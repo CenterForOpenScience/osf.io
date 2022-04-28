@@ -5,6 +5,7 @@ import logging
 from operator import itemgetter
 
 from django.db import connection
+from django.db.models import Q
 from django.http import Http404
 from django.core import serializers
 from django.shortcuts import redirect
@@ -12,6 +13,7 @@ from django.forms.models import model_to_dict
 from django.urls import reverse_lazy, reverse
 from django.http import HttpResponse, JsonResponse
 from django.views.generic import ListView, DetailView, View, CreateView, UpdateView, DeleteView, TemplateView
+from django.views.generic.base import RedirectView
 from django.views.generic.edit import FormView
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin, UserPassesTestMixin
@@ -21,10 +23,11 @@ from admin.base import settings
 from admin.base.forms import ImportFileForm
 from admin.institutions.forms import InstitutionForm, InstitutionalMetricsAdminRegisterForm
 from django.contrib.auth.models import Group
-from osf.models import Institution, Node, OSFUser, UserQuota
+from osf.models import Institution, Node, OSFUser, UserQuota, Email
 from website.util import quota
 from addons.osfstorage.models import Region
 from api.base import settings as api_settings
+import csv
 
 logger = logging.getLogger(__name__)
 
@@ -282,7 +285,7 @@ class QuotaUserList(ListView):
         return {
             'id': user.guids.first()._id,
             'fullname': user.fullname,
-            'eppn': user.eppn,
+            'eppn': user.eppn or '',
             'username': user.username,
             'ratio': float(used_quota) / max_quota_bytes * 100,
             'usage': used_quota,
@@ -318,16 +321,47 @@ class QuotaUserList(ListView):
         kwargs['institution_id'] = institution.id
         kwargs['institution_name'] = institution.name
 
+        if hasattr(institution, 'storage_name'):
+            kwargs['institution_storage_name'] = institution.storage_name
+
         self.query_set = self.get_queryset()
         self.page_size = self.get_paginate_by(self.query_set)
         self.paginator, self.page, self.query_set, self.is_paginated = \
             self.paginate_queryset(self.query_set, self.page_size)
 
+        kwargs['requested_user'] = self.request.user
         kwargs['users'] = self.query_set
         kwargs['page'] = self.page
         kwargs['order_by'] = self.get_order_by()
         kwargs['direction'] = self.get_direction()
         return super(QuotaUserList, self).get_context_data(**kwargs)
+
+
+class ExportFileTSV(PermissionRequiredMixin, QuotaUserList):
+    permission_required = 'osf.view_osfuser'
+    raise_exception = True
+
+    def get(self, request, **kwargs):
+        institution_id = self.kwargs['institution_id']
+        response = HttpResponse(content_type='text/tsv')
+        writer = csv.writer(response, delimiter='\t')
+        writer.writerow(['GUID', 'Username', 'Fullname', 'Ratio (%)', 'Usage (Byte)', 'Remaining (Byte)', 'Quota (Byte)'])
+
+        for user in OSFUser.objects.filter(affiliated_institutions=institution_id):
+            max_quota, used_quota = quota.get_quota_info(user, UserQuota.NII_STORAGE)
+            max_quota_bytes = max_quota * api_settings.SIZE_UNIT_GB
+            remaining_quota = max_quota_bytes - used_quota
+
+            writer.writerow([user.guids.first()._id, user.username,
+                             user.fullname,
+                             round(float(used_quota) / max_quota_bytes * 100, 1),
+                             round(used_quota, 0),
+                             round(remaining_quota, 0),
+                             round(max_quota_bytes, 0)])
+        query = 'attachment; filename=user_list_by_institution_{}_export.tsv'.format(
+            institution_id)
+        response['Content-Disposition'] = query
+        return response
 
 
 class UserListByInstitutionID(PermissionRequiredMixin, QuotaUserList):
@@ -337,10 +371,38 @@ class UserListByInstitutionID(PermissionRequiredMixin, QuotaUserList):
     paginate_by = 10
 
     def get_userlist(self):
-        user_list = []
-        for user in OSFUser.objects.filter(affiliated_institutions=self.kwargs['institution_id']):
-            user_list.append(self.get_user_quota_info(user, UserQuota.NII_STORAGE))
-        return user_list
+        guid = self.request.GET.get('guid')
+        name = self.request.GET.get('info')
+        email = self.request.GET.get('email')
+        queryset = OSFUser.objects.filter(affiliated_institutions=self.kwargs['institution_id'])
+
+        if not email and not guid and not name:
+            return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in queryset]
+
+        query_email = query_guid = query_name = None
+
+        if email:
+            existing_user_ids = list(Email.objects.filter(Q(address__exact=email)).values_list('user_id', flat=True))
+            query_email = queryset.filter(Q(pk__in=existing_user_ids) | Q(username__exact=email))
+        if guid:
+            query_guid = queryset.filter(guids___id=guid)
+        if name:
+            query_name = queryset.filter(Q(fullname__icontains=name) |
+                                         # Q(family_name_ja__icontains=name) |  # add in (1)4.1.4
+                                         # Q(given_name_ja__icontains=name) |  # add in (1)4.1.4
+                                         # Q(middle_names_ja__icontains=name) |  # add in (1)4.1.4
+                                         Q(given_name__icontains=name) |
+                                         Q(middle_names__icontains=name) |
+                                         Q(family_name__icontains=name))
+
+        if query_email is not None and query_email.exists():
+            return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in query_email]
+        elif query_guid is not None and query_guid.exists():
+            return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in query_guid]
+        elif query_name is not None and query_name.exists():
+            return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in query_name]
+        else:
+            return []
 
     def get_institution(self):
         return Institution.objects.get(id=self.kwargs['institution_id'])
@@ -382,3 +444,29 @@ class StatisticalStatusDefaultStorage(QuotaUserList, RdmPermissionMixin, UserPas
 
     def get_institution(self):
         return self.request.user.affiliated_institutions.first()
+
+
+class RecalculateQuota(RdmPermissionMixin, RedirectView):
+
+    def dispatch(self, request, *args, **kwargs):
+        if self.is_super_admin:
+            institutions_list = Institution.objects.all()
+
+            for institution in institutions_list:
+                user_list = OSFUser.objects.filter(affiliated_institutions=institution)
+                for user in user_list:
+                    quota.update_user_used_quota(user)
+
+        return redirect('institutions:institution_list')
+
+
+class RecalculateQuotaOfUsersInInstitution(RdmPermissionMixin, RedirectView):
+
+    def dispatch(self, request, *args, **kwargs):
+        if self.is_admin:
+            institution = self.request.user.affiliated_institutions.first()
+            if institution is not None and Region.objects.filter(_id=institution._id).exists():
+                for user in OSFUser.objects.filter(affiliated_institutions=institution.id):
+                    quota.update_user_used_quota(user, UserQuota.CUSTOM_STORAGE)
+
+        return redirect('institutions:statistical_status_default_storage')

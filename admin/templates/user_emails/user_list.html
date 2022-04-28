@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}
+    <title>{% trans "RDM" %} {% trans "User-Emails" %} - {% trans "Search Results" %}</title>
+{% endblock title %}
+
+{% block content %}
+    {% include "util/pagination.html" with items=page status=status %}
+
+    <table class="table table-striped table-hover table-responsive">
+        <thead>
+        <tr>
+            <th>{% trans "GUID" %}</th>
+            <th>{% trans "EPPN" %}</th>
+            <th>{% trans "Username" %}</th>
+            <th>{% trans "Fullname" %}</th>
+            <th>{% trans "Affiliation" %}</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for user in users %}
+            <tr>
+                <td>
+                    <a href="{% url 'user-emails:user' user.id %}"
+                       class="btn btn-primary">
+                        {{ user.id }}
+                    </a>
+                </td>
+                <td>
+                    {{ user.eppn }}
+                </td>
+                <td>
+                    {{ user.username }}
+                </td>
+                <td>
+                    {{ user.name }}
+                </td>
+                <td>
+                    {% if user.affiliation is not None %}{{ user.affiliation.name }}{% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    {% if not users|length %}
+        <h3>{% trans "No results found" %}</h3>
+    {% endif %}
+{% endblock content %}

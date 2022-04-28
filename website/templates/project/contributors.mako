@@ -179,10 +179,10 @@
     <thead>
         <tr>
             <th class="responsive-table-hide"
-                data-bind="css: {sortable: ($data === 'contrib' && $root.isSortable())}">${_("Name")}
+                data-bind="css: {sortable: ($data === 'contrib' && $root.isSortable())}" style="min-width: 100px;white-space: nowrap;">${_("Name")}
             </th>
-            <th></th>
-            <th>
+            <th style="min-width: 140px;width: 200px;white-space: nowrap;"></th>
+            <th style="min-width: 150px;width: 160px;white-space: nowrap;">
                 ${_("Permissions")}
                 <i class="fa fa-question-circle permission-info"
                     data-toggle="popover"
@@ -192,7 +192,7 @@
                     data-html="true"
                 ></i>
             </th>
-            <th class="biblio-contrib">
+            <th class="biblio-contrib" style="min-width:144px;white-space: nowrap;">
                 ${_("Bibliographic Contributor")}
                 <i class="fa fa-question-circle visibility-info"
                     data-toggle="popover"
@@ -202,6 +202,7 @@
                     data-html="true"
                 ></i>
             </th>
+            <th style="width: 50px;max-width: 100px; white-space: nowrap;"></th>
             <th class="remove"></th>
         </tr>
     </thead>
@@ -320,6 +321,15 @@
                     data-bind="checked: visible, enable: $data.canEdit() && !contributor.isParentAdmin && !deleteStaged()"
                 />
             </div>
+        </td>
+        <td>
+            <!-- ko if: (!contributor.registered) -->
+            <div class="td-content">
+                <a class="btn btn-success btn-sm m-l-md" data-bind="click: reInvite, class: {}">
+                    ${_('Invitation Code')}
+                </a>
+            </div>
+            <!-- /ko -->
         </td>
         <td data-bind="css: {'add-remove': !$root.collapsed()}">
             <div class="td-content" data-bind="visible: !$root.collapsed() || contributor.expanded()">

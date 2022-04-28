@@ -49,7 +49,7 @@ from osf.models import AbstractNode, Collection, Contributor, Guid, PrivateLink,
 from osf.models.licenses import serialize_node_license_record
 from osf.utils.sanitize import strip_html
 from osf.utils.permissions import ADMIN, READ, WRITE, CREATOR_PERMISSIONS, ADMIN_NODE
-from osf.models import RdmTimestampGrantPattern
+from osf.models import RdmTimestampGrantPattern, OSFUser
 from website import settings
 from website.views import find_bookmark_collection, validate_page_num
 from website.views import serialize_node_summary, get_storage_region_list
@@ -691,6 +691,14 @@ def component_remove(auth, node, **kwargs):
     message = '{} has been successfully deleted.'.format(
         node.project_or_component.capitalize()
     )
+
+    if node.project_or_component == 'project':
+        storage_type = node.projectstoragetype.storage_type
+        contributor_ids = Contributor.objects.filter(node=node).values_list('user', flat=True)
+        user_list = OSFUser.objects.filter(id__in=contributor_ids)
+        for user in user_list:
+            quota.update_user_used_quota(user, storage_type=storage_type)
+
     id = '{}_deleted'.format(node.project_or_component)
     status.push_status_message(message, kind='success', trust=False, id=id)
     parent = node.parent_node

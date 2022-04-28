@@ -649,6 +649,36 @@
                 "status": "none",
                 "text": "BinderHub information will not be registered."
             }
+        },
+        "Metadata": {
+            "Permissions": {
+                "status": "none",
+                "text": "The GakuNin RDM does not affect the permissions of Metadata."
+            },
+            "View / download file versions": {
+                "status": "none",
+                "text": "The Metadata add-on does not provide Storage Features."
+            },
+            "Add / update files": {
+                "status": "none",
+                "text": "The Metadata add-on does not provide Storage Features."
+            },
+            "Delete files": {
+                "status": "none",
+                "text": "The Metadata add-on does not provide Storage Features."
+            },
+            "Logs": {
+                "status": "none",
+                "text": "The Metadata add-on does not provide Storage Features."
+            },
+            "Forking": {
+                "status": "partial",
+                "text": "Forking a project or component copies information about linked Metadata but the GakuNin RDM does not affect authentication of Metadata."
+            },
+            "Registering": {
+                "status": "none",
+                "text": "Metadata information will not be registered."
+            }
         }
     },
     "disclaimers": [

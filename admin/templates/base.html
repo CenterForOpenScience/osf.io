@@ -149,6 +149,11 @@
                   </ul>
               </div>
           {% endif %}
+          <li>
+              <a href="{% url 'user-emails:search' %}">
+                  <i class='fa fa-link'></i> <span> {% trans "RDM" %} {% trans "User Emails" %}</span>
+              </a>
+          </li>
           {% if perms.osf.view_spam %}
             <li><a href="{% url 'spam:spam' %}"><i class='fa fa-link'></i> <span>{% trans "RDM Spam" %}</span></a></li>
           {% endif %}
@@ -299,6 +304,9 @@
           {% if not user.is_superuser and user.is_staff %}
             <li><a href="{% url 'custom_storage_location:institutional_storage' %}"><i class='fa fa-link'></i> <span>{% trans "Institutional Storage" %}</span></a></li>
             <li><a href="{% url 'institutions:statistical_status_default_storage' %}"><i class='fa fa-link'></i> <span>{% trans "Quota for Institutional Storage" %}</span></a></li>
+          {% endif %}
+          {% if user.is_superuser or user.is_staff %}
+            <li><a href="{% url 'institutional_storage_quota_control:list_institution_storage' %}"><i class='fa fa-link'></i> <span>{% trans "Inst. Storage Quota Control" %}</span></a></li>
           {% endif %}
           </ul><!-- /.sidebar-menu -->
         </section>

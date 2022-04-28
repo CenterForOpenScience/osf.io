@@ -38,6 +38,21 @@ FORMAT_TYPE_TO_TYPE_MAP = {
     ('textarea-lg', None): 'long-text-input',
     ('textarea-lg', 'string'): 'long-text-input',
     ('textarea-xl', 'string'): 'long-text-input',
+    ('e-rad-award-funder', 'choose'): 'e-rad-award-funder-input',
+    ('e-rad-award-number', 'string'): 'e-rad-award-number-input',
+    ('e-rad-award-title-ja', 'string'): 'e-rad-award-title-ja-input',
+    ('e-rad-award-title-en', 'string'): 'e-rad-award-title-en-input',
+    ('e-rad-researcher-number', 'string'): 'e-rad-researcher-number-input',
+    ('e-rad-researcher-name-ja', 'string'): 'e-rad-researcher-name-ja-input',
+    ('e-rad-researcher-name-en', 'string'): 'e-rad-researcher-name-en-input',
+    ('e-rad-bunnya', 'string'): 'e-rad-bunnya-input',
+    ('file-metadata', 'string'): 'file-metadata-input',
+    ('date', 'string'): 'date-input',
+    ('file-capacity', 'string'): 'file-capacity-input',
+    ('file-creators', 'string'): 'file-creators-input',
+    ('file-url', 'string'): 'file-url-input',
+    ('file-institution-ja', 'string'): 'file-institution-ja-input',
+    ('file-institution-en', 'string'): 'file-institution-en-input',
 }
 
 def get_osf_models():

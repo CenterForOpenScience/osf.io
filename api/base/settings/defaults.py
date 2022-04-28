@@ -125,6 +125,7 @@ INSTALLED_APPS = (
     'addons.ociinstitutions',
     'addons.binderhub',
     'addons.onedrivebusiness',
+    'addons.metadata',
 )
 
 # local development using https

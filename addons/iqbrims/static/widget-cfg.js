@@ -125,6 +125,8 @@ function IQBRIMSWidget() {
 
 }
 
-var w = new IQBRIMSWidget();
-osfHelpers.applyBindings(w, '#iqbrims-content');
-w.loadConfig();
+if (contextVars.iqbrimsAddonEnabled) {
+  var w = new IQBRIMSWidget();
+  osfHelpers.applyBindings(w, '#iqbrims-content');
+  w.loadConfig();
+}

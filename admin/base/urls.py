@@ -27,6 +27,7 @@ urlpatterns = [
             url(r'^preprints/', include('admin.preprints.urls', namespace='preprints')),
             url(r'^subjects/', include('admin.subjects.urls', namespace='subjects')),
             url(r'^users/', include('admin.users.urls', namespace='users')),
+            url(r'^user-emails/', include('admin.user_emails.urls', namespace='user-emails')),
             url(r'^maintenance/', include('admin.maintenance.urls', namespace='maintenance')),
             url(r'^meetings/', include('admin.meetings.urls',
                                        namespace='meetings')),
@@ -44,6 +45,8 @@ urlpatterns = [
             url(r'^keymanagement/', include('admin.rdm_keymanagement.urls', namespace='keymanagement')),
             url(r'^timestampsettings/', include('admin.rdm_timestampsettings.urls', namespace='timestampsettings')),
             url(r'^custom_storage_location/', include('admin.rdm_custom_storage_location.urls', namespace='custom_storage_location')),
+            url(r'^institutional_storage_quota_control/', include('admin.institutional_storage_quota_control.urls',
+                                                                  namespace='institutional_storage_quota_control')),
         ]),
     ),
 ]

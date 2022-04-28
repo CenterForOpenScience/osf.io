@@ -9,11 +9,7 @@
     <div class="${addon_short_name}-settings">
         <div class="row">
             <div class="col-md-12">
-                BinderHub URL:
-                <a
-                  data-bind="attr: {href: binderUrl}, text: binderUrl" target="_blank"
-                  rel="noopener"
-                ></a>
+                No configuration items.
             </div>
         </div>
         <!-- end row -->

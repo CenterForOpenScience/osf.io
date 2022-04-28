@@ -443,6 +443,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     cggroups_sync = models.ManyToManyField(CGGroup, related_name='users_group_sync')
     cggroups_initialized = models.BooleanField(default=False)
     date_last_access = NonNaiveDateTimeField(null=True, blank=True)
+    # temporary user identifier
+    temp_account = models.BooleanField(default=False)
 
     # MAPProfile link.
     map_profile = models.OneToOneField(MAPProfile,
@@ -726,7 +728,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """The ability of the `merge_user` method to fully merge the user"""
         return all((addon.can_be_merged for addon in self.get_addons()))
 
-    def merge_user(self, user):
+    def merge_user(self, user, is_forced=False):
         """Merge a registered user into this account. This user will be
         a contributor on any project. if the registered user and this account
         are both contributors of the same project. Then it will remove the
@@ -735,6 +737,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         the project.
 
         :param user: A User object to be merged.
+        :param is_forced: forced to merge.
         """
 
         # Attempt to prevent self merges which end up removing self as a contributor from all projects
@@ -745,7 +748,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if not user.can_be_merged:
             raise MergeConflictError('Users cannot be merged')
 
-        if not website_settings.ENABLE_USER_MERGE:
+        if not is_forced and not website_settings.ENABLE_USER_MERGE:
             raise MergeDisableError('The merge feature is disabled')
 
         # Move over the other user's attributes
@@ -1441,7 +1444,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             user_to_merge = None
 
         if user_to_merge and merge:
-            self.merge_user(user_to_merge)
+            self.merge_user(user_to_merge, is_forced=user_to_merge.temp_account)
         elif user_to_merge:
             raise MergeConfirmedRequiredError(
                 'Merge requires confirmation',
@@ -1456,9 +1459,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             unregistered_user = None
 
         if unregistered_user:
-            self.merge_user(unregistered_user)
+            self.merge_user(unregistered_user, is_forced=unregistered_user.temp_account)
             self.save()
-            unregistered_user.username = None
+            unregistered_user.gdpr_delete()
+            unregistered_user.temp_account = False
+            unregistered_user.save()
 
         if self.have_email is False:
             from api.institutions.authentication import send_welcome
