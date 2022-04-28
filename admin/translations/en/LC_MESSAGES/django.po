@@ -3093,8 +3093,47 @@ msgstr ""
 #~ msgid "Submit"
 #~ msgstr ""
 
-#~ msgid "Institutions"
-#~ msgstr ""
+# text of menuitem on left-side menu
+msgid "Login Availability Control"
+msgstr ""
+
+# page title
+msgid "List of Entitlements"
+msgstr "List of eduPersonEntitlement"
+
+# label for eduPersonEntitlement input box
+msgid "Entitlements"
+msgstr "eduPersonEntitlement"
+
+msgid "Institutions"
+msgstr ""
+
+# hint text of eduPersonEntitlement input box
+msgid "Enter new entitlement"
+msgstr "Enter new eduPersonEntitlement"
+
+# label for checkboxes
+msgid "login availability"
+msgstr ""
+
+# text for button to add another eduPersonEntitlement input box
+msgid "New entitlement"
+msgstr "New eduPersonEntitlement"
+
+msgid "Delete"
+msgstr ""
+
+msgid "Entitlement must be not empty"
+msgstr "eduPersonEntitlement must be not empty"
+
+msgid "Entitlement '"
+msgstr "eduPersonEntitlement '"
+
+msgid "' already exists"
+msgstr ""
+
+msgid "' have been inputted"
+msgstr "' is duplicated"
 
 # msgid "Configure NII Storage Quota"
 # msgstr ""

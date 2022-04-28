@@ -1,0 +1,58 @@
+{% load i18n %}
+{% block content %}
+
+    <div class="pagination pagination-lg">
+        <span>
+            {% if items.has_previous %}
+                <a href="?institution_id={{ institution_id }}&amp;page=1&amp;status={{ status }}&amp;p={{ pagin }}&amp;order_by={{ order }}"
+                   class="btn btn-primary">
+                    |
+                </a>
+                <a href="?institution_id={{ institution_id }}&amp;page={{ items.previous_page_number }}&amp;status={{ status }}&amp;p={{ pagin }}&amp;order_by={{ order }}"
+                   class="btn btn-primary">
+                    <i class="fa fa-angle-left"></i>
+                </a>
+            {% else %}
+                <div class="btn btn-primary disabled">
+                    |
+                </div>
+                <div class="btn btn-primary disabled">
+                    <i class="fa fa-angle-left"></i>
+                </div>
+            {% endif %}
+
+            <span class="current">
+                {% blocktrans with itemsNumber=items.number paginatorNumPage=items.paginator.num_pages %}Page {{ itemsNumber }} of {{ paginatorNumPage }}{% endblocktrans %}
+            </span>
+
+            {% if items.has_next %}
+                <a href="?institution_id={{ institution_id }}&amp;page={{ items.next_page_number }}&amp;status={{ status }}&amp;p={{ pagin }}&amp;order_by={{ order }}"
+                   class="btn btn-primary">
+                    <i class="fa fa-angle-right"></i>
+                </a>
+                <a href="?institution_id={{ institution_id }}&amp;page={{ items.paginator.num_pages }}&amp;status={{ status }}&amp;p={{ pagin }}&amp;order_by={{ order }}"
+                   class="btn btn-primary">
+                    |
+                </a>
+            {% else %}
+                <div class="btn btn-primary disabled">
+                    <i class="fa fa-angle-right"></i>
+                </div>
+                <div class="btn btn-primary disabled">
+                    |
+                </div>
+            {% endif %}
+        </span>
+        {% if pagin %}
+        <span>
+            <a href="?p=10&amp;order_by={{ order }}&amp;status={{ status }}"
+               class="btn btn-primary">10</a>
+            <a href="?p=25&amp;order_by={{ order }}&amp;status={{ status }}"
+               class="btn btn-primary">25</a>
+            <a href="?p=50&amp;order_by={{ order }}&amp;status={{ status }}"
+               class="btn btn-primary">50</a>
+        </span>
+        {% endif %}
+    </div>
+
+{% endblock content %}

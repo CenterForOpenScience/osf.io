@@ -49,6 +49,7 @@ urlpatterns = [
                 url(r'^guids/', include('api.guids.urls', namespace='guids')),
                 url(r'^identifiers/', include('api.identifiers.urls', namespace='identifiers')),
                 url(r'^institutions/', include('api.institutions.urls', namespace='institutions')),
+                url(r'^entitlements/', include('api.entitlements.urls', namespace='entitlements')),
                 url(r'^licenses/', include('api.licenses.urls', namespace='licenses')),
                 url(r'^logs/', include('api.logs.urls', namespace='logs')),
                 url(r'^metaschemas/', include('api.metaschemas.urls', namespace='metaschemas')),
