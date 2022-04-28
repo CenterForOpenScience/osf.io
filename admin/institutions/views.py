@@ -281,7 +281,7 @@ class QuotaUserList(ListView):
         return {
             'id': user.guids.first()._id,
             'fullname': user.fullname,
-            'eppn': user.eppn,
+            'eppn': user.eppn or '',
             'username': user.username,
             'ratio': float(used_quota) / max_quota_bytes * 100,
             'usage': used_quota,
@@ -317,11 +317,15 @@ class QuotaUserList(ListView):
         kwargs['institution_id'] = institution.id
         kwargs['institution_name'] = institution.name
 
+        if hasattr(institution, 'storage_name'):
+            kwargs['institution_storage_name'] = institution.storage_name
+
         self.query_set = self.get_queryset()
         self.page_size = self.get_paginate_by(self.query_set)
         self.paginator, self.page, self.query_set, self.is_paginated = \
             self.paginate_queryset(self.query_set, self.page_size)
 
+        kwargs['requested_user'] = self.request.user
         kwargs['users'] = self.query_set
         kwargs['page'] = self.page
         kwargs['order_by'] = self.get_order_by()
