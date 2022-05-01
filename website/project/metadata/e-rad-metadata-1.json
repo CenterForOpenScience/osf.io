@@ -108,8 +108,54 @@
           "qid": "grdm-file:data-research-field",
           "nav": "データの分野",
           "title": "データの分野",
-          "type": "string",
-          "format": "e-rad-bunnya",
+          "type": "choose",
+          "format": "singleselect",
+          "options": [
+              {
+                "text": "189",
+                "tooltip": "ライフサイエンス (Life Science)"
+              },
+              {
+                "text": "289",
+                "tooltip": "情報通信 (Informatics)"
+              },
+              {
+                "text": "389",
+                "tooltip": "環境 (Environmental Science)"
+              },
+              {
+                "text": "489",
+                "tooltip": "ナノテク・材料 (Nanotechnology/Materials)"
+              },
+              {
+                "text": "589",
+                "tooltip": "エネルギー (Energy Engineering)"
+              },
+              {
+                "text": "689",
+                "tooltip": "ものづくり技術 (Manufacturing Technology)"
+              },
+              {
+                "text": "789",
+                "tooltip": "社会基盤 (Social Infrastructure)"
+              },
+              {
+                "text": "889",
+                "tooltip": "フロンティア (Frontier Technology)"
+              },
+              {
+                "text": "900",
+                "tooltip": "人文・社会 (Humanities & Social Sciences)"
+              },
+              {
+                "text": "1000",
+                "tooltip": "自然科学一般 (Natural Science)"
+              },
+              {
+                "text": "9999",
+                "tooltip": "その他 (Others)"
+              }
+          ],
           "required": true
         },
         {
