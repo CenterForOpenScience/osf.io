@@ -6305,6 +6305,15 @@ msgstr ""
 msgid "Institution/Employer required"
 msgstr ""
 
+msgid "Institution/Employer (English) required"
+msgstr ""
+
+msgid "Affiliation required"
+msgstr ""
+
+msgid "Affiliation (English) required"
+msgstr ""
+
 #: website/static/js/profile.js:1132
 msgid "Institution required"
 msgstr ""

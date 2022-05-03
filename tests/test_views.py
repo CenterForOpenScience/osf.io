@@ -46,7 +46,7 @@ from website import mailchimp_utils, mails, settings, language
 from addons.osfstorage import settings as osfstorage_settings
 from osf.models import AbstractNode, NodeLog, QuickFilesNode
 from website.profile.utils import add_contributor_json, serialize_unregistered
-from website.profile.views import update_osf_help_mails_subscription, _profile_view
+from website.profile.views import update_osf_help_mails_subscription, _profile_view, append_idp_attr_common
 from website.project.decorators import check_can_access
 from website.project.model import has_anonymous_link
 from website.project.signals import contributor_added
@@ -58,6 +58,7 @@ from website.project.views.contributor import (
     send_claim_registered_email,
 )
 from website import views as website_view
+from website.profile import views as website_profile_view
 from website.project.views.node import _should_show_wiki_widget, _view_project, abbrev_authors
 from website.util import api_url_for, web_url_for
 from website.util import rubeus
@@ -65,7 +66,7 @@ from website.util.metrics import OsfSourceTags, OsfClaimedTags, provider_source_
 from website.util.timestamp import userkey_generation, AddTimestamp
 from osf.utils import permissions
 from osf.models import Comment
-from osf.models import OSFUser, Tag
+from osf.models import OSFUser, Tag, UserExtendedData
 from osf.models import Email, TimestampTask
 from tests.base import (
     assert_is_redirect,
@@ -1136,11 +1137,13 @@ class TestUserProfile(OsfTestCase):
         self.user = AuthUserFactory()
 
     def test_unserialize_social(self):
+        erad = '007'
         url = api_url_for('unserialize_social')
         payload = {
             'profileWebsites': ['http://frozen.pizza.com/reviews'],
             'twitter': 'howtopizza',
             'github': 'frozenpizzacode',
+            'erad': erad
         }
         self.app.put_json(
             url,
@@ -1148,8 +1151,10 @@ class TestUserProfile(OsfTestCase):
             auth=self.user.auth,
         )
         self.user.reload()
-        for key, value in payload.items():
-            assert_equal(self.user.social[key], value)
+        assert_equal(self.user.social['profileWebsites'], payload['profileWebsites'])
+        assert_equal(self.user.social['twitter'], payload['twitter'])
+        assert_equal(self.user.social['github'], payload['github'])
+        assert_equal(self.user.erad, payload['erad'])
         assert_true(self.user.social['researcherId'] is None)
 
     # Regression test for help-desk ticket
@@ -1247,6 +1252,8 @@ class TestUserProfile(OsfTestCase):
         jobs = [{
             'institution': 'an institution',
             'department': 'a department',
+            'institution_ja': 'an institution ja',
+            'department_ja': 'a department ja',
             'title': 'a title',
             'startMonth': 'January',
             'startYear': '2001',
@@ -1256,6 +1263,8 @@ class TestUserProfile(OsfTestCase):
         }, {
             'institution': 'another institution',
             'department': None,
+            'institution_ja': 'another institution ja',
+            'department_ja': 'another department ja',
             'title': None,
             'startMonth': 'May',
             'startYear': '2001',
@@ -1280,6 +1289,8 @@ class TestUserProfile(OsfTestCase):
         schools = [{
             'institution': 'an institution',
             'department': 'a department',
+            'institution_ja': 'an institution ja',
+            'department_ja': 'a department ja',
             'degree': 'a degree',
             'startMonth': 1,
             'startYear': '2001',
@@ -1289,6 +1300,8 @@ class TestUserProfile(OsfTestCase):
         }, {
             'institution': 'another institution',
             'department': None,
+            'institution_ja': 'another institution ja',
+            'department_ja': 'another department ja',
             'degree': None,
             'startMonth': 5,
             'startYear': '2001',
@@ -1315,6 +1328,8 @@ class TestUserProfile(OsfTestCase):
             {
                 'institution': fake.company(),
                 'department': fake.catch_phrase(),
+                'institution_ja': fake.company(),
+                'department_ja': fake.catch_phrase(),
                 'title': fake.bs(),
                 'startMonth': 5,
                 'startYear': '2013',
@@ -1358,6 +1373,8 @@ class TestUserProfile(OsfTestCase):
             {
                 'institution': fake.company(),
                 'department': fake.catch_phrase(),
+                'institution_ja': fake.company(),
+                'department_ja': fake.catch_phrase(),
                 'degree': fake.bs(),
                 'startMonth': 5,
                 'startYear': '2013',
@@ -1573,6 +1590,364 @@ class TestUserProfile(OsfTestCase):
 
         res = self.app.put_json(url, payload, auth=auth, expect_errors=True)
         assert res.status_code == 404
+
+    def test_serialize_social_with_erad(self):
+        user2 = AuthUserFactory()
+        self.user.social['twitter'] = 'howtopizza'
+        self.user.social['profileWebsites'] = ['http://www.cos.io']
+        self.user.erad = '123'
+        self.user.save()
+        url = api_url_for('serialize_social', uid=self.user._id)
+        res = self.app.get(
+            url,
+            auth=user2.auth,
+        )
+        assert_equal(res.json.get('twitter'), 'howtopizza')
+        assert_equal(res.json.get('profileWebsites'), ['http://www.cos.io'])
+        assert_true(res.json.get('github') is None)
+        assert_false(res.json['editable'])
+        assert_true(res.json.get('erad') is None)
+
+    def test_serialize_social_with_erad_and_editable(self):
+        self.user.social['twitter'] = 'howtopizza'
+        self.user.social['profileWebsites'] = ['http://www.cos.io',
+                                               'http://www.osf.io',
+                                               'http://www.wordup.com']
+        self.user.erad = '123'
+        self.user.save()
+        url = api_url_for('serialize_social')
+        res = self.app.get(
+            url,
+            auth=self.user.auth,
+        )
+        print(res)
+        assert_equal(res.json.get('twitter'), 'howtopizza')
+        assert_equal(res.json.get('profileWebsites'),
+                        [
+                            'http://www.cos.io',
+                            'http://www.osf.io',
+                            'http://www.wordup.com'
+                        ])
+        assert_equal(res.json.get('erad'), '123')
+        assert_true(res.json.get('github') is None)
+        assert_true(res.json['editable'])
+
+    def test_unserialize_names(self):
+        fake_fullname_w_spaces = '    {}    '.format(fake.name())
+        names = {
+            'full': fake_fullname_w_spaces,
+            'given': 'Tea',
+            'middle': 'Gray',
+            'family': 'Pot',
+            'suffix': 'Ms.',
+            'given_ja': 'Given name ja',
+            'middle_ja': 'Middle name ja',
+            'family_ja': 'Family name ja',
+        }
+
+        url = api_url_for('unserialize_names')
+        res = self.app.put_json(url, names, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        self.user.reload()
+
+        assert_equal(self.user.fullname, fake_fullname_w_spaces.strip())
+        assert_equal(self.user.given_name, names['given'])
+        assert_equal(self.user.middle_names, names['middle'])
+        assert_equal(self.user.family_name, names['family'])
+        assert_equal(self.user.suffix, names['suffix'])
+        assert_equal(self.user.given_name_ja, names['given_ja'])
+        assert_equal(self.user.middle_names_ja, names['middle_ja'])
+        assert_equal(self.user.family_name_ja, names['family_ja'])
+
+    def test_serialize_account_info(self):
+        url = api_url_for('serialize_account_info')
+
+        response = self.app.get(
+            url,
+            auth=self.user.auth,
+        )
+
+        assert_equal(response.status_code, 200)
+        response_data = response.body
+        response_data = json.loads(response_data)
+        assert_equal(response_data['full'], self.user.fullname)
+        assert_equal(response_data['given'], self.user.given_name)
+        assert_equal(response_data['middle'], self.user.middle_names)
+        assert_equal(response_data['family'], self.user.family_name)
+        assert_equal(response_data['given_ja'], self.user.given_name_ja)
+        assert_equal(response_data['middle_ja'], self.user.middle_names_ja)
+        assert_equal(response_data['family_ja'], self.user.family_name_ja)
+        assert_equal(response_data['suffix'], self.user.suffix)
+        assert_equal(response_data['erad'], self.user.erad)
+        assert_equal(response_data['institution'], None)
+        assert_equal(response_data['department'], None)
+        assert_equal(response_data['institution_ja'], None)
+        assert_equal(response_data['department_ja'], None)
+
+    def test_unserialize_account_info_initial_jobs(self):
+        url = api_url_for('serialize_account_info')
+        payload = {
+            'full': self.user.fullname,
+            'given': self.user.given_name,
+            'middle': self.user.middle_names,
+            'family': self.user.family_name,
+            'given_ja': self.user.given_name_ja,
+            'middle_ja': self.user.middle_names_ja,
+            'family_ja': self.user.family_name_ja,
+            'suffix': self.user.suffix,
+            'erad': self.user.erad,
+            'institution': 'another institution',
+            'institution_ja': 'Another Institution',
+            'department': 'department B',
+            'department_ja': 'Department B',
+            'title': '',
+            'startMonth': None,
+            'startYear': None,
+            'endMonth': None,
+            'endYear': None,
+            'ongoing': False,
+        }
+
+        self.app.put_json(
+            url,
+            payload,
+            auth=self.user.auth
+        )
+
+        self.user.reload()
+
+        assert_equal(self.user.fullname, payload['full'])
+        assert_equal(self.user.given_name, payload['given'])
+        assert_equal(self.user.middle_names, payload['middle'])
+        assert_equal(self.user.family_name, payload['family'])
+        assert_equal(self.user.given_name_ja, payload['given_ja'])
+        assert_equal(self.user.middle_names_ja, payload['middle_ja'])
+        assert_equal(self.user.family_name_ja, payload['family_ja'])
+        assert_equal(self.user.suffix, payload['suffix'])
+        assert_equal(self.user.erad, payload['erad'])
+        assert_equal(self.user.jobs[0]['institution'], payload['institution'])
+        assert_equal(self.user.jobs[0]['department'], payload['department'])
+        assert_equal(self.user.jobs[0]['institution_ja'], payload['institution_ja'])
+        assert_equal(self.user.jobs[0]['department_ja'], payload['department_ja'])
+        assert_equal(self.user.jobs[0]['title'], payload['title'])
+        assert_equal(self.user.jobs[0]['startMonth'], payload['startMonth'])
+        assert_equal(self.user.jobs[0]['startYear'], payload['startYear'])
+        assert_equal(self.user.jobs[0]['endMonth'], payload['endMonth'])
+        assert_equal(self.user.jobs[0]['endYear'], payload['endYear'])
+        assert_equal(self.user.jobs[0]['ongoing'], payload['ongoing'])
+
+    @mock.patch('osf.models.user.OSFUser.check_spam')
+    def test_unserialize_account_info_with_jobs(self, mock_check_spam):
+        url = api_url_for('serialize_account_info')
+        jobs = [{
+            'institution': 'an institution',
+            'institution_ja': 'Institution',
+            'department': 'department A',
+            'department_ja': 'Department A',
+            'location': 'Anywhere',
+            'startMonth': 'January',
+            'startYear': '2001',
+            'endMonth': 'March',
+            'endYear': '2001',
+            'ongoing': False,
+        }, {
+            'institution': 'another institution',
+            'institution_ja': 'Another Institution',
+            'department': 'department B',
+            'department_ja': 'Department B',
+            'location': 'Nowhere',
+            'startMonth': 'January',
+            'startYear': '2001',
+            'endMonth': 'March',
+            'endYear': '2001',
+            'ongoing': False,
+        }]
+        self.user.jobs = jobs
+        self.user.save()
+
+        payload = {
+            'full': self.user.fullname,
+            'given': self.user.given_name,
+            'middle': self.user.middle_names,
+            'family': self.user.family_name,
+            'given_ja': self.user.given_name_ja,
+            'middle_ja': self.user.middle_names_ja,
+            'family_ja': self.user.family_name_ja,
+            'suffix': self.user.suffix,
+            'erad': self.user.erad,
+            'institution': 'change institution',
+            'department': 'change department',
+            'institution_ja': 'Change Institution',
+            'department_ja': 'Change Department',
+        }
+
+        self.app.put_json(
+            url,
+            payload,
+            auth=self.user.auth
+        )
+
+        self.user.reload()
+
+        assert_equal(
+            self.user.jobs[0]['institution'], payload['institution'])
+        assert_equal(
+            self.user.jobs[0]['department'], payload['department'])
+        assert_equal(
+            self.user.jobs[0]['institution_ja'], payload['institution_ja'])
+        assert_equal(
+            self.user.jobs[0]['department_ja'], payload['department_ja'])
+
+        assert mock_check_spam.called
+
+    def test_serialize_name(self):
+        url = api_url_for('serialize_names')
+        response = self.app.get(
+            url,
+            auth=self.user.auth,
+        )
+
+        assert_equal(response.status_code, 200)
+        response_data = response.body
+        response_data = json.loads(response_data)
+
+        assert_equal(response_data['full'], self.user.fullname)
+        assert_equal(response_data['given'], self.user.given_name)
+        assert_equal(response_data['middle'], self.user.middle_names)
+        assert_equal(response_data['family'], self.user.family_name)
+        assert_equal(response_data['given_ja'], self.user.given_name_ja)
+        assert_equal(response_data['middle_ja'], self.user.middle_names_ja)
+        assert_equal(response_data['family_ja'], self.user.family_name_ja)
+        assert_equal(response_data['suffix'], self.user.suffix)
+
+    def test_unserialize_social(self):
+        erad = '007'
+        url = api_url_for('unserialize_social')
+        payload = {
+            'profileWebsites': ['http://frozen.pizza.com/reviews'],
+            'twitter': 'howtopizza',
+            'github': 'frozenpizzacode',
+            'erad': erad
+        }
+
+        self.app.put_json(
+            url,
+            payload,
+            auth=self.user.auth,
+        )
+        self.user.reload()
+
+        self.user.social['profileWebsites'] = payload['profileWebsites']
+        self.user.social['twitter'] = payload['twitter']
+        self.user.social['github'] = payload['github']
+        self.user.erad = payload['erad']
+
+        assert_true(self.user.social['researcherId'] is None)
+
+    def test_append_idp_attr_common(self):
+        ext, created = UserExtendedData.objects.get_or_create(user=self.user)
+        # update every login.
+        ext.set_idp_attr(
+            {
+                'idp': 'identify provider',
+                'eppn': 'eppn@mail.com',
+                'fullname': 'fullname',
+                'fullname_ja': 'fullname ja',
+                'entitlement': 'Entitlement',
+                'email': 'abc@mail.com',
+                'organization_name': 'a organization',
+                'organizational_unit': 'a organizational unit',
+                'organization_name_ja': 'a organization ja',
+                'organizational_unit_ja': 'a organizational unit ja',
+            },
+        )
+
+        data = {
+            'idp_attr': ''
+        }
+
+        self.user.save()
+
+        append_idp_attr_common(data, self.user)
+
+        assert_equal(data['idp_attr']['institution'],
+                        self.user.ext.data['idp_attr']['organization_name'])
+        assert_equal(data['idp_attr']['department'],
+                        self.user.ext.data['idp_attr']['organizational_unit'])
+        assert_equal(data['idp_attr']['institution_ja'],
+                        self.user.ext.data['idp_attr']['organization_name_ja'])
+        assert_equal(
+            data['idp_attr']['department_ja'],
+            self.user.ext.data['idp_attr']
+            ['organizational_unit_ja'])
+
+    def test_serialize_job(self):
+        job = {
+            'institution': 'an institution',
+            'institution_ja': 'Institution',
+            'department': 'department A',
+            'department_ja': 'Department A',
+            'title': 'Title B',
+            'startMonth': 'January',
+            'startYear': '2001',
+            'endMonth': 'March',
+            'endYear': '2001',
+            'ongoing': False,
+        }
+        result = website_profile_view.serialize_job(job)
+        for key, value in job.items():
+            assert_equal(result[key], job[key])
+
+    def test_serialize_school(self):
+        school = {
+            'institution': 'an institution',
+            'department': 'a department',
+            'institution_ja': 'an institution ja',
+            'department_ja': 'a department ja',
+            'degree': None,
+            'startMonth': 1,
+            'startYear': '2001',
+            'endMonth': 5,
+            'endYear': '2001',
+            'ongoing': False,
+        }
+        result = website_profile_view.serialize_school(school)
+        for key, value in school.items():
+            assert_equal(result[key], school[key])
+
+    def test_unserialize_job(self):
+        job = {
+            'institution': 'an institution',
+            'department': 'a department',
+            'institution_ja': 'an institution ja',
+            'department_ja': 'a department ja',
+            'title': 'a title',
+            'startMonth': 'January',
+            'startYear': '2001',
+            'endMonth': 'March',
+            'endYear': '2001',
+            'ongoing': False,
+        }
+        result = website_profile_view.unserialize_job(job)
+        for key, value in job.items():
+            assert_equal(result[key], job[key])
+
+    def test_unserialize_school(self):
+        school = {
+            'institution': 'an institution',
+            'department': 'a department',
+            'institution_ja': 'an institution ja',
+            'department_ja': 'a department ja',
+            'degree': None,
+            'startMonth': 1,
+            'startYear': '2001',
+            'endMonth': 5,
+            'endYear': '2001',
+            'ongoing': False,
+        }
+        result = website_profile_view.unserialize_school(school)
+        for key, value in school.items():
+            assert_equal(result[key], school[key])
 
     @mock.patch('website.settings.ENABLE_USER_MERGE', False)
     def test_user_update_not_temp_account(self):
@@ -4102,6 +4477,19 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
         assert_equal(data.get('status_code'), http_status.HTTP_200_OK)
         assert_equal(data.get('next_url'), self.next_url)
         assert_true(data.get('must_login_warning'))
+
+    def test_osf_login_with_institutional_auth(self):
+        self.user_auth = AuthUserFactory()
+        institution = InstitutionFactory()
+        self.user_auth.affiliated_institutions.add(institution)
+        self.user_auth.family_name_ja = ''
+        self.user_auth.save()
+        self.auth = Auth(user=self.user_auth)
+
+        data = login_and_register_handler(self.auth)
+        assert_equal(data.get('status_code'), http_status.HTTP_302_FOUND)
+        assert_equal(data.get('next_url'), web_url_for('user_profile',
+                                                       _absolute=True))
 
 
 class TestAuthLogout(OsfTestCase):

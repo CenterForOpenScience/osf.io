@@ -135,11 +135,15 @@ class UserExtendedData(BaseModel):
     data = DateTimeAwareJSONField(default=dict, blank=True)
     # Format: {
     #   'idp_attr': {
+    #      'eppn': <eppn>,
     #      'fullname': <displayName>,
+    #      'fullname_ja': <jaDisplayName>,
     #      'entitlement': <eduPersonEntitlement>,
     #      'email': <mail address>,
     #      'organization_name': <o>,
+    #      'organization_name_ja': <jao>,
     #      'organizational_unit': <ou>,
+    #      'organizational_unit_ja': <jaou>,
     #   },
     # }
 
@@ -328,6 +332,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     family_name = models.CharField(max_length=255, blank=True)
     suffix = models.CharField(max_length=255, blank=True)
 
+    # names in Japanese
+    given_name_ja = models.CharField(max_length=255, blank=True)
+    middle_names_ja = models.CharField(max_length=255, blank=True)
+    family_name_ja = models.CharField(max_length=255, blank=True)
+
+    # optional
+    erad = models.CharField(max_length=255, blank=True)
+
     # identity for user logged in through external idp
     external_identity = DateTimeAwareJSONField(default=dict, blank=True)
     # Format: {
@@ -343,7 +355,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # Format: list of {
     #     'title': <position or job title>,
     #     'institution': <institution or organization>,
+    #     'institution_ja': <institution or organization in japanese>,
     #     'department': <department>,
+    #     'department_ja': <department_ja>,
     #     'location': <location>,
     #     'startMonth': <start month>,
     #     'startYear': <start year>,
@@ -357,7 +371,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # Format: list of {
     #     'degree': <position or job title>,
     #     'institution': <institution or organization>,
+    #     'institution_ja': <institution or organization in japanese>,
     #     'department': <department>,
+    #     'department_ja': <department_ja>,
     #     'location': <location>,
     #     'startMonth': <start month>,
     #     'startYear': <start year>,
@@ -456,6 +472,30 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     def __repr__(self):
         return '<OSFUser({0!r}) with guid {1!r}>'.format(self.username, self._id)
+
+    def get_idp_attr(self):
+        try:
+            return self.ext.data.get('idp_attr', {})
+        except Exception:  # self.ext may not exist
+            return {}
+
+    @property
+    def is_full_account_required_info(self):
+        """required idp's attr: sn, givenName, o, jasn, jaGivenName, jao"""
+        if not self.affiliated_institutions.exists():
+            return True
+        if not self.jobs:
+            return False
+        try:
+            institution = self.jobs[0].get('institution')
+            institution_ja = self.jobs[0].get('institution_ja')
+        except Exception:
+            idp_attrs = self.get_idp_attr()
+            institution = idp_attrs.get('organization_name')
+            institution_ja = idp_attrs.get('organization_name_ja')
+        en = [self.family_name, self.given_name, institution]
+        ja = [self.family_name_ja, self.given_name_ja, institution_ja]
+        return all(ja + en)
 
     @property
     def deep_url(self):

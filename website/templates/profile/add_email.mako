@@ -16,7 +16,107 @@
             <div class="col-md-3 affix-parent">
               <%include file="include/profile/settings_navpanel.mako" args="current_page='account'"/>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-8">
+                <div id="accountInformation" class="panel panel-default scripted">
+                    <div class="panel-heading clearfix">
+                        <h3 class="panel-title">${_("Account Information")}</h3>
+                    </div>
+                    <div class="panel-body">
+                        <form role="form" data-bind="submit: submit, validationOptions: {insertMessages: false, messagesOnModified: false}">
+                            <div class="form-group">
+                                <label>${_("Display name")} <span style="color: red">*</span></label>
+                                ## Maxlength for full names must be 186 - quickfile titles use fullname + 's Quick Files
+                                <input class="form-control" data-bind="value: full" maxlength="186"/>
+                                <div data-bind="visible: showMessages, css:'text-danger'">
+                                    <p data-bind="validationMessage: full"></p>
+                                </div>
+                            </div>
+
+                            <div class="form-row row">
+                                <div class="form-group col-md-4">
+                                    <label class="long-label">${_("Family name")} <span style="color: red">*</span></label>
+                                    <input class="form-control" data-bind="value: family_ja" maxlength="255"/>
+                                    <div data-bind="visible: showMessages, css:'text-danger'">
+                                        <p data-bind="validationMessage: family_ja"></p>
+                                    </div>
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label class="long-label">${_("Middle name(s)")}</label>
+                                    <input class="form-control" data-bind="value: middle_ja" maxlength="255"/>
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label class="long-label">${_("Given name")} <span style="color: red">*</span></label>
+                                    <input class="form-control" data-bind="value: given_ja" maxlength="255"/>
+                                    <div data-bind="visible: showMessages, css:'text-danger'">
+                                        <p data-bind="validationMessage: given_ja"></p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-row row">
+                                <div class="form-group col-md-4">
+                                    <label class="long-label">${_("Family name (EN)")} <span style="color: red">*</span></label>
+                                    <input class="form-control" data-bind="value: family" maxlength="255"/>
+                                    <div data-bind="visible: showMessages, css:'text-danger'">
+                                        <p data-bind="validationMessage: family"></p>
+                                    </div>
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label class="long-label">${_("Middle name(s) (EN)")}</label>
+                                    <input class="form-control" data-bind="value: middle" maxlength="255"/>
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label class="long-label">${_("Given name (EN)")} <span style="color: red">*</span></label>
+                                    <input class="form-control" data-bind="value: given" maxlength="255"/>
+                                    <div data-bind="visible: showMessages, css:'text-danger'">
+                                        <p data-bind="validationMessage: given"></p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-row row">
+                                <div class="form-group col-md-6">
+                                    <label>${_("Affiliation")} <span style="color: red">*</span></label>
+                                    <input class="form-control" data-bind="value: institution_ja"
+                                        placeholder="${_('Required')}"/>
+                                    <div data-bind="visible: showMessages, css:'text-danger'">
+                                        <p data-bind="validationMessage: institution_ja"></p>
+                                    </div>
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label>${_("Department")}</label>
+                                    <input class="form-control" data-bind="value: department_ja" />
+                                </div>
+                            </div>
+
+                            <div class="form-row row">
+                                <div class="form-group col-md-6">
+                                    <label>${_("Affiliation (English)")} <span style="color: red">*</span></label>
+                                    <input class="form-control" data-bind="value: institution"
+                                           placeholder="${_('Required')}"/>
+                                    <div data-bind="visible: showMessages, css:'text-danger'">
+                                        <p data-bind="validationMessage: institution"></p>
+                                    </div>
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label>${_("Department (English)")}</label>
+                                    <input class="form-control" data-bind="value: department" />
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>${_("e-Rad number")}</label>
+                                <input class="form-control" data-bind="value: erad" placeholder=""/>
+                            </div>
+
+                            <div class="p-t-lg p-b-lg">
+                                <button data-bind="disable: saving(), text: saving() ? '${_("Saving")}' : '${_("Save")}'" type="submit" class="btn btn-success" >${_("Save")}</button>
+                            </div>
+
+                        </form>
+                    </div>
+                </div>
+
                 <div id="connectedEmails" class="panel panel-default scripted">
                     <div class="panel-heading clearfix"><h3 class="panel-title">${_("Connected Emails")}</h3></div>
                     <div class="panel-body">
@@ -24,7 +124,7 @@
                         <table class="table">
                             <thead>
                                 <tr>
-                                    <th colspan="2">${_("Primary Email")}</th>
+                                    <th colspan="2">${_("Primary Email")} <span style="color: red">*</span></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -269,7 +369,6 @@
             </div>
         </div>
     </div>
-    <script src=${"/static/public/js/profile-account-settings-page.js" | webpack_asset}></script>
 </%def>
 
 <%def name="stylesheets()">
@@ -277,6 +376,15 @@
   % for stylesheet in addons_css:
       <link rel="stylesheet" type="text/css" href="${stylesheet}">
   % endfor
+    <style>
+        @media (min-width: 992px) and (max-width: 1199px) {
+            .form-row .form-group.col-md-4 .long-label,
+            .form-row .form-group.col-md-6 .long-label {
+                white-space: nowrap;
+                // margin-left: -13px;
+            }
+        }
+    </style>
 </%def>
 
 <%def name="render_user_settings(config)">
@@ -290,7 +398,11 @@
 <%def name="javascript_bottom()">
     <script type="text/javascript">
         window.contextVars = $.extend(true, {}, window.contextVars, {
-            username: ${user_name | sjson, n}
+            username: ${user_name | sjson, n},
+            accountUrls: {
+                crud: ${ api_url_for('serialize_account_info') | sjson, n },
+                impute: ${ api_url_for('impute_names') | sjson, n }
+            }
         });
     </script>
     ${parent.javascript_bottom()}
@@ -298,4 +410,5 @@
     % for js_asset in addons_js:
       <script src="${js_asset | webpack_asset}"></script>
     % endfor
+    <script src=${"/static/public/js/profile-account-settings-page.js" | webpack_asset}></script>
 </%def>

@@ -1,9 +1,9 @@
 <script id="profileName" type="text/html">
 
-    <form role="form" data-bind="submit: submit">
+    <form role="form" data-bind="submit: submit, validationOptions: {insertMessages: false, messagesOnModified: false}">
 
         <div class="form-group">
-            <label>${_("Full name (e.g. Rosalind Elsie Franklin)")}</label>
+            <label>${_("Full name (e.g. Rosalind Elsie Franklin)")} <span style="color: red">*</span></label>
             ## Maxlength for full names must be 186 - quickfile titles use fullname + 's Quick Files
             <input class="form-control" data-bind="value: full" maxlength="186"/>
             <div data-bind="visible: showMessages, css:'text-danger'">
@@ -21,20 +21,46 @@
         <div style="margin-bottom: 10px;">
             <a class="btn btn-primary" data-bind="enabled: hasFirst(), click: autoFill">${_("Auto-fill")}</a>
         </div>
-
-        <div class="form-group">
-            <label>${_("Given name (e.g. Rosalind)")}</label>
-            <input class="form-control" data-bind="value: given" maxlength="255"/>
+        <div class="form-row row">
+            <div class="form-group col-md-4">
+                <label class="long-label">${_("Family name")} <span style="color: red">*</span></label>
+                <input class="form-control" data-bind="value: family_ja" maxlength="255"/>
+                <div data-bind="visible: showMessages, css:'text-danger'">
+                    <p data-bind="validationMessage: family_ja"></p>
+                </div>
+            </div>
+            <div class="form-group col-md-4">
+                <label class="long-label">${_("Middle name(s)")}</label>
+                <input class="form-control" data-bind="value: middle_ja" maxlength="255"/>
+            </div>
+            <div class="form-group col-md-4">
+                <label class="long-label">${_("Given name")} <span style="color: red">*</span></label>
+                <input class="form-control" data-bind="value: given_ja" maxlength="255"/>
+                <div data-bind="visible: showMessages, css:'text-danger'">
+                    <p data-bind="validationMessage: given_ja"></p>
+                </div>
+            </div>
         </div>
 
-        <div class="form-group">
-            <label>${_("Middle name(s) (e.g. Elsie)")}</label>
-            <input class="form-control" data-bind="value: middle" maxlength="255"/>
-        </div>
-
-        <div class="form-group">
-            <label>${_("Family name (e.g. Franklin)")}</label>
-            <input class="form-control" data-bind="value: family" maxlength="255"/>
+        <div class="form-row row">
+            <div class="form-group col-md-4">
+                <label class="long-label">${_("Family name (EN)")} <span style="color: red">*</span></label>
+                <input class="form-control" data-bind="value: family" maxlength="255"/>
+                <div data-bind="visible: showMessages, css:'text-danger'">
+                    <p data-bind="validationMessage: family"></p>
+                </div>
+            </div>
+            <div class="form-group col-md-4">
+                <label class="long-label">${_("Middle name(s) (EN)")}</label>
+                <input class="form-control" data-bind="value: middle" maxlength="255"/>
+            </div>
+            <div class="form-group col-md-4">
+                <label class="long-label">${_("Given name (EN)")} <span style="color: red">*</span></label>
+                <input class="form-control" data-bind="value: given" maxlength="255"/>
+                <div data-bind="visible: showMessages, css:'text-danger'">
+                    <p data-bind="validationMessage: given"></p>
+                </div>
+            </div>
         </div>
 
         <div class="form-group">

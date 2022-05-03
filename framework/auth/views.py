@@ -313,6 +313,10 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
             data['status_code'] = http_status.HTTP_302_FOUND
         data['next_url'] = web_url_for('dashboard', _absolute=True)
 
+    if auth.logged_in and not auth.user.is_full_account_required_info:
+        data['status_code'] = http_status.HTTP_302_FOUND
+        data['next_url'] = web_url_for('user_profile', _absolute=True)
+
     return data
 
 

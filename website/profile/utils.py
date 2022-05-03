@@ -30,6 +30,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
         contrib = user
         user = contrib.user
     fullname = user.display_full_name(node=node)
+    idp_attrs = user.get_idp_attr()
     ret = {
         'id': str(user._id),
         'primary_key': user.id,
@@ -39,6 +40,8 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
         'shortname': fullname if len(fullname) < 50 else fullname[:23] + '...' + fullname[-23:],
         'profile_image_url': user.profile_image_url(size=settings.PROFILE_IMAGE_MEDIUM),
         'active': user.is_active,
+        'have_email': user.have_email,
+        'idp_email': idp_attrs.get('email'),
     }
     if node is not None:
         if admin:

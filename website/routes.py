@@ -1062,6 +1062,10 @@ def make_url_map(app):
             json_renderer,
         ),
 
+        # Rules for user account settings
+        Rule('/settings/account_info/', 'get', profile_views.serialize_account_info, json_renderer),
+        Rule('/settings/account_info/', 'put', profile_views.unserialize_account_info, json_renderer),
+
         # Rules for user profile configuration
         Rule('/settings/names/', 'get', profile_views.serialize_names, json_renderer),
         Rule('/settings/names/', 'put', profile_views.unserialize_names, json_renderer),

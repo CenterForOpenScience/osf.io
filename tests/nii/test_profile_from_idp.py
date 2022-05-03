@@ -36,6 +36,7 @@ def make_payload(
 ):
     data = {
         'provider': {
+            'idp': institution.email_domains,
             'id': institution._id,
             'user': {
                 'middleNames': '',
@@ -47,7 +48,13 @@ def make_payload(
                 'entitlement':  entitlement,
                 'email': email,
                 'organizationName': organization_name,
-                'organizationalUnit': organizational_unit
+                'organizationalUnitName': organizational_unit,
+                'jaDisplayName': '',  # jaDisplayName
+                'jaSurname': family_name + '_ja',  # jasn
+                'jaGivenName': given_name + '_ja',  # jaGivenName
+                'jaMiddleNames': '',
+                'jaOrganizationName': organization_name + '_ja',  # jao
+                'jaOrganizationalUnitName': organizational_unit + '_ja',  # jaou
             }
         }
     }
@@ -72,11 +79,15 @@ class TestGettingShibbolethAttribute:
     def test_without_email(self, app, institution, url_auth_institution):
         eppn = 'jsmith@circle.edu'
         fullname = 'John Smith'
+        given_name = 'John'
+        given_name_ja = given_name + '_ja'
+        family_name = 'Smitth'
+        family_name_ja = family_name + '_ja'
         tmp_eppn_username = TMP_EPPN_PREFIX + eppn
 
         res = app.post(
             url_auth_institution,
-            make_payload(institution, eppn, fullname)
+            make_payload(institution, eppn, fullname, given_name, family_name)
         )
 
         assert res.status_code == 204
@@ -85,16 +96,22 @@ class TestGettingShibbolethAttribute:
         assert user.fullname == fullname
         assert user.eppn == eppn
         assert user.have_email == False
+        assert user.given_name_ja == given_name_ja
+        assert user.family_name_ja == family_name_ja
 
     @mock.patch('api.institutions.authentication.settings.LOGIN_BY_EPPN', True)
     def test_with_email(self, app, institution, url_auth_institution):
         eppn = 'jsmith@circle.edu'
         fullname = 'John Smith'
         email = 'john.smith@circle.edu'
+        given_name = 'John'
+        given_name_ja = given_name + '_ja'
+        family_name = 'Smitth'
+        family_name_ja = family_name + '_ja'
 
         res = app.post(
             url_auth_institution,
-            make_payload(institution, eppn, fullname, email=email)
+            make_payload(institution, eppn, fullname, given_name, family_name, email=email)
         )
 
         assert res.status_code == 204
@@ -104,6 +121,8 @@ class TestGettingShibbolethAttribute:
         assert user.eppn == eppn
         assert user.have_email == True
         assert user.emails.filter(address=email).exists()
+        assert user.given_name_ja == given_name_ja
+        assert user.family_name_ja == family_name_ja
 
     @mock.patch('api.institutions.authentication.settings.LOGIN_BY_EPPN', True)
     def test_with_email_and_profile_attr(self, app, institution, url_auth_institution):
@@ -112,11 +131,20 @@ class TestGettingShibbolethAttribute:
         email = 'john.smith@circle.edu'
         entitlement = 'GakuninRDMAdmin'
         organization_name = 'Example University'
+        organization_name_ja = organization_name + '_ja'
         organizational_unit = 'Example Unit'
+        organizational_unit_ja = organizational_unit + '_ja'
+
+        given_name = 'John'
+        given_name_ja = given_name + '_ja'
+        family_name = 'Smitth'
+        family_name_ja = family_name + '_ja'
+        expected_full_name_ja = given_name_ja + ' ' + family_name_ja
 
         res = app.post(
             url_auth_institution,
             make_payload(institution, eppn, fullname,
+                given_name, family_name,
                 entitlement=entitlement, email=email,
                 organization_name=organization_name,
                 organizational_unit=organizational_unit
@@ -127,10 +155,14 @@ class TestGettingShibbolethAttribute:
         user = OSFUser.objects.get(username=email)
         assert user
         assert user.fullname == fullname
+        assert user.given_name_ja == given_name_ja
+        assert user.family_name_ja == family_name_ja
         assert user.eppn == eppn
         assert user.have_email == True
         assert user.jobs[-1] == {
             'title': '',
+            'institution_ja': organization_name_ja,
+            'department_ja': organizational_unit_ja,
             'institution': organization_name,
             'department': organizational_unit,
             'location': '',
@@ -144,11 +176,14 @@ class TestGettingShibbolethAttribute:
         idp_attr = user.ext.data['idp_attr']
         assert idp_attr
         assert idp_attr['fullname'] == fullname
+        assert idp_attr['fullname_ja'] == expected_full_name_ja
         assert idp_attr['entitlement'] == entitlement
         assert user.is_staff == True
         assert idp_attr['email'] == email
         assert idp_attr['organization_name'] == organization_name
         assert idp_attr['organizational_unit'] == organizational_unit
+        assert idp_attr['organization_name_ja'] == organization_name_ja
+        assert idp_attr['organizational_unit_ja'] == organizational_unit_ja
 
     @mock.patch('api.institutions.authentication.settings.LOGIN_BY_EPPN', True)
     def test_with_email_and_profile_attr_without_orgname(self, app, institution, url_auth_institution):
@@ -156,10 +191,14 @@ class TestGettingShibbolethAttribute:
         fullname = 'John Smith'
         email = 'john.smith@circle.edu'
         organizational_unit = 'Example Unit'
+        given_name = 'John'
+        given_name_ja = given_name + '_ja'
+        family_name = 'Smitth'
+        family_name_ja = family_name + '_ja'
 
         res = app.post(
             url_auth_institution,
-            make_payload(institution, eppn, fullname, email=email,
+            make_payload(institution, eppn, fullname, given_name, family_name, email=email,
                 organizational_unit=organizational_unit
             )
         )
@@ -168,6 +207,8 @@ class TestGettingShibbolethAttribute:
         user = OSFUser.objects.get(username=email)
         assert user
         assert user.fullname == fullname
+        assert user.given_name_ja == given_name_ja
+        assert user.family_name_ja == family_name_ja
         assert user.have_email == True
         assert not user.jobs
         assert not user.schools
@@ -178,10 +219,15 @@ class TestGettingShibbolethAttribute:
         fullname = 'John Smith'
         email = 'johon@example.com'
         tmp_eppn_username = TMP_EPPN_PREFIX + eppn
+        given_name = 'John'
+        given_name_ja = given_name + '_ja'
+        family_name = 'Smitth'
+        family_name_ja = family_name + '_ja'
+        expected_full_name = given_name_ja + ' ' + family_name_ja
 
         res = app.post(
             url_auth_institution,
-            make_payload(institution, eppn, fullname, email=email)
+            make_payload(institution, eppn, fullname, given_name, family_name, email=email)
         )
 
         assert res.status_code == 204
@@ -194,6 +240,8 @@ class TestGettingShibbolethAttribute:
         user = OSFUser.objects.get(username=tmp_eppn_username)
         assert user
         assert user.fullname == fullname
+        assert user.given_name_ja == given_name_ja
+        assert user.family_name_ja == family_name_ja
         assert user.eppn == eppn
         assert not user.emails.filter(address=email).exists()
         assert user.have_email == False
@@ -203,10 +251,14 @@ class TestGettingShibbolethAttribute:
         eppn = 'jsmith@circle.edu'
         fullname = 'John Smith'
         email = 'john.smith@circle.edu'
+        given_name = 'John'
+        given_name_ja = given_name + '_ja'
+        family_name = 'Smitth'
+        family_name_ja = family_name + '_ja'
 
         res = app.post(
             url_auth_institution,
-            make_payload(institution, eppn, fullname, email=email)
+            make_payload(institution, eppn, fullname, given_name, family_name, email=email)
         )
         assert res.status_code == 204
         user = OSFUser.objects.get(username=email)
@@ -218,7 +270,7 @@ class TestGettingShibbolethAttribute:
 
         res = app.post(
             url_auth_institution,
-            make_payload(institution, eppn2, fullname, email=email)
+            make_payload(institution, eppn2, fullname, given_name, family_name, email=email)
         )
         assert res.status_code == 204
 
@@ -226,6 +278,8 @@ class TestGettingShibbolethAttribute:
         user2 = OSFUser.objects.get(username=tmp_eppn_username2)
         assert user2
         assert user2.fullname == fullname  # same fullname is OK
+        assert user.given_name_ja == given_name_ja
+        assert user.family_name_ja == family_name_ja
         assert user2.eppn == eppn2
         assert not user2.emails.filter(address=email).exists()
         assert user2.have_email == False
@@ -235,18 +289,29 @@ class TestGettingShibbolethAttribute:
         eppn = 'jsmith@circle.edu'
         fullname = 'John Smith'
         email = 'john.smith@circle.edu'
+        given_name = 'John'
+        given_name_ja = given_name + '_ja'
+        family_name = 'Smitth'
+        family_name_ja = family_name + '_ja'
 
         app.post(
             url_auth_institution,
-            make_payload(institution, eppn, fullname, email=email)
+            make_payload(institution, eppn, fullname, given_name, family_name, email=email)
         )
 
         new_fullname = 'New John Smith'
         new_email = 'new.john.smith@circle.edu'
 
+        new_given_name = 'Bob'
+        new_given_name_ja = new_given_name + '_ja'
+        new_family_name = 'Wayne'
+        new_family_name_ja = new_family_name + '_ja'
+        new_expected_full_name_ja = new_given_name_ja + ' ' + new_family_name_ja
+
         res = app.post(
             url_auth_institution,
-            make_payload(institution, eppn, new_fullname, email=new_email)
+            make_payload(institution, eppn, new_fullname,
+                         new_given_name, new_family_name, email=new_email)
         )
 
         # user.fullname is not changned
@@ -257,10 +322,14 @@ class TestGettingShibbolethAttribute:
         assert user.emails.filter(address=email).exists()
         assert not user.emails.filter(address=new_email).exists()
 
+        assert user.given_name_ja == given_name_ja
+        assert user.family_name_ja == family_name_ja
+
         # user.ext is changed
         idp_attr = user.ext.data['idp_attr']
         assert idp_attr
         assert idp_attr['fullname'] == new_fullname
+        assert idp_attr['fullname_ja'] == new_expected_full_name_ja
         assert idp_attr['email'] == new_email
 
 
@@ -294,6 +363,8 @@ class TestUserProfile(OsfTestCase):
 
     def test_unserialize_and_serialize_jobs_with_idp_attr(self):
         jobs = [{
+            'institution_ja': 'an institution' + '_ja',
+            'department_ja': 'a department' + '_ja',
             'institution': 'an institution',
             'department': 'a department',
             'title': 'a title',
@@ -303,6 +374,8 @@ class TestUserProfile(OsfTestCase):
             'endYear': '2001',
             'ongoing': False,
         }, {
+            'institution_ja': 'another institution' + '_ja',
+            'department_ja': None,
             'institution': 'another institution',
             'department': None,
             'title': None,
@@ -334,6 +407,8 @@ class TestUserProfile(OsfTestCase):
 
     def test_unserialize_and_serialize_schools_with_idp_attr(self):
         schools = [{
+            'institution_ja': 'an institution' + '_ja',
+            'department_ja': 'a department' + '_ja',
             'institution': 'an institution',
             'department': 'a department',
             'degree': 'a degree',
@@ -343,6 +418,8 @@ class TestUserProfile(OsfTestCase):
             'endYear': '2001',
             'ongoing': False,
         }, {
+            'institution_ja': 'another institution' + '_ja',
+            'department_ja': None,
             'institution': 'another institution',
             'department': None,
             'degree': None,

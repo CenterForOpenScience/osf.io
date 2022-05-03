@@ -6,6 +6,13 @@
     <div data-bind="if: mode() === 'edit'">
 
         <form role="form" data-bind="submit: submit">
+            <div class="form-group">
+                <label>${_("Your e-Rad number")}</label>
+                <div class="input-group">
+                    <span class="input-group-addon">e-Rad</span>
+                    <input class="form-control" data-bind="value: erad" placeholder=""/>
+                </div>
+            </div>
 
             <% from addons.metadata import FULL_NAME as METADATA_FULL_NAME %>
             <% from api.base import settings as api_settings %>

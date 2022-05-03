@@ -70,9 +70,13 @@ class InstitutionAuthentication(BaseAuthentication):
                 "user": {
                     "username":     "",  # email or eppn
                     "fullname":     "",  # displayName
-                    "familyName":   "",
+                    "familyName":   "",  # sn or surname
                     "givenName":    "",
                     "middleNames":  "",
+                    "jaDisplayName": "",
+                    "jaSurname":     "",  # jasn
+                    "jaGivenName":   "",
+                    "jaMiddleNames": "",
                     "suffix":       "",
                     "groups":       "",  # isMemberOf for mAP API v1
                     "eptid":        "",  # persistent-id for mAP API v1
@@ -80,6 +84,8 @@ class InstitutionAuthentication(BaseAuthentication):
                     "email":        "",  # mail
                     "organizationName": "",    # o
                     "organizationalUnit": "",  # ou
+                    "jaOrganizationName": "",  # jao
+                    "jaOrganizationalUnitName": "",  # jaou
                 }
             }
         }
@@ -111,21 +117,59 @@ class InstitutionAuthentication(BaseAuthentication):
 
         logger.info('---InstitutionAuthentication.authenticate.user:{}'.format(provider))
 
-        username = provider['user'].get('username')
-        fullname = provider['user'].get('fullname')
-        given_name = provider['user'].get('givenName')
-        family_name = provider['user'].get('familyName')
-        middle_names = provider['user'].get('middleNames')
-        suffix = provider['user'].get('suffix')
-        department = provider['user'].get('department')
-        entitlement = provider['user'].get('entitlement')
-        email = provider['user'].get('email')
-        organization_name = provider['user'].get('organizationName')
-        organizational_unit = provider['user'].get('organizationalUnit')
+        p_idp = provider['idp']
+        p_user = provider['user']
+
+        def get_next(obj, *args):
+            ret = None
+            for key in args:
+                val = obj.get(key)
+                if val is not None:
+                    ret = val
+                if val:
+                    break
+            return ret
+
+        # username
+        username = p_user.get('username')
+        # display name: 'displayName' is friendlyName
+        fullname = get_next(p_user, 'displayName', 'fullname')
+        # first name: 'givenName' is friendlyName
+        given_name = get_next(p_user, 'givenName', 'firstName')
+        # last name: 'sn' is friendlyName
+        family_name = get_next(p_user, 'sn', 'surname', 'familyName', 'lastName')
+        # middle names
+        middle_names = p_user.get('middleNames')
+        # suffix name
+        suffix = p_user.get('suffix')
+        # display name: 'jaDisplayName' is friendlyName
+        fullname_ja = get_next(p_user, 'jaDisplayName', 'jaFullname')
+        # first name: 'jaGivenName' is friendlyName
+        given_name_ja = get_next(p_user, 'jaGivenName', 'jaFirstName')
+        # last name: 'jasn' is friendlyName
+        family_name_ja = get_next(p_user, 'jasn', 'jaSurname', 'jaFamilyName', 'jaLastName')
+        # middle names
+        middle_names_ja = p_user.get('jaMiddleNames')
+        # department
+        department = p_user.get('department')
+        # entitlement: 'eduPersonEntitlement' is friendlyName
+        entitlement = get_next(p_user, 'eduPersonEntitlement', 'entitlement')
+        # email: 'mail' is friendlyName
+        mail = email = get_next(p_user, 'mail', 'email')
+        # organization: 'o' is friendlyName
+        organization_name = get_next(p_user, 'o', 'organizationName')
+        # affiliation: 'ou' is friendlyName
+        organizational_unit = get_next(p_user, 'ou', 'organizationalUnitName')
+        # organization: 'jao' is friendlyName
+        organization_name_ja = get_next(p_user, 'jao', 'jaOrganizationName')
+        # affiliation: 'jaou' is friendlyName
+        organizational_unit_ja = get_next(p_user, 'jaou', 'jaOrganizationalUnitName')
 
         # Use given name and family name to build full name if it is not provided
         if given_name and family_name and not fullname:
             fullname = given_name + ' ' + family_name
+        if given_name_ja and family_name_ja and not fullname_ja:
+            fullname_ja = given_name_ja + ' ' + family_name_ja
 
         if USE_EPPN and not fullname:
             fullname = NEW_USER_NO_NAME
@@ -262,6 +306,13 @@ class InstitutionAuthentication(BaseAuthentication):
             if suffix:
                 user.suffix = suffix
 
+            if given_name_ja:
+                user.given_name_ja = given_name_ja
+            if family_name_ja:
+                user.family_name_ja = family_name_ja
+            if middle_names_ja:
+                user.middle_names_ja = middle_names_ja
+
             # Users claimed or confirmed via institution SSO should have their full name updated
             if activation_required:
                 user.fullname = fullname
@@ -296,7 +347,9 @@ class InstitutionAuthentication(BaseAuthentication):
                     job = {
                         'title': '',
                         'institution': organization_name,  # required
+                        'institution_ja': '',  # required
                         'department': '',
+                        'department_ja': '',
                         'location': '',
                         'startMonth': '',
                         'startYear': '',
@@ -304,8 +357,12 @@ class InstitutionAuthentication(BaseAuthentication):
                         'endYear': '',
                         'ongoing': False,
                     }
+                    if organization_name_ja:
+                        job['institution_ja'] = organization_name_ja
                     if organizational_unit:
                         job['department'] = organizational_unit
+                    if organizational_unit_ja:
+                        job['department_ja'] = organizational_unit_ja
                     user.jobs.append(job)
             else:
                 user.eppn = None
@@ -326,13 +383,17 @@ class InstitutionAuthentication(BaseAuthentication):
         # update every login.
         ext.set_idp_attr(
             {
+                'idp': p_idp,
                 'eppn': eppn,
                 'username': username,
                 'fullname': fullname,
+                'fullname_ja': fullname_ja,
                 'entitlement': entitlement,
-                'email': email,
+                'email': mail,
                 'organization_name': organization_name,
                 'organizational_unit': organizational_unit,
+                'organization_name_ja': organization_name_ja,
+                'organizational_unit_ja': organizational_unit_ja,
             },
         )
 

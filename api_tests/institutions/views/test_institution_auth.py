@@ -1,5 +1,5 @@
 import json
-
+import mock
 import jwe
 import jwt
 import pytest
@@ -26,20 +26,38 @@ def make_payload(
         fullname='Fake User',
         given_name='',
         family_name='',
+        middle_names='',
         department='',
+        jaGivenName='',
+        jaSurname='',
+        jaFullname='',
+        jaDisplayName='',
+        jaMiddleNames='',
+        jaOrganizationalUnitName='',
+        organizationalUnit='',
+        organizationName='',
 ):
 
     data = {
         'provider': {
+            'idp': institution.email_domains,
             'id': institution._id,
             'user': {
-                'middleNames': '',
+                'middleNames': middle_names,
                 'familyName': family_name,
                 'givenName': given_name,
                 'fullname': fullname,
                 'suffix': '',
                 'username': username,
-                'department': department
+                'department': department,
+                'jaGivenName': jaGivenName,
+                'jaSurname': jaSurname,
+                'jaDisplayName': jaDisplayName,
+                'jaFullname': jaFullname,
+                'jaMiddleNames': jaMiddleNames,
+                'jaOrganizationalUnitName': jaOrganizationalUnitName,
+                'organizationalUnitName': organizationalUnit,
+                'organizationName': organizationName,
             }
         }
     }
@@ -215,8 +233,6 @@ class TestInstitutionAuth:
                 make_payload(
                     institution,
                     username,
-                    family_name='User',
-                    given_name='Fake',
                     fullname='Fake User',
                     department='Fake Department',
                 )
@@ -229,8 +245,6 @@ class TestInstitutionAuth:
         # User becomes active and all names are updated
         assert user.is_active
         assert user.fullname == 'Fake User'
-        assert user.family_name == 'User'
-        assert user.given_name == 'Fake'
         assert user.department == 'Fake Department'
         # Unclaimed records must have been cleared
         assert not user.unclaimed_records
@@ -255,8 +269,6 @@ class TestInstitutionAuth:
                 make_payload(
                     institution,
                     username,
-                    family_name='User',
-                    given_name='Fake',
                     fullname='Fake User'
                 )
             )
@@ -268,8 +280,6 @@ class TestInstitutionAuth:
         # User becomes active and all names are updated
         assert user.is_active
         assert user.fullname == 'Fake User'
-        assert user.family_name == 'User'
-        assert user.given_name == 'Fake'
         # Pending email verifications must be cleared
         assert not user.email_verifications
         # Previously unconfirmed user must be given a new password during institution auth
@@ -372,3 +382,142 @@ class TestInstitutionAuth:
         assert email_verifications == user.email_verifications
         assert accepted_terms_of_service == user.accepted_terms_of_service
         assert not user.has_usable_password()
+
+    def test_authenticate_jaSurname_and_jaGivenName_are_valid(
+            self, app, institution, url_auth_institution):
+        username = 'user@gmail.com'
+        jagivenname = 'given'
+        jasurname = 'sur'
+        res = app.post(
+            url_auth_institution,
+            make_payload(institution, username,
+                         jaGivenName=jagivenname, jaSurname=jasurname),
+            expect_errors=True
+        )
+        assert res.status_code == 204
+
+        user = OSFUser.objects.filter(username=username).first()
+        assert user
+        assert user.ext.data['idp_attr']['fullname_ja'] == jagivenname + ' ' + jasurname
+
+    def test_authenticate_jaGivenName_is_valid(
+            self, app, institution, url_auth_institution):
+        username = 'user@gmail.com'
+        jagivenname = 'givenname'
+        res = app.post(
+            url_auth_institution,
+            make_payload(institution, username, jaGivenName=jagivenname),
+            expect_errors=True
+        )
+        assert res.status_code == 204
+        user = OSFUser.objects.filter(username=username).first()
+        assert user
+        assert user.given_name_ja == jagivenname
+
+    def test_authenticate_jaSurname_is_valid(
+            self, app, institution, url_auth_institution):
+        username = 'user@gmail.com'
+        jasurname = 'surname'
+        res = app.post(
+            url_auth_institution,
+            make_payload(institution, username, jaSurname=jasurname),
+            expect_errors=True
+        )
+        assert res.status_code == 204
+        user = OSFUser.objects.filter(username=username).first()
+        assert user
+        assert user.family_name_ja == jasurname
+
+    def test_authenticate_jaMiddleNames_is_valid(
+            self, app, institution, url_auth_institution):
+        username = 'user@gmail.com'
+        middlename = 'surname'
+        res = app.post(
+            url_auth_institution,
+            make_payload(institution, username, jaMiddleNames=middlename),
+            expect_errors=True
+        )
+        assert res.status_code == 204
+        user = OSFUser.objects.filter(username=username).first()
+        assert user
+        assert user.middle_names_ja == middlename
+
+    def test_authenticate_givenname_is_valid(
+            self, app, institution, url_auth_institution):
+        username = 'user@gmail.com'
+        given_name = 'givenname'
+        res = app.post(
+            url_auth_institution,
+            make_payload(institution, username, given_name=given_name),
+            expect_errors=True
+        )
+        assert res.status_code == 204
+        user = OSFUser.objects.filter(username=username).first()
+        assert user
+        assert user.given_name == given_name
+
+    def test_authenticate_familyname_is_valid(
+            self, app, institution, url_auth_institution):
+        username = 'user@gmail.com'
+        family_name = 'familyname'
+        res = app.post(
+            url_auth_institution,
+            make_payload(institution, username, family_name=family_name),
+            expect_errors=True
+        )
+        assert res.status_code == 204
+        user = OSFUser.objects.filter(username=username).first()
+        assert user
+        assert user.family_name == family_name
+
+    def test_authenticate_middlename_is_valid(
+            self, app, institution, url_auth_institution):
+        username = 'user@gmail.com'
+        middle_names = 'middlenames'
+        res = app.post(
+            url_auth_institution,
+            make_payload(institution, username, middle_names=middle_names),
+            expect_errors=True
+        )
+        assert res.status_code == 204
+        user = OSFUser.objects.filter(username=username).first()
+        assert user
+        assert user.middle_names == middle_names
+
+    @mock.patch('api.institutions.authentication.login_by_eppn')
+    def test_authenticate_jaOrganizationalUnitName_is_valid(
+            self, mock, app, institution, url_auth_institution):
+        mock.return_value = True
+        username = 'user@gmail.com'
+        jaorganizationname = 'organizationname'
+        organizationname = 'name'
+        res = app.post(
+            url_auth_institution,
+            make_payload(institution, username,
+                         jaOrganizationalUnitName=jaorganizationname,
+                         organizationName=organizationname),
+            expect_errors=True
+        )
+        assert res.status_code == 204
+        user = OSFUser.objects.filter(username='tmp_eppn_' + username).first()
+        assert user
+        assert user.jobs[0]['department_ja'] == jaorganizationname
+
+    @mock.patch('api.institutions.authentication.login_by_eppn')
+    def test_authenticate_OrganizationalUnitName_is_valid(
+            self, mock, app, institution, url_auth_institution):
+        mock.return_value = True
+        username = 'user@gmail.com'
+        organizationnameunit = 'organizationname'
+        organizationname = 'name'
+        res = app.post(
+            url_auth_institution,
+            make_payload(institution, username,
+                         organizationalUnit=organizationnameunit,
+                         organizationName=organizationname),
+            expect_errors=True
+        )
+        assert res.status_code == 204
+        user = OSFUser.objects.filter(username='tmp_eppn_' + username).first()
+        assert user
+        assert user.jobs[0]['department'] == organizationnameunit

@@ -226,7 +226,13 @@ var TrackedMixin = function() {
 /** Determine if the model has changed from its original state */
 TrackedMixin.prototype.dirty = function() {
     var self = this;
-    return ko.toJSON(self.trackedProperties) !== ko.toJSON(self.originalValues());
+    if ($('.nav.nav-tabs>li.active>a').length) {
+        var href = $('.nav.nav-tabs>li.active>a')[0].getAttribute('href');
+        if (href === self.selector) {
+            return ko.toJSON(self.trackedProperties) !== ko.toJSON(self.originalValues());
+        }
+    }
+    return false;
 };
 
 /** Store values in tracked fields for future use */
@@ -411,22 +417,34 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
         required: true
     });
 
-    self.given = koHelpers.sanitizedObservable().extend({trimmed: true});
+    self.given = koHelpers.sanitizedObservable().extend({trimmed: true, required: true});
     self.middle = koHelpers.sanitizedObservable().extend({trimmed: true});
-    self.family = koHelpers.sanitizedObservable().extend({trimmed: true});
+    self.family = koHelpers.sanitizedObservable().extend({trimmed: true, required: true});
     self.suffix = koHelpers.sanitizedObservable().extend({trimmed: true});
+
+    self.given_ja = koHelpers.sanitizedObservable().extend({trimmed: true, required: true});
+    self.middle_ja = koHelpers.sanitizedObservable().extend({trimmed: true});
+    self.family_ja = koHelpers.sanitizedObservable().extend({trimmed: true, required: true});
 
     self.imputedGiven = ko.observable();
     self.imputedMiddle = ko.observable();
     self.imputedFamily = ko.observable();
     self.imputedSuffix = ko.observable();
 
+    self.imputedGivenJa = ko.observable();
+    self.imputedMiddleJa = ko.observable();
+    self.imputedFamilyJa = ko.observable();
+
     self.trackedProperties = [
         self.full,
         self.given,
         self.middle,
         self.family,
-        self.suffix
+        self.suffix,
+
+        self.given_ja,
+        self.middle_ja,
+        self.family_ja,
     ];
 
     var validated = ko.validatedObservable(self);
@@ -446,6 +464,10 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
         self.middle(self.imputedMiddle());
         self.family(self.imputedFamily());
         self.suffix(self.imputedSuffix());
+
+        self.given_ja(self.imputedGivenJa());
+        self.middle_ja(self.imputedMiddleJa());
+        self.family_ja(self.imputedFamilyJa());
     };
 
     self.impute = function () {
@@ -461,6 +483,10 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
             self.imputedMiddle(response.middle);
             self.imputedFamily(response.family);
             self.imputedSuffix(response.suffix);
+
+            self.imputedGivenJa(response.given);
+            self.imputedMiddleJa(response.middle);
+            self.imputedFamilyJa(response.family);
         });
     };
 
@@ -566,6 +592,8 @@ var SocialViewModel = function(urls, modes, preventUnsaved) {
 
     self.addons = ko.observableArray();
 
+    self.erad = ko.observable('');
+
     self.profileWebsite = ko.observable('').extend({
         ensureHttp: true
     });
@@ -663,6 +691,7 @@ var SocialViewModel = function(urls, modes, preventUnsaved) {
     );
 
     self.trackedProperties = [
+        self.erad,
         self.profileWebsites,
         self.eRadResearcherNumber,
         self.orcid,
@@ -1074,15 +1103,25 @@ var JobViewModel = function() {
     TrackedMixin.call(self);
 
     self.department = ko.observable('').extend({trimmed: true});
+    self.department_ja = ko.observable('').extend({trimmed: true});
     self.title = ko.observable('').extend({trimmed: true});
 
     self.institution = ko.observable('').extend({
         trimmed: true,
         required: {
             onlyIf: function() {
-               return !!self.department() || !!self.title() || !!self.startYear() || !!self.endYear();
+               return true;
             },
-            message: _('Institution/Employer required')
+            message: _('Affiliation (English) required')
+        }
+    });
+    self.institution_ja = ko.observable('').extend({
+        trimmed: true,
+        required: {
+            onlyIf: function() {
+               return true;
+            },
+            message: _('Affiliation required')
         }
     });
 
@@ -1101,6 +1140,8 @@ var JobViewModel = function() {
     self.trackedProperties = [
         self.institution,
         self.department,
+        self.institution_ja,
+        self.department_ja,
         self.title,
         self.startMonth,
         self.startYear,
@@ -1113,6 +1154,9 @@ var JobViewModel = function() {
     //In addition to normal knockout field checks, check to see if institution is not filled out when other fields are
     self.institutionObjectEmpty = ko.pureComputed(function() {
         return !self.institution() && !self.department() && !self.title();
+    }, self);
+    self.institutionJaObjectEmpty = ko.pureComputed(function() {
+        return !self.institution_ja() && !self.department_ja() && !self.title();
     }, self);
 
     self.isValid = ko.computed(function() {
@@ -1195,28 +1239,152 @@ SchoolsViewModel.prototype = Object.create(ListViewModel.prototype);
 var Names = function(selector, urls, modes, preventUnsaved) {
     this.viewModel = new NameViewModel(urls, modes, preventUnsaved);
     $osf.applyBindings(this.viewModel, selector);
+    this.viewModel.selector = selector;
     window.nameModel = this.viewModel;
 };
 
 var Social = function(selector, urls, modes, preventUnsaved) {
     this.viewModel = new SocialViewModel(urls, modes, preventUnsaved);
     $osf.applyBindings(this.viewModel, selector);
-    window.social = this.viewModel;
+    this.viewModel.selector = selector;
+    window.socialModel = this.viewModel;
 };
 
 var Jobs = function(selector, urls, modes, preventUnsaved) {
     this.viewModel = new JobsViewModel(urls, modes, preventUnsaved);
     $osf.applyBindings(this.viewModel, selector);
+    this.viewModel.selector = selector;
     window.jobsModel = this.viewModel;
 };
 
 var Schools = function(selector, urls, modes, preventUnsaved) {
     this.viewModel = new SchoolsViewModel(urls, modes, preventUnsaved);
     $osf.applyBindings(this.viewModel, selector);
+    this.viewModel.selector = selector;
+    window.schoolsModel = this.viewModel;
+};
+
+var AccountInformationViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
+    var self = this;
+    BaseViewModel.call(self, urls, modes, preventUnsaved);
+    TrackedMixin.call(self);
+
+    self.full = koHelpers.sanitizedObservable().extend({
+        trimmed: true,
+        required: true
+    });
+
+    self.given = koHelpers.sanitizedObservable().extend({trimmed: true, required: true});
+    self.middle = koHelpers.sanitizedObservable().extend({trimmed: true});
+    self.family = koHelpers.sanitizedObservable().extend({trimmed: true, required: true});
+    self.suffix = koHelpers.sanitizedObservable().extend({trimmed: true});
+
+    self.given_ja = koHelpers.sanitizedObservable().extend({trimmed: true, required: true});
+    self.middle_ja = koHelpers.sanitizedObservable().extend({trimmed: true});
+    self.family_ja = koHelpers.sanitizedObservable().extend({trimmed: true, required: true});
+
+    self.erad = ko.observable('');
+
+    self.department = ko.observable('').extend({trimmed: true});
+    self.department_ja = ko.observable('').extend({trimmed: true});
+    self.institution = ko.observable('').extend({
+        trimmed: true,
+        required: {
+            onlyIf: function() {
+               return true;
+            },
+            message: _('Affiliation (English) required')
+        }
+    });
+    self.institution_ja = ko.observable('').extend({
+        trimmed: true,
+        required: {
+            onlyIf: function() {
+               return true;
+            },
+            message: _('Affiliation required')
+        }
+    });
+
+    self.imputedGiven = ko.observable();
+    self.imputedMiddle = ko.observable();
+    self.imputedFamily = ko.observable();
+    self.imputedSuffix = ko.observable();
+
+    self.imputedGivenJa = ko.observable();
+    self.imputedMiddleJa = ko.observable();
+    self.imputedFamilyJa = ko.observable();
+
+    self.trackedProperties = [
+        self.full,
+        self.given,
+        self.middle,
+        self.family,
+        self.suffix,
+
+        self.given_ja,
+        self.middle_ja,
+        self.family_ja,
+
+        self.erad,
+
+        self.institution,
+        self.department,
+        self.institution_ja,
+        self.department_ja,
+    ];
+
+    var validated = ko.validatedObservable(self);
+
+    //In addition to normal knockout field checks, check to see if institution is not filled out when other fields are
+    self.institutionObjectEmpty = ko.pureComputed(function() {
+        return !self.institution() && !self.department() && !self.title();
+    }, self);
+    self.institutionJaObjectEmpty = ko.pureComputed(function() {
+        return !self.institution_ja() && !self.department_ja() && !self.title();
+    }, self);
+
+    self.isValid = ko.computed(function() {
+        return validated.isValid();
+    });
+    self.hasValidProperty(true);
+
+    self.impute = function () {
+        return $.ajax({
+            type: 'GET',
+            url: urls.impute,
+            data: {
+                name: self.full()
+            },
+            dataType: 'json',
+        }).done(function (response) {
+            self.imputedGiven(response.given);
+            self.imputedMiddle(response.middle);
+            self.imputedFamily(response.family);
+            self.imputedSuffix(response.suffix);
+
+            self.imputedGivenJa(response.given);
+            self.imputedMiddleJa(response.middle);
+            self.imputedFamilyJa(response.family);
+        });
+    };
+
+    self.fetch(self.impute);
+    self.full.subscribe(self.impute);
+};
+AccountInformationViewModel.prototype = Object.create(BaseViewModel.prototype);
+$.extend(AccountInformationViewModel.prototype, SerializeMixin.prototype, TrackedMixin.prototype);
+
+var AccountInformation = function(selector, urls, modes, preventUnsaved) {
+    this.viewModel = new AccountInformationViewModel(urls, modes, preventUnsaved);
+    $osf.applyBindings(this.viewModel, selector);
+    this.viewModel.selector = selector;
+    window.accountInfoModel = this.viewModel;
 };
 
 /*global module */
 module.exports = {
+    AccountInformation: AccountInformation,
     Names: Names,
     Social: Social,
     Jobs: Jobs,

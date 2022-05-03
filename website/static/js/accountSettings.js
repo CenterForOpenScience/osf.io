@@ -29,6 +29,7 @@ var UserProfile = oop.defclass({
         this.emails = ko.observableArray();
         this.defaultRegion = ko.observable();
         this.availableRegions = ko.observableArray();
+        this.idpEmail = ko.observable();
         this.inactiveProfile = ko.observableArray();
 
         this.primaryEmail = ko.pureComputed(function () {
@@ -169,6 +170,8 @@ var UserProfileClient = oop.defclass({
                 return email;
             })
         );
+        // set for first login
+        !data.profile.have_email && profile.idpEmail(data.profile.idp_email);
         profile.inactiveProfile(data.profile.inactive_profile);
 
         return profile;
@@ -186,7 +189,12 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
     },
     init: function () {
         this.client.fetch().done(
-            function(profile) { this.profile(profile); }.bind(this)
+            function(profile) {
+                this.profile(profile);
+                if (this.profile().idpEmail() && this.profile().primaryEmail().address().startsWith('tmp_eppn_')) {
+                    this.emailInput(this.profile().idpEmail());
+                }
+            }.bind(this)
         );
     },
     addEmail: function (new_email, allow_active) {
