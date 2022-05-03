@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2022-02-01 08:32+0000\n"
+"POT-Creation-Date: 2022-05-04 06:30+0000\n"
 "PO-Revision-Date: 2020-11-10 20:10+0900\n"
 "Last-Translator: Hiroki Ohashi\n"
 "Language: ja\n"
@@ -326,37 +326,57 @@ msgstr "BinderHubを追加"
 msgid "Configure a BinderHub client"
 msgstr "BinderHubクライアント情報の設定"
 
-#: addons/binderhub/templates/hosts_modal.mako:21
+#: addons/binderhub/templates/hosts_modal.mako:22
+msgid "Use BinderHub API"
+msgstr "BinderHub APIを使用する"
+
+#: addons/binderhub/templates/hosts_modal.mako:25
 msgid "BinderHub OAuth Client ID"
 msgstr "BinderHub OAuthクライアントID"
 
-#: addons/binderhub/templates/hosts_modal.mako:25
+#: addons/binderhub/templates/hosts_modal.mako:29
 msgid "BinderHub OAuth Client Secret"
 msgstr "BinderHub OAuthクライアントシークレット"
 
-#: addons/binderhub/templates/hosts_modal.mako:29
+#: addons/binderhub/templates/hosts_modal.mako:34
+msgid "Use JupyterHub API"
+msgstr "JupyterHub APIを使用する"
+
+#: addons/binderhub/templates/hosts_modal.mako:37
 msgid "JupyterHub URL"
 msgstr ""
 
-#: addons/binderhub/templates/hosts_modal.mako:33
+#: addons/binderhub/templates/hosts_modal.mako:41
 msgid "JupyterHub OAuth Client ID"
 msgstr "JupyterHub OAuthクライアントID"
 
-#: addons/binderhub/templates/hosts_modal.mako:37
+#: addons/binderhub/templates/hosts_modal.mako:45
 msgid "JupyterHub OAuth Client Secret"
 msgstr "JupyterHub OAuthクライアントシークレット"
 
-#: addons/binderhub/templates/hosts_modal.mako:41
+#: addons/binderhub/templates/hosts_modal.mako:49
 msgid "JupyterHub Admin Token"
 msgstr "JupyterHub 管理者トークン"
 
-#: addons/binderhub/templates/hosts_modal.mako:51
+#: addons/binderhub/templates/hosts_modal.mako:53
+msgid "JupyterHub Logout URL"
+msgstr "JupyterHub ログアウト用URL"
+
+#: addons/binderhub/templates/hosts_modal.mako:57
+msgid "Maximum number of servers available on JupyterHub"
+msgstr "JupyterHubで利用可能な環境数"
+
+#: addons/binderhub/templates/hosts_modal.mako:67
 msgid "BinderHub URL is invalid. BinderHub URL should be start with http(s)://"
 msgstr "BinderHub URLは無効です。http(s):// から始まる文字列である必要があります。"
 
-#: addons/binderhub/templates/hosts_modal.mako:56
+#: addons/binderhub/templates/hosts_modal.mako:72
 msgid "JupyterHub URL is invalid. JupyterHub URL should be start with http(s)://"
 msgstr "JupyterHub URLは無効です。http(s):// から始まる文字列である必要があります。"
+
+#: addons/binderhub/templates/hosts_modal.mako:77
+msgid "Maximum number of servers must be a number or an empty string."
+msgstr "JupyterHubで利用可能な環境数は数字か空文字列である必要があります。"
 
 #: addons/bitbucket/templates/bitbucket_node_settings.mako:25
 #: addons/github/templates/github_node_settings.mako:25

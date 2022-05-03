@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2022-02-01 08:32+0000\n"
+"POT-Creation-Date: 2022-05-04 06:30+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -325,36 +325,56 @@ msgstr ""
 msgid "Configure a BinderHub client"
 msgstr ""
 
-#: addons/binderhub/templates/hosts_modal.mako:21
-msgid "BinderHub OAuth Client ID"
+#: addons/binderhub/templates/hosts_modal.mako:22
+msgid "Use BinderHub API"
 msgstr ""
 
 #: addons/binderhub/templates/hosts_modal.mako:25
-msgid "BinderHub OAuth Client Secret"
+msgid "BinderHub OAuth Client ID"
 msgstr ""
 
 #: addons/binderhub/templates/hosts_modal.mako:29
-msgid "JupyterHub URL"
+msgid "BinderHub OAuth Client Secret"
 msgstr ""
 
-#: addons/binderhub/templates/hosts_modal.mako:33
-msgid "JupyterHub OAuth Client ID"
+#: addons/binderhub/templates/hosts_modal.mako:34
+msgid "Use JupyterHub API"
 msgstr ""
 
 #: addons/binderhub/templates/hosts_modal.mako:37
-msgid "JupyterHub OAuth Client Secret"
+msgid "JupyterHub URL"
 msgstr ""
 
 #: addons/binderhub/templates/hosts_modal.mako:41
+msgid "JupyterHub OAuth Client ID"
+msgstr ""
+
+#: addons/binderhub/templates/hosts_modal.mako:45
+msgid "JupyterHub OAuth Client Secret"
+msgstr ""
+
+#: addons/binderhub/templates/hosts_modal.mako:49
 msgid "JupyterHub Admin Token"
 msgstr ""
 
-#: addons/binderhub/templates/hosts_modal.mako:51
+#: addons/binderhub/templates/hosts_modal.mako:53
+msgid "JupyterHub Logout URL"
+msgstr ""
+
+#: addons/binderhub/templates/hosts_modal.mako:57
+msgid "Maximum number of servers available on JupyterHub"
+msgstr ""
+
+#: addons/binderhub/templates/hosts_modal.mako:67
 msgid "BinderHub URL is invalid. BinderHub URL should be start with http(s)://"
 msgstr ""
 
-#: addons/binderhub/templates/hosts_modal.mako:56
+#: addons/binderhub/templates/hosts_modal.mako:72
 msgid "JupyterHub URL is invalid. JupyterHub URL should be start with http(s)://"
+msgstr ""
+
+#: addons/binderhub/templates/hosts_modal.mako:77
+msgid "Maximum number of servers must be a number or an empty string."
 msgstr ""
 
 #: addons/bitbucket/templates/bitbucket_node_settings.mako:25

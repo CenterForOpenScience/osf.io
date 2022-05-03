@@ -22,6 +22,8 @@ def make_binderhub(
     jupyterhub_oauth_scope=['identity'],
     jupyterhub_api_url='https://test.jupyterhub.my.site/api',
     jupyterhub_admin_api_token='TEST_ADMIN_JH',
+    jupyterhub_max_servers=None,
+    jupyterhub_logout_url=None,
 ):
     return {
         'binderhub_url': binderhub_url,
@@ -39,6 +41,8 @@ def make_binderhub(
         'jupyterhub_oauth_scope': jupyterhub_oauth_scope,
         'jupyterhub_api_url': jupyterhub_api_url,
         'jupyterhub_admin_api_token': jupyterhub_admin_api_token,
+        'jupyterhub_max_servers': jupyterhub_max_servers,
+        'jupyterhub_logout_url': jupyterhub_logout_url,
     }
 
 def make_tljh(tljh_url='https://test.binderhub.my.site'):
