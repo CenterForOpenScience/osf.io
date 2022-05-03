@@ -242,6 +242,7 @@ def serialize_preprint(preprint, old_subjects=None):
             'is_deleted': (
                 (not preprint.verified_publishable and not preprint.is_retracted)
                 or preprint.is_spam
+                or preprint.is_deleted
                 or is_qa_resource(preprint)
             ),
             'date_updated': preprint.modified.isoformat(),

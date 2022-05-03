@@ -150,12 +150,12 @@ def stat_addon(addon_short_name, job_pk):
 @celery_app.task(base=ArchiverTask, ignore_result=False)
 @logged('make_copy_request')
 def make_copy_request(job_pk, url, data):
-    """Make the copy request to the WaterBulter API and handle
+    """Make the copy request to the WaterButler API and handle
     successful and failed responses
 
     :param job_pk: primary key of ArchiveJob
     :param url: URL to send request to
-    :param data: <dict> of setting to send in POST to WaterBulter API
+    :param data: <dict> of setting to send in POST to WaterButler API
     :return: None
     """
     create_app_context()
@@ -179,7 +179,7 @@ def make_waterbutler_payload(dst_id, rename):
 @logged('archive_addon')
 def archive_addon(addon_short_name, job_pk):
     """Archive the contents of an addon by making a copy request to the
-    WaterBulter API
+    WaterButler API
 
     :param addon_short_name: AddonConfig.short_name of the addon to be archived
     :param job_pk: primary key of ArchiveJob
@@ -304,14 +304,9 @@ def archive_success(dst_pk, job_pk):
     # Cache registration files count
     dst.update_files_count()
 
-    # The filePicker extension addded with the Prereg Challenge registration schema
-    # allows users to select files in OSFStorage as their response to some schema
-    # questions. These files are references to files on the unregistered Node, and
-    # consequently we must migrate those file paths after archiver has run. Using
-    # sha256 hashes is a convenient way to identify files post-archival.
-    for schema in dst.registered_schema.all():
-        if schema.has_files:
-            utils.migrate_file_metadata(dst, schema)
+    # Update file references in the Registration's responses to point to the archived
+    # file on the Registration instead of the "live" version on the backing project
+    utils.migrate_file_metadata(dst)
     job = ArchiveJob.load(job_pk)
     if not job.sent:
         job.sent = True

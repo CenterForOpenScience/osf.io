@@ -1,0 +1,334 @@
+{
+   "atomicSchema":true,
+   "name":"Global Flourishing Study Descriptive Meta-analysis Core Team Wave One Preregistration",
+   "version":1,
+   "description":null,
+   "blocks":[
+      {
+         "block_type":"page-heading",
+         "display_text":"Study Information"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"Description",
+         "help_text":"Please give a brief description of your study, including background, purpose of the study, and your specific research question(s).",
+         "registration_response_key":""
+      },
+      {
+         "block_type":"long-text-input",
+         "required":true
+      },
+      {
+         "block_type":"page-heading",
+         "display_text":"Data Description"
+      },
+      {
+         "block_type":"section-heading"
+      },
+      {
+         "block_type":"paragraph",
+         "display_text":"The Global Flourishing Study is a five-year, longitudinal study investigating the predictors of human flourishing across approximately 240,000 participants from 22 geographically and culturally diverse countries. More information about the dataset, how it can be accessed, how it was collected, and its codebook are available at https://osf.io/3jtz8/. Wave 1 of these data were available to researchers who preregistered their hypotheses on the Open Science Framework."
+      },
+      {
+         "block_type":"question-label",
+         "example_text":"No authors have accessed the Wave 1 data from The Global Flourishing Study as of [date of pre-registration] because these data are not yet available for download.",
+         "display_text":"Data Access Logs",
+         "help_text":"Specify the date of download and/or access for each author, if any author(s) has/have accessed the data prior to pre-registration.",
+         "registration_response_key":""
+      },
+      {
+         "block_type":"short-text-input",
+         "required":true
+      },
+      {
+         "block_type":"page-heading",
+         "display_text":"Variables"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"Scale/Index Aggregation",
+         "help_text":"For each scale/index, state the construct that the index represents, which items the scale/index will consist of, how these items will be aggregated, and whether this aggregation is based on a recommendation from the study codebook or validation research. If you are using any categorical variables, state how you will code them in the statistical analyses.",
+         "registration_response_key":""
+      },
+      {
+         "required":true,
+         "block_type":"long-text-input"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"Units of Analysis",
+         "help_text":"Which units of analysis (respondents, cases, etc.) will be included or excluded in your study? Taking these inclusion/exclusion criteria into account, indicate the (expected) sample size of the data you\u2019ll be using for your statistical analyses to the best of your knowledge. In the next few questions, you will be asked to refine this sample size estimation based on your judgments about missing data and outliers.\n",
+         "registration_response_key":""
+      },
+      {
+         "required":true,
+         "block_type":"short-text-input"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"Missing Data",
+         "help_text":"What do you know about missing data in the dataset (i.e., overall missingness rate, information about differential dropout)? How will you deal with incomplete or missing data? Based on this information, provide a new expected sample size.\n",
+         "registration_response_key":""
+      },
+      {
+         "required":true,
+         "block_type":"long-text-input"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"Outliers",
+         "help_text":"If you plan to remove outliers, how will you define what a statistical outlier is in your data? Please provide a new expected sample size, if appropriate.",
+         "registration_response_key":""
+      },
+      {
+         "required":true,
+         "block_type":"long-text-input"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"Sampling Weights",
+         "help_text":"Are there sampling weights available with this dataset? If so, are you using them or are you using your own sampling weights?",
+         "registration_response_key":""
+      },
+      {
+         "required":true,
+         "block_type":"long-text-input"
+      },
+      {
+         "block_type":"page-heading",
+         "display_text":"Analyses"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"Descriptive Statistics",
+         "help_text":"Will you be testing for significant differences between groups for the demographic descriptive statistics? If so, how? Will you use any measures of effect size? If so, which and how will they be calculated?",
+         "registration_response_key":""
+      },
+      {
+         "required":true,
+         "block_type":"long-text-input"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"Meta-Analytic Outcome Measure",
+         "help_text":"What is the outcome measure for your meta-analysis? Will the outcome measure be transformed in any way from the raw data (e.g., into an Odds Ratio, Proportion, etc.)? Describe this process, if so.",
+         "registration_response_key":""
+      },
+      {
+         "required":true,
+         "block_type":"long-text-input"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"Meta-Analytics Model Selection",
+         "help_text":"Will nesting be utilized in these analyses? If so, which models will be run and how will you select the most appropriate representation of the data? How will you decide which model to use if the models do not converge?",
+         "registration_response_key":""
+      },
+      {
+         "required":true,
+         "block_type":"long-text-input"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"Meta-Analytic Heterogeneity",
+         "help_text":"What measures of heterogeneity will be evaluated for this meta-analysis? How will significant or moderate heterogeneity be dealt with?",
+         "registration_response_key":""
+      },
+      {
+         "required":true,
+         "block_type":"long-text-input"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"Meta-Analytic Subgroup Analysis",
+         "help_text":"Will you perform any subgroup analyses? If so, please describe them below.",
+         "registration_response_key":""
+      },
+      {
+         "required":true,
+         "block_type":"long-text-input"
+      },
+      {
+         "block_type":"page-heading",
+         "display_text":"Other"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"Additoinal Information",
+         "help_text":"If there is any additional information that you feel needs to be included in your preregistration, please enter it here. Literature cited, disclosures of any related work such as replications or work that uses the same data, or other context that will be helpful for future readers would be appropriate here. \n"
+      },
+      {
+         "block_type":"long-text-input"
+      },
+      {
+         "block_type":"page-heading",
+         "display_text":"Data Request"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"Datasets requested (region)",
+         "help_text":"To which datasets are you requesting access? \n"
+      },
+      {
+         "block_type":"multi-select-input"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Global ONLY"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Argentina"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Brazil"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"China"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Egypt"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Germany"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"India"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Indonesia"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Israel"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Japan"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Kenya"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Mexico"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Nigeria"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Philippines"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Poland"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Russia"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"South Africa"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Spain"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Tanzania"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Turkey"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"UK"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Ukraine"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"United States"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"Datasets requested (sensitivity)",
+         "help_text":"Are you requesting access to the sensitive or non-sensitive datasets?"
+      },
+      {
+         "block_type":"single-select-input"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Non-sensitive"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Sensitive"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Both"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"IRB Approval Number",
+         "help_text":"Only if you are requesting access to the sensitive dataset: please provide your IRB approval number"
+      },
+      {
+         "block_type":"short-text-input"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"IRB Approval Letter and Protocol (Sensitive Data Requests Only)",
+         "help_text":"Only if you are requesting access to the sensitive data, please upload your IRB approval letter and IRB protocol here. Please note that these documents will be uploaded with your preregistration, so it is important that you censor any contact information prior to upload."
+      },
+      {
+         "block_type":"file-input"
+      },
+      {
+         "block_type":"page-heading",
+         "display_text":"Data Request Agreements"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"Instructions",
+         "help_text":"By submitting this preregistration and requesting access to the specific Global Flourishing Study dataset(s) indicated above, I agree to the following:\n",
+         "registration_response_key":""
+      },
+      {
+         "required":true,
+         "block_type":"multi-select-input"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"All data that are provided to me are for my use only. I will keep these data private from other researchers, except those added as contributors on this preregistration form (until these data are publicly available on the Open Science Framework)."
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"I will use these data to test for my preregistered hypotheses only (until these data are publicly available on the Open Science Framework). I will return to the Open Science Framework and preregister any additional hypotheses."
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"In order to request future waves of data, I will be required to report certain outcomes from my previous data use including, but not limited to: derived data, analysis code, DOI links to publications, links to preprints."
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Except when not possible, I will post preprints to the appropriate or relevant preprint server (e.g., SocArXiv, medRxiv, biorxiv, and PsyArXiv)."
+      }
+   ]
+}

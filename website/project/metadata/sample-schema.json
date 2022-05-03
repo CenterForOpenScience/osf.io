@@ -1,0 +1,111 @@
+{
+   "atomicSchema":true,
+   "name":"Sample",
+   "version":1,
+   "description":null,
+   "blocks":[
+      {
+         "block_type":"page-heading",
+         "help_text":"This is extra, helpful context",
+         "display_text":"This is the page heading."
+      },
+      {
+         "block_type":"section-heading",
+         "help_text":"This is extra, helpful context",
+         "display_text":"This is a section heading."
+      },
+      {
+         "block_type":"subsection-heading",
+         "display_text":"This is a subsection heading.",
+         "help_text":"This is extra, helpful context"
+      },
+      {
+         "block_type":"paragraph",
+         "display_text":"This is a paragraph.",
+         "example_text":"This is instructional text  that the researcher can see when fulfilling their registration."
+      },
+      {
+         "block_type":"section-heading",
+         "display_text":"This is another section with questions."
+      },
+      {
+         "block_type":"question-label",
+         "help_text":"This is instructional text that the researcher can see when drafting their registration. It is not visible to reviewers of the completed registration. The following question is multiple choice with one selectable option.",
+         "display_text":"This is a label that the researcher and reader will see when either drafting or reviewing the registration.",
+         "example_text":"This is an example to help the researcher fill out the registration. Consider adding examples, formats, or other helpful content. It will appear as collapsable text under the question's instructions."
+      },
+      {
+         "block_type":"single-select-input"
+      },
+      {
+         "block_type":"select-input-option",
+         "help_text":"This is additional helpful text you can provide on each question",
+         "display_text":"Option 1"
+      },
+      {
+         "block_type":"select-input-option",
+         "help_text":"This is additional helpful text you can provide on each question",
+         "display_text":"Option 2"
+      },
+      {
+         "block_type":"select-input-option",
+         "help_text":"This is additional helpful text you can provide on each question",
+         "display_text":"Option 3"
+      },
+      {
+         "block_type":"question-label",
+         "help_text":"This is a multiple choice question with multiple selectable options",
+         "display_text":"Another question label",
+         "example_text":"This is an example to help the researcher fill out the registration. Consider adding examples, formats, or other helpful content."
+      },
+      {
+         "block_type":"multi-select-input"
+      },
+      {
+         "block_type":"select-input-option",
+         "help_text":"This is additional helpful text you can provide on each question",
+         "display_text":"Option 1"
+      },
+      {
+         "block_type":"select-input-option",
+         "help_text":"This is additional helpful text you can provide on each question",
+         "display_text":"Option 2"
+      },
+      {
+         "block_type":"select-input-option",
+         "help_text":"This is additional helpful text you can provide on each question",
+         "display_text":"Option 3"
+      },
+      {
+         "block_type":"question-label",
+         "help_text":"This is a question with a long text box for content.",
+         "display_text":"This is another question label",
+         "example_text":"This is an example to help the researcher fill out the registration. Consider adding examples, formats, or other helpful content."
+      },
+      {
+         "block_type":"long-text-input"
+      },
+      {
+         "block_type":"question-label",
+         "help_text":"This is a question with a short text box for content.",
+         "display_text":"This is another question label",
+         "example_text":"This is an example to help the researcher fill out the registration. Consider adding examples, formats, or other helpful content."
+      },
+      {
+         "block_type":"paragraph",
+         "help_text":"This is another paragraph that will appear when both drafting or reviewing responses. Pargraphs can be placed anywhere!"
+      },
+      {
+         "block_type":"short-text-input"
+      },
+      {
+         "block_type":"question-label",
+         "help_text":"This is a question that allows the researchers to specify files from OSF Storage on the root Project or from their computer as a response (uploaded files will be added to the OSF Project's OSF Storage).",
+         "display_text":"This is another question label",
+         "example_text":"This is an example to help the researcher fill out the registration. Consider adding examples, formats, or other helpful content."
+      },
+      {
+         "block_type":"file-input"
+      }
+   ]
+}

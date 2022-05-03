@@ -38,10 +38,12 @@ OSF_META_SCHEMA_FILES = [
     'other-studies-using-youth-data.json',
     'character-lab-short-form-registration.json',
     'character-lab-long-form-registration.json',
+    'global-flourishing-preregistration.json',
+    'global-flourishing.json',
+    'sample-schema.json',
 ]
 
 METASCHEMA_ORDERING = (
-    'Prereg Challenge',
     'OSF Preregistration',
     'Open-Ended Registration',
     'Preregistration Template from AsPredicted.org',

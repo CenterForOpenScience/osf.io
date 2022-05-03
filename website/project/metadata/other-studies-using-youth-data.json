@@ -1,13 +1,13 @@
 {
     "atomicSchema": true,
-    "name": "Other studies using YOUth data - Other studies using YOUth data.csv",
+    "name": "Other studies using YOUth data",
     "version": 2,
     "description": null,
     "blocks": [
         {
             "block_type": "question-label",
             "display_text": "Research questions",
-            "example_text": "Please describe the research question, problem statement, or goal of the study.  "
+            "help_text": "Please describe the research question, problem statement, or goal of the study.  "
         },
         {
             "block_type": "long-text-input",
@@ -17,7 +17,7 @@
         {
             "block_type": "question-label",
             "display_text": "Methodological Approach",
-            "example_text": "Describe the general methodological approach to answering the research question or tackling the problem."
+            "help_text": "Describe the general methodological approach to answering the research question or tackling the problem."
         },
         {
             "block_type": "long-text-input",
@@ -27,7 +27,7 @@
         {
             "block_type": "question-label",
             "display_text": "Data processing/analysis",
-            "example_text": "Specify the data processing/analysis steps insofar as they are known."
+            "help_text": "Specify the data processing/analysis steps insofar as they are known."
         },
         {
             "block_type": "long-text-input",
@@ -37,7 +37,7 @@
         {
             "block_type": "question-label",
             "display_text": "Upload any files or supporting materials",
-            "example_text": "Upload the data request form output pdf file here. \n\nAlso upload any supporting materials that help describe the studiy design, goals, methodology approach, analysis plan, data processing, etc. "
+            "help_text": "Upload the data request form output pdf file here. \n\nAlso upload any supporting materials that help describe the studiy design, goals, methodology approach, analysis plan, data processing, etc. "
         },
         {
             "block_type": "file-input"

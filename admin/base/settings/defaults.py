@@ -84,7 +84,6 @@ INSTALLED_APPS = (
     'django_celery_results',
     'raven.contrib.django.raven_compat',
     'webpack_loader',
-    'django_nose',
     'password_reset',
     'guardian',
     'waffle',
