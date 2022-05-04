@@ -25,10 +25,7 @@ from osf_tests.factories import (
     PreprintFactory,
 )
 from website import settings as website_settings
-import datetime
-from website.util import api_url_for
-import jwe
-import jwt
+
 
 # stolen from^W^Winspired by DRF
 # rest_framework.fields.DateTimeField.to_representation
@@ -47,20 +44,6 @@ def user():
 
 @pytest.mark.django_db
 class TestFileView:
-
-    def build_url(self, node, **kwargs):
-        JWE_KEY = jwe.kdf(website_settings.WATERBUTLER_JWE_SECRET.encode('utf-8'),
-                website_settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
-
-        options = {'payload': jwe.encrypt(jwt.encode({'data': dict(dict(
-            action='download',
-            nid=node._id,
-            metrics={'uri': website_settings.MFR_SERVER_URL},
-            provider='osfstorage'),
-            **kwargs),
-            'exp': timezone.now() + datetime.timedelta(seconds=website_settings.WATERBUTLER_JWT_EXPIRATION),
-        }, website_settings.WATERBUTLER_JWT_SECRET, algorithm=website_settings.WATERBUTLER_JWT_ALGORITHM), JWE_KEY)}
-        return api_url_for('get_auth', **options)
 
     @pytest.fixture()
     def node(self, user):
