@@ -401,7 +401,7 @@ class FileSerializer(BaseFileSerializer):
         if version and not self.context['request'].user.is_anonymous:  # This is to ensure compatibility with tests, ugh.
             return version.seen_by.filter(id=self.context['request'].user.id).exists()
         else:
-            return False
+            return True
 
     def get_target_type(self, obj):
         if isinstance(obj, Preprint):
