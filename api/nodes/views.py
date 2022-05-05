@@ -2,7 +2,7 @@ import re
 
 from distutils.version import StrictVersion
 from django.apps import apps
-from django.db.models import Q, OuterRef, Exists, Subquery, F
+from django.db.models import Q, OuterRef, Exists, Subquery, F, Max
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics, permissions as drf_permissions
@@ -134,13 +134,22 @@ from framework.exceptions import HTTPError, PermissionsError
 from framework.auth.oauth_scopes import CoreScopes
 from framework.sentry import log_exception
 from osf.features import OSF_GROUPS
-from osf.models import AbstractNode
-from osf.models import (Node, PrivateLink, Institution, Comment, DraftRegistration, Registration, )
-from osf.models import OSFUser
-from osf.models import OSFGroup
-from osf.models import NodeRelation, Guid
-from osf.models import BaseFileNode
-from osf.models.files import File, Folder
+from osf.models import (
+    AbstractNode,
+    OSFUser,
+    Node,
+    PrivateLink,
+    Institution,
+    Comment,
+    DraftRegistration,
+    Registration,
+    BaseFileNode,
+    OSFGroup,
+    NodeRelation,
+    Guid,
+    File,
+    Folder,
+)
 from addons.osfstorage.models import Region
 from osf.utils.permissions import ADMIN, WRITE_NODE
 from website import mails, settings
@@ -1157,7 +1166,14 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             raise NotFound
 
         sub_qs = OsfStorageFolder.objects.filter(_children=OuterRef('pk'), pk=files_list.pk)
-        return files_list.children.annotate(folder=Exists(sub_qs)).filter(folder=True).prefetch_related('versions', 'tags', 'guids')
+        return files_list.children.prefetch_related(
+            'versions', 'tags', 'guids',
+        ).annotate(
+            folder=Exists(sub_qs),
+            date_modified=Max('versions__created'),
+        ).filter(
+            folder=True,
+        )
 
     # overrides ListAPIView
     def get_queryset(self):

@@ -213,7 +213,10 @@ class BaseFileSerializer(JSONAPISerializer):
         read_only=True, help_text='The Unix-style path of this object relative to the provider root',
     )
     last_touched = VersionedDateTimeField(read_only=True, help_text='The last time this file had information fetched about it via the OSF')
-    date_modified = ser.SerializerMethodField(read_only=True, help_text='Timestamp when the file was last modified')
+    date_modified = VersionedDateTimeField(
+        read_only=True,
+        help_text='Timestamp when the file was last modified',
+    )
     date_created = ser.SerializerMethodField(read_only=True, help_text='Timestamp when the file was created')
     extra = ser.SerializerMethodField(read_only=True, help_text='Additional metadata about this file')
     tags = JSONAPIListField(child=FileTagField(), required=False)
@@ -283,22 +286,6 @@ class BaseFileSerializer(JSONAPISerializer):
             self.size = obj.versions.first().size
             return self.size
         return None
-
-    def get_date_modified(self, obj):
-        mod_dt = None
-        if obj.provider == 'osfstorage' and obj.versions.exists():
-            # Each time an osfstorage file is added or uploaded, a new version object is created with its
-            # date_created equal to the time of the update.  The external_modified is the modified date
-            # from the backend the file is stored on.  This field refers to the modified date on osfstorage,
-            # so prefer to use the created of the latest version.
-            mod_dt = obj.versions.first().created
-        elif obj.provider != 'osfstorage' and obj.history:
-            mod_dt = obj.history[-1].get('modified', None)
-
-        if self.context['request'].version >= '2.2' and obj.is_file and mod_dt:
-            return datetime.strftime(mod_dt, '%Y-%m-%dT%H:%M:%S.%fZ')
-
-        return mod_dt and mod_dt.replace(tzinfo=pytz.utc)
 
     def get_date_created(self, obj):
         creat_dt = None
@@ -420,9 +407,6 @@ class OsfStorageFileSerializer(FileSerializer):
         'provider',
         'tags',
     ])
-
-    def create(self, validated_data):
-        return super(OsfStorageFileSerializer, self).create(validated_data)
 
 
 class FileDetailSerializer(FileSerializer):
