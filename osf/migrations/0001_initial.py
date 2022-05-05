@@ -1050,7 +1050,7 @@ class Migration(migrations.Migration):
                 ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
                 ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
                 ('domain', osf.utils.fields.LowercaseCharField(db_index=True, max_length=255, unique=True)),
-                ('note', models.IntegerField(choices=[(0, 'EXCLUDE_FROM_ACCOUNT_CREATION'), (1, 'ASSUME_HAM_UNTIL_REPORTED')], default=osf.models.notable_email_domain.Note(0))),
+                ('note', models.IntegerField(choices=[(0, 'EXCLUDE_FROM_ACCOUNT_CREATION'), (1, 'ASSUME_HAM_UNTIL_REPORTED')], default=0)),
             ],
             options={
                 'abstract': False,

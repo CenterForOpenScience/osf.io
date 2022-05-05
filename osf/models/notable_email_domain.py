@@ -7,6 +7,7 @@ from osf.utils.fields import LowercaseCharField
 
 
 class NotableEmailDomain(BaseModel):
+
     class Note(IntEnum):
         EXCLUDE_FROM_ACCOUNT_CREATION = 0
         ASSUME_HAM_UNTIL_REPORTED = 1
