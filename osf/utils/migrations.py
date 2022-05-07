@@ -42,6 +42,7 @@ FORMAT_TYPE_TO_TYPE_MAP = {
     ('e-rad-award-number', 'string'): 'e-rad-award-number-input',
     ('e-rad-award-title-ja', 'string'): 'e-rad-award-title-ja-input',
     ('e-rad-award-title-en', 'string'): 'e-rad-award-title-en-input',
+    ('e-rad-award-field', 'choose'): 'e-rad-award-field-input',
     ('e-rad-researcher-number', 'string'): 'e-rad-researcher-number-input',
     ('e-rad-researcher-name-ja', 'string'): 'e-rad-researcher-name-ja-input',
     ('e-rad-researcher-name-en', 'string'): 'e-rad-researcher-name-en-input',

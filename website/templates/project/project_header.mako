@@ -43,7 +43,7 @@
                         <!-- Add-on tabs  -->
                         % for addon in addons_enabled:
 
-                            % if addon != 'binderhub' and addons[addon]['has_page']:
+                            % if addon not in ['binderhub', 'metadata'] and addons[addon]['has_page']:
                                 <li>
                                     <a href="${node['url']}${addons[addon]['short_name']}">
 
@@ -55,6 +55,17 @@
                                 </li>
                             % endif
                         % endfor
+
+                        % if 'metadata' in addons_enabled and addons['metadata']['has_page']:
+                            <li>
+                                <a href="${node['url']}${addons['metadata']['short_name']}">
+                                    % if addons['metadata']['icon'] and addons['metadata']['has_page_icon']:
+                                        <img src="${addons['metadata']['icon']}" class="addon-logo"/>
+                                    % endif
+                                    ${_("Metadata")}
+                                </a>
+                            </li>
+                        % endif
 
                         % if 'binderhub' in addons_enabled and addons['binderhub']['has_page']:
                             <li>

@@ -454,6 +454,7 @@
             %else:
                <div class="panel-body">
             %endif
+                    <!-- for fangorn.js: _createLinkEvent -->
                     <div id="link_container" style="display: none;">
                         <input type="text"/>
                     </div>

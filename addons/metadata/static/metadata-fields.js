@@ -2,12 +2,27 @@
 
 const $ = require('jquery');
 const $osf = require('js/osfHelpers');
-const oop = require('js/oop');
-const _ = require('js/rdmGettext')._;
+const fangorn = require('js/fangorn');
+const rdmGettext = require('js/rdmGettext');
+const _ = rdmGettext._;
 const datepicker = require('js/rdmDatepicker');
 require('typeahead.js');
 
 const logPrefix = '[metadata] ';
+
+function getLocalizedText(text) {
+  if (!text) {
+    return text;
+  }
+  if (!text.includes('|')) {
+    return text;
+  }
+  const texts = text.split('|');
+  if (rdmGettext.getBrowserLang() === 'ja') {
+    return texts[0];
+  }
+  return texts[1];
+}
 
 function createField(erad, question, valueEntry, options, callback) {
   if (question.type == 'string') {
@@ -107,6 +122,16 @@ function createStringField(erad, question, value, options, callback) {
       options,
       callback
     );
+  } else if (question.format == 'file-url') {
+    return new SingleElementField(
+      createFileURLFieldElement(function() {
+        return $('<input></input>');
+      }, options),
+      question,
+      value,
+      options,
+      callback
+    );
   }
   return new SingleElementField(
     createFormElement(function() {
@@ -143,23 +168,21 @@ function createChooseField(erad, question, value, options, callback) {
 }
 
 function validateStringField(erad, question, value) {
-  // TBD
 }
 
 function validateChooseField(erad, question, value) {
-  // TBD
 }
 
 function createChooser(options) {
   const select = $('<select></select>');
   select.append($('<option></option>').attr('value', '').text(_('Choose...')));
   (options || []).forEach(function(opt) {
-    if (!opt.text) {
+    if (opt.text === undefined) {
       const optElem = $('<option></option>').attr('value', opt).text(opt);
       select.append(optElem);
       return;
     }
-    const optElem = $('<option></option>').attr('value', opt.text).text(opt.tooltip);
+    const optElem = $('<option></option>').attr('value', opt.text).text(getLocalizedText(opt.tooltip));
     select.append(optElem);
   });
   return select;
@@ -205,7 +228,7 @@ function SingleElementField(formField, question, defaultValue, options, callback
   self.defaultValue = defaultValue;
 
   self.createFormGroup = function(input, errorContainer) {
-    const label = $('<label></label>').text(self.title || self.label);
+    const label = $('<label></label>').text(self.getDisplayText());
     if (question.required) {
       label.append($('<span></span>')
         .css('color', 'red')
@@ -217,6 +240,13 @@ function SingleElementField(formField, question, defaultValue, options, callback
       .append(input)
       .append(errorContainer);
     return group;
+  }
+
+  self.getDisplayText = function() {
+    if (!self.title) {
+      return self.label;
+    }
+    return getLocalizedText(self.title);
   }
 
   self.getValue = function(input) {
@@ -245,7 +275,9 @@ function SingleElementField(formField, question, defaultValue, options, callback
 function createFileCapacityFieldElement(createHandler, options) {
   // ref: website/project/util.py sizeof_fmt()
   function sizeofFormat(num) {
-    for (const unit of ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z']) {
+    const units = ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z'];
+    for (var i = 0; i < units.length; i ++) {
+      const unit = units[i];
       if (Math.abs(num) < 1000) {
         return Math.round(num * 10) / 10 + unit + 'B';
       }
@@ -268,8 +300,7 @@ function createFileCapacityFieldElement(createHandler, options) {
       new Promise(function (resolve, reject) {
         try {
           options.wbcache.searchFile(options.filepath, function (item) {
-            console.log(item);
-            resolve(Number(item.data.size));
+            resolve(Number(item.attributes.size));
           });
         } catch (err) {
           reject(err);
@@ -304,20 +335,21 @@ function createFileCapacityFieldElement(createHandler, options) {
         input.change(callback);
       }
       input.addClass('form-control');
-      const container = $('<div>').append(input);
+      const container = $('<div>').css('display', 'flex').append(input);
       if (!options || !options.readonly) {
-        const calcButton = $('<a class="btn btn-default btn-sm m-l-md">')
-          .append('<i class="fa fa-refresh"> ' + _('Calc') + '</i>');
         const calcIndicator = $('<i class="fa fa-spinner fa-pulse">')
           .hide();
+        const calcButton = $('<a class="btn btn-default btn-sm">')
+          .append($('<i class="fa fa-refresh"></i>'))
+          .append($('<span></span>').text(_('Calculate')))
+          .append(calcIndicator);
         const errorContainer = $('<span>')
           .css('color', 'red').hide();
         const calcContainer = $('<div>')
-          .css('margin-top', '4px')
+          .css('margin', 'auto 0 auto 8px')
           .append(calcButton)
-          .append(calcIndicator)
           .append(errorContainer);
-        let calculating = false;
+        var calculating = false;
         calcButton.on('click', function (e) {
           e.preventDefault();
           if (!calculating) {
@@ -345,6 +377,43 @@ function createFileCapacityFieldElement(createHandler, options) {
   };
 }
 
+function createFileURLFieldElement(createHandler, options) {
+  return {
+    create: function(addToContainer, callback) {
+      const input = createHandler();
+      if (options && options.readonly) {
+        input.attr('readonly', true);
+      }
+      if (callback) {
+        input.change(callback);
+      }
+      input.addClass('form-control');
+      const container = $('<div>').css('display', 'flex').append(input);
+      if (!options || !options.readonly) {
+        const fillButton = $('<a class="btn btn-default btn-sm">')
+          .append($('<i class="fa fa-refresh"></i>'))
+          .append($('<span></span>').text(_('Fill')));
+        const fillContainer = $('<div>')
+          .css('margin', 'auto 0 auto 8px')
+          .append(fillButton);
+        fillButton.on('click', function (e) {
+          e.preventDefault();
+          input.val(fangorn.getPersistentLinkFor(options.fileitem));
+        });
+        container.append(fillContainer)
+      }
+      addToContainer(container);
+      return container;
+    },
+    getValue: function(container) {
+      return container.find('input').val();
+    },
+    setValue: function(container, value) {
+      container.find('input').val(value);
+    },
+  };
+}
+
 function createFileCreatorsFieldElement(erad, options) {
   const typeaheadSource = (function () {
     const allResearchers = erad.candidates.map(function (c) {
@@ -359,7 +428,10 @@ function createFileCreatorsFieldElement(erad, options) {
     });
     return substringMatcher(Object.values(uniqResearchers));
   })();
-  const emptyLine = $('<div></div>')
+  const emptyLine = $('<td></td>')
+    .attr('colspan', '4')
+    .css('text-align', 'center')
+    .css('padding', '1em')
     .text(_('No members'))
     .show();
 
@@ -440,8 +512,9 @@ function createFileCreatorsFieldElement(erad, options) {
         );
       tbody.append(emptyLine);
       if (!options || !options.readonly) {
-        const addButton = $('<a class="btn btn-success btn-sm m-l-md">')
-          .append('<i class="fa fa-plus">' + _('Add') + '</i>');
+        const addButton = $('<a class="btn btn-success btn-sm">')
+          .append($('<i class="fa fa-plus"></i>'))
+          .append($('<span></span>').text(_('Add')));
         container.append(addButton);
         addButton.on('click', function (e) {
           e.preventDefault();

@@ -375,7 +375,8 @@ class RegistrationResponsesValidator:
             question.registration_response_key,  # default
         )
 
-        if question.block_type in ('single-select-input', 'e-rad-award-funder-input'):
+        if question.block_type in ('single-select-input', 'e-rad-award-funder-input',
+                                   'e-rad-award-field-input'):
             return {
                 'type': 'string',
                 'enum': self._get_multiple_choice_options(question),

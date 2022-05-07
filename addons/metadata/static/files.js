@@ -51,9 +51,10 @@ function ERad() {
 
 function MetadataButtons() {
   var self = this;
-  self.baseUrl = window.contextVars.node.urls.api + 'metadata/';
+  self.baseUrl = contextVars.node.urls.api + 'metadata/';
   self.loading = null;
-  self.projectMetadata = null;
+  self.contexts = null;
+  self.loadingMetadatas = {};
   self.erad = new ERad();
   self.currentItem = null;
   self.registrationSchemas = new RegistrationSchemas();
@@ -61,8 +62,6 @@ function MetadataButtons() {
   self.registeringFilepath = null;
   self.selectDraftDialog = null;
   self.reservedRows = [];
-  self.wbcache = new WaterButlerCache();
-  self.validatedFiles = {};
 
   self.loadConfig = function(callback) {
     if (self.loading !== null) {
@@ -71,7 +70,7 @@ function MetadataButtons() {
     self.loading = true;
     self.erad.load(self.baseUrl, function() {
       self.registrationSchemas.load(function() {
-        self.loadMetadata(self.baseUrl, function() {
+        self.loadMetadata(contextVars.node.id, contextVars.node.urls.api + 'metadata/', function() {
           self.loading = false;
           const path = self.processHash();
           if (!callback) {
@@ -91,7 +90,11 @@ function MetadataButtons() {
     if (window.location.hash !== '#edit-metadata') {
       return path;
     }
-    self.editMetadata(path, null);
+    const context = self.findContextByNodeId(contextVars.node.id);
+    if (!context) {
+      return null;
+    }
+    self.editMetadata(context, path, null);
     return path;
   }
 
@@ -99,10 +102,11 @@ function MetadataButtons() {
     if (contextVars.file && contextVars.file.provider) {
       return contextVars.file.provider + contextVars.file.materializedPath;
     }
-    if (!self.projectMetadata) {
+    const projectMetadata = self.findProjectMetadataByNodeId(contextVars.node.id);
+    if (!projectMetadata) {
       return null;
     }
-    const currentMetadata = (self.projectMetadata.files || []).filter(function(f) {
+    const currentMetadata = (projectMetadata.files || []).filter(function(f) {
       return f.urlpath === window.location.pathname;
     })[0];
     if (!currentMetadata) {
@@ -111,8 +115,12 @@ function MetadataButtons() {
     return currentMetadata.path;
   }
 
-  self.loadMetadata = function(baseUrl, callback) {
-    var url = baseUrl + 'project';
+  self.loadMetadata = function(nodeId, baseUrl, callback) {
+    if (self.loadingMetadatas[nodeId]) {
+      return;
+    }
+    self.loadingMetadatas[nodeId] = true;
+    const url = baseUrl + 'project';
     console.log(logPrefix, 'loading: ', url);
 
     return $.ajax({
@@ -120,20 +128,49 @@ function MetadataButtons() {
         type: 'GET',
         dataType: 'json'
     }).done(function (data) {
+      self.loadingMetadatas[nodeId] = false;
       console.log(logPrefix, 'loaded: ', data);
-      self.projectMetadata = (data.data || {}).attributes;
+      if (!self.contexts) {
+        self.contexts = {};
+      }
+      const metadata = {
+        nodeId: nodeId,
+        baseUrl: baseUrl,
+        projectMetadata: (data.data || {}).attributes,
+        wbcache: (self.contexts[nodeId] ? self.contexts[nodeId].wbcache : null) || new WaterButlerCache(),
+        validatedFiles: (self.contexts[nodeId] ? self.contexts[nodeId].validatedFiles : null) || {},
+        addonAttached: true
+      };
+      self.contexts[nodeId] = metadata;
       if (!callback) {
         return;
       }
       callback();
     }).fail(function(xhr, status, error) {
-      Raven.captureMessage('Error while retrieving addon info', {
+      self.loadingMetadatas[nodeId] = false;
+      if (error === 'BAD REQUEST') {
+        if (!self.contexts) {
+          self.contexts = {};
+        }
+        self.contexts[nodeId] = {
+          nodeId: nodeId,
+          baseUrl: baseUrl,
+          projectMetadata: {
+            files: [],
+          },
+          wbcache: (self.contexts[nodeId] ? self.contexts[nodeId].wbcache : null) || new WaterButlerCache(),
+          validatedFiles: (self.contexts[nodeId] ? self.contexts[nodeId].validatedFiles : null) || {},
+          addonAttached: false
+        };
+      } else {
+        Raven.captureMessage('Error while retrieving addon info', {
           extra: {
               url: url,
               status: status,
               error: error
           }
-      });
+        });
+      }
       if (!callback) {
         return;
       }
@@ -195,7 +232,7 @@ function MetadataButtons() {
     });
   }
 
-  self.prepareFields = function(container, schema, filepath) {
+  self.prepareFields = function(context, container, schema, filepath, fileitem) {
     const lastMetadataItems = (self.lastMetadata.items || []).filter(function(item) {
       return item.schema == schema.id;
     });
@@ -205,8 +242,10 @@ function MetadataButtons() {
       schema.attributes.schema,
       lastMetadataItem,
       {
+        context: context,
         filepath: filepath,
-        wbcache: self.wbcache
+        wbcache: context.wbcache,
+        fileitem: fileitem
       },
       self.fieldsChanged
     );
@@ -262,8 +301,27 @@ function MetadataButtons() {
     }
   }
 
-  self.findMetadataByPath = function(filepath) {
-    const currentMetadatas = self.projectMetadata.files.filter(function(f) {
+  self.findProjectMetadataByNodeId = function(nodeId) {
+    const ctx = self.findContextByNodeId(nodeId);
+    if (!ctx) {
+      return null;
+    }
+    return ctx.projectMetadata;
+  };
+
+  self.findContextByNodeId = function(nodeId) {
+    if (!self.contexts) {
+      return null;
+    }
+    return self.contexts[nodeId];
+  };
+
+  self.findMetadataByPath = function(nodeId, filepath) {
+    const projectMetadata = self.findProjectMetadataByNodeId(nodeId);
+    if (!projectMetadata) {
+      return null;
+    }
+    const currentMetadatas = projectMetadata.files.filter(function(f) {
       return f.path === filepath;
     });
     if (currentMetadatas.length === 0) {
@@ -275,14 +333,14 @@ function MetadataButtons() {
   /**
    * Start editing metadata.
    */
-  self.editMetadata = function(filepath, item) {
+  self.editMetadata = function(context, filepath, item) {
     if (!self.editMetadataDialog) {
       self.editMetadataDialog = self.createEditMetadataDialog();
     }
     const dialog = self.editMetadataDialog;
     console.log(logPrefix, 'edit metadata: ', filepath, item);
     self.currentItem = item;
-    const currentMetadata = self.findMetadataByPath(filepath);
+    const currentMetadata = self.findMetadataByPath(context.nodeId, filepath);
     if (!currentMetadata) {
       self.lastMetadata = {
         path: filepath,
@@ -292,6 +350,7 @@ function MetadataButtons() {
     } else {
       self.lastMetadata = Object.assign({}, currentMetadata);
     }
+    self.editingContext = context;
     dialog.toolbar.empty();
     dialog.container.empty();
     dialog.copyStatus.text('');
@@ -308,9 +367,11 @@ function MetadataButtons() {
       }
       self.currentSchemaId = event.target.value;
       self.prepareFields(
+        context,
         fieldContainer,
         self.findSchemaById(self.currentSchemaId),
-        filepath
+        filepath,
+        item
       );
     });
     const pasteButton = $('<button></button>')
@@ -325,9 +386,11 @@ function MetadataButtons() {
       .css('display', 'flex')
       .append(pasteButton));
     self.prepareFields(
+      context,
       fieldContainer,
       self.findSchemaById(self.currentSchemaId),
-      filepath
+      filepath,
+      item
     );
     dialog.container.append(fieldContainer);
     dialog.dialog.modal('show');
@@ -398,9 +461,10 @@ function MetadataButtons() {
     });
   };
 
-  self.registerMetadata = function(filepath) {
+  self.registerMetadata = function(context, filepath, item) {
     self.registeringFilepath = filepath;
-    const currentMetadata = self.findMetadataByPath(filepath);
+    self.registeringContext = context;
+    const currentMetadata = self.findMetadataByPath(context.nodeId, filepath);
     if (!currentMetadata) {
       return;
     }
@@ -410,18 +474,19 @@ function MetadataButtons() {
     self.openDraftModal(currentMetadata);
   }
 
-  self.deleteMetadata = function(filepath) {
+  self.deleteMetadata = function(context, filepath, item) {
     if (!self.deleteConfirmationDialog) {
       self.deleteConfirmationDialog = self.initConfirmDeleteDialog();
     }
     self.deleteConfirmingFilepath = filepath;
+    self.deleteConfirmingContext = context;
     self.deleteConfirmationDialog.modal('show');
   }
 
   /**
    * Resolve missing metadata
    */
-  self.resolveMetadataConsistency = function(metadata) {
+  self.resolveMetadataConsistency = function(context, metadata) {
     if (!self.resolveConsistencyDialog) {
       self.resolveConsistencyDialog = self.createResolveConsistencyDialog();
     }
@@ -465,11 +530,11 @@ function MetadataButtons() {
       self.findSchemaById(self.currentSchemaId),
       targetItem
     );
-    self.wbcache.listFiles(null, true)
+    context.wbcache.listFiles(null, true)
       .then(function(files) {
         const tasks = files.map(function(file) {
           const item = file.item;
-          return self.wbcache.computeHash({
+          return context.wbcache.computeHash({
             data: Object.assign({}, item.attributes, {
               links: item.linsks,
             }),
@@ -557,7 +622,7 @@ function MetadataButtons() {
         dataType: 'json'
       }).done(function (data) {
         console.log(logPrefix, 'deleted: ', data);
-        self.loadMetadata(self.baseUrl);
+        self.reloadMetadatas();
       }).fail(function(xhr, status, error) {
         Raven.captureMessage('Error while retrieving addon info', {
             extra: {
@@ -580,16 +645,18 @@ function MetadataButtons() {
 
   self.deleteConfirmedModal = function() {
     const filepath = self.deleteConfirmingFilepath;
+    const context = self.deleteConfirmingContext;
     self.deleteConfirmingFilepath = null;
-    console.log(logPrefix, 'delete metadata: ', filepath);
-    var url = self.baseUrl + 'files/' + filepath;
+    self.deleteConfirmingContext = null;
+    console.log(logPrefix, 'delete metadata: ', filepath, context.nodeId);
+    var url = context.baseUrl + 'files/' + filepath;
     return $.ajax({
         url: url,
         type: 'DELETE',
         dataType: 'json'
     }).done(function (data) {
-      console.log(logPrefix, 'deleted: ', data);
-      self.loadMetadata(self.baseUrl);
+      console.log(logPrefix, 'deleted: ', data, context.nodeId);
+      self.loadMetadata(context.nodeId, context.baseUrl);
     }).fail(function(xhr, status, error) {
       Raven.captureMessage('Error while retrieving addon info', {
           extra: {
@@ -621,7 +688,7 @@ function MetadataButtons() {
     return projectNameJaValue + ' / ' + projectNameEnValue;
   };
 
-  self.includePathInDraftRegistration = function(path, registration) {
+  self.includePathInDraftRegistration = function(context, path, registration) {
     if (!registration.attributes) {
       return false;
     }
@@ -636,8 +703,9 @@ function MetadataButtons() {
       return false;
     }
     const fileEntries = JSON.parse(files.value);
+    const draftPath = context.nodeId === contextVars.node.id ? path : context.nodeId + '/' + path;
     return fileEntries.filter(function(file) {
-      return file.path == path;
+      return file.path === draftPath;
     }).length > 0;
   };
 
@@ -663,7 +731,7 @@ function MetadataButtons() {
           .attr('id', 'draft-' + r.id)
           .attr('name', 'draft-' + r.id)
           .attr('disabled', disabled)
-          .attr('checked', self.includePathInDraftRegistration(self.registeringFilepath, r)))
+          .attr('checked', self.includePathInDraftRegistration(self.registeringContext, self.registeringFilepath, r)))
         .append(text)
         .append($('<span></span>')
           .attr('id', 'draft-' + r.id + '-link')));
@@ -808,10 +876,10 @@ function MetadataButtons() {
     });
   };
 
-  self.updateRegistrationAsync = function(checked, filepath, draftId, link) {
+  self.updateRegistrationAsync = function(context, checked, filepath, draftId, link) {
     return new Promise(function(resolve, perror) {
       console.log(logPrefix, 'register metadata: ', filepath, draftId);
-      var url = self.baseUrl + 'draft_registrations/' + draftId + '/files/' + filepath;
+      var url = self.baseUrl + 'draft_registrations/' + draftId + '/files/' + context.nodeId + '/' + filepath;
       link.text(checked ? _('Registering...') : _('Deleting...'));
       return $.ajax({
           url: url,
@@ -831,20 +899,22 @@ function MetadataButtons() {
 
   self.selectDraftModal = function() {
     const filepath = self.registeringFilepath;
+    const context = self.registeringContext;
     if (!filepath) {
       return;
     }
     self.registeringFilepath = null;
+    self.registeringContext = null;
     const ops = [];
     (self.draftRegistrations.registrations || []).forEach(function(r) {
       const checkbox = self.selectDraftDialog.container.find('#draft-' + r.id);
       const checked = checkbox.is(':checked');
-      const oldChecked = self.includePathInDraftRegistration(filepath, r);
+      const oldChecked = self.includePathInDraftRegistration(context, filepath, r);
       if (checked == oldChecked) {
         return;
       }
       const link = self.selectDraftDialog.container.find('#draft-' + r.id + '-link');
-      ops.push(self.updateRegistrationAsync(checked, filepath, r.id, link));
+      ops.push(self.updateRegistrationAsync(context, checked, filepath, r.id, link));
     });
     Promise.all(ops)
       .then(function(data) {
@@ -876,14 +946,23 @@ function MetadataButtons() {
   }
 
   self.createButtonsBase = function(filepath, item, createButton) {
-    const currentMetadatas = self.projectMetadata.files.filter(function(f) {
+    const context = self.findContextByNodeId(item ? item.data.nodeId : contextVars.node.id);
+    if (!context) {
+      console.warn('Metadata not loaded for project:', item.data.nodeId);
+      return [];
+    }
+    if (!context.addonAttached) {
+      return [];
+    }
+    const projectMetadata = context.projectMetadata;
+    const currentMetadatas = projectMetadata.files.filter(function(f) {
       return f.path === filepath;
     });
     const currentMetadata = currentMetadatas[0] || null;
     const buttons = [];
     const editButton = createButton({
       onclick: function(event) {
-        self.editMetadata(filepath, item);
+        self.editMetadata(context, filepath, item);
       },
       icon: 'fa fa-edit',
       className : 'text-primary'
@@ -892,7 +971,7 @@ function MetadataButtons() {
     if (currentMetadata) {
       const registerButton = createButton({
         onclick: function(event) {
-          self.registerMetadata(filepath);
+          self.registerMetadata(context, filepath, item);
         },
         icon: 'fa fa-external-link',
         className : 'text-success'
@@ -900,7 +979,7 @@ function MetadataButtons() {
       buttons.push(registerButton)
       const deleteButton = createButton({
         onclick: function(event) {
-          self.deleteMetadata(filepath);
+          self.deleteMetadata(context, filepath, item);
         },
         icon: 'fa fa-trash',
         className : 'text-danger'
@@ -913,17 +992,17 @@ function MetadataButtons() {
   /**
    * Register existence-verified metadata.
    */
-  self.setValidatedFile = function(filepath, item, metadata) {
-    const cache = self.validatedFiles[filepath];
+  self.setValidatedFile = function(context, filepath, item, metadata) {
+    const cache = context.validatedFiles[filepath];
     if (cache && cache.expired > Date.now() && cache.item !== null) {
       return;
     }
-    self.validatedFiles[filepath] = {
+    context.validatedFiles[filepath] = {
       expired: Date.now() + METADATA_CACHE_EXPIRATION_MSEC,
       item: item,
       metadata: metadata,
     };
-    self.wbcache.computeHash(item)
+    context.wbcache.computeHash(item)
       .then(function(hash) {
         if (metadata.hash === hash) {
           return;
@@ -940,7 +1019,7 @@ function MetadataButtons() {
           })
         }).done(function (data) {
           console.log(logPrefix, 'saved: ', hash, data);
-          self.validatedFiles[filepath] = {
+          context.validatedFiles[filepath] = {
             expired: Date.now() + METADATA_CACHE_EXPIRATION_MSEC,
             item: item,
             metadata: Object.assign({}, metadata, {
@@ -964,8 +1043,8 @@ function MetadataButtons() {
   /**
    * Verify the existence of metadata.
    */
-  self.validateFile = function(filepath, metadata, callback) {
-    const cache = self.validatedFiles[filepath];
+  self.validateFile = function(context, filepath, metadata, callback) {
+    const cache = context.validatedFiles[filepath];
     if (cache && cache.expired > Date.now()) {
       if (cache.loading) {
         return;
@@ -973,7 +1052,7 @@ function MetadataButtons() {
       callback(cache.item);
       return;
     }
-    self.validatedFiles[filepath] = {
+    context.validatedFiles[filepath] = {
       expired: Date.now() + METADATA_CACHE_EXPIRATION_MSEC,
       item: null,
       loading: true,
@@ -981,9 +1060,9 @@ function MetadataButtons() {
     };
     console.log(logPrefix, 'Checking metadata', filepath, metadata);
     setTimeout(function() {
-      self.wbcache.searchFile(filepath, function(file) {
+      context.wbcache.searchFile(filepath, function(file) {
         console.log(logPrefix, 'Search result', filepath, file);
-        self.validatedFiles[filepath] = {
+        context.validatedFiles[filepath] = {
           expired: Date.now() + METADATA_CACHE_EXPIRATION_MSEC,
           item: file,
           loading: false,
@@ -1006,8 +1085,13 @@ function MetadataButtons() {
       if (text.length === 0) {
         return true;
       }
+      const context = self.findContextByNodeId(item.data.nodeId);
+      if (!context) {
+        self.loadMetadata(item.data.nodeId, item.data.nodeApiUrl + 'metadata/');
+        return true;
+      }
       if (!item.data.materialized) {
-        self.wbcache.setProvider(item);
+        context.wbcache.setProvider(item);
       }
       var indicator = text.find('.metadata-indicator');
       if (indicator.length === 0) {
@@ -1017,12 +1101,13 @@ function MetadataButtons() {
         text.append(indicator);
       }
       const filepath = item.data.provider + (item.data.materialized || '/');
-      const metadata = self.findMetadataByPath(filepath);
+      const metadata = self.findMetadataByPath(context.nodeId, filepath);
+      const projectMetadata = context.projectMetadata;
       if (!metadata) {
         if (filepath.length > 0 && filepath[filepath.length - 1] !== '/') {
           return false;
         }
-        const childMetadata = self.projectMetadata.files.filter(function(f) {
+        const childMetadata = projectMetadata.files.filter(function(f) {
           return f.path.substring(0, filepath.length) === filepath;
         });
         if (childMetadata.length === 0) {
@@ -1036,7 +1121,7 @@ function MetadataButtons() {
           .css('color', '#ccc')
           .attr('title', _('Some of the children have metadata.')));
         childMetadata.forEach(function (child) {
-          self.validateFile(child.path, child, function(item) {
+          self.validateFile(context, child.path, child, function(item) {
             if (item) {
               return;
             }
@@ -1045,7 +1130,7 @@ function MetadataButtons() {
                 .addClass('fa fa-exclamation-circle')
                 .attr('title', _('File not found: ') + child.path))
               .on('click', function() {
-                self.resolveMetadataConsistency(child);
+                self.resolveMetadataConsistency(context, child);
               });
             indicator.append(ic);
           });
@@ -1058,7 +1143,7 @@ function MetadataButtons() {
         .css('font-weight', 'bold')
         .css('margin', '0 8px')
         .attr('title', _('Metadata is defined')));
-      self.setValidatedFile(filepath, item, metadata);
+      self.setValidatedFile(context, filepath, item, metadata);
       return false;
     });
     if (remains.length === 0) {
@@ -1125,7 +1210,7 @@ function MetadataButtons() {
         return new Proxy(obj, {
           get: function(target, propname) {
             if (propname == 'itemButtons') {
-              if (!self.projectMetadata) {
+              if (!self.contexts) {
                 return target[propname];
               }
               return function(item) {
@@ -1163,7 +1248,7 @@ function MetadataButtons() {
                     base = baseRows;
                   }
                 }
-                if (self.projectMetadata) {
+                if (self.contexts) {
                   setTimeout(function() {
                     self.decorateRows([item]);
                   }, 500);
@@ -1186,6 +1271,7 @@ function MetadataButtons() {
    */
   self.saveEditMetadataModal = function() {
     const metadata = Object.assign({}, self.lastMetadata);
+    const context = self.editingContext;
     metadata.items = (self.lastMetadata.items || [])
       .filter(function(item) {
         return item.schema != self.currentSchemaId;
@@ -1210,9 +1296,9 @@ function MetadataButtons() {
       });
       metadata.items.unshift(metacontent);
     }
-    self.wbcache.computeHash(self.currentItem)
+    context.wbcache.computeHash(self.currentItem)
       .then(function(hash) {
-        const url = self.baseUrl + 'files/' + metadata.path;
+        const url = context.baseUrl + 'files/' + metadata.path;
         $.ajax({
           method: 'PATCH',
           url: url,
@@ -1223,7 +1309,8 @@ function MetadataButtons() {
         }).done(function (data) {
           console.log(logPrefix, 'saved: ', hash, data);
           self.currentItem = null;
-          self.loadMetadata(self.baseUrl)
+          self.editingContext = null;
+          self.loadMetadata(context.nodeId, context.baseUrl)
         }).fail(function(xhr, status, error) {
           Raven.captureMessage('Error while retrieving addon info', {
               extra: {
@@ -1242,6 +1329,8 @@ function MetadataButtons() {
   self.closeModal = function() {
     console.log(logPrefix, 'Modal closed');
     self.deleteConfirmingFilepath = null;
+    self.deleteConfirmingContext = null;
+    self.editingContext = null;
   };
 
   /**

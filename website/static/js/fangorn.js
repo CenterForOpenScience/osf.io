@@ -1474,23 +1474,51 @@ function gotoFileEvent (item, toUrl) {
     }
 }
 
-function _createLinkEvent(event, item) {
+/**
+ * Get persistent link for files/folders
+ * @param {*} item the file or folder
+ * @returns persistent link for the file/folder
+ */
+function getPersistentLinkFor(item) {
     var location = window.location;
-    var path = '/';
-    if (item.data.materialized !== undefined && item.data.materialized.length > 0) {
-        path = item.data.materialized;
+    var redir = new URI(location.protocol + '//' + location.host + '/' + item.data.nodeId);
+    if (item.kind === 'folder') {
+        var path = '/';
+        if (item.data.materialized !== undefined && item.data.materialized.length > 0) {
+            path = item.data.materialized;
+        }
+        redir.segment('files/dir').segment(item.data.provider).segment(path.substring(1));
+    } else {
+        redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
     }
-    var link = location.protocol + '//' + location.host + '/' + item.data.nodeId + '/files/dir/' + item.data.provider + path;
-    var encodedLink = encodeURI(link);
-    var container = $('#link_container');
-    var input = $('#link_container input');
-    input.val(encodedLink);
-    container.css('display', 'block');
-    input.focus();
-    input.select();
-    document.execCommand('copy');
-    container.css('display', 'none');
-    $osf.growl('Clipboard', gettext('Copied!'), 'success', 5000);
+    return redir.toString();
+}
+
+function _createLinkEvent(event, item) {
+    var encodedLink = getPersistentLinkFor(item);
+    if (!navigator.clipboard) {
+        // Fallback when navigator.clipboard is not supported
+        // This process will be removed because document.execCommand is deprecated.
+        var container = $('#link_container');
+        var input = $('#link_container input');
+        input.val(encodedLink);
+        container.css('display', 'block');
+        input.focus();
+        input.select();
+        document.execCommand('copy');
+        container.css('display', 'none');
+        $osf.growl('Clipboard', gettext('Copied!'), 'success', 5000);
+        return;
+    }
+    navigator.clipboard.writeText(encodedLink).then(function() {
+        $osf.growl('Clipboard', gettext('Copied!'), 'success', 5000);
+    }, function(err) {
+        Raven.captureMessage(gettext('Could not copy text'), {
+            extra: {
+                error: err.toString(),
+            },
+        });
+    });
 }
 
 /**
@@ -2094,7 +2122,7 @@ var FGItemButtons = {
                     }, gettext('Rename'))
                 );
             }
-            if (window.File && window.FileReader && item.kind === 'folder' && item.data.permissions && item.data.permissions.edit) {
+            if (window.File && window.FileReader && (item.kind === 'folder' || item.kind === 'file') && item.data.permissions && item.data.permissions.edit) {
                 rowButtons.push(
                     m.component(FGButton, {
                         onclick: function (event) { _createLinkEvent.call(tb, event, item); },
@@ -3138,5 +3166,6 @@ module.exports = {
     isInvalidDropItem : isInvalidDropItem,
     getCopyMode : getCopyMode,
     showDeleteMultiple : showDeleteMultiple,
-    checkConflicts : checkConflicts
+    checkConflicts : checkConflicts,
+    getPersistentLinkFor: getPersistentLinkFor
 };

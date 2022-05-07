@@ -10,7 +10,7 @@ from .models import ERadRecord, RegistrationReportFormat, get_draft_files, FIELD
 from .utils import make_report_as_csv
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
-from osf.models import DraftRegistration, Registration
+from osf.models import AbstractNode, DraftRegistration, Registration
 from osf.models.metaschema import RegistrationSchema
 from admin.rdm_addons.decorators import must_be_rdm_addons_allowed
 from website.project.decorators import (
@@ -88,6 +88,14 @@ def _get_file_metadata_for_schema(schema_id, file_metadata):
         'urlpath': file_metadata['urlpath'],
         'metadata': items[0]['data'],
     }
+
+def _get_file_metadata_node(node, metadata_node_id):
+    if node._id == metadata_node_id:
+        return node
+    nodes = [n for n in node.nodes if n._id == metadata_node_id]
+    if len(nodes) == 0:
+        raise ValueError('Unexpected node ID: {}'.format(metadata_node_id))
+    return AbstractNode.objects.filter(guids___id=metadata_node_id).first()
 
 @must_be_logged_in
 @must_be_rdm_addons_allowed(SHORT_NAME)
@@ -205,9 +213,10 @@ def metadata_delete_file(auth, filepath=None, **kwargs):
 @must_be_logged_in
 @must_have_permission('write')
 @must_have_addon(SHORT_NAME, 'node')
-def metadata_set_file_to_drafts(auth, did=None, filepath=None, **kwargs):
+def metadata_set_file_to_drafts(auth, did=None, mnode=None, filepath=None, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    addon = node.get_addon(SHORT_NAME)
+    mnode_obj = _get_file_metadata_node(node, mnode)
+    addon = mnode_obj.get_addon(SHORT_NAME)
     try:
         draft = DraftRegistration.objects.get(_id=did, branched_from=node)
         draft_schema = draft.registration_schema.schema
@@ -230,6 +239,8 @@ def metadata_set_file_to_drafts(auth, did=None, filepath=None, **kwargs):
             ))
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
         logger.info('Draft: draft={}, file_metadata={}'.format(draft_files, file_metadata))
+        if node._id != mnode_obj._id:
+            file_metadata['path'] = '{}/{}'.format(mnode_obj._id, file_metadata['path'])
         draft_files = [df
                        for df in draft_files
                        if df['path'] != file_metadata['path']]
@@ -248,9 +259,10 @@ def metadata_set_file_to_drafts(auth, did=None, filepath=None, **kwargs):
 @must_be_logged_in
 @must_have_permission('write')
 @must_have_addon(SHORT_NAME, 'node')
-def metadata_delete_file_from_drafts(auth, did=None, filepath=None, **kwargs):
+def metadata_delete_file_from_drafts(auth, did=None, mnode=None, filepath=None, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    addon = node.get_addon(SHORT_NAME)
+    mnode_obj = _get_file_metadata_node(node, mnode)
+    addon = mnode_obj.get_addon(SHORT_NAME)
     try:
         draft = DraftRegistration.objects.get(_id=did, branched_from=node)
         draft_schema = draft.registration_schema.schema
@@ -259,9 +271,12 @@ def metadata_delete_file_from_drafts(auth, did=None, filepath=None, **kwargs):
         draft_metadata = draft.registration_metadata
         draft_files = get_draft_files(draft_metadata)
         logger.info('Draft: draft={}'.format(draft_files))
+        draft_filepath = filepath
+        if node._id != mnode_obj._id:
+            draft_filepath = '{}/{}'.format(mnode_obj._id, filepath)
         draft_files = [df
                        for df in draft_files
-                       if df['path'] != filepath]
+                       if df['path'] != draft_filepath]
         draft.update_metadata({
             FIELD_GRDM_FILES: {
                 'value': json.dumps(draft_files, indent=2),
