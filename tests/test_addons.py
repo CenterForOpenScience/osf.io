@@ -235,6 +235,8 @@ class TestAddonAuth(OsfTestCase):
         assert res.status_code == 200
         assert res.json['data']['attributes']['current_user_has_viewed'] is False
 
+        # This mocks the Waterbutler callback endpoint (`get_auth` function in addons/base/views.py ) which indicates if
+        # a file has been view with the MFR.
         self.app.get(
             self.build_url(
                 nid=node._id,
@@ -247,8 +249,8 @@ class TestAddonAuth(OsfTestCase):
 
         res = django_app.get(f'/{API_BASE}files/{file._id}/', auth=file_viewer.auth)
 
-        versions = file.versions.order_by('created')
-        assert versions.first().seen_by.exists()
+        version = file.versions.get()
+        assert version.seen_by.exists()
         assert res.json['data']['attributes']['current_user_has_viewed']
 
     def test_current_user_has_viewed_private(self):
@@ -260,6 +262,8 @@ class TestAddonAuth(OsfTestCase):
         assert res.status_code == 200
         assert res.json['data']['attributes']['current_user_has_viewed'] is False
 
+        # This mocks the Waterbutler callback endpoint (`get_auth` function in addons/base/views.py ) which indicates if
+        # a file has been view with the MFR.
         self.app.get(
             self.build_url(
                 nid=node._id,
