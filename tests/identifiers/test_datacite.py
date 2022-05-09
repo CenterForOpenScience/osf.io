@@ -90,7 +90,7 @@ class TestDataCiteClient:
         assert resource_type.text == 'Pre-registration'
         assert resource_type.attrib['resourceTypeGeneral'] == 'Text'
 
-    def test_metadata_for_node_only_includes_visible_contribs(self, datacite_client):
+    def test_datcite_format_contributors(self, datacite_client):
         visible_contrib = AuthUserFactory()
         visible_contrib2 = AuthUserFactory()
         visible_contrib2.given_name = u'ヽ༼ ಠ益ಠ ༽ﾉ'
@@ -109,12 +109,12 @@ class TestDataCiteClient:
 
         metadata_xml = datacite_client.build_metadata(registration)
         # includes visible contrib name
-        assert u'<givenName>{}</givenName>'.format(visible_contrib.given_name) in metadata_xml
-        assert u'<familyName>{}</familyName>'.format(visible_contrib.family_name) in metadata_xml
+        assert f'<contributorName nameType="Personal">{visible_contrib.fullname}</contributorName>' in metadata_xml
+        assert f'<creatorName nameType="Personal">{visible_contrib.fullname}</creatorName>' in metadata_xml
 
-        # doesn't include invisible contrib name
-        assert u'<givenName>{}</givenName>'.format(invisible_contrib.given_name) not in metadata_xml
-        assert u'<familyName>{}</familyName>'.format(invisible_contrib.family_name) not in metadata_xml
+        assert f'<contributorName nameType="Personal">{invisible_contrib.fullname}</contributorName>' in metadata_xml
+        assert f'<creatorName nameType="Personal">{invisible_contrib.fullname}</creatorName>' not in metadata_xml
+
 
 
 @pytest.mark.django_db
