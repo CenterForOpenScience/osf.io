@@ -216,6 +216,8 @@ class BaseFileSerializer(JSONAPISerializer):
     date_modified = VersionedDateTimeField(
         read_only=True,
         help_text='Timestamp when the file was last modified',
+        required=False,
+        allow_null=True,
     )
     date_created = ser.SerializerMethodField(read_only=True, help_text='Timestamp when the file was created')
     extra = ser.SerializerMethodField(read_only=True, help_text='Additional metadata about this file')
