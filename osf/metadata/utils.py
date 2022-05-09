@@ -42,13 +42,6 @@ def datacite_format_name_identifiers(user):
                 'schemeURI': 'http://orcid.org/'
             })
 
-    if user.social_links.get('orcid'):
-        data['nameIdentifiers'].append({
-            'nameIdentifier': user.social_links.get('orcid'),
-            'nameIdentifierScheme': 'ORCID',
-            'schemeURI': 'http://orcid.org/'
-        })
-
     return data
 
 

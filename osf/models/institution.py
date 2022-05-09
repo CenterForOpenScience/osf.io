@@ -91,7 +91,6 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
         blank=True,
     )
 
-
     class Meta:
         # custom permissions for use in the OSF Admin App
         permissions = (
