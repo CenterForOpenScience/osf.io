@@ -153,6 +153,8 @@ from osf.models import (
 from addons.osfstorage.models import Region
 from osf.utils.permissions import ADMIN, WRITE_NODE
 from website import mails, settings
+from django.db.models.functions.base import Cast
+from django.contrib.postgres.fields.jsonb import KeyTextTransform, JSONField
 
 # This is used to rethrow v1 exceptions as v2
 HTTP_CODE_MAP = {
@@ -1159,7 +1161,11 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             # trashed file nodes are filtered out automatically
             ConcreteFileNode = BaseFileNode.resolve_class(provider, BaseFileNode.ANY)
             file_ids = [f.id for f in self.bulk_get_file_nodes_from_wb_resp(files_list)]
-            return ConcreteFileNode.objects.filter(id__in=file_ids)
+            return ConcreteFileNode.objects.filter(id__in=file_ids).annotate(
+                recent_history=Cast(KeyTextTransform(-1, '_history'), JSONField()),  # negative index == recent history
+            ).annotate(
+                date_modified=KeyTextTransform('modified', 'recent_history'),
+            )
 
         if isinstance(files_list, list) or not isinstance(files_list, Folder):
             # We should not have gotten a file here
