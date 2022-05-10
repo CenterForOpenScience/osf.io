@@ -711,6 +711,7 @@ function MetadataButtons() {
 
   self.createDraftsSelect = function(schema, disabled) {
     const registrations = $('<ul></ul>').css('list-style-type', 'none');
+    var empty = true;
     (self.draftRegistrations.registrations || []).forEach(function(r) {
       const registration_schema = r.relationships.registration_schema;
       if (!registration_schema || registration_schema.data.id !== schema.id) {
@@ -735,7 +736,16 @@ function MetadataButtons() {
         .append(text)
         .append($('<span></span>')
           .attr('id', 'draft-' + r.id + '-link')));
+      empty = false;
     });
+    if (empty) {
+      registrations.append($('<li></li>')
+        .append($('<span></span>').text(_('There is no draft metadata compliant with the schema. Create new draft metadata from the Metadata tab:')))
+        .append($('<a></a>')
+          .text(_('Open'))
+          .attr('href', contextVars.node.urls.web + 'metadata'))
+      );
+    }
     return registrations;
   }
 
