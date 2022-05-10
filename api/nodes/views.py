@@ -2,7 +2,7 @@ import re
 
 from distutils.version import StrictVersion
 from django.apps import apps
-from django.db.models import Q, Subquery, F, Max
+from django.db.models import Q, Subquery, F
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics, permissions as drf_permissions
@@ -11,7 +11,6 @@ from rest_framework.response import Response
 from rest_framework.status import HTTP_202_ACCEPTED, HTTP_204_NO_CONTENT
 
 from addons.base.exceptions import InvalidAuthError
-from addons.osfstorage.models import OsfStorageFolder
 from api.addons.serializers import NodeAddonFolderSerializer
 from api.addons.views import AddonSettingsMixin
 from api.base import generic_bulk_views as bulk_views
@@ -66,6 +65,7 @@ from api.comments.serializers import (
 )
 from api.draft_registrations.serializers import DraftRegistrationSerializer, DraftRegistrationDetailSerializer
 from api.files.serializers import FileSerializer, OsfStorageFileSerializer
+from api.files.annotations import DATE_MODIFIED
 from api.identifiers.serializers import NodeIdentifierSerializer
 from api.identifiers.views import IdentifierList
 from api.institutions.serializers import InstitutionSerializer
@@ -153,8 +153,7 @@ from osf.models import (
 from addons.osfstorage.models import Region
 from osf.utils.permissions import ADMIN, WRITE_NODE
 from website import mails, settings
-from django.db.models.functions.base import Cast
-from django.contrib.postgres.fields.jsonb import KeyTextTransform, JSONField
+
 
 # This is used to rethrow v1 exceptions as v2
 HTTP_CODE_MAP = {
@@ -1158,38 +1157,38 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
         provider = self.kwargs[self.provider_lookup_url_kwarg]
         folder_object = self.get_file_object(node, path, provider)
 
+        # Addon provided files/folders don't have versions so for there date modified we check the history. The history
+        # is updated every time we query the file metadata via Waterbutler.
         if provider == 'osfstorage':
             return folder_object.children.prefetch_related(
-                'versions', 'tags', 'guids',
-            ).annotate(
-                date_modified=Max('versions__created'),
+                'versions',
+                'tags',
+                'guids',
             )
         else:
-            return self.bulk_get_file_nodes_from_wb_resp(folder_object).annotate(
-                recent_history=Cast(KeyTextTransform(-1, '_history'), JSONField()),  # negative index == recent history
-            ).annotate(
-                date_modified=KeyTextTransform('modified', 'recent_history'),
-            )
+            return self.bulk_get_file_nodes_from_wb_resp(folder_object)
 
     # overrides ListAPIView
     def get_queryset(self):
         path = self.kwargs[self.path_lookup_url_kwarg]
+        provider = self.kwargs[self.provider_lookup_url_kwarg]
+
         # query param info when used on a folder gives that folder's metadata instead of the metadata of it's children
         if 'info' in self.request.query_params and path.endswith('/'):
-            fobj = self.fetch_from_waterbutler()
+            node = self.get_resource(check_object_permissions=False)
+            file_obj = self.get_file_object(node, path, provider)
 
-            if isinstance(fobj, list):
-                node = self.get_node(check_object_permissions=False)
-                base_class = BaseFileNode.resolve_class(self.kwargs[self.provider_lookup_url_kwarg], BaseFileNode.FOLDER)
-                return base_class.objects.filter(
-                    target_object_id=node.id, target_content_type=ContentType.objects.get_for_model(node), _path=path,
-                )
-            elif isinstance(fobj, OsfStorageFolder):
-                return BaseFileNode.objects.filter(id=fobj.id)
+            if provider == 'osfstorage':
+                return BaseFileNode.objects.filter(id=file_obj.id)
             else:
-                raise NotFound
+                base_class = BaseFileNode.resolve_class(provider, BaseFileNode.FOLDER)
+                return base_class.objects.filter(
+                    target_object_id=node.id,
+                    target_content_type=ContentType.objects.get_for_model(node),
+                    _path=path,
+                ).annotate(date_modified=DATE_MODIFIED)
         else:
-            return self.get_queryset_from_request().distinct()
+            return self.get_queryset_from_request().annotate(date_modified=DATE_MODIFIED)
 
 
 class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):
