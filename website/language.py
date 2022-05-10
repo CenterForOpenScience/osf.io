@@ -146,8 +146,8 @@ BEFORE_REGISTER_HAS_POINTERS = (
     u'This {category} contains links to other projects. These links will be '
     u'copied into your registration, but the projects that they link to will '
     u'not be registered. If you wish to register the linked projects, they '
-    u'must be registered separately. Learn more about <a href="https://help.osf.io/article/199-link-to-a-project'
-    u'/m/links_forks/l/524112-link-to-a-project">links</a>.'
+    u'must be registered separately. Learn more about <a href="https://help.osf.io'
+    u'/article/199-link-to-a-project">links</a>.'
 )
 
 BEFORE_FORK_HAS_POINTERS = (

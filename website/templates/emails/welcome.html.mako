@@ -25,7 +25,7 @@ Archive your materials, data, manuscripts, or anything else associated with your
 <br>
 
 <h4>Share your work</h4>
-Keep your research materials and data private, make it accessible to specific others with view-only links, or make it publicly accessible. You have full control of what parts of your research are public and what remains private. <a href="https://help.osf.io/article/201-create-a-view-only-link-for-a-project">Explore privacy settings.</a><br>
+Keep your research materials and data private, make it accessible to specific others with view-only links, or make it publicly accessible. You have full control of what parts of your research are public and what remains private. <a href="https://help.osf.io/article/285-control-your-privacy-settings">Explore privacy settings.</a><br>
 <br>
 
 <h4>Register your research</h4>
