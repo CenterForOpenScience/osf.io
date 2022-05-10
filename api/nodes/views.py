@@ -1153,29 +1153,23 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             ]
 
     def get_default_queryset(self):
-        files_list = self.fetch_from_waterbutler()
+        node = self.get_node(check_object_permissions=False)
+        path = self.kwargs[self.path_lookup_url_kwarg]
+        provider = self.kwargs[self.provider_lookup_url_kwarg]
+        folder_object = self.get_file_object(node, path, provider)
 
-        if isinstance(files_list, list):
-            provider = self.kwargs[self.provider_lookup_url_kwarg]
-            # Resolve to a provider-specific subclass, so that
-            # trashed file nodes are filtered out automatically
-            ConcreteFileNode = BaseFileNode.resolve_class(provider, BaseFileNode.ANY)
-            file_ids = [f.id for f in self.bulk_get_file_nodes_from_wb_resp(files_list)]
-            return ConcreteFileNode.objects.filter(id__in=file_ids).annotate(
+        if provider == 'osfstorage':
+            return folder_object.children.prefetch_related(
+                'versions', 'tags', 'guids',
+            ).annotate(
+                date_modified=Max('versions__created'),
+            )
+        else:
+            return self.bulk_get_file_nodes_from_wb_resp(folder_object).annotate(
                 recent_history=Cast(KeyTextTransform(-1, '_history'), JSONField()),  # negative index == recent history
             ).annotate(
                 date_modified=KeyTextTransform('modified', 'recent_history'),
             )
-
-        if isinstance(files_list, list) or not isinstance(files_list, Folder):
-            # We should not have gotten a file here
-            raise NotFound
-
-        return files_list.children.prefetch_related(
-            'versions', 'tags', 'guids',
-        ).annotate(
-            date_modified=Max('versions__created'),
-        )
 
     # overrides ListAPIView
     def get_queryset(self):

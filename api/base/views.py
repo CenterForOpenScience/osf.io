@@ -655,7 +655,8 @@ class WaterButlerMixin(object):
             base_class.objects.bulk_create(objs_to_create[base_class])
             file_objs += objs_to_create[base_class]
 
-        return file_objs
+        # stuff list into QuerySet
+        return base_class.objects.filter(id__in=[item.id for item in file_objs])
 
     def get_file_node_from_wb_resp(self, item):
         """Takes file data from wb response, touches/updates metadata for it, and returns file object"""
