@@ -138,6 +138,7 @@ INSTALLED_APPS = (
     'addons.s3compatinstitutions',
     'addons.ociinstitutions',
     'addons.onedrivebusiness',
+    'addons.metadata',
 )
 
 MIGRATION_MODULES = {

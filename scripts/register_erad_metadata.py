@@ -19,22 +19,10 @@ from scripts import utils as script_utils
 
 from website.app import init_app
 from addons.metadata.models import ERadRecordSet
+from admin.rdm_metadata.erad import ERAD_COLUMNS, validate_record
 
 
 logger = logging.getLogger(__name__)
-
-ERAD_COLUMNS = [
-    'KENKYUSHA_NO', 'KENKYUSHA_SHIMEI', 'KENKYUKIKAN_CD', 'KENKYUKIKAN_MEI',
-    'HAIBUNKIKAN_CD', 'HAIBUNKIKAN_MEI', 'NENDO', 'SEIDO_CD', 'SEIDO_MEI',
-    'JIGYO_CD', 'JIGYO_MEI', 'KADAI_ID', 'KADAI_MEI', 'BUNYA_CD', 'BUNYA_MEI'
-]
-
-
-def validate_record(record_num, row):
-    for column in ERAD_COLUMNS:
-        if column in row:
-            continue
-        raise ValueError(f'Column "{column}" not exists (record={record_num})')
 
 
 def do_populate(file):
