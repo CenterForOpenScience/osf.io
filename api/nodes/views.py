@@ -2,7 +2,7 @@ import re
 
 from distutils.version import StrictVersion
 from django.apps import apps
-from django.db.models import Q, OuterRef, Exists, Subquery, F, Max
+from django.db.models import Q, Subquery, F, Max
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics, permissions as drf_permissions
@@ -1171,14 +1171,10 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             # We should not have gotten a file here
             raise NotFound
 
-        sub_qs = OsfStorageFolder.objects.filter(_children=OuterRef('pk'), pk=files_list.pk)
         return files_list.children.prefetch_related(
             'versions', 'tags', 'guids',
         ).annotate(
-            folder=Exists(sub_qs),
             date_modified=Max('versions__created'),
-        ).filter(
-            folder=True,
         )
 
     # overrides ListAPIView
