@@ -138,6 +138,7 @@ from osf.models import (
     AbstractNode,
     OSFUser,
     Node,
+    Preprint,
     PrivateLink,
     Institution,
     Comment,
@@ -1152,10 +1153,16 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             ]
 
     def get_default_queryset(self):
-        node = self.get_node(check_object_permissions=False)
+        if self.kwargs.get('node_id'):
+            resource = get_object_or_error(AbstractNode, self.kwargs['node_id'], self.request)
+        elif self.kwargs.get('preprint_id'):
+            resource = get_object_or_error(Preprint, self.kwargs['preprint_id'], self.request)
+        else:
+            raise NotImplementedError()
+
         path = self.kwargs[self.path_lookup_url_kwarg]
         provider = self.kwargs[self.provider_lookup_url_kwarg]
-        folder_object = self.get_file_object(node, path, provider)
+        folder_object = self.get_file_object(resource, path, provider)
 
         # Addon provided files/folders don't have versions so for there date modified we check the history. The history
         # is updated every time we query the file metadata via Waterbutler.
