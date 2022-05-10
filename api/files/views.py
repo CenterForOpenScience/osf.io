@@ -111,7 +111,10 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
         # We normally would pass this through `get_file` as an annotation, but the `select_for_update` feature prevents
         # grouping versions in an annotation
         if file.kind == 'file':
-            file.date_modified = file.versions.aggregate(Max('created'))['created__max'].replace(tzinfo=pytz.utc)
+            if file.provider == 'osfstorage':
+                file.date_modified = file.versions.aggregate(Max('created'))['created__max'].replace(tzinfo=pytz.utc)
+            else:
+                file.date_modified = file.history[-1]['modified']
 
         return file
 
