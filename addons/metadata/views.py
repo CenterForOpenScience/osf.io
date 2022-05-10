@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import codecs
 import json
 from rest_framework import status as http_status
 from flask import request
@@ -313,8 +314,8 @@ def metadata_export_draft_registrations_csv(auth, did=None, **kwargs):
         schema = draft.registration_schema.schema
         filename, csvcontent = make_report_as_csv(formats[0], draft_metadata, schema)
         response = make_response()
-        response.data = csvcontent.encode('utf8')
-        response.mimetype = 'text/csv;charset=utf-8'
+        response.data = codecs.BOM_UTF16_LE + csvcontent.encode('utf-16-le')
+        response.mimetype = 'text/csv;charset=utf-16'
         response.headers['Content-Disposition'] = 'attachment; filename={}'.format(filename)
         return response
     except DraftRegistration.DoesNotExist:
@@ -341,8 +342,8 @@ def metadata_export_registrations_csv(auth, rid=None, **kwargs):
         schema = registration.registration_schema.schema
         filename, csvcontent = make_report_as_csv(formats[0], registration_metadata, schema)
         response = make_response()
-        response.data = csvcontent.encode('utf8')
-        response.mimetype = 'text/csv;charset=utf-8'
+        response.data = codecs.BOM_UTF16_LE + csvcontent.encode('utf-16-le')
+        response.mimetype = 'text/csv;charset=utf-16'
         response.headers['Content-Disposition'] = 'attachment; filename={}'.format(filename)
         return response
     except Registration.DoesNotExist:

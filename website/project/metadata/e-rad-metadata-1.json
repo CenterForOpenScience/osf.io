@@ -183,7 +183,7 @@
           "format": "singleselect",
           "options": [
               {
-                "text": "",
+                "text": "project",
                 "tooltip": "プロジェクトに指定された分野|The field specified for the project"
               },
               {
