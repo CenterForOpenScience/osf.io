@@ -349,9 +349,9 @@ def redirect_howosfworks(**kwargs):
     return redirect('/getting-started/')
 
 
-# redirect osf.io/getting-started to https://openscience.zendesk.com/hc/en-us
+# redirect osf.io/getting-started to https://help.osf.io/article/342-getting-started-on-the-osf
 def redirect_getting_started(**kwargs):
-    return redirect('https://openscience.zendesk.com/hc/en-us')
+    return redirect('https://help.osf.io/article/342-getting-started-on-the-osf')
 
 
 # Redirect to home page
