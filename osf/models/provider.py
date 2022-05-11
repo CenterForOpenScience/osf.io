@@ -311,7 +311,8 @@ class RegistrationProvider(AbstractProvider):
                 """,
                 [cls.default__id]
             )
-            default_id = cursor.fetchone()[0]
+            id_list = cursor.fetchone()
+            default_id = id_list[0] if id_list else None
         return default_id
 
     @property
