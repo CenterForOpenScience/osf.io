@@ -155,7 +155,6 @@ from addons.osfstorage.models import Region
 from osf.utils.permissions import ADMIN, WRITE_NODE
 from website import mails, settings
 
-
 # This is used to rethrow v1 exceptions as v2
 HTTP_CODE_MAP = {
     400: ValidationError(detail='This add-on has made a bad request.'),
@@ -1182,25 +1181,26 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
         # query param info when used on a folder gives that folder's metadata instead of the metadata of it's children
         if 'info' in self.request.query_params and path.endswith('/'):
-            node = self.get_resource(check_object_permissions=False)
-            file_obj = self.get_file_object(node, path, provider)
+            resource = self.get_resource(check_object_permissions=False)
+            file_obj = self.get_file_object(resource, path, provider)
 
             if provider == 'osfstorage':
-                return BaseFileNode.objects.filter(id=file_obj.id)
+                queryset = BaseFileNode.objects.filter(id=file_obj.id)
             else:
                 base_class = BaseFileNode.resolve_class(provider, BaseFileNode.FOLDER)
-                return base_class.objects.filter(
-                    target_object_id=node.id,
-                    target_content_type=ContentType.objects.get_for_model(node),
+                queryset = base_class.objects.filter(
+                    target_object_id=resource.id,
+                    target_content_type=ContentType.objects.get_for_model(resource),
                     _path=path,
-                ).annotate(date_modified=DATE_MODIFIED)
+                )
         else:
-            return self.get_queryset_from_request().annotate(date_modified=DATE_MODIFIED)
+            queryset = self.get_queryset_from_request()
+
+        return queryset.annotate(date_modified=DATE_MODIFIED)
 
 
 class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_files_read).
-
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,

@@ -579,7 +579,7 @@ class PreprintFilesList(NodeFilesList, PreprintMixin):
     def get_queryset(self):
         self.kwargs[self.path_lookup_url_kwarg] = '/'
         self.kwargs[self.provider_lookup_url_kwarg] = 'osfstorage'
-        return super().get_queryset()
+        return super(PreprintFilesList, self).get_queryset()
 
     def get_resource(self, check_object_permissions):
         return self.get_preprint(check_object_permissions=check_object_permissions)
