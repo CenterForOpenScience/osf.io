@@ -22,9 +22,9 @@
     * Collaborators/contributors to the submission<br>
     * Charts, graphs, and data that didn't make it onto the submission<br>
     * Links to related publications or reference lists<br>
-    * Connecting other accounts, like Dropbox, Google Drive, GitHub, figshare and Mendeley via add-on integration. Learn more and read the full list of available add-ons <a href="https://openscience.zendesk.com/hc/en-us/categories/360001550973/?utm_source=notification&utm_medium=email&utm_campaign=conference_submitted">here.</a><br>
+    * Connecting other accounts, like Dropbox, Google Drive, GitHub, figshare and Mendeley via add-on integration. Learn more and read the full list of available add-ons <a href="https://help.osf.io/article/377-add-ons-api-home-page">here.</a><br>
     <br>
-    To learn more about OSF, read the <a href="https://openscience.zendesk.com/hc/en-us/?utm_source=notification&utm_medium=email&utm_campaign=conference_submitted">Guides</a>.<br>
+    To learn more about OSF, read the <a href="https://help.osf.io/">Guides</a>.<br>
     <br>
     Sincerely,<br>
     <br>
