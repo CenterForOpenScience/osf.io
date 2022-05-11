@@ -276,8 +276,8 @@ class TestAddonAuth(OsfTestCase):
 
         res = django_app.get(f'/{API_BASE}files/{file._id}/', auth=node.creator.auth)
 
-        versions = file.versions.order_by('created')
-        assert versions.first().seen_by.exists()
+        version = file.versions.get()
+        assert version.seen_by.exists()
         assert res.json['data']['attributes']['current_user_has_viewed']
 
 
