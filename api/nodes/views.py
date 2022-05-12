@@ -1,8 +1,9 @@
 import re
+import pytz
 
 from distutils.version import StrictVersion
 from django.apps import apps
-from django.db.models import Q, Subquery, F
+from django.db.models import Q, Subquery, F, Max
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics, permissions as drf_permissions
@@ -1221,11 +1222,16 @@ class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin
         fobj = self.fetch_from_waterbutler()
         if isinstance(fobj, dict):
             # if dict it is a wb response, not file object yet
-            return self.get_file_node_from_wb_resp(fobj)
+            fobj = self.get_file_node_from_wb_resp(fobj)
 
         if isinstance(fobj, list) or not isinstance(fobj, File):
             # We should not have gotten a folder here
             raise NotFound
+        if fobj.kind == 'file':
+            if fobj.provider == 'osfstorage':
+                fobj.date_modified = fobj.versions.aggregate(Max('created'))['created__max']
+            else:
+                fobj.date_modified = fobj.history[-1]['modified']
 
         return fobj
 
