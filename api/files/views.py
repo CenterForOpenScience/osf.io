@@ -112,7 +112,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
         # grouping versions in an annotation
         if file.kind == 'file':
             if file.provider == 'osfstorage':
-                file.date_modified = file.versions.aggregate(Max('created'))['created__max'].replace(tzinfo=pytz.utc)
+                file.date_modified = file.versions.aggregate(Max('created'))['created__max']
             else:
                 file.date_modified = file.history[-1]['modified']
 
