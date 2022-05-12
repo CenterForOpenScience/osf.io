@@ -21,7 +21,7 @@ from osf_tests.factories import (
     PrivateLinkFactory
 )
 from osf.utils.permissions import READ
-
+from website import settings
 
 def prepare_mock_wb_response(
         node=None,
@@ -678,6 +678,10 @@ class TestNodeStorageProviderDetail(ApiTestCase):
             res.json['data']['id'],
             '{}:osfstorage'.format(self.private_project._id)
         )
+        assert_equal(
+            res.json['data']['relationships']['target']['links']['related']['href'],
+            f'{settings.API_DOMAIN}v2/nodes/{self.private_project._id}/'
+        )
 
     def test_can_view_if_public(self):
         res = self.app.get(self.public_url)
@@ -685,6 +689,10 @@ class TestNodeStorageProviderDetail(ApiTestCase):
         assert_equal(
             res.json['data']['id'],
             '{}:osfstorage'.format(self.public_project._id)
+        )
+        assert_equal(
+            res.json['data']['relationships']['target']['links']['related']['href'],
+            f'{settings.API_DOMAIN}v2/nodes/{self.public_project._id}/'
         )
 
     def test_cannot_view_if_private(self):

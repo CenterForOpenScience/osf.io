@@ -14,7 +14,7 @@ from api.base.serializers import (
     ShowIfVersion, TargetTypeField, TypeField,
     WaterbutlerLink, relationship_diff, BaseAPISerializer,
     HideIfWikiDisabled, ShowIfAdminScopeOrAnonymous,
-    ValuesListField,
+    ValuesListField, TargetField,
 )
 from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
 from api.base.utils import (
@@ -38,6 +38,7 @@ from osf.models import (
     Comment, DraftRegistration, ExternalAccount, Institution,
     RegistrationSchema, AbstractNode, PrivateLink, Preprint,
     RegistrationProvider, OSFGroup, NodeLicense, DraftNode,
+    Registration, Node,
 )
 from website.project import new_private_link
 from website.project.model import NodeUpdateError
@@ -1407,6 +1408,20 @@ class NodeStorageProviderSerializer(JSONAPISerializer):
         related_view_kwargs={'file_id': '<root_folder._id>'},
         help_text='The folder in which this file exists',
     )
+
+    target = TargetField(link_type='related', meta={'type': 'get_target_type'})
+
+    def get_target_type(self, obj):
+        if isinstance(obj, Preprint):
+            return 'preprints'
+        elif isinstance(obj, DraftNode):
+            return 'draft_nodes'
+        elif isinstance(obj, Registration):
+            return 'registrations'
+        elif isinstance(obj, Node):
+            return 'nodes'
+        else:
+            raise NotImplementedError()
 
     class Meta:
         type_ = 'files'
