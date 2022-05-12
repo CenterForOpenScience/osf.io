@@ -1422,6 +1422,10 @@ class TestFileViews(StorageTestCase):
             assert not mock_ember.called
             res.follow()
             assert mock_ember.called
+            args, kwargs = mock_ember.call_args
+
+            assert args[0] == EXTERNAL_EMBER_APPS['ember_osf_web']['server']
+            assert args[1] == EXTERNAL_EMBER_APPS['ember_osf_web']['path'].rstrip('/')
 
     def test_download_file(self):
         file = create_test_file(target=self.node, user=self.user)
