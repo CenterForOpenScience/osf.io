@@ -138,7 +138,6 @@ from osf.models import (
     AbstractNode,
     OSFUser,
     Node,
-    Preprint,
     PrivateLink,
     Institution,
     Comment,
@@ -151,7 +150,7 @@ from osf.models import (
     File,
     Folder,
 )
-from addons.osfstorage.models import Region
+from addons.osfstorage.models import Region, OsfStorageFileNode
 from osf.utils.permissions import ADMIN, WRITE_NODE
 from website import mails, settings
 
@@ -1121,6 +1120,9 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             return OsfStorageFileSerializer
         return FileSerializer
 
+    def get_resource(self):
+        return get_object_or_error(AbstractNode, self.kwargs['node_id'], self.request)
+
     # overrides FilterMixin
     def postprocess_query_param(self, key, field_name, operation):
         # tag queries will usually be on Tag.name,
@@ -1152,13 +1154,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             ]
 
     def get_default_queryset(self):
-        if self.kwargs.get('node_id'):
-            resource = get_object_or_error(AbstractNode, self.kwargs['node_id'], self.request)
-        elif self.kwargs.get('preprint_id'):
-            resource = get_object_or_error(Preprint, self.kwargs['preprint_id'], self.request)
-        else:
-            raise NotImplementedError()
-
+        resource = self.get_resource()
         path = self.kwargs[self.path_lookup_url_kwarg]
         provider = self.kwargs[self.provider_lookup_url_kwarg]
         folder_object = self.get_file_object(resource, path, provider)
@@ -1181,11 +1177,11 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
         # query param info when used on a folder gives that folder's metadata instead of the metadata of it's children
         if 'info' in self.request.query_params and path.endswith('/'):
-            resource = self.get_resource(check_object_permissions=False)
+            resource = self.get_resource()
             file_obj = self.get_file_object(resource, path, provider)
 
             if provider == 'osfstorage':
-                queryset = BaseFileNode.objects.filter(id=file_obj.id)
+                queryset = OsfStorageFileNode.objects.filter(id=file_obj.id)
             else:
                 base_class = BaseFileNode.resolve_class(provider, BaseFileNode.FOLDER)
                 queryset = base_class.objects.filter(

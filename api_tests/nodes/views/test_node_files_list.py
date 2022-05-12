@@ -615,7 +615,7 @@ class TestNodeFilesListPagination(ApiTestCase):
             oauth_settings._id: []}
         addon.user_settings.save()
 
-    def check_file_order(self, resp, key, compare_func, ascending=False):
+    def check_file_order(self, resp, attribute, key, ascending=False):
         files = resp.json['data']
         if ascending:
             files.reverse()
@@ -623,7 +623,7 @@ class TestNodeFilesListPagination(ApiTestCase):
         previous_file_field_value = None
         for file in files:
             if file['attributes'][key] is not None:
-                file_field_value = compare_func(file['attributes'][key])
+                file_field_value = key(file['attributes'][attribute])
                 if previous_file_field_value:
                     assert file_field_value > previous_file_field_value, 'Files were not in order'
                 previous_file_field_value = file_field_value
@@ -663,18 +663,18 @@ class TestNodeFilesListPagination(ApiTestCase):
         url = '/{}nodes/{}/files/github/?page[size]=100'.format(
             API_BASE, self.project._id)
         res = self.app.get(url, auth=self.user.auth)
-        self.check_file_order(res, 'name', compare_func=int)
+        self.check_file_order(res, 'name', key=int)
 
     @responses.activate
     def test_node_files_are_sorted_correctly_date_modified(self):
         prepare_mock_wb_response(
             node=self.project, provider='github',
             files=[
-                {'name': '01', 'path': '/01', 'materialized': '/01', 'kind': 'file', 'modified': '2022-05-08T21:01:52.000Z'},
-                {'name': '02', 'path': '/02', 'materialized': '/02', 'kind': 'file', 'modified': '2021-05-08T21:01:52.000Z'},
-                {'name': '03', 'path': '/03', 'materialized': '/03', 'kind': 'file', 'modified': '2020-05-08T21:01:52.000Z'},
-                {'name': '04', 'path': '/04', 'materialized': '/04', 'kind': 'file', 'modified': '2023-05-08T21:01:52.000Z'},
-                {'name': '05', 'path': '/05', 'materialized': '/05', 'kind': 'file', 'modified': '2024-05-08T21:01:52.000Z'},
+                {'name': '01', 'path': '/01', 'materialized': '/01', 'kind': 'file', 'modified': '2022-05-08T21:01:52.001Z'},
+                {'name': '02', 'path': '/02', 'materialized': '/02', 'kind': 'file', 'modified': '2021-05-08T21:01:52.020Z'},
+                {'name': '03', 'path': '/03', 'materialized': '/03', 'kind': 'file', 'modified': '2020-05-08T21:01:52.300Z'},
+                {'name': '04', 'path': '/04', 'materialized': '/04', 'kind': 'file', 'modified': '2023-05-08T21:01:52.020Z'},
+                {'name': '05', 'path': '/05', 'materialized': '/05', 'kind': 'file', 'modified': '2024-05-08T21:01:52.001Z'},
                 {'name': '06', 'path': '/06', 'materialized': '/06', 'kind': 'file', 'modified': '2025-05-08T21:01:52.000Z'},
                 {'name': '07', 'path': '/07/', 'materialized': '/07/', 'kind': 'folder'},
                 {'name': '01', 'path': '/01/', 'materialized': '/01/', 'kind': 'folder'},
@@ -684,11 +684,11 @@ class TestNodeFilesListPagination(ApiTestCase):
 
         url = f'/{API_BASE}nodes/{self.project._id}/files/github/?sort=date_modified'
         res = self.app.get(url, auth=self.user.auth)
-        self.check_file_order(res, 'date_modified', compare_func=parse_date)
+        self.check_file_order(res, 'date_modified', key=parse_date)
 
         url = f'/{API_BASE}nodes/{self.project._id}/files/github/?sort=-date_modified'
         res = self.app.get(url, auth=self.user.auth)
-        self.check_file_order(res, 'date_modified', compare_func=parse_date, ascending=True)
+        self.check_file_order(res, 'date_modified', key=parse_date, ascending=True)
 
 
 class TestNodeStorageProviderDetail(ApiTestCase):
