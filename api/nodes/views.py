@@ -1,5 +1,4 @@
 import re
-import pytz
 
 from distutils.version import StrictVersion
 from django.apps import apps

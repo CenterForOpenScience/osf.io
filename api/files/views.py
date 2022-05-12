@@ -1,5 +1,4 @@
 import io
-import pytz
 
 from django.db.models import Max
 from django.http import FileResponse
