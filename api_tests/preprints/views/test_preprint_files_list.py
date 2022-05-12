@@ -12,7 +12,7 @@ from osf_tests.factories import (
 from osf.utils.permissions import WRITE
 from osf.utils.workflows import DefaultStates
 from addons.osfstorage.models import OsfStorageFile
-
+from website import settings
 
 class TestPreprintProvidersList(ApiTestCase):
     def setUp(self):
@@ -175,6 +175,10 @@ class TestPreprintProvidersList(ApiTestCase):
         assert_equal(data['attributes']['preprint'], self.preprint._id)
         assert_equal(data['attributes']['path'], '/')
         assert_equal(data['attributes']['node'], None)
+        assert_equal(
+            data['relationships']['target']['links']['related']['href'],
+            f'{settings.API_DOMAIN}v2/preprints/{self.preprint._id}/'
+        )
 
     def test_osfstorage_file_data_not_found(self):
         res = self.app.get(
