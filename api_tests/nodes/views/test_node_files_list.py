@@ -622,7 +622,7 @@ class TestNodeFilesListPagination(ApiTestCase):
 
         previous_file_field_value = None
         for file in files:
-            if file['attributes'][key] is not None:
+            if file['attributes'][attribute] is not None:
                 file_field_value = key(file['attributes'][attribute])
                 if previous_file_field_value:
                     assert file_field_value > previous_file_field_value, 'Files were not in order'
