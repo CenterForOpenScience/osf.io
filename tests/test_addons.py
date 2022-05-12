@@ -17,8 +17,12 @@ from framework.exceptions import HTTPError
 from nose.tools import *  # noqa
 from tests.base import OsfTestCase, get_default_metaschema
 from api_tests.utils import create_test_file
-from osf_tests.factories import (AuthUserFactory, ProjectFactory,
-                             RegistrationFactory, DraftRegistrationFactory,)
+from osf_tests.factories import (
+    AuthUserFactory,
+    ProjectFactory,
+    RegistrationFactory,
+    DraftRegistrationFactory,
+)
 from website import settings
 from addons.base import views
 from addons.github.exceptions import ApiError
@@ -27,7 +31,7 @@ from addons.github.tests.factories import GitHubAccountFactory
 from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder, OsfStorageFile
 from addons.osfstorage.tests.factories import FileVersionFactory
 from osf import features
-from osf.models import Session, QuickFilesNode
+from osf.models import Session
 from osf.models import files as file_models
 from osf.models.files import BaseFileNode, TrashedFileNode
 from osf.utils.permissions import WRITE, READ
@@ -40,19 +44,11 @@ from addons.osfstorage import settings as osfstorage_settings
 from api.caching.utils import storage_usage_cache
 from dateutil.parser import parse as parse_date
 from framework import sentry
+from api.base.settings.defaults import API_BASE
+from tests.json_api_test_app import JSONAPITestApp
 from website.settings import EXTERNAL_EMBER_APPS
 from waffle.testutils import override_flag
 
-
-class SetEnvironMiddleware(object):
-
-    def __init__(self, app, **kwargs):
-        self.app = app
-        self.kwargs = kwargs
-
-    def __call__(self, environ, start_response):
-        environ.update(self.kwargs)
-        return self.app(environ, start_response)
 
 
 class TestAddonAuth(OsfTestCase):
@@ -163,7 +159,7 @@ class TestAddonAuth(OsfTestCase):
         res = self.app.get(url, headers={'Authorization': 'Bearer invalid_access_token'}, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    def test_action_downloads_marks_version_as_seen(self):
+    def test_action_render_marks_version_as_seen(self):
         noncontrib = AuthUserFactory()
         node = ProjectFactory(is_public=True)
         test_file = create_test_file(node, self.user)
@@ -227,6 +223,62 @@ class TestAddonAuth(OsfTestCase):
         test_file.reload()
         assert_equal(test_file.get_view_count(), 1)
         assert_equal(node.logs.count(), nlogs) # don't log views
+
+    def test_current_user_has_viewed_public(self):
+        node = ProjectFactory(is_public=True)
+        file = create_test_file(node, node.creator, create_guid=False)
+        django_app = JSONAPITestApp()
+
+        file_viewer = AuthUserFactory()
+
+        res = django_app.get(f'/{API_BASE}files/{file._id}/', auth=file_viewer.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['current_user_has_viewed'] is False
+
+        # This mocks the Waterbutler callback endpoint (`get_auth` function in addons/base/views.py ) which indicates if
+        # a file has been view with the MFR.
+        self.app.get(
+            self.build_url(
+                nid=node._id,
+                provider='osfstorage',
+                path=file.path,
+                version=1
+            ),
+            auth=file_viewer.auth
+        )
+
+        res = django_app.get(f'/{API_BASE}files/{file._id}/', auth=file_viewer.auth)
+
+        version = file.versions.get()
+        assert version.seen_by.exists()
+        assert res.json['data']['attributes']['current_user_has_viewed']
+
+    def test_current_user_has_viewed_private(self):
+        node = ProjectFactory()
+        file = create_test_file(node, node.creator, create_guid=False)
+        django_app = JSONAPITestApp()
+
+        res = django_app.get(f'/{API_BASE}files/{file._id}/', auth=node.creator.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['current_user_has_viewed'] is False
+
+        # This mocks the Waterbutler callback endpoint (`get_auth` function in addons/base/views.py ) which indicates if
+        # a file has been view with the MFR.
+        self.app.get(
+            self.build_url(
+                nid=node._id,
+                provider='osfstorage',
+                path=file.path,
+                version=1
+            ),
+            auth=node.creator.auth
+        )
+
+        res = django_app.get(f'/{API_BASE}files/{file._id}/', auth=node.creator.auth)
+
+        version = file.versions.get()
+        assert version.seen_by.exists()
+        assert res.json['data']['attributes']['current_user_has_viewed']
 
 
 class TestAddonLogs(OsfTestCase):
