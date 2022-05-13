@@ -313,6 +313,8 @@ def resolve_guid(guid, suffix=None):
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
     # Stream to ember app if resource has emberized view
+    addon_paths = [f'files/{addon.short_name}' for addon in settings.ADDONS_AVAILABLE_DICT.values() if 'storage' in addon.categories] + ['files']
+
     if isinstance(resource, Preprint):
         if resource.provider.domain_redirect_enabled:
             return redirect(resource.absolute_url, http_status.HTTP_301_MOVED_PERMANENTLY)
@@ -324,8 +326,13 @@ def resolve_guid(guid, suffix=None):
     elif isinstance(resource, Registration) and suffix and suffix.rstrip('/').lower() in ('files', 'files/osfstorage') and waffle.flag_is_active(request, features.EMBER_REGISTRATION_FILES):
         return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
 
+    elif isinstance(resource, Node) and suffix and any(path.startswith(suffix.rstrip('/').lower()) for path in addon_paths) and waffle.flag_is_active(request, features.EMBER_PROJECT_FILES):
+        return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
+
     elif isinstance(resource, BaseFileNode) and resource.is_file and not isinstance(resource.target, Preprint):
         if isinstance(resource.target, Registration) and waffle.flag_is_active(request, features.EMBER_FILE_REGISTRATION_DETAIL):
+            return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
+        if isinstance(resource.target, Node) and waffle.flag_is_active(request, features.EMBER_FILE_PROJECT_DETAIL):
             return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
 
     # Redirect to legacy endpoint for Nodes, Wikis etc.

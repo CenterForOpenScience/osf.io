@@ -1417,7 +1417,10 @@ class TestFileViews(StorageTestCase):
             file = create_test_file(target=self.node, user=self.user)
             url = self.node.web_url_for('addon_view_or_download_file', path=file._id, provider=file.provider)
             res = self.app.get(url, auth=self.user.auth)
-            assert res.status_code == 200
+            assert res.status_code == 302
+            assert res.headers['Location'] == f'{settings.DOMAIN}{file.get_guid()._id}/'
+            assert not mock_ember.called
+            res.follow()
             assert mock_ember.called
             args, kwargs = mock_ember.call_args
 
