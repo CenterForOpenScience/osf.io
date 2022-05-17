@@ -53,6 +53,7 @@ class DataCiteClient(AbstractIdentifierClient):
             ],
         })
 
+        date_created = node.created.date() if not node.type == 'osf.registration' else node.date_registered.date()
         data = {
             'identifiers': [
                 {
@@ -74,7 +75,7 @@ class DataCiteClient(AbstractIdentifierClient):
             'schemaVersion': 'http://datacite.org/schema/kernel-4',
             'dates': [
                 {
-                    'date': str(node.created.date()),
+                    'date': str(date_created),
                     'dateType': 'Created'
                 },
                 {
