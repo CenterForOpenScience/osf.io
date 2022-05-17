@@ -80,15 +80,17 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
     is_deleted = models.BooleanField(default=False, db_index=True)
     deleted = NonNaiveDateTimeField(null=True, blank=True)
     deactivated = NonNaiveDateTimeField(null=True, blank=True)
-    ror_domain = models.URLField(
+    ror_uri = models.URLField(
         max_length=500,
         null=True,
         blank=True,
+        help_text='The full URI for the this institutions ROR.'
     )
     identifier_domain = models.URLField(
         max_length=500,
         null=True,
         blank=True,
+        help_text='The full domain this institutions that will appear in DOI metadata.'
     )
 
     class Meta:

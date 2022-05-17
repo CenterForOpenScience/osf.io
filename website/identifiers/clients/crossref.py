@@ -185,17 +185,16 @@ class CrossRefClient(AbstractIdentifierClient):
             person.append(element.surname(name_parts['surname']))
             if name_parts.get('suffix'):
                 person.append(element.suffix(remove_control_characters(name_parts['suffix'])))
-
             affiliations = [
                 element.institution(
                     element.institution_name(institution.name),
                     element.institution_id(
-                        institution.ror,
+                        institution.ror_uri,
                         type='ror'
                     ),
-                ) for institution in contributor.affiliated_institutions.all()
+                ) for institution in contributor.affiliated_institutions.all() if institution.ror_uri
             ]
-
+            print(affiliations)
             person.append(element.affiliations(*affiliations))
 
             if contributor.external_identity.get('ORCID'):
