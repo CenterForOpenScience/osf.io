@@ -16,7 +16,8 @@ from osf_tests.factories import (
     ProjectFactory,
     PreprintFactory,
     PreprintProviderFactory,
-    AuthUserFactory
+    AuthUserFactory,
+    InstitutionFactory
 )
 from framework.flask import rm_handlers
 from framework.auth.core import Auth
@@ -286,3 +287,16 @@ class TestCrossRefClient:
         xml_without_relation = crossref_client.build_metadata(preprint, include_relation=False)
         root_without_relation = lxml.etree.fromstring(xml_without_relation)
         assert root_without_relation.find('.//{%s}intra_work_relation' % crossref.CROSSREF_RELATIONS) is None
+
+    def test_metadata_for_affiliated_institutions(self, crossref_client, preprint):
+        institution = InstitutionFactory()
+        institution.ror_uri = 'http://ror.org/WHATisITgoodFOR/'
+        institution.save()
+        preprint.creator.affiliated_institutions.add(institution)
+        preprint.creator.save()
+
+        crossref_xml = crossref_client.build_metadata(preprint)
+        root = lxml.etree.fromstring(crossref_xml)
+        contributors = root.find('.//{%s}contributors' % crossref.CROSSREF_NAMESPACE)
+        assert contributors.find('.//{%s}institution_name' % crossref.CROSSREF_NAMESPACE).text == institution.name
+        assert contributors.find('.//{%s}institution_id' % crossref.CROSSREF_NAMESPACE).text == institution.ror_uri

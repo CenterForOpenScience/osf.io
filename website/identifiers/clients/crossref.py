@@ -205,11 +205,6 @@ class CrossRefClient(AbstractIdentifierClient):
                         element.ORCID(f'https://orcid.org/{orcid}', authenticated='true')
                     )
 
-            social_orcid = contributor.social.get('orcid')
-            if social_orcid:
-                person.append(
-                    element.ORCID(f'https://orcid.org/{social_orcid}', authenticated='false')
-                )
             contributors.append(person)
 
         return contributors
