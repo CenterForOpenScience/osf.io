@@ -70,11 +70,13 @@ class TestFileSerializer:
 
         # test_date_modified_formats_to_old_format
         req = make_drf_request_with_version(version='2.0')
+        file_one.date_modified = modified_tz_aware  # date_modified is past into the serializer via view logic
         data = FileSerializer(file_one, context={'request': req}).data['data']
-        assert modified_tz_aware == data['attributes']['date_modified']
+        assert modified_tz_aware.strftime('%Y-%m-%dT%H:%M:%S.%f') == data['attributes']['date_modified']
 
         # test_date_modified_formats_to_new_format
         req = make_drf_request_with_version(version='2.2')
+        file_one.date_modified = modified_tz_aware  # date_modified is past into the serializer via view logic
         data = FileSerializer(file_one, context={'request': req}).data['data']
         assert datetime.strftime(
             modified, new_format
