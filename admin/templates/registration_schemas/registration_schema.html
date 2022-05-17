@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load node_extras %}
+{% block title %}
+    <title>Schema Responses</title>
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+        <ul class="messages">
+            {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="btn-group" role="group">
+                    <a href="{% url 'registration_schemas:list' %}" class="btn btn-primary"> All Registration Schemas</a>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <h3>Registration Schema Details</h3>
+        </div>
+        <div class="row padded">
+            <div class="col-md-12">
+                <form style="display: inline;" method="post" action="{% url 'registration_schemas:detail' registration_schema_id=registration_schema.id %}">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <input class="btn btn-success" type="submit" value="Create New Schema or Schema Version" />
+
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
