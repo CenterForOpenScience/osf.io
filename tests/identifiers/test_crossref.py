@@ -255,8 +255,8 @@ class TestCrossRefClient:
         root = lxml.etree.fromstring(crossref_xml)
         contributors = root.find('.//{%s}contributors' % crossref.CROSSREF_NAMESPACE)
 
-        assert contributors.find('.//{%s}ORCID' % crossref.CROSSREF_NAMESPACE).text == 'https://orcid.org/{}'.format(ORCID)
-        assert contributors.find('.//{%s}ORCID' % crossref.CROSSREF_NAMESPACE).attrib == {'authenticated': 'false'}
+        # Do not send unverified ORCID to crossref
+        assert contributors.find('.//{%s}ORCID' % crossref.CROSSREF_NAMESPACE) is None
 
     def test_metadata_none_license_update(self, crossref_client, preprint):
         crossref_xml = crossref_client.build_metadata(preprint)

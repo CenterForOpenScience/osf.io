@@ -194,16 +194,13 @@ class CrossRefClient(AbstractIdentifierClient):
                     ),
                 ) for institution in contributor.affiliated_institutions.all() if institution.ror_uri
             ]
-            print(affiliations)
             person.append(element.affiliations(*affiliations))
 
-            if contributor.external_identity.get('ORCID'):
-                orcid = list(contributor.external_identity['ORCID'].keys())[0]
-                verified = list(contributor.external_identity['ORCID'].values())[0] == 'VERIFIED'
-                if orcid and verified:
-                    person.append(
-                        element.ORCID(f'https://orcid.org/{orcid}', authenticated='true')
-                    )
+            orcid = contributor.get_verified_external_id('ORCID', verified_only=True)
+            if orcid:
+                person.append(
+                    element.ORCID(f'https://orcid.org/{orcid}', authenticated='true')
+                )
 
             contributors.append(person)
 
