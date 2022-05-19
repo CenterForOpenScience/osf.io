@@ -23,14 +23,6 @@ DATACITE_RESOURCE_TYPE_MAP = {
 }
 
 
-def get_verified_external_id(self, external_service, verified_only=False):
-    identifier_info = self.external_identity.get(external_service, {})
-    for external_id, status in identifier_info.items():
-        if status and status == 'VERIFIED' or not verified_only:
-            return external_id
-    return None
-
-
 def datacite_format_name_identifiers(user):
     data = {
         'nameIdentifiers': [
@@ -40,7 +32,7 @@ def datacite_format_name_identifiers(user):
             }
         ]
     }
-    orcid = get_verified_external_id('ORCID')
+    orcid = user.get_verified_external_id('ORCID', verified_only=True)
     if orcid:
         data['nameIdentifiers'].append({
             'nameIdentifier': orcid,
