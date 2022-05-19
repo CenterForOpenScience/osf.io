@@ -121,10 +121,6 @@ class RegistrationSchemaDeleteView(DeleteView, PermissionRequiredMixin):
         return RegistrationSchema.objects.get(id=self.kwargs['registration_schema_id'])
 
     def delete(self, request, *args, **kwargs):
-        """
-        Call the delete() method on the fetched object and then redirect to the
-        success URL.
-        """
         ret = super().delete(request, *args, **kwargs)
         messages.success(request, 'Schema deleted!')
         return ret

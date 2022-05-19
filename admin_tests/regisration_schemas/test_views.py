@@ -145,6 +145,7 @@ class TestCreateRegistrationSchema:
 
 
 @pytest.mark.django_db
+@pytest.mark.urls('admin.base.urls')
 class TestDeleteRegistrationSchema:
 
     @pytest.fixture()
@@ -161,11 +162,18 @@ class TestDeleteRegistrationSchema:
             visible=False
         )
     @pytest.fixture()
-    def view(self, req, provider):
-        view = views.RegistrationSchemaDetailView()
+    def view(self, req, registration_schema):
+        view = views.RegistrationSchemaDeleteView()
         view = setup_view(view, req)
-        view.kwargs = {'registration_schema_id': provider.id}
+        view.kwargs = {'registration_schema_id': registration_schema.id}
         return view
 
-    def test_registration_schema_delete(self, view, registration_schema):
-        pass
+    def test_registration_schema_delete(self, req, view, registration_schema):
+        # django.contrib.messages has a bug which effects unittests
+        # more info here -> https://code.djangoproject.com/ticket/17971
+        setattr(req, 'session', 'session')
+        messages = FallbackStorage(req)
+        setattr(req, '_messages', messages)
+
+        view.delete(req)
+        assert not RegistrationSchema.objects.filter(id=registration_schema.id)
