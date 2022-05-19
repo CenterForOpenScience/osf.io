@@ -6,6 +6,8 @@ from django.views.generic import ListView, TemplateView, FormView, DeleteView
 from admin.registration_schemas.forms import RegistrationSchemaCreateForm, RegistrationSchemaEditForm
 from django.contrib import messages
 from django.core.urlresolvers import reverse_lazy
+from django.db.models import Max
+
 from osf.utils.migrations import map_schemas_to_schemablocks
 
 class RegistrationSchemaDetailView(FormView, PermissionRequiredMixin, TemplateView):
@@ -17,13 +19,9 @@ class RegistrationSchemaDetailView(FormView, PermissionRequiredMixin, TemplateVi
     form_class = RegistrationSchemaEditForm
 
     def get_object(self):
-        registration_schema = RegistrationSchema.objects.get(
+        return RegistrationSchema.objects.get(
             id=self.kwargs['registration_schema_id']
         )
-
-        # django admin templates don't like attributes with underscores for some reason
-        registration_schema.guid = registration_schema._id
-        return registration_schema
 
     def get_context_data(self, *args, **kwargs):
         registration_schema = self.get_object()
@@ -59,15 +57,17 @@ class RegistrationSchemaCreateView(FormView, PermissionRequiredMixin):
     form_class = RegistrationSchemaCreateForm
 
     def form_valid(self, form):
-        latest_version = RegistrationSchema.objects.get_latest_version(form.data['name']) or 1
+        latest_version = RegistrationSchema.objects.filter(
+            name=form.data['name']
+        ).aggregate(latest_version=Max('schema_version'))['latest_version'] or 0
 
         blocks = self.csv_to_blocks(form.files['schema'])
         registration_schema = RegistrationSchema.objects.create(
             name=form.data['name'],
             schema={
-                "atomicSchema": True,
-                "version": latest_version + 1,
-                "blocks": blocks,
+                'atomicSchema': True,
+                'version': latest_version + 1,
+                'blocks': blocks,
             },
             active=False,
             visible=False,
@@ -142,4 +142,3 @@ class RegistrationSchemaListView(PermissionRequiredMixin, ListView):
 
     def get_context_data(self, *, object_list=None, **kwargs):
         return {'registration_schemas': self.get_queryset()}
-
