@@ -8,6 +8,8 @@
             <tr>
                 <th>Name</th>
                 <th>Version</th>
+                <th>Active (This determines if the schema can be used)</th>
+                <th>Visible (This determines if the schema is listed in our list of schemas)</th>
                 <th>Modified Date</th>
             </tr>
         </thead>
@@ -19,6 +21,12 @@
                 </td>
                 <td>
                     {{ registration_schema.schema_version }}
+                </td>
+                <td>
+                    {{ registration_schema.active }}
+                </td>
+                <td>
+                    {{ registration_schema.visible }}
                 </td>
                 <td>
                     {{ registration_schema.modified }}
