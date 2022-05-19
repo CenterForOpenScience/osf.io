@@ -13,7 +13,7 @@ from django.apps import apps
 from django.db import connection
 from django.db.migrations.operations.base import Operation
 
-from osf.models.base import generate_object_id
+from osf.utils.ids import generate_object_id
 from osf.utils.sanitize import strip_html, unescape_entities
 from website import settings
 from website.project.metadata.schemas import get_osf_meta_schemas

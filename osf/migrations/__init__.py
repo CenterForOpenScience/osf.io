@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 from django.db.utils import ProgrammingError
+from osf.utils.migrations import ensure_schemas, map_schemas_to_schemablocks
 
 logger = logging.getLogger(__file__)
 
@@ -118,3 +119,8 @@ def update_permission_groups(sender, verbosity=0, **kwargs):
     if getattr(sender, 'label', None) == 'osf':
         update_admin_permissions(verbosity)
         update_provider_auth_groups(verbosity)
+
+def add_registration_schemas(sender, verbosity=0, **kwargs):
+    if getattr(sender, 'label', None) == 'osf':
+        ensure_schemas()
+        map_schemas_to_schemablocks()
