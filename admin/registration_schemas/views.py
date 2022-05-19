@@ -2,10 +2,9 @@ import csv
 import codecs
 from osf.models import RegistrationSchema
 from django.contrib.auth.mixins import PermissionRequiredMixin
-from django.views.generic import ListView, TemplateView, FormView
+from django.views.generic import ListView, TemplateView, FormView, DeleteView
 from admin.registration_schemas.forms import RegistrationSchemaCreateForm, RegistrationSchemaEditForm
 from django.contrib import messages
-from django.shortcuts import redirect
 from django.core.urlresolvers import reverse_lazy
 from osf.utils.migrations import map_schemas_to_schemablocks
 
@@ -47,10 +46,8 @@ class RegistrationSchemaDetailView(FormView, PermissionRequiredMixin, TemplateVi
         registration_schema.save()
         return super().form_valid(form)
 
-
     def get_success_url(self, *args, **kwargs):
         return reverse_lazy('registration_schemas:detail', kwargs={'registration_schema_id': self.get_object().id})
-
 
 
 class RegistrationSchemaCreateView(FormView, PermissionRequiredMixin):
@@ -74,11 +71,16 @@ class RegistrationSchemaCreateView(FormView, PermissionRequiredMixin):
             },
             active=False,
             visible=False,
-            schema_version=latest_version + 1
+            schema_version=latest_version + 1,
         )
         map_schemas_to_schemablocks()
 
-        self.object = registration_schema
+        self.success_url = reverse_lazy(
+            'registration_schemas:detail',
+            kwargs={
+                'registration_schema_id': registration_schema.id,
+            }
+        )
         messages.success(
             self.request,
             f'{registration_schema.name} ({registration_schema.schema_version}) created with '
@@ -87,11 +89,8 @@ class RegistrationSchemaCreateView(FormView, PermissionRequiredMixin):
 
         return super().form_valid(form)
 
-    def get_success_url(self, *args, **kwargs):
-        return reverse_lazy('registration_schemas:detail',  kwargs={'registration_schema_id': self.object.id})
-
     def csv_to_blocks(self, file):
-        rows = [row for row in csv.DictReader(codecs.iterdecode(file.file, 'utf-8-sig'), delimiter=",")]
+        rows = [row for row in csv.DictReader(codecs.iterdecode(file.file, 'utf-8-sig'), delimiter=',')]
 
         blocks = []
         for row in rows:
@@ -109,6 +108,28 @@ class RegistrationSchemaCreateView(FormView, PermissionRequiredMixin):
         return blocks
 
 
+class RegistrationSchemaDeleteView(DeleteView, PermissionRequiredMixin):
+    """
+    """
+    permission_required = 'osf.change_registrationschema'
+    raise_exception = True
+    form_class = RegistrationSchemaCreateForm
+    success_url = reverse_lazy('registration_schemas:list')
+    model = RegistrationSchema
+
+    def get_object(self, queryset=None):
+        return RegistrationSchema.objects.get(id=self.kwargs['registration_schema_id'])
+
+    def delete(self, request, *args, **kwargs):
+        """
+        Call the delete() method on the fetched object and then redirect to the
+        success URL.
+        """
+        ret = super().delete(request, *args, **kwargs)
+        messages.success(request, 'Schema deleted!')
+        return ret
+
+
 class RegistrationSchemaListView(PermissionRequiredMixin, ListView):
     """
     """
@@ -117,7 +138,7 @@ class RegistrationSchemaListView(PermissionRequiredMixin, ListView):
     raise_exception = True
 
     def get_queryset(self):
-        return RegistrationSchema.objects.all().order_by('name')
+        return RegistrationSchema.objects.all().order_by('name', 'schema_version')
 
     def get_context_data(self, *, object_list=None, **kwargs):
         return {'registration_schemas': self.get_queryset()}
