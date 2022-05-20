@@ -28,6 +28,8 @@ def get_default_binderhubs(allow_secrets=False):
         'jupyterhub_oauth_token_url': jupyterhub_oauth['token_url'],
         'jupyterhub_oauth_scope': jupyterhub_oauth['scope'],
         'jupyterhub_api_url': jupyterhub_oauth['api_url'],
+        'jupyterhub_max_servers': jupyterhub_oauth['max_servers'] if 'max_servers' in jupyterhub_oauth else None,
+        'jupyterhub_logout_url': jupyterhub_oauth['logout_url'] if 'logout_url' in jupyterhub_oauth else None,
     }
     if not allow_secrets:
         return [binderhub]

@@ -18,173 +18,190 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.5.1\n"
 
-#: addons/jupyterhub/static/files.js:93
+#: addons/jupyterhub/static/files.js:96
 msgid "Launch"
 msgstr "起動"
 
-#: addons/metadata/static/files.js:237
+#: addons/metadata/static/files.js:279
 msgid "Data Schema:"
 msgstr "データスキーマ:"
 
-#: addons/metadata/static/files.js:317
+#: addons/metadata/static/files.js:382
 msgid "Paste from Clipboard"
 msgstr "クリップボードから貼り付け"
 
-#: addons/metadata/static/files.js:339 addons/metadata/static/files.js:353
+#: addons/metadata/static/files.js:407 addons/metadata/static/files.js:421
+#: website/static/js/fangorn.js:1516
 msgid "Could not copy text"
 msgstr "テキストをコピーできませんでした"
 
-#: addons/metadata/static/files.js:351 website/static/js/clipboard.js:27
-#: website/static/js/fangorn.js:1493
+#: addons/metadata/static/files.js:419 website/static/js/clipboard.js:27
+#: website/static/js/fangorn.js:1510 website/static/js/fangorn.js:1514
 msgid "Copied!"
 msgstr "コピーされました！"
 
-#: addons/metadata/static/files.js:368 addons/metadata/static/files.js:381
-#: addons/metadata/static/files.js:388
+#: addons/metadata/static/files.js:436 addons/metadata/static/files.js:449
+#: addons/metadata/static/files.js:456
 msgid "Could not paste text"
 msgstr "テキストを貼り付けできませんでした"
 
-#: addons/metadata/static/files.js:435 addons/metadata/static/files.js:449
-#: addons/metadata/static/files.js:774
+#: addons/metadata/static/files.js:505 addons/metadata/static/files.js:519
+#: addons/metadata/static/files.js:857
 msgid "Loading..."
 msgstr "読み込み中..."
 
-#: addons/metadata/static/files.js:447
+#: addons/metadata/static/files.js:517
 msgid "Select the destination of the file metadata."
 msgstr "ファイルメタデータの移動先を選択してください。"
 
-#: addons/metadata/static/files.js:452
+#: addons/metadata/static/files.js:522
 msgid "Current Metadata:"
 msgstr "現在のメタデータ:"
 
-#: addons/metadata/static/files.js:509
+#: addons/metadata/static/files.js:579
 msgid "Delete metadata"
 msgstr "メタデータを削除"
 
-#: addons/metadata/static/files.js:512
+#: addons/metadata/static/files.js:582
 msgid "Could not list hashes"
 msgstr "ハッシュ情報の一覧を取得できませんでした"
 
-#: addons/metadata/static/files.js:520
+#: addons/metadata/static/files.js:590
+#: addons/metadata/static/metadata-fields.js:316
+#: addons/metadata/static/metadata-fields.js:321
 msgid "Could not list files"
 msgstr "ファイルの一覧を取得できませんでした"
 
-#: addons/metadata/static/files.js:601 addons/metadata/static/files.js:608
+#: addons/metadata/static/files.js:673 addons/metadata/static/files.js:680
 msgid "No name"
 msgstr "名称未設定"
 
-#: addons/metadata/static/files.js:751
-msgid "There are errors in some fields."
-msgstr "いくつかのフィールドにエラーがあります。"
+#: addons/metadata/static/files.js:743
+msgid ""
+"There is no draft metadata compliant with the schema. Create new draft "
+"metadata from the Metadata tab:"
+msgstr "スキーマに対応するメタデータがありません。メタデータ タブから新規メタデータを作成してください:"
 
-#: addons/metadata/static/files.js:785 addons/metadata/static/files.js:1313
-#: addons/metadata/static/files.js:1338 website/static/js/folderpicker.js:105
-msgid "Select"
-msgstr "選択"
-
-#: addons/metadata/static/files.js:789
-msgid "Select the destination draft for the file metadata."
-msgstr "ファイルメタデータの送信先を選択してください。"
-
-#: addons/metadata/static/files.js:810
-msgid "Registering..."
-msgstr "登録中..."
-
-#: addons/metadata/static/files.js:810
-msgid "Deleting..."
-msgstr "削除中..."
-
-#: addons/metadata/static/files.js:818
+#: addons/metadata/static/files.js:745 addons/metadata/static/files.js:901
 msgid "Open"
 msgstr "開く"
 
-#: addons/metadata/static/files.js:848 addons/metadata/static/files.js:1246
-#: addons/metadata/static/files.js:1290 addons/metadata/static/files.js:1311
-#: addons/metadata/static/files.js:1336
-#: website/static/js/accountSettings.js:226 website/static/js/fangorn.js:2298
+#: addons/metadata/static/files.js:834
+msgid "There are errors in some fields."
+msgstr "いくつかのフィールドにエラーがあります。"
+
+#: addons/metadata/static/files.js:868 addons/metadata/static/files.js:1417
+#: addons/metadata/static/files.js:1442 website/static/js/folderpicker.js:105
+msgid "Select"
+msgstr "選択"
+
+#: addons/metadata/static/files.js:872
+msgid "Select the destination draft for the file metadata."
+msgstr "ファイルメタデータの送信先を選択してください。"
+
+#: addons/metadata/static/files.js:893
+msgid "Registering..."
+msgstr "登録中..."
+
+#: addons/metadata/static/files.js:893
+msgid "Deleting..."
+msgstr "削除中..."
+
+#: addons/metadata/static/files.js:933 addons/metadata/static/files.js:1350
+#: addons/metadata/static/files.js:1394 addons/metadata/static/files.js:1415
+#: addons/metadata/static/files.js:1440
+#: website/static/js/accountSettings.js:259 website/static/js/fangorn.js:2326
 #: website/static/js/folderPickerNodeConfig.js:591
 #: website/static/js/pages/profile-settings-addons-page.js:72
 #: website/static/js/pages/project-settings-page.js:118
 msgid "Close"
 msgstr "閉じる"
 
-#: addons/metadata/static/files.js:885 addons/metadata/static/files.js:1263
+#: addons/metadata/static/files.js:979 addons/metadata/static/files.js:1367
 msgid "Edit Metadata"
 msgstr "メタデータ編集"
 
-#: addons/metadata/static/files.js:894
+#: addons/metadata/static/files.js:988
 msgid "Register Metadata"
 msgstr "メタデータ登録"
 
-#: addons/metadata/static/files.js:902 addons/metadata/static/files.js:1298
+#: addons/metadata/static/files.js:996 addons/metadata/static/files.js:1402
 msgid "Delete Metadata"
 msgstr "メタデータ削除"
 
-#: addons/metadata/static/files.js:1032
+#: addons/metadata/static/files.js:1132
 msgid "Some of the children have metadata."
 msgstr "いくつかの子ファイルにメタデータが定義されています。"
 
-#: addons/metadata/static/files.js:1041
+#: addons/metadata/static/files.js:1141
 msgid "File not found: "
 msgstr "ファイルが見つかりません:"
 
-#: addons/metadata/static/files.js:1055
+#: addons/metadata/static/files.js:1155
 msgid "Metadata is defined"
 msgstr "メタデータが定義されています"
 
-#: addons/metadata/static/files.js:1248 website/static/js/contribManager.js:429
+#: addons/metadata/static/files.js:1352 website/static/js/contribManager.js:440
 #: website/static/js/filepage/editor.js:180
 msgid "Save"
 msgstr "保存"
 
-#: addons/metadata/static/files.js:1252 addons/metadata/static/files.js:1342
+#: addons/metadata/static/files.js:1356 addons/metadata/static/files.js:1446
 msgid "Copy to clipboard"
 msgstr "クリップボードにコピー"
 
-#: addons/metadata/static/files.js:1292 website/static/js/fangorn.js:1226
-#: website/static/js/fangorn.js:1249 website/static/js/fangorn.js:2028
-#: website/static/js/fangorn.js:2064 website/static/js/filepage/index.js:204
+#: addons/metadata/static/files.js:1396 website/static/js/fangorn.js:1226
+#: website/static/js/fangorn.js:1249 website/static/js/fangorn.js:2056
+#: website/static/js/fangorn.js:2092 website/static/js/filepage/index.js:204
 #: website/static/js/filepage/index.js:517 website/static/js/myProjects.js:1637
 msgid "Delete"
 msgstr "削除"
 
-#: addons/metadata/static/files.js:1303
+#: addons/metadata/static/files.js:1407
 msgid "Do you want to delete metadata? This operation cannot be undone."
 msgstr "メタデータを削除してよろしいですか？この操作は元に戻せません。"
 
-#: addons/metadata/static/files.js:1320
+#: addons/metadata/static/files.js:1424
 msgid "Select draft registration"
 msgstr "ドラフトレポートの選択"
 
-#: addons/metadata/static/files.js:1352
+#: addons/metadata/static/files.js:1456
 msgid "Resolve metadata"
 msgstr "メタデータの解決"
 
-#: addons/metadata/static/metadata-fields.js:24
+#: addons/metadata/static/metadata-fields.js:40
 msgid "This field can't be blank."
 msgstr "このフィールドは必須項目です。"
 
-#: addons/metadata/static/metadata-fields.js:144
+#: addons/metadata/static/metadata-fields.js:178
 msgid "Choose..."
 msgstr "選択..."
 
-#: addons/metadata/static/metadata-fields.js:248
+#: addons/metadata/static/metadata-fields.js:344
+msgid "Calculate"
+msgstr "集計"
+
+#: addons/metadata/static/metadata-fields.js:395
+msgid "Fill"
+msgstr "入力"
+
+#: addons/metadata/static/metadata-fields.js:435
 msgid "No members"
 msgstr "作成者が設定されていません"
 
-#: addons/metadata/static/metadata-fields.js:314
+#: addons/metadata/static/metadata-fields.js:501
 msgid "e-Rad Researcher Number"
 msgstr "e-Rad研究者番号"
 
-#: addons/metadata/static/metadata-fields.js:315
+#: addons/metadata/static/metadata-fields.js:502
 msgid "Name (Japanese)"
 msgstr "名前　(日本語)"
 
-#: addons/metadata/static/metadata-fields.js:316
+#: addons/metadata/static/metadata-fields.js:503
 msgid "Name (English)"
 msgstr "名前　(英語)"
 
-#: addons/metadata/static/metadata-fields.js:329
+#: addons/metadata/static/metadata-fields.js:517
 #: website/static/js/myProjects.js:1565
 msgid "Add"
 msgstr "追加"
@@ -3110,7 +3127,7 @@ msgstr ""
 msgid ""
 "\n"
 "\n"
-"<h3>BinderHub Add-on Terms</h3>\n"
+"<h3>GakuNin Federated Computing Services (Jupyter) Add-on Terms</h3>\n"
 "\n"
 "<table class=\"table table-bordered table-addon-terms\">\n"
 "\n"
@@ -3129,29 +3146,29 @@ msgid ""
 "            </tr>\n"
 "            <tr class=\"danger\">\n"
 "                <td>View / download file versions</td>\n"
-"                <td>The BinderHub add-on does not provide Storage "
+"                <td>The GakuNin Federated Computing Services (Jupyter) add-on does not provide Storage "
 "Features.</td>\n"
 "            </tr>\n"
 "            <tr class=\"danger\">\n"
 "                <td>Add / update files</td>\n"
-"                <td>The BinderHub add-on does not provide Storage "
+"                <td>The GakuNin Federated Computing Services (Jupyter) add-on does not provide Storage "
 "Features.</td>\n"
 "            </tr>\n"
 "            <tr class=\"danger\">\n"
 "                <td>Delete files</td>\n"
-"                <td>The BinderHub add-on does not provide Storage "
+"                <td>The GakuNin Federated Computing Services (Jupyter) add-on does not provide Storage "
 "Features.</td>\n"
 "            </tr>\n"
 "            <tr class=\"danger\">\n"
 "                <td>Logs</td>\n"
-"                <td>The BinderHub add-on does not provide Storage "
+"                <td>The GakuNin Federated Computing Services (Jupyter) add-on does not provide Storage "
 "Features.</td>\n"
 "            </tr>\n"
 "            <tr class=\"warning\">\n"
 "                <td>Forking</td>\n"
 "                <td>Forking a project or component copies information "
-"about linked BinderHub but the GakuNin RDM does not affect authentication"
-" of BinderHub.</td>\n"
+"about linked GakuNin Federated Computing Services (Jupyter) but the GakuNin RDM does not affect authentication"
+" of GakuNin Federated Computing Services (Jupyter).</td>\n"
 "            </tr>\n"
 "    </tbody>\n"
 "\n"
@@ -3169,7 +3186,7 @@ msgid ""
 msgstr ""
 "\n"
 "\n"
-"<h3>BinderHub アドオン規約</h3>\n"
+"<h3>GakuNin Federated Computing Services (Jupyter) アドオン規約</h3>\n"
 "\n"
 "<table class=\"table table-bordered table-addon-terms\">\n"
 "\n"
@@ -3183,29 +3200,29 @@ msgstr ""
 "    <tbody>\n"
 "            <tr class=\"danger\">\n"
 "                <td>権限</td>\n"
-"                <td>GakuNin RDMは、BinderHubの権限に影響を及ぼしません。</td>\n"
+"                <td>GakuNin RDMは、GakuNin Federated Computing Services (Jupyter)の権限に影響を及ぼしません。</td>\n"
 "            </tr>\n"
 "            <tr class=\"danger\">\n"
 "                <td>ファイルバージョンの閲覧/ダウンロード</td>\n"
-"                <td>BinderHubアドオンはストレージ機能を提供しません。</td>\n"
+"                <td>GakuNin Federated Computing Services (Jupyter)アドオンはストレージ機能を提供しません。</td>\n"
 "            </tr>\n"
 "            <tr class=\"danger\">\n"
 "                <td>ファイルの追加/更新</td>\n"
-"                <td>BinderHubアドオンはストレージ機能を提供しません。</td>\n"
+"                <td>GakuNin Federated Computing Services (Jupyter)アドオンはストレージ機能を提供しません。</td>\n"
 "            </tr>\n"
 "            <tr class=\"danger\">\n"
 "                <td>ファイルの削除</td>\n"
-"                <td>BinderHubアドオンはストレージ機能を提供しません。</td>\n"
+"                <td>GakuNin Federated Computing Services (Jupyter)アドオンはストレージ機能を提供しません。</td>\n"
 "            </tr>\n"
 "            <tr class=\"danger\">\n"
 "                <td>ログ</td>\n"
-"                <td>BinderHubアドオンはストレージ機能を提供しません。</td>\n"
+"                <td>GakuNin Federated Computing Services (Jupyter)アドオンはストレージ機能を提供しません。</td>\n"
 "            </tr>\n"
 "            <tr class=\"warning\">\n"
 "                <td>フォーク</td>\n"
 "                "
-"<td>プロジェクトまたはコンポーネントのフォークを行うと、リンクされたBinderHubに関する情報がコピーされますが、GakuNin "
-"RDMはBinderHubの認証に影響を及ぼしません。</td>\n"
+"<td>プロジェクトまたはコンポーネントのフォークを行うと、リンクされたGakuNin Federated Computing Services (Jupyter)に関する情報がコピーされますが、GakuNin "
+"RDMはGakuNin Federated Computing Services (Jupyter)の認証に影響を及ぼしません。</td>\n"
 "            </tr>\n"
 "    </tbody>\n"
 "\n"
@@ -5439,7 +5456,7 @@ msgstr "${user}が${pointer_category} ${pointer}へのリンクを作成しま�
 
 #: website/static/js/logActionsList_extract.js:10
 msgid "${user} forked a link to ${pointer_category} ${pointer}"
-msgstr "${user}が${pointer_category} ${pointer}へのリンクをforkしました"
+msgstr "${user}が${pointer_category} ${pointer}へのリンクをフォークしました"
 
 #: website/static/js/logActionsList_extract.js:11
 msgid "${user} removed a link to ${pointer_category} ${pointer}"
@@ -5471,11 +5488,11 @@ msgstr "${user}が${node}を非公開にしました"
 
 #: website/static/js/logActionsList_extract.js:18
 msgid "${user} added tag ${tag} to ${node}"
-msgstr "${user}さんがタグ${tag}を${node}に追加しました"
+msgstr "${user}がタグ${tag}を${node}に追加しました"
 
 #: website/static/js/logActionsList_extract.js:19
 msgid "${user} removed tag ${tag} from ${node}"
-msgstr "${user}が${node}からタグ${tag}を削除しました"
+msgstr "${user}がタグ${tag}を${node}から削除しました"
 
 #: website/static/js/logActionsList_extract.js:20
 msgid "${user} changed the title from ${title_original} to ${title_new}"
@@ -5535,7 +5552,7 @@ msgstr "${user}が目録表示メンバー(${contributors})を${node}の目録�
 
 #: website/static/js/logActionsList_extract.js:33
 msgid "${user} updated wiki page ${page} to version ${version} of ${node}"
-msgstr "${user}が${node}のWiki(${page})をバージョン${version}に更新"
+msgstr "${user}が${node}のWiki(${page})をバージョン${version}に更新しました"
 
 #: website/static/js/logActionsList_extract.js:34
 msgid "${user} deleted wiki page ${page} of ${node}"
@@ -5607,11 +5624,11 @@ msgstr "${user}が${kind} ${path}を${node}にチェックインしました"
 
 #: website/static/js/logActionsList_extract.js:51
 msgid "${user} added a comment ${comment_location} in ${node}"
-msgstr "${user}さんが${node}にコメント${comment_location}を追加しました"
+msgstr "${user}が${node}にコメント${comment_location}を追加しました"
 
 #: website/static/js/logActionsList_extract.js:52
 msgid "${user} deleted a comment ${comment_location} in ${node}"
-msgstr "${user}さんが${node}のコメント${comment_location}を削除しました"
+msgstr "${user}が${node}のコメント${comment_location}を削除しました"
 
 #: website/static/js/logActionsList_extract.js:53
 msgid "${user} restored a comment ${comment_location}  in ${node}"
@@ -5763,21 +5780,21 @@ msgstr "${user}が${node}への${anonymous_link}参照専用リンクを削除�
 
 #: website/static/js/logActionsList_extract.js:90
 msgid "${user} verified timestamp"
-msgstr "${user}がタイムスタンプ確認"
+msgstr "${user}がタイムスタンプ確認をしました"
 
 #: website/static/js/logActionsList_extract.js:91
 msgid "${user} requested trusted timestamp"
-msgstr "${user}がタイムスタンプを打つ"
+msgstr "${user}がタイムスタンプを打ちました"
 
 #: website/static/js/logActionsList_extract.js:92
 msgid "${user} requested trusted timestamp file ${path}"
-msgstr "${user}がファイル${path}にタイムスタンプを打つ"
+msgstr "${user}がファイル${path}にタイムスタンプを打ちました"
 
 #: website/static/js/logActionsList_extract.js:93
 msgid ""
 "${user} downloaded a file of timestamp errors as a "
 "${timestamp_errors_file_format}"
-msgstr "${user}がタイムスタンプエラーのファイルを${timestamp_errors_file_format}でダウンロード"
+msgstr "${user}がタイムスタンプエラーのファイルを${timestamp_errors_file_format}でダウンロードしました"
 
 #: website/static/js/logActionsList_extract.js:94
 msgid ""
@@ -5803,7 +5820,7 @@ msgstr "[MAPCORE_SYNC:ERROR] GRDMプロジェクト<${node}>はmAPグループ�
 msgid ""
 "[MAPCORE_SYNC:NOTICE] Unknown (unregistered in GRDM) users belong to mAP "
 "group <${node}> (ignored) (See logs for details)"
-msgstr ""
+msgstr "不明(GRDMに登録されていない)ユーザーはmAPグループ<${node}>に属しています(無視されます)(詳細についてはログを参照してください)"
 
 #: website/static/js/logActionsList_extract.js:98
 msgid "${user} linked the Azure Blob Storage container ${bucket} to ${node}"
@@ -5847,7 +5864,7 @@ msgstr "${user}が${node}のAzure Blob Storageアドオンの認証を解除し�
 
 #: website/static/js/logActionsList_extract.js:106
 msgid "Azure Blob Storage addon for ${node} deauthorized"
-msgstr "許可されていない${node}のAzure Blob Storageアドオン"
+msgstr "${node}のAzure Blob Storageアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:107
 msgid "${user} added file ${path} to Bitbucket repo ${bitbucket_repo} in ${node}"
@@ -5881,7 +5898,7 @@ msgstr "${user}が${node}のBitbucketアドオンの認証を解除しました"
 
 #: website/static/js/logActionsList_extract.js:113
 msgid "Bitbucket addon for ${node} deauthorized"
-msgstr "許可されていない${node}のBitbucketアドオン"
+msgstr "${node}のBitbucketドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:114
 msgid "${user} linked Bitbucket repo ${bitbucket_repo} to ${node}"
@@ -5917,7 +5934,7 @@ msgstr "${user}が${node}のBoxアドオンの認証を解除しました"
 
 #: website/static/js/logActionsList_extract.js:122
 msgid "Box addon for ${node} deauthorized"
-msgstr "許可されていない${node}のボックスアドオン"
+msgstr "${node}のBoxアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:123
 msgid "${user} added a citation ${citation} to ${node}"
@@ -5967,7 +5984,7 @@ msgstr "${user}が${node}のDataverseアドオンの認証を解除しました"
 
 #: website/static/js/logActionsList_extract.js:134
 msgid "Dataverse addon for ${node} deauthorized"
-msgstr "許可されていない${node}のDataverseアドオン"
+msgstr "${node}のDataverseアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:135
 msgid "${user} added file ${path} to Dropbox in ${node}"
@@ -5999,7 +6016,7 @@ msgstr "${user}が${node}のDropboxアドオンの認証を解除しました"
 
 #: website/static/js/logActionsList_extract.js:142
 msgid "Dropbox addon for ${node} deauthorized"
-msgstr "許可されていない${node}のDropboxアドオン"
+msgstr "${node}のDropboxアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:143
 msgid "${user} added file ${path} to Dropbox Business in ${node}"
@@ -6033,7 +6050,7 @@ msgstr "${user}が${node}のDropbox Businessアドオンの認証を解除しま
 
 #: website/static/js/logActionsList_extract.js:150
 msgid "Dropbox Business addon for ${node} deauthorized"
-msgstr "許可されていない${node}のDropbox Businessアドオン"
+msgstr "${node}のDropbox Businessアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:151
 msgid "${user} linked figshare ${folder} ${folder_name} to ${node}"
@@ -6041,7 +6058,7 @@ msgstr "${user}がfigshare ${folder}(${folder_name})を${node}にリンクしま
 
 #: website/static/js/logActionsList_extract.js:152
 msgid "${user} unlinked content from figshare in ${node}"
-msgstr "${user}が${node}のfigshareからリンク解除されたコンテンツ"
+msgstr "${user}が${node}のfigshareからコンテンツのリンクを解除しました。"
 
 #: website/static/js/logActionsList_extract.js:153
 msgid "${user} added file ${path} to figshare in ${node}"
@@ -6065,7 +6082,7 @@ msgstr "${user}が${node}のfigshareアドオンの認証を解除しました"
 
 #: website/static/js/logActionsList_extract.js:158
 msgid "figshare addon for ${node} deauthorized"
-msgstr "許可されていない${node}のfigshareアドオン"
+msgstr "${node}のfigshareアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:159
 msgid "${user} changed external link to ${forward_url} in ${node}"
@@ -6097,7 +6114,7 @@ msgstr "${user}が${node}のGitHubアドオンの認証を解除しました"
 
 #: website/static/js/logActionsList_extract.js:166
 msgid "GitHub addon for ${node} deauthorized"
-msgstr "許可されていない${node}のGitHubアドオン"
+msgstr "${node}のGitHubアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:167
 msgid "${user} linked GitHub repo ${repo} to ${node}"
@@ -6129,7 +6146,7 @@ msgstr "${user}が${node}のGitLabアドオンの認証を解除しました"
 
 #: website/static/js/logActionsList_extract.js:174
 msgid "GitLab addon for ${node} deauthorized"
-msgstr "許可されていない${node}のGitLabアドオン"
+msgstr "${node}のGitLabアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:175
 msgid "${user} linked GitLab repo ${gitlab_repo} to ${node}"
@@ -6167,7 +6184,7 @@ msgstr "${user}が${node}のGoogle Driveアドオンの認証を解除しまし�
 
 #: website/static/js/logActionsList_extract.js:183
 msgid "Google Drive addon for ${node} deauthorized"
-msgstr "許可されていない${node}のGoogle Driveアドオン"
+msgstr "${node}のGoogle Driveアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:184
 msgid "${user} added file ${iqbrims_path} to IQB-RIMS in ${node}"
@@ -6199,7 +6216,7 @@ msgstr "${user}が${node}のIQB-RIMSアドオンの認証を解除しました"
 
 #: website/static/js/logActionsList_extract.js:191
 msgid "IQB-RIMS addon for ${node} deauthorized"
-msgstr "許可されていない${node}のIQB-RIMSアドオン"
+msgstr "${node}のIQB-RIMSアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:192
 #: website/static/js/logActionsList_extract.js:194
@@ -6253,7 +6270,7 @@ msgstr "${user}が${node}のNextcloudアドオンの認証を解除しました"
 
 #: website/static/js/logActionsList_extract.js:206
 msgid "Nextcloud addon for ${node} deauthorized"
-msgstr "許可されていない${node}のNextcloudアドオン"
+msgstr "${node}のNextcloudアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:207
 msgid "${user} added file ${path} to Microsoft OneDrive in ${node}"
@@ -6285,7 +6302,7 @@ msgstr "${user}が${node}のMicrosoft OneDriveアドオンの認証を解除し�
 
 #: website/static/js/logActionsList_extract.js:214
 msgid "Microsoft OneDrive addon for ${node} deauthorized"
-msgstr "許可されていない${node}のMicrosoft OneDriveアドオン"
+msgstr "${node}のMicrosoft OneDriveアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:215
 msgid "${user} added file ${path} to ownCloud in ${node}"
@@ -6317,7 +6334,7 @@ msgstr "${user}が${node}のownCloudアドオンの認証を解除しました"
 
 #: website/static/js/logActionsList_extract.js:222
 msgid "ownCloud addon for ${node} deauthorized"
-msgstr "許可されていない${node}のownCloudアドオン"
+msgstr "${node}のownCloudアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:223
 msgid "${user} linked the Amazon S3 bucket ${bucket} to ${node}"
@@ -6353,7 +6370,7 @@ msgstr "${user}が${node}のAmazon S3アドオンの認証を解除しました"
 
 #: website/static/js/logActionsList_extract.js:231
 msgid "Amazon S3 addon for ${node} deauthorized"
-msgstr "許可されていない${node}のAmazon S3アドオン"
+msgstr "${node}のAmazon S3アドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:232
 msgid "${user} linked the S3 Compatible Storage bucket ${bucket} to ${node}"
@@ -6397,7 +6414,7 @@ msgstr "${user}が${node}のS3互換ストレージアドオンの認証を解�
 
 #: website/static/js/logActionsList_extract.js:240
 msgid "S3 Compatible Storage addon for ${node} deauthorized"
-msgstr "許可されていない${node}のS3互換ストレージアドオン"
+msgstr "${node}のS3互換ストレージアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:241
 msgid "${user} linked the Swift container ${bucket} to ${node}"
@@ -6433,7 +6450,7 @@ msgstr "${user}が${node}のSwiftアドオンの認証を解除しました"
 
 #: website/static/js/logActionsList_extract.js:249
 msgid "Swift addon for ${node} deauthorized"
-msgstr "許可されていない${node}のSwiftアドオン"
+msgstr "${node}のSwiftアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:250
 msgid "${user} added file ${filename} to WEKO index ${dataset} in ${node}"
@@ -6469,7 +6486,7 @@ msgstr "${user}が${node}のWEKOアドオンの認証を解除しました"
 
 #: website/static/js/logActionsList_extract.js:258
 msgid "WEKO addon for ${node} deauthorized"
-msgstr "許可されていない${node}のWEKOアドオン"
+msgstr "${node}のWEKOアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:259
 msgid "${user} linked Zotero folder ${folder_name} to ${node}"
@@ -8498,3 +8515,4 @@ msgstr "招待に失敗しました"
 
 #~ msgid "Not selected"
 #~ msgstr "未選択"
+

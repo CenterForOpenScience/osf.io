@@ -132,7 +132,7 @@
         "iqbrims": "IQB-RIMS is a file storage add-on. Connect your Google Drive account to a GakuNin RDM project to interact with files hosted on Google Drive via the GakuNin RDM.",
         "nextcloudinstitutions": "Nextcloud for Institutions is a file storage add-on for Institutions. Connect your Nextcloud account to a GakuNin RDM project to interact with files hosted on Nextcloud via the GakuNin RDM.",
         "dropboxbusiness": "Dropbox Business for Institutions is a file storage add-on for Institutions. Connect your Dropbox Business administrator account to a GakuNin RDM project to interact with files hosted on Dropbox via the GakuNin RDM.",
-        "binderhub": "BinderHub is a web-based interactive computational environment. Files on a GakuNin RDM project can be imported to/exported from BinderHub",
+        "binderhub": "GakuNin Federated Computing Services (Jupyter) is a web-based interactive computational environment. Files on a GakuNin RDM project can be imported to/exported from GakuNin Federated Computing Services (Jupyter)",
         "onedrivebusiness": "OneDrive for Office365 is a file storage add-on. Connect your Microsoft OneDrive account to a GakuNin RDM project to interact with files hosted on Microsoft OneDrive via the GakuNin RDM.",
         "metadata": "The Metadata addon provides the functionality to register metadata to files and generate reports."
     },

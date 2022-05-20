@@ -52,11 +52,14 @@ api_routes = {
             '/project/<pid>/{}/settings'.format(SHORT_NAME),
             '/project/<pid>/node/<nid>/{}/settings'.format(SHORT_NAME),
         ], 'put', views.binderhub_set_config, json_renderer),
-
         Rule([
             '/project/<pid>/{}/config'.format(SHORT_NAME),
             '/project/<pid>/node/<nid>/{}/config'.format(SHORT_NAME),
         ], 'get', views.binderhub_get_config_ember, json_renderer),
+        Rule([
+            '/project/<pid>/{}/session'.format(SHORT_NAME),
+            '/project/<pid>/node/<nid>/{}/session'.format(SHORT_NAME),
+        ], 'delete', views.binderhub_logout, json_renderer),
     ],
     'prefix': '/api/v1',
 }
