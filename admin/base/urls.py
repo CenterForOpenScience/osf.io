@@ -48,6 +48,7 @@ urlpatterns = [
             url(r'^custom_storage_location/', include('admin.rdm_custom_storage_location.urls', namespace='custom_storage_location')),
             url(r'^institutional_storage_quota_control/', include('admin.institutional_storage_quota_control.urls',
                                                                   namespace='institutional_storage_quota_control')),
+            url(r'^metadata/', include('admin.rdm_metadata.urls', namespace='metadata')),
         ]),
     ),
 ]

@@ -44,6 +44,13 @@ function WaterButlerCache() {
     return r[0].item;
   };
 
+  self.clearCache = function() {
+    console.log(logPrefix, 'clear cache')
+    self.cache = self.cache.filter(function(c) {
+      return c.expired === 0;
+    });
+  };
+
   /**
    * List all folders/files
    */

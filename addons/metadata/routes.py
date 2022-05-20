@@ -45,12 +45,12 @@ api_routes = {
             '/project/<pid>/node/<nid>/{}/hashes/<path:filepath>'.format(SHORT_NAME),
         ], 'patch', views.metadata_set_file_hash, json_renderer),
         Rule([
-            '/project/<pid>/{}/draft_registrations/<did>/files/<path:filepath>'.format(SHORT_NAME),
-            '/project/<pid>/node/<nid>/{}/draft_registrations/<did>/files/<path:filepath>'.format(SHORT_NAME),
+            '/project/<pid>/{}/draft_registrations/<did>/files/<mnode>/<path:filepath>'.format(SHORT_NAME),
+            '/project/<pid>/node/<nid>/{}/draft_registrations/<did>/files/<mnode>/<path:filepath>'.format(SHORT_NAME),
         ], 'put', views.metadata_set_file_to_drafts, json_renderer),
         Rule([
-            '/project/<pid>/{}/draft_registrations/<did>/files/<path:filepath>'.format(SHORT_NAME),
-            '/project/<pid>/node/<nid>/{}/draft_registrations/<did>/files/<path:filepath>'.format(SHORT_NAME),
+            '/project/<pid>/{}/draft_registrations/<did>/files/<mnode>/<path:filepath>'.format(SHORT_NAME),
+            '/project/<pid>/node/<nid>/{}/draft_registrations/<did>/files/<mnode>/<path:filepath>'.format(SHORT_NAME),
         ], 'delete', views.metadata_delete_file_from_drafts, json_renderer),
     ],
     'prefix': '/api/v1',

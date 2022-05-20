@@ -3442,33 +3442,37 @@ msgid "Navigation"
 msgstr "ナビゲーション"
 
 #: website/templates/project/project_header.mako:65
+msgid "Metadata"
+msgstr "メタデータ"
+
+#: website/templates/project/project_header.mako:76
 msgid "Computation"
 msgstr "解析"
 
-#: website/templates/project/project_header.mako:61
+#: website/templates/project/project_header.mako:83
 msgid "Statistics"
 msgstr "統計"
 
-#: website/templates/project/project_header.mako:67
+#: website/templates/project/project_header.mako:89
 msgid "Registrations"
 msgstr "登録"
 
-#: website/templates/project/project_header.mako:76
+#: website/templates/project/project_header.mako:98
 msgid "Add-ons"
 msgstr "アドオン"
 
-#: website/templates/project/project_header.mako:96
+#: website/templates/project/project_header.mako:118
 #: website/templates/project/timestamp.mako:2
 msgid "Timestamp"
 msgstr "証跡管理"
 
-#: website/templates/project/project_header.mako:128
+#: website/templates/project/project_header.mako:150
 msgid ""
 "This file is part of a registration and is being shown in its archived "
 "version (and cannot be altered)."
 msgstr "このファイルは登録の一部であり、アーカイブバージョンで表示されています（変更できません）。"
 
-#: website/templates/project/project_header.mako:129
+#: website/templates/project/project_header.mako:151
 #, python-format
 msgid ""
 "The <a %(archivedFromUrl)s>active file</a> is viewable from within the <a"
@@ -3477,7 +3481,7 @@ msgstr ""
 "<a %(archivedFromUrl)s>アクティブなファイル</a>は、<a "
 "%(registeredFromUrl)s>ライブ%(nodeType)s</a>内から表示できます。"
 
-#: website/templates/project/project_header.mako:131
+#: website/templates/project/project_header.mako:153
 #, python-format
 msgid ""
 "This registration is a frozen, non-editable version of <a "

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load render_bundle from webpack_loader %}
+{% load spam_extras %}
+{% load i18n %}
+
+{% load static %}
+{% block top_includes %}
+  <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
+{% endblock %}
+{% block title %}
+    <title>{% trans "e-Rad records" %}</title>
+{% endblock title %}
+{% block content %}
+    <h2>{% trans "e-Rad records" %}</h2>
+
+    <p>
+        {% trans "Upload the TSV file containing the e-Rad record and press the Update button." %}
+    </p>
+
+    {% csrf_token %}
+    <div>
+        <input type="file" id="e-rad-files" multiple />
+        <button id="e-rad-update" style="margin-top: 1em;">{% trans "Update" %}</button>
+    </div>
+
+{% render_bundle 'rdm-metadata-page' %}
+{% endblock content %}

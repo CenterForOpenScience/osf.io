@@ -43,7 +43,7 @@
                         <!-- Add-on tabs  -->
                         % for addon in addons_enabled:
 
-                            % if addon != 'binderhub' and addons[addon]['has_page']:
+                            % if addon not in ['binderhub', 'metadata'] and addons[addon]['has_page']:
                                 <li>
                                     <a href="${node['url']}${addons[addon]['short_name']}">
 
@@ -55,6 +55,17 @@
                                 </li>
                             % endif
                         % endfor
+
+                        % if 'metadata' in addons_enabled and addons['metadata']['has_page']:
+                            <li>
+                                <a href="${node['url']}${addons['metadata']['short_name']}">
+                                    % if addons['metadata']['icon'] and addons['metadata']['has_page_icon']:
+                                        <img src="${addons['metadata']['icon']}" class="addon-logo"/>
+                                    % endif
+                                    ${_("Metadata")}
+                                </a>
+                            </li>
+                        % endif
 
                         % if 'binderhub' in addons_enabled and addons['binderhub']['has_page']:
                             <li>
@@ -139,7 +150,7 @@
                         <div class="alert alert-info">${ _("This file is part of a registration and is being shown in its archived version (and cannot be altered).")}
                             ${_("The <a %(archivedFromUrl)s>active file</a> is viewable from within the <a %(registeredFromUrl)s>live %(nodeType)s</a>.") % dict(archivedFromUrl='class="link-solid" href="' + urls['archived_from'] +'"',registeredFromUrl='class="link-solid" href="' + node['registered_from_url'] + '"',nodeType=node['node_type'] ) | n}</div>
                 % else:
-                    <div class="alert alert-info">${ _('This registration is a frozen, non-editable version of <a %(registeredFromUrl)s>this %(nodeType)s</a>') % dict(registeredFromUrl='class="link-solid" href="' + h(node['registered_from_url']) + '"',nodeType=node['node_type']) }</div>
+                    <div class="alert alert-info">${ _('This registration is a frozen, non-editable version of <a %(registeredFromUrl)s>this %(nodeType)s</a>') % dict(registeredFromUrl='class="link-solid" href="' + node['registered_from_url'] + '"',nodeType=node['node_type']) | n}</div>
                 % endif
             % else:
                 ## Hide top alert message for metadata addon
@@ -176,18 +187,19 @@
         % endif
 
         % if node['is_pending_embargo']:
-            <div
-                class="alert alert-info">${ _('This %(nodeType)s is currently pending registration, awaiting approval from project administrators. This registration will be final and enter the embargo period when all project administrators approve the registration or 48 hours pass, whichever comes first. The embargo will keep the registration private until the embargo period ends.') % dict(nodeType=node['node_type']) }
-                % if permissions.ADMIN in user['permissions']:
-                        <div>
-                            <br>
-                            <button type="button" id="registrationCancelButton" class="btn btn-danger" data-toggle="modal" data-target="#registrationCancel">
-                                ${ _("Cancel registration") }
-                            </button>
-                        </div>
-                        <%include file="modal_confirm_cancel_registration.mako"/>
-                    % endif
-            </div>
+            ## Hide top alert message for metadata addon
+##             <div
+##                 class="alert alert-info">${ _('This %(nodeType)s is currently pending registration, awaiting approval from project administrators. This registration will be final and enter the embargo period when all project administrators approve the registration or 48 hours pass, whichever comes first. The embargo will keep the registration private until the embargo period ends.') % dict(nodeType=node['node_type']) }
+##                 % if permissions.ADMIN in user['permissions']:
+##                         <div>
+##                             <br>
+##                             <button type="button" id="registrationCancelButton" class="btn btn-danger" data-toggle="modal" data-target="#registrationCancel">
+##                                 ${ _("Cancel registration") }
+##                             </button>
+##                         </div>
+##                         <%include file="modal_confirm_cancel_registration.mako"/>
+##                     % endif
+##             </div>
         % endif
 
         % if node['is_embargoed']:

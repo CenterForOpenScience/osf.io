@@ -89,7 +89,9 @@ def make_report_as_csv(format, draft_metadata, schema):
 
 def ensure_registration_report(schema_name, report_name, csv_template):
     from .models import RegistrationReportFormat
-    registration_schema = RegistrationSchema.objects.get(name=schema_name)
+    registration_schema = RegistrationSchema.objects.filter(
+        name=schema_name
+    ).order_by('-schema_version').first()
     template_query = RegistrationReportFormat.objects.filter(
         registration_schema_id=registration_schema._id, name=report_name
     )

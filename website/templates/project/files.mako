@@ -9,6 +9,7 @@
     <span class="f-w-xl">${_("Click on a storage provider or drag and drop to upload")}</span>
 %endif
 
+<!-- for fangorn.js: _createLinkEvent -->
 <div id="link_container" style="display: none;">
     <input type="text"/>
 </div>
