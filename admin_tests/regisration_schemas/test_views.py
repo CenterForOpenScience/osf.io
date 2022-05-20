@@ -8,6 +8,8 @@ from admin.registration_schemas import views
 from django.contrib.messages.storage.fallback import FallbackStorage
 
 from django.core.files.uploadedfile import SimpleUploadedFile
+from osf_tests.factories import RegistrationProviderFactory
+
 
 @pytest.mark.django_db
 class TestRegistrationSchemaList:
@@ -161,6 +163,13 @@ class TestDeleteRegistrationSchema:
             active=False,
             visible=False
         )
+
+    @pytest.fixture()
+    def provider(self, registration_schema):
+        provider = RegistrationProviderFactory()
+        registration_schema.providers.add(provider)
+        return provider
+
     @pytest.fixture()
     def view(self, req, registration_schema):
         view = views.RegistrationSchemaDeleteView()
@@ -177,3 +186,13 @@ class TestDeleteRegistrationSchema:
 
         view.delete(req)
         assert not RegistrationSchema.objects.filter(id=registration_schema.id)
+
+    def test_registration_schema_delete_validate(self, req, view, registration_schema, provider):
+        # django.contrib.messages has a bug which effects unittests
+        # more info here -> https://code.djangoproject.com/ticket/17971
+        setattr(req, 'session', 'session')
+        messages = FallbackStorage(req)
+        setattr(req, '_messages', messages)
+
+        view.delete(req)
+        assert RegistrationSchema.objects.filter(id=registration_schema.id)

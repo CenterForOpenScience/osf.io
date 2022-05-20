@@ -7,8 +7,10 @@ from admin.registration_schemas.forms import RegistrationSchemaCreateForm, Regis
 from django.contrib import messages
 from django.core.urlresolvers import reverse_lazy
 from django.db.models import Max
+from django.http import HttpResponseRedirect
 
 from osf.utils.migrations import map_schemas_to_schemablocks
+
 
 class RegistrationSchemaDetailView(FormView, PermissionRequiredMixin, TemplateView):
     """
@@ -121,6 +123,13 @@ class RegistrationSchemaDeleteView(DeleteView, PermissionRequiredMixin):
         return RegistrationSchema.objects.get(id=self.kwargs['registration_schema_id'])
 
     def delete(self, request, *args, **kwargs):
+        providers = self.get_object().providers.all()
+        if providers:
+            messages.warning(
+                request,
+                f'Schema could not be deleted because it\'s still associated with {",".join(providers.values_list("name", flat=True))}')
+            return HttpResponseRedirect(self.success_url)
+
         ret = super().delete(request, *args, **kwargs)
         messages.success(request, 'Schema deleted!')
         return ret
