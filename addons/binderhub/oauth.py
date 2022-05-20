@@ -189,6 +189,8 @@ def binderhub_oauth_authorize(**kwargs):
         scope=client_settings['scope'],
     )
 
+    if client_settings['authorize_url'] is None:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
     url, state = oauth.authorization_url(client_settings['authorize_url'])
 
     # save state token to the session for confirmation in the callback
