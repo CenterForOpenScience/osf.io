@@ -2,7 +2,7 @@ import re
 
 from distutils.version import StrictVersion
 from django.apps import apps
-from django.db.models import Q, OuterRef, Exists, Subquery, F
+from django.db.models import Q, Subquery, F, Max
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics, permissions as drf_permissions
@@ -11,7 +11,6 @@ from rest_framework.response import Response
 from rest_framework.status import HTTP_202_ACCEPTED, HTTP_204_NO_CONTENT
 
 from addons.base.exceptions import InvalidAuthError
-from addons.osfstorage.models import OsfStorageFolder
 from api.addons.serializers import NodeAddonFolderSerializer
 from api.addons.views import AddonSettingsMixin
 from api.base import generic_bulk_views as bulk_views
@@ -66,6 +65,7 @@ from api.comments.serializers import (
 )
 from api.draft_registrations.serializers import DraftRegistrationSerializer, DraftRegistrationDetailSerializer
 from api.files.serializers import FileSerializer, OsfStorageFileSerializer
+from api.files.annotations import DATE_MODIFIED
 from api.identifiers.serializers import NodeIdentifierSerializer
 from api.identifiers.views import IdentifierList
 from api.institutions.serializers import InstitutionSerializer
@@ -134,14 +134,23 @@ from framework.exceptions import HTTPError, PermissionsError
 from framework.auth.oauth_scopes import CoreScopes
 from framework.sentry import log_exception
 from osf.features import OSF_GROUPS
-from osf.models import AbstractNode
-from osf.models import (Node, PrivateLink, Institution, Comment, DraftRegistration, Registration, )
-from osf.models import OSFUser
-from osf.models import OSFGroup
-from osf.models import NodeRelation, Guid
-from osf.models import BaseFileNode
-from osf.models.files import File, Folder
-from addons.osfstorage.models import Region
+from osf.models import (
+    AbstractNode,
+    OSFUser,
+    Node,
+    PrivateLink,
+    Institution,
+    Comment,
+    DraftRegistration,
+    Registration,
+    BaseFileNode,
+    OSFGroup,
+    NodeRelation,
+    Guid,
+    File,
+    Folder,
+)
+from addons.osfstorage.models import Region, OsfStorageFileNode
 from osf.utils.permissions import ADMIN, WRITE_NODE
 from website import mails, settings
 
@@ -1111,6 +1120,9 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             return OsfStorageFileSerializer
         return FileSerializer
 
+    def get_resource(self):
+        return get_object_or_error(AbstractNode, self.kwargs['node_id'], self.request)
+
     # overrides FilterMixin
     def postprocess_query_param(self, key, field_name, operation):
         # tag queries will usually be on Tag.name,
@@ -1142,47 +1154,49 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             ]
 
     def get_default_queryset(self):
-        files_list = self.fetch_from_waterbutler()
+        resource = self.get_resource()
+        path = self.kwargs[self.path_lookup_url_kwarg]
+        provider = self.kwargs[self.provider_lookup_url_kwarg]
+        folder_object = self.get_file_object(resource, path, provider)
 
-        if isinstance(files_list, list):
-            provider = self.kwargs[self.provider_lookup_url_kwarg]
-            # Resolve to a provider-specific subclass, so that
-            # trashed file nodes are filtered out automatically
-            ConcreteFileNode = BaseFileNode.resolve_class(provider, BaseFileNode.ANY)
-            file_ids = [f.id for f in self.bulk_get_file_nodes_from_wb_resp(files_list)]
-            return ConcreteFileNode.objects.filter(id__in=file_ids)
-
-        if isinstance(files_list, list) or not isinstance(files_list, Folder):
-            # We should not have gotten a file here
-            raise NotFound
-
-        sub_qs = OsfStorageFolder.objects.filter(_children=OuterRef('pk'), pk=files_list.pk)
-        return files_list.children.annotate(folder=Exists(sub_qs)).filter(folder=True).prefetch_related('versions', 'tags', 'guids')
+        # Addon provided files/folders don't have versions so for there date modified we check the history. The history
+        # is updated every time we query the file metadata via Waterbutler.
+        if provider == 'osfstorage':
+            return folder_object.children.prefetch_related(
+                'versions',
+                'tags',
+                'guids',
+            )
+        else:
+            return self.bulk_get_file_nodes_from_wb_resp(folder_object)
 
     # overrides ListAPIView
     def get_queryset(self):
         path = self.kwargs[self.path_lookup_url_kwarg]
+        provider = self.kwargs[self.provider_lookup_url_kwarg]
+
         # query param info when used on a folder gives that folder's metadata instead of the metadata of it's children
         if 'info' in self.request.query_params and path.endswith('/'):
-            fobj = self.fetch_from_waterbutler()
+            resource = self.get_resource()
+            file_obj = self.get_file_object(resource, path, provider)
 
-            if isinstance(fobj, list):
-                node = self.get_node(check_object_permissions=False)
-                base_class = BaseFileNode.resolve_class(self.kwargs[self.provider_lookup_url_kwarg], BaseFileNode.FOLDER)
-                return base_class.objects.filter(
-                    target_object_id=node.id, target_content_type=ContentType.objects.get_for_model(node), _path=path,
-                )
-            elif isinstance(fobj, OsfStorageFolder):
-                return BaseFileNode.objects.filter(id=fobj.id)
+            if provider == 'osfstorage':
+                queryset = OsfStorageFileNode.objects.filter(id=file_obj.id)
             else:
-                raise NotFound
+                base_class = BaseFileNode.resolve_class(provider, BaseFileNode.FOLDER)
+                queryset = base_class.objects.filter(
+                    target_object_id=resource.id,
+                    target_content_type=ContentType.objects.get_for_model(resource),
+                    _path=path,
+                )
         else:
-            return self.get_queryset_from_request().distinct()
+            queryset = self.get_queryset_from_request()
+
+        return queryset.annotate(date_modified=DATE_MODIFIED)
 
 
 class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_files_read).
-
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -1203,11 +1217,16 @@ class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin
         fobj = self.fetch_from_waterbutler()
         if isinstance(fobj, dict):
             # if dict it is a wb response, not file object yet
-            return self.get_file_node_from_wb_resp(fobj)
+            fobj = self.get_file_node_from_wb_resp(fobj)
 
         if isinstance(fobj, list) or not isinstance(fobj, File):
             # We should not have gotten a folder here
             raise NotFound
+        if fobj.kind == 'file':
+            if fobj.provider == 'osfstorage':
+                fobj.date_modified = fobj.versions.aggregate(Max('created'))['created__max']
+            else:
+                fobj.date_modified = fobj.history[-1]['modified']
 
         return fobj
 
