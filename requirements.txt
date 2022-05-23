@@ -35,12 +35,13 @@ google-api-python-client==1.6.4
 Babel==2.9.1
 citeproc-py==0.4.0
 boto3==1.4.7
-django-waffle==0.13.0
+django-waffle==2.4.1
 pymongo==3.7.1
 tqdm==4.28.1
 # Python markdown extensions for comment emails
 git+https://github.com/CenterForOpenScience/mdx_del_ins.git
 
+markdown
 certifi==2020.12.5
 sendgrid==1.5.13
 
@@ -51,9 +52,9 @@ requests-oauthlib==0.8.0
 raven==6.4.0
 
 # API requirements
-Django==1.11.29
-djangorestframework==3.8.2
-django-cors-headers==2.1.0
+Django==3.2
+djangorestframework==3.13.1
+django-cors-headers==3.10.1
 djangorestframework-bulk==0.2.1
 hashids==1.2.0
 pyjwt==1.5.3
@@ -64,11 +65,11 @@ pyjwe==1.0.0
 # Building wheel for cryptography >= 3.4.0 requires a Rust version incompatible with Docker base image.
 cryptography==3.3.2
 jsonschema==2.6.0
-django-guardian==1.4.9
+django-guardian==2.4.0
 
 # Admin requirements
 django-webpack-loader==0.5.0
-django-password-reset==1.0
+django-password-reset==2.0
 sendgrid-django==2.0.0
 
 # Analytics requirements
@@ -76,12 +77,11 @@ keen==0.5.1
 maxminddb-geolite2==2018.308
 
 # OSF models
-django-typed-models==0.7.0
+django-typed-models==0.11.1
 django-storages==1.6.6
 google-cloud-storage==0.22.0  # dependency of django-storages, hard-pin to version
 django-dirtyfields==1.3.1
 django-extensions==2.1.3
-django-include==0.2.4
 psycopg2==2.7.3 --no-binary psycopg2
 django-bulk-update==2.2.0
 
@@ -92,7 +92,7 @@ transitions==0.8.2
 datacite==1.0.1
 
 # Metrics
-django-elasticsearch-metrics==5.0.0
+git+https://github.com/Johnetordoff/django-elasticsearch-metrics.git@update-django-3
 
 # Impact Metrics CSV Export
 djangorestframework-csv==2.1.0
