@@ -207,8 +207,7 @@ REST_FRAMEWORK = {
 # CORS plugin only matches based on "netloc" part of URL, so as workaround we add that to the list
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ORIGIN_WHITELIST = (
-    urlparse(osf_settings.DOMAIN).netloc,
-    osf_settings.DOMAIN,
+    osf_settings.DOMAIN.rstrip('/'),
 )
 # This needs to remain True to allow cross origin requests that are in CORS_ORIGIN_WHITELIST to
 # use cookies.

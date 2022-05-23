@@ -4,7 +4,7 @@ from future.moves.urllib.parse import urlparse
 
 import furl
 import waffle
-from django.core.urlresolvers import resolve, reverse, NoReverseMatch
+from django.urls import resolve, reverse, NoReverseMatch
 from django.core.exceptions import ImproperlyConfigured
 from distutils.version import StrictVersion
 
