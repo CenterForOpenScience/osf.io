@@ -21,7 +21,6 @@
         <div class="row">
             <h3>Registration Schema Details</h3>
             <p>Associate this schema with a provider via the <a href="{% url 'registration_providers:list' %}">Providers Page </a></p>
-
         </div>
         <div class="row">
             <h2>{{ registration_schema.name }} v{{ registration_schema.schema_version }}</h2>
@@ -44,7 +43,6 @@
                 </tbody>
             </table>
         </div>
-
         <div class="row padded">
             <div class="col-md-12">
                 <form style="display: inline;" method="post" action="{% url 'registration_schemas:detail' registration_schema_id=registration_schema.id %}">

@@ -8,7 +8,6 @@ class RegistrationSchemaCreateForm(forms.Form):
     schema = forms.FileField(widget=forms.ClearableFileInput(), required=False)
 
     class Meta:
-        model = RegistrationSchema
         fields = ('name', 'schema')
 
 

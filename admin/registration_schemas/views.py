@@ -14,6 +14,7 @@ from osf.utils.migrations import map_schemas_to_schemablocks
 
 class RegistrationSchemaDetailView(FormView, PermissionRequiredMixin, TemplateView):
     """
+    Allows authorized users to view and edit some attributes of a Registration Schema.
     """
     template_name = 'registration_schemas/registration_schema.html'
     permission_required = 'osf.view_registration_schema'
@@ -52,6 +53,7 @@ class RegistrationSchemaDetailView(FormView, PermissionRequiredMixin, TemplateVi
 
 class RegistrationSchemaCreateView(FormView, PermissionRequiredMixin):
     """
+    Allows authorized users to create a Registration Schema.
     """
     template_name = 'registration_schemas/registration_schema_create.html'
     permission_required = 'osf.change_registrationschema'
@@ -112,6 +114,7 @@ class RegistrationSchemaCreateView(FormView, PermissionRequiredMixin):
 
 class RegistrationSchemaDeleteView(DeleteView, PermissionRequiredMixin):
     """
+    Allows authorized users to delete a Registration Schema.
     """
     permission_required = 'osf.change_registrationschema'
     raise_exception = True
@@ -137,6 +140,7 @@ class RegistrationSchemaDeleteView(DeleteView, PermissionRequiredMixin):
 
 class RegistrationSchemaListView(PermissionRequiredMixin, ListView):
     """
+    Allows authorized users to view all Registration Schema.
     """
     template_name = 'registration_schemas/registration_schema_list.html'
     permission_required = 'osf.view_registration_schema'
