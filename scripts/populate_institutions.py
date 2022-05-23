@@ -354,6 +354,23 @@ INSTITUTIONS = {
                 'delegation_protocol': '',
             },
             {
+                '_id': 'eur',
+                'name': 'Erasmus University Rotterdam',
+                'description': '<a href="https://doi.org/10.25397/eur.16912120.v1">EUR Data Policy</a> | '
+                               '<a href="https://my.eur.nl/en/eur-employee/work-support/cybersecurity/working-safely-it-eur">CyberSecurity at EUR</a> | '
+                               '<a href="https://my.eur.nl/en/eur-employee/work-support/cybersecurity/data-classification">EUR Data Classification</a> | '
+                               '<a href="https://my.eur.nl/en/eur-employee/research/research-services/research-data-management/rdm-policy/">EUR Data Classification (Examples)</a> | '
+                               '<a href="https://login.microsoftonline.com/715902d6-f63e-4b8d-929b-4bb170bad492/oauth2/authorize?client_id=00000003-0000-0ff1-ce00-000000000000&response_mode=form_post&protectedtoken=true&response_type=code%20id_token&resource=00000003-0000-0ff1-ce00-000000000000&scope=openid&nonce=65F9AF2BB43D7220657D949CB8FD3F4296DC77476CAACAF9-9161197C25231B477690A7A1C2BDFDF2BF0D6AA07DA0C6F3A8A9FBC3C5F0364F&redirect_uri=https%3A%2F%2Fliveeur.sharepoint.com%2F_forms%2Fdefault.aspx&state=OD0w&claims=%7B%22id_token%22%3A%7B%22xms_cc%22%3A%7B%22values%22%3A%5B%22CP1%22%5D%7D%7D%7D&wsucxt=1&cobrandid=11bd8083-87e0-41b5-bb78-0bc43c8a8e8a&client-request-id=d5792fa0-f064-3000-fabf-791a47aed3ce">EUR OSF Research Guidelines</a> | '
+                               '<a href="mailto:datasteward@eur.nl">Contact</a>',
+                'banner_name': 'eur-banner.png',
+                'logo_name': 'eur-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://sts.windows.net/715902d6-f63e-4b8d-929b-4bb170bad492/')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
                 '_id': 'ferris',
                 'name': 'Ferris State University',
                 'description': 'In partnership with the <a href="https://www.ferris.edu/research/">Office of Research and Sponsored Programs</a>, the <a href="https://www.ferris.edu/HTMLS/administration/academicaffairs/index.htm">Provost and Vice President for Academic Affairs</a>, and the <a href="https://www.ferris.edu/library/">FLITE Library</a>. Do not use this service to store or transfer personally identifiable information (PII), personal health information (PHI), intellectual property (IP) or any other controlled unclassified information (CUI). All projects must abide by the <a href="https://www.ferris.edu/HTMLS/administration/academicaffairs/Forms_Policies/Documents/Policy_Letters/AA-Intellectual-Property-Rights.pdf">FSU Intellectual Property Rights and Electronic Distance Learning Materials</a> letter of agreement.',
@@ -1368,6 +1385,23 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': ['esipfed.org'],
                 'delegation_protocol': '',
+            },
+            {
+                '_id': 'eur',
+                'name': 'Erasmus University Rotterdam [Test]',
+                'description': '<a href="https://doi.org/10.25397/eur.16912120.v1">EUR Data Policy</a> | '
+                               '<a href="https://my.eur.nl/en/eur-employee/work-support/cybersecurity/working-safely-it-eur">CyberSecurity at EUR</a> | '
+                               '<a href="https://my.eur.nl/en/eur-employee/work-support/cybersecurity/data-classification">EUR Data Classification</a> | '
+                               '<a href="https://my.eur.nl/en/eur-employee/research/research-services/research-data-management/rdm-policy/">EUR Data Classification (Examples)</a> | '
+                               '<a href="https://login.microsoftonline.com/715902d6-f63e-4b8d-929b-4bb170bad492/oauth2/authorize?client_id=00000003-0000-0ff1-ce00-000000000000&response_mode=form_post&protectedtoken=true&response_type=code%20id_token&resource=00000003-0000-0ff1-ce00-000000000000&scope=openid&nonce=65F9AF2BB43D7220657D949CB8FD3F4296DC77476CAACAF9-9161197C25231B477690A7A1C2BDFDF2BF0D6AA07DA0C6F3A8A9FBC3C5F0364F&redirect_uri=https%3A%2F%2Fliveeur.sharepoint.com%2F_forms%2Fdefault.aspx&state=OD0w&claims=%7B%22id_token%22%3A%7B%22xms_cc%22%3A%7B%22values%22%3A%5B%22CP1%22%5D%7D%7D%7D&wsucxt=1&cobrandid=11bd8083-87e0-41b5-bb78-0bc43c8a8e8a&client-request-id=d5792fa0-f064-3000-fabf-791a47aed3ce">EUR OSF Research Guidelines</a> | '
+                               '<a href="mailto:datasteward@eur.nl">Contact</a>',
+                'banner_name': 'eur-banner.png',
+                'logo_name': 'eur-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://sts.windows.net/715902d6-f63e-4b8d-929b-4bb170bad492/')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'ferris',
