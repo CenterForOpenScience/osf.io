@@ -1,6 +1,6 @@
 import csv
 import codecs
-from osf.models import RegistrationSchema
+from osf.models import RegistrationSchema, RegistrationSchemaBlock
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.views.generic import ListView, TemplateView, FormView, DeleteView
 from admin.registration_schemas.forms import RegistrationSchemaCreateForm, RegistrationSchemaEditForm
@@ -9,7 +9,7 @@ from django.core.urlresolvers import reverse_lazy
 from django.db.models import Max
 from django.http import HttpResponseRedirect
 
-from osf.utils.migrations import map_schemas_to_schemablocks
+from osf.utils.migrations import create_schema_blocks_for_atomic_schema
 
 
 class RegistrationSchemaDetailView(FormView, PermissionRequiredMixin, TemplateView):
@@ -77,7 +77,7 @@ class RegistrationSchemaCreateView(FormView, PermissionRequiredMixin):
             visible=False,
             schema_version=latest_version + 1,
         )
-        map_schemas_to_schemablocks()
+        create_schema_blocks_for_atomic_schema(registration_schema)
 
         self.success_url = reverse_lazy(
             'registration_schemas:detail',
@@ -94,19 +94,18 @@ class RegistrationSchemaCreateView(FormView, PermissionRequiredMixin):
         return super().form_valid(form)
 
     def csv_to_blocks(self, file):
-        rows = [row for row in csv.DictReader(codecs.iterdecode(file.file, 'utf-8-sig'), delimiter=',')]
-
         blocks = []
-        for row in rows:
+        supported_keys = {field.name for field in RegistrationSchemaBlock._meta.get_fields()}
+
+        for row in csv.DictReader(codecs.iterdecode(file.file, 'utf-8'), delimiter=','):
             data = {}
-            for key, value in list(row.items()):
-                if value is not '' and not key.startswith('NOEX'):
-                    if value == 'FALSE':
-                        data.update({key: False})
-                    elif value == 'TRUE':
-                        data.update({key: True})
-                    else:
-                        data.update({key: value})
+            for key, value in row.items():
+                if key not in supported_keys or not value:
+                    continue
+                if key != 'required':
+                    data[key] = value
+                else:
+                    data[key] = True if value.lower() == 'true' else False
             blocks.append(data)
 
         return blocks
@@ -126,11 +125,19 @@ class RegistrationSchemaDeleteView(DeleteView, PermissionRequiredMixin):
         return RegistrationSchema.objects.get(id=self.kwargs['registration_schema_id'])
 
     def delete(self, request, *args, **kwargs):
-        providers = self.get_object().providers.all()
+        schema = self.get_object()
+        providers = schema.providers.all()
         if providers:
             messages.warning(
                 request,
                 f'Schema could not be deleted because it\'s still associated with {",".join(providers.values_list("name", flat=True))}')
+            return HttpResponseRedirect(self.success_url)
+
+        registrations = schema.registration_set.all()
+        if registrations:
+            messages.warning(
+                request,
+                f'Schema could not be deleted because it\'s still associated with {registrations.count()} registrations')
             return HttpResponseRedirect(self.success_url)
 
         ret = super().delete(request, *args, **kwargs)
