@@ -101,7 +101,9 @@ function createStringField(erad, question, value, options, callback) {
     );
   } else if (
     question.format == 'e-rad-researcher-name-ja' ||
-    question.format == 'e-rad-researcher-name-en'
+    question.format == 'e-rad-researcher-name-en' ||
+    question.format == 'file-institution-ja' ||
+    question.format == 'file-institution-en'
   ) {
     return new SingleElementField(
       createFormElement(function() {
@@ -415,19 +417,6 @@ function createFileURLFieldElement(createHandler, options) {
 }
 
 function createFileCreatorsFieldElement(erad, options) {
-  const typeaheadSource = (function () {
-    const allResearchers = erad.candidates.map(function (c) {
-      return {
-        kenkyusha_no: c.kenkyusha_no,
-        kenkyusha_shimei: c.kenkyusha_shimei
-      };
-    });
-    const uniqResearchers = {};
-    allResearchers.forEach(function (researcher) {
-      uniqResearchers[JSON.stringify(researcher)] = researcher;
-    });
-    return substringMatcher(Object.values(uniqResearchers));
-  })();
   const emptyLine = $('<td></td>')
     .attr('colspan', '4')
     .css('text-align', 'center')
@@ -472,12 +461,13 @@ function createFileCreatorsFieldElement(erad, options) {
           suggestion: function(data) {
             return '<div style="background-color: white;"><span>' + $osf.htmlEscape(data.kenkyusha_shimei) + '</span> ' +
               '<span><small class="m-l-md text-muted">'+
-              $osf.htmlEscape(data.kenkyusha_no) + ' ' +
-              $osf.htmlEscape(data.kenkyusha_shimei) +
+              $osf.htmlEscape(data.kenkyusha_no) + ' - ' +
+              $osf.htmlEscape(data.kenkyukikan_mei) + ' - ' +
+              $osf.htmlEscape(data.kadai_mei) + ' (' + data.nendo + ')'
               + '</small></span></div>';
           }
         },
-        source: typeaheadSource,
+        source: substringMatcher(erad.candidates),
       }
     );
     numberInput.bind('typeahead:selected', function(event, data) {
@@ -588,6 +578,7 @@ function createERadResearcherNumberFieldElement(erad, options) {
             suggestion: function(data) {
               return '<div style="background-color: white;"><span>' + $osf.htmlEscape(data.kenkyusha_shimei) + '</span> ' +
                 '<span><small class="m-l-md text-muted">'+
+                $osf.htmlEscape(data.kenkyusha_no) + ' - ' +
                 $osf.htmlEscape(data.kenkyukikan_mei) + ' - ' +
                 $osf.htmlEscape(data.kadai_mei) + ' (' + data.nendo + ')'
                 + '</small></span></div>';
@@ -597,14 +588,20 @@ function createERadResearcherNumberFieldElement(erad, options) {
         }
       );
       input.bind('typeahead:selected', function(event, data) {
-        if (!data.kenkyusha_shimei) {
-          return;
+        if (data.kenkyusha_shimei) {
+          const names = data.kenkyusha_shimei.split('|');
+          const jaNames = names.slice(0, Math.floor(names.length / 2))
+          const enNames = names.slice(Math.floor(names.length / 2))
+          $('.e-rad-researcher-name-ja').val(jaNames.join(''));
+          $('.e-rad-researcher-name-en').val(enNames.join(' '));
         }
-        const names = data.kenkyusha_shimei.split('|');
-        const jaNames = names.slice(0, Math.floor(names.length / 2))
-        const enNames = names.slice(Math.floor(names.length / 2))
-        $('.e-rad-researcher-name-ja').val(jaNames.join(' '));
-        $('.e-rad-researcher-name-en').val(enNames.join(' '));
+        if (data.kenkyukikan_mei) {
+          const names = data.kenkyukikan_mei.split('|');
+          const jaNames = names.slice(0, Math.floor(names.length / 2))
+          const enNames = names.slice(Math.floor(names.length / 2))
+          $('.file-institution-ja').val(jaNames.join(''));
+          $('.file-institution-en').val(enNames.join(' '));
+        }
       });
       container.find('.twitter-typeahead').css('width', '100%');
       if (callback) {
