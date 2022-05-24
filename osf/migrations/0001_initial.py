@@ -33,7 +33,6 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('contenttypes', '0002_remove_content_type_name'),
-        ('admin', '0002_logentry_remove_auto_add'),
         ('auth', '0008_alter_user_username_max_length'),
         ('addons_osfstorage', '0001_initial'),
     ]
@@ -1050,7 +1049,7 @@ class Migration(migrations.Migration):
                 ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
                 ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
                 ('domain', osf.utils.fields.LowercaseCharField(db_index=True, max_length=255, unique=True)),
-                ('note', models.IntegerField(choices=[(0, 'EXCLUDE_FROM_ACCOUNT_CREATION'), (1, 'ASSUME_HAM_UNTIL_REPORTED')], default=osf.models.notable_email_domain.Note(0))),
+                ('note', models.IntegerField(choices=[(0, 'EXCLUDE_FROM_ACCOUNT_CREATION'), (1, 'ASSUME_HAM_UNTIL_REPORTED')], default=0)),
             ],
             options={
                 'abstract': False,
@@ -1677,19 +1676,6 @@ class Migration(migrations.Migration):
                 'abstract': False,
             },
             bases=(models.Model, osf.models.base.QuerySetExplainMixin),
-        ),
-        migrations.CreateModel(
-            name='AdminLogEntry',
-            fields=[
-            ],
-            options={
-                'proxy': True,
-                'indexes': [],
-            },
-            bases=('admin.logentry',),
-            managers=[
-                ('objects', osf.models.admin_log_entry.AdminLogEntryManager()),
-            ],
         ),
         migrations.AlterUniqueTogether(
             name='tag',
