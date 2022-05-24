@@ -16,7 +16,13 @@ class TestRegistrationSchemaList:
 
     @pytest.fixture()
     def req(self):
-        return RequestFactory().get('/fake_path')
+        req = RequestFactory().get('/fake_path')
+        # django.contrib.messages has a bug which effects unittests
+        # more info here -> https://code.djangoproject.com/ticket/17971
+        setattr(req, 'session', 'session')
+        messages = FallbackStorage(req)
+        setattr(req, '_messages', messages)
+        return req
 
     @pytest.fixture()
     def registration_schema(self):
@@ -45,7 +51,13 @@ class TestRegistrationSchemaDetail:
 
     @pytest.fixture()
     def req(self):
-        return RequestFactory().get('/fake_path')
+        req = RequestFactory().get('/fake_path')
+        # django.contrib.messages has a bug which effects unittests
+        # more info here -> https://code.djangoproject.com/ticket/17971
+        setattr(req, 'session', 'session')
+        messages = FallbackStorage(req)
+        setattr(req, '_messages', messages)
+        return req
 
     @pytest.fixture()
     def registration_schema(self):
@@ -96,7 +108,13 @@ class TestCreateRegistrationSchema:
 
     @pytest.fixture()
     def req(self):
-        return RequestFactory().get('/fake_path')
+        req = RequestFactory().get('/fake_path')
+        # django.contrib.messages has a bug which effects unittests
+        # more info here -> https://code.djangoproject.com/ticket/17971
+        setattr(req, 'session', 'session')
+        messages = FallbackStorage(req)
+        setattr(req, '_messages', messages)
+        return req
 
     @pytest.fixture
     def csv_data(self):
@@ -114,29 +132,29 @@ class TestCreateRegistrationSchema:
         view = setup_view(plain_view, req)
         return view
 
-    def test_registration_schema_create(self, view, csv_file, req):
-        # django.contrib.messages has a bug which effects unittests
-        # more info here -> https://code.djangoproject.com/ticket/17971
-        setattr(req, 'session', 'session')
-        messages = FallbackStorage(req)
-        setattr(req, '_messages', messages)
-
+    @pytest.fixture()
+    def form(self, view, csv_file):
         form = view.get_form()
-
         form.data['name'] = 'Trust the Process'
         form.files['schema'] = csv_file
+        return form
 
+    def test_registration_schema_create(self, view, csv_file, form, req):
         view.form_valid(form)
-
-        registration_schema = RegistrationSchema.objects.get(name='Trust the Process')
+        registration_schema = RegistrationSchema.objects.get(name=form.data['name'])
         assert registration_schema.schema_blocks.count() == 1
         block = registration_schema.schema_blocks.first()
         assert block.block_type == 'page-heading'
         assert block.display_text == 'This is the page heading'
         assert registration_schema.schema_version == 1
 
+    def test_registration_schema_increment_version(self, view, csv_file, form, req):
         view.form_valid(form)
-        registration_schema = RegistrationSchema.objects.get_latest_version(name='Trust the Process')
+        registration_schema = RegistrationSchema.objects.get_latest_version(name=form.data['name'])
+        assert registration_schema.schema_version == 1
+
+        view.form_valid(form)
+        registration_schema = RegistrationSchema.objects.get_latest_version(name=form.data['name'])
         assert registration_schema.schema_version == 2
 
     def test_registration_schema_csv_to_blocks(self, view, csv_file):
@@ -152,7 +170,13 @@ class TestDeleteRegistrationSchema:
 
     @pytest.fixture()
     def req(self):
-        return RequestFactory().get('/fake_path')
+        req = RequestFactory().get('/fake_path')
+        # django.contrib.messages has a bug which effects unittests
+        # more info here -> https://code.djangoproject.com/ticket/17971
+        setattr(req, 'session', 'session')
+        messages = FallbackStorage(req)
+        setattr(req, '_messages', messages)
+        return req
 
     @pytest.fixture()
     def registration_schema(self):
@@ -178,21 +202,12 @@ class TestDeleteRegistrationSchema:
         return view
 
     def test_registration_schema_delete(self, req, view, registration_schema):
-        # django.contrib.messages has a bug which effects unittests
-        # more info here -> https://code.djangoproject.com/ticket/17971
-        setattr(req, 'session', 'session')
-        messages = FallbackStorage(req)
-        setattr(req, '_messages', messages)
-
         view.delete(req)
         assert not RegistrationSchema.objects.filter(id=registration_schema.id)
 
-    def test_registration_schema_delete_validate(self, req, view, registration_schema, provider):
-        # django.contrib.messages has a bug which effects unittests
-        # more info here -> https://code.djangoproject.com/ticket/17971
-        setattr(req, 'session', 'session')
-        messages = FallbackStorage(req)
-        setattr(req, '_messages', messages)
-
+    def test_registration_schema_prevent_delete_if_used(self, req, view, registration_schema, provider):
+        """
+        If a Registration Schema is being used as part of registration it shouldn't be deletable from the admin app.
+        """
         view.delete(req)
         assert RegistrationSchema.objects.filter(id=registration_schema.id)
