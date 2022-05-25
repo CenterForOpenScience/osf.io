@@ -14,7 +14,7 @@ var logPrefix = '[' + SHORT_NAME + '] ';
 
 function UserSettings() {
   var self = this;
-  self.properName = 'BinderHub';
+  self.properName = 'GakuNin Federated Computing Services (Jupyter)';
   self.baseUrl = '/api/v1/settings/' + SHORT_NAME + '/';
 
   self.loading = ko.observable(false);
