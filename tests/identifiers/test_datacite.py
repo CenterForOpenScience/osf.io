@@ -109,7 +109,7 @@ class TestDataCiteClient:
 
         metadata_xml = datacite_client.build_metadata(registration)
         # includes visible contrib name
-        assert f'<contributorName nameType="Personal">{visible_contrib.fullname}</contributorName>' in metadata_xml
+        assert f'<contributorName nameType="Personal">{visible_contrib.fullname}</contributorName>' not in metadata_xml
         assert f'<creatorName nameType="Personal">{visible_contrib.fullname}</creatorName>' in metadata_xml
 
         assert f'<contributorName nameType="Personal">{invisible_contrib.fullname}</contributorName>' in metadata_xml

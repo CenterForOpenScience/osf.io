@@ -32,8 +32,12 @@ class DataCiteClient(AbstractIdentifierClient):
     def build_metadata(self, node):
         """Return the formatted datacite metadata XML as a string.
          """
+        non_bib_contributors = node.contributors.filter(
+            contributor__visible=False,
+            contributor__node=node.id
+        )
 
-        contributors = datacite_format_contributors(node.contributors)
+        contributors = datacite_format_contributors(non_bib_contributors)
         contributors.append({
             'nameType': 'Organizational',
             'contributorType': 'HostingInstitution',
