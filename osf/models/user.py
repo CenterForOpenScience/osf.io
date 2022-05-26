@@ -664,6 +664,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def __str__(self):
         return self.get_short_name()
 
+    def get_verified_external_id(self, external_service, verified_only=False):
+        identifier_info = self.external_identity.get(external_service, {})
+        for external_id, status in identifier_info.items():
+            if status and status == 'VERIFIED' or not verified_only:
+                return external_id
+        return None
+
     @property
     def contributed(self):
         return self.nodes.all()
