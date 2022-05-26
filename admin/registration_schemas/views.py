@@ -126,13 +126,6 @@ class RegistrationSchemaDeleteView(DeleteView, PermissionRequiredMixin):
 
     def delete(self, request, *args, **kwargs):
         schema = self.get_object()
-        providers = schema.providers.all()
-        if providers:
-            messages.warning(
-                request,
-                f'Schema could not be deleted because it\'s still associated with {",".join(providers.values_list("name", flat=True))}')
-            return HttpResponseRedirect(self.success_url)
-
         registrations = schema.registration_set.all()
         if registrations:
             messages.warning(

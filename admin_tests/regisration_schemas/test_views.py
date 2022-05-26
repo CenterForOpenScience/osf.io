@@ -8,7 +8,7 @@ from admin.registration_schemas import views
 from django.contrib.messages.storage.fallback import FallbackStorage
 
 from django.core.files.uploadedfile import SimpleUploadedFile
-from osf_tests.factories import RegistrationProviderFactory
+from osf_tests.factories import RegistrationProviderFactory, RegistrationFactory
 
 
 @pytest.mark.django_db
@@ -189,6 +189,13 @@ class TestDeleteRegistrationSchema:
         )
 
     @pytest.fixture()
+    def registration(self, registration_schema):
+        registration = RegistrationFactory()
+        registration.registered_schema.add(registration_schema)
+        registration.save()
+        return registration
+
+    @pytest.fixture()
     def provider(self, registration_schema):
         provider = RegistrationProviderFactory()
         registration_schema.providers.add(provider)
@@ -205,7 +212,7 @@ class TestDeleteRegistrationSchema:
         view.delete(req)
         assert not RegistrationSchema.objects.filter(id=registration_schema.id)
 
-    def test_registration_schema_prevent_delete_if_used(self, req, view, registration_schema, provider):
+    def test_registration_schema_prevent_delete_if_used(self, req, view, registration_schema, provider, registration):
         """
         If a Registration Schema is being used as part of registration it shouldn't be deletable from the admin app.
         """
