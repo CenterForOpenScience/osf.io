@@ -572,6 +572,10 @@ msgstr ""
 msgid "OK"
 msgstr ""
 
+#: addons/metadata/templates/metadata_node_settings.mako:12
+msgid "No configuration items."
+msgstr ""
+
 #: addons/nextcloud/templates/nextcloud_credentials_modal.mako:6
 msgid "Connect an Nextcloud Account"
 msgstr ""

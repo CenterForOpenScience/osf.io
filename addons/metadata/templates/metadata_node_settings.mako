@@ -9,7 +9,7 @@
     <div class="${addon_short_name}-settings">
         <div class="row">
             <div class="col-md-12">
-                No configuration items.
+                ${_("No configuration items.")}
             </div>
         </div>
         <!-- end row -->

@@ -162,7 +162,7 @@ class NodeSettings(BaseNodeSettings):
         r.update(self._get_file_metadata(m))
         return r
 
-    def set_file_metadata(self, filepath, file_metadata):
+    def set_file_metadata(self, filepath, file_metadata, auth=None):
         self._validate_file_metadata(file_metadata)
         q = self.file_metadata.filter(path=filepath)
         if not q.exists():
@@ -173,6 +173,16 @@ class NodeSettings(BaseNodeSettings):
                 folder=file_metadata['folder'],
                 metadata=json.dumps({'items': file_metadata['items']})
             )
+            if auth:
+                self.owner.add_log(
+                    action='metadata_file_added',
+                    params={
+                        'project': self.owner.parent_id,
+                        'node': self.owner._id,
+                        'path': filepath,
+                    },
+                    auth=auth,
+                )
             return
         m = q.first()
         m.hash = file_metadata['hash']
@@ -185,6 +195,16 @@ class NodeSettings(BaseNodeSettings):
                 filepath,
                 item['data'])
         m.save()
+        if auth:
+            self.owner.add_log(
+                action='metadata_file_updated',
+                params={
+                    'project': self.owner.parent_id,
+                    'node': self.owner._id,
+                    'path': filepath,
+                },
+                auth=auth,
+            )
 
     def set_file_hash(self, filepath, hash):
         q = self.file_metadata.filter(path=filepath)
@@ -194,7 +214,7 @@ class NodeSettings(BaseNodeSettings):
         m.hash = hash
         m.save()
 
-    def delete_file_metadata(self, filepath):
+    def delete_file_metadata(self, filepath, auth=None):
         q = self.file_metadata.filter(path=filepath)
         if not q.exists():
             return
@@ -202,6 +222,16 @@ class NodeSettings(BaseNodeSettings):
         for schema in self._get_related_schemas(metadata.metadata):
             self._remove_draft_files(schema, filepath)
         metadata.delete()
+        if auth:
+            self.owner.add_log(
+                action='metadata_file_deleted',
+                params={
+                    'project': self.owner.parent_id,
+                    'node': self.owner._id,
+                    'path': filepath,
+                },
+                auth=auth,
+            )
 
     def get_project_metadata(self):
         if self.project_metadata is None or self.project_metadata == '':

@@ -289,6 +289,14 @@ function createFileCapacityFieldElement(createHandler, options) {
   }
 
   function calcCapacity(input, calcIndicator, errorContainer) {
+    if (contextVars.file) {
+      return new Promise(function (resolve, reject) {
+        const totalSize = contextVars.file.size || 0;
+        console.log(logPrefix, 'totalSize: ', totalSize);
+        input.val(sizeofFormat(totalSize));
+        resolve();
+      });
+    }
     errorContainer.hide().text('');
     calcIndicator.show();
     options.wbcache.clearCache();

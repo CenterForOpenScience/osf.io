@@ -1,0 +1,5 @@
+{
+    "metadata_file_added" : "A user added a metadata to a ${path} in a project",
+    "metadata_file_updated" : "A user updated a metadata for a ${path} in a project",
+    "metadata_file_deleted" : "A user deleted a metadata for a ${path} in a project"
+}

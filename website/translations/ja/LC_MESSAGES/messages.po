@@ -579,6 +579,10 @@ msgstr "サービスベースURL"
 msgid "OK"
 msgstr "OK"
 
+#: addons/metadata/templates/metadata_node_settings.mako:12
+msgid "No configuration items."
+msgstr "設定項目はありません。"
+
 #: addons/nextcloud/templates/nextcloud_credentials_modal.mako:6
 msgid "Connect an Nextcloud Account"
 msgstr "Nextcloudアカウントに接続"
