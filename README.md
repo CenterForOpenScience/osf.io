@@ -31,6 +31,6 @@ This includes style guides, process docs, troubleshooting, and more.
 ## Find an issue? or have questions?
 
 If you find a bug, have a technical question, or want to request a feature, please contact us at help@osf.io. While 
-we occasional reply to question via other channels, contacting us at help@osf.io will ensure your feedback goes to 
-correct person most promptly. If you are considering posting an issue on our Github issues page, we would suggest 
+we may reply to questions via other channels, contacting us at help@osf.io will ensure your feedback goes to 
+correct person most promptly. If you are considering posting an issue on our Github issues page, we suggest 
 sending it to help@osf.io instead.
