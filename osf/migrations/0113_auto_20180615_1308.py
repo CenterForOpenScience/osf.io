@@ -10,32 +10,6 @@ from osf.models import PreprintProvider
 logger = logging.getLogger(__file__)
 
 
-PREPRINT_DOI_NAMESPACE = {
-    'ecsarxiv': '10.1149'
-}
-
-def add_doi_prefix(*args, **kwargs):
-    for key, value in PREPRINT_DOI_NAMESPACE.items():
-        provider = PreprintProvider.objects.filter(_id=key)
-        if not provider.exists():
-            logger.info('Could not find provider with _id {}, skipping for now...'.format(key))
-            continue
-        provider = provider.get()
-        provider.doi_prefix = value
-        provider.save()
-
-
-def remove_doi_prefix(*args, **kwargs):
-    for key, _ in PREPRINT_DOI_NAMESPACE.items():
-        provider = PreprintProvider.objects.filter(_id=key)
-        if not provider.exists():
-            logger.info('Could not find provider with _id {}, skipping for now...'.format(key))
-            continue
-        provider = provider.get()
-        provider.doi_prefix = ''
-        provider.save()
-
-
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -43,5 +17,4 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(add_doi_prefix, remove_doi_prefix)
     ]
