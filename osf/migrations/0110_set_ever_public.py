@@ -4,11 +4,6 @@ from __future__ import unicode_literals
 
 from django.db import migrations
 
-def set_ever_public(state, *args, **kwargs):
-    state.get_model('osf', 'preprintservice').objects.filter(is_published=True).update(ever_public=True)
-
-def revert_to_default(state, *args, **kwargs):
-    state.get_model('osf', 'preprintservice').objects.all().update(ever_public=False)
 
 class Migration(migrations.Migration):
 
@@ -17,7 +12,4 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(
-            set_ever_public, revert_to_default
-        ),
     ]
