@@ -10,21 +10,6 @@ import logging
 
 logger = logging.getLogger(__file__)
 
-def remove_invalid_social_entries(state, *args, **kwargs):
-    OSFUser = state.get_model('osf', 'osfuser')
-    # targets = OSFUser.objects.filter()
-    targets = OSFUser.objects.exclude(social={})
-
-    logger.info('Removing invalid social entries!')
-
-    for user in targets:
-        for invalid_key in set(user.social.keys()) - set(osfuser.SOCIAL_FIELDS.keys()):
-                logger.warn(str(dir(user)))
-                user.social.pop(invalid_key)
-                logger.info('User ID {0}: dropped social: {1}'.format(user.id, invalid_key))
-                user.save()
-
-    logger.info('Invalid social entry removal completed.')
 
 class Migration(migrations.Migration):
 
@@ -33,5 +18,4 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(remove_invalid_social_entries)
     ]
