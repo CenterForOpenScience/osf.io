@@ -4,8 +4,6 @@ from __future__ import unicode_literals
 
 from django.db import migrations, models
 
-from django.contrib.contenttypes.models import ContentType
-
 
 class Migration(migrations.Migration):
 

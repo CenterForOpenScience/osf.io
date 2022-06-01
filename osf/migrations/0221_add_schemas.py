@@ -3,8 +3,6 @@ import logging
 from django.db import migrations
 
 logger = logging.getLogger(__file__)
-from osf.utils.migrations import ensure_schemas
-from osf.utils.migrations import UpdateRegistrationSchemasAndSchemaBlocks
 
 
 class Migration(migrations.Migration):
@@ -14,5 +12,4 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        UpdateRegistrationSchemasAndSchemaBlocks(),
     ]
