@@ -29,16 +29,4 @@ class Migration(migrations.Migration):
         ('osf', '0188_deleted_field_mig'),
     ]
 
-    if DEBUG_MODE:
-        operations = [
-            migrations.RunSQL(FORWARD_BASE_FILE, REVERSE_BASE_FILE),
-            migrations.RunSQL(FORWARD_INSTITUTION, REVERSE_INSTITUTION),
-            migrations.RunSQL(FORWARD_ABSTRACT_NODE, REVERSE_ABSTRACT_NODE),
-            migrations.RunSQL(FORWARD_PRIVATE_LINK, REVERSE_PRIVATE_LINK),
-            migrations.RunSQL(FORWARD_COMMENT, REVERSE_COMMENT)
-        ]
-    else:
-        operations = []
-        logger.info(
-            'The automatic migration only runs in DEBUG_MODE. Use management command migrate_deleted_date instead'
-        )
+    operations = []
