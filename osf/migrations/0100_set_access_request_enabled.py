@@ -16,34 +16,10 @@ class Migration(migrations.Migration):
         ('osf', '0099_merge_20180427_1109'),
     ]
 
-    def add_default_access_requests_enabled(self, *args, **kwargs):
-        # Update nodes in batches
-        BATCHSIZE = 5000
-
-        max_pk = Node.objects.aggregate(models.Max('pk'))['pk__max']
-        if max_pk is not None:
-            for offset in range(0, max_pk + 1, BATCHSIZE):
-                (Node.objects
-                 .filter(pk__gte=offset)
-                 .filter(pk__lt=offset + BATCHSIZE)
-                 .filter(access_requests_enabled__isnull=True)
-                 .update(access_requests_enabled=True))
-
-    def remove_default_access_requests_enabled(self, *args, **kwargs):
-        # Get the date the original noderequest migration was applied
-        sql = "SELECT applied from django_migrations WHERE app = 'osf' AND name = '0077_add_noderequest_model';"
-        with connection.cursor() as cursor:
-            cursor.execute(sql)
-            date_noderequest_migration = cursor.fetchall()[0][0]
-
-        # Get all projects created before that
-        Node.objects.filter(created__lte=date_noderequest_migration).update(access_requests_enabled=None)
-
     operations = [
         migrations.AlterField(
             model_name='noderequestaction',
             name='permissions',
             field=models.CharField(choices=[('read', 'Read'), ('write', 'Write'), ('admin', 'Admin')], default='read', max_length=5),
         ),
-        migrations.RunPython(add_default_access_requests_enabled, remove_default_access_requests_enabled),
     ]
