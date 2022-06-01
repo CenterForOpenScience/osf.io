@@ -10,43 +10,6 @@ from osf.models.validators import validate_email
 from osf.utils.fields import LowercaseEmailField
 
 
-def create_emails(user, Email):
-    uid = user['id']
-    primary_email = user['username'].lower().strip()
-    emails = set([e.lower().strip() for e in user['emails']])
-    active = user['is_active']
-    if active or not Email.objects.filter(address=primary_email).exists():
-        _, created = Email.objects.get_or_create(address=primary_email, user_id=uid)
-        assert created, 'Email object for username {} already exists'.format(primary_email)
-    for email in emails:
-        if email == primary_email:
-            # Already created above
-            continue
-        if active or not Email.objects.filter(address=email).exists():
-            _, created = Email.objects.get_or_create(address=email, user_id=uid)
-            assert created, 'Email object for email {} on user {} already exists'.format(email, uid)
-
-
-def populate_email_model(state, schema):
-    # Note: it is expected that any duplicates have been merged before this is ran.
-    # If not, this will error
-    OSFUser = state.get_model('osf', 'osfuser')
-    Email = state.get_model('osf', 'email')
-    for user in OSFUser.objects.filter(is_active=True).values('id', 'username', 'emails', 'is_active'):
-        # Give priority to active users
-        create_emails(user, Email)
-    for user in OSFUser.objects.filter(is_active=False, merged_by__isnull=True).values('id', 'username', 'emails', 'is_active'):
-        create_emails(user, Email)
-
-
-def restore_old_emails(state, schema):
-    # Not possible with complete accuracy -- some disabled users may have lost info
-    Email = state.get_model('osf', 'email')
-    for email in Email.objects.all():
-        if email.address not in email.user.emails:
-            email.user.emails.append(email.address)
-            email.user.save()
-
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -66,9 +29,6 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-        ),
-        migrations.RunPython(
-            populate_email_model, restore_old_emails
         ),
         migrations.RemoveField(
             model_name='osfuser',
