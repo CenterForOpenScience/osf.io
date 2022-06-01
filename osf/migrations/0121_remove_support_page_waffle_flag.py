@@ -5,14 +5,6 @@ from waffle.models import Flag
 from django.db import migrations
 
 
-def reverse_func(state, schema):
-    flag = Flag(name='ember_support_page', everyone=False)
-    flag.save()
-
-
-def remove_support_page_waffle_flags(state, schema):
-    Flag.objects.get(name='ember_support_page').delete()
-
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -20,5 +12,4 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(remove_support_page_waffle_flags, reverse_func)
     ]
