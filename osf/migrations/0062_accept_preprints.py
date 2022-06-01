@@ -8,14 +8,6 @@ from django.db.models import F
 from osf.utils.workflows import DefaultStates
 
 
-# When a preprint provider is set up with a reviews/moderation workflow,
-# make sure all existing preprints will be in a public state.
-def accept_all_published_preprints(apps, schema_editor):
-    Preprint = apps.get_model('osf', 'PreprintService')
-    published_preprints = Preprint.objects.filter(is_published=True, reviews_state=DefaultStates.INITIAL.value)
-    published_preprints.update(reviews_state=DefaultStates.ACCEPTED.value, date_last_transitioned=F('date_published'))
-
-
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -23,7 +15,4 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(
-            accept_all_published_preprints
-        ),
     ]
