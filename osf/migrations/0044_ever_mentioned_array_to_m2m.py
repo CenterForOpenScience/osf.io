@@ -7,21 +7,6 @@ from django.db import migrations, models
 from osf.utils.migrations import disable_auto_now_fields
 
 
-def migrate_user_guid_array_to_m2m(state, schema):
-    from osf.models import OSFUser as FindableOSFUser
-    AddableOSFUser = state.get_model('osf', 'osfuser')
-    Comment = state.get_model('osf', 'comment')
-    for comment in Comment.objects.exclude(_ever_mentioned=[]).all():
-        for user in AddableOSFUser.objects.filter(id__in=[FindableOSFUser.objects.get(guids___id=_id).id for _id in comment._ever_mentioned]):
-            comment.ever_mentioned.add(user)
-
-def unmigrate_user_guid_array_from_m2m(state, schema):
-    Comment = state.get_model('osf', 'comment')
-    with disable_auto_now_fields(models=[Comment]):
-        for comment in Comment.objects.exclude(ever_mentioned__isnull=False).all():
-            comment._ever_mentioned = list(comment.ever_mentioned.values_list('guids___id', flat=True))
-            comment.save()
-
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -38,9 +23,6 @@ class Migration(migrations.Migration):
             model_name='comment',
             name='ever_mentioned',
             field=models.ManyToManyField(blank=True, related_name='mentioned_in', to=settings.AUTH_USER_MODEL),
-        ),
-        migrations.RunPython(
-            migrate_user_guid_array_to_m2m, unmigrate_user_guid_array_from_m2m
         ),
         migrations.RemoveField(
             model_name='comment',
