@@ -5,12 +5,6 @@ from __future__ import unicode_literals
 import logging
 
 from django.db import migrations, models
-from django.core.paginator import Paginator
-
-from addons.osfstorage.models import NodeSettings as OSFSNodeSettings, OsfStorageFolder
-from osf.models import OSFUser, QuickFilesNode, Contributor
-from osf.models.base import ensure_guid
-from osf.models.quickfiles import get_quickfiles_project_title
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)

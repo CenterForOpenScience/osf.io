@@ -3,9 +3,6 @@
 from __future__ import unicode_literals
 
 from django.db import migrations
-from django.db.models import F
-
-from osf.utils.workflows import DefaultStates
 
 
 class Migration(migrations.Migration):

@@ -4,8 +4,6 @@ from __future__ import unicode_literals
 
 from django.db import migrations
 
-from osf.models import OSFUser as osfuser
-
 import logging
 
 logger = logging.getLogger(__file__)

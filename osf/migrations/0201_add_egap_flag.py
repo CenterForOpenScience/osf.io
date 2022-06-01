@@ -13,5 +13,4 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        AddWaffleFlags([features.EGAP_ADMINS], on_for_everyone=None),
     ]

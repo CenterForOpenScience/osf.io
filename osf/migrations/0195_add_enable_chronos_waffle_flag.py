@@ -13,5 +13,4 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        AddWaffleFlags([features.ENABLE_CHRONOS]),
     ]

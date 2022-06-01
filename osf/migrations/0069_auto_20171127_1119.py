@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 import logging
 
 from django.db import migrations
-from osf.utils.migrations import disable_auto_now_fields
 
 logger = logging.getLogger(__name__)
 

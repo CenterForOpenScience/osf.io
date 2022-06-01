@@ -6,10 +6,7 @@ import logging
 
 from django.db import migrations
 from django.apps import apps
-from django.core.paginator import Paginator
 
-from addons.osfstorage.settings import DEFAULT_REGION_NAME, DEFAULT_REGION_ID
-from website.settings import WATERBUTLER_URL
 
 logger = logging.getLogger(__file__)
 

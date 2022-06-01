@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 
 from django.conf import settings
 from django.db import migrations, models
-from osf.utils.migrations import disable_auto_now_fields
 
 
 class Migration(migrations.Migration):
