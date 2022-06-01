@@ -14,53 +14,10 @@ from website.settings import DEBUG_MODE
 logger = logging.getLogger(__name__)
 
 
-def clear_draft_registration_responses(state, schema):
-    """
-    Reverse migration
-    """
-    DraftRegistration = state.get_model('osf', 'draftregistration')
-    DraftRegistration.objects.update(
-        registration_responses={},
-        registration_responses_migrated=False
-    )
-
-def clear_registration_responses(state, schema):
-    """
-    Reverse migration
-    """
-    Registration = state.get_model('osf', 'registration')
-    Registration.objects.update(
-        registration_responses={},
-        registration_responses_migrated=False
-    )
-
-def migrate_draft_registration_metadata(state, schema):
-    migrate_draft_registrations(
-        dry_run=False,
-        rows='all',
-        DraftRegistrationModel=state.get_model('osf', 'draftregistration')
-    )
-
-def migrate_registration_registered_meta(state, schema):
-    migrate_registrations(
-        dry_run=False,
-        rows='all',
-        AbstractNodeModel=state.get_model('osf', 'abstractnode')
-    )
-
 class Migration(migrations.Migration):
 
     dependencies = [
         ('osf', '0192_add_registation_responses_fields'),
     ]
 
-    if DEBUG_MODE:
-        operations = [
-            migrations.RunPython(migrate_draft_registration_metadata, clear_draft_registration_responses),
-            migrations.RunPython(migrate_registration_registered_meta, clear_registration_responses),
-        ]
-    else:
-        operations = []
-        logger.info(
-            'The automatic migration only runs in DEBUG_MODE. Use management command migrate_registration_responses instead'
-        )
+    operations = []
