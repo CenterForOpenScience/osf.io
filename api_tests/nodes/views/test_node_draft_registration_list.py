@@ -448,9 +448,8 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         assert res.status_code == 404
 
-    #   test_registration_supplement_must_be_active_metaschema
-        schema = RegistrationSchema.objects.get(
-            name='Election Research Preacceptance Competition', active=False)
+    #   test_registration_schema_must_be_active
+        schema = RegistrationSchema.objects.create(name='foo', schema={'foo': 42}, schema_version=1, active=False)
         draft_data = {
             'data': {
                 'type': 'draft_registrations',
@@ -478,9 +477,13 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Registration supplement must be an active schema.'
 
-    #   test_registration_supplement_must_be_active
-        schema = RegistrationSchema.objects.get(
-            name='Election Research Preacceptance Competition', schema_version=2)
+    #   test_registration_schema_must_be_active_versioning
+        schema = RegistrationSchema.objects.create(
+            name='foo',
+            schema={'foo': 'whats six times seven'},
+            schema_version=2,
+            active=False
+        )
         draft_data = {
             'data': {
                 'type': 'draft_registrations',
