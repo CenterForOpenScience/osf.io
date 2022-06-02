@@ -98,20 +98,7 @@ class RegistrationReportFormat(BaseModel):
 
 
 class UserSettings(BaseUserSettings):
-    """
-    eRad KENKYUSHA_NO
-    """
-    erad_researcher_number = EncryptedTextField(blank=True, null=True)
-
-    def get_erad_researcher_number(self):
-        v = self.erad_researcher_number
-        if v is not None and isinstance(v, bytes):
-            return v.decode('utf8')
-        return v
-
-    def set_erad_researcher_number(self, erad_researcher_number):
-        self.erad_researcher_number = erad_researcher_number
-        self.save()
+    pass
 
 
 class NodeSettings(BaseNodeSettings):
