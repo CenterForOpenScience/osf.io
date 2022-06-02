@@ -18,6 +18,7 @@ from website.project.decorators import (
     must_be_valid_project,
     must_have_addon,
     must_have_permission,
+    must_be_contributor,
 )
 from website.ember_osf_web.views import use_ember_app
 
@@ -259,6 +260,7 @@ def metadata_delete_file_from_drafts(auth, did=None, mnode=None, filepath=None, 
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
 @must_be_valid_project
+@must_be_contributor
 @must_have_addon(SHORT_NAME, 'node')
 def metadata_report_list_view(**kwargs):
     return use_ember_app()

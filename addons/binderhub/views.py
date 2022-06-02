@@ -12,6 +12,7 @@ from website.project.decorators import (
     must_have_addon,
     must_be_valid_project,
     must_have_permission,
+    must_be_contributor,
 )
 from website.ember_osf_web.views import use_ember_app
 from website import settings as website_settings
@@ -134,6 +135,7 @@ def binderhub_set_config(**kwargs):
     return {}
 
 @must_be_valid_project
+@must_be_contributor
 @must_have_addon(SHORT_NAME, 'node')
 def project_binderhub(**kwargs):
     return use_ember_app()
