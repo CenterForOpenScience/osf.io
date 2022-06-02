@@ -6643,26 +6643,34 @@ msgid ""
 msgstr "${node}のOCIオブジェクトストレージ(for Institutions)アドオンの認証が解除されました"
 
 #: website/static/js/anonymousLogActionsList_extract.js:284
+msgid "A user added a metadata in a project"
+msgstr "ユーザがプロジェクトにメタデータを追加しました"
+
+#: website/static/js/anonymousLogActionsList_extract.js:285
 msgid "A user added a metadata to a ${path} in a project"
 msgstr "ユーザがプロジェクトの ${path} にメタデータを追加しました"
 
-#: website/static/js/anonymousLogActionsList_extract.js:285
+#: website/static/js/anonymousLogActionsList_extract.js:286
 msgid "A user updated a metadata for a ${path} in a project"
 msgstr "ユーザがプロジェクトの ${path} のメタデータを更新しました"
 
-#: website/static/js/anonymousLogActionsList_extract.js:286
+#: website/static/js/anonymousLogActionsList_extract.js:287
 msgid "A user deleted a metadata for a ${path} in a project"
 msgstr "ユーザがプロジェクトの ${path} のメタデータを削除しました"
 
 #: website/static/js/logActionsList_extract.js:314
+msgid "${user} added metadata in ${node}"
+msgstr "${user}が${node}にメタデータを追加しました"
+
+#: website/static/js/logActionsList_extract.js:315
 msgid "${user} added metadata ${path} in ${node}"
 msgstr "${user}が${node}の ${path} にメタデータを追加しました"
 
-#: website/static/js/logActionsList_extract.js:315
+#: website/static/js/logActionsList_extract.js:316
 msgid "${user} updated metadata ${path} in ${node}"
 msgstr "${user}が${node}の ${path} のメタデータを更新しました"
 
-#: website/static/js/logActionsList_extract.js:316
+#: website/static/js/logActionsList_extract.js:317
 msgid "${user} deleted metadata ${path} in ${node}"
 msgstr "${user}が${node}の ${path} のメタデータを削除しました"
 

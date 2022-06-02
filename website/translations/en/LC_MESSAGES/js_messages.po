@@ -5419,26 +5419,34 @@ msgid ""
 msgstr ""
 
 #: website/static/js/anonymousLogActionsList_extract.js:284
-msgid "A user added a metadata to a ${path} in a project"
+msgid "A user added a metadata in a project"
 msgstr ""
 
 #: website/static/js/anonymousLogActionsList_extract.js:285
-msgid "A user updated a metadata for a ${path} in a project"
+msgid "A user added a metadata to a ${path} in a project"
 msgstr ""
 
 #: website/static/js/anonymousLogActionsList_extract.js:286
+msgid "A user updated a metadata for a ${path} in a project"
+msgstr ""
+
+#: website/static/js/anonymousLogActionsList_extract.js:287
 msgid "A user deleted a metadata for a ${path} in a project"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:314
-msgid "${user} added metadata ${path} in ${node}"
+msgid "${user} added metadata in ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:315
-msgid "${user} updated metadata ${path} in ${node}"
+msgid "${user} added metadata ${path} in ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:316
+msgid "${user} updated metadata ${path} in ${node}"
+msgstr ""
+
+#: website/static/js/logActionsList_extract.js:317
 msgid "${user} deleted metadata ${path} in ${node}"
 msgstr ""
 

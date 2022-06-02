@@ -1,4 +1,5 @@
 {
+  "metadata_added" : "${user} added metadata in ${node}",
   "metadata_file_added" : "${user} added metadata ${path} in ${node}",
   "metadata_file_updated" : "${user} updated metadata ${path} in ${node}",
   "metadata_file_deleted" : "${user} deleted metadata ${path} in ${node}"
