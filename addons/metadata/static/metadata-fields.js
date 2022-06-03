@@ -485,8 +485,8 @@ function createFileCreatorsFieldElement(erad, options) {
       const names = data.kenkyusha_shimei.split('|');
       const jaNames = names.slice(0, Math.floor(names.length / 2))
       const enNames = names.slice(Math.floor(names.length / 2))
-      nameJaInput.val(jaNames.join(' '));
-      nameEnInput.val(enNames.join(' '));
+      nameJaInput.val(jaNames.join(''));
+      nameEnInput.val(enNames.reverse().join(' '));
     });
     tbody.find('.twitter-typeahead').css('width', '100%');
     emptyLine.hide();
@@ -601,7 +601,7 @@ function createERadResearcherNumberFieldElement(erad, options) {
           const jaNames = names.slice(0, Math.floor(names.length / 2))
           const enNames = names.slice(Math.floor(names.length / 2))
           $('.e-rad-researcher-name-ja').val(jaNames.join(''));
-          $('.e-rad-researcher-name-en').val(enNames.join(' '));
+          $('.e-rad-researcher-name-en').val(enNames.reverse().join(' '));
         }
         if (data.kenkyukikan_mei) {
           const names = data.kenkyukikan_mei.split('|');

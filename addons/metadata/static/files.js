@@ -69,16 +69,21 @@ function MetadataButtons() {
       return;
     }
     self.loading = true;
-    self.erad.load(self.baseUrl, function() {
-      self.registrationSchemas.load(function() {
-        self.loadMetadata(contextVars.node.id, contextVars.node.urls.api + 'metadata/', function() {
-          self.loading = false;
-          const path = self.processHash();
-          if (!callback) {
-            return;
-          }
-          callback(path);
-        });
+    const loadedCallback = function() {
+      self.loading = false;
+      const path = self.processHash();
+      if (!callback) {
+        return;
+      }
+      callback(path);
+    };
+    self.registrationSchemas.load(function() {
+      self.loadMetadata(contextVars.node.id, contextVars.node.urls.api + 'metadata/', function(projectMetadata) {
+        if (projectMetadata && projectMetadata.editable) {
+          self.erad.load(self.baseUrl, loadedCallback);
+          return;
+        }
+        loadedCallback();
       });
     });
   };
@@ -146,7 +151,7 @@ function MetadataButtons() {
       if (!callback) {
         return;
       }
-      callback();
+      callback((data.data || {}).attributes);
     }).fail(function(xhr, status, error) {
       self.loadingMetadatas[nodeId] = false;
       if (error === 'BAD REQUEST') {
@@ -157,7 +162,8 @@ function MetadataButtons() {
           nodeId: nodeId,
           baseUrl: baseUrl,
           projectMetadata: {
-            files: [],
+            editable: false,
+            files: []
           },
           wbcache: (self.contexts[nodeId] ? self.contexts[nodeId].wbcache : null) || new WaterButlerCache(),
           validatedFiles: (self.contexts[nodeId] ? self.contexts[nodeId].validatedFiles : null) || {},
@@ -175,7 +181,7 @@ function MetadataButtons() {
       if (!callback) {
         return;
       }
-      callback();
+      callback(null);
     });
   };
 
@@ -244,6 +250,7 @@ function MetadataButtons() {
       schema.attributes.schema,
       lastMetadataItem,
       {
+        readonly: !((context.projectMetadata || {}).editable),
         context: context,
         filepath: filepath,
         wbcache: context.wbcache,
@@ -405,10 +412,18 @@ function MetadataButtons() {
    * Start editing metadata.
    */
   self.editMetadata = function(context, filepath, item) {
-    if (!self.editMetadataDialog) {
-      self.editMetadataDialog = self.initEditMetadataDialog();
+    var dialog = null;
+    if ((context.projectMetadata || {}).editable) {
+      if (!self.editMetadataDialog) {
+        self.editMetadataDialog = self.initEditMetadataDialog(true);
+      }
+      dialog = self.editMetadataDialog;
+    } else {
+      if (!self.viewMetadataDialog) {
+        self.viewMetadataDialog = self.initEditMetadataDialog(false);
+      }
+      dialog = self.viewMetadataDialog;
     }
-    const dialog = self.editMetadataDialog;
     console.log(logPrefix, 'edit metadata: ', filepath, item);
     self.currentItem = item;
     const currentMetadata = self.findMetadataByPath(context.nodeId, filepath);
@@ -445,17 +460,19 @@ function MetadataButtons() {
         item
       );
     });
-    const pasteButton = $('<button></button>')
-      .addClass('btn btn-default')
-      .css('margin-right', 0)
-      .css('margin-left', 'auto')
-      .append($('<i></i>').addClass('fa fa-paste'))
-      .append(_('Paste from Clipboard'))
-      .on('click', self.pasteFromClipboard);
     dialog.toolbar.append(selector.group);
-    dialog.toolbar.append($('<div></div>')
-      .css('display', 'flex')
-      .append(pasteButton));
+    if ((context.projectMetadata || {}).editable) {
+      const pasteButton = $('<button></button>')
+        .addClass('btn btn-default')
+        .css('margin-right', 0)
+        .css('margin-left', 'auto')
+        .append($('<i></i>').addClass('fa fa-paste'))
+        .append(_('Paste from Clipboard'))
+        .on('click', self.pasteFromClipboard);
+      dialog.toolbar.append($('<div></div>')
+        .css('display', 'flex')
+        .append(pasteButton));
+    }
     self.prepareFields(
       context,
       fieldContainer,
@@ -594,7 +611,6 @@ function MetadataButtons() {
     metadataMessage.text(_('Current Metadata:')).css('margin-top', '1em');
     container.append(metadataMessage);
     container.append(selector.group);
-    container.append(draftSelection);
     container.append(reviewFields);
     self.prepareReviewFields(
       reviewFields,
@@ -728,7 +744,12 @@ function MetadataButtons() {
         dataType: 'json'
     }).done(function (data) {
       console.log(logPrefix, 'deleted: ', data, context.nodeId);
-      self.loadMetadata(context.nodeId, context.baseUrl);
+      self.loadMetadata(context.nodeId, context.baseUrl, function() {
+        if (!self.fileViewPath) {
+          return;
+        }
+        self.refreshFileViewButtons(self.fileViewPath);
+      });
     }).fail(function(xhr, status, error) {
       Raven.captureMessage('Error while retrieving addon info', {
           extra: {
@@ -1038,6 +1059,22 @@ function MetadataButtons() {
       return f.path === filepath;
     });
     const currentMetadata = currentMetadatas[0] || null;
+    if (!projectMetadata.editable) {
+      // readonly
+      const filepath = item.data.provider + (item.data.materialized || '/');
+      const metadata = self.findMetadataByPath(context.nodeId, filepath);
+      if (!metadata) {
+        return [];
+      }
+      const viewButton = createButton({
+        onclick: function(event) {
+          self.editMetadata(context, filepath, item);
+        },
+        icon: 'fa fa-edit',
+        className : 'text-primary'
+      }, _('View Metadata'));
+      return [viewButton];
+    }
     const buttons = [];
     const editButton = createButton({
       onclick: function(event) {
@@ -1220,6 +1257,9 @@ function MetadataButtons() {
               .addClass('fa fa-exclamation-circle')
               .attr('title', _('File not found: ') + child.path))
             .on('click', function() {
+              if (!((context.projectMetadata || {}).editable)) {
+                return;
+              }
               self.resolveMetadataConsistency(context, child);
             });
           indicator.append(ic);
@@ -1239,38 +1279,60 @@ function MetadataButtons() {
     self.loadConfig(callback);
   }
 
+  /**
+   * Refresh buttons for file view.
+   */
+  self.refreshFileViewButtons = function(path) {
+    if (!self.fileViewButtons) {
+      self.fileViewButtons = $('<div></div>')
+        .addClass('btn-group m-t-xs')
+        .attr('id', 'metadata-toolbar');
+    }
+    self.fileViewPath = path;
+    const buttons = self.fileViewButtons;
+    buttons.empty();
+    self.createButtonsBase(
+      path,
+      self.getFileItemFromContext(),
+      function(options, label) {
+        const btn = $('<button></button>')
+          .addClass('btn')
+          .addClass('btn-sm');
+        if (options.className) {
+          btn.addClass(options.className.replace(/^text-/, 'btn-'));
+        }
+        if (options.icon) {
+          btn.append($('<i></i>').addClass(options.icon));
+        }
+        if (options.onclick) {
+          btn.click(options.onclick);
+        }
+        btn.append($('<span></span>').text(label));
+        return btn;
+      }
+    )
+      .forEach(function(button) {
+        buttons.append(button);
+      });
+    $('#toggleBar .btn-toolbar').append(buttons);
+  };
+
   self.initFileView = function() {
     self.initBase(function(path) {
       if (!path) {
         return;
       }
-      const buttons = $('<div></div>')
-        .addClass('btn-group m-t-xs')
-        .attr('id', 'metadata-toolbar');
-      self.createButtonsBase(
-        path,
-        self.getFileItemFromContext(),
-        function(options, label) {
-          const btn = $('<button></button>')
-            .addClass('btn')
-            .addClass('btn-sm');
-          if (options.className) {
-            btn.addClass(options.className.replace(/^text-/, 'btn-'));
-          }
-          if (options.icon) {
-            btn.append($('<i></i>').addClass(options.icon));
-          }
-          if (options.onclick) {
-            btn.click(options.onclick);
-          }
-          btn.append($('<span></span>').text(label));
-          return btn;
+      var handler = null;
+      handler = function() {
+        // Wait until btn-toolbar is created
+        const toolbar = $('#toggleBar .btn-toolbar');
+        if (toolbar.length > 0) {
+          self.refreshFileViewButtons(path);
+          return;
         }
-      )
-        .forEach(function(button) {
-          buttons.append(button);
-        });
-      $('#toggleBar').prepend(buttons);
+        setTimeout(handler, 100);
+      };
+      setTimeout(handler, 100);
     });
   }
 
@@ -1391,7 +1453,12 @@ function MetadataButtons() {
           console.log(logPrefix, 'saved: ', hash, data);
           self.currentItem = null;
           self.editingContext = null;
-          self.loadMetadata(context.nodeId, context.baseUrl)
+          self.loadMetadata(context.nodeId, context.baseUrl, function() {
+            if (!self.fileViewPath) {
+              return;
+            }
+            self.refreshFileViewButtons(self.fileViewPath);
+          });
         }).fail(function(xhr, status, error) {
           Raven.captureMessage('Error while retrieving addon info', {
               extra: {
@@ -1417,11 +1484,14 @@ function MetadataButtons() {
   /**
    * Create the Edit Metadata dialog.
    */
-  self.initEditMetadataDialog = function() {
+  self.initEditMetadataDialog = function(editable) {
     const close = $('<a href="#" class="btn btn-default" data-dismiss="modal"></a>').text(_('Close'));
     close.click(self.closeModal);
-    const save = $('<a href="#" class="btn btn-success" data-dismiss="modal"></a>').text(_('Save'));
-    save.click(self.saveEditMetadataModal);
+    var save = $('<span></span>');
+    if (editable) {
+      save = $('<a href="#" class="btn btn-success" data-dismiss="modal"></a>').text(_('Save'));
+      save.click(self.saveEditMetadataModal);
+    }
     const copyToClipboard = $('<button class="btn btn-default"></button>')
       .append($('<i></i>').addClass('fa fa-copy'))
       .append(_('Copy to clipboard'));
@@ -1431,16 +1501,19 @@ function MetadataButtons() {
     });
     const toolbar = $('<div></div>');
     const container = $('<ul></ul>');
-    const notice = $('<div></div>')
-      .css('text-align', 'left')
-      .css('padding', '0.2em 0.2em 0.2em 1em')
-      .css('color', 'red')
-      .text(_('Renaming, moving the file/directory, or changing the directory hierarchy can break the association of the metadata you have added.'));
+    var notice = $('<span></span>');
+    if (editable) {
+      notice = $('<div></div>')
+        .css('text-align', 'left')
+        .css('padding', '0.2em 0.2em 0.2em 1em')
+        .css('color', 'red')
+        .text(_('Renaming, moving the file/directory, or changing the directory hierarchy can break the association of the metadata you have added.'));
+    }
     const dialog = $('<div class="modal fade"></div>')
       .append($('<div class="modal-dialog modal-lg"></div>')
         .append($('<div class="modal-content"></div>')
           .append($('<div class="modal-header"></div>')
-            .append($('<h3></h3>').text(_('Edit Metadata'))))
+            .append($('<h3></h3>').text(editable ? _('Edit Metadata') : _('View Metadata'))))
           .append($('<form></form>')
             .append($('<div class="modal-body"></div>')
               .append($('<div class="row"></div>')

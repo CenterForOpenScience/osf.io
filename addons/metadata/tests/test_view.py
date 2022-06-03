@@ -22,6 +22,7 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
         assert_equals(res.json, {
             'data': {
                 'attributes': {
+                    'editable': True,
                     'files': [],
                 },
                 'id': self.node_settings.owner._id,

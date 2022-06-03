@@ -2122,7 +2122,7 @@ var FGItemButtons = {
                     }, gettext('Rename'))
                 );
             }
-            if (window.File && window.FileReader && (item.kind === 'folder' || item.kind === 'file') && item.data.permissions && item.data.permissions.edit) {
+            if (window.File && window.FileReader && (item.kind === 'folder' || item.kind === 'file') && item.data.permissions && item.data.permissions.view) {
                 rowButtons.push(
                     m.component(FGButton, {
                         onclick: function (event) { _createLinkEvent.call(tb, event, item); },

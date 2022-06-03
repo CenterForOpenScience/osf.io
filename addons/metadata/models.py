@@ -279,12 +279,7 @@ class NodeSettings(BaseNodeSettings):
                 if draft_file['path'] != filepath:
                     continue
                 draft_file['metadata'] = metadata
-            draft.update_metadata({
-                FIELD_GRDM_FILES: {
-                    'value': json.dumps(draft_files, indent=2),
-                },
-            })
-            draft.save()
+            self._update_draft_grdm_files(draft, draft_files)
 
     def _remove_draft_files(self, schema, filepath):
         drafts = self._get_registration_schema(schema)
@@ -297,12 +292,16 @@ class NodeSettings(BaseNodeSettings):
             draft_files = [draft_file
                            for draft_file in draft_files
                            if draft_file['path'] != filepath]
-            draft.update_metadata({
-                FIELD_GRDM_FILES: {
-                    'value': json.dumps(draft_files, indent=2),
-                },
-            })
-            draft.save()
+            self._update_draft_grdm_files(draft, draft_files)
+
+    def _update_draft_grdm_files(self, draft, draft_files):
+        value = json.dumps(draft_files, indent=2) if len(draft_files) > 0 else ''
+        draft.update_metadata({
+            FIELD_GRDM_FILES: {
+                'value': value,
+            },
+        })
+        draft.save()
 
     def _get_related_schemas(self, metadata):
         if metadata is None or len(metadata) == 0:

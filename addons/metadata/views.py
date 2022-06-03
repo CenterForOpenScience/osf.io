@@ -13,6 +13,7 @@ from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
 from osf.models import AbstractNode, DraftRegistration, Registration
 from osf.models.metaschema import RegistrationSchema
+from osf.utils.permissions import WRITE
 from website.project.decorators import (
     must_be_valid_project,
     must_have_addon,
@@ -30,12 +31,16 @@ ERAD_COLUMNS = [
 ]
 
 
-def _response_project_metadata(addon):
+def _response_project_metadata(user, addon):
+    attr = {
+        'editable': addon.owner.has_permission(user, WRITE),
+    }
+    attr.update(addon.get_project_metadata())
     return {
         'data': {
             'id': addon.owner._id,
             'type': 'metadata-node-project',
-            'attributes': addon.get_project_metadata(),
+            'attributes': attr,
         }
     }
 
@@ -114,7 +119,7 @@ def metadata_get_erad_candidates(auth, **kwargs):
 def metadata_get_project(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     addon = node.get_addon(SHORT_NAME)
-    return _response_project_metadata(addon)
+    return _response_project_metadata(auth.user, addon)
 
 @must_be_valid_project
 @must_be_logged_in
@@ -213,7 +218,7 @@ def metadata_set_file_to_drafts(auth, did=None, mnode=None, filepath=None, **kwa
         draft_files.append(file_metadata)
         draft.update_metadata({
             FIELD_GRDM_FILES: {
-                'value': json.dumps(draft_files, indent=2),
+                'value': json.dumps(draft_files, indent=2) if len(draft_files) > 0 else '',
             },
         })
         draft.save()
@@ -245,7 +250,7 @@ def metadata_delete_file_from_drafts(auth, did=None, mnode=None, filepath=None, 
                        if df['path'] != draft_filepath]
         draft.update_metadata({
             FIELD_GRDM_FILES: {
-                'value': json.dumps(draft_files, indent=2),
+                'value': json.dumps(draft_files, indent=2) if len(draft_files) > 0 else '',
             },
         })
         draft.save()
