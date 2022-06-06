@@ -180,6 +180,29 @@ class TestResolveGuid(OsfTestCase):
         )
         assert res.status_code == 200
 
+    def test_resolve_guid_no_auth_redirect_to_cas_includes_public_with_url_segments(self):
+        """
+        Unauthenticated users are sent to login when visiting private projects related URLs, but not if the projects are
+        public
+        """
+        for segment in ('comments', 'links', 'components', 'files', 'files/osfstorage', 'files/addon'):
+            self.node.is_public = False
+            self.node.save()
+            res = self.app.get(
+                f'{self.node.web_url_for("resolve_guid", guid=self.node._id)}/{segment}/',
+                expect_errors=True,
+            )
+            assert res.status_code == 302
+            assert '/login?service=' in res.location
+
+            self.node.is_public = True
+            self.node.save()
+            res = self.app.get(
+                f'{self.node.web_url_for("resolve_guid", guid=self.node._id)}/{segment}/',
+                expect_errors=True,
+            )
+            assert res.status_code == 200
+
     def test_resolve_guid_private_request_access_or_redirect_to_cas(self):
         """
         Authenticated users are sent to the request access page when it is set to true on the node, otherwise they get a
