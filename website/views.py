@@ -31,6 +31,7 @@ from osf.models import Guid, Institution, Preprint, AbstractNode, Node, DraftNod
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, DOMAIN
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.ember_osf_web.views import use_ember_app
+from website.project.decorators import check_contributor_auth
 from website.project.model import has_anonymous_link
 from osf.utils import permissions
 
@@ -311,6 +312,17 @@ def resolve_guid(guid, suffix=None):
 
     if isinstance(resource, DraftNode):
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
+
+    if isinstance(resource, AbstractNode):
+        response = check_contributor_auth(
+            resource,
+            auth=Auth.from_kwargs(request.args.to_dict(), {}),
+            include_public=True,
+            include_view_only_anon=True,
+            include_groups=True
+        )
+        if response:
+            return response
 
     # Stream to ember app if resource has emberized view
     addon_paths = [f'files/{addon.short_name}' for addon in settings.ADDONS_AVAILABLE_DICT.values() if 'storage' in addon.categories] + ['files']

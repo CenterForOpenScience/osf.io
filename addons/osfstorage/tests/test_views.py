@@ -221,6 +221,17 @@ class TestGetMetadataHook(HookTestCase):
             self.node,
             expect_errors=True,
         )
+        assert_equal(res.status_code, 302)
+        assert '/login?service=' in res.location
+
+        self.node.is_public = True
+        self.node.save()
+        res = self.send_hook(
+            'osfstorage_get_metadata',
+            {'fid': '/not/fo/u/nd/'}, {},
+            self.node,
+            expect_errors=True,
+        )
         assert_equal(res.status_code, 404)
 
 
