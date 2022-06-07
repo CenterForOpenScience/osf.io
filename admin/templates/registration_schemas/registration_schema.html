@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load node_extras %}
+{% block title %}
+    <title>Registration Schema</title>
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+        <ul class="messages">
+            {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="btn-group" role="group">
+                    <a href="{% url 'registration_schemas:list' %}" class="btn btn-primary"> All Registration Schemas</a>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <h3>Registration Schema Details</h3>
+            <p>Associate this schema with a provider via the <a href="{% url 'registration_providers:list' %}">Providers Page </a></p>
+        </div>
+        <div class="row">
+            <h2>{{ registration_schema.name }} v{{ registration_schema.schema_version }}</h2>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Schema Version</td>
+                        <td>{{registration_schema.schema_version}}</td>
+                    </tr>
+                    <tr>
+                        <td>Description</td>
+                        <td>{{registration_schema.description}}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="row padded">
+            <div class="col-md-12">
+                <form style="display: inline;" method="post" action="{% url 'registration_schemas:detail' registration_schema_id=registration_schema.id %}">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <input class="btn btn-success" type="submit" value="Update Schema" />
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

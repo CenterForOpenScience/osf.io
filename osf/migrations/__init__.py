@@ -52,6 +52,7 @@ def get_admin_write_permissions():
         'delete_preprintprovider',
         'change_subject',
         'change_maintenancestate',
+        'change_registrationschema',
         'delete_maintenancestate',
         'change_scheduledbanner',
         'delete_scheduledbanner',

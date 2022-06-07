@@ -32,11 +32,11 @@ from api.base.serializers import (
     HideIfWithdrawalOrWikiDisabled,
 )
 from framework.auth.core import Auth
-from osf.exceptions import ValidationValueError, NodeStateError
+from osf.exceptions import NodeStateError
 from osf.models import Node
 from osf.utils.registrations import strip_registered_meta_comments
 from osf.utils.workflows import ApprovalStates
-from framework.sentry import log_exception
+
 
 class RegistrationSerializer(NodeSerializer):
     admin_only_editable_fields = [
@@ -695,14 +695,6 @@ class RegistrationCreateSerializer(RegistrationSerializer):
             raise exceptions.ValidationError('All files attached to this form must be registered to complete the process. '
                                              'The following file(s) are attached, but are not part of a component being'
                                              ' registered: {}'.format(', '.join(orphan_files_names)))
-
-        try:
-            # Still validating metadata, but whether `registration_responses` or `registration_metadata` were populated
-            # on the draft, the other field was built and populated as well.  Both should exist.
-            draft.validate_metadata(metadata=draft.registration_metadata, required_fields=True)
-        except ValidationValueError:
-            log_exception()  # Probably indicates a bug on our end, so log to sentry
-            # TODO: Raise an error once our JSON schemas are updated
 
         try:
             registration = draft.register(auth, save=True, child_ids=children)
