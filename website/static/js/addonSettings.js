@@ -101,7 +101,7 @@ var OAuthAddonSettingsViewModel = oop.defclass({
                     } else if (self.name === 'bitbucket') {
                         self.setMessage(_('Add-on successfully authorized. If you wish to link a different account, log out of bitbucket.org before attempting to connect to a second Bitbucket account on the GakuNin RDM. This will clear the credentials stored in your browser.'), 'text-success');
                     } else if (self.name === 'onedrive') {
-                        self.setMessage(_('Add-on successfully authorized. If you wish to link a different account, log out of onedrive.live.com before attempting to connect to a second OneDrive account on the GakuNin RDM. This will clear the credentials stored in your browser.'), 'text-success');
+                        self.setMessage(_('Add-on successfully authorized. If you wish to link a different account, log out of Personal OneDrive at login.live.com and OneDrive for School or Business at login.microsoftonline.com before attempting to connect to a second OneDrive account on the GakuNin RDM. This will clear the credentials stored in your browser.'), 'text-success');
                     } else {
                         self.setMessage(sprintf(_('Add-on successfully authorized. To link this add-on to an GakuNin RDM project, go to the settings page of the project, enable %1$s, and choose content to connect.'),self.properName), 'text-success');
                     }

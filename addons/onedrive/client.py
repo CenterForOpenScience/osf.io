@@ -5,6 +5,9 @@ from website.util.client import BaseClient
 from addons.onedrive import settings
 from addons.onedrive.settings import DEFAULT_ROOT_ID
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 class OneDriveClient(BaseClient):
 
@@ -43,6 +46,7 @@ class OneDriveClient(BaseClient):
         resp = self._make_request(
             'GET',
             url,
+            headers=self._default_headers,
             expects=(200, ),
             throws=HTTPError(401)
         )
@@ -54,6 +58,7 @@ class OneDriveClient(BaseClient):
             next_resp = self._make_request(
                 'GET',
                 next_url,
+                headers=self._default_headers,
                 expects=(200, ),
                 throws=HTTPError(401)
             )
@@ -65,17 +70,47 @@ class OneDriveClient(BaseClient):
 
     def user_info(self):
         """Get information about the token's owner.
-
         API Docs::
-
-        https://docs.microsoft.com/en-us/graph/api/user-get
-
+        https://msdn.microsoft.com/en-us/library/hh826533.aspx#requesting_info_using_rest
+        https://msdn.microsoft.com/en-us/library/hh243648.aspx#user
         :rtype: dict
         :return: a dict containing metadata about the token's owner.
         """
-        return self._make_request(
+        me_url = self._build_url(settings.ONEDRIVE_API_URL, 'me')
+        me_resp = self._make_request(
             'GET',
-            self._build_url(settings.ONEDRIVE_API_URL, 'me'),
+            me_url,
+            headers=self._default_headers,
             expects=(200, ),
             throws=HTTPError(401)
-        ).json()
+        )
+        me_data = me_resp.json()
+        logger.debug('me_data:({})'.format(me_data))
+
+        retval = {
+            'id': me_data['id'],
+            'name': me_data['displayName'],
+            'link': self._build_url(settings.ONEDRIVE_API_URL, 'users', me_data['id']),
+            'mail': me_data['userPrincipalName'],
+        }
+
+        # get drive properties from /users/$user_id/drive endpoint
+        drive_url = self._build_url(settings.ONEDRIVE_API_URL, 'users', retval['id'], 'drive')
+        drive_resp = self._make_request(
+            'GET',
+            drive_url,
+            headers=self._default_headers,
+            expects=(200, ),
+            throws=HTTPError(401)
+        )
+        drive_data = drive_resp.json()
+        logger.debug('drive_data:({})'.format(drive_data))
+        retval['drive_id'] = drive_data['id']
+
+        if drive_data['driveType'] == 'personal':
+            retval['name'] = '{} - OneDrive Personal'.format(retval['mail'])
+        else:
+            retval['name'] = '{} - {}'.format(retval['mail'], 'OneDrive for School or Business')
+
+        logger.debug('retval:({})'.format(retval))
+        return retval
