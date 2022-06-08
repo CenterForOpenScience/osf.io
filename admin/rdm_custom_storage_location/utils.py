@@ -912,7 +912,7 @@ def save_basic_storage_institutions_credentials_common(
         # ... or get the old one
         provider.account = ExternalAccount.objects.get(
             provider=provider_name,
-            provider_id='{}{}{}'.format(host, separator, username).lower()
+            provider_id='{}{}{}'.format(host, separator, username)
         )
         if provider.account.oauth_key != password:
             provider.account.oauth_key = password

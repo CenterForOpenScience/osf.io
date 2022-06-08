@@ -36,7 +36,7 @@ def encrypt_string(value, prefix='jwe:::'):
                     pass
                 else:
                     raise
-    return value
+    return ensure_str(value)
 
 
 def decrypt_string(value, prefix='jwe:::'):
@@ -52,7 +52,7 @@ def decrypt_string(value, prefix='jwe:::'):
                     pass
                 else:
                     raise
-    return value
+    return ensure_str(value)
 
 class LowercaseCharField(models.CharField):
     def get_prep_value(self, value):
