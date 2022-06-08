@@ -1701,7 +1701,7 @@ INSTITUTIONS = {
                 'banner_name': 'sc-banner.png',
                 'logo_name': 'sc-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(
-                    encode_uri_component('urn:mace:incommon:sc.edu')),
+                    encode_uri_component('https://cas.auth.sc.edu/cas/idp')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(
                     encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-sc.cos.io'],
