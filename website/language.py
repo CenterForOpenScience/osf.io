@@ -13,7 +13,7 @@ from website import settings
 # (upon clicking primary email confirmation link)
 WELCOME_MESSAGE = """
 <h1>Welcome to the OSF!</h1>
-<p>Visit our <a href="https://openscience.zendesk.com/hc/en-us" target="_blank" rel="noreferrer">Guides</a> to learn about creating a project, or get inspiration from <a href="https://osf.io/explore/activity/#popularPublicProjects">popular public projects</a>.</p>
+<p>Visit our <a href="https://help.osf.io/" target="_blank" rel="noreferrer">Guides</a> to learn about creating a project, or get inspiration from <a href="https://osf.io/explore/activity/#popularPublicProjects">popular public projects</a>.</p>
 """
 
 TERMS_OF_SERVICE = """
@@ -146,8 +146,8 @@ BEFORE_REGISTER_HAS_POINTERS = (
     u'This {category} contains links to other projects. These links will be '
     u'copied into your registration, but the projects that they link to will '
     u'not be registered. If you wish to register the linked projects, they '
-    u'must be registered separately. Learn more about <a href="http://help.osf.io'
-    u'/m/links_forks/l/524112-link-to-a-project">links</a>.'
+    u'must be registered separately. Learn more about <a href="https://help.osf.io'
+    u'/article/199-link-to-a-project">links</a>.'
 )
 
 BEFORE_FORK_HAS_POINTERS = (

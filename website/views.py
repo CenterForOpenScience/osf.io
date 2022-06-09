@@ -31,6 +31,7 @@ from osf.models import Guid, Institution, Preprint, AbstractNode, Node, DraftNod
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, DOMAIN
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.ember_osf_web.views import use_ember_app
+from website.project.decorators import check_contributor_auth
 from website.project.model import has_anonymous_link
 from osf.utils import permissions
 
@@ -312,7 +313,20 @@ def resolve_guid(guid, suffix=None):
     if isinstance(resource, DraftNode):
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
+    if isinstance(resource, AbstractNode):
+        response = check_contributor_auth(
+            resource,
+            auth=Auth.from_kwargs(request.args.to_dict(), {}),
+            include_public=True,
+            include_view_only_anon=True,
+            include_groups=True
+        )
+        if response:
+            return response
+
     # Stream to ember app if resource has emberized view
+    addon_paths = [f'files/{addon.short_name}' for addon in settings.ADDONS_AVAILABLE_DICT.values() if 'storage' in addon.categories] + ['files']
+
     if isinstance(resource, Preprint):
         if resource.provider.domain_redirect_enabled:
             return redirect(resource.absolute_url, http_status.HTTP_301_MOVED_PERMANENTLY)
@@ -324,8 +338,13 @@ def resolve_guid(guid, suffix=None):
     elif isinstance(resource, Registration) and suffix and suffix.rstrip('/').lower() in ('files', 'files/osfstorage') and waffle.flag_is_active(request, features.EMBER_REGISTRATION_FILES):
         return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
 
+    elif isinstance(resource, Node) and suffix and any(path.startswith(suffix.rstrip('/').lower()) for path in addon_paths) and waffle.flag_is_active(request, features.EMBER_PROJECT_FILES):
+        return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
+
     elif isinstance(resource, BaseFileNode) and resource.is_file and not isinstance(resource.target, Preprint):
         if isinstance(resource.target, Registration) and waffle.flag_is_active(request, features.EMBER_FILE_REGISTRATION_DETAIL):
+            return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
+        if isinstance(resource.target, Node) and waffle.flag_is_active(request, features.EMBER_FILE_PROJECT_DETAIL):
             return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
 
     # Redirect to legacy endpoint for Nodes, Wikis etc.
@@ -349,9 +368,9 @@ def redirect_howosfworks(**kwargs):
     return redirect('/getting-started/')
 
 
-# redirect osf.io/getting-started to https://openscience.zendesk.com/hc/en-us
+# redirect osf.io/getting-started to https://help.osf.io/article/342-getting-started-on-the-osf
 def redirect_getting_started(**kwargs):
-    return redirect('https://openscience.zendesk.com/hc/en-us')
+    return redirect('https://help.osf.io/article/342-getting-started-on-the-osf')
 
 
 # Redirect to home page

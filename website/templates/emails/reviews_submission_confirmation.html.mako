@@ -57,8 +57,8 @@
                                         Now that you've shared your ${document_type}, take advantage of more OSF features:
                                             <ul>
                                                 <li>Upload supplemental, materials, data, and code to an OSF project associated with your ${document_type}.
-                                                    <a href="https://openscience.zendesk.com/hc/en-us/articles/360019930533-Upload-a-Preprint#add-supplemental-materials" target="_blank">Learn how</a></li>
-                                                <li>Preregister your next study. <a href="https://openscience.zendesk.com/hc/en-us/articles/360019930893">Read more</a></li>
+                                                    <a href="https://help.osf.io/article/177-upload-a-preprint" target="_blank">Learn how</a></li>
+                                                <li>Preregister your next study. <a href="https://help.osf.io/article/145-preregistration">Read more</a></li>
                                                 <li>Or share on social media: Tell your friends through:
                                                     <table style="display: inline-table;" width="53" border="0" cellspacing="0" cellpadding="0" align="center">
                                                         <tbody>

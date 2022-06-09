@@ -208,7 +208,7 @@ INSTITUTIONS = {
             {
                 '_id': 'cfa',
                 'name': 'Center for Astrophysics | Harvard & Smithsonian',
-                'description': 'Open Source Project Management Tools for the CfA Community: About <a href="https://cos.io/our-products/osf/">OSF</a> | <a href="https://www.cfa.harvard.edu/researchtopics">Research at the CfA</a> | <a href="https://library.cfa.harvard.edu/">CfA Library</a> | <a href="https://openscience.zendesk.com/hc/en-us">Get Help</a>',
+                'description': 'Open Source Project Management Tools for the CfA Community: About <a href="https://cos.io/our-products/osf/">OSF</a> | <a href="https://www.cfa.harvard.edu/researchtopics">Research at the CfA</a> | <a href="https://library.cfa.harvard.edu/">CfA Library</a> | <a href="https://help.osf.io/">Get Help</a>',
                 'banner_name': 'cfa-banner.png',
                 'logo_name': 'cfa-shield.png',
                 'login_url': None,
@@ -1241,7 +1241,7 @@ INSTITUTIONS = {
             {
                 '_id': 'cfa',
                 'name': 'Center for Astrophysics | Harvard & Smithsonian [Test]',
-                'description': 'Open Source Project Management Tools for the CfA Community: About <a href="https://cos.io/our-products/osf/">OSF</a> | <a href="https://www.cfa.harvard.edu/researchtopics">Research at the CfA</a> | <a href="https://library.cfa.harvard.edu/">CfA Library</a> | <a href="https://openscience.zendesk.com/hc/en-us">Get Help</a>',
+                'description': 'Open Source Project Management Tools for the CfA Community: About <a href="https://cos.io/our-products/osf/">OSF</a> | <a href="https://www.cfa.harvard.edu/researchtopics">Research at the CfA</a> | <a href="https://library.cfa.harvard.edu/">CfA Library</a> | <a href="https://help.osf.io/">Get Help</a>',
                 'banner_name': 'cfa-banner.png',
                 'logo_name': 'cfa-shield.png',
                 'login_url': None,

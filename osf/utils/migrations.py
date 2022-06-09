@@ -414,6 +414,8 @@ def create_schema_blocks_for_atomic_schema(schema):
         if block_type == 'question-label':
             current_group_key = generate_object_id()
             block['schema_block_group_key'] = current_group_key
+        elif block_type == 'paragraph':  # if a paragraph trails a question-label
+            block['schema_block_group_key'] = current_group_key
         elif block_type in grouped_block_types:
             block['schema_block_group_key'] = current_group_key
         else:

@@ -161,6 +161,74 @@ class TestResolveGuid(OsfTestCase):
         )
         assert res.status_code == 404
 
+    def test_resolve_guid_no_auth_redirect_to_cas_includes_public(self):
+        """
+        Unauthenticated users are sent to login when visiting private projects, but not if the projects are public.
+        """
+        res = self.app.get(
+            self.node.web_url_for('resolve_guid', guid=self.node._id),
+            expect_errors=True,
+        )
+        assert res.status_code == 302
+        assert '/login?service=' in res.location
+
+        self.node.is_public = True
+        self.node.save()
+        res = self.app.get(
+            self.node.web_url_for('resolve_guid', guid=self.node._id),
+            expect_errors=True,
+        )
+        assert res.status_code == 200
+
+    def test_resolve_guid_no_auth_redirect_to_cas_includes_public_with_url_segments(self):
+        """
+        Unauthenticated users are sent to login when visiting private projects related URLs, but not if the projects are
+        public
+        """
+        for segment in ('comments', 'links', 'components', 'files', 'files/osfstorage', 'files/addon'):
+            self.node.is_public = False
+            self.node.save()
+            res = self.app.get(
+                f'{self.node.web_url_for("resolve_guid", guid=self.node._id)}/{segment}/',
+                expect_errors=True,
+            )
+            assert res.status_code == 302
+            assert '/login?service=' in res.location
+
+            self.node.is_public = True
+            self.node.save()
+            res = self.app.get(
+                f'{self.node.web_url_for("resolve_guid", guid=self.node._id)}/{segment}/',
+                expect_errors=True,
+            )
+            assert res.status_code == 200
+
+    def test_resolve_guid_private_request_access_or_redirect_to_cas(self):
+        """
+        Authenticated users are sent to the request access page when it is set to true on the node, otherwise they get a
+        legacy Forbidden page.
+        """
+        non_contrib = AuthUserFactory()
+        self.node.access_requests_enabled = False
+        self.node.save()
+        res = self.app.get(
+            self.node.web_url_for('resolve_guid', guid=self.node._id),
+            auth=non_contrib.auth,
+            expect_errors=True,
+        )
+        assert '<title>OSF | Forbidden</title>' in res.body.decode()
+        assert res.status_code == 403
+
+        self.node.access_requests_enabled = True
+        self.node.save()
+        res = self.app.get(
+            self.node.web_url_for('resolve_guid', guid=self.node._id),
+            auth=non_contrib.auth,
+            expect_errors=True,
+        )
+        assert res.status_code == 403
+        assert '<title>OSF | Request Access</title>' in res.body.decode()
+
     def test_resolve_guid_download_file(self):
         pp = PreprintFactory(finish=True)
 

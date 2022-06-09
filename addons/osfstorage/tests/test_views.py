@@ -12,6 +12,8 @@ from nose.tools import *  # noqa
 from dateutil.parser import parse as parse_datetime
 from website import settings
 
+from addons.github.tests.factories import GitHubAccountFactory
+from addons.github.models import GithubFile
 from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
 from framework.auth.core import Auth
 from addons.osfstorage.tests.utils import (
@@ -39,6 +41,8 @@ from api.caching.utils import storage_usage_cache
 from osf_tests.factories import ProjectFactory, ApiOAuth2PersonalTokenFactory, PreprintFactory
 from website.files.utils import attach_versions
 from website.settings import EXTERNAL_EMBER_APPS
+from api_tests.draft_nodes.views.test_draft_node_files_lists import prepare_mock_wb_response
+
 
 def create_record_with_version(path, node_settings, **kwargs):
     version = factories.FileVersionFactory(**kwargs)
@@ -211,6 +215,17 @@ class TestGetMetadataHook(HookTestCase):
         assert_equal(res.status_code, 404)
 
     def test_metadata_not_found_lots_of_slashes(self):
+        res = self.send_hook(
+            'osfstorage_get_metadata',
+            {'fid': '/not/fo/u/nd/'}, {},
+            self.node,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 302)
+        assert '/login?service=' in res.location
+
+        self.node.is_public = True
+        self.node.save()
         res = self.send_hook(
             'osfstorage_get_metadata',
             {'fid': '/not/fo/u/nd/'}, {},
@@ -1411,13 +1426,54 @@ class TestFileTags(StorageTestCase):
 @pytest.mark.enable_bookmark_creation
 class TestFileViews(StorageTestCase):
 
+    def add_github(self):
+        addon = self.node.add_addon('github', auth=Auth(self.user))
+        oauth_settings = GitHubAccountFactory()
+        oauth_settings.save()
+        self.user.add_addon('github')
+        self.user.external_accounts.add(oauth_settings)
+        self.user.save()
+        addon.user_settings = self.user.get_addon('github')
+        addon.external_account = oauth_settings
+        addon.repo = 'something'
+        addon.user = 'someone'
+        addon.save()
+        addon.user_settings.oauth_grants[self.project._id] = {
+            oauth_settings._id: []}
+        addon.user_settings.save()
+        self.node.save()
+
+
+    @responses.activate
+    def test_file_view_updates_history(self):
+        self.add_github()
+
+        # This represents a file add to github via github, without any OSF activity.
+        prepare_mock_wb_response(
+            folder=False,
+            path='/testpath',
+            node=self.node,
+            provider='github',
+            files=[
+                {'name': 'testpath', 'path': '/testpath', 'materialized': '/testpath', 'kind': 'file'},
+            ]
+        )
+        with override_flag(features.EMBER_FILE_PROJECT_DETAIL, active=True):
+            url = self.node.web_url_for('addon_view_or_download_file', path='testpath', provider='github')
+            self.app.get(url, auth=self.user.auth)
+            file = GithubFile.objects.get(_path='/testpath', provider='github')
+            assert file.history
+
     @mock.patch('website.views.stream_emberapp')
     def test_file_views(self, mock_ember):
         with override_flag(features.EMBER_FILE_PROJECT_DETAIL, active=True):
             file = create_test_file(target=self.node, user=self.user)
             url = self.node.web_url_for('addon_view_or_download_file', path=file._id, provider=file.provider)
             res = self.app.get(url, auth=self.user.auth)
-            assert res.status_code == 200
+            assert res.status_code == 302
+            assert res.headers['Location'] == f'{settings.DOMAIN}{file.get_guid()._id}/'
+            assert not mock_ember.called
+            res.follow()
             assert mock_ember.called
             args, kwargs = mock_ember.call_args
 

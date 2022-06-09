@@ -56,7 +56,6 @@ from osf.models import (
 )
 from osf.metrics import PreprintView, PreprintDownload
 from osf.utils import permissions
-from website.ember_osf_web.views import use_ember_app
 from website.profile.utils import get_profile_image_url
 from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project, check_contributor_auth
@@ -728,20 +727,9 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     savepoint_id = transaction.savepoint()
     file_node = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).get_or_create(target, path)
-    if isinstance(target, Node) and waffle.flag_is_active(request, features.EMBER_FILE_PROJECT_DETAIL):
-        return use_ember_app()
-
-    if action != 'download' and isinstance(target, Registration) and waffle.flag_is_active(request, features.EMBER_FILE_REGISTRATION_DETAIL):
-        if file_node.get_guid():
-            guid = file_node.get_guid()
-        else:
-            guid = file_node.get_guid(create=True)
-            guid.save()
-            file_node.save()
-        return redirect(f'{settings.DOMAIN}{guid._id}/')
 
     # Note: Cookie is provided for authentication to waterbutler
-    # it is overriden to force authentication as the current user
+    # it is overridden to force authentication as the current user
     # the auth header is also pass to support basic auth
     version = file_node.touch(
         request.headers.get('Authorization'),
@@ -750,6 +738,16 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
             cookie=request.cookies.get(settings.COOKIE_NAME)
         )
     )
+
+    # There's no download action redirect to the Ember front-end file view and create guid.
+    if action != 'download':
+        if isinstance(target, Node) and waffle.flag_is_active(request, features.EMBER_FILE_PROJECT_DETAIL):
+            guid = file_node.get_guid(create=True)
+            return redirect(f'{settings.DOMAIN}{guid._id}/')
+        if isinstance(target, Registration) and waffle.flag_is_active(request, features.EMBER_FILE_REGISTRATION_DETAIL):
+            guid = file_node.get_guid(create=True)
+            return redirect(f'{settings.DOMAIN}{guid._id}/')
+
     if version is None:
         # File is either deleted or unable to be found in the provider location
         # Rollback the insertion of the file_node

@@ -121,11 +121,13 @@ class SendEmailDeactivationThrottle(SendEmailThrottle):
         return super(SendEmailDeactivationThrottle, self).allow_request(request, view)
 
 
-class BurstRateThrottle(UserRateThrottle):
+class BurstRateThrottle(NonCookieAuthThrottle, UserRateThrottle):
     scope = 'burst'
+
 
 class FilesRateThrottle(NonCookieAuthThrottle, UserRateThrottle):
     scope = 'files'
+
 
 class FilesBurstRateThrottle(NonCookieAuthThrottle, UserRateThrottle):
     scope = 'files-burst'

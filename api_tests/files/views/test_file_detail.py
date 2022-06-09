@@ -146,7 +146,7 @@ class TestFileView:
         assert mock_allow.call_count == 1
 
     def test_get_file(self, app, user, file_url, file):
-        res = app.get(file_url, auth=user.auth)
+        res = app.get(f'{file_url}?version=2.2', auth=user.auth)
         file.versions.first().reload()
         assert res.status_code == 200
         assert set(res.json.keys()) == {'meta', 'data'}
