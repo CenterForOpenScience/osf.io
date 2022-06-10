@@ -194,7 +194,8 @@ class CrossRefClient(AbstractIdentifierClient):
                     ),
                 ) for institution in contributor.affiliated_institutions.all() if institution.ror_uri
             ]
-            person.append(element.affiliations(*affiliations))
+            if affiliations:
+                person.append(element.affiliations(*affiliations))
 
             orcid = contributor.get_verified_external_id('ORCID', verified_only=True)
             if orcid:
