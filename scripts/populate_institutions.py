@@ -1115,6 +1115,18 @@ INSTITUTIONS = {
         ],
     'test': [
             {
+                '_id': 'osfidemo',
+                'name': 'OSF Demo Institution',
+                'description': 'Here is the place to put in links to other resources, security and data policies, research guidelines, and/or a contact for user support within your institution.',
+                'banner_name': 'placeholder-banner.png',
+                'logo_name': 'placeholder-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': '',
+            },
+            {
                 '_id': 'a2jlab',
                 'name': 'Access to Justice Lab [Test]',
                 'description': 'Based within Harvard Law School, the <a href="https://a2jlab.org/">Access to Justice Lab</a> works with court administrators, legal service providers, and other stakeholders in the U.S. legal system to design and implement randomized field experiments evaluating interventions that impact access to justice.',
