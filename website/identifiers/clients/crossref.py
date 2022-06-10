@@ -118,7 +118,7 @@ class CrossRefClient(AbstractIdentifierClient):
                     element.program(xmlns=CROSSREF_ACCESS_INDICATORS)
                 )
 
-            if preprint.article_doi != self.build_doi(preprint) and include_relation:
+            if preprint.article_doi and preprint.article_doi != self.build_doi(preprint) and include_relation:
                 posted_content.append(
                     element.program(
                         element.related_item(
