@@ -26,6 +26,7 @@ from website.project.decorators import (
     must_be_valid_project,
     must_be_addon_authorizer,
     must_have_permission,
+    must_be_contributor,
 )
 from website import settings as website_settings
 from website.ember_osf_web.views import use_ember_app
@@ -81,6 +82,7 @@ iqbrims_deauthorize_node = generic_views.deauthorize_node(
 )
 
 @must_be_valid_project
+@must_be_contributor
 @must_have_addon('iqbrims', 'node')
 def project_iqbrims(**kwargs):
     node = kwargs['node'] or kwargs['project']

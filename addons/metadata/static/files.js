@@ -6,7 +6,8 @@ const Fangorn = require('js/fangorn').Fangorn;
 const Raven = require('raven-js');
 
 const logPrefix = '[metadata] ';
-const _ = require('js/rdmGettext')._;
+const rdmGettext = require('js/rdmGettext');
+const _ = rdmGettext._;
 
 const metadataFields = require('./metadata-fields.js');
 const WaterButlerCache = require('./wbcache.js').WaterButlerCache;
@@ -68,16 +69,21 @@ function MetadataButtons() {
       return;
     }
     self.loading = true;
-    self.erad.load(self.baseUrl, function() {
-      self.registrationSchemas.load(function() {
-        self.loadMetadata(contextVars.node.id, contextVars.node.urls.api + 'metadata/', function() {
-          self.loading = false;
-          const path = self.processHash();
-          if (!callback) {
-            return;
-          }
-          callback(path);
-        });
+    const loadedCallback = function() {
+      self.loading = false;
+      const path = self.processHash();
+      if (!callback) {
+        return;
+      }
+      callback(path);
+    };
+    self.registrationSchemas.load(function() {
+      self.loadMetadata(contextVars.node.id, contextVars.node.urls.api + 'metadata/', function(projectMetadata) {
+        if (projectMetadata && projectMetadata.editable) {
+          self.erad.load(self.baseUrl, loadedCallback);
+          return;
+        }
+        loadedCallback();
       });
     });
   };
@@ -94,7 +100,7 @@ function MetadataButtons() {
     if (!context) {
       return null;
     }
-    self.editMetadata(context, path, null);
+    self.editMetadata(context, path, self.getFileItemFromContext());
     return path;
   }
 
@@ -145,7 +151,7 @@ function MetadataButtons() {
       if (!callback) {
         return;
       }
-      callback();
+      callback((data.data || {}).attributes);
     }).fail(function(xhr, status, error) {
       self.loadingMetadatas[nodeId] = false;
       if (error === 'BAD REQUEST') {
@@ -156,7 +162,8 @@ function MetadataButtons() {
           nodeId: nodeId,
           baseUrl: baseUrl,
           projectMetadata: {
-            files: [],
+            editable: false,
+            files: []
           },
           wbcache: (self.contexts[nodeId] ? self.contexts[nodeId].wbcache : null) || new WaterButlerCache(),
           validatedFiles: (self.contexts[nodeId] ? self.contexts[nodeId].validatedFiles : null) || {},
@@ -174,7 +181,7 @@ function MetadataButtons() {
       if (!callback) {
         return;
       }
-      callback();
+      callback(null);
     });
   };
 
@@ -234,7 +241,8 @@ function MetadataButtons() {
 
   self.prepareFields = function(context, container, schema, filepath, fileitem) {
     const lastMetadataItems = (self.lastMetadata.items || []).filter(function(item) {
-      return item.schema == schema.id;
+      const resolved = self.resolveActiveSchemaId(item.schema) || self.currentSchemaId;
+      return resolved === schema.id;
     });
     const lastMetadataItem = lastMetadataItems[0] || {};
     container.empty();
@@ -242,6 +250,7 @@ function MetadataButtons() {
       schema.attributes.schema,
       lastMetadataItem,
       {
+        readonly: !((context.projectMetadata || {}).editable),
         context: context,
         filepath: filepath,
         wbcache: context.wbcache,
@@ -275,20 +284,57 @@ function MetadataButtons() {
     return targetSchemas[0];
   }
 
+  self.resolveActiveSchemaId = function(schemaId) {
+    const targetSchemas = (self.registrationSchemas.schemas || [])
+      .filter(function(s) {
+        return s.id === schemaId;
+      });
+    if (targetSchemas.length === 0) {
+      console.warn(logPrefix, 'No schemas for ' + schemaId);
+      return null;
+    }
+    const targetSchema = targetSchemas[0];
+    if (targetSchema.attributes.active) {
+      return targetSchema.id;
+    }
+    const alternativeSchemas = (self.registrationSchemas.schemas || [])
+      .filter(function(s) {
+        return s.attributes.name === targetSchema.attributes.name;
+      });
+    if (alternativeSchemas.length === 0) {
+      console.warn(logPrefix, 'No schemas for ' + targetSchema.attributes.name);
+      return null;
+    }
+    return alternativeSchemas[0].id;
+  }
+
   self.createSchemaSelector = function(targetItem) {
     const label = $('<label></label>').text(_('Data Schema:'));
     const schema = $('<select></select>');
-    (self.registrationSchemas.schemas || []).forEach(function(s) {
+    const activeSchemas = (self.registrationSchemas.schemas || [])
+      .filter(function(s) {
+        return s.attributes.active;
+      });
+    if (activeSchemas.length === 0) {
+      throw new Error('No active metadata schemas');
+    }
+    activeSchemas.forEach(function(s) {
       schema.append($('<option></option>')
         .attr('value', s.id)
         .text(s.attributes.name));
     });
     var currentSchemaId = null;
-    if (targetItem.schema) {
+    const activeSchemaIds = activeSchemas.map(function(s) {
+      return s.id;
+    });
+    if (targetItem.schema && activeSchemaIds.includes(targetItem.schema)) {
       currentSchemaId = targetItem.schema;
       schema.val(currentSchemaId);
+    } else if (targetItem.schema && self.resolveActiveSchemaId(targetItem.schema)) {
+      currentSchemaId = self.resolveActiveSchemaId(targetItem.schema);
+      schema.val(currentSchemaId);
     } else {
-      currentSchemaId = ((self.registrationSchemas.schemas || [])[0] || {}).id;
+      currentSchemaId = activeSchemas[0].id;
       schema.val(currentSchemaId);
     }
     const group = $('<div></div>').addClass('form-group')
@@ -331,20 +377,60 @@ function MetadataButtons() {
   };
 
   /**
+   * Get the file item for input fields.
+   */
+  self.getFileItemFromContext = function() {
+    if (contextVars.directory) {
+      const dir = contextVars.directory;
+      return {
+        kind: 'folder',
+        data: {
+          materialized: dir.materializedPath,
+          path: dir.path,
+          provider: dir.provider,
+          nodeId: contextVars.node.id
+        }
+      };
+    }
+    if (contextVars.file) {
+      const file = contextVars.file;
+      return {
+        kind: 'file',
+        data: {
+          name: file.name,
+          materialized: file.materializedPath,
+          path: file.path,
+          provider: file.provider,
+          nodeId: contextVars.node.id
+        }
+      };
+    }
+    return null;
+  }
+
+  /**
    * Start editing metadata.
    */
   self.editMetadata = function(context, filepath, item) {
-    if (!self.editMetadataDialog) {
-      self.editMetadataDialog = self.createEditMetadataDialog();
+    var dialog = null;
+    if ((context.projectMetadata || {}).editable) {
+      if (!self.editMetadataDialog) {
+        self.editMetadataDialog = self.initEditMetadataDialog(true);
+      }
+      dialog = self.editMetadataDialog;
+    } else {
+      if (!self.viewMetadataDialog) {
+        self.viewMetadataDialog = self.initEditMetadataDialog(false);
+      }
+      dialog = self.viewMetadataDialog;
     }
-    const dialog = self.editMetadataDialog;
     console.log(logPrefix, 'edit metadata: ', filepath, item);
     self.currentItem = item;
     const currentMetadata = self.findMetadataByPath(context.nodeId, filepath);
     if (!currentMetadata) {
       self.lastMetadata = {
         path: filepath,
-        folder: item === null ? false : item.kind === 'folder',
+        folder: item.kind === 'folder',
         items: [],
       };
     } else {
@@ -374,17 +460,19 @@ function MetadataButtons() {
         item
       );
     });
-    const pasteButton = $('<button></button>')
-      .addClass('btn btn-default')
-      .css('margin-right', 0)
-      .css('margin-left', 'auto')
-      .append($('<i></i>').addClass('fa fa-paste'))
-      .append(_('Paste from Clipboard'))
-      .on('click', self.pasteFromClipboard);
     dialog.toolbar.append(selector.group);
-    dialog.toolbar.append($('<div></div>')
-      .css('display', 'flex')
-      .append(pasteButton));
+    if ((context.projectMetadata || {}).editable) {
+      const pasteButton = $('<button></button>')
+        .addClass('btn btn-default')
+        .css('margin-right', 0)
+        .css('margin-left', 'auto')
+        .append($('<i></i>').addClass('fa fa-paste'))
+        .append(_('Paste from Clipboard'))
+        .on('click', self.pasteFromClipboard);
+      dialog.toolbar.append($('<div></div>')
+        .css('display', 'flex')
+        .append(pasteButton));
+    }
     self.prepareFields(
       context,
       fieldContainer,
@@ -490,6 +578,7 @@ function MetadataButtons() {
     if (!self.resolveConsistencyDialog) {
       self.resolveConsistencyDialog = self.createResolveConsistencyDialog();
     }
+    self.currentContext = context;
     self.currentMetadata = metadata;
     const container = self.resolveConsistencyDialog.container;
     self.resolveConsistencyDialog.copyStatus.text('');
@@ -522,7 +611,6 @@ function MetadataButtons() {
     metadataMessage.text(_('Current Metadata:')).css('margin-top', '1em');
     container.append(metadataMessage);
     container.append(selector.group);
-    container.append(draftSelection);
     container.append(reviewFields);
     self.prepareReviewFields(
       reviewFields,
@@ -602,13 +690,13 @@ function MetadataButtons() {
     });
     console.log('matchedFiles', matchedFiles, self.currentMetadata);
     if (matchedFiles.length === 0) {
-      self.deleteMetadata(self.currentMetadata.path);
+      self.deleteMetadata(self.currentContext, self.currentMetadata.path);
       return;
     }
     const newMetadata = Object.assign({}, self.currentMetadata, {
       path: matchedFiles[0].path
     });
-    const url = self.baseUrl + 'files/' + newMetadata.path;
+    const url = self.currentContext.baseUrl + 'files/' + newMetadata.path;
     $.ajax({
       method: 'PATCH',
       url: url,
@@ -617,12 +705,12 @@ function MetadataButtons() {
     }).done(function (data) {
       console.log(logPrefix, 'saved: ', data);
       return $.ajax({
-        url: self.baseUrl + 'files/' + self.currentMetadata.path,
+        url: self.currentContext.baseUrl + 'files/' + self.currentMetadata.path,
         type: 'DELETE',
         dataType: 'json'
       }).done(function (data) {
         console.log(logPrefix, 'deleted: ', data);
-        self.reloadMetadatas();
+        window.location.reload();
       }).fail(function(xhr, status, error) {
         Raven.captureMessage('Error while retrieving addon info', {
             extra: {
@@ -656,7 +744,12 @@ function MetadataButtons() {
         dataType: 'json'
     }).done(function (data) {
       console.log(logPrefix, 'deleted: ', data, context.nodeId);
-      self.loadMetadata(context.nodeId, context.baseUrl);
+      self.loadMetadata(context.nodeId, context.baseUrl, function() {
+        if (!self.fileViewPath) {
+          return;
+        }
+        self.refreshFileViewButtons(self.fileViewPath);
+      });
     }).fail(function(xhr, status, error) {
       Raven.captureMessage('Error while retrieving addon info', {
           extra: {
@@ -679,13 +772,10 @@ function MetadataButtons() {
     if (!projectNameJaValue && !projectNameEnValue) {
       return _('No name');
     }
-    if (projectNameJaValue && !projectNameEnValue) {
-      return projectNameJaValue;
+    if (rdmGettext.getBrowserLang() === 'ja') {
+      return projectNameJaValue || projectNameEnValue;
     }
-    if (!projectNameJaValue && projectNameEnValue) {
-      return projectNameEnValue;
-    }
-    return projectNameJaValue + ' / ' + projectNameEnValue;
+    return projectNameEnValue || projectNameJaValue;
   };
 
   self.includePathInDraftRegistration = function(context, path, registration) {
@@ -721,7 +811,7 @@ function MetadataButtons() {
       const text = $('<label></label>')
         .css('margin-right', '0.5em')
         .attr('for', 'draft-' + r.id)
-        .text(projectName + ' - ' + r.id);
+        .text(projectName);
       if (disabled) {
         text.css('color', '#888');
       }
@@ -969,6 +1059,22 @@ function MetadataButtons() {
       return f.path === filepath;
     });
     const currentMetadata = currentMetadatas[0] || null;
+    if (!projectMetadata.editable) {
+      // readonly
+      const filepath = item.data.provider + (item.data.materialized || '/');
+      const metadata = self.findMetadataByPath(context.nodeId, filepath);
+      if (!metadata) {
+        return [];
+      }
+      const viewButton = createButton({
+        onclick: function(event) {
+          self.editMetadata(context, filepath, item);
+        },
+        icon: 'fa fa-edit',
+        className : 'text-primary'
+      }, _('View Metadata'));
+      return [viewButton];
+    }
     const buttons = [];
     const editButton = createButton({
       onclick: function(event) {
@@ -1113,16 +1219,26 @@ function MetadataButtons() {
       const filepath = item.data.provider + (item.data.materialized || '/');
       const metadata = self.findMetadataByPath(context.nodeId, filepath);
       const projectMetadata = context.projectMetadata;
-      if (!metadata) {
-        if (filepath.length > 0 && filepath[filepath.length - 1] !== '/') {
-          return false;
-        }
-        const childMetadata = projectMetadata.files.filter(function(f) {
-          return f.path.substring(0, filepath.length) === filepath;
-        });
-        if (childMetadata.length === 0) {
-          return false;
-        }
+      if (!metadata && filepath.length > 0 && filepath[filepath.length - 1] !== '/') {
+        // file with no metadata
+        return false;
+      }
+      const childMetadata = projectMetadata.files.filter(function(f) {
+        return f.path.substring(0, filepath.length) === filepath;
+      });
+      if (!metadata && childMetadata.length === 0) {
+        // folder with no metadata
+        return false;
+      }
+      if (metadata) {
+        indicator.empty();
+        indicator.append($('<span></span>')
+          .text('{}')
+          .css('font-weight', 'bold')
+          .css('margin', '0 8px')
+          .attr('title', _('Metadata is defined')));
+        self.setValidatedFile(context, filepath, item, metadata);
+      } else {
         indicator.empty();
         indicator.append($('<span></span>')
           .text('{}')
@@ -1130,30 +1246,25 @@ function MetadataButtons() {
           .css('margin', '0 8px')
           .css('color', '#ccc')
           .attr('title', _('Some of the children have metadata.')));
-        childMetadata.forEach(function (child) {
-          self.validateFile(context, child.path, child, function(item) {
-            if (item) {
-              return;
-            }
-            const ic = $('<span></span>')
-              .append($('<i></i>')
-                .addClass('fa fa-exclamation-circle')
-                .attr('title', _('File not found: ') + child.path))
-              .on('click', function() {
-                self.resolveMetadataConsistency(context, child);
-              });
-            indicator.append(ic);
-          });
-        });
-        return false;
       }
-      indicator.empty();
-      indicator.append($('<span></span>')
-        .text('{}')
-        .css('font-weight', 'bold')
-        .css('margin', '0 8px')
-        .attr('title', _('Metadata is defined')));
-      self.setValidatedFile(context, filepath, item, metadata);
+      childMetadata.forEach(function (child) {
+        self.validateFile(context, child.path, child, function(item) {
+          if (item) {
+            return;
+          }
+          const ic = $('<span></span>')
+            .append($('<i></i>')
+              .addClass('fa fa-exclamation-circle')
+              .attr('title', _('File not found: ') + child.path))
+            .on('click', function() {
+              if (!((context.projectMetadata || {}).editable)) {
+                return;
+              }
+              self.resolveMetadataConsistency(context, child);
+            });
+          indicator.append(ic);
+        });
+      });
       return false;
     });
     if (remains.length === 0) {
@@ -1168,38 +1279,60 @@ function MetadataButtons() {
     self.loadConfig(callback);
   }
 
+  /**
+   * Refresh buttons for file view.
+   */
+  self.refreshFileViewButtons = function(path) {
+    if (!self.fileViewButtons) {
+      self.fileViewButtons = $('<div></div>')
+        .addClass('btn-group m-t-xs')
+        .attr('id', 'metadata-toolbar');
+    }
+    self.fileViewPath = path;
+    const buttons = self.fileViewButtons;
+    buttons.empty();
+    self.createButtonsBase(
+      path,
+      self.getFileItemFromContext(),
+      function(options, label) {
+        const btn = $('<button></button>')
+          .addClass('btn')
+          .addClass('btn-sm');
+        if (options.className) {
+          btn.addClass(options.className.replace(/^text-/, 'btn-'));
+        }
+        if (options.icon) {
+          btn.append($('<i></i>').addClass(options.icon));
+        }
+        if (options.onclick) {
+          btn.click(options.onclick);
+        }
+        btn.append($('<span></span>').text(label));
+        return btn;
+      }
+    )
+      .forEach(function(button) {
+        buttons.append(button);
+      });
+    $('#toggleBar .btn-toolbar').append(buttons);
+  };
+
   self.initFileView = function() {
     self.initBase(function(path) {
       if (!path) {
         return;
       }
-      const buttons = $('<div></div>')
-        .addClass('btn-group m-t-xs')
-        .attr('id', 'metadata-toolbar');
-      self.createButtonsBase(
-        path,
-        null,
-        function(options, label) {
-          const btn = $('<button></button>')
-            .addClass('btn')
-            .addClass('btn-sm');
-          if (options.className) {
-            btn.addClass(options.className.replace(/^text-/, 'btn-'));
-          }
-          if (options.icon) {
-            btn.append($('<i></i>').addClass(options.icon));
-          }
-          if (options.onclick) {
-            btn.click(options.onclick);
-          }
-          btn.append($('<span></span>').text(label));
-          return btn;
+      var handler = null;
+      handler = function() {
+        // Wait until btn-toolbar is created
+        const toolbar = $('#toggleBar .btn-toolbar');
+        if (toolbar.length > 0) {
+          self.refreshFileViewButtons(path);
+          return;
         }
-      )
-        .forEach(function(button) {
-          buttons.append(button);
-        });
-      $('#toggleBar').prepend(buttons);
+        setTimeout(handler, 100);
+      };
+      setTimeout(handler, 100);
     });
   }
 
@@ -1320,7 +1453,12 @@ function MetadataButtons() {
           console.log(logPrefix, 'saved: ', hash, data);
           self.currentItem = null;
           self.editingContext = null;
-          self.loadMetadata(context.nodeId, context.baseUrl)
+          self.loadMetadata(context.nodeId, context.baseUrl, function() {
+            if (!self.fileViewPath) {
+              return;
+            }
+            self.refreshFileViewButtons(self.fileViewPath);
+          });
         }).fail(function(xhr, status, error) {
           Raven.captureMessage('Error while retrieving addon info', {
               extra: {
@@ -1346,11 +1484,14 @@ function MetadataButtons() {
   /**
    * Create the Edit Metadata dialog.
    */
-  self.createEditMetadataDialog = function() {
+  self.initEditMetadataDialog = function(editable) {
     const close = $('<a href="#" class="btn btn-default" data-dismiss="modal"></a>').text(_('Close'));
     close.click(self.closeModal);
-    const save = $('<a href="#" class="btn btn-success" data-dismiss="modal"></a>').text(_('Save'));
-    save.click(self.saveEditMetadataModal);
+    var save = $('<span></span>');
+    if (editable) {
+      save = $('<a href="#" class="btn btn-success" data-dismiss="modal"></a>').text(_('Save'));
+      save.click(self.saveEditMetadataModal);
+    }
     const copyToClipboard = $('<button class="btn btn-default"></button>')
       .append($('<i></i>').addClass('fa fa-copy'))
       .append(_('Copy to clipboard'));
@@ -1360,11 +1501,19 @@ function MetadataButtons() {
     });
     const toolbar = $('<div></div>');
     const container = $('<ul></ul>');
+    var notice = $('<span></span>');
+    if (editable) {
+      notice = $('<div></div>')
+        .css('text-align', 'left')
+        .css('padding', '0.2em 0.2em 0.2em 1em')
+        .css('color', 'red')
+        .text(_('Renaming, moving the file/directory, or changing the directory hierarchy can break the association of the metadata you have added.'));
+    }
     const dialog = $('<div class="modal fade"></div>')
       .append($('<div class="modal-dialog modal-lg"></div>')
         .append($('<div class="modal-content"></div>')
           .append($('<div class="modal-header"></div>')
-            .append($('<h3></h3>').text(_('Edit Metadata'))))
+            .append($('<h3></h3>').text(editable ? _('Edit Metadata') : _('View Metadata'))))
           .append($('<form></form>')
             .append($('<div class="modal-body"></div>')
               .append($('<div class="row"></div>')
@@ -1379,6 +1528,7 @@ function MetadataButtons() {
               .css('align-items', 'center')
               .append(copyToClipboard.css('margin-left', 0).css('margin-right', 0))
               .append(copyStatus.css('margin-left', 0).css('margin-right', 'auto'))
+              .append(notice)
               .append(close)
               .append(save)))));
     dialog.appendTo($('#treeGrid'));

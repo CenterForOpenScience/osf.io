@@ -11,9 +11,9 @@ function RegistrationSchemas() {
 
   self.schemas = [];
 
-  self.load = function(callback, page) {
-    var params = new URLSearchParams({'filter[active]': 'true', page: page === undefined ? 1 : page});
-    var url = $osf.apiV2Url('schemas/registrations/') + '?' + params;
+  self.load = function(callback, nextUrl) {
+    const params = new URLSearchParams({page: 1});
+    const url = nextUrl || ($osf.apiV2Url('schemas/registrations/') + '?' + params);
     $osf.ajaxJSON(
       'GET',
       url,
@@ -26,7 +26,7 @@ function RegistrationSchemas() {
     ).done(function (data) {
       Array.prototype.push.apply(self.schemas, self.getSchemaWithFile(data.data || []));
       if (data.links.next) {
-        self.load(callback, page + 1);
+        self.load(callback, data.links.next);
         return;
       }
       console.log(logPrefix, 'schemas: ', self.schemas);

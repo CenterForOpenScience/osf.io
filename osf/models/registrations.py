@@ -306,16 +306,27 @@ class Registration(AbstractNode):
                                          for_existing_registration=for_existing_registration,
                                          notify_initiator_on_complete=notify_initiator_on_complete)
 
-        self.registered_from.add_log(
-            action=NodeLog.EMBARGO_INITIATED,
-            params={
-                'node': self.registered_from._id,
-                'registration': self._id,
-                'embargo_id': embargo._id,
-            },
-            auth=Auth(user),
-            save=True,
-        )
+        if self.registered_from.has_addon('metadata'):
+            self.registered_from.add_log(
+                action='metadata_added',
+                params={
+                    'node': self.registered_from._id,
+                    'registration': self._id,
+                },
+                auth=Auth(user),
+                save=True,
+            )
+        else:
+            self.registered_from.add_log(
+                action=NodeLog.EMBARGO_INITIATED,
+                params={
+                    'node': self.registered_from._id,
+                    'registration': self._id,
+                    'embargo_id': embargo._id,
+                },
+                auth=Auth(user),
+                save=True,
+            )
         if self.is_public:
             self.set_privacy('private', Auth(user))
 

@@ -14,18 +14,6 @@
                 </div>
             </div>
 
-            <% from addons.metadata import FULL_NAME as METADATA_FULL_NAME %>
-            <% from api.base import settings as api_settings %>
-            % if METADATA_FULL_NAME in api_settings.INSTALLED_APPS:
-            <div class="form-group">
-                <label>e-Rad Researcher Number</label>
-                <div class="input-group">
-                <span class="input-group-addon">e-Rad Researcher Number</span>
-                <input class="form-control" data-bind="value: eRadResearcherNumber" placeholder="xxxxxxxxx"/>
-                </div>
-            </div>
-            % endif
-
             <label>${_("Your websites")}</label>
             <div data-bind="sortable: {
                         data: profileWebsites,

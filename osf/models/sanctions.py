@@ -302,20 +302,24 @@ class EmailApprovableSanction(TokenApprovableSanction):
         return {}
 
     def _notify_authorizer(self, authorizer, node):
-        context = self._email_template_context(authorizer,
-                                            node,
-                                            is_authorizer=True)
+        # context = self._email_template_context(authorizer,
+        #                                     node,
+        #                                     is_authorizer=True)
         if self.AUTHORIZER_NOTIFY_EMAIL_TEMPLATE:
-            self._send_approval_request_email(
-                authorizer, self.AUTHORIZER_NOTIFY_EMAIL_TEMPLATE, context)
+            pass
+            # disable for metadata addon
+            # self._send_approval_request_email(
+            #     authorizer, self.AUTHORIZER_NOTIFY_EMAIL_TEMPLATE, context)
         else:
             raise NotImplementedError
 
     def _notify_non_authorizer(self, user, node):
-        context = self._email_template_context(user, node)
+        # context = self._email_template_context(user, node)
         if self.NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE:
-            self._send_approval_request_email(
-                user, self.NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE, context)
+            pass
+            # disable for metadata addon
+            # self._send_approval_request_email(
+            #     user, self.NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE, context)
         else:
             raise NotImplementedError
 

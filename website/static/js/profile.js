@@ -46,7 +46,6 @@ function urlRegex() {
 }
 
 var socialRules = {
-    eRadResearcherNumber: /(.+)/,
     orcid: /orcid\.org\/([-\d]+)/i,
     researcherId: /researcherid\.com\/rid\/([-\w]+)/i,
     scholar: /scholar\.google\.com\/citations\?user=(\w+)/i,
@@ -636,10 +635,6 @@ var SocialViewModel = function(urls, modes, preventUnsaved) {
         return true;
     });
 
-    self.eRadResearcherNumber = extendLink(
-        ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.eRadResearcherNumber)}),
-        self, 'eRadResearcherNumber', 'https://www.e-rad.go.jp/'
-    );
     self.orcid = extendLink(
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.orcid)}),
         self, 'orcid', 'http://orcid.org/'
@@ -693,7 +688,6 @@ var SocialViewModel = function(urls, modes, preventUnsaved) {
     self.trackedProperties = [
         self.erad,
         self.profileWebsites,
-        self.eRadResearcherNumber,
         self.orcid,
         self.researcherId,
         self.twitter,
@@ -716,7 +710,6 @@ var SocialViewModel = function(urls, modes, preventUnsaved) {
 
     self.values = ko.computed(function() {
         return [
-            {label: 'ERadResearcherNumber', text: self.eRadResearcherNumber(), value: self.eRadResearcherNumber.url()},
             {label: 'ORCID', text: self.orcid(), value: self.orcid.url()},
             {label: 'ResearcherID', text: self.researcherId(), value: self.researcherId.url()},
             {label: 'Twitter', text: self.twitter(), value: self.twitter.url()},

@@ -13,11 +13,12 @@ from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
 from osf.models import AbstractNode, DraftRegistration, Registration
 from osf.models.metaschema import RegistrationSchema
-from admin.rdm_addons.decorators import must_be_rdm_addons_allowed
+from osf.utils.permissions import WRITE
 from website.project.decorators import (
     must_be_valid_project,
     must_have_addon,
     must_have_permission,
+    must_be_contributor,
 )
 from website.ember_osf_web.views import use_ember_app
 
@@ -31,23 +32,16 @@ ERAD_COLUMNS = [
 ]
 
 
-def _response_user_erad_config(addon):
-    return {
-        'data': {
-            'id': addon.owner._id,
-            'type': 'metadata-user-erad',
-            'attributes': {
-                'researcher_number': addon.get_erad_researcher_number() if addon else None,
-            }
-        }
+def _response_project_metadata(user, addon):
+    attr = {
+        'editable': addon.owner.has_permission(user, WRITE),
     }
-
-def _response_project_metadata(addon):
+    attr.update(addon.get_project_metadata())
     return {
         'data': {
             'id': addon.owner._id,
             'type': 'metadata-node-project',
-            'attributes': addon.get_project_metadata(),
+            'attributes': attr,
         }
     }
 
@@ -98,26 +92,6 @@ def _get_file_metadata_node(node, metadata_node_id):
         raise ValueError('Unexpected node ID: {}'.format(metadata_node_id))
     return AbstractNode.objects.filter(guids___id=metadata_node_id).first()
 
-@must_be_logged_in
-@must_be_rdm_addons_allowed(SHORT_NAME)
-def metadata_get_user_erad_config(auth, **kwargs):
-    addon = auth.user.get_addon(SHORT_NAME)
-    return _response_user_erad_config(addon)
-
-@must_be_logged_in
-@must_be_rdm_addons_allowed(SHORT_NAME)
-def metadata_set_user_erad_config(auth, **kwargs):
-    addon = auth.user.get_addon(SHORT_NAME)
-    if not addon:
-        auth.user.add_addon(SHORT_NAME)
-        addon = auth.user.get_addon(SHORT_NAME)
-    try:
-        researcher_number = request.json['researcher_number']
-    except KeyError:
-        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
-    addon.set_erad_researcher_number(researcher_number)
-    return _response_user_erad_config(addon)
-
 @must_be_valid_project
 @must_be_logged_in
 @must_have_permission('write')
@@ -125,10 +99,7 @@ def metadata_get_erad_candidates(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     candidates = []
     for user in node.contributors:
-        addon = user.get_addon(SHORT_NAME)
-        if addon is None:
-            continue
-        rn = addon.get_erad_researcher_number()
+        rn = user.erad
         if rn is None:
             continue
         candidates += _erad_candidates(rn)
@@ -149,7 +120,7 @@ def metadata_get_erad_candidates(auth, **kwargs):
 def metadata_get_project(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     addon = node.get_addon(SHORT_NAME)
-    return _response_project_metadata(addon)
+    return _response_project_metadata(auth.user, addon)
 
 @must_be_valid_project
 @must_be_logged_in
@@ -180,7 +151,7 @@ def metadata_set_file(auth, filepath=None, **kwargs):
     node = kwargs['node'] or kwargs['project']
     addon = node.get_addon(SHORT_NAME)
     try:
-        addon.set_file_metadata(filepath, request.json)
+        addon.set_file_metadata(filepath, request.json, auth=auth)
     except ValueError as e:
         logger.error('Invalid metadata: ' + str(e))
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
@@ -207,7 +178,7 @@ def metadata_set_file_hash(auth, filepath=None, **kwargs):
 def metadata_delete_file(auth, filepath=None, **kwargs):
     node = kwargs['node'] or kwargs['project']
     addon = node.get_addon(SHORT_NAME)
-    addon.delete_file_metadata(filepath)
+    addon.delete_file_metadata(filepath, auth=auth)
     return _response_file_metadata(addon, filepath)
 
 @must_be_valid_project
@@ -248,7 +219,7 @@ def metadata_set_file_to_drafts(auth, did=None, mnode=None, filepath=None, **kwa
         draft_files.append(file_metadata)
         draft.update_metadata({
             FIELD_GRDM_FILES: {
-                'value': json.dumps(draft_files, indent=2),
+                'value': json.dumps(draft_files, indent=2) if len(draft_files) > 0 else '',
             },
         })
         draft.save()
@@ -280,7 +251,7 @@ def metadata_delete_file_from_drafts(auth, did=None, mnode=None, filepath=None, 
                        if df['path'] != draft_filepath]
         draft.update_metadata({
             FIELD_GRDM_FILES: {
-                'value': json.dumps(draft_files, indent=2),
+                'value': json.dumps(draft_files, indent=2) if len(draft_files) > 0 else '',
             },
         })
         draft.save()
@@ -289,6 +260,7 @@ def metadata_delete_file_from_drafts(auth, did=None, mnode=None, filepath=None, 
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
 @must_be_valid_project
+@must_be_contributor
 @must_have_addon(SHORT_NAME, 'node')
 def metadata_report_list_view(**kwargs):
     return use_ember_app()
