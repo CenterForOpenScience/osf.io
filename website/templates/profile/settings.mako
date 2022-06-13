@@ -44,7 +44,7 @@
 
         <div id="userProfile">
             <div>
-                <span style="color:red;">${_(""Full name", "Family name", "Given name", "Family name (EN)", "Given name (EN)" on the Name tab, and "Affiliation" and "Affiliation (English)" on the Employment tab is required.")}<span/>
+                <span style="color:red;">${_("Full name, Family name, Given name, Family name (EN), Given name (EN) on the Name tab, and Affiliation and Affiliation (English) on the Employment tab is required.")}<span/>
             </div>
             <ul class="nav nav-tabs">
                 <li class="active"><a href="#names" data-toggle="tab">${_("Name")}<span style="color: red">*</span></a></li>
