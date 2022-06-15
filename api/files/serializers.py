@@ -386,10 +386,19 @@ class FileSerializer(BaseFileSerializer):
     current_user_has_viewed = ser.SerializerMethodField(help_text='Whether the current user has already viewed the file')
 
     def get_current_user_has_viewed(self, obj):
-        version = obj.versions.order_by('created').last()
-        if version and not self.context['request'].user.is_anonymous:  # This is to ensure compatibility with tests, ugh.
-            return version.seen_by.filter(id=self.context['request'].user.id).exists()
+        user = self.context['request'].user
+        versions = obj.versions.order_by('created')
+
+        most_recent_version = versions.last()
+        previous_versions = versions.exclude(id=most_recent_version.id)
+        if not previous_versions.filter(seen_by=user.id).exists():
+            return True
+
+        if most_recent_version and not self.context['request'].user.is_anonymous:  # This is to ensure compatibility with tests, ugh.
+            # You must view the file initally to see the indicator it has changed.
+            return most_recent_version.seen_by.filter(id=user.id).exists()
         else:
+            # unauthenticated viewers always get True so they won't see the `new version` indicator
             return True
 
     def get_target_type(self, obj):
