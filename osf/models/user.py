@@ -1895,18 +1895,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         If a user only has no resources or only deleted resources this will return false and they can safely be deactivated
         otherwise they must delete or transfer their outstanding resources.
 
-        :return bool: does the user have any active node, preprints, groups, quickfiles etc?
+        :return bool: does the user have any active node, preprints, groups, etc?
         """
         from osf.models import Preprint
 
-        # TODO: Update once quickfolders in merged
-
-        nodes = self.nodes.exclude(type='osf.quickfilesnode').exclude(is_deleted=True).exists()
-        quickfiles = self.nodes.get(type='osf.quickfilesnode').files.exists()
+        nodes = self.nodes.filter(deleted__isnull=True).exists()
         groups = self.osf_groups.exists()
         preprints = Preprint.objects.filter(_contributors=self, ever_public=True, deleted__isnull=True).exists()
 
-        return groups or nodes or quickfiles or preprints
+        return groups or nodes or preprints
 
     class Meta:
         # custom permissions for use in the OSF Admin App
