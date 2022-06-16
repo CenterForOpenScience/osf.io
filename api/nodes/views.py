@@ -2,7 +2,7 @@ import re
 
 from distutils.version import StrictVersion
 from django.apps import apps
-from django.db.models import Exists, F, IntegerField, Max, OuterRef, Q, Subquery
+from django.db.models import Case, Exists, F, IntegerField, Max, OuterRef, Q, Subquery, Value, When
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics, permissions as drf_permissions
@@ -1183,7 +1183,10 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
                 previously_seen=Exists(
                     seen_versions.filter(basefilenode=OuterRef('id')).exclude(id=F('latest_version')),
                 ),
-                current_user_has_viewed=Q(latest_seen=True) | Q(previously_seen=False),
+                current_user_has_viewed=Case(
+                    When(Q(latest_seen=True) | Q(previously_seen=False), then=Value(True)),
+                    default=Value(False),
+                ),
             )
 
         else:
