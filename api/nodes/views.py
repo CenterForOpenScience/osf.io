@@ -1166,7 +1166,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             seen_versions = FileVersion.objects.annotate(
                 latest_version=Subquery(
                     FileVersion.objects.filter(
-                        file_id=OuterRef('file_id'),
+                        basefilenode=OuterRef('basefilenode'),
                     ).order_by('-created').values('id')[:1],
                 ),
                 output_field=IntegerField,
