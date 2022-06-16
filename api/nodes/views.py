@@ -1165,7 +1165,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
         if provider == 'osfstorage':
             seen_versions = FileVersion.objects.annotate(
                 latest_version=Subquery(
-                    FileVersion.filter(
+                    FileVersion.objects.filter(
                         file_id=OuterRef('file_id'),
                     ).order_by('-created').values('id')[:1],
                 ),
@@ -1185,6 +1185,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
                 ),
                 current_user_has_viewed=Q(latest_seen=True) | Q(previously_seen=False),
             )
+
         else:
             return self.bulk_get_file_nodes_from_wb_resp(folder_object)
 
@@ -1200,6 +1201,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
             if provider == 'osfstorage':
                 queryset = OsfStorageFileNode.objects.filter(id=file_obj.id)
+
             else:
                 base_class = BaseFileNode.resolve_class(provider, BaseFileNode.FOLDER)
                 queryset = base_class.objects.filter(

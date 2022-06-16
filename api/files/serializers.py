@@ -383,7 +383,7 @@ class FileSerializer(BaseFileSerializer):
         min_version='2.0', max_version='2.7',
     )
     target = TargetField(link_type='related', meta={'type': 'get_target_type'})
-    current_user_has_viewed = ser.BooleanField(help_text='Whether the current user has already viewed the file')
+    current_user_has_viewed = ser.BooleanField(default=True, help_text='Whether the current user has already viewed the file')
 
     def get_target_type(self, obj):
         if isinstance(obj, Preprint):
