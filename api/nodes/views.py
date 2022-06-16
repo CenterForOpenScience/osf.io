@@ -1168,8 +1168,8 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
                     FileVersion.objects.filter(
                         basefilenode=OuterRef('basefilenode'),
                     ).order_by('-created').values('id')[:1],
+                    output_field=IntegerField,
                 ),
-                output_field=IntegerField,
             ).filter(seen_by=self.request.user)
 
             return folder_object.children.prefetch_related(
