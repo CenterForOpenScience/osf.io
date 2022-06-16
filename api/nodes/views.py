@@ -2,7 +2,7 @@ import re
 
 from distutils.version import StrictVersion
 from django.apps import apps
-from django.db.models import Q, Subquery, F, Max
+from django.db.models import Exists, F, IntegerField, Max, OuterRef, Q, Subquery
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics, permissions as drf_permissions
@@ -149,6 +149,7 @@ from osf.models import (
     Guid,
     File,
     Folder,
+    FileVersion,
 )
 from addons.osfstorage.models import Region, OsfStorageFileNode
 from osf.utils.permissions import ADMIN, WRITE_NODE
@@ -1162,10 +1163,27 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
         # Addon provided files/folders don't have versions so for there date modified we check the history. The history
         # is updated every time we query the file metadata via Waterbutler.
         if provider == 'osfstorage':
+            seen_versions = FileVersion.objects.annotate(
+                latest_version=Subquery(
+                    FileVersion.filter(
+                        file_id=OuterRef('file_id'),
+                    ).order_by('-created').values('id')[:1],
+                ),
+                output_field=IntegerField,
+            ).filter(seen_by=self.request.user)
+
             return folder_object.children.prefetch_related(
                 'versions',
                 'tags',
                 'guids',
+            ).annotate(
+                latest_seen=Exists(
+                    seen_versions.filter(file_id=OuterRef('id')).filter(id=F('latest_version')),
+                ),
+                previously_seen=Exists(
+                    seen_versions.filter(file_id=OuterRef('id')).exclude(id=F('latest_version')),
+                ),
+                current_user_has_viewed=Q(latest_seen=True) | Q(previously_seen=False),
             )
         else:
             return self.bulk_get_file_nodes_from_wb_resp(folder_object)
