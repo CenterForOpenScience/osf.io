@@ -2,7 +2,7 @@ import re
 
 from distutils.version import StrictVersion
 from django.apps import apps
-from django.db.models import Case, Exists, F, IntegerField, Max, OuterRef, Q, Subquery, Value, When
+from django.db.models import BooleanField, Case, Exists, F, IntegerField, Max, OuterRef, Q, Subquery, Value, When
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics, permissions as drf_permissions
@@ -1186,6 +1186,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
                 current_user_has_viewed=Case(
                     When(Q(latest_seen=True) | Q(previously_seen=False), then=Value(True)),
                     default=Value(False),
+                    output_field=BooleanField(),
                 ),
             )
 
