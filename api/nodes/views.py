@@ -1178,10 +1178,10 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
                 'guids',
             ).annotate(
                 latest_seen=Exists(
-                    seen_versions.filter(file_id=OuterRef('id')).filter(id=F('latest_version')),
+                    seen_versions.filter(basefilenode=OuterRef('id')).filter(id=F('latest_version')),
                 ),
                 previously_seen=Exists(
-                    seen_versions.filter(file_id=OuterRef('id')).exclude(id=F('latest_version')),
+                    seen_versions.filter(basefilenode=OuterRef('id')).exclude(id=F('latest_version')),
                 ),
                 current_user_has_viewed=Q(latest_seen=True) | Q(previously_seen=False),
             )
