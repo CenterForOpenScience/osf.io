@@ -1,5 +1,6 @@
 import io
 
+from django.db.models import Max
 from django.http import FileResponse
 
 from rest_framework import generics
@@ -110,7 +111,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
         # grouping versions in an annotation
         if file.kind == 'file':
             if file.provider == 'osfstorage':
-                file.date_modified = file.versions.order_by('-created').first().created
+                file.date_modified = file.versions.aggregate(Max('created'))['created__max']
             else:
                 file.date_modified = file.history[-1]['modified']
 
