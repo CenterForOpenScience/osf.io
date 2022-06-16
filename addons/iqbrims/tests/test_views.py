@@ -252,7 +252,8 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
             'state': 'deposit',
             'labo_id': 'fake_labo_name',
             'other_attribute': 'fake_other_attribute',
-            'is_dirty': False
+            'is_dirty': False,
+            'workflow_paper_permissions': ['READ', 'WRITE', 'UPLOADABLE'],
         }
         fake_folder = {
             'id': '382635482',
@@ -262,10 +263,15 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
         fake_management_project.add_addon('iqbrims', auth=None)
         mock_get_management_node.return_value = fake_management_project
         mock_import_auth_from_management_node.return_value = None
-        mock_iqbrims_init_folders.return_value = fake_folder
+        mock_client = mock.MagicMock()
+        mock_iqbrims_init_folders.return_value = mock_client, fake_folder
         mock_update_spreadsheet.return_value = None
         mock_flowable_make_request.return_value = MockResponse('{"test": 1}',
                                                                200)
+        mock_client.folders.return_value = [{
+            'id': 'FOLDER67890',
+            'title': '最終原稿・組図',
+        }]
 
         url = self.project.api_url_for('iqbrims_set_status')
         payload = {
@@ -331,6 +337,10 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
           'value': 'deposit/fake_labo_name/%-{}/'.format(self.project._id)
         })
 
+        assert_equal(len(mock_client.grant_access_from_anyone.call_args_list), 1)
+        assert_equal(mock_client.grant_access_from_anyone.call_args_list[0][0][0], 'FOLDER67890')
+        assert_equal(len(mock_client.revoke_access_from_anyone.call_args_list), 0)
+
     @mock.patch.object(IQBRIMSFlowableClient, 'start_workflow')
     @mock.patch.object(iqbrims_views, '_iqbrims_update_spreadsheet')
     @mock.patch.object(iqbrims_views, '_iqbrims_init_folders')
@@ -353,7 +363,8 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
         fake_management_project.add_addon('iqbrims', auth=None)
         mock_get_management_node.return_value = fake_management_project
         mock_import_auth_from_management_node.return_value = None
-        mock_iqbrims_init_folders.return_value = fake_folder
+        mock_client = mock.MagicMock()
+        mock_iqbrims_init_folders.return_value = mock_client, fake_folder
         mock_update_spreadsheet.return_value = None
         mock_flowable_start_workflow.return_value = None
 
@@ -418,7 +429,8 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
         fake_management_project.add_addon('iqbrims', auth=None)
         mock_get_management_node.return_value = fake_management_project
         mock_import_auth_from_management_node.return_value = None
-        mock_iqbrims_init_folders.return_value = fake_folder
+        mock_client = mock.MagicMock()
+        mock_iqbrims_init_folders.return_value = mock_client, fake_folder
         mock_update_spreadsheet.return_value = None
         mock_flowable_make_request.return_value = MockResponse('{"test": 1}',
                                                                200)
@@ -513,7 +525,8 @@ class TestStatusViews(IQBRIMSAddonTestCase, OsfTestCase):
         fake_management_project.add_addon('iqbrims', auth=None)
         mock_get_management_node.return_value = fake_management_project
         mock_import_auth_from_management_node.return_value = None
-        mock_iqbrims_init_folders.return_value = fake_folder
+        mock_client = mock.MagicMock()
+        mock_iqbrims_init_folders.return_value = mock_client, fake_folder
         mock_update_spreadsheet.return_value = None
         user_settings = {'FLOWABLE_HOST': 'https://test.somehost.ac.jp/',
                          'FLOWABLE_RESEARCH_APP_ID': 'latest_workflow_id'}
@@ -2295,14 +2308,14 @@ class TestWorkflowStateViews(IQBRIMSAddonTestCase, OsfTestCase):
         node_settings.save()
 
         url = self.project.api_url_for('iqbrims_post_workflow_state',
-                                       part='rawdata')
+                                       part='raw')
         res = self.app.post(url,
                             expect_errors=True).maybe_follow()
 
         assert_equal(res.status_code, 403)
 
         url = self.project.api_url_for('iqbrims_post_workflow_state',
-                                       part='rawdata')
+                                       part='raw')
         res = self.app.post(url, headers={'X-RDM-Token': 'invalid123'},
                             expect_errors=True).maybe_follow()
 
@@ -2323,7 +2336,7 @@ class TestWorkflowStateViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert_equal(self.project.logs.count(), 2)
         assert_equal(management_project.logs.count(), 1)
         url = self.project.api_url_for('iqbrims_post_workflow_state',
-                                       part='rawdata')
+                                       part='raw')
         res = self.app.post_json(url, {
           'state': 'test',
           'permissions': ['READ', 'WRITE']
@@ -2334,8 +2347,136 @@ class TestWorkflowStateViews(IQBRIMSAddonTestCase, OsfTestCase):
           'status': 'complete',
           'data': {
             'state': 'initialized',
-            'workflow_rawdata_state': 'test',
-            'workflow_rawdata_permissions': ['READ', 'WRITE']
+            'workflow_raw_state': 'test',
+            'workflow_raw_permissions': ['READ', 'WRITE']
+          }
+        })
+
+    @mock.patch.object(IQBRIMSClient, 'get_folder_info')
+    @mock.patch.object(iqbrims_views, '_iqbrims_update_spreadsheet')
+    @mock.patch.object(iqbrims_views, '_iqbrims_init_folders')
+    @mock.patch.object(iqbrims_views, '_iqbrims_import_auth_from_management_node')
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    def test_post_uploadable_workflow_state(self, mock_get_management_node,
+                                            mock_import_auth_from_management_node,
+                                            mock_iqbrims_init_folders, mock_update_spreadsheet,
+                                            mock_get_folder_info):
+        fake_management_project = ProjectFactory()
+        fake_management_project.add_addon('iqbrims', auth=None)
+        mock_get_management_node.return_value = fake_management_project
+        mock_import_auth_from_management_node.return_value = None
+        mock_client = mock.MagicMock()
+        fake_folder = {
+            'id': '382635482',
+            'path': 'fake/folder/path'
+        }
+        mock_iqbrims_init_folders.return_value = mock_client, fake_folder
+        mock_update_spreadsheet.return_value = None
+        mock_client.folders.return_value = [{
+            'id': 'FOLDER12345',
+            'title': '生データ',
+        }]
+        mock_get_folder_info.return_value = {
+            'title': u'{0}-{1}'.format(self.project.title.replace('/', '_'), self.project._id)
+        }
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.set_status({
+            'state': 'deposit',
+            'labo_id': 'fake_labo_name',
+        })
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        assert_equal(self.project.logs.count(), 2)
+        assert_equal(fake_management_project.logs.count(), 2)
+        url = self.project.api_url_for('iqbrims_post_workflow_state',
+                                       part='raw')
+        res = self.app.post_json(url, {
+          'state': 'test',
+          'permissions': ['READ', 'WRITE', 'UPLOADABLE']
+        }, headers={'X-RDM-Token': token})
+
+        assert_equal(len(mock_client.grant_access_from_anyone.call_args_list), 1)
+        assert_equal(mock_client.grant_access_from_anyone.call_args_list[0][0][0], 'FOLDER12345')
+        assert_equal(len(mock_client.revoke_access_from_anyone.call_args_list), 0)
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json, {
+          'status': 'complete',
+          'data': {
+            'labo_id': 'fake_labo_name',
+            'state': 'deposit',
+            'workflow_raw_state': 'test',
+            'workflow_raw_permissions': ['READ', 'WRITE', 'UPLOADABLE']
+          }
+        })
+
+    @mock.patch.object(IQBRIMSClient, 'get_folder_info')
+    @mock.patch.object(iqbrims_views, '_iqbrims_update_spreadsheet')
+    @mock.patch.object(iqbrims_views, '_iqbrims_init_folders')
+    @mock.patch.object(iqbrims_views, '_iqbrims_import_auth_from_management_node')
+    @mock.patch.object(iqbrims_views, '_get_management_node')
+    def test_post_prevent_uploadable_workflow_state(self, mock_get_management_node,
+                                                    mock_import_auth_from_management_node,
+                                                    mock_iqbrims_init_folders,
+                                                    mock_update_spreadsheet,
+                                                    mock_get_folder_info):
+        fake_management_project = ProjectFactory()
+        fake_management_project.add_addon('iqbrims', auth=None)
+        mock_get_management_node.return_value = fake_management_project
+        mock_import_auth_from_management_node.return_value = None
+        mock_client = mock.MagicMock()
+        fake_folder = {
+            'id': '382635482',
+            'path': 'fake/folder/path'
+        }
+        mock_iqbrims_init_folders.return_value = mock_client, fake_folder
+        mock_update_spreadsheet.return_value = None
+        mock_client.folders.return_value = [{
+            'id': 'FOLDER12345',
+            'title': '生データ',
+        }]
+        mock_get_folder_info.return_value = {
+            'title': u'{0}-{1}'.format(self.project.title.replace('/', '_'), self.project._id)
+        }
+
+        node_settings = self.project.get_addon('iqbrims')
+        node_settings.secret = 'secret123'
+        node_settings.process_definition_id = 'process456'
+        node_settings.set_status({
+            'state': 'deposit',
+            'labo_id': 'fake_labo_name',
+            'workflow_raw_permissions': ['READ', 'WRITE', 'UPLOADABLE']
+        })
+        node_settings.save()
+        token = hashlib.sha256(('secret123' + 'process456' +
+                                self.project._id).encode('utf8')).hexdigest()
+
+        assert_equal(self.project.logs.count(), 2)
+        assert_equal(fake_management_project.logs.count(), 2)
+        url = self.project.api_url_for('iqbrims_post_workflow_state',
+                                       part='raw')
+        res = self.app.post_json(url, {
+          'state': 'test',
+          'permissions': ['READ', 'WRITE']
+        }, headers={'X-RDM-Token': token})
+
+        assert_equal(len(mock_client.revoke_access_from_anyone.call_args_list), 1)
+        assert_equal(mock_client.revoke_access_from_anyone.call_args_list[0][0][0], 'FOLDER12345')
+        assert_equal(len(mock_client.grant_access_from_anyone.call_args_list), 0)
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json, {
+          'status': 'complete',
+          'data': {
+            'labo_id': 'fake_labo_name',
+            'state': 'deposit',
+            'workflow_raw_state': 'test',
+            'workflow_raw_permissions': ['READ', 'WRITE']
           }
         })
 
@@ -2354,7 +2495,7 @@ class TestWorkflowStateViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert_equal(self.project.logs.count(), 2)
         assert_equal(management_project.logs.count(), 1)
         url = self.project.api_url_for('iqbrims_post_workflow_state',
-                                       part='rawdata')
+                                       part='raw')
         res = self.app.post_json(url, {
           'state': 'test',
           'permissions': ['READ', 'WRITE'],
@@ -2365,8 +2506,8 @@ class TestWorkflowStateViews(IQBRIMSAddonTestCase, OsfTestCase):
         assert_equal(res.json, {
           'status': 'complete',
           'data': {
-            'workflow_rawdata_state': 'test',
-            'workflow_rawdata_permissions': ['READ', 'WRITE'],
+            'workflow_raw_state': 'test',
+            'workflow_raw_permissions': ['READ', 'WRITE'],
             'state': 'initialized',
             'is_directly_submit_data': True
           }
