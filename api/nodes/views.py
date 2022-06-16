@@ -2,7 +2,7 @@ import re
 
 from distutils.version import StrictVersion
 from django.apps import apps
-from django.db.models import Exists, F, IntegerField, Max, OuterRef, Q, Subquery
+from django.db.models import Exists, F, IntegerField, OuterRef, Q, Subquery
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics, permissions as drf_permissions
@@ -1242,7 +1242,8 @@ class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin
             raise NotFound
         if fobj.kind == 'file':
             if fobj.provider == 'osfstorage':
-                fobj.date_modified = fobj.versions.aggregate(Max('created'))['created__max']
+                fobj.date_modified = fobj.versions.order_by('-created').first().created
+                fobj.current_user_has_viewed = True
             else:
                 fobj.date_modified = fobj.history[-1]['modified']
 
