@@ -225,7 +225,7 @@ class TestAddonAuth(OsfTestCase):
         assert_equal(node.logs.count(), nlogs) # don't log views
 
 
-    def test_show_as_unseen__detail_view(self):
+    def test_show_as_unviewed__detail_view(self):
         django_app = JSONAPITestApp()
         test_file = create_test_file(self.node, self.user, create_guid=False)
         test_file.versions.get().seen_by.add(self.user)
@@ -241,7 +241,7 @@ class TestAddonAuth(OsfTestCase):
                 nid=node._id,
                 provider='osfstorage',
                 path=test_file.path,
-                version=2  # NOTE: This is version 1 !!!
+                version=2
             ),
             auth=self.user.auth
         )
@@ -251,7 +251,7 @@ class TestAddonAuth(OsfTestCase):
         res = django_app.get(f'/{API_BASE}files/{test_file._id}/', auth=self.user.auth)
         assert not res.json['data']['attributes']['show_as_unviewed']
 
-    def test_show_as_unseen__detail_view__not_previously_seen(self):
+    def test_show_as_unviewed__detail_view__not_previously_seen(self):
         django_app = JSONAPITestApp()
         test_file = create_test_file(self.node, self.user, create_guid=False)
         version2 = FileVersionFactory()
@@ -260,7 +260,7 @@ class TestAddonAuth(OsfTestCase):
         res = django_app.get(f'/{API_BASE}files/{test_file._id}/', auth=self.user.auth)
         assert not res.json['data']['attributes']['show_as_unviewed']
 
-    def test_show_as_unseen__detail_view__different_user(self):
+    def test_show_as_unviewed__detail_view__different_user(self):
         django_app = JSONAPITestApp()
         test_file = create_test_file(self.node, self.user, create_guid=False)
         test_file.versions.get().seen_by.add(self.user)
@@ -274,7 +274,7 @@ class TestAddonAuth(OsfTestCase):
         res = django_app.get(f'/{API_BASE}files/{test_file._id}/', auth=file_viewer.auth)
         assert not res.json['data']['attributes']['show_as_unviewed']
 
-    def test_show_as_unseen__detail_view__anonymous_user(self):
+    def test_show_as_unviewed__detail_view__anonymous_user(self):
         django_app = JSONAPITestApp()
         test_file = create_test_file(self.node, self.user, create_guid=False)
 
@@ -284,7 +284,7 @@ class TestAddonAuth(OsfTestCase):
         res = django_app.get(f'/{API_BASE}files/{test_file._id}/')
         assert not res.json['data']['attributes']['show_as_unviewed']
 
-    def test_show_as_unseen__detail_view__non_osfstorage_file(self):
+    def test_show_as_unviewed__detail_view__non_osfstorage_file(self):
         django_app = JSONAPITestApp()
         test_file = create_test_file(self.node, self.user, create_guid=False)
         test_file.provider = 'github'
@@ -293,7 +293,7 @@ class TestAddonAuth(OsfTestCase):
         res = django_app.get(f'/{API_BASE}files/{test_file._id}/', auth=self.user.auth)
         assert not res.json['data']['attributes']['show_as_unviewed']
 
-    def test_show_as_unseen__list_view(self):
+    def test_show_as_unviewed__list_view(self):
         django_app = JSONAPITestApp()
         test_file = create_test_file(self.node, self.user, create_guid=False)
         test_file.versions.get().seen_by.add(self.user)
@@ -309,7 +309,7 @@ class TestAddonAuth(OsfTestCase):
                 nid=node._id,
                 provider='osfstorage',
                 path=test_file.path,
-                version=2  # NOTE: This is version 1 !!!
+                version=2
             ),
             auth=file_viewer.auth
         )
@@ -320,7 +320,7 @@ class TestAddonAuth(OsfTestCase):
         assert not res.json['data'][0]['attributes']['show_as_unviewed']
 
 
-    def test_show_as_unseen__list_view__not_previously_seen(self):
+    def test_show_as_unviewed__list_view__not_previously_seen(self):
         django_app = JSONAPITestApp()
         test_file = create_test_file(self.node, self.user, create_guid=False)
         test_file.versions.get().seen_by.add(self.user)
@@ -330,7 +330,7 @@ class TestAddonAuth(OsfTestCase):
         res = django_app.get(f'/{API_BASE}nodes/{self.node._id}/files/', auth=self.user.auth)
         assert not res.json['data'][0]['attributes']['show_as_unviewed']
 
-    def test_show_as_unseen__list_view__different_user(self):
+    def test_show_as_unviewed__list_view__different_user(self):
         django_app = JSONAPITestApp()
         test_file = create_test_file(self.node, self.user, create_guid=False)
         test_file.versions.get().seen_by.add(self.user)
@@ -344,7 +344,7 @@ class TestAddonAuth(OsfTestCase):
         res = django_app.get(f'/{API_BASE}nodes/{self.node._id}/files/', auth=file_viewer.auth)
         assert not res.json['data'][0]['attributes']['show_as_unviewed']
 
-    def test_show_as_unseen__list_view__anonymous_user(self):
+    def test_show_as_unviewed__list_view__anonymous_user(self):
         django_app = JSONAPITestApp()
         test_file = create_test_file(self.node, self.user, create_guid=False)
 
@@ -354,7 +354,7 @@ class TestAddonAuth(OsfTestCase):
         res = django_app.get(f'/{API_BASE}nodes/{self.node._id}/files/', auth=self.user.auth)
         assert not res.json['data'][0]['attributes']['show_as_unviewed']
 
-    def test_show_as_unseen__list_view__non_osfstorage_file(self):
+    def test_show_as_unviewed__list_view__non_osfstorage_file(self):
         django_app = JSONAPITestApp()
         test_file = create_test_file(self.node, self.user, create_guid=False)
         test_file.provider = 'github'
