@@ -387,7 +387,7 @@ class FileSerializer(BaseFileSerializer):
     # Assigned via annotation. See api/files/annotations for info
     show_as_unviewed = ser.BooleanField(
         read_only=True,
-        required=False,
+        # required=False,
         default=False,
         help_text='Whether to mark the file as unviewed for the current user',
     )

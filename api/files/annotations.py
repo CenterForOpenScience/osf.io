@@ -82,5 +82,5 @@ def check_show_as_unviewed(user, osf_file):
     latest_version = osf_file.versions.order_by('-created').first()
     return (
         osf_file.versions.filter(seen_by=user).exists()
-        and not latest_version.seen_by.filter(user=user).exists()
+        and not latest_version.seen_by.filter(id=user.id).exists()
     )

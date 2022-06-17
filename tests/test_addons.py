@@ -309,7 +309,7 @@ class TestAddonAuth(OsfTestCase):
         test_file.add_version(version2)
 
         res = django_app.get(f'/{API_BASE}nodes/{self.node._id}/files/', auth=self.user.auth)
-        assert res.json['data']['attributes']['show_as_unviewed']
+        assert res.json['data'][0]['attributes']['show_as_unviewed']
 
         # seen_by is set by the WB callback
         self.app.get(
