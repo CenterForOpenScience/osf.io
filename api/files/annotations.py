@@ -30,8 +30,19 @@ DATE_MODIFIED = Case(
     ),
 )
 
-def make_current_user_has_viewed_annotations(user):
-    '''Returns the set of annotations required to set the current_user_has_viewed attribute.'''
+def make_show_as_unviewed_annotations(user):
+    '''Returns the annotations required to set the current_user_has_viewed attribute.
+
+    Usage:
+    OsfStorageFile.objects.annotate(**make_current_user_has_viewed_annotations(request.user))
+
+    show_as_unviewed is only true if the user has not seen the latest version of a file
+    but has looked at it previously. Making this determination requires multiple annotations,
+    which is why this returns a dictionary that must be unpacked into kwargs.
+    '''
+    if user.is_anonymous:
+        return {'show_as_unviewed': Value(False)}
+
     seen_versions = FileVersion.objects.annotate(
         latest_version=Subquery(
             FileVersion.objects.filter(
@@ -48,7 +59,7 @@ def make_current_user_has_viewed_annotations(user):
         seen_versions.filter(basefilenode=OuterRef('id').exclude(id=F('latest_version'))),
     )
     current_user_has_viewed = Case(
-        When(Q(latest_seen=True) | Q(previously_seen=False), then=Value(True)),
+        When(Q(has_seen_latest=False) & Q(has_previously_seen=True), then=Value(True)),
         default=Value(False),
         output_field=BooleanField(),
     )
@@ -58,3 +69,18 @@ def make_current_user_has_viewed_annotations(user):
         'has_previously_seen': has_previously_seen,
         'current_user_has_viewed': current_user_has_viewed,
     }
+
+def check_show_as_unviewed(user, osf_file):
+    '''A separte function for assigning the show_as_unviewed value to a single instance.
+
+    Our logic is not conducive to assigning annotations to a single file, so do it manually
+    in the DetailView case.
+    '''
+    if user.is_anonymous:
+        return False
+
+    latest_version = osf_file.versions.order_by('-created').first()
+    return (
+        osf_file.versions.filter(seen_by=user).exists()
+        and not latest_version.seen_by.filter(user=user).exists()
+    )

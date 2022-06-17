@@ -24,6 +24,7 @@ from api.base.views import JSONAPIBaseView
 from api.base import permissions as base_permissions
 from api.nodes.permissions import ContributorOrPublic
 from api.nodes.permissions import ReadOnlyIfRegistration
+from api.files import annotations
 from api.files.permissions import IsPreprintFile
 from api.files.permissions import CheckedOutOrAdmin
 from api.files.permissions import FileMetadataRecordPermission
@@ -112,6 +113,9 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
         if file.kind == 'file':
             if file.provider == 'osfstorage':
                 file.date_modified = file.versions.aggregate(Max('created'))['created__max']
+                file.show_as_unviewed = annotations.check_show_as_unviewed(
+                    user=self.request.user, osf_file=file,
+                )
             else:
                 file.date_modified = file.history[-1]['modified']
 

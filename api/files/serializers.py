@@ -383,7 +383,14 @@ class FileSerializer(BaseFileSerializer):
         min_version='2.0', max_version='2.7',
     )
     target = TargetField(link_type='related', meta={'type': 'get_target_type'})
-    current_user_has_viewed = ser.BooleanField(default=True, help_text='Whether the current user has already viewed the file')
+
+    # Assigned via annotation. See api/files/annotations for info
+    show_as_unviewed = ser.BooleanField(
+        read_only=True,
+        required=False,
+        default=False,
+        help_text='Whether to mark the file as unviewed for the current user',
+    )
 
     def get_target_type(self, obj):
         if isinstance(obj, Preprint):

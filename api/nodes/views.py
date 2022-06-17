@@ -2,7 +2,7 @@ import re
 
 from distutils.version import StrictVersion
 from django.apps import apps
-from django.db.models import BooleanField, Case, Exists, F, IntegerField, Max, OuterRef, Q, Subquery, Value, When
+from django.db.models import F, Max, Q, Subquery
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics, permissions as drf_permissions
@@ -65,7 +65,7 @@ from api.comments.serializers import (
 )
 from api.draft_registrations.serializers import DraftRegistrationSerializer, DraftRegistrationDetailSerializer
 from api.files.serializers import FileSerializer, OsfStorageFileSerializer
-from api.files.annotations import DATE_MODIFIED
+from api.files import annotations as file_annotations
 from api.identifiers.serializers import NodeIdentifierSerializer
 from api.identifiers.views import IdentifierList
 from api.institutions.serializers import InstitutionSerializer
@@ -149,7 +149,6 @@ from osf.models import (
     Guid,
     File,
     Folder,
-    FileVersion,
 )
 from addons.osfstorage.models import Region, OsfStorageFileNode
 from osf.utils.permissions import ADMIN, WRITE_NODE
@@ -1163,32 +1162,11 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
         # Addon provided files/folders don't have versions so for there date modified we check the history. The history
         # is updated every time we query the file metadata via Waterbutler.
         if provider == 'osfstorage':
-            seen_versions = FileVersion.objects.annotate(
-                latest_version=Subquery(
-                    FileVersion.objects.filter(
-                        basefilenode=OuterRef('basefilenode'),
-                    ).order_by('-created').values('id')[:1],
-                    output_field=IntegerField(),
-                ),
-            ).filter(seen_by=self.request.user)
-
             return folder_object.children.prefetch_related(
                 'versions',
                 'tags',
                 'guids',
-            ).annotate(
-                latest_seen=Exists(
-                    seen_versions.filter(basefilenode=OuterRef('id')).filter(id=F('latest_version')),
-                ),
-                previously_seen=Exists(
-                    seen_versions.filter(basefilenode=OuterRef('id')).exclude(id=F('latest_version')),
-                ),
-                current_user_has_viewed=Case(
-                    When(Q(latest_seen=True) | Q(previously_seen=False), then=Value(True)),
-                    default=Value(False),
-                    output_field=BooleanField(),
-                ),
-            )
+            ).annotate(**file_annotations.make_show_as_unviewed_annotations(self.request.user))
 
         else:
             return self.bulk_get_file_nodes_from_wb_resp(folder_object)
@@ -1204,7 +1182,9 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             file_obj = self.get_file_object(resource, path, provider)
 
             if provider == 'osfstorage':
-                queryset = OsfStorageFileNode.objects.filter(id=file_obj.id)
+                queryset = OsfStorageFileNode.objects.filter(id=file_obj.id).annotate(
+                    **file_annotations.make_show_as_unviewed_annotations(self.request.user)
+                )
 
             else:
                 base_class = BaseFileNode.resolve_class(provider, BaseFileNode.FOLDER)
@@ -1216,7 +1196,9 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
         else:
             queryset = self.get_queryset_from_request()
 
-        return queryset.annotate(date_modified=DATE_MODIFIED)
+        return queryset.annotate(
+            date_modified=file_annotations.DATE_MODIFIED,
+        )
 
 
 class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):
@@ -1249,7 +1231,9 @@ class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin
         if fobj.kind == 'file':
             if fobj.provider == 'osfstorage':
                 fobj.date_modified = fobj.versions.aggregate(Max('created'))['created__max']
-                fobj.current_user_has_viewed = True
+                fobj.show_as_unviewed = file_annotations.check_show_as_unviewed(
+                    user=self.request.user, osf_file=fobj,
+                )
             else:
                 fobj.date_modified = fobj.history[-1]['modified']
 
