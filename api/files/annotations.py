@@ -58,7 +58,7 @@ def make_show_as_unviewed_annotations(user):
     has_previously_seen = Exists(
         seen_versions.filter(basefilenode=OuterRef('id').exclude(id=F('latest_version'))),
     )
-    current_user_has_viewed = Case(
+    show_as_unviewed = Case(
         When(Q(has_seen_latest=False) & Q(has_previously_seen=True), then=Value(True)),
         default=Value(False),
         output_field=BooleanField(),
@@ -67,7 +67,7 @@ def make_show_as_unviewed_annotations(user):
     return {
         'has_seen_latest': has_seen_latest,
         'has_previously_seen': has_previously_seen,
-        'current_user_has_viewed': current_user_has_viewed,
+        'show_as_unviewed': show_as_unviewed,
     }
 
 def check_show_as_unviewed(user, osf_file):
