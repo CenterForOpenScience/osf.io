@@ -10,10 +10,12 @@ from framework.auth.core import Auth
 
 from addons.github.models import GithubFolder
 from addons.github.tests.factories import GitHubAccountFactory
+from addons.osfstorage.tests.factories import FileVersionFactory
 from api.base.settings.defaults import API_BASE
 from api.base.utils import waterbutler_api_url_for
 from api_tests import utils as api_utils
 from tests.base import ApiTestCase
+from osf.models.files import FileVersionUserMetadata
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
@@ -731,3 +733,56 @@ class TestNodeStorageProviderDetail(ApiTestCase):
     def test_cannot_view_if_private(self):
         res = self.app.get(self.private_url, expect_errors=True)
         assert_equal(res.status_code, 401)
+
+
+class TestShowAsUnviewed(ApiTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.user = AuthUserFactory()
+        self.node = ProjectFactory(is_public=True, creator=self.user)
+        self.test_file = api_utils.create_test_file(self.node, self.user, create_guid=False)
+        self.test_file.add_version(FileVersionFactory())
+        self.url = f'/{API_BASE}nodes/{self.node._id}/files/osfstorage/'
+
+    def test_show_as_unviewed__previously_seen(self):
+        FileVersionUserMetadata.objects.create(
+            user=self.user,
+            file_version=self.test_file.versions.order_by('created').first()
+        )
+
+        res = self.app.get(self.url, auth=self.user.auth)
+        assert res.json['data'][0]['attributes']['show_as_unviewed']
+
+        file_models.FileVersionUserMetadata.objects.create(
+            user=self.user,
+            file_version=self.test_file.versions.order_by('-created').first()
+        )
+
+        res = self.app.get(self.url, auth=self.user.auth)
+        assert not res.json['data'][0]['attributes']['show_as_unviewed']
+
+    def test_show_as_unviewed__not_previously_seen(self):
+        res = self.app.get(self.url, auth=self.user.auth)
+        assert not res.json['data'][0]['attributes']['show_as_unviewed']
+
+    def test_show_as_unviewed__different_user(self):
+        FileVersionUserMetadata.objects.create(
+            user=self.user,
+            file_version=self.test_file.versions.order_by('created').first()
+        )
+        file_viewer = AuthUserFactory()
+
+        res = self.app.get(self.url, auth=file_viewer.auth)
+        assert not res.json['data'][0]['attributes']['show_as_unviewed']
+
+    def test_show_as_unviewed__anonymous_user(self):
+        res = self.app.get(self.url)
+        assert not res.json['data'][0]['attributes']['show_as_unviewed']
+
+    def test_show_as_unviewed__no_versions(self):
+        # Most Non-OSFStorage providers don't have versions; make sure this still works
+        self.test_file.versions.all().delete()
+
+        res = self.app.get(self.url, auth=self.user.auth)
+        assert not res.json['data'][0]['attributes']['show_as_unviewed']
