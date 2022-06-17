@@ -67,7 +67,7 @@ def make_show_as_unviewed_annotations(user):
     return {
         'has_seen_latest': has_seen_latest,
         'has_previously_seen': has_previously_seen,
-        'show_as_unviewed': show_as_unviewed,
+        'show_as_unviewed': show_as_unviewed
     }
 
 def check_show_as_unviewed(user, osf_file):
