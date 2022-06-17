@@ -34,14 +34,14 @@ def make_show_as_unviewed_annotations(user):
     '''Returns the annotations required to set the current_user_has_viewed attribute.
 
     Usage:
-    OsfStorageFile.objects.annotate(**make_current_user_has_viewed_annotations(request.user))
+    OsfStorageFile.objects.annotate(**make_show_as_unviewed_annotations(request.user))
 
     show_as_unviewed is only true if the user has not seen the latest version of a file
     but has looked at it previously. Making this determination requires multiple annotations,
     which is why this returns a dictionary that must be unpacked into kwargs.
     '''
     if user.is_anonymous:
-        return {'show_as_unviewed': Value(False)}
+        return {'show_as_unviewed': Value(False, output_field=BooleanField())}
 
     seen_versions = FileVersion.objects.annotate(
         latest_version=Subquery(
@@ -54,7 +54,7 @@ def make_show_as_unviewed_annotations(user):
 
     has_seen_latest = Exists(
         seen_versions.filter(basefilenode=OuterRef('id')).filter(id=F('latest_version')),
-    ),
+    )
     has_previously_seen = Exists(
         seen_versions.filter(basefilenode=OuterRef('id')).exclude(id=F('latest_version')),
     )
@@ -67,7 +67,7 @@ def make_show_as_unviewed_annotations(user):
     return {
         'has_seen_latest': has_seen_latest,
         'has_previously_seen': has_previously_seen,
-        'show_as_unviewed': show_as_unviewed
+        'show_as_unviewed': show_as_unviewed,
     }
 
 def check_show_as_unviewed(user, osf_file):

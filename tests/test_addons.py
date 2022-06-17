@@ -231,10 +231,10 @@ class TestAddonAuth(OsfTestCase):
         file_models.FileVersionUserMetadata.objects.create(
             user=self.user, file_version=test_file.versions.get()
         )
-        version2 = FileVersionFactory()
+        version2 = FileVersionFactory(identifier='2')
         test_file.add_version(version2)
 
-        res = django_app.get(f'/{API_BASE}files/{test_file._id}/', auth=self.user.auth)
+        res = django_app.get(f'/{API_BASE}files/{test_file._id}', auth=self.user.auth)
         assert res.json['data']['attributes']['show_as_unviewed']
 
         # seen_by is set by the WB callback
@@ -250,7 +250,7 @@ class TestAddonAuth(OsfTestCase):
         version2.refresh_from_db()
         assert version2.seen_by.exists()
 
-        res = django_app.get(f'/{API_BASE}files/{test_file._id}/', auth=self.user.auth)
+        res = django_app.get(f'/{API_BASE}files/{test_file._id}', auth=self.user.auth)
         assert not res.json['data']['attributes']['show_as_unviewed']
 
     def test_show_as_unviewed__detail_view__not_previously_seen(self):
@@ -259,7 +259,7 @@ class TestAddonAuth(OsfTestCase):
         version2 = FileVersionFactory()
         test_file.add_version(version2)
 
-        res = django_app.get(f'/{API_BASE}files/{test_file._id}/', auth=self.user.auth)
+        res = django_app.get(f'/{API_BASE}files/{test_file._id}', auth=self.user.auth)
         assert not res.json['data']['attributes']['show_as_unviewed']
 
     def test_show_as_unviewed__detail_view__different_user(self):
