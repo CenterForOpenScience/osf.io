@@ -240,7 +240,7 @@ class TestAddonAuth(OsfTestCase):
         # seen_by is set by the WB callback
         self.app.get(
             self.build_url(
-                nid=node._id,
+                nid=self.node._id,
                 provider='osfstorage',
                 path=test_file.path,
                 version=2
@@ -308,13 +308,13 @@ class TestAddonAuth(OsfTestCase):
         version2 = FileVersionFactory()
         test_file.add_version(version2)
 
-        res = django_app.get(f'/{API_BASE}nodes/{self.node._id}/files/', auth=self.user.auth)
+        res = django_app.get(f'/{API_BASE}nodes/{self.node._id}/files/osfstorage/', auth=self.user.auth)
         assert res.json['data'][0]['attributes']['show_as_unviewed']
 
         # seen_by is set by the WB callback
         self.app.get(
             self.build_url(
-                nid=node._id,
+                nid=self.node._id,
                 provider='osfstorage',
                 path=test_file.path,
                 version=2
@@ -324,7 +324,7 @@ class TestAddonAuth(OsfTestCase):
         version.refresh_from_db()
         assert version2.seen_by.exists()
 
-        res = django_app.get(f'/{API_BASE}files/{file._id}/', auth=file_viewer.auth)
+        res = django_app.get(f'/{API_BASE}nodes/{self.node._id}/files/osfstorage/', auth=self.user.auth)
         assert not res.json['data'][0]['attributes']['show_as_unviewed']
 
 
@@ -334,7 +334,7 @@ class TestAddonAuth(OsfTestCase):
         version2 = FileVersionFactory()
         test_file.add_version(version2)
 
-        res = django_app.get(f'/{API_BASE}nodes/{self.node._id}/files/', auth=self.user.auth)
+        res = django_app.get(f'/{API_BASE}nodes/{self.node._id}/files/osfstorage/', auth=self.user.auth)
         assert not res.json['data'][0]['attributes']['show_as_unviewed']
 
     def test_show_as_unviewed__list_view__different_user(self):
@@ -350,7 +350,7 @@ class TestAddonAuth(OsfTestCase):
         self.node.save()
         file_viewer = AuthUserFactory()
 
-        res = django_app.get(f'/{API_BASE}nodes/{self.node._id}/files/', auth=file_viewer.auth)
+        res = django_app.get(f'/{API_BASE}nodes/{self.node._id}/files/osfstorage/', auth=self.user.auth)
         assert not res.json['data'][0]['attributes']['show_as_unviewed']
 
     def test_show_as_unviewed__list_view__anonymous_user(self):
@@ -362,7 +362,7 @@ class TestAddonAuth(OsfTestCase):
         self.node.is_public = True
         self.node.save()
 
-        res = django_app.get(f'/{API_BASE}nodes/{self.node._id}/files/', auth=self.user.auth)
+        res = django_app.get(f'/{API_BASE}nodes/{self.node._id}/files/osfstorage/')
         assert not res.json['data'][0]['attributes']['show_as_unviewed']
 
     def test_show_as_unviewed__list_view__non_osfstorage_file(self):
