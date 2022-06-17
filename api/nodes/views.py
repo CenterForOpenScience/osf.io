@@ -1166,8 +1166,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
                 'versions',
                 'tags',
                 'guids',
-            ).annotate(**file_annotations.make_show_as_unviewed_annotations(self.request.user))
-
+            )
         else:
             return self.bulk_get_file_nodes_from_wb_resp(folder_object)
 
@@ -1182,10 +1181,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             file_obj = self.get_file_object(resource, path, provider)
 
             if provider == 'osfstorage':
-                queryset = OsfStorageFileNode.objects.filter(id=file_obj.id).annotate(
-                    **file_annotations.make_show_as_unviewed_annotations(self.request.user)
-                )
-
+                queryset = OsfStorageFileNode.objects.filter(id=file_obj.id).annotate
             else:
                 base_class = BaseFileNode.resolve_class(provider, BaseFileNode.FOLDER)
                 queryset = base_class.objects.filter(
@@ -1198,6 +1194,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
         return queryset.annotate(
             date_modified=file_annotations.DATE_MODIFIED,
+            **file_annotations.make_show_as_unviewed_annotations(self.request.user)
         )
 
 
