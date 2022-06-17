@@ -224,62 +224,144 @@ class TestAddonAuth(OsfTestCase):
         assert_equal(test_file.get_view_count(), 1)
         assert_equal(node.logs.count(), nlogs) # don't log views
 
-    def test_current_user_has_viewed_public(self):
-        node = ProjectFactory(is_public=True)
-        file = create_test_file(node, node.creator, create_guid=False)
+
+    def test_show_as_unseen__detail_view(self):
         django_app = JSONAPITestApp()
+        test_file = create_test_file(self.node, self.user, create_guid=False)
+        test_file.versions.get().seen_by.add(self.user)
+        version2 = FileVersionFactory()
+        test_file.add_version(version2)
 
-        file_viewer = AuthUserFactory()
+        res = django_app.get(f'/{API_BASE}files/{test_file._id}/', auth=self.user.auth)
+        assert res.json['data']['attributes']['show_as_unviewed']
 
-        res = django_app.get(f'/{API_BASE}files/{file._id}/', auth=file_viewer.auth)
-        assert res.status_code == 200
-        assert res.json['data']['attributes']['current_user_has_viewed'] is False
-
-        # This mocks the Waterbutler callback endpoint (`get_auth` function in addons/base/views.py ) which indicates if
-        # a file has been view with the MFR.
+        # seen_by is set by the WB callback
         self.app.get(
             self.build_url(
                 nid=node._id,
                 provider='osfstorage',
-                path=file.path,
-                version=1
+                path=test_file.path,
+                version=2  # NOTE: This is version 1 !!!
+            ),
+            auth=self.user.auth
+        )
+        version2.refresh_from_db()
+        assert version2.seen_by.exists()
+
+        res = django_app.get(f'/{API_BASE}files/{test_file._id}/', auth=self.user.auth)
+        assert not res.json['data']['attributes']['show_as_unviewed']
+
+    def test_show_as_unseen__detail_view__not_previously_seen(self):
+        django_app = JSONAPITestApp()
+        test_file = create_test_file(self.node, self.user, create_guid=False)
+        version2 = FileVersionFactory()
+        test_file.add_version(version2)
+
+        res = django_app.get(f'/{API_BASE}files/{test_file._id}/', auth=self.user.auth)
+        assert not res.json['data']['attributes']['show_as_unviewed']
+
+    def test_show_as_unseen__detail_view__different_user(self):
+        django_app = JSONAPITestApp()
+        test_file = create_test_file(self.node, self.user, create_guid=False)
+        test_file.versions.get().seen_by.add(self.user)
+        version2 = FileVersionFactory()
+        test_file.add_version(version2)
+
+        self.node.is_public = True
+        self.node.save()
+        file_viewer = AuthUserFactory()
+
+        res = django_app.get(f'/{API_BASE}files/{test_file._id}/', auth=file_viewer.auth)
+        assert not res.json['data']['attributes']['show_as_unviewed']
+
+    def test_show_as_unseen__detail_view__anonymous_user(self):
+        django_app = JSONAPITestApp()
+        test_file = create_test_file(self.node, self.user, create_guid=False)
+
+        version2 = FileVersionFactory()
+        test_file.add_version(version2)
+
+        res = django_app.get(f'/{API_BASE}files/{test_file._id}/')
+        assert not res.json['data']['attributes']['show_as_unviewed']
+
+    def test_show_as_unseen__detail_view__non_osfstorage_file(self):
+        django_app = JSONAPITestApp()
+        test_file = create_test_file(self.node, self.user, create_guid=False)
+        test_file.provider = 'github'
+        test_file.save()
+
+        res = django_app.get(f'/{API_BASE}files/{test_file._id}/', auth=self.user.auth)
+        assert not res.json['data']['attributes']['show_as_unviewed']
+
+    def test_show_as_unseen__list_view(self):
+        django_app = JSONAPITestApp()
+        test_file = create_test_file(self.node, self.user, create_guid=False)
+        test_file.versions.get().seen_by.add(self.user)
+        version2 = FileVersionFactory()
+        test_file.add_version(version2)
+
+        res = django_app.get(f'/{API_BASE}nodes/{self.node._id}/files/', auth=self.user.auth)
+        assert res.json['data']['attributes']['show_as_unviewed']
+
+        # seen_by is set by the WB callback
+        self.app.get(
+            self.build_url(
+                nid=node._id,
+                provider='osfstorage',
+                path=test_file.path,
+                version=2  # NOTE: This is version 1 !!!
             ),
             auth=file_viewer.auth
         )
+        version.refresh_from_db()
+        assert version2.seen_by.exists()
 
         res = django_app.get(f'/{API_BASE}files/{file._id}/', auth=file_viewer.auth)
+        assert not res.json['data'][0]['attributes']['show_as_unviewed']
 
-        version = file.versions.get()
-        assert version.seen_by.exists()
-        assert res.json['data']['attributes']['current_user_has_viewed']
 
-    def test_current_user_has_viewed_private(self):
-        node = ProjectFactory()
-        file = create_test_file(node, node.creator, create_guid=False)
+    def test_show_as_unseen__list_view__not_previously_seen(self):
         django_app = JSONAPITestApp()
+        test_file = create_test_file(self.node, self.user, create_guid=False)
+        test_file.versions.get().seen_by.add(self.user)
+        version2 = FileVersionFactory()
+        test_file.add_version(version2)
 
-        res = django_app.get(f'/{API_BASE}files/{file._id}/', auth=node.creator.auth)
-        assert res.status_code == 200
-        assert res.json['data']['attributes']['current_user_has_viewed'] is False
+        res = django_app.get(f'/{API_BASE}nodes/{self.node._id}/files/', auth=self.user.auth)
+        assert not res.json['data'][0]['attributes']['show_as_unviewed']
 
-        # This mocks the Waterbutler callback endpoint (`get_auth` function in addons/base/views.py ) which indicates if
-        # a file has been view with the MFR.
-        self.app.get(
-            self.build_url(
-                nid=node._id,
-                provider='osfstorage',
-                path=file.path,
-                version=1
-            ),
-            auth=node.creator.auth
-        )
+    def test_show_as_unseen__list_view__different_user(self):
+        django_app = JSONAPITestApp()
+        test_file = create_test_file(self.node, self.user, create_guid=False)
+        test_file.versions.get().seen_by.add(self.user)
+        version2 = FileVersionFactory()
+        test_file.add_version(version2)
 
-        res = django_app.get(f'/{API_BASE}files/{file._id}/', auth=node.creator.auth)
+        self.node.is_public = True
+        self.node.save()
+        file_viewer = AuthUserFactory()
 
-        version = file.versions.get()
-        assert version.seen_by.exists()
-        assert res.json['data']['attributes']['current_user_has_viewed']
+        res = django_app.get(f'/{API_BASE}nodes/{self.node._id}/files/', auth=file_viewer.auth)
+        assert not res.json['data'][0]['attributes']['show_as_unviewed']
 
+    def test_show_as_unseen__list_view__anonymous_user(self):
+        django_app = JSONAPITestApp()
+        test_file = create_test_file(self.node, self.user, create_guid=False)
+
+        version2 = FileVersionFactory()
+        test_file.add_version(version2)
+
+        res = django_app.get(f'/{API_BASE}nodes/{self.node._id}/files/', auth=self.user.auth)
+        assert not res.json['data'][0]['attributes']['show_as_unviewed']
+
+    def test_show_as_unseen__list_view__non_osfstorage_file(self):
+        django_app = JSONAPITestApp()
+        test_file = create_test_file(self.node, self.user, create_guid=False)
+        test_file.provider = 'github'
+        test_file.save()
+
+        res = django_app.get(f'/{API_BASE}nodes/{self.node._id}/files/', auth=self.user.auth)
+        assert not res.json['data'][0]['attributes']['show_as_unviewed']
 
 class TestAddonLogs(OsfTestCase):
 

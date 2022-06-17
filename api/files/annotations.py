@@ -53,10 +53,10 @@ def make_show_as_unviewed_annotations(user):
     ).filter(seen_by=user)
 
     has_seen_latest = Exists(
-        seen_versions.filter(basefilenode=OuterRef('id').filter(id=F('latest_version'))),
-    )
+        seen_versions.filter(basefilenode=OuterRef('id')).filter(id=F('latest_version')),
+    ),
     has_previously_seen = Exists(
-        seen_versions.filter(basefilenode=OuterRef('id').exclude(id=F('latest_version'))),
+        seen_versions.filter(basefilenode=OuterRef('id')).exclude(id=F('latest_version')),
     )
     show_as_unviewed = Case(
         When(Q(has_seen_latest=False) & Q(has_previously_seen=True), then=Value(True)),
