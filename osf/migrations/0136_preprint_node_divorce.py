@@ -102,7 +102,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(emit_signals, reverse_func),
         migrations.RunSQL(
             [
                 """

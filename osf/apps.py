@@ -1,8 +1,9 @@
-from __future__ import unicode_literals
-
+import logging
 from django.apps import AppConfig as BaseAppConfig
 from django.db.models.signals import post_migrate
-from osf.migrations import update_permission_groups
+from osf.migrations import update_permission_groups, update_waffle_flags
+
+logger = logging.getLogger(__file__)
 
 
 class AppConfig(BaseAppConfig):
@@ -15,4 +16,8 @@ class AppConfig(BaseAppConfig):
         post_migrate.connect(
             update_permission_groups,
             dispatch_uid='osf.apps.update_permissions_groups'
+        )
+        post_migrate.connect(
+            update_waffle_flags,
+            dispatch_uid='osf.apps.update_waffle_flags'
         )

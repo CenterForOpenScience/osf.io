@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
+import sys
 import logging
 from django.db.utils import ProgrammingError
+from osf.management.commands.manage_switch_flags import manage_waffle
 
 logger = logging.getLogger(__file__)
 
@@ -119,3 +121,10 @@ def update_permission_groups(sender, verbosity=0, **kwargs):
     if getattr(sender, 'label', None) == 'osf':
         update_admin_permissions(verbosity)
         update_provider_auth_groups(verbosity)
+
+
+def update_waffle_flags(sender, verbosity=0, **kwargs):
+    if getattr(sender, 'label', None) == 'osf':
+        if 'pytest' not in sys.modules:
+            manage_waffle()
+            logger.info('Waffle flags have been synced')
