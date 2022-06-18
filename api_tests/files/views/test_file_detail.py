@@ -929,7 +929,7 @@ class TestShowAsUnviewed:
 
     @pytest.fixture
     def test_file(self, user, node):
-        test_file = api_utils.create_test_file(self.node, self.user, create_guid=False)
+        test_file = api_utils.create_test_file(node, user, create_guid=False)
         test_file.add_version(FileVersionFactory())
         return test_file
 

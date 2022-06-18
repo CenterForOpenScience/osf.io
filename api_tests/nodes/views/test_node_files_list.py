@@ -754,7 +754,7 @@ class TestShowAsUnviewed(ApiTestCase):
         res = self.app.get(self.url, auth=self.user.auth)
         assert res.json['data'][0]['attributes']['show_as_unviewed']
 
-        file_models.FileVersionUserMetadata.objects.create(
+        FileVersionUserMetadata.objects.create(
             user=self.user,
             file_version=self.test_file.versions.order_by('-created').first()
         )
