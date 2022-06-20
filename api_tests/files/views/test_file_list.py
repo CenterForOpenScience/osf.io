@@ -1,4 +1,5 @@
 import pytest
+import responses
 
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as api_utils
@@ -7,6 +8,8 @@ from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
 )
+from addons.dataverse.tests.factories import DataverseAccountFactory
+from api_tests.draft_nodes.views.test_draft_node_files_lists import prepare_mock_wb_response
 
 
 @pytest.fixture()
@@ -16,6 +19,25 @@ def user():
 
 @pytest.mark.django_db
 class TestNodeFileList:
+
+    @pytest.fixture()
+    def dataverse(self, user, node):
+        addon = node.add_addon('dataverse', auth=Auth(user))
+        oauth_settings = DataverseAccountFactory()
+        oauth_settings.save()
+        user.add_addon('dataverse')
+        user.external_accounts.add(oauth_settings)
+        user.save()
+        addon.user_settings = user.get_addon('dataverse')
+        addon.external_account = oauth_settings
+        addon.dataset_doi = 'test dataset_doi'
+        addon.dataset = 'test dataset'
+        addon._dataset_id = 'test dataset_id'
+        addon.save()
+        addon.user_settings.oauth_grants[node._id] = {
+            oauth_settings._id: []}
+        addon.user_settings.save()
+        node.save()
 
     @pytest.fixture()
     def node(self, user):
@@ -41,6 +63,26 @@ class TestNodeFileList:
         )
         data = res.json.get('data')
         assert len(data) == 1
+
+    @responses.activate
+    def test_does_disambiguate_dataverse_names(self, app, user, node, dataverse):
+        prepare_mock_wb_response(
+            path='/',
+            node=node,
+            provider='dataverse',
+            files=[
+                {'name': 'testpath', 'path': '/testpath', 'materialized': '/testpath', 'kind': 'file', 'extra': {'datasetVersion': 'latest'}, 'provider': 'dataverse'},
+                {'name': 'testpath', 'path': '/testpath', 'materialized': '/testpath', 'kind': 'file', 'extra': {'datasetVersion': 'latest-published'}, 'provider': 'dataverse'},
+            ]
+        )
+        res = app.get(
+            f'/{API_BASE}nodes/{node._id}/files/dataverse/',
+            auth=node.creator.auth
+        )
+        data = res.json['data']
+        assert len(data) == 2
+        assert data[0]['attributes']['name'] == 'testpath [Draft]'
+        assert data[1]['attributes']['name'] == 'testpath [Published]'
 
 
 @pytest.mark.django_db

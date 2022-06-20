@@ -35,6 +35,12 @@ class DataverseFile(DataverseFileNode, File):
         Call super to update _history and last_touched anyway.
         """
         version = super().update(None, data, user=user, save=save)
+        if data['extra']['datasetVersion'] == 'latest':
+            self.name += ' [Draft]'
+        if data['extra']['datasetVersion'] == 'latest-published':
+            self.name += ' [Published]'
+        if save:
+            self.save()
         version.identifier = revision
         return version
 
