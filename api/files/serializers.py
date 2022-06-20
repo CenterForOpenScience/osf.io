@@ -317,6 +317,10 @@ class BaseFileSerializer(JSONAPISerializer):
         }
         if obj.provider == 'osfstorage' and obj.is_file:
             extras['downloads'] = obj.get_download_count()
+
+        if obj.provider == 'dataverse':
+            extras.update(obj.history[0]['extra'])
+
         return extras
 
     def get_current_user_can_comment(self, obj):
