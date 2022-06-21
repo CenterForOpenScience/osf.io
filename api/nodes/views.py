@@ -1226,11 +1226,11 @@ class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin
             # We should not have gotten a folder here
             raise NotFound
         if fobj.kind == 'file':
+            fobj.show_as_unviewed = file_annotations.check_show_as_unviewed(
+                user=self.request.user, osf_file=fobj,
+            )
             if fobj.provider == 'osfstorage':
                 fobj.date_modified = fobj.versions.aggregate(Max('created'))['created__max']
-                fobj.show_as_unviewed = file_annotations.check_show_as_unviewed(
-                    user=self.request.user, osf_file=fobj,
-                )
             else:
                 fobj.date_modified = fobj.history[-1]['modified']
 

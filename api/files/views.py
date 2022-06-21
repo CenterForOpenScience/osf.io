@@ -111,11 +111,11 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
         # We normally would pass this through `get_file` as an annotation, but the `select_for_update` feature prevents
         # grouping versions in an annotation
         if file.kind == 'file':
+            file.show_as_unviewed = annotations.check_show_as_unviewed(
+                user=self.request.user, osf_file=file,
+            )
             if file.provider == 'osfstorage':
                 file.date_modified = file.versions.aggregate(Max('created'))['created__max']
-                file.show_as_unviewed = annotations.check_show_as_unviewed(
-                    user=self.request.user, osf_file=file,
-                )
             else:
                 file.date_modified = file.history[-1]['modified']
 
