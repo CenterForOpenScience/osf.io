@@ -71,7 +71,7 @@ def make_show_as_unviewed_annotations(user):
     }
 
 def check_show_as_unviewed(user, osf_file):
-    '''A separte function for assigning the show_as_unviewed value to a single instance.
+    '''A separate function for assigning the show_as_unviewed value to a single instance.
 
     Our logic is not conducive to assigning annotations to a single file, so do it manually
     in the DetailView case.
