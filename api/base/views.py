@@ -5,7 +5,6 @@ from distutils.version import StrictVersion
 
 from django_bulk_update.helper import bulk_update
 from django.conf import settings as django_settings
-from django.core.exceptions import MultipleObjectsReturned
 from django.db import transaction
 from django.db.models import F, Q
 from django.http import JsonResponse
@@ -640,29 +639,23 @@ class WaterButlerMixin(object):
 
             # mirrors BaseFileNode get_or_create
             _path = '/' + attrs['path'].lstrip('/')
+            query = {
+                'target_object_id': node.id,
+                'target_content_type': content_type,
+                '_path': _path,
+            }
+
+            # Dataverse provides us two sets of files with the same path, so we disambiguate the paths, this
+            # preserves legacy behavior by distingishing them by version (Draft/Published).
+            if attrs['provider'] == 'dataverse':
+                query.update({'_history__0__extra__datasetVersion': attrs['extra']['datasetVersion']})
+
             try:
-                file_obj = base_class.objects.get(
-                    target_object_id=node.id,
-                    target_content_type=content_type,
-                    _path=_path,
-                )
+                file_obj = base_class.objects.get(**query)
             except base_class.DoesNotExist:
                 # create method on BaseFileNode appends provider, bulk_create bypasses this step so it is added here
                 file_obj = base_class(target=node, _path=_path, provider=base_class._provider)
                 objs_to_create[base_class].append(file_obj)
-            except MultipleObjectsReturned as e:
-                # Dataverse provides us two sets of files with the same path, so we disambiguate the paths, this
-                # preserves legacy behavior.
-                if str(e) == 'get() returned more than one DataverseFile -- it returned 2!':
-                    file_obj = base_class.objects.get(
-                        target_object_id=node.id,
-                        target_content_type=content_type,
-                        _path=_path,
-                        _history__0__extra__datasetVersion=attrs['extra']['datasetVersion'],
-                    )
-                    file_objs.append(file_obj)
-                else:
-                    raise e
             else:
                 file_objs.append(file_obj)
 
