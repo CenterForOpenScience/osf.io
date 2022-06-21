@@ -651,18 +651,16 @@ class WaterButlerMixin(object):
                 file_obj = base_class(target=node, _path=_path, provider=base_class._provider)
                 objs_to_create[base_class].append(file_obj)
             except MultipleObjectsReturned as e:
-                # Dataverse provides us two sets of files with the same path, so we disambiguate the tiles, this
+                # Dataverse provides us two sets of files with the same path, so we disambiguate the paths, this
                 # preserves legacy behavior.
-                if attrs['provider'] == 'dataverse':
-                    dataverse_files = base_class.objects.filter(
+                if str(e) == 'get() returned more than one DataverseFile -- it returned 2!':
+                    file_obj = base_class.objects.get(
                         target_object_id=node.id,
                         target_content_type=content_type,
                         _path=_path,
+                        _history__0__extra__datasetVersion=attrs['extra']['datasetVersion'],
                     )
-                    for dataverse_file in dataverse_files:
-                        dataverse_file.update(None, attrs, user=self.request.user, save=False)
-                        file_objs.append(dataverse_file)
-                    continue
+                    file_objs.append(file_obj)
                 else:
                     raise e
             else:

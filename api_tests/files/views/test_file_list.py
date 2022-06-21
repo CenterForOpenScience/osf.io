@@ -10,6 +10,7 @@ from osf_tests.factories import (
 )
 from addons.dataverse.tests.factories import DataverseAccountFactory
 from api_tests.draft_nodes.views.test_draft_node_files_lists import prepare_mock_wb_response
+from addons.dataverse.models import DataverseFile
 
 
 @pytest.fixture()
@@ -49,6 +50,22 @@ class TestNodeFileList:
             node, user, filename='file_one')
 
     @pytest.fixture()
+    def dataverse_published_filenode(self, node):
+        return DataverseFile.objects.create(
+            target=node,
+            path='/testpath',
+            _history=[{'extra': {'datasetVersion': 'latest-published'}}],
+        )
+
+    @pytest.fixture()
+    def dataverse_draft_filenode(self, node):
+        return DataverseFile.objects.create(
+            target=node,
+            path='/testpath',
+            _history=[{'extra': {'datasetVersion': 'latest'}}],
+        )
+
+    @pytest.fixture()
     def deleted_file(self, user, node):
         deleted_file = api_utils.create_test_file(
             node, user, filename='file_two')
@@ -65,14 +82,39 @@ class TestNodeFileList:
         assert len(data) == 1
 
     @responses.activate
-    def test_does_disambiguate_dataverse_names(self, app, user, node, dataverse):
+    def test_disambiguate_dataverse_paths_initial(self, app, user, node, dataverse):
+        '''
+        This test is for retrieving files from Dataverse initially, (Osf is contacting Dataverse after a update to their
+        Dataverse files) this test ensures both files are made into OSF filenodes and their `extra` info is passed along
+        to the front-end.
+        '''
         prepare_mock_wb_response(
             path='/',
             node=node,
             provider='dataverse',
             files=[
-                {'name': 'testpath', 'path': '/testpath', 'materialized': '/testpath', 'kind': 'file', 'modified': '2018-02-04T00:00:00.001Z', 'extra': {'datasetVersion': 'latest'}, 'provider': 'dataverse'},
-                {'name': 'testpath', 'path': '/testpath', 'materialized': '/testpath', 'kind': 'file', 'modified': '2018-02-04T11:11:11.001Z', 'extra': {'datasetVersion': 'latest-published'}, 'provider': 'dataverse'},
+                {
+                    'name': 'testpath',
+                    'path': '/testpath',
+                    'materialized': '/testpath',
+                    'kind': 'file',
+                    'modified': 'Wed, 20 Jul 2011 22:04:50 +0000',
+                    'extra': {
+                        'datasetVersion': 'latest'
+                    },
+                    'provider': 'dataverse'
+                },
+                {
+                    'name': 'testpath',
+                    'path': '/testpath',
+                    'materialized': '/testpath',
+                    'kind': 'file',
+                    'modified': 'Wed, 20 Jul 2011 22:04:50 +0000',
+                    'extra': {
+                        'datasetVersion': 'latest-published'
+                    },
+                    'provider': 'dataverse'
+                },
             ]
         )
         res = app.get(
@@ -81,8 +123,75 @@ class TestNodeFileList:
         )
         data = res.json['data']
         assert len(data) == 2
-        assert data[0]['attributes']['extra'] == {'datasetVersion': 'latest', 'hashes': {'md5': None, 'sha256': None}}
-        assert data[1]['attributes']['extra'] == {'datasetVersion': 'latest-published', 'hashes': {'md5': None, 'sha256': None}}
+        assert data[0]['attributes']['extra'] == {
+            'datasetVersion': 'latest',
+            'hashes': {
+                'md5': None,
+                'sha256': None
+            }
+        }
+        assert data[1]['attributes']['extra'] == {
+            'datasetVersion': 'latest-published',
+            'hashes': {
+                'md5': None,
+                'sha256': None
+            }
+        }
+
+    @responses.activate
+    def test_disambiguate_dataverse_paths_retrieve(self, app, user, node, dataverse, dataverse_draft_filenode, dataverse_published_filenode):
+        '''
+        This test is for retrieving files from Dataverse and disambiguating thier corresponding OSF filenodes and
+        ensures their `extra` info is passed along to the front-end.
+        '''
+        prepare_mock_wb_response(
+            path='/',
+            node=node,
+            provider='dataverse',
+            files=[
+                {
+                    'name': 'testpath',
+                    'path': '/testpath',
+                    'materialized': '/testpath',
+                    'kind': 'file',
+
+                    'extra': {
+                        'datasetVersion': 'latest',
+                    },
+                    'provider': 'dataverse',
+                },
+                {
+                    'name': 'testpath',
+                    'path': '/testpath',
+                    'materialized': '/testpath',
+                    'kind': 'file',
+                    'extra': {
+                        'datasetVersion': 'latest-published',
+                    },
+                    'provider': 'dataverse',
+                },
+            ]
+        )
+        res = app.get(
+            f'/{API_BASE}nodes/{node._id}/files/dataverse/?sort=date_modified',
+            auth=node.creator.auth
+        )
+        data = res.json['data']
+        assert len(data) == 2
+        assert data[0]['attributes']['extra'] == {
+            'datasetVersion': 'latest',
+            'hashes': {
+                'md5': None,
+                'sha256': None
+            }
+        }
+        assert data[1]['attributes']['extra'] == {
+            'datasetVersion': 'latest-published',
+            'hashes': {
+                'md5': None,
+                'sha256': None
+            }
+        }
 
 
 @pytest.mark.django_db
