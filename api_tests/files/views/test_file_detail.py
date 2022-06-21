@@ -939,16 +939,16 @@ class TestShowAsUnviewed:
 
     def test_show_as_unviewed__previously_seen(self, app, user, test_file, url):
         FileVersionUserMetadata.objects.create(
-            user=self.user,
-            file_version=self.test_file.versions.order_by('created').first()
+            user=user,
+            file_version=test_file.versions.order_by('created').first()
         )
 
         res = app.get(url, auth=user.auth)
         assert res.json['data']['attributes']['show_as_unviewed']
 
         FileVersionUserMetadata.objects.create(
-            user=self.user,
-            file_version=self.test_file.versions.order_by('-created').first()
+            user=user,
+            file_version=test_file.versions.order_by('-created').first()
         )
 
         res = app.get(url, auth=user.auth)
@@ -976,5 +976,5 @@ class TestShowAsUnviewed:
         # Most Non-OSFStorage providers don't have versions; make sure this still works
         test_file.versions.all().delete()
 
-        res = self.app.get(url, auth=user.auth)
+        res = app.get(url, auth=user.auth)
         assert not res.json['data']['attributes']['show_as_unviewed']
