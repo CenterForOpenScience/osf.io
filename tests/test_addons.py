@@ -224,62 +224,6 @@ class TestAddonAuth(OsfTestCase):
         assert_equal(test_file.get_view_count(), 1)
         assert_equal(node.logs.count(), nlogs) # don't log views
 
-    def test_current_user_has_viewed_public(self):
-        node = ProjectFactory(is_public=True)
-        file = create_test_file(node, node.creator, create_guid=False)
-        django_app = JSONAPITestApp()
-
-        file_viewer = AuthUserFactory()
-
-        res = django_app.get(f'/{API_BASE}files/{file._id}/', auth=file_viewer.auth)
-        assert res.status_code == 200
-        assert res.json['data']['attributes']['current_user_has_viewed'] is False
-
-        # This mocks the Waterbutler callback endpoint (`get_auth` function in addons/base/views.py ) which indicates if
-        # a file has been view with the MFR.
-        self.app.get(
-            self.build_url(
-                nid=node._id,
-                provider='osfstorage',
-                path=file.path,
-                version=1
-            ),
-            auth=file_viewer.auth
-        )
-
-        res = django_app.get(f'/{API_BASE}files/{file._id}/', auth=file_viewer.auth)
-
-        version = file.versions.get()
-        assert version.seen_by.exists()
-        assert res.json['data']['attributes']['current_user_has_viewed']
-
-    def test_current_user_has_viewed_private(self):
-        node = ProjectFactory()
-        file = create_test_file(node, node.creator, create_guid=False)
-        django_app = JSONAPITestApp()
-
-        res = django_app.get(f'/{API_BASE}files/{file._id}/', auth=node.creator.auth)
-        assert res.status_code == 200
-        assert res.json['data']['attributes']['current_user_has_viewed'] is False
-
-        # This mocks the Waterbutler callback endpoint (`get_auth` function in addons/base/views.py ) which indicates if
-        # a file has been view with the MFR.
-        self.app.get(
-            self.build_url(
-                nid=node._id,
-                provider='osfstorage',
-                path=file.path,
-                version=1
-            ),
-            auth=node.creator.auth
-        )
-
-        res = django_app.get(f'/{API_BASE}files/{file._id}/', auth=node.creator.auth)
-
-        version = file.versions.get()
-        assert version.seen_by.exists()
-        assert res.json['data']['attributes']['current_user_has_viewed']
-
 
 class TestAddonLogs(OsfTestCase):
 

@@ -2,7 +2,7 @@ import re
 
 from distutils.version import StrictVersion
 from django.apps import apps
-from django.db.models import Q, Subquery, F, Max
+from django.db.models import F, Max, Q, Subquery
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics, permissions as drf_permissions
@@ -65,7 +65,7 @@ from api.comments.serializers import (
 )
 from api.draft_registrations.serializers import DraftRegistrationSerializer, DraftRegistrationDetailSerializer
 from api.files.serializers import FileSerializer, OsfStorageFileSerializer
-from api.files.annotations import DATE_MODIFIED
+from api.files import annotations as file_annotations
 from api.identifiers.serializers import NodeIdentifierSerializer
 from api.identifiers.views import IdentifierList
 from api.institutions.serializers import InstitutionSerializer
@@ -1181,7 +1181,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
             file_obj = self.get_file_object(resource, path, provider)
 
             if provider == 'osfstorage':
-                queryset = OsfStorageFileNode.objects.filter(id=file_obj.id)
+                queryset = OsfStorageFileNode.objects.filter(id=file_obj.id).annotate
             else:
                 base_class = BaseFileNode.resolve_class(provider, BaseFileNode.FOLDER)
                 queryset = base_class.objects.filter(
@@ -1192,7 +1192,10 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
         else:
             queryset = self.get_queryset_from_request()
 
-        return queryset.annotate(date_modified=DATE_MODIFIED)
+        return queryset.annotate(
+            date_modified=file_annotations.DATE_MODIFIED,
+            **file_annotations.make_show_as_unviewed_annotations(self.request.user)
+        )
 
 
 class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):
@@ -1223,6 +1226,9 @@ class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin
             # We should not have gotten a folder here
             raise NotFound
         if fobj.kind == 'file':
+            fobj.show_as_unviewed = file_annotations.check_show_as_unviewed(
+                user=self.request.user, osf_file=fobj,
+            )
             if fobj.provider == 'osfstorage':
                 fobj.date_modified = fobj.versions.aggregate(Max('created'))['created__max']
             else:

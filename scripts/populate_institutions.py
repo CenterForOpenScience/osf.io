@@ -668,7 +668,7 @@ INSTITUTIONS = {
                 'banner_name': 'sc-banner.png',
                 'logo_name': 'sc-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(
-                    encode_uri_component('urn:mace:incommon:sc.edu')),
+                    encode_uri_component('https://cas.auth.sc.edu/cas/idp')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(
                     encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.sc.edu'],
@@ -1114,6 +1114,18 @@ INSTITUTIONS = {
             },
         ],
     'test': [
+            {
+                '_id': 'osfidemo',
+                'name': 'OSF Demo Institution',
+                'description': 'Here is the place to put in links to other resources, security and data policies, research guidelines, and/or a contact for user support within your institution.',
+                'banner_name': 'placeholder-banner.png',
+                'logo_name': 'placeholder-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': '',
+            },
             {
                 '_id': 'a2jlab',
                 'name': 'Access to Justice Lab [Test]',
@@ -1701,7 +1713,7 @@ INSTITUTIONS = {
                 'banner_name': 'sc-banner.png',
                 'logo_name': 'sc-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(
-                    encode_uri_component('urn:mace:incommon:sc.edu')),
+                    encode_uri_component('https://cas.auth.sc.edu/cas/idp')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(
                     encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-sc.cos.io'],

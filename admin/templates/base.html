@@ -241,6 +241,17 @@
                       {% endif %}
                   </ul>
               </div>
+          {% if perms.osf.change_registrationschema %}
+              <li><a role="button" data-toggle="collapse" href="#collapseRegistrationSchemas">
+                  <i class='fa fa-caret-down'></i> Registration Schemas
+              </a></li>
+              <div class="collapse" id="collapseRegistrationSchemas">
+                  <ul class="sidebar-menu sidebar-menu-inner">
+                      <li><a href="{% url 'registration_schemas:list' %}"><i class='fa fa-link'></i><span> List</span> </a></li>
+                      <li><a href="{% url 'registration_schemas:create' %}"><i class='fa fa-link'></i><span> Create</span> </a></li>
+                  </ul>
+              </div>
+          {% endif %}
           {% endif %}
           {% if perms.osf.view_conference %}
             <li><a href="{% url 'meetings:list' %}"><i class='fa fa-link'></i> <span>Meetings</span></a></li>

@@ -250,8 +250,8 @@ OSF_UPLOAD_EXTRA_SCHEMA = {
 def base_metaschema(metaschema):
     json_schema = {
         'type': 'object',
-        'description': metaschema['description'],
-        'title': metaschema['title'],
+        'description': metaschema.get('description'),
+        'title': metaschema.get('title'),
         'additionalProperties': False,
         'properties': {
         }

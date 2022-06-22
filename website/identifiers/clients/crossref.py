@@ -118,7 +118,7 @@ class CrossRefClient(AbstractIdentifierClient):
                     element.program(xmlns=CROSSREF_ACCESS_INDICATORS)
                 )
 
-            if preprint.article_doi != self.build_doi(preprint) and include_relation:
+            if preprint.article_doi and preprint.article_doi != self.build_doi(preprint) and include_relation:
                 posted_content.append(
                     element.program(
                         element.related_item(
@@ -194,7 +194,8 @@ class CrossRefClient(AbstractIdentifierClient):
                     ),
                 ) for institution in contributor.affiliated_institutions.all() if institution.ror_uri
             ]
-            person.append(element.affiliations(*affiliations))
+            if affiliations:
+                person.append(element.affiliations(*affiliations))
 
             orcid = contributor.get_verified_external_id('ORCID', verified_only=True)
             if orcid:
