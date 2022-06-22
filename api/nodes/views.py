@@ -150,7 +150,7 @@ from osf.models import (
     File,
     Folder,
 )
-from addons.osfstorage.models import Region, OsfStorageFileNode
+from addons.osfstorage.models import Region
 from osf.utils.permissions import ADMIN, WRITE_NODE
 from website import mails, settings
 
