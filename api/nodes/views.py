@@ -150,7 +150,7 @@ from osf.models import (
     File,
     Folder,
 )
-from addons.osfstorage.models import Region, OsfStorageFileNode
+from addons.osfstorage.models import Region
 from osf.utils.permissions import ADMIN, WRITE_NODE
 from website import mails, settings
 
@@ -1178,17 +1178,12 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
         # query param info when used on a folder gives that folder's metadata instead of the metadata of it's children
         if 'info' in self.request.query_params and path.endswith('/'):
             resource = self.get_resource()
-            file_obj = self.get_file_object(resource, path, provider)
-
-            if provider == 'osfstorage':
-                queryset = OsfStorageFileNode.objects.filter(id=file_obj.id).annotate
-            else:
-                base_class = BaseFileNode.resolve_class(provider, BaseFileNode.FOLDER)
-                queryset = base_class.objects.filter(
-                    target_object_id=resource.id,
-                    target_content_type=ContentType.objects.get_for_model(resource),
-                    _path=path,
-                )
+            base_class = BaseFileNode.resolve_class(provider, BaseFileNode.FOLDER)
+            queryset = base_class.objects.filter(
+                target_object_id=resource.id,
+                target_content_type=ContentType.objects.get_for_model(resource),
+                _path=path,
+            )
         else:
             queryset = self.get_queryset_from_request()
 
