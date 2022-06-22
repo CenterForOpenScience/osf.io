@@ -319,7 +319,7 @@ class BaseFileSerializer(JSONAPISerializer):
             extras['downloads'] = obj.get_download_count()
 
         if obj.provider == 'dataverse':
-            extras.update(obj.history[0]['extra'])
+            extras.update(obj.history[-1]['extra'])
 
         return extras
 
