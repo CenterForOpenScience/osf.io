@@ -55,7 +55,7 @@
 
                     % endif
 
-                    % if enable_institutions:
+                    % if enable_institutions and use_project_institution_settings:
                         <li><a href="#configureInstitutionAnchor">${_("Project Affiliation / Branding")}</a></li>
                     % endif
 
@@ -466,7 +466,7 @@
 
         % endif  ## End Retract Registration
 
-        % if enable_institutions:
+        % if enable_institutions and use_project_institution_settings:
              <div class="panel panel-default scripted" id="institutionSettings">
                  <span id="configureInstitutionAnchor" class="anchor"></span>
                  <div class="panel-heading clearfix">
