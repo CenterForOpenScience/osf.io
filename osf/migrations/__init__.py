@@ -157,7 +157,8 @@ def update_blocked_email_domains(sender, verbosity=0, **kwargs):
     if getattr(sender, 'label', None) == 'osf':
         from django.apps import apps
         NotableEmailDomain = apps.get_model('osf', 'NotableEmailDomain')
-        NotableEmailDomain.objects.bulk_create([
-            NotableEmailDomain(domain=domain, note=NotableEmailDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION)
-            for domain in osf_settings.DENY_EMAIL_DOMAINS
-        ])
+        for domain in osf_settings.DENY_EMAIL_DOMAINS:
+            NotableEmailDomain.objects.update_or_create(
+                domain=domain,
+                defaults={'note': NotableEmailDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION},
+            )
