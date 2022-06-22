@@ -266,8 +266,12 @@ class BaseFileSerializer(JSONAPISerializer):
 
     def absolute_url(self, obj):
         if obj.is_file:
+            params = furl._absent
+            if obj.provider == 'dataverse':
+                params = {'version': obj.history[-1]['extra']['datasetVersion']}
             return furl.furl(settings.DOMAIN).set(
                 path=(obj.target._id, 'files', obj.provider, obj.path.lstrip('/')),
+                query_params=params,
             ).url
 
     def get_download_link(self, obj):
