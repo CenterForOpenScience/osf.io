@@ -191,7 +191,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         return cls(**kwargs)
 
     @classmethod
-    def get_or_create(cls, target, path, extra_filters):
+    def get_or_create(cls, target, path, **extra_filters):
         content_type = ContentType.objects.get_for_model(target)
         try:
             obj = cls.objects.get(

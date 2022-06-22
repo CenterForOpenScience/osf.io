@@ -729,8 +729,14 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     extra_filters = {}
     if provider == 'dataverse':
-        extra_filters = {'_history__0__extra__datasetVersion': extras.get('version', 'latest-publised')}
-    file_node = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).get_or_create(target, path, extra_filters)
+        extra_filters = {
+            '_history__0__extra__datasetVersion': extras.get('version', 'latest-publised')
+        }
+    file_node = BaseFileNode.resolve_class(
+        provider, BaseFileNode.FILE
+    ).get_or_create(
+        target, path, **extra_filters
+    )
 
     # Note: Cookie is provided for authentication to waterbutler
     # it is overridden to force authentication as the current user
