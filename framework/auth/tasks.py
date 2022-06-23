@@ -1,10 +1,9 @@
 from datetime import datetime
 import logging
 
+from lxml import etree
 import pytz
 import requests
-
-from lxml import etree
 
 from framework import sentry
 from framework.celery_tasks import app as celery_app
