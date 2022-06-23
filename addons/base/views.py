@@ -730,7 +730,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     extra_filters = {}
     if provider == 'dataverse':
         try:
-            extra_filters = {'_history__0__extra__datasetVersion': extras.get['version']}
+            extra_filters = {'_history__0__extra__datasetVersion': extras['version']}
         except KeyError:
             raise HTTPError(
                 http_status.HTTP_400_BAD_REQUEST,
