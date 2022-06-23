@@ -191,10 +191,14 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         return cls(**kwargs)
 
     @classmethod
-    def get_or_create(cls, target, path):
+    def get_or_create(cls, target, path, **unused_query_params):
         content_type = ContentType.objects.get_for_model(target)
         try:
-            obj = cls.objects.get(target_object_id=target.id, target_content_type=content_type, _path='/' + path.lstrip('/'))
+            obj = cls.objects.get(
+                target_object_id=target.id,
+                target_content_type=content_type,
+                _path='/' + path.lstrip('/'),
+            )
         except cls.DoesNotExist:
             obj = cls(target_object_id=target.id, target_content_type=content_type, _path='/' + path.lstrip('/'))
         return obj
