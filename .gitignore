@@ -204,3 +204,4 @@ ssl/
 # pyenv
 .python-version
 
+/storage-regions.yaml  # contains secrets

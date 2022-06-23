@@ -1,0 +1,13 @@
+# This is used to populate fake storage region's for use in development, urls and file paths in this file should point
+# to urls and file paths in test environments and services.
+storage_regions:
+ - _id: us  # default
+   name: United States
+   waterbutler_credentials:
+     storage: {}
+   waterbutler_url: http://localhost:7777
+   mfr_url: http://localhost:7778
+   waterbutler_settings:
+    storage:
+      folder: /code/website/osfstoragecache
+      provider: filesystem

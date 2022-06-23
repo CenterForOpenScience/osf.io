@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys
+import yaml
 import logging
 
 from django.db.utils import ProgrammingError
@@ -162,3 +163,17 @@ def update_blocked_email_domains(sender, verbosity=0, **kwargs):
                 domain=domain,
                 defaults={'note': NotableEmailDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION},
             )
+
+
+def update_storage_regions(sender, verbosity=0, **kwargs):
+    from django.apps import apps
+
+    if getattr(sender, 'label', None) == 'osf':
+        with open(osf_settings.STORAGE_REGION_CONFIG_PATH, 'r') as stream:
+            features = yaml.safe_load(stream)
+            Region = apps.get_model('addons_osfstorage', 'Region')
+            for region in features['storage_regions']:
+                Region.objects.update_or_create(_id=region['_id'], defaults=region)
+
+        if 'pytest' not in sys.modules:  # Allows for isolated tests without Regions
+            assert not Region.objects.all(), 'No storage regions found.'

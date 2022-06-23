@@ -107,3 +107,5 @@ DOI_FORMAT = '{prefix}/FK2osf.io/{guid}'
 SHARE_ENABLED = False
 DATACITE_ENABLED = False
 IA_ARCHIVE_ENABLED = False
+
+STORAGE_REGION_CONFIG_PATH = 'storage-regions-local.yaml'
