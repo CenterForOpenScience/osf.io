@@ -85,7 +85,7 @@ class OsfStorageFileNode(BaseFileNode):
         return cls.objects.get(_id=_id, target_object_id=target.id, target_content_type=ContentType.objects.get_for_model(target))
 
     @classmethod
-    def get_or_create(cls, target, path):
+    def get_or_create(cls, target, path, **kwargs):
         """Override get or create for osfstorage
         Path is always the _id of the osfstorage filenode.
         Use load here as its way faster than find.

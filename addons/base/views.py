@@ -729,9 +729,20 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     extra_filters = {}
     if provider == 'dataverse':
-        extra_filters = {
-            '_history__0__extra__datasetVersion': extras.get('version', 'latest-publised')
-        }
+        try:
+            extra_filters = {'_history__0__extra__datasetVersion': extras.get['version']}
+        except KeyError:
+            raise HTTPError(
+                http_status.HTTP_400_BAD_REQUEST,
+                data={
+                    'message_short': 'Bad Request',
+                    'message_long': (
+                        'Dataverse files must specify a "version" query parameter. '
+                        'Acceptable values are "latest" or "latest-published".'
+                    )
+                }
+            )
+
     file_node = BaseFileNode.resolve_class(
         provider, BaseFileNode.FILE
     ).get_or_create(
