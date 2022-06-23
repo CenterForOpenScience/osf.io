@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 from rest_framework import status as http_status
 
+from addons.base import exceptions as addon_errors
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from framework.auth.decorators import Auth
 from framework.exceptions import HTTPError
 from osf.models.files import File, Folder, BaseFileNode
-from osf.utils.permissions import WRITE
-from framework.auth.core import _get_current_user
 from addons.base import exceptions
 from addons.dataverse.client import connect_from_settings_or_401
 from addons.dataverse.serializer import DataverseSerializer
@@ -16,6 +16,36 @@ from addons.dataverse.utils import DataverseNodeLogger
 
 class DataverseFileNode(BaseFileNode):
     _provider = 'dataverse'
+
+    @classmethod
+    def get_or_create(cls, target, path, **query_params):
+        '''Override get_or_create for Dataverse.
+
+        Dataverse is weird and reuses paths, so we need to extract a "version"
+        query param to determine which file to get. We also don't want to "create"
+        here, as that might lead to integrity errors.
+        '''
+        version = query_params.get('version', None)
+        if version not in {'latest', 'latest-published'}:
+            raise addon_errors.QueryError(
+                'Dataverse requires a "version" query paramater. '
+                'Acceptable options are "latest" or "latest-published"'
+            )
+
+        content_type = ContentType.objects.get_for_model(target)
+        try:
+            obj = cls.objects.get(
+                target_object_id=target.id,
+                target_content_type=content_type,
+                _path='/' + path.lstrip('/'),
+                _history__0__extra__datasetVersion=version,
+            )
+        except cls.DoesNotExist:
+            raise addon_errors.DoesNotExist(
+                f'Requested Dataverse file does not exist with version "{version}"'
+            )
+
+        return obj
 
 
 class DataverseFolder(DataverseFileNode, Folder):
@@ -33,25 +63,11 @@ class DataverseFile(DataverseFileNode, File):
             return None
 
     def update(self, revision, data, save=True, user=None):
-        """Note: Dataverse only has psuedo versions, pass None to not save them
+        """Note: Dataverse only has psuedo versions (_history), pass None to not save them
         Call super to update _history and last_touched anyway.
-        Dataverse requires a user for the weird check below
         """
-        version = super(DataverseFile, self).update(None, data, user=user, save=save)
+        version = super().update(None, data, user=user, save=save)
         version.identifier = revision
-
-        user = user or _get_current_user()
-        if not user or not self.target.has_permission(user, WRITE):
-            try:
-                # Users without edit permission can only see published files
-                if not data['extra']['hasPublishedVersion']:
-                    # Blank out name and path for the render
-                    # Dont save because there's no reason to persist the change
-                    self.name = ''
-                    self.materialized_path = ''
-                    return (version, '<div class="alert alert-info" role="alert">This file does not exist.</div>')
-            except (KeyError, IndexError):
-                pass
         return version
 
 
