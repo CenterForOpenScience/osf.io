@@ -19,6 +19,7 @@ from elasticsearch import exceptions as es_exceptions
 
 from api.caching.tasks import update_storage_usage_with_size
 
+from addons.base import exceptions as addon_errors
 from addons.base.models import BaseStorageAddon
 from addons.osfstorage.models import OsfStorageFile
 from addons.osfstorage.models import OsfStorageFileNode
@@ -727,27 +728,28 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     savepoint_id = transaction.savepoint()
 
-    extra_filters = {}
-    if provider == 'dataverse':
-        try:
-            extra_filters = {'_history__0__extra__datasetVersion': extras['version']}
-        except KeyError:
-            raise HTTPError(
-                http_status.HTTP_400_BAD_REQUEST,
-                data={
-                    'message_short': 'Bad Request',
-                    'message_long': (
-                        'Dataverse files must specify a "version" query parameter. '
-                        'Acceptable values are "latest" or "latest-published".'
-                    )
-                }
-            )
-
-    file_node = BaseFileNode.resolve_class(
-        provider, BaseFileNode.FILE
-    ).get_or_create(
-        target, path, **extra_filters
-    )
+    try:
+        file_node = BaseFileNode.resolve_class(
+            provider, BaseFileNode.FILE
+        ).get_or_create(
+            target, path, **extras
+        )
+    except addon_errors.QueryError as e:
+        raise HTTPError(
+            http_status.HTTP_400_BAD_REQUEST,
+            data={
+                'message_short': 'Bad Request',
+                'message_long': str(e)
+            }
+        )
+    except addon_errors.DoesNotExist as e:
+        raise HTTPError(
+            http_status.HTTP_404_NOT_FOUND,
+            data={
+                'message_short': 'Not Found',
+                'message_long': str(e)
+            }
+        )
 
     # Note: Cookie is provided for authentication to waterbutler
     # it is overridden to force authentication as the current user
