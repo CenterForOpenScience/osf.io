@@ -1952,8 +1952,8 @@ OSF_LOGO_LIST = [OSF_LOGO, OSF_PREPRINTS_LOGO, OSF_MEETINGS_LOGO, OSF_PREREG_LOG
 
 FOOTER_LINKS = {
     'terms': 'https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419',
-    'privacyPolicy': 'https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422',
-    'cookies': 'https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422',
+    'privacyPolicy': 'https://support.rdm.nii.ac.jp/terms/',
+    'cookies': 'https://support.rdm.nii.ac.jp/terms/',
     'cos': 'https://www.nii.ac.jp/',
     'statusPage': 'https://status.cos.io/',
     'apiDocs': 'https://developer.osf.io/',
