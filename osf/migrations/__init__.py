@@ -3,6 +3,9 @@ import sys
 import logging
 from django.db.utils import ProgrammingError
 from osf.management.commands.manage_switch_flags import manage_waffle
+from django.core.management import call_command
+from api.base import settings
+
 
 logger = logging.getLogger(__file__)
 
@@ -128,3 +131,8 @@ def update_waffle_flags(sender, verbosity=0, **kwargs):
         if 'pytest' not in sys.modules:
             manage_waffle()
             logger.info('Waffle flags have been synced')
+
+
+def create_cache_table(sender, verbosity=0, **kwargs):
+    if getattr(sender, 'label', None) == 'osf':
+        call_command('createcachetable', tablename=settings.CACHES[settings.STORAGE_USAGE_CACHE_NAME]['LOCATION'])

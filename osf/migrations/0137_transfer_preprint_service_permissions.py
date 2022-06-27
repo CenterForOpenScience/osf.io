@@ -6,7 +6,6 @@ from django.db import migrations
 
 
 def unmigrate_preprint_service_permissions(state, schema):
-
     Permission = state.get_model('auth', 'permission')
 
     # New permission groups
@@ -19,8 +18,6 @@ def migrate_preprint_service_permissions(state, schema):
     """
     Django permissions on the preprint model have new names.
     """
-    # this is to make sure that the permissions created earlier exist!
-
     Permission = state.get_model('auth', 'permission')
 
     Permission.objects.filter(codename='add_preprint').delete()

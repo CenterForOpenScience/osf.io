@@ -266,9 +266,12 @@ class BaseFileSerializer(JSONAPISerializer):
 
     def absolute_url(self, obj):
         if obj.is_file:
-            return furl.furl(settings.DOMAIN).set(
+            url = furl.furl(settings.DOMAIN).set(
                 path=(obj.target._id, 'files', obj.provider, obj.path.lstrip('/')),
-            ).url
+            )
+            if obj.provider == 'dataverse':
+                url.add(query_params={'version': obj.history[-1]['extra']['datasetVersion']})
+            return url.url
 
     def get_download_link(self, obj):
         if obj.is_file:
@@ -317,6 +320,10 @@ class BaseFileSerializer(JSONAPISerializer):
         }
         if obj.provider == 'osfstorage' and obj.is_file:
             extras['downloads'] = obj.get_download_count()
+
+        if obj.provider == 'dataverse':
+            extras.update(obj.history[-1]['extra'])
+
         return extras
 
     def get_current_user_can_comment(self, obj):
@@ -383,14 +390,14 @@ class FileSerializer(BaseFileSerializer):
         min_version='2.0', max_version='2.7',
     )
     target = TargetField(link_type='related', meta={'type': 'get_target_type'})
-    current_user_has_viewed = ser.SerializerMethodField(help_text='Whether the current user has already viewed the file')
 
-    def get_current_user_has_viewed(self, obj):
-        version = obj.versions.order_by('created').last()
-        if version and not self.context['request'].user.is_anonymous:  # This is to ensure compatibility with tests, ugh.
-            return version.seen_by.filter(id=self.context['request'].user.id).exists()
-        else:
-            return True
+    # Assigned via annotation. See api/files/annotations for info
+    show_as_unviewed = ser.BooleanField(
+        read_only=True,
+        required=False,
+        default=False,
+        help_text='Whether to mark the file as unviewed for the current user',
+    )
 
     def get_target_type(self, obj):
         if isinstance(obj, Preprint):
