@@ -75,5 +75,4 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(parse_citation_styles, revert),
     ]

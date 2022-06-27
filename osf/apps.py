@@ -7,6 +7,7 @@ from osf.migrations import (
     add_registration_schemas,
     create_cache_table,
     update_blocked_email_domains,
+    update_citation_styles,
     update_license,
     update_permission_groups,
     update_waffle_flags,
@@ -52,4 +53,9 @@ class AppConfig(BaseAppConfig):
         post_migrate.connect(
             update_blocked_email_domains,
             dispatch_uid='osf.apps.update_blocked_email_domains'
+        )
+
+        post_migrate.connect(
+            update_citation_styles,
+            dispatch_uid='osf.apps.update_citation_styles'
         )
