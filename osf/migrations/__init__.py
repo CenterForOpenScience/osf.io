@@ -9,6 +9,8 @@ import requests
 import logging
 from django.apps import apps
 from django.db.utils import ProgrammingError
+from django.core.management import call_command
+from api.base import settings
 
 logger = logging.getLogger(__file__)
 from django.db import transaction
@@ -235,3 +237,8 @@ def update_citation_styles(sender, verbosity=0, **kwargs):
     if getattr(sender, 'label', None) == 'osf':
         if 'pytest' not in sys.modules:
             ensure_citation_styles()
+
+
+def create_cache_table(sender, verbosity=0, **kwargs):
+    if getattr(sender, 'label', None) == 'osf':
+        call_command('createcachetable', tablename=settings.CACHES[settings.STORAGE_USAGE_CACHE_NAME]['LOCATION'])
