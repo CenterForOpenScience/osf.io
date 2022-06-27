@@ -63,9 +63,9 @@
             a new project in your account. By creating an account you agree to our
             <a href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419">Terms</a>
             and that you have read our
-            <a href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422">Privacy Policy</a>,
+            <a href="https://support.rdm.nii.ac.jp/terms/">Privacy Policy</a>,
             including our information on
-            <a href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422">Cookie Use</a>.
+            <a href="https://support.rdm.nii.ac.jp/terms/">Cookie Use</a>.
         </p>
     </div>
 % endif

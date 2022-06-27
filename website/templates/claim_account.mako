@@ -90,7 +90,7 @@
             <!-- Terms of Service and Privacy Policy agreement -->
             <div class="form-group">
                     <input type="checkbox" data-bind="checked: acceptedTermsOfService" name="accepted_terms_of_service">
-                    <label style="margin-right: 15px">${_('I have read and agree to the <a %(meatwikiTermsOfUse)s>Terms of Use</a> and <a %(meatwikiPrivacyPolicy)s>Privacy Policy</a>.') % dict(meatwikiTermsOfUse='target="_blank" href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419"',meatwikiPrivacyPolicy='target="_blank" href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422"') | n}</label>
+                    <label style="margin-right: 15px">${_('I have read and agree to the <a %(meatwikiTermsOfUse)s>Terms of Use</a> and <a %(meatwikiPrivacyPolicy)s>Privacy Policy</a>.') % dict(meatwikiTermsOfUse='target="_blank" href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419"',meatwikiPrivacyPolicy='target="_blank" href="https://support.rdm.nii.ac.jp/terms/"') | n}</label>
                     <p class="help-block" data-bind="validationMessage: acceptedTermsOfService" style="display: none;"></p>
             </div>
 

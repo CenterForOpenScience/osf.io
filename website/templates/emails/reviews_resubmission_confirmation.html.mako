@@ -35,5 +35,5 @@
             National Institute of Informatics<br>
             2-1-2 Hitotsubashi, Chiyoda Ward, Tokyo 101-8430, JAPAN
         </p>
-        <a href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676422">Privacy Policy</a>
+        <a href="https://support.rdm.nii.ac.jp/terms/">Privacy Policy</a>
 </div>
