@@ -63,7 +63,8 @@ class OneDriveProvider(ExternalProvider):
 
         return {
             'provider_id': user_info['id'],
-            'display_name': user_info['displayName'],
+            'display_name': user_info['name'],
+            'profile_url': user_info['link'],
         }
 
     def fetch_access_token(self, force_refresh=False):
@@ -99,6 +100,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     folder_id = models.TextField(null=True, blank=True)
     folder_path = models.TextField(null=True, blank=True)
     user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
+    drive_id = models.TextField(null=True, blank=True)
 
     _api = None
 
@@ -127,6 +129,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             return '/ (Full OneDrive)'
 
     def clear_settings(self):
+        self.drive_id = None
         self.folder_id = None
         self.folder_path = None
 
@@ -181,7 +184,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         except exceptions.InvalidAuthError:
             raise HTTPError(403)
 
-        client = OneDriveClient(access_token)
+        client = OneDriveClient(access_token, self.drive_id)
         items = client.folders(folder_id)
         return [
             {
@@ -243,7 +246,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     def serialize_waterbutler_settings(self):
         if self.folder_id is None:
             raise exceptions.AddonError('Folder is not configured')
-        return {'folder': self.folder_id}
+        return {'drive_id': self.drive_id, 'folder': self.folder_id}
 
     def create_waterbutler_log(self, auth, action, metadata):
         self.owner.add_log(
@@ -279,4 +282,12 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     def on_delete(self):
         self.deauthorize(add_log=False)
+        self.save()
+
+    def set_auth(self, external_account, user, **kwargs):
+        super(NodeSettings, self).set_auth(external_account, user, **kwargs)
+
+        client = OneDriveClient(self.fetch_access_token())
+        user_info = client.user_info()
+        self.drive_id = user_info['drive_id']
         self.save()

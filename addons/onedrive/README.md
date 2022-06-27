@@ -3,10 +3,25 @@
 Enabling the addon for development
 
 1. If `addons/onedrive/settings/local.py` does not yet exist, create a local onedrive settings file with `cp addons/onedrive/settings/local-dist.py addons/onedrive/settings/local.py`
-2. Register the addon with Microsoft at https://aad.portal.azure.com/#blade/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/RegisteredApps it should be a 'Web' platform
-3. Enter the Redirect URL as http://localhost:5000/oauth/callback/onedrive/
-4. Copy the value of the Application (client) ID and put that string as the `ONEDRIVE_KEY` in `addons/onedrive/settings/local.py`
-5. Select Certificates & secrets under Manage. Select the New client secret button. Enter a value in Description and select one of the options for Expires and select Add.
-6. Copy the client secret value before you leave this page and put that string as `ONEDRIVE_SECRET` in `addons/onedrive/settings/local.py`
-
-See also https://docs.microsoft.com/en-us/graph/tutorials/python?tutorial-step=2
+2. Register the addon with Microsoft at: https://portal.azure.com/#home
+   Search or click "App registrations"
+   Click "+ New registration"
+     == Name: GRDM OneDrive App
+     == Supported account types:
+        Accounts in any organizational directory (Any Azure AD directory - Multitenant) and personal Microsoft accounts (e.g. Skype, Xbox)
+     == Redirect URI (optional)
+        Web
+        http://localhost:5000/oauth/callback/onedrive/
+   => sent to new application registration page
+     ==> "Note Application (client) ID", that will be the `ONEDRIVE_KEY` value provided to the OD provider.
+   => Click on "Certificates & secrets"
+     => Click "+ New client secret"
+        Choose term limits
+        Save
+        Copy "Value" of new secret.  In `~/addons/onedrive/settings/local.py`, set `ONEDRIVE_SECRET` to the copied value.
+   => Click on "API permissions"
+     => Click "+ Add a permission"
+       => Select "Microsoft Graph"
+       => Select "Delegated Permission"
+         => "User.Read" is selected by default.  Add "offline_access", "Files.Read",
+            "Files.Read.All", "Files.ReadWrite"

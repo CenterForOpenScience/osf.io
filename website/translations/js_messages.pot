@@ -2589,7 +2589,7 @@ msgstr ""
 #: website/static/js/addonSettings.js:104
 msgid ""
 "Add-on successfully authorized. If you wish to link a different account, "
-"log out of onedrive.live.com before attempting to connect to a second "
+"log out of Personal OneDrive at login.live.com and OneDrive for School or Business at login.microsoftonline.com before attempting to connect to a second "
 "OneDrive account on the GakuNin RDM. This will clear the credentials "
 "stored in your browser."
 msgstr ""
