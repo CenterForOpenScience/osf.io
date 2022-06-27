@@ -133,6 +133,9 @@ def iqbrims_get_status(**kwargs):
     status['is_admin'] = is_admin
     if is_admin:
         status['task_url'] = user_settings.FLOWABLE_TASK_URL
+    client = IQBRIMSClient(access_token)
+    if iqbrims.folder_id is not None:
+        status.update(_iqbrims_get_drive_url(client, iqbrims.folder_id, status))
     logger.debug('settings extracted.')
     return {'data': {'id': node._id, 'type': 'iqbrims-status',
                      'attributes': status}}
@@ -603,6 +606,27 @@ def iqbrims_get_message(**kwargs):
     msg['notify_type'] = messageid
     return msg
 
+def _iqbrims_get_drive_url(client, root_folder_id, status):
+    logger.debug('Retrieving Drive URL...')
+    base_folders = None
+    r = {}
+    for part in REVIEW_FOLDERS.keys():
+        has_uploadable = _iqbrims_has_uploadable(status, part)
+        if not has_uploadable:
+            continue
+        if base_folders is None:
+            logger.debug('Retrieving files...')
+            base_folders = client.folders(folder_id=root_folder_id)
+        folder_name = REVIEW_FOLDERS[part]
+        folders = [f for f in base_folders if f['title'] == folder_name]
+        if len(folders) == 0:
+            logger.warn(f'No folders: {root_folder_id}, {folder_name}')
+            continue
+        folder_id = folders[0]['id']
+        r[f'workflow_{part}_link'] = client.get_folder_link(folder_id)
+        logger.info(f'Retrieved Google Drive for {part}')
+    return r
+
 def _iqbrims_import_auth_from_management_node(node, node_addon, management_node):
     """Grant oauth access on user_settings of management_node and
     set reference of user_settings and external_account of management_node
@@ -677,13 +701,14 @@ def _iqbrims_set_status(node, status, auth=None):
             _iqbrims_import_auth_from_management_node(node, iqbrims, management_node)
 
             # create folder
-            root_folder = _iqbrims_init_folders(node, management_node, register_type, labo_name)
+            client, root_folder = _iqbrims_init_folders(node, management_node, register_type, labo_name)
 
             # mount container
             iqbrims.set_folder(root_folder, auth=auth)
             iqbrims.save()
             if 'is_dirty' not in all_status or not all_status['is_dirty']:
                 _iqbrims_update_spreadsheet(node, management_node, register_type, all_status)
+            _iqbrims_update_drive_permissions(client, root_folder, last_status, all_status)
 
         iqbrims.set_status(all_status)
     return all_status
@@ -711,7 +736,7 @@ def _iqbrims_init_folders(node, management_node, register_type, labo_name):
             continue
         client.create_folder_if_not_exists(root_folder_id, title)
 
-    return {
+    return (client, {
         'id': res['id'],
         'path': '/'.join([
             management_node_addon.folder_path,
@@ -719,7 +744,35 @@ def _iqbrims_init_folders(node, management_node, register_type, labo_name):
             labo_name,
             root_folder_title
         ]) + '/',
-    }
+    })
+
+def _iqbrims_update_drive_permissions(client, root_folder, last_status, all_status):
+    base_folders = client.folders(folder_id=root_folder['id'])
+    for part in REVIEW_FOLDERS.keys():
+        last_has_uploadable = _iqbrims_has_uploadable(last_status, part)
+        all_has_uploadable = _iqbrims_has_uploadable(all_status, part)
+        if last_has_uploadable == all_has_uploadable:
+            continue
+        folder_name = REVIEW_FOLDERS[part]
+        folders = [f for f in base_folders if f['title'] == folder_name]
+        if len(folders) == 0:
+            logger.warn(f'No folders: {folder_name}')
+            continue
+        folder_id = folders[0]['id']
+        if all_has_uploadable:
+            logger.info(f'Grant access folder={folder_id}')
+            client.grant_access_from_anyone(folder_id)
+        else:
+            logger.info(f'Revoke access folder={folder_id}')
+            client.revoke_access_from_anyone(folder_id)
+
+def _iqbrims_has_uploadable(status, part):
+    key = f'workflow_{part}_permissions'
+    if key not in status:
+        return False
+    if not status[key]:
+        return False
+    return 'UPLOADABLE' in status[key]
 
 def _iqbrims_update_spreadsheet(node, management_node, register_type, status):
     management_node_addon = IQBRIMSNodeSettings.objects.get(owner=management_node)

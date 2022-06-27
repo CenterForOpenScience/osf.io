@@ -152,7 +152,7 @@ class IQBRIMSClient(BaseClient):
                     'DELETE',
                     self._build_url(settings.API_BASE_URL, 'drive', 'v3', 'files',
                     file_id, 'permissions', p['id']),
-                    expects=(200, ),
+                    expects=(200, 204, 404, ),
                     throws=HTTPError(401)
                 )
         return permissions
