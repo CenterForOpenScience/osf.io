@@ -119,3 +119,9 @@ def update_permission_groups(sender, verbosity=0, **kwargs):
     if getattr(sender, 'label', None) == 'osf':
         update_admin_permissions(verbosity)
         update_provider_auth_groups(verbosity)
+
+
+def update_license(sender, verbosity=0, **kwargs):
+    if getattr(sender, 'label', None) == 'osf':
+        from osf.utils.migrations import ensure_licenses
+        ensure_licenses()
