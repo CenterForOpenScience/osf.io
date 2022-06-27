@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import logging
 from django.db.utils import ProgrammingError
+from django.core.management import call_command
+from api.base import settings
 
 logger = logging.getLogger(__file__)
 
@@ -119,3 +121,8 @@ def update_permission_groups(sender, verbosity=0, **kwargs):
     if getattr(sender, 'label', None) == 'osf':
         update_admin_permissions(verbosity)
         update_provider_auth_groups(verbosity)
+
+
+def create_cache_table(sender, verbosity=0, **kwargs):
+    if getattr(sender, 'label', None) == 'osf':
+        call_command('createcachetable', tablename=settings.CACHES[settings.STORAGE_USAGE_CACHE_NAME]['LOCATION'])
