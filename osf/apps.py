@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 from django.apps import AppConfig as BaseAppConfig
 from django.db.models.signals import post_migrate
-from osf.migrations import update_permission_groups, update_license
+from osf.migrations import update_permission_groups, update_license, create_cache_table
 
 
 class AppConfig(BaseAppConfig):
@@ -18,5 +18,9 @@ class AppConfig(BaseAppConfig):
         )
         post_migrate.connect(
             update_license,
-            dispatch_uid='osf.apps.ensure_licenses'
+            dispatch_uid='osf.apps.ensure_licenses',
+        )
+        post_migrate.connect(
+            create_cache_table,
+            dispatch_uid='osf.apps.create_cache_table'
         )
