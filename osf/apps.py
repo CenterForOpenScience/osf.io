@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 from django.apps import AppConfig as BaseAppConfig
 from django.db.models.signals import post_migrate
-from osf.migrations import update_permission_groups
+from osf.migrations import update_permission_groups, update_citation_styles
 
 
 class AppConfig(BaseAppConfig):
@@ -15,4 +15,8 @@ class AppConfig(BaseAppConfig):
         post_migrate.connect(
             update_permission_groups,
             dispatch_uid='osf.apps.update_permissions_groups'
+        )
+        post_migrate.connect(
+            update_citation_styles,
+            dispatch_uid='osf.apps.update_citation_styles'
         )
