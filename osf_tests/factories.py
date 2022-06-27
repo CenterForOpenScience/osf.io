@@ -26,6 +26,7 @@ from website.settings import FAKE_EMAIL_NAME, FAKE_EMAIL_DOMAIN
 from framework.auth.core import Auth
 
 from osf import models
+from osf.migrations import ensure_default_providers
 from osf.models.sanctions import Sanction
 from osf.models.storage import PROVIDER_ASSET_NAME_CHOICES
 from osf.utils.names import impute_names_model
@@ -397,7 +398,12 @@ class RegistrationFactory(BaseNodeFactory):
             user = project.creator
         user = kwargs.pop('user', None) or kwargs.get('creator') or user or AuthUserFactory()
         kwargs['creator'] = user
-        provider = provider or models.RegistrationProvider.get_default()
+        try:
+            provider = provider or models.RegistrationProvider.get_default()
+        except models.RegistrationProvider.DoesNotExist:
+            ensure_default_providers()
+            provider = models.RegistrationProvider.get_default()
+
         # Original project to be registered
         project = project or target_class(*args, **kwargs)
         if project.is_admin_contributor(user):
@@ -558,7 +564,12 @@ class DraftRegistrationFactory(DjangoModelFactory):
         initiator = initiator or branched_from_creator or kwargs.get('user', None) or kwargs.get('creator', None) or UserFactory()
         registration_schema = registration_schema or get_default_metaschema()
         registration_metadata = registration_metadata or {}
-        provider = provider or models.RegistrationProvider.get_default()
+        try:
+            provider = provider or models.RegistrationProvider.get_default()
+        except models.RegistrationProvider.DoesNotExist:
+            ensure_default_providers()
+            provider = models.RegistrationProvider.get_default()
+
         provider.schemas.add(registration_schema)
         draft = models.DraftRegistration.create_from_node(
             node=branched_from,

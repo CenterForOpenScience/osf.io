@@ -16,6 +16,7 @@ from osf_tests import factories
 from tests.utils import make_drf_request_with_version
 
 from osf.models import RegistrationSchema
+from osf.migrations import ensure_default_providers
 
 from api.base.settings.defaults import API_BASE
 from api.schemas.serializers import SchemaSerializer
@@ -90,6 +91,11 @@ class FakeSerializer(base_serializers.JSONAPISerializer):
 
 
 class TestSerializerMetaType(ApiTestCase):
+
+    @pytest.fixture(autouse=True)
+    def default_provider(self):
+        ensure_default_providers()
+
     def test_expected_serializers_have_meta_types(self):
         for ser in SER_CLASSES:
             assert hasattr(

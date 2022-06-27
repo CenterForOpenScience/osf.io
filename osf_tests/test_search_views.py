@@ -8,6 +8,7 @@ from osf_tests import factories
 from tests.base import OsfTestCase
 from website.util import api_url_for
 from website.views import find_bookmark_collection
+from osf.migrations import ensure_default_providers
 
 
 @pytest.mark.enable_search
@@ -16,6 +17,7 @@ class TestSearchViews(OsfTestCase):
 
     def setUp(self):
         super(TestSearchViews, self).setUp()
+        ensure_default_providers()
         import website.search.search as search
         search.delete_all()
 
