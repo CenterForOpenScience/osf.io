@@ -142,5 +142,3 @@ SHARE_ENABLED = False
 DATACITE_ENABLED = False
 
 OOPSPAM_CHECK_IP = False
-
-STORAGE_REGION_CONFIG_PATH = 'storage-regions-local.yaml'

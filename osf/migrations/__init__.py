@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 import sys
-import yaml
 import logging
 
+from django.apps import apps
 from django.db.utils import ProgrammingError
 from django.core.management import call_command
 
+from addons.osfstorage.settings import DEFAULT_REGION_ID, DEFAULT_REGION_NAME
 from api.base import settings as api_settings
 from osf.management.commands.manage_switch_flags import manage_waffle
 from osf.utils.migrations import ensure_schemas, map_schemas_to_schemablocks
@@ -166,14 +167,19 @@ def update_blocked_email_domains(sender, verbosity=0, **kwargs):
 
 
 def update_storage_regions(sender, verbosity=0, **kwargs):
-    from django.apps import apps
-
     if getattr(sender, 'label', None) == 'osf':
-        with open(osf_settings.STORAGE_REGION_CONFIG_PATH, 'r') as stream:
-            features = yaml.safe_load(stream)
-            Region = apps.get_model('addons_osfstorage', 'Region')
-            for region in features['storage_regions']:
-                Region.objects.update_or_create(_id=region['_id'], defaults=region)
+        ensure_default_storage_region()
 
-        if 'pytest' not in sys.modules:  # Allows for isolated tests without Regions
-            assert not Region.objects.all(), 'No storage regions found.'
+
+def ensure_default_storage_region():
+    osfstorage_config = apps.get_app_config('addons_osfstorage')
+    Region = apps.get_model('addons_osfstorage', 'Region')
+    Region.objects.update_or_create(
+        _id=DEFAULT_REGION_ID,
+        defaults={
+            'name': DEFAULT_REGION_NAME,
+            'waterbutler_credentials': osfstorage_config.WATERBUTLER_CREDENTIALS,
+            'waterbutler_settings': osfstorage_config.WATERBUTLER_SETTINGS,
+            'waterbutler_url': settings.WATERBUTLER_URL
+        }
+    )
