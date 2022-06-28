@@ -13,7 +13,7 @@ from api.base.authentication import drf
 from api.base import exceptions, settings
 
 from framework import sentry
-from framework.auth import get_or_create_user
+from framework.auth import get_or_create_institutional_user
 
 from osf import features
 from osf.models import Institution
@@ -83,29 +83,34 @@ class InstitutionAuthentication(BaseAuthentication):
         """
         Handle CAS institution authentication request.
 
-        The JWT `data` payload is expected in the following structure:
-        {
-            "provider": {
-                "idp": "",
-                "id": "",
-                "user": {
-                    "username": "",
-                    "fullname": "",
-                    "familyName": "",
-                    "givenName": "",
-                    "middleNames": "",
-                    "suffix": "",
-                    "department": "",
-                    "isMemberOf": "",  # Shared SSO
-                    "selectiveSsoFilter": "",  # Selective SSO
+        Note: If authentication fails, HTTP 403 Forbidden is returned no matter what type of the
+        exception is raised. In this method, we use ``AuthenticationFailed`` when the payload is
+        not correctly encrypted or encoded since it is the "authentication" between CAS and this
+        endpoint. We use `PermissionDenied` for all other exceptions that happens afterwards.
+
+        Expected JWT ``data`` payload format in JSON:
+
+        .. highlight:: json
+        .. code-block:: python
+
+            {
+                "provider": {
+                    "idp": "",
+                    "id": "",
+                    "user": {
+                        "eppn": "",
+                        "username": "",
+                        "fullname": "",
+                        "familyName": "",
+                        "givenName": "",
+                        "middleNames": "",
+                        "suffix": "",
+                        "department": "",
+                        "isMemberOf": "",
+                        "selectiveSsoFilter": "",
+                    }
                 }
             }
-        }
-
-        Note that if authentication failed, HTTP 403 Forbidden is returned no matter what type of
-        exception is raised. In this method, we use `AuthenticationFailed` when the payload is not
-        correctly encrypted/encoded since it is the "authentication" between CAS and this endpoint.
-        We use `PermissionDenied` for all other exceptions that happened afterwards.
 
         :param request: the POST request
         :return: user, None if authentication succeed
@@ -132,6 +137,7 @@ class InstitutionAuthentication(BaseAuthentication):
             logger.error(message)
             sentry.log_message(message)
             raise PermissionDenied(detail='InstitutionSsoInvalidInstitution')
+        eppn = provider['user'].get('eppn')
         username = provider['user'].get('username')
         fullname = provider['user'].get('fullname')
         given_name = provider['user'].get('givenName')
@@ -199,16 +205,12 @@ class InstitutionAuthentication(BaseAuthentication):
             sentry.log_message(message)
             raise PermissionDenied(detail='InstitutionSsoMissingUserNames')
 
-        # Get an existing user or create a new one. If a new user is created, the user object is
-        # confirmed but not registered,which is temporarily of an inactive status. If an existing
-        # user is found, it is also possible that the user is inactive (e.g. unclaimed, disabled,
-        # unconfirmed, etc.).
-        user, created = get_or_create_user(fullname, username, reset_password=False)
+        user, is_created, email_to_add = get_or_create_institutional_user(fullname, username, eppn=eppn)
 
         # Existing but inactive users need to be either "activated" or failed the auth
         activation_required = False
         new_password_required = False
-        if not created:
+        if not is_created:
             try:
                 drf.check_user(user)
                 logger.info('Institution SSO: active user [{}]'.format(username))
@@ -275,7 +277,7 @@ class InstitutionAuthentication(BaseAuthentication):
                         'inst=[{}]'.format(user_guid, username, institution._id))
 
         # Both created and activated accounts need to be updated and registered
-        if created or activation_required:
+        if is_created or activation_required:
 
             if given_name:
                 user.given_name = given_name
@@ -306,6 +308,10 @@ class InstitutionAuthentication(BaseAuthentication):
                 osf_support_email=OSF_SUPPORT_EMAIL,
                 storage_flag_is_active=waffle.flag_is_active(request, features.STORAGE_I18N),
             )
+
+        # Add the email to the user's account if it is identified by the eppn
+        if not is_created and email_to_add:
+            user.emails.add(email_to_add)
 
         # Affiliate the user to the primary institution if not previously affiliated
         if not user.is_affiliated_with_institution(institution):
