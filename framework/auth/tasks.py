@@ -66,7 +66,7 @@ def verify_user_orcid_id(user, orcid_id):
     """
     provider = EXTERNAL_IDENTITY_PROFILE.get('OrcidProfile')
     status = user.external_identity.get(provider, {}).get(orcid_id, None)
-    return True if status and status == 'VERIFIED' else False
+    return status == 'VERIFIED'
 
 
 def check_institution_affiliation(orcid_id):
@@ -143,7 +143,8 @@ def orcid_public_api_make_request(path, orcid_id):
         sentry.log_exception()
         return None
     if response.status_code != 200:
-        error_message = f'ORCiD public API request has failed: url=[{request_url}], status=[{response.status_code}]'
+        error_message = f'ORCiD public API request has failed: url=[{request_url}], ' \
+                        f'status=[{response.status_code}], response = [{response.content}]'
         logger.error(error_message)
         sentry.log_message(error_message)
         return None
