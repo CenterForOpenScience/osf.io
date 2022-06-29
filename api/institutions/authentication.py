@@ -99,7 +99,7 @@ class InstitutionAuthentication(BaseAuthentication):
                     "id": "",
                     "user": {
                         "eppn": "",
-                        "username": "",
+                        "ssoEmail": "",
                         "fullname": "",
                         "familyName": "",
                         "givenName": "",
@@ -138,7 +138,7 @@ class InstitutionAuthentication(BaseAuthentication):
             sentry.log_message(message)
             raise PermissionDenied(detail='InstitutionSsoInvalidInstitution')
         eppn = provider['user'].get('eppn')
-        username = provider['user'].get('username')
+        sso_email = provider['user'].get('ssoEmail')
         fullname = provider['user'].get('fullname')
         given_name = provider['user'].get('givenName')
         family_name = provider['user'].get('familyName')
@@ -150,13 +150,13 @@ class InstitutionAuthentication(BaseAuthentication):
         # Check selective login first
         if provider['id'] in INSTITUTION_SELECTIVE_SSO_MAP:
             if selective_sso_filter != INSTITUTION_SELECTIVE_SSO_MAP[provider['id']]:
-                message = f'Institution SSO Error: user [email={username}] is not allowed for ' \
+                message = f'Institution SSO Error: user [email={sso_email}] is not allowed for ' \
                           f'institution SSO [id={institution._id}] due to selective SSO rules'
                 logger.error(message)
                 sentry.log_message(message)
                 raise PermissionDenied(detail='InstitutionSsoSelectiveNotAllowed')
             logger.info(
-                f'Institution SSO: selective SSO verified for user [email={username}] '
+                f'Institution SSO: selective SSO verified for user [email={sso_email}] '
                 f'at institution [id={institution._id}]',
             )
 
@@ -174,22 +174,22 @@ class InstitutionAuthentication(BaseAuthentication):
                         {},
                     ).get(attribute_value)
                     logger.info('Institution SSO: primary=[{}], secondary=[{}], '
-                                'username=[{}]'.format(provider['id'], secondary_institution_id, username))
+                                'sso_email=[{}]'.format(provider['id'], secondary_institution_id, sso_email))
                     secondary_institution = Institution.load(secondary_institution_id)
                     if not secondary_institution:
                         # Log errors and inform Sentry but do not raise an exception if OSF fails
                         # to load the secondary institution from database
                         message = 'Institution SSO Error: invalid secondary institution [{}]; ' \
-                                  'primary=[{}], username=[{}]'.format(attribute_value, provider['id'], username)
+                                  'primary=[{}], sso_email=[{}]'.format(attribute_value, provider['id'], sso_email)
                         logger.error(message)
                         sentry.log_message(message)
                 else:
                     # SSO from primary institution only
                     logger.info('Institution SSO: primary=[{}], secondary=[None], '
-                                'username=[{}]'.format(provider['id'], username))
+                                'sso_email=[{}]'.format(provider['id'], sso_email))
             else:
                 message = 'Institution SSO Error: invalid criteria [{}]; ' \
-                          'primary=[{}], username=[{}]'.format(criteria_type, provider['id'], username)
+                          'primary=[{}], sso_email=[{}]'.format(criteria_type, provider['id'], sso_email)
                 logger.error(message)
                 sentry.log_message(message)
 
@@ -200,12 +200,19 @@ class InstitutionAuthentication(BaseAuthentication):
         # Non-empty full name is required. Fail the auth and inform sentry if not provided.
         if not fullname:
             message = 'Institution SSO Error: missing fullname ' \
-                      'for user [{}] from institution [{}]'.format(username, provider['id'])
+                      'for user [{}] from institution [{}]'.format(sso_email, provider['id'])
             logger.error(message)
             sentry.log_message(message)
             raise PermissionDenied(detail='InstitutionSsoMissingUserNames')
 
-        user, is_created, email_to_add = get_or_create_institutional_user(fullname, username, eppn=eppn)
+        # Attempt to find an existing user that matches the email(s) provided via SSO. Create a new one if not found.
+        # If a user is found, it is possible that the user is inactive (e.g. unclaimed, disabled, unconfirmed, etc.).
+        # If a new user is created, the user object is confirmed but not registered (i.e. inactive until registered).
+        user, is_created, email_to_add = get_or_create_institutional_user(fullname, sso_email, eppn=eppn)
+        # Set user's email to eppn if email_to_add is returned. When email_to_add is not None, sso_email equals to
+        # email_to_add. It is the email to be added to the user while eppn is the email of the existing user.
+        # For details, see `get_or_create_institutional_user`
+        email = eppn if email_to_add else sso_email
 
         # Existing but inactive users need to be either "activated" or failed the auth
         activation_required = False
@@ -213,7 +220,7 @@ class InstitutionAuthentication(BaseAuthentication):
         if not is_created:
             try:
                 drf.check_user(user)
-                logger.info('Institution SSO: active user [{}]'.format(username))
+                logger.info('Institution SSO: active user [{}]'.format(email))
             except exceptions.UnclaimedAccountError:
                 # Unclaimed user (i.e. a user that has been added as an unregistered contributor)
                 user.unclaimed_records = {}
@@ -221,7 +228,7 @@ class InstitutionAuthentication(BaseAuthentication):
                 # Unclaimed users have an unusable password when being added as an unregistered
                 # contributor. Thus a random usable password must be assigned during activation.
                 new_password_required = True
-                logger.warning('Institution SSO: unclaimed contributor [{}]'.format(username))
+                logger.warning('Institution SSO: unclaimed contributor [{}]'.format(email))
             except exceptions.UnconfirmedAccountError:
                 if user.has_usable_password():
                     # Unconfirmed user from default username / password signup
@@ -231,24 +238,24 @@ class InstitutionAuthentication(BaseAuthentication):
                     # sign-up. However, it must be overwritten by a new random one so the creator
                     # (if he is not the real person) can not access the account after activation.
                     new_password_required = True
-                    logger.warning('Institution SSO: unconfirmed user [{}]'.format(username))
+                    logger.warning('Institution SSO: unconfirmed user [{}]'.format(email))
                 else:
                     # Login take-over has not been implemented for unconfirmed user created via
                     # external IdP login (ORCiD).
                     message = 'Institution SSO Error: SSO is not eligible for an unconfirmed account [{}] ' \
-                              'created via IdP login'.format(username)
+                              'created via IdP login'.format(email)
                     sentry.log_message(message)
                     logger.error(message)
                     raise PermissionDenied(detail='InstitutionSsoAccountNotConfirmed')
             except exceptions.DeactivatedAccountError:
                 # Deactivated user: login is not allowed for deactivated users
-                message = 'Institution SSO Error: SSO is not eligible for a deactivated account: [{}]'.format(username)
+                message = 'Institution SSO Error: SSO is not eligible for a deactivated account: [{}]'.format(email)
                 sentry.log_message(message)
                 logger.error(message)
                 raise PermissionDenied(detail='InstitutionSsoAccountDisabled')
             except exceptions.MergedAccountError:
                 # Merged user: this shouldn't happen since merged users do not have an email
-                message = 'Institution SSO Error: SSO is not eligible for a merged account: [{}]'.format(username)
+                message = 'Institution SSO Error: SSO is not eligible for a merged account: [{}]'.format(email)
                 sentry.log_message(message)
                 logger.error(message)
                 raise PermissionDenied(detail='InstitutionSsoAccountMerged')
@@ -257,12 +264,12 @@ class InstitutionAuthentication(BaseAuthentication):
                 # temporary state. Such state requires more updates before the user can be saved
                 # to the database. (e.g. `get_or_create_user()` creates a temporary-state user.)
                 message = 'Institution SSO Error: SSO is not eligible for an inactive account [{}] ' \
-                          'with an unknown or invalid status'.format(username)
+                          'with an unknown or invalid status'.format(email)
                 sentry.log_message(message)
                 logger.error(message)
                 raise PermissionDenied(detail='InstitutionSsoInvalidAccount')
         else:
-            logger.info('Institution SSO: new user [{}]'.format(username))
+            logger.info('Institution SSO: new user [{}]'.format(email))
 
         # The `department` field is updated each login when it was changed.
         user_guid = user.guids.first()._id
@@ -271,10 +278,10 @@ class InstitutionAuthentication(BaseAuthentication):
                 user.department = department
                 user.save()
             logger.info('Institution SSO: user w/ dept: user=[{}], email=[{}], inst=[{}], '
-                        'dept=[{}]'.format(user_guid, username, institution._id, department))
+                        'dept=[{}]'.format(user_guid, email, institution._id, department))
         else:
             logger.info('Institution SSO: user w/o dept: user=[{}], email=[{}], '
-                        'inst=[{}]'.format(user_guid, username, institution._id))
+                        'inst=[{}]'.format(user_guid, email, institution._id))
 
         # Both created and activated accounts need to be updated and registered
         if is_created or activation_required:
@@ -296,7 +303,7 @@ class InstitutionAuthentication(BaseAuthentication):
 
             # Register and save user
             password = str(uuid.uuid4()) if new_password_required else None
-            user.register(username, password=password)
+            user.register(email, password=password)
             user.save()
 
             # Send confirmation email for all three: created, confirmed and claimed
@@ -310,7 +317,8 @@ class InstitutionAuthentication(BaseAuthentication):
             )
 
         # Add the email to the user's account if it is identified by the eppn
-        if not is_created and email_to_add:
+        if email_to_add:
+            assert not is_created and email_to_add == sso_email
             user.emails.add(email_to_add)
 
         # Affiliate the user to the primary institution if not previously affiliated
