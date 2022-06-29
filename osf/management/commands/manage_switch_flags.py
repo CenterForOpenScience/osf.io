@@ -3,31 +3,33 @@ import logging
 import yaml
 
 from django.core.management.base import BaseCommand
+from django.db import transaction
+from website import settings
 
 logger = logging.getLogger(__name__)
 
 
 def manage_waffle(delete_waffle=False):
+    # Inline importation of models is done to so for use in post migrate signal.
     from django.apps import apps
-
     Flag = apps.get_model('waffle.Flag')
     Switch = apps.get_model('waffle.Switch')
 
-    with open('osf/features.yaml', 'r') as stream:
-        features = yaml.safe_load(stream)
-    for flag in features['flags']:
-        flag.pop('flag_name')
-        Flag.objects.get_or_create(name=flag['name'], defaults=flag)
-    for switch in features['switches']:
-        switch.pop('flag_name')
-        Switch.objects.get_or_create(name=switch['name'], defaults=switch)
+    with transaction.atomic():
+        if delete_waffle:
+            results = Switch.objects.all().delete()
+            logger.info(f'Deleting switches: {results}')
+            results = Flag.objects.all().delete()
+            logger.info(f'Deleting flags: {results}')
 
-    if delete_waffle:
-        results = Switch.objects.exclude(name__in=[switch['name'] for switch in features['switches']]).delete()
-        logger.info(f'Deleting switches: {results}')
-
-        results = Flag.objects.exclude(name__in=[flag['name'] for flag in features['flags']]).delete()
-        logger.info(f'Deleting flags: {results}')
+        with open(settings.WAFFLE_VALUES_YAML, 'r') as stream:
+            features = yaml.safe_load(stream)
+        for flag in features['flags']:
+            flag.pop('flag_name')
+            Flag.objects.update_or_create(name=flag['name'], defaults=flag)
+        for switch in features['switches']:
+            switch.pop('flag_name')
+            Switch.objects.update_or_create(name=switch['name'], defaults=switch)
 
 
 class Command(BaseCommand):

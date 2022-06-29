@@ -1,6 +1,7 @@
 import yaml
+from website import settings
 
-with open('osf/features.yaml', 'r') as stream:
+with open(settings.WAFFLE_VALUES_YAML, 'r') as stream:
     features = yaml.safe_load(stream)
 
 for flag in features['flags']:
