@@ -41,6 +41,7 @@ from osf.models import (
 
 from addons.wiki.models import WikiPage, WikiVersion
 from osf.models.node import AbstractNodeQuerySet
+from osf.migrations import ensure_default_providers
 from osf.exceptions import ValidationError, ValidationValueError, UserStateError
 from osf.utils.workflows import DefaultStates
 from framework.auth.core import Auth
@@ -2420,6 +2421,11 @@ class TestNodeSpam:
 
 # copied from tests/test_models.py
 class TestPrivateLinks:
+
+    @pytest.fixture(autouse=True)
+    def default_providers(self):
+        ensure_default_providers()
+
     def test_add_private_link(self, node):
         link = PrivateLinkFactory()
         link.nodes.add(node)

@@ -6,7 +6,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     CollectionFactory,
 )
-from osf.models import NodeLicense, RegistrationProvider
+from osf.models import NodeLicense
 
 
 class ProviderMixinBase(object):
@@ -648,18 +648,12 @@ class ProviderListViewTestBaseMixin(ProviderMixinBase):
         # Test length and not auth
         res = app.get(url)
         assert res.status_code == 200
-        if isinstance(provider_one, RegistrationProvider):
-            assert len(res.json['data']) == 3  # 2 test provider +1 for default provider
-        else:
-            assert len(res.json['data']) == 2
+        assert len(res.json['data']) == 2
 
         # Test length and auth
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
-        if isinstance(provider_one, RegistrationProvider):
-            assert len(res.json['data']) == 3  # 2 test provider +1 for default provider
-        else:
-            assert len(res.json['data']) == 2
+        assert len(res.json['data']) == 2
 
     @pytest.mark.parametrize('filter_type,filter_value', [
         ('allow_submissions', True),
@@ -675,10 +669,8 @@ class ProviderListViewTestBaseMixin(ProviderMixinBase):
         res = app.get('{}?filter[{}]={}'.format(
             url, filter_type, filter_value))
         assert res.status_code == 200
-        if isinstance(provider_one, RegistrationProvider) and filter_type == 'allow_submissions':
-            assert len(res.json['data']) == 2  # 1 test provider +1 for default provider
-        else:
-            assert len(res.json['data']) == 1
+        assert len(res.json['data']) == 1
+
 
 class ProviderDetailViewTestBaseMixin(ProviderExistsMixin):
 

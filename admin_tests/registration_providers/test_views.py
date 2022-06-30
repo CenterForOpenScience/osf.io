@@ -24,7 +24,7 @@ import responses
 from website import settings
 
 from django.contrib.messages.storage.fallback import FallbackStorage
-from osf.migrations import update_provider_auth_groups
+from osf.migrations import update_provider_auth_groups, ensure_default_providers
 
 pytestmark = pytest.mark.django_db
 
@@ -38,7 +38,12 @@ def req(user):
     req.user = user
     return req
 
+
 class TestRegistrationProviderList(ProviderListMixinBase):
+
+    @pytest.fixture(autouse=True)
+    def default_provider(self):
+        ensure_default_providers()
 
     @pytest.fixture()
     def provider_factory(self):

@@ -14,7 +14,7 @@ from osf.utils.permissions import ADMIN, READ, WRITE
 from osf_tests.factories import InstitutionFactory, SubjectFactory, UserFactory
 
 from website import mails, settings
-
+from osf.migrations import ensure_default_providers
 
 class TestRegistrationBulkUploadContributors:
 
@@ -95,7 +95,8 @@ class TestBulkUploadTasks:
 
     @pytest.fixture()
     def provider(self, schema, subjects):
-        provider = RegistrationProvider.load('osf')
+        ensure_default_providers()
+        provider = RegistrationProvider.get_default()
         provider.allow_bulk_uploads = True
         provider.schemas.add(schema)
         provider.subjects.add(*subjects)

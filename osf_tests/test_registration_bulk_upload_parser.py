@@ -8,13 +8,15 @@ from nose.tools import assert_equal, assert_true
 from rest_framework.exceptions import NotFound
 
 from osf_tests.factories import SubjectFactory
-from osf.models import RegistrationSchema, RegistrationProvider
-from osf.models import NodeLicense
+from osf.models import RegistrationSchema, RegistrationProvider, NodeLicense
 
 from osf.registrations.utils import (BulkRegistrationUpload, InvalidHeadersError,
                                      FileUploadNotSupportedError, DuplicateHeadersError,
                                      get_excel_column_name, Store, CategoryField, LicenseField, ContributorField,
                                      MAX_EXCEL_COLUMN_NUMBER, METADATA_FIELDS)
+
+from osf.migrations import ensure_default_providers
+
 
 def write_csv(header_row, *rows):
     csv_buffer = io.StringIO()
@@ -69,6 +71,10 @@ def assert_errors(actual_errors, expected_errors):
 @pytest.mark.django_db
 class TestBulkUploadParserValidationErrors:
 
+    @pytest.fixture(autouse=True)
+    def default_provider(self):
+        ensure_default_providers()
+
     @pytest.fixture()
     def open_ended_schema(self):
         return RegistrationSchema.objects.get(name='Open-Ended Registration', schema_version=3)
@@ -85,6 +91,9 @@ class TestBulkUploadParserValidationErrors:
         osf_provider.licenses_acceptable.add(NodeLicense.objects.get(name='No License'))
         osf_provider.schemas.add(open_ended_schema)
         osf_provider.subjects.add(*provider_subjects)
+        no_license = NodeLicense.objects.get(name='No license')
+        osf_provider.licenses_acceptable.add(no_license)
+        osf_provider.default_license = no_license
         osf_provider.save()
         return osf_provider
 

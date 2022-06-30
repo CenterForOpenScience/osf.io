@@ -8,16 +8,15 @@ from django.db.utils import ProgrammingError
 from osf.management.commands.manage_switch_flags import manage_waffle
 from django.core.management import call_command
 from website.settings import APP_PATH
-from website import settings
-from api.base import settings as api_settings
 from addons.osfstorage.settings import DEFAULT_REGION_ID, DEFAULT_REGION_NAME
 
+from api.base import settings as api_settings
+from website import settings
 
 logger = logging.getLogger(__file__)
 
 OSF_PREPRINTS_DATA = {
     '_id': 'osf',
-    'type': 'osf.preprintprovider',
     'name': 'Open Science Framework',
     'domain': settings.DOMAIN,
     'share_publish_type': 'Preprint',
@@ -26,7 +25,6 @@ OSF_PREPRINTS_DATA = {
 
 OSF_REGISTRIES_DATA = {
     '_id': 'osf',
-    'type': 'osf.registrationprovider',
     'name': 'OSF Registries',
     'domain': settings.DOMAIN,
     'share_publish_type': 'Registration',
