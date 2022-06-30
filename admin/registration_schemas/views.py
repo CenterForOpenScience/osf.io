@@ -5,7 +5,7 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.views.generic import ListView, TemplateView, FormView, DeleteView
 from admin.registration_schemas.forms import RegistrationSchemaCreateForm, RegistrationSchemaEditForm
 from django.contrib import messages
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse_lazy
 from django.db.models import Max
 from django.http import HttpResponseRedirect
 
