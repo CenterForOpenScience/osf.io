@@ -1477,7 +1477,9 @@ class DraftRegistrationGroupObjectPermission(GroupObjectPermissionBase):
 def create_django_groups_for_draft_registration(sender, instance, created, **kwargs):
     if created:
         instance.update_group_permissions()
-
+        if not instance.provider:
+            instance.provider = RegistrationProvider.get_default()
+            instance.save()
         initiator = instance.initiator
 
         if instance.branched_from.contributor_set.filter(user=initiator).exists():

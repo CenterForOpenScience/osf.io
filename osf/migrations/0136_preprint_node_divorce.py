@@ -7,7 +7,6 @@ from django.contrib.auth.models import Group
 from django.contrib.contenttypes.models import ContentType
 from django.db import migrations
 from django.db.models import Func, Value, F, Q
-from django.core.management.sql import emit_post_migrate_signal
 from bulk_update.helper import bulk_update
 
 logger = logging.getLogger(__name__)
@@ -91,7 +90,6 @@ def format_group(self, name):
 
 def emit_signals(state, schema):
     # this is to make sure that the permissions created earlier exist!
-    emit_post_migrate_signal(2, False, 'default')
     logger.info('Starting preprint node divorce [SQL]:')
 
 

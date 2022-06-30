@@ -1,8 +1,16 @@
-from __future__ import unicode_literals
-
+import logging
 from django.apps import AppConfig as BaseAppConfig
 from django.db.models.signals import post_migrate
-from osf.migrations import update_permission_groups, create_cache_table
+
+logger = logging.getLogger(__file__)
+from osf.migrations import (
+    update_waffle_flags,
+    update_permission_groups,
+    create_cache_table,
+    update_storage_regions,
+    update_blocked_email_domains,
+    update_subjects
+)
 
 
 class AppConfig(BaseAppConfig):
@@ -17,6 +25,22 @@ class AppConfig(BaseAppConfig):
             dispatch_uid='osf.apps.update_permissions_groups'
         )
         post_migrate.connect(
+            update_waffle_flags,
+            dispatch_uid='osf.apps.update_waffle_flags'
+        )
+        post_migrate.connect(
+            update_blocked_email_domains,
+            dispatch_uid='osf.apps.update_blocked_email_domains',
+        )
+        post_migrate.connect(
+            update_storage_regions,
+            dispatch_uid='osf.apps.update_storage_regions',
+        )
+        post_migrate.connect(
             create_cache_table,
-            dispatch_uid='osf.apps.create_cache_table'
+            dispatch_uid='osf.apps.create_cache_table',
+        )
+        post_migrate.connect(
+            update_subjects,
+            dispatch_uid='osf.apps.update_subjects',
         )

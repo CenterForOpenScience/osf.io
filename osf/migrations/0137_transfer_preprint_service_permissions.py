@@ -6,6 +6,7 @@ from django.db import migrations
 
 
 def unmigrate_preprint_service_permissions(state, schema):
+
     Permission = state.get_model('auth', 'permission')
 
     # New permission groups

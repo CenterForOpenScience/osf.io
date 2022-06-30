@@ -751,7 +751,7 @@ EXTERNAL_IDENTITY_PROFILE = {
 }
 
 # Source: https://github.com/maxd/fake_email_validator/blob/master/config/fake_domains.list
-BLACKLISTED_DOMAINS = [
+DENY_EMAIL_DOMAINS = [
     '0-mail.com',
     '0815.ru',
     '0815.su',
@@ -2101,3 +2101,4 @@ PRODUCT_OWNER_EMAIL_ADDRESS = {}
 CAS_LOG_LEVEL = 3  # ERROR
 
 PREPRINT_METRICS_START_DATE = datetime.datetime(2019, 1, 1)
+WAFFLE_VALUES_YAML = 'osf/features.yaml'

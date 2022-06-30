@@ -1,11 +1,37 @@
 # -*- coding: utf-8 -*-
+import sys
+import os
+import json
 import logging
+from django.apps import apps
 from django.db.utils import ProgrammingError
+from osf.management.commands.manage_switch_flags import manage_waffle
 from django.core.management import call_command
-from api.base import settings
+from website.settings import APP_PATH
+from website import settings
+from api.base import settings as api_settings
+from addons.osfstorage.settings import DEFAULT_REGION_ID, DEFAULT_REGION_NAME
+
 
 logger = logging.getLogger(__file__)
 
+OSF_PREPRINTS_DATA = {
+    '_id': 'osf',
+    'type': 'osf.preprintprovider',
+    'name': 'Open Science Framework',
+    'domain': settings.DOMAIN,
+    'share_publish_type': 'Preprint',
+    'domain_redirect_enabled': False,
+}
+
+OSF_REGISTRIES_DATA = {
+    '_id': 'osf',
+    'type': 'osf.registrationprovider',
+    'name': 'OSF Registries',
+    'domain': settings.DOMAIN,
+    'share_publish_type': 'Registration',
+    'domain_redirect_enabled': False,
+}
 
 # Admin group permissions
 def get_admin_read_permissions():
@@ -123,6 +149,104 @@ def update_permission_groups(sender, verbosity=0, **kwargs):
         update_provider_auth_groups(verbosity)
 
 
+def update_waffle_flags(sender, verbosity=0, **kwargs):
+    if getattr(sender, 'label', None) == 'osf':
+        if 'pytest' not in sys.modules:
+            manage_waffle()
+            logger.info('Waffle flags have been synced')
+
+
+def update_blocked_email_domains(sender, verbosity=0, **kwargs):
+    if getattr(sender, 'label', None) == 'osf':
+        from django.apps import apps
+        NotableEmailDomain = apps.get_model('osf', 'NotableEmailDomain')
+        for domain in settings.DENY_EMAIL_DOMAINS:
+            NotableEmailDomain.objects.update_or_create(
+                domain=domain,
+                defaults={'note': NotableEmailDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION},
+            )
+
+
+def update_storage_regions(sender, verbosity=0, **kwargs):
+    if getattr(sender, 'label', None) == 'osf':
+        ensure_default_storage_region()
+
+
+def ensure_default_storage_region():
+    osfstorage_config = apps.get_app_config('addons_osfstorage')
+    Region = apps.get_model('addons_osfstorage', 'Region')
+    Region.objects.update_or_create(
+        _id=DEFAULT_REGION_ID,
+        defaults={
+            'name': DEFAULT_REGION_NAME,
+            'waterbutler_credentials': osfstorage_config.WATERBUTLER_CREDENTIALS,
+            'waterbutler_settings': osfstorage_config.WATERBUTLER_SETTINGS,
+            'waterbutler_url': settings.WATERBUTLER_URL
+        }
+    )
+
+
 def create_cache_table(sender, verbosity=0, **kwargs):
     if getattr(sender, 'label', None) == 'osf':
-        call_command('createcachetable', tablename=settings.CACHES[settings.STORAGE_USAGE_CACHE_NAME]['LOCATION'])
+        call_command('createcachetable', tablename=api_settings.CACHES[api_settings.STORAGE_USAGE_CACHE_NAME]['LOCATION'])
+
+
+def update_default_providers(sender, verbosity=0, **kwargs):
+    if getattr(sender, 'label', None) == 'osf':
+        ensure_default_providers()
+
+
+def ensure_default_providers():
+    from osf.models import PreprintProvider, RegistrationProvider
+
+    PreprintProvider.objects.update_or_create(
+        _id=OSF_PREPRINTS_DATA['_id'],
+        defaults=OSF_PREPRINTS_DATA
+    )
+    RegistrationProvider.objects.update_or_create(
+        _id=OSF_REGISTRIES_DATA['_id'],
+        defaults=OSF_REGISTRIES_DATA
+    )
+
+
+def ensure_subjects():
+    Subject = apps.get_model('osf.subject')
+    PreprintProvider = apps.get_model('osf.preprintprovider')
+    bepress_provider, _ = PreprintProvider.objects.get_or_create(
+        type='osf.preprintprovider',
+        _id='osf'
+    )
+    # Flat taxonomy is stored locally, read in here
+    with open(
+            os.path.join(
+                APP_PATH,
+                'website',
+                'static',
+                'bepress_taxonomy.json',
+            )
+    ) as fp:
+        taxonomy = json.load(fp)
+
+        for subject_path in taxonomy.get('data'):
+            subjects = subject_path.split('_')
+            text = subjects[-1]
+
+            # Search for parent subject, get id if it exists
+            parent = None
+            if len(subjects) > 1:
+                parent, _ = Subject.objects.update_or_create(
+                    text=subjects[-2],
+                    provider=bepress_provider
+                )
+            subject, _ = Subject.objects.update_or_create(
+                text=text,
+                provider=bepress_provider
+            )
+            if parent and not subject.parent:
+                subject.parent = parent
+                subject.save()
+
+
+def update_subjects(sender, verbosity=0, **kwargs):
+    if getattr(sender, 'label', None) == 'osf':
+        ensure_subjects()
