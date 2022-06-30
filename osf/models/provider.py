@@ -284,7 +284,7 @@ class RegistrationProvider(AbstractProvider):
     #
     # Ex:
     # [{'field_name': 'foo'}, {'field_name': 'bar'}]
-    additional_metadata_fields = DateTimeAwareJSONField(blank=True)
+    additional_metadata_fields = DateTimeAwareJSONField(blank=True, null=True)
     default_schema = models.ForeignKey('osf.registrationschema', related_name='default_schema', null=True, blank=True, on_delete=models.SET_NULL)
     bulk_upload_auto_approval = models.NullBooleanField(default=False)
     allow_updates = models.NullBooleanField(default=False)
