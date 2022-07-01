@@ -3,9 +3,6 @@ from __future__ import unicode_literals
 
 from django.db import migrations
 
-from osf import features
-from osf.utils.migrations import AddWaffleSwitches
-
 
 class Migration(migrations.Migration):
 
@@ -14,5 +11,4 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        AddWaffleSwitches([features.OSF_PREREGISTRATION], active=False),
     ]
