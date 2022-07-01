@@ -20,5 +20,4 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(remove_support_page_waffle_flags, reverse_func)
     ]
