@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 
 from django.db import migrations
 
-from osf.utils.migrations import UpdateRegistrationSchemas
 
 V2_INVISIBLE_SCHEMAS = [
     'EGAP Project',
@@ -39,7 +38,4 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(remove_version_1_schemas, noop),
-        UpdateRegistrationSchemas(),
-        migrations.RunPython(update_v2_schemas, noop),
     ]

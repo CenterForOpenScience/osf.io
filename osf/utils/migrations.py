@@ -157,16 +157,11 @@ def remove_licenses(*args):
     logger.info('{} licenses removed from the database.'.format(pre_count))
 
 
-def ensure_schemas(*args):
+def ensure_schemas(*args, **kwargs):
     """Import meta-data schemas from JSON to database if not already loaded
     """
-    state = args[0] if args else apps
-    schema_count = 0
-    try:
-        schema_model = state.get_model('osf', 'registrationschema')
-    except LookupError:
-        # Use MetaSchema model if migrating from a version before RegistrationSchema existed
-        schema_model = state.get_model('osf', 'metaschema')
+    from django.apps import apps
+    schema_model = apps.get_model('osf', 'registrationschema')
 
     for schema in get_osf_meta_schemas():
         schema_obj, created = schema_model.objects.update_or_create(
@@ -453,15 +448,11 @@ def map_schemas_to_schemablocks(*args):
 
     WARNING: Deletes existing schema blocks
     """
-    state = args[0] if args else apps
-    try:
-        schema_model = state.get_model('osf', 'registrationschema')
-    except LookupError:
-        # Use MetaSchema model if migrating from a version before RegistrationSchema existed
-        schema_model = state.get_model('osf', 'metaschema')
+    from django.apps import apps
+    schema_model = apps.get_model('osf', 'registrationschema')
 
     try:
-        RegistrationSchemaBlock = state.get_model('osf', 'registrationschemablock')
+        RegistrationSchemaBlock = apps.get_model('osf', 'registrationschemablock')
     except LookupError:
         return  # can't create SchemaBlocks if they don't exist
 

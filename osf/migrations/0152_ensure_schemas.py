@@ -1,7 +1,6 @@
 from __future__ import unicode_literals
 
 from django.db import migrations
-from osf.utils.migrations import ensure_schemas
 
 
 class Migration(migrations.Migration):
@@ -11,5 +10,4 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(ensure_schemas, ensure_schemas),
     ]
