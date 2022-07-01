@@ -163,7 +163,7 @@ def ensure_schemas(*args, **kwargs):
     from django.apps import apps
     schema_model = apps.get_model('osf', 'registrationschema')
     schema_count = 0
-    
+
     for schema in get_osf_meta_schemas():
         schema_obj, created = schema_model.objects.update_or_create(
             name=schema['name'],
