@@ -3,7 +3,6 @@
 from __future__ import unicode_literals
 import logging
 from django.db import migrations
-from django.core.management.sql import emit_post_migrate_signal
 
 from osf.migrations.sql.draft_nodes_migration import (
     add_draft_read_write_admin_auth_groups,
@@ -13,10 +12,6 @@ from osf.migrations.sql.draft_nodes_migration import (
 
 logger = logging.getLogger(__name__)
 
-
-def post_migrate_signal(state, schema):
-    # this is to make sure that the draft registration permissions created earlier exist!
-    emit_post_migrate_signal(3, False, 'default')
 
 class Migration(migrations.Migration):
 
