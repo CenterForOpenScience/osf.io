@@ -56,5 +56,4 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(add_ember_waffle_flags, reverse_func)
     ]

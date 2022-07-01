@@ -5,7 +5,6 @@ from __future__ import unicode_literals
 from django.db import migrations
 
 from osf import features
-from osf.utils.migrations import AddWaffleFlags
 
 
 USER_SETTINGS_FLAGS = [
@@ -24,5 +23,4 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        AddWaffleFlags(USER_SETTINGS_FLAGS),
     ]
