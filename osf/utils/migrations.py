@@ -188,7 +188,7 @@ def remove_schemas(*args):
     logger.info('Removed {} schemas from the database'.format(pre_count))
 
 
-def schema_countcreate_schema_block(state, schema_id, block_type, display_text='', required=False, help_text='',
+def create_schema_block(state, schema_id, block_type, display_text='', required=False, help_text='',
         registration_response_key=None, schema_block_group_key='', example_text=''):
     """
     For mapping schemas to schema blocks: creates a given block from the specified parameters
