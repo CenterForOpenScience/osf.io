@@ -427,6 +427,14 @@ def rules_to_subjects(rules):
 def create_provider_auth_groups(sender, instance, created, **kwargs):
     if created:
         instance.update_group_permissions()
+        if instance.provider is None:
+            if isinstance(instance, RegistrationProvider):
+                instance.provider = RegistrationProvider.get_default()
+            elif isinstance(instance, PreprintProvider):
+                instance.provider = PreprintProvider.get_default()
+            else:
+                raise NotImplementedError()
+            instance.save()
 
 
 @receiver(post_save, sender=PreprintProvider)

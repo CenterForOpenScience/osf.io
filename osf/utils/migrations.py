@@ -162,7 +162,8 @@ def ensure_schemas(*args, **kwargs):
     """
     from django.apps import apps
     schema_model = apps.get_model('osf', 'registrationschema')
-
+    schema_count = 0
+    
     for schema in get_osf_meta_schemas():
         schema_obj, created = schema_model.objects.update_or_create(
             name=schema['name'],
@@ -187,7 +188,7 @@ def remove_schemas(*args):
     logger.info('Removed {} schemas from the database'.format(pre_count))
 
 
-def create_schema_block(state, schema_id, block_type, display_text='', required=False, help_text='',
+def schema_countcreate_schema_block(state, schema_id, block_type, display_text='', required=False, help_text='',
         registration_response_key=None, schema_block_group_key='', example_text=''):
     """
     For mapping schemas to schema blocks: creates a given block from the specified parameters
@@ -468,14 +469,14 @@ def map_schemas_to_schemablocks(*args):
         for page in rs.schema['pages']:
             # Create page heading block
             create_schema_block(
-                state,
+                apps,
                 rs.id,
                 'page-heading',
                 display_text=strip_html(page.get('title', '')),
                 help_text=strip_html(page.get('description', ''))
             )
             for question in page['questions']:
-                create_schema_blocks_for_question(state, rs, question)
+                create_schema_blocks_for_question(apps, rs, question)
 
 
 def unmap_schemablocks(*args):

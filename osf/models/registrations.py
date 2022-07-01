@@ -961,9 +961,9 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
     provider = models.ForeignKey(
         'RegistrationProvider',
         related_name='draft_registrations',
-        null=False,
+        null=True,
         on_delete=models.CASCADE,
-        default=get_default_id,
+        default=None,
     )
 
     # Dictionary field mapping question id to a question's comments and answer
