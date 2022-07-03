@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-<<<<<<< HEAD
 import re
 import os
 import io
@@ -7,9 +6,6 @@ import sys
 import zipfile
 import requests
 
-=======
-import sys
->>>>>>> b2f6e94ac09df54df9e79ae8f529a068c88db8d1
 import logging
 from django.apps import apps
 from django.db.utils import ProgrammingError
