@@ -6,7 +6,6 @@ logger = logging.getLogger(__file__)
 from osf.migrations import (
     update_waffle_flags,
     update_permission_groups,
-    create_cache_table,
     update_storage_regions,
     update_blocked_email_domains,
     update_subjects
@@ -39,10 +38,6 @@ class AppConfig(BaseAppConfig):
         post_migrate.connect(
             update_waffle_flags,
             dispatch_uid='osf.apps.update_waffle_flags'
-        )
-        post_migrate.connect(
-            create_cache_table,
-            dispatch_uid='osf.apps.create_cache_table',
         )
         post_migrate.connect(
             update_subjects,

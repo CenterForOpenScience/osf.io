@@ -6,11 +6,9 @@ import logging
 from django.apps import apps
 from django.db.utils import ProgrammingError
 from osf.management.commands.manage_switch_flags import manage_waffle
-from django.core.management import call_command
 from website.settings import APP_PATH
 from addons.osfstorage.settings import DEFAULT_REGION_ID, DEFAULT_REGION_NAME
 
-from api.base import settings as api_settings
 from website import settings
 
 
@@ -173,11 +171,6 @@ def ensure_default_storage_region():
             'waterbutler_url': settings.WATERBUTLER_URL
         }
     )
-
-
-def create_cache_table(sender, verbosity=0, **kwargs):
-    if getattr(sender, 'label', None) == 'osf':
-        call_command('createcachetable', tablename=api_settings.CACHES[api_settings.STORAGE_USAGE_CACHE_NAME]['LOCATION'])
 
 
 def update_default_providers(sender, verbosity=0, **kwargs):
