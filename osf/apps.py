@@ -37,6 +37,10 @@ class AppConfig(BaseAppConfig):
             dispatch_uid='osf.apps.update_storage_regions',
         )
         post_migrate.connect(
+            update_waffle_flags,
+            dispatch_uid='osf.apps.update_waffle_flags'
+        )
+        post_migrate.connect(
             create_cache_table,
             dispatch_uid='osf.apps.create_cache_table',
         )

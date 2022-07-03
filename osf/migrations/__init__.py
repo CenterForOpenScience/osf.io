@@ -13,6 +13,7 @@ from addons.osfstorage.settings import DEFAULT_REGION_ID, DEFAULT_REGION_NAME
 from api.base import settings as api_settings
 from website import settings
 
+
 logger = logging.getLogger(__file__)
 
 OSF_PREPRINTS_DATA = {

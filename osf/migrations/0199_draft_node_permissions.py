@@ -13,11 +13,6 @@ from osf.migrations.sql.draft_nodes_migration import (
 logger = logging.getLogger(__name__)
 
 
-def post_migrate_signal(state, schema):
-    # this is to make sure that the draft registration permissions created earlier exist!
-    pass
-
-
 class Migration(migrations.Migration):
 
     dependencies = [
