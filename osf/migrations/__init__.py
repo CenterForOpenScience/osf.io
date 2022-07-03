@@ -21,6 +21,7 @@ from website import settings as osf_settings
 
 logger = logging.getLogger(__file__)
 
+
 # Admin group permissions
 def get_admin_read_permissions():
     from django.contrib.auth.models import Permission
@@ -174,7 +175,11 @@ def update_blocked_email_domains(sender, verbosity=0, **kwargs):
 
 def ensure_citation_styles():
     CitationStyle = apps.get_model('osf', 'citationstyle')
-    zip_data = io.BytesIO(requests.get('https://codeload.github.com/CenterForOpenScience/styles/zip/refs/heads/master').content)
+    zip_data = io.BytesIO(
+        requests.get(
+            f'https://github.com/CenterForOpenScience/styles/archive/{osf_settings.CITATION_STYLES_REPO_COMMIT_SHA}.zip'
+        ).content
+    )
     with transaction.atomic():
         with zipfile.ZipFile(zip_data) as zip_file:
             for file_name in [name for name in zip_file.namelist() if name.endswith('.zip') and not name.startswith('dependent')]:
