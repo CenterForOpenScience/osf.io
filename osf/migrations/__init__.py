@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+<<<<<<< HEAD
 import re
 import os
 import io
@@ -6,11 +7,16 @@ import sys
 import zipfile
 import requests
 
+=======
+import sys
+>>>>>>> b2f6e94ac09df54df9e79ae8f529a068c88db8d1
 import logging
 from django.apps import apps
 from django.db.utils import ProgrammingError
+from osf.management.commands.manage_switch_flags import manage_waffle
 from django.core.management import call_command
 from api.base import settings
+
 
 logger = logging.getLogger(__file__)
 from django.db import transaction
@@ -133,6 +139,7 @@ def update_permission_groups(sender, verbosity=0, **kwargs):
         update_provider_auth_groups(verbosity)
 
 
+
 def ensure_citation_styles():
     CitationStyle = apps.get_model('osf', 'citationstyle')
     zip_data = io.BytesIO(requests.get('https://codeload.github.com/CenterForOpenScience/styles/zip/refs/heads/master').content)
@@ -237,6 +244,13 @@ def update_citation_styles(sender, verbosity=0, **kwargs):
     if getattr(sender, 'label', None) == 'osf':
         if 'pytest' not in sys.modules:
             ensure_citation_styles()
+
+
+def update_waffle_flags(sender, verbosity=0, **kwargs):
+    if getattr(sender, 'label', None) == 'osf':
+        if 'pytest' not in sys.modules:
+            manage_waffle()
+            logger.info('Waffle flags have been synced')
 
 
 def create_cache_table(sender, verbosity=0, **kwargs):

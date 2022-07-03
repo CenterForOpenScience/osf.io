@@ -1,38 +1,36 @@
 # -*- coding: utf-8 -*-
 import logging
+import yaml
 
 from django.core.management.base import BaseCommand
-
-from osf.features import switches, flags
-from waffle.models import Flag, Switch
+from django.db import transaction
+from website import settings
 
 logger = logging.getLogger(__name__)
 
+
 def manage_waffle(delete_waffle=False):
-    file_switches = list(switches.values())
-    current_switches = Switch.objects.values_list('name', flat=True)
+    # Inline importation of models is done to so for use in post migrate signal.
+    from django.apps import apps
+    Flag = apps.get_model('waffle.Flag')
+    Switch = apps.get_model('waffle.Switch')
 
-    add_switches = set(file_switches) - set(current_switches)
-    for switch in add_switches:
-        Switch.objects.get_or_create(name=switch, defaults={'active': False})
-        logger.info('Adding switch: {}'.format(switch))
+    with transaction.atomic():
+        if delete_waffle:
+            results = Switch.objects.all().delete()
+            logger.info(f'Deleting switches: {results}')
+            results = Flag.objects.all().delete()
+            logger.info(f'Deleting flags: {results}')
 
-    file_flags = list(flags.values())
-    current_flags = Flag.objects.values_list('name', flat=True)
+        with open(settings.WAFFLE_VALUES_YAML, 'r') as stream:
+            features = yaml.safe_load(stream)
+        for flag in features['flags']:
+            flag.pop('flag_name')
+            Flag.objects.update_or_create(name=flag['name'], defaults=flag)
+        for switch in features['switches']:
+            switch.pop('flag_name')
+            Switch.objects.update_or_create(name=switch['name'], defaults=switch)
 
-    add_flags = set(file_flags) - set(current_flags)
-    for flag_name in add_flags:
-        Flag.objects.get_or_create(name=flag_name, defaults={'everyone': False})
-        logger.info('Adding flag: {}'.format(flag_name))
-
-    if delete_waffle:
-        delete_switches = set(current_switches) - set(file_switches)
-        Switch.objects.filter(name__in=delete_switches).delete()
-        logger.info('Deleting switches: {}'.format(delete_switches))
-
-        delete_flags = set(current_flags) - set(file_flags)
-        Flag.objects.filter(name__in=delete_flags).delete()
-        logger.info('Deleting flags: {}'.format(delete_flags))
 
 class Command(BaseCommand):
     """Ensure all features and switches are updated with the switch and flag files
