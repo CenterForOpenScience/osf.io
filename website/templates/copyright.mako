@@ -5,7 +5,7 @@
         <div class="col-md-12">
             <!--
             <p>Copyright &copy; 2011-${datetime.utcnow().year} <a href="https://nii.ac.jp/">${_("National Institute of Informatics")}</a> |
-                <a href="https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=32676419">${_("Terms of Use")}</a> |
+                <a href="https://support.rdm.nii.ac.jp/terms">${_("Terms of Use")}</a> |
                 <a href="https://support.rdm.nii.ac.jp/terms/">${_("Privacy Policy")}</a>
             </p>
             -->
