@@ -3957,3 +3957,6 @@ msgstr ""
 
 msgid "Please click the button below if you would like to receive an invitation to the project again."
 msgstr ""
+
+msgid "\"Full name\", \"Family name\", \"Given name\", \"Family name (EN)\", \"Given name (EN)\" on the Name tab, and \"Affiliation\" and \"Affiliation (English)\" on the Employment tab is required."
+msgstr ""
