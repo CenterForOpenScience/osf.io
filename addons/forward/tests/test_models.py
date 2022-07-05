@@ -7,13 +7,15 @@ from django.core.exceptions import ValidationError
 
 from osf_tests.factories import ProjectFactory, RegistrationFactory
 from addons.forward.tests.factories import ForwardSettingsFactory
-
+from tests.base import OsfTestCase
+from osf.migrations import ensure_default_providers
 pytestmark = pytest.mark.django_db
 
 
-class TestNodeSettings(unittest.TestCase):
+class TestNodeSettings(OsfTestCase):
 
     def setUp(self):
+        ensure_default_providers()
         super(TestNodeSettings, self).setUp()
         self.node = ProjectFactory()
         self.settings = ForwardSettingsFactory(owner=self.node)
@@ -27,7 +29,7 @@ class TestNodeSettings(unittest.TestCase):
         assert_equal(forward.url, 'http://frozen.pizza.reviews/')
 
 @pytest.mark.enable_implicit_clean
-class TestSettingsValidation(unittest.TestCase):
+class TestSettingsValidation(OsfTestCase):
 
     def setUp(self):
         super(TestSettingsValidation, self).setUp()
