@@ -16,7 +16,6 @@ def set_preprint_providers():
     """Populate `PreprintProvider` to test database for testing."""
 
     providers = {
-        'osf': 'Open Science Framework',
         'socarxiv': 'SocArXiv',
         'engrxiv': 'EngrXiv',
         'psyarxiv': 'PsyArXiv',

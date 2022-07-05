@@ -53,4 +53,3 @@ def disconnected_signals():
 @pytest.fixture(autouse=True)
 def default_provider():
     ensure_default_providers()
-
