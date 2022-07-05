@@ -4,11 +4,27 @@ import logging
 from django.db.utils import ProgrammingError
 from osf.management.commands.manage_switch_flags import manage_waffle
 from django.core.management import call_command
-from api.base import settings
+from api.base import settings as api_settings
+from website import settings
 
 
 logger = logging.getLogger(__file__)
 
+OSF_PREPRINTS_DATA = {
+    '_id': 'osf',
+    'name': 'Open Science Framework',
+    'domain': settings.DOMAIN,
+    'share_publish_type': 'Preprint',
+    'domain_redirect_enabled': False,
+}
+
+OSF_REGISTRIES_DATA = {
+    '_id': 'osf',
+    'name': 'OSF Registries',
+    'domain': settings.DOMAIN,
+    'share_publish_type': 'Registration',
+    'domain_redirect_enabled': False,
+}
 
 # Admin group permissions
 def get_admin_read_permissions():
@@ -135,4 +151,22 @@ def update_waffle_flags(sender, verbosity=0, **kwargs):
 
 def create_cache_table(sender, verbosity=0, **kwargs):
     if getattr(sender, 'label', None) == 'osf':
-        call_command('createcachetable', tablename=settings.CACHES[settings.STORAGE_USAGE_CACHE_NAME]['LOCATION'])
+        call_command('createcachetable', tablename=api_settings.CACHES[api_settings.STORAGE_USAGE_CACHE_NAME]['LOCATION'])
+
+
+def update_default_providers(sender, verbosity=0, **kwargs):
+    if getattr(sender, 'label', None) == 'osf':
+        ensure_default_providers()
+
+
+def ensure_default_providers():
+    from osf.models import PreprintProvider, RegistrationProvider
+
+    PreprintProvider.objects.update_or_create(
+        _id=OSF_PREPRINTS_DATA['_id'],
+        defaults=OSF_PREPRINTS_DATA
+    )
+    RegistrationProvider.objects.update_or_create(
+        _id=OSF_REGISTRIES_DATA['_id'],
+        defaults=OSF_REGISTRIES_DATA
+    )

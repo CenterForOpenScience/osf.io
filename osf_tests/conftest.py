@@ -6,6 +6,7 @@ from framework.flask import rm_handlers
 from website.app import init_app
 from website.project.signals import contributor_added
 from website.project.views.contributor import notify_added_contributor
+from osf.migrations import ensure_default_providers
 
 
 # NOTE: autouse so that ADDONS_REQUESTED gets set on website.settings
@@ -47,3 +48,9 @@ def disconnected_signals():
     for signal in DISCONNECTED_SIGNALS:
         for receiver in DISCONNECTED_SIGNALS[signal]:
             signal.disconnect(receiver)
+
+
+@pytest.fixture(autouse=True)
+def default_provider():
+    ensure_default_providers()
+
