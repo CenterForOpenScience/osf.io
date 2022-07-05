@@ -25,6 +25,8 @@ from website.util import paths
 from website.util import web_url_for, api_url_for, is_json_request, conjunct, api_v2_url
 from website.project import utils as project_utils
 from website.profile import utils as profile_utils
+from tests.base import OsfTestCase
+
 
 try:
     import magic  # noqa
@@ -34,7 +36,8 @@ except ImportError:
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-class TestTimeUtils(unittest.TestCase):
+
+class TestTimeUtils(OsfTestCase):
     def test_throttle_period_expired_no_timestamp(self):
         is_expired = throttle_period_expired(timestamp=None, throttle=30)
         assert_true(is_expired)
@@ -55,9 +58,12 @@ class TestTimeUtils(unittest.TestCase):
         is_expired = throttle_period_expired(timestamp=(timestamp - 31), throttle=30)
         assert_true(is_expired)
 
-class TestUrlForHelpers(unittest.TestCase):
+
+class TestUrlForHelpers(OsfTestCase):
 
     def setUp(self):
+        super().setUp()
+
         def dummy_view():
             return {}
 
@@ -227,7 +233,7 @@ class TestUrlForHelpers(unittest.TestCase):
         assert_in('/providers/provider', url)
 
 
-class TestFrameworkUtils(unittest.TestCase):
+class TestFrameworkUtils(OsfTestCase):
 
     def test_leading_underscores(self):
         assert_equal(
@@ -257,9 +263,10 @@ class TestFrameworkUtils(unittest.TestCase):
         )
 
 
-class TestWebpackFilter(unittest.TestCase):
+class TestWebpackFilter(OsfTestCase):
 
     def setUp(self):
+        super().setUp()
         self.asset_paths = {'assets': {'js': 'assets.07123e.js'}}
 
     def test_resolve_asset(self):
@@ -271,7 +278,7 @@ class TestWebpackFilter(unittest.TestCase):
             paths.webpack_asset('bundle.js', self.asset_paths, debug=False)
 
 
-class TestWebsiteUtils(unittest.TestCase):
+class TestWebsiteUtils(OsfTestCase):
 
     def test_conjunct(self):
         words = []
@@ -351,7 +358,6 @@ class TestProjectUtils(OsfTestCase):
         reg.save()
 
     def test_get_recent_public_registrations(self):
-
         count = 0
         for i in range(5):
             reg = RegistrationFactory()
@@ -387,9 +393,10 @@ class TestProfileUtils(DbTestCase):
         assert_true(profile_image)
 
 
-class TestSignalUtils(unittest.TestCase):
+class TestSignalUtils(OsfTestCase):
 
     def setUp(self):
+        super().setUp()
         self.signals = blinker.Namespace()
         self.signal_ = self.signals.signal('signal-')
         self.mock_listener = mock.MagicMock()
@@ -403,7 +410,7 @@ class TestSignalUtils(unittest.TestCase):
         assert_true(self.mock_listener.called)
 
 
-class TestUserUtils(unittest.TestCase):
+class TestUserUtils(OsfTestCase):
 
     def test_generate_csl_given_name_with_given_middle_suffix(self):
         given_name = 'Cause'

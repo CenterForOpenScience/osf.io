@@ -4,9 +4,10 @@ import unittest
 from django.utils import timezone
 from nose.tools import *  # noqa: F403
 from osf.utils import sanitize
+from tests.base import OsfTestCase
 
 
-class TestSanitize(unittest.TestCase):
+class TestSanitize(OsfTestCase):
 
     def test_strip_html(self):
         assert_equal(

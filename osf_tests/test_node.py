@@ -3592,6 +3592,7 @@ class TestCitationsProperties:
         assert node.csl['author'] == expected_authors
 
 
+@pytest.mark.django_db
 @pytest.mark.enable_implicit_clean
 class TestNodeEditableFieldsMixin:
     @pytest.fixture()

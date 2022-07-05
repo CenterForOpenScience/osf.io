@@ -42,6 +42,7 @@ class TestEncryptedExternalAccountFields(object):
                 assert jwe.decrypt(blicky[len(EncryptedTextField.prefix):].encode(), SENSITIVE_DATA_KEY).decode() == self.magic_string
 
 
+@pytest.mark.django_db
 class TestEncryptedTextField:
     @pytest.fixture
     def field(self):

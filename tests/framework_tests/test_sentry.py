@@ -28,14 +28,15 @@ def set_sentry(status):
 with_sentry = set_sentry(True)
 without_sentry = set_sentry(False)
 
-@with_sentry
-@mock.patch('framework.sentry.sentry.captureException')
-def test_log_no_request_context(mock_capture):
-    sentry.log_exception()
-    mock_capture.assert_called_with(extra={'session': {}})
 
 
 class TestSentry(OsfTestCase):
+
+    @with_sentry
+    @mock.patch('framework.sentry.sentry.captureException')
+    def test_log_no_request_context(self, mock_capture):
+        sentry.log_exception()
+        mock_capture.assert_called_with(extra={'session': {}})
 
     @with_sentry
     @mock.patch('framework.sentry.sentry.captureException')

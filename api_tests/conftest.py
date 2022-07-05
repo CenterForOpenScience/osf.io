@@ -16,6 +16,7 @@ def app():
 def app_init():
     init_app(routes=False, set_backends=False)
 
+
 @pytest.fixture(autouse=True)
 def default_provider():
     ensure_default_providers()

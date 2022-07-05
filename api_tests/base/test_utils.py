@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
 from nose.tools import *  # noqa:
+import pytest
 import mock  # noqa
-import unittest
 
 from rest_framework import fields
 from rest_framework.exceptions import ValidationError
 from api.base import utils as api_utils
 
 from framework.status import push_status_message
+from tests.base import OsfTestCase
 
 
+@pytest.mark.django_db
 class TestTruthyFalsy:
     """Check that our copy/pasted representation of
     TRUTHY and FALSY match the DRF BooleanField's versions
@@ -22,7 +24,7 @@ class TestTruthyFalsy:
         assert_equal(api_utils.FALSY, fields.BooleanField.FALSE_VALUES)
 
 
-class TestIsDeprecated(unittest.TestCase):
+class TestIsDeprecated(OsfTestCase):
 
     def setUp(self):
         super(TestIsDeprecated, self).setUp()
@@ -49,6 +51,7 @@ class TestIsDeprecated(unittest.TestCase):
         assert is_deprecated is True
 
 
+@pytest.mark.django_db
 class TestFlaskDjangoIntegration:
     def test_push_status_message_no_response(self):
         status_message = 'This is a message'

@@ -7,50 +7,56 @@ from addons.onedrive import settings
 from addons.onedrive.client import OneDriveClient
 from addons.onedrive.tests.utils import (raw_root_folder_response, raw_me_response,
                                          raw_user_personal_drive_response, dummy_user_info)
+from tests.base import OsfTestCase
+from osf.migrations import ensure_default_providers
 
 
-def test_headers():
-    client = OneDriveClient(access_token='meowmix')
-    assert(client._default_headers == {'Authorization': 'Bearer meowmix'})
+class TestClient(OsfTestCase):
 
+    def setUp(self):
+        ensure_default_providers()
+        super().setUp()
 
-def test_folders():
+    def test_headers(self):
+        client = OneDriveClient(access_token='meowmix')
+        assert(client._default_headers == {'Authorization': 'Bearer meowmix'})
 
-    def _quack(method, url, headers, params, expects, throws):
-        if method != 'GET':
-            raise 'failure to match method'
+    def test_folders(self):
 
-        if '{}/drives'.format(settings.MSGRAPH_API_URL) not in url:
-            raise 'failure to match url'
+        def _quack(method, url, headers, params, expects, throws):
+            if method != 'GET':
+                raise AssertionError('failure to match method')
 
-        mock_res = mock.Mock()
-        mock_res.json = mock.Mock(return_value={'value': raw_root_folder_response})
-        return mock_res
+            if '{}/drives'.format(settings.MSGRAPH_API_URL) not in url:
+                raise AssertionError('failure to match url')
 
-    client = OneDriveClient(access_token='meowmix')
-    with mock.patch.object(client, '_make_request', side_effect=_quack):
-        retval = client.folders(drive_id='abcd')
-        assert(retval == raw_root_folder_response)
+            mock_res = mock.Mock()
+            mock_res.json = mock.Mock(return_value={'value': raw_root_folder_response})
+            return mock_res
 
+        client = OneDriveClient(access_token='meowmix')
+        with mock.patch.object(client, '_make_request', side_effect=_quack):
+            retval = client.folders(drive_id='abcd')
+            assert retval == raw_root_folder_response
 
-def test_user_info_token():
+    def test_user_info_token(self):
 
-    def _woof(method, url, headers, expects, throws):
-        if method != 'GET':
-            raise 'failure to match method'
+        def _woof(method, url, headers, expects, throws):
+            if method != 'GET':
+                raise AssertionError('failure to match method')
 
-        if url.endswith('/me'):
-            mock_me_res = mock.Mock()
-            mock_me_res.json = mock.Mock(return_value=raw_me_response)
-            return mock_me_res
-        elif url.endswith('/drive'):
-            mock_drive_res = mock.Mock()
-            mock_drive_res.json = mock.Mock(return_value=raw_user_personal_drive_response)
-            return mock_drive_res
+            if url.endswith('/me'):
+                mock_me_res = mock.Mock()
+                mock_me_res.json = mock.Mock(return_value=raw_me_response)
+                return mock_me_res
+            elif url.endswith('/drive'):
+                mock_drive_res = mock.Mock()
+                mock_drive_res.json = mock.Mock(return_value=raw_user_personal_drive_response)
+                return mock_drive_res
 
-        raise 'failure to match url'
+            raise AssertionError('failure to match url')
 
-    client = OneDriveClient(access_token='meowmix')
-    with mock.patch.object(client, '_make_request', side_effect=_woof):
-        retval = client.user_info()
-        assert(retval == dummy_user_info)
+        client = OneDriveClient(access_token='meowmix')
+        with mock.patch.object(client, '_make_request', side_effect=_woof):
+            retval = client.user_info()
+            assert retval == dummy_user_info

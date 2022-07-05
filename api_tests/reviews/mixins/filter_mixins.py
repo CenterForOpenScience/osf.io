@@ -11,6 +11,7 @@ from osf_tests.factories import (
     ProjectFactory,
 )
 from osf.utils import permissions
+from osf.models import PreprintProvider
 
 
 def get_actual(app, url, user=None, sort=None, expect_errors=False, **filters):
@@ -213,6 +214,7 @@ class ReviewProviderFilterMixin(object):
             PreprintProviderFactory(reviews_workflow='post-moderation'),
             PreprintProviderFactory(reviews_workflow='pre-moderation'),
             PreprintProviderFactory(reviews_workflow=None),
+            PreprintProvider.get_default(),
         ]
 
     @pytest.fixture()

@@ -1,4 +1,5 @@
 import pytest
+
 from osf.migrations import ensure_default_providers
 
 

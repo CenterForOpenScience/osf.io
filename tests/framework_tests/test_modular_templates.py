@@ -27,7 +27,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATES_PATH = os.path.join(HERE, 'templates')
 
 
-class RendererTestCase(AppTestCase):
+class RendererTestCase(OsfTestCase):
     def setUp(self):
         super(RendererTestCase, self).setUp()
         self.r = Renderer()
@@ -206,7 +206,8 @@ class WebRendererTestCase(OsfTestCase):
         self.assertEqual(302, resp.status_code)
         self.assertEqual('http://google.com/', resp.location)
 
-class JSONRendererEncoderTestCase(unittest.TestCase):
+
+class JSONRendererEncoderTestCase(OsfTestCase):
 
     def test_encode_custom_class(self):
 

@@ -8,7 +8,7 @@ import sendgrid
 
 from framework.email.tasks import send_email, _send_with_sendgrid
 from website import settings
-from tests.base import fake
+from tests.base import fake, OsfTestCase
 from osf_tests.factories import fake_email
 
 # Check if local mail server is running
@@ -20,7 +20,7 @@ except Exception as err:
     SERVER_RUNNING = False
 
 
-class TestEmail(unittest.TestCase):
+class TestEmail(OsfTestCase):
 
     @unittest.skipIf(not SERVER_RUNNING,
                      "Mailserver isn't running. Run \"invoke mailserver\".")
@@ -73,7 +73,3 @@ class TestEmail(unittest.TestCase):
             client=mock_client
         )
         assert_false(ret)
-
-
-if __name__ == '__main__':
-    unittest.main()

@@ -2216,7 +2216,7 @@ class TestPreprintConfirmationEmails(OsfTestCase):
             self.user.email,
             mails.REVIEWS_SUBMISSION_CONFIRMATION,
             user=self.user,
-            provider_url='{}preprints/{}'.format(domain, self.preprint.provider._id),
+            provider_url=f'{domain}preprints',
             domain=domain,
             provider_contact_email=settings.OSF_CONTACT_EMAIL,
             provider_support_email=settings.OSF_SUPPORT_EMAIL,

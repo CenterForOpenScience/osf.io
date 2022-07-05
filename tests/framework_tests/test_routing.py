@@ -7,6 +7,7 @@ from webtest_plus import TestApp
 
 from framework.exceptions import HTTPError
 from framework.routing import json_renderer, process_rules, Rule
+from tests.base import OsfTestCase
 
 def error_view():
     raise HTTPError(400)
@@ -17,9 +18,11 @@ def error_with_msg():
         'message_long': 'Invalid request'
     })
 
-class TestJSONRenderer(unittest.TestCase):
+
+class TestJSONRenderer(OsfTestCase):
 
     def setUp(self):
+        super().setUp()
         self.app = Flask(__name__)
         self.app.debug = True
 

@@ -1,8 +1,8 @@
-import unittest
 from framework.routing import Rule, json_renderer
+from tests.base import OsfTestCase
 
 
-class RuleTestCase(unittest.TestCase):
+class RuleTestCase(OsfTestCase):
 
     def _make_rule(self, **kwargs):
         def vf():

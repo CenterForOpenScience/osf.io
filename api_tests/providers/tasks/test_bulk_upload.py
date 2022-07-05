@@ -15,7 +15,7 @@ from osf_tests.factories import InstitutionFactory, SubjectFactory, UserFactory
 
 from website import mails, settings
 
-
+@pytest.mark.django_db
 class TestRegistrationBulkUploadContributors:
 
     @pytest.fixture()
@@ -50,7 +50,7 @@ class TestRegistrationBulkUploadContributors:
         with pytest.raises(RegistrationBulkCreationContributorError):
             contributors.get_permission('random@email.com')
 
-
+@pytest.mark.django_db
 class TestRegistrationBulkCreationRowError:
 
     def test_error_message_with_detail(self):

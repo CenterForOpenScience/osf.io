@@ -5,6 +5,7 @@ from framework.celery_tasks import handlers
 from website.project.tasks import on_node_updated
 
 
+@pytest.mark.django_db
 class TestCeleryHandlers:
 
     @pytest.fixture()

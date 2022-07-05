@@ -5,11 +5,13 @@ from nose.tools import *  # PEP8 asserts
 from flask import Flask, url_for
 
 from framework.routing import Rule, json_renderer, process_rules
+from tests.base import OsfTestCase
 
 
-class RuleTestCase(unittest.TestCase):
+class RuleTestCase(OsfTestCase):
 
     def setUp(self):
+        super().setUp()
         # create a new app for every test
         self.app = Flask(__name__)
 

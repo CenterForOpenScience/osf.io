@@ -11,9 +11,7 @@ from nose.tools import *  # noqa:
 
 from rest_framework import serializers as ser
 
-from unittest import TestCase
-
-from tests.base import ApiTestCase
+from tests.base import ApiTestCase, OsfTestCase
 
 from api.base.filters import ListFilterMixin
 import api.base.filters as filters
@@ -506,7 +504,7 @@ class TestOSFOrderingFilter(ApiTestCase):
         assert res_created.json['data'][0]['id'] == res_date_created.json['data'][0]['id']
 
 
-class TestQueryPatternRegex(TestCase):
+class TestQueryPatternRegex(OsfTestCase):
 
     def setUp(self):
         super(TestQueryPatternRegex, self).setUp()

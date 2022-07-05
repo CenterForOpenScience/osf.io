@@ -10,15 +10,15 @@ from website import settings
 
 logger = logging.getLogger(__file__)
 
-OSF_PREPRINTS_DATA = {
+OSF_PREPRINTS_PROVIDER_DATA = {
     '_id': 'osf',
-    'name': 'Open Science Framework',
+    'name': 'OSF Preprints',
     'domain': settings.DOMAIN,
     'share_publish_type': 'Preprint',
     'domain_redirect_enabled': False,
 }
 
-OSF_REGISTRIES_DATA = {
+OSF_REGISTRIES_PROVIDER_DATA = {
     '_id': 'osf',
     'name': 'OSF Registries',
     'domain': settings.DOMAIN,
@@ -163,10 +163,11 @@ def ensure_default_providers():
     from osf.models import PreprintProvider, RegistrationProvider
 
     PreprintProvider.objects.update_or_create(
-        _id=OSF_PREPRINTS_DATA['_id'],
-        defaults=OSF_PREPRINTS_DATA
+        _id=OSF_PREPRINTS_PROVIDER_DATA['_id'],
+        defaults=OSF_PREPRINTS_PROVIDER_DATA
     )
     RegistrationProvider.objects.update_or_create(
-        _id=OSF_REGISTRIES_DATA['_id'],
-        defaults=OSF_REGISTRIES_DATA
+        _id=OSF_REGISTRIES_PROVIDER_DATA['_id'],
+        defaults=OSF_REGISTRIES_PROVIDER_DATA
     )
+    update_provider_auth_groups()

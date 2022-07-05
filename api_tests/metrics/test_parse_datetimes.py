@@ -8,6 +8,7 @@ from rest_framework.exceptions import ValidationError
 from api.metrics.utils import parse_datetimes
 
 
+@pytest.mark.django_db
 class TestParseDatetimes:
 
     @pytest.fixture()

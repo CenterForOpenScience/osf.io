@@ -1,10 +1,9 @@
 import pytest
 import json
 
-from osf.models import RegistrationProvider
-
 from osf_tests.factories import SubjectFactory
 from admin.base.forms import ImportFileForm
+from osf.models import CollectionProvider
 
 
 pytestmark = pytest.mark.django_db
@@ -47,12 +46,14 @@ class ProviderListMixinBase:
     def test_context_data(self, provider_one, provider_two, view, provider_class):
         view.object_list = view.get_queryset()
         res = view.get_context_data()
-        assert isinstance(res, dict)
-        if isinstance(provider_one, RegistrationProvider):
-            assert len(res[f'{provider_one.readable_type}_providers']) == 3  # 2 test providers + 1 for the default provider
-        else:
-            assert len(res[f'{provider_one.readable_type}_providers']) == 2
 
+        assert isinstance(res, dict)
+        if isinstance(provider_one, CollectionProvider):
+            assert len(res[f'{provider_one.readable_type}_providers']) == 2
+        else:
+            assert len(res[f'{provider_one.readable_type}_providers']) == 3  # 2 test providers + 1 for the default provider
+
+        assert len(res[f'{provider_one.readable_type}_providers']) == 3  # 2 test providers + 1 for the default provider
         assert isinstance(res['{}_providers'.format(provider_one.readable_type)][0], provider_class)
 
 

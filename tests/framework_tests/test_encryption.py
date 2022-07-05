@@ -3,8 +3,10 @@ import unittest
 from nose.tools import *  # noqa
 
 from framework.encryption import encrypt, decrypt, ensure_bytes
+from tests.base import OsfTestCase
 
-class EncryptionTestCase(unittest.TestCase):
+
+class EncryptionTestCase(OsfTestCase):
 
     def test_ensure_bytes_encodes_no_unicode_in_string_type_str(self):
         my_value = 'hello'

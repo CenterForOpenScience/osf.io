@@ -87,6 +87,7 @@ MULTIPLE_MULTIPLE_RELATIONSHIPS = {
 }
 
 
+@pytest.mark.django_db
 class TestMultipleRelationshipsParser:
 
     @pytest.mark.parametrize('relationship,expected',
