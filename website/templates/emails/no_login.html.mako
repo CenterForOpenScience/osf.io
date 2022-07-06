@@ -13,7 +13,7 @@
             <li>DropboxやGoogle Driveなどの第三者サービスに接続できます</li>
         </ul>
         開始するには、ダッシュボードに移動し、「プロジェクト作成」をクリックします。
-        プロジェクトを開始するのにサポートが必要でしょうか？<a href="https://meatwiki.nii.ac.jp/confluence/display/gakuninrdmusers">GakuNin RDMのユーザサポート</a>をご確認ください。
+        プロジェクトを開始するのにサポートが必要でしょうか？<a href="https://support.rdm.nii.ac.jp">GakuNin RDMのユーザサポート</a>をご確認ください。
         <br><br>
         よろしくお願いいたします。
         <br>

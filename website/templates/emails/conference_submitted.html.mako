@@ -22,9 +22,9 @@
     * Collaborators/contributors to the submission<br>
     * Charts, graphs, and data that didn't make it onto the submission<br>
     * Links to related publications or reference lists<br>
-    * Connecting other accounts, like Dropbox, Google Drive, GitHub, figshare and Mendeley via add-on integration. Learn more and read the full list of available add-ons: https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=27853502<br>
+    * Connecting other accounts, like Dropbox, Google Drive, GitHub, figshare and Mendeley via add-on integration. Learn more and read the full list of available add-ons: https://support.rdm.nii.ac.jp/usermanual/24<br>
     <br>
-    To learn more about the GRDM, visit: https://meatwiki.nii.ac.jp/confluence/pages/viewpage.action?pageId=24871475<br>
+    To learn more about the GRDM, visit: https://support.rdm.nii.ac.jp<br>
     <br>
     Sincerely,<br>
     <br>
