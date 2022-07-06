@@ -3,6 +3,7 @@ import sys
 import logging
 from django.db.utils import ProgrammingError
 from osf.management.commands.manage_switch_flags import manage_waffle
+from osf.models import PreprintProvider, RegistrationProvider
 from django.core.management import call_command
 from api.base import settings as api_settings
 from website import settings
@@ -10,7 +11,7 @@ from website import settings
 
 logger = logging.getLogger(__file__)
 
-OSF_PREPRINTS_DATA = {
+OSF_PREPRINTS_PROVIDER_DATA = {
     '_id': 'osf',
     'name': 'Open Science Framework',
     'domain': settings.DOMAIN,
@@ -18,7 +19,7 @@ OSF_PREPRINTS_DATA = {
     'domain_redirect_enabled': False,
 }
 
-OSF_REGISTRIES_DATA = {
+OSF_REGISTRIES_PROVIDER_DATA = {
     '_id': 'osf',
     'name': 'OSF Registries',
     'domain': settings.DOMAIN,
@@ -156,17 +157,24 @@ def create_cache_table(sender, verbosity=0, **kwargs):
 
 def update_default_providers(sender, verbosity=0, **kwargs):
     if getattr(sender, 'label', None) == 'osf':
-        ensure_default_providers()
+        if 'pytest' in sys.modules:
+            ensure_default_registration_provider()
 
 
 def ensure_default_providers():
-    from osf.models import PreprintProvider, RegistrationProvider
+    ensure_default_preprint_provider()
+    ensure_default_registration_provider()
 
+
+def ensure_default_preprint_provider():
     PreprintProvider.objects.update_or_create(
-        _id=OSF_PREPRINTS_DATA['_id'],
-        defaults=OSF_PREPRINTS_DATA
+        _id=OSF_PREPRINTS_PROVIDER_DATA['_id'],
+        defaults=OSF_PREPRINTS_PROVIDER_DATA
     )
+
+
+def ensure_default_registration_provider():
     RegistrationProvider.objects.update_or_create(
-        _id=OSF_REGISTRIES_DATA['_id'],
-        defaults=OSF_REGISTRIES_DATA
+        _id=OSF_REGISTRIES_PROVIDER_DATA['_id'],
+        defaults=OSF_REGISTRIES_PROVIDER_DATA
     )
