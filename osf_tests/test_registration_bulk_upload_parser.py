@@ -8,7 +8,7 @@ from nose.tools import assert_equal, assert_true
 from rest_framework.exceptions import NotFound
 
 from osf_tests.factories import SubjectFactory
-from osf.models import RegistrationSchema, RegistrationProvider
+from osf.models import RegistrationSchema, RegistrationProvider, NodeLicense
 
 from osf.registrations.utils import (BulkRegistrationUpload, InvalidHeadersError,
                                      FileUploadNotSupportedError, DuplicateHeadersError,
@@ -65,6 +65,7 @@ def assert_errors(actual_errors, expected_errors):
 
     assert_true(len(actual_errors), len(expected_errors.keys()))
 
+
 @pytest.mark.django_db
 class TestBulkUploadParserValidationErrors:
 
@@ -81,6 +82,7 @@ class TestBulkUploadParserValidationErrors:
         osf_provider = RegistrationProvider.load('osf')
         osf_provider.schemas.add(open_ended_schema)
         osf_provider.subjects.add(*provider_subjects)
+        osf_provider.licenses_acceptable.add(NodeLicense.objects.get(name='No license'))
         osf_provider.save()
         return osf_provider
 

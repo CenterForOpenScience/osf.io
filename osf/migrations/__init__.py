@@ -3,8 +3,8 @@ import sys
 import logging
 from django.db.utils import ProgrammingError
 from osf.management.commands.manage_switch_flags import manage_waffle
-from osf.models import PreprintProvider, RegistrationProvider
 from django.core.management import call_command
+from django.apps import apps
 from api.base import settings as api_settings
 from website import settings
 
@@ -167,6 +167,8 @@ def ensure_default_providers():
 
 
 def ensure_default_preprint_provider():
+    PreprintProvider = apps.get_model('osf', 'PreprintProvider')
+
     PreprintProvider.objects.update_or_create(
         _id=OSF_PREPRINTS_PROVIDER_DATA['_id'],
         defaults=OSF_PREPRINTS_PROVIDER_DATA
@@ -174,6 +176,8 @@ def ensure_default_preprint_provider():
 
 
 def ensure_default_registration_provider():
+    RegistrationProvider = apps.get_model('osf', 'RegistrationProvider')
+
     RegistrationProvider.objects.update_or_create(
         _id=OSF_REGISTRIES_PROVIDER_DATA['_id'],
         defaults=OSF_REGISTRIES_PROVIDER_DATA
