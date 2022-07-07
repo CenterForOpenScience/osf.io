@@ -6,7 +6,6 @@ from osf.migrations import (
     update_permission_groups,
     update_waffle_flags,
     create_cache_table,
-    update_citation_styles
 )
 
 logger = logging.getLogger(__file__)
@@ -22,10 +21,6 @@ class AppConfig(BaseAppConfig):
         post_migrate.connect(
             update_permission_groups,
             dispatch_uid='osf.apps.update_permissions_groups'
-        )
-        post_migrate.connect(
-            update_citation_styles,
-            dispatch_uid='osf.apps.update_citation_styles'
         )
         post_migrate.connect(
             update_waffle_flags,
