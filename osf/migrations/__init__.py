@@ -173,7 +173,7 @@ def update_blocked_email_domains(sender, verbosity=0, **kwargs):
             )
 
 
-def ensure_citation_styles():
+def update_ciation_fixture():
     CitationStyle = apps.get_model('osf', 'citationstyle')
     zip_data = io.BytesIO(
         requests.get(
@@ -275,9 +275,8 @@ def ensure_citation_styles():
                         'parent_style': None
                     }
                     CitationStyle.objects.update_or_create(**fields)
+    call_command('dumpdata', osf_settings.CITATION_STYLES_FIXTURE_PATH, 'osf.CitationStyles')
 
 
-def update_citation_styles(sender, verbosity=0, **kwargs):
-    if getattr(sender, 'label', None) == 'osf':
-        if 'pytest' not in sys.modules:
-            ensure_citation_styles()
+def load_ciation_fixture():
+    call_command('loaddata', osf_settings.CITATION_STYLES_FIXTURE_PATH)

@@ -6,9 +6,11 @@ from django.utils import timezone
 from nose.tools import *  # noqa: F403
 
 from api.citations.utils import render_citation
+from osf.migrations import load_ciation_fixture
+from osf.models import OSFUser
 from osf_tests.factories import UserFactory, PreprintFactory
 from tests.base import OsfTestCase
-from osf.models import OSFUser
+
 
 class Node:
     _id = '2nthu'
@@ -21,6 +23,7 @@ class Node:
 class TestCiteprocpy(OsfTestCase):
 
     def setUp(self):
+        load_ciation_fixture()
         super(TestCiteprocpy, self).setUp()
         self.user = UserFactory(fullname='Henrique Harman')
 
