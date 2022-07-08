@@ -19,11 +19,7 @@ logger = logging.getLogger(__name__)
 
 def sync_citation_styles(dry_run=False):
     CitationStyle = apps.get_model('osf', 'citationstyle')
-    zip_data = io.BytesIO(
-        requests.get(
-            f'https://github.com/CenterForOpenScience/styles/archive/{settings.CITATION_STYLES_REPO_COMMIT_SHA}.zip'
-        ).content
-    )
+    zip_data = io.BytesIO(requests.get(settings.CITATION_STYLES_REPO_URL).content)
     with transaction.atomic():
         with zipfile.ZipFile(zip_data) as zip_file:
             for file_name in [name for name in zip_file.namelist() if name.endswith('.zip') and not name.startswith('dependent')]:
@@ -125,7 +121,7 @@ def sync_citation_styles(dry_run=False):
 
 
 class Command(BaseCommand):
-    """Adds DOIs to all registrations"""
+    """Updates citation styles to repo it's current repo URL."""
     def add_arguments(self, parser):
         super().add_arguments(parser)
         parser.add_argument(
