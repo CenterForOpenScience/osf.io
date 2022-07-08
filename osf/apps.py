@@ -1,11 +1,10 @@
 import logging
 from django.apps import AppConfig as BaseAppConfig
 from django.db.models.signals import post_migrate
-
 from osf.migrations import (
     update_permission_groups,
     update_waffle_flags,
-    create_cache_table,
+    create_cache_table
 )
 
 logger = logging.getLogger(__file__)

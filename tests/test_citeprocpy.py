@@ -9,7 +9,7 @@ from api.citations.utils import render_citation
 from osf_tests.factories import UserFactory, PreprintFactory
 from tests.base import OsfTestCase
 from osf.models import OSFUser
-from osf.migrations import load_ciation_fixture
+from osf.management.commands.sync_citation_styles import sync_citation_styles
 
 class Node:
     _id = '2nthu'
@@ -22,7 +22,7 @@ class Node:
 class TestCiteprocpy(OsfTestCase):
 
     def setUp(self):
-        load_ciation_fixture()
+        sync_citation_styles()
         super(TestCiteprocpy, self).setUp()
         self.user = UserFactory(fullname='Henrique Harman')
 

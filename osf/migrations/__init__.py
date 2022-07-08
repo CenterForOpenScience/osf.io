@@ -1,13 +1,6 @@
 # -*- coding: utf-8 -*-
-import re
-import os
-import io
 import sys
-import zipfile
-import requests
-
 import logging
-from django.apps import apps
 from django.db.utils import ProgrammingError
 from osf.management.commands.manage_switch_flags import manage_waffle
 from django.core.management import call_command
@@ -15,9 +8,7 @@ from api.base import settings
 
 
 logger = logging.getLogger(__file__)
-from django.db import transaction
-from lxml import etree
-from urllib.parse import urlparse
+
 
 # Admin group permissions
 def get_admin_read_permissions():
@@ -133,115 +124,6 @@ def update_permission_groups(sender, verbosity=0, **kwargs):
     if getattr(sender, 'label', None) == 'osf':
         update_admin_permissions(verbosity)
         update_provider_auth_groups(verbosity)
-
-
-def update_ciation_fixture():
-    CitationStyle = apps.get_model('osf', 'citationstyle')
-    zip_data = io.BytesIO(
-        requests.get(
-            f'https://github.com/CenterForOpenScience/styles/archive/{settings.CITATION_STYLES_REPO_COMMIT_SHA}.zip'
-        ).content
-    )
-    with transaction.atomic():
-        with zipfile.ZipFile(zip_data) as zip_file:
-            for file_name in [name for name in zip_file.namelist() if name.endswith('.zip') and not name.startswith('dependent')]:
-                root = etree.fromstring(zip_file.read(file_name))
-
-                namespace = re.search(r'\{.*\}', root.tag).group()
-                title = root.find('{namespace}info/{namespace}title'.format(namespace=f'{namespace}')).text
-                has_bibliography = 'Bluebook' in title
-
-                if not has_bibliography:
-                    bib = root.find(f'{{{namespace}}}bibliography')
-                    layout = bib.find(f'{{{namespace}}}layout') if bib is not None else None
-                    has_bibliography = True
-                    if layout is not None and len(layout.getchildren()) == 1 and 'choose' in layout.getchildren()[0].tag:
-                        choose = layout.find(f'{{{namespace}}}choose')
-                        else_tag = choose.find(f'{{{namespace}}}else')
-                        if else_tag is None:
-                            supported_types = []
-                            match_none = False
-                            for child in choose.getchildren():
-                                types = child.get('type', None)
-                                match_none = child.get('match', 'any') == 'none'
-                                if types is not None:
-                                    types = types.split(' ')
-                                    supported_types.extend(types)
-                                    if 'webpage' in types:
-                                        break
-                            else:
-                                if len(supported_types) and not match_none:
-                                    # has_bibliography set to False now means that either bibliography tag is absent
-                                    # or our type (webpage) is not supported by the current version of this style.
-                                    has_bibliography = False
-
-                summary = getattr(
-                    root.find('{namespace}info/{namespace}summary'.format(namespace=f'{namespace}')), 'text', None
-                )
-                short_title = getattr(
-                    root.find('{namespace}info/{namespace}title-short'.format(namespace=f'{namespace}')), 'text', None
-                )
-                # Required
-                fields = {
-                    '_id': os.path.splitext(os.path.basename(file_name))[0],
-                    'title': title,
-                    'has_bibliography': has_bibliography, 'parent_style': None,
-                    'short_title': short_title,
-                    'summary': summary
-                }
-
-                CitationStyle.objects.update_or_create(**fields)
-
-            for file_name in [name for name in zip_file.namelist() if name.endswith('.zip') and name.startswith('dependent')]:
-                root = etree.fromstring(zip_file.read(file_name))
-
-                namespace = re.search(r'\{.*\}', root.tag).group()
-                title = root.find('{namespace}info/{namespace}title'.format(namespace=f'{namespace}')).text
-                has_bibliography = root.find(f'{{{namespace}}}bibliography') is not None or 'Bluebook' in title
-
-                style_id = os.path.splitext(os.path.basename(file_name))[0]
-                links = root.findall('{namespace}info/{namespace}link'.format(namespace=f'{namespace}'))
-                for link in links:
-                    if link.get('rel') == 'independent-parent':
-                        parent_style_id = urlparse(link.get('href')).path.split('/')[-1]
-                        parent_style = CitationStyle.objects.get(_id=parent_style_id)
-
-                        if parent_style is not None:
-                            summary = getattr(
-                                root.find('{namespace}info/{namespace}summary'.format(namespace=f'{namespace}')),
-                                'text', None
-                            )
-                            short_title = getattr(
-                                root.find('{namespace}info/{namespace}title-short'.format(namespace=f'{namespace}')),
-                                'text', None
-                            )
-
-                            parent_has_bibliography = parent_style.has_bibliography
-                            fields = {
-                                '_id': style_id,
-                                'title': title,
-                                'has_bibliography': parent_has_bibliography,
-                                'parent_style': parent_style_id,
-                                'short_title': short_title,
-                                'summary': summary
-                            }
-                            CitationStyle.objects.update_or_create(**fields)
-                            break
-                        else:
-                            logger.debug('Unable to load parent_style object: parent {}, dependent style {}'.format(parent_style_id, style_id))
-                else:
-                    fields = {
-                        '_id': style_id,
-                        'title': title,
-                        'has_bibliography': has_bibliography,
-                        'parent_style': None
-                    }
-                    CitationStyle.objects.update_or_create(**fields)
-    call_command('dumpdata', settings.CITATION_STYLES_FIXTURE_PATH, 'osf.CitationStyles')
-
-
-def load_ciation_fixture():
-    call_command('loaddata', settings.CITATION_STYLES_FIXTURE_PATH)
 
 
 def update_waffle_flags(sender, verbosity=0, **kwargs):
