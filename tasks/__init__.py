@@ -467,8 +467,6 @@ def remove_failures_from_testmon(ctx, db_path=None):
 
 @task
 def travis_setup(ctx):
-    ctx.run('npm install -g bower', echo=True)
-
     with open('package.json', 'r') as fobj:
         package_json = json.load(fobj)
         ctx.run('npm install @centerforopenscience/list-of-licenses@{}'.format(package_json['dependencies']['@centerforopenscience/list-of-licenses']), echo=True)
