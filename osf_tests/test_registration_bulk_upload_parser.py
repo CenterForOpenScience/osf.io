@@ -68,6 +68,7 @@ def assert_errors(actual_errors, expected_errors):
 
     assert_true(len(actual_errors), len(expected_errors.keys()))
 
+
 @pytest.mark.django_db
 class TestBulkUploadParserValidationErrors:
 
@@ -94,6 +95,7 @@ class TestBulkUploadParserValidationErrors:
         no_license = NodeLicense.objects.get(name='No license')
         osf_provider.licenses_acceptable.add(no_license)
         osf_provider.default_license = no_license
+        osf_provider.licenses_acceptable.add(NodeLicense.objects.get(name='No license'))
         osf_provider.save()
         return osf_provider
 

@@ -299,8 +299,9 @@ class RegistrationProvider(AbstractProvider):
                 """,
                 [cls.default__id]
             )
-            default_id = cursor.fetchone()[0]
-        return default_id
+            value = cursor.fetchone()
+            if value:
+                return value[0]
 
     @property
     def readable_type(self):

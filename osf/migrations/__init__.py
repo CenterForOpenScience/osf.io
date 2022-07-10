@@ -3,18 +3,20 @@ import sys
 import os
 import json
 import logging
-from django.apps import apps
 from django.db.utils import ProgrammingError
 from osf.management.commands.manage_switch_flags import manage_waffle
 from website.settings import APP_PATH
 from addons.osfstorage.settings import DEFAULT_REGION_ID, DEFAULT_REGION_NAME
 
+from django.core.management import call_command
+from django.apps import apps
+from api.base import settings as api_settings
 from website import settings
 
 
 logger = logging.getLogger(__file__)
 
-OSF_PREPRINTS_DATA = {
+OSF_PREPRINTS_PROVIDER_DATA = {
     '_id': 'osf',
     'name': 'Open Science Framework',
     'domain': settings.DOMAIN,
@@ -22,7 +24,7 @@ OSF_PREPRINTS_DATA = {
     'domain_redirect_enabled': False,
 }
 
-OSF_REGISTRIES_DATA = {
+OSF_REGISTRIES_PROVIDER_DATA = {
     '_id': 'osf',
     'name': 'OSF Registries',
     'domain': settings.DOMAIN,
@@ -178,19 +180,6 @@ def update_default_providers(sender, verbosity=0, **kwargs):
         ensure_default_providers()
 
 
-def ensure_default_providers():
-    from osf.models import PreprintProvider, RegistrationProvider
-
-    PreprintProvider.objects.update_or_create(
-        _id=OSF_PREPRINTS_DATA['_id'],
-        defaults=OSF_PREPRINTS_DATA
-    )
-    RegistrationProvider.objects.update_or_create(
-        _id=OSF_REGISTRIES_DATA['_id'],
-        defaults=OSF_REGISTRIES_DATA
-    )
-
-
 def ensure_subjects():
     Subject = apps.get_model('osf.subject')
     PreprintProvider = apps.get_model('osf.preprintprovider')
@@ -232,3 +221,37 @@ def ensure_subjects():
 def update_subjects(sender, verbosity=0, **kwargs):
     if getattr(sender, 'label', None) == 'osf':
         ensure_subjects()
+
+
+def create_cache_table(sender, verbosity=0, **kwargs):
+    if getattr(sender, 'label', None) == 'osf':
+        call_command('createcachetable', tablename=api_settings.CACHES[api_settings.STORAGE_USAGE_CACHE_NAME]['LOCATION'])
+
+
+def update_default_providers(sender, verbosity=0, **kwargs):
+    if getattr(sender, 'label', None) == 'osf':
+        if 'pytest' in sys.modules:
+            ensure_default_registration_provider()
+
+
+def ensure_default_providers():
+    ensure_default_preprint_provider()
+    ensure_default_registration_provider()
+
+
+def ensure_default_preprint_provider():
+    PreprintProvider = apps.get_model('osf', 'PreprintProvider')
+
+    PreprintProvider.objects.update_or_create(
+        _id=OSF_PREPRINTS_PROVIDER_DATA['_id'],
+        defaults=OSF_PREPRINTS_PROVIDER_DATA
+    )
+
+
+def ensure_default_registration_provider():
+    RegistrationProvider = apps.get_model('osf', 'RegistrationProvider')
+
+    RegistrationProvider.objects.update_or_create(
+        _id=OSF_REGISTRIES_PROVIDER_DATA['_id'],
+        defaults=OSF_REGISTRIES_PROVIDER_DATA
+    )

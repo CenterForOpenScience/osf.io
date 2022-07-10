@@ -8,7 +8,9 @@ from osf.migrations import (
     update_permission_groups,
     update_storage_regions,
     update_blocked_email_domains,
-    update_subjects
+    update_subjects,
+    create_cache_table,
+    update_default_providers
 )
 
 
@@ -42,4 +44,8 @@ class AppConfig(BaseAppConfig):
         post_migrate.connect(
             update_subjects,
             dispatch_uid='osf.apps.update_subjects',
+        )
+        post_migrate.connect(
+            update_default_providers,
+            dispatch_uid='osf.apps.update_default_providers'
         )
