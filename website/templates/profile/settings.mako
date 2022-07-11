@@ -43,10 +43,12 @@
     <div class="col-sm-9 col-md-8">
 
         <div id="userProfile">
-
+            <div>
+                <span style="color:red;">${_("\"Full name\", \"Family name\", \"Given name\", \"Family name (EN)\", \"Given name (EN)\" on the Name tab, and \"Affiliation\" and \"Affiliation (English)\" on the Employment tab is required.")}</span>
+            </div>
             <ul class="nav nav-tabs">
-                <li class="active"><a href="#names" data-toggle="tab">${_("Name")}</a></li>
-                <li><a href="#jobs" data-toggle="tab">${_("Employment")}</a></li>
+                <li class="active"><a href="#names" data-toggle="tab">${_("Name")}<span style="color: red">*</span></a></li>
+                <li><a href="#jobs" data-toggle="tab">${_("Employment")}<span style="color: red">*</span></a></li>
                 <li><a href="#schools" data-toggle="tab">${_("Education")}</a></li>
                 <li><a href="#social" data-toggle="tab">${_("ID")}</a></li>
             </ul>
