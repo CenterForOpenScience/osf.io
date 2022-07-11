@@ -13,7 +13,6 @@ from django.db.models.query import QuerySet
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django_extensions.db.models import TimeStampedModel
-from include import IncludeQuerySet
 from past.builtins import basestring
 
 from osf.utils.caching import cached_property
@@ -281,15 +280,12 @@ class OptionalGuidMixin(BaseIDMixin):
         abstract = True
 
 
-class GuidMixinQuerySet(IncludeQuerySet):
-
-    def _filter_or_exclude(self, negate, *args, **kwargs):
-        return super(GuidMixinQuerySet, self)._filter_or_exclude(negate, *args, **kwargs).include('guids')
+class GuidMixinQuerySet(QuerySet):
 
     def all(self):
         if self._fields:
             return super(GuidMixinQuerySet, self).all()
-        return super(GuidMixinQuerySet, self).all().include('guids')
+        return super(GuidMixinQuerySet, self).all()
 
 
 class GuidMixin(BaseIDMixin):

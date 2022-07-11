@@ -4,14 +4,14 @@ from django.db import models
 from django.db.models import Q
 from django.core.exceptions import ValidationError
 from django.utils.functional import cached_property
-from include import IncludeQuerySet
 
 from website.util import api_v2_url
 
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.validators import validate_subject_hierarchy_length, validate_subject_highlighted_count
 
-class SubjectQuerySet(IncludeQuerySet):
+
+class SubjectQuerySet(models.QuerySet):
     def include_children(self):
         # It would be more efficient to OR self with the latter two Q's,
         # but this breaks for certain querysets when relabeling aliases.

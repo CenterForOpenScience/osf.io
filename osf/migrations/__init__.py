@@ -175,11 +175,6 @@ def ensure_default_storage_region():
     )
 
 
-def update_default_providers(sender, verbosity=0, **kwargs):
-    if getattr(sender, 'label', None) == 'osf':
-        ensure_default_providers()
-
-
 def ensure_subjects():
     Subject = apps.get_model('osf.subject')
     PreprintProvider = apps.get_model('osf.preprintprovider')

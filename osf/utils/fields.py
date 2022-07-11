@@ -1,7 +1,6 @@
 import jwe
 import json
 from django.db import models
-from django.contrib.postgres.fields.jsonb import JSONField
 from website import settings
 from osf.utils.functional import rapply
 
@@ -84,7 +83,7 @@ class NonNaiveDateTimeField(models.DateTimeField):
         return value
 
 
-class EncryptedJSONField(JSONField):
+class EncryptedJSONField(models.JSONField):
     """
     Very similar to EncryptedTextField, but for postgresql's JSONField
     """

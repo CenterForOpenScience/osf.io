@@ -9,7 +9,6 @@ from osf.migrations import (
     update_storage_regions,
     update_blocked_email_domains,
     update_subjects,
-    create_cache_table,
     update_default_providers
 )
 
