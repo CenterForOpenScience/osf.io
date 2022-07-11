@@ -11,12 +11,19 @@ from osf_tests.factories import (
 )
 from osf.utils.permissions import WRITE, READ, ADMIN
 from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistrationTestCase
+from osf.utils.migrations import ensure_schemas
+from osf.migrations import ensure_default_providers
 
 SCHEMA_VERSION = 2
 
 
 @pytest.mark.django_db
 class TestDraftRegistrationDetail(DraftRegistrationTestCase):
+
+    @pytest.fixture(autouse=True)
+    def schemas(self):
+        ensure_default_providers()
+        ensure_schemas()
 
     @pytest.fixture()
     def schema(self):
@@ -139,6 +146,11 @@ class TestDraftRegistrationDetail(DraftRegistrationTestCase):
 
 @pytest.mark.django_db
 class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
+
+    @pytest.fixture(autouse=True)
+    def schemas(self):
+        ensure_default_providers()
+        ensure_schemas()
 
     @pytest.fixture()
     def schema(self):
