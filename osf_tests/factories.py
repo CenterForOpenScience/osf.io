@@ -380,6 +380,7 @@ class OSFGroupFactory(DjangoModelFactory):
 
 class RegistrationFactory(BaseNodeFactory):
 
+    creator = None
     # Default project is created if not provided
     category = 'project'
 
