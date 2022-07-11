@@ -22,6 +22,7 @@ from osf_tests.factories import (
 )
 from osf.models.admin_log_entry import AdminLogEntry
 from osf.models.spam import SpamStatus
+from osf.migrations import update_admin_permissions
 from osf.utils.workflows import DefaultStates, RequestTypes
 
 from admin_tests.utilities import setup_view, setup_log_view
@@ -495,6 +496,7 @@ class TestPreprintWithdrawalRequests:
     @pytest.fixture()
     def admin(self):
         admin = AuthUserFactory()
+        update_admin_permissions()
         osf_admin = Group.objects.get(name='osf_admin')
         admin.groups.add(osf_admin)
         return admin

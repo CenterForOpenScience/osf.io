@@ -1,6 +1,6 @@
 from django.conf.urls import include, url
 from django.contrib import admin
-from admin.base.settings import ADMIN_BASE, DEBUG
+from admin.base.settings import ADMIN_BASE
 from admin.base import views
 
 base_pattern = f'^{ADMIN_BASE}'
@@ -37,12 +37,5 @@ urlpatterns = [
         ]),
     ),
 ]
-
-if DEBUG:
-    import debug_toolbar
-
-    urlpatterns += [
-        url(r'^__debug__/', include(debug_toolbar.urls)),
-    ]
 
 admin.site.site_header = 'OSF-Admin administration'
