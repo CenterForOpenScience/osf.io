@@ -380,7 +380,6 @@ class OSFGroupFactory(DjangoModelFactory):
 
 class RegistrationFactory(BaseNodeFactory):
 
-    creator = None
     # Default project is created if not provided
     category = 'project'
 
@@ -472,6 +471,7 @@ class RegistrationFactory(BaseNodeFactory):
         reg.files_count = reg.registered_from.files.filter(deleted_on__isnull=True).count()
         draft_registration.registered_node = reg
         draft_registration.save()
+        reg.creator = user
         reg.save()
         return reg
 
