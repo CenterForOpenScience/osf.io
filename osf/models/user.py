@@ -1746,12 +1746,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         secret = secret or settings.SECRET_KEY
 
         try:
-            token = itsdangerous.Signer(secret).unsign(cookie)
+            token = itsdangerous.Signer(secret).unsign(cookie).decode()
         except itsdangerous.BadSignature:
             return None
 
-        user_session = Session.load(token)
-
+        user_session = Session.load(token.split('.')[0])
         if user_session is None:
             return None
 
