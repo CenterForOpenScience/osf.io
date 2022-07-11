@@ -690,7 +690,7 @@ def _view_project(node, auth, primary=False,
     """Build a JSON object containing everything needed to render
     project.view.mako.
     """
-    node = AbstractNode.objects.filter(pk=node.pk).include('contributor__user__guids').get()
+    node = AbstractNode.objects.filter(pk=node.pk).get()
     user = auth.user
 
     parent = node.find_readable_antecedent(auth)
@@ -1060,7 +1060,6 @@ def node_child_tree(user, node):
     children = (Node.objects.get_children(node)
                 .filter(is_deleted=False)
                 .annotate(parentnode_id=Subquery(parent_node_sqs[:1]))
-                .include('contributor__user__guids')
                 )
 
     nested = defaultdict(list)
@@ -1072,7 +1071,7 @@ def node_child_tree(user, node):
         'is_admin': node.is_admin_contributor(contributor.user),
         'is_confirmed': contributor.user.is_confirmed,
         'visible': contributor.visible
-    } for contributor in node.contributor_set.all().include('user__guids')]
+    } for contributor in node.contributor_set.all()]
 
     can_read = node.has_permission(user, READ)
     is_admin = node.has_permission(user, ADMIN)

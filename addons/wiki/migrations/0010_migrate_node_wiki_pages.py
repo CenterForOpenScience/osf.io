@@ -32,7 +32,7 @@ def reverse_func(state, schema):
         for wiki_key, version_list in node.wiki_pages_versions.items():
             if version_list:
                 for index, version in enumerate(version_list):
-                    nwp = NodeWikiPage.objects.filter(former_guid=version).include(None)[0]
+                    nwp = NodeWikiPage.objects.filter(former_guid=version)[0]
                     # All NodeWikiPages associated with a certain wiki key on a node point to the same WikiPage.
                     wp = WikiPage.load(version)
                     guid = migrate_guid_referent(Guid.load(version), nwp, nwp_content_type_id)

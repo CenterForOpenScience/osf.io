@@ -829,9 +829,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return NodeLog.objects.filter(
             node_id=self.id,
             should_hide=False
-        ).order_by('-date').include(
-            'node__guids', 'user__guids', 'original_node__guids', limit_includes=10
-        )
+        ).order_by('-date')
 
     def get_absolute_url(self):
         return self.absolute_api_v2_url
@@ -980,7 +978,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def osfstorage_region(self):
         from addons.osfstorage.models import Region
         osfs_settings = self._settings_model('osfstorage')
-        region_subquery = osfs_settings.objects.filter(owner=self.target.id).values_list('region_id', flat=True)[0]
+        region_subquery = osfs_settings.objects.filter(owner=self.id).values_list('region_id', flat=True)[0]
         return Region.objects.get(id=region_subquery)
 
     @property

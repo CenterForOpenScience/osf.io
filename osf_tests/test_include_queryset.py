@@ -44,7 +44,7 @@ class TestIncludeQuerySet:
     def test_include_root_guids(self, create_n_nodes, django_assert_num_queries):
         nodes = create_n_nodes(3, roots=False)
 
-        queryset = Node.objects.filter(id__in=[e.id for e in nodes]).include('root__guids')
+        queryset = Node.objects.filter(id__in=[e.id for e in nodes])
         with django_assert_num_queries(1):
             for node in queryset:
                 assert node.root._id is not None
@@ -57,7 +57,7 @@ class TestIncludeQuerySet:
                 contrib = UserFactory()
                 node.add_contributor(contrib, auth=Auth(node.creator), save=True)
 
-        nodes = Node.objects.include('contributor__user__guids').all()
+        nodes = Node.objects.all()
         for node in nodes:
             with django_assert_num_queries(0):
                 for contributor in node.contributor_set.all():
