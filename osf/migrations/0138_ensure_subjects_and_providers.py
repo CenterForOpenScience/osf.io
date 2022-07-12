@@ -19,8 +19,6 @@ OSF_PREPRINTS_DATA = {
     'domain': DOMAIN,
     'share_publish_type': 'Preprint',
     'domain_redirect_enabled': False,
-    'default_license': 'CC0 1.0 Universal',
-    'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
 }
 OSF_REGISTRIES_DATA = {
     '_id': 'osf',
@@ -29,8 +27,6 @@ OSF_REGISTRIES_DATA = {
     'domain': DOMAIN,
     'share_publish_type': 'Registration',
     'domain_redirect_enabled': False,
-    'default_license': 'CC0 1.0 Universal',
-    'licenses_acceptable': ['CC0 1.0 Universal', 'CC-By Attribution 4.0 International', 'No license'],
 }
 
 def _create_provider(cls, data, state):
