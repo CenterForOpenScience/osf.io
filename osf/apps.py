@@ -4,7 +4,8 @@ from django.db.models.signals import post_migrate
 from osf.migrations import (
     update_permission_groups,
     update_waffle_flags,
-    create_cache_table
+    create_cache_table,
+    update_license
 )
 
 logger = logging.getLogger(__file__)
@@ -20,6 +21,10 @@ class AppConfig(BaseAppConfig):
         post_migrate.connect(
             update_permission_groups,
             dispatch_uid='osf.apps.update_permissions_groups'
+        )
+        post_migrate.connect(
+            update_license,
+            dispatch_uid='osf.apps.ensure_licenses',
         )
         post_migrate.connect(
             update_waffle_flags,
