@@ -44,6 +44,7 @@ from osf.models.node import AbstractNodeQuerySet
 from osf.migrations import ensure_default_providers
 from osf.exceptions import ValidationError, ValidationValueError, UserStateError
 from osf.utils.workflows import DefaultStates
+from osf.utils.migrations import ensure_schemas, map_schemas_to_schemablocks
 from framework.auth.core import Auth
 
 from osf_tests.factories import (
@@ -1893,6 +1894,11 @@ class TestNodeSubjects:
 
 
 class TestRegisterNode:
+
+    @pytest.fixture(autouse=True)
+    def schemas(self):
+        ensure_schemas()
+        map_schemas_to_schemablocks()
 
     def test_register_node_creates_new_registration(self, node, auth):
         with disconnected_from_listeners(after_create_registration):

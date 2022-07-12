@@ -495,8 +495,6 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
     #   test_registration_supplement_must_be_active
         schema = RegistrationSchema.objects.get(
             name='Election Research Preacceptance Competition', schema_version=2)
-        schema.active = True
-        schema.save()
 
         draft_data = {
             'data': {
