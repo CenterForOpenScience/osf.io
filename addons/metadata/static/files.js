@@ -215,14 +215,21 @@ function MetadataButtons() {
     if (!self.lastFields) {
       return;
     }
+    const fieldSetsAndValues = [];
     self.lastFields.forEach(function(fieldSet) {
       const value = fieldSet.field.getValue(fieldSet.input);
+      fieldSetsAndValues.push({ fieldSet: fieldSet, value: value });
+    });
+    fieldSetsAndValues.forEach(function(fieldSetAndValue) {
+      const fieldSet = fieldSetAndValue.fieldSet;
+      const value = fieldSetAndValue.value;
       var error = null;
       try {
         metadataFields.validateField(
           self.erad,
           fieldSet.question,
-          value
+          value,
+          fieldSetsAndValues
         );
       } catch(e) {
         error = e.message;
@@ -890,34 +897,44 @@ function MetadataButtons() {
     container.empty();
     var errors = 0;
     self.lastFields = [];
+    const fieldSetsAndValues = [];
     fields.forEach(function(fieldSet) {
       const errorContainer = $('<div></div>')
         .css('color', 'red').hide();
       const input = fieldSet.field.addElementTo(container, errorContainer);
       const value = fieldSet.field.getValue(input);
+      fieldSetsAndValues.push({
+        fieldSet: {
+          field: fieldSet.field,
+          question: fieldSet.question,
+          input: input,
+          lastError: null,
+          errorContainer: errorContainer
+        },
+        value: value
+      });
+    });
+    fieldSetsAndValues.forEach(function(fieldSetAndValue) {
+      const fieldSet = fieldSetAndValue.fieldSet;
+      const value = fieldSetAndValue.value;
       var error = null;
       try {
         metadataFields.validateField(
           self.erad,
           fieldSet.question,
-          value
+          value,
+          fieldSetsAndValues
         );
       } catch(e) {
         error = e.message;
       }
       if (error) {
-        errorContainer.text(error).show()
+        fieldSet.errorContainer.text(error).show()
         errors ++;
       } else {
-        errorContainer.hide().text('')
+        fieldSet.errorContainer.hide().text('')
       }
-      self.lastFields.push({
-        field: fieldSet.field,
-        question: fieldSet.question,
-        input: input,
-        lastError: error,
-        errorContainer: errorContainer
-      });
+      self.lastFields.push(fieldSet);
     });
     const message = $('<div></div>');
     if (errors) {
