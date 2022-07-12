@@ -185,6 +185,9 @@ function createChooser(options) {
       return;
     }
     const optElem = $('<option></option>').attr('value', opt.text).text(getLocalizedText(opt.tooltip));
+    if (opt.default) {
+      optElem.attr('selected', true);
+    }
     select.append(optElem);
   });
   return select;

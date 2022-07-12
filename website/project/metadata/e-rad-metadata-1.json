@@ -133,7 +133,7 @@
           "title": "データ No.|Data No.",
           "type": "string",
           "format": "text",
-          "required": true
+          "required": false
         },
         {
           "qid": "grdm-file:title-ja",
@@ -157,7 +157,7 @@
           "title": "掲載日・掲載更新日|Date (Issued / Updated)",
           "type": "string",
           "format": "date",
-          "required": true
+          "required": false
         },
         {
           "qid": "grdm-file:data-description-ja",
@@ -184,7 +184,8 @@
           "options": [
               {
                 "text": "project",
-                "tooltip": "プロジェクトに指定された分野|The field specified for the project"
+                "tooltip": "プロジェクトの研究分野|Research field of the project",
+                "default": true
               },
               {
                 "text": "189",
@@ -242,7 +243,8 @@
           "options": [
               {
                 "text": "dataset",
-                "tooltip": "データセット|dataset"
+                "tooltip": "データセット|dataset",
+                "default": true
               },
               {
                   "text": "conference paper",
@@ -521,7 +523,7 @@
           "title": "リポジトリ情報 (日本語)|Repository information (Japanese)",
           "type": "string",
           "format": "text",
-          "required": true
+          "required": false
         },
         {
           "qid": "grdm-file:repo-information-en",
@@ -529,7 +531,7 @@
           "title": "Repository information (English)",
           "type": "string",
           "format": "text",
-          "required": true
+          "required": false
         },
         {
           "qid": "grdm-file:repo-url-doi-link",
