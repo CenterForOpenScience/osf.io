@@ -469,7 +469,7 @@ class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesF
 
     # overrides ListAPIView
     def get_queryset(self):
-        return self.get_queryset_from_request().select_related('node_license').include('contributor__user__guids', 'root__guids', limit_includes=10)
+        return self.get_queryset_from_request().select_related('node_license')
 
 class UserDraftRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     permission_classes = (
