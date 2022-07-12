@@ -8,7 +8,7 @@ from nose.tools import assert_equal, assert_true
 from rest_framework.exceptions import NotFound
 
 from osf_tests.factories import SubjectFactory
-from osf.models import RegistrationSchema, RegistrationProvider
+from osf.models import RegistrationSchema, RegistrationProvider, NodeLicense
 
 from osf.registrations.utils import (BulkRegistrationUpload, InvalidHeadersError,
                                      FileUploadNotSupportedError, DuplicateHeadersError,
@@ -79,6 +79,8 @@ class TestBulkUploadParserValidationErrors:
     @pytest.fixture()
     def registration_provider(self, open_ended_schema, provider_subjects):
         osf_provider = RegistrationProvider.load('osf')
+        osf_provider.default_license = NodeLicense.objects.get(name='No license')
+        osf_provider.licenses_acceptable.add(NodeLicense.objects.get(name='No license'))
         osf_provider.schemas.add(open_ended_schema)
         osf_provider.subjects.add(*provider_subjects)
         osf_provider.save()
