@@ -16,6 +16,7 @@ from osf.registrations.utils import (BulkRegistrationUpload, InvalidHeadersError
                                      MAX_EXCEL_COLUMN_NUMBER, METADATA_FIELDS)
 
 from osf.migrations import ensure_default_providers
+from osf.utils.migrations import ensure_schemas
 
 
 def write_csv(header_row, *rows):
@@ -71,6 +72,10 @@ def assert_errors(actual_errors, expected_errors):
 
 @pytest.mark.django_db
 class TestBulkUploadParserValidationErrors:
+
+    @pytest.fixture(autouse=True)
+    def schemas(self):
+        ensure_schemas()
 
     @pytest.fixture(autouse=True)
     def default_provider(self):

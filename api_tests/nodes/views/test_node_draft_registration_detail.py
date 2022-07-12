@@ -543,6 +543,10 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 @pytest.mark.django_db
 class TestDraftRegistrationPatch(DraftRegistrationTestCase):
 
+    @pytest.fixture(autouse=True)
+    def schemas(self):
+        ensure_schemas()
+
     @pytest.fixture()
     def schema(self):
         return RegistrationSchema.objects.get(
