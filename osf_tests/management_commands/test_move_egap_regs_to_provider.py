@@ -16,12 +16,15 @@ from osf.management.commands.move_egap_regs_to_provider import (
 )
 
 from osf.migrations import ensure_default_providers
+from osf.utils.migrations import ensure_schemas
+
 
 @pytest.mark.django_db
 class TestEGAPMoveToProvider:
 
     @pytest.fixture(autouse=True)
     def default_providers(self):
+        ensure_schemas()
         ensure_default_providers()
 
     @pytest.fixture()

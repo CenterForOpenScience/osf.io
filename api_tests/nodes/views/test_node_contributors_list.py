@@ -1763,6 +1763,12 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
 @pytest.mark.django_db
 class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
 
+    @pytest.fixture(autouse=True)
+    def schemas(self):
+        from osf.utils.migrations import ensure_schemas, map_schemas_to_schemablocks
+        ensure_schemas()
+        map_schemas_to_schemablocks()
+
     @pytest.fixture()
     def user_three(self):
         return AuthUserFactory()

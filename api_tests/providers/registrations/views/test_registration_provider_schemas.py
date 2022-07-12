@@ -12,11 +12,17 @@ from osf.models import RegistrationSchema
 from waffle.models import Flag
 
 from osf.migrations import update_provider_auth_groups
+from osf.utils.migrations import ensure_schemas, map_schemas_to_schemablocks
 from osf.features import EGAP_ADMINS
 
 
 @pytest.mark.django_db
 class TestRegistrationProviderSchemas:
+
+    @pytest.fixture(autouse=True)
+    def schemas(self):
+        ensure_schemas()
+        map_schemas_to_schemablocks()
 
     @pytest.fixture()
     def user(self):

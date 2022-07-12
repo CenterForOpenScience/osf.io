@@ -2,6 +2,7 @@ import pytest
 
 from osf.management.commands.backfill_egap_provider_metadata import backfill_egap_metadata
 from osf.management.commands.update_registration_schemas import update_registration_schemas
+from osf.utils.migrations import ensure_schemas, map_schemas_to_schemablocks
 from osf.models import RegistrationSchema
 from osf_tests.factories import RegistrationFactory, RegistrationProviderFactory
 
@@ -15,6 +16,11 @@ OLDEST_TIMESTAMP = '03/01/2011 - 22:00'
 
 @pytest.mark.django_db
 class TestMigrateEgapRegistrationMetadata:
+
+    @pytest.fixture(autouse=True)
+    def schemas(self):
+        ensure_schemas()
+        map_schemas_to_schemablocks()
 
     @pytest.fixture()
     def egap(self):

@@ -15,6 +15,8 @@ from osf_tests.factories import InstitutionFactory, SubjectFactory, UserFactory
 
 from website import mails, settings
 from osf.migrations import ensure_default_providers
+from osf.utils.migrations import ensure_schemas
+
 
 class TestRegistrationBulkUploadContributors:
 
@@ -68,6 +70,10 @@ class TestRegistrationBulkCreationRowError:
 
 @pytest.mark.django_db
 class TestBulkUploadTasks:
+
+    @pytest.fixture(autouse=True)
+    def schemas(self):
+        ensure_schemas()
 
     @pytest.fixture()
     def initiator(self):

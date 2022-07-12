@@ -14,7 +14,7 @@ from osf_tests.factories import (
     DraftRegistrationFactory,
 )
 from osf.utils import permissions
-from osf.utils.migrations import ensure_schemas
+from osf.utils.migrations import ensure_schemas, map_schemas_to_schemablocks
 from osf.migrations import ensure_default_providers
 from website.project.metadata.utils import create_jsonschema_from_metaschema
 from website import settings
@@ -91,7 +91,6 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
 
     @pytest.fixture(autouse=True)
     def schemas(self):
-        from osf.utils.migrations import map_schemas_to_schemablocks
         ensure_schemas()
         map_schemas_to_schemablocks()
 
@@ -232,7 +231,6 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
     @pytest.fixture(autouse=True)
     def default_providers(self):
-        from osf.utils.migrations import map_schemas_to_schemablocks
         ensure_default_providers()
         ensure_schemas()
         map_schemas_to_schemablocks()
@@ -464,8 +462,9 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 404
 
     #   test_registration_supplement_must_be_active_metaschema
-        schema = RegistrationSchema.objects.get(
-            name='Election Research Preacceptance Competition', active=False)
+        schema = RegistrationSchema.objects.get(name='Election Research Preacceptance Competition')
+        schema.active = False
+        schema.save()
         draft_data = {
             'data': {
                 'type': 'draft_registrations',
@@ -496,6 +495,9 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
     #   test_registration_supplement_must_be_active
         schema = RegistrationSchema.objects.get(
             name='Election Research Preacceptance Competition', schema_version=2)
+        schema.active = True
+        schema.save()
+
         draft_data = {
             'data': {
                 'type': 'draft_registrations',

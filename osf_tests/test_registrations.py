@@ -10,6 +10,7 @@ from nose.tools import assert_raises
 from osf.models import Node, Registration, Sanction, RegistrationSchema, NodeLog
 from addons.wiki.models import WikiPage
 from osf.utils.permissions import ADMIN
+from osf.utils.migrations import ensure_schemas, map_schemas_to_schemablocks
 from osf.registrations.utils import get_registration_provider_submissions_url
 
 from website import settings
@@ -579,6 +580,12 @@ class TestDOIValidation:
 
 
 class TestRegistrationMixin:
+
+    @pytest.fixture(autouse=True)
+    def schemas(self):
+        ensure_schemas()
+        map_schemas_to_schemablocks()
+
     @pytest.fixture()
     def draft_prereg(self, prereg_schema):
         return factories.DraftRegistrationFactory(
