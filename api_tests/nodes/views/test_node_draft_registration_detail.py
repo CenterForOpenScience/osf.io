@@ -149,8 +149,10 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
     @pytest.fixture(autouse=True)
     def schemas(self):
+        from osf.utils.migrations import map_schemas_to_schemablocks
         ensure_default_providers()
         ensure_schemas()
+        map_schemas_to_schemablocks()
 
     @pytest.fixture()
     def schema(self):

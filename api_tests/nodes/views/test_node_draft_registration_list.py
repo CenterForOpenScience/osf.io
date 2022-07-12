@@ -224,10 +224,15 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
 @pytest.mark.django_db
 class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
+    @pytest.fixture(autouse=True)
+    def default_providers(self):
+        from osf.utils.migrations import map_schemas_to_schemablocks
+        ensure_default_providers()
+        ensure_schemas()
+        map_schemas_to_schemablocks()
+
     @pytest.fixture()
     def provider(self):
-        ensure_schemas()
-        ensure_default_providers()
         return RegistrationProvider.get_default()
 
     @pytest.fixture()
