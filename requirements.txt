@@ -11,7 +11,6 @@ Werkzeug==1.0.0
 Flask==1.0
 gevent==1.2.2
 Mako==1.0.7
-Markdown==2.6.9
 WTForms==1.0.4
 # Fork of celery 4.1.1 with https://github.com/celery/celery/pull/4278 backported,
 # which fixes a bug that was causing stuck registrations
@@ -39,7 +38,7 @@ django-waffle==2.4.1
 pymongo==3.7.1
 tqdm==4.28.1
 # Python markdown extensions for comment emails
-git+https://github.com/CenterForOpenScience/mdx_del_ins.git
+git+https://github.com/Johnetordoff/mdx_del_ins.git@django-3
 
 markdown
 certifi==2020.12.5
