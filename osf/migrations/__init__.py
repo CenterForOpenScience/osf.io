@@ -4,7 +4,7 @@ import logging
 from django.db.utils import ProgrammingError
 from osf.management.commands.manage_switch_flags import manage_waffle
 from django.core.management import call_command
-from api.base import settings
+from api.base import settings as api_settings
 
 
 logger = logging.getLogger(__file__)
@@ -126,6 +126,12 @@ def update_permission_groups(sender, verbosity=0, **kwargs):
         update_provider_auth_groups(verbosity)
 
 
+def update_license(sender, verbosity=0, **kwargs):
+    if getattr(sender, 'label', None) == 'osf':
+        from osf.utils.migrations import ensure_licenses
+        ensure_licenses()
+
+
 def update_waffle_flags(sender, verbosity=0, **kwargs):
     if getattr(sender, 'label', None) == 'osf':
         if 'pytest' not in sys.modules:
@@ -135,4 +141,4 @@ def update_waffle_flags(sender, verbosity=0, **kwargs):
 
 def create_cache_table(sender, verbosity=0, **kwargs):
     if getattr(sender, 'label', None) == 'osf':
-        call_command('createcachetable', tablename=settings.CACHES[settings.STORAGE_USAGE_CACHE_NAME]['LOCATION'])
+        call_command('createcachetable', tablename=api_settings.CACHES[api_settings.STORAGE_USAGE_CACHE_NAME]['LOCATION'])
