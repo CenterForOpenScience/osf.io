@@ -486,10 +486,15 @@ class WithdrawnRegistrationFactory(BaseNodeFactory):
 
     @classmethod
     def _create(cls, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        registration = kwargs.pop('registration', None)
 
-        registration = kwargs.pop('registration', RegistrationFactory())
+        if user and not registration:
+            registration = RegistrationFactory(creator=user)
+        else:
+            registration = RegistrationFactory()
+
         registration.is_public = True
-        user = kwargs.pop('user', registration.creator)
 
         registration.retract_registration(user)
         withdrawal = registration.retraction
