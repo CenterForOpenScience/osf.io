@@ -6,7 +6,6 @@ import logging
 
 from django.db import migrations
 
-
 logger = logging.getLogger(__file__)
 
 
@@ -16,5 +15,4 @@ class Migration(migrations.Migration):
         ('osf', '0076_action_rename'),
     ]
 
-    operations = [
-    ]
+    operations = []

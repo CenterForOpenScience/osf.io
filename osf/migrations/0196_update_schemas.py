@@ -12,11 +12,11 @@ def make_egap_active_but_invisible(state, schema):
 def noop(*args, **kwargs):
     pass
 
+
 class Migration(migrations.Migration):
 
     dependencies = [
         ('osf', '0195_add_enable_chronos_waffle_flag'),
     ]
 
-    operations = [
-    ]
+    operations = []

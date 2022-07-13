@@ -3,7 +3,6 @@
 from __future__ import unicode_literals
 
 from django.db import migrations, models
-from osf.utils.migrations import ensure_licenses, remove_licenses
 
 
 class Migration(migrations.Migration):
@@ -18,5 +17,4 @@ class Migration(migrations.Migration):
             name='url',
             field=models.URLField(blank=True),
         ),
-        migrations.RunPython(ensure_licenses, remove_licenses),
     ]

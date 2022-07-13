@@ -16,5 +16,4 @@ class Migration(migrations.Migration):
         ('osf', '0190_add_schema_block_models')
     ]
 
-
     operations = []

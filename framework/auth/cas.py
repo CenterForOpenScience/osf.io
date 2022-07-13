@@ -10,6 +10,7 @@ import requests
 from framework.auth import authenticate, external_first_login_authenticate
 from framework.auth.core import get_user, generate_verification_key
 from framework.auth.utils import print_cas_log, LogLevel
+from framework.celery_tasks.handlers import enqueue_task
 from framework.flask import redirect
 from framework.exceptions import HTTPError
 from website import settings
@@ -376,6 +377,9 @@ def get_user_from_cas_resp(cas_resp):
                             external_id=external_credential['id'])
             # existing user found
             if user:
+                # Send to celery the following async task to affiliate the user with eligible institutions if verified
+                from framework.auth.tasks import update_affiliation_for_orcid_sso_users
+                enqueue_task(update_affiliation_for_orcid_sso_users.s(user._id, external_credential['id']))
                 return user, external_credential, 'authenticate'
             # user first time login through external identity provider
             else:

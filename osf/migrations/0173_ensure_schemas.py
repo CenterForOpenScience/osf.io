@@ -11,6 +11,4 @@ class Migration(migrations.Migration):
         ('osf', '0172_ensure_schemas'),
     ]
 
-    operations = [
-        # To reverse this migrations simply revert changes to the schema and re-run
-    ]
+    operations = []

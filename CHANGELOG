@@ -2,6 +2,12 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+22.06.0 (2022-06-23)
+====================
+- Fix support for Dataverse files
+- Match Legacy behavior with new `show_as_unviewed` File field
+- Other assorted fixes for new Files page
+
 22.05.0 (2022-06-09)
 ====================
 - Add institutional affiliations via ROR to minted DOIs
