@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from django.core.management.base import BaseCommand
-import re
-import os
 import io
-import zipfile
-import requests
 import logging
-from django.apps import apps
-from api.base import settings
+import os
+import re
+import requests
+import zipfile
 
+from django.apps import apps
+from django.core.management.base import BaseCommand
 from django.db import transaction
 from lxml import etree
 from urllib.parse import urlparse
+
+from api.base import settings
 
 logger = logging.getLogger(__name__)
 
