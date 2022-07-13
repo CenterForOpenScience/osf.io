@@ -174,7 +174,7 @@ def update_storage_regions(sender, verbosity=0, **kwargs):
 def ensure_default_storage_region():
     osfstorage_config = apps.get_app_config('addons_osfstorage')
     Region = apps.get_model('addons_osfstorage', 'Region')
-    Region.objects.update_or_create(
+    Region.objects.get_or_create(
         _id=DEFAULT_REGION_ID,
         defaults={
             'name': DEFAULT_REGION_NAME,
