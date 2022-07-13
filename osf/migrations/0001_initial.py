@@ -332,9 +332,6 @@ class Migration(migrations.Migration):
                 ('num_submissions', models.IntegerField(default=0)),
                 ('admins', models.ManyToManyField(to=settings.AUTH_USER_MODEL)),
             ],
-            options={
-                'permissions': (('view_conference', 'Can view conference details in the admin app.'),),
-            },
         ),
         migrations.CreateModel(
             name='Contributor',
@@ -1099,7 +1096,6 @@ class Migration(migrations.Migration):
             ],
             options={
                 'proxy': True,
-                'permissions': (('view_registration', 'Can view registration details'),),
             },
             bases=('osf.abstractnode',),
         ),
