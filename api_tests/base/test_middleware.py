@@ -62,7 +62,7 @@ class TestCorsMiddleware(MiddlewareTestCase):
         url = api_v2_url('users/me/')
         domain = urlparse('https://dinosaurs.sexy')
         request = self.request_factory.get(url, HTTP_ORIGIN=domain.geturl())
-        response = {}
+        response = HttpResponse()
         with mock.patch.object(request, 'COOKIES', True):
             self.middleware.process_request(request)
             self.middleware.process_response(request, response)
@@ -92,7 +92,7 @@ class TestCorsMiddleware(MiddlewareTestCase):
             HTTP_ORIGIN=domain.geturl(),
             HTTP_AUTHORIZATION='Bearer aqweqweohuweglbiuwefq'
         )
-        response = {}
+        response = HttpResponse()
         with mock.patch.object(request, 'COOKIES', True):
             self.middleware.process_request(request)
             self.middleware.process_response(request, response)
