@@ -1,12 +1,15 @@
 import logging
+
 from django.apps import AppConfig as BaseAppConfig
 from django.db.models.signals import post_migrate
+
 from osf.migrations import (
+    add_registration_schemas,
+    create_cache_table,
+    update_blocked_email_domains,
+    update_license,
     update_permission_groups,
     update_waffle_flags,
-    create_cache_table,
-    update_license,
-    add_registration_schemas
 )
 
 logger = logging.getLogger(__file__)
@@ -44,4 +47,9 @@ class AppConfig(BaseAppConfig):
         post_migrate.connect(
             create_cache_table,
             dispatch_uid='osf.apps.create_cache_table'
+        )
+
+        post_migrate.connect(
+            update_blocked_email_domains,
+            dispatch_uid='osf.apps.update_blocked_email_domains'
         )

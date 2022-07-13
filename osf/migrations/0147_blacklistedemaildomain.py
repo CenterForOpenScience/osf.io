@@ -39,6 +39,4 @@ class Migration(migrations.Migration):
                 'abstract': False,
             },
         ),
-        migrations.RunPython(populate_blacklisted_domains, remove_blacklisted_domains)
-
     ]
