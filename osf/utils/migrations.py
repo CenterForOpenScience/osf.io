@@ -5,6 +5,7 @@ import builtins
 import json
 import logging
 import warnings
+import bson
 from math import ceil
 
 
@@ -13,7 +14,6 @@ from django.apps import apps
 from django.db import connection
 from django.db.migrations.operations.base import Operation
 
-from osf.models.base import generate_object_id
 from osf.utils.sanitize import strip_html, unescape_entities
 from website import settings
 from website.project.metadata.schemas import get_osf_meta_schemas
@@ -40,6 +40,11 @@ FORMAT_TYPE_TO_TYPE_MAP = {
     ('textarea-lg', 'string'): 'long-text-input',
     ('textarea-xl', 'string'): 'long-text-input',
 }
+
+
+def generate_object_id():
+    return str(bson.ObjectId())
+
 
 def get_osf_models():
     """
