@@ -171,7 +171,7 @@ class TestSubjectProperties(OsfTestCase):
         self.bepress_child = SubjectFactory(text='BePress Child', provider=self.osf_provider, parent=self.bepress_subj)
         self.other_child = SubjectFactory(text='Other Child', bepress_subject=self.bepress_subj, provider=self.asdf_provider, parent=self.other_subj)
 
-        assert self.bepress_subj.path == 'bepress|BePress Text'
-        assert self.bepress_child.path == 'bepress|BePress Text|BePress Child'
+        assert self.bepress_subj.path == 'osf|BePress Text'
+        assert self.bepress_child.path == 'osf|BePress Text|BePress Child'
         assert self.other_subj.path == 'asdf|Other Text'
         assert self.other_child.path == 'asdf|Other Text|Other Child'
