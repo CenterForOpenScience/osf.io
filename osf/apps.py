@@ -11,6 +11,7 @@ from osf.migrations import (
     update_subjects,
     update_default_providers
 )
+from osf.migrations import add_registration_schemas, update_permission_groups
 
 
 class AppConfig(BaseAppConfig):
@@ -43,4 +44,9 @@ class AppConfig(BaseAppConfig):
         post_migrate.connect(
             update_default_providers,
             dispatch_uid='osf.apps.update_default_providers'
+        )
+
+        post_migrate.connect(
+            add_registration_schemas,
+            dispatch_uid='osf.apps.add_registration_schemas'
         )

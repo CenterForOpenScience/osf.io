@@ -32,12 +32,11 @@ def migrate_preprint_service_permissions(state, schema):
     Permission.objects.filter(codename='delete_preprintservice').update(codename='delete_preprint', name='Can delete preprint')
     Permission.objects.filter(codename='view_preprintservice').update(codename='view_preprint', name='Can view preprint details in the admin app')
 
+
 class Migration(migrations.Migration):
 
     dependencies = [
         ('osf', '0136_preprint_node_divorce'),
     ]
 
-    operations = [
-        migrations.RunPython(migrate_preprint_service_permissions, unmigrate_preprint_service_permissions),
-    ]
+    operations = []

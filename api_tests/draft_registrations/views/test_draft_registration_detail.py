@@ -255,7 +255,6 @@ class TestDraftRegistrationUpdateWithNode(TestDraftRegistrationUpdate, TestUpdat
         map_schemas_to_schemablocks()
         ensure_default_providers()
 
-
     @pytest.fixture()
     def url_draft_registrations(self, project_public, draft_registration):
         return '/{}draft_registrations/{}/'.format(

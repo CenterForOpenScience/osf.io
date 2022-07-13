@@ -13,6 +13,7 @@ from django.apps import apps
 from api.base import settings as api_settings
 from website import settings
 
+from osf.utils.migrations import ensure_schemas, map_schemas_to_schemablocks
 
 logger = logging.getLogger(__file__)
 
@@ -250,3 +251,9 @@ def ensure_default_registration_provider():
         _id=OSF_REGISTRIES_PROVIDER_DATA['_id'],
         defaults=OSF_REGISTRIES_PROVIDER_DATA
     )
+
+
+def add_registration_schemas(sender, verbosity=0, **kwargs):
+    if getattr(sender, 'label', None) == 'osf':
+        ensure_schemas()
+        map_schemas_to_schemablocks()
