@@ -253,6 +253,8 @@ class InstitutionFactory(DjangoModelFactory):
     domains = FakeList('url', n=3)
     email_domains = FakeList('domain_name', n=1)
     logo_name = factory.Faker('file_name')
+    orcid_record_verified_source = ''
+    delegation_protocol = ''
 
     class Meta:
         model = models.Institution
