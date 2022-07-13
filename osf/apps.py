@@ -5,7 +5,8 @@ from osf.migrations import update_permission_groups, update_subjects
 from osf.migrations import (
     update_permission_groups,
     update_waffle_flags,
-    create_cache_table
+    create_cache_table,
+    update_license
 )
 
 logger = logging.getLogger(__file__)
@@ -25,6 +26,10 @@ class AppConfig(BaseAppConfig):
         post_migrate.connect(
             update_subjects,
             dispatch_uid='osf.apps.update_subjects'
+        )
+        post_migrate.connect(
+            update_license,
+            dispatch_uid='osf.apps.ensure_licenses',
         )
         post_migrate.connect(
             update_waffle_flags,
