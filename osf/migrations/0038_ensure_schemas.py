@@ -5,8 +5,6 @@ from __future__ import unicode_literals
 import logging
 
 from django.db import migrations
-from osf.utils.migrations import ensure_schemas, remove_schemas
-
 
 logger = logging.getLogger(__file__)
 
@@ -17,6 +15,4 @@ class Migration(migrations.Migration):
         ('osf', '0037_ensure_licenses'),
     ]
 
-    operations = [
-        migrations.RunPython(ensure_schemas, remove_schemas),
-    ]
+    operations = []

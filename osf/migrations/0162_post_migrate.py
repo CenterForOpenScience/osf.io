@@ -4,14 +4,8 @@ from __future__ import unicode_literals
 
 import logging
 from django.db import migrations
-from django.core.management.sql import emit_post_migrate_signal
 
 logger = logging.getLogger(__name__)
-
-def post_migrate_signal(state, schema):
-    # this is to make sure that the permissions created earlier exist!
-    emit_post_migrate_signal(3, False, 'default')
-    logger.info('Starting guardian/groups migration [SQL]:')
 
 
 class Migration(migrations.Migration):
@@ -20,6 +14,4 @@ class Migration(migrations.Migration):
         ('osf', '0161_guardian_direct_fks'),
     ]
 
-    operations = [
-        migrations.RunPython(post_migrate_signal, migrations.RunPython.noop),
-    ]
+    operations = []
