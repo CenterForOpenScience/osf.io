@@ -15,7 +15,7 @@ from osf.registrations.utils import (BulkRegistrationUpload, InvalidHeadersError
                                      get_excel_column_name, Store, CategoryField, LicenseField, ContributorField,
                                      MAX_EXCEL_COLUMN_NUMBER, METADATA_FIELDS)
 
-from osf.migrations import ensure_default_providers
+from osf.migrations import ensure_default_providers, update_license
 from osf.utils.migrations import ensure_schemas
 
 
@@ -76,6 +76,10 @@ class TestBulkUploadParserValidationErrors:
     @pytest.fixture(autouse=True)
     def schemas(self):
         ensure_schemas()
+
+    @pytest.fixture(autouse=True)
+    def licenses(self):
+        ensure_licenses()
 
     @pytest.fixture(autouse=True)
     def default_provider(self):
