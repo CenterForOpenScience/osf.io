@@ -147,6 +147,13 @@ class DraftRegistrationDetailSerializer(DraftRegistrationSerializer, DraftRegist
         'self': 'get_self_url',
     })
 
+    registration_schema = RelationshipField(
+        related_view='schemas:registration-schema-detail',
+        related_view_kwargs={'schema_id': '<schema._id>'},
+        read_only=True,
+        required=False,
+    )
+
     def get_self_url(self, obj):
         return absolute_reverse(
             'draft_registrations:draft-registration-detail',
