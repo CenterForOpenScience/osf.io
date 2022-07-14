@@ -11,6 +11,7 @@ from bulk_update.helper import bulk_update
 
 logger = logging.getLogger(__name__)
 
+
 def reverse_func(apps, schema_editor):
     PreprintContributor = apps.get_model('osf', 'PreprintContributor')
     PreprintTags = apps.get_model('osf', 'Preprint_Tags')
@@ -83,7 +84,9 @@ def reverse_func(apps, schema_editor):
     modified_field.auto_now = True
     node_modified_field.auto_now = True
 
+
 group_format = 'preprint_{self.id}_{group}'
+
 
 def format_group(self, name):
     return group_format.format(self=self, group=name)

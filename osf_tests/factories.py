@@ -490,7 +490,6 @@ class WithdrawnRegistrationFactory(BaseNodeFactory):
         registration = kwargs.pop('registration', RegistrationFactory())
         registration.is_public = True
         user = kwargs.pop('user', registration.creator)
-        
         registration.retract_registration(user)
         registration.save()
         withdrawal = registration.retraction

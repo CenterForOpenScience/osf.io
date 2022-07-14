@@ -1,16 +1,17 @@
 import logging
+
 from django.apps import AppConfig as BaseAppConfig
 from django.db.models.signals import post_migrate
 
 logger = logging.getLogger(__file__)
 from osf.migrations import (
-    update_waffle_flags,
     update_storage_regions,
     update_blocked_email_domains,
     update_subjects,
     update_default_providers,
-    update_permission_groups,
     update_license,
+    update_permission_groups,
+    update_waffle_flags,
     add_registration_schemas
 )
 
@@ -62,4 +63,9 @@ class AppConfig(BaseAppConfig):
         post_migrate.connect(
             add_registration_schemas,
             dispatch_uid='osf.apps.add_registration_schemas'
+        )
+
+        post_migrate.connect(
+            update_blocked_email_domains,
+            dispatch_uid='osf.apps.update_blocked_email_domains'
         )
