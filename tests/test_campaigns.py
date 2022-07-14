@@ -37,7 +37,6 @@ class TestCampaignInitialization(OsfTestCase):
         self.campaign_lists = [
             'erpc',
             'institution',
-            'osf-preprints',
             'socarxiv-preprints',
             'engrxiv-preprints',
             'psyarxiv-preprints',
@@ -74,6 +73,8 @@ class TestCampaignMethods(OsfTestCase):
 
     def setUp(self):
         super(TestCampaignMethods, self).setUp()
+        from osf.migrations import ensure_default_providers
+        ensure_default_providers()
         set_preprint_providers()
         self.campaign_lists = [
             'erpc',
