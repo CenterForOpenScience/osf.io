@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
-import os
 import json
 from django.apps import apps
-from website.settings import APP_PATH
 import sys
 import logging
 
@@ -137,18 +135,10 @@ def ensure_subjects():
     Subject = apps.get_model('osf.subject')
     PreprintProvider = apps.get_model('osf.preprintprovider')
     bepress_provider, _ = PreprintProvider.objects.get_or_create(
-        type='osf.preprintprovider',
-        _id='osf'
+        _id='osf',
     )
     # Flat taxonomy is stored locally, read in here
-    with open(
-            os.path.join(
-                APP_PATH,
-                'website',
-                'static',
-                'bepress_taxonomy.json',
-            )
-    ) as fp:
+    with open(osf_settings.SUBJECT_PATH) as fp:
         taxonomy = json.load(fp)
 
         for subject_path in taxonomy.get('data'):
@@ -160,11 +150,11 @@ def ensure_subjects():
             if len(subjects) > 1:
                 parent, _ = Subject.objects.update_or_create(
                     text=subjects[-2],
-                    provider=bepress_provider
+                    defaults={'provider': bepress_provider}
                 )
             subject, _ = Subject.objects.update_or_create(
                 text=text,
-                provider=bepress_provider
+                defaults={'provider': bepress_provider}
             )
             if parent and not subject.parent:
                 subject.parent = parent

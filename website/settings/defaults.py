@@ -23,6 +23,7 @@ def parent_dir(path):
 HERE = os.path.dirname(os.path.abspath(__file__))
 BASE_PATH = parent_dir(HERE)  # website/ directory
 APP_PATH = parent_dir(BASE_PATH)
+SUBJECT_PATH = os.path.join(APP_PATH,'website', 'static', 'bepress_taxonomy.json')
 ADDON_PATH = os.path.join(APP_PATH, 'addons')
 STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = '/static'
