@@ -1535,7 +1535,6 @@ class DraftRegistrationLegacySerializer(JSONAPISerializer):
         related_view='schemas:registration-schema-detail',
         related_view_kwargs={'schema_id': '<registration_schema._id>'},
         read_only=False,
-        required=True,
     )
 
     provider = RegistrationProviderRelationshipField(

@@ -12,7 +12,6 @@ from api_tests.utils import create_test_file
 from framework.auth import Auth
 from osf.management.commands.update_institution_project_counts import update_institution_project_counts
 from osf.management.commands.project_to_draft_registration_contributor_sync import retrieve_draft_registrations_to_sync, project_to_draft_registration_contributor_sync
-from osf.models import RegistrationSchema
 from osf.metrics import InstitutionProjectCounts, UserInstitutionProjectCounts
 from osf_tests.factories import (
     AuthUserFactory,

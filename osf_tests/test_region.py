@@ -3,7 +3,7 @@ import pytest
 
 from framework.auth import Auth
 
-from osf.models import RegistrationSchema, Registration
+from osf.models import Registration
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
