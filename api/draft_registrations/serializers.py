@@ -149,9 +149,8 @@ class DraftRegistrationDetailSerializer(DraftRegistrationSerializer, DraftRegist
 
     registration_schema = RelationshipField(
         related_view='schemas:registration-schema-detail',
-        related_view_kwargs={'schema_id': '<schema._id>'},
-        read_only=True,
-        required=False,
+        related_view_kwargs={'schema_id': '<registration_schema._id>'},
+        required=False
     )
 
     def get_self_url(self, obj):

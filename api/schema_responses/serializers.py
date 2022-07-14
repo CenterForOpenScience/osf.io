@@ -75,13 +75,6 @@ class RegistrationSchemaResponseSerializer(JSONAPISerializer):
         required=False,
     )
 
-    registration_schema = RelationshipField(
-        related_view='schemas:registration-schema-detail',
-        related_view_kwargs={'schema_id': '<schema._id>'},
-        read_only=True,
-        required=False,
-    )
-
     initiated_by = RelationshipField(
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<initiator._id>'},
