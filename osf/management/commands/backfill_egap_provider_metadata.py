@@ -63,7 +63,7 @@ def backfill_egap_metadata(dry_run=False, batch_size=None):
         schema_version=Max('registered_schema__schema_version')
     ).filter(
         provider___id='egap',
-        additional_metadata=None,  # JSON fields are weird
+        additional_metadata__isnull=True,  # JSON fields are weird
         schema_version__lte=LAST_RELEVANT_VERSION
     )
     if batch_size:
