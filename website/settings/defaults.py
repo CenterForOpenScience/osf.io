@@ -758,7 +758,7 @@ ORCID_RECORD_EMPLOYMENT_PATH = '/employments'
 ORCID_RECORD_EDUCATION_PATH = '/educations'
 
 # Source: https://github.com/maxd/fake_email_validator/blob/master/config/fake_domains.list
-DENY_EMAIL_DOMAINS = [
+BLACKLISTED_DOMAINS = [
     '0-mail.com',
     '0815.ru',
     '0815.su',

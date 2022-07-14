@@ -7,7 +7,6 @@ logger = logging.getLogger(__file__)
 from osf.migrations import (
     update_storage_regions,
     update_blocked_email_domains,
-    update_subjects,
     update_default_providers,
     update_license,
     update_permission_groups,
@@ -52,10 +51,6 @@ class AppConfig(BaseAppConfig):
             dispatch_uid='osf.apps.update_storage_regions',
         )
         post_migrate.connect(
-            update_subjects,
-            dispatch_uid='osf.apps.update_subjects',
-        )
-        post_migrate.connect(
             update_default_providers,
             dispatch_uid='osf.apps.update_default_providers'
         )
@@ -63,9 +58,4 @@ class AppConfig(BaseAppConfig):
         post_migrate.connect(
             add_registration_schemas,
             dispatch_uid='osf.apps.add_registration_schemas'
-        )
-
-        post_migrate.connect(
-            update_blocked_email_domains,
-            dispatch_uid='osf.apps.update_blocked_email_domains'
         )

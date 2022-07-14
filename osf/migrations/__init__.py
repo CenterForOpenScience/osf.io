@@ -155,17 +155,6 @@ def update_waffle_flags(sender, verbosity=0, **kwargs):
             logger.info('Waffle flags have been synced')
 
 
-def update_blocked_email_domains(sender, verbosity=0, **kwargs):
-    if getattr(sender, 'label', None) == 'osf':
-        from django.apps import apps
-        NotableEmailDomain = apps.get_model('osf', 'NotableEmailDomain')
-        for domain in settings.DENY_EMAIL_DOMAINS:
-            NotableEmailDomain.objects.update_or_create(
-                domain=domain,
-                defaults={'note': NotableEmailDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION},
-            )
-
-
 def update_storage_regions(sender, verbosity=0, **kwargs):
     if getattr(sender, 'label', None) == 'osf':
         ensure_default_storage_region()
