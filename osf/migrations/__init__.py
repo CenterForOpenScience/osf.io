@@ -5,11 +5,14 @@ from django.apps import apps
 from website.settings import APP_PATH
 import sys
 import logging
-from django.db.utils import ProgrammingError
-from osf.management.commands.manage_switch_flags import manage_waffle
-from django.core.management import call_command
-from api.base import settings as api_settings
 
+from django.db.utils import ProgrammingError
+from django.core.management import call_command
+
+from api.base import settings as api_settings
+from osf.management.commands.manage_switch_flags import manage_waffle
+from osf.utils.migrations import ensure_schemas, map_schemas_to_schemablocks
+from website import settings as osf_settings
 
 logger = logging.getLogger(__file__)
 
@@ -189,3 +192,20 @@ def update_waffle_flags(sender, verbosity=0, **kwargs):
 def create_cache_table(sender, verbosity=0, **kwargs):
     if getattr(sender, 'label', None) == 'osf':
         call_command('createcachetable', tablename=api_settings.CACHES[api_settings.STORAGE_USAGE_CACHE_NAME]['LOCATION'])
+
+
+def add_registration_schemas(sender, verbosity=0, **kwargs):
+    if getattr(sender, 'label', None) == 'osf':
+        ensure_schemas()
+        map_schemas_to_schemablocks()
+
+
+def update_blocked_email_domains(sender, verbosity=0, **kwargs):
+    if getattr(sender, 'label', None) == 'osf':
+        from django.apps import apps
+        NotableEmailDomain = apps.get_model('osf', 'NotableEmailDomain')
+        for domain in osf_settings.BLACKLISTED_DOMAINS:
+            NotableEmailDomain.objects.update_or_create(
+                domain=domain,
+                defaults={'note': NotableEmailDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION},
+            )
