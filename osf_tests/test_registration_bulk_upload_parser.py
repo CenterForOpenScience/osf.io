@@ -9,11 +9,19 @@ from rest_framework.exceptions import NotFound
 
 from osf_tests.factories import SubjectFactory
 from osf.models import RegistrationSchema, RegistrationProvider, NodeLicense
-
-from osf.registrations.utils import (BulkRegistrationUpload, InvalidHeadersError,
-                                     FileUploadNotSupportedError, DuplicateHeadersError,
-                                     get_excel_column_name, Store, CategoryField, LicenseField, ContributorField,
-                                     MAX_EXCEL_COLUMN_NUMBER, METADATA_FIELDS)
+from osf.registrations.utils import (
+    BulkRegistrationUpload,
+    CategoryField,
+    ContributorField,
+    DuplicateHeadersError,
+    FileUploadNotSupportedError,
+    InvalidHeadersError,
+    LicenseField,
+    MAX_EXCEL_COLUMN_NUMBER,
+    METADATA_FIELDS,
+    Store,
+    get_excel_column_name,
+)
 
 
 def write_csv(header_row, *rows):
@@ -83,7 +91,7 @@ class TestBulkUploadParserValidationErrors:
 
     @pytest.fixture()
     def registration_provider(self, open_ended_schema, provider_subjects):
-        osf_provider = RegistrationProvider.get_default()
+        osf_provider = RegistrationProvider.load('osf')
         node_license = NodeLicense.objects.get(name='No license')
         osf_provider.default_license = node_license
         osf_provider.licenses_acceptable.add(node_license)

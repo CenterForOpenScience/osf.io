@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 import os
 import json
-import pytest
 
 from django.utils import timezone
 from nose.tools import *  # noqa: F403
+import pytest
 
 from api.citations.utils import render_citation
+from osf.models import OSFUser
 from osf_tests.factories import UserFactory, PreprintFactory
 from tests.base import OsfTestCase
-from osf.models import OSFUser
+
 
 class Node:
     _id = '2nthu'

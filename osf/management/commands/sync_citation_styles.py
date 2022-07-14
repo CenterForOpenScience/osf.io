@@ -122,7 +122,7 @@ def sync_citation_styles(dry_run=False):
 
 
 class Command(BaseCommand):
-    """Updates citation styles to repo it's current repo URL."""
+    """Updates citation styles to its current repo URL."""
     def add_arguments(self, parser):
         super().add_arguments(parser)
         parser.add_argument(
