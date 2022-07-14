@@ -478,6 +478,7 @@ class RegistrationFactory(BaseNodeFactory):
         draft_registration.registered_node = reg
         draft_registration.save()
         reg.creator = user
+        reg.registered_schema.add(schema)
         reg.save()
         return reg
 
@@ -486,23 +487,17 @@ class WithdrawnRegistrationFactory(BaseNodeFactory):
 
     @classmethod
     def _create(cls, *args, **kwargs):
-        user = kwargs.pop('user', None)
-        registration = kwargs.pop('registration', None)
-
-        if user and not registration:
-            registration = RegistrationFactory(creator=user)
-        else:
-            registration = RegistrationFactory()
-
+        registration = kwargs.pop('registration', RegistrationFactory())
         registration.is_public = True
-
+        user = kwargs.pop('user', registration.creator)
+        
         registration.retract_registration(user)
+        registration.save()
         withdrawal = registration.retraction
         token = list(withdrawal.approval_state.values())[0]['approval_token']
         with patch('osf.models.AbstractNode.update_search'):
             withdrawal.approve_retraction(user, token)
         withdrawal.save()
-
         return withdrawal
 
 class SanctionFactory(DjangoModelFactory):

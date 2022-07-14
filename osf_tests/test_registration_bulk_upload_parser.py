@@ -95,16 +95,11 @@ class TestBulkUploadParserValidationErrors:
 
     @pytest.fixture()
     def registration_provider(self, open_ended_schema, provider_subjects):
-        from osf.migrations import ensure_subjects
-        ensure_subjects()
         osf_provider = RegistrationProvider.get_default()
-        osf_provider.licenses_acceptable.add(NodeLicense.objects.get(name='No License'))
         osf_provider.schemas.add(open_ended_schema)
-        osf_provider.subjects.add(*provider_subjects)
         no_license = NodeLicense.objects.get(name='No license')
         osf_provider.licenses_acceptable.add(no_license)
         osf_provider.default_license = no_license
-        osf_provider.licenses_acceptable.add(NodeLicense.objects.get(name='No license'))
         osf_provider.save()
         return osf_provider
 

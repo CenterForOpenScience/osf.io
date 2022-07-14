@@ -56,9 +56,8 @@ class TestRegion:
         :param project_with_different_regions:
         :return:
         """
-        schema = RegistrationSchema.objects.first()
         draft_reg = DraftRegistrationFactory(branched_from=project_with_different_regions)
-        project_with_different_regions.register_node(schema, Auth(user=user), draft_reg)
+        project_with_different_regions.register_node(draft_reg.registration_schema, Auth(user=user), draft_reg)
 
         regs = Registration.objects.all()
 
