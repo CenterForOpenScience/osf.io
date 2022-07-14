@@ -52,7 +52,7 @@ raven==6.4.0
 
 # API requirements
 Django==3.2
-djangorestframework==3.13.1
+djangorestframework==3.8.2
 django-cors-headers==3.10.1
 djangorestframework-bulk==0.2.1
 hashids==1.2.0
