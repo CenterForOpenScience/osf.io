@@ -11,6 +11,7 @@ from api.draft_registrations.permissions import (
 )
 from api.draft_registrations.serializers import (
     DraftRegistrationSerializer,
+    DraftRegistrationDetailSerializer,
     DraftRegistrationContributorsSerializer,
     DraftRegistrationContributorDetailSerializer,
     DraftRegistrationContributorsCreateSerializer,
@@ -80,6 +81,10 @@ class DraftRegistrationDetail(NodeDraftRegistrationDetail, DraftRegistrationMixi
 
     view_category = 'draft_registrations'
     view_name = 'draft-registration-detail'
+
+    # overrides NodeDraftRegistrationDetail
+    def get_serializer_class(self):
+        return DraftRegistrationDetailSerializer
 
 
 class DraftInstitutionsList(NodeInstitutionsList, DraftRegistrationMixin):
