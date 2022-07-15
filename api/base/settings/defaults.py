@@ -218,8 +218,6 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = list(default_headers) + [
     'cache-control',
 ]
-# Set dynamically on app init
-ORIGINS_WHITELIST = ()
 
 MIDDLEWARE = (
     'api.base.middleware.DjangoGlobalMiddleware',
