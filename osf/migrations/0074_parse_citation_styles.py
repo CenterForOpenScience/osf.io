@@ -23,7 +23,6 @@ logger = logging.getLogger(__file__)
 def get_style_files(path):
     files = (os.path.join(path, x) for x in os.listdir(path))
     return (f for f in files if os.path.isfile(f))
-
 def parse_citation_styles(state, schema):
     # drop all styles
     CitationStyle = state.get_model('osf', 'citationstyle')
@@ -74,6 +73,4 @@ class Migration(migrations.Migration):
         ('osf', '0073_citationstyle_has_bibliography'),
     ]
 
-    operations = [
-        migrations.RunPython(parse_citation_styles, revert),
-    ]
+    operations = []
