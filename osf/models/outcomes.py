@@ -53,7 +53,7 @@ class Outcome(ObjectIDMixin, EditableFieldsMixin, BaseModel):
     # tags (Tags, M2M)
     # subjects (Subjects, M2M)
 
-    # These overrid the fields inherited from EditableField Mixin
+    # These override the fields inherited from EditableField Mixin
     # This is required to avoid collisions with the related_name
     affiliated_institutions = models.ManyToManyField('Institution', related_name='outcomes')
     node_license = models.ForeignKey(
