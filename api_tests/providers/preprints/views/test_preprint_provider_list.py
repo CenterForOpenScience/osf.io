@@ -42,12 +42,12 @@ class TestPreprintProviderList:
         # Test length and not auth
         res = app.get(url)
         assert res.status_code == 200
-        assert len(res.json['data']) == 3
+        assert len(res.json['data']) == 2
 
         # Test length and auth
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
-        assert len(res.json['data']) == 3
+        assert len(res.json['data']) == 2
 
     @pytest.mark.parametrize('filter_type,filter_value', [
         ('allow_submissions', True),
@@ -63,10 +63,7 @@ class TestPreprintProviderList:
             provider_one, provider_two):
         res = app.get(f'{url}filter[{filter_type}]={filter_value}')
         assert res.status_code == 200
-        if filter_type == 'allow_submissions' and filter_value:
-            assert len(res.json['data']) == 2
-        else:
-            assert len(res.json['data']) == 1
+        assert len(res.json['data']) == 1
 
 
 @pytest.mark.django_db
