@@ -86,14 +86,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     view_name = 'file-detail'
 
     def get_serializer_class(self):
-        try:
-            target = self.get_target()
-        except (NotFound, Gone, PermissionDenied):
-            return FileDetailSerializer
-        else:
-            if isinstance(target, QuickFilesNode):
-                return QuickFilesDetailSerializer
-            return FileDetailSerializer
+        return FileDetailSerializer
 
     def get_target(self):
         return self.get_file().target
