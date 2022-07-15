@@ -151,7 +151,7 @@ class TestOutcomeArtifact:
             identifier=external_doi, artifact_type=ArtifactTypes.SUPPLEMENTS
         )
 
-        # Add another Artifact for one of hte identifiers to make sure it doesn't get picked up, too
+        # Add another Artifact for one of the identifiers to make sure it doesn't get picked up, too
         bogus_outcome = Outcome.objects.create()
         bogus_outcome.artifact_metadata.create(
             identifier=external_doi, artifact_type=ArtifactTypes.CODE
