@@ -375,7 +375,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         base_manager_name = 'objects'
         index_together = (('is_public', 'is_deleted', 'type'))
         permissions = (
-            ('view_node', 'Can view node details'),
             ('read_node', 'Can read the node'),
             ('write_node', 'Can edit the node'),
             ('admin_node', 'Can manage the node'),
