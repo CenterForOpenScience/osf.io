@@ -82,10 +82,6 @@ class DraftRegistrationDetail(NodeDraftRegistrationDetail, DraftRegistrationMixi
     view_category = 'draft_registrations'
     view_name = 'draft-registration-detail'
 
-    # overrides NodeDraftRegistrationDetail
-    def get_serializer_class(self):
-        return DraftRegistrationDetailSerializer
-
 
 class DraftInstitutionsList(NodeInstitutionsList, DraftRegistrationMixin):
     permission_classes = (
