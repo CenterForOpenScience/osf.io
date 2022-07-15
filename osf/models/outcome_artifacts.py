@@ -2,9 +2,16 @@ from django.db import models
 
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.identifiers import Identifier
-from osf.models.outcomes import Outcome
 from osf.utils.outcomes import ArtifactTypes, NoPIDError
 
+
+'''
+This module defines the OutcomeArtifact model and its custom manager.
+
+OutcomeArtifacts are a through-table, providing some additional metadata on the relationship
+between an Outcome and an external Identifier that stores materials or provides context
+for the research effort described by the Outcome.
+'''
 
 class ArtifactManager(models.Manager):
 
@@ -52,8 +59,23 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
     '''OutcomeArtifact is a through table that connects an Outcomes with Identifiers
     while providing some additional, useful metadata'''
 
-    outcome = models.ForeignKey(Outcome, on_delete=models.CASCADE)
-    identifier = models.ForeignKey(Identifier, on_delete=models.CASCADE)
+    # The following fields are inherited from ObjectIdMixin
+    # _id (CharField)
+
+    # The following fields are inherited from BaseModel
+    # created (DateTimeField)
+    # modified (DateTimeField)
+
+    outcome = models.ForeignKey(
+        'osf.outcome',
+        on_delete=models.CASCADE,
+        related_name='artifact_metadata'
+    )
+    identifier = models.ForeignKey(
+        'osf.identifier',
+        on_delete=models.CASCADE,
+        related_name='artifact_metadata'
+    )
 
     artifact_type = models.IntegerField(
         null=False,

@@ -21,38 +21,43 @@ def registration_doi(registration):
         category='doi'
     )
 
+@pytest.fixture
+def outcome(registration_doi):
+    outcome = Outcome.objects.create()
+    OutcomeArtifact.objects.create(
+        outcome=outcome,
+        identifier=registration_doi,
+        artifact_type=ArtifactTypes.PRIMARY
+    )
+    return outcome
+
 
 @pytest.mark.django_db
-class TestOutcomeForRegistration:
+class TestOutcomes:
 
-    def test_get_outcome___exists(self, registration, registration_doi):
-        new_outcome = Outcome.objects.create()
-        OutcomeArtifact.objects.create(
-            outcome=new_outcome,
-            identifier=registration_doi,
-            artifact_type=ArtifactTypes.PRIMARY
-        )
-
+    def test_outcome_for_registration__get__exists(self, outcome, registration):
         stored_outcome = Outcome.objects.for_registration(registration, creaate=False)
-        assert stored_outcome.id == new_outcome.id
+        assert stored_outcome == outcome
 
-    def test_get_outcome__none_exists(self, registration, registration_doi):
+    def test_outcome_for_registration__get__none_exists(self, registration, registration_doi):
         assert not Outcome.objects.for_registration(registration, create=False)
 
-    def test_get_outcome__no_identifier(self, registration):
+    def test_outcome_for_registration__get__no_registration_identifier(self, registration):
         with pytest.raises(NoPIDError):
             Outcome.objects.for_registration(registration)
 
-    def test_create_outcome__creates(self, registration, registration_doi):
+    def test_outcome_for_registration__create(self, registration, registration_doi):
         assert not Outcome.objects.exists()
         Outcome.objects.for_registration(registration, create=True)
         assert Outcome.objects.exists()
 
-    def test_create_outcome__no_identifier(self, registration):
+    def test_outcome_for_registration__create__no_identifier(self, registration):
         with pytest.raises(NoPIDError):
             Outcome.objects.for_registration(registration, create=True)
 
-    def test_create_outcome__creates_primary_artifact(self, registration, registration_doi):
+    def test_outcome_for_registration__create_creates_primary_artifact(
+        self, registration, registration_doi
+    ):
         outcome = Outcome.objects.for_registration(registration, create=True)
 
         assert outcome.artifacts.count() == 1
@@ -61,11 +66,14 @@ class TestOutcomeForRegistration:
         assert primary_artifact.pid == registration_doi.value
         assert primary_artifact.artifact_type == ArtifactTypes.PRIMARY
 
-    def test_create_outcome__copies_metadata(self, registration, registration_doi):
+    def test_outcome_for_registration__create_copies_metadata(self, registration, registration_doi):
         outcome = Outcome.objects.for_registration(registration, create=True)
         assert outcome.title == registration.title
         assert outcome.description == registration.description
         assert outcome.category == registration.category
+
+    def test_primary_osf_resource(self, outcome, registration):
+        assert outcome.primary_osf_resource == registration
 
 
 @pytest.mark.django_db
@@ -134,21 +142,27 @@ class TestOutcomeArtifact:
             )
 
     def test_get_artifacts_for_registration(self, outcome, registration, project_doi, external_doi):
-        outcome.add_artifact(project_doi, ArtifactTypes.MATERIALS)
-        outcome.add_artifact(external_doi, ArtifactTypes.SUPPLEMENTS)
+        assert not OutcomeArtifact.objects.for_registration(registration).exists()
 
+        project_artifact = outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.MATERIALS
+        )
+        external_artifact = outcome.artifact_metadata.create(
+            identifier=external_doi, artifact_type=ArtifactTypes.SUPPLEMENTS
+        )
+
+        # Add another Artifact for one of hte identifiers to make sure it doesn't get picked up, too
         bogus_outcome = Outcome.objects.create()
-        bogus_outcome.add_artifact(external_doi, ArtifactTypes.CODE)
+        bogus_outcome.artifact_metadata.create(
+            identifier=external_doi, artifact_type=ArtifactTypes.CODE
+        )
 
         registration_artifacts = OutcomeArtifact.objects.for_registration(registration)
+        # Registration artifact should not appear in the list
         assert registration_artifacts.count() == 2
 
-        project_artifact = registration_artifacts.get(identifier=project_doi)
-        assert project_artifact.outcome == outcome
-        assert project_artifact.artifact_type == ArtifactTypes.MATERIALS
-        assert project_artifact.pid == project_doi.value
+        retrieved_project_artifact = registration_artifacts.get(identifier=project_doi)
+        assert retrieved_project_artifact == project_artifact
 
-        external_artifact = registration_artifacts.get(identifier=external_doi)
-        assert external_artifact.outcome == outcome
-        assert external_artifact.artifact_type == ArtifactTypes.SUPPLEMENTS
-        assert external_artifact.pid == external_doi.value
+        retrieved_external_artifact = registration_artifacts.get(identifier=external_doi)
+        assert retrieved_external_artifact == external_artifact

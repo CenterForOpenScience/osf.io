@@ -1,8 +1,18 @@
 from django.db import models
+from django.utils.functional import cached_property
 
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.mixins import EditableFieldsMixin
 from osf.utils.outcomes import ArtifactTypes, NoPIDError
+
+'''
+This module defines the Outcome model and its custom manager.
+
+Outcomes serve as a way to collect metadata about a research effort and to aggregate Identifiers
+used to share data or provide context for a that research effort, along with some additional metadata
+stored in the OutcomeArtifact through table.
+'''
+
 
 class OutcomeManager(models.Manager):
 
@@ -11,7 +21,7 @@ class OutcomeManager(models.Manager):
         if not registration_identifier:
             raise NoPIDError(f'Provided registration has no PID of type {identifier_type}')
 
-        primary_artifact = registration_identifier.outcomeartifact_set.filter(
+        primary_artifact = registration_identifier.artifact_metadata.filter(
             artifact_type=ArtifactTypes.PRIMARY.value
         ).order_by('-created').first()
         if primary_artifact:
@@ -21,12 +31,14 @@ class OutcomeManager(models.Manager):
 
         new_outcome = self.create(**kwargs)
         new_outcome.copy_editable_fields(registration, include_contributors=False)
-        new_outcome.add_artifact(registration_identifier, ArtifactTypes.PRIMARY)
+        new_outcome.artifact_metadata.create(
+            identifier=registration_identifier,
+            artifact_type=ArtifactTypes.PRIMARY
+        )
         return new_outcome
 
 
 class Outcome(ObjectIDMixin, EditableFieldsMixin, BaseModel):
-
     # The following fields are inherited from ObjectIdMixin
     # _id (CharField)
 
@@ -56,9 +68,15 @@ class Outcome(ObjectIDMixin, EditableFieldsMixin, BaseModel):
 
     objects = OutcomeManager()
 
-    def add_artifact(self, identifier, artifact_type):
-        # After Django upgrade, this can simplify to
-        # self.artifacts.add(identifier, through_defaults={'artifact_type': artifact_type})
-        self.artifacts.through.objects.create(
-            outcome=self, identifier=identifier, artifact_type=artifact_type
+    @cached_property
+    def primary_osf_resource(self):
+        return self.artifact_metadata.get(artifact_type=ArtifactTypes.PRIMARY).identifier.referent
+
+    def add_artifact_by_pid(self, pid, artifact_type, pid_type='doi', create_identifier=False):
+        return self.artifacts.through.objects.create_for_identifier_value(
+            outcome=self,
+            pid_value=pid,
+            pid_type=pid_type,
+            artifact_type=artifact_type,
+            create_identifier=create_identifier
         )
