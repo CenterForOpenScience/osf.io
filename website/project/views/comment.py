@@ -22,10 +22,8 @@ from website.project.signals import comment_added, mention_added
 def update_file_guid_referent(self, target, event_type, payload, user=None):
     if event_type not in ('addon_file_moved', 'addon_file_renamed'):
         return  # Nothing to do
-
     source, destination = payload['source'], payload['destination']
     source_node, destination_node = Node.load(source['node']['_id']), Node.load(destination['node']['_id'])
-
     if source['provider'] in settings.ADDONS_BASED_ON_IDS:
         if event_type == 'addon_file_renamed':
             return  # Node has not changed and provider has not changed
@@ -39,7 +37,6 @@ def update_file_guid_referent(self, target, event_type, payload, user=None):
         provider=source['provider'],
         target=source_node
     )
-
     for guid in file_guids:
         obj = Guid.load(guid)
         if source_node != destination_node and Comment.objects.filter(root_target___id=guid).count() != 0:
@@ -100,6 +97,7 @@ def find_and_create_file_from_metadata(children, source, destination, destinatio
 
 
 def update_comment_node(root_target_id, source_node, destination_node):
+    print(Comment.objects.filter(root_target___id=root_target_id))
     Comment.objects.filter(root_target___id=root_target_id).update(node=destination_node)
     source_node.save()
     destination_node.save()
