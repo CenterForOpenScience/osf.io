@@ -147,6 +147,4 @@ class Migration(migrations.Migration):
         ('osf', '0106_citationstyle_parent_style'),
     ]
 
-    operations = [
-        migrations.RunPython(update_styles, revert),
-    ]
+    operations = []
