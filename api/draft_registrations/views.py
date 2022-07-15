@@ -11,7 +11,6 @@ from api.draft_registrations.permissions import (
 )
 from api.draft_registrations.serializers import (
     DraftRegistrationSerializer,
-    DraftRegistrationDetailSerializer,
     DraftRegistrationContributorsSerializer,
     DraftRegistrationContributorDetailSerializer,
     DraftRegistrationContributorsCreateSerializer,
