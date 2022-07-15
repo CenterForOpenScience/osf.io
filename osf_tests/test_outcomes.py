@@ -36,7 +36,7 @@ def outcome(registration_doi):
 class TestOutcomes:
 
     def test_outcome_for_registration__get__exists(self, outcome, registration):
-        stored_outcome = Outcome.objects.for_registration(registration, creaate=False)
+        stored_outcome = Outcome.objects.for_registration(registration, create=False)
         assert stored_outcome == outcome
 
     def test_outcome_for_registration__get__none_exists(self, registration, registration_doi):

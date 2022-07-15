@@ -51,7 +51,7 @@ class Outcome(ObjectIDMixin, EditableFieldsMixin, BaseModel):
     # description (TextField)
     # category (CharField)
     # tags (Tags, M2M)
-    # subjects (Subkects, M2M)
+    # subjects (Subjects, M2M)
 
     # These overrid the fields inherited from EditableField Mixin
     # This is required to avoid collisions with the related_name
