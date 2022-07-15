@@ -7,10 +7,6 @@ from django.db import migrations
 
 logger = logging.getLogger(__name__)
 
-def post_migrate_signal(state, schema):
-    # this is to make sure that the permissions created earlier exist!
-    logger.info('Starting guardian/groups migration [SQL]:')
-
 
 class Migration(migrations.Migration):
 

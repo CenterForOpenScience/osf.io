@@ -91,10 +91,6 @@ group_format = 'preprint_{self.id}_{group}'
 def format_group(self, name):
     return group_format.format(self=self, group=name)
 
-def emit_signals(state, schema):
-    # this is to make sure that the permissions created earlier exist!
-    logger.info('Starting preprint node divorce [SQL]:')
-
 
 class Migration(migrations.Migration):
 

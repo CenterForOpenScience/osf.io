@@ -10,6 +10,4 @@ class Migration(migrations.Migration):
         ('osf', '0169_merge_20190618_1429'),
     ]
 
-    operations = [
-        # To reverse this migrations simply revert changes to the schema and re-run
-    ]
+    operations = []

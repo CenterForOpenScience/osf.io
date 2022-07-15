@@ -2,8 +2,6 @@ from __future__ import unicode_literals
 
 from django.db import migrations
 
-def noop(*args, **kwargs):
-    pass
 
 class Migration(migrations.Migration):
 
@@ -11,5 +9,4 @@ class Migration(migrations.Migration):
         ('osf', '0207_update_schemas2'),
     ]
 
-    operations = [
-    ]
+    operations = []

@@ -48,15 +48,6 @@ def user():
 @pytest.mark.django_db
 class TestNodeDetail:
 
-    @pytest.fixture(autouse=True)
-    def schemas(self):
-        from osf.utils.migrations import ensure_schemas, map_schemas_to_schemablocks
-        from osf.migrations import ensure_default_providers
-        ensure_default_providers()
-        ensure_schemas()
-        map_schemas_to_schemablocks()
-        ensure_default_providers()
-
     @pytest.fixture()
     def user_two(self):
         return AuthUserFactory()

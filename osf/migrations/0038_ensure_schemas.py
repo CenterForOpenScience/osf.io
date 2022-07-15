@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 import logging
 
 from django.db import migrations
+
 logger = logging.getLogger(__file__)
 
 

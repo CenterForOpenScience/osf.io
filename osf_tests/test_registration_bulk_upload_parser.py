@@ -9,11 +9,20 @@ from rest_framework.exceptions import NotFound
 
 from osf_tests.factories import SubjectFactory
 from osf.models import RegistrationSchema, RegistrationProvider, NodeLicense
+from osf.registrations.utils import (
+    BulkRegistrationUpload,
+    CategoryField,
+    ContributorField,
+    DuplicateHeadersError,
+    FileUploadNotSupportedError,
+    InvalidHeadersError,
+    LicenseField,
+    MAX_EXCEL_COLUMN_NUMBER,
+    METADATA_FIELDS,
+    Store,
+    get_excel_column_name,
+)
 
-from osf.registrations.utils import (BulkRegistrationUpload, InvalidHeadersError,
-                                     FileUploadNotSupportedError, DuplicateHeadersError,
-                                     get_excel_column_name, Store, CategoryField, LicenseField, ContributorField,
-                                     MAX_EXCEL_COLUMN_NUMBER, METADATA_FIELDS)
 
 from osf.migrations import ensure_default_providers
 from osf.utils.migrations import ensure_schemas, ensure_licenses
@@ -27,6 +36,7 @@ def write_csv(header_row, *rows):
         csv_writer.writerow(row)
     csv_buffer.seek(0)
     return csv_buffer
+
 
 def make_row(field_values={}):
     return {**{
@@ -46,6 +56,7 @@ def make_row(field_values={}):
         'summary': 'Test study',
     }, **field_values}
 
+
 def assert_parsed(actual_parsed, expected_parsed):
     parsed = {**actual_parsed['metadata'], **actual_parsed['registration_responses']}
     for key, value in expected_parsed.items():
@@ -57,6 +68,7 @@ def assert_parsed(actual_parsed, expected_parsed):
                 assert_equal(actual.sort(), expected.sort(), msg=f'"{key}" parsed correctly')
                 continue
         assert_equal(actual, expected)
+
 
 def assert_errors(actual_errors, expected_errors):
     for error in actual_errors:
@@ -96,10 +108,10 @@ class TestBulkUploadParserValidationErrors:
     @pytest.fixture()
     def registration_provider(self, open_ended_schema, provider_subjects):
         osf_provider = RegistrationProvider.get_default()
+        node_license = NodeLicense.objects.get(name='No license')
+        osf_provider.default_license = node_license
+        osf_provider.licenses_acceptable.add(node_license)
         osf_provider.schemas.add(open_ended_schema)
-        no_license = NodeLicense.objects.get(name='No license')
-        osf_provider.licenses_acceptable.add(no_license)
-        osf_provider.default_license = no_license
         osf_provider.save()
         return osf_provider
 

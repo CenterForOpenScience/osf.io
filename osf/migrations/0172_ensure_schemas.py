@@ -11,6 +11,4 @@ class Migration(migrations.Migration):
         ('osf', '0171_add_registration_files_count'),
     ]
 
-    operations = [
-        # To reverse this migrations simply revert changes to the schema and re-run
-    ]
+    operations = []
