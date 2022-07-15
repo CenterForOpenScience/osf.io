@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2022-04-12 12:37+0000\n"
+"POT-Creation-Date: 2022-07-15 01:31+0000\n"
 "PO-Revision-Date: 2020-11-23 09:30+0900\n"
 "Last-Translator: Hidetoshi Yoshimoto\n"
 "Language: ja\n"
@@ -22,94 +22,94 @@ msgstr ""
 msgid "Launch"
 msgstr "起動"
 
-#: addons/metadata/static/files.js:312
-msgid "Data Schema:"
-msgstr "データスキーマ:"
+#: addons/metadata/static/files.js:319
+msgid "Metadata Schema:"
+msgstr "メタデータ様式:"
 
-#: addons/metadata/static/files.js:470
+#: addons/metadata/static/files.js:477
 msgid "Paste from Clipboard"
 msgstr "クリップボードから貼り付け"
 
-#: addons/metadata/static/files.js:495 addons/metadata/static/files.js:509
+#: addons/metadata/static/files.js:502 addons/metadata/static/files.js:516
 #: website/static/js/fangorn.js:1516
 msgid "Could not copy text"
 msgstr "テキストをコピーできませんでした"
 
-#: addons/metadata/static/files.js:507 website/static/js/clipboard.js:27
+#: addons/metadata/static/files.js:514 website/static/js/clipboard.js:27
 #: website/static/js/fangorn.js:1510 website/static/js/fangorn.js:1514
 msgid "Copied!"
 msgstr "コピーされました！"
 
-#: addons/metadata/static/files.js:524 addons/metadata/static/files.js:537
-#: addons/metadata/static/files.js:544
+#: addons/metadata/static/files.js:531 addons/metadata/static/files.js:544
+#: addons/metadata/static/files.js:551
 msgid "Could not paste text"
 msgstr "テキストを貼り付けできませんでした"
 
-#: addons/metadata/static/files.js:594 addons/metadata/static/files.js:608
-#: addons/metadata/static/files.js:942
+#: addons/metadata/static/files.js:601 addons/metadata/static/files.js:615
+#: addons/metadata/static/files.js:964
 msgid "Loading..."
 msgstr "読み込み中..."
 
-#: addons/metadata/static/files.js:606
+#: addons/metadata/static/files.js:613
 msgid "Select the destination of the file metadata."
 msgstr "ファイルメタデータの移動先を選択してください。"
 
-#: addons/metadata/static/files.js:611
+#: addons/metadata/static/files.js:618
 msgid "Current Metadata:"
 msgstr "現在のメタデータ:"
 
-#: addons/metadata/static/files.js:667
+#: addons/metadata/static/files.js:674
 msgid "Delete metadata"
 msgstr "メタデータを削除"
 
-#: addons/metadata/static/files.js:670
+#: addons/metadata/static/files.js:677
 msgid "Could not list hashes"
 msgstr "ハッシュ情報の一覧を取得できませんでした"
 
-#: addons/metadata/static/files.js:678
-#: addons/metadata/static/metadata-fields.js:326
-#: addons/metadata/static/metadata-fields.js:331
+#: addons/metadata/static/files.js:685
+#: addons/metadata/static/metadata-fields.js:343
+#: addons/metadata/static/metadata-fields.js:348
 msgid "Could not list files"
 msgstr "ファイルの一覧を取得できませんでした"
 
-#: addons/metadata/static/files.js:761 addons/metadata/static/files.js:768
+#: addons/metadata/static/files.js:773 addons/metadata/static/files.js:780
 msgid "No name"
 msgstr "名称未設定"
 
-#: addons/metadata/static/files.js:828
+#: addons/metadata/static/files.js:840
 msgid ""
-"There is no draft metadata compliant with the schema. Create new draft "
-"metadata from the Metadata tab:"
-msgstr "スキーマに対応するメタデータがありません。メタデータ タブから新規メタデータを作成してください:"
+"There is no draft project metadata compliant with the schema. Create new "
+"draft project metadata from the Metadata tab:"
+msgstr "スキーマに対応するプロジェクトメタデータの下書きがありません。メタデータ タブから新規プロジェクトメタデータを作成してください:"
 
-#: addons/metadata/static/files.js:830 addons/metadata/static/files.js:986
+#: addons/metadata/static/files.js:842 addons/metadata/static/files.js:1008
 msgid "Open"
 msgstr "開く"
 
-#: addons/metadata/static/files.js:919
+#: addons/metadata/static/files.js:941
 msgid "There are errors in some fields."
 msgstr "いくつかのフィールドにエラーがあります。"
 
-#: addons/metadata/static/files.js:953 addons/metadata/static/files.js:1535
-#: addons/metadata/static/files.js:1560 website/static/js/folderpicker.js:105
+#: addons/metadata/static/files.js:975 addons/metadata/static/files.js:1584
+#: addons/metadata/static/files.js:1609 website/static/js/folderpicker.js:105
 msgid "Select"
 msgstr "選択"
 
-#: addons/metadata/static/files.js:957
-msgid "Select the destination draft for the file metadata."
-msgstr "ファイルメタデータの送信先を選択してください。"
+#: addons/metadata/static/files.js:979
+msgid "Select the destination for the file metadata."
+msgstr "ファイルメタデータの登録先を選択してください。"
 
-#: addons/metadata/static/files.js:978
+#: addons/metadata/static/files.js:1000
 msgid "Registering..."
 msgstr "登録中..."
 
-#: addons/metadata/static/files.js:978
+#: addons/metadata/static/files.js:1000
 msgid "Deleting..."
 msgstr "削除中..."
 
-#: addons/metadata/static/files.js:1018 addons/metadata/static/files.js:1456
-#: addons/metadata/static/files.js:1512 addons/metadata/static/files.js:1533
-#: addons/metadata/static/files.js:1558
+#: addons/metadata/static/files.js:1040 addons/metadata/static/files.js:1505
+#: addons/metadata/static/files.js:1561 addons/metadata/static/files.js:1582
+#: addons/metadata/static/files.js:1607
 #: website/static/js/accountSettings.js:267 website/static/js/fangorn.js:2326
 #: website/static/js/folderPickerNodeConfig.js:591
 #: website/static/js/pages/profile-settings-addons-page.js:72
@@ -117,101 +117,114 @@ msgstr "削除中..."
 msgid "Close"
 msgstr "閉じる"
 
-#: addons/metadata/static/files.js:1070 addons/metadata/static/files.js:1484
+#: addons/metadata/static/files.js:1092
 msgid "View Metadata"
 msgstr "メタデータ確認"
 
-#: addons/metadata/static/files.js:1080 addons/metadata/static/files.js:1484
+#: addons/metadata/static/files.js:1102
 msgid "Edit Metadata"
 msgstr "メタデータ編集"
 
-#: addons/metadata/static/files.js:1089
+#: addons/metadata/static/files.js:1111
 msgid "Register Metadata"
 msgstr "メタデータ登録"
 
-#: addons/metadata/static/files.js:1097 addons/metadata/static/files.js:1520
+#: addons/metadata/static/files.js:1119
 msgid "Delete Metadata"
 msgstr "メタデータ削除"
 
-#: addons/metadata/static/files.js:1234
+#: addons/metadata/static/files.js:1256
 msgid "Metadata is defined"
 msgstr "メタデータが定義されています"
 
-#: addons/metadata/static/files.js:1243
+#: addons/metadata/static/files.js:1265
 msgid "Some of the children have metadata."
 msgstr "いくつかの子ファイルにメタデータが定義されています。"
 
-#: addons/metadata/static/files.js:1253
+#: addons/metadata/static/files.js:1275
 msgid "File not found: "
 msgstr "ファイルが見つかりません:"
 
-#: addons/metadata/static/files.js:1460 website/static/js/contribManager.js:440
+#: addons/metadata/static/files.js:1509 website/static/js/contribManager.js:440
 #: website/static/js/filepage/editor.js:180
 msgid "Save"
 msgstr "保存"
 
-#: addons/metadata/static/files.js:1465 addons/metadata/static/files.js:1564
+#: addons/metadata/static/files.js:1514 addons/metadata/static/files.js:1613
 msgid "Copy to clipboard"
 msgstr "クリップボードにコピー"
 
-#: addons/metadata/static/files.js:1478
+#: addons/metadata/static/files.js:1527
 msgid ""
 "Renaming, moving the file/directory, or changing the directory hierarchy "
 "can break the association of the metadata you have added."
 msgstr "ファイルのリネーム、ファイルやディレクトリの移動、ディレクトリ階層の変更を行うと、入力したメタデータの関連付けが解除される場合があります。"
 
-#: addons/metadata/static/files.js:1514 website/static/js/fangorn.js:1226
+#: addons/metadata/static/files.js:1533
+msgid "Edit File Metadata"
+msgstr "ファイルメタデータの編集"
+
+#: addons/metadata/static/files.js:1533
+msgid "View File Metadata"
+msgstr "ファイルメタデータの参照"
+
+#: addons/metadata/static/files.js:1563 website/static/js/fangorn.js:1226
 #: website/static/js/fangorn.js:1249 website/static/js/fangorn.js:2056
 #: website/static/js/fangorn.js:2092 website/static/js/filepage/index.js:204
 #: website/static/js/filepage/index.js:517 website/static/js/myProjects.js:1637
 msgid "Delete"
 msgstr "削除"
 
-#: addons/metadata/static/files.js:1525
+#: addons/metadata/static/files.js:1569
+msgid "Delete File Metadata"
+msgstr "ファイルメタデータの削除"
+
+#: addons/metadata/static/files.js:1574
 msgid "Do you want to delete metadata? This operation cannot be undone."
 msgstr "メタデータを削除してよろしいですか？この操作は元に戻せません。"
 
-#: addons/metadata/static/files.js:1542
-msgid "Select draft registration"
-msgstr "ドラフトレポートの選択"
+#: addons/metadata/static/files.js:1591
+msgid "Select a destination for file metadata registration"
+msgstr "ファイルメタデータ登録先の選択"
 
-#: addons/metadata/static/files.js:1574
-msgid "Resolve metadata"
-msgstr "メタデータの解決"
+#: addons/metadata/static/files.js:1623
+msgid "Fix file metadata"
+msgstr "ファイルメタデータの修正"
 
-#: addons/metadata/static/metadata-fields.js:40
+#: addons/metadata/static/metadata-fields.js:43
+#: addons/metadata/static/metadata-fields.js:188
 msgid "This field can't be blank."
 msgstr "このフィールドは必須項目です。"
 
-#: addons/metadata/static/metadata-fields.js:180
+#: addons/metadata/static/metadata-fields.js:194
 msgid "Choose..."
 msgstr "選択..."
 
-#: addons/metadata/static/metadata-fields.js:354
+#: addons/metadata/static/metadata-fields.js:371
 msgid "Calculate"
 msgstr "集計"
 
-#: addons/metadata/static/metadata-fields.js:405
+#: addons/metadata/static/metadata-fields.js:422
 msgid "Fill"
 msgstr "入力"
 
-#: addons/metadata/static/metadata-fields.js:432
+#: addons/metadata/static/metadata-fields.js:449
 msgid "No members"
 msgstr "作成者が設定されていません"
 
-#: addons/metadata/static/metadata-fields.js:499
+#: addons/metadata/static/metadata-fields.js:516
 msgid "e-Rad Researcher Number"
 msgstr "e-Rad研究者番号"
 
-#: addons/metadata/static/metadata-fields.js:500
+#: addons/metadata/static/metadata-fields.js:517
 msgid "Name (Japanese)"
 msgstr "名前 (日本語)"
 
-#: addons/metadata/static/metadata-fields.js:501
+#: addons/metadata/static/metadata-fields.js:518
 msgid "Name (English)"
 msgstr ""
 
-#: addons/metadata/static/metadata-fields.js:515
+#: addons/metadata/static/metadata-fields.js:532
 #: website/static/js/myProjects.js:1565
 msgid "Add"
 msgstr "追加"

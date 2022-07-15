@@ -316,7 +316,7 @@ function MetadataButtons() {
   }
 
   self.createSchemaSelector = function(targetItem) {
-    const label = $('<label></label>').text(_('Data Schema:'));
+    const label = $('<label></label>').text(_('Metadata Schema:'));
     const schema = $('<select></select>');
     const activeSchemas = (self.registrationSchemas.schemas || [])
       .filter(function(s) {
@@ -837,7 +837,7 @@ function MetadataButtons() {
     });
     if (empty) {
       registrations.append($('<li></li>')
-        .append($('<span></span>').text(_('There is no draft metadata compliant with the schema. Create new draft metadata from the Metadata tab:')))
+        .append($('<span></span>').text(_('There is no draft project metadata compliant with the schema. Create new draft project metadata from the Metadata tab:')))
         .append($('<a></a>')
           .text(_('Open'))
           .attr('href', contextVars.node.urls.web + 'metadata'))
@@ -976,7 +976,7 @@ function MetadataButtons() {
       .attr('disabled', true)
       .attr('data-dismiss', false);
     const message = $('<div></div>');
-    message.text(_('Select the destination draft for the file metadata.'));
+    message.text(_('Select the destination for the file metadata.'));
     self.selectDraftDialog.container.empty();
     self.selectDraftDialog.container.append(selector.group);
     self.selectDraftDialog.container.append(message);
@@ -1530,7 +1530,7 @@ function MetadataButtons() {
       .append($('<div class="modal-dialog modal-lg"></div>')
         .append($('<div class="modal-content"></div>')
           .append($('<div class="modal-header"></div>')
-            .append($('<h3></h3>').text(editable ? _('Edit Metadata') : _('View Metadata'))))
+            .append($('<h3></h3>').text(editable ? _('Edit File Metadata') : _('View File Metadata'))))
           .append($('<form></form>')
             .append($('<div class="modal-body"></div>')
               .append($('<div class="row"></div>')
@@ -1566,7 +1566,7 @@ function MetadataButtons() {
       .append($('<div class="modal-dialog modal-lg"></div>')
         .append($('<div class="modal-content"></div>')
           .append($('<div class="modal-header"></div>')
-            .append($('<h3></h3>').text(_('Delete Metadata'))))
+            .append($('<h3></h3>').text(_('Delete File Metadata'))))
           .append($('<form></form>')
             .append($('<div class="modal-body"></div>')
               .append($('<div class="row"></div>')
@@ -1588,7 +1588,7 @@ function MetadataButtons() {
       .append($('<div class="modal-dialog modal-lg"></div>')
         .append($('<div class="modal-content"></div>')
           .append($('<div class="modal-header"></div>')
-            .append($('<h3></h3>').text(_('Select draft registration'))))
+            .append($('<h3></h3>').text(_('Select a destination for file metadata registration'))))
           .append($('<form></form>')
             .append($('<div class="modal-body"></div>')
               .append($('<div class="row"></div>')
@@ -1620,7 +1620,7 @@ function MetadataButtons() {
       .append($('<div class="modal-dialog modal-lg"></div>')
         .append($('<div class="modal-content"></div>')
           .append($('<div class="modal-header"></div>')
-            .append($('<h3></h3>').text(_('Resolve metadata'))))
+            .append($('<h3></h3>').text(_('Fix file metadata'))))
           .append($('<form></form>')
             .append($('<div class="modal-body"></div>')
               .append($('<div class="row"></div>')
