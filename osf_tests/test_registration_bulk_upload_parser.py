@@ -24,10 +24,6 @@ from osf.registrations.utils import (
 )
 
 
-from osf.migrations import ensure_default_providers
-from osf.utils.migrations import ensure_schemas, ensure_licenses
-
-
 def write_csv(header_row, *rows):
     csv_buffer = io.StringIO()
     csv_writer = csv.DictWriter(csv_buffer, fieldnames=header_row)
@@ -84,10 +80,6 @@ def assert_errors(actual_errors, expected_errors):
 
 @pytest.mark.django_db
 class TestBulkUploadParserValidationErrors:
-
-    @pytest.fixture(autouse=True)
-    def default_provider(self):
-        ensure_default_providers()
 
     @pytest.fixture()
     def open_ended_schema(self):

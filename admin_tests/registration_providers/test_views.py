@@ -38,7 +38,6 @@ def req(user):
     req.user = user
     return req
 
-
 class TestRegistrationProviderList(ProviderListMixinBase):
 
     @pytest.fixture()
