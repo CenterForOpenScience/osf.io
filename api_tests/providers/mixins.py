@@ -680,7 +680,6 @@ class ProviderListViewTestBaseMixin(ProviderMixinBase):
         else:
             assert len(res.json['data']) == 1
 
-
 class ProviderDetailViewTestBaseMixin(ProviderExistsMixin):
 
     def test_provider_exists(self, app, provider_url, fake_url, provider_list_url, provider_list_url_fake):

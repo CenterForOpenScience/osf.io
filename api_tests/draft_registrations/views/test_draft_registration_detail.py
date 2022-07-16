@@ -245,16 +245,6 @@ class TestUpdateEditableFieldsTestCase:
 
 @pytest.mark.django_db
 class TestDraftRegistrationUpdateWithNode(TestDraftRegistrationUpdate, TestUpdateEditableFieldsTestCase):
-
-    @pytest.fixture(autouse=True)
-    def schemas(self):
-        from osf.utils.migrations import ensure_schemas, map_schemas_to_schemablocks
-        from osf.migrations import ensure_default_providers
-        ensure_default_providers()
-        ensure_schemas()
-        map_schemas_to_schemablocks()
-        ensure_default_providers()
-
     @pytest.fixture()
     def url_draft_registrations(self, project_public, draft_registration):
         return '/{}draft_registrations/{}/'.format(

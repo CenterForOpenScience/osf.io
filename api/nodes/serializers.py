@@ -28,7 +28,7 @@ from django.apps import apps
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from framework.auth.core import Auth
-from framework.exceptions import PermissionsError, HTTPError
+from framework.exceptions import PermissionsError
 from osf.models import Tag
 from rest_framework import serializers as ser
 from rest_framework import exceptions
@@ -44,8 +44,6 @@ from osf.models import (
 from website.project import new_private_link
 from website.project.model import NodeUpdateError
 from osf.utils import permissions as osf_permissions
-
-from rest_framework import status as http_status
 
 
 class RegistrationProviderRelationshipField(RelationshipField):
