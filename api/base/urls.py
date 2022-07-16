@@ -86,12 +86,4 @@ if 'silk' in settings.INSTALLED_APPS:
         url(r'^silk/', include('silk.urls', namespace='silk')),
     ]
 
-if settings.DEBUG:
-    import debug_toolbar
-
-    urlpatterns += [
-        url(r'^__debug__/', include(debug_toolbar.urls, namespace='django_debug_toolbar')),
-    ]
-
-
 handler404 = views.error_404
