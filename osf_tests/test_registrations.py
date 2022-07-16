@@ -579,7 +579,6 @@ class TestDOIValidation:
 
 
 class TestRegistrationMixin:
-
     @pytest.fixture()
     def draft_prereg(self, prereg_schema):
         return factories.DraftRegistrationFactory(

@@ -22,19 +22,24 @@ from website.project.signals import comment_added, mention_added
 def update_file_guid_referent(self, target, event_type, payload, user=None):
     if event_type not in ('addon_file_moved', 'addon_file_renamed'):
         return  # Nothing to do
+
     source, destination = payload['source'], payload['destination']
     source_node, destination_node = Node.load(source['node']['_id']), Node.load(destination['node']['_id'])
+
     if source['provider'] in settings.ADDONS_BASED_ON_IDS:
         if event_type == 'addon_file_renamed':
             return  # Node has not changed and provider has not changed
+
         # Must be a move
         if source['provider'] == destination['provider'] and source_node == destination_node:
             return  # Node has not changed and provider has not changed
+
     file_guids = BaseFileNode.resolve_class(source['provider'], BaseFileNode.ANY).get_file_guids(
         materialized_path=source['materialized'] if source['provider'] != 'osfstorage' else source['path'],
         provider=source['provider'],
         target=source_node
     )
+
     for guid in file_guids:
         obj = Guid.load(guid)
         if source_node != destination_node and Comment.objects.filter(root_target___id=guid).count() != 0:

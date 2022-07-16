@@ -6,6 +6,7 @@ from osf.exceptions import ValidationValueError
 
 @pytest.mark.django_db
 class TestRegistrationSchema:
+
     @pytest.fixture()
     def schema_name(self):
         return 'Preregistration Template from AsPredicted.org'

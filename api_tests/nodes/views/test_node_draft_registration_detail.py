@@ -643,6 +643,7 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
 
 @pytest.mark.django_db
 class TestDraftRegistrationDelete(DraftRegistrationTestCase):
+
     @pytest.fixture()
     def schema(self):
         return RegistrationSchema.objects.get(

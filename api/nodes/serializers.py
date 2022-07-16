@@ -21,7 +21,6 @@ from api.base.utils import (
     absolute_reverse, get_object_or_error,
     get_user_auth, is_truthy,
 )
-
 from api.base.versioning import get_kebab_snake_case_field
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from django.apps import apps
