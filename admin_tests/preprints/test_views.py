@@ -105,7 +105,7 @@ class TestPreprintView:
         request = RequestFactory().get(reverse('preprints:preprint', kwargs={'guid': preprint._id}))
         request.user = user
         resp = plain_view.as_view()(request, guid=preprint._id)
-        assert resp.header['location'] == f'/accounts/login/?next=/preprints/{preprint._id}/'
+        assert resp.headers['location'] == f'/accounts/login/?next=/preprints/{preprint._id}/'
 
     def test_get_flagged_spam(self, superuser, preprint, ham_preprint, spam_preprint, flagged_preprint):
         request = RequestFactory().get(reverse('preprints:flagged-spam'))

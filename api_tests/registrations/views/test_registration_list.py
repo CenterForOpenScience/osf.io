@@ -35,8 +35,6 @@ from website import settings
 from website.views import find_bookmark_collection
 from website.project.metadata.schemas import from_json
 from osf.utils import permissions
-from osf.utils.migrations import ensure_schemas
-from osf.migrations import ensure_default_providers
 
 SCHEMA_VERSION = 2
 
@@ -612,11 +610,6 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
     Tests for creating registration through old workflow -
     POST NodeRegistrationList
     """
-
-    @pytest.fixture(autouse=True)
-    def schemas(self):
-        ensure_default_providers()
-        ensure_schemas()
 
     @pytest.fixture()
     def schema(self):

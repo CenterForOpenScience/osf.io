@@ -21,13 +21,14 @@ from api.base.utils import (
     absolute_reverse, get_object_or_error,
     get_user_auth, is_truthy,
 )
+
 from api.base.versioning import get_kebab_snake_case_field
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from django.apps import apps
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from framework.auth.core import Auth
-from framework.exceptions import PermissionsError
+from framework.exceptions import PermissionsError, HTTPError
 from osf.models import Tag
 from rest_framework import serializers as ser
 from rest_framework import exceptions
@@ -43,6 +44,8 @@ from osf.models import (
 from website.project import new_private_link
 from website.project.model import NodeUpdateError
 from osf.utils import permissions as osf_permissions
+
+from rest_framework import status as http_status
 
 
 class RegistrationProviderRelationshipField(RelationshipField):
@@ -1534,7 +1537,7 @@ class DraftRegistrationLegacySerializer(JSONAPISerializer):
     registration_schema = RegistrationSchemaRelationshipField(
         related_view='schemas:registration-schema-detail',
         related_view_kwargs={'schema_id': '<registration_schema._id>'},
-        required=False,
+        required=True,
         read_only=False,
     )
 
@@ -1590,6 +1593,18 @@ class DraftRegistrationLegacySerializer(JSONAPISerializer):
     def create(self, validated_data):
         initiator = get_user_auth(self.context['request']).user
         node = self.get_node(validated_data)
+        branched_from_guid = self.context['request'].data.get('branched_from')
+        if not node and branched_from_guid:
+            node = get_object_or_error(Node, branched_from_guid, self.context['request'])
+            if not node.has_permission(initiator, 'write'):
+                raise exceptions.NotFound()
+
+        if node and node.is_deleted:
+            from api.base.exceptions import Gone
+            raise Gone(detail='The requested node is no longer available.')
+
+        if node and not node.has_permission(initiator, 'write'):
+            raise exceptions.PermissionDenied()
         # Old workflow - deeply nested
         metadata = validated_data.pop('registration_metadata', None)
         registration_responses = validated_data.pop('registration_responses', None)

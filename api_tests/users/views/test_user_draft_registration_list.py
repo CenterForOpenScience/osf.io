@@ -12,19 +12,12 @@ from osf_tests.factories import (
     DraftRegistrationFactory,
 )
 from osf.utils import permissions
-from osf.utils.migrations import ensure_schemas
-from osf.migrations import ensure_default_providers
 
 SCHEMA_VERSION = 2
 
 
 @pytest.mark.django_db
 class TestDraftRegistrationList(DraftRegistrationTestCase):
-
-    @pytest.fixture(autouse=True)
-    def schemas(self):
-        ensure_default_providers()
-        ensure_schemas()
 
     @pytest.fixture()
     def other_admin(self, project_public):

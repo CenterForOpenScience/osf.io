@@ -206,10 +206,7 @@ REST_FRAMEWORK = {
 # Settings related to CORS Headers addon: allow API to receive authenticated requests from OSF
 # CORS plugin only matches based on "netloc" part of URL, so as workaround we add that to the list
 CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOWED_ORIGINS = (
-    urlparse(osf_settings.DOMAIN).netloc,
-    osf_settings.DOMAIN,
-)
+CORS_ALLOWED_ORIGINS = (urlparse(osf_settings.DOMAIN).netloc,)
 # This needs to remain True to allow cross origin requests that are in CORS_ALLOWED_ORIGINS to
 # use cookies.
 CORS_ALLOW_CREDENTIALS = True

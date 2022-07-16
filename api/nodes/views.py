@@ -631,7 +631,6 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
     required_read_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE]
 
-    serializer_class = DraftRegistrationLegacySerializer
     view_category = 'nodes'
     view_name = 'node-draft-registrations'
 
