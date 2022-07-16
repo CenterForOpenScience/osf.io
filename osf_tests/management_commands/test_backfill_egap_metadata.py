@@ -17,11 +17,6 @@ OLDEST_TIMESTAMP = '03/01/2011 - 22:00'
 @pytest.mark.django_db
 class TestMigrateEgapRegistrationMetadata:
 
-    @pytest.fixture(autouse=True)
-    def schemas(self):
-        ensure_schemas()
-        map_schemas_to_schemablocks()
-
     @pytest.fixture()
     def egap(self):
         return RegistrationProviderFactory(_id='egap')

@@ -89,11 +89,6 @@ class DraftRegistrationTestCase:
 @pytest.mark.django_db
 class TestDraftRegistrationList(DraftRegistrationTestCase):
 
-    @pytest.fixture(autouse=True)
-    def schemas(self):
-        ensure_schemas()
-        map_schemas_to_schemablocks()
-
     @pytest.fixture()
     def schema(self):
         return RegistrationSchema.objects.get(

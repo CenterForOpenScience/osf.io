@@ -3,16 +3,9 @@ import pytest
 
 from osf.models import RegistrationSchema
 from osf.exceptions import ValidationValueError
-from osf.utils.migrations import ensure_schemas, map_schemas_to_schemablocks
-
 
 @pytest.mark.django_db
 class TestRegistrationSchema:
-
-    @pytest.fixture(autouse=True)
-    def schemas(self):
-        ensure_schemas()
-
     @pytest.fixture()
     def schema_name(self):
         return 'Preregistration Template from AsPredicted.org'
@@ -37,11 +30,6 @@ class TestRegistrationSchema:
 
 @pytest.mark.django_db
 class TestRegistrationSchemaValidation:
-
-    @pytest.fixture(autouse=True)
-    def schemas(self):
-        ensure_schemas()
-        map_schemas_to_schemablocks()
 
     @pytest.fixture()
     def prereg_schema(self):

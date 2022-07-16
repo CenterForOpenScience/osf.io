@@ -1895,11 +1895,6 @@ class TestNodeSubjects:
 
 class TestRegisterNode:
 
-    @pytest.fixture(autouse=True)
-    def schemas(self):
-        ensure_schemas()
-        map_schemas_to_schemablocks()
-
     def test_register_node_creates_new_registration(self, node, auth):
         with disconnected_from_listeners(after_create_registration):
             draft_reg = DraftRegistrationFactory(branched_from=node)

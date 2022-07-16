@@ -14,8 +14,6 @@ from osf.utils.permissions import ADMIN, READ, WRITE
 from osf_tests.factories import InstitutionFactory, SubjectFactory, UserFactory
 
 from website import mails, settings
-from osf.migrations import ensure_default_providers
-from osf.utils.migrations import ensure_schemas
 
 
 class TestRegistrationBulkUploadContributors:
@@ -71,10 +69,6 @@ class TestRegistrationBulkCreationRowError:
 @pytest.mark.django_db
 class TestBulkUploadTasks:
 
-    @pytest.fixture(autouse=True)
-    def schemas(self):
-        ensure_schemas()
-
     @pytest.fixture()
     def initiator(self):
         return UserFactory(username='admin1@email.com', fullname='admin1')
@@ -101,7 +95,6 @@ class TestBulkUploadTasks:
 
     @pytest.fixture()
     def provider(self, schema, subjects):
-        ensure_default_providers()
         provider = RegistrationProvider.get_default()
         provider.allow_bulk_uploads = True
         provider.schemas.add(schema)

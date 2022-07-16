@@ -86,14 +86,6 @@ def assert_errors(actual_errors, expected_errors):
 class TestBulkUploadParserValidationErrors:
 
     @pytest.fixture(autouse=True)
-    def schemas(self):
-        ensure_schemas()
-
-    @pytest.fixture(autouse=True)
-    def licenses(self):
-        ensure_licenses()
-
-    @pytest.fixture(autouse=True)
     def default_provider(self):
         ensure_default_providers()
 

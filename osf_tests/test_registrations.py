@@ -581,11 +581,6 @@ class TestDOIValidation:
 
 class TestRegistrationMixin:
 
-    @pytest.fixture(autouse=True)
-    def schemas(self):
-        ensure_schemas()
-        map_schemas_to_schemablocks()
-
     @pytest.fixture()
     def draft_prereg(self, prereg_schema):
         return factories.DraftRegistrationFactory(

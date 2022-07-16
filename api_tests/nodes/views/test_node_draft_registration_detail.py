@@ -11,7 +11,6 @@ from osf_tests.factories import (
 )
 from osf.utils.permissions import WRITE, READ, ADMIN
 from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistrationTestCase
-from osf.utils.migrations import ensure_schemas
 
 SCHEMA_VERSION = 2
 
@@ -533,10 +532,6 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 @pytest.mark.django_db
 class TestDraftRegistrationPatch(DraftRegistrationTestCase):
 
-    @pytest.fixture(autouse=True)
-    def schemas(self):
-        ensure_schemas()
-
     @pytest.fixture()
     def schema(self):
         return RegistrationSchema.objects.get(
@@ -648,11 +643,6 @@ class TestDraftRegistrationPatch(DraftRegistrationTestCase):
 
 @pytest.mark.django_db
 class TestDraftRegistrationDelete(DraftRegistrationTestCase):
-
-    @pytest.fixture(autouse=True)
-    def schemas(self):
-        ensure_schemas()
-
     @pytest.fixture()
     def schema(self):
         return RegistrationSchema.objects.get(
