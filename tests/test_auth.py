@@ -23,7 +23,6 @@ from osf_tests.factories import (
 from framework.auth import Auth
 from framework.auth.decorators import must_be_logged_in
 from osf.models import OSFUser, Session
-from osf.migrations import ensure_default_providers
 from osf.utils import permissions
 from website import mails
 from website import settings

@@ -10,6 +10,7 @@ from website.util.metrics import provider_source_tag
 from osf_tests import factories
 from tests.base import OsfTestCase
 from tests.utils import mock_auth
+from osf.migrations import ensure_default_providers
 
 
 def set_preprint_providers():
@@ -73,7 +74,6 @@ class TestCampaignMethods(OsfTestCase):
 
     def setUp(self):
         super(TestCampaignMethods, self).setUp()
-        from osf.migrations import ensure_default_providers
         ensure_default_providers()
         set_preprint_providers()
         self.campaign_lists = [

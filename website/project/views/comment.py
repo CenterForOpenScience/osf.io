@@ -27,11 +27,9 @@ def update_file_guid_referent(self, target, event_type, payload, user=None):
     if source['provider'] in settings.ADDONS_BASED_ON_IDS:
         if event_type == 'addon_file_renamed':
             return  # Node has not changed and provider has not changed
-
         # Must be a move
         if source['provider'] == destination['provider'] and source_node == destination_node:
             return  # Node has not changed and provider has not changed
-
     file_guids = BaseFileNode.resolve_class(source['provider'], BaseFileNode.ANY).get_file_guids(
         materialized_path=source['materialized'] if source['provider'] != 'osfstorage' else source['path'],
         provider=source['provider'],
@@ -97,7 +95,6 @@ def find_and_create_file_from_metadata(children, source, destination, destinatio
 
 
 def update_comment_node(root_target_id, source_node, destination_node):
-    print(Comment.objects.filter(root_target___id=root_target_id))
     Comment.objects.filter(root_target___id=root_target_id).update(node=destination_node)
     source_node.save()
     destination_node.save()

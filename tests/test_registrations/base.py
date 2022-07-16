@@ -10,13 +10,11 @@ from osf.models import RegistrationSchema
 
 from tests.base import OsfTestCase
 from osf_tests.factories import AuthUserFactory, ProjectFactory, DraftRegistrationFactory, OSFGroupFactory
-from osf.utils.migrations import ensure_schemas
 
 
 class RegistrationsTestBase(OsfTestCase):
     def setUp(self):
         super(RegistrationsTestBase, self).setUp()
-        ensure_schemas()
         self.user = AuthUserFactory()
         self.auth = Auth(self.user)
         self.node = ProjectFactory(creator=self.user)
