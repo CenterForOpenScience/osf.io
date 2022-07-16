@@ -17,6 +17,7 @@ from osf_tests.factories import SubjectFactory, UserFactory, RegistrationFactory
 
 from osf.models import Subject, OSFUser, Collection, Embargo
 from osf.models.provider import rules_to_subjects
+from osf.migrations import update_admin_permissions
 from admin.base.utils import get_subject_rules, change_embargo_date
 from osf.admin import OSFUserAdmin
 
@@ -125,7 +126,9 @@ class TestNodeChanges(AdminTestCase):
         self.registration = RegistrationFactory(is_public=True)
         self.user = UserFactory()
         self.user.is_staff = True
-        self.user.groups.add(Group.objects.get(name='osf_admin'))
+        update_admin_permissions()
+        group = Group.objects.get(name='osf_admin')
+        self.user.groups.add(group)
         self.user.save()
 
         self.date_valid = self.registration.registered_date + datetime.timedelta(days=365)
