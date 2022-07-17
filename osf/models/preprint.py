@@ -206,7 +206,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         blank=True,
         null=True,
     )
-    has_coi = models.NullBooleanField(
+    has_coi = models.BooleanField(
         blank=True,
         null=True
     )

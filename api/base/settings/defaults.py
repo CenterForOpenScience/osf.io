@@ -354,3 +354,5 @@ DEFAULT_ES_NULL_VALUE = 'N/A'
 TRAVIS_ENV = False
 
 CITATION_STYLES_REPO_URL = 'https://github.com/CenterForOpenScience/styles/archive/88e6ed31a91e9f5a480b486029cda97b535935d4.zip'
+
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'

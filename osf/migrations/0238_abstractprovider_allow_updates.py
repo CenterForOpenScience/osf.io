@@ -15,6 +15,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='abstractprovider',
             name='allow_updates',
-            field=models.NullBooleanField(default=False),
+            field=models.BooleanField(default=False, null=True),
         ),
     ]
