@@ -13,7 +13,6 @@ from website import settings
 
 from django.core.management import call_command
 
-from api.base import settings as api_settings
 from osf.management.commands.manage_switch_flags import manage_waffle
 from osf.utils.migrations import ensure_schemas, map_schemas_to_schemablocks
 from website import settings as osf_settings
@@ -229,7 +228,7 @@ def update_subjects(sender, verbosity=0, **kwargs):
 
 def create_cache_table(sender, verbosity=0, **kwargs):
     if getattr(sender, 'label', None) == 'osf':
-        call_command('createcachetable', tablename=api_settings.CACHES[api_settings.STORAGE_USAGE_CACHE_NAME]['LOCATION'])
+        call_command('createcachetable')
 
 
 def update_default_providers(sender, verbosity=0, **kwargs):
