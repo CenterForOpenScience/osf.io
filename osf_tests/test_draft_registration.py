@@ -38,13 +38,6 @@ def draft_registration(project):
 
 class TestDraftRegistrations:
     # copied from tests/test_registrations/test_models.py
-
-    @pytest.fixture(autouse=True)
-    def default_providers(self):
-        ensure_schemas()
-        map_schemas_to_schemablocks()
-        ensure_default_providers()
-
     def test_factory(self):
         draft = factories.DraftRegistrationFactory()
         assert draft.branched_from is not None

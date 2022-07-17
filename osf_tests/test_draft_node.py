@@ -113,10 +113,6 @@ def make_complex_draft_registration(title, institution, description, category,
 
 class TestDraftNode:
 
-    @pytest.fixture(autouse=True)
-    def default_providers(self):
-        ensure_default_providers()
-
     def test_draft_node_creation(self, user):
         draft_node = DraftNode.objects.create(title='Draft Registration', creator_id=user.id)
         assert draft_node.is_public is False

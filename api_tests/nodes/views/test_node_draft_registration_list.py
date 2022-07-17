@@ -14,8 +14,6 @@ from osf_tests.factories import (
     DraftRegistrationFactory,
 )
 from osf.utils import permissions
-from osf.utils.migrations import ensure_schemas, map_schemas_to_schemablocks
-from osf.migrations import ensure_default_providers
 from website.project.metadata.utils import create_jsonschema_from_metaschema
 from website import settings
 
@@ -223,12 +221,6 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
 
 @pytest.mark.django_db
 class TestDraftRegistrationCreate(DraftRegistrationTestCase):
-
-    @pytest.fixture(autouse=True)
-    def default_providers(self):
-        ensure_default_providers()
-        ensure_schemas()
-        map_schemas_to_schemablocks()
 
     @pytest.fixture()
     def provider(self):
