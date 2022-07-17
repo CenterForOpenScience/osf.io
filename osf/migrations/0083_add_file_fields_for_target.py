@@ -31,6 +31,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='basefilenode',
             name='is_root',
-            field=models.BooleanField(null=True),
+            field=models.BooleanField(null=True, blank=True),
         ),
     ]

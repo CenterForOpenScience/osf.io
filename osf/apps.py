@@ -3,16 +3,16 @@ import logging
 from django.apps import AppConfig as BaseAppConfig
 from django.db.models.signals import post_migrate
 
-logger = logging.getLogger(__file__)
 from osf.migrations import (
-    update_storage_regions,
+    add_registration_schemas,
+    create_cache_table,
     update_blocked_email_domains,
-    update_default_providers,
     update_license,
     update_permission_groups,
     update_waffle_flags,
-    add_registration_schemas
 )
+
+logger = logging.getLogger(__file__)
 
 
 class AppConfig(BaseAppConfig):
@@ -22,14 +22,16 @@ class AppConfig(BaseAppConfig):
     managed = True
 
     def ready(self):
-        super().ready()
+        super(AppConfig, self).ready()
+
         post_migrate.connect(
             add_registration_schemas,
             dispatch_uid='osf.apps.add_registration_schemas'
         )
+
         post_migrate.connect(
             update_permission_groups,
-            dispatch_uid='django.contrib.auth.management.create_permissions'  # override default perm groups
+            dispatch_uid='osf.apps.update_permissions_groups'
         )
 
         post_migrate.connect(
@@ -43,19 +45,11 @@ class AppConfig(BaseAppConfig):
         )
 
         post_migrate.connect(
-            update_blocked_email_domains,
-            dispatch_uid='osf.apps.update_blocked_email_domains',
-        )
-        post_migrate.connect(
-            update_storage_regions,
-            dispatch_uid='osf.apps.update_storage_regions',
-        )
-        post_migrate.connect(
-            update_default_providers,
-            dispatch_uid='osf.apps.update_default_providers'
+            create_cache_table,
+            dispatch_uid='osf.apps.create_cache_table'
         )
 
         post_migrate.connect(
-            add_registration_schemas,
-            dispatch_uid='osf.apps.add_registration_schemas'
+            update_blocked_email_domains,
+            dispatch_uid='osf.apps.update_blocked_email_domains'
         )

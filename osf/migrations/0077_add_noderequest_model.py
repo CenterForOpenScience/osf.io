@@ -57,7 +57,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='abstractnode',
             name='access_requests_enabled',
-            field=models.BooleanField(db_index=True),
+            field=models.BooleanField(db_index=True, null=True),
         ),
         # Adding a default does not require a table rewrite
         migrations.RunSQL(

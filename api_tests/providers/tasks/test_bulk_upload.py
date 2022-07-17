@@ -95,7 +95,7 @@ class TestBulkUploadTasks:
 
     @pytest.fixture()
     def provider(self, schema, subjects):
-        provider = RegistrationProvider.get_default()
+        provider = RegistrationProvider.load('osf')
         provider.allow_bulk_uploads = True
         provider.schemas.add(schema)
         provider.subjects.add(*subjects)

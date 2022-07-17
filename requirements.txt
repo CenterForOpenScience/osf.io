@@ -88,9 +88,6 @@ django-bulk-update==2.2.0
 # Reviews requirements
 transitions==0.8.2
 
-six==1.16.0
-
-
 # identifiers
 datacite==1.1.2
 
