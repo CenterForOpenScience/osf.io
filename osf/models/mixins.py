@@ -966,8 +966,8 @@ class ReviewProviderMixin(GuardianMixin):
         abstract = True
 
     reviews_workflow = models.CharField(null=True, blank=True, max_length=15, choices=Workflows.choices())
-    reviews_comments_private = models.BooleanField(null=True)
-    reviews_comments_anonymous = models.BooleanField(null=True)
+    reviews_comments_private = models.BooleanField(null=True, blank=True)
+    reviews_comments_anonymous = models.BooleanField(null=True, blank=True)
 
     DEFAULT_SUBSCRIPTIONS = ['new_pending_submissions']
 
