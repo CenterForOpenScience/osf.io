@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 """
 
 import os
-from future.moves.urllib.parse import urlparse
 from website import settings as osf_settings
 from corsheaders.defaults import default_headers
 
