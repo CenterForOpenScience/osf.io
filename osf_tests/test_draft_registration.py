@@ -5,8 +5,6 @@ from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 from osf.exceptions import UserNotAffiliatedError, DraftRegistrationStateError, NodeStateError
 from osf.models import RegistrationSchema, DraftRegistration, DraftRegistrationContributor, NodeLicense, Node, NodeLog
-from osf.migrations import ensure_default_providers
-from osf.utils.migrations import ensure_schemas, map_schemas_to_schemablocks
 from osf.utils.permissions import ADMIN, READ, WRITE
 from osf_tests.test_node import TestNodeEditableFieldsMixin, TestTagging, TestNodeSubjects
 from osf_tests.test_node_license import TestNodeLicenses
