@@ -5,7 +5,6 @@ import builtins
 import json
 import logging
 import warnings
-import bson
 from math import ceil
 
 
@@ -40,10 +39,6 @@ FORMAT_TYPE_TO_TYPE_MAP = {
     ('textarea-lg', 'string'): 'long-text-input',
     ('textarea-xl', 'string'): 'long-text-input',
 }
-
-
-def generate_object_id():
-    return str(bson.ObjectId())
 
 
 def get_osf_models():

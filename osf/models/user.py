@@ -1751,6 +1751,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             return None
 
         user_session = Session.load(token.split('.')[0])
+
         if user_session is None:
             return None
 

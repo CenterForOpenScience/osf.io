@@ -487,9 +487,11 @@ class WithdrawnRegistrationFactory(BaseNodeFactory):
 
     @classmethod
     def _create(cls, *args, **kwargs):
+
         registration = kwargs.pop('registration', RegistrationFactory())
         registration.is_public = True
         user = kwargs.pop('user', registration.creator)
+
         registration.retract_registration(user)
         withdrawal = registration.retraction
         token = list(withdrawal.approval_state.values())[0]['approval_token']

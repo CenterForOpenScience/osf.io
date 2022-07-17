@@ -15,5 +15,4 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # To reverse this migrations simply revert changes to the schema and re-run
     ]

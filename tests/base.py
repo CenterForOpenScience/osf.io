@@ -4,10 +4,12 @@ import abc
 import datetime as dt
 import functools
 import logging
+import re
 import unittest
 import uuid
 
 import blinker
+import responses
 import mock
 import pytest
 

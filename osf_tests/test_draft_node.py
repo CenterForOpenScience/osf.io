@@ -11,7 +11,6 @@ from osf.models import (
 )
 from osf.exceptions import NodeStateError
 from osf.utils.permissions import READ, WRITE, ADMIN
-from osf.migrations import ensure_default_providers
 
 from osf_tests.factories import (
     DraftNodeFactory,
@@ -119,7 +118,6 @@ class TestDraftNode:
         assert draft_node.has_addon('osfstorage') is True
 
     def test_create_draft_registration_without_node(self, user):
-        ensure_default_providers()
         data = {'some': 'data'}
         draft = DraftRegistration.create_from_node(
             user=user,
