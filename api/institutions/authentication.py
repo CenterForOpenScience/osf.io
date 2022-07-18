@@ -52,12 +52,17 @@ logger = logging.getLogger(__name__)
 #
 INSTITUTION_SHARED_SSO_MAP = {
     'brown': {
-        'criteria': 'attribute',
         'attribute': 'isMemberOf',
-        'institutions': {
-            'thepolicylab': 'thepolicylab',
-        },
+        'criteria': 'equalsTo',
+        'value': 'thepolicylab',
+        'institution': 'thepolicylab',
     },
+    'fsu': {
+        'attribute': 'userRoles',
+        'criteria': 'contains',
+        'value': 'FSU_OSF_MAGLAB',
+        'institution': 'maglab',
+    }
 }
 
 # A map that defines whether to allow an institutional user to access OSF via SSO. For each entry,
@@ -157,35 +162,38 @@ class InstitutionAuthentication(BaseAuthentication):
         # Check secondary institutions which uses the SSO of primary ones
         secondary_institution = None
         if provider['id'] in INSTITUTION_SHARED_SSO_MAP:
+            # Check shared SSO and attempt to retrieve the secondary institution
             switch_map = INSTITUTION_SHARED_SSO_MAP[provider['id']]
-            criteria_type = switch_map.get('criteria')
-            if criteria_type == 'attribute':
-                attribute_name = switch_map.get('attribute')
-                attribute_value = provider['user'].get(attribute_name)
-                if attribute_value:
-                    secondary_institution_id = switch_map.get(
-                        'institutions',
-                        {},
-                    ).get(attribute_value)
-                    logger.info('Institution SSO: primary=[{}], secondary=[{}], '
-                                'username=[{}]'.format(provider['id'], secondary_institution_id, username))
-                    secondary_institution = Institution.load(secondary_institution_id)
-                    if not secondary_institution:
-                        # Log errors and inform Sentry but do not raise an exception if OSF fails
-                        # to load the secondary institution from database
-                        message = 'Institution SSO Error: invalid secondary institution [{}]; ' \
-                                  'primary=[{}], username=[{}]'.format(attribute_value, provider['id'], username)
-                        logger.error(message)
-                        sentry.log_message(message)
-                else:
-                    # SSO from primary institution only
-                    logger.info('Institution SSO: primary=[{}], secondary=[None], '
-                                'username=[{}]'.format(provider['id'], username))
+            matching_criteria = switch_map.get('criteria')
+            attribute_name = switch_map.get('attribute')
+            attribute_value = provider['user'].get(attribute_name)
+            criteria_value = switch_map.get('value')
+            secondary_institution_id = None
+            if matching_criteria == 'equalsTo':
+                secondary_institution_id = switch_map.get('institution') if criteria_value == attribute_value else None
+            elif matching_criteria == 'contains':
+                secondary_institution_id = switch_map.get('institution') if criteria_value in attribute_value else None
             else:
-                message = 'Institution SSO Error: invalid criteria [{}]; ' \
-                          'primary=[{}], username=[{}]'.format(criteria_type, provider['id'], username)
+                message = 'Institution SSO Error: invalid matching criteria [{}]; ' \
+                          'primary=[{}], username=[{}]'.format(matching_criteria, provider['id'], username)
                 logger.error(message)
                 sentry.log_message(message)
+            # Load the secondary institution
+            if secondary_institution_id:
+                logger.info('Institution SSO: primary=[{}], secondary=[{}], '
+                            'username=[{}]'.format(provider['id'], secondary_institution_id, username))
+                secondary_institution = Institution.load(secondary_institution_id)
+                if not secondary_institution:
+                    # Log errors and inform Sentry but do not raise an exception if OSF fails
+                    # to load the secondary institution from database
+                    message = 'Institution SSO Error: invalid secondary institution [{}]; ' \
+                              'primary=[{}], username=[{}]'.format(attribute_value, provider['id'], username)
+                    logger.error(message)
+                    sentry.log_message(message)
+            else:
+                # SSO from primary institution only
+                logger.info('Institution SSO: primary=[{}], secondary=[None], '
+                            'username=[{}]'.format(provider['id'], username))
 
         # Use given name and family name to build full name if it is not provided
         if given_name and family_name and not fullname:
