@@ -2,7 +2,7 @@ from django.db import models
 
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.identifiers import Identifier
-from osf.utils.outcomes import ArtifactTypes, NoPIDError
+from osf.utils import outcomes as outcome_utils
 
 
 '''
@@ -13,11 +13,17 @@ between an Outcome and an external Identifier that stores materials or provides 
 for the research effort described by the Outcome.
 '''
 
+
+ArtifactTypes = outcome_utils.ArtifactTypes
+
+
 class ArtifactManager(models.Manager):
 
     def get_queryset(self):
-        return super().get_queryset().annotate(
-            pid=models.F('identifier__value')
+        base_queryset = super().get_queryset().select_related('identifier')
+        return base_queryset.annotate(
+            pid=models.F('identifier__value'),
+            primary_resource_guid=outcome_utils.make_primary_resource_guid_annotation(base_queryset)
         )
 
     def create_for_identifier_value(
@@ -33,7 +39,9 @@ class ArtifactManager(models.Manager):
                     value=pid_value, category=pid_type
                 )
             except Identifier.DoesNotExist:
-                raise NoPIDError('No PID with value {pid_value} found for PID type {pid_type}')
+                raise outcome_utils.NoPIDError(
+                    'No PID with value {pid_value} found for PID type {pid_type}'
+                )
 
         return self.create(outcome=outcome, identifier=identifier, **kwargs)
 
@@ -44,7 +52,7 @@ class ArtifactManager(models.Manager):
             primary_outcome=models.Subquery(
                 artifact_qs.filter(
                     identifier=registration_identifier,
-                    artifact_type=ArtifactTypes.PRIMARY
+                    artifact_type=outcome_utils.ArtifactTypes.PRIMARY
                 ).values('outcome_id')[:1],
                 output_field=models.IntegerField()
             )

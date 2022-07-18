@@ -1,5 +1,7 @@
 from enum import IntEnum
 
+from django.db.models import CharField, OuterRef, Subquery
+
 
 class NoPIDError(Exception):
     pass
@@ -24,3 +26,25 @@ class ArtifactTypes(IntEnum):
     @classmethod
     def choices(cls):
         return tuple((entry.value, entry.name) for entry in cls)
+
+
+def make_primary_resource_guid_annotation(base_queryset):
+    from osf.models import Guid
+    primary_artifacts_and_guids = base_queryset.filter(
+        artifact_type=ArtifactTypes.PRIMARY
+    ).annotate(
+        resource_guid=Subquery(
+            Guid.objects.filter(
+                content_type=OuterRef('identifier__content_type'),
+                object_id=OuterRef('identifier__object_id')
+            ).order_by('-created').values('_id')[:1],
+            output_field=CharField(),
+        )
+    )
+
+    return Subquery(
+        primary_artifacts_and_guids.filter(
+            outcome_id=OuterRef('outcome_id')
+        ).values('resource_guid')[:1],
+        output_field=CharField()
+    )

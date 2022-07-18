@@ -15,7 +15,7 @@ class OutputSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'outputs'
 
-    id = ser.CharField(source='_id', required=True, allow_null=False, read_only=True)
+    id = ser.CharField(source='_id', read_only=True, required=False)
     type = TypeField()
 
     date_created = VersionedDateTimeField(source='created', required=False)
@@ -23,24 +23,21 @@ class OutputSerializer(JSONAPISerializer):
 
     name = ser.CharField(allow_null=False, allow_blank=True, required=False)
     description = ser.CharField(allow_null=False, allow_blank=True, required=False)
-    artifact_type = ser.IntegerField(allow_null=False, required=False)
-    finalized = ser.BooleanField(allow_null=False, required=False)
+    output_type = ser.IntegerField(source='artifact_type', allow_null=False, required=False)
+    finalized = ser.BooleanField(required=False)
 
     # Reference to obj.identifier.value, populated via annotation on default manager
     pid = ser.CharField(allow_null=False, allow_blank=True, required=False)
 
     registration = RelationshipField(
         related_view='registrations:registration-detail',
-        related_view_kwargs={'node_id': 'get_primary_registration_id'},
+        related_view_kwargs={'node_id': '<primary_resource_guid>'},
         read_only=True,
         required=False,
         allow_null=True,
     )
 
     links = LinksField({'self': 'get_absolute_url'})
-
-    def get_primary_registration_id(self, obj):
-        return obj.outcome.primary_osf_resource._id
 
     def get_absolute_url(self, obj):
         return absolute_reverse(

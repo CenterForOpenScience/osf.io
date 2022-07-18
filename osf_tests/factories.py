@@ -392,7 +392,7 @@ class RegistrationFactory(BaseNodeFactory):
     def _create(cls, target_class, project=None, is_public=False,
                 schema=None, draft_registration=None,
                 archive=False, embargo=None, registration_approval=None, retraction=None,
-                provider=None,
+                provider=None, has_doi=True,
                 *args, **kwargs):
         user = None
         if project:
@@ -468,6 +468,10 @@ class RegistrationFactory(BaseNodeFactory):
         draft_registration.registered_node = reg
         draft_registration.save()
         reg.save()
+
+        if has_doi:
+            IdentifierFactory(referent=reg, category='doi')
+
         return reg
 
 
