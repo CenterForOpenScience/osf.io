@@ -62,7 +62,7 @@ INSTITUTION_SHARED_SSO_MAP = {
         'attribute_name': 'userRoles',
         'criteria_action': SharedSsoAffiliationFilterCriteriaAction.CONTAINS.value,
         'criteria_value': 'FSU_OSF_MAGLAB',  # Actual value TBD
-        'institution_id': 'maglab',  # Actual id TBD
+        'institution_id': 'nationalmaglab',
     },
 }
 
