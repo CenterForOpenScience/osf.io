@@ -36,7 +36,7 @@ def outcome(registration_doi):
 class TestOutcomes:
 
     def test_outcome_for_registration__get__exists(self, outcome, registration):
-        stored_outcome = Outcome.objects.for_registration(registration, creaate=False)
+        stored_outcome = Outcome.objects.for_registration(registration, create=False)
         assert stored_outcome == outcome
 
     def test_outcome_for_registration__get__none_exists(self, registration, registration_doi):
@@ -152,7 +152,7 @@ class TestOutcomeArtifact:
             identifier=external_doi, artifact_type=ArtifactTypes.SUPPLEMENTS
         )
 
-        # Add another Artifact for one of hte identifiers to make sure it doesn't get picked up, too
+        # Add another Artifact for one of the identifiers to make sure it doesn't get picked up, too
         bogus_outcome = Outcome.objects.create()
         bogus_outcome.artifact_metadata.create(
             identifier=external_doi, artifact_type=ArtifactTypes.CODE

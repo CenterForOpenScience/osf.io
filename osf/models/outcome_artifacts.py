@@ -52,7 +52,7 @@ class ArtifactManager(models.Manager):
             primary_outcome=models.Subquery(
                 artifact_qs.filter(
                     identifier=registration_identifier,
-                    artifact_type=outcome_utils.ArtifactTypes.PRIMARY
+                    artifact_type=ArtifactTypes.PRIMARY
                 ).values('outcome_id')[:1],
                 output_field=models.IntegerField()
             )
