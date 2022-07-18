@@ -1993,3 +1993,20 @@ class DisableIfSwitch(HideIfSwitch):
         """
         super(DisableIfSwitch, self).__init__(switch_name, field, hide_if, **kwargs)
         self.validators.append(SwitchValidator(self.switch_name))
+
+
+class EnumField(ser.ChoiceField):
+    """
+    Custom field for using Int enums internally in a human-readable way.
+    """
+    def __init__(self, enum_class, **kwargs):
+        self._enum_class = enum_class
+        # We usually define this on the Enum class
+        choices = tuple((entry.value, entry.name.lower()) for entry in enum_class)
+        super().__init__(choices=choices, **kwargs)
+
+    def to_representation(self, value):
+        return self._enum_class(value).name.lower()
+
+    def to_internal_value(self, data):
+        return self._enum_class[data.upper()].value

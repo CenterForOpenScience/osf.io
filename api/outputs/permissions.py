@@ -24,7 +24,6 @@ class OutputsPermission:
     REQUIRED_PERMISSIONS = {}
 
     def has_permission(self, request, view):
-        print('checking perms')
         if request.method not in self.REQUIRED_PERMISSIONS.keys():
             raise exceptions.MethodNotAllowed(request.method)
 

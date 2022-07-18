@@ -1,6 +1,7 @@
 from rest_framework import serializers as ser
 
 from api.base.serializers import (
+    EnumField,
     JSONAPISerializer,
     LinksField,
     RelationshipField,
@@ -8,7 +9,7 @@ from api.base.serializers import (
     VersionedDateTimeField,
 )
 from api.base.utils import absolute_reverse
-
+from osf.utils.outcomes import ArtifactTypes
 
 class OutputSerializer(JSONAPISerializer):
 
@@ -23,7 +24,7 @@ class OutputSerializer(JSONAPISerializer):
 
     name = ser.CharField(allow_null=False, allow_blank=True, required=False)
     description = ser.CharField(allow_null=False, allow_blank=True, required=False)
-    output_type = ser.IntegerField(source='artifact_type', allow_null=False, required=False)
+    output_type = EnumField(ArtifactTypes, source='artifact_type', allow_null=False, required=False)
     finalized = ser.BooleanField(required=False)
 
     # Reference to obj.identifier.value, populated via annotation on default manager

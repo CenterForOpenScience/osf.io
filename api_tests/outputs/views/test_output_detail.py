@@ -149,3 +149,18 @@ class TestOutputDetailGETPermissions:
         )
         resp = app.get(make_api_url(test_artifact), auth=test_auth, expect_errors=True)
         assert resp.status_code == 403 if test_auth else 401
+
+
+@pytest.mark.django_db
+class TestOutputDetailGETBehavior:
+
+    def test_serialized_data(self, app):
+        test_artifact, test_auth, _ = configure_test_preconditions()
+
+        resp = app.get(make_api_url(test_artifact), auth=test_auth)
+        data = resp.json['data']
+
+        assert data['id'] == test_artifact._id
+        assert data['type'] == 'outputs'
+        assert data['attributes']['output_type'] == ArtifactTypes(test_artifact.artifact_type).name.lower()
+        assert data['relationships']['registration']['data']['id'] == test_artifact.outcome.primary_osf_resource._id
