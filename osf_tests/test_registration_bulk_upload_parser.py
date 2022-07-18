@@ -9,6 +9,7 @@ from rest_framework.exceptions import NotFound
 
 from osf_tests.factories import SubjectFactory
 from osf.models import RegistrationSchema, RegistrationProvider, NodeLicense
+from osf.migrations import ensure_default_registration_provider
 from osf.registrations.utils import (
     BulkRegistrationUpload,
     CategoryField,
@@ -91,7 +92,8 @@ class TestBulkUploadParserValidationErrors:
 
     @pytest.fixture()
     def registration_provider(self, open_ended_schema, provider_subjects):
-        osf_provider = RegistrationProvider.load('osf')
+        ensure_default_registration_provider()
+        osf_provider = RegistrationProvider.get_default()
         node_license = NodeLicense.objects.get(name='No license')
         osf_provider.default_license = node_license
         osf_provider.licenses_acceptable.add(node_license)

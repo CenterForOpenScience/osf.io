@@ -1,8 +1,6 @@
 import pytest
 import json
 
-from osf.models import RegistrationProvider
-
 from osf_tests.factories import SubjectFactory
 from admin.base.forms import ImportFileForm
 
@@ -48,10 +46,7 @@ class ProviderListMixinBase:
         view.object_list = view.get_queryset()
         res = view.get_context_data()
         assert isinstance(res, dict)
-        if isinstance(provider_one, RegistrationProvider):
-            assert len(res[f'{provider_one.readable_type}_providers']) == 3  # 2 test providers + 1 for the default provider
-        else:
-            assert len(res[f'{provider_one.readable_type}_providers']) == 2
+        assert len(res[f'{provider_one.readable_type}_providers']) == 2
 
         assert isinstance(res['{}_providers'.format(provider_one.readable_type)][0], provider_class)
 
