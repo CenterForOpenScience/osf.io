@@ -14,6 +14,7 @@ from framework.auth import signals, Auth
 from framework.auth.views import send_confirm_email
 
 from osf.models import OSFUser
+from osf.models.institution import SharedSsoAffiliationFilterCriteriaAction
 from osf_tests.factories import InstitutionFactory, ProjectFactory, UserFactory
 
 from tests.base import capture_signals
@@ -70,7 +71,7 @@ def institution():
 
 
 @pytest.fixture()
-def institution_primary():
+def institution_primary_type_1():
     institution = InstitutionFactory()
     institution._id = 'brown'
     institution.save()
@@ -78,7 +79,7 @@ def institution_primary():
 
 
 @pytest.fixture()
-def institution_secondary():
+def institution_secondary_type_1():
     institution = InstitutionFactory()
     institution._id = 'thepolicylab'
     institution.save()
@@ -408,16 +409,16 @@ class TestInstitutionAuth:
 
 
 @pytest.mark.django_db
-class TestInstitutionAuthnSharedSSO:
+class TestInstitutionAuthnSharedSSOCriteriaType1:
 
     def test_new_user_primary_only(self, app, url_auth_institution,
-                                        institution_primary, institution_secondary):
+                                   institution_primary_type_1, institution_secondary_type_1):
 
         username = 'user_created@osf.edu'
         assert OSFUser.objects.filter(username=username).count() == 0
 
         with capture_signals() as mock_signals:
-            res = app.post(url_auth_institution, make_payload(institution_primary, username))
+            res = app.post(url_auth_institution, make_payload(institution_primary_type_1, username))
         assert res.status_code == 204
         assert mock_signals.signals_sent() == set([signals.user_confirmed])
 
@@ -425,18 +426,20 @@ class TestInstitutionAuthnSharedSSO:
         assert user
         assert user.fullname == 'Fake User'
         assert user.accepted_terms_of_service is None
-        assert institution_primary in user.affiliated_institutions.all()
-        assert institution_secondary not in user.affiliated_institutions.all()
+        assert institution_primary_type_1 in user.affiliated_institutions.all()
+        assert institution_secondary_type_1 not in user.affiliated_institutions.all()
 
     def test_new_user_primary_and_secondary(self, app, url_auth_institution,
-                                                 institution_primary, institution_secondary):
+                                            institution_primary_type_1, institution_secondary_type_1):
 
         username = 'user_created@osf.edu'
         assert OSFUser.objects.filter(username=username).count() == 0
 
         with capture_signals() as mock_signals:
-            res = app.post(url_auth_institution,
-                           make_payload(institution_primary, username, is_member_of='thepolicylab'))
+            res = app.post(
+                url_auth_institution,
+                make_payload(institution_primary_type_1, username, is_member_of='thepolicylab')
+            )
         assert res.status_code == 204
         assert mock_signals.signals_sent() == set([signals.user_confirmed])
 
@@ -444,48 +447,48 @@ class TestInstitutionAuthnSharedSSO:
         assert user
         assert user.fullname == 'Fake User'
         assert user.accepted_terms_of_service is None
-        assert institution_primary in user.affiliated_institutions.all()
-        assert institution_secondary in user.affiliated_institutions.all()
+        assert institution_primary_type_1 in user.affiliated_institutions.all()
+        assert institution_secondary_type_1 in user.affiliated_institutions.all()
 
     def test_existing_user_primary_only_not_affiliated(self, app, url_auth_institution,
-                                                       institution_primary, institution_secondary):
+                                                       institution_primary_type_1, institution_secondary_type_1):
         username = 'user_not_affiliated@primary.edu'
         user = make_user(username, 'Foo Bar')
         user.save()
         number_of_affiliations = user.affiliated_institutions.count()
 
         with capture_signals() as mock_signals:
-            res = app.post(url_auth_institution, make_payload(institution_primary, username))
+            res = app.post(url_auth_institution, make_payload(institution_primary_type_1, username))
         assert res.status_code == 204
         assert not mock_signals.signals_sent()
 
         user.reload()
         assert user.fullname == 'Foo Bar'
         assert user.affiliated_institutions.count() == number_of_affiliations + 1
-        assert institution_primary in user.affiliated_institutions.all()
-        assert institution_secondary not in user.affiliated_institutions.all()
+        assert institution_primary_type_1 in user.affiliated_institutions.all()
+        assert institution_secondary_type_1 not in user.affiliated_institutions.all()
 
     def test_existing_user_primary_only_affiliated(self, app, url_auth_institution,
-                                                   institution_primary, institution_secondary):
+                                                   institution_primary_type_1, institution_secondary_type_1):
         username = 'user_affiliated@primary.edu'
         user = make_user(username, 'Foo Bar')
-        user.affiliated_institutions.add(institution_primary)
+        user.affiliated_institutions.add(institution_primary_type_1)
         user.save()
         number_of_affiliations = user.affiliated_institutions.count()
 
         with capture_signals() as mock_signals:
-            res = app.post(url_auth_institution, make_payload(institution_primary, username))
+            res = app.post(url_auth_institution, make_payload(institution_primary_type_1, username))
         assert res.status_code == 204
         assert not mock_signals.signals_sent()
 
         user.reload()
         assert user.fullname == 'Foo Bar'
         assert user.affiliated_institutions.count() == number_of_affiliations
-        assert institution_primary in user.affiliated_institutions.all()
-        assert institution_secondary not in user.affiliated_institutions.all()
+        assert institution_primary_type_1 in user.affiliated_institutions.all()
+        assert institution_secondary_type_1 not in user.affiliated_institutions.all()
 
     def test_existing_user_both_not_affiliated(self, app, url_auth_institution,
-                                               institution_primary, institution_secondary):
+                                               institution_primary_type_1, institution_secondary_type_1):
 
         username = 'user_both_not_affiliated@primary.edu'
         user = make_user(username, 'Foo Bar')
@@ -493,151 +496,161 @@ class TestInstitutionAuthnSharedSSO:
         number_of_affiliations = user.affiliated_institutions.count()
 
         with capture_signals() as mock_signals:
-            res = app.post(url_auth_institution,
-                           make_payload(institution_primary, username, is_member_of='thepolicylab'))
+            res = app.post(
+                url_auth_institution,
+                make_payload(institution_primary_type_1, username, is_member_of='thepolicylab')
+            )
         assert res.status_code == 204
         assert not mock_signals.signals_sent()
 
         user.reload()
         assert user.fullname == 'Foo Bar'
         assert user.affiliated_institutions.count() == number_of_affiliations + 2
-        assert institution_primary in user.affiliated_institutions.all()
-        assert institution_secondary in user.affiliated_institutions.all()
+        assert institution_primary_type_1 in user.affiliated_institutions.all()
+        assert institution_secondary_type_1 in user.affiliated_institutions.all()
 
     def test_existing_user_both_affiliated(self, app, url_auth_institution,
-                                           institution_primary, institution_secondary):
+                                           institution_primary_type_1, institution_secondary_type_1):
 
         username = 'user_both_affiliated@primary.edu'
         user = make_user(username, 'Foo Bar')
-        user.affiliated_institutions.add(institution_primary)
-        user.affiliated_institutions.add(institution_secondary)
+        user.affiliated_institutions.add(institution_primary_type_1)
+        user.affiliated_institutions.add(institution_secondary_type_1)
         user.save()
         number_of_affiliations = user.affiliated_institutions.count()
 
         with capture_signals() as mock_signals:
-            res = app.post(url_auth_institution,
-                           make_payload(institution_primary, username, is_member_of='thepolicylab'))
+            res = app.post(
+                url_auth_institution,
+                make_payload(institution_primary_type_1, username, is_member_of='thepolicylab')
+            )
         assert res.status_code == 204
         assert not mock_signals.signals_sent()
 
         user.reload()
         assert user.fullname == 'Foo Bar'
         assert user.affiliated_institutions.count() == number_of_affiliations
-        assert institution_primary in user.affiliated_institutions.all()
-        assert institution_secondary in user.affiliated_institutions.all()
+        assert institution_primary_type_1 in user.affiliated_institutions.all()
+        assert institution_secondary_type_1 in user.affiliated_institutions.all()
 
     def test_existing_user_secondary_not_affiliated(self, app, url_auth_institution,
-                                                    institution_primary, institution_secondary):
+                                                    institution_primary_type_1, institution_secondary_type_1):
 
         username = 'user_secondary_not@primary.edu'
         user = make_user(username, 'Foo Bar')
-        user.affiliated_institutions.add(institution_primary)
+        user.affiliated_institutions.add(institution_primary_type_1)
         user.save()
         number_of_affiliations = user.affiliated_institutions.count()
 
         with capture_signals() as mock_signals:
-            res = app.post(url_auth_institution,
-                           make_payload(institution_primary, username, is_member_of='thepolicylab'))
+            res = app.post(
+                url_auth_institution,
+                make_payload(institution_primary_type_1, username, is_member_of='thepolicylab')
+            )
         assert res.status_code == 204
         assert not mock_signals.signals_sent()
 
         user.reload()
         assert user.fullname == 'Foo Bar'
         assert user.affiliated_institutions.count() == number_of_affiliations + 1
-        assert institution_primary in user.affiliated_institutions.all()
-        assert institution_secondary in user.affiliated_institutions.all()
+        assert institution_primary_type_1 in user.affiliated_institutions.all()
+        assert institution_secondary_type_1 in user.affiliated_institutions.all()
 
-    def test_invalid_criteria_type(self, app, url_auth_institution,
-                                   institution_primary, institution_secondary):
+    def test_invalid_criteria_action(self, app, url_auth_institution,
+                                     institution_primary_type_1, institution_secondary_type_1):
 
         INSTITUTION_SHARED_SSO_MAP.update({
             'brown': {
-                'criteria': 'emailDomain',
-                'institutions': {
-                    'policylab.io': 'thepolicylab',
-                }
+                'attribute_name': 'isMemberOf',
+                'criteria_action': 'invalid_criteria_action',
+                'criteria_value': 'thepolicylab',
+                'institution_id': 'thepolicylab',
             },
         })
 
-        username = 'user_invalid_criteria@primary.edu'
+        username = 'user_invalid_criteria_action@primary.edu'
         user = make_user(username, 'Foo Bar')
-        user.affiliated_institutions.add(institution_primary)
+        user.affiliated_institutions.add(institution_primary_type_1)
         user.save()
         number_of_affiliations = user.affiliated_institutions.count()
 
         with capture_signals() as mock_signals:
-            res = app.post(url_auth_institution,
-                           make_payload(institution_primary, username, is_member_of='thepolicylab'))
+            res = app.post(
+                url_auth_institution,
+                make_payload(institution_primary_type_1, username, is_member_of='thepolicylab')
+            )
         assert res.status_code == 204
         assert not mock_signals.signals_sent()
 
         user.reload()
         assert user.fullname == 'Foo Bar'
         assert user.affiliated_institutions.count() == number_of_affiliations
-        assert institution_primary in user.affiliated_institutions.all()
-        assert institution_secondary not in user.affiliated_institutions.all()
+        assert institution_primary_type_1 in user.affiliated_institutions.all()
+        assert institution_secondary_type_1 not in user.affiliated_institutions.all()
 
-    def test_invalid_secondary_institution(self, app, url_auth_institution,
-                                           institution_primary, institution_secondary):
+    def test_invalid_institution_id(self, app, url_auth_institution,
+                                    institution_primary_type_1, institution_secondary_type_1):
 
         INSTITUTION_SHARED_SSO_MAP.update({
             'brown': {
-                'criteria': 'attribute',
-                'attribute': 'isMemberOf',
-                'institutions': {
-                    'thepolicylab': 'brownlab',
-                }
+                'attribute_name': 'isMemberOf',
+                'criteria_action': SharedSsoAffiliationFilterCriteriaAction.EQUALS_TO.value,
+                'criteria_value': 'thepolicylab',
+                'institution_id': 'invalid_institution_id',
             },
         })
 
-        username = 'user_invalid_criteria@primary.edu'
+        username = 'user_invalid_institution_id@primary.edu'
         user = make_user(username, 'Foo Bar')
-        user.affiliated_institutions.add(institution_primary)
+        user.affiliated_institutions.add(institution_primary_type_1)
         user.save()
         number_of_affiliations = user.affiliated_institutions.count()
 
         with capture_signals() as mock_signals:
-            res = app.post(url_auth_institution,
-                           make_payload(institution_primary, username, is_member_of='thepolicylab'))
+            res = app.post(
+                url_auth_institution,
+                make_payload(institution_primary_type_1, username, is_member_of='thepolicylab')
+            )
         assert res.status_code == 204
         assert not mock_signals.signals_sent()
 
         user.reload()
         assert user.fullname == 'Foo Bar'
         assert user.affiliated_institutions.count() == number_of_affiliations
-        assert institution_primary in user.affiliated_institutions.all()
-        assert institution_secondary not in user.affiliated_institutions.all()
+        assert institution_primary_type_1 in user.affiliated_institutions.all()
+        assert institution_secondary_type_1 not in user.affiliated_institutions.all()
 
-    def test_empty_secondary_institution(self, app, url_auth_institution,
-                                         institution_primary, institution_secondary):
+    def test_invalid_criteria_value(self, app, url_auth_institution,
+                                    institution_primary_type_1, institution_secondary_type_1):
 
         INSTITUTION_SHARED_SSO_MAP.update({
             'brown': {
-                'criteria': 'attribute',
-                'attribute': 'isMemberOf',
-                'institutions': {
-                    'thepolicylab': 'thepolicylab',
-                }
+                'attribute_name': 'isMemberOf',
+                'criteria_action': SharedSsoAffiliationFilterCriteriaAction.EQUALS_TO.value,
+                'criteria_value': 'thepolicylab',
+                'institution_id': 'thepolicylab',
             },
         })
 
-        username = 'user_invalid_criteria@primary.edu'
+        username = 'user_invalid_criteria_value@primary.edu'
         user = make_user(username, 'Foo Bar')
-        user.affiliated_institutions.add(institution_primary)
+        user.affiliated_institutions.add(institution_primary_type_1)
         user.save()
         number_of_affiliations = user.affiliated_institutions.count()
 
         with capture_signals() as mock_signals:
-            res = app.post(url_auth_institution,
-                           make_payload(institution_primary, username, is_member_of='brownlab'))
+            res = app.post(
+                url_auth_institution,
+                make_payload(institution_primary_type_1, username, is_member_of='invalid_criteria_value')
+            )
         assert res.status_code == 204
         assert not mock_signals.signals_sent()
 
         user.reload()
         assert user.fullname == 'Foo Bar'
         assert user.affiliated_institutions.count() == number_of_affiliations
-        assert institution_primary in user.affiliated_institutions.all()
-        assert institution_secondary not in user.affiliated_institutions.all()
+        assert institution_primary_type_1 in user.affiliated_institutions.all()
+        assert institution_secondary_type_1 not in user.affiliated_institutions.all()
 
 
 @pytest.mark.django_db
