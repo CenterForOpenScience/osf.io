@@ -7,7 +7,7 @@ import re
 from dirtyfields import DirtyFieldsMixin
 from include import IncludeManager
 from django.db import models
-from django.db.models import Q, Manager
+from django.db.models import Q
 from django.utils import timezone
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
