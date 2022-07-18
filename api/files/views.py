@@ -5,7 +5,7 @@ from django.http import FileResponse
 
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
-from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+from rest_framework.exceptions import NotFound, ValidationError
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -13,7 +13,6 @@ from osf.models import (
     Guid,
     BaseFileNode,
     FileVersion,
-    QuickFilesNode,
 )
 
 from api.base.exceptions import Gone
@@ -29,7 +28,7 @@ from api.files.permissions import IsPreprintFile
 from api.files.permissions import CheckedOutOrAdmin
 from api.files.permissions import FileMetadataRecordPermission
 from api.files.serializers import FileSerializer
-from api.files.serializers import FileDetailSerializer, QuickFilesDetailSerializer
+from api.files.serializers import FileDetailSerializer
 from api.files.serializers import FileMetadataRecordSerializer
 from api.files.serializers import FileVersionSerializer
 from osf.utils.permissions import ADMIN
@@ -86,14 +85,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     view_name = 'file-detail'
 
     def get_serializer_class(self):
-        try:
-            target = self.get_target()
-        except (NotFound, Gone, PermissionDenied):
-            return FileDetailSerializer
-        else:
-            if isinstance(target, QuickFilesNode):
-                return QuickFilesDetailSerializer
-            return FileDetailSerializer
+        return FileDetailSerializer
 
     def get_target(self):
         return self.get_file().target

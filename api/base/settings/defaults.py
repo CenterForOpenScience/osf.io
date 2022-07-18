@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 """
 
 import os
-from future.moves.urllib.parse import urlparse
 from website import settings as osf_settings
 from corsheaders.defaults import default_headers
 
@@ -22,7 +21,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 DATABASES = {
     'default': {
         'CONN_MAX_AGE': 0,
-        'ENGINE': 'osf.db.backends.postgresql',  # django.db.backends.postgresql
+        'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.environ.get('OSF_DB_NAME', 'osf'),
         'USER': os.environ.get('OSF_DB_USER', 'postgres'),
         'PASSWORD': os.environ.get('OSF_DB_PASSWORD', ''),
@@ -224,13 +223,12 @@ MIDDLEWARE = (
     # Uncomment and add "prof" to url params to recieve a profile for that url
     # 'api.base.middleware.ProfileMiddleware',
 
-    # 'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
     'api.base.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    # 'django.contrib.auth.middleware.AuthenticationMiddleware',
-    # 'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
-    # 'django.contrib.messages.middleware.MessageMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'waffle.middleware.WaffleMiddleware',
@@ -241,6 +239,14 @@ TEMPLATES = [
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
     },
 ]
 
@@ -348,3 +354,5 @@ DEFAULT_ES_NULL_VALUE = 'N/A'
 TRAVIS_ENV = False
 
 CITATION_STYLES_REPO_URL = 'https://github.com/CenterForOpenScience/styles/archive/88e6ed31a91e9f5a480b486029cda97b535935d4.zip'
+
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'

@@ -417,7 +417,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
         url = '/{}nodes/{}/draft_registrations/{}/'.format(
             API_BASE, project_public._id, draft_registration_prereg._id)
 
-        del metadata_registration['q1']
+        del metadata_registration['q3']
         draft_registration_prereg.metadata_registration = metadata_registration
         draft_registration_prereg.save()
 
@@ -427,7 +427,7 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
                 'type': 'draft_registrations',
                 'attributes': {
                     'registration_metadata': {
-                        'q3': {
+                        'q2': {
                             'value': 'New response'
                         }
                     }
@@ -439,17 +439,17 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             url, payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 200
-        assert res.json['data']['attributes']['registration_metadata']['q3']['value'] == 'New response'
-        assert 'q1' not in res.json['data']['attributes']['registration_metadata']
+        assert res.json['data']['attributes']['registration_metadata']['q2']['value'] == 'New response'
+        assert 'q3' not in res.json['data']['attributes']['registration_metadata']
 
     def test_required_registration_responses_questions_not_required_on_update(
             self, app, user, project_public, draft_registration_prereg):
 
-        url = '/{}nodes/{}/draft_registrations/{}/'.format(
+        url = '/{}nodes/{}/draft_registrations/{}/?version=2.20'.format(
             API_BASE, project_public._id, draft_registration_prereg._id)
 
         registration_responses = {
-            'q1': 'First question answered'
+            'q2': 'First question answered'
         }
 
         draft_registration_prereg.registration_responses = {}
@@ -470,8 +470,8 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
             url, payload, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 200
-        assert res.json['data']['attributes']['registration_metadata']['q1']['value'] == registration_responses['q1']
-        assert res.json['data']['attributes']['registration_responses']['q1'] == registration_responses['q1']
+        assert res.json['data']['attributes']['registration_metadata']['q2']['value'] == registration_responses['q2']
+        assert res.json['data']['attributes']['registration_responses']['q2'] == registration_responses['q2']
 
     def test_registration_responses_must_be_a_dictionary(
             self, app, user, payload_with_registration_responses, url_draft_registrations):
