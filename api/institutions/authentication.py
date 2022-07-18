@@ -17,6 +17,7 @@ from framework.auth import get_or_create_user
 
 from osf import features
 from osf.models import Institution
+from osf.models.institution import SharedSsoAffiliationFilterCriteriaAction
 
 from website.mails import send_mail, WELCOME_OSF4I
 from website.settings import OSF_SUPPORT_EMAIL, DOMAIN
@@ -52,17 +53,17 @@ logger = logging.getLogger(__name__)
 #
 INSTITUTION_SHARED_SSO_MAP = {
     'brown': {
-        'attribute': 'isMemberOf',
-        'criteria': 'equalsTo',
-        'value': 'thepolicylab',
-        'institution': 'thepolicylab',
+        'attribute_name': 'isMemberOf',
+        'criteria_action': SharedSsoAffiliationFilterCriteriaAction.EQUALS_TO.value,
+        'criteria_value': 'thepolicylab',
+        'institution_id': 'thepolicylab',
     },
     'fsu': {
-        'attribute': 'userRoles',
-        'criteria': 'contains',
-        'value': 'FSU_OSF_MAGLAB',
-        'institution': 'maglab',
-    }
+        'attribute_name': 'userRoles',
+        'criteria_action': SharedSsoAffiliationFilterCriteriaAction.CONTAINS.value,
+        'criteria_value': 'FSU_OSF_MAGLAB',  # Actual value TBD
+        'institution_id': 'maglab',  # Actual id TBD
+    },
 }
 
 # A map that defines whether to allow an institutional user to access OSF via SSO. For each entry,
@@ -162,32 +163,36 @@ class InstitutionAuthentication(BaseAuthentication):
         # Check secondary institutions which uses the SSO of primary ones
         secondary_institution = None
         if provider['id'] in INSTITUTION_SHARED_SSO_MAP:
-            # Check shared SSO and attempt to retrieve the secondary institution
             switch_map = INSTITUTION_SHARED_SSO_MAP[provider['id']]
-            matching_criteria = switch_map.get('criteria')
-            attribute_name = switch_map.get('attribute')
+            attribute_name = switch_map.get('attribute_name')
+            criteria_action = switch_map.get('criteria_action')
+            criteria_value = switch_map.get('criteria_value')
             attribute_value = provider['user'].get(attribute_name)
-            criteria_value = switch_map.get('value')
+            # Check affiliation filter criteria and retrieve the secondary institution ID
             secondary_institution_id = None
-            if matching_criteria == 'equalsTo':
-                secondary_institution_id = switch_map.get('institution') if criteria_value == attribute_value else None
-            elif matching_criteria == 'contains':
-                secondary_institution_id = switch_map.get('institution') if criteria_value in attribute_value else None
+            if criteria_action == SharedSsoAffiliationFilterCriteriaAction.EQUALS_TO.value:
+                secondary_institution_id = switch_map.get('institution_id') if criteria_value == attribute_value else None
+            elif criteria_action == SharedSsoAffiliationFilterCriteriaAction.CONTAINS.value:
+                secondary_institution_id = switch_map.get('institution_id') if criteria_value in attribute_value else None
             else:
-                message = 'Institution SSO Error: invalid matching criteria [{}]; ' \
-                          'primary=[{}], username=[{}]'.format(matching_criteria, provider['id'], username)
+                message = 'Institution Shared SSO Error: invalid affiliation filter criteria action [{}]; ' \
+                          'primary=[{}], username=[{}]'.format(criteria_action, provider['id'], username)
                 logger.error(message)
                 sentry.log_message(message)
-            # Load the secondary institution
+            # Attempt to load the secondary institution by ID
             if secondary_institution_id:
-                logger.info('Institution SSO: primary=[{}], secondary=[{}], '
-                            'username=[{}]'.format(provider['id'], secondary_institution_id, username))
+                logger.info(
+                    'Institution Shared SSO Eligible: primary=[{}], secondary=[{}], '
+                    'filter=[{}: {} {} {}], username=[{}]'.format(
+                        provider['id'], secondary_institution_id, attribute_name,
+                        attribute_value, criteria_action, criteria_value, username
+                    ))
                 secondary_institution = Institution.load(secondary_institution_id)
                 if not secondary_institution:
                     # Log errors and inform Sentry but do not raise an exception if OSF fails
                     # to load the secondary institution from database
-                    message = 'Institution SSO Error: invalid secondary institution [{}]; ' \
-                              'primary=[{}], username=[{}]'.format(attribute_value, provider['id'], username)
+                    message = 'Institution Shared SSO Warning: invalid secondary institution [{}], primary=[{}], ' \
+                              'username=[{}]'.format(secondary_institution_id, provider['id'], username)
                     logger.error(message)
                     sentry.log_message(message)
             else:
