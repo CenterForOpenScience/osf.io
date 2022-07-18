@@ -205,12 +205,9 @@ REST_FRAMEWORK = {
 
 # Settings related to CORS Headers addon: allow API to receive authenticated requests from OSF
 # CORS plugin only matches based on "netloc" part of URL, so as workaround we add that to the list
-CORS_ORIGIN_ALLOW_ALL = False
-CORS_ORIGIN_WHITELIST = (
-    urlparse(osf_settings.DOMAIN).netloc,
-    osf_settings.DOMAIN,
-)
-# This needs to remain True to allow cross origin requests that are in CORS_ORIGIN_WHITELIST to
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = (osf_settings.DOMAIN.rstrip('/'),)
+# This needs to remain True to allow cross origin requests that are in CORS_ALLOWED_ORIGINS to
 # use cookies.
 CORS_ALLOW_CREDENTIALS = True
 # Allow 'cache-control' in addition to default request headers
@@ -218,8 +215,6 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = list(default_headers) + [
     'cache-control',
 ]
-# Set dynamically on app init
-ORIGINS_WHITELIST = ()
 
 MIDDLEWARE = (
     'api.base.middleware.DjangoGlobalMiddleware',
