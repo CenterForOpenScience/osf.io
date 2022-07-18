@@ -114,10 +114,10 @@ class Migration(migrations.Migration):
                 ('wiki_pages_versions', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict)),
                 ('wiki_private_uuids', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict)),
                 ('preprint_article_doi', models.CharField(blank=True, max_length=128, null=True, validators=[osf.models.validators.validate_doi])),
-                ('_is_preprint_orphan', models.NullBooleanField(default=False)),
+                ('_is_preprint_orphan', models.BooleanField(default=False, null=True)),
                 ('_has_abandoned_preprint', models.BooleanField(default=False)),
                 ('keenio_read_key', models.CharField(blank=True, max_length=1000, null=True)),
-                ('is_bookmark_collection', models.NullBooleanField(db_index=True, default=False)),
+                ('is_bookmark_collection', models.BooleanField(db_index=True, null=True, default=False)),
                 ('registered_date', osf.utils.fields.NonNaiveDateTimeField(blank=True, db_index=True, null=True)),
                 ('registered_meta', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict, null=True)),
             ],
@@ -332,9 +332,6 @@ class Migration(migrations.Migration):
                 ('num_submissions', models.IntegerField(default=0)),
                 ('admins', models.ManyToManyField(to=settings.AUTH_USER_MODEL)),
             ],
-            options={
-                'permissions': (('view_conference', 'Can view conference details in the admin app.'),),
-            },
         ),
         migrations.CreateModel(
             name='Contributor',
@@ -1099,7 +1096,6 @@ class Migration(migrations.Migration):
             ],
             options={
                 'proxy': True,
-                'permissions': (('view_registration', 'Can view registration details'),),
             },
             bases=('osf.abstractnode',),
         ),

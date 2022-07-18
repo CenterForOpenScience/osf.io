@@ -11,9 +11,4 @@ class Migration(migrations.Migration):
         ('osf', '0117_merge_20180712_1241'),
     ]
 
-    operations = [
-        migrations.AlterModelOptions(
-            name='providerassetfile',
-            options={'permissions': (('view_providerassetfile', 'Can view provider asset files'),)},
-        ),
-    ]
+    operations = []

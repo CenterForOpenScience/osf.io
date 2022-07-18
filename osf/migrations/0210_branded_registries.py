@@ -55,6 +55,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterModelOptions(
             name='brand',
-            options={'permissions': (('view_brand', 'Can view brand details'), ('modify_brand', 'Can modify brands'))},
+            options={'permissions': (('modify_brand', 'Can modify brands'),)},
         ),
     ]

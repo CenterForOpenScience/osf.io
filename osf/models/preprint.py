@@ -7,7 +7,7 @@ import re
 from dirtyfields import DirtyFieldsMixin
 from include import IncludeManager
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, Manager
 from django.utils import timezone
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
@@ -207,7 +207,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         blank=True,
         null=True,
     )
-    has_coi = models.NullBooleanField(
+    has_coi = models.BooleanField(
         blank=True,
         null=True
     )
@@ -253,7 +253,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
     class Meta:
         permissions = (
-            ('view_preprint', 'Can view preprint details in the admin app'),
             ('read_preprint', 'Can read the preprint'),
             ('write_preprint', 'Can write the preprint'),
             ('admin_preprint', 'Can manage the preprint'),

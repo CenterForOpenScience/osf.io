@@ -243,12 +243,6 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
 
 class CollectionProvider(AbstractProvider):
 
-    class Meta:
-        permissions = (
-            # custom permissions for use in the OSF Admin App
-            ('view_collectionprovider', 'Can view collection provider details'),
-        )
-
     @property
     def readable_type(self):
         return 'collection'
@@ -284,7 +278,7 @@ class RegistrationProvider(AbstractProvider):
     #
     # Ex:
     # [{'field_name': 'foo'}, {'field_name': 'bar'}]
-    additional_metadata_fields = DateTimeAwareJSONField(blank=True)
+    additional_metadata_fields = DateTimeAwareJSONField(blank=True, null=True)
     default_schema = models.ForeignKey('osf.registrationschema', related_name='default_schema', null=True, blank=True, on_delete=models.SET_NULL)
     bulk_upload_auto_approval = models.BooleanField(default=False, null=True)
     allow_updates = models.BooleanField(default=False, null=True)
@@ -293,12 +287,6 @@ class RegistrationProvider(AbstractProvider):
     def __init__(self, *args, **kwargs):
         self._meta.get_field('share_publish_type').default = 'Registration'
         super().__init__(*args, **kwargs)
-
-    class Meta:
-        permissions = (
-            # custom permissions for use in the OSF Admin App
-            ('view_registrationprovider', 'Can view registration provider details'),
-        )
 
     @classmethod
     def get_default_id(cls):
@@ -311,8 +299,9 @@ class RegistrationProvider(AbstractProvider):
                 """,
                 [cls.default__id]
             )
-            default_id = cursor.fetchone()[0]
-        return default_id
+            value = cursor.fetchone()
+            if value:
+                return value[0]
 
     @property
     def readable_type(self):
@@ -352,12 +341,6 @@ class PreprintProvider(AbstractProvider):
     )
     preprint_word = models.CharField(max_length=10, choices=PREPRINT_WORD_CHOICES, default='preprint')
     subjects_acceptable = DateTimeAwareJSONField(blank=True, default=list)
-
-    class Meta:
-        permissions = (
-            # custom permissions for use in the OSF Admin App
-            ('view_preprintprovider', 'Can view preprint provider details'),
-        )
 
     @property
     def readable_type(self):

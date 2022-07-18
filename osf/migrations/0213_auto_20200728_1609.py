@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 
 from django.db import migrations, models
 import django.db.models.deletion
-import osf.models.registrations
 
 
 class Migration(migrations.Migration):
@@ -17,6 +16,12 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='draftregistration',
             name='provider',
-            field=models.ForeignKey(default=osf.models.registrations.get_default_id, on_delete=django.db.models.deletion.CASCADE, related_name='draft_registrations', to='osf.RegistrationProvider'),
+            field=models.ForeignKey(
+                default=None,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name='draft_registrations',
+                to='osf.RegistrationProvider'
+            ),
         ),
     ]

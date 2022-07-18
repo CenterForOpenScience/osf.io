@@ -19,7 +19,6 @@ class Migration(migrations.Migration):
             options={
                 'indexes': [],
                 'proxy': True,
-                'permissions': (('view_registrationprovider', 'Can view registration provider details'),),
             },
             bases=('osf.abstractprovider',),
         ),

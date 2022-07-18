@@ -36,8 +36,5 @@ class Migration(migrations.Migration):
                 ('mobile_photo', models.FileField(storage=osf.utils.storage.BannerImageStorage(), upload_to='')),
                 ('mobile_alt_text', models.TextField(blank=True, null=True)),
             ],
-            options={
-                'permissions': (('view_scheduledbanner', 'Can view scheduled banner details'),),
-            },
         ),
     ]
