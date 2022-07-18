@@ -12,12 +12,20 @@ from osf_tests.factories import (
 )
 
 
+from osf.migrations import ensure_schemas, map_schemas_to_schemablocks
+
+
 @pytest.mark.django_db
 class TestRegion:
 
     @pytest.fixture()
     def user(self):
         return AuthUserFactory()
+
+    @pytest.fixture(autouse=True)
+    def schemas(self):
+        ensure_schemas()
+        map_schemas_to_schemablocks()
 
     @pytest.fixture()
     def project_with_different_regions(self, user):
@@ -57,7 +65,7 @@ class TestRegion:
         :return:
         """
         schema = RegistrationSchema.objects.first()
-        draft_reg = DraftRegistrationFactory(branched_from=project_with_different_regions)
+        draft_reg = DraftRegistrationFactory(branched_from=project_with_different_regions, registration_schema=schema)
         project_with_different_regions.register_node(schema, Auth(user=user), draft_reg)
 
         regs = Registration.objects.all()

@@ -64,8 +64,9 @@ class TestRegistrationSchemaDetail:
         assert res.status_code == 200
 
         # test_inactive_metaschema_returned
-        inactive_schema = RegistrationSchema.objects.get(
-            name='Election Research Preacceptance Competition', active=False)
+        inactive_schema = RegistrationSchema.objects.get(name='Election Research Preacceptance Competition')
+        inactive_schema.active = False
+        inactive_schema.save()
         url = '/{}schemas/registrations/{}/'.format(API_BASE, inactive_schema._id)
         res = app.get(url)
         assert res.status_code == 200

@@ -11,6 +11,8 @@ from osf.models import (
 )
 from osf.exceptions import NodeStateError
 from osf.utils.permissions import READ, WRITE, ADMIN
+from osf.migrations import ensure_default_registration_provider
+
 from osf_tests.factories import (
     DraftNodeFactory,
     DraftRegistrationFactory,
@@ -110,6 +112,10 @@ def make_complex_draft_registration(title, institution, description, category,
 
 
 class TestDraftNode:
+
+    @pytest.fixture(autouse=True)
+    def default_registration_provider(self):
+        ensure_default_registration_provider()
 
     def test_draft_node_creation(self, user):
         draft_node = DraftNode.objects.create(title='Draft Registration', creator_id=user.id)

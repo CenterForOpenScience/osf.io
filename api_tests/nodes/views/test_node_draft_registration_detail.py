@@ -156,9 +156,10 @@ class TestDraftRegistrationUpdate(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def reg_schema(self):
-        return RegistrationSchema.objects.get(
-            name='OSF Preregistration',
-            schema_version=SCHEMA_VERSION)
+        schema = RegistrationSchema.objects.get_latest_version(name='OSF Preregistration')
+        schema.active = True
+        schema.save()
+        return schema
 
     @pytest.fixture()
     def draft_registration_prereg(self, user, project_public, reg_schema):

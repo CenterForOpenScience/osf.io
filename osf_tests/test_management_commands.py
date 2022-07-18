@@ -12,7 +12,6 @@ from api_tests.utils import create_test_file
 from framework.auth import Auth
 from osf.management.commands.update_institution_project_counts import update_institution_project_counts
 from osf.management.commands.project_to_draft_registration_contributor_sync import retrieve_draft_registrations_to_sync, project_to_draft_registration_contributor_sync
-from osf.models import RegistrationSchema
 from osf.metrics import InstitutionProjectCounts, UserInstitutionProjectCounts
 from osf_tests.factories import (
     AuthUserFactory,
@@ -69,9 +68,8 @@ class TestDataStorageUsage(DbTestCase):
         return project
 
     def registration(self, project, creator, withdrawn=False):
-        schema = RegistrationSchema.objects.first()
         draft_reg = DraftRegistrationFactory(branched_from=project)
-        registration = project.register_node(schema, Auth(user=creator), draft_reg)
+        registration = project.register_node(draft_reg.registration_schema, Auth(user=creator), draft_reg)
         registration.is_public = True
         registration.save()
 

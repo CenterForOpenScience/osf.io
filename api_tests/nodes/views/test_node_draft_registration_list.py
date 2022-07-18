@@ -14,6 +14,7 @@ from osf_tests.factories import (
     DraftRegistrationFactory,
 )
 from osf.utils import permissions
+from osf.migrations import ensure_default_registration_provider
 from website.project.metadata.utils import create_jsonschema_from_metaschema
 from website import settings
 
@@ -224,6 +225,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def provider(self):
+        ensure_default_registration_provider()
         return RegistrationProvider.get_default()
 
     @pytest.fixture()
@@ -449,8 +451,9 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 404
 
     #   test_registration_supplement_must_be_active_metaschema
-        schema = RegistrationSchema.objects.get(
-            name='Election Research Preacceptance Competition', active=False)
+        schema = RegistrationSchema.objects.get(name='Election Research Preacceptance Competition')
+        schema.active = False
+        schema.save()
         draft_data = {
             'data': {
                 'type': 'draft_registrations',
