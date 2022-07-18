@@ -105,9 +105,7 @@ class Registration(AbstractNode):
     )
     registered_date = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
 
-    # This is a NullBooleanField because of inheritance issues with using a BooleanField
-    # TODO: Update to BooleanField(default=False, null=True) when Django is updated to >=2.1
-    external_registration = models.NullBooleanField(default=False)
+    external_registration = models.BooleanField(default=False, null=True)
     registered_user = models.ForeignKey(OSFUser,
                                         related_name='related_to',
                                         on_delete=models.SET_NULL,
@@ -139,7 +137,7 @@ class Registration(AbstractNode):
                                                     null=True, blank=True,
                                                     on_delete=models.SET_NULL)
     files_count = models.PositiveIntegerField(blank=True, null=True)
-    branched_from_node = models.NullBooleanField(blank=True, null=True)
+    branched_from_node = models.BooleanField(blank=True, null=True)
 
     moderation_state = models.CharField(
         max_length=30,

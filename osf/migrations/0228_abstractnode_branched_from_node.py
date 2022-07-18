@@ -15,6 +15,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='abstractnode',
             name='branched_from_node',
-            field=models.NullBooleanField(),
+            field=models.BooleanField(null=True),
         ),
     ]

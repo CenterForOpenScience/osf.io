@@ -19,6 +19,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='abstractnode',
             name='external_registration',
-            field=models.NullBooleanField(default=False),
+            field=models.BooleanField(default=False, null=True),
         ),
     ]
