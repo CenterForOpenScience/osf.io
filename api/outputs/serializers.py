@@ -29,6 +29,7 @@ class OutputSerializer(JSONAPISerializer):
     # Reference to obj.identifier.value, populated via annotation on default manager
     pid = ser.CharField(allow_null=False, allow_blank=True, required=False)
 
+    # primary_resource_guid is populated via annotation on the default manager
     registration = RelationshipField(
         related_view='registrations:registration-detail',
         related_view_kwargs={'node_id': '<primary_resource_guid>'},

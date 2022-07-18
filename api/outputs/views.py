@@ -35,13 +35,10 @@ class OutputDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
 
     def get_object(self):
-        print('get object!')
         try:
             return OutcomeArtifact.objects.get(_id=self.kwargs['output_id'])
         except OutcomeArtifact.DoesNotExist:
-            print('Not found :/')
             raise NotFound
 
     def get_permissions_proxy(self):
-        print('get permissions proxy!')
-        return Guid.load(self.get_object().primary_resource_guid)
+        return Guid.load(self.get_object().primary_resource_guid).referent

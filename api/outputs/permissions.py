@@ -8,7 +8,7 @@ from api.base.utils import get_user_auth, assert_resource_type
 from osf.models import Registration
 
 
-class OutputsPermission(permissions.BasePermission):
+class OutputsPermission:
     '''Base permissions class for acting on Outputs.
 
     To GET an Output (when the method is available), the user must have `can_view` access
@@ -21,7 +21,7 @@ class OutputsPermission(permissions.BasePermission):
     while access should be denied to SchemaResponses on withdrawn parent resources.
     '''
     acceptable_models = (Registration, )
-    REQUIRED_PERMISSIONS = {'PATCH': 'write', 'POST': 'admin', 'DELETE': 'admin'}
+    REQUIRED_PERMISSIONS = {}
 
     def has_permission(self, request, view):
         print('checking perms')
@@ -43,10 +43,6 @@ class OutputsPermission(permissions.BasePermission):
 
         return proxy_object.has_permission(auth.user, self.REQUIRED_PERMISSIONS[request.method])
 
-    def has_object_permission(self, request, view, obj):
-        print('has object permission')
-        return self.has_permission(self, request, view)
-
 
 class OutputsListPermission(OutputsPermission):
     '''Permissions for the top-level OutputsList endpoint.
@@ -56,12 +52,15 @@ class OutputsListPermission(OutputsPermission):
     REQUIRED_PERMISSIONS = {'POST': 'admin'}
 
 
-class OutputDetailPermission(OutputsPermission):
+class OutputDetailPermission(OutputsPermission, permissions.BasePermission):
     '''Permissions for the top-level OutputsDetail endpoint.
 
     OutputsDetail supports GET, PATCH, and DELETE methods.
     '''
     REQUIRED_PERMISSIONS = {'GET': None, 'PATCH': 'write', 'DELETE': 'admin'}
+
+#    def has_object_permission(self, request, view, obj):
+#        return self.has_permission(self, request, view)
 
 
 class RegistrationOutputsListPermission(OutputsPermission):

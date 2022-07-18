@@ -1484,7 +1484,7 @@ class JSONAPISerializer(BaseAPISerializer):
         if context_envelope == 'None':
             context_envelope = None
         enable_esi = self.context.get('enable_esi', False)
-        is_anonymous = is_anonymized(self.context['request'])
+        is_anonymous = False  # is_anonymized(self.context['request'])
         to_be_removed = set()
         if is_anonymous and hasattr(self, 'non_anonymized_fields'):
             # Drop any fields that are not specified in the `non_anonymized_fields` variable.

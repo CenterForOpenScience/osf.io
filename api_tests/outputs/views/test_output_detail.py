@@ -40,7 +40,7 @@ def make_api_url(output):
 def configure_test_preconditions(registration_state=RegStates.ACCEPTED, user_role=UserRoles.ADMIN_USER):
     provider = RegistrationProviderFactory()
     provider.update_group_permissions()
-    provider.workflow = ModerationWorkflows.PRE_MODERATION.value
+    provider.reviews_workflow = ModerationWorkflows.PRE_MODERATION.value
     provider.save()
 
     state_settings = STATE_VISIBILITY_MAPPINGS[registration_state]
@@ -101,12 +101,12 @@ class TestOutputDetailGETPermissions:
             registration_state=RegStates.INITIAL, user_role=user_role
         )
         resp = app.get(make_api_url(test_artifact), auth=test_auth, expect_errors=True)
-        assert resp.status_code == 403
+        assert resp.status_code == 403 if test_auth else 401
 
     @pytest.mark.parametrize('registration_state', [RegStates.PENDING, RegStates.EMBARGO])
     @pytest.mark.parametrize('user_role', UserRoles.contributor_roles(include_moderator=True))
     def test_status_code__pending_or_embargoed__contributor_or_moderator(self, app, registration_state, user_role):
-        test_artifact, test_auth, _ = configure_test_preconditions(
+        test_artifact, test_auth, registration = configure_test_preconditions(
             registration_state=registration_state, user_role=user_role
         )
         resp = app.get(make_api_url(test_artifact), auth=test_auth, expect_errors=True)
