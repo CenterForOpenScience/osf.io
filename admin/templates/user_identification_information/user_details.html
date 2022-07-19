@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+{% load node_extras %}
+{% block top_includes %}
+  <link rel="stylesheet" type="text/css" href="/static/css/users.css" />
+{% endblock %}
+
+{% block title %}
+    <title>{% trans "User Details" %}</title>
+{% endblock title %}
+{% block content %}
+    <div class="row">
+        <div class="col-md-12">
+            <h3>{% trans "User details" %}</h3>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>{% trans "Field" %}</th>
+                    <th>{% trans "Value" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{% trans "Name" %}</td>
+                    <td>{{ user.name }}</td>
+                </tr>
+                <tr>
+                    <td>{% trans "GakuNin RDM account" %}</td>
+                    <td>
+                        <a href="{{ user.osf_link }}">{{ user.id }}</a>
+                    </td>
+                </tr>
+                <tr>
+                    <td>{% trans "Username" %}</td>
+                    <td>{{ user.username }}</td>
+                </tr>
+                <tr>
+                    <td>{% trans "Emails" %}</td>
+                    <td>
+                        {% for email in user.emails %}
+                                {% if email == user.username %}
+                                    {{ email }}
+                                {% else %}
+                                    {{ email }}
+                                {% endif %}
+                        {% endfor %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>{% trans "Registered" %}</td>
+                    <td>{{ user.registered }}</td>
+                </tr>
+                <tr>
+                    <td>{% trans "Confirmed" %}</td>
+                    <td>{{ user.confirmed }}</td>
+                </tr>
+                <tr>
+                    <td>{% trans "Affiliation" %}</td>
+                    <td>{{ user.affiliation.name  }}</td>
+                </tr>
+                <tr>
+                    <td>{% trans "Last login" %}</td>
+                    <td>{{ user.last_login }}</td>
+                </tr>
+                <tr>
+                    <td>{% trans "Disabled" %}</td>
+                    <td>{{ user.disabled }}</td>
+                </tr>
+                <tr>
+                    <td>{% trans "Two factor" %}</td>
+                    <td>
+                        {{ user.two_factor }}
+                        {% if user.two_factor %}
+                            <a href="{% url 'users:remove2factor' user.id %}"
+                               class="btn btn-default"
+                               data-toggle="modal"
+                               data-target="#twoFactorModal">
+                                {% trans "Deactivate" %}
+                            </a>
+                            <div class="modal" id="twoFactorModal">
+                                <div class="modal-dialog">
+                                    <div class="modal-content"></div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>{% trans "System tags" %}</td>
+                    <td>
+                        {% for system_tag in user.system_tags %}
+                            {{ system_tag }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                        {% if system_tag is null %} Null {% endif %}
+                    </td>
+                </tr>
+                {% if user.osf_groups %}
+                    <tr>
+                        <td>
+                            {% trans "GakuNin RDM Groups" %}
+                        </td>
+                        <td>
+                            <select class="form-control" style="width:90%; display:inherit;" id="groups-select">
+                                {% for group in user.osf_groups %}
+                                    <option value="{{ group.id | reverse_osf_group }}">{{ group.name }} ({{ group.role }})</option>
+                                {% endfor %}
+                            </select>
+                            <input type="submit" class="pull-right btn btn-default"  value="Go to" onclick="document.location.href = document.getElementById('groups-select').value;" />
+                        </td>
+                    </tr>
+                {% endif %}
+                <tr>
+                    <td>{% trans "Usage" %}</td>
+                    <td>
+                        {{ user.usage_value }} {{ user.usage_abbr }}
+                    </td>
+                </tr>
+                <tr>
+                    <td>{% trans "Remaining" %}</td>
+                    <td>{{ user.remaining_value|floatformat:1 }} {{ user.remaining_abbr }}</td>
+                </tr>
+                <tr>
+                    <td>{% trans "Quota" %}</td>
+                    <td>{{ user.quota }}</td>
+                </tr>
+                <tr>
+                    <td>{% trans "Extended Storage" %}</td>
+                    <td>{{user.extended_storage}}</td>
+                </tr>
+            </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock content %}
