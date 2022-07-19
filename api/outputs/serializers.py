@@ -13,6 +13,17 @@ from osf.utils.outcomes import ArtifactTypes
 
 class OutputSerializer(JSONAPISerializer):
 
+    non_anonymized_fields = frozenset([
+        'id',
+        'type',
+        'date_created',
+        'date_modified',
+        'name',
+        'description',
+        'registration',
+        'links',
+    ])
+
     class Meta:
         type_ = 'outputs'
 

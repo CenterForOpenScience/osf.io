@@ -8,6 +8,7 @@ from osf.models import Outcome
 from osf.utils.workflows import RegistrationModerationStates as RegStates
 from osf_tests.factories import (
     AuthUserFactory,
+    PrivateLinkFactory,
     RegistrationFactory,
     RegistrationProviderFactory
 )
@@ -34,8 +35,11 @@ STATE_VISIBILITY_MAPPINGS = {
 }
 
 
-def make_api_url(output):
-    return f'/v2/outputs/{output._id}/'
+def make_api_url(output, vol_key=None):
+    base_url = f'/v2/outputs/{output._id}/'
+    if vol_key:
+        return f'{base_url}?view_only={vol_key}'
+    return base_url
 
 def configure_test_preconditions(registration_state=RegStates.ACCEPTED, user_role=UserRoles.ADMIN_USER):
     provider = RegistrationProviderFactory()
@@ -159,8 +163,21 @@ class TestOutputDetailGETBehavior:
 
         resp = app.get(make_api_url(test_artifact), auth=test_auth)
         data = resp.json['data']
+        print(data)
 
         assert data['id'] == test_artifact._id
         assert data['type'] == 'outputs'
         assert data['attributes']['output_type'] == ArtifactTypes(test_artifact.artifact_type).name.lower()
+        assert data['attributes']['pid'] == test_artifact.identifier.value
         assert data['relationships']['registration']['data']['id'] == test_artifact.outcome.primary_osf_resource._id
+
+    def test_anonymized_data(self, app):
+        test_artifact, test_auth, registration = configure_test_preconditions()
+        avol = PrivateLinkFactory(anonymous=True)
+        avol.nodes.add(registration)
+
+        url = make_api_url(test_artifact, vol_key=avol.key)
+        print(url)
+        resp = app.get(make_api_url(test_artifact, vol_key=avol.key), auth=None)
+        data = resp.json['data']
+        assert 'pid' not in data['attributes']

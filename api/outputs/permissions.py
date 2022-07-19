@@ -58,9 +58,6 @@ class OutputDetailPermission(OutputsPermission, permissions.BasePermission):
     '''
     REQUIRED_PERMISSIONS = {'GET': None, 'PATCH': 'write', 'DELETE': 'admin'}
 
-#    def has_object_permission(self, request, view, obj):
-#        return self.has_permission(self, request, view)
-
 
 class RegistrationOutputsListPermission(OutputsPermission):
     '''Permissions for the RegistrationOutputsList endpoing.
