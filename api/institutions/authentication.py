@@ -61,7 +61,7 @@ INSTITUTION_SHARED_SSO_MAP = {
     'fsu': {
         'attribute_name': 'userRoles',
         'criteria_action': SharedSsoAffiliationFilterCriteriaAction.CONTAINS.value,
-        'criteria_value': 'FSU_OSF_MAGLAB',  # Actual value TBD
+        'criteria_value': 'FSU_OSF_MAGLAB',
         'institution_id': 'nationalmaglab',
     },
 }
@@ -185,8 +185,9 @@ class InstitutionAuthentication(BaseAuthentication):
                     'Institution Shared SSO Eligible: primary=[{}], secondary=[{}], '
                     'filter=[{}: {} {} {}], username=[{}]'.format(
                         provider['id'], secondary_institution_id, attribute_name,
-                        attribute_value, criteria_action, criteria_value, username
-                    ))
+                        attribute_value, criteria_action, criteria_value, username,
+                    ),
+                )
                 secondary_institution = Institution.load(secondary_institution_id)
                 if not secondary_institution:
                     # Log errors and inform Sentry but do not raise an exception if OSF fails
