@@ -43,25 +43,10 @@ class OutputsPermission:
         return proxy_object.has_permission(auth.user, self.REQUIRED_PERMISSIONS[request.method])
 
 
-class OutputsListPermission(OutputsPermission):
-    '''Permissions for the top-level OutputsList endpoint.
-
-    Outputs List only supports the POST method.
-    '''
-    REQUIRED_PERMISSIONS = {'POST': 'admin'}
-
-
 class OutputDetailPermission(OutputsPermission, permissions.BasePermission):
     '''Permissions for the top-level OutputsDetail endpoint.
 
     OutputsDetail supports GET, PATCH, and DELETE methods.
     '''
-    REQUIRED_PERMISSIONS = {'GET': None, 'PATCH': 'write', 'DELETE': 'admin'}
-
-
-class RegistrationOutputsListPermission(OutputsPermission):
-    '''Permissions for the RegistrationOutputsList endpoing.
-
-    RegistrationOutputsList only supports the GET method.
-    '''
+    # TODO(ENG-3898, ENG-3899) Implement PATCH and DELETE
     REQUIRED_PERMISSIONS = {'GET': None}

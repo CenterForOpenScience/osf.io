@@ -154,6 +154,21 @@ class TestOutputDetailGETPermissions:
         resp = app.get(make_api_url(test_artifact), auth=test_auth, expect_errors=True)
         assert resp.status_code == 403 if test_auth else 401
 
+    @pytest.mark.parametrize('registration_state', [RegStates.INITIAL, RegStates.PENDING, RegStates.EMBARGO])
+    @pytest.mark.parametrize('user_role', UserRoles.noncontributor_roles())
+    def test_status_code__vol(self, app, registration_state, user_role):
+        test_artifact, test_auth, registration = configure_test_preconditions(
+            registration_state=registration_state, user_role=user_role
+        )
+        provider = registration.provider
+        provider.reviews_workflow = ModerationWorkflows.NONE.value
+        provider.save()
+
+        vol = PrivateLinkFactory(anonymous=False)
+        vol.nodes.add(registration)
+        resp = app.get(make_api_url(test_artifact, vol_key=vol.key), auth=test_auth, expect_errors=True)
+        assert resp.status_code == 200
+
 
 @pytest.mark.django_db
 class TestOutputDetailGETBehavior:
@@ -163,7 +178,6 @@ class TestOutputDetailGETBehavior:
 
         resp = app.get(make_api_url(test_artifact), auth=test_auth)
         data = resp.json['data']
-        print(data)
 
         assert data['id'] == test_artifact._id
         assert data['type'] == 'outputs'
@@ -176,8 +190,34 @@ class TestOutputDetailGETBehavior:
         avol = PrivateLinkFactory(anonymous=True)
         avol.nodes.add(registration)
 
-        url = make_api_url(test_artifact, vol_key=avol.key)
-        print(url)
         resp = app.get(make_api_url(test_artifact, vol_key=avol.key), auth=None)
         data = resp.json['data']
         assert 'pid' not in data['attributes']
+
+
+@pytest.mark.django_db
+class TestOutputDetailUnsupportedMethods:
+
+    @pytest.mark.parametrize('user_role', UserRoles)
+    def test_cannot_POST(self, app, user_role):
+        test_artifact, test_auth, _ = configure_test_preconditions()
+        resp = app.post_json_api(make_api_url(test_artifact), auth=test_auth, expect_errors=True)
+        assert resp.status_code == 405
+
+    @pytest.mark.parametrize('user_role', UserRoles)
+    def test_cannot_PUT(self, app, user_role):
+        test_artifact, test_auth, _ = configure_test_preconditions()
+        resp = app.put_json_api(make_api_url(test_artifact), auth=test_auth, expect_errors=True)
+        assert resp.status_code == 405
+
+    @pytest.mark.parametrize('user_role', UserRoles)
+    def test_cannot_PATCH(self, app, user_role):
+        test_artifact, test_auth, _ = configure_test_preconditions()
+        resp = app.patch_json_api(make_api_url(test_artifact), auth=test_auth, expect_errors=True)
+        assert resp.status_code == 405
+
+    @pytest.mark.parametrize('user_role', UserRoles)
+    def test_cannot_DELETEe(self, app, user_role):
+        test_artifact, test_auth, _ = configure_test_preconditions()
+        resp = app.delete_json_api(make_api_url(test_artifact), auth=test_auth, expect_errors=True)
+        assert resp.status_code == 405
