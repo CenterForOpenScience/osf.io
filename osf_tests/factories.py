@@ -392,7 +392,7 @@ class RegistrationFactory(BaseNodeFactory):
     def _create(cls, target_class, project=None, is_public=False,
                 schema=None, draft_registration=None,
                 archive=False, embargo=None, registration_approval=None, retraction=None,
-                provider=None, has_doi=True,
+                provider=None, has_doi=False,
                 *args, **kwargs):
         user = None
         if project:
