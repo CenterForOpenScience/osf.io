@@ -1526,7 +1526,7 @@ function MetadataButtons() {
         .css('color', 'red')
         .text(_('Renaming, moving the file/directory, or changing the directory hierarchy can break the association of the metadata you have added.'));
     }
-    const dialog = $('<div class="modal fade"></div>')
+    const dialog = $('<div class="modal fade" data-backdrop="static"></div>')
       .append($('<div class="modal-dialog modal-lg"></div>')
         .append($('<div class="modal-content"></div>')
           .append($('<div class="modal-header"></div>')
@@ -1548,6 +1548,11 @@ function MetadataButtons() {
               .append(notice)
               .append(close)
               .append(save)))));
+    $(window).on('beforeunload', function() {
+      if ($(dialog).data('bs.modal').isShown) {
+        return _('You have unsaved changes.');
+      }
+    });
     dialog.appendTo($('#treeGrid'));
     return {
       dialog: dialog,
