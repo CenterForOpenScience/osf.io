@@ -8,10 +8,10 @@ from api.base.utils import get_user_auth, assert_resource_type
 from osf.models import Registration
 
 
-class OutputsPermission:
-    '''Base permissions class for acting on Outputs.
+class ResourcesPermission:
+    '''Base permissions class for acting on Resources.
 
-    To GET an Output (when the method is available), the user must have `can_view` access
+    To GET an Resource (when the method is available), the user must have `can_view` access
     to the proxy_object designated by the view (i.e. the Primary Registration).
 
     For all other methods, the user must have the permissions designated by the
@@ -33,7 +33,7 @@ class OutputsPermission:
             # Mimics get_object_or_error logic
             raise Gone
         if getattr(proxy_object, 'is_retracted', False):
-            # Mimics behavior of ExcludeWithdrawals for Registration Outputs
+            # Mimics behavior of ExcludeWithdrawals for Registration Resources
             return False
 
         auth = get_user_auth(request)
@@ -43,10 +43,10 @@ class OutputsPermission:
         return proxy_object.has_permission(auth.user, self.REQUIRED_PERMISSIONS[request.method])
 
 
-class OutputDetailPermission(OutputsPermission, permissions.BasePermission):
-    '''Permissions for the top-level OutputsDetail endpoint.
+class ResourceDetailPermission(ResourcesPermission, permissions.BasePermission):
+    '''Permissions for the top-level ResourcesDetail endpoint.
 
-    OutputsDetail supports GET, PATCH, and DELETE methods.
+    ResourcesDetail supports GET, PATCH, and DELETE methods.
     '''
     # TODO(ENG-3898, ENG-3899) Implement PATCH and DELETE
     REQUIRED_PERMISSIONS = {'GET': None}

@@ -11,7 +11,7 @@ from api.base.serializers import (
 from api.base.utils import absolute_reverse
 from osf.utils.outcomes import ArtifactTypes
 
-class OutputSerializer(JSONAPISerializer):
+class ResourceSerializer(JSONAPISerializer):
 
     non_anonymized_fields = frozenset([
         'id',
@@ -25,7 +25,7 @@ class OutputSerializer(JSONAPISerializer):
     ])
 
     class Meta:
-        type_ = 'outputs'
+        type_ = 'resources'
 
     id = ser.CharField(source='_id', read_only=True, required=False)
     type = TypeField()
@@ -35,7 +35,7 @@ class OutputSerializer(JSONAPISerializer):
 
     name = ser.CharField(allow_null=False, allow_blank=True, required=False)
     description = ser.CharField(allow_null=False, allow_blank=True, required=False)
-    output_type = EnumField(ArtifactTypes, source='artifact_type', allow_null=False, required=False)
+    resource_type = EnumField(ArtifactTypes, source='artifact_type', allow_null=False, required=False)
     finalized = ser.BooleanField(required=False)
 
     # Reference to obj.identifier.value, populated via annotation on default manager
@@ -54,9 +54,9 @@ class OutputSerializer(JSONAPISerializer):
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
-            'outputs:output-detail',
+            'resources:resource-detail',
             kwargs={
                 'version': self.context['request'].parser_context['kwargs']['version'],
-                'output_id': obj._id,
+                'resource_id': obj._id,
             },
         )

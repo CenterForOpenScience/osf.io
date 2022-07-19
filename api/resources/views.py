@@ -9,34 +9,34 @@ from api.base.parsers import (
     JSONAPIMultipleRelationshipsParserForRegularJSON,
 )
 from api.base.views import JSONAPIBaseView
-from api.outputs.permissions import OutputDetailPermission
-from api.outputs.serializers import OutputSerializer
+from api.resources.permissions import ResourceDetailPermission
+from api.resources.serializers import ResourceSerializer
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import Guid, OutcomeArtifact
 
 logger = logging.getLogger(__name__)
 
-class OutputDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
+class ResourceDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
 
     permission_classes = (
-        OutputDetailPermission,
+        ResourceDetailPermission,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.READ_REGISTRATION_OUTPUTS]
-    required_write_scopes = [CoreScopes.WRITE_REGISTRATION_OUTPUTS]
+    required_read_scopes = [CoreScopes.READ_REGISTRATION_RESOURCES]
+    required_write_scopes = [CoreScopes.WRITE_REGISTRATION_RESOURCES]
 
-    view_category = 'outputs'
-    view_name = 'output-detail'
+    view_category = 'resources'
+    view_name = 'resource-detail'
 
-    serializer_class = OutputSerializer
+    serializer_class = ResourceSerializer
 
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
 
     def get_object(self):
         try:
-            return OutcomeArtifact.objects.get(_id=self.kwargs['output_id'])
+            return OutcomeArtifact.objects.get(_id=self.kwargs['resource_id'])
         except OutcomeArtifact.DoesNotExist:
             raise NotFound
 

@@ -13,7 +13,7 @@ from osf_tests.factories import (
     RegistrationProviderFactory
 )
 from osf.utils.outcomes import ArtifactTypes
-from api.outputs import urls, permissions, views, serializers  # noqa
+from api.resources import urls, permissions, views, serializers  # noqa
 
 TEST_EXTERNAL_PID = 'This is a doi'
 
@@ -35,8 +35,8 @@ STATE_VISIBILITY_MAPPINGS = {
 }
 
 
-def make_api_url(output, vol_key=None):
-    base_url = f'/v2/outputs/{output._id}/'
+def make_api_url(resource, vol_key=None):
+    base_url = f'/v2/resources/{resource._id}/'
     if vol_key:
         return f'{base_url}?view_only={vol_key}'
     return base_url
@@ -81,7 +81,7 @@ def _configure_permissions_test_auth(registration, user_role):
 
 
 @pytest.mark.django_db
-class TestOutputDetailGETPermissions:
+class TestResourceDetailGETPermissions:
 
     @pytest.mark.parametrize('user_role', UserRoles)
     def test_status_code__public(self, app, user_role):
@@ -171,7 +171,7 @@ class TestOutputDetailGETPermissions:
 
 
 @pytest.mark.django_db
-class TestOutputDetailGETBehavior:
+class TestResourceDetailGETBehavior:
 
     def test_serialized_data(self, app):
         test_artifact, test_auth, _ = configure_test_preconditions()
@@ -180,8 +180,8 @@ class TestOutputDetailGETBehavior:
         data = resp.json['data']
 
         assert data['id'] == test_artifact._id
-        assert data['type'] == 'outputs'
-        assert data['attributes']['output_type'] == ArtifactTypes(test_artifact.artifact_type).name.lower()
+        assert data['type'] == 'resources'
+        assert data['attributes']['resource_type'] == ArtifactTypes(test_artifact.artifact_type).name.lower()
         assert data['attributes']['pid'] == test_artifact.identifier.value
         assert data['relationships']['registration']['data']['id'] == test_artifact.outcome.primary_osf_resource._id
 
@@ -196,7 +196,7 @@ class TestOutputDetailGETBehavior:
 
 
 @pytest.mark.django_db
-class TestOutputDetailUnsupportedMethods:
+class TestResourceDetailUnsupportedMethods:
 
     @pytest.mark.parametrize('user_role', UserRoles)
     def test_cannot_POST(self, app, user_role):
