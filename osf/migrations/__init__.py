@@ -176,10 +176,10 @@ def ensure_default_storage_region():
     Region = apps.get_model('addons_osfstorage', 'Region')
     Region.objects.get_or_create(
         _id=DEFAULT_REGION_ID,
+        name=DEFAULT_REGION_NAME,
         defaults={
-            'name': DEFAULT_REGION_NAME,
             'waterbutler_credentials': osfstorage_config.WATERBUTLER_CREDENTIALS,
             'waterbutler_settings': osfstorage_config.WATERBUTLER_SETTINGS,
-            'waterbutler_url': settings.WATERBUTLER_URL
+            'waterbutler_url': osf_settings.WATERBUTLER_URL
         }
     )
