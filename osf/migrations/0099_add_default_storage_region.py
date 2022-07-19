@@ -75,5 +75,4 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(add_osfstorage_addon, remove_osfstorage_addon),
     ]
