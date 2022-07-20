@@ -18,7 +18,10 @@ def admin_user():
 
 @pytest.fixture
 def registration(admin_user):
-    return RegistrationFactory(creator=admin_user, is_public=True, has_doi=True)
+    registration = RegistrationFactory(creator=admin_user, is_public=True, has_doi=True)
+    registration.moderation_state = RegStates.ACCEPTED.db_name
+    registration.save()
+    return registration
 
 
 @pytest.fixture
@@ -46,18 +49,20 @@ class TestResourceListPOSTPermissions:
 
     @pytest.mark.parametrize('user_role', [role for role in UserRoles if role is not UserRoles.ADMIN_USER])
     def test_status_code__non_admin(self, app, registration, payload, user_role):
-        test_auth = configure_test_auth(registration, UserRoles.ADMIN_USER)
+        test_auth = configure_test_auth(registration, user_role)
         resp = app.post_json_api(POST_URL, payload, auth=test_auth, expect_errors=True)
-        assert resp.status_code == 403 if test_auth else 401
+        expected_code = 403 if user_role is not UserRoles.UNAUTHENTICATED else 401
+        assert resp.status_code == expected_code
 
     @pytest.mark.parametrize('user_role', UserRoles)
     def test_status_code__withdrawn_registration(self, app, registration, payload, user_role):
         registration.moderation_state = RegStates.WITHDRAWN.db_name
         registration.save()
 
-        test_auth = configure_test_auth(registration, UserRoles.ADMIN_USER)
+        test_auth = configure_test_auth(registration, user_role)
         resp = app.post_json_api(POST_URL, payload, auth=test_auth, expect_errors=True)
-        assert resp.status_code == 403 if test_auth else 401
+        expected_code = 403 if user_role is not UserRoles.UNAUTHENTICATED else 401
+        assert resp.status_code == expected_code
 
     @pytest.mark.parametrize('user_role', UserRoles)
     def test_status_code__deleted_registration(self, app, registration, payload, user_role):
@@ -148,3 +153,13 @@ class TestResourceListPOSTBehavior:
 
         resp = app.post_json_api(POST_URL, payload, auth=None, expect_errors=True)
         assert resp.status_code == 404
+
+    @pytest.mark.parametrize('registration_state', [RegStates.INITIAL, RegStates.PENDING])
+    def test_post_fails_with_409_if_registration_not_approved(
+        self, app, registration, admin_user, payload, registration_state
+    ):
+        registration.moderation_state = registration_state.db_name
+        registration.save()
+
+        resp = app.post_json_api(POST_URL, payload, auth=admin_user.auth, expect_errors=True)
+        assert resp.status_code == 409

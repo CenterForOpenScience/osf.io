@@ -249,10 +249,15 @@ class Registration(AbstractNode):
 
     @property
     def is_registration_approved(self):
-        root = self._dirty_root
-        if root.registration_approval is None:
-            return False
-        return root.registration_approval.is_approved
+        pending_states = [
+            RegistrationModerationStates.INITIAL.db_name,
+            RegistrationModerationStates.PENDING.db_name
+        ]
+        return self.moderation_state not in pending_states
+#        root = self._dirty_root
+#        if root.registration_approval is None:
+#            return False
+#        return root.registration_approval.is_approved
 
     @property
     def is_pending_embargo(self):
