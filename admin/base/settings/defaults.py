@@ -137,10 +137,8 @@ RAVEN_CONFIG = {
 
 # Settings related to CORS Headers addon: allow API to receive authenticated requests from OSF
 # CORS plugin only matches based on "netloc" part of URL, so as workaround we add that to the list
-CORS_ORIGIN_ALLOW_ALL = False
-CORS_ORIGIN_WHITELIST = (urlparse(osf_settings.DOMAIN).netloc,
-                         osf_settings.DOMAIN,
-                         )
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOWED_ORIGINS = (osf_settings.DOMAIN.rstrip('/'),)
 CORS_ALLOW_CREDENTIALS = True
 
 MIDDLEWARE = (
