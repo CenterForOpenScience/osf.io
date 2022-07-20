@@ -97,6 +97,7 @@ class TestBulkUploadParserValidationErrors:
         osf_provider.licenses_acceptable.add(node_license)
         osf_provider.schemas.add(open_ended_schema)
         osf_provider.subjects.add(*provider_subjects)
+        osf_provider.licenses_acceptable.add(NodeLicense.objects.get(name='No license'))
         osf_provider.save()
         return osf_provider
 
