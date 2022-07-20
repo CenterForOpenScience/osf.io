@@ -1,38 +1,12 @@
 import pytest
 
-from django.utils import timezone
-
 from api.providers.workflows import Workflows as ModerationWorkflows
 from api_tests.utils import UserRoles
-from osf.models import Outcome
+from api_tests.resources.utils import configure_test_preconditions
+
 from osf.utils.workflows import RegistrationModerationStates as RegStates
-from osf_tests.factories import (
-    AuthUserFactory,
-    PrivateLinkFactory,
-    RegistrationFactory,
-    RegistrationProviderFactory
-)
 from osf.utils.outcomes import ArtifactTypes
-from api.resources import urls, permissions, views, serializers  # noqa
-
-TEST_EXTERNAL_PID = 'This is a doi'
-
-# Omitted the following redundant states:
-# PENDING_EMBARGO_TERMINATION (overlaps EMBARGO)
-# PENDING_WITHDRAW_REQESST and PENDING_WITHDRAW (ovrlaps ACCEPTED)
-# REVERTED (overlaps REJECTED)
-#
-# Techncically PENDING and EMBARGO overlap as well, but worth confirming EMBARGO behavior
-STATE_VISIBILITY_MAPPINGS = {
-    RegStates.INITIAL: {'public': False, 'deleted': False},
-    RegStates.PENDING: {'public': False, 'deleted': False},
-    RegStates.EMBARGO: {'public': False, 'deleted': False},
-    RegStates.ACCEPTED: {'public': True, 'deleted': False},
-    RegStates.WITHDRAWN: {'public': True, 'deleted': False},
-    RegStates.REJECTED: {'public': False, 'deleted': True},
-    # Use the generally unreachable UNDEFINED value for the edge case of deleted and public
-    RegStates.UNDEFINED: {'public': True, 'deleted': True},
-}
+from osf_tests.factories import PrivateLinkFactory
 
 
 def make_api_url(resource, vol_key=None):
@@ -40,44 +14,6 @@ def make_api_url(resource, vol_key=None):
     if vol_key:
         return f'{base_url}?view_only={vol_key}'
     return base_url
-
-def configure_test_preconditions(registration_state=RegStates.ACCEPTED, user_role=UserRoles.ADMIN_USER):
-    provider = RegistrationProviderFactory()
-    provider.update_group_permissions()
-    provider.reviews_workflow = ModerationWorkflows.PRE_MODERATION.value
-    provider.save()
-
-    state_settings = STATE_VISIBILITY_MAPPINGS[registration_state]
-    registration = RegistrationFactory(
-        provider=provider,
-        is_public=state_settings['public'],
-        has_doi=True
-    )
-    registration.moderation_state = registration_state.db_name
-    registration.deleted = timezone.now() if state_settings['deleted'] else None
-    registration.save()
-
-    outcome = Outcome.objects.for_registration(registration, create=True)
-    test_artifact = outcome.add_artifact_by_pid(
-        pid=TEST_EXTERNAL_PID, artifact_type=ArtifactTypes.DATA, create_identifier=True
-    )
-
-    test_auth = _configure_permissions_test_auth(registration, user_role)
-
-    return test_artifact, test_auth, registration
-
-
-def _configure_permissions_test_auth(registration, user_role):
-    if user_role is UserRoles.UNAUTHENTICATED:
-        return None
-
-    user = AuthUserFactory()
-    if user_role is UserRoles.MODERATOR:
-        registration.provider.get_group('moderator').user_set.add(user)
-    elif user_role in UserRoles.contributor_roles():
-        registration.add_contributor(user, user_role.get_permissions_string())
-
-    return user.auth
 
 
 @pytest.mark.django_db

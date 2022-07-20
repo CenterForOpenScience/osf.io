@@ -43,6 +43,14 @@ class ResourcesPermission:
         return proxy_object.has_permission(auth.user, self.REQUIRED_PERMISSIONS[request.method])
 
 
+class ResourceListPermission(ResourcesPermission, permissions.BasePermission):
+    '''Permissions for the top-level ResourceList endpoint.
+
+    ResourceList only supports POST
+    '''
+    REQUIRED_PERMISSIONS = {'POST': 'admin'}
+
+
 class ResourceDetailPermission(ResourcesPermission, permissions.BasePermission):
     '''Permissions for the top-level ResourcesDetail endpoint.
 
