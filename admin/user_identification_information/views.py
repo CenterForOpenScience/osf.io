@@ -1,10 +1,9 @@
 from admin.base.views import GuidView
-from django.core.paginator import Paginator
 from django.views.generic import ListView
 from admin.rdm.utils import RdmPermissionMixin
 from api.base import settings as api_settings
 from addons.osfstorage.models import Region
-from osf.models import OSFUser, UserQuota, Email
+from osf.models import OSFUser, UserQuota
 from website.util import quota
 from osf.models.files import FileVersion
 
@@ -67,7 +66,7 @@ class ShowListUser(RdmPermissionMixin, UserIdentificationInformation):
     def get_userlist(self):
 
         queryset = []
-        if self.request.user.is_superuser == False:
+        if self.request.user.is_superuser is False:
             institution = self.request.user.affiliated_institutions.first()
             if institution is not None:  # and Region.objects.filter(_id=institution._id).exists():
                 queryset = OSFUser.objects.filter(affiliated_institutions=institution.id)
