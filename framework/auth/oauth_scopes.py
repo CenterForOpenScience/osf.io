@@ -189,8 +189,8 @@ class CoreScopes(object):
     READ_SCHEMA_RESPONSES = 'read_schema_responses'
     WRITE_SCHEMA_RESPONSES = 'write_schema_responses'
 
-    READ_REGISTRATION_RESOURCES = 'read_registration_outputs'
-    WRITE_REGISTRATION_RESOURCES = 'write_registration_outputs'
+    READ_REGISTRATION_RESOURCES = 'read_registration_resources'
+    WRITE_REGISTRATION_RESOURCES = 'write_registration_resources'
 
 class ComposedScopes(object):
     """

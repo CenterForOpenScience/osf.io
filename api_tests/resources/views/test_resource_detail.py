@@ -1,12 +1,11 @@
 import pytest
 
 from api.providers.workflows import Workflows as ModerationWorkflows
-from api_tests.utils import UserRoles
 from api_tests.resources.utils import configure_test_preconditions
-
+from api_tests.utils import UserRoles
 from osf.utils.workflows import RegistrationModerationStates as RegStates
-from osf.utils.outcomes import ArtifactTypes
 from osf_tests.factories import PrivateLinkFactory
+from osf.utils.outcomes import ArtifactTypes
 
 
 def make_api_url(resource, vol_key=None):
@@ -153,7 +152,7 @@ class TestResourceDetailUnsupportedMethods:
         assert resp.status_code == 405
 
     @pytest.mark.parametrize('user_role', UserRoles)
-    def test_cannot_DELETEe(self, app, user_role):
+    def test_cannot_DELETE(self, app, user_role):
         test_artifact, test_auth, _ = configure_test_preconditions()
         resp = app.delete_json_api(make_api_url(test_artifact), auth=test_auth, expect_errors=True)
         assert resp.status_code == 405
