@@ -1,10 +1,8 @@
-
 from rest_framework import exceptions
 from rest_framework import permissions
 
 from api.base.exceptions import Gone
 from api.base.utils import get_user_auth, assert_resource_type
-
 from osf.models import Registration
 
 

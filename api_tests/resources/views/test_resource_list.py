@@ -163,3 +163,30 @@ class TestResourceListPOSTBehavior:
 
         resp = app.post_json_api(POST_URL, payload, auth=admin_user.auth, expect_errors=True)
         assert resp.status_code == 409
+
+@pytest.mark.django_db
+class TestResourceListUnsupportedMethods:
+
+    @pytest.mark.parametrize('user_role', UserRoles)
+    def test_cannot_GET(self, app, registration, user_role):
+        test_auth = configure_test_auth(registration, user_role)
+        resp = app.get(POST_URL, auth=test_auth, expect_errors=True)
+        assert resp.status_code == 405
+
+    @pytest.mark.parametrize('user_role', UserRoles)
+    def test_cannot_PUT(self, app, registration, user_role):
+        test_auth = configure_test_auth(registration, user_role)
+        resp = app.put_json_api(POST_URL, auth=test_auth, expect_errors=True)
+        assert resp.status_code == 405
+
+    @pytest.mark.parametrize('user_role', UserRoles)
+    def test_cannot_PATCH(self, app, registration, user_role):
+        test_auth = configure_test_auth(registration, user_role)
+        resp = app.patch_json_api(POST_URL, auth=test_auth, expect_errors=True)
+        assert resp.status_code == 405
+
+    @pytest.mark.parametrize('user_role', UserRoles)
+    def test_cannot_DELETE(self, app, registration, user_role):
+        test_auth = configure_test_auth(registration, user_role)
+        resp = app.delete_json_api(POST_URL, auth=test_auth, expect_errors=True)
+        assert resp.status_code == 405

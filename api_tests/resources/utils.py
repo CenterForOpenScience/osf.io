@@ -15,7 +15,7 @@ TEST_EXTERNAL_PID = 'This is a doi'
 
 # Omitted the following redundant states:
 # PENDING_EMBARGO_TERMINATION (overlaps EMBARGO)
-# PENDING_WITHDRAW_REQESST and PENDING_WITHDRAW (ovrlaps ACCEPTED)
+# PENDING_WITHDRAW_REQUEST and PENDING_WITHDRAW (overlaps ACCEPTED)
 # REVERTED (overlaps REJECTED)
 #
 # Techncically PENDING and EMBARGO overlap as well, but worth confirming EMBARGO behavior
