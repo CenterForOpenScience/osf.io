@@ -1,11 +1,12 @@
-from admin.base.views import GuidView
 from django.views.generic import ListView
+
+from addons.osfstorage.models import Region
+from admin.base.views import GuidView
 from admin.rdm.utils import RdmPermissionMixin
 from api.base import settings as api_settings
-from addons.osfstorage.models import Region
 from osf.models import OSFUser, UserQuota
-from website.util import quota
 from osf.models.files import FileVersion
+from website.util import quota
 
 
 def custom_size_abbreviation(size, abbr, *kwargs):
@@ -57,14 +58,13 @@ class UserIdentificationInformation(ListView):
         return super(UserIdentificationInformation, self).get_context_data(**kwargs)
 
 
-class ShowListUser(RdmPermissionMixin, UserIdentificationInformation):
-    template_name = 'user_identification_information/user_list.html'
+class UserIdentificationList(RdmPermissionMixin, UserIdentificationInformation):
+    template_name = 'user_identification_information/list_user_identification.html'
     permission_required = 'osf.view_osfuser'
     raise_exception = True
-    paginate_by = 25
+    paginate_by = 20
 
     def get_userlist(self):
-
         queryset = []
         if self.request.user.is_superuser is False:
             institution = self.request.user.affiliated_institutions.first()
@@ -75,8 +75,8 @@ class ShowListUser(RdmPermissionMixin, UserIdentificationInformation):
         return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in queryset]
 
 
-class UserView(RdmPermissionMixin, GuidView):
-    template_name = 'user_identification_information/user_details.html'
+class UserIdentificationDetails(RdmPermissionMixin, GuidView):
+    template_name = 'user_identification_information/user_identification_details.html'
     context_object_name = 'user'
     permission_required = 'osf.view_osfuser'
     raise_exception = True
