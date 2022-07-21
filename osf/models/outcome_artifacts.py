@@ -83,8 +83,7 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
         'osf.identifier',
         null=True,
         on_delete=models.CASCADE,
-        related_name='artifact_metadata',
-        null=True,
+        related_name='artifact_metadata'
     )
 
     artifact_type = models.IntegerField(
