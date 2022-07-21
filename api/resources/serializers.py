@@ -67,10 +67,6 @@ class ResourceSerializer(JSONAPISerializer):
         # Already loaded by view, so no need to error check
         guid = self.context['request'].data['registration']
         primary_registration = Registration.load(guid)
-        if not primary_registration.is_registration_approved:
-            raise Conflict(
-                f'Registration {guid} is pending approval and cannot have associated resources',
-            )
 
         try:
             root_outcome = Outcome.objects.for_registration(primary_registration, create=True)

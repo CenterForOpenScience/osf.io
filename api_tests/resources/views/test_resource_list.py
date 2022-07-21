@@ -154,12 +154,9 @@ class TestResourceListPOSTBehavior:
         resp = app.post_json_api(POST_URL, payload, auth=None, expect_errors=True)
         assert resp.status_code == 404
 
-    @pytest.mark.parametrize('registration_state', [RegStates.INITIAL, RegStates.PENDING])
-    def test_post_fails_with_409_if_registration_not_approved(
-        self, app, registration, admin_user, payload, registration_state
-    ):
-        registration.moderation_state = registration_state.db_name
-        registration.save()
+    def test_post_fails_with_409_if_no_registration_identifier(self, app, admin_user, payload):
+        registration = RegistrationFactory(creator=admin_user, has_doi=False)
+        payload['data']['relationships']['registration']['data']['id'] = registration._id
 
         resp = app.post_json_api(POST_URL, payload, auth=admin_user.auth, expect_errors=True)
         assert resp.status_code == 409
