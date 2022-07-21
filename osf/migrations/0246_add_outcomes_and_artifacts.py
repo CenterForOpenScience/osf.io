@@ -44,7 +44,7 @@ class Migration(migrations.Migration):
                 ('artifact_type', models.IntegerField(choices=[(0, 'UNDEFINED'), (1, 'DATA'), (11, 'CODE'), (21, 'MATERIALS'), (31, 'PAPERS'), (41, 'SUPPLEMENTS'), (1001, 'PRIMARY')], default=osf.utils.outcomes.ArtifactTypes(0))),
                 ('title', models.TextField()),
                 ('description', models.TextField()),
-                ('identifier', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='artifact_metadata', to='osf.Identifier')),
+                ('identifier', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='artifact_metadata', to='osf.Identifier')),
                 ('outcome', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='artifact_metadata', to='osf.Outcome')),
             ],
             options={

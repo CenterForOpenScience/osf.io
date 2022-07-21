@@ -81,6 +81,7 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
     )
     identifier = models.ForeignKey(
         'osf.identifier',
+        null=True,
         on_delete=models.CASCADE,
         related_name='artifact_metadata'
     )
