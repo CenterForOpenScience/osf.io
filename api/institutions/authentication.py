@@ -24,32 +24,18 @@ from website.settings import OSF_SUPPORT_EMAIL, DOMAIN
 
 logger = logging.getLogger(__name__)
 
-# This map defines how to find the secondary institution IdP which uses the shared SSO of a primary
-# IdP. Each map entry has the following format.
+# This map defines how to find the secondary institution which uses SSO of a primary one. Each map
+# entry has the following format.
 #
 #    '<ID of the primary institution A>': {
-#        'criteria': 'attribute',
-#        'attribute': '<the attribute name for identifying secondary institutions>',
-#        'institutions': {
-#            '<attribute value for identifying institution A1>': '<ID of secondary institution A1>',
-#            '<attribute value for identifying institution A2>': '<ID of secondary institution A2>',
-#            ...
-#        },
-#        ...
+#        'attribute_name': '<the attribute name for identifying secondary institutions>',
+#        'criteria_action': '<the action to perform between the attribute value and criteria value',
+#        'criteria_value': '<the value that>
+#        'institution_id': 'the ID of the secondary institution',
 #    }
-#
-# Currently, the only active criteria is "attribute", which the primary institution IdP releases to
-# OSF for us to identify the secondary institution. Another option is "emailDomain". For example:
-#
-#    '<ID of the primary institution B>': {
-#        'criteria': 'emailDomain',
-#        'institutions': {
-#            '<the email domain for identifying institution B1>': '<ID of secondary institution B1',
-#            '<the email domain for identifying institution B2>': '<ID of secondary institution B2',
-#            ...
-#        }
-#        ...
-#    }
+# For now, this map is temporarily defined here but will be moved to settings or be re-implemented
+# in model via relationships later. In addition, we should be able to make the attribute name fixed
+# since CAS can normalize them into "sharedSsoFilter" ahead of time.
 #
 INSTITUTION_SHARED_SSO_MAP = {
     'brown': {
