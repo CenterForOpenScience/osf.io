@@ -16,11 +16,8 @@ def custom_size_abbreviation(size, abbr, *kwargs):
 
 
 def check_extended_storage(user):
-    files_version = FileVersion.objects.filter(creator_id=user.id).values_list('region_id', flat=True)
-    check_extended_storage = False
-    if len(Region.objects.filter(id__in=files_version).all()) == 0 and len(files_version) > 0:
-        check_extended_storage = True
-    return check_extended_storage
+    check_provider = set(BaseFileNode.objects.filter(checkout_id=user.id).values_list('provider', flat=True))
+    return True if len(check_provider) > 1 else False
 
 
 class UserIdentificationInformation(ListView):
