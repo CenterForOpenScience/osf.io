@@ -1,15 +1,16 @@
+import csv
+from django.db.models import Q
+from django.http import HttpResponse
 from django.views.generic import ListView
+from operator import itemgetter
+
 from addons.osfstorage.models import Region
 from admin.base.views import GuidView
 from admin.rdm.utils import RdmPermissionMixin
 from api.base import settings as api_settings
 from osf.models import OSFUser, UserQuota, Email
-from osf.models.files import FileVersion
+from osf.models.files import BaseFileNode
 from website.util import quota
-import csv
-from operator import itemgetter
-from django.db.models import Q
-from django.http import HttpResponse
 
 
 def custom_size_abbreviation(size, abbr, *kwargs):
@@ -19,11 +20,8 @@ def custom_size_abbreviation(size, abbr, *kwargs):
 
 
 def check_extended_storage(user):
-    files_version = FileVersion.objects.filter(creator_id=user.id).values_list('region_id', flat=True)
-    check_extended_storage = False
-    if len(Region.objects.filter(id__in=files_version).all()) == 0 and len(files_version) > 0:
-        check_extended_storage = True
-    return check_extended_storage
+    check_provider = set(BaseFileNode.objects.filter(checkout_id=user.id).values_list('provider', flat=True))
+    return True if len(check_provider) > 1 else False
 
 
 class UserIdentificationInformation(ListView):
