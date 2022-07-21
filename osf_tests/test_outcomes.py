@@ -65,6 +65,7 @@ class TestOutcomes:
         assert primary_artifact.identifier == registration_doi
         assert primary_artifact.pid == registration_doi.value
         assert primary_artifact.artifact_type == ArtifactTypes.PRIMARY
+        assert primary_artifact.primary_resource_guid == registration._id
 
     def test_outcome_for_registration__create_copies_metadata(self, registration, registration_doi):
         outcome = Outcome.objects.for_registration(registration, create=True)
@@ -163,6 +164,10 @@ class TestOutcomeArtifact:
 
         retrieved_project_artifact = registration_artifacts.get(identifier=project_doi)
         assert retrieved_project_artifact == project_artifact
+        assert retrieved_project_artifact.pid == TEST_PROJECT_DOI
+        assert retrieved_project_artifact.primary_resource_guid == registration._id
 
         retrieved_external_artifact = registration_artifacts.get(identifier=external_doi)
         assert retrieved_external_artifact == external_artifact
+        assert retrieved_external_artifact.pid == TEST_EXTERNAL_DOI
+        assert retrieved_external_artifact.primary_resource_guid == registration._id
