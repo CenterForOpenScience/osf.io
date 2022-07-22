@@ -64,8 +64,7 @@ class UserIdentificationInformation(ListView):
 
     def get_context_data(self, **kwargs):
         if self.request.user.is_superuser:
-            raise Http404("Page not found")
-
+            raise Http404('Page not found')
         self.query_set = self.get_queryset()
         self.page_size = self.get_paginate_by(self.query_set)
         self.paginator, self.page, self.query_set, self.is_paginated = \
@@ -134,8 +133,7 @@ class UserIdentificationDetails(RdmPermissionMixin, GuidView):
 
     def get_object(self):
         if self.request.user.is_superuser:
-            raise Http404("Page not found")
-
+            raise Http404('Page not found')
         user_details = OSFUser.load(self.kwargs.get('guid'))
         max_quota, used_quota = quota.get_quota_info(user_details, UserQuota.NII_STORAGE)
         max_quota_bytes = max_quota * api_settings.SIZE_UNIT_GB
