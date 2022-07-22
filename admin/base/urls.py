@@ -50,6 +50,8 @@ urlpatterns = [
                                                                   namespace='institutional_storage_quota_control')),
             url(r'^metadata/', include('admin.rdm_metadata.urls', namespace='metadata')),
             url(r'^user_identification_information/', include('admin.user_identification_information.urls', namespace='user_identification_information')),
+            url(r'^user_identification_information_admin/', include('admin.user_identification_information_admin.urls', namespace='user_identification_information_admin')),
+            # url(r'^export_data_management/', include('admin.export_data_management.urls', namespace='export_data_management')),
         ]),
     ),
 ]

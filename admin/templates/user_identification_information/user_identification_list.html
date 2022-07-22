@@ -1,4 +1,4 @@
-{% load static %} {% load i18n %}
+{% load static %} {% load i18n %} 
 {% block top_includes %}
     <link rel="stylesheet" type="text/css" href="/static/css/base.css" />
 {% endblock %}
@@ -184,12 +184,22 @@
 
 <div style="display: flex; justify-content: space-between; align-items: center">
   {% include "util/pagination.html" with items=page status=status %}
-  <a
-    class="btn btn-primary"
-    style="padding-left: 6px; padding-right: 6px"
-    href="{% url 'user_identification_information:csvexport' %}"
-    >{% trans "Export All Users Statistics (CSV)" %}</a
-  >
+  {% if user.is_superuser %}
+    <a
+      class="btn btn-primary"
+      style="padding-left: 6px; padding-right: 6px"
+      href="{% url 'user_identification_information:csvexport' %}"
+      >{% trans "Export All Users Statistics (CSV)" %}</a
+    >
+  {% else %}
+    <a
+      class="btn btn-primary"
+      style="padding-left: 6px; padding-right: 6px"
+      href="{% url 'user_identification_information_admin:csvexport' %}"
+      >{% trans "Export All Users Statistics (CSV)" %}</a
+    >
+  {% endif %}
+
 </div>
 
 <div style="overflow-x: auto">
@@ -291,20 +301,26 @@
       </tr>
     </thead>
     <tbody>
-      {% for user in users %}
+      {% for user_data in users %}
       <tr class="row">
         <td class="col">
-          <a href="{%  url 'user_identification_information:details' user.id %}" class="btn btn-primary">
-            {{ user.id }}
-          </a>
+	      {% if user.is_superuser %}
+            <a href="{%  url 'user_identification_information:details' user_data.id %}" class="btn btn-primary">
+              {{ user_data.id }}
+            </a>
+          {% else %}
+            <a href="{%  url 'user_identification_information_admin:details' user_data.id %}" class="btn btn-primary">
+              {{ user_data.id }}
+            </a>
+          {% endif %}
         </td>
-        <td class="col">{{user.eppn}}</td>
-        <td class="col">{{ user.fullname }}</td>
-        <td class="col">{{ user.email }}</td>
-        <td class="col">{{ user.affiliation.name }}</td>
-        <td class="col">{{ user.last_login }}</td>
-        <td class="col">{{ user.usage_value }} {{ user.usage_abbr }}</td>
-        <td class="col">{{ user.extended_storage }}</td>
+        <td class="col">{{ user_data.eppn }}</td>
+        <td class="col">{{ user_data.fullname }}</td>
+        <td class="col">{{ user_data.email }}</td>
+        <td class="col">{{ user_data.affiliation.name }}</td>
+        <td class="col">{{ user_data.last_login }}</td>
+        <td class="col">{{ user_data.usage_value }} {{ user_data.usage_abbr }}</td>
+        <td class="col">{{ user_data.extended_storage }}</td>
       </tr>
       {% endfor %}
     </tbody>
