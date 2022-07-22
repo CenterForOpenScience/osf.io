@@ -4,7 +4,7 @@ from website.project import new_private_link
 
 from .factories import PrivateLinkFactory, NodeFactory
 from osf.models import RegistrationSchema, DraftRegistration, NodeLog
-from osf.migrations import ensure_default_registration_provider
+from osf.migrations import ensure_default_providers
 
 
 @pytest.mark.django_db
@@ -19,8 +19,8 @@ def test_factory():
 class TestPrivateLink:
 
     @pytest.fixture(autouse=True)
-    def ensure_default_registration_provider(self):
-        ensure_default_registration_provider()
+    def ensure_default_providers(self):
+        ensure_default_providers()
 
     def test_node_scale(self):
         link = PrivateLinkFactory()

@@ -6,13 +6,13 @@ import logging
 
 from django.db.utils import ProgrammingError
 from website.settings import APP_PATH
-from addons.osfstorage.settings import DEFAULT_REGION_ID, DEFAULT_REGION_NAME
 
 from django.apps import apps
 from website import settings
 
 from django.core.management import call_command
 
+from addons.osfstorage.settings import DEFAULT_REGION_ID, DEFAULT_REGION_NAME
 from osf.management.commands.manage_switch_flags import manage_waffle
 from osf.utils.migrations import ensure_schemas, map_schemas_to_schemablocks
 from website import settings as osf_settings
@@ -169,20 +169,6 @@ def update_storage_regions(sender, verbosity=0, **kwargs):
         ensure_default_storage_region()
 
 
-def ensure_default_storage_region():
-    osfstorage_config = apps.get_app_config('addons_osfstorage')
-    Region = apps.get_model('addons_osfstorage', 'Region')
-    Region.objects.update_or_create(
-        _id=DEFAULT_REGION_ID,
-        defaults={
-            'name': DEFAULT_REGION_NAME,
-            'waterbutler_credentials': osfstorage_config.WATERBUTLER_CREDENTIALS,
-            'waterbutler_settings': osfstorage_config.WATERBUTLER_SETTINGS,
-            'waterbutler_url': settings.WATERBUTLER_URL
-        }
-    )
-
-
 def ensure_subjects():
     Subject = apps.get_model('osf.subject')
     PreprintProvider = apps.get_model('osf.preprintprovider')
@@ -275,3 +261,17 @@ def update_blocked_email_domains(sender, verbosity=0, **kwargs):
                 domain=domain,
                 defaults={'note': NotableEmailDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION},
             )
+
+
+def ensure_default_storage_region():
+    osfstorage_config = apps.get_app_config('addons_osfstorage')
+    Region = apps.get_model('addons_osfstorage', 'Region')
+    Region.objects.get_or_create(
+        _id=DEFAULT_REGION_ID,
+        name=DEFAULT_REGION_NAME,
+        defaults={
+            'waterbutler_credentials': osfstorage_config.WATERBUTLER_CREDENTIALS,
+            'waterbutler_settings': osfstorage_config.WATERBUTLER_SETTINGS,
+            'waterbutler_url': osf_settings.WATERBUTLER_URL
+        }
+    )
