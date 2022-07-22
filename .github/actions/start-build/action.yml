@@ -24,11 +24,6 @@ runs:
       pip install psycopg2==2.7.3 --no-binary psycopg2
       invoke travis_addon_settings
       invoke requirements --dev --addons
-      pip uninstall uritemplate.py --yes
-      pip install uritemplate.py==0.3.0
       # use yarn add --exact to match versions in yarn.lock w/o installing all deps
       yarn add --exact bower@^1.8.8
       yarn add --exact @centerforopenscience/list-of-licenses@^1.1.0
-      # styles.git is a ruby project that contains a lot of useful data files. This
-      # just clones the repo into bower_components, where we can access them.
-      ./node_modules/.bin/bower install "https://github.com/CenterForOpenScience/styles.git#88e6ed31a91e9f5a480b486029cda97b535935d4"
