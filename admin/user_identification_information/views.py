@@ -1,8 +1,7 @@
+from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.views.generic import ListView
 
 from admin.base.views import GuidView
-from admin.rdm.utils import RdmPermissionMixin
-from django.contrib.auth.mixins import PermissionRequiredMixin
 from api.base import settings as api_settings
 from osf.models import OSFUser, UserQuota
 from osf.models.files import BaseFileNode
@@ -49,7 +48,7 @@ class UserIdentificationInformation(ListView):
         self.paginator, self.page, self.query_set, self.is_paginated = \
             self.paginate_queryset(self.query_set, self.page_size)
         kwargs['requested_user'] = self.request.user
-        kwargs['institution_name'] = self.request.user.affiliated_institutions.first()
+        kwargs['institution_name'] = self.request.user.affiliated_institutions.first().name
         kwargs['users'] = self.query_set
         kwargs['page'] = self.page
         return super(UserIdentificationInformation, self).get_context_data(**kwargs)
