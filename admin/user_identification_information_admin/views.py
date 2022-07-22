@@ -1,8 +1,8 @@
+from django.http import Http404
 from django.views.generic import ListView
 
 from admin.base.views import GuidView
 from admin.rdm.utils import RdmPermissionMixin
-from django.contrib.auth.mixins import PermissionRequiredMixin
 from api.base import settings as api_settings
 from osf.models import OSFUser, UserQuota
 from osf.models.files import BaseFileNode
@@ -44,6 +44,9 @@ class UserIdentificationInformation(ListView):
         return user_list
 
     def get_context_data(self, **kwargs):
+        if self.request.user.is_superuser:
+            raise Http404("Page not found")
+
         self.query_set = self.get_userlist()
         self.page_size = self.get_paginate_by(self.query_set)
         self.paginator, self.page, self.query_set, self.is_paginated = \
@@ -55,24 +58,30 @@ class UserIdentificationInformation(ListView):
         return super(UserIdentificationInformation, self).get_context_data(**kwargs)
 
 
-class UserIdentificationList(PermissionRequiredMixin, UserIdentificationInformation):
+class UserIdentificationList(RdmPermissionMixin, UserIdentificationInformation):
     template_name = 'user_identification_information/list_user_identification.html'
-    permission_required = 'osf.view_osfuser'
+    permission_required = ''
     raise_exception = True
     paginate_by = 20
 
     def get_userlist(self):
-        queryset = OSFUser.objects.all()
+        queryset = []
+        institution = self.request.user.affiliated_institutions.first()
+        if institution is not None:  # and Region.objects.filter(_id=institution._id).exists():
+            queryset = OSFUser.objects.filter(affiliated_institutions=institution.id)
         return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in queryset]
 
 
-class UserIdentificationDetails(PermissionRequiredMixin, GuidView):
+class UserIdentificationDetails(RdmPermissionMixin, GuidView):
     template_name = 'user_identification_information/user_identification_details.html'
     context_object_name = 'user_details'
-    permission_required = 'osf.view_osfuser'
+    permission_required = ''
     raise_exception = True
 
     def get_object(self):
+        if self.request.user.is_superuser:
+            raise Http404("Page not found")
+
         user_details = OSFUser.load(self.kwargs.get('guid'))
         max_quota, used_quota = quota.get_quota_info(user_details, UserQuota.NII_STORAGE)
         max_quota_bytes = max_quota * api_settings.SIZE_UNIT_GB
