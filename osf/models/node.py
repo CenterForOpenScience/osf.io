@@ -379,6 +379,33 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             ('write_node', 'Can edit the node'),
             ('admin_node', 'Can manage the node'),
         )
+        indexes = [
+            models.Index(
+                fields=['-registered_date'],
+                name='registered_date_index'
+            ),
+            models.Index(
+                fields=['is_public', 'is_deleted', 'type'],
+                condition=(
+                    Q(is_public=True) & Q(is_deleted=False) & Q(type='osf.registration')
+                ),
+                name='reg_pub_del_type_index'
+            ),
+            models.Index(
+                fields=['is_public', 'is_deleted', 'type'],
+                condition=(
+                    Q(is_public=True) & Q(is_deleted=False) & Q(type='osf.node')
+                ),
+                name='node_pub_del_type_index'
+            ),
+            models.Index(
+                fields=['is_public', 'is_deleted', 'type'],
+                condition=(
+                    Q(is_public=True) & Q(is_deleted=False) & Q(type='osf.collection')
+                ),
+                name='collection_pub_del_type_index'
+            ),
+        ]
 
     objects = AbstractNodeManager()
 

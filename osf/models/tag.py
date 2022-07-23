@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models.functions import Lower
 
 from .base import BaseModel
 
@@ -42,3 +43,7 @@ class Tag(BaseModel):
     class Meta:
         unique_together = ('name', 'system')
         ordering = ('name', )
+        indexes = [
+            models.Index(Lower('name'), 'system', name='lowercase_tag_index')
+
+        ]

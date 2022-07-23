@@ -180,3 +180,9 @@ class PageCounter(BaseModel):
             return (counter.unique, counter.total)
         except cls.DoesNotExist:
             return (None, None)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['action', 'resource_id', 'file_id', 'version'], name='page_counter_idx')
+
+        ]

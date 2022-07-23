@@ -26,16 +26,4 @@ class Migration(migrations.Migration):
             name='noderequest',
             unique_together=set([]),
         ),
-        migrations.RunSQL(
-            [
-                """
-                CREATE UNIQUE INDEX osf_noderequest_target_creator_non_accepted ON osf_noderequest (target_id, creator_id)
-                WHERE machine_state != 'accepted';
-                """
-            ], [
-                """
-                DROP INDEX IF EXISTS osf_noderequest_target_creator_non_accepted RESTRICT;
-                """
-            ]
-        ),
     ]

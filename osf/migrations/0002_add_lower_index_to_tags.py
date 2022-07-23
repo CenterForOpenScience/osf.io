@@ -12,15 +12,4 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunSQL(
-            [
-                """
-                CREATE INDEX lowercase_tag_index ON osf_tag (lower(name), system);
-                """
-            ], [
-                """
-                DROP INDEX IF EXISTS lowercase_tag_index RESTRICT;
-                """
-            ]
-        )
     ]

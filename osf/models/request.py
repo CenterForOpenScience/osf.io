@@ -26,6 +26,15 @@ class NodeRequest(AbstractRequest, NodeRequestableMixin):
     """
     target = models.ForeignKey('AbstractNode', related_name='requests', on_delete=models.CASCADE)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                name='osf_noderequest_target_creator_non_accepted',
+                fields=['target_id', 'creator_id'],
+                condition=models.Q(machine_state='accepted')
+            )
+        ]
+
 
 class PreprintRequest(AbstractRequest, PreprintRequestableMixin):
     """ Request for Preprint Withdrawal

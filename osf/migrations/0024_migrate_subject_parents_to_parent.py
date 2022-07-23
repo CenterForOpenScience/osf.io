@@ -76,9 +76,6 @@ class Migration(migrations.Migration):
             WHERE parent_id IS NOT NULL;
             """]
         ),
-        migrations.RunPython(
-            add_custom_mapping_constraint, remove_custom_mapping_constraint
-        ),
         migrations.RemoveField(
             model_name='subject',
             name='parents'

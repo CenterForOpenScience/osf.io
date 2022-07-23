@@ -1391,24 +1391,6 @@ class Migration(migrations.Migration):
         migrations.RunSQL(
             [
                 """
-                CREATE INDEX osf_abstractnode_registered_date_index ON public.osf_abstractnode (registered_date DESC);
-                CREATE INDEX osf_abstractnode_registration_pub_del_type_index ON public.osf_abstractnode (is_public, is_deleted, type) WHERE is_public=TRUE and is_deleted=FALSE and type = 'osf.registration';
-                CREATE INDEX osf_abstractnode_node_pub_del_type_index ON public.osf_abstractnode (is_public, is_deleted, type) WHERE is_public=TRUE and is_deleted=FALSE and type = 'osf.node';
-                CREATE INDEX osf_abstractnode_collection_pub_del_type_index ON public.osf_abstractnode (is_public, is_deleted, type) WHERE is_public=TRUE and is_deleted=FALSE and type = 'osf.collection';
-                """
-            ],
-            [
-                """
-                DROP INDEX public.osf_abstractnode_registered_date_index RESTRICT;
-                DROP INDEX public.osf_abstractnode_registration_pub_del_type_index RESTRICT;
-                DROP INDEX public.osf_abstractnode_node_pub_del_type_index RESTRICT;
-                DROP INDEX public.osf_abstractnode_collection_pub_del_type_index RESTRICT;
-                """
-            ]
-        ),
-        migrations.RunSQL(
-            [
-                """
                 CREATE UNIQUE INDEX osf_basefilenode_non_trashed_unique_index
                 ON public.osf_basefilenode
                 (node_id, name, parent_id, type, _path)

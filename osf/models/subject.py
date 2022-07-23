@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from dirtyfields import DirtyFieldsMixin
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, CheckConstraint
 from django.core.exceptions import ValidationError
 from django.utils.functional import cached_property
 
@@ -30,6 +30,9 @@ class Subject(ObjectIDMixin, BaseModel, DirtyFieldsMixin):
     class Meta:
         base_manager_name = 'objects'
         unique_together = ('text', 'provider')
+        constraints = [
+            CheckConstraint(name='customs_must_be_mapped', check=(Q(bepress_subject_id__isnull=True) | ~Q(provider___id='osf')))
+        ]
 
     def __unicode__(self):
         return '{} with id {}'.format(self.text, self.id)
