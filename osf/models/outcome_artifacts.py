@@ -35,14 +35,7 @@ class ArtifactManager(models.Manager):
         return base_queryset.annotate(
             pid=models.F('identifier__value'),
             primary_resource_guid=outcome_utils.make_primary_resource_guid_annotation(base_queryset)
-        ).filter(deleted__isnull=True)
-
-    def include_deleted(self):
-        '''Returns all OutcomeArtifacts, including those marked as `deleted`.
-
-        Excludes other API-relevant annotations.
-        '''
-        return super().get_queryset()
+        )
 
     def for_registration(self, registration, identifier_type='doi'):
         '''Retrieves all OutcomeArtifacts sharing an Outcome, given the Primary Registration.'''

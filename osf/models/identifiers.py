@@ -32,7 +32,7 @@ class Identifier(ObjectIDMixin, BaseModel):
 
     def delete(self):
         '''Used to delete an orphaned Identifier (distinct from setting `deleted`)'''
-        if self.object_id or self.artifact_metadata.exists():
+        if self.object_id or self.artifact_metadata.filter(deleted__isnull=True).exists():
             raise IdentifierHasReferencesError
         super().delete()
 

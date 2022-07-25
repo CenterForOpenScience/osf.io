@@ -200,7 +200,7 @@ class TestOutcomeArtifact:
         )
 
         test_artifact.delete()
-        assert not OutcomeArtifact.objects.include_deleted().filter(id=test_artifact.id).exists()
+        assert not OutcomeArtifact.objects.filter(id=test_artifact.id).exists()
 
     def test_delete_artifact__sets_deleted_if_finalized(self, outcome, project_doi):
         test_artifact = outcome.artifact_metadata.create(
@@ -210,7 +210,7 @@ class TestOutcomeArtifact:
 
         test_artifact.delete()
         assert test_artifact.deleted
-        assert OutcomeArtifact.objects.include_deleted().filter(id=test_artifact.id).exists()
+        assert OutcomeArtifact.objects.filter(id=test_artifact.id).exists()
 
     @pytest.mark.parametrize('is_finalized', [True, False])
     def test_delete_artifact__deletes_identifier_if_unreferenced(self, outcome, external_doi, is_finalized):
@@ -244,25 +244,3 @@ class TestOutcomeArtifact:
 
         test_artifact.delete()
         assert Identifier.objects.filter(value=TEST_EXTERNAL_DOI).exists()
-
-    def test_deleted_artifact_excluded_from_outcome(self, outcome, project_doi):
-        project_artifact = outcome.artifact_metadata.create(
-            identifier=project_doi, artifact_type=ArtifactTypes.DATA, finalized=True
-        )
-        assert outcome.artifacts.count() == 2
-        assert outcome.artifact_metadata.count() == 2
-
-        project_artifact.delete()
-
-        assert outcome.artifacts.count() == 2  # Identifier links cannot be magically filtered out
-        assert outcome.artifact_metadata.count() == 1  # OutcomeArtifact links, however, should be disappeared
-
-    def test_deleted_artifact_excluded_from_artifacts_for_registration(self, registration, outcome, project_doi):
-        project_artifact = outcome.artifact_metadata.create(
-            identifier=project_doi, artifact_type=ArtifactTypes.DATA, finalized=True
-        )
-        assert OutcomeArtifact.objects.for_registration(registration).exists()
-
-        project_artifact.delete()
-
-        assert not OutcomeArtifact.objects.for_registration(registration).exists()
