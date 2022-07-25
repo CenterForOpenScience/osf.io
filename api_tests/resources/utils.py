@@ -3,13 +3,13 @@ from django.utils import timezone
 from api.providers.workflows import Workflows as ModerationWorkflows
 from api_tests.utils import UserRoles
 from osf.models import Outcome
+from osf.utils.outcomes import ArtifactTypes
 from osf.utils.workflows import RegistrationModerationStates as RegStates
 from osf_tests.factories import (
     AuthUserFactory,
     RegistrationFactory,
     RegistrationProviderFactory
 )
-from osf.utils.outcomes import ArtifactTypes
 
 TEST_EXTERNAL_PID = 'This is a doi'
 
