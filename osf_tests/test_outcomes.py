@@ -65,6 +65,7 @@ class TestOutcomes:
         assert primary_artifact.identifier == registration_doi
         assert primary_artifact.pid == registration_doi.value
         assert primary_artifact.artifact_type == ArtifactTypes.PRIMARY
+        assert primary_artifact.primary_resource_guid == registration._id
 
     def test_outcome_for_registration__create_copies_metadata(self, registration, registration_doi):
         outcome = Outcome.objects.for_registration(registration, create=True)
@@ -105,42 +106,6 @@ class TestOutcomeArtifact:
             category='doi'
         )
 
-    @pytest.mark.parametrize('doi_value', [TEST_PROJECT_DOI, TEST_EXTERNAL_DOI])
-    def test_create_artifact_from_known_identifier(
-        self, outcome, project_doi, external_doi, doi_value
-    ):
-        new_artifact = OutcomeArtifact.objects.create_for_identifier_value(
-            outcome=outcome,
-            pid_value=TEST_PROJECT_DOI,
-            artifact_type=ArtifactTypes.MATERIALS
-        )
-
-        assert new_artifact.identifier == project_doi
-        assert new_artifact.outcome == outcome
-        assert new_artifact.artifact_type == ArtifactTypes.MATERIALS
-
-    def test_create_artifact_from_unknown_identifier__create(self, outcome):
-        assert not Identifier.objects.filter(value=TEST_EXTERNAL_DOI).exists()
-
-        new_artifact = OutcomeArtifact.objects.create_for_identifier_value(
-            outcome=outcome,
-            pid_value=TEST_EXTERNAL_DOI,
-            create_identifier=True,
-            artifact_type=ArtifactTypes.CODE,
-        )
-
-        created_identifier = Identifier.objects.get(value=TEST_EXTERNAL_DOI)
-        assert new_artifact.identifier == created_identifier
-
-    def test_create_artifact_from_unknown_identifer__no_create(self, outcome):
-        with pytest.raises(NoPIDError):
-            OutcomeArtifact.objects.create_for_identifier_value(
-                outcome=outcome,
-                pid_value=TEST_EXTERNAL_DOI,
-                create_identifier=False,
-                artifact_type=ArtifactTypes.SUPPLEMENTS
-            )
-
     def test_get_artifacts_for_registration(self, outcome, registration, project_doi, external_doi):
         assert not OutcomeArtifact.objects.for_registration(registration).exists()
 
@@ -163,6 +128,141 @@ class TestOutcomeArtifact:
 
         retrieved_project_artifact = registration_artifacts.get(identifier=project_doi)
         assert retrieved_project_artifact == project_artifact
+        assert retrieved_project_artifact.pid == TEST_PROJECT_DOI
+        assert retrieved_project_artifact.primary_resource_guid == registration._id
 
         retrieved_external_artifact = registration_artifacts.get(identifier=external_doi)
         assert retrieved_external_artifact == external_artifact
+        assert retrieved_external_artifact.pid == TEST_EXTERNAL_DOI
+        assert retrieved_external_artifact.primary_resource_guid == registration._id
+
+    def test_update_identifier__get_existing_identifier(self, outcome, project_doi, external_doi):
+        test_artifact = outcome.artifact_metadata.create(artifact_type=ArtifactTypes.DATA)
+        test_artifact.update_identifier(new_pid_value=TEST_PROJECT_DOI)
+        assert test_artifact.identifier == project_doi
+
+    def test_update_identifier__create_new_identifier(self, outcome, project_doi):
+        assert not Identifier.objects.filter(value=TEST_EXTERNAL_DOI).exists()
+
+        test_artifact = outcome.artifact_metadata.create(artifact_type=ArtifactTypes.DATA)
+        test_artifact.update_identifier(new_pid_value=TEST_EXTERNAL_DOI)
+
+        assert test_artifact.identifier.value == TEST_EXTERNAL_DOI
+        assert Identifier.objects.filter(value=TEST_EXTERNAL_DOI).exists()
+
+    def test_update_identifier__deletes_previous_identifier_if_unreferenced(self, outcome, project_doi, external_doi):
+        assert Identifier.objects.filter(value=TEST_EXTERNAL_DOI).exists()
+        test_artifact = outcome.artifact_metadata.create(
+            identifier=external_doi, artifact_type=ArtifactTypes.DATA
+        )
+        assert test_artifact.identifier != project_doi
+
+        test_artifact.update_identifier(new_pid_value=project_doi.value)
+        assert test_artifact.identifier == project_doi
+        assert not Identifier.objects.filter(value=TEST_EXTERNAL_DOI).exists()
+
+    def test_update_identifier__keeps_previous_identifier_if_osf_referent_exists(self, outcome, project_doi):
+        assert Identifier.objects.filter(value=TEST_PROJECT_DOI).exists()
+        test_artifact = outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.DATA
+        )
+
+        test_artifact.update_identifier(new_pid_value=TEST_EXTERNAL_DOI)
+        assert test_artifact.identifier != project_doi
+        assert Identifier.objects.filter(value=TEST_PROJECT_DOI).exists()
+
+    def test_update_identifier__keeps_previous_identifier_if_part_of_other_outcomes(
+        self, outcome, project_doi, external_doi
+    ):
+        test_artifact = outcome.artifact_metadata.create(
+            identifier=external_doi, artifact_type=ArtifactTypes.DATA
+        )
+        alternate_outcome = Outcome.objects.create()
+        alternate_outcome.artifact_metadata.create(
+            identifier=external_doi, artifact_type=ArtifactTypes.CODE
+        )
+
+        test_artifact.update_identifier(new_pid_value=project_doi.value)
+        assert test_artifact.identifier == project_doi
+        assert Identifier.objects.filter(value=TEST_EXTERNAL_DOI).exists()
+
+    def test_update_identifier__no_change_if_same_pid(self, outcome, project_doi):
+        test_artifact = outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.DATA
+        )
+
+        test_artifact.update_identifier(new_pid_value=project_doi.value)
+        assert test_artifact.identifier == project_doi
+
+    def test_delete_artifact__deletes_from_db_if_not_finalized(self, outcome, project_doi):
+        test_artifact = outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.DATA, finalized=False
+        )
+
+        test_artifact.delete()
+        assert not OutcomeArtifact.objects.include_deleted().filter(id=test_artifact.id).exists()
+
+    def test_delete_artifact__sets_deleted_if_finalized(self, outcome, project_doi):
+        test_artifact = outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.DATA, finalized=True
+        )
+        assert not test_artifact.deleted
+
+        test_artifact.delete()
+        assert test_artifact.deleted
+        assert OutcomeArtifact.objects.include_deleted().filter(id=test_artifact.id).exists()
+
+    @pytest.mark.parametrize('is_finalized', [True, False])
+    def test_delete_artifact__deletes_identifier_if_unreferenced(self, outcome, external_doi, is_finalized):
+        assert Identifier.objects.filter(value=TEST_EXTERNAL_DOI).exists()
+        test_artifact = outcome.artifact_metadata.create(
+            identifier=external_doi, artifact_type=ArtifactTypes.DATA, finalized=is_finalized
+        )
+
+        test_artifact.delete()
+        assert not Identifier.objects.filter(value=TEST_EXTERNAL_DOI).exists()
+
+    @pytest.mark.parametrize('is_finalized', [True, False])
+    def test_delete_artifact__keeps_identifier_if_osf_referent_exists(self, outcome, project_doi, is_finalized):
+        test_artifact = outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.DATA, finalized=is_finalized
+        )
+
+        test_artifact.delete()
+        assert Identifier.objects.filter(value=TEST_PROJECT_DOI).exists()
+
+    @pytest.mark.parametrize('is_finalized', [True, False])
+    def test_delete_artifact__keeps_identifier_if_part_of_other_outcomes(self, outcome, external_doi, is_finalized):
+        test_artifact = outcome.artifact_metadata.create(
+            identifier=external_doi, artifact_type=ArtifactTypes.DATA, finalized=is_finalized
+        )
+
+        alternate_outcome = Outcome.objects.create()
+        alternate_outcome.artifact_metadata.create(
+            identifier=external_doi, artifact_type=ArtifactTypes.CODE
+        )
+
+        test_artifact.delete()
+        assert Identifier.objects.filter(value=TEST_EXTERNAL_DOI).exists()
+
+    def test_deleted_artifact_excluded_from_outcome(self, outcome, project_doi):
+        project_artifact = outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.DATA, finalized=True
+        )
+        assert outcome.artifacts.count() == 2
+        assert outcome.artifact_metadata.count() == 2
+
+        project_artifact.delete()
+
+        assert outcome.artifacts.count() == 2  # Identifier links cannot be magically filtered out
+        assert outcome.artifact_metadata.count() == 1  # OutcomeArtifact links, however, should be disappeared
+
+    def test_deleted_artifact_excluded_from_artifacts_for_registration(self, registration, outcome, project_doi):
+        project_artifact = outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.DATA, finalized=True
+        )
+        assert OutcomeArtifact.objects.for_registration(registration).exists()
+
+        project_artifact.delete()
+
+        assert not OutcomeArtifact.objects.for_registration(registration).exists()

@@ -223,3 +223,7 @@ class SchemaResponseUpdateError(SchemaResponseError):
         )
 
         super().__init__(error_message)
+
+
+class IdentifierHasReferencesError(OSFError):
+    pass

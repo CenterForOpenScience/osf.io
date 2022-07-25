@@ -1,8 +1,11 @@
 from django.db import models
+from django.utils import timezone
 
+from osf.exceptions import IdentifierHasReferencesError
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.identifiers import Identifier
-from osf.utils.outcomes import ArtifactTypes, NoPIDError
+from osf.utils import outcomes as outcome_utils
+from osf.utils.fields import NonNaiveDateTimeField
 
 
 '''
@@ -13,31 +16,36 @@ between an Outcome and an external Identifier that stores materials or provides 
 for the research effort described by the Outcome.
 '''
 
+
+ArtifactTypes = outcome_utils.ArtifactTypes
+OutcomeActions = outcome_utils.OutcomeActions
+
+
 class ArtifactManager(models.Manager):
 
     def get_queryset(self):
-        return super().get_queryset().annotate(
-            pid=models.F('identifier__value')
-        )
+        '''Overrides default `get_queryset` behavior to add custom logic.
 
-    def create_for_identifier_value(
-        self, outcome, pid_value, pid_type='doi', create_identifier=False, **kwargs
-    ):
-        if create_identifier:
-            identifier, _ = Identifier.objects.get_or_create(
-                value=pid_value, category=pid_type
-            )
-        else:
-            try:
-                identifier = Identifier.objects.get(
-                    value=pid_value, category=pid_type
-                )
-            except Identifier.DoesNotExist:
-                raise NoPIDError('No PID with value {pid_value} found for PID type {pid_type}')
+        Automatically annotates the `pid` from any linked identifier and the
+        GUID of the primary resource for the parent artifact.
 
-        return self.create(outcome=outcome, identifier=identifier, **kwargs)
+        Automatically filters out deleted entries
+        '''
+        base_queryset = super().get_queryset().select_related('identifier')
+        return base_queryset.annotate(
+            pid=models.F('identifier__value'),
+            primary_resource_guid=outcome_utils.make_primary_resource_guid_annotation(base_queryset)
+        ).filter(deleted__isnull=True)
+
+    def include_deleted(self):
+        '''Returns all OutcomeArtifacts, including those marked as `deleted`.
+
+        Excludes other API-relevant annotations.
+        '''
+        return super().get_queryset()
 
     def for_registration(self, registration, identifier_type='doi'):
+        '''Retrieves all OutcomeArtifacts sharing an Outcome, given the Primary Registration.'''
         registration_identifier = registration.get_identifier(identifier_type)
         artifact_qs = self.get_queryset()
         return artifact_qs.annotate(
@@ -84,8 +92,10 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
         default=ArtifactTypes.UNDEFINED,
     )
 
-    title = models.TextField(null=False)
-    description = models.TextField(null=False)
+    title = models.TextField(null=False, blank=True)
+    description = models.TextField(null=False, blank=True)
+    finalized = models.BooleanField(default=False)
+    deleted = NonNaiveDateTimeField(null=True, blank=True)
 
     objects = ArtifactManager()
 
@@ -95,3 +105,85 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
             models.Index(fields=['outcome', 'artifact_type'])
         ]
         ordering = ['artifact_type', 'title']
+
+    def update_identifier(self, new_pid_value, pid_type='doi', api_request=None):
+        '''Changes the linked Identifer to one matching the new pid_value and handles callbacks.
+
+        If `finalized` is True, will also log the change on the parent Outcome if invoked via API.
+        Will attempt to delete the previous identifier to avoid orphaned entries.
+
+        Parameters:
+        new_pid_value: The string value of the new PID
+        pid_type (str): The string "type" of the new PID (for now, only "doi" is supported)
+        api_request: The api_request data from the API call that initiated the change.
+        '''
+
+        previous_identifier = self.identifier
+        self.identifier, _ = Identifier.objects.get_or_create(
+            value=new_pid_value, category=pid_type
+        )
+        self.save()
+        if previous_identifier:
+            try:
+                previous_identifier.delete()
+            except IdentifierHasReferencesError:
+                pass
+
+        if self.finalized and api_request:
+            self.outcome.log_artifact_change(
+                action=OutcomeActions.UPDATE,
+                artifact=self,
+                api_request=api_request,
+                obsolete_identifier=previous_identifier.value if previous_identifier else None,
+                new_identifier=new_pid_value
+            )
+
+    def finalize(self, api_request=None):
+        '''Sets `finalized` to True and handles callbacks.
+
+        Logs the change on the parent Outcome if invoked via the API.
+
+        Parameters:
+        api_request: The api_request data from the API call that initiated the change.
+        '''
+        if not (self.identifier and self.identifier.value and self.artifact_type):
+            return False
+        self.finalized = True
+        self.save()
+
+        if api_request:
+            self.outcome.log_artifact_change(
+                action=OutcomeActions.ADD,
+                artifact=self,
+                api_request=api_request,
+                new_identifier=self.identifier.value
+            )
+
+    def delete(self, api_request=None, **kwargs):
+        '''Intercept `delete` behavior on the model instance and handles callbacks.
+
+        Deletes from database if not `finalized` otherwise sets the `deleted` timestamp.
+        Logs the change on the parent Outcome if invoked via the API.
+        Attempts to delete the linked Identifier to avoid orphaned entries.
+
+        Parameters:
+        api_request: The api_request data from the API call that initiated the change.
+        '''
+        identifier = self.identifier
+        if self.finalized:
+            if api_request:
+                self.outcome.log_artifact_change(
+                    action=OutcomeActions.REMOVE,
+                    artifact=self,
+                    api_request=api_request,
+                    obsolete_identifier=identifier.value
+                )
+            self.deleted = timezone.now()
+            self.save()
+        else:
+            super().delete(**kwargs)
+
+        try:
+            identifier.delete()
+        except IdentifierHasReferencesError:
+            pass
