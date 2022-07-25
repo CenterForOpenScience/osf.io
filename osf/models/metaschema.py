@@ -189,6 +189,7 @@ class RegistrationSchemaBlock(ObjectIDMixin, BaseModel):
     block_type = models.CharField(max_length=31, db_index=True, choices=SCHEMABLOCK_TYPES)
     display_text = models.TextField()
     required = models.BooleanField(default=False)
+    default = models.BooleanField(default=False)
 
     @property
     def absolute_api_v2_url(self):

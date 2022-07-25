@@ -28,30 +28,46 @@ def _convert_metadata_grdm_files(value, questions):
                 dispkey = key[10:]
             else:
                 dispkey = key
-            v_ = _convert_metadata_value(key, metadata[key], questions)
-            for k in _convert_metadata_key(dispkey):
-                obj[k] = v_
+            for suffix_, v_ in _convert_metadata_value(key, metadata[key], questions):
+                for k in _convert_metadata_key(dispkey):
+                    obj[f'{k}{suffix_}'] = v_
         r.append(obj)
     return r
 
 def _convert_metadata_value(key, value, questions):
     if 'value' not in value:
-        return value
+        return [('', value)]
     v = value['value']
     if key == 'grdm-files':
-        return _convert_metadata_grdm_files(v, questions)
+        return [('', _convert_metadata_grdm_files(v, questions))]
     if key in questions and 'type' in questions[key] and \
             questions[key]['type'] == 'string' and 'format' in questions[key] and \
             questions[key]['format'] == 'file-creators':
-        return json.loads(v) if v != '' else []
-    return v
+        return [('', json.loads(v) if v != '' else [])]
+    if key in questions and 'type' in questions[key] and \
+            questions[key]['type'] == 'choose' and 'options' in questions[key]:
+        values = [('', v)]
+        for opt in questions[key]['options']:
+            if not isinstance(opt, dict) or 'text' not in opt or 'tooltip' not in opt:
+                continue
+            if opt['text'] != v:
+                continue
+            for sep in '-_':
+                tooltip = opt['tooltip']
+                values += [(f'{sep}tooltip', tooltip)]
+                if tooltip is None:
+                    continue
+                for j, t in enumerate(tooltip.split('|')):
+                    values += [(f'{sep}tooltip{sep}{j}', t)]
+        return values
+    return [('', v)]
 
 def _convert_metadata(metadata, questions):
     r = {}
     for key in metadata.keys():
-        v = _convert_metadata_value(key, metadata[key], questions)
-        for k in _convert_metadata_key(key):
-            r[k] = v
+        for suffix, v in _convert_metadata_value(key, metadata[key], questions):
+            for k in _convert_metadata_key(key):
+                r[f'{k}{suffix}'] = v
     return r
 
 def _quote_csv(value):

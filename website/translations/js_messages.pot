@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2022-04-12 12:37+0000\n"
+"POT-Creation-Date: 2022-07-15 01:31+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -21,94 +21,94 @@ msgstr ""
 msgid "Launch"
 msgstr ""
 
-#: addons/metadata/static/files.js:312
-msgid "Data Schema:"
+#: addons/metadata/static/files.js:319
+msgid "Metadata Schema:"
 msgstr ""
 
-#: addons/metadata/static/files.js:470
+#: addons/metadata/static/files.js:477
 msgid "Paste from Clipboard"
 msgstr ""
 
-#: addons/metadata/static/files.js:495 addons/metadata/static/files.js:509
+#: addons/metadata/static/files.js:502 addons/metadata/static/files.js:516
 #: website/static/js/fangorn.js:1516
 msgid "Could not copy text"
 msgstr ""
 
-#: addons/metadata/static/files.js:507 website/static/js/clipboard.js:27
+#: addons/metadata/static/files.js:514 website/static/js/clipboard.js:27
 #: website/static/js/fangorn.js:1510 website/static/js/fangorn.js:1514
 msgid "Copied!"
 msgstr ""
 
-#: addons/metadata/static/files.js:524 addons/metadata/static/files.js:537
-#: addons/metadata/static/files.js:544
+#: addons/metadata/static/files.js:531 addons/metadata/static/files.js:544
+#: addons/metadata/static/files.js:551
 msgid "Could not paste text"
 msgstr ""
 
-#: addons/metadata/static/files.js:594 addons/metadata/static/files.js:608
-#: addons/metadata/static/files.js:942
+#: addons/metadata/static/files.js:601 addons/metadata/static/files.js:615
+#: addons/metadata/static/files.js:964
 msgid "Loading..."
 msgstr ""
 
-#: addons/metadata/static/files.js:606
+#: addons/metadata/static/files.js:613
 msgid "Select the destination of the file metadata."
 msgstr ""
 
-#: addons/metadata/static/files.js:611
+#: addons/metadata/static/files.js:618
 msgid "Current Metadata:"
 msgstr ""
 
-#: addons/metadata/static/files.js:667
+#: addons/metadata/static/files.js:674
 msgid "Delete metadata"
 msgstr ""
 
-#: addons/metadata/static/files.js:670
+#: addons/metadata/static/files.js:677
 msgid "Could not list hashes"
 msgstr ""
 
-#: addons/metadata/static/files.js:678
-#: addons/metadata/static/metadata-fields.js:326
-#: addons/metadata/static/metadata-fields.js:331
+#: addons/metadata/static/files.js:685
+#: addons/metadata/static/metadata-fields.js:343
+#: addons/metadata/static/metadata-fields.js:348
 msgid "Could not list files"
 msgstr ""
 
-#: addons/metadata/static/files.js:761 addons/metadata/static/files.js:768
+#: addons/metadata/static/files.js:773 addons/metadata/static/files.js:780
 msgid "No name"
 msgstr ""
 
-#: addons/metadata/static/files.js:828
+#: addons/metadata/static/files.js:840
 msgid ""
-"There is no draft metadata compliant with the schema. Create new draft "
-"metadata from the Metadata tab:"
+"There is no draft project metadata compliant with the schema. Create new "
+"draft project metadata from the Metadata tab:"
 msgstr ""
 
-#: addons/metadata/static/files.js:830 addons/metadata/static/files.js:986
+#: addons/metadata/static/files.js:842 addons/metadata/static/files.js:1008
 msgid "Open"
 msgstr ""
 
-#: addons/metadata/static/files.js:919
+#: addons/metadata/static/files.js:941
 msgid "There are errors in some fields."
 msgstr ""
 
-#: addons/metadata/static/files.js:953 addons/metadata/static/files.js:1535
-#: addons/metadata/static/files.js:1560 website/static/js/folderpicker.js:105
+#: addons/metadata/static/files.js:975 addons/metadata/static/files.js:1584
+#: addons/metadata/static/files.js:1609 website/static/js/folderpicker.js:105
 msgid "Select"
 msgstr ""
 
-#: addons/metadata/static/files.js:957
-msgid "Select the destination draft for the file metadata."
+#: addons/metadata/static/files.js:979
+msgid "Select the destination for the file metadata."
 msgstr ""
 
-#: addons/metadata/static/files.js:978
+#: addons/metadata/static/files.js:1000
 msgid "Registering..."
 msgstr ""
 
-#: addons/metadata/static/files.js:978
+#: addons/metadata/static/files.js:1000
 msgid "Deleting..."
 msgstr ""
 
-#: addons/metadata/static/files.js:1018 addons/metadata/static/files.js:1456
-#: addons/metadata/static/files.js:1512 addons/metadata/static/files.js:1533
-#: addons/metadata/static/files.js:1558
+#: addons/metadata/static/files.js:1040 addons/metadata/static/files.js:1505
+#: addons/metadata/static/files.js:1561 addons/metadata/static/files.js:1582
+#: addons/metadata/static/files.js:1607
 #: website/static/js/accountSettings.js:267 website/static/js/fangorn.js:2326
 #: website/static/js/folderPickerNodeConfig.js:591
 #: website/static/js/pages/profile-settings-addons-page.js:72
@@ -116,101 +116,114 @@ msgstr ""
 msgid "Close"
 msgstr ""
 
-#: addons/metadata/static/files.js:1070 addons/metadata/static/files.js:1484
+#: addons/metadata/static/files.js:1092
 msgid "View Metadata"
 msgstr ""
 
-#: addons/metadata/static/files.js:1080 addons/metadata/static/files.js:1484
+#: addons/metadata/static/files.js:1102
 msgid "Edit Metadata"
 msgstr ""
 
-#: addons/metadata/static/files.js:1089
+#: addons/metadata/static/files.js:1111
 msgid "Register Metadata"
 msgstr ""
 
-#: addons/metadata/static/files.js:1097 addons/metadata/static/files.js:1520
+#: addons/metadata/static/files.js:1119
 msgid "Delete Metadata"
 msgstr ""
 
-#: addons/metadata/static/files.js:1234
+#: addons/metadata/static/files.js:1256
 msgid "Metadata is defined"
 msgstr ""
 
-#: addons/metadata/static/files.js:1243
+#: addons/metadata/static/files.js:1265
 msgid "Some of the children have metadata."
 msgstr ""
 
-#: addons/metadata/static/files.js:1253
+#: addons/metadata/static/files.js:1275
 msgid "File not found: "
 msgstr ""
 
-#: addons/metadata/static/files.js:1460 website/static/js/contribManager.js:440
+#: addons/metadata/static/files.js:1509 website/static/js/contribManager.js:440
 #: website/static/js/filepage/editor.js:180
 msgid "Save"
 msgstr ""
 
-#: addons/metadata/static/files.js:1465 addons/metadata/static/files.js:1564
+#: addons/metadata/static/files.js:1514 addons/metadata/static/files.js:1613
 msgid "Copy to clipboard"
 msgstr ""
 
-#: addons/metadata/static/files.js:1478
+#: addons/metadata/static/files.js:1527
 msgid ""
 "Renaming, moving the file/directory, or changing the directory hierarchy "
 "can break the association of the metadata you have added."
 msgstr ""
 
-#: addons/metadata/static/files.js:1514 website/static/js/fangorn.js:1226
+#: addons/metadata/static/files.js:1533
+msgid "Edit File Metadata"
+msgstr ""
+
+#: addons/metadata/static/files.js:1533
+msgid "View File Metadata"
+msgstr ""
+
+#: addons/metadata/static/files.js:1563 website/static/js/fangorn.js:1226
 #: website/static/js/fangorn.js:1249 website/static/js/fangorn.js:2056
 #: website/static/js/fangorn.js:2092 website/static/js/filepage/index.js:204
 #: website/static/js/filepage/index.js:517 website/static/js/myProjects.js:1637
 msgid "Delete"
 msgstr ""
 
-#: addons/metadata/static/files.js:1525
-msgid "Do you want to delete metadata? This operation cannot be undone."
-msgstr ""
-
-#: addons/metadata/static/files.js:1542
-msgid "Select draft registration"
+#: addons/metadata/static/files.js:1569
+msgid "Delete File Metadata"
 msgstr ""
 
 #: addons/metadata/static/files.js:1574
-msgid "Resolve metadata"
+msgid "Do you want to delete metadata? This operation cannot be undone."
 msgstr ""
 
-#: addons/metadata/static/metadata-fields.js:40
+#: addons/metadata/static/files.js:1591
+msgid "Select a destination for file metadata registration"
+msgstr ""
+
+#: addons/metadata/static/files.js:1623
+msgid "Fix file metadata"
+msgstr ""
+
+#: addons/metadata/static/metadata-fields.js:43
+#: addons/metadata/static/metadata-fields.js:188
 msgid "This field can't be blank."
 msgstr ""
 
-#: addons/metadata/static/metadata-fields.js:180
+#: addons/metadata/static/metadata-fields.js:194
 msgid "Choose..."
 msgstr ""
 
-#: addons/metadata/static/metadata-fields.js:354
+#: addons/metadata/static/metadata-fields.js:371
 msgid "Calculate"
 msgstr ""
 
-#: addons/metadata/static/metadata-fields.js:405
+#: addons/metadata/static/metadata-fields.js:422
 msgid "Fill"
 msgstr ""
 
-#: addons/metadata/static/metadata-fields.js:432
+#: addons/metadata/static/metadata-fields.js:449
 msgid "No members"
 msgstr ""
 
-#: addons/metadata/static/metadata-fields.js:499
+#: addons/metadata/static/metadata-fields.js:516
 msgid "e-Rad Researcher Number"
 msgstr ""
 
-#: addons/metadata/static/metadata-fields.js:500
+#: addons/metadata/static/metadata-fields.js:517
 msgid "Name (Japanese)"
 msgstr ""
 
-#: addons/metadata/static/metadata-fields.js:501
+#: addons/metadata/static/metadata-fields.js:518
 msgid "Name (English)"
 msgstr ""
 
-#: addons/metadata/static/metadata-fields.js:515
+#: addons/metadata/static/metadata-fields.js:532
 #: website/static/js/myProjects.js:1565
 msgid "Add"
 msgstr ""
