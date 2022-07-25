@@ -69,6 +69,7 @@ class RegistrationSerializer(NodeSerializer):
         'registration_responses',
         'registration_schema',
         'registration_supplement',
+        'resources',
         'schema_responses',
         'withdrawal_justification',
         'withdrawn',
@@ -78,6 +79,8 @@ class RegistrationSerializer(NodeSerializer):
     # filterable fields from the NodeSerializer
     filterable_fields = NodeSerializer.filterable_fields ^ frozenset([
         'revision_state',
+        'has_data',
+        'has_materials',
     ])
 
     ia_url = ser.URLField(read_only=True)
@@ -146,6 +149,12 @@ class RegistrationSerializer(NodeSerializer):
         'and some information will not change. By default, the description will '
         'be cleared and the project will be made private.',
     ))
+
+    # Populated via annnotation
+    revision_state = HideIfWithdrawal(ser.CharField(read_only=True, required=False))
+    has_data = HideIfWithdrawal(ser.BooleanField(read_only=True, required=False))
+    has_materials = HideIfWithdrawal(ser.BooleanField(read_only=True, required=False))
+
     registration_supplement = ser.SerializerMethodField()
     # Will be deprecated in favor of registration_responses
     registered_meta = HideIfWithdrawal(ser.SerializerMethodField(
@@ -379,7 +388,10 @@ class RegistrationSerializer(NodeSerializer):
         related_view_kwargs={'schema_response_id': 'get_latest_response_id'},
     ))
 
-    revision_state = HideIfWithdrawal(ser.CharField(read_only=True, required=False))
+    resources = HideIfWithdrawal(RelationshipField(
+        related_view='registrations:resource-list',
+        realted_view_kwargs={'node_id': '<_id>'},
+    ))
 
     @property
     def subjects_related_view(self):
