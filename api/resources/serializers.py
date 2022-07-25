@@ -71,6 +71,6 @@ class ResourceSerializer(JSONAPISerializer):
         try:
             root_outcome = Outcome.objects.for_registration(primary_registration, create=True)
         except NoPIDError:
-            raise Conflict('Cannot add Resrouces to a Registration without a DOI')
+            raise Conflict('Cannot add Resources to a Registration that does not have a DOI')
 
         return OutcomeArtifact.objects.create(outcome=root_outcome)
