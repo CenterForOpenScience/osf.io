@@ -1,7 +1,11 @@
 from django.db import models
 from django.utils import timezone
 
-from osf.exceptions import IdentifierHasReferencesError
+from osf.exceptions import (
+    CannotFinalizeArtifactError,
+    IdentifierHasReferencesError,
+    NoPIDError
+)
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.identifiers import Identifier
 from osf.utils import outcomes as outcome_utils
@@ -110,6 +114,8 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
         pid_type (str): The string "type" of the new PID (for now, only "doi" is supported)
         api_request: The api_request data from the API call that initiated the change.
         '''
+        if not new_pid_value:
+            raise NoPIDError(f'Cannot assign an empty PID to OutcomeArtifact with ID {self._id}')
 
         previous_identifier = self.identifier
         self.identifier, _ = Identifier.objects.get_or_create(
@@ -139,8 +145,14 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
         Parameters:
         api_request: The api_request data from the API call that initiated the change.
         '''
-        if not (self.identifier and self.identifier.value and self.artifact_type):
-            return False
+        incomplete_fields = []
+        if not (self.identifier and self.identifier.value):
+            incomplete_fields.append('identifier__value')
+        if not self.artifact_type:
+            incomplete_fields.append('artifact_type')
+        if incomplete_fields:
+            raise CannotFinalizeArtifactError(self, incomplete_fields)
+
         self.finalized = True
         self.save()
 

@@ -2,9 +2,6 @@ from enum import Enum, IntEnum
 
 from django.db.models import CharField, OuterRef, Subquery
 
-class NoPIDError(Exception):
-    pass
-
 
 class ArtifactTypes(IntEnum):
     '''Labels used to classify artifacts.

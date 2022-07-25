@@ -1,10 +1,11 @@
 from django.db import models
 from django.utils.functional import cached_property
 
+from osf.exceptions import NoPIDError
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.mixins import EditableFieldsMixin
 from osf.models.nodelog import NodeLog
-from osf.utils.outcomes import ArtifactTypes, NoPIDError, OutcomeActions
+from osf.utils.outcomes import ArtifactTypes, OutcomeActions
 
 '''
 This module defines the Outcome model and its custom manager.

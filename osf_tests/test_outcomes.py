@@ -1,6 +1,8 @@
 import pytest
+
+from osf.exceptions import CannotFinalizeArtifactError, NoPIDError
 from osf.models import Identifier, Outcome, OutcomeArtifact
-from osf.utils.outcomes import ArtifactTypes, NoPIDError
+from osf.utils.outcomes import ArtifactTypes
 from osf_tests.factories import ProjectFactory, RegistrationFactory
 
 
@@ -193,6 +195,47 @@ class TestOutcomeArtifact:
 
         test_artifact.update_identifier(new_pid_value=project_doi.value)
         assert test_artifact.identifier == project_doi
+
+    @pytest.mark.parametrize('empty_value', ['', None])
+    def test_update_identifier__raises_if_empty_pid(self, outcome, project_doi, empty_value):
+        test_artifact = outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.DATA
+        )
+
+        with pytest.raises(NoPIDError):
+            test_artifact.update_identifier(new_pid_value=empty_value)
+
+    def test_finalize__raises__missing_identifier(self, outcome):
+        test_artifact = outcome.artifact_metadata.create(artifact_type=ArtifactTypes.DATA)
+
+        with pytest.raises(CannotFinalizeArtifactError) as caught:
+            test_artifact.finalize()
+        assert caught.value.incomplete_fields == ['identifier__value']
+
+    def test_finalize__raises__missing_identifier_value(self, outcome, project_doi):
+        test_artifact = outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.DATA
+        )
+        project_doi.value = ''
+        project_doi.save()
+
+        with pytest.raises(CannotFinalizeArtifactError) as caught:
+            test_artifact.finalize()
+        assert caught.value.incomplete_fields == ['identifier__value']
+
+    def test_finalize__raises__missing_artifact_type(self, outcome, project_doi):
+        test_artifact = outcome.artifact_metadata.create(identifier=project_doi)
+
+        with pytest.raises(CannotFinalizeArtifactError) as caught:
+            test_artifact.finalize()
+        assert caught.value.incomplete_fields == ['artifact_type']
+
+    def test_finalize__raises__missing_both(self, outcome):
+        test_artifact = outcome.artifact_metadata.create()
+
+        with pytest.raises(CannotFinalizeArtifactError) as caught:
+            test_artifact.finalize()
+        assert caught.value.incomplete_fields == ['identifier__value', 'artifact_type']
 
     def test_delete_artifact__deletes_from_db_if_not_finalized(self, outcome, project_doi):
         test_artifact = outcome.artifact_metadata.create(
