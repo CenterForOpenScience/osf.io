@@ -1,8 +1,7 @@
-from django.contrib.auth.mixins import PermissionRequiredMixin
-from django.views.generic import ListView
-
 from admin.base.views import GuidView
 from api.base import settings as api_settings
+from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.views.generic import ListView
 from osf.models import OSFUser, UserQuota
 from osf.models.files import BaseFileNode
 from website.util import quota
@@ -16,7 +15,16 @@ def custom_size_abbreviation(size, abbr, *kwargs):
 
 def check_extended_storage(user):
     check_provider = set(BaseFileNode.objects.filter(checkout_id=user.id).values_list('provider', flat=True))
-    return True if len(check_provider) > 1 else False
+    if len(check_provider) > 1:
+        return True
+    elif len(check_provider) == 1:
+        for provider in check_provider:
+            if provider is 'osfstorage':
+                return False
+            else:
+                return True
+    else:
+        return False
 
 
 class UserIdentificationInformation(ListView):

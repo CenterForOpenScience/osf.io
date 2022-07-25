@@ -1,9 +1,8 @@
-from django.http import Http404
-from django.views.generic import ListView
-
 from admin.base.views import GuidView
 from admin.rdm.utils import RdmPermissionMixin
 from api.base import settings as api_settings
+from django.http import Http404
+from django.views.generic import ListView
 from osf.models import OSFUser, UserQuota
 from osf.models.files import BaseFileNode
 from website.util import quota
@@ -17,7 +16,16 @@ def custom_size_abbreviation(size, abbr, *kwargs):
 
 def check_extended_storage(user):
     check_provider = set(BaseFileNode.objects.filter(checkout_id=user.id).values_list('provider', flat=True))
-    return True if len(check_provider) > 1 else False
+    if len(check_provider) > 1:
+        return True
+    elif len(check_provider) == 1:
+        for provider in check_provider:
+            if provider is 'osfstorage':
+                return False
+            else:
+                return True
+    else:
+        return False
 
 
 class UserIdentificationInformation(ListView):
@@ -45,8 +53,7 @@ class UserIdentificationInformation(ListView):
 
     def get_context_data(self, **kwargs):
         if self.request.user.is_superuser:
-            raise Http404("Page not found")
-
+            raise Http404('Page not found')
         self.query_set = self.get_userlist()
         self.page_size = self.get_paginate_by(self.query_set)
         self.paginator, self.page, self.query_set, self.is_paginated = \
@@ -80,8 +87,7 @@ class UserIdentificationDetails(RdmPermissionMixin, GuidView):
 
     def get_object(self):
         if self.request.user.is_superuser:
-            raise Http404("Page not found")
-
+            raise Http404('Page not found')
         user_details = OSFUser.load(self.kwargs.get('guid'))
         max_quota, used_quota = quota.get_quota_info(user_details, UserQuota.NII_STORAGE)
         max_quota_bytes = max_quota * api_settings.SIZE_UNIT_GB
