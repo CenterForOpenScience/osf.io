@@ -43,13 +43,13 @@ def payload(registration):
 @pytest.mark.django_db
 class TestResourceListPOSTPermissions:
 
-    @pytest.mark.parametrize('user_role', UserRoles.write_users())
+    @pytest.mark.parametrize('user_role', UserRoles.write_roles())
     def test_status_code__write_user(self, app, registration, payload, user_role):
         test_auth = configure_test_auth(registration, user_role)
         resp = app.post_json_api(POST_URL, payload, auth=test_auth, expect_errors=True)
         assert resp.status_code == 201
 
-    @pytest.mark.parametrize('user_role', UserRoles.excluding(*UserRoles.write_users()))
+    @pytest.mark.parametrize('user_role', UserRoles.excluding(*UserRoles.write_roles()))
     def test_status_code__non_admin(self, app, registration, payload, user_role):
         test_auth = configure_test_auth(registration, user_role)
         resp = app.post_json_api(POST_URL, payload, auth=test_auth, expect_errors=True)
