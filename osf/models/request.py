@@ -31,7 +31,7 @@ class NodeRequest(AbstractRequest, NodeRequestableMixin):
             models.UniqueConstraint(
                 name='osf_noderequest_target_creator_non_accepted',
                 fields=['target_id', 'creator_id'],
-                condition=models.Q(machine_state='accepted')
+                condition=~models.Q(machine_state='accepted')
             )
         ]
 

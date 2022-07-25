@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from dirtyfields import DirtyFieldsMixin
 from django.db import models
-from django.db.models import Q, CheckConstraint
+from django.db.models import Q
 from django.core.exceptions import ValidationError
 from django.utils.functional import cached_property
 
@@ -22,7 +22,7 @@ class Subject(ObjectIDMixin, BaseModel, DirtyFieldsMixin):
     text = models.CharField(null=False, max_length=256, db_index=True)  # max length on prod: 73
     parent = models.ForeignKey('self', related_name='children', null=True, blank=True, on_delete=models.SET_NULL, validators=[validate_subject_hierarchy_length])
     bepress_subject = models.ForeignKey('self', related_name='aliases', null=True, blank=True, on_delete=models.deletion.CASCADE)
-    provider = models.ForeignKey('AbstractProvider', related_name='subjects', on_delete=models.deletion.CASCADE)
+    provider = models.ForeignKey('AbstractProvider', related_name='subjects', on_delete=models.deletion.CASCADE, null=True)
     highlighted = models.BooleanField(db_index=True, default=False)
 
     objects = SubjectQuerySet.as_manager()
@@ -30,9 +30,6 @@ class Subject(ObjectIDMixin, BaseModel, DirtyFieldsMixin):
     class Meta:
         base_manager_name = 'objects'
         unique_together = ('text', 'provider')
-        constraints = [
-            CheckConstraint(name='customs_must_be_mapped', check=(Q(bepress_subject_id__isnull=True) | ~Q(provider___id='osf')))
-        ]
 
     def __unicode__(self):
         return '{} with id {}'.format(self.text, self.id)
