@@ -171,3 +171,61 @@ class TestOutcomeArtifact:
         assert retrieved_external_artifact == external_artifact
         assert retrieved_external_artifact.pid == TEST_EXTERNAL_DOI
         assert retrieved_external_artifact.primary_resource_guid == registration._id
+
+    def test_update_identifier__get_existing_identifier(self, outcome, project_doi, external_doi):
+        test_artifact = outcome.artifact_metadata.create(artifact_type=ArtifactTypes.DATA)
+        test_artifact.update_identifier(new_pid_value=TEST_PROJECT_DOI)
+        assert test_artifact.identifier == project_doi
+
+    def test_update_identifier__create_new_identifier(self, outcome, project_doi):
+        assert not Identifier.objects.filter(value=TEST_EXTERNAL_DOI).exists()
+
+        test_artifact = outcome.artifact_metadata.create(artifact_type=ArtifactTypes.DATA)
+        test_artifact.update_identifier(new_pid_value=TEST_EXTERNAL_DOI)
+
+        assert test_artifact.identifier.value == TEST_EXTERNAL_DOI
+        assert Identifier.objects.filter(value=TEST_EXTERNAL_DOI).exists()
+
+    def test_update_identifier__deletes_previous_identifier_if_unreferenced(self, outcome, project_doi, external_doi):
+        assert Identifier.objects.filter(value=TEST_EXTERNAL_DOI).exists()
+        test_artifact = outcome.artifact_metadata.create(
+            identifier=external_doi, artifact_type=ArtifactTypes.DATA
+        )
+        assert test_artifact.identifier != project_doi
+
+        test_artifact.update_identifier(new_pid_value=project_doi.value)
+        assert test_artifact.identifier == project_doi
+        assert not Identifier.objects.filter(value=TEST_EXTERNAL_DOI).exists()
+
+    def test_update_identifier__keeps_previous_identifier_if_osf_referent_exists(self, outcome, project_doi):
+        assert Identifier.objects.filter(value=TEST_PROJECT_DOI).exists()
+        test_artifact = outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.DATA
+        )
+
+        test_artifact.update_identifier(new_pid_value=TEST_EXTERNAL_DOI)
+        assert test_artifact.identifier != project_doi
+        assert Identifier.objects.filter(value=TEST_PROJECT_DOI).exists()
+
+    def test_update_identifier__keeps_previous_identifier_if_part_of_other_outcomes(
+        self, outcome, project_doi, external_doi
+    ):
+        test_artifact = outcome.artifact_metadata.create(
+            identifier=external_doi, artifact_type=ArtifactTypes.DATA
+        )
+        alternate_outcome = Outcome.objects.create()
+        alternate_outcome.artifact_metadata.create(
+            identifier=external_doi, artifact_type=ArtifactTypes.CODE
+        )
+
+        test_artifact.update_identifier(new_pid_value=project_doi.value)
+        assert test_artifact.identifier == project_doi
+        assert Identifier.objects.filter(value=TEST_EXTERNAL_DOI).exists()
+
+    def test_update_identifier__no_change_if_same_pid(self, outcome, project_doi):
+        test_artifact = outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.DATA
+        )
+
+        test_artifact.update_identifier(new_pid_value=project_doi.value)
+        assert test_artifact.identifier == project_doi

@@ -223,3 +223,8 @@ class SchemaResponseUpdateError(SchemaResponseError):
         )
 
         super().__init__(error_message)
+
+
+class IdentifierHasReferencesError(OSFError):
+    """Raised when deleting an Identifier that references or is referenced by OSF Entities."""
+    pass

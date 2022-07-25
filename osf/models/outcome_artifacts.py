@@ -1,8 +1,10 @@
 from django.db import models
 
+from osf.exceptions import IdentifierHasReferencesError
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.identifiers import Identifier
 from osf.utils import outcomes as outcome_utils
+from osf.utils.fields import NonNaiveDateTimeField
 
 
 '''
@@ -92,8 +94,10 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
         default=ArtifactTypes.UNDEFINED,
     )
 
-    title = models.TextField(null=False)
-    description = models.TextField(null=False)
+    title = models.TextField(null=False, blank=True)
+    description = models.TextField(null=False, blank=True)
+    finalized = models.BooleanField(default=False)
+    deleted = NonNaiveDateTimeField(null=True, blank=True)
 
     objects = ArtifactManager()
 
@@ -103,3 +107,26 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
             models.Index(fields=['outcome', 'artifact_type'])
         ]
         ordering = ['artifact_type', 'title']
+
+    def update_identifier(self, new_pid_value, pid_type='doi'):
+        previous_identifier = self.identifier
+        self.identifier, _ = Identifier.objects.get_or_create(
+            value=new_pid_value, category=pid_type
+        )
+        self.save()
+        if previous_identifier:
+            try:
+                previous_identifier.delete()
+            except IdentifierHasReferencesError:
+                pass
+
+    def delete(self):
+        if self.finalized:
+            raise RuntimeError
+        identifier = self.identifier
+        super().delete()
+
+        try:
+            identifier.delete()
+        except IdentifierHasReferencesError:
+            pass

@@ -86,6 +86,14 @@ class UserRoles(Enum):
     def noncontributor_roles(cls):
         return [cls.UNAUTHENTICATED, cls.NONCONTRIB, cls.MODERATOR]
 
+    @classmethod
+    def write_roles(cls):
+        return [cls.WRITE_USER, cls.ADMIN_USER]
+
+    @classmethod
+    def excluding(cls, *excluded_roles):
+        return [role for role in cls if role not in excluded_roles]
+
     def get_permissions_string(self):
         if self is UserRoles.READ_USER:
             return 'read'
