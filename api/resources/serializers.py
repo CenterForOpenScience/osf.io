@@ -1,5 +1,6 @@
 from rest_framework import serializers as ser
 
+from api.base.exceptions import Conflict
 from api.base.serializers import (
     EnumField,
     JSONAPISerializer,
@@ -9,7 +10,8 @@ from api.base.serializers import (
     VersionedDateTimeField,
 )
 from api.base.utils import absolute_reverse
-from osf.utils.outcomes import ArtifactTypes
+from osf.models import Outcome, OutcomeArtifact, Registration
+from osf.utils.outcomes import ArtifactTypes, NoPIDError
 
 class ResourceSerializer(JSONAPISerializer):
 
@@ -60,3 +62,15 @@ class ResourceSerializer(JSONAPISerializer):
                 'resource_id': obj._id,
             },
         )
+
+    def create(self, validated_data):
+        # Already loaded by view, so no need to error check
+        guid = self.context['request'].data['registration']
+        primary_registration = Registration.load(guid)
+
+        try:
+            root_outcome = Outcome.objects.for_registration(primary_registration, create=True)
+        except NoPIDError:
+            raise Conflict('Cannot add Resources to a Registration that does not have a DOI')
+
+        return OutcomeArtifact.objects.create(outcome=root_outcome)
