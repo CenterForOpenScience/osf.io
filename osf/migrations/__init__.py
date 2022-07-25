@@ -169,6 +169,8 @@ def update_default_providers(sender, verbosity=0, **kwargs):
     if getattr(sender, 'label', None) == 'osf':
         if 'pytest' in sys.modules:
             ensure_default_registration_provider()
+        else:
+            ensure_default_providers()
 
 
 def ensure_default_providers():
