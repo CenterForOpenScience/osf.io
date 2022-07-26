@@ -9,7 +9,7 @@ from admin.base.views import GuidView
 from admin.rdm.utils import RdmPermissionMixin
 from api.base import settings as api_settings
 from osf.models import OSFUser, UserQuota, Email
-from osf.models.files import BaseFileNode
+from osf.models.files import BaseFileNode, FileVersion, BaseFileVersionsThrough
 from website.util import quota
 
 
@@ -20,8 +20,21 @@ def custom_size_abbreviation(size, abbr, *kwargs):
 
 
 def check_extended_storage(user):
-    check_provider = set(BaseFileNode.objects.filter(checkout_id=user.id).values_list('provider', flat=True))
-    return True if len(check_provider) > 1 else False
+    fileVersion = FileVersion.objects.filter(creator=user).values_list('id', flat=True)
+    base = BaseFileVersionsThrough.objects.filter(fileversion_id__in=fileVersion).values_list('basefilenode_id',
+                                                                                              flat=True)
+    check_provider = set(BaseFileNode.objects.filter(id__in=base).values_list('provider', flat=True))
+
+    if len(check_provider) > 1:
+        return True
+    elif len(check_provider) == 1:
+        for provider in check_provider:
+            if provider in 'osfstorage':
+                return False
+            else:
+                return True
+    else:
+        return False
 
 
 class UserIdentificationInformation(ListView):
