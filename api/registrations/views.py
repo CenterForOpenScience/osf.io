@@ -243,9 +243,7 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, Regist
 
     # overrides RetrieveAPIView
     def get_object(self):
-        registration = self.get_node(
-            revision_state=annotations.REVISION_STATE,
-        )
+        registration = self.get_node(revision_state=annotations.REVISION_STATE)
         if not registration.is_registration:
             raise ValidationError('This is not a registration.')
 
