@@ -15,14 +15,12 @@ from api_tests.subjects.mixins import UpdateSubjectsMixin
 from api_tests.utils import create_test_file, disconnected_from_listeners
 from framework.auth import Auth
 from osf.migrations import update_provider_auth_groups
-from osf.models import Registration, NodeLog, NodeLicense, Outcome, SchemaResponse
+from osf.models import Registration, NodeLog, NodeLicense, SchemaResponse
 from osf.utils import permissions
-from osf.utils.outcomes import ArtifactTypes
 from osf.utils.workflows import ApprovalStates
 from osf_tests.factories import (
     AuthUserFactory,
     CommentFactory,
-    IdentifierFactory,
     InstitutionFactory,
     NodeFactory,
     OSFGroupFactory,
@@ -1589,66 +1587,3 @@ class TestRegistrationResponses:
         latest_response_id = resp.json['data']['relationships']['latest_response']['data']['id']
         assert original_response_id == approved_schema_response._id
         assert latest_response_id == revised_schema_response._id
-
-
-@pytest.mark.django_db
-class TestRegistrationOpenPracticeAnnotations:
-
-    @pytest.fixture
-    def registration(self):
-        return RegistrationFactory(is_public=True, has_doi=True)
-
-    @pytest.fixture
-    def outcome(self, registration):
-        return Outcome.objects.for_registration(registration, create=True)
-
-    @pytest.fixture
-    def data_resource(self, outcome):
-        return outcome.artifact_metadata.create(
-            identifier=IdentifierFactory(),
-            artifact_type=ArtifactTypes.DATA,
-            finalized=True
-        )
-
-    @pytest.fixture
-    def code_resource(self, outcome):
-        return outcome.artifact_metadata.create(
-            identifier=IdentifierFactory(),
-            artifact_type=ArtifactTypes.ANALYTIC_CODE,
-            finalized=True
-        )
-
-    @pytest.fixture
-    def materials_resource(self, outcome):
-        return outcome.artifact_metadata.create(
-            identifier=IdentifierFactory(),
-            artifact_type=ArtifactTypes.MATERIALS,
-            finalized=True
-        )
-
-    @pytest.fixture()
-    def url(self, registration):
-        return f'/{API_BASE}registrations/{registration._id}/'
-
-    def test_badge_annotations(self, app, registration, data_resource, code_resource, materials_resource, url):
-        resp = app.get(url, auth=None, expect_errors=False)
-        attributes = resp.json['data']['attributes']
-
-        assert attributes['has_data']
-        assert attributes['has_analytic_code']
-        assert attributes['has_materials']
-
-    def test_badge_annotations_exclude_nonvisible_results(
-        self, app, registration, data_resource, code_resource, materials_resource, url
-    ):
-        code_resource.finalized = False
-        code_resource.save()
-        materials_resource.deleted = timezone.now()
-        materials_resource.save()
-
-        resp = app.get(url, auth=None, expect_errors=False)
-        attributes = resp.json['data']['attributes']
-
-        assert attributes['has_data']
-        assert not attributes['has_analytic_code']
-        assert not attributes['has_materials']

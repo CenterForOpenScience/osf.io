@@ -126,7 +126,6 @@ from api.registrations.serializers import (
 from api.requests.permissions import NodeRequestPermission
 from api.requests.serializers import NodeRequestSerializer, NodeRequestCreateSerializer
 from api.requests.views import NodeRequestMixin
-from api.resources import annotations as resource_annotations
 from api.subjects.views import SubjectRelationshipBaseView, BaseResourceSubjectsList
 from api.users.views import UserMixin
 from api.users.serializers import UserSerializer
@@ -711,7 +710,6 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
     def get_queryset(self):
         nodes = self.get_node().registrations_all.annotate(
             revision_state=registration_annotations.REVISION_STATE,
-            **resource_annotations.make_open_practice_badge_annotations(),
         )
         auth = get_user_auth(self.request)
         registrations = [node for node in nodes if node.can_view(auth)]

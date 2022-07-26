@@ -82,7 +82,6 @@ from api.providers.permissions import MustBeModerator
 from api.providers.views import ProviderMixin
 from api.registrations import annotations
 
-from api.resources import annotations as resource_annotations
 from api.resources.permissions import RegistrationResourceListPermission
 from api.resources.serializers import ResourceSerializer
 from api.schema_responses import annotations as schema_response_annotations
@@ -157,7 +156,6 @@ class RegistrationList(JSONAPIBaseView, generics.ListCreateAPIView, bulk_views.B
             user=self.request.user,
             model_cls=Registration,
             revision_state=annotations.REVISION_STATE,
-            **resource_annotations.make_open_practice_badge_annotations(),
         )
 
     def is_blacklisted(self):
@@ -247,7 +245,6 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, Regist
     def get_object(self):
         registration = self.get_node(
             revision_state=annotations.REVISION_STATE,
-            **resource_annotations.make_open_practice_badge_annotations(),
         )
         if not registration.is_registration:
             raise ValidationError('This is not a registration.')
