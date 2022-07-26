@@ -857,15 +857,6 @@ class Migration(migrations.Migration):
             bases=('osf.basefilenode',),
         ),
         migrations.CreateModel(
-            name='Collection',
-            fields=[
-            ],
-            options={
-                'proxy': True,
-            },
-            bases=('osf.abstractnode',),
-        ),
-        migrations.CreateModel(
             name='DataverseFileNode',
             fields=[
             ],
@@ -1402,24 +1393,6 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-        ),
-        migrations.CreateModel(
-            name='CollectionSubmission',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created',
-                 django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
-                ('modified',
-                 django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
-                ('collected_type', models.CharField(blank=True, max_length=127)),
-                ('status', models.CharField(blank=True, max_length=127)),
-                ('volume', models.CharField(blank=True, max_length=127)),
-                ('issue', models.CharField(blank=True, max_length=127)),
-                ('program_area', models.CharField(blank=True, max_length=127)),
-                ('school_type', models.CharField(blank=True, max_length=127)),
-                ('study_design', models.CharField(blank=True, max_length=127)),
-            ],
-            bases=(models.Model, osf.models.base.QuerySetExplainMixin),
         ),
         migrations.CreateModel(
             name='CollectionUserObjectPermission',
@@ -3828,21 +3801,6 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL),
         ),
         migrations.AddField(
-            model_name='collectionsubmission',
-            name='creator',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL),
-        ),
-        migrations.AddField(
-            model_name='collectionsubmission',
-            name='guid',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='osf.guid'),
-        ),
-        migrations.AddField(
-            model_name='collectionsubmission',
-            name='subjects',
-            field=models.ManyToManyField(blank=True, related_name='collectionsubmissions', to='osf.Subject'),
-        ),
-        migrations.AddField(
             model_name='collectiongroupobjectpermission',
             name='group',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='auth.group'),
@@ -4170,38 +4128,6 @@ class Migration(migrations.Migration):
             name='dismissedalert',
             unique_together={('_id', 'location')},
         ),
-        migrations.AddField(
-            model_name='collectionsubmission',
-            name='collection',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='osf.collection'),
-        ),
-        migrations.AddField(
-            model_name='collection',
-            name='collected_types',
-            field=models.ManyToManyField(
-                limit_choices_to={'model__in': ['abstractnode', 'basefilenode', 'collection', 'preprint']},
-                related_name='_osf_collection_collected_types_+', to='contenttypes.ContentType'),
-        ),
-        migrations.AddField(
-            model_name='collection',
-            name='guid_links',
-            field=models.ManyToManyField(related_name='collections', through='osf.CollectionSubmission', to='osf.Guid'),
-        ),
-        migrations.AlterField(
-            model_name='CollectionSubmission',
-            name='collection',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='osf.collection'),
-        ),
-        migrations.AddField(
-            model_name='collectionuserobjectpermission',
-            name='content_object',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='osf.collection'),
-        ),
-        migrations.AddField(
-            model_name='collectiongroupobjectpermission',
-            name='content_object',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='osf.collection'),
-        ),
         migrations.AlterUniqueTogether(
             name='chronossubmission',
             unique_together={('preprint', 'journal')},
@@ -4221,12 +4147,6 @@ class Migration(migrations.Migration):
         migrations.AlterUniqueTogether(
             name='abstractprovidergroupobjectpermission',
             unique_together={('group', 'permission', 'content_object')},
-        ),
-        migrations.AddField(
-            model_name='abstractprovider',
-            name='primary_collection',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
-                                    related_name='+', to='osf.collection'),
         ),
         migrations.CreateModel(
             name='PreprintProvider',
@@ -4262,27 +4182,8 @@ class Migration(migrations.Migration):
                                     related_name='preprints', to='osf.preprintprovider'),
         ),
         migrations.AlterUniqueTogether(
-            name='collectionuserobjectpermission',
-            unique_together={('user', 'permission', 'content_object')},
-        ),
-        migrations.AlterOrderWithRespectTo(
-            name='collectionsubmission',
-            order_with_respect_to='collection',
-        ),
-        migrations.AlterUniqueTogether(
-            name='collectionsubmission',
-            unique_together={('collection', 'guid')},
-        ),
-        migrations.AlterUniqueTogether(
-            name='collectiongroupobjectpermission',
-            unique_together={('group', 'permission', 'content_object')},
-        ),
-        migrations.AlterUniqueTogether(
             name='abstractprovider',
             unique_together={('_id', 'type')},
-        ),
-        migrations.DeleteModel(
-            name='Collection',
         ),
         migrations.RemoveConstraint(
             model_name='noderequest',
@@ -4363,8 +4264,6 @@ class Migration(migrations.Migration):
                      to=settings.AUTH_USER_MODEL
                  )
                  ),
-                ('guid_links',
-                 models.ManyToManyField(related_name='collections', through='osf.CollectionSubmission', to='osf.Guid')),
                 ('provider', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE,
                                                to='osf.abstractprovider')),
             ],
@@ -4374,10 +4273,64 @@ class Migration(migrations.Migration):
             },
             bases=(dirtyfields.dirtyfields.DirtyFieldsMixin, models.Model, osf.models.base.QuerySetExplainMixin),
         ),
-        migrations.AlterField(
-            model_name='CollectionSubmission',
-            name='collection',
+        migrations.AddField(
+            model_name='collectionuserobjectpermission',
+            name='content_object',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='osf.collection'),
+        ),
+        migrations.AddField(
+            model_name='collectiongroupobjectpermission',
+            name='content_object',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='osf.collection'),
+        ),
+        migrations.AddField(
+            model_name='abstractprovider',
+            name='primary_collection',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
+                                    related_name='+', to='osf.collection'),
+        ),
+        migrations.AlterUniqueTogether(
+            name='collectionuserobjectpermission',
+            unique_together={('user', 'permission', 'content_object')},
+        ),
+        migrations.AlterUniqueTogether(
+            name='collectiongroupobjectpermission',
+            unique_together={('group', 'permission', 'content_object')},
+        ),
+        migrations.CreateModel(
+            name='CollectionSubmission',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('created',
+                 django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
+                ('modified',
+                 django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
+                ('collected_type', models.CharField(blank=True, max_length=127)),
+                ('status', models.CharField(blank=True, max_length=127)),
+                ('volume', models.CharField(blank=True, max_length=127)),
+                ('issue', models.CharField(blank=True, max_length=127)),
+                ('program_area', models.CharField(blank=True, max_length=127)),
+                ('school_type', models.CharField(blank=True, max_length=127)),
+                ('study_design', models.CharField(blank=True, max_length=127)),
+                ('collection', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='osf.Collection')),
+                ('creator', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+                ('guid', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='osf.guid')),
+                ('subjects', models.ManyToManyField(blank=True, related_name='collection_submissions', to='osf.Subject')),
+            ],
+            bases=(models.Model, osf.models.base.QuerySetExplainMixin),
+        ),
+        migrations.AlterOrderWithRespectTo(
+            name='collectionsubmission',
+            order_with_respect_to='collection',
+        ),
+        migrations.AlterUniqueTogether(
+            name='collectionsubmission',
+            unique_together={('collection', 'guid')},
+        ),
+        migrations.AddField(
+            model_name='collection',
+            name='guid_links',
+            field=models.ManyToManyField(related_name='collections', through='osf.CollectionSubmission', to='osf.Guid'),
         ),
         migrations.RunSQL(
             [
