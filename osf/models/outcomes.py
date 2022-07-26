@@ -1,9 +1,11 @@
 from django.db import models
 from django.utils.functional import cached_property
 
+from osf.exceptions import NoPIDError
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.mixins import EditableFieldsMixin
-from osf.utils.outcomes import ArtifactTypes, NoPIDError
+from osf.models.nodelog import NodeLog
+from osf.utils.outcomes import ArtifactTypes, OutcomeActions
 
 '''
 This module defines the Outcome model and its custom manager.
@@ -12,6 +14,12 @@ Outcomes serve as a way to collect metadata about a research effort and to aggre
 used to share data or provide context for a that research effort, along with some additional metadata
 stored in the OutcomeArtifact through table.
 '''
+
+NODE_LOGS_FOR_OUTCOME_ACTION = {
+    OutcomeActions.ADD: NodeLog.RESOURCE_ADDED,
+    OutcomeActions.UPDATE: NodeLog.RESOURCE_UPDATED,
+    OutcomeActions.REMOVE: NodeLog.RESOURCE_REMOVED,
+}
 
 
 class OutcomeManager(models.Manager):
@@ -33,7 +41,8 @@ class OutcomeManager(models.Manager):
         new_outcome.copy_editable_fields(registration, include_contributors=False)
         new_outcome.artifact_metadata.create(
             identifier=registration_identifier,
-            artifact_type=ArtifactTypes.PRIMARY
+            artifact_type=ArtifactTypes.PRIMARY,
+            finalized=True,
         )
         return new_outcome
 
@@ -72,11 +81,12 @@ class Outcome(ObjectIDMixin, EditableFieldsMixin, BaseModel):
     def primary_osf_resource(self):
         return self.artifact_metadata.get(artifact_type=ArtifactTypes.PRIMARY).identifier.referent
 
-    def add_artifact_by_pid(self, pid, artifact_type, pid_type='doi', create_identifier=False):
-        return self.artifacts.through.objects.create_for_identifier_value(
-            outcome=self,
-            pid_value=pid,
-            pid_type=pid_type,
-            artifact_type=artifact_type,
-            create_identifier=create_identifier
+    def log_artifact_change(self, action, artifact, api_request, **log_params):
+        nodelog_action = NODE_LOGS_FOR_OUTCOME_ACTION[action]
+        nodelog_params = {'artifact_id': artifact._id, **log_params}
+
+        self.primary_osf_resource.add_log(
+            action=nodelog_action,
+            params=nodelog_params,
+            request=api_request,
         )

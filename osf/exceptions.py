@@ -223,3 +223,21 @@ class SchemaResponseUpdateError(SchemaResponseError):
         )
 
         super().__init__(error_message)
+
+
+class IdentifierHasReferencesError(OSFError):
+    pass
+
+
+class NoPIDError(OSFError):
+    pass
+
+
+class CannotFinalizeArtifactError(OSFError):
+
+    def __init__(self, artifact, incomplete_fields):
+        self.incomplete_fields = incomplete_fields
+        self.message = (
+            f'Could not set `finalized=True` for OutcomeArtifact with id [{artifact._id}]. '
+            f'The following required fields are not set: {incomplete_fields}'
+        )

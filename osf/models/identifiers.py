@@ -2,6 +2,8 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils import timezone
+
+from osf.exceptions import IdentifierHasReferencesError
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.fields import NonNaiveDateTimeField
 
@@ -27,6 +29,12 @@ class Identifier(ObjectIDMixin, BaseModel):
         self.deleted = timezone.now()
         if save:
             self.save()
+
+    def delete(self):
+        '''Used to delete an orphaned Identifier (distinct from setting `deleted`)'''
+        if self.object_id or self.artifact_metadata.filter(deleted__isnull=True).exists():
+            raise IdentifierHasReferencesError
+        super().delete()
 
 
 class IdentifierMixin(models.Model):
