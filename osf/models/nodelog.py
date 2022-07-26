@@ -143,6 +143,10 @@ class NodeLog(ObjectIDMixin, BaseModel):
 
     MIGRATED_QUICK_FILES = 'migrated_quickfiles'
 
+    RESOURCE_ADDED = 'resource_identifier_added'
+    RESOURCE_UPDATED = 'resource_identifier_udpated'
+    RESOURCE_REMOVED = 'resource_identifier_removed'
+
     actions = ([CHECKED_IN, CHECKED_OUT, FILE_TAG_REMOVED, FILE_TAG_ADDED, CREATED_FROM, PROJECT_CREATED,
                 PROJECT_REGISTERED, PROJECT_DELETED, NODE_CREATED, NODE_FORKED, NODE_REMOVED,
                 NODE_ACCESS_REQUESTS_ENABLED, NODE_ACCESS_REQUESTS_DISABLED,
@@ -161,7 +165,8 @@ class NodeLog(ObjectIDMixin, BaseModel):
                 PREREG_REGISTRATION_INITIATED, PROJECT_CREATED_FROM_DRAFT_REG,
                 GROUP_ADDED, GROUP_UPDATED, GROUP_REMOVED,
                 AFFILIATED_INSTITUTION_ADDED, AFFILIATED_INSTITUTION_REMOVED, PREPRINT_INITIATED,
-                PREPRINT_FILE_UPDATED, PREPRINT_LICENSE_UPDATED, VIEW_ONLY_LINK_ADDED, VIEW_ONLY_LINK_REMOVED] + list(sum([
+                PREPRINT_FILE_UPDATED, PREPRINT_LICENSE_UPDATED, VIEW_ONLY_LINK_ADDED, VIEW_ONLY_LINK_REMOVED,
+                RESOURCE_ADDED, RESOURCE_UPDATED, RESOURCE_REMOVED] + list(sum([
                     config.actions for config in apps.get_app_configs() if config.name.startswith('addons.')
                 ], tuple())))
     action_choices = [(action, action.upper()) for action in actions]
