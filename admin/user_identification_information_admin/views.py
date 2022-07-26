@@ -4,7 +4,7 @@ from api.base import settings as api_settings
 from django.http import Http404
 from django.views.generic import ListView
 from osf.models import OSFUser, UserQuota
-from osf.models.files import BaseFileNode
+from osf.models.files import BaseFileNode, FileVersion, BaseFileVersionsThrough
 from website.util import quota
 
 
@@ -15,12 +15,16 @@ def custom_size_abbreviation(size, abbr, *kwargs):
 
 
 def check_extended_storage(user):
-    check_provider = set(BaseFileNode.objects.filter(checkout_id=user.id).values_list('provider', flat=True))
+    fileVersion = FileVersion.objects.filter(creator=user).values_list('id', flat=True)
+    base = BaseFileVersionsThrough.objects.filter(fileversion_id__in=fileVersion).values_list('basefilenode_id',
+                                                                                              flat=True)
+    check_provider = set(BaseFileNode.objects.filter(id__in=base).values_list('provider', flat=True))
+
     if len(check_provider) > 1:
         return True
     elif len(check_provider) == 1:
         for provider in check_provider:
-            if provider is 'osfstorage':
+            if provider in 'osfstorage':
                 return False
             else:
                 return True
@@ -59,7 +63,8 @@ class UserIdentificationInformation(ListView):
         self.paginator, self.page, self.query_set, self.is_paginated = \
             self.paginate_queryset(self.query_set, self.page_size)
         kwargs['requested_user'] = self.request.user
-        kwargs['institution_name'] = self.request.user.affiliated_institutions.first().name
+        kwargs['institution_name'] = self.request.user.affiliated_institutions.first().name \
+            if self.request.user.is_superuser is False else None
         kwargs['users'] = self.query_set
         kwargs['page'] = self.page
         return super(UserIdentificationInformation, self).get_context_data(**kwargs)
