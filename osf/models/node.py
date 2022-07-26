@@ -381,8 +381,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         )
         indexes = [
             models.Index(
+                name='registered_date_index',
                 fields=['-registered_date'],
-                name='osf_abstractnode_registered_date_index'
             ),
             models.Index(
                 fields=['is_public', 'is_deleted', 'type'],

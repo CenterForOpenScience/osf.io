@@ -100,7 +100,6 @@ class Migration(migrations.Migration):
                 ('title', models.TextField(validators=[osf.models.validators.validate_title])),
                 ('wiki_private_uuids', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict)),
                 ('keenio_read_key', models.CharField(blank=True, max_length=1000, null=True)),
-                ('is_bookmark_collection', models.BooleanField(db_index=True, null=True, default=False)),
                 ('registered_date', osf.utils.fields.NonNaiveDateTimeField(blank=True, db_index=True, null=True)),
                 ('registered_meta', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict, null=True)),
             ],
@@ -3399,11 +3398,11 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name='nodelog',
-            index=models.Index(fields=['node_id', '-date'], name='nodelog__node_id_date_desc'),
+            index=models.Index(fields=['node', '-date'], name='nodelog__node_id_date_desc'),
         ),
         migrations.AddIndex(
             model_name='nodelog',
-            index=models.Index(fields=['node_id', 'should_hide'], name='osf_nodelog_should_hide_nid'),
+            index=models.Index(fields=['node', 'should_hide'], name='osf_nodelog_should_hide_nid'),
         ),
         migrations.AddIndex(
             model_name='pagecounter',
@@ -4060,7 +4059,7 @@ class Migration(migrations.Migration):
             name='versions',
             field=models.ManyToManyField(through='osf.BaseFileVersionsThrough', to='osf.FileVersion'),
         ),
-        migrations.AlterField(
+        migrations.AddField(
             model_name='draftregistration',
             name='registration_schema',
             field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE,
@@ -4298,20 +4297,12 @@ class Migration(migrations.Migration):
             name='osf_nodelog_should_hide_nid',
         ),
         migrations.RemoveField(
-            model_name='abstractnode',
-            name='is_bookmark_collection',
-        ),
-        migrations.RemoveField(
             model_name='comment',
             name='date_created',
         ),
         migrations.AddIndex(
-            model_name='abstractnode',
-            index=models.Index(fields=['-registered_date'], name='osf_abstractnode_registered'),
-        ),
-        migrations.AddIndex(
             model_name='nodelog',
-            index=models.Index(fields=['should_hide', 'node_id'], name='osf_nodelog_should_hide_nid'),
+            index=models.Index(fields=['should_hide', 'node'], name='osf_nodelog_should_hide_nid'),
         ),
         migrations.AddConstraint(
             model_name='noderequest',
@@ -4355,17 +4346,17 @@ class Migration(migrations.Migration):
                 ('is_bookmark_collection', models.BooleanField(db_index=True, default=False)),
                 ('deleted', osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True)),
                 ('collected_types', models.ManyToManyField(
-                     limit_choices_to={
-                         'model__in': [
-                             'abstractnode',
-                             'basefilenode',
-                             'collection',
-                             'preprint'
-                         ]
-                     },
-                     related_name='_osf_collection_collected_types_+', to='contenttypes.ContentType'
-                 )
-                 ),
+                    limit_choices_to={
+                        'model__in': [
+                            'abstractnode',
+                            'basefilenode',
+                            'collection',
+                            'preprint'
+                        ]
+                    },
+                    related_name='_osf_collection_collected_types_+', to='contenttypes.ContentType'
+                )
+                ),
                 ('creator',
                  models.ForeignKey(
                      on_delete=django.db.models.deletion.CASCADE,
@@ -4388,17 +4379,6 @@ class Migration(migrations.Migration):
             name='collection',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='osf.collection'),
         ),
-        migrations.AlterField(
-            model_name='CollectionUserObjectPermission',
-            name='content_object',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='osf.collection'),
-        ),
-        migrations.AlterField(
-            model_name='CollectionGroupObjectPermission',
-            name='content_object',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='osf.collection'),
-        ),
-
         migrations.RunSQL(
             [
                 """
@@ -4413,31 +4393,8 @@ class Migration(migrations.Migration):
                 """
             ]
         ),
-        migrations.RunSQL(
-            [
-                """
-                CREATE UNIQUE INDEX one_bookmark_collection_per_user ON osf_abstractnode (creator_id, is_bookmark_collection, is_deleted)
-                WHERE is_bookmark_collection=TRUE AND is_deleted=FALSE;
-                """
-            ], [
-                """
-                DROP INDEX IF EXISTS one_bookmark_collection_per_user RESTRICT;
-                """
-            ]
-        ),
-        migrations.RunSQL(
-            [
-                """
-                CREATE UNIQUE INDEX osf_basefilenode_non_trashed_unique_index
-                ON public.osf_basefilenode
-                (node_id, name, parent_id, type, _path)
-                WHERE type NOT IN ('osf.trashedfilenode', 'osf.trashedfile', 'osf.trashedfolder');
-                """,
-            ],
-            [
-                """
-                DROP INDEX public.osf_basefilenode_non_trashed_unique_index RESTRICT;
-                """
-            ]
+        migrations.AddIndex(
+            model_name='abstractnode',
+            index=models.Index(fields=['-registered_date'], name='registered_date_index'),
         ),
     ]

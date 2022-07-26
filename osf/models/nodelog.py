@@ -182,8 +182,8 @@ class NodeLog(ObjectIDMixin, BaseModel):
         ordering = ['-date']
         get_latest_by = 'date'
         indexes = [
-            models.Index(fields=['node_id', '-date'], name='nodelog__node_id_date_desc'),
-            models.Index(fields=['should_hide', 'node_id'], name='osf_nodelog_should_hide_nid')
+            models.Index(fields=['node', '-date'], name='nodelog__node_id_date_desc'),
+            models.Index(fields=['should_hide', 'node'], name='osf_nodelog_should_hide_nid')
         ]
 
     @property
