@@ -10,8 +10,9 @@ from api.base.serializers import (
     VersionedDateTimeField,
 )
 from api.base.utils import absolute_reverse
+from osf.exceptions import NoPIDError
 from osf.models import Outcome, OutcomeArtifact, Registration
-from osf.utils.outcomes import ArtifactTypes, NoPIDError
+from osf.utils.outcomes import ArtifactTypes
 
 class ResourceSerializer(JSONAPISerializer):
 
