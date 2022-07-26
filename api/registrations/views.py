@@ -953,8 +953,11 @@ class RegistrationResourceList(JSONAPIBaseView, generics.ListAPIView, ListFilter
 
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
 
+    def get_node(self):
+        return super().get_node(check_object_permissions=False)
+
     def get_default_queryset(self):
-        root_registration = self.get_permissions_proxy()
+        root_registration = self.get_node()
         return OutcomeArtifact.objects.for_registration(root_registration).filter(
             finalized=True,
             deleted__isnull=True,
@@ -964,7 +967,4 @@ class RegistrationResourceList(JSONAPIBaseView, generics.ListAPIView, ListFilter
         return self.get_queryset_from_request()
 
     def get_permissions_proxy(self):
-        try:
-            return Registration.objects.get(self.kwargs[self.node_lookup_url_kwarg])
-        except Registration.DoesNotExist:
-            raise NotFound
+        return self.get_node()

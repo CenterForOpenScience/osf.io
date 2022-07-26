@@ -390,7 +390,7 @@ class RegistrationSerializer(NodeSerializer):
 
     resources = HideIfWithdrawal(RelationshipField(
         related_view='registrations:resource-list',
-        realted_view_kwargs={'node_id': '<_id>'},
+        related_view_kwargs={'node_id': '<_id>'},
     ))
 
     @property

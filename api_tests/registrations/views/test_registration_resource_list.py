@@ -121,8 +121,8 @@ class TestRegistrationResourceListGETBehavior:
         return AuthUserFactory()
 
     @pytest.fixture
-    def registration(self, auth_user):
-        return RegistrationFactory(creator=auth_user, has_doi=True)
+    def registration(self, admin_user):
+        return RegistrationFactory(creator=admin_user, has_doi=True)
 
     @pytest.fixture
     def outcome(self, registration):
@@ -130,7 +130,7 @@ class TestRegistrationResourceListGETBehavior:
 
     @pytest.fixture
     def artifact_one(self, outcome):
-        return outcome.artifact_metadata.objects.create(
+        return outcome.artifact_metadata.create(
             identifier=IdentifierFactory(),
             artifact_type=ArtifactTypes.DATA,
             finalized=True
@@ -138,7 +138,7 @@ class TestRegistrationResourceListGETBehavior:
 
     @pytest.fixture
     def artifact_two(self, outcome):
-        return outcome.artifact_metadata.objects.create(
+        return outcome.artifact_metadata.create(
             identifier=IdentifierFactory(),
             artifact_type=ArtifactTypes.CODE,
             finalized=True
@@ -146,7 +146,7 @@ class TestRegistrationResourceListGETBehavior:
 
     @pytest.fixture
     def draft_artifact(self, outcome):
-        return outcome.artifact_metadata.objects.create(
+        return outcome.artifact_metadata.create(
             identifier=IdentifierFactory(),
             artifact_type=ArtifactTypes.MATERIALS,
             finalized=False
@@ -154,7 +154,7 @@ class TestRegistrationResourceListGETBehavior:
 
     @pytest.fixture
     def deleted_artifact(self, outcome):
-        return outcome.artifact_metadata.objects.create(
+        return outcome.artifact_metadata.create(
             identifier=IdentifierFactory(),
             artifact_type=ArtifactTypes.PAPERS,
             finalized=True,
@@ -169,11 +169,11 @@ class TestRegistrationResourceListGETBehavior:
         returned_ids = set(entry['id'] for entry in resp.json['data'])
         assert returned_ids == {artifact_one._id, artifact_two._id}
 
-    def test_anonymized_data(self, app, registration, artifact_one):
+    def test_anonymized_data(self, app, registration, artifact_one, admin_user):
         avol = PrivateLinkFactory(anonymous=True)
         avol.nodes.add(registration)
 
-        resp = app.get(make_api_url(registration, vol_key=avol.key), auth=None)
+        resp = app.get(make_api_url(registration, vol_key=avol.key), auth=admin_user)
         data = resp.json['data'][0]
         assert 'pid' not in data['attributes']
 
