@@ -3,37 +3,38 @@ import pytest
 import datetime
 from future.moves.urllib.parse import urlparse
 
-from django.utils import timezone
 from rest_framework import exceptions
-
-from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
+from django.utils import timezone
 from api.base.settings.defaults import API_BASE
-from api.registrations.serializers import RegistrationSerializer, RegistrationDetailSerializer
 from api.taxonomies.serializers import subjects_as_relationships_version
-from api_tests.nodes.views.test_node_detail import TestNodeUpdateLicense
 from api_tests.subjects.mixins import UpdateSubjectsMixin
-from api_tests.utils import create_test_file, disconnected_from_listeners
-from framework.auth import Auth
-from osf.migrations import update_provider_auth_groups
-from osf.models import Registration, NodeLog, NodeLicense, SchemaResponse
 from osf.utils import permissions
 from osf.utils.workflows import ApprovalStates
+from osf.models import Registration, NodeLog, NodeLicense, SchemaResponse
+from framework.auth import Auth
+from website.project.signals import contributor_added
+from api_tests.utils import disconnected_from_listeners
+from api.registrations.serializers import RegistrationSerializer, RegistrationDetailSerializer
+from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
+from osf.migrations import update_provider_auth_groups
 from osf_tests.factories import (
-    AuthUserFactory,
-    CommentFactory,
-    InstitutionFactory,
-    NodeFactory,
-    OSFGroupFactory,
     ProjectFactory,
-    RegistrationApprovalFactory,
+    NodeFactory,
     RegistrationFactory,
+    RegistrationApprovalFactory,
     RegistrationProviderFactory,
+    AuthUserFactory,
     UnregUserFactory,
     WithdrawnRegistrationFactory,
+    OSFGroupFactory,
+    CommentFactory,
+    InstitutionFactory,
 )
 from osf_tests.utils import get_default_test_schema
+
+from api_tests.nodes.views.test_node_detail import TestNodeUpdateLicense
 from tests.utils import assert_latest_log
-from website.project.signals import contributor_added
+from api_tests.utils import create_test_file
 
 
 @pytest.fixture()

@@ -1,12 +1,10 @@
-from future.moves.urllib.parse import urljoin, urlparse
-import mock
-
 import dateutil.relativedelta
 from django.utils import timezone
+import mock
 from nose.tools import *  # noqa:
 import pytest
-from rest_framework import exceptions
 
+from future.moves.urllib.parse import urljoin, urlparse
 
 from api.base.settings.defaults import API_BASE
 from api.base.versioning import CREATE_REGISTRATION_FIELD_CHANGE_VERSION
@@ -16,26 +14,27 @@ from api_tests.registrations.filters.test_filters import RegistrationListFilteri
 from api_tests.utils import create_test_file
 from framework.auth.core import Auth
 from osf.models import RegistrationSchema
-from osf.utils import permissions
 from osf_tests.factories import (
+    EmbargoFactory,
+    ProjectFactory,
+    RegistrationFactory,
     AuthUserFactory,
     CollectionFactory,
     DraftRegistrationFactory,
-    EmbargoFactory,
-    InstitutionFactory,
     OSFGroupFactory,
     NodeLicenseRecordFactory,
-    ProjectFactory,
-    RegistrationFactory,
-    SubjectFactory,
     TagFactory,
+    SubjectFactory,
+    InstitutionFactory,
 )
-from osf_tests.test_registrations import prereg_registration_responses
 from osf_tests.utils import get_default_test_schema
+from osf_tests.test_registrations import prereg_registration_responses
+from rest_framework import exceptions
 from tests.base import ApiTestCase
 from website import settings
-from website.project.metadata.schemas import from_json
 from website.views import find_bookmark_collection
+from website.project.metadata.schemas import from_json
+from osf.utils import permissions
 
 SCHEMA_VERSION = 2
 
