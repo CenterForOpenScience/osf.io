@@ -7,6 +7,7 @@ from osf.utils.outcomes import ArtifactTypes
 from osf.utils.workflows import RegistrationModerationStates as RegStates
 from osf_tests.factories import (
     AuthUserFactory,
+    IdentifierFactory,
     RegistrationFactory,
     RegistrationProviderFactory
 )
@@ -48,8 +49,9 @@ def configure_test_preconditions(registration_state=RegStates.ACCEPTED, user_rol
     registration.save()
 
     outcome = Outcome.objects.for_registration(registration, create=True)
-    test_artifact = outcome.add_artifact_by_pid(
-        pid=TEST_EXTERNAL_PID, artifact_type=ArtifactTypes.DATA, create_identifier=True
+    test_artifact = outcome.artifact_metadata.create(
+        identifier=IdentifierFactory(value=TEST_EXTERNAL_PID, category='doi'),
+        artifact_type=ArtifactTypes.DATA,
     )
 
     test_auth = configure_test_auth(registration, user_role)

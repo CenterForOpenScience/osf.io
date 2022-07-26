@@ -1,10 +1,6 @@
-from enum import IntEnum
+from enum import Enum, IntEnum
 
 from django.db.models import CharField, OuterRef, Subquery
-
-
-class NoPIDError(Exception):
-    pass
 
 
 class ArtifactTypes(IntEnum):
@@ -17,7 +13,7 @@ class ArtifactTypes(IntEnum):
     '''
     UNDEFINED = 0
     DATA = 1
-    CODE = 11
+    ANALYTIC_CODE = 11
     MATERIALS = 21
     PAPERS = 31
     SUPPLEMENTS = 41
@@ -26,6 +22,12 @@ class ArtifactTypes(IntEnum):
     @classmethod
     def choices(cls):
         return tuple((entry.value, entry.name) for entry in cls)
+
+
+class OutcomeActions(Enum):
+    ADD = 0
+    UPDATE = 1
+    REMOVE = 2
 
 
 def make_primary_resource_guid_annotation(base_queryset):

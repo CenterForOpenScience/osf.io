@@ -1,6 +1,8 @@
 import pytest
+
+from osf.exceptions import CannotFinalizeArtifactError, NoPIDError
 from osf.models import Identifier, Outcome, OutcomeArtifact
-from osf.utils.outcomes import ArtifactTypes, NoPIDError
+from osf.utils.outcomes import ArtifactTypes
 from osf_tests.factories import ProjectFactory, RegistrationFactory
 
 
@@ -106,42 +108,6 @@ class TestOutcomeArtifact:
             category='doi'
         )
 
-    @pytest.mark.parametrize('doi_value', [TEST_PROJECT_DOI, TEST_EXTERNAL_DOI])
-    def test_create_artifact_from_known_identifier(
-        self, outcome, project_doi, external_doi, doi_value
-    ):
-        new_artifact = OutcomeArtifact.objects.create_for_identifier_value(
-            outcome=outcome,
-            pid_value=TEST_PROJECT_DOI,
-            artifact_type=ArtifactTypes.MATERIALS
-        )
-
-        assert new_artifact.identifier == project_doi
-        assert new_artifact.outcome == outcome
-        assert new_artifact.artifact_type == ArtifactTypes.MATERIALS
-
-    def test_create_artifact_from_unknown_identifier__create(self, outcome):
-        assert not Identifier.objects.filter(value=TEST_EXTERNAL_DOI).exists()
-
-        new_artifact = OutcomeArtifact.objects.create_for_identifier_value(
-            outcome=outcome,
-            pid_value=TEST_EXTERNAL_DOI,
-            create_identifier=True,
-            artifact_type=ArtifactTypes.CODE,
-        )
-
-        created_identifier = Identifier.objects.get(value=TEST_EXTERNAL_DOI)
-        assert new_artifact.identifier == created_identifier
-
-    def test_create_artifact_from_unknown_identifer__no_create(self, outcome):
-        with pytest.raises(NoPIDError):
-            OutcomeArtifact.objects.create_for_identifier_value(
-                outcome=outcome,
-                pid_value=TEST_EXTERNAL_DOI,
-                create_identifier=False,
-                artifact_type=ArtifactTypes.SUPPLEMENTS
-            )
-
     def test_get_artifacts_for_registration(self, outcome, registration, project_doi, external_doi):
         assert not OutcomeArtifact.objects.for_registration(registration).exists()
 
@@ -155,7 +121,7 @@ class TestOutcomeArtifact:
         # Add another Artifact for one of the identifiers to make sure it doesn't get picked up, too
         bogus_outcome = Outcome.objects.create()
         bogus_outcome.artifact_metadata.create(
-            identifier=external_doi, artifact_type=ArtifactTypes.CODE
+            identifier=external_doi, artifact_type=ArtifactTypes.ANALYTIC_CODE
         )
 
         registration_artifacts = OutcomeArtifact.objects.for_registration(registration)
@@ -215,7 +181,7 @@ class TestOutcomeArtifact:
         )
         alternate_outcome = Outcome.objects.create()
         alternate_outcome.artifact_metadata.create(
-            identifier=external_doi, artifact_type=ArtifactTypes.CODE
+            identifier=external_doi, artifact_type=ArtifactTypes.ANALYTIC_CODE
         )
 
         test_artifact.update_identifier(new_pid_value=project_doi.value)
@@ -229,3 +195,95 @@ class TestOutcomeArtifact:
 
         test_artifact.update_identifier(new_pid_value=project_doi.value)
         assert test_artifact.identifier == project_doi
+
+    @pytest.mark.parametrize('empty_value', ['', None])
+    def test_update_identifier__raises_if_empty_pid(self, outcome, project_doi, empty_value):
+        test_artifact = outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.DATA
+        )
+
+        with pytest.raises(NoPIDError):
+            test_artifact.update_identifier(new_pid_value=empty_value)
+
+    def test_finalize__raises__missing_identifier(self, outcome):
+        test_artifact = outcome.artifact_metadata.create(artifact_type=ArtifactTypes.DATA)
+
+        with pytest.raises(CannotFinalizeArtifactError) as caught:
+            test_artifact.finalize()
+        assert caught.value.incomplete_fields == ['identifier__value']
+
+    def test_finalize__raises__missing_identifier_value(self, outcome, project_doi):
+        test_artifact = outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.DATA
+        )
+        project_doi.value = ''
+        project_doi.save()
+
+        with pytest.raises(CannotFinalizeArtifactError) as caught:
+            test_artifact.finalize()
+        assert caught.value.incomplete_fields == ['identifier__value']
+
+    def test_finalize__raises__missing_artifact_type(self, outcome, project_doi):
+        test_artifact = outcome.artifact_metadata.create(identifier=project_doi)
+
+        with pytest.raises(CannotFinalizeArtifactError) as caught:
+            test_artifact.finalize()
+        assert caught.value.incomplete_fields == ['artifact_type']
+
+    def test_finalize__raises__missing_both(self, outcome):
+        test_artifact = outcome.artifact_metadata.create()
+
+        with pytest.raises(CannotFinalizeArtifactError) as caught:
+            test_artifact.finalize()
+        assert caught.value.incomplete_fields == ['identifier__value', 'artifact_type']
+
+    def test_delete_artifact__deletes_from_db_if_not_finalized(self, outcome, project_doi):
+        test_artifact = outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.DATA, finalized=False
+        )
+
+        test_artifact.delete()
+        assert not OutcomeArtifact.objects.filter(id=test_artifact.id).exists()
+
+    def test_delete_artifact__sets_deleted_if_finalized(self, outcome, project_doi):
+        test_artifact = outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.DATA, finalized=True
+        )
+        assert not test_artifact.deleted
+
+        test_artifact.delete()
+        assert test_artifact.deleted
+        assert OutcomeArtifact.objects.filter(id=test_artifact.id).exists()
+
+    @pytest.mark.parametrize('is_finalized', [True, False])
+    def test_delete_artifact__deletes_identifier_if_unreferenced(self, outcome, external_doi, is_finalized):
+        assert Identifier.objects.filter(value=TEST_EXTERNAL_DOI).exists()
+        test_artifact = outcome.artifact_metadata.create(
+            identifier=external_doi, artifact_type=ArtifactTypes.DATA, finalized=is_finalized
+        )
+
+        test_artifact.delete()
+        assert not Identifier.objects.filter(value=TEST_EXTERNAL_DOI).exists()
+
+    @pytest.mark.parametrize('is_finalized', [True, False])
+    def test_delete_artifact__keeps_identifier_if_osf_referent_exists(self, outcome, project_doi, is_finalized):
+        test_artifact = outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.DATA, finalized=is_finalized
+        )
+
+        test_artifact.delete()
+        assert Identifier.objects.filter(value=TEST_PROJECT_DOI).exists()
+
+    @pytest.mark.parametrize('is_finalized', [True, False])
+    def test_delete_artifact__keeps_identifier_if_part_of_other_outcomes(self, outcome, external_doi, is_finalized):
+        test_artifact = outcome.artifact_metadata.create(
+            identifier=external_doi, artifact_type=ArtifactTypes.DATA, finalized=is_finalized
+        )
+
+        alternate_outcome = Outcome.objects.create()
+        alternate_outcome.artifact_metadata.create(
+            identifier=external_doi, artifact_type=ArtifactTypes.ANALYTIC_CODE
+        )
+
+        test_artifact.delete()
+        assert Identifier.objects.filter(value=TEST_EXTERNAL_DOI).exists()
