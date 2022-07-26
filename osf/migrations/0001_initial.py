@@ -96,12 +96,38 @@ class Migration(migrations.Migration):
                 ('is_public', models.BooleanField(db_index=True, default=False)),
                 ('is_deleted', models.BooleanField(db_index=True, default=False)),
                 ('piwik_site_id', models.IntegerField(blank=True, null=True)),
+                ('registered_from', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
+                                    related_name='registrations', to='osf.AbstractNode')),
                 ('suspended', models.BooleanField(db_index=True, default=False)),
                 ('title', models.TextField(validators=[osf.models.validators.validate_title])),
                 ('wiki_private_uuids', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict)),
+                ('node_license', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
+                                    related_name='nodes', to='osf.NodeLicenseRecord')),
+                ('forked_from', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
+                                    related_name='forks', to='osf.AbstractNode')),
                 ('keenio_read_key', models.CharField(blank=True, max_length=1000, null=True)),
+                ('embargo', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
+                                    related_name='registrations', to='osf.Embargo')),
                 ('registered_date', osf.utils.fields.NonNaiveDateTimeField(blank=True, db_index=True, null=True)),
+                ('embargo_termination_approval', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
+                                    related_name='registrations', to='osf.EmbargoTerminationApproval')),
+                ('creator', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
+                                    related_name='created', to=settings.AUTH_USER_MODEL)),
                 ('registered_meta', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict, null=True)),
+                ('registered_user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
+                                    related_name='related_to', to=settings.AUTH_USER_MODEL)),
+                ('affiliated_institutions', models.ManyToManyField(related_name='nodes', to='osf.Institution')),
+                ('_contributors', models.ManyToManyField(related_name='nodes', through='osf.Contributor', to=settings.AUTH_USER_MODEL)),
+                ('_nodes', models.ManyToManyField(related_name='parent_nodes', through='osf.NodeRelation',
+                                         to='osf.AbstractNode')),
+                ('registration_approval', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
+                                    related_name='registrations', to='osf.RegistrationApproval')),
+                ('retraction', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
+                                    related_name='registrations', to='osf.Retraction')),
+                ('root', models.ForeignKey(blank=True, default=None, null=True, on_delete=django.db.models.deletion.SET_NULL,
+                                    related_name='descendants', to='osf.AbstractNode')),
+                ('template_node', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
+                                    related_name='templated_from', to='osf.AbstractNode')),
             ],
             bases=(dirtyfields.dirtyfields.DirtyFieldsMixin, osf.models.mixins.CommentableMixin, models.Model),
         ),
@@ -262,12 +288,24 @@ class Migration(migrations.Migration):
                 ('spam_data', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict)),
                 ('date_last_reported', osf.utils.fields.NonNaiveDateTimeField(blank=True, db_index=True, default=None, null=True)),
                 ('reports', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict, validators=[osf.models.spam._validate_reports])),
-                ('date_created', osf.utils.fields.NonNaiveDateTimeField(default=django.utils.timezone.now)),
-                ('modified', osf.utils.fields.NonNaiveDateTimeField(default=django.utils.timezone.now)),
+                ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
+                ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True,
+                                                                    default=django.utils.timezone.now,
+                                                                    verbose_name='created')),
                 ('is_deleted', models.BooleanField(default=False)),
+                ('deleted', osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True)),
                 ('page', models.CharField(blank=True, max_length=255)),
-                ('content', models.TextField(validators=[osf.models.validators.CommentMaxLength(500), osf.models.validators.string_required])),
+                ('edited', models.BooleanField(default=False)),
+                ('content', models.TextField(
+                validators=[osf.models.validators.CommentMaxLength(1000), osf.models.validators.string_required])),
                 ('node', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='osf.AbstractNode')),
+                ('ever_mentioned', models.ManyToManyField(blank=True, related_name='mentioned_in', to=settings.AUTH_USER_MODEL)),
+                ('user', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE,
+                                    to=settings.AUTH_USER_MODEL)),
+                ('target', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
+                                    related_name='child_comments', to='osf.Guid')),
+                ('root_target', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
+                                    related_name='comments', to='osf.Guid')),
             ],
             options={
                 'abstract': False,
@@ -314,6 +352,8 @@ class Migration(migrations.Migration):
                 ('registration_metadata', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict)),
                 ('_metaschema_flags', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict)),
                 ('notes', models.TextField(blank=True)),
+                ('initiator', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE,
+                                    to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'abstract': False,
@@ -442,6 +482,8 @@ class Migration(migrations.Migration):
                 ('name', models.CharField(max_length=255)),
                 ('description', models.TextField(blank=True, default='', null=True)),
                 ('is_deleted', models.BooleanField(db_index=True, default=False)),
+                ('contributors', models.ManyToManyField(related_name='institutions', through='osf.InstitutionalContributor',
+                                         to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'abstract': False,
@@ -672,6 +714,11 @@ class Migration(migrations.Migration):
                 ('system', models.BooleanField(default=False)),
             ],
         ),
+        migrations.AddField(
+            model_name='abstractnode',
+            name='tags',
+            field=models.ManyToManyField(related_name='abstractnode_tagged', to='osf.Tag'),
+        ),
         migrations.CreateModel(
             name='UserActivityCounter',
             fields=[
@@ -693,34 +740,9 @@ class Migration(migrations.Migration):
             name='nodelicense',
             unique_together=set([('_id', 'license_id')]),
         ),
-        migrations.AddField(
-            model_name='institution',
-            name='contributors',
-            field=models.ManyToManyField(related_name='institutions', through='osf.InstitutionalContributor', to=settings.AUTH_USER_MODEL),
-        ),
         migrations.AlterUniqueTogether(
             name='externalaccount',
             unique_together=set([('provider', 'provider_id')]),
-        ),
-        migrations.AddField(
-            model_name='draftregistration',
-            name='initiator',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL),
-        ),
-        migrations.AddField(
-            model_name='comment',
-            name='root_target',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='comments', to='osf.Guid'),
-        ),
-        migrations.AddField(
-            model_name='comment',
-            name='target',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='child_comments', to='osf.Guid'),
-        ),
-        migrations.AddField(
-            model_name='comment',
-            name='user',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL),
         ),
         migrations.AddField(
             model_name='basefilenode',
@@ -736,81 +758,6 @@ class Migration(migrations.Migration):
             model_name='archivejob',
             name='target_addons',
             field=models.ManyToManyField(to='osf.ArchiveTarget'),
-        ),
-        migrations.AddField(
-            model_name='abstractnode',
-            name='_contributors',
-            field=models.ManyToManyField(related_name='nodes', through='osf.Contributor', to=settings.AUTH_USER_MODEL),
-        ),
-        migrations.AddField(
-            model_name='abstractnode',
-            name='_nodes',
-            field=models.ManyToManyField(related_name='parent_nodes', through='osf.NodeRelation', to='osf.AbstractNode'),
-        ),
-        migrations.AddField(
-            model_name='abstractnode',
-            name='affiliated_institutions',
-            field=models.ManyToManyField(related_name='nodes', to='osf.Institution'),
-        ),
-        migrations.AddField(
-            model_name='abstractnode',
-            name='creator',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='created', to=settings.AUTH_USER_MODEL),
-        ),
-        migrations.AddField(
-            model_name='abstractnode',
-            name='embargo',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='registrations', to='osf.Embargo'),
-        ),
-        migrations.AddField(
-            model_name='abstractnode',
-            name='embargo_termination_approval',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='registrations', to='osf.EmbargoTerminationApproval'),
-        ),
-        migrations.AddField(
-            model_name='abstractnode',
-            name='forked_from',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='forks', to='osf.AbstractNode'),
-        ),
-        migrations.AddField(
-            model_name='abstractnode',
-            name='node_license',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='nodes', to='osf.NodeLicenseRecord'),
-        ),
-        migrations.AddField(
-            model_name='abstractnode',
-            name='registered_from',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='registrations', to='osf.AbstractNode'),
-        ),
-        migrations.AddField(
-            model_name='abstractnode',
-            name='registered_user',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='related_to', to=settings.AUTH_USER_MODEL),
-        ),
-        migrations.AddField(
-            model_name='abstractnode',
-            name='registration_approval',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='registrations', to='osf.RegistrationApproval'),
-        ),
-        migrations.AddField(
-            model_name='abstractnode',
-            name='retraction',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='registrations', to='osf.Retraction'),
-        ),
-        migrations.AddField(
-            model_name='abstractnode',
-            name='root',
-            field=models.ForeignKey(blank=True, default=None, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='descendants', to='osf.AbstractNode'),
-        ),
-        migrations.AddField(
-            model_name='abstractnode',
-            name='tags',
-            field=models.ManyToManyField(related_name='abstractnode_tagged', to='osf.Tag'),
-        ),
-        migrations.AddField(
-            model_name='abstractnode',
-            name='template_node',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='templated_from', to='osf.AbstractNode'),
         ),
         migrations.AddField(
             model_name='osfuser',
@@ -2501,24 +2448,6 @@ class Migration(migrations.Migration):
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='comment',
-            name='created',
-            field=django_extensions.db.fields.CreationDateTimeField(auto_now_add=True,
-                                                                    default=django.utils.timezone.now,
-                                                                    verbose_name='created'),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name='comment',
-            name='deleted',
-            field=osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True),
-        ),
-        migrations.AddField(
-            model_name='comment',
-            name='edited',
-            field=models.BooleanField(default=False),
-        ),
-        migrations.AddField(
             model_name='conference',
             name='auto_check_spam',
             field=models.BooleanField(default=True),
@@ -3186,22 +3115,6 @@ class Migration(migrations.Migration):
                 db_index=True, max_length=255),
         ),
         migrations.AlterField(
-            model_name='comment',
-            name='content',
-            field=models.TextField(
-                validators=[osf.models.validators.CommentMaxLength(1000), osf.models.validators.string_required]),
-        ),
-        migrations.AddField(
-            model_name='comment',
-            name='ever_mentioned',
-            field=models.ManyToManyField(blank=True, related_name='mentioned_in', to=settings.AUTH_USER_MODEL),
-        ),
-        migrations.AlterField(
-            model_name='comment',
-            name='modified',
-            field=django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified'),
-        ),
-        migrations.AlterField(
             model_name='draftregistration',
             name='branched_from',
             field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE,
@@ -3350,10 +3263,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name='abstractnode',
-            index=models.Index(fields=['-registered_date'], name='registered_date_index'),
-        ),
-        migrations.AddIndex(
-            model_name='abstractnode',
             index=models.Index(
                 condition=models.Q(('is_public', True), ('is_deleted', False), ('type', 'osf.registration')),
                 fields=['is_public', 'is_deleted', 'type'], name='reg_pub_del_type_index'),
@@ -3372,10 +3281,6 @@ class Migration(migrations.Migration):
         migrations.AddIndex(
             model_name='nodelog',
             index=models.Index(fields=['node', '-date'], name='nodelog__node_id_date_desc'),
-        ),
-        migrations.AddIndex(
-            model_name='nodelog',
-            index=models.Index(fields=['node', 'should_hide'], name='osf_nodelog_should_hide_nid'),
         ),
         migrations.AddIndex(
             model_name='pagecounter',
@@ -4090,12 +3995,6 @@ class Migration(migrations.Migration):
             name='nodeuserobjectpermission',
             unique_together={('user', 'permission', 'content_object')},
         ),
-        migrations.AddConstraint(
-            model_name='noderequest',
-            constraint=models.UniqueConstraint(condition=models.Q(machine_state='accepted'),
-                                               fields=('target_id', 'creator_id'),
-                                               name='osf_noderequest_target_creator_non_accepted'),
-        ),
         migrations.AlterUniqueTogether(
             name='nodegroupobjectpermission',
             unique_together={('group', 'permission', 'content_object')},
@@ -4184,22 +4083,6 @@ class Migration(migrations.Migration):
         migrations.AlterUniqueTogether(
             name='abstractprovider',
             unique_together={('_id', 'type')},
-        ),
-        migrations.RemoveConstraint(
-            model_name='noderequest',
-            name='osf_noderequest_target_creator_non_accepted',
-        ),
-        migrations.RemoveIndex(
-            model_name='abstractnode',
-            name='registered_date_index',
-        ),
-        migrations.RemoveIndex(
-            model_name='nodelog',
-            name='osf_nodelog_should_hide_nid',
-        ),
-        migrations.RemoveField(
-            model_name='comment',
-            name='date_created',
         ),
         migrations.AddIndex(
             model_name='nodelog',
