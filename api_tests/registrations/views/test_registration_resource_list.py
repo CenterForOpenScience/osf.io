@@ -140,7 +140,7 @@ class TestRegistrationResourceListGETBehavior:
     def artifact_two(self, outcome):
         return outcome.artifact_metadata.create(
             identifier=IdentifierFactory(),
-            artifact_type=ArtifactTypes.CODE,
+            artifact_type=ArtifactTypes.ANALYTIC_CODE,
             finalized=True
         )
 

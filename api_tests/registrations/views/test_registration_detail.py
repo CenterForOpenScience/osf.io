@@ -3,38 +3,39 @@ import pytest
 import datetime
 from future.moves.urllib.parse import urlparse
 
-from rest_framework import exceptions
 from django.utils import timezone
-from api.base.settings.defaults import API_BASE
-from api.taxonomies.serializers import subjects_as_relationships_version
-from api_tests.subjects.mixins import UpdateSubjectsMixin
-from osf.utils import permissions
-from osf.utils.workflows import ApprovalStates
-from osf.models import Registration, NodeLog, NodeLicense, SchemaResponse
-from framework.auth import Auth
-from website.project.signals import contributor_added
-from api_tests.utils import disconnected_from_listeners
-from api.registrations.serializers import RegistrationSerializer, RegistrationDetailSerializer
+from rest_framework import exceptions
+
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
+from api.base.settings.defaults import API_BASE
+from api.registrations.serializers import RegistrationSerializer, RegistrationDetailSerializer
+from api.taxonomies.serializers import subjects_as_relationships_version
+from api_tests.nodes.views.test_node_detail import TestNodeUpdateLicense
+from api_tests.subjects.mixins import UpdateSubjectsMixin
+from api_tests.utils import create_test_file, disconnected_from_listeners
+from framework.auth import Auth
 from osf.migrations import update_provider_auth_groups
+from osf.models import Registration, NodeLog, NodeLicense, Outcome, SchemaResponse
+from osf.utils import permissions
+from osf.utils.outcomes import ArtifactTypes
+from osf.utils.workflows import ApprovalStates
 from osf_tests.factories import (
-    ProjectFactory,
-    NodeFactory,
-    RegistrationFactory,
-    RegistrationApprovalFactory,
-    RegistrationProviderFactory,
     AuthUserFactory,
+    CommentFactory,
+    IdentifierFactory,
+    InstitutionFactory,
+    NodeFactory,
+    OSFGroupFactory,
+    ProjectFactory,
+    RegistrationApprovalFactory,
+    RegistrationFactory,
+    RegistrationProviderFactory,
     UnregUserFactory,
     WithdrawnRegistrationFactory,
-    OSFGroupFactory,
-    CommentFactory,
-    InstitutionFactory,
 )
 from osf_tests.utils import get_default_test_schema
-
-from api_tests.nodes.views.test_node_detail import TestNodeUpdateLicense
 from tests.utils import assert_latest_log
-from api_tests.utils import create_test_file
+from website.project.signals import contributor_added
 
 
 @pytest.fixture()
@@ -1588,3 +1589,66 @@ class TestRegistrationResponses:
         latest_response_id = resp.json['data']['relationships']['latest_response']['data']['id']
         assert original_response_id == approved_schema_response._id
         assert latest_response_id == revised_schema_response._id
+
+
+@pytest.mark.django_db
+class TestRegistrationOpenPracticeAnnotations:
+
+    @pytest.fixture
+    def registration(self):
+        return RegistrationFactory(is_public=True, has_doi=True)
+
+    @pytest.fixture
+    def outcome(self, registration):
+        return Outcome.objects.for_registration(registration, create=True)
+
+    @pytest.fixture
+    def data_resource(self, outcome):
+        return outcome.artifact_metadata.create(
+            identifier=IdentifierFactory(),
+            artifact_type=ArtifactTypes.DATA,
+            finalized=True
+        )
+
+    @pytest.fixture
+    def code_resource(self, outcome):
+        return outcome.artifact_metadata.create(
+            identifier=IdentifierFactory(),
+            artifact_type=ArtifactTypes.ANALYTIC_CODE,
+            finalized=True
+        )
+
+    @pytest.fixture
+    def materials_resource(self, outcome):
+        return outcome.artifact_metadata.create(
+            identifier=IdentifierFactory(),
+            artifact_type=ArtifactTypes.MATERIALS,
+            finalized=True
+        )
+
+    @pytest.fixture()
+    def url(self, registration):
+        return f'/{API_BASE}registrations/{registration._id}/'
+
+    def test_badge_annotations(self, app, registration, data_resource, code_resource, materials_resource, url):
+        resp = app.get(url, auth=None, expect_errors=False)
+        attributes = resp.json['data']['attributes']
+
+        assert attributes['has_data']
+        assert attributes['has_analytic_code']
+        assert attributes['has_materials']
+
+    def test_badge_annotations_exclude_nonvisible_results(
+        self, app, registration, data_resource, code_resource, materials_resource, url
+    ):
+        code_resource.finalized = False
+        code_resource.save()
+        materials_resource.deleted = timezone.now()
+        materials_resource.save()
+
+        resp = app.get(url, auth=None, expect_errors=False)
+        attributes = resp.json['data']['attributes']
+
+        assert attributes['has_data']
+        assert not attributes['has_analytic_code']
+        assert not attributes['has_materials']

@@ -251,6 +251,7 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, Regist
         )
         if not registration.is_registration:
             raise ValidationError('This is not a registration.')
+
         return registration
 
     def get_serializer_context(self):
