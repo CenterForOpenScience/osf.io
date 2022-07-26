@@ -33,4 +33,9 @@ class Migration(migrations.Migration):
             name='title',
             field=models.TextField(blank=True),
         ),
+        migrations.AlterField(
+            model_name='outcomeartifact',
+            name='artifact_type',
+            field=models.IntegerField(choices=[(0, 'UNDEFINED'), (1, 'DATA'), (11, 'ANALYTIC_CODE'), (21, 'MATERIALS'), (31, 'PAPERS'), (41, 'SUPPLEMENTS'), (1001, 'PRIMARY')], default=osf.utils.outcomes.ArtifactTypes(0)),
+        ),
     ]

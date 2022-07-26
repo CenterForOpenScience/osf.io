@@ -121,7 +121,7 @@ class TestOutcomeArtifact:
         # Add another Artifact for one of the identifiers to make sure it doesn't get picked up, too
         bogus_outcome = Outcome.objects.create()
         bogus_outcome.artifact_metadata.create(
-            identifier=external_doi, artifact_type=ArtifactTypes.CODE
+            identifier=external_doi, artifact_type=ArtifactTypes.ANALYTIC_CODE
         )
 
         registration_artifacts = OutcomeArtifact.objects.for_registration(registration)
@@ -181,7 +181,7 @@ class TestOutcomeArtifact:
         )
         alternate_outcome = Outcome.objects.create()
         alternate_outcome.artifact_metadata.create(
-            identifier=external_doi, artifact_type=ArtifactTypes.CODE
+            identifier=external_doi, artifact_type=ArtifactTypes.ANALYTIC_CODE
         )
 
         test_artifact.update_identifier(new_pid_value=project_doi.value)
@@ -282,7 +282,7 @@ class TestOutcomeArtifact:
 
         alternate_outcome = Outcome.objects.create()
         alternate_outcome.artifact_metadata.create(
-            identifier=external_doi, artifact_type=ArtifactTypes.CODE
+            identifier=external_doi, artifact_type=ArtifactTypes.ANALYTIC_CODE
         )
 
         test_artifact.delete()

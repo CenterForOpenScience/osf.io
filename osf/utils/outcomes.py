@@ -13,7 +13,7 @@ class ArtifactTypes(IntEnum):
     '''
     UNDEFINED = 0
     DATA = 1
-    CODE = 11
+    ANALYTIC_CODE = 11
     MATERIALS = 21
     PAPERS = 31
     SUPPLEMENTS = 41

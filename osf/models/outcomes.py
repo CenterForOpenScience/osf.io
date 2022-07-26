@@ -41,7 +41,8 @@ class OutcomeManager(models.Manager):
         new_outcome.copy_editable_fields(registration, include_contributors=False)
         new_outcome.artifact_metadata.create(
             identifier=registration_identifier,
-            artifact_type=ArtifactTypes.PRIMARY
+            artifact_type=ArtifactTypes.PRIMARY,
+            finalized=True,
         )
         return new_outcome
 
