@@ -3,6 +3,7 @@ import pytest
 from api.providers.workflows import Workflows as ModerationWorkflows
 from api_tests.resources.utils import configure_test_preconditions
 from api_tests.utils import UserRoles
+from osf.models import NodeLog, OutcomeArtifact
 from osf.utils.workflows import RegistrationModerationStates as RegStates
 from osf_tests.factories import PrivateLinkFactory
 from osf.utils.outcomes import ArtifactTypes
@@ -21,12 +22,13 @@ def make_patch_payload(
     new_title=None,
     new_description=None,
     new_resource_type=None,
-    is_finalized=False,
+    is_finalized=None,
 ):
     pid = new_pid if new_pid is not None else test_artifact.identifier.value
     title = new_title if new_title is not None else test_artifact.title
     description = new_description if new_description is not None else test_artifact.description
     resource_type = ArtifactTypes(test_artifact.artifact_type).name.lower()
+    is_finalized = is_finalized if is_finalized is not None else test_artifact.finalized
     if new_resource_type is not None:
         resource_type = new_resource_type.name.lower()
 
@@ -291,6 +293,23 @@ class TestResourceDetailPATCHBehavior:
         assert test_artifact.identifier == original_identifier
         assert test_artifact.identifier.value == original_identifier.value
 
+    def test_patch_pid__adds_log_if_finalized(self, app):
+        test_artifact, test_auth, registration = configure_test_preconditions()
+        assert not registration.logs.filter(action=NodeLog.RESOURCE_UPDATED).exists()
+
+        test_artifact.finalized = True
+        test_artifact.save()
+
+        original_pid = test_artifact.identifier.value
+        updated_pid = 'metadata is so cool'
+        payload = make_patch_payload(test_artifact, new_pid=updated_pid)
+        app.patch_json_api(make_api_url(test_artifact), payload, auth=test_auth)
+
+        resource_updated_log = registration.logs.get(action=NodeLog.RESOURCE_UPDATED)
+        assert resource_updated_log.params['artifact_id'] == test_artifact._id
+        assert resource_updated_log.params['obsolete_identifier'] == original_pid
+        assert resource_updated_log.params['new_identifier'] == updated_pid
+
     @pytest.mark.xfail(reason='Placeholder, not yet implemented')
     def test_patch_pid__invalid(self, app):
         assert False
@@ -326,9 +345,8 @@ class TestResourceDetailPATCHBehavior:
             (True, True, '/data/attributes/'),
         ]
     )
-    @pytest.mark.parametrize('previously_finalized', [True, False])
     def test_patch_finalized__missing_required_fields(
-        self, app, missing_pid, missing_resource_type, expected_error_source, previously_finalized
+        self, app, missing_pid, missing_resource_type, expected_error_source
     ):
         test_artifact, test_auth, _ = configure_test_preconditions()
         if missing_pid:
@@ -337,7 +355,7 @@ class TestResourceDetailPATCHBehavior:
             identifier.save()
         if missing_resource_type:
             test_artifact.artifact_type = ArtifactTypes.UNDEFINED
-        test_artifact.finalized = previously_finalized
+        test_artifact.finalized = False
         test_artifact.save()
 
         payload = make_patch_payload(test_artifact, is_finalized=True)
@@ -375,6 +393,20 @@ class TestResourceDetailPATCHBehavior:
         assert test_artifact.identifier.value == original_identifier.value
         assert not test_artifact.finalized
 
+    def test_patch_finalized__adds_log(self, app):
+        test_artifact, test_auth, registration = configure_test_preconditions()
+        assert not registration.logs.filter(action=NodeLog.RESOURCE_ADDED).exists()
+
+        test_artifact.finalized = False
+        test_artifact.save()
+
+        payload = make_patch_payload(test_artifact, is_finalized=True)
+        app.patch_json_api(make_api_url(test_artifact), payload, auth=test_auth, expect_errors=True)
+
+        resource_added_log = registration.logs.get(action=NodeLog.RESOURCE_ADDED)
+        assert resource_added_log.params['artifact_id'] == test_artifact._id
+        assert resource_added_log.params['new_identifier'] == test_artifact.identifier.value
+
 
 @pytest.mark.django_db
 class TestResourceDetailDELETEPermissions:
@@ -384,12 +416,7 @@ class TestResourceDetailDELETEPermissions:
         test_artifact, test_auth, _ = configure_test_preconditions(
             registration_state=registration_state, user_role=UserRoles.ADMIN
         )
-        resp = app.delete_json_api(
-            make_api_url(test_artifact),
-            make_patch_payload(test_artifact),
-            auth=test_auth,
-            expect_errors=True
-        )
+        resp = app.delete_json_api(make_api_url(test_artifact), auth=test_auth, expect_errors=True)
         assert resp.status_code == 204
 
     @pytest.mark.parametrize('user_role', UserRoles.excluding(UserRoles.ADMIN_USER))
@@ -398,12 +425,7 @@ class TestResourceDetailDELETEPermissions:
         test_artifact, test_auth, _ = configure_test_preconditions(
             registration_state=RegStates.ACCEPTED, user_role=user_role
         )
-        resp = app.delete_json_api(
-            make_api_url(test_artifact),
-            make_patch_payload(test_artifact),
-            auth=test_auth,
-            expect_errors=True
-        )
+        resp = app.delete_json_api(make_api_url(test_artifact), auth=test_auth, expect_errors=True)
         expected_status_code = 403 if test_auth else 401
         assert resp.status_code == expected_status_code
 
@@ -413,12 +435,7 @@ class TestResourceDetailDELETEPermissions:
         test_artifact, test_auth, _ = configure_test_preconditions(
             registration_state=registration_state, user_role=user_role
         )
-        resp = app.delete_json_api(
-            make_api_url(test_artifact),
-            make_patch_payload(test_artifact),
-            auth=test_auth,
-            expect_errors=True
-        )
+        resp = app.delete_json_api(make_api_url(test_artifact), auth=test_auth, expect_errors=True)
         assert resp.status_code == 410
 
     @pytest.mark.parametrize('user_role', UserRoles)
@@ -426,14 +443,56 @@ class TestResourceDetailDELETEPermissions:
         test_artifact, test_auth, _ = configure_test_preconditions(
             registration_state=RegStates.WITHDRAWN, user_role=user_role
         )
-        resp = app.delete_json_api(
-            make_api_url(test_artifact),
-            make_patch_payload(test_artifact),
-            auth=test_auth,
-            expect_errors=True
-        )
+        resp = app.delete_json_api(make_api_url(test_artifact), auth=test_auth, expect_errors=True)
         expected_status_code = 403 if test_auth else 401
         assert resp.status_code == expected_status_code
+
+
+@pytest.mark.django_db
+class TestResourceDetailDELETEBehavior:
+
+    def test_delete__not_finalized__deletes_from_db(self, app):
+        test_artifact, test_auth, _ = configure_test_preconditions()
+        test_artifact.finalized = False
+        test_artifact.save()
+
+        app.delete_json_api(make_api_url(test_artifact), auth=test_auth)
+
+        assert not OutcomeArtifact.objects.filter(id=test_artifact.id).exists()
+
+    def test_delete__not_finalized__does_not_add_log(self, app):
+        test_artifact, test_auth, registration = configure_test_preconditions()
+        test_artifact.finalized = False
+        test_artifact.save()
+
+        app.delete_json_api(make_api_url(test_artifact), auth=test_auth)
+
+        assert not registration.logs.filter(action=NodeLog.RESOURCE_REMOVED).exists()
+
+    def test_delete__finalized__marks_deleted(self, app):
+        test_artifact, test_auth, _ = configure_test_preconditions()
+        test_artifact.finalized = True
+        test_artifact.save()
+
+        app.delete_json_api(make_api_url(test_artifact), auth=test_auth)
+
+        assert OutcomeArtifact.objects.filter(id=test_artifact.id).exists()
+
+        test_artifact.refresh_from_db()
+        assert test_artifact.deleted
+
+    def test_delete__finalized__adds_log(self, app):
+        test_artifact, test_auth, registration = configure_test_preconditions()
+        assert not registration.logs.filter(action=NodeLog.RESOURCE_REMOVED).exists()
+
+        test_artifact.finalized = True
+        test_artifact.save()
+
+        app.delete_json_api(make_api_url(test_artifact), auth=test_auth)
+
+        resource_removed_log = registration.logs.get(action=NodeLog.RESOURCE_REMOVED)
+        assert resource_removed_log.params['artifact_id'] == test_artifact._id
+        assert resource_removed_log.params['obsolete_identifier'] == test_artifact.identifier.value
 
 
 @pytest.mark.django_db

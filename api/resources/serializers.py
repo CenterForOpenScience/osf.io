@@ -10,8 +10,15 @@ from api.base.serializers import (
     VersionedDateTimeField,
 )
 from api.base.utils import absolute_reverse
+from osf.exceptions import CannotFinalizeArtifactError, NoPIDError
 from osf.models import Outcome, OutcomeArtifact, Registration
-from osf.utils.outcomes import ArtifactTypes, NoPIDError
+from osf.utils.outcomes import ArtifactTypes
+
+
+MODEL_TO_SERIALIZER_FIELD_MAPPINGS = {
+    'artifact_type': 'resource_type',
+    'identifier__value': 'pid',
+}
 
 class ResourceSerializer(JSONAPISerializer):
 
@@ -76,49 +83,57 @@ class ResourceSerializer(JSONAPISerializer):
         return OutcomeArtifact.objects.create(outcome=root_outcome)
 
     def update(self, instance, validated_data):
-        print(validated_data)
         updated_title = validated_data.get('title')
-        updated_description = validated_data.get('description')
-        updated_artifact_type = validated_data.get('artifact_type')
         if updated_title is not None:
             instance.title = updated_title
+
+        updated_description = validated_data.get('description')
         if updated_description is not None:
             instance.description = updated_description
+
+        updated_artifact_type = validated_data.get('artifact_type')
         if updated_artifact_type:  # Disallow resetting artifact_type to UNDEFINED
             instance.artifact_type = updated_artifact_type
 
         updated_pid = validated_data.get('pid')
         if updated_pid and updated_pid != instance.pid:  # Disallow resetting pid to ''
-            instance.update_identifier(updated_pid)
+            instance.update_identifier(updated_pid, api_request=self.context['request'])
 
         finalized = validated_data.get('finalized')
-        if finalized is not None and _validate_finalized(instance, finalized):
-            instance.finalized = finalized
+        if finalized is not None:
+            self._update_finalized(instance, finalized)
 
         instance.save()
         return instance
 
+    def _update_finalized(self, instance, patched_finalized):
+        # No change -> noop
+        if instance.finalized == patched_finalized:
+            return
 
-def _validate_finalized(instance, patched_finalized):
-    if instance.finalized and not patched_finalized:
-        raise Conflict(
-            detail=(
-                'Resource with id [{instance._id}] has state `finalized: true`, '
-                'cannot PATCH `finalized: false'
-            ),
-            source={'pointer': '/data/attributes/finalized'},
-        )
+        # Previous check alerts us that patched_finalized is False here
+        if instance.finalized:
+            raise Conflict(
+                detail=(
+                    'Resource with id [{instance._id}] has state `finalized: true`, '
+                    'cannot PATCH `finalized: false'
+                ),
+                source={'pointer': '/data/attributes/finalized'},
+            )
 
-    error_sources = []
-    if patched_finalized and not instance.pid:
-        error_sources.append('pid')
-    if patched_finalized and not instance.artifact_type:
-        error_sources.append('resource_type')
+        try:
+            instance.finalize(api_request=self.context['request'])
+        except CannotFinalizeArtifactError as e:
+            error_sources = [
+                MODEL_TO_SERIALIZER_FIELD_MAPPINGS[field] for field in e.incomplete_fields
+            ]
+        else:
+            return
 
-    if error_sources:
         source = '/data/attributes/'
-        if len(error_sources) == 1:
+        if len(error_sources) == 1:  # Be more specific if possible
             source += error_sources[0]
+
         raise Conflict(
             detail=(
                 f'Cannot PATCH `finalized: true` for Resource with id [{instance._id}] '
@@ -126,4 +141,5 @@ def _validate_finalized(instance, patched_finalized):
             ),
             source={'pointer': source},
         )
-    return True
+
+        return True

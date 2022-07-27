@@ -74,3 +74,6 @@ class ResourceDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
 
     def get_permissions_proxy(self):
         return Guid.load(self.get_object().primary_resource_guid).referent
+
+    def perform_destroy(self, instance):
+        instance.delete(api_request=self.request)

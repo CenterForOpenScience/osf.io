@@ -88,5 +88,6 @@ class Outcome(ObjectIDMixin, EditableFieldsMixin, BaseModel):
         self.primary_osf_resource.add_log(
             action=nodelog_action,
             params=nodelog_params,
+            auth=None,  # Grabbed from request
             request=api_request,
         )
