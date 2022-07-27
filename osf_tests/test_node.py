@@ -70,6 +70,7 @@ from osf_tests.factories import (
 from .factories import get_default_metaschema
 from addons.wiki.tests.factories import WikiVersionFactory, WikiFactory
 from osf_tests.utils import capture_signals, assert_datetime_equal, mock_archive
+from osf.migrations import ensure_default_registration_provider
 
 pytestmark = pytest.mark.django_db
 
@@ -2420,6 +2421,11 @@ class TestNodeSpam:
 
 # copied from tests/test_models.py
 class TestPrivateLinks:
+
+    @pytest.fixture(autouse=True)
+    def default_registration_provider(self):
+        ensure_default_registration_provider()
+
     def test_add_private_link(self, node):
         link = PrivateLinkFactory()
         link.nodes.add(node)
