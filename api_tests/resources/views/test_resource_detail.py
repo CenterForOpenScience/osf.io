@@ -272,7 +272,7 @@ class TestResourceDetailPATCHBehavior:
     def test_patch__resource_type__invalid_resource_type(self, app):
         test_artifact, test_auth, _ = configure_test_preconditions()
 
-        payload = make_patch_payload(test_artifact, new_resource_type=ArtifactTypes.ANALYTIC_CODE)
+        payload = make_patch_payload(test_artifact)
         payload['data']['attributes']['resource_type'] = 'obviously bad'
 
         resp = app.patch_json_api(make_api_url(test_artifact), payload, auth=test_auth, expect_errors=True)
