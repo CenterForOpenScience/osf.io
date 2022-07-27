@@ -1003,6 +1003,7 @@ class Migration(migrations.Migration):
                                                                     verbose_name='created')),
                 ('deleted', osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True)),
                 ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
+                ('nodes', models.ManyToManyField(related_name='private_links', to='osf.AbstractNode')),
             ],
             options={
                 'abstract': False,
