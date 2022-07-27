@@ -19,16 +19,14 @@ def make_api_url(resource, vol_key=None):
 def make_patch_payload(
     test_artifact,
     new_pid=None,
-    new_title=None,
     new_description=None,
     new_resource_type=None,
     is_finalized=None,
 ):
     pid = new_pid if new_pid is not None else test_artifact.identifier.value
-    title = new_title if new_title is not None else test_artifact.title
     description = new_description if new_description is not None else test_artifact.description
-    resource_type = ArtifactTypes(test_artifact.artifact_type).name.lower()
     is_finalized = is_finalized if is_finalized is not None else test_artifact.finalized
+    resource_type = ArtifactTypes(test_artifact.artifact_type).name.lower()
     if new_resource_type is not None:
         resource_type = new_resource_type.name.lower()
 
@@ -38,7 +36,6 @@ def make_patch_payload(
             'type': 'resources',
             'attributes': {
                 'pid': pid,
-                'name': title,
                 'description': description,
                 'resource_type': resource_type,
                 'finalized': is_finalized
@@ -168,12 +165,11 @@ class TestResourceDetailGETBehavior:
 @pytest.mark.django_db
 class TestResourceDetailPATCHPermissions:
 
-    @pytest.mark.parametrize('registration_state', [RegStates.ACCEPTED, RegStates.EMBARGO])
+    # Don't bother exhaustive Registration state checking for PATCHing.
+    # If the Resource exists and the Registration isn't WITHDRAWN or DELETED, the Resource should be PATCHable
     @pytest.mark.parametrize('user_role', UserRoles.write_roles())
-    def test_status_code__user_can_write(self, app, registration_state, user_role):
-        test_artifact, test_auth, _ = configure_test_preconditions(
-            registration_state=registration_state, user_role=user_role
-        )
+    def test_status_code__user_can_write(self, app, user_role):
+        test_artifact, test_auth, _ = configure_test_preconditions(user_role=user_role)
         resp = app.patch_json_api(
             make_api_url(test_artifact),
             make_patch_payload(test_artifact),
@@ -185,9 +181,7 @@ class TestResourceDetailPATCHPermissions:
     @pytest.mark.parametrize('user_role', UserRoles.excluding(*UserRoles.write_roles()))
     def test_status_code__user_cannot_write(self, app, user_role):
         # Only checking the least restrictive state
-        test_artifact, test_auth, _ = configure_test_preconditions(
-            registration_state=RegStates.ACCEPTED, user_role=user_role
-        )
+        test_artifact, test_auth, _ = configure_test_preconditions(user_role=user_role)
         resp = app.patch_json_api(
             make_api_url(test_artifact),
             make_patch_payload(test_artifact),
@@ -235,13 +229,11 @@ class TestResourceDetailPATCHBehavior:
         test_artifact.finalized = previously_finalized
         test_artifact.save()
 
-        assert not test_artifact.title
         assert not test_artifact.description
         assert test_artifact.artifact_type == ArtifactTypes.DATA
 
         payload = make_patch_payload(
             test_artifact,
-            new_title='New title',
             new_description='This is a description',
             new_resource_type=ArtifactTypes.SUPPLEMENTS,
             is_finalized=previously_finalized
@@ -249,25 +241,22 @@ class TestResourceDetailPATCHBehavior:
         app.patch_json_api(make_api_url(test_artifact), payload, auth=test_auth)
 
         test_artifact.refresh_from_db()
-        assert test_artifact.title == 'New title'
         assert test_artifact.description == 'This is a description'
         assert test_artifact.artifact_type == ArtifactTypes.SUPPLEMENTS
 
     @pytest.mark.parametrize('previously_finalized', [True, False])
     def test_patch_supports_empty_string(self, app, previously_finalized):
         test_artifact, test_auth, _ = configure_test_preconditions()
-        test_artifact.title = 'Placeholder'
         test_artifact.description = 'Long placeholder'
         test_artifact.finalized = previously_finalized
         test_artifact.save()
 
         payload = make_patch_payload(
-            test_artifact, new_title='', new_description='', is_finalized=previously_finalized
+            test_artifact, new_description='', is_finalized=previously_finalized
         )
         app.patch_json_api(make_api_url(test_artifact), payload, auth=test_auth)
 
         test_artifact.refresh_from_db()
-        assert not test_artifact.title
         assert not test_artifact.description
 
     def test_patch_pid__updates_identifier(self, app):
@@ -370,13 +359,11 @@ class TestResourceDetailPATCHBehavior:
         test_artifact.artifact_type = ArtifactTypes.UNDEFINED
         test_artifact.save()
 
-        original_title = test_artifact.title
         original_description = test_artifact.description
         original_identifier = test_artifact.identifier
 
         payload = make_patch_payload(
             test_artifact,
-            new_title='Some new name',
             new_description='Some new desciprtion',
             new_pid='Some new pid',
             new_resource_type=ArtifactTypes.UNDEFINED,
@@ -386,7 +373,6 @@ class TestResourceDetailPATCHBehavior:
         app.patch_json_api(make_api_url(test_artifact), payload, auth=test_auth, expect_errors=True)
         test_artifact.refresh_from_db()
 
-        assert test_artifact.title == original_title
         assert test_artifact.description == original_description
         assert test_artifact.artifact_type == ArtifactTypes.UNDEFINED
         assert test_artifact.identifier == original_identifier
@@ -411,20 +397,18 @@ class TestResourceDetailPATCHBehavior:
 @pytest.mark.django_db
 class TestResourceDetailDELETEPermissions:
 
-    @pytest.mark.parametrize('registration_state', [RegStates.ACCEPTED, RegStates.EMBARGO])
-    def test_status_code__admin(self, app, registration_state):
-        test_artifact, test_auth, _ = configure_test_preconditions(
-            registration_state=registration_state, user_role=UserRoles.ADMIN_USER
-        )
+    # Don't bother exhaustive Registration state checking for DELETEing.
+    # If the Resource exists and the Registration isn't WITHDRAWN or DELETED, the Resource should be DELETEable
+    @pytest.mark.parametrize('user_role', UserRoles.write_roles())
+    def test_status_code__user_can_write(self, app, user_role):
+        test_artifact, test_auth, _ = configure_test_preconditions(user_role=user_role)
         resp = app.delete_json_api(make_api_url(test_artifact), auth=test_auth, expect_errors=True)
         assert resp.status_code == 204
 
-    @pytest.mark.parametrize('user_role', UserRoles.excluding(UserRoles.ADMIN_USER))
-    def test_status_code__non_admin(self, app, user_role):
+    @pytest.mark.parametrize('user_role', UserRoles.excluding(*UserRoles.write_roles()))
+    def test_status_code__user_cannot_write(self, app, user_role):
         # Only checking the least restrictive state
-        test_artifact, test_auth, _ = configure_test_preconditions(
-            registration_state=RegStates.ACCEPTED, user_role=user_role
-        )
+        test_artifact, test_auth, _ = configure_test_preconditions(user_role=user_role)
         resp = app.delete_json_api(make_api_url(test_artifact), auth=test_auth, expect_errors=True)
         expected_status_code = 403 if test_auth else 401
         assert resp.status_code == expected_status_code

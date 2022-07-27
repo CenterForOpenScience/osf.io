@@ -54,8 +54,7 @@ class ResourceDetailPermission(ResourcesPermission, permissions.BasePermission):
 
     ResourcesDetail supports GET, PATCH, and DELETE methods.
     '''
-    # TODO(ENG-3898, ENG-3899) Implement PATCH and DELETE
-    REQUIRED_PERMISSIONS = {'GET': None, 'PATCH': 'write', 'DELETE': 'admin'}
+    REQUIRED_PERMISSIONS = {'GET': None, 'PATCH': 'write', 'DELETE': 'write'}
 
 
 class RegistrationResourceListPermission(ResourcesPermission, permissions.BasePermission):

@@ -27,7 +27,6 @@ class ResourceSerializer(JSONAPISerializer):
         'type',
         'date_created',
         'date_modified',
-        'name',
         'description',
         'registration',
         'links',
@@ -42,7 +41,6 @@ class ResourceSerializer(JSONAPISerializer):
     date_created = VersionedDateTimeField(source='created', required=False)
     date_modified = VersionedDateTimeField(source='modified', required=False)
 
-    name = ser.CharField(source='title', allow_null=False, allow_blank=True, required=False)
     description = ser.CharField(allow_null=False, allow_blank=True, required=False)
     resource_type = EnumField(ArtifactTypes, source='artifact_type', allow_null=False, required=False)
     finalized = ser.BooleanField(required=False)
@@ -78,7 +76,7 @@ class ResourceSerializer(JSONAPISerializer):
         try:
             root_outcome = Outcome.objects.for_registration(primary_registration, create=True)
         except NoPIDError:
-            raise Conflict('Cannot add Resrouces to a Registration without a DOI')
+            raise Conflict('Cannot add Resources to a Registration that does not have a DOI')
 
         return OutcomeArtifact.objects.create(outcome=root_outcome)
 
