@@ -97,5 +97,4 @@ class Migration(migrations.Migration):
 
     operations = [
     ] if getattr(settings, 'TEST_ENV', False) else [
-        migrations.RunPython(create_subjects, migrations.RunPython.noop),
     ]
