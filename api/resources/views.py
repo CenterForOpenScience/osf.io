@@ -40,7 +40,10 @@ class ResourceList(JSONAPIBaseView, generics.ListCreateAPIView):
         try:
             registration_guid = self.request.data['registration']
         except KeyError:
-            raise JSONAPIException('Must provide "registration" relationship in payload"')
+            raise JSONAPIException(
+                detail='Must provide "registration" relationship in payload"',
+                source={'pointer': '/data/relationships/registration/data/id'},
+            )
 
         registration = Registration.load(registration_guid)
         if not registration:
