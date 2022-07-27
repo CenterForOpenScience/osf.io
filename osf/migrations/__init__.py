@@ -276,3 +276,19 @@ def ensure_default_storage_region():
             'waterbutler_url': osf_settings.WATERBUTLER_URL
         }
     )
+
+
+def add_datacite_schema():
+    ''' Test use only '''
+    from osf.models import FileMetadataSchema
+    with open('osf/metadata/schemas/datacite.json') as f:
+        jsonschema = json.load(f)
+    _, created = FileMetadataSchema.objects.get_or_create(
+        _id='datacite',
+        schema_version=1,
+        defaults={
+            'name': 'datacite',
+            'schema': jsonschema
+        }
+
+    )
