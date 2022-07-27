@@ -1081,11 +1081,6 @@ class Migration(migrations.Migration):
             field=models.ManyToManyField(blank=True, related_name='draftregistrations', to='osf.Subject'),
         ),
         migrations.AddField(
-            model_name='preprint',
-            name='subjects',
-            field=models.ManyToManyField(blank=True, related_name='preprints', to='osf.Subject'),
-        ),
-        migrations.AddField(
             model_name='abstractnode',
             name='subjects',
             field=models.ManyToManyField(blank=True, related_name='abstractnodes', to='osf.Subject'),
@@ -2082,6 +2077,11 @@ class Migration(migrations.Migration):
                 ),
             },
             bases=(dirtyfields.dirtyfields.DirtyFieldsMixin, models.Model, osf.models.base.QuerySetExplainMixin),
+        ),
+        migrations.AddField(
+            model_name='preprint',
+            name='subjects',
+            field=models.ManyToManyField(blank=True, related_name='preprints', to='osf.Subject'),
         ),
         migrations.CreateModel(
             name='PreprintContributor',
