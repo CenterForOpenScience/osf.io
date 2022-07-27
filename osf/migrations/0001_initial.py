@@ -70,10 +70,32 @@ class Migration(migrations.Migration):
                 ('is_active', models.BooleanField(default=False)),
                 ('is_staff', models.BooleanField(default=False)),
             ],
-            options={
-                'permissions': (('view_user', 'Can view user details'),),
-            },
             bases=(dirtyfields.dirtyfields.DirtyFieldsMixin, models.Model),
+        ),
+        migrations.CreateModel(
+            name='NodeLicense',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('_id', models.CharField(db_index=True, default=osf.models.base.generate_object_id, max_length=24,
+                                         unique=True)),
+                ('license_id',
+                 models.CharField(help_text='A unique id for the license. for example', max_length=128, unique=True)),
+                ('name', models.CharField(help_text='The name of the license', max_length=256, unique=True)),
+                ('modified',
+                 django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
+                ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True,
+                                                                              default=django.utils.timezone.now,
+                                                                              verbose_name='created')),
+                ('url', models.URLField(blank=True,
+                                        help_text="The license's url for example: <i>http://opensource.org/licenses/BSD-3-Clause</i>")),
+                ('text', models.TextField(
+                    help_text='The text of the license with custom properties surround by curly brackets, for example: <i>Copyright (c) {{year}}, {{copyrightHolders}} All rights reserved.</i>')),
+                ('properties',
+                 django.contrib.postgres.fields.ArrayField(base_field=models.CharField(max_length=128), blank=True,
+                                                           default=list,
+                                                           help_text="The custom elements in a license's text surrounded with curly brackets for example: <i>{year,copyrightHolders}</i>",
+                                                           size=None)),
+            ],
         ),
         migrations.CreateModel(
             name='NodeLicenseRecord',
@@ -102,7 +124,9 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('content_type_pk', models.PositiveIntegerField(blank=True, null=True)),
-                ('type', models.CharField(choices=[('osf.node', 'node'), ('osf.collection', 'collection'), ('osf.registration', 'registration')], db_index=True, max_length=255)),
+                ('type', models.CharField(
+                choices=[('osf.node', 'node'), ('osf.draftnode', 'draft node'), ('osf.registration', 'registration'),
+                         ('osf.quickfilesnode', 'quick files node')], db_index=True, max_length=255)),
                 ('spam_status', models.IntegerField(blank=True, db_index=True, default=None, null=True)),
                 ('spam_pro_tip', models.CharField(blank=True, default=None, max_length=200, null=True)),
                 ('spam_data', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict)),
@@ -134,8 +158,9 @@ class Migration(migrations.Migration):
                 ('embargo_termination_approval', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
                                     related_name='registrations', to='osf.EmbargoTerminationApproval')),
                 ('creator', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
-                                    related_name='created', to=settings.AUTH_USER_MODEL)),
-                ('registered_meta', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict, null=True)),
+                                    related_name='nodes_created', to=settings.AUTH_USER_MODEL)),
+                ('registered_meta', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict,
+                                                                            encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder)),
                 ('registered_user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
                                     related_name='related_to', to=settings.AUTH_USER_MODEL)),
                 ('affiliated_institutions', models.ManyToManyField(related_name='nodes', to='osf.Institution')),
@@ -184,6 +209,14 @@ class Migration(migrations.Migration):
                 ('registration_responses_migrated', models.BooleanField(db_index=True, default=True, null=True)),
             ],
             bases=(dirtyfields.dirtyfields.DirtyFieldsMixin, osf.models.mixins.CommentableMixin, models.Model),
+            options={
+                'base_manager_name': 'objects',
+                'permissions': (
+                    ('read_node', 'Can read the node'),
+                    ('write_node', 'Can edit the node'),
+                    ('admin_node', 'Can manage the node')
+                )
+            }
         ),
         migrations.CreateModel(
             name='AdminLogEntry',
@@ -205,9 +238,12 @@ class Migration(migrations.Migration):
                 ('desk_token_secret', models.CharField(blank=True, max_length=45)),
                 ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='admin_profile', to=settings.AUTH_USER_MODEL)),
             ],
-            options={
-                'permissions': (('mark_spam', 'Can mark comments, projects and registrations as spam'), ('view_spam', 'Can view nodes, comments, and projects marked as spam'), ('view_metrics', 'Can view metrics on the OSF Admin app'), ('view_desk', 'Can view details about Desk users')),
-            },
+            options={'permissions': (('mark_spam', 'Can mark comments, projects and registrations as spam'),
+                                     ('view_spam', 'Can view nodes, comments, and projects marked as spam'),
+                                     ('view_metrics', 'Can view metrics on the OSF Admin app'),
+                                     ('view_desk', 'Can view details about Desk users'),
+                                     ('delete_preprintrequest', 'Can delete preprints withdrawal requests'),
+                                     ('change_preprintrequest', 'Can update preprints withdrawal requests'))},
         ),
         migrations.CreateModel(
             name='ApiOAuth2Application',
@@ -221,6 +257,10 @@ class Migration(migrations.Migration):
                 ('description', models.CharField(blank=True, max_length=1000, null=True)),
                 ('home_url', models.URLField()),
                 ('callback_url', models.URLField()),
+                ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True,
+                                                                    default=django.utils.timezone.now,
+                                                                    verbose_name='created')),
+                ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
                 ('owner', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
             ],
             options={
@@ -234,6 +274,10 @@ class Migration(migrations.Migration):
                 ('_id', models.CharField(db_index=True, default=osf.models.base.generate_object_id, max_length=24, unique=True)),
                 ('token_id', models.CharField(default=osf.models.oauth.generate_token_id, max_length=70, unique=True)),
                 ('name', models.CharField(db_index=True, max_length=100)),
+                ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True,
+                                                                    default=django.utils.timezone.now,
+                                                                    verbose_name='created')),
+                ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
                 ('is_active', models.BooleanField(db_index=True, default=True)),
                 ('owner', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
             ],
@@ -248,6 +292,11 @@ class Migration(migrations.Migration):
                 ('_id', models.CharField(db_index=True, default=osf.models.base.generate_object_id, max_length=24, unique=True)),
                 ('name', models.CharField(db_index=True, max_length=50, unique=True)),
                 ('description', models.CharField(max_length=255)),
+                ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True,
+                                                                    default=django.utils.timezone.now,
+                                                                    verbose_name='created')),
+                ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
+                ('is_public', models.BooleanField(db_index=True, default=True)),
                 ('is_active', models.BooleanField(db_index=True, default=True)),
             ],
             options={
@@ -261,6 +310,10 @@ class Migration(migrations.Migration):
                 ('_id', models.CharField(db_index=True, default=osf.models.base.generate_object_id, max_length=24, unique=True)),
                 ('done', models.BooleanField(default=False, verbose_name='completed')),
                 ('sent', models.BooleanField(default=False, verbose_name='emails sent')),
+                ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True,
+                                                                    default=django.utils.timezone.now,
+                                                                    verbose_name='created')),
+                ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
                 ('status', models.CharField(default='INITIATED', max_length=40)),
                 ('datetime_initiated', osf.utils.fields.NonNaiveDateTimeField(default=django.utils.timezone.now, verbose_name='initiated at')),
                 ('initiator', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
@@ -278,6 +331,11 @@ class Migration(migrations.Migration):
                 ('status', models.CharField(default='INITIATED', max_length=40)),
                 ('stat_result', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict)),
                 ('errors', django.contrib.postgres.fields.ArrayField(base_field=models.TextField(), blank=True, default=list, size=None)),
+                ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True,
+                                                                              default=django.utils.timezone.now,
+                                                                              verbose_name='created')),
+                ('modified',
+                 django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
             ],
             options={
                 'abstract': False,
@@ -301,10 +359,18 @@ class Migration(migrations.Migration):
                 ('copied_from', models.ForeignKey(blank=True, default=None, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='copy_of', to='osf.BaseFileNode')),
                 ('deleted_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='files_deleted_by', to=settings.AUTH_USER_MODEL)),
                 ('parent', models.ForeignKey(blank=True, default=None, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='_children', to='osf.BaseFileNode')),
+                ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True,
+                                                                    default=django.utils.timezone.now,
+                                                                    verbose_name='created')),
+                ('deleted', osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True)),
+                ('is_root', models.BooleanField(blank=True, null=True)),
+                ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
+                ('purged', osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True)),
+                ('target_content_type', models.ForeignKey(blank=True, default=None, null=True, on_delete=django.db.models.deletion.CASCADE,
+                                    to='contenttypes.contenttype')),
+                ('target_object_id', models.PositiveIntegerField(blank=True, default=None, null=True)),
             ],
-            options={
-                'abstract': False,
-            },
+            options={'base_manager_name': 'objects'},
             bases=(osf.models.mixins.CommentableMixin, models.Model),
         ),
         migrations.CreateModel(
@@ -312,6 +378,10 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(primary_key=True, serialize=False)),
                 ('guid', osf.utils.fields.LowercaseCharField(db_index=True, max_length=255, unique=True)),
+                ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True,
+                                                                    default=django.utils.timezone.now,
+                                                                    verbose_name='created')),
+                ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
             ],
             options={
                 'abstract': False,
@@ -326,6 +396,12 @@ class Migration(migrations.Migration):
                 ('date_parsed', osf.utils.fields.NonNaiveDateTimeField(default=django.utils.timezone.now)),
                 ('short_title', models.CharField(blank=True, max_length=2048, null=True)),
                 ('summary', models.CharField(blank=True, max_length=4200, null=True)),
+                ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True,
+                                                                    default=django.utils.timezone.now,
+                                                                    verbose_name='created')),
+                ('has_bibliography', models.BooleanField(default=False)),
+                ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
+                ('parent_style', models.CharField(blank=True, max_length=255, null=True)),
             ],
             options={
                 'abstract': False,
@@ -385,8 +461,19 @@ class Migration(migrations.Migration):
                 ('talk', models.BooleanField(default=True)),
                 ('field_names', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(default=osf.models.conference.get_default_field_names)),
                 ('admins', models.ManyToManyField(to=settings.AUTH_USER_MODEL)),
+                ('auto_check_spam', models.BooleanField(default=True)),
+                ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
+                ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True,
+                                                                    default=django.utils.timezone.now,
+                                                                    verbose_name='created')),
             ],
         ),
+        migrations.AddField(
+            model_name='conference',
+            name='submissions',
+            field=models.ManyToManyField(related_name='conferences', to='osf.AbstractNode'),
+        ),
+
         migrations.CreateModel(
             name='Contributor',
             fields=[
@@ -404,14 +491,57 @@ class Migration(migrations.Migration):
                 ('datetime_initiated', osf.utils.fields.NonNaiveDateTimeField(default=django.utils.timezone.now)),
                 ('datetime_updated', osf.utils.fields.NonNaiveDateTimeField(default=django.utils.timezone.now)),
                 ('registration_metadata', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict)),
+                ('affiliated_institutions', models.ManyToManyField(related_name='draft_registrations', to='osf.Institution')),
+                ('category', models.CharField(blank=True, choices=[('analysis', 'Analysis'), ('communication', 'Communication'),
+                                                        ('data', 'Data'), ('hypothesis', 'Hypothesis'),
+                                                        ('instrumentation', 'Instrumentation'),
+                                                        ('methods and measures', 'Methods and Measures'),
+                                                        ('procedure', 'Procedure'), ('project', 'Project'),
+                                                        ('software', 'Software'), ('other', 'Other'),
+                                                        ('', 'Uncategorized')], default='', max_length=255)),
                 ('_metaschema_flags', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict)),
                 ('notes', models.TextField(blank=True)),
+                ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True,
+                                                                    default=django.utils.timezone.now,
+                                                                    verbose_name='created')),
+                ('deleted', osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True)),
+                ('description', models.TextField(blank=True, default='')),
+                ('last_logged', osf.utils.fields.NonNaiveDateTimeField(blank=True, db_index=True, default=django.utils.timezone.now,
+                                                         null=True)),
+                ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
+                ('registration_responses', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict,
+                                                                            encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder)),
+                ('registration_responses_migrated', models.BooleanField(db_index=True, default=True, null=True)),
+                ('title', models.TextField(blank=True, default='', validators=[osf.models.validators.validate_title])),
                 ('initiator', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE,
                                     to=settings.AUTH_USER_MODEL)),
             ],
-            options={
-                'abstract': False,
-            },
+            options={'permissions': (('read_draft_registration', 'Can read the draft registration'),
+                                     ('write_draft_registration', 'Can edit the draft registration'),
+                                     ('admin_draft_registration', 'Can manage the draft registration'))},
+        ),
+        migrations.AddField(
+            model_name='draftregistration',
+            name='node_license',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
+                                    related_name='draft_registrations', to='osf.nodelicenserecord'),
+        ),
+        migrations.AddField(
+            model_name='draftregistration',
+            name='subjects',
+            field=models.ManyToManyField(blank=True, related_name='draftregistrations', to='osf.Subject'),
+        ),
+        migrations.AddField(
+            model_name='draftregistration',
+            name='branched_from',
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE,
+                                    related_name='registered_draft', to='osf.abstractnode'),
+        ),
+        migrations.AddField(
+            model_name='draftregistration',
+            name='registered_node',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE,
+                                    related_name='draft_registration', to='osf.Registration'),
         ),
         migrations.CreateModel(
             name='DraftRegistrationLog',
@@ -423,9 +553,7 @@ class Migration(migrations.Migration):
                 ('draft', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='logs', to='osf.DraftRegistration')),
                 ('user', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
-            options={
-                'abstract': False,
-            },
+            options={'get_latest_by': 'created', 'ordering': ['-created']},
         ),
         migrations.CreateModel(
             name='Embargo',
@@ -493,9 +621,7 @@ class Migration(migrations.Migration):
                 ('location', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=None, null=True, validators=[osf.models.validators.validate_location])),
                 ('creator', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
-            options={
-                'ordering': ('date_created',),
-            },
+            options={'ordering': ('-created',)},
         ),
         migrations.CreateModel(
             name='Guid',
@@ -540,7 +666,7 @@ class Migration(migrations.Migration):
                                          to=settings.AUTH_USER_MODEL)),
             ],
             options={
-                'abstract': False,
+                'permissions': (('view_institutional_metrics', 'Can access metrics endpoints for their Institution'),)
             },
         ),
         migrations.CreateModel(
@@ -563,27 +689,6 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-        ),
-        migrations.CreateModel(
-            name='NodeLicense',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('_id', models.CharField(db_index=True, default=osf.models.base.generate_object_id, max_length=24, unique=True)),
-                ('license_id', models.CharField(help_text='A unique id for the license. for example', max_length=128, unique=True)),
-                ('name', models.CharField(help_text='The name of the license', max_length=256, unique=True)),
-                ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
-                ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True,
-                                                                    default=django.utils.timezone.now,
-                                                                    verbose_name='created')),
-                ('url', models.URLField(blank=True,
-                                  help_text="The license's url for example: <i>http://opensource.org/licenses/BSD-3-Clause</i>")),
-                ('text', models.TextField(
-                help_text='The text of the license with custom properties surround by curly brackets, for example: <i>Copyright (c) {{year}}, {{copyrightHolders}} All rights reserved.</i>')),
-                ('properties', django.contrib.postgres.fields.ArrayField(base_field=models.CharField(max_length=128), blank=True,
-                                                            default=list,
-                                                            help_text="The custom elements in a license's text surrounded with curly brackets for example: <i>{year,copyrightHolders}</i>",
-                                                            size=None)),
-            ],
         ),
         migrations.CreateModel(
             name='NodeLog',
@@ -751,11 +856,25 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('_id', models.CharField(db_index=True, default=osf.models.base.generate_object_id, max_length=24, unique=True)),
-                ('text', models.CharField(max_length=256, unique=True)),
+                ('text', models.CharField(db_index=True, max_length=256)),
+                ('bepress_subject', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE,
+                                    related_name='aliases', to='osf.subject')),
+                ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True,
+                                                                    default=django.utils.timezone.now,
+                                                                    verbose_name='created')),
+                ('highlighted', models.BooleanField(db_index=True, default=False)),
+                ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
+                ('parent', models.ForeignKey(
+                    blank=True,
+                    null=True,
+                    on_delete=django.db.models.deletion.SET_NULL,
+                    related_name='children',
+                    to='osf.subject',
+                    validators=[osf.models.validators.validate_subject_hierarchy_length]
+                )
+                ),
             ],
-            options={
-                'abstract': False,
-            },
+            options={'base_manager_name': 'objects'},
         ),
         migrations.CreateModel(
             name='Tag',
@@ -764,12 +883,24 @@ class Migration(migrations.Migration):
                 ('name', models.CharField(db_index=True, max_length=1024)),
                 ('system', models.BooleanField(default=False)),
             ],
+            options={'ordering': ('name',)}
         ),
         migrations.AddField(
             model_name='abstractnode',
             name='tags',
             field=models.ManyToManyField(related_name='abstractnode_tagged', to='osf.Tag'),
         ),
+        migrations.AddField(
+            model_name='osfuser',
+            name='tags',
+            field=models.ManyToManyField(blank=True, to='osf.Tag'),
+        ),
+        migrations.AddField(
+            model_name='draftregistration',
+            name='tags',
+            field=models.ManyToManyField(related_name='draftregistration_tagged', to='osf.Tag'),
+        ),
+
         migrations.CreateModel(
             name='UserActivityCounter',
             fields=[
@@ -777,6 +908,10 @@ class Migration(migrations.Migration):
                 ('_id', models.CharField(db_index=True, max_length=5, unique=True)),
                 ('action', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(default=dict)),
                 ('date', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(default=dict)),
+                ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True,
+                                                                    default=django.utils.timezone.now,
+                                                                    verbose_name='created')),
+                ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
                 ('total', models.PositiveIntegerField(default=0)),
             ],
             options={
@@ -834,11 +969,6 @@ class Migration(migrations.Migration):
             model_name='osfuser',
             name='recently_added',
             field=models.ManyToManyField(through='osf.RecentlyAddedContributor', to=settings.AUTH_USER_MODEL),
-        ),
-        migrations.AddField(
-            model_name='osfuser',
-            name='tags',
-            field=models.ManyToManyField(blank=True, to='osf.Tag'),
         ),
         migrations.AddField(
             model_name='osfuser',
@@ -903,10 +1033,6 @@ class Migration(migrations.Migration):
             name='Node',
             fields=[
             ],
-            options={
-                'proxy': True,
-                'permissions': (('view_node', 'Can view node details'),),
-            },
             bases=('osf.abstractnode',),
         ),
         migrations.CreateModel(
@@ -997,16 +1123,7 @@ class Migration(migrations.Migration):
             name='embargoed_registration',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='osf.Registration'),
         ),
-        migrations.AddField(
-            model_name='draftregistration',
-            name='branched_from',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='registered_draft', to='osf.Node'),
-        ),
-        migrations.AddField(
-            model_name='draftregistration',
-            name='registered_node',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='draft_registration', to='osf.Registration'),
-        ),
+
         migrations.AlterUniqueTogether(
             name='contributor',
             unique_together=set([('user', 'node')]),
@@ -2184,314 +2301,10 @@ class Migration(migrations.Migration):
             },
             bases=('osf.abstractnode',),
         ),
-        migrations.AlterModelOptions(
-            name='abstractnode',
-            options={
-                'base_manager_name': 'objects',
-                'permissions': (
-                    ('read_node', 'Can read the node'),
-                    ('write_node', 'Can edit the node'),
-                    ('admin_node', 'Can manage the node')
-                )
-            },
-        ),
-        migrations.AlterModelOptions(
-            name='adminprofile',
-            options={'permissions': (('mark_spam', 'Can mark comments, projects and registrations as spam'),
-                                     ('view_spam', 'Can view nodes, comments, and projects marked as spam'),
-                                     ('view_metrics', 'Can view metrics on the OSF Admin app'),
-                                     ('view_desk', 'Can view details about Desk users'),
-                                     ('delete_preprintrequest', 'Can delete preprints withdrawal requests'),
-                                     ('change_preprintrequest', 'Can update preprints withdrawal requests'))},
-        ),
-        migrations.AlterModelOptions(
-            name='basefilenode',
-            options={'base_manager_name': 'objects'},
-        ),
-        migrations.AlterModelOptions(
-            name='draftregistration',
-            options={'permissions': (('read_draft_registration', 'Can read the draft registration'),
-                                     ('write_draft_registration', 'Can edit the draft registration'),
-                                     ('admin_draft_registration', 'Can manage the draft registration'))},
-        ),
-        migrations.AlterModelOptions(
-            name='draftregistrationlog',
-            options={'get_latest_by': 'created', 'ordering': ['-created']},
-        ),
-        migrations.AlterModelOptions(
-            name='fileversion',
-            options={'ordering': ('-created',)},
-        ),
-        migrations.AlterModelOptions(
-            name='institution',
-            options={
-                'permissions': (('view_institutional_metrics', 'Can access metrics endpoints for their Institution'),)},
-        ),
-        migrations.AlterModelOptions(
-            name='node',
-            options={},
-        ),
-        migrations.AlterModelOptions(
-            name='osfuser',
-            options={},
-        ),
-        migrations.AlterModelOptions(
-            name='subject',
-            options={'base_manager_name': 'objects'},
-        ),
-        migrations.AlterModelOptions(
-            name='tag',
-            options={'ordering': ('name',)},
-        ),
         migrations.AddField(
             model_name='abstractnode',
             name='subjects',
             field=models.ManyToManyField(blank=True, related_name='abstractnodes', to='osf.Subject'),
-        ),
-        migrations.AddField(
-            model_name='apioauth2application',
-            name='created',
-            field=django_extensions.db.fields.CreationDateTimeField(auto_now_add=True,
-                                                                    default=django.utils.timezone.now,
-                                                                    verbose_name='created'),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name='apioauth2application',
-            name='modified',
-            field=django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified'),
-        ),
-        migrations.AddField(
-            model_name='apioauth2personaltoken',
-            name='created',
-            field=django_extensions.db.fields.CreationDateTimeField(auto_now_add=True,
-                                                                    default=django.utils.timezone.now,
-                                                                    verbose_name='created'),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name='apioauth2personaltoken',
-            name='modified',
-            field=django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified'),
-        ),
-        migrations.AddField(
-            model_name='apioauth2scope',
-            name='created',
-            field=django_extensions.db.fields.CreationDateTimeField(auto_now_add=True,
-                                                                    default=django.utils.timezone.now,
-                                                                    verbose_name='created'),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name='apioauth2scope',
-            name='is_public',
-            field=models.BooleanField(db_index=True, default=True),
-        ),
-        migrations.AddField(
-            model_name='apioauth2scope',
-            name='modified',
-            field=django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified'),
-        ),
-        migrations.AddField(
-            model_name='archivejob',
-            name='created',
-            field=django_extensions.db.fields.CreationDateTimeField(auto_now_add=True,
-                                                                    default=django.utils.timezone.now,
-                                                                    verbose_name='created'),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name='archivejob',
-            name='modified',
-            field=django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified'),
-        ),
-        migrations.AddField(
-            model_name='archivetarget',
-            name='created',
-            field=django_extensions.db.fields.CreationDateTimeField(auto_now_add=True,
-                                                                    default=django.utils.timezone.now,
-                                                                    verbose_name='created'),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name='archivetarget',
-            name='modified',
-            field=django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified'),
-        ),
-        migrations.AddField(
-            model_name='basefilenode',
-            name='created',
-            field=django_extensions.db.fields.CreationDateTimeField(auto_now_add=True,
-                                                                    default=django.utils.timezone.now,
-                                                                    verbose_name='created'),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name='basefilenode',
-            name='deleted',
-            field=osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True),
-        ),
-        migrations.AddField(
-            model_name='basefilenode',
-            name='is_root',
-            field=models.BooleanField(blank=True, null=True),
-        ),
-        migrations.AddField(
-            model_name='basefilenode',
-            name='modified',
-            field=django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified'),
-        ),
-        migrations.AddField(
-            model_name='basefilenode',
-            name='purged',
-            field=osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True),
-        ),
-        migrations.AddField(
-            model_name='basefilenode',
-            name='target_content_type',
-            field=models.ForeignKey(blank=True, default=None, null=True, on_delete=django.db.models.deletion.CASCADE,
-                                    to='contenttypes.contenttype'),
-        ),
-        migrations.AddField(
-            model_name='basefilenode',
-            name='target_object_id',
-            field=models.PositiveIntegerField(blank=True, default=None, null=True),
-        ),
-        migrations.AddField(
-            model_name='blacklistguid',
-            name='created',
-            field=django_extensions.db.fields.CreationDateTimeField(auto_now_add=True,
-                                                                    default=django.utils.timezone.now,
-                                                                    verbose_name='created'),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name='blacklistguid',
-            name='modified',
-            field=django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified'),
-        ),
-        migrations.AddField(
-            model_name='citationstyle',
-            name='created',
-            field=django_extensions.db.fields.CreationDateTimeField(auto_now_add=True,
-                                                                    default=django.utils.timezone.now,
-                                                                    verbose_name='created'),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name='citationstyle',
-            name='has_bibliography',
-            field=models.BooleanField(default=False),
-        ),
-        migrations.AddField(
-            model_name='citationstyle',
-            name='modified',
-            field=django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified'),
-        ),
-        migrations.AddField(
-            model_name='citationstyle',
-            name='parent_style',
-            field=models.CharField(blank=True, max_length=255, null=True),
-        ),
-        migrations.AddField(
-            model_name='conference',
-            name='auto_check_spam',
-            field=models.BooleanField(default=True),
-        ),
-        migrations.AddField(
-            model_name='conference',
-            name='created',
-            field=django_extensions.db.fields.CreationDateTimeField(auto_now_add=True,
-                                                                    default=django.utils.timezone.now,
-                                                                    verbose_name='created'),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name='conference',
-            name='modified',
-            field=django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified'),
-        ),
-        migrations.AddField(
-            model_name='conference',
-            name='submissions',
-            field=models.ManyToManyField(related_name='conferences', to='osf.AbstractNode'),
-        ),
-        migrations.AddField(
-            model_name='draftregistration',
-            name='affiliated_institutions',
-            field=models.ManyToManyField(related_name='draft_registrations', to='osf.Institution'),
-        ),
-        migrations.AddField(
-            model_name='draftregistration',
-            name='category',
-            field=models.CharField(blank=True, choices=[('analysis', 'Analysis'), ('communication', 'Communication'),
-                                                        ('data', 'Data'), ('hypothesis', 'Hypothesis'),
-                                                        ('instrumentation', 'Instrumentation'),
-                                                        ('methods and measures', 'Methods and Measures'),
-                                                        ('procedure', 'Procedure'), ('project', 'Project'),
-                                                        ('software', 'Software'), ('other', 'Other'),
-                                                        ('', 'Uncategorized')], default='', max_length=255),
-        ),
-        migrations.AddField(
-            model_name='draftregistration',
-            name='created',
-            field=django_extensions.db.fields.CreationDateTimeField(auto_now_add=True,
-                                                                    default=django.utils.timezone.now,
-                                                                    verbose_name='created'),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name='draftregistration',
-            name='deleted',
-            field=osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True),
-        ),
-        migrations.AddField(
-            model_name='draftregistration',
-            name='description',
-            field=models.TextField(blank=True, default=''),
-        ),
-        migrations.AddField(
-            model_name='draftregistration',
-            name='last_logged',
-            field=osf.utils.fields.NonNaiveDateTimeField(blank=True, db_index=True, default=django.utils.timezone.now,
-                                                         null=True),
-        ),
-        migrations.AddField(
-            model_name='draftregistration',
-            name='modified',
-            field=django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified'),
-        ),
-        migrations.AddField(
-            model_name='draftregistration',
-            name='node_license',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
-                                    related_name='draft_registrations', to='osf.nodelicenserecord'),
-        ),
-        migrations.AddField(
-            model_name='draftregistration',
-            name='registration_responses',
-            field=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict,
-                                                                            encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder),
-        ),
-        migrations.AddField(
-            model_name='draftregistration',
-            name='registration_responses_migrated',
-            field=models.BooleanField(db_index=True, default=True, null=True),
-        ),
-        migrations.AddField(
-            model_name='draftregistration',
-            name='subjects',
-            field=models.ManyToManyField(blank=True, related_name='draftregistrations', to='osf.Subject'),
-        ),
-        migrations.AddField(
-            model_name='draftregistration',
-            name='tags',
-            field=models.ManyToManyField(related_name='draftregistration_tagged', to='osf.Tag'),
-        ),
-        migrations.AddField(
-            model_name='draftregistration',
-            name='title',
-            field=models.TextField(blank=True, default='', validators=[osf.models.validators.validate_title]),
         ),
         migrations.AddField(
             model_name='draftregistrationlog',
@@ -2917,37 +2730,6 @@ class Migration(migrations.Migration):
             field=django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified'),
         ),
         migrations.AddField(
-            model_name='subject',
-            name='bepress_subject',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE,
-                                    related_name='aliases', to='osf.subject'),
-        ),
-        migrations.AddField(
-            model_name='subject',
-            name='created',
-            field=django_extensions.db.fields.CreationDateTimeField(auto_now_add=True,
-                                                                    default=django.utils.timezone.now,
-                                                                    verbose_name='created'),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name='subject',
-            name='highlighted',
-            field=models.BooleanField(db_index=True, default=False),
-        ),
-        migrations.AddField(
-            model_name='subject',
-            name='modified',
-            field=django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified'),
-        ),
-        migrations.AddField(
-            model_name='subject',
-            name='parent',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
-                                    related_name='children', to='osf.subject',
-                                    validators=[osf.models.validators.validate_subject_hierarchy_length]),
-        ),
-        migrations.AddField(
             model_name='tag',
             name='created',
             field=django_extensions.db.fields.CreationDateTimeField(auto_now_add=True,
@@ -2959,49 +2741,11 @@ class Migration(migrations.Migration):
             model_name='tag',
             name='modified',
             field=django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified'),
-        ),
-        migrations.AddField(
-            model_name='useractivitycounter',
-            name='created',
-            field=django_extensions.db.fields.CreationDateTimeField(auto_now_add=True,
-                                                                    default=django.utils.timezone.now,
-                                                                    verbose_name='created'),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name='useractivitycounter',
-            name='modified',
-            field=django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified'),
-        ),
-        migrations.AlterField(
-            model_name='abstractnode',
-            name='creator',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
-                                    related_name='nodes_created', to=settings.AUTH_USER_MODEL),
-        ),
-        migrations.AlterField(
-            model_name='abstractnode',
-            name='registered_meta',
-            field=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict,
-                                                                            encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder),
-        ),
-        migrations.AlterField(
-            model_name='abstractnode',
-            name='type',
-            field=models.CharField(
-                choices=[('osf.node', 'node'), ('osf.draftnode', 'draft node'), ('osf.registration', 'registration'),
-                         ('osf.quickfilesnode', 'quick files node')], db_index=True, max_length=255),
         ),
         migrations.AddField(
             model_name='apioauth2personaltoken',
             name='scopes',
             field=models.ManyToManyField(related_name='tokens', to='osf.ApiOAuth2Scope'),
-        ),
-        migrations.AlterField(
-            model_name='basefilenode',
-            name='name',
-            field=models.TextField(blank=True, default='default name'),
-            preserve_default=False,
         ),
         migrations.AlterField(
             model_name='basefilenode',
@@ -3027,22 +2771,6 @@ class Migration(migrations.Migration):
                          ('osf.owncloudfolder', 'owncloud folder'), ('osf.owncloudfile', 'owncloud file'),
                          ('osf.s3filenode', 's3 file node'), ('osf.s3folder', 's3 folder'), ('osf.s3file', 's3 file')],
                 db_index=True, max_length=255),
-        ),
-        migrations.AlterField(
-            model_name='draftregistration',
-            name='branched_from',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE,
-                                    related_name='registered_draft', to='osf.abstractnode'),
-        ),
-        migrations.AlterField(
-            model_name='draftregistration',
-            name='datetime_initiated',
-            field=osf.utils.fields.NonNaiveDateTimeField(auto_now_add=True),
-        ),
-        migrations.AlterField(
-            model_name='draftregistration',
-            name='datetime_updated',
-            field=osf.utils.fields.NonNaiveDateTimeField(auto_now=True),
         ),
         migrations.AlterField(
             model_name='draftregistrationlog',
@@ -3141,11 +2869,6 @@ class Migration(migrations.Migration):
                                             ('rejected', 'Rejected'), ('moderator_rejected', 'ModeratorRejected'),
                                             ('completed', 'Completed'), ('in_progress', 'InProgress')],
                                    default='unapproved', max_length=255),
-        ),
-        migrations.AlterField(
-            model_name='subject',
-            name='text',
-            field=models.CharField(db_index=True, max_length=256),
         ),
         migrations.AlterIndexTogether(
             name='basefilenode',
@@ -4092,6 +3815,11 @@ class Migration(migrations.Migration):
             ],
             bases=(models.Model, osf.models.base.QuerySetExplainMixin),
         ),
+        migrations.AddField(
+            model_name='collection',
+            name='guid_links',
+            field=models.ManyToManyField(related_name='collections', through='osf.CollectionSubmission', to='osf.Guid'),
+        ),
         migrations.AlterOrderWithRespectTo(
             name='collectionsubmission',
             order_with_respect_to='collection',
@@ -4099,11 +3827,6 @@ class Migration(migrations.Migration):
         migrations.AlterUniqueTogether(
             name='collectionsubmission',
             unique_together={('collection', 'guid')},
-        ),
-        migrations.AddField(
-            model_name='collection',
-            name='guid_links',
-            field=models.ManyToManyField(related_name='collections', through='osf.CollectionSubmission', to='osf.Guid'),
         ),
         migrations.RunSQL(
             [
