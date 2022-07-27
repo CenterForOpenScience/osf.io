@@ -17,7 +17,7 @@ logger = logging.getLogger(__file__)
 OSF_PREPRINTS_PROVIDER_DATA = {
     '_id': 'osf',
     'name': 'Open Science Framework',
-    'domain': settings.DOMAIN,
+    'domain': osf_settings.DOMAIN,
     'share_publish_type': 'Preprint',
     'domain_redirect_enabled': False,
 }
@@ -25,7 +25,7 @@ OSF_PREPRINTS_PROVIDER_DATA = {
 OSF_REGISTRIES_PROVIDER_DATA = {
     '_id': 'osf',
     'name': 'OSF Registries',
-    'domain': settings.DOMAIN,
+    'domain': osf_settings.DOMAIN,
     'share_publish_type': 'Registration',
     'domain_redirect_enabled': False,
 }
