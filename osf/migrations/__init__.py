@@ -2,14 +2,15 @@
 import sys
 import os
 import json
-import logging
-
-from django.db.utils import ProgrammingError
 from website.settings import APP_PATH
 
-from django.apps import apps
 from website import settings
 
+
+import logging
+
+from django.apps import apps
+from django.db.utils import ProgrammingError
 from django.core.management import call_command
 
 from addons.osfstorage.settings import DEFAULT_REGION_ID, DEFAULT_REGION_NAME

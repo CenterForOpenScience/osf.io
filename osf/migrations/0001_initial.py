@@ -2365,6 +2365,12 @@ class Migration(migrations.Migration):
             },
             bases=(models.Model, osf.models.base.QuerySetExplainMixin),
         ),
+        migrations.AddField(
+            model_name='reviewaction',
+            name='target',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='actions',
+                                    to='osf.preprint'),
+        ),
         migrations.CreateModel(
             name='ScheduledBanner',
             fields=[
@@ -2620,12 +2626,6 @@ class Migration(migrations.Migration):
             name='creator',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='+',
                                     to=settings.AUTH_USER_MODEL),
-        ),
-        migrations.AddField(
-            model_name='reviewaction',
-            name='target',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='actions',
-                                    to='osf.preprint'),
         ),
         migrations.AddField(
             model_name='registrationschemablock',
@@ -3502,5 +3502,114 @@ class Migration(migrations.Migration):
         migrations.AddIndex(
             model_name='abstractnode',
             index=models.Index(fields=['-registered_date'], name='registered_date_index'),
+        ),
+        migrations.CreateModel(
+            name='Outcome',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('created',
+                 django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
+                ('modified',
+                 django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
+                ('_id', models.CharField(db_index=True, default=osf.models.base.generate_object_id, max_length=24,
+                                         unique=True)),
+                ('title', models.TextField(validators=[osf.models.validators.validate_title])),
+                ('description', models.TextField(blank=True, default='')),
+                ('category', models.CharField(blank=True,
+                                              choices=[('analysis', 'Analysis'), ('communication', 'Communication'),
+                                                       ('data', 'Data'), ('hypothesis', 'Hypothesis'),
+                                                       ('instrumentation', 'Instrumentation'),
+                                                       ('methods and measures', 'Methods and Measures'),
+                                                       ('procedure', 'Procedure'), ('project', 'Project'),
+                                                       ('software', 'Software'), ('other', 'Other'),
+                                                       ('', 'Uncategorized')], default='', max_length=255)),
+                ('affiliated_institutions', models.ManyToManyField(related_name='outcomes', to='osf.Institution')),
+            ],
+            options={
+                'abstract': False,
+            },
+            bases=(models.Model, osf.models.base.QuerySetExplainMixin),
+        ),
+        migrations.CreateModel(
+            name='OutcomeArtifact',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('created',
+                 django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
+                ('modified',
+                 django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
+                ('_id', models.CharField(db_index=True, default=osf.models.base.generate_object_id, max_length=24,
+                                         unique=True)),
+                ('artifact_type', models.IntegerField(
+                    choices=[(0, 'UNDEFINED'), (1, 'DATA'), (11, 'CODE'), (21, 'MATERIALS'), (31, 'PAPERS'),
+                             (41, 'SUPPLEMENTS'), (1001, 'PRIMARY')], default=osf.utils.outcomes.ArtifactTypes(0))),
+                ('title', models.TextField()),
+                ('description', models.TextField()),
+                ('identifier', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE,
+                                                 related_name='artifact_metadata', to='osf.Identifier')),
+                ('outcome',
+                 models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='artifact_metadata',
+                                   to='osf.Outcome')),
+            ],
+            options={
+                'ordering': ['artifact_type', 'title'],
+            },
+            bases=(models.Model, osf.models.base.QuerySetExplainMixin),
+        ),
+        migrations.AddField(
+            model_name='outcome',
+            name='artifacts',
+            field=models.ManyToManyField(through='osf.OutcomeArtifact', to='osf.Identifier'),
+        ),
+        migrations.AddField(
+            model_name='outcome',
+            name='node_license',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
+                                    related_name='outcomes', to='osf.NodeLicenseRecord'),
+        ),
+        migrations.AddField(
+            model_name='outcome',
+            name='subjects',
+            field=models.ManyToManyField(blank=True, related_name='outcomes', to='osf.Subject'),
+        ),
+        migrations.AddField(
+            model_name='outcome',
+            name='tags',
+            field=models.ManyToManyField(related_name='outcome_tagged', to='osf.Tag'),
+        ),
+        migrations.AddIndex(
+            model_name='outcomeartifact',
+            index=models.Index(fields=['outcome', 'artifact_type'], name='osf_outcome_outcome_a62f5c_idx'),
+        ),
+        migrations.AlterUniqueTogether(
+            name='outcomeartifact',
+            unique_together=set([('outcome', 'identifier', 'artifact_type')]),
+        ),
+        migrations.AddField(
+            model_name='outcomeartifact',
+            name='deleted',
+            field=osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True),
+        ),
+        migrations.AddField(
+            model_name='outcomeartifact',
+            name='finalized',
+            field=models.BooleanField(default=False),
+        ),
+        migrations.AlterField(
+            model_name='outcomeartifact',
+            name='description',
+            field=models.TextField(blank=True),
+        ),
+        migrations.AlterField(
+            model_name='outcomeartifact',
+            name='title',
+            field=models.TextField(blank=True),
+        ),
+        migrations.AlterField(
+            model_name='outcomeartifact',
+            name='artifact_type',
+            field=models.IntegerField(
+                choices=[(0, 'UNDEFINED'), (1, 'DATA'), (11, 'ANALYTIC_CODE'), (21, 'MATERIALS'), (31, 'PAPERS'),
+                         (41, 'SUPPLEMENTS'), (1001, 'PRIMARY')], default=osf.utils.outcomes.ArtifactTypes(0)),
         ),
     ]
