@@ -2,7 +2,7 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from framework.auth.oauth_scopes import CoreScopes
 
-from osf.models import Registration, OSFUser, RegistrationProvider
+from osf.models import Registration, OSFUser, RegistrationProvider, OutcomeArtifact
 from osf.utils.permissions import WRITE_NODE
 from osf.utils.workflows import ApprovalStates
 
@@ -82,6 +82,8 @@ from api.providers.permissions import MustBeModerator
 from api.providers.views import ProviderMixin
 from api.registrations import annotations
 
+from api.resources.permissions import RegistrationResourceListPermission
+from api.resources.serializers import ResourceSerializer
 from api.schema_responses import annotations as schema_response_annotations
 from api.schema_responses.permissions import (
     MODERATOR_VISIBLE_STATES,
@@ -927,3 +929,37 @@ class RegistrationSchemaResponseList(JSONAPIBaseView, generics.ListAPIView, List
 
     def get_queryset(self):
         return self.get_queryset_from_request()
+
+
+class RegistrationResourceList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, RegistrationMixin):
+    permission_classes = (
+        RegistrationResourceListPermission,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.READ_REGISTRATION_RESOURCES]
+    required_write_scopes = [CoreScopes.WRITE_REGISTRATION_RESOURCES]
+
+    view_category = 'registrations'
+    view_name = 'resource-list'
+
+    serializer_class = ResourceSerializer
+
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
+
+    def get_node(self):
+        return super().get_node(check_object_permissions=False)
+
+    def get_default_queryset(self):
+        root_registration = self.get_node()
+        return OutcomeArtifact.objects.for_registration(root_registration).filter(
+            finalized=True,
+            deleted__isnull=True,
+        )
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+    def get_permissions_proxy(self):
+        return self.get_node()
