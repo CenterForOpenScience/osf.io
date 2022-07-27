@@ -311,3 +311,13 @@ class NonDescendantNodeError(APIException):
 class PermanentlyMovedError(APIException):
     status_code = 301
     default_detail = _('This object has permanently moved.')
+
+
+class EnumFieldMemberError(JSONAPIException):
+
+    def __init__(self, enum_class, bad_value, source=None, meta=None):
+        choices = [entry.name.lower() for entry in enum_class]
+        detail = (
+            f'"{bad_value}" is not a supported value for this field. Valid options are: {choices}'
+        )
+        super().__init__(detail=detail, source=source, meta=meta)

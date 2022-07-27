@@ -1,6 +1,6 @@
 from rest_framework import serializers as ser
 
-from api.base.exceptions import Conflict
+from api.base.exceptions import Conflict, JSONAPIException
 from api.base.serializers import (
     EnumField,
     JSONAPISerializer,
@@ -81,21 +81,31 @@ class ResourceSerializer(JSONAPISerializer):
         return OutcomeArtifact.objects.create(outcome=root_outcome)
 
     def update(self, instance, validated_data):
-        updated_title = validated_data.get('title')
-        if updated_title is not None:
-            instance.title = updated_title
+        updated_artifact_type = validated_data.get('artifact_type')
+        if updated_artifact_type is not None and updated_artifact_type != instance.artifact_type:
+            if updated_artifact_type == ArtifactTypes.UNDEFINED:
+                raise JSONAPIException(
+                    detail=(
+                        f'Resource with id [{instance._id}] currently has a resource_type of '
+                        f'"{instance.artifact_type}", cannot retrun resource_type to "undefined".'
+                    ),
+                    source={'pointer': '/data/attributes/resource_type'},
+                )
+            instance.artifact_type = updated_artifact_type
+
+        updated_pid = validated_data.get('pid')
+        if updated_pid is not None and updated_pid != instance.pid:
+            try:
+                instance.update_identifier(updated_pid, api_request=self.context['request'])
+            except NoPIDError:
+                raise JSONAPIException(
+                    detail=f'Cannot remove PID for Resource with id [{instance._id}].',
+                    source={'pointer': '/data/attributes/pid'},
+                )
 
         updated_description = validated_data.get('description')
         if updated_description is not None:
             instance.description = updated_description
-
-        updated_artifact_type = validated_data.get('artifact_type')
-        if updated_artifact_type:  # Disallow resetting artifact_type to UNDEFINED
-            instance.artifact_type = updated_artifact_type
-
-        updated_pid = validated_data.get('pid')
-        if updated_pid and updated_pid != instance.pid:  # Disallow resetting pid to ''
-            instance.update_identifier(updated_pid, api_request=self.context['request'])
 
         finalized = validated_data.get('finalized')
         if finalized is not None:

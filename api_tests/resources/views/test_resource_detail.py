@@ -245,7 +245,7 @@ class TestResourceDetailPATCHBehavior:
         assert test_artifact.artifact_type == ArtifactTypes.SUPPLEMENTS
 
     @pytest.mark.parametrize('previously_finalized', [True, False])
-    def test_patch_supports_empty_string(self, app, previously_finalized):
+    def test_patch_description_supports_empty_string(self, app, previously_finalized):
         test_artifact, test_auth, _ = configure_test_preconditions()
         test_artifact.description = 'Long placeholder'
         test_artifact.finalized = previously_finalized
@@ -259,7 +259,46 @@ class TestResourceDetailPATCHBehavior:
         test_artifact.refresh_from_db()
         assert not test_artifact.description
 
-    def test_patch_pid__updates_identifier(self, app):
+    def test_patch__resource_type(self, app):
+        test_artifact, test_auth, _ = configure_test_preconditions()
+        assert test_artifact.artifact_type == ArtifactTypes.DATA
+
+        payload = make_patch_payload(test_artifact, new_resource_type=ArtifactTypes.ANALYTIC_CODE)
+        app.patch_json_api(make_api_url(test_artifact), payload, auth=test_auth)
+
+        test_artifact.refresh_from_db()
+        assert test_artifact.artifact_type == ArtifactTypes.ANALYTIC_CODE
+
+    def test_patch__resource_type__invalid_resource_type(self, app):
+        test_artifact, test_auth, _ = configure_test_preconditions()
+
+        payload = make_patch_payload(test_artifact, new_resource_type=ArtifactTypes.ANALYTIC_CODE)
+        payload['data']['attributes']['resource_type'] = 'obviously bad'
+
+        resp = app.patch_json_api(make_api_url(test_artifact), payload, auth=test_auth, expect_errors=True)
+        assert resp.status_code == 400
+        assert resp.json['errors'][0]['source']['pointer'] == '/data/attributes/resource_type'
+
+    def test_patch__resource_type__undefined__allowed_if_not_previously_set(self, app):
+        test_artifact, test_auth, _ = configure_test_preconditions()
+        test_artifact.artifact_type = ArtifactTypes.UNDEFINED
+        test_artifact.save()
+
+        payload = make_patch_payload(test_artifact, new_resource_type=ArtifactTypes.UNDEFINED)
+        resp = app.patch_json_api(make_api_url(test_artifact), payload, auth=test_auth)
+
+        assert resp.status_code == 200
+
+    def test_patch__resource_type__undefined__is_error_if_previously_set(self, app):
+        test_artifact, test_auth, _ = configure_test_preconditions()
+
+        payload = make_patch_payload(test_artifact, new_resource_type=ArtifactTypes.UNDEFINED)
+        resp = app.patch_json_api(make_api_url(test_artifact), payload, auth=test_auth, expect_errors=True)
+
+        assert resp.status_code == 400
+        assert resp.json['errors'][0]['source']['pointer'] == '/data/attributes/resource_type'
+
+    def test_patch__pid__updates_identifier(self, app):
         # For futher nuances of update behavior see osf_tests/test_outcomes
         test_artifact, test_auth, _ = configure_test_preconditions()
         original_identifier = test_artifact.identifier
@@ -271,7 +310,7 @@ class TestResourceDetailPATCHBehavior:
         assert test_artifact.identifier != original_identifier
         assert test_artifact.identifier.value == 'updated pid'
 
-    def test_patch_pid__same_pid_no_change(self, app):
+    def test_patch__pid__same_pid_no_change(self, app):
         test_artifact, test_auth, _ = configure_test_preconditions()
         original_identifier = test_artifact.identifier
 
@@ -282,7 +321,25 @@ class TestResourceDetailPATCHBehavior:
         assert test_artifact.identifier == original_identifier
         assert test_artifact.identifier.value == original_identifier.value
 
-    def test_patch_pid__adds_log_if_finalized(self, app):
+    def test_patch__pid__empty_string__allowed_if_not_previously_set(self, app):
+        test_artifact, test_auth, _ = configure_test_preconditions()
+        identifier = test_artifact.identifier
+        identifier.value = ''
+        identifier.save()
+
+        payload = make_patch_payload(test_artifact, new_pid='')
+        resp = app.patch_json_api(make_api_url(test_artifact), payload, auth=test_auth, expect_errors=True)
+        assert resp.status_code == 200
+
+    def test_patch__pid__empty_string__is_error_if_previously_set(self, app):
+        test_artifact, test_auth, _ = configure_test_preconditions()
+
+        payload = make_patch_payload(test_artifact, new_pid='')
+        resp = app.patch_json_api(make_api_url(test_artifact), payload, auth=test_auth, expect_errors=True)
+        assert resp.status_code == 400
+        assert resp.json['errors'][0]['source']['pointer'] == '/data/attributes/pid'
+
+    def test_patch__pid__adds_log_if_finalized(self, app):
         test_artifact, test_auth, registration = configure_test_preconditions()
         assert not registration.logs.filter(action=NodeLog.RESOURCE_UPDATED).exists()
 
@@ -300,10 +357,10 @@ class TestResourceDetailPATCHBehavior:
         assert resource_updated_log.params['new_identifier'] == updated_pid
 
     @pytest.mark.xfail(reason='Placeholder, not yet implemented')
-    def test_patch_pid__invalid(self, app):
+    def test_patch__pid__invalid(self, app):
         assert False
 
-    def test_patch_finalized__valid_resource(self, app):
+    def test_patch__finalized__valid_resource(self, app):
         test_artifact, test_auth, _ = configure_test_preconditions()
         assert test_artifact.identifier.value
         assert test_artifact.artifact_type
@@ -314,7 +371,25 @@ class TestResourceDetailPATCHBehavior:
         test_artifact.refresh_from_db()
         assert test_artifact.finalized
 
-    def test_patch_finalized__cannot_revert(self, app):
+    def test_patch__finalized__can_update_and_finalize(self, app):
+        test_artifact, test_auth, _ = configure_test_preconditions()
+
+        payload = make_patch_payload(
+            test_artifact,
+            new_description='Final Description',
+            new_resource_type=ArtifactTypes.MATERIALS,
+            new_pid='Final PID',
+            is_finalized=True
+        )
+        app.patch_json_api(make_api_url(test_artifact), payload, auth=test_auth)
+
+        test_artifact.refresh_from_db()
+        assert test_artifact.description == 'Final Description'
+        assert test_artifact.artifact_type == ArtifactTypes.MATERIALS
+        assert test_artifact.identifier.value == 'Final PID'
+        assert test_artifact.finalized
+
+    def test_patch__finalized__cannot_revert(self, app):
         test_artifact, test_auth, _ = configure_test_preconditions()
         test_artifact.finalized = True
         test_artifact.save()
@@ -334,7 +409,7 @@ class TestResourceDetailPATCHBehavior:
             (True, True, '/data/attributes/'),
         ]
     )
-    def test_patch_finalized__missing_required_fields(
+    def test_patch__finalized__missing_required_fields(
         self, app, missing_pid, missing_resource_type, expected_error_source
     ):
         test_artifact, test_auth, _ = configure_test_preconditions()
@@ -354,7 +429,7 @@ class TestResourceDetailPATCHBehavior:
         error_info = resp.json['errors'][0]
         assert error_info['source']['pointer'] == expected_error_source
 
-    def test_patch_finalized__patch_is_atomic(self, app):
+    def test_patch__finalized__patch_is_atomic(self, app):
         test_artifact, test_auth, _ = configure_test_preconditions()
         test_artifact.artifact_type = ArtifactTypes.UNDEFINED
         test_artifact.save()
