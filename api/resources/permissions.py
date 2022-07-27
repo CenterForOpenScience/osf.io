@@ -57,3 +57,11 @@ class ResourceDetailPermission(ResourcesPermission, permissions.BasePermission):
     '''
     # TODO(ENG-3898, ENG-3899) Implement PATCH and DELETE
     REQUIRED_PERMISSIONS = {'GET': None, 'PATCH': 'write', 'DELETE': 'admin'}
+
+
+class RegistrationResourceListPermission(ResourcesPermission, permissions.BasePermission):
+    '''Permissions for the Registration's ResourceList relationship endpoint.
+
+    RegistrationResourceList only supports GET
+    '''
+    REQUIRED_PERMISSIONS = {'GET': None}
