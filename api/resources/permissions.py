@@ -46,7 +46,6 @@ class ResourceListPermission(ResourcesPermission, permissions.BasePermission):
 
     ResourceList only supports POST
     '''
-
     REQUIRED_PERMISSIONS = {'POST': 'write'}
 
 

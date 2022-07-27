@@ -414,7 +414,7 @@ class TestResourceDetailDELETEPermissions:
     @pytest.mark.parametrize('registration_state', [RegStates.ACCEPTED, RegStates.EMBARGO])
     def test_status_code__admin(self, app, registration_state):
         test_artifact, test_auth, _ = configure_test_preconditions(
-            registration_state=registration_state, user_role=UserRoles.ADMIN
+            registration_state=registration_state, user_role=UserRoles.ADMIN_USER
         )
         resp = app.delete_json_api(make_api_url(test_artifact), auth=test_auth, expect_errors=True)
         assert resp.status_code == 204
