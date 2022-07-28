@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import time
 import datetime
 import logging
 
 from django.core.management.base import BaseCommand
 from osf.models import Identifier
-from framework.exceptions import HTTPError
-from django.utils import timezone
 
 from framework.celery_tasks import app
 from framework.celery_tasks.handlers import enqueue_task
@@ -18,7 +15,6 @@ logger = logging.getLogger(__name__)
 @app.task(name='osf.management.commands.sync_doi_metadata', max_retries=5, default_retry_delay=60)
 def sync_identifier_doi(identifier):
     identifier.referent.request_identifier_update('doi')
-    identifier.modified = timezone.now()
     identifier.save()
     logger.info(f' doi update for {identifier.value} complete')
 
@@ -61,6 +57,7 @@ class Command(BaseCommand):
             '-m',
             type=lambda s: datetime.datetime.strptime(s, '%Y-%m-%d %H:%M:%S.%f'),
             help='include all dois updated before this date.',
+            required=True
         )
 
     def handle(self, *args, **options):
