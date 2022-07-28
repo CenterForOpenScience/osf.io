@@ -145,7 +145,7 @@ class ResourceSerializer(JSONAPISerializer):
         raise Conflict(
             detail=(
                 f'Cannot PATCH `finalized: true` for Resource with id [{instance._id}] '
-                f'until the following  required fields are populated {error_sources}.'
+                f'until the following required fields are populated {error_sources}.'
             ),
             source={'pointer': source},
         )
