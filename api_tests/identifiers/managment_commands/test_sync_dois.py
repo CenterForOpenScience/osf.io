@@ -12,9 +12,6 @@ from osf_tests.factories import (
 from website import settings
 from website.identifiers.clients import CrossRefClient
 
-from framework.celery_tasks import handlers as celery_task_handlers
-from framework.flask import add_handlers
-
 
 @pytest.mark.django_db
 class TestSyncDOIs:
@@ -51,8 +48,6 @@ class TestSyncDOIs:
 
     @pytest.mark.enable_enqueue_task
     def test_doi_synced_datacite(self, app, registration, registration_identifier, mock_datacite):
-        add_handlers(app, celery_task_handlers.handlers)
-
         assert registration_identifier.modified.date() < datetime.datetime.now().date()
 
         call_command('sync_doi_metadata', f'-m={datetime.datetime.now()}')
@@ -66,8 +61,6 @@ class TestSyncDOIs:
 
     @pytest.mark.enable_enqueue_task
     def test_doi_synced_crossref(self, app, preprint_identifier, mock_crossref):
-        add_handlers(app, celery_task_handlers.handlers)
-
         assert preprint_identifier.modified.date() < datetime.datetime.now().date()
 
         call_command('sync_doi_metadata', f'-m={datetime.datetime.now()}')
