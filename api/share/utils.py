@@ -306,7 +306,7 @@ def serialize_registration(registration):
             'registration_type': registration.registered_schema.first().name if registration.registered_schema.exists() else None,
             'justification': registration.retraction.justification if registration.retraction else None,
             'withdrawn': registration.is_retracted,
-            'open_badges': _check_registration_open_practice_badges(registration)
+            'open_badges': _check_registration_open_practice_badges(registration),
         },
     )
 
