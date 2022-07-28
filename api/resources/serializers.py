@@ -87,7 +87,7 @@ class ResourceSerializer(JSONAPISerializer):
                 raise JSONAPIException(
                     detail=(
                         f'Resource with id [{instance._id}] currently has a resource_type of '
-                        f'"{instance.artifact_type}", cannot retrun resource_type to "undefined".'
+                        f'"{instance.artifact_type}", cannot return resource_type to "undefined".'
                     ),
                     source={'pointer': '/data/attributes/resource_type'},
                 )
