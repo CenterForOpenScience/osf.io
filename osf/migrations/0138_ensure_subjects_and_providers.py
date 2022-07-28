@@ -96,9 +96,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(create_osf_registries, migrations.RunPython.noop),
     ] if getattr(settings, 'TEST_ENV', False) else [
-        migrations.RunPython(create_osf_preprints, migrations.RunPython.noop),
-        migrations.RunPython(create_subjects, migrations.RunPython.noop),
-        migrations.RunPython(create_osf_registries, migrations.RunPython.noop),
     ]
