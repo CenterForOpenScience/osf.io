@@ -3,8 +3,8 @@ import sys
 import logging
 
 from django.apps import apps
-from django.db.utils import ProgrammingError
 from django.core.management import call_command
+from django.db.utils import ProgrammingError
 
 from addons.osfstorage.settings import DEFAULT_REGION_ID, DEFAULT_REGION_NAME
 from api.base import settings as api_settings
@@ -13,6 +13,22 @@ from osf.utils.migrations import ensure_schemas, map_schemas_to_schemablocks
 from website import settings as osf_settings
 
 logger = logging.getLogger(__file__)
+
+OSF_PREPRINTS_PROVIDER_DATA = {
+    '_id': 'osf',
+    'name': 'Open Science Framework',
+    'domain': osf_settings.DOMAIN,
+    'share_publish_type': 'Preprint',
+    'domain_redirect_enabled': False,
+}
+
+OSF_REGISTRIES_PROVIDER_DATA = {
+    '_id': 'osf',
+    'name': 'OSF Registries',
+    'domain': osf_settings.DOMAIN,
+    'share_publish_type': 'Registration',
+    'domain_redirect_enabled': False,
+}
 
 
 # Admin group permissions
@@ -147,6 +163,37 @@ def update_waffle_flags(sender, verbosity=0, **kwargs):
 def create_cache_table(sender, verbosity=0, **kwargs):
     if getattr(sender, 'label', None) == 'osf':
         call_command('createcachetable', tablename=api_settings.CACHES[api_settings.STORAGE_USAGE_CACHE_NAME]['LOCATION'])
+
+
+def update_default_providers(sender, verbosity=0, **kwargs):
+    if getattr(sender, 'label', None) == 'osf':
+        if 'pytest' in sys.modules:
+            ensure_default_registration_provider()
+        else:
+            ensure_default_providers()
+
+
+def ensure_default_providers():
+    ensure_default_preprint_provider()
+    ensure_default_registration_provider()
+
+
+def ensure_default_preprint_provider():
+    PreprintProvider = apps.get_model('osf', 'PreprintProvider')
+
+    PreprintProvider.objects.update_or_create(
+        _id=OSF_PREPRINTS_PROVIDER_DATA['_id'],
+        defaults=OSF_PREPRINTS_PROVIDER_DATA
+    )
+
+
+def ensure_default_registration_provider():
+    RegistrationProvider = apps.get_model('osf', 'RegistrationProvider')
+
+    RegistrationProvider.objects.update_or_create(
+        _id=OSF_REGISTRIES_PROVIDER_DATA['_id'],
+        defaults=OSF_REGISTRIES_PROVIDER_DATA
+    )
 
 
 def add_registration_schemas(sender, verbosity=0, **kwargs):

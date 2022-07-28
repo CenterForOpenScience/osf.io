@@ -91,14 +91,15 @@ class TestBulkUploadParserValidationErrors:
 
     @pytest.fixture()
     def registration_provider(self, open_ended_schema, provider_subjects):
-        osf_provider = RegistrationProvider.load('osf')
+        provider = RegistrationProvider.get_default()
         node_license = NodeLicense.objects.get(name='No license')
-        osf_provider.default_license = node_license
-        osf_provider.licenses_acceptable.add(node_license)
-        osf_provider.schemas.add(open_ended_schema)
-        osf_provider.subjects.add(*provider_subjects)
-        osf_provider.save()
-        return osf_provider
+        provider.default_license = node_license
+        provider.licenses_acceptable.add(node_license)
+        provider.schemas.add(open_ended_schema)
+        provider.subjects.add(*provider_subjects)
+        provider.licenses_acceptable.add(NodeLicense.objects.get(name='No license'))
+        provider.save()
+        return provider
 
     @pytest.fixture()
     def question_headers(self):
