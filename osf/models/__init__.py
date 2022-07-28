@@ -55,3 +55,5 @@ from osf.models.schema_response import SchemaResponse  # noqa
 from osf.models.schema_response_block import SchemaResponseBlock  # noqa
 from osf.models.registration_bulk_upload_job import RegistrationBulkUploadJob  # noqa
 from osf.models.registration_bulk_upload_row import RegistrationBulkUploadRow  # noqa
+from osf.models.outcomes import Outcome  # noqa
+from osf.models.outcome_artifacts import OutcomeArtifact  # noqa
