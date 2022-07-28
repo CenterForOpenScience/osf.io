@@ -11,7 +11,6 @@ from osf_tests.factories import (
 
 from website import settings
 from website.identifiers.clients import CrossRefClient
-from website.app import init_app
 
 from framework.celery_tasks import handlers as celery_task_handlers
 from framework.flask import add_handlers
