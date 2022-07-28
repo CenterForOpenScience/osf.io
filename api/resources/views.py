@@ -4,7 +4,7 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import NotFound
 
 from api.base import permissions as base_permissions
-from api.base.exceptions import JSONAPIException
+from api.base.exceptions import EnumFieldMemberError, JSONAPIException
 from api.base.parsers import (
     JSONAPIMultipleRelationshipsParser,
     JSONAPIMultipleRelationshipsParserForRegularJSON,
@@ -77,3 +77,13 @@ class ResourceDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
 
     def get_permissions_proxy(self):
         return Guid.load(self.get_object().primary_resource_guid).referent
+
+    def patch(self, *args, **kwargs):
+        try:
+            return super().patch(*args, **kwargs)
+        except EnumFieldMemberError as e:
+            e.source = {'pointer': '/data/attributes/resource_type'}
+            raise e
+
+    def perform_destroy(self, instance):
+        instance.delete(api_request=self.request)

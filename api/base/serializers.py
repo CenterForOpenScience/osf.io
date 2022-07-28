@@ -15,6 +15,7 @@ from rest_framework.fields import get_attribute as get_nested_attributes
 from rest_framework.mixins import RetrieveModelMixin
 
 from api.base import utils
+from api.base.exceptions import EnumFieldMemberError
 from osf.utils import permissions as osf_permissions
 from osf.utils import sanitize
 from osf.utils import functional
@@ -2009,4 +2010,7 @@ class EnumField(ser.ChoiceField):
         return self._enum_class(value).name.lower()
 
     def to_internal_value(self, data):
-        return self._enum_class[data.upper()].value
+        try:
+            return self._enum_class[data.upper()].value
+        except KeyError:
+            raise EnumFieldMemberError(self._enum_class, data)
