@@ -4,14 +4,11 @@ import os
 import json
 from website.settings import APP_PATH
 
-from website import settings
-
-
 import logging
 
 from django.apps import apps
-from django.db.utils import ProgrammingError
 from django.core.management import call_command
+from django.db.utils import ProgrammingError
 
 from addons.osfstorage.settings import DEFAULT_REGION_ID, DEFAULT_REGION_NAME
 from osf.management.commands.manage_switch_flags import manage_waffle
@@ -23,7 +20,7 @@ logger = logging.getLogger(__file__)
 OSF_PREPRINTS_PROVIDER_DATA = {
     '_id': 'osf',
     'name': 'Open Science Framework',
-    'domain': settings.DOMAIN,
+    'domain': osf_settings.DOMAIN,
     'share_publish_type': 'Preprint',
     'domain_redirect_enabled': False,
 }
@@ -31,10 +28,11 @@ OSF_PREPRINTS_PROVIDER_DATA = {
 OSF_REGISTRIES_PROVIDER_DATA = {
     '_id': 'osf',
     'name': 'OSF Registries',
-    'domain': settings.DOMAIN,
+    'domain': osf_settings.DOMAIN,
     'share_publish_type': 'Registration',
     'domain_redirect_enabled': False,
 }
+
 
 # Admin group permissions
 def get_admin_read_permissions():
@@ -218,12 +216,6 @@ def create_cache_table(sender, verbosity=0, **kwargs):
         call_command('createcachetable')
 
 
-def update_default_providers(sender, verbosity=0, **kwargs):
-    if getattr(sender, 'label', None) == 'osf':
-        if 'pytest' in sys.modules:
-            ensure_default_registration_provider()
-
-
 def ensure_default_providers():
     ensure_default_preprint_provider()
     ensure_default_registration_provider()
@@ -245,6 +237,14 @@ def ensure_default_registration_provider():
         _id=OSF_REGISTRIES_PROVIDER_DATA['_id'],
         defaults=OSF_REGISTRIES_PROVIDER_DATA
     )
+
+
+def update_default_providers(sender, verbosity=0, **kwargs):
+    if getattr(sender, 'label', None) == 'osf':
+        if 'pytest' in sys.modules:
+            ensure_default_registration_provider()
+        else:
+            ensure_default_providers()
 
 
 def add_registration_schemas(sender, verbosity=0, **kwargs):
