@@ -79,6 +79,9 @@ class RegistrationSerializer(NodeSerializer):
     # filterable fields from the NodeSerializer
     filterable_fields = NodeSerializer.filterable_fields ^ frozenset([
         'revision_state',
+        'has_data',
+        'has_analytic_code',
+        'has_materials',
     ])
 
     ia_url = ser.URLField(read_only=True)
@@ -150,6 +153,9 @@ class RegistrationSerializer(NodeSerializer):
 
     # Populated via annnotation
     revision_state = HideIfWithdrawal(ser.CharField(read_only=True, required=False))
+    has_data = HideIfWithdrawal(ser.BooleanField(read_only=True, required=False))
+    has_analytic_code = HideIfWithdrawal(ser.BooleanField(read_only=True, required=False))
+    has_materials = HideIfWithdrawal(ser.BooleanField(read_only=True, required=False))
 
     registration_supplement = ser.SerializerMethodField()
     # Will be deprecated in favor of registration_responses
