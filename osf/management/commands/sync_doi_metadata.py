@@ -24,6 +24,7 @@ def sync_doi_metadata(modified_date, batch_size=100, dry_run=True):
         category='doi',
         deleted__isnull=True,
         modified__lte=modified_date,
+        object_id__isnull=False,
     )[:batch_size]
     logger.info(f'{"[DRY RUN]: " if dry_run else ""}'
                 f'{identifiers.count()} identifiers to mint')
