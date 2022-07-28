@@ -15,23 +15,15 @@ from framework.celery_tasks.handlers import enqueue_task
 logger = logging.getLogger(__name__)
 
 
-@app.task(name='osf.management.commands.sync_doi_metadata')
-def sync_identifier_doi(identifier, retries):
-    for i in reversed(range(retries)):
-        try:
-            identifier.referent.request_identifier_update('doi')
-            identifier.modified = timezone.now()
-            identifier.save()
-            break
-        except HTTPError as e:
-            if i < 1:
-                raise e
-            time.sleep(10)
-
+@app.task(name='osf.management.commands.sync_doi_metadata', max_retries=5, default_retry_delay=60)
+def sync_identifier_doi(identifier):
+    identifier.referent.request_identifier_update('doi')
+    identifier.modified = timezone.now()
+    identifier.save()
     logger.info(f' doi update for {identifier.value} complete')
 
 
-def sync_doi_metadata(modified_date, batch_size=100, dry_run=True, retries=4):
+def sync_doi_metadata(modified_date, batch_size=100, dry_run=True):
     identifiers = Identifier.objects.filter(
         category='doi',
         deleted__isnull=True,
@@ -42,14 +34,14 @@ def sync_doi_metadata(modified_date, batch_size=100, dry_run=True, retries=4):
 
     for identifier in identifiers:
         if not dry_run:
-            enqueue_task(sync_identifier_doi.s(identifier, retries))
+            enqueue_task(sync_identifier_doi.s(identifier))
 
         logger.info(f'{"[DRY RUN]: " if dry_run else ""}'
                     f' doi minting for {identifier.value} started')
 
 
 class Command(BaseCommand):
-    """Adds updates all crossref DOIs."""
+    """ Adds updates all DOIs, will remove metadata for DOI bearing resources that have been withdrawn. """
     def add_arguments(self, parser):
         super().add_arguments(parser)
         parser.add_argument(
