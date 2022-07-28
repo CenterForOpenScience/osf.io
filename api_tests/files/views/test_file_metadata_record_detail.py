@@ -11,6 +11,8 @@ from osf_tests.factories import (
     PreprintFactory,
 )
 
+from osf.migrations import ensure_datacite_file_schema
+
 @pytest.fixture()
 def user():
     return AuthUserFactory()
@@ -27,6 +29,10 @@ def preprint_record(user, preprint):
 
 @pytest.mark.django_db
 class TestFileMetadataRecordDetail:
+
+    @pytest.fixture(autouse=True)
+    def datacite_file_schema(self):
+        return ensure_datacite_file_schema()
 
     @pytest.fixture()
     def private_record(self, user):
@@ -99,8 +105,13 @@ class TestFileMetadataRecordDetail:
         assert res.status_code == 200
         assert res.json['data']['id'] == unpublished_preprint_record._id
 
+
 @pytest.mark.django_db
 class TestFileMetadataRecordUpdate:
+
+    @pytest.fixture(autouse=True)
+    def datacite_file_schema(self):
+        return ensure_datacite_file_schema()
 
     @pytest.fixture()
     def user_write(self):

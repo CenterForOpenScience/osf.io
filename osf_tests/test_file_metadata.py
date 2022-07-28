@@ -7,6 +7,7 @@ from framework.exceptions import PermissionsError
 from website.settings import DOI_FORMAT, DATACITE_PREFIX
 from website.project.licenses import set_license
 from osf.models import FileMetadataSchema, NodeLicense, NodeLog
+from osf.migrations import ensure_datacite_file_schema
 from osf_tests.factories import ProjectFactory, SubjectFactory, AuthUserFactory
 from osf.utils.permissions import READ
 from api_tests.utils import create_test_file
@@ -30,6 +31,10 @@ def inject_placeholder_doi(json_data):
 
 @pytest.mark.django_db
 class TestFileMetadataRecordSerializer:
+
+    @pytest.fixture(autouse=True)
+    def datacite_file_schema(self):
+        return ensure_datacite_file_schema()
 
     def test_record_created_post_save(self, node, osf_file):
         # check there's a record for every FileMetadataSchema
@@ -121,6 +126,10 @@ class TestFileMetadataRecordSerializer:
 
 @pytest.mark.django_db
 class TestFileMetadataRecord:
+
+    @pytest.fixture(autouse=True)
+    def datacite_file_schema(self):
+        return ensure_datacite_file_schema()
 
     @pytest.fixture()
     def initial_metadata(self):

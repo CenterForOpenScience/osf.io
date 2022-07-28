@@ -6,9 +6,15 @@ from osf_tests.factories import (
     AuthUserFactory,
 )
 
+from osf.migrations import ensure_datacite_file_schema
+
 
 @pytest.mark.django_db
 class TestFileMetadataSchemaDetail:
+
+    @pytest.fixture(autouse=True)
+    def datacite_file_schema(self):
+        return ensure_datacite_file_schema()
 
     @pytest.fixture()
     def user(self):
