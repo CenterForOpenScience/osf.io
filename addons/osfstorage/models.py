@@ -10,6 +10,8 @@ from django.contrib.contenttypes.models import ContentType
 from psycopg2._psycopg import AsIs
 
 from addons.base.models import BaseNodeSettings, BaseStorageAddon, BaseUserSettings
+from addons.osfstorage.models import Region
+
 from osf.utils.fields import EncryptedJSONField
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.exceptions import InvalidTagError, TagNotFoundError
@@ -304,7 +306,12 @@ class OsfStorageFile(OsfStorageFileNode, File):
         if metadata:
             version.update_metadata(metadata, save=False)
 
-        version.region = self.target.osfstorage_region
+        if getattr(self.target, '_settings_model', None):
+            osfs_settings = self.target._settings_model('osfstorage')
+            region_subquery = osfs_settings.objects.filter(owner=self.target.id).values_list('region_id', flat=True)[0]
+            version.region = Region.objects.get(id=region_subquery)
+        else:
+            version.region = self.target.region
         version._find_matching_archive(save=False)
 
         version.save()
