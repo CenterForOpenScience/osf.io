@@ -23,7 +23,7 @@ def _make_badge_subquery(artifact_type):
 
 def make_open_practice_badge_annotations():
     '''Builds all of the annotation Subqueries for OpenPractice badges. '''
-    #TODO: Accept CT as a param
+    #TODO: Accept CT as a param if/when PRIMARY artifact can be something other than a Registration
     primary_resource_ct = ContentType.objects.get_for_model(Registration)
     primary_outcome_subquery = Subquery(
         OutcomeArtifact.objects.filter(
