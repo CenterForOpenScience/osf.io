@@ -1,12 +1,10 @@
-from future.moves.urllib.parse import urljoin, urlparse
-import mock
-
 import dateutil.relativedelta
 from django.utils import timezone
+import mock
 from nose.tools import *  # noqa:
 import pytest
-from rest_framework import exceptions
 
+from future.moves.urllib.parse import urljoin, urlparse
 
 from api.base.settings.defaults import API_BASE
 from api.base.versioning import CREATE_REGISTRATION_FIELD_CHANGE_VERSION
@@ -15,29 +13,28 @@ from api_tests.subjects.mixins import SubjectsFilterMixin
 from api_tests.registrations.filters.test_filters import RegistrationListFilteringMixin
 from api_tests.utils import create_test_file
 from framework.auth.core import Auth
-from osf.models import RegistrationSchema, Outcome
-from osf.utils import permissions
-from osf.utils.outcomes import ArtifactTypes
+from osf.models import RegistrationSchema
 from osf_tests.factories import (
+    EmbargoFactory,
+    ProjectFactory,
+    RegistrationFactory,
     AuthUserFactory,
     CollectionFactory,
     DraftRegistrationFactory,
-    EmbargoFactory,
-    IdentifierFactory,
-    InstitutionFactory,
     OSFGroupFactory,
     NodeLicenseRecordFactory,
-    ProjectFactory,
-    RegistrationFactory,
-    SubjectFactory,
     TagFactory,
+    SubjectFactory,
+    InstitutionFactory,
 )
-from osf_tests.test_registrations import prereg_registration_responses
 from osf_tests.utils import get_default_test_schema
+from osf_tests.test_registrations import prereg_registration_responses
+from rest_framework import exceptions
 from tests.base import ApiTestCase
 from website import settings
-from website.project.metadata.schemas import from_json
 from website.views import find_bookmark_collection
+from website.project.metadata.schemas import from_json
+from osf.utils import permissions
 
 SCHEMA_VERSION = 2
 
@@ -1935,89 +1932,3 @@ class TestRegistrationListFiltering(
         ApiTestCase):
 
     url = '/{}registrations/?'.format(API_BASE)
-
-
-@pytest.mark.django_db
-class TestRegistrationListOpenPracticeAnnotations:
-
-    def make_api_url(self, filter_param=None):
-        base_url = f'/{API_BASE}registrations/'
-        if not filter_param:
-            return base_url
-        return f'{base_url}?filter[{filter_param}]=True'
-
-    @pytest.fixture
-    def open_data_reg(self):
-        r = RegistrationFactory(is_public=True, has_doi=True)
-        o = Outcome.objects.for_registration(r, create=True)
-        o.artifact_metadata.create(
-            identifier=IdentifierFactory(),
-            artifact_type=ArtifactTypes.DATA,
-            finalized=True,
-        )
-        return r
-
-    @pytest.fixture
-    def open_code_reg(self):
-        r = RegistrationFactory(is_public=True, has_doi=True)
-        o = Outcome.objects.for_registration(r, create=True)
-        o.artifact_metadata.create(
-            identifier=IdentifierFactory(),
-            artifact_type=ArtifactTypes.ANALYTIC_CODE,
-            finalized=True,
-        )
-        return r
-
-    @pytest.fixture
-    def open_materials_reg(self):
-        r = RegistrationFactory(is_public=True, has_doi=True)
-        o = Outcome.objects.for_registration(r, create=True)
-        o.artifact_metadata.create(
-            identifier=IdentifierFactory(),
-            artifact_type=ArtifactTypes.MATERIALS,
-            finalized=True,
-        )
-        return r
-
-    def test_annotations(self, app, open_data_reg, open_code_reg, open_materials_reg):
-        resp = app.get(self.make_api_url(), auth=None, expect_errors=False)
-        data = resp.json['data']
-        import pprint
-        pprint.pprint(data)
-
-        parsed_results = {
-            entry['id']: {
-                'data': entry['attributes']['has_data'],
-                'code': entry['attributes']['has_analytic_code'],
-                'materials': entry['attributes']['has_materials'],
-            }
-            for entry in data
-        }
-        expected_results = {
-            open_data_reg._id: {'data': True, 'code': False, 'materials': False},
-            open_code_reg._id: {'data': False, 'code': True, 'materials': False},
-            open_materials_reg._id: {'data': False, 'code': False, 'materials': True}
-        }
-
-        assert parsed_results == expected_results
-
-    def test_filtering__has_data(self, app, open_data_reg, open_code_reg, open_materials_reg):
-        resp = app.get(self.make_api_url(filter_param='has_data'), auth=None, expect_errors=False)
-        data = resp.json['data']
-
-        response_ids = set(entry['id'] for entry in data)
-        assert response_ids == {open_data_reg._id}
-
-    def test_filtering__has_code(self, app, open_data_reg, open_code_reg, open_materials_reg):
-        resp = app.get(self.make_api_url(filter_param='has_analytic_code'), auth=None, expect_errors=False)
-        data = resp.json['data']
-
-        response_ids = set(entry['id'] for entry in data)
-        assert response_ids == {open_code_reg._id}
-
-    def test_filtering__has_materials(self, app, open_data_reg, open_code_reg, open_materials_reg):
-        resp = app.get(self.make_api_url(filter_param='has_materials'), auth=None, expect_errors=False)
-        data = resp.json['data']
-
-        response_ids = set(entry['id'] for entry in data)
-        assert response_ids == {open_materials_reg._id}
