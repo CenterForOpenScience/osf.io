@@ -306,9 +306,18 @@ def serialize_registration(registration):
             'registration_type': registration.registered_schema.first().name if registration.registered_schema.exists() else None,
             'justification': registration.retraction.justification if registration.retraction else None,
             'withdrawn': registration.is_retracted,
+            'open_badges': _check_registration_open_practice_badges(registration)
         },
     )
 
+def _check_registration_open_practice_badges(registration):
+    from osf.models import OutcomeArtifacts
+    from osf.utils.outcomes import ArtifactTypes
+    artifacts = OutcomeArtifacts.objects.for_registration(registration).filter(finalized=True, deleted__isnull=True)
+    return {
+        artifact_type.name.lower(): artifacts.filter(artifact_type=artifact_type)
+        for artifact_type in ArtifactTypes
+    }
 
 def serialize_osf_node(osf_node, additional_attrs=None):
     if osf_node.provider:
