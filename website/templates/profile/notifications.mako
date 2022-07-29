@@ -24,7 +24,7 @@
                          <label>${settings.MAILCHIMP_GENERAL_LIST}</label>
                          <p class="text-muted" style="padding-left: 15px">Receive general notifications about the OSF
                             every 2-3 weeks. If you unsubscribe you must resubscribe via
-                            <a href="https://cos.us9.list-manage.com/subscribe/post?u=4ea2d63bcf7c2776e53a62167&amp;id=c5fabe3548">Mailchip's form <i class="fa fa-external-link"></i></a>
+                            <a href="https://cos.us9.list-manage.com/subscribe/post?u=4ea2d63bcf7c2776e53a62167&amp;id=c5fabe3548" target="_blank">Mailchip's form <i class="fa fa-external-link"></i></a>
                             in order to better verify your identity.
                          </p>
                      </div>
