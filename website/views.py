@@ -332,11 +332,10 @@ def resolve_guid(guid, suffix=None):
             return redirect(resource.absolute_url, http_status.HTTP_301_MOVED_PERMANENTLY)
         return stream_emberapp(EXTERNAL_EMBER_APPS['preprints']['server'], preprints_dir)
 
-    elif isinstance(resource, Registration) and (not suffix or suffix.rstrip('/').lower() in ('comments', 'links', 'components',)) and waffle.flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
-        return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
-
-    elif isinstance(resource, Registration) and suffix and suffix.rstrip('/').lower() in ('files', 'files/osfstorage') and waffle.flag_is_active(request, features.EMBER_REGISTRATION_FILES):
-        return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
+    elif isinstance(resource, Registration):
+        suffix = suffix.rstrip('/').lower if suffix else None
+        if suffix in [None, 'comments', 'components', 'files', 'files/osfstorage', 'links', 'resources']:
+            return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
 
     elif isinstance(resource, Node) and suffix and any(path.startswith(suffix.rstrip('/').lower()) for path in addon_paths) and waffle.flag_is_active(request, features.EMBER_PROJECT_FILES):
         return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
