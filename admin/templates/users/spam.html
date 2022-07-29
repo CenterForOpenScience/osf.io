@@ -11,19 +11,19 @@
     {% if status == '1' %}
         <a href="" class="btn btn-primary active disabled">Flagged</a>
     {% else %}
-        <a href="{% url 'spam:user_spam' user_id %}?status=1&page={{ page_number }}"
+        <a href="{% url 'ci:user-spam' guid=user.guid %}?status=1&page={{ page_number }}"
            class="btn btn-primary">Flagged</a>
     {% endif %}
     {% if status == '2' %}
         <a href="" class="btn btn-primary active disabled">Spam</a>
     {% else %}
-        <a href="{% url 'spam:user_spam' user_id %}?status=2&page={{ page_number }}"
+        <a href="{% url 'comments:user-spam' guid=user.guid %}?status=2&page={{ page_number }}"
            class="btn btn-primary">Spam</a>
     {% endif %}
     {% if status == '4' %}
         <a href="" class="btn btn-primary active disabled">Ham</a>
     {% else %}
-        <a href="{% url 'spam:user_spam' user_id %}?status=4&page={{ page_number }}"
+        <a href="{% url 'comments:user-spam' guid=user.guid %}?status=4&page={{ page_number }}"
            class="btn btn-primary">Ham</a>
     {% endif %}
     </div>
@@ -62,8 +62,7 @@
             {{ comment.content|truncatechars:30 }}
         </td>
         <td>
-            <a href="{% url 'spam:detail' comment.id %}?page={{ page_number }}"
-               class="btn btn-primary">
+            <a href="{% url 'comments:detail' comment.id %}?page={{ page_number }}" class="btn btn-primary">
                 Detail
             </a>
         </td>

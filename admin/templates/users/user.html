@@ -8,152 +8,60 @@
 <div class="container-fluid">
     <div class="row">
         {% if messages %}
-        <ul>
-            {% for message in messages %}
-            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-            {% endfor %}
-        </ul>
+            <ul>
+                {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
         {% endif %}
     </div>
     <div class="row">
         <div class="col-md-12">
             <div class="btn-group" role="group">
                 <a href="{% url 'users:search' %}" class="btn btn-default"><i class="fa fa-search"></i></a>
-                {%  if perms.osf.view_spam %}
-                <a href="{% url 'spam:user_spam' user.id %}" class="btn btn-default">Related spam</a>
-                {% endif %}
+                {% include "users/reset_password.html" with user=user %}
                 {%  if perms.osf.change_osfuser %}
-                    {% if  user.is_registered %}
-                <a href="{% url 'users:reset_password' user.id %}" data-toggle="modal" data-target="#resetModal" class="btn btn-default">Send reset password email</a>
-                {% endif %}
-                        <a href="{% url 'users:get_reset_password' user.id %}" data-toggle="modal" data-target="#getResetModal" class="btn btn-default">Get password reset link</a>
-                {% if user.confirmed %}
-                    <button class="btn btn-default disabled" data-toggle="tooltip" title="User already confirmed">Get confirmation link</button>
-                {% else %}
-                    {% if user.unclaimed %}
-                        <a href="{% url 'users:get_claim_urls' user.id %}" data-toggle="modal" data-target="#getUserClaimModal" class="btn btn-default">Get claim links</a>
-                    {%  else %}
-                        <a href="{% url 'users:get_confirmation' user.id %}" data-toggle="modal" data-target="#getConfirmationModal" class="btn btn-default">Get confirmation link</a>
-                    {% endif %}
-                {% endif %}
-                {% endif %}
-                {%  if perms.osf.view_desk %}
-                <a href="{% url 'desk:customer' user.id %}" data-toggle="modal" data-target="#deskModal" class="btn btn-default">Desk profile</a>
-                <a href="{% url 'desk:user_cases' user.id %}" data-toggle="modal" data-target="#caseModal" class="btn btn-default">Desk cases</a>
-                {% endif %}
-                <a href="{% url 'users:merge-accounts' user.id  %}" data-toggle="modal" data-target="#mergeAccountModal" class="btn btn-default">Merge Account</a>
-            </div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-md-12">
-            <div class="btn-group padded" role="group">
-                {% if not user.deleted %}
-                    <a href="{% url 'users:GDPR_delete' user.id %}" data-toggle="modal" data-target="#deleteModal" class="btn btn-danger">GDPR Delete Account</a>
-                {% endif %}
-                {% if not user.disabled %}
-                    {% if user.requested_deactivation %}
-                        <a href="{% url 'users:disable' user.id %}" data-toggle="modal" data-target="#disableModal" class="btn btn-danger">Requested account deactivation</a>
+                    <a href="{% url 'users:get-reset-password' guid=user.guid %}" data-toggle="modal" data-target="#getResetModal" class="btn btn-default">Get password reset link</a>
+                    {% if user.confirmed %}
+                        <button class="btn btn-default disabled" data-toggle="tooltip" title="User already confirmed">Get confirmation link</button>
                     {% else %}
-                        <a href="{% url 'users:disable' user.id %}" data-toggle="modal" data-target="#disableModal" class="btn btn-danger disabled">Requested account deactivation</a>
+                        {% if user.unclaimed %}
+                            <a href="{% url 'users:get-claim-urls' guid=user.guid  %}" data-toggle="modal" data-target="#getUserClaimModal" class="btn btn-default">Get claim links</a>
+                        {%  else %}
+                            <a href="{% url 'users:get-confirmation' guid=user.guid  %}" data-toggle="modal" data-target="#getConfirmationModal" class="btn btn-default">Get confirmation link</a>
+                        {% endif %}
                     {% endif %}
-                    <a href="{% url 'users:disable' user.id %}" data-toggle="modal" data-target="#disableModal" class="btn btn-danger">Force disable account</a>
-                {% elif 'deac_confirmed' not in user.system_tags %}
-                    <form method="post" action="{% url 'users:reactivate' user.id %}" style="display: inherit;">
-                        {% csrf_token %}
-                        <input class="btn btn-success" type="submit" value="Reactivate account"/>
-                    </form>
                 {% endif %}
-                {% if not user.disabled or user.spam_status == SPAM_STATUS.FLAGGED %}
-                    <a href="{% url 'users:spam_disable' user.id %}" data-toggle="modal" data-target="#disableSpamModal" class="btn btn-danger">Disable Spam account</a>
-                {% endif %}
-                {% if user.spam_status != SPAM_STATUS.HAM %}
-                    <a href="{% url 'users:ham_enable' user.id %}" data-toggle="modal" data-target="#enableHamModal" class="btn btn-success">Mark Ham account</a>
-                {% endif %}
-                <a href="{% url 'users:reset_password' user.id %}" data-toggle="modal" data-target="#resetModal" class="btn btn-primary">
-                    Send reset
-                </a>
-                <a href="{% url 'users:reindex-elastic-user' guid=user.id %}" data-toggle="modal" data-target="#confirmReindexElasticUser" class="btn btn-success">Elastic Reindex</a>
+                {% include "users/merge_accounts.html" with user=user %}
+                {% include "users/GDPR_delete_user.html" with user=user %}
+                {% include "users/disable_user.html" with user=user %}
+                {% include "users/mark_spam.html" with user=user %}
+                {% include "users/reindex_user_elastic.html" with user=user %}
             </div>
         </div>
     </div>
     <div class="row">
         <div class="col-md-12">
-            <div class="modal" id="deskModal">
+            <div class="modal" id="getResetModal" >
                 <div class="modal-dialog">
                     <div class="modal-content"></div>
                 </div>
             </div>
-            <div class="modal" id="caseModal">
+            <div class="modal" id="getConfirmationModal">
                 <div class="modal-dialog">
                     <div class="modal-content"></div>
                 </div>
             </div>
-            <div class="modal" id="mergeAccountModal">
-                <div class="modal-dialog">
-                    <div class="modal-content"></div>
-                </div>
-            </div>
-
-            {%  if perms.osf.change_osfuser %}
-                <span class="col-md-2">
-                </span>
-            {% endif %}
-            <div class="modal" id="resetModal" style="display: none">
-                <div class="modal-dialog">
-                    <div class="modal-content"></div>
-                </div>
-            </div>
-            <div class="modal" id="getResetModal" style="display: none">
-                <div class="modal-dialog">
-                    <div class="modal-content"></div>
-                </div>
-            </div>
-            <div class="modal" id="getConfirmationModal" style="display: none">
-                <div class="modal-dialog">
-                    <div class="modal-content"></div>
-                </div>
-            </div>
-            <div class="modal" id="getUserClaimModal" style="display: none">
-                <div class="modal-dialog">
-                    <div class="modal-content"></div>
-                </div>
-            </div>
-            <div class="modal" id="disableModal">
-                <div class="modal-dialog">
-                    <div class="modal-content"></div>
-                </div>
-            </div>
-            <div class="modal" id="deleteModal">
-                <div class="modal-dialog">
-                    <div class="modal-content"></div>
-                </div>
-            </div>
-            <div class="modal" id="disableSpamModal">
-                <div class="modal-dialog">
-                    <div class="modal-content"></div>
-                </div>
-            </div>
-            <div class="modal" id="enableHamModal">
-                <div class="modal-dialog">
-                    <div class="modal-content"></div>
-                </div>
-            </div>
-            <div class="modal" id="confirmReindexElasticUser">
+            <div class="modal" id="getUserClaimModal">
                 <div class="modal-dialog">
                     <div class="modal-content"></div>
                 </div>
             </div>
         </div>
     </div>
-
     <div class="row">
         <div class="col-md-12">
-            <h3>User details</h3>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-md-12">
+            <h2>User: <b>{{ user.username }}</b> <a href="{{ user.absolute_url }}"> ({{user.guid}})</a> </h2>
             <table class="table table-striped">
             <thead>
                 <tr>
@@ -163,130 +71,72 @@
             </thead>
             <tbody>
                 <tr>
-                    <td>Name</td>
-                    <td>{{ user.name }}</td>
-                </tr>
-                <tr>
-                    <td>OSF account</td>
-                    <td>
-                        <a href="{{ user.osf_link }}">{{ user.id }}</a>
-                    </td>
+                    <td>Full Name</td>
+                    <td>{{ user.fullname }}</td>
                 </tr>
                 <tr>
                     <td>Username</td>
                     <td>{{ user.username }}</td>
                 </tr>
                 <tr>
-                    <td>Emails</td>
+                    <td>Guid</td>
                     <td>
-                        {% for email in user.emails %}
-                            <li>
-                                {% if email == user.username %}
-                                    <strong>Primary: </strong>
-                                    {{ email }}
-                                    <a href=""
-                                       class="btn btn-default disabled">Email</a>
-                                {% else %}
-                                    {{ email }}
-                                {% endif %}
-                            </li>
-                        {% endfor %}
+                        {{ user.guid }}
                     </td>
                 </tr>
                 <tr>
+                    <td>Disabled</td>
+                    <td>{{ user.is_disabled }}</td>
+                </tr>
+                <tr>
                     <td>Registered</td>
-                    <td>{{ user.registered }}</td>
+                    <td>{{ user.is_registered }}</td>
                 </tr>
                 <tr>
                     <td>Confirmed</td>
-                    <td>{{ user.confirmed }}</td>
+                    <td>{{ user.is_confirmed }}</td>
                 </tr>
                 <tr>
                     <td>Last login</td>
                     <td>{{ user.last_login }}</td>
                 </tr>
                 <tr>
-                    <td>Disabled</td>
-                    <td>{{ user.disabled }}</td>
-                </tr>
-                <tr>
-                    <td>Two factor</td>
+                    <td>Emails</td>
                     <td>
-                        {{ user.two_factor }}
-                        {% if user.two_factor %}
-                            <a href="{% url 'users:remove2factor' user.id %}"
-                               class="btn btn-default"
-                               data-toggle="modal"
-                               data-target="#twoFactorModal">
-                                Deactivate
-                            </a>
-                            <div class="modal" id="twoFactorModal">
-                                <div class="modal-dialog">
-                                    <div class="modal-content"></div>
-                                </div>
-                            </div>
-                        {% endif %}
-                    </td>
-                </tr>
-                <tr>
-                    <td>System tags</td>
-                    <td>
-                        {% for system_tag in user.system_tags %}
-                            {{ system_tag }}{% if not forloop.last %}, {% endif %}
+                        {% for email in user.emails.all %}
+                            <li>
+                                {% if email == user.username %}
+                                    <strong>Primary: </strong>
+                                    {{ email.address }}
+                                    <a href="" class="btn btn-default disabled">Email</a>
+                                {% else %}
+                                    {{ email.address }}
+                                {% endif %}
+                            </li>
                         {% endfor %}
-                    <a href="{% url 'users:add_system_tag' user.id %}"
-                        class="btn btn-default"
-                        data-toggle="modal"
-                        data-target="#systemTagModal">
-                         add system tag
-                     </a>
-                     <div class="modal" id="systemTagModal">
-                         <div class="modal-dialog">
-                             <div class="modal-content"></div>
-                         </div>
-                     </div>
                     </td>
                 </tr>
-                {% if user.osf_groups %}
-                    <tr>
-                        <td>
-                            OSF Groups
-                        </td>
-                        <td>
-                            <select class="form-control" style="width:90%; display:inherit;" id="groups-select">
-                                {% for group in user.osf_groups %}
-                                    <option value="{{ group.id | reverse_osf_group }}">{{ group.name }} ({{ group.role }})</option>
-                                {% endfor %}
-                            </select>
-                            <input type="submit" class="pull-right btn btn-default"  value="Go to" onclick="document.location.href = document.getElementById('groups-select').value;" />
-                        </td>
-                    </tr>
-                {% endif %}
+                {% include "users/two_factor.html" with user=user %}
+
                 <tr>
                     <td>User is spammy</td>
                     <td>
                         {{ user.is_spammy }}
                     </td>
                 </tr>
-                <tr>
-                    <td>SPAM Status</td>
-                    <td>{% include "nodes/spam_status.html" with resource=user %}</td>
-                </tr>
-                <tr>
-                    <td>Profile content checked for spam</td>
-                    <td>{{ user.potential_spam_profile_content }}</td>
-                </tr>
-                <tr>
-                    <td>Nodes</td>
-                    <td>
-                        {% include "util/node_preprint_paginated_list.html" with items=nodes items_paginator=node_page resource_type="node" current_other_param=current_preprint %}
-                    </td>
-                </tr>
+                {% include "users/add_system_tags.html" with user=user %}
+                {% include "nodes/spam_status.html" with resource=user %}
                 <tr>
                     <td>Preprints</td>
                     <td>
                         {% include "util/node_preprint_paginated_list.html" with items=preprints items_paginator=preprint_page resource_type="preprint" current_other_param=current_node %}
                         * In Preprints, public means Verified Publishable.
+                    </td>
+                </tr>
+                <tr>
+                    <td>Nodes</td>
+                    <td>
+                        {% include "util/node_preprint_paginated_list.html" with items=nodes items_paginator=node_page resource_type="node" current_other_param=current_preprint %}
                     </td>
                 </tr>
             </tbody>

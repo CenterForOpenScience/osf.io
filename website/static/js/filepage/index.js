@@ -13,7 +13,6 @@ var FileRevisionsTable = require('./revisions.js');
 var storageAddons = require('json-loader!storageAddons.json');
 var CommentModel = require('js/comment');
 
-var History = require('exports-loader?History!history');
 var SocialShare = require('js/components/socialshare');
 
 // Sanity
@@ -395,7 +394,7 @@ var FileViewPage = {
             var state = {
                 scrollTop: $(window).scrollTop(),
             };
-            History.pushState(state, 'OSF | ' + window.contextVars.file.name, url);
+            history.pushState(state, 'OSF | ' + window.contextVars.file.name, url);
         }
 
         function changeVersionHeader(){
@@ -467,7 +466,8 @@ var FileViewPage = {
                 return m('button.btn' + (ctrl.editor.selected ? '.btn-primary' : '.btn-default'), {
                     onclick: function (e) {
                         e.preventDefault();
-                        // atleast one button must remain enabled.
+                        $osf.trackClick('file-page', 'file-edit', 'click-file-edit');
+                        // at least one button must remain enabled.
                         if ((!ctrl.editor.selected || panelsShown > 1)) {
                             ctrl.editor.selected = !ctrl.editor.selected;
                             ctrl.revisions.selected = false;
@@ -475,7 +475,7 @@ var FileViewPage = {
                             state = {
                                 scrollTop: $(window).scrollTop(),
                             };
-                            History.pushState(state, 'OSF | ' + window.contextVars.file.name, url);
+                            history.pushState(state, 'OSF | ' + window.contextVars.file.name, url);
                         }
                     }
                 }, ctrl.editor.title);
@@ -491,7 +491,7 @@ var FileViewPage = {
                 ctrl.isLatestVersion ? m('.btn.btn-sm.btn-default', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_checkin')}, 'Force check in') : null
             ]) : '',
             ctrl.canEdit() && (!ctrl.file.checkoutUser) && (ctrl.file.provider === 'osfstorage') ? m('.btn-group.m-l-xs.m-t-xs', [
-                ctrl.isLatestVersion ? m('.btn.btn-sm.btn-default', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkout')}, 'Check out') : null
+                ctrl.isLatestVersion && !window.contextVars.node.isRegistration ? m('.btn.btn-sm.btn-default', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkout')}, 'Check out') : null
             ]) : '',
             (ctrl.canEdit() && (ctrl.file.checkoutUser === ctrl.context.currentUser.id) ) ? m('.btn-group.m-l-xs.m-t-xs', [
                 ctrl.isLatestVersion ? m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkin')}, 'Check in') : null
@@ -505,7 +505,7 @@ var FileViewPage = {
                 (ctrl.file.provider !== 'osfstorage' || !ctrl.file.checkoutUser) &&
                 (document.URL.indexOf('version=latest-published') < 0)
             ) ? m('.btn-group.m-l-xs.m-t-xs', [
-                ctrl.isLatestVersion ? m('button.btn.btn-sm.btn-default.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete') }, 'Delete') : null
+                ctrl.isLatestVersion && !window.contextVars.node.isRegistration ? m('button.btn.btn-sm.btn-default.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete') }, 'Delete') : null
             ]) : '',
             m('.btn-group.m-t-xs', [
                 ctrl.isLatestVersion ? m('a.btn.btn-sm.btn-primary.file-download', {href: 'download'}, 'Download') : null
@@ -519,21 +519,23 @@ var FileViewPage = {
                 m('button.btn' + (ctrl.mfrIframeParent.is(':visible') ? '.btn-primary' : '.btn-default'), {
                     onclick: function (e) {
                         e.preventDefault();
+                        $osf.trackClick('file-page', 'file-share', 'click-file-view');
                         // at least one button must remain enabled.
                         if (!ctrl.mfrIframeParent.is(':visible') || panelsShown > 1) {
                             ctrl.mfrIframeParent.toggle();
                             ctrl.revisions.selected = false;
-                            History.pushState(state, 'OSF | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'view'));
+                            history.pushState(state, 'OSF | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'view'));
                         } else if (ctrl.mfrIframeParent.is(':visible') && !ctrl.editor){
                             ctrl.mfrIframeParent.toggle();
                             ctrl.revisions.selected = true;
-                            History.pushState(state, 'OSF | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'revision'));
+                            history.pushState(state, 'OSF | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'revision'));
                         }
                     }
                 }, 'View'), editButton())
             ),
             m('.btn-group.m-t-xs', [
                 m('button.btn.btn-sm' + (ctrl.revisions.selected ? '.btn-primary': '.btn-default'), {onclick: function(){
+                    $osf.trackClick('file-page', 'file-revision', 'click-file-revision');
                     var editable = ctrl.editor && ctrl.editor.selected;
                     var viewable = ctrl.mfrIframeParent.is(':visible');
                     if (editable || viewable){
@@ -544,14 +546,14 @@ var FileViewPage = {
                             ctrl.editor.selected = false;
                         }
                         ctrl.revisions.selected = true;
-                        History.pushState(state, 'OSF | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'revision'));
+                        history.pushState(state, 'OSF | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'revision'));
                     } else {
                         ctrl.mfrIframeParent.toggle();
                         if (ctrl.editor) {
                             ctrl.editor.selected = false;
                         }
                         ctrl.revisions.selected = false;
-                        History.pushState(state, 'OSF | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'view'));
+                        history.pushState(state, 'OSF | ' + window.contextVars.file.name, formatUrl(ctrl.urlParams, 'view'));
                     }
                 }}, 'Revisions')
             ])

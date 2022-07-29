@@ -41,7 +41,7 @@ var ProjectWiki = require('js/wikiSettingsTreebeard.js');
 var wikiSettingsURL = ctx.node.urls.api  + 'wiki/settings/';
 var $wikiMsg = $('#configureWikiMessage');
 
-if ($('#wgrid').length) {
+if ($('#wiki-grid').length) {
     $.ajax({
         url: wikiSettingsURL,
         type: 'GET',

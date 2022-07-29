@@ -14,11 +14,11 @@ from website import settings
 
 logger = logging.getLogger(__name__)
 
-CROSSREF_NAMESPACE = 'http://www.crossref.org/schema/4.4.1'
-CROSSREF_SCHEMA_LOCATION = 'http://www.crossref.org/schema/4.4.1 http://www.crossref.org/schemas/crossref4.4.1.xsd'
+CROSSREF_NAMESPACE = 'http://www.crossref.org/schema/5.3.1'
+CROSSREF_SCHEMA_LOCATION = 'http://www.crossref.org/schema/5.3.1 http://www.crossref.org/schemas/crossref5.3.1.xsd'
 CROSSREF_ACCESS_INDICATORS = 'http://www.crossref.org/AccessIndicators.xsd'
 CROSSREF_RELATIONS = 'http://www.crossref.org/relations.xsd'
-CROSSREF_SCHEMA_VERSION = '4.4.1'
+CROSSREF_SCHEMA_VERSION = '5.3.1'
 JATS_NAMESPACE = 'http://www.ncbi.nlm.nih.gov/JATS1'
 XSI = 'http://www.w3.org/2001/XMLSchema-instance'
 CROSSREF_DEPOSITOR_NAME = 'Open Science Framework'
@@ -36,19 +36,15 @@ class CrossRefClient(AbstractIdentifierClient):
         return (settings.CROSSREF_USERNAME, settings.CROSSREF_PASSWORD)
 
     def build_doi(self, preprint):
-        from osf.models import PreprintProvider
-
-        prefix = preprint.provider.doi_prefix or PreprintProvider.objects.get(_id='osf').doi_prefix
+        prefix = preprint.provider.doi_prefix
         return settings.DOI_FORMAT.format(prefix=prefix, guid=preprint._id)
 
-    def build_metadata(self, preprint, status='public', include_relation=True, **kwargs):
+    def build_metadata(self, preprint, include_relation=True):
         """Return the crossref metadata XML document for a given preprint as a string for DOI minting purposes
 
         :param preprint: the preprint, or list of preprints to build metadata for
         """
-        is_batch = False
         if isinstance(preprint, (list, QuerySet)):
-            is_batch = True
             preprints = preprint
         else:
             preprints = [preprint]
@@ -72,10 +68,9 @@ class CrossRefClient(AbstractIdentifierClient):
             element.registrant('Center for Open Science')
         )
         # if this is a batch update, let build_posted_content determine status for each preprint
-        status = status if not is_batch else None
         body = element.body()
         for preprint in preprints:
-            body.append(self.build_posted_content(preprint, element, status, include_relation))
+            body.append(self.build_posted_content(preprint, element, include_relation))
 
         root = element.doi_batch(
             head,
@@ -83,18 +78,18 @@ class CrossRefClient(AbstractIdentifierClient):
             version=CROSSREF_SCHEMA_VERSION
         )
         root.attrib['{%s}schemaLocation' % XSI] = CROSSREF_SCHEMA_LOCATION
-        return lxml.etree.tostring(root, pretty_print=kwargs.get('pretty_print', True))
+        return lxml.etree.tostring(root)
 
-    def build_posted_content(self, preprint, element, status, include_relation):
+    def build_posted_content(self, preprint, element, include_relation):
         """Build the <posted_content> element for a single preprint
         preprint - preprint to build posted_content for
         element - namespace element to use when building parts of the XML structure
         """
-        status = status or self.get_status(preprint)
         posted_content = element.posted_content(
             element.group_title(preprint.provider.name),
             type='preprint'
         )
+        status = self.get_status(preprint)
         if status == 'public':
             posted_content.append(element.contributors(*self._crossref_format_contributors(element, preprint)))
 
@@ -123,7 +118,7 @@ class CrossRefClient(AbstractIdentifierClient):
                     element.program(xmlns=CROSSREF_ACCESS_INDICATORS)
                 )
 
-            if preprint.article_doi and include_relation:
+            if preprint.article_doi and preprint.article_doi != self.build_doi(preprint) and include_relation:
                 posted_content.append(
                     element.program(
                         element.related_item(
@@ -190,13 +185,24 @@ class CrossRefClient(AbstractIdentifierClient):
             person.append(element.surname(name_parts['surname']))
             if name_parts.get('suffix'):
                 person.append(element.suffix(remove_control_characters(name_parts['suffix'])))
-            if contributor.external_identity.get('ORCID'):
-                orcid = list(contributor.external_identity['ORCID'].keys())[0]
-                verified = list(contributor.external_identity['ORCID'].values())[0] == 'VERIFIED'
-                if orcid and verified:
-                    person.append(
-                        element.ORCID('https://orcid.org/{}'.format(orcid), authenticated='true')
-                    )
+            affiliations = [
+                element.institution(
+                    element.institution_name(institution.name),
+                    element.institution_id(
+                        institution.ror_uri,
+                        type='ror'
+                    ),
+                ) for institution in contributor.affiliated_institutions.all() if institution.ror_uri
+            ]
+            if affiliations:
+                person.append(element.affiliations(*affiliations))
+
+            orcid = contributor.get_verified_external_id('ORCID', verified_only=True)
+            if orcid:
+                person.append(
+                    element.ORCID(f'https://orcid.org/{orcid}', authenticated='true')
+                )
+
             contributors.append(person)
 
         return contributors
@@ -215,25 +221,21 @@ class CrossRefClient(AbstractIdentifierClient):
         return url.url
 
     def create_identifier(self, preprint, category, include_relation=True):
-        status = self.get_status(preprint)
-
         if category == 'doi':
-            metadata = self.build_metadata(preprint, status, include_relation)
+            metadata = self.build_metadata(preprint, include_relation)
             doi = self.build_doi(preprint)
-            filename = doi.split('/')[-1]
             username, password = self.get_credentials()
             logger.info('Sending metadata for DOI {}:\n{}'.format(doi, metadata))
 
             # Crossref sends an email to CROSSREF_DEPOSITOR_EMAIL to confirm
-            requests.request(
-                'POST',
+            requests.post(
                 self._build_url(
                     operation='doMDUpload',
                     login_id=username,
                     login_passwd=password,
-                    fname='{}.xml'.format(filename)
+                    fname=f'{preprint._id}.xml'
                 ),
-                files={'file': ('{}.xml'.format(filename), metadata)},
+                files={'file': (f'{preprint._id}.xml', metadata)},
             )
 
             # Don't wait for response to confirm doi because it arrives via email.
@@ -250,15 +252,14 @@ class CrossRefClient(AbstractIdentifierClient):
     def bulk_create(self, metadata, filename):
         # Crossref sends an email to CROSSREF_DEPOSITOR_EMAIL to confirm
         username, password = self.get_credentials()
-        requests.request(
-            'POST',
+        requests.post(
             self._build_url(
                 operation='doMDUpload',
                 login_id=username,
                 login_passwd=password,
-                fname='{}.xml'.format(filename)
+                fname=f'{filename}.xml'
             ),
-            files={'file': ('{}.xml'.format(filename), metadata)},
+            files={'file': (f'{filename}.xml', metadata)},
         )
 
         logger.info('Sent a bulk update of metadata to CrossRef')

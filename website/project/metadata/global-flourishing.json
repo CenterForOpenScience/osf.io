@@ -1,0 +1,358 @@
+{
+   "atomicSchema":true,
+   "name":"Predictors of Global Flourishing Core Team Wave One Preregistration",
+   "version":1,
+   "description":null,
+   "blocks":[
+      {
+         "block_type":"page-heading",
+         "display_text":"Study Information"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"Research question",
+         "help_text":"List the research question(s) included in this study."
+      },
+      {
+         "block_type":"long-text-input"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"Hypotheses",
+         "help_text":"List your study hypotheses below."
+      },
+      {
+         "block_type":"long-text-input"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"Registered Report",
+         "help_text":"Is this a preregistration for study that has been given in-principle acceptance for publication as a Registered Report?"
+      },
+      {
+         "block_type":"single-select-input"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Yes"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"No"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"Registered Report Journal",
+         "help_text":"If this is for a Registered Report, please provide the name of the journal:\n"
+      },
+      {
+         "block_type":"short-text-input"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"Registered Report In-principle Acceptance Date",
+         "help_text":"Date of in-principle acceptance (Format: (YYYY-MM-DD))"
+      },
+      {
+         "block_type":"short-text-input"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"Manuscript",
+         "help_text":"Please attach the protocol that has been accepted for publication as a Registered Report. Completed studies with final results may not use this form. "
+      },
+      {
+         "block_type":"file-input"
+      },
+      {
+         "block_type":"page-heading",
+         "display_text":"Data Description"
+      },
+      {
+         "block_type":"section-heading"
+      },
+      {
+         "block_type":"paragraph",
+         "display_text":"The Global Flourishing Study is a five-year, longitudinal study investigating the predictors of human flourishing across approximately 240,000 participants from 22 geographically and culturally diverse countries. More information about the dataset, how it can be accessed, how it was collected, and its codebook are available at https://osf.io/3jtz8/. Wave 1 of these data were available to researchers who preregistered their hypotheses on the Open Science Framework."
+      },
+      {
+         "block_type":"question-label",
+         "example_text":"Please use the following boiler plate language, if applicable: \u201cNo authors have accessed the Wave 1 data from The Global Flourishing Study as of [date of pre-registration] because these data are not yet available for download.\u201d",
+         "display_text":"Data Access Logs",
+         "help_text":"Specify the date of download and/or access for each author, if any author(s) has/have accessed the data prior to pre-registration.",
+         "registration_response_key":""
+      },
+      {
+         "required":true,
+         "block_type":"short-text-input"
+      },
+      {
+         "block_type":"page-heading",
+         "display_text":"Variables"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"Scale/Index Aggregation",
+         "help_text":"For each scale/index, state the construct that the index represents, which items the scale/index will consist of, how these items will be aggregated, and whether this aggregation is based on a recommendation from the study codebook or validation research. If you are using any categorical variables, state how you will code them in the statistical analyses.",
+         "registration_response_key":""
+      },
+      {
+         "required":true,
+         "block_type":"long-text-input"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"Units of Analysis",
+         "help_text":"Which units of analysis (respondents, cases, etc.) will be included or excluded in your study? Taking these inclusion/exclusion criteria into account, indicate the (expected) sample size of the data you\u2019ll be using for your statistical analyses to the best of your knowledge. In the next few questions, you will be asked to refine this sample size estimation based on your judgments about missing data and outliers.\n",
+         "registration_response_key":""
+      },
+      {
+         "required":true,
+         "block_type":"short-text-input"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"Missing Data",
+         "help_text":"What do you know about missing data in the dataset (i.e., overall missingness rate, information about differential dropout)? How will you deal with incomplete or missing data? Based on this information, provide a new expected sample size.\n",
+         "registration_response_key":""
+      },
+      {
+         "required":true,
+         "block_type":"long-text-input"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"Outliers",
+         "help_text":"If you plan to remove outliers, how will you define what a statistical outlier is in your data? Please also provide a new expected sample size, if appropriate.\n",
+         "registration_response_key":""
+      },
+      {
+         "required":true,
+         "block_type":"long-text-input"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"Sampling Weights",
+         "help_text":"Are there sampling weights available with this dataset? If so, are you using them or are you using your own sampling weights?\n",
+         "registration_response_key":""
+      },
+      {
+         "required":true,
+         "block_type":"long-text-input"
+      },
+      {
+         "block_type":"page-heading",
+         "display_text":"Analyses"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"Statistical Models",
+         "help_text":"What statistical model will you use to test each hypothesis? Please include the type of model (e.g. ANOVA, multiple regression, SEM, etc) and the specification of the model (this includes each variable that will be included as predictors, outcomes, or covariates). Please specify any interactions, subgroup analyses, pairwise or complex contrasts, or follow-up tests from omnibus tests. If you plan on using any positive controls, negative controls, or manipulation checks you may mention that here. Remember that any test not included here must be noted as an exploratory test in your final article. \n",
+         "registration_response_key":""
+      },
+      {
+         "required":true,
+         "block_type":"long-text-input"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"Inference Criteria",
+         "help_text":"What criteria will you use to make inferences? Please describe the information you\u00cdll use (e.g. p-values, bayes factors, specific model fit indices), as well as cut-off criterion, where appropriate. Will you be using one or two tailed tests for each of your analyses? If you are comparing multiple conditions or testing multiple hypotheses, will you account for this?\n",
+         "registration_response_key":""
+      },
+      {
+         "required":true,
+         "block_type":"long-text-input"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"Exploratory Tests",
+         "help_text":"If you plan to explore your data set to look for unexpected differences or relationships, you may describe those tests here. An exploratory test is any test where a prediction is not made up front, or there are multiple possible tests that you are going to use. A statistically significant finding in an exploratory test is a great way to form a new confirmatory hypothesis, which could be registered at a later time. \n"
+      },
+      {
+         "block_type":"long-text-input"
+      },
+      {
+         "block_type":"page-heading",
+         "display_text":"Other"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"Additional Information",
+         "help_text":"If there is any additional information that you feel needs to be included in your preregistration, please enter it here. Literature cited, disclosures of any related work such as replications or work that uses the same data, or other context that will be helpful for future readers would be appropriate here. "
+      },
+      {
+         "block_type":"long-text-input"
+      },
+      {
+         "block_type":"page-heading",
+         "display_text":"Data Request"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"Datasets requested (region)",
+         "help_text":"To which datasets are you requesting access? \n"
+      },
+      {
+         "block_type":"multi-select-input"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Global ONLY"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Argentina"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Brazil"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"China"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Egypt"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Germany"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"India"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Indonesia"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Israel"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Japan"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Kenya"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Mexico"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Nigeria"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Philippines"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Poland"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Russia"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"South Africa"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Spain"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Tanzania"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Turkey"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"UK"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Ukraine"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"United States"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"Datasets requested (sensitivity)",
+         "help_text":"Are you requesting access to the sensitive or non-sensitive datasets?"
+      },
+      {
+         "block_type":"single-select-input"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Non-sensitive"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Sensitive"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Both"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"IRB Approval Number",
+         "help_text":"If you are requesting access to the sensitive dataset only, please provide your IRB approval number:"
+      },
+      {
+         "block_type":"short-text-input"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"IRB Approval Letter and Protocol (Sensitive Data Requests Only)",
+         "help_text":"If you are requesting access to the sensitive data only, please upload your IRB approval letter and IRB protocol here. Please note that these documents will be uploaded with your preregistration, so it is important that you censor any contact information prior to upload."
+      },
+      {
+         "block_type":"file-input"
+      },
+      {
+         "block_type":"page-heading",
+         "display_text":"Data Request Agreements"
+      },
+      {
+         "block_type":"question-label",
+         "display_text":"Instructions",
+         "help_text":"By submitting this preregistration and requesting access to the specific Global Flourishing Study dataset(s) indicated above, I agree to the following:\n",
+         "registration_response_key":""
+      },
+      {
+         "required":true,
+         "block_type":"multi-select-input"
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"All data that are provided to me are for my use only. I will keep these data private from other researchers, except those added as contributors on this preregistration form (until these data are publicly available on the Open Science Framework)."
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"I will use these data to test for my preregistered hypotheses only (until these data are publicly available on the Open Science Framework). I will return to the Open Science Framework and preregister any additional hypotheses."
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"In order to request future waves of data, I will be required to report certain outcomes from my previous data use including, but not limited to: derived data, analysis code, DOI links to publications, links to preprints."
+      },
+      {
+         "block_type":"select-input-option",
+         "display_text":"Except when not possible, I will post preprints to the appropriate or relevant preprint server (e.g., SocArXiv, medRxiv, biorxiv, and PsyArXiv)."
+      }
+   ]
+}

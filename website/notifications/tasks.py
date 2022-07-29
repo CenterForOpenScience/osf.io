@@ -9,6 +9,7 @@ from framework.celery_tasks import app as celery_app
 from framework.sentry import log_exception
 from osf.models import OSFUser, AbstractNode, AbstractProvider, RegistrationProvider
 from osf.models import NotificationDigest
+from osf.registrations.utils import get_registration_provider_submissions_url
 from osf.utils.permissions import ADMIN
 from website import mails, settings
 from website.notifications.utils import NotificationsDict
@@ -68,7 +69,7 @@ def _send_reviews_moderator_emails(send_type):
         additional_context = dict()
         if isinstance(provider, RegistrationProvider):
             provider_type = 'registration'
-            submissions_url = f'{settings.DOMAIN}registries/{provider._id}/moderation/submissions',
+            submissions_url = get_registration_provider_submissions_url(provider)
             withdrawals_url = f'{submissions_url}?state=pending_withdraw'
             notification_settings_url = f'{settings.DOMAIN}registries/{provider._id}/moderation/notifications'
             if provider.brand:

@@ -2,12 +2,26 @@ from datetime import datetime
 from collections import OrderedDict
 
 from django.core.urlresolvers import resolve, reverse
+from django.core.exceptions import ValidationError
+
 import furl
 import pytz
 import jsonschema
 
 from framework.auth.core import Auth
-from osf.models import BaseFileNode, DraftNode, OSFUser, Comment, Preprint, AbstractNode
+
+from osf.models import (
+    BaseFileNode,
+    DraftNode,
+    OSFUser,
+    Comment,
+    Preprint,
+    AbstractNode,
+    Registration,
+    Guid,
+    Node,
+)
+
 from rest_framework import serializers as ser
 from rest_framework.fields import SkipField
 from website import settings
@@ -19,6 +33,7 @@ from api.base.serializers import (
     FileRelationshipField,
     format_relationship_links,
     IDField,
+    GuidOrIDField,
     JSONAPIListField,
     JSONAPISerializer,
     Link,
@@ -45,6 +60,7 @@ class CheckoutField(ser.HyperlinkedRelatedField):
     def __init__(self, **kwargs):
         kwargs['queryset'] = True
         kwargs['read_only'] = False
+        kwargs['required'] = False
         kwargs['allow_null'] = True
         kwargs['lookup_field'] = '_id'
         kwargs['lookup_url_kwarg'] = 'user_id'
@@ -197,7 +213,12 @@ class BaseFileSerializer(JSONAPISerializer):
         read_only=True, help_text='The Unix-style path of this object relative to the provider root',
     )
     last_touched = VersionedDateTimeField(read_only=True, help_text='The last time this file had information fetched about it via the OSF')
-    date_modified = ser.SerializerMethodField(read_only=True, help_text='Timestamp when the file was last modified')
+    date_modified = VersionedDateTimeField(
+        read_only=True,
+        help_text='Timestamp when the file was last modified',
+        required=False,
+        allow_null=True,
+    )
     date_created = ser.SerializerMethodField(read_only=True, help_text='Timestamp when the file was created')
     extra = ser.SerializerMethodField(read_only=True, help_text='Additional metadata about this file')
     tags = JSONAPIListField(child=FileTagField(), required=False)
@@ -245,9 +266,12 @@ class BaseFileSerializer(JSONAPISerializer):
 
     def absolute_url(self, obj):
         if obj.is_file:
-            return furl.furl(settings.DOMAIN).set(
+            url = furl.furl(settings.DOMAIN).set(
                 path=(obj.target._id, 'files', obj.provider, obj.path.lstrip('/')),
-            ).url
+            )
+            if obj.provider == 'dataverse':
+                url.add(query_params={'version': obj.history[-1]['extra']['datasetVersion']})
+            return url.url
 
     def get_download_link(self, obj):
         if obj.is_file:
@@ -267,22 +291,6 @@ class BaseFileSerializer(JSONAPISerializer):
             self.size = obj.versions.first().size
             return self.size
         return None
-
-    def get_date_modified(self, obj):
-        mod_dt = None
-        if obj.provider == 'osfstorage' and obj.versions.exists():
-            # Each time an osfstorage file is added or uploaded, a new version object is created with its
-            # date_created equal to the time of the update.  The external_modified is the modified date
-            # from the backend the file is stored on.  This field refers to the modified date on osfstorage,
-            # so prefer to use the created of the latest version.
-            mod_dt = obj.versions.first().created
-        elif obj.provider != 'osfstorage' and obj.history:
-            mod_dt = obj.history[-1].get('modified', None)
-
-        if self.context['request'].version >= '2.2' and obj.is_file and mod_dt:
-            return datetime.strftime(mod_dt, '%Y-%m-%dT%H:%M:%S.%fZ')
-
-        return mod_dt and mod_dt.replace(tzinfo=pytz.utc)
 
     def get_date_created(self, obj):
         creat_dt = None
@@ -312,6 +320,10 @@ class BaseFileSerializer(JSONAPISerializer):
         }
         if obj.provider == 'osfstorage' and obj.is_file:
             extras['downloads'] = obj.get_download_count()
+
+        if obj.provider == 'dataverse':
+            extras.update(obj.history[-1]['extra'])
+
         return extras
 
     def get_current_user_can_comment(self, obj):
@@ -334,30 +346,25 @@ class BaseFileSerializer(JSONAPISerializer):
             return obj._id
         return None
 
-    def update(self, instance, validated_data):
-        assert isinstance(instance, BaseFileNode), 'Instance must be a BaseFileNode'
-        if instance.provider != 'osfstorage' and 'tags' in validated_data:
-            raise Conflict('File service provider {} does not support tags on the OSF.'.format(instance.provider))
-        auth = get_user_auth(self.context['request'])
-        old_tags = set(instance.tags.values_list('name', flat=True))
+    def update(self, file, validated_data):
+        assert isinstance(file, BaseFileNode), 'Instance must be a BaseFileNode'
         if 'tags' in validated_data:
-            current_tags = set(validated_data.pop('tags', []))
-        else:
-            current_tags = set(old_tags)
+            if file.provider != 'osfstorage':
+                raise Conflict(f'File service provider {file.provider} does not support tags on the OSF.')
+            auth = get_user_auth(self.context['request'])
+            file.update_tags(set(validated_data.pop('tags', [])), auth=auth)
 
-        for new_tag in (current_tags - old_tags):
-            instance.add_tag(new_tag, auth=auth)
-        for deleted_tag in (old_tags - current_tags):
-            instance.remove_tag(deleted_tag, auth=auth)
+        if 'checkout' in validated_data:
+            if isinstance(file.target, Registration):
+                raise ValidationError('Registration files are static and cannot be checked in or out.')
+            user = self.context['request'].user
+            file.check_in_or_out(user, validated_data.pop('checkout'))
 
+        # `validated_data` ignores Read-only fields in payload
         for attr, value in validated_data.items():
-            if attr == 'checkout':
-                user = self.context['request'].user
-                instance.check_in_or_out(user, value)
-            else:
-                setattr(instance, attr, value)
-        instance.save()
-        return instance
+            setattr(file, attr, value)
+        file.save()
+        return file
 
     def is_valid(self, **kwargs):
         return super(BaseFileSerializer, self).is_valid(clean_html=False, **kwargs)
@@ -384,13 +391,25 @@ class FileSerializer(BaseFileSerializer):
     )
     target = TargetField(link_type='related', meta={'type': 'get_target_type'})
 
+    # Assigned via annotation. See api/files/annotations for info
+    show_as_unviewed = ser.BooleanField(
+        read_only=True,
+        required=False,
+        default=False,
+        help_text='Whether to mark the file as unviewed for the current user',
+    )
+
     def get_target_type(self, obj):
-        target_type = 'node'
         if isinstance(obj, Preprint):
-            target_type = 'preprint'
-        if isinstance(obj, DraftNode):
-            target_type = 'draft_node'
-        return target_type
+            return 'preprints'
+        elif isinstance(obj, DraftNode):
+            return 'draft_nodes'
+        elif isinstance(obj, Registration):
+            return 'registrations'
+        elif isinstance(obj, Node):
+            return 'nodes'
+        else:
+            raise NotImplementedError()
 
 
 class OsfStorageFileSerializer(FileSerializer):
@@ -406,15 +425,25 @@ class OsfStorageFileSerializer(FileSerializer):
         'tags',
     ])
 
-    def create(self, validated_data):
-        return super(OsfStorageFileSerializer, self).create(validated_data)
-
 
 class FileDetailSerializer(FileSerializer):
     """
-    Overrides FileSerializer to make id required.
+    - Overrides FileSerializer to make id required
+    - Files should return the id type they are queried with, but only in osfstorage is the id is reliably equivalent to
+     the path attribute, so that should not be overridden.
+
     """
-    id = IDField(source='_id', required=True)
+    id = GuidOrIDField(source='_id', required=True)
+
+    def to_representation(self, value):
+        data = super().to_representation(value)
+        view = self.context['view']
+        data['data']['links']['self'] = absolute_reverse(f'{view.view_category}:{view.view_name}', kwargs=view.kwargs)
+        guid = Guid.load(view.kwargs['file_id'])
+        if guid:
+            data['data']['id'] = guid._id
+
+        return data
 
 
 class QuickFilesSerializer(BaseFileSerializer):

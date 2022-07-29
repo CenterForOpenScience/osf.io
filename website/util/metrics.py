@@ -3,12 +3,11 @@ from enum import Enum
 
 def get_entry_point(user):
     """
-    Given the user system_tags, return the user entry point (osf, osf4m, prereg, institution)
+    Given the user system_tags, return the user entry point (osf, osf4m, institution)
     In case of multiple entry_points existing in the system_tags, return only the first one.
     """
     entry_points = [
         CampaignSourceTags.Osf4m.value,
-        CampaignSourceTags.PreregChallenge.value,
         'institution_campaign',
         provider_source_tag('osf', 'preprint'),
     ]
@@ -48,8 +47,6 @@ class OsfSourceTags(Enum):
 # Needs to be updated when new campaigns are added.
 class CampaignSourceTags(Enum):
     ErpChallenge = campaign_source_tag('erp_challenge')
-    PreregChallenge = campaign_source_tag('prereg_challenge')
-    Prereg = campaign_source_tag('prereg')
     OsfRegisteredReports = campaign_source_tag('osf_registered_reports')
     Osf4m = campaign_source_tag('osf4m')
 
@@ -61,7 +58,5 @@ class OsfClaimedTags(Enum):
 # Needs to be updated when new campaigns are added.
 class CampaignClaimedTags(Enum):
     ErpChallenge = campaign_claimed_tag('erp_challenge')
-    PreregChallenge = campaign_claimed_tag('prereg_challenge')
-    Prereg = campaign_claimed_tag('prereg')
     OsfRegisteredReports = campaign_claimed_tag('osf_registered_reports')
     Osf4m = campaign_claimed_tag('osf4m')

@@ -1,5 +1,6 @@
 import io
 
+from django.db.models import Max
 from django.http import FileResponse
 
 from rest_framework import generics
@@ -23,6 +24,7 @@ from api.base.views import JSONAPIBaseView
 from api.base import permissions as base_permissions
 from api.nodes.permissions import ContributorOrPublic
 from api.nodes.permissions import ReadOnlyIfRegistration
+from api.files import annotations
 from api.files.permissions import IsPreprintFile
 from api.files.permissions import CheckedOutOrAdmin
 from api.files.permissions import FileMetadataRecordPermission
@@ -73,7 +75,6 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
         CheckedOutOrAdmin,
         base_permissions.TokenHasScope,
         PermissionWithGetter(ContributorOrPublic, 'target'),
-        PermissionWithGetter(ReadOnlyIfRegistration, 'target'),
     )
 
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
@@ -106,6 +107,18 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
             # allows quickfiles to be given guids when another user wants a permanent link to it
             if (self.get_target().has_permission(user, ADMIN) and utils.has_admin_scope(self.request)) or getattr(file.target, 'is_quickfiles', False):
                 file.get_guid(create=True)
+
+        # We normally would pass this through `get_file` as an annotation, but the `select_for_update` feature prevents
+        # grouping versions in an annotation
+        if file.kind == 'file':
+            file.show_as_unviewed = annotations.check_show_as_unviewed(
+                user=self.request.user, osf_file=file,
+            )
+            if file.provider == 'osfstorage':
+                file.date_modified = file.versions.aggregate(Max('created'))['created__max']
+            else:
+                file.date_modified = file.history[-1]['modified']
+
         return file
 
 

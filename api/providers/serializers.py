@@ -34,7 +34,6 @@ class ProviderSerializer(JSONAPISerializer):
     allow_submissions = ser.BooleanField(read_only=True)
     allow_commenting = ser.BooleanField(read_only=True)
     assets = ser.SerializerMethodField(read_only=True)
-    in_sloan_study = ser.BooleanField(read_only=True)
 
     share_source = ser.CharField(read_only=True)
     share_publish_type = ser.CharField(read_only=True)
@@ -157,6 +156,7 @@ class RegistrationProviderSerializer(ProviderSerializer):
     reviews_workflow = ser.ChoiceField(choices=Workflows.choices(), read_only=True)
     reviews_comments_anonymous = ser.BooleanField(read_only=True)
     allow_updates = ser.BooleanField(read_only=True)
+    allow_bulk_uploads = ser.BooleanField(read_only=True)
 
     registrations = ReviewableCountsRelationshipField(
         related_view='providers:registration-providers:registrations-list',

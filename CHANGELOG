@@ -2,6 +2,57 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+22.06.0 (2022-06-23)
+====================
+- Fix support for Dataverse files
+- Match Legacy behavior with new `show_as_unviewed` File field
+- Other assorted fixes for new Files page
+
+22.05.0 (2022-06-09)
+====================
+- Add institutional affiliations via ROR to minted DOIs
+- Improve file sorting by `date_modified`
+- Update help links
+- Add ability to create RegistrationSchemas via the Admin App
+- Update files page routing for upcoming FE release
+
+22.04.0 (2022-03-31)
+====================
+- Update JS and Python dependencies
+- Remove unused "PreReg Challenge" code paths
+- Remove SLOAN study code paths now that the "experiment" is always on
+- Improve A11y on the legacy FE
+- Update post-archival workflow for registrations to parse schema structure from SchemaBlocks
+
+22.03.0 (2022-03-31)
+====================
+- Add waffle flags for registration files
+- Enable writeable tags on registration files
+- Allow embedding of target on files
+- Fix serialization of files
+
+22.02.0 (2022-3-10)
+====================
+- Stop creating Quickfiles for new users
+- Stop surfacing a user's Quickfiles through the API
+- Script for migrating existing Quickfiles to projects
+- Script for deleting unused Quickfiles nodes
+
+
+22.01.0 (2022-2-02)
+====================
+- Improve Admin App functionality
+- Improve MyProject Page performance
+- Other assorted bugfixes
+
+21.09.0 (2021-12-21)
+====================
+- Bulk Upload follow-ups, fixes, and improvements
+
+21.08.0 (2021-11-30)
+====================
+- Remaining work in support of Registrion Versioning/Updating
+
 21.07.0 (2021-10-04)
 ====================
 - Add support for Registry Admins to bulk upload

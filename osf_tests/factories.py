@@ -12,6 +12,7 @@ import pytz
 import factory.django
 from factory.django import DjangoModelFactory
 from django.apps import apps
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from django.db.utils import IntegrityError
@@ -252,6 +253,8 @@ class InstitutionFactory(DjangoModelFactory):
     domains = FakeList('url', n=3)
     email_domains = FakeList('domain_name', n=1)
     logo_name = factory.Faker('file_name')
+    orcid_record_verified_source = ''
+    delegation_protocol = ''
 
     class Meta:
         model = models.Institution
@@ -633,8 +636,8 @@ class SubjectFactory(DjangoModelFactory):
             osf = models.PreprintProvider.load('osf') or PreprintProviderFactory(_id='osf')
             bepress_subject = SubjectFactory(provider=osf)
         try:
-            ret = super(SubjectFactory, cls)._create(target_class, parent=parent, provider=provider, bepress_subject=bepress_subject, *args, **kwargs)
-        except IntegrityError:
+            ret = super()._create(target_class, parent=parent, provider=provider, bepress_subject=bepress_subject, *args, **kwargs)
+        except (IntegrityError, ValidationError):
             ret = models.Subject.objects.get(text=kwargs['text'])
             if parent:
                 ret.parent = parent
@@ -654,14 +657,22 @@ class PreprintProviderFactory(DjangoModelFactory):
 
     @classmethod
     def _build(cls, target_class, *args, **kwargs):
-        instance = super(PreprintProviderFactory, cls)._build(target_class, *args, **kwargs)
+        try:
+            instance = models.PreprintProvider.objects.get(_id=kwargs['_id'])
+        except models.PreprintProvider.DoesNotExist:
+            instance = super()._build(target_class, *args, **kwargs)
+
         if not instance.share_title:
             instance.share_title = instance._id
         return instance
 
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
-        instance = super(PreprintProviderFactory, cls)._create(target_class, *args, **kwargs)
+        try:
+            instance = models.PreprintProvider.objects.get(_id=kwargs['_id'])
+        except models.PreprintProvider.DoesNotExist:
+            instance = super()._create(target_class, *args, **kwargs)
+
         if not instance.share_title:
             instance.share_title = instance._id
             instance.save()
@@ -1173,3 +1184,13 @@ class SchemaResponseActionFactory(DjangoModelFactory):
     creator = factory.SubFactory(AuthUserFactory)
 
     is_deleted = False
+
+
+class RegistrationBulkUploadJobFactory(DjangoModelFactory):
+    class Meta:
+        model = models.RegistrationBulkUploadJob
+
+
+class RegistrationBulkUploadRowFactory(DjangoModelFactory):
+    class Meta:
+        model = models.RegistrationBulkUploadRow

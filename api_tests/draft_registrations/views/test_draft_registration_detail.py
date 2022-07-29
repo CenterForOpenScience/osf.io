@@ -1,13 +1,11 @@
 import pytest
 
-from django.contrib.auth.models import Permission
 from api.base.settings.defaults import API_BASE
 from api_tests.nodes.views.test_node_draft_registration_detail import (
     TestDraftRegistrationDetail,
     TestDraftRegistrationUpdate,
     TestDraftRegistrationPatch,
     TestDraftRegistrationDelete,
-    TestDraftPreregChallengeRegistrationMetadataValidation
 )
 from osf.models import DraftNode, Node, NodeLicense, RegistrationSchema
 from osf.utils.permissions import ADMIN, READ, WRITE
@@ -148,18 +146,6 @@ class TestDraftRegistrationDetailEndpoint(TestDraftRegistrationDetail):
         project = draft_registration.branched_from
         project.add_contributor(user, ADMIN)
         res = app.get(url_draft_registrations, auth=user.auth, expect_errors=True)
-        assert res.status_code == 403
-
-    # Overrides TestDraftRegistrationDetail
-    def test_reviewer_can_see_draft_registration(
-            self, app, schema, draft_registration, url_draft_registrations):
-        user = AuthUserFactory()
-        administer_permission = Permission.objects.get(
-            codename='administer_prereg')
-        user.user_permissions.add(administer_permission)
-        user.save()
-        res = app.get(url_draft_registrations, auth=user.auth, expect_errors=True)
-        # New workflows aren't accommodating old prereg challenge
         assert res.status_code == 403
 
     def test_current_permissions_field(self, app, user_read_contrib,
@@ -568,12 +554,3 @@ class TestDraftRegistrationDelete(TestDraftRegistrationDelete):
         # Overrides TestDraftRegistrationDelete
         return '/{}draft_registrations/{}/'.format(
             API_BASE, draft_registration._id)
-
-
-class TestDraftPreregChallengeRegistrationMetadataValidationNew(TestDraftPreregChallengeRegistrationMetadataValidation):
-    @pytest.fixture()
-    def url_draft_registrations(
-            self, project_public,
-            draft_registration_prereg):
-        return '/{}draft_registrations/{}/'.format(
-            API_BASE, draft_registration_prereg._id)

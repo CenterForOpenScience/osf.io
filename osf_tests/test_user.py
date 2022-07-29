@@ -35,7 +35,6 @@ from osf.models import (
     Contributor,
     Session,
     NotableEmailDomain,
-    QuickFilesNode,
     PreprintContributor,
     DraftRegistrationContributor,
 )
@@ -89,7 +88,6 @@ def auth(user):
 
 # Tests copied from tests/test_models.py
 @pytest.mark.enable_implicit_clean
-@pytest.mark.enable_quickfiles_creation
 class TestOSFUser:
 
     def test_create(self):
@@ -291,9 +289,8 @@ class TestOSFUser:
 
         assert user.nodes.filter(type='osf.node').count() == 5
         # one group for each node
-        assert user.groups.count() == 6  # (including quickfiles node)
+        assert user.groups.count() == 5
         assert user2.nodes.filter(type='osf.node').count() == 0
-        assert user2.groups.count() == 1  # (quickfilesnode)
 
         contrib_obj = Contributor.objects.get(user=user, node=project_one)
         assert contrib_obj.visible is True
@@ -1430,7 +1427,6 @@ class TestCitationProperties:
 # copied from tests/test_models.py
 @pytest.mark.enable_bookmark_creation
 @pytest.mark.enable_implicit_clean
-@pytest.mark.enable_quickfiles_creation
 class TestMergingUsers:
 
     @pytest.yield_fixture()
@@ -1467,17 +1463,6 @@ class TestMergingUsers:
         assert dupe.collection_set.filter(id=dashnode.id).exists()
         merge_dupe()
         assert not master.collection_set.filter(id=dashnode.id).exists()
-
-    # Note the files are merged, but the actual node stays with the dupe user
-    def test_quickfiles_node_arent_merged(self, dupe, master, merge_dupe):
-        assert master.nodes.filter(type='osf.quickfilesnode').count() == 1
-        assert dupe.nodes.filter(type='osf.quickfilesnode').count() == 1
-
-        merge_dupe()
-        master.refresh_from_db()
-        dupe.refresh_from_db()
-        assert master.nodes.filter(type='osf.quickfilesnode').count() == 1
-        assert dupe.nodes.filter(type='osf.quickfilesnode').count() == 1
 
     def test_dupe_is_merged(self, dupe, master, merge_dupe):
         merge_dupe()
@@ -1636,13 +1621,13 @@ class TestDisablingUsers(OsfTestCase):
         assert new_date_disabled == old_date_disabled
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
-    def test_disable_account_and_remove_sessions(self, mock_mail):
+    def test_deactivate_account_and_remove_sessions(self, mock_mail):
         session1 = SessionFactory(user=self.user, created=(timezone.now() - dt.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
         session2 = SessionFactory(user=self.user, created=(timezone.now() - dt.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
 
         self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST] = True
         self.user.save()
-        self.user.disable_account()
+        self.user.deactivate_account()
 
         assert self.user.is_disabled is True
         assert isinstance(self.user.date_disabled, dt.datetime)
@@ -1651,13 +1636,12 @@ class TestDisablingUsers(OsfTestCase):
         assert not Session.load(session1._id)
         assert not Session.load(session2._id)
 
-    def test_disable_account_api(self):
+    def test_deactivate_account_api(self):
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = True
         with pytest.raises(mailchimp_utils.mailchimp.InvalidApiKeyError):
-            self.user.disable_account()
+            self.user.deactivate_account()
 
 # Copied from tests/modes/test_user.py
-@pytest.mark.enable_quickfiles_creation
 @pytest.mark.enable_bookmark_creation
 class TestUser(OsfTestCase):
     def setUp(self):
@@ -1819,11 +1803,10 @@ class TestUser(OsfTestCase):
         project_three.save()
 
         user_nodes = self.user.all_nodes
-        assert user_nodes.count() == 3
+        assert user_nodes.count() == 2
         assert project in user_nodes
         assert project_two in user_nodes
         assert project_three not in user_nodes
-        assert QuickFilesNode.objects.get(creator=self.user) in user_nodes
 
     def test_visible_contributor_to_property(self):
         invisible_contributor = UserFactory()
@@ -1852,7 +1835,6 @@ class TestUser(OsfTestCase):
 # Copied from tests/models/test_user.py
 @pytest.mark.enable_implicit_clean
 @pytest.mark.enable_bookmark_creation
-@pytest.mark.enable_quickfiles_creation
 class TestUserMerging(OsfTestCase):
     def setUp(self):
         super(TestUserMerging, self).setUp()
@@ -2308,7 +2290,6 @@ class TestUserValidation(OsfTestCase):
                 self.user.save()
 
 
-@pytest.mark.enable_quickfiles_creation
 class TestUserGdprDelete:
 
     @pytest.fixture()
@@ -2393,18 +2374,12 @@ class TestUserGdprDelete:
     def test_can_gdpr_delete_personal_nodes(self, user):
 
         user.gdpr_delete()
-
-        # user still has nodes because we did a soft delete
-        assert user.nodes.all().count()
-        # but they're all deleted
         assert user.nodes.exclude(is_deleted=True).count() == 0
 
     def test_can_gdpr_delete_shared_nodes_with_multiple_admins(self, user, project_with_two_admins):
 
         user.gdpr_delete()
-
-        # The deleted user is still associated with the node, though their name still appears as 'Deleted User'
-        assert user.nodes.all().count() == 1
+        assert user.nodes.all().count() == 0
 
     def test_cant_gdpr_delete_registrations(self, user, registration):
 

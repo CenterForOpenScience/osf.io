@@ -4,7 +4,6 @@ import re
 from future.moves.urllib.parse import urljoin, urlencode
 import uuid
 from copy import deepcopy
-from os.path import splitext
 
 from flask import Request as FlaskRequest
 from framework import analytics
@@ -37,14 +36,12 @@ from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
 from framework.exceptions import PermissionsError
 from framework.sessions.utils import remove_sessions_for_user
 from osf.utils.requests import get_current_request
-from osf.exceptions import reraise_django_validation_errors, MaxRetriesError, UserStateError
+from osf.exceptions import reraise_django_validation_errors, UserStateError
 from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
 from osf.models.notable_email_domain import NotableEmailDomain
 from osf.models.contributor import Contributor, RecentlyAddedContributor
 from osf.models.institution import Institution
 from osf.models.mixins import AddonModelMixin
-from osf.models.nodelog import NodeLog
-from osf.models.preprintlog import PreprintLog
 from osf.models.spam import SpamMixin
 from osf.models.session import Session
 from osf.models.tag import Tag
@@ -667,6 +664,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def __str__(self):
         return self.get_short_name()
 
+    def get_verified_external_id(self, external_service, verified_only=False):
+        identifier_info = self.external_identity.get(external_service, {})
+        for external_id, status in identifier_info.items():
+            if status and status == 'VERIFIED' or not verified_only:
+                return external_id
+        return None
+
     @property
     def contributed(self):
         return self.nodes.all()
@@ -814,7 +818,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         from osf.models import QuickFilesNode
         from osf.models import BaseFileNode
-        from addons.osfstorage.models import OsfStorageFolder
 
         # - projects where the user was the creator
         user.nodes_created.exclude(type=QuickFilesNode._typedmodels_type).update(creator=self)
@@ -823,41 +826,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         for file_node in BaseFileNode.files_checked_out(user=user):
             file_node.checkout = self
             file_node.save()
-
-        # - move files in the merged user's quickfiles node, checking for name conflicts
-        primary_quickfiles = QuickFilesNode.objects.get(creator=self)
-        primary_quickfiles_root = OsfStorageFolder.objects.get_root(target=primary_quickfiles)
-        merging_user_quickfiles = QuickFilesNode.objects.get(creator=user)
-
-        files_in_merging_user_quickfiles = merging_user_quickfiles.files.filter(type='osf.osfstoragefile')
-        for merging_user_file in files_in_merging_user_quickfiles:
-            if primary_quickfiles.files.filter(name=merging_user_file.name).exists():
-                digit = 1
-                split_filename = splitext(merging_user_file.name)
-                name_without_extension = split_filename[0]
-                extension = split_filename[1]
-                found_digit_in_parens = re.findall(r'(?<=\()(\d)(?=\))', name_without_extension)
-                if found_digit_in_parens:
-                    found_digit = int(found_digit_in_parens[0])
-                    digit = found_digit + 1
-                    name_without_extension = name_without_extension.replace('({})'.format(found_digit), '').strip()
-                new_name_format = '{} ({}){}'
-                new_name = new_name_format.format(name_without_extension, digit, extension)
-
-                # check if new name conflicts, update til it does not (try up to 1000 times)
-                rename_count = 0
-                while primary_quickfiles.files.filter(name=new_name).exists():
-                    digit += 1
-                    new_name = new_name_format.format(name_without_extension, digit, extension)
-                    rename_count += 1
-                    if rename_count >= MAX_QUICKFILES_MERGE_RENAME_ATTEMPTS:
-                        raise MaxRetriesError('Maximum number of rename attempts has been reached')
-
-                merging_user_file.name = new_name
-                merging_user_file.save()
-
-            merging_user_file.move_under(primary_quickfiles_root)
-            merging_user_file.save()
 
         # Transfer user's preprints
         self._merge_users_preprints(user)
@@ -933,9 +901,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         Active draft registrations attached to a user (user is a contributor)
         """
+
         return self.draft_registrations.filter(
-            models.Q(registered_node__isnull=True) |
-            models.Q(registered_node__is_deleted=True),
+            (models.Q(registered_node__isnull=True) | models.Q(registered_node__deleted__isnull=False)),
+            branched_from__deleted__isnull=True,
             deleted__isnull=True,
         )
 
@@ -979,7 +948,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             draft_reg.remove_permission(user, user_perms)
             draft_reg.save()
 
-    def disable_account(self):
+    def deactivate_account(self):
         """
         Disables user account, making is_disabled true, while also unsubscribing user
         from mailchimp emails, remove any existing sessions.
@@ -1014,6 +983,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if isinstance(req, FlaskRequest):
             logout()
         remove_sessions_for_user(self)
+
+    def reactivate_account(self):
+        """
+        Enable user account
+        """
+        self.is_disabled = False
+        self.requested_deactivation = False
+        from website.mailchimp_utils import subscribe_on_confirm
+        subscribe_on_confirm(self)
 
     def update_is_active(self):
         """Update ``is_active`` to be consistent with the fields that
@@ -1430,17 +1408,21 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return True
 
     def confirm_spam(self, save=True):
+        self.deactivate_account()
         super().confirm_spam(save=save)
+
         for node in self.nodes.filter(is_public=True, is_deleted=False).exclude(type='osf.quickfilesnode'):
             node.confirm_spam(train_akismet=False)
         for preprint in self.preprints.filter(is_public=True, deleted__isnull=True):
             preprint.confirm_spam(train_akismet=False)
 
     def confirm_ham(self, save=False):
+        self.reactivate_account()
         super().confirm_ham(save=save)
-        for node in self.nodes.filter(logs__action=NodeLog.CONFIRM_SPAM).exclude(type='osf.quickfilesnode'):
+
+        for node in self.nodes.filter().exclude(type='osf.quickfilesnode'):
             node.confirm_ham(save=save, train_akismet=False)
-        for preprint in self.preprints.filter(logs__action=PreprintLog.CONFIRM_SPAM):
+        for preprint in self.preprints.filter():
             preprint.confirm_ham(save=save, train_akismet=False)
 
     @property
@@ -1858,7 +1840,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             node.remove_contributor(self, auth=Auth(self), log=False)
 
         # This is doesn't to remove identifying info, but ensures other users can't see the deleted user's profile etc.
-        self.disable_account()
+        self.deactivate_account()
 
         # delete all personal nodes (one contributor), bookmarks, quickfiles etc.
         for node in personal_nodes.all():
@@ -1913,18 +1895,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         If a user only has no resources or only deleted resources this will return false and they can safely be deactivated
         otherwise they must delete or transfer their outstanding resources.
 
-        :return bool: does the user have any active node, preprints, groups, quickfiles etc?
+        :return bool: does the user have any active node, preprints, groups, etc?
         """
         from osf.models import Preprint
 
-        # TODO: Update once quickfolders in merged
-
-        nodes = self.nodes.exclude(type='osf.quickfilesnode').exclude(is_deleted=True).exists()
-        quickfiles = self.nodes.get(type='osf.quickfilesnode').files.exists()
+        nodes = self.nodes.filter(deleted__isnull=True).exists()
         groups = self.osf_groups.exists()
         preprints = Preprint.objects.filter(_contributors=self, ever_public=True, deleted__isnull=True).exists()
 
-        return groups or nodes or quickfiles or preprints
+        return groups or nodes or preprints
 
     class Meta:
         # custom permissions for use in the OSF Admin App
@@ -1943,16 +1922,3 @@ def add_default_user_addons(sender, instance, created, **kwargs):
 def create_bookmark_collection(sender, instance, created, **kwargs):
     if created:
         new_bookmark_collection(instance)
-
-
-# Allows this hook to be easily mock.patched
-def _create_quickfiles_project(instance):
-    from osf.models.quickfiles import QuickFilesNode
-
-    QuickFilesNode.objects.create_for_user(instance)
-
-
-@receiver(post_save, sender=OSFUser)
-def create_quickfiles_project(sender, instance, created, **kwargs):
-    if created:
-        _create_quickfiles_project(instance)

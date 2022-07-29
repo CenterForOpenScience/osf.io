@@ -1,0 +1,62 @@
+{% load node_extras %}
+{% if registration_approval %}
+    <tr>
+        <td>Registration Approval</td>
+        <td>
+            <table class="table table-bordered table-hover">
+                <thead>
+                    <th>Field</th>
+                    <th>Value</th>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Name</td>
+                        <td>{{ registration_approval }}</td>
+                    </tr>
+                    <tr>
+                        <td>State</td>
+                        <td>{{ registration_approval.state  }}</td>
+                    </tr>
+                    <tr>
+                        <td>Created</td>
+                        <td>{{ node.registration_approval.created | date:"F j, Y P"  }}</td>
+                    </tr>
+                    <tr>
+                        <td>Initiation Date</td>
+                        <td>{{ registration_approval.initiation_date | date:"F j, Y P"  }}</td>
+                    </tr>
+                    <tr>
+                        <td>End Date</td>
+                        <td>{{ registration_approval.end_date | date:"F j, Y P"  }}</td>
+
+                    </tr>
+                    <tr>
+                        <td>Modified</td>
+                        <td>{{ registration_approval.modified | date:"F j, Y P"  }}</td>
+                    </tr>
+                    <tr>
+                        <td>Initiated by</td>
+                        <td><a href="{{ registration_approval.initiated_by | reverse_user }}">{{ registration_approval.initiated_by }}</a></td>
+                    </tr>
+                    <tr>
+                        <td>Approval State</td>
+                        <td><pre style="width: 400px !important;" >{{ registration_approval.approval_state }}</pre></td>
+                    </tr>
+                    <tr>
+                        <td>Stashed Urls</td>
+                        <td><pre style="width: 400px !important;">{{ registration_approval.stashed_urls }}</pre></td>
+                    </tr>
+                    <tr>
+                        <td>notify_initiator_on_complete</td>
+                        <td>{{ registration_approval.notify_initiator_on_complete }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </td>
+    </tr>
+    {% else %}
+    <tr>
+        <td>Registration Approval</td>
+        <td>No Registration Approval for this Node</td>
+    </tr>
+{% endif %}

@@ -10,7 +10,7 @@
 
             <div class="modal-body">
 
-                <form role='form'>
+                <form>
                     <div class="form-group">
                         <input class="form-control" placeholder="Search projects" data-bind="value:query" />
 

@@ -12,7 +12,7 @@ from psycopg2._psycopg import AsIs
 from addons.base.models import BaseNodeSettings, BaseStorageAddon, BaseUserSettings
 from osf.utils.fields import EncryptedJSONField
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
+from osf.exceptions import InvalidTagError, TagNotFoundError
 from framework.auth.core import Auth
 from osf.models.mixins import Loggable
 from osf.models import AbstractNode
@@ -85,7 +85,7 @@ class OsfStorageFileNode(BaseFileNode):
         return cls.objects.get(_id=_id, target_object_id=target.id, target_content_type=ContentType.objects.get_for_model(target))
 
     @classmethod
-    def get_or_create(cls, target, path):
+    def get_or_create(cls, target, path, **unused_query_params):
         """Override get or create for osfstorage
         Path is always the _id of the osfstorage filenode.
         Use load here as its way faster than find.
@@ -239,9 +239,9 @@ class OsfStorageFile(OsfStorageFileNode, File):
         if not last_version:
             return None
         return {
-            'sha1': last_version.metadata['sha1'],
-            'sha256': last_version.metadata['sha256'],
-            'md5': last_version.metadata['md5']
+            'sha1': last_version.metadata.get('sha1', ''),
+            'sha256': last_version.metadata.get('sha256', ''),
+            'md5': last_version.metadata.get('md5', ''),
         }
 
     @property
@@ -352,7 +352,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
     def add_tag(self, tag, auth, save=True, log=True):
         from osf.models import Tag, NodeLog  # Prevent import error
 
-        if not self.tags.filter(system=False, name=tag).exists() and not getattr(self.target, 'is_registration', False):
+        if not self.tags.filter(system=False, name=tag).exists():
             new_tag = Tag.load(tag)
             if not new_tag:
                 new_tag = Tag(name=tag)
@@ -367,9 +367,6 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
     def remove_tag(self, tag, auth, save=True, log=True):
         from osf.models import Tag, NodeLog  # Prevent import error
-        if getattr(self.target, 'is_registration', False):
-            # Can't perform edits on a registration
-            raise NodeStateError
         tag_instance = Tag.objects.filter(system=False, name=tag).first()
         if not tag_instance:
             raise InvalidTagError
@@ -382,6 +379,17 @@ class OsfStorageFile(OsfStorageFileNode, File):
             if save:
                 self.save()
             return True
+
+    def add_tags(self, tags, auth=None, save=True, log=True, system=False):
+        for tag in tags:
+            self.add_tag(tag, auth, save, log=log)
+
+    def remove_tags(self, tags, auth, save=True):
+        if not tags:
+            raise InvalidTagError
+
+        for tag in tags:
+            self.remove_tag(tag, auth, save)
 
     def delete(self, user=None, **kwargs):
         from website.search import search

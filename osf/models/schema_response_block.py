@@ -2,6 +2,7 @@ from django.db import models
 from django.utils.functional import cached_property
 
 from osf.exceptions import SchemaResponseUpdateError
+from osf.models import RegistrationSchemaBlock
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils import sanitize
@@ -22,27 +23,32 @@ class SchemaResponseBlock(ObjectIDMixin, BaseModel):
     source_schema_response = models.ForeignKey(
         'osf.SchemaResponse',
         null=False,
-        related_name='updated_response_blocks'
+        related_name='updated_response_blocks',
+        on_delete=models.CASCADE,
     )
-    # The RegistrationSchemaBlock that defines the question being answered
-    source_schema_block = models.ForeignKey('osf.RegistrationSchemaBlock', null=False)
-
-    # Should match source_schema_block.registration_response_key
+    # Must align with the `registration_response_key from some schema_block on the
+    # source_schema_response's schema
     schema_key = models.CharField(max_length=255)
     response = DateTimeAwareJSONField(blank=True, null=True)
 
     class Meta:
-        unique_together = ('source_schema_response', 'source_schema_block')
+        unique_together = ('source_schema_response', 'schema_key')
 
     @classmethod
     def create(cls, source_schema_response, source_schema_block, response_value=None):
         new_response_block = cls(
             source_schema_response=source_schema_response,
-            source_schema_block=source_schema_block,
             schema_key=source_schema_block.registration_response_key
         )
         new_response_block.set_response(response_value)
         return new_response_block
+
+    @cached_property
+    def source_schema_block(self):
+        return RegistrationSchemaBlock.objects.filter(
+            schema=self.source_schema_response.schema,
+            registration_response_key=self.schema_key
+        ).get()
 
     @cached_property
     def block_type(self):

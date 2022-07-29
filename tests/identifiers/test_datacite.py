@@ -21,7 +21,7 @@ from website.identifiers.clients import DataCiteClient
 class TestDataCiteClient:
 
     @pytest.fixture()
-    def datacite_client(self, registration):
+    def datacite_client(self, registration, mock_datacite):
         return registration.get_doi_client()
 
     @pytest.fixture()
@@ -70,7 +70,7 @@ class TestDataCiteClient:
         parser = lxml.etree.XMLParser(ns_clean=True, recover=True, encoding='utf-8')
         root = lxml.etree.fromstring(metadata_xml, parser=parser)
         xsi_location = '{http://www.w3.org/2001/XMLSchema-instance}schemaLocation'
-        expected_location = 'http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4/metadata.xsd'
+        expected_location = 'http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4.3/metadata.xsd'
         assert root.attrib[xsi_location] == expected_location
 
         identifier = root.find('{%s}identifier' % schema40.ns[None])
@@ -90,7 +90,7 @@ class TestDataCiteClient:
         assert resource_type.text == 'Pre-registration'
         assert resource_type.attrib['resourceTypeGeneral'] == 'Text'
 
-    def test_metadata_for_node_only_includes_visible_contribs(self, datacite_client):
+    def test_datcite_format_contributors(self, datacite_client):
         visible_contrib = AuthUserFactory()
         visible_contrib2 = AuthUserFactory()
         visible_contrib2.given_name = u'ヽ༼ ಠ益ಠ ༽ﾉ'
@@ -109,12 +109,12 @@ class TestDataCiteClient:
 
         metadata_xml = datacite_client.build_metadata(registration)
         # includes visible contrib name
-        assert u'<givenName>{}</givenName>'.format(visible_contrib.given_name) in metadata_xml
-        assert u'<familyName>{}</familyName>'.format(visible_contrib.family_name) in metadata_xml
+        assert f'<contributorName nameType="Personal">{visible_contrib.fullname}</contributorName>' not in metadata_xml
+        assert f'<creatorName nameType="Personal">{visible_contrib.fullname}</creatorName>' in metadata_xml
 
-        # doesn't include invisible contrib name
-        assert u'<givenName>{}</givenName>'.format(invisible_contrib.given_name) not in metadata_xml
-        assert u'<familyName>{}</familyName>'.format(invisible_contrib.family_name) not in metadata_xml
+        assert f'<contributorName nameType="Personal">{invisible_contrib.fullname}</contributorName>' in metadata_xml
+        assert f'<creatorName nameType="Personal">{invisible_contrib.fullname}</creatorName>' not in metadata_xml
+
 
 
 @pytest.mark.django_db

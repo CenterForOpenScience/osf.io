@@ -3,6 +3,7 @@ from rest_framework import exceptions
 from rest_framework import serializers as ser
 from rest_framework.fields import empty
 from rest_framework.exceptions import ValidationError as DRFValidationError
+from website import settings
 
 from api.base.exceptions import Conflict, JSONAPIException
 from api.base.serializers import (
@@ -18,7 +19,6 @@ from api.base.serializers import (
     NodeFileHyperLinkField,
     WaterbutlerLink,
     HideIfPreprint,
-    DisableIfSwitch,
     LinkedNodesRelationshipSerializer,
 )
 from api.base.utils import absolute_reverse, get_user_auth
@@ -46,11 +46,7 @@ from osf.models import (
     NodeLicense,
 )
 from osf.utils import permissions as osf_permissions
-from osf.features import (
-    SLOAN_DATA_INPUT,
-    SLOAN_COI_INPUT,
-    SLOAN_PREREG_INPUT,
-)
+
 
 from osf.exceptions import PreprintStateError
 
@@ -205,70 +201,15 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         },
     )
 
-    has_coi = DisableIfSwitch(
-        SLOAN_COI_INPUT,
-        ser.NullBooleanField(required=False),
-    )
-    conflict_of_interest_statement = DisableIfSwitch(
-        SLOAN_COI_INPUT,
-        ser.CharField(
-            required=False,
-            allow_blank=True,
-            allow_null=True,
-        ),
-    )
-    has_data_links = DisableIfSwitch(
-        SLOAN_DATA_INPUT,
-        ser.ChoiceField(
-            Preprint.HAS_LINKS_CHOICES,
-            required=False,
-        ),
-    )
-    why_no_data = DisableIfSwitch(
-        SLOAN_DATA_INPUT,
-        ser.CharField(
-            required=False,
-            allow_blank=True,
-            allow_null=True,
-        ),
-    )
-    data_links = DisableIfSwitch(
-        SLOAN_DATA_INPUT,
-        ser.ListField(
-            child=ser.URLField(),
-            required=False,
-        ),
-    )
-    has_prereg_links = DisableIfSwitch(
-        SLOAN_PREREG_INPUT,
-        ser.ChoiceField(
-            Preprint.HAS_LINKS_CHOICES,
-            required=False,
-        ),
-    )
-    why_no_prereg = DisableIfSwitch(
-        SLOAN_PREREG_INPUT,
-        ser.CharField(
-            required=False,
-            allow_blank=True,
-            allow_null=True,
-        ),
-    )
-    prereg_links = DisableIfSwitch(
-        SLOAN_PREREG_INPUT,
-        ser.ListField(
-            child=ser.URLField(),
-            required=False,
-        ),
-    )
-    prereg_link_info = DisableIfSwitch(
-        SLOAN_PREREG_INPUT,
-        ser.ChoiceField(
-            Preprint.PREREG_LINK_INFO_CHOICES,
-            required=False,
-            allow_blank=True,
-        ),
-    )
+    has_coi = ser.NullBooleanField(required=False)
+    conflict_of_interest_statement = ser.CharField(required=False, allow_blank=True, allow_null=True)
+    has_data_links = ser.ChoiceField(Preprint.HAS_LINKS_CHOICES, required=False)
+    why_no_data = ser.CharField(required=False, allow_blank=True, allow_null=True)
+    data_links = ser.ListField(child=ser.URLField(), required=False)
+    has_prereg_links = ser.ChoiceField(Preprint.HAS_LINKS_CHOICES, required=False)
+    why_no_prereg = ser.CharField(required=False, allow_blank=True, allow_null=True)
+    prereg_links = ser.ListField(child=ser.URLField(), required=False)
+    prereg_link_info = ser.ChoiceField(Preprint.PREREG_LINK_INFO_CHOICES, required=False, allow_blank=True)
 
     class Meta:
         type_ = 'preprints'
@@ -368,6 +309,13 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             save_preprint = True
 
         if 'article_doi' in validated_data:
+            doi = settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id)
+            if validated_data['article_doi'] == doi:
+                raise exceptions.ValidationError(
+                    detail=f'The `article_doi` "{doi}" is already associated with this'
+                    f' preprint please enter a peer-reviewed publication\'s DOI',
+                )
+
             preprint.article_doi = validated_data['article_doi']
             save_preprint = True
 

@@ -6,7 +6,6 @@ import uuid
 import ssl
 from pymongo import MongoClient
 import requests
-from bs4 import BeautifulSoup
 from django.apps import apps
 
 from addons.wiki import settings as wiki_settings
@@ -239,15 +238,13 @@ def serialize_wiki_widget(node):
     more = node.wikis.filter(deleted__isnull=True).count() >= 2
     MAX_DISPLAY_LENGTH = 400
     rendered_before_update = False
-    if wiki_version and wiki_version.html(node):
-        wiki_html = BeautifulSoup(wiki_version.html(node)).text
-        if len(wiki_html) > MAX_DISPLAY_LENGTH:
-            wiki_html = BeautifulSoup(wiki_html[:MAX_DISPLAY_LENGTH] + '...', 'html.parser')
+    if wiki_version and wiki_version.content:
+        if len(wiki_version.content) > MAX_DISPLAY_LENGTH:
             more = True
-
         rendered_before_update = wiki_version.rendered_before_update
-    else:
-        wiki_html = None
+
+    # Content fetched and rendered by front-end
+    wiki_html = None
 
     wiki_widget_data = {
         'complete': True,

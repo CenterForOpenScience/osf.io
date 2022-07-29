@@ -29,7 +29,7 @@ from api.schema_responses.serializers import (
 from framework.auth.oauth_scopes import CoreScopes
 
 from osf.exceptions import SchemaResponseStateError
-from osf.models import SchemaResponse, SchemaResponseAction, Registration
+from osf.models import SchemaResponse, SchemaResponseAction
 from osf.utils.workflows import ApprovalStates
 
 
@@ -94,13 +94,7 @@ class SchemaResponseDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVie
     view_category = 'schema_responses'
     view_name = 'schema-responses-detail'
 
-    def get_serializer_class(self):
-        parent = self.get_object().parent
-
-        if isinstance(parent, Registration):
-            return RegistrationSchemaResponseSerializer
-        else:
-            raise NotImplementedError()
+    serializer_class = RegistrationSchemaResponseSerializer
 
     def get_object(self):
         user = self.request.user

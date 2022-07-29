@@ -290,7 +290,7 @@ def find_title_description_help_example(rs, question):
     ]
 
     if title:
-        if schema_name in ['OSF Preregistration', 'Prereg Challenge', 'Secondary Data Preregistration']:
+        if schema_name in ['OSF Preregistration', 'Secondary Data Preregistration']:
             # These two schemas have clear "example" text in the "help" section
             example = help
             help = description
@@ -414,6 +414,8 @@ def create_schema_blocks_for_atomic_schema(schema):
         if block_type == 'question-label':
             current_group_key = generate_object_id()
             block['schema_block_group_key'] = current_group_key
+        elif block_type == 'paragraph':  # if a paragraph trails a question-label
+            block['schema_block_group_key'] = current_group_key
         elif block_type in grouped_block_types:
             block['schema_block_group_key'] = current_group_key
         else:
@@ -458,10 +460,15 @@ def map_schemas_to_schemablocks(*args):
         # Use MetaSchema model if migrating from a version before RegistrationSchema existed
         schema_model = state.get_model('osf', 'metaschema')
 
-    # Delete all existing schema blocks (avoid creating duplicates)
-    unmap_schemablocks(*args)
+    try:
+        RegistrationSchemaBlock = state.get_model('osf', 'registrationschemablock')
+    except LookupError:
+        return  # can't create SchemaBlocks if they don't exist
 
     for rs in schema_model.objects.all():
+        if RegistrationSchemaBlock.objects.filter(schema_id=rs.id).exists():
+            continue
+
         logger.info('Migrating schema {}, version {} to schema blocks.'.format(rs.name, rs.schema_version))
         if rs.schema.get('atomicSchema'):
             create_schema_blocks_for_atomic_schema(rs)
@@ -481,10 +488,8 @@ def map_schemas_to_schemablocks(*args):
 
 
 def unmap_schemablocks(*args):
-    state = args[0] if args else apps
-    schema_block_model = state.get_model('osf', 'registrationschemablock')
-
-    schema_block_model.objects.all().delete()
+    '''Noop for historical purposes'''
+    return
 
 
 class UpdateRegistrationSchemas(Operation):

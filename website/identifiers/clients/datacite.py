@@ -7,7 +7,7 @@ import datetime
 
 from website.identifiers.clients.base import AbstractIdentifierClient
 from website import settings
-from datacite import DataCiteMDSClient, schema40
+from datacite import DataCiteMDSClient, schema43
 from django.core.exceptions import ImproperlyConfigured
 from osf.metadata.utils import datacite_format_subjects, datacite_format_contributors, datacite_format_creators
 
@@ -32,31 +32,63 @@ class DataCiteClient(AbstractIdentifierClient):
     def build_metadata(self, node):
         """Return the formatted datacite metadata XML as a string.
          """
+        non_bib_contributors = node.contributors.filter(
+            contributor__visible=False,
+            contributor__node=node.id
+        )
 
+        contributors = datacite_format_contributors(non_bib_contributors)
+        contributors.append({
+            'nameType': 'Organizational',
+            'contributorType': 'HostingInstitution',
+            'contributorName': 'Open Science Framework',
+            'name': 'Open Science Framework',
+            'nameIdentifiers': [
+                {
+                    'name': 'Open Science Framework',
+                    'nameIdentifier': f'https://ror.org/{settings.OSF_ROR_ID}/',
+                    'nameIdentifierScheme': 'ROR',
+                },
+                {
+                    'name': 'Open Science Framework',
+                    'nameIdentifier': f'https://grid.ac/institutes/{settings.OSF_GRID_ID}/',
+                    'nameIdentifierScheme': 'GRID',
+                }
+            ],
+        })
+
+        date_created = node.created.date() if not node.type == 'osf.registration' else node.registered_date.date()
         data = {
-            'identifier': {
-                'identifier': self.build_doi(node),
-                'identifierType': 'DOI',
-            },
-            'creators': datacite_format_creators([node.creator]),
-            'contributors': datacite_format_contributors(node.visible_contributors),
+            'identifiers': [
+                {
+                    'identifier': self.build_doi(node),
+                    'identifierType': 'DOI',
+                }
+            ],
+            'creators': datacite_format_creators(node.visible_contributors),
+            'contributors': contributors,
             'titles': [
                 {'title': node.title}
             ],
             'publisher': 'Open Science Framework',
             'publicationYear': str(datetime.datetime.now().year),
-            'resourceType': {
+            'types': {
                 'resourceType': 'Pre-registration' if node.type == 'osf.registration' else 'Project',
                 'resourceTypeGeneral': 'Text'
             },
+            'schemaVersion': 'http://datacite.org/schema/kernel-4',
             'dates': [
                 {
-                    'date': node.created.isoformat(),
+                    'date': str(date_created),
                     'dateType': 'Created'
                 },
                 {
-                    'date': node.modified.isoformat(),
+                    'date': str(node.modified.date()),
                     'dateType': 'Updated'
+                },
+                {
+                    'date': str(datetime.datetime.now().date()),
+                    'dateType': 'Issued'
                 },
             ]
         }
@@ -86,10 +118,10 @@ class DataCiteClient(AbstractIdentifierClient):
         data['subjects'] = datacite_format_subjects(node)
 
         # Validate dictionary
-        assert schema40.validate(data)
+        assert schema43.validate(data)
 
         # Generate DataCite XML from dictionary.
-        return schema40.tostring(data)
+        return schema43.tostring(data)
 
     def build_doi(self, object):
         return settings.DOI_FORMAT.format(

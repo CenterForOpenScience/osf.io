@@ -15,7 +15,7 @@ from tests.base import AdminTestCase
 
 from osf_tests.factories import SubjectFactory, UserFactory, RegistrationFactory, PreprintFactory
 
-from osf.models import Subject, OSFUser, Collection
+from osf.models import Subject, OSFUser, Collection, Embargo
 from osf.models.provider import rules_to_subjects
 from admin.base.utils import get_subject_rules, change_embargo_date
 from osf.admin import OSFUserAdmin
@@ -137,12 +137,14 @@ class TestNodeChanges(AdminTestCase):
 
         assert_false(self.registration.embargo)
         assert_true(self.registration.is_public)
+        assert_true(Embargo.objects.count() == 0)
 
         # Note: Date comparisons accept a difference up to a day because embargoes start at midnight
 
         # Create an embargo from a registration with none
         change_embargo_date(self.registration, self.user, self.date_valid)
         assert_almost_equal(self.registration.embargo.end_date, self.date_valid, delta=datetime.timedelta(days=1))
+        assert_true(Embargo.objects.count() == 1)
 
         # Make sure once embargo is set, registration is made private
         self.registration.reload()
@@ -151,6 +153,7 @@ class TestNodeChanges(AdminTestCase):
         # Update an embargo end date
         change_embargo_date(self.registration, self.user, self.date_valid2)
         assert_almost_equal(self.registration.embargo.end_date, self.date_valid2, delta=datetime.timedelta(days=1))
+        assert_true(Embargo.objects.count() == 1)
 
         # Test invalid dates
         with assert_raises(ValidationError):
@@ -163,8 +166,10 @@ class TestNodeChanges(AdminTestCase):
             change_embargo_date(self.registration, UserFactory(), self.date_valid)
 
         assert_almost_equal(self.registration.embargo.end_date, self.date_valid2, delta=datetime.timedelta(days=1))
+        assert_true(Embargo.objects.count() == 1)
 
-        # Add a test to check privatizing
+        assert_false(self.registration.is_public)
+
 
 site = AdminSite()
 

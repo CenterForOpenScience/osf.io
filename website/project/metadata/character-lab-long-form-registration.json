@@ -13,11 +13,11 @@
 		"registration_response_key": "Q1",
 		"block_type": "long-text-input"
 	}, {
-		"registration_response_key": "Q2",
 		"block_type": "question-label",
 		"help_text": "These outcomes were developed by the Impact Genome Project \u00ae and are licensed under a Creative Commons BY-NC-ND 4.0 license. ",
 		"display_text": "Expected outcomes"
 	}, {
+		"registration_response_key": "Q2",
 		"block_type": "multi-select-input"
 	}, {
 		"block_type": "select-input-option",
@@ -263,6 +263,7 @@
 		"block_type": "question-label",
 		"display_text": "Study design"
 	}, {
+		"registration_response_key": "Q10",
 		"block_type": "multi-select-input"
 	}, {
 		"block_type": "select-input-option",

@@ -631,6 +631,16 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['current_user_is_contributor_or_group_member'] is False
         assert res.json['data']['attributes']['current_user_is_contributor'] is False
 
+    def test_current_user_permissions_vol(self, app, user, url_public, project_public):
+        '''
+        User's including view only link query params should get ONLY read permissions even if they are admins etc.
+        '''
+        private_link = PrivateLinkFactory(anonymous=False)
+        private_link.nodes.add(project_public)
+        private_link.save()
+        res = app.get(f'{url_public}?view_only={private_link.key}', auth=user.auth)
+        assert [permissions.READ] == res.json['data']['attributes']['current_user_permissions']
+
 
 @pytest.mark.django_db
 class NodeCRUDTestCase:

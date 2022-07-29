@@ -13,3 +13,9 @@ class InvalidAuthError(AddonError):
 
 class HookError(AddonError):
     pass
+
+class QueryError(AddonError):
+    pass
+
+class DoesNotExist(AddonError):
+    pass

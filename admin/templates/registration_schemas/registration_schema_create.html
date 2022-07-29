@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load node_extras %}
+{% block title %}
+    <title>Registration Schema</title>
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <ul class="messages">
+                {% for message in messages %}
+                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="btn-group" role="group">
+                    <a href="{% url 'registration_schemas:list' %}" class="btn btn-primary"> All Registration Schemas</a>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <h3>Registration Schema Details</h3>
+            <p>Remember to activate your Schema and associate it with a provider via the <a href="{% url 'registration_providers:list' %}">Providers Page </a></p>
+        </div>
+        <div class="row padded">
+            <div class="col-md-12">
+                <form method="POST" enctype="multipart/form-data" action="{% url 'registration_schemas:create' %}">
+                    {% csrf_token %}
+                    <label for="name">Name</label>
+                    <input type="text" class="form-control" name="name" aria-describedby="name" required>
+                    <label for="schema">Select CSV To Import as schema</label>
+                    <input type="file" class="form-control" name="schema" aria-describedby="schema" required>
+                    <button type="submit" class="btn btn-primary form-control  col-md-2">Import CSV</button>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

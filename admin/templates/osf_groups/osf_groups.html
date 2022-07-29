@@ -46,14 +46,14 @@
                     </tr>
                     <tr>
                         <td>Creator</td>
-                        <td colspan="2"><a href="{{ group.creator.id | reverse_user }}">{{ group.creator.name }}</a></td>
+                        <td colspan="2"><a href="{{ group.creator | reverse_user }}">{{ group.creator.name }}</a></td>
                     </tr>
                     <tr>
                         <td>Managers</td>
                         <td>
                             <select class="form-control" id="manager-select">
                                 {% for manager in group.managers %}
-                                    <option value="{{ manager.id | reverse_user }}">{{ manager.name }}</option>
+                                    <option value="{{ manager | reverse_user }}">{{ manager.name }}</option>
                                 {% endfor %}
                             </select>
                         </td>
@@ -66,7 +66,7 @@
                         <td>
                             <select class="form-control" id="member-select">
                                 {% for member in group.members %}
-                                    <option value="{{ member.id | reverse_user }}">{{ member.name }}</option>
+                                    <option value="{{ member | reverse_user }}">{{ member.name }}</option>
                                 {% endfor %}
                             </select>
                         </td>
@@ -82,7 +82,7 @@
                             <td>
                                 <select class="form-control" id="node-select">
                                     {% for node in group.nodes %}
-                                        <option value="{{ node.id | reverse_node }}">{{ node.title }} ({{ node.permission }})</option>
+                                        <option value="{{ node | reverse_node }}">{{ node.title }} ({{ node.permission }})</option>
                                     {% endfor %}
                                 </select>
                             </td>

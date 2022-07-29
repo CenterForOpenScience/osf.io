@@ -1315,16 +1315,12 @@ class ContributorMixin(models.Model):
         Returns Contributor queryset whose objects have admin permissions to the node.
         Group permissions not included.
         """
-
-        query_dict = {
-            'user__in': users,
-            'user__is_active': True,
-            'user__groups': self.get_group(ADMIN).id
-        }
-
-        query_dict[self.guardian_object_type] = self
-
-        return self.contributor_class.objects.select_related('user').filter(**query_dict)
+        return self.contributor_class.objects.select_related('user').filter(
+            user__in=users,
+            user__is_active=True,
+            user__groups=self.get_group(ADMIN).id,
+            **{self.guardian_object_type: self}
+        )
 
     def add_contributor(self, contributor, permissions=None, visible=True,
                         send_email=None, auth=None, log=True, save=False):
@@ -2001,7 +1997,7 @@ class SpamOverrideMixin(SpamMixin):
         super().confirm_spam(save=save, train_akismet=train_akismet)
         self.deleted = timezone.now()
         was_public = self.is_public
-        self.set_privacy('private', auth=None, log=False, save=False)
+        self.set_privacy('private', auth=None, log=False, save=False, force=True)
 
         log = self.add_log(
             action=self.log_class.CONFIRM_SPAM,
@@ -2024,8 +2020,8 @@ class SpamOverrideMixin(SpamMixin):
 
         if self.logs.filter(action__in=[self.log_class.FLAG_SPAM, self.log_class.CONFIRM_SPAM]):
             spam_log = self.logs.filter(action__in=[self.log_class.FLAG_SPAM, self.log_class.CONFIRM_SPAM]).latest()
-            # set objects to prior public state if known
-            if spam_log.params.get('was_public', False):
+            # set objects to prior public state if known, unless it's a registration pending approval.
+            if spam_log.params.get('was_public', False) and not getattr(self, 'is_pending_registration', False):
                 self.set_privacy('public', log=False)
 
             self.is_deleted = False
@@ -2119,7 +2115,7 @@ class SpamOverrideMixin(SpamMixin):
         # Suspend the flagged user for spam.
         user.flag_spam()
         if not user.is_disabled:
-            user.disable_account()
+            user.deactivate_account()
             user.is_registered = False
             mails.send_mail(
                 to_addr=user.username,
@@ -2251,7 +2247,7 @@ class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, Contribut
         else:
             return []
 
-    def copy_editable_fields(self, resource, auth=None, alternative_resource=None, save=True):
+    def copy_editable_fields(self, resource, auth=None, alternative_resource=None, include_contributors=True, save=True):
         """
         Copy various editable fields from the 'resource' object to the current object.
         Includes, title, description, category, contributors, node_license, tags, subjects, and affiliated_institutions
@@ -2265,11 +2261,12 @@ class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, Contribut
         self.set_editable_attribute('category', resource, alternative_resource)
         self.set_editable_attribute('node_license', resource, alternative_resource)
 
-        # Contributors will always come from "resource", as contributor constraints
-        # will require contributors to be present on the resource
-        self.copy_contributors_from(resource)
-        # Copy unclaimed records for unregistered users
-        self.copy_unclaimed_records(resource)
+        if include_contributors:
+            # Contributors will always come from "resource", as contributor constraints
+            # will require contributors to be present on the resource
+            self.copy_contributors_from(resource)
+            # Copy unclaimed records for unregistered users
+            self.copy_unclaimed_records(resource)
 
         self.tags.add(*self.stage_m2m_values('all_tags', resource, alternative_resource))
         self.subjects.add(*self.stage_m2m_values('subjects', resource, alternative_resource))

@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 from rest_framework import generics
 from rest_framework import serializers as ser
 from rest_framework import status as http_status
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from transitions import MachineError
 
 from framework.exceptions import HTTPError, PermissionsError
@@ -364,11 +364,13 @@ class SchemaResponseActionSerializer(BaseActionSerializer):
                 raise JSONAPIAttributeException(attribute='trigger', detail='Invalid trigger.')
         except PermissionsError as exc:
             raise PermissionDenied(exc)
-        except (MachineError, ValueError):
+        except MachineError:
             raise Conflict(
                 f'Trigger "{trigger}" is not supported for the target SchemaResponse '
                 f'with id [{target._id}] in state "{target.reviews_state}"',
             )
+        except ValueError as exc:
+            raise ValidationError(exc)
 
         new_action = target.actions.last()
         if new_action is None or new_action == previous_action or new_action.trigger != trigger:

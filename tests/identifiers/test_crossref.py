@@ -16,7 +16,8 @@ from osf_tests.factories import (
     ProjectFactory,
     PreprintFactory,
     PreprintProviderFactory,
-    AuthUserFactory
+    AuthUserFactory,
+    InstitutionFactory
 )
 from framework.flask import rm_handlers
 from framework.auth.core import Auth
@@ -94,7 +95,7 @@ class TestCrossRefClient:
     def test_crossref_build_metadata(self, crossref_client, preprint):
         test_email = 'test-email@osf.io'
         with mock.patch('website.settings.CROSSREF_DEPOSITOR_EMAIL', test_email):
-            crossref_xml = crossref_client.build_metadata(preprint, pretty_print=True)
+            crossref_xml = crossref_client.build_metadata(preprint)
         root = lxml.etree.fromstring(crossref_xml)
 
         # header
@@ -139,7 +140,7 @@ class TestCrossRefClient:
             preprint.is_public = False
             preprint.save()
 
-        crossref_xml = crossref_client.build_metadata(preprint, status='unavailable')
+        crossref_xml = crossref_client.build_metadata(preprint)
         root = lxml.etree.fromstring(crossref_xml)
 
         # body
@@ -217,7 +218,7 @@ class TestCrossRefClient:
         contributor.family_name = ''
         contributor.save()
 
-        crossref_xml = crossref_client.build_metadata(preprint, pretty_print=True)
+        crossref_xml = crossref_client.build_metadata(preprint)
         root = lxml.etree.fromstring(crossref_xml)
         contributors = root.find('.//{%s}contributors' % crossref.CROSSREF_NAMESPACE)
 
@@ -236,7 +237,7 @@ class TestCrossRefClient:
         }
         contributor.save()
 
-        crossref_xml = crossref_client.build_metadata(preprint, pretty_print=True)
+        crossref_xml = crossref_client.build_metadata(preprint)
         root = lxml.etree.fromstring(crossref_xml)
         contributors = root.find('.//{%s}contributors' % crossref.CROSSREF_NAMESPACE)
 
@@ -250,14 +251,15 @@ class TestCrossRefClient:
         }
         contributor.save()
 
-        crossref_xml = crossref_client.build_metadata(preprint, pretty_print=True)
+        crossref_xml = crossref_client.build_metadata(preprint)
         root = lxml.etree.fromstring(crossref_xml)
         contributors = root.find('.//{%s}contributors' % crossref.CROSSREF_NAMESPACE)
 
+        # Do not send unverified ORCID to crossref
         assert contributors.find('.//{%s}ORCID' % crossref.CROSSREF_NAMESPACE) is None
 
     def test_metadata_none_license_update(self, crossref_client, preprint):
-        crossref_xml = crossref_client.build_metadata(preprint, pretty_print=True)
+        crossref_xml = crossref_client.build_metadata(preprint)
         root = lxml.etree.fromstring(crossref_xml)
 
         assert root.find('.//{%s}license_ref' % crossref.CROSSREF_ACCESS_INDICATORS).text == 'https://creativecommons.org/licenses/by/4.0/legalcode'
@@ -271,7 +273,7 @@ class TestCrossRefClient:
 
         preprint.set_preprint_license(license_detail, Auth(preprint.creator), save=True)
 
-        crossref_xml = crossref_client.build_metadata(preprint, pretty_print=True)
+        crossref_xml = crossref_client.build_metadata(preprint)
         root = lxml.etree.fromstring(crossref_xml)
 
         assert root.find('.//{%s}license_ref' % crossref.CROSSREF_ACCESS_INDICATORS) is None
@@ -285,3 +287,16 @@ class TestCrossRefClient:
         xml_without_relation = crossref_client.build_metadata(preprint, include_relation=False)
         root_without_relation = lxml.etree.fromstring(xml_without_relation)
         assert root_without_relation.find('.//{%s}intra_work_relation' % crossref.CROSSREF_RELATIONS) is None
+
+    def test_metadata_for_affiliated_institutions(self, crossref_client, preprint):
+        institution = InstitutionFactory()
+        institution.ror_uri = 'http://ror.org/WHATisITgoodFOR/'
+        institution.save()
+        preprint.creator.affiliated_institutions.add(institution)
+        preprint.creator.save()
+
+        crossref_xml = crossref_client.build_metadata(preprint)
+        root = lxml.etree.fromstring(crossref_xml)
+        contributors = root.find('.//{%s}contributors' % crossref.CROSSREF_NAMESPACE)
+        assert contributors.find('.//{%s}institution_name' % crossref.CROSSREF_NAMESPACE).text == institution.name
+        assert contributors.find('.//{%s}institution_id' % crossref.CROSSREF_NAMESPACE).text == institution.ror_uri

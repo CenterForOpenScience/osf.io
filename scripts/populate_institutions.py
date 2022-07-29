@@ -19,7 +19,7 @@ from website.search.search import update_institution
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-ENVS = ['prod', 'stage', 'stage2', 'stage3', 'test', ]
+ENVS = ['prod', 'stage', 'stage2', 'stage3', 'test', 'local']
 
 # TODO: Store only the Entity IDs in OSF DB and move the URL building process to CAS
 SHIBBOLETH_SP_LOGIN = '{}/Shibboleth.sso/Login?entityID={{}}'.format(settings.CAS_SERVER_URL)
@@ -208,7 +208,7 @@ INSTITUTIONS = {
             {
                 '_id': 'cfa',
                 'name': 'Center for Astrophysics | Harvard & Smithsonian',
-                'description': 'Open Source Project Management Tools for the CfA Community: About <a href="https://cos.io/our-products/osf/">OSF</a> | <a href="https://www.cfa.harvard.edu/researchtopics">Research at the CfA</a> | <a href="https://library.cfa.harvard.edu/">CfA Library</a> | <a href="https://openscience.zendesk.com/hc/en-us">Get Help</a>',
+                'description': 'Open Source Project Management Tools for the CfA Community: About <a href="https://cos.io/our-products/osf/">OSF</a> | <a href="https://www.cfa.harvard.edu/researchtopics">Research at the CfA</a> | <a href="https://library.cfa.harvard.edu/">CfA Library</a> | <a href="https://help.osf.io/">Get Help</a>',
                 'banner_name': 'cfa-banner.png',
                 'logo_name': 'cfa-shield.png',
                 'login_url': None,
@@ -352,6 +352,23 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': ['esipfed.org'],
                 'delegation_protocol': '',
+            },
+            {
+                '_id': 'eur',
+                'name': 'Erasmus University Rotterdam',
+                'description': '<a href="https://doi.org/10.25397/eur.16912120.v1">EUR Data Policy</a> | '
+                               '<a href="https://my.eur.nl/en/eur-employee/work-support/cybersecurity/working-safely-it-eur">CyberSecurity at EUR</a> | '
+                               '<a href="https://my.eur.nl/en/eur-employee/work-support/cybersecurity/data-classification">EUR Data Classification</a> | '
+                               '<a href="https://my.eur.nl/en/eur-employee/research/research-services/research-data-management/rdm-policy/">EUR Data Classification (Examples)</a> | '
+                               '<a href="https://login.microsoftonline.com/715902d6-f63e-4b8d-929b-4bb170bad492/oauth2/authorize?client_id=00000003-0000-0ff1-ce00-000000000000&response_mode=form_post&protectedtoken=true&response_type=code%20id_token&resource=00000003-0000-0ff1-ce00-000000000000&scope=openid&nonce=65F9AF2BB43D7220657D949CB8FD3F4296DC77476CAACAF9-9161197C25231B477690A7A1C2BDFDF2BF0D6AA07DA0C6F3A8A9FBC3C5F0364F&redirect_uri=https%3A%2F%2Fliveeur.sharepoint.com%2F_forms%2Fdefault.aspx&state=OD0w&claims=%7B%22id_token%22%3A%7B%22xms_cc%22%3A%7B%22values%22%3A%5B%22CP1%22%5D%7D%7D%7D&wsucxt=1&cobrandid=11bd8083-87e0-41b5-bb78-0bc43c8a8e8a&client-request-id=d5792fa0-f064-3000-fabf-791a47aed3ce">EUR OSF Research Guidelines</a> | '
+                               '<a href="mailto:datasteward@eur.nl">Contact</a>',
+                'banner_name': 'eur-banner.png',
+                'logo_name': 'eur-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://sts.windows.net/715902d6-f63e-4b8d-929b-4bb170bad492/')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'ferris',
@@ -573,6 +590,18 @@ INSTITUTIONS = {
                 'delegation_protocol': 'saml-shib',
             },
             {
+                '_id': 'nesta',
+                'name': 'Nesta',
+                'description': '<a href="https://www.nesta.org.uk/">Nesta</a> is the UK\'s innovation agency for social good. We design, test and scale new solutions to society\'s biggest problems, changing millions of lives for the better.',
+                'banner_name': 'nesta-banner.png',
+                'logo_name': 'nesta-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('http://www.okta.com/exkum8enx4nlKaJR50x7')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
                 '_id': 'nd',
                 'name': 'University of Notre Dame',
                 'description': 'In <a href="https://research.nd.edu/news/64035-notre-dame-center-for-open-science-partner-to-advance-open-science-initiatives/">partnership</a> with the <a href="https://crc.nd.edu">Center for Research Computing</a>, <a href="http://esc.nd.edu">Engineering &amp; Science Computing</a>, and the <a href="https://library.nd.edu">Hesburgh Libraries</a>',
@@ -621,6 +650,19 @@ INSTITUTIONS = {
                 'delegation_protocol': 'saml-shib',
             },
             {
+                '_id': 'oxford',
+                'name': 'University of Oxford',
+                'description': '',
+                'banner_name': 'oxford-banner.png',
+                'logo_name': 'oxford-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': 'via-orcid',
+                'orcid_record_verified_source': 'ORCID Integration at the University of Oxford',
+            },
+            {
                 '_id': 'pu',
                 'name': 'Princeton University',
                 'description': 'A research project management and sharing tool provided to the Princeton University research community by the <a href="https://library.princeton.edu/">Princeton University Library</a> and the <a href="https://researchdata.princeton.edu/">Princeton Research Data Service</a>. Projects must abide by University guidelines for <a href="https://ria.princeton.edu/research-data-security">Research Data Security and Privacy</a> and <a href="https://oit.princeton.edu/policies/information-security">Information Security</a> | <a href="https://github.com/CenterForOpenScience/cos.io/blob/master/TERMS_OF_USE.md">OSF Terms of Use</a> | <a href="https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md">OSF Privacy Policy</a>',
@@ -639,7 +681,7 @@ INSTITUTIONS = {
                 'banner_name': 'sc-banner.png',
                 'logo_name': 'sc-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(
-                    encode_uri_component('urn:mace:incommon:sc.edu')),
+                    encode_uri_component('https://cas.auth.sc.edu/cas/idp')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(
                     encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.sc.edu'],
@@ -815,6 +857,18 @@ INSTITUTIONS = {
                 'delegation_protocol': 'saml-shib',
             },
             {
+                '_id': 'umb',
+                'name': 'University of Maryland, Baltimore',
+                'description': 'This research data management service is supported by the <a href="https://www2.hshsl.umaryland.edu/cdabs/">Center for Data and Bioinformtion Services</a> at the <a href="https://www.hshsl.umaryland.edu/">Health Sciences and Human Services Library</a>. This platform is not intended for the storage of PII or PHI.<br><a href="https://www.umaryland.edu/policies-and-procedures/library/research/policies/iv-9901a.php">UMB Policy Regarding Ownership, Management, and Sharing of Research Data</a> | For questions contact <a href="mailto:data@hshsl.umaryland.edu">data@hshsl.umaryland.edu</a>',
+                'banner_name': 'umb-banner.png',
+                'logo_name': 'umb-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://webauth.umaryland.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
                 '_id': 'umd',
                 'name': 'University of Maryland',
                 'description': 'University of Maryland',
@@ -857,6 +911,18 @@ INSTITUTIONS = {
                 'banner_name': 'uol-banner.png',
                 'logo_name': 'uol-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://idp.uolia.london.ac.uk/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
+                '_id': 'uom',
+                'name': 'University of Manchester',
+                'description': 'OSF is currently only supported for FBMH Core Facility users, for further information contact <a href="mailto:danielle.owen@manchester.ac.uk">danielle.owen@manchester.ac.uk</a>. <a href="https://www.manchester.ac.uk/discover/privacy-information/">University of Manchester Privacy Policy</a>',
+                'banner_name': 'uom-banner.png',
+                'logo_name': 'uom-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shib.manchester.ac.uk/shibboleth')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': [],
                 'email_domains': [],
@@ -1031,6 +1097,33 @@ INSTITUTIONS = {
                 'email_domains': ['yahoo.com'],
                 'delegation_protocol': '',
             },
+            {
+                '_id': 'oxford',
+                'name': 'University of Oxford [Stage]',
+                'description': 'Here is the place to put in links to other resources, security and data policies, research guidelines, and/or a contact for user support within your institution.',
+                'banner_name': 'placeholder-banner.png',
+                'logo_name': 'placeholder-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': 'via-orcid',
+                'orcid_record_verified_source': 'ORCID Integration at the University of Oxford',
+            },
+            {
+                '_id': 'osftype1',
+                'name': 'Fake "via-ORCiD" Institution [Stage]',
+                'description': 'Fake OSF Institution Type 1. This institution uses ORCiD SSO for login and its user '
+                               'affiliation is retrieved from ORCiD public record.',
+                'banner_name': 'placeholder-banner.png',
+                'logo_name': 'placeholder-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': 'via-orcid',
+                'orcid_record_verified_source': 'OSF Integration',
+            },
         ],
     'stage2': [
             {
@@ -1061,6 +1154,18 @@ INSTITUTIONS = {
             },
         ],
     'test': [
+            {
+                '_id': 'osfidemo',
+                'name': 'OSF Demo Institution',
+                'description': 'Here is the place to put in links to other resources, security and data policies, research guidelines, and/or a contact for user support within your institution.',
+                'banner_name': 'placeholder-banner.png',
+                'logo_name': 'placeholder-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': '',
+            },
             {
                 '_id': 'a2jlab',
                 'name': 'Access to Justice Lab [Test]',
@@ -1188,7 +1293,7 @@ INSTITUTIONS = {
             {
                 '_id': 'cfa',
                 'name': 'Center for Astrophysics | Harvard & Smithsonian [Test]',
-                'description': 'Open Source Project Management Tools for the CfA Community: About <a href="https://cos.io/our-products/osf/">OSF</a> | <a href="https://www.cfa.harvard.edu/researchtopics">Research at the CfA</a> | <a href="https://library.cfa.harvard.edu/">CfA Library</a> | <a href="https://openscience.zendesk.com/hc/en-us">Get Help</a>',
+                'description': 'Open Source Project Management Tools for the CfA Community: About <a href="https://cos.io/our-products/osf/">OSF</a> | <a href="https://www.cfa.harvard.edu/researchtopics">Research at the CfA</a> | <a href="https://library.cfa.harvard.edu/">CfA Library</a> | <a href="https://help.osf.io/">Get Help</a>',
                 'banner_name': 'cfa-banner.png',
                 'logo_name': 'cfa-shield.png',
                 'login_url': None,
@@ -1332,6 +1437,23 @@ INSTITUTIONS = {
                 'domains': [],
                 'email_domains': ['esipfed.org'],
                 'delegation_protocol': '',
+            },
+            {
+                '_id': 'eur',
+                'name': 'Erasmus University Rotterdam [Test]',
+                'description': '<a href="https://doi.org/10.25397/eur.16912120.v1">EUR Data Policy</a> | '
+                               '<a href="https://my.eur.nl/en/eur-employee/work-support/cybersecurity/working-safely-it-eur">CyberSecurity at EUR</a> | '
+                               '<a href="https://my.eur.nl/en/eur-employee/work-support/cybersecurity/data-classification">EUR Data Classification</a> | '
+                               '<a href="https://my.eur.nl/en/eur-employee/research/research-services/research-data-management/rdm-policy/">EUR Data Classification (Examples)</a> | '
+                               '<a href="https://login.microsoftonline.com/715902d6-f63e-4b8d-929b-4bb170bad492/oauth2/authorize?client_id=00000003-0000-0ff1-ce00-000000000000&response_mode=form_post&protectedtoken=true&response_type=code%20id_token&resource=00000003-0000-0ff1-ce00-000000000000&scope=openid&nonce=65F9AF2BB43D7220657D949CB8FD3F4296DC77476CAACAF9-9161197C25231B477690A7A1C2BDFDF2BF0D6AA07DA0C6F3A8A9FBC3C5F0364F&redirect_uri=https%3A%2F%2Fliveeur.sharepoint.com%2F_forms%2Fdefault.aspx&state=OD0w&claims=%7B%22id_token%22%3A%7B%22xms_cc%22%3A%7B%22values%22%3A%5B%22CP1%22%5D%7D%7D%7D&wsucxt=1&cobrandid=11bd8083-87e0-41b5-bb78-0bc43c8a8e8a&client-request-id=d5792fa0-f064-3000-fabf-791a47aed3ce">EUR OSF Research Guidelines</a> | '
+                               '<a href="mailto:datasteward@eur.nl">Contact</a>',
+                'banner_name': 'eur-banner.png',
+                'logo_name': 'eur-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://sts.windows.net/715902d6-f63e-4b8d-929b-4bb170bad492/')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
             },
             {
                 '_id': 'ferris',
@@ -1553,6 +1675,18 @@ INSTITUTIONS = {
                 'delegation_protocol': 'saml-shib',
             },
             {
+                '_id': 'nesta',
+                'name': 'Nesta [Test]',
+                'description': '<a href="https://www.nesta.org.uk/">Nesta</a> is the UK\'s innovation agency for social good. We design, test and scale new solutions to society\'s biggest problems, changing millions of lives for the better.',
+                'banner_name': 'nesta-banner.png',
+                'logo_name': 'nesta-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('http://www.okta.com/exkum8f6y1gTYTIaT0x7')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
                 '_id': 'nd',
                 'name': 'University of Notre Dame [Test]',
                 'description': 'In <a href="https://research.nd.edu/news/64035-notre-dame-center-for-open-science-partner-to-advance-open-science-initiatives/">partnership</a> with the <a href="https://crc.nd.edu">Center for Research Computing</a>, <a href="http://esc.nd.edu">Engineering &amp; Science Computing</a>, and the <a href="https://library.nd.edu">Hesburgh Libraries</a>',
@@ -1601,6 +1735,19 @@ INSTITUTIONS = {
                 'delegation_protocol': 'saml-shib',
             },
             {
+                '_id': 'oxford',
+                'name': 'University of Oxford [Test]',
+                'description': '',
+                'banner_name': 'oxford-banner.png',
+                'logo_name': 'oxford-shield.png',
+                'login_url': None,
+                'logout_url': None,
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': 'via-orcid',
+                'orcid_record_verified_source': 'ORCID Integration at the University of Oxford',
+            },
+            {
                 '_id': 'pu',
                 'name': 'Princeton University [Test]',
                 'description': 'A research project management and sharing tool provided to the Princeton University research community by the <a href="https://library.princeton.edu/">Princeton University Library</a> and the <a href="https://researchdata.princeton.edu/">Princeton Research Data Service</a>. Projects must abide by University guidelines for <a href="https://ria.princeton.edu/research-data-security">Research Data Security and Privacy</a> and <a href="https://oit.princeton.edu/policies/information-security">Information Security</a> | <a href="https://github.com/CenterForOpenScience/cos.io/blob/master/TERMS_OF_USE.md">OSF Terms of Use</a> | <a href="https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md">OSF Privacy Policy</a>',
@@ -1619,7 +1766,7 @@ INSTITUTIONS = {
                 'banner_name': 'sc-banner.png',
                 'logo_name': 'sc-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(
-                    encode_uri_component('urn:mace:incommon:sc.edu')),
+                    encode_uri_component('https://cas.auth.sc.edu/cas/idp')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(
                     encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-sc.cos.io'],
@@ -1771,6 +1918,18 @@ INSTITUTIONS = {
                 'delegation_protocol': 'saml-shib',
             },
             {
+                '_id': 'umb',
+                'name': 'University of Maryland, Baltimore [Test]',
+                'description': 'This research data management service is supported by the <a href="https://www2.hshsl.umaryland.edu/cdabs/">Center for Data and Bioinformtion Services</a> at the <a href="https://www.hshsl.umaryland.edu/">Health Sciences and Human Services Library</a>. This platform is not intended for the storage of PII or PHI.<br><a href="https://www.umaryland.edu/policies-and-procedures/library/research/policies/iv-9901a.php">UMB Policy Regarding Ownership, Management, and Sharing of Research Data</a> | For questions contact <a href="mailto:data@hshsl.umaryland.edu">data@hshsl.umaryland.edu</a>',
+                'banner_name': 'umb-banner.png',
+                'logo_name': 'umb-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://webauth.umaryland.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['test-osf-umb.cos.io'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
                 '_id': 'umd',
                 'name': 'University of Maryland [Test]',
                 'description': 'Here goes the description of your institution.',
@@ -1851,6 +2010,18 @@ INSTITUTIONS = {
                 'banner_name': 'uol-banner.png',
                 'logo_name': 'uol-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://idp.uolia.london.ac.uk/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
+                '_id': 'uom',
+                'name': 'University of Manchester [Test]',
+                'description': 'OSF is currently only supported for FBMH Core Facility users, for further information contact <a href="mailto:danielle.owen@manchester.ac.uk">danielle.owen@manchester.ac.uk</a>. <a href="https://www.manchester.ac.uk/discover/privacy-information/">University of Manchester Privacy Policy</a>',
+                'banner_name': 'uom-banner.png',
+                'logo_name': 'uom-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://beta.shib.manchester.ac.uk/shibboleth')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': [],
                 'email_domains': [],
@@ -1977,6 +2148,120 @@ INSTITUTIONS = {
                 'delegation_protocol': 'saml-shib',
             },
         ],
+    'local': [
+        {
+            '_id': 'osftype0',
+            'name': 'Fake CAS Institution',
+            'description': 'Fake OSF Institution Type 0. Its SSO is done via CAS (pac4j impl) where OSF-CAS serves as '
+                           'the CAS client and the institution as the CAS server.',
+            'banner_name': 'placeholder-banner.png',
+            'logo_name': 'placeholder-shield.png',
+            'login_url': None,
+            'logout_url': None,
+            'domains': [],
+            'email_domains': [],
+            'delegation_protocol': 'cas-pac4j',
+        },
+        {
+            '_id': 'osftype1',
+            'name': 'Fake "via-ORCiD" Institution',
+            'description': 'Fake OSF Institution Type 1. This institution uses ORCiD SSO for login and its user '
+                           'affiliation is retrieved from ORCiD public record.',
+            'banner_name': 'placeholder-banner.png',
+            'logo_name': 'placeholder-shield.png',
+            'login_url': None,
+            'logout_url': None,
+            'domains': [],
+            'email_domains': [],
+            'delegation_protocol': 'via-orcid',
+            'orcid_record_verified_source': 'OSF Integration',
+        },
+        {
+            '_id': 'osftype2',
+            'name': 'Fake SAML Institution - Standard',
+            'description': 'Fake OSF Institution Type 2. Its SSO is done via SAML (Shibboleth impl) where OSF-CAS '
+                           'serves as the SP and the institution as the IdP.',
+            'banner_name': 'placeholder-banner.png',
+            'logo_name': 'placeholder-shield.png',
+            'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('type-2-fake-saml-idp')),
+            'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('http://localhost:5000/goodbye')),
+            'domains': [],
+            'email_domains': [],
+            'delegation_protocol': 'saml-shib',
+            'orcid_record_verified_source': '',
+        },
+        {
+            '_id': 'osftype3',
+            'name': 'Fake SAML Institution - Shared SSO Primary',
+            'description': 'Fake OSF Institution Type 3. Its SSO is done via SAML (Shibboleth impl) where OSF-CAS '
+                           'serves as the SP and the institution as the IdP. This institution is a primary one that '
+                           'provides shared SSO to secondary institutions.',
+            'banner_name': 'placeholder-banner.png',
+            'logo_name': 'placeholder-shield.png',
+            'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('type-3-fake-saml-idp')),
+            'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('http://localhost:5000/goodbye')),
+            'domains': [],
+            'email_domains': [],
+            'delegation_protocol': 'saml-shib',
+        },
+        {
+            '_id': 'osftype4',
+            'name': 'Fake SAML Institution - Shared SSO Secondary',
+            'description': 'Fake OSF Institution Type 3. Its SSO is done via SAML (Shibboleth impl) where OSF-CAS '
+                           'serves as the SP and the institution as the IdP. This institution is a secondary one that '
+                           'uses a primary institution\'s SSO.',
+            'banner_name': 'placeholder-banner.png',
+            'logo_name': 'placeholder-shield.png',
+            'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('type-4-fake-saml-idp')),
+            'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('http://localhost:5000/goodbye')),
+            'domains': [],
+            'email_domains': [],
+            'delegation_protocol': 'saml-shib',
+        },
+        {
+            '_id': 'osftype5',
+            'name': 'Fake SAML Institution - Selective SSO',
+            'description': 'Fake OSF Institution Type 3. Its SSO is done via SAML (Shibboleth impl) where OSF-CAS '
+                           'serves as the SP and the institution as the IdP. This institution only allows a subset of '
+                           'users to use SSO by releasing a special attribute for them.',
+            'banner_name': 'placeholder-banner.png',
+            'logo_name': 'placeholder-shield.png',
+            'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('type-5-fake-saml-idp')),
+            'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('http://localhost:5000/goodbye')),
+            'domains': [],
+            'email_domains': [],
+            'delegation_protocol': 'saml-shib',
+            'orcid_record_verified_source': '',
+        },
+        {
+            '_id': 'osftype6',
+            'name': 'Fake SAML Institution - Department I',
+            'description': 'Fake OSF Institution Type 3. Its SSO is done via SAML (Shibboleth impl) where OSF-CAS '
+                           'serves as the SP and the institution as the IdP. This institution provides the department '
+                           'attribute via an eduPerson attribute.',
+            'banner_name': 'placeholder-banner.png',
+            'logo_name': 'placeholder-shield.png',
+            'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('type-6-fake-saml-idp')),
+            'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('http://localhost:5000/goodbye')),
+            'domains': [],
+            'email_domains': [],
+            'delegation_protocol': 'saml-shib',
+        },
+        {
+            '_id': 'osftype7',
+            'name': 'Fake SAML Institution - Department II',
+            'description': 'Fake OSF Institution Type 3. Its SSO is done via SAML (Shibboleth impl) where OSF-CAS '
+                           'serves as the SP and the institution as the IdP. This institution provides the department '
+                           'attribute via a customized attribute.',
+            'banner_name': 'placeholder-banner.png',
+            'logo_name': 'placeholder-shield.png',
+            'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('type-7-fake-saml-idp')),
+            'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('http://localhost:5000/goodbye')),
+            'domains': [],
+            'email_domains': [],
+            'delegation_protocol': 'saml-shib',
+        },
+    ],
 }
 
 

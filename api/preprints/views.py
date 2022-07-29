@@ -22,7 +22,8 @@ from api.base.parsers import (
     JSONAPIMultipleRelationshipsParser,
     JSONAPIMultipleRelationshipsParserForRegularJSON,
 )
-from api.base.utils import absolute_reverse, get_user_auth
+
+from api.base.utils import absolute_reverse, get_user_auth, get_object_or_error
 from api.base import permissions as base_permissions
 from api.citations.utils import render_citation
 from api.preprints.serializers import (
@@ -58,7 +59,7 @@ from api.requests.permissions import PreprintRequestPermission
 from api.requests.serializers import PreprintRequestSerializer, PreprintRequestCreateSerializer
 from api.requests.views import PreprintRequestMixin
 from api.subjects.views import BaseResourceSubjectsList
-from api.base.metrics import MetricsViewMixin
+from api.base.metrics import PreprintMetricsViewMixin
 from osf.metrics import PreprintDownload, PreprintView
 
 class PreprintMixin(NodeMixin):
@@ -83,8 +84,7 @@ class PreprintMixin(NodeMixin):
 
         return preprint
 
-
-class PreprintList(MetricsViewMixin, JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMixin):
+class PreprintList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprints_list).
     """
     # These permissions are not checked for the list of preprints, permissions handled by the query
@@ -134,7 +134,7 @@ class PreprintList(MetricsViewMixin, JSONAPIBaseView, generics.ListCreateAPIView
     def get_queryset(self):
         return self.get_queryset_from_request()
 
-    # overrides MetricsViewMixin
+    # overrides PreprintMetricsViewMixin
     def get_annotated_queryset_with_metrics(self, queryset, metric_class, metric_name, after):
         return metric_class.get_top_by_count(
             qs=queryset,
@@ -150,7 +150,7 @@ class PreprintList(MetricsViewMixin, JSONAPIBaseView, generics.ListCreateAPIView
         )
 
 
-class PreprintDetail(MetricsViewMixin, JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin, WaterButlerMixin):
+class PreprintDetail(PreprintMetricsViewMixin, JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin, WaterButlerMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprints_read).
     """
     permission_classes = (
@@ -582,8 +582,8 @@ class PreprintFilesList(NodeFilesList, PreprintMixin):
         self.kwargs[self.provider_lookup_url_kwarg] = 'osfstorage'
         return super(PreprintFilesList, self).get_queryset()
 
-    def get_resource(self, check_object_permissions):
-        return self.get_preprint(check_object_permissions=check_object_permissions)
+    def get_resource(self):
+        return get_object_or_error(Preprint, self.kwargs['preprint_id'], self.request)
 
 
 class PreprintRequestListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, PreprintRequestMixin):

@@ -1,4 +1,5 @@
 import pytest
+import responses
 
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as api_utils
@@ -7,6 +8,9 @@ from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
 )
+from addons.dataverse.tests.factories import DataverseAccountFactory
+from api_tests.draft_nodes.views.test_draft_node_files_lists import prepare_mock_wb_response
+from addons.dataverse.models import DataverseFile
 
 
 @pytest.fixture()
@@ -18,6 +22,25 @@ def user():
 class TestNodeFileList:
 
     @pytest.fixture()
+    def dataverse(self, user, node):
+        addon = node.add_addon('dataverse', auth=Auth(user))
+        oauth_settings = DataverseAccountFactory()
+        oauth_settings.save()
+        user.add_addon('dataverse')
+        user.external_accounts.add(oauth_settings)
+        user.save()
+        addon.user_settings = user.get_addon('dataverse')
+        addon.external_account = oauth_settings
+        addon.dataset_doi = 'test dataset_doi'
+        addon.dataset = 'test dataset'
+        addon._dataset_id = 'test dataset_id'
+        addon.save()
+        addon.user_settings.oauth_grants[node._id] = {
+            oauth_settings._id: []}
+        addon.user_settings.save()
+        node.save()
+
+    @pytest.fixture()
     def node(self, user):
         return ProjectFactory(creator=user)
 
@@ -25,6 +48,22 @@ class TestNodeFileList:
     def file(self, user, node):
         return api_utils.create_test_file(
             node, user, filename='file_one')
+
+    @pytest.fixture()
+    def dataverse_published_filenode(self, node):
+        return DataverseFile.objects.create(
+            target=node,
+            path='/testpath',
+            _history=[{'extra': {'datasetVersion': 'latest-published'}}],
+        )
+
+    @pytest.fixture()
+    def dataverse_draft_filenode(self, node):
+        return DataverseFile.objects.create(
+            target=node,
+            path='/testpath',
+            _history=[{'extra': {'datasetVersion': 'latest'}}],
+        )
 
     @pytest.fixture()
     def deleted_file(self, user, node):
@@ -41,6 +80,119 @@ class TestNodeFileList:
         )
         data = res.json.get('data')
         assert len(data) == 1
+
+    @responses.activate
+    def test_disambiguate_dataverse_paths_initial(self, app, user, node, dataverse):
+        '''
+        This test is for retrieving files from Dataverse initially, (Osf is contacting Dataverse after a update to their
+        Dataverse files) this test ensures both files are made into OSF filenodes and their `extra` info is passed along
+        to the front-end.
+        '''
+        prepare_mock_wb_response(
+            path='/',
+            node=node,
+            provider='dataverse',
+            files=[
+                {
+                    'name': 'testpath',
+                    'path': '/testpath',
+                    'materialized': '/testpath',
+                    'kind': 'file',
+                    'modified': 'Wed, 20 Jul 2011 22:04:50 +0000',
+                    'extra': {
+                        'datasetVersion': 'latest'
+                    },
+                    'provider': 'dataverse'
+                },
+                {
+                    'name': 'testpath',
+                    'path': '/testpath',
+                    'materialized': '/testpath',
+                    'kind': 'file',
+                    'modified': 'Wed, 20 Jul 2011 22:04:50 +0000',
+                    'extra': {
+                        'datasetVersion': 'latest-published'
+                    },
+                    'provider': 'dataverse'
+                },
+            ]
+        )
+        res = app.get(
+            f'/{API_BASE}nodes/{node._id}/files/dataverse/?sort=date_modified',
+            auth=node.creator.auth
+        )
+        data = res.json['data']
+        assert len(data) == 2
+        assert data[0]['attributes']['extra'] == {
+            'datasetVersion': 'latest',
+            'hashes': {
+                'md5': None,
+                'sha256': None
+            }
+        }
+        assert data[1]['attributes']['extra'] == {
+            'datasetVersion': 'latest-published',
+            'hashes': {
+                'md5': None,
+                'sha256': None
+            }
+        }
+
+    @responses.activate
+    def test_disambiguate_dataverse_paths_retrieve(self, app, user, node, dataverse, dataverse_draft_filenode, dataverse_published_filenode):
+        '''
+        This test is for retrieving files from Dataverse and disambiguating their corresponding OSF filenodes and
+        ensures their `extra` info is passed along to the front-end. Waterbulter must also be mocked here, otherwise OSF
+        will assume the files are gone.
+        '''
+        prepare_mock_wb_response(
+            path='/',
+            node=node,
+            provider='dataverse',
+            files=[
+                {
+                    'name': 'testpath',
+                    'path': '/testpath',
+                    'materialized': '/testpath',
+                    'kind': 'file',
+
+                    'extra': {
+                        'datasetVersion': 'latest',
+                    },
+                    'provider': 'dataverse',
+                },
+                {
+                    'name': 'testpath',
+                    'path': '/testpath',
+                    'materialized': '/testpath',
+                    'kind': 'file',
+                    'extra': {
+                        'datasetVersion': 'latest-published',
+                    },
+                    'provider': 'dataverse',
+                },
+            ]
+        )
+        res = app.get(
+            f'/{API_BASE}nodes/{node._id}/files/dataverse/?sort=date_modified',
+            auth=node.creator.auth
+        )
+        data = res.json['data']
+        assert len(data) == 2
+        assert data[0]['attributes']['extra'] == {
+            'datasetVersion': 'latest',
+            'hashes': {
+                'md5': None,
+                'sha256': None
+            }
+        }
+        assert data[1]['attributes']['extra'] == {
+            'datasetVersion': 'latest-published',
+            'hashes': {
+                'md5': None,
+                'sha256': None
+            }
+        }
 
 
 @pytest.mark.django_db

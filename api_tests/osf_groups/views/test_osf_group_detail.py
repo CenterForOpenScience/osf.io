@@ -72,7 +72,6 @@ def name_payload(osf_group, new_name):
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestGroupDetail:
 
     def test_return(self, app, member, manager, user, osf_group, url):
@@ -120,7 +119,6 @@ class TestGroupDetail:
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestOSFGroupUpdate:
     def test_patch_osf_group_perms(self, app, member, manager, user, osf_group, url, name_payload, new_name):
         with override_flag(OSF_GROUPS, active=True):
@@ -173,7 +171,6 @@ class TestOSFGroupUpdate:
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestOSFGroupDelete:
     def test_delete_perms(self, app, osf_group, manager, member, user, url):
         with override_flag(OSF_GROUPS, active=True):
