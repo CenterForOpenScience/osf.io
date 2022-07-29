@@ -229,8 +229,30 @@ class IdentifierHasReferencesError(OSFError):
     pass
 
 
-class NoPIDError(OSFError):
+class NoSuchPIDValidatorError(OSFError):
     pass
+
+
+class InvalidPIDError(OSFError):
+
+    ERROR_MESSAGE = 'Invalid PID of type {category} with value {value}'
+
+    def __init__(self, pid_value, pid_category):
+        self.message = self.ERROR_MESSAGE.format(value=pid_value, category=pid_category.upper())
+
+
+class NoPIDError(InvalidPIDError):
+
+    def __init__(self):
+        self.message = 'Must provide a PID value'
+
+
+class InvalidPIDFormatError(InvalidPIDError):
+    ERROR_MESSAGE = '{value} does not follow the proper formatting for a PID of type {category}'
+
+
+class NoSuchPIDError(InvalidPIDError):
+    ERROR_MESSAGE = 'Could not find any record of PID of type {category} with valuea {value}'
 
 
 class CannotFinalizeArtifactError(OSFError):

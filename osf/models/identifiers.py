@@ -3,9 +3,13 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils import timezone
 
-from osf.exceptions import IdentifierHasReferencesError
+from osf.exceptions import (
+    IdentifierHasReferencesError,
+    NoSuchPIDValidatorError,
+)
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.fields import NonNaiveDateTimeField
+from osf.utils import identifiers as identifier_utils
 
 
 class Identifier(ObjectIDMixin, BaseModel):
@@ -35,6 +39,20 @@ class Identifier(ObjectIDMixin, BaseModel):
         if self.object_id or self.artifact_metadata.filter(deleted__isnull=True).exists():
             raise IdentifierHasReferencesError
         super().delete()
+
+    def validate_identifier_value(self):
+        # We created the PID, so assume valid
+        if self.object_id is not None:
+            return True
+
+        # If we don't know how to validate a PID, assume it's fine
+        try:
+            validator = identifier_utils.PIDValidator.for_identifier_category(self.category)
+        except NoSuchPIDValidatorError:
+            return True
+
+        # Let the caller decide what to do with any validation errors
+        return validator.validate(self.value)
 
 
 class IdentifierMixin(models.Model):
@@ -77,10 +95,11 @@ class IdentifierMixin(models.Model):
         return identifier.value if identifier else None
 
     def set_identifier_value(self, category, value):
-        identifier, created = Identifier.objects.get_or_create(object_id=self.pk,
-                                                               content_type=ContentType.objects.get_for_model(self),
-                                                               category=category,
-                                                               defaults=dict(value=value))
+        identifier, created = Identifier.objects.get_or_create(
+            referent=self,
+            category=category,
+            defaults=dict(value=value)
+        )
         if not created:
             identifier.value = value
             identifier.save()

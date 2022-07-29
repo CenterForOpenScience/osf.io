@@ -1,6 +1,14 @@
+import mock
+
 import pytest
 
-from osf.exceptions import CannotFinalizeArtifactError, NoPIDError
+from osf.exceptions import (
+    CannotFinalizeArtifactError,
+    InvalidPIDError,
+    InvalidPIDFormatError,
+    NoPIDError,
+    NoSuchPIDError,
+)
 from osf.models import Identifier, Outcome, OutcomeArtifact
 from osf.utils.outcomes import ArtifactTypes
 from osf_tests.factories import ProjectFactory, RegistrationFactory
@@ -80,6 +88,7 @@ class TestOutcomes:
 
 
 @pytest.mark.django_db
+@mock.patch('osf.utils.identifiers.PID_VALIDATION_ENABLED', False)
 class TestOutcomeArtifact:
 
     @pytest.fixture
@@ -204,6 +213,19 @@ class TestOutcomeArtifact:
 
         with pytest.raises(NoPIDError):
             test_artifact.update_identifier(new_pid_value=empty_value)
+
+    @pytest.mark.parametrize('validation_error', [InvalidPIDError, InvalidPIDFormatError, NoSuchPIDError])
+    def test_update_identifier___reverts_and_reraises_on_invalid_pid(self, outcome, project_doi, validation_error):
+        test_artifact = outcome.artifact_metadata.create(identifier=project_doi)
+
+        invalid_identifier = 'apparently invalid'
+        with mock.patch.object(Identifier, 'validate_identifier_value') as mock_validate:
+            mock_validate.side_effect = validation_error('', '')
+            with pytest.raises(validation_error):
+                test_artifact.update_identifier(new_pid_value=invalid_identifier)
+
+        assert test_artifact.identifier == project_doi
+        assert not Identifier.objects.filter(value=invalid_identifier).exists()
 
     def test_finalize__raises__missing_identifier(self, outcome):
         test_artifact = outcome.artifact_metadata.create(artifact_type=ArtifactTypes.DATA)
