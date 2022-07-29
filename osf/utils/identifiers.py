@@ -45,10 +45,12 @@ class DOIValidator(PIDValidator):
     IDENTIFIER_CATEGORY = 'doi'
 
     def validate(self, doi_value):
-        #Local-development and test environments should
+        # Either validation is turned off or we don't know how to validate
+        # Either way, just let the people do what they want
         if not self.validation_endpoint:
             return True
-        # An Invalid DOI will not have a Registration Agency
+
+        # An Invalid DOI will raise an exception error. Let the caller handle what to do there.
         return self.get_registration_agency(doi_value) is not None
 
     def get_registration_agency(self, doi_value):
