@@ -184,10 +184,6 @@ CONFIRM_EMAIL = Mail(
     'confirm',
     subject='Add a new email to your OSF account'
 )
-CONFIRM_EMAIL_PREREG = Mail(
-    'confirm_prereg',
-    subject='OSF Account Verification, OSF Preregistration'
-)
 CONFIRM_EMAIL_ERPC = Mail(
     'confirm_erpc',
     subject='OSF Account Verification, Election Research Preacceptance Competition'
@@ -532,4 +528,9 @@ SCHEMA_RESPONSE_APPROVED = Mail(
 SCHEMA_RESPONSE_REJECTED = Mail(
     'updates_rejected',
     subject='The updates for ${resource_type} ${title} were not accepted'
+)
+
+QUICKFILES_MIGRATED = Mail(
+    'quickfiles_migrated',
+    subject='Your Quick Files have moved'
 )

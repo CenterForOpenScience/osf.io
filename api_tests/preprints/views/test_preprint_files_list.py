@@ -12,7 +12,7 @@ from osf_tests.factories import (
 from osf.utils.permissions import WRITE
 from osf.utils.workflows import DefaultStates
 from addons.osfstorage.models import OsfStorageFile
-
+from website import settings
 
 class TestPreprintProvidersList(ApiTestCase):
     def setUp(self):
@@ -175,6 +175,10 @@ class TestPreprintProvidersList(ApiTestCase):
         assert_equal(data['attributes']['preprint'], self.preprint._id)
         assert_equal(data['attributes']['path'], '/')
         assert_equal(data['attributes']['node'], None)
+        assert_equal(
+            data['relationships']['target']['links']['related']['href'],
+            f'{settings.API_DOMAIN}v2/preprints/{self.preprint._id}/'
+        )
 
     def test_osfstorage_file_data_not_found(self):
         res = self.app.get(
@@ -295,20 +299,20 @@ class TestPreprintFilesList(ApiTestCase):
 
         # Unauthenticated
         res = self.app.get(self.url, expect_errors=True)
-        assert res.status_code == 404
+        assert res.status_code == 410
 
         # Noncontrib
         res = self.app.get(self.url, auth=self.user_two.auth, expect_errors=True)
-        assert res.status_code == 404
+        assert res.status_code == 410
 
         # Write contributor
         self.preprint.add_contributor(self.user_two, WRITE, save=True)
         res = self.app.get(self.url, auth=self.user_two.auth, expect_errors=True)
-        assert res.status_code == 404
+        assert res.status_code == 410
 
         # Admin contrib
         res = self.app.get(self.url, auth=self.user.auth, expect_errors=True)
-        assert res.status_code == 404
+        assert res.status_code == 410
 
     def test_withdrawn_preprint_files(self):
         self.preprint.date_withdrawn = timezone.now()
@@ -360,7 +364,7 @@ class TestPreprintFilesList(ApiTestCase):
 
         data = res.json['data']
         assert len(data) == 2
-        assert data[0]['id'] == self.preprint.primary_file._id
+        assert set([item['id'] for item in data]) == {second_file._id, self.preprint.primary_file._id}
 
     def test_nested_file_as_primary_file_is_returned(self):
         # Primary file can be any file nested somewhere under the preprint's root folder.

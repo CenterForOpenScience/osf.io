@@ -20,6 +20,7 @@ from framework.auth.core import generate_verification_key
 from framework.auth.decorators import block_bing_preview, collect_auth, must_be_logged_in
 from framework.auth.forms import ResendConfirmationForm, ForgotPasswordForm, ResetPasswordForm
 from framework.auth.utils import ensure_external_identity_uniqueness, validate_recaptcha
+from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions.utils import remove_sessions_for_user, remove_session
@@ -28,15 +29,16 @@ from framework.utils import throttle_period_expired
 from osf.models import OSFUser
 from osf.utils.sanitize import strip_html
 from website import settings, mails, language
-from website.ember_osf_web.decorators import ember_flag_is_active
 from api.waffle.utils import storage_i18n_flag_active
 from website.util import web_url_for
 from osf.exceptions import ValidationValueError, BlockedEmailError
 from osf.models.provider import PreprintProvider
 from osf.models.tag import Tag
 from osf.utils.requests import check_select_for_update
-from osf import features
 from website.util.metrics import CampaignClaimedTags, CampaignSourceTags
+from website.ember_osf_web.decorators import ember_flag_is_active
+from osf import features
+#from osf.models import PreprintProvider
 
 
 @block_bing_preview
@@ -671,6 +673,10 @@ def external_login_confirm_email_get(auth, uid, token):
             can_change_preferences=False,
         )
 
+    # Send to celery the following async task to affiliate the user with eligible institutions if verified
+    from framework.auth.tasks import update_affiliation_for_orcid_sso_users
+    enqueue_task(update_affiliation_for_orcid_sso_users.s(user._id, provider_id))
+
     # redirect to CAS and authenticate the user with the verification key
     return redirect(cas.get_login_url(
         service_url,
@@ -1076,7 +1082,7 @@ def external_login_email_post():
                     if campaign != 'osf-preprints':
                         break
             elif service_url.startswith(campaign_url):
-                # osf campaigns: OSF Prereg and ERPC
+                # osf campaigns: ERPC
                 destination = campaign
                 break
 

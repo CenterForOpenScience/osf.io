@@ -19,6 +19,7 @@ from addons.github.models import GithubFolder
 from addons.github.tests.factories import GitHubAccountFactory
 from api.base.utils import waterbutler_api_url_for
 from api_tests import utils as api_utils
+from website import settings
 
 
 class TestDraftNodeProvidersList(ApiTestCase):
@@ -71,6 +72,10 @@ class TestDraftNodeProvidersList(ApiTestCase):
         assert_equal(data['attributes']['provider'], 'osfstorage')
         assert_equal(data['attributes']['node'], self.draft_node._id)
         assert_equal(data['attributes']['path'], '/')
+        assert_equal(
+            data['relationships']['target']['links']['related']['href'],
+            f'{settings.API_DOMAIN}v2/draft_nodes/{self.draft_node._id}/'
+        )
 
     def test_returns_osfstorage_folder_version_two(self):
         res = self.app.get(

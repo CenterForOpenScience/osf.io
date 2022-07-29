@@ -3,7 +3,6 @@ from django.core.management.base import BaseCommand
 from osf.models import Registration, RegistrationSchema
 
 PREREG_SCHEMA_NAMES = [
-    'Prereg Challenge',
     'Preregistration Template from AsPredicted.org',
     'OSF-Standard Pre-Data Collection Registration',
     'Replication Recipe (Brandt et al., 2013): Pre-Registration',

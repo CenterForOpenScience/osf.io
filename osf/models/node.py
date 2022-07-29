@@ -672,7 +672,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return DraftRegistration.objects.filter(
             models.Q(branched_from=self) &
             models.Q(deleted__isnull=True) &
-            (models.Q(registered_node=None) | models.Q(registered_node__is_deleted=True))
+            (models.Q(registered_node=None) | models.Q(registered_node__deleted__isnull=False)),
         )
 
     @property
@@ -2394,7 +2394,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         source_tag = self.all_tags.filter(
             system=True,
             name__in=[
-                CampaignSourceTags.Prereg.value,
                 CampaignSourceTags.OsfRegisteredReports.value,
                 CampaignSourceTags.Osf4m.value
             ]

@@ -21,8 +21,5 @@ new profile.Schools('#schools', ctx.schoolsUrls, ['view'], false);
 $(document).ready(function () {
     m.mount(document.getElementById('publicProjects'), m.component(publicNodes.PublicNodes, {user: ctx.user, nodeType: 'projects'}));
     m.mount(document.getElementById('publicComponents'), m.component(publicNodes.PublicNodes, {user: ctx.user, nodeType: 'components'}));
-    if(ctx.user.has_quickfiles) {
-        m.mount(document.getElementById('quickFiles'), m.component(quickFiles.QuickFiles, {user: ctx.user}));
-    }
 });
 

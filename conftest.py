@@ -70,10 +70,6 @@ _MOCKS = {
         'mark': 'enable_bookmark_creation',
         'replacement': lambda *args, **kwargs: None,
     },
-    'osf.models.user._create_quickfiles_project': {
-        'mark': 'enable_quickfiles_creation',
-        'replacement': lambda *args, **kwargs: None,
-    },
     'framework.celery_tasks.handlers._enqueue_task': {
         'mark': 'enable_enqueue_task',
         'replacement': lambda *args, **kwargs: None,
@@ -195,12 +191,14 @@ def mock_datacite(registration):
         data = ET.tostring(base_xml)
 
     with mock.patch.object(website_settings, 'DATACITE_ENABLED', True):
-        with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
-            rsps.add(responses.GET, f'{website_settings.DATACITE_URL}/metadata', body=data, status=200)
-            rsps.add(responses.POST, f'{website_settings.DATACITE_URL}/metadata', body=f'OK ({doi})', status=201)
-            rsps.add(responses.POST, f'{website_settings.DATACITE_URL}/doi', body=f'OK ({doi})', status=201)
-            rsps.add(responses.DELETE, f'{website_settings.DATACITE_URL}/metadata/{doi}', status=200)
-            yield rsps
+        with mock.patch.object(website_settings, 'DATACITE_USERNAME', 'TestDataciteUsername'):
+            with mock.patch.object(website_settings, 'DATACITE_PASSWORD', 'TestDatacitePassword'):
+                with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
+                    rsps.add(responses.GET, f'{website_settings.DATACITE_URL}/metadata', body=data, status=200)
+                    rsps.add(responses.POST, f'{website_settings.DATACITE_URL}/metadata', body=f'OK ({doi})', status=201)
+                    rsps.add(responses.POST, f'{website_settings.DATACITE_URL}/doi', body=f'OK ({doi})', status=201)
+                    rsps.add(responses.DELETE, f'{website_settings.DATACITE_URL}/metadata/{doi}', status=200)
+                    yield rsps
 
 
 @pytest.fixture

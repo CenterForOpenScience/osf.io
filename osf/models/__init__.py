@@ -7,7 +7,7 @@ from osf.models.institution import Institution  # noqa
 from osf.models.collection import CollectionSubmission, Collection  # noqa
 from osf.models.draft_node import DraftNode  # noqa
 from osf.models.node import AbstractNode, Node  # noqa
-from osf.models.sanctions import Sanction, Embargo, Retraction, RegistrationApproval, DraftRegistrationApproval, EmbargoTerminationApproval  # noqa
+from osf.models.sanctions import Sanction, Embargo, Retraction, RegistrationApproval, EmbargoTerminationApproval  # noqa
 from osf.models.registrations import Registration, DraftRegistrationLog, DraftRegistration  # noqa
 from osf.models.nodelog import NodeLog  # noqa
 from osf.models.preprintlog import PreprintLog  # noqa
@@ -55,3 +55,5 @@ from osf.models.schema_response import SchemaResponse  # noqa
 from osf.models.schema_response_block import SchemaResponseBlock  # noqa
 from osf.models.registration_bulk_upload_job import RegistrationBulkUploadJob  # noqa
 from osf.models.registration_bulk_upload_row import RegistrationBulkUploadRow  # noqa
+from osf.models.outcomes import Outcome  # noqa
+from osf.models.outcome_artifacts import OutcomeArtifact  # noqa

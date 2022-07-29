@@ -12,7 +12,7 @@ from framework.auth import Auth
 from osf_tests.factories import (AuthUserFactory, NodeLicenseRecordFactory,
                                  ProjectFactory)
 from tests.base import OsfTestCase
-from osf.utils.migrations import ensure_licenses
+from osf.utils.migrations import ensure<_licenses
 from tests.utils import assert_logs, assert_not_logs
 from website import settings
 from osf.models.licenses import NodeLicense, serialize_node_license_record, serialize_node_license

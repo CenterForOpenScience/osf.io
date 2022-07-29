@@ -1,5 +1,4 @@
 #-*- coding: utf-8 -*-
-import re
 import datetime
 import functools
 import random
@@ -16,6 +15,9 @@ from nose.tools import *  # noqa: F403
 from framework.auth import Auth
 from framework.celery_tasks import handlers
 
+from website import mails
+from website import settings
+
 from website.archiver import (
     ARCHIVER_INITIATED,
 )
@@ -23,12 +25,12 @@ from website.archiver import utils as archiver_utils
 from website.app import *  # noqa: F403
 from website.archiver import listeners
 from website.archiver.tasks import *   # noqa: F403
-from osf.models.archive import ArchiveTarget, ArchiveJob
 from website.archiver.decorators import fail_archive_on_error
 
-from website import mails
-from website import settings
-from osf.models import RegistrationSchema, Registration
+from osf.models import Guid, RegistrationSchema, Registration
+from osf.models.archive import ArchiveTarget, ArchiveJob
+from osf.models.base import generate_object_id
+from osf.utils.migrations import map_schema_to_schemablocks
 from osf.utils.sanitize import strip_html
 from addons.base.models import BaseStorageAddon
 from api.base.utils import waterbutler_api_url_for
@@ -49,7 +51,7 @@ for each in SILENT_LOGGERS:
     logging.getLogger(each).setLevel(logging.CRITICAL)
 
 sha256_factory = _unique(fake.sha256)
-name_factory = _unique(fake.ean13)
+id_factory = _unique(generate_object_id)
 
 @contextmanager
 def nested(*contexts):
@@ -62,9 +64,9 @@ def nested(*contexts):
         yield contexts
 
 def file_factory(name=None, sha256=None):
-    fname = name or name_factory()
+    fname = name or fake.word()
     return {
-        'path': '/' + fname,
+        'path': '/' + id_factory(),
         'name': fname,
         'kind': 'file',
         'size': random.randint(4, 4000),
@@ -276,14 +278,16 @@ def generate_schema_from_data(data):
         else:
             return {
                 'id': id,
-                'type': 'osf-upload' if prop.get('extra') else 'string'
+                'type': 'osf-upload' if prop.get('extra') else 'string',
+                'format': 'osf-upload-open' if prop.get('extra') else 'text'
             }
 
     def from_question(qid, question):
         if question.get('extra'):
             return {
                 'qid': qid,
-                'type': 'osf-upload'
+                'type': 'osf-upload',
+                'format': 'osf-upload-open',
             }
         elif isinstance(question.get('value'), dict):
             return {
@@ -297,7 +301,8 @@ def generate_schema_from_data(data):
         else:
             return {
                 'qid': qid,
-                'type': 'string'
+                'type': 'string',
+                'format': 'text'
             }
     _schema = {
         'name': 'Test',
@@ -330,13 +335,13 @@ def generate_schema_from_data(data):
         schema.schema = _schema
         schema.save()
 
+    map_schema_to_schemablocks(schema)
+
     return schema
 
 def generate_metadata(file_trees, selected_files, node_index):
-    data = {}
     uploader_types = {
         ('q_' + selected_file['name']): {
-            'value': fake.word(),
             'extra': [{
                 'sha256': sha256,
                 'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
@@ -349,38 +354,13 @@ def generate_metadata(file_trees, selected_files, node_index):
         }
         for sha256, selected_file in selected_files.items()
     }
-    data.update(uploader_types)
-    object_types = {
-        ('q_' + selected_file['name'] + '_obj'): {
-            'value': {
-                name_factory(): {
-                    'value': fake.word(),
-                    'extra': [{
-                        'sha256': sha256,
-                        'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
-                            node_index[sha256],
-                            selected_file['path']
-                        ),
-                        'selectedFileName': selected_file['name'],
-                        'nodeId': node_index[sha256]
-                    }]
-                },
-                name_factory(): {
-                    'value': fake.word()
-                }
-            }
-        }
-        for sha256, selected_file in selected_files.items()
-    }
-    data.update(object_types)
     other_questions = {
         'q{}'.format(i): {
             'value': fake.word()
         }
         for i in range(5)
     }
-    data.update(other_questions)
-    return data
+    return dict(**uploader_types, **other_questions)
 
 class ArchiverTestCase(OsfTestCase):
 
@@ -582,26 +562,27 @@ class TestArchiverTasks(ArchiverTestCase):
         )
         schema = generate_schema_from_data(data)
         draft_registration = factories.DraftRegistrationFactory(branched_from=node, registration_schema=schema, registration_metadata=data)
-
+        registration_files = set()
         with test_utils.mock_archive(node, schema=schema, draft_registration=draft_registration, autocomplete=True, autoapprove=True) as registration:
+            prearchive_responses = registration.registration_responses
             with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=file_trees[node._id])):
                 job = factories.ArchiveJobFactory(initiator=registration.creator)
                 archive_success(registration._id, job._id)
-                registration.reload()
-                for key, question in registration.registered_meta[schema._id].items():
-                    target = None
-                    if isinstance(question.get('value'), dict):
-                        target = [v for v in question['value'].values() if 'extra' in v and 'sha256' in v['extra'][0]][0]
-                    elif 'extra' in question and 'hashes' in question['extra'][0]:
-                        target = question
-                    if target:
-                        assert_in(registration._id, target['extra'][0]['viewUrl'])
-                        assert_not_in(node._id, target['extra'][0]['viewUrl'])
-                        del selected_files[target['extra'][0]['sha256']]
-                    else:
-                        # check non-file questions are unmodified
-                        assert_equal(data[key]['value'], question['value'])
-                assert_false(selected_files)
+
+        registration.refresh_from_db()
+        for response_block in registration.schema_responses.get().response_blocks.all():
+            if response_block.block_type != 'file-input':
+                assert response_block.response == prearchive_responses[response_block.schema_key]
+                continue
+            for file_response in response_block.response:
+                file_sha = file_response['file_hashes']['sha256']
+                originating_node = Guid.objects.get(_id=node_index[file_sha]).referent
+                parent_registration = originating_node.registrations.get()
+                assert originating_node._id not in file_response['file_urls']['html']
+                assert parent_registration._id in file_response['file_urls']['html']
+                registration_files.add(file_sha)
+
+        assert registration_files == set(selected_files.keys())
 
     def test_archive_success_escaped_file_names(self):
         file_tree = file_tree_factory(0, 0, 0)
@@ -610,9 +591,9 @@ class TestArchiverTasks(ArchiverTestCase):
         file_tree['children'] = [fake_file]
 
         node = factories.NodeFactory(creator=self.user)
+        qid = 'q_' + fake_file_name
         data = {
-            ('q_' + fake_file_name): {
-                'value': fake.word(),
+            qid: {
                 'extra': [{
                     'sha256': fake_file['extra']['hashes']['sha256'],
                     'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
@@ -625,51 +606,14 @@ class TestArchiverTasks(ArchiverTestCase):
             }
         }
         schema = generate_schema_from_data(data)
-        draft = factories.DraftRegistrationFactory(branched_from=node, registration_schema=schema, registered_metadata=data)
+        draft = factories.DraftRegistrationFactory(branched_from=node, registration_schema=schema, registration_metadata=data)
         with test_utils.mock_archive(node, schema=schema, draft_registration=draft, autocomplete=True, autoapprove=True) as registration:
             with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=file_tree)):
                 job = factories.ArchiveJobFactory(initiator=registration.creator)
                 archive_success(registration._id, job._id)
-                registration.reload()
-                for key, question in registration.registered_meta[schema._id].items():
-                    assert_equal(question['extra'][0]['selectedFileName'], fake_file_name)
-
-    def test_archive_success_with_deeply_nested_schema(self):
-        node = factories.NodeFactory(creator=self.user)
-        file_trees, selected_files, node_index = generate_file_tree([node])
-        data = {
-            ('q_' + selected_file['name']): {
-                'value': fake.word(),
-                'extra': [{
-                    'selectedFileName': selected_file['name'],
-                    'nodeId': node._id,
-                    'sha256': sha256,
-                    'viewUrl': '/project/{0}/files/osfstorage{1}'.format(node._id, selected_file['path'])
-                }]
-            }
-            for sha256, selected_file in selected_files.items()
-        }
-        schema = generate_schema_from_data(data)
-        draft_registration = factories.DraftRegistrationFactory(registration_schema=schema, branched_from=node, registration_metadata=data)
-        with test_utils.mock_archive(node, schema=schema, draft_registration=draft_registration, autocomplete=True, autoapprove=True) as registration:
-            with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=file_trees[node._id])):
-                job = factories.ArchiveJobFactory(initiator=registration.creator)
-                archive_success(registration._id, job._id)
-                registration.reload()
-                for key, question in registration.registered_meta[schema._id].items():
-                    target = None
-                    if isinstance(question['value'], dict):
-                        target = [v for v in question['value'].values() if 'extra' in v and 'sha256' in v['extra'][0]][0]
-                    elif 'extra' in question and 'sha256' in question['extra'][0]:
-                        target = question
-                    if target:
-                        assert_in(registration._id, target['extra'][0]['viewUrl'])
-                        assert_not_in(node._id, target['extra'][0]['viewUrl'])
-                        del selected_files[target['extra'][0]['sha256']]
-                    else:
-                        # check non-file questions are unmodified
-                        assert_equal(data[key]['value'], question['value'])
-                assert_false(selected_files)
+                registration.refresh_from_db()
+                updated_response = registration.schema_responses.get().all_responses[qid]
+                assert updated_response[0]['file_name'] == fake_file_name
 
     def test_archive_success_with_components(self):
         node = factories.NodeFactory(creator=self.user)
@@ -685,38 +629,30 @@ class TestArchiverTasks(ArchiverTestCase):
         )
         schema = generate_schema_from_data(data)
         draft_registration = factories.DraftRegistrationFactory(registration_schema=schema, branched_from=node, registration_metadata=data)
+
         with test_utils.mock_archive(node, schema=schema, draft_registration=draft_registration, autocomplete=True, autoapprove=True) as registration:
+            prearchive_responses = registration.registration_responses
+
             def mock_get_file_tree(self, *args, **kwargs):
                 return file_trees[self.owner.registered_from._id]
+
             with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock_get_file_tree):
                 job = factories.ArchiveJobFactory(initiator=registration.creator)
                 archive_success(registration._id, job._id)
 
-            registration.reload()
-
-            for key, question in registration.registered_meta[schema._id].items():
-                target = None
-                if isinstance(question['value'], dict):
-                    target = [v for v in question['value'].values() if 'extra' in v and 'sha256' in v['extra'][0]]
-                elif 'extra' in question and 'sha256' in question['extra']:
-                    target = question
-
-                if target:
-                    node_id = re.search(
-                        r'^/project/(?P<node_id>\w{5}).+$',
-                        target[0]['extra'][0]['viewUrl']
-                    ).groupdict()['node_id']
-                    assert_in(
-                        node_id,
-                        [r._id for r in registration.node_and_primary_descendants()]
-                    )
-                    if target[0]['extra'][0]['sha256'] in selected_files:
-                        del selected_files[target[0]['extra'][0]['sha256']]
-                else:
-                    # check non-file questions are unmodified
-                    assert_equal(data[key]['value'], question['value'])
-            # ensure each selected file was checked
-            assert_false(selected_files)
+        registration.refresh_from_db()
+        registration_files = set()
+        for response_block in registration.schema_responses.get().response_blocks.all():
+            if response_block.block_type != 'file-input':
+                assert response_block.response == prearchive_responses[response_block.schema_key]
+                continue
+            for file_response in response_block.response:
+                file_sha = file_response['file_hashes']['sha256']
+                originating_node = Guid.objects.get(_id=node_index[file_sha]).referent
+                parent_registration = originating_node.registrations.get()
+                assert originating_node._id not in file_response['file_urls']['html']
+                assert parent_registration._id in file_response['file_urls']['html']
+                registration_files.add(file_sha)
 
     def test_archive_success_different_name_same_sha(self):
         file_tree = file_tree_factory(0, 0, 0)
@@ -727,7 +663,6 @@ class TestArchiverTasks(ArchiverTestCase):
         node = factories.NodeFactory(creator=self.user)
         data = {
             ('q_' + fake_file['name']): {
-                'value': fake.word(),
                 'extra': [{
                     'sha256': fake_file['extra']['hashes']['sha256'],
                     'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
@@ -757,7 +692,6 @@ class TestArchiverTasks(ArchiverTestCase):
         node = factories.NodeFactory(creator=self.user)
         data = {
             ('q_' + fake_file['name']): {
-                'value': fake.word(),
                 'extra': [{
                     'sha256': fake_file['extra']['hashes']['sha256'],
                     'viewUrl': '/project/{0}/files/osfstorage{1}'.format(
@@ -774,8 +708,6 @@ class TestArchiverTasks(ArchiverTestCase):
         with test_utils.mock_archive(node, schema=schema, draft_registration=draft, autocomplete=True, autoapprove=True) as registration:
             with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=file_tree)):
                 job = factories.ArchiveJobFactory(initiator=registration.creator)
-                draft.registered_node = registration
-                draft.save()
                 with assert_raises(ArchivedFileNotFound):
                     archive_success(registration._id, job._id)
 
@@ -791,7 +723,6 @@ class TestArchiverTasks(ArchiverTestCase):
 
         data = {
             ('q_' + selected['name']): {
-                'value': fake.word(),
                 'extra': [{
                     'sha256': selected['extra']['hashes']['sha256'],
                     'viewUrl': '/project/{0}/files/osfstorage{1}'.format(

@@ -36,7 +36,6 @@ class TestCampaignInitialization(OsfTestCase):
         super(TestCampaignInitialization, self).setUp()
         set_preprint_providers()
         self.campaign_lists = [
-            'prereg',
             'erpc',
             'institution',
             'osf-preprints',
@@ -78,7 +77,6 @@ class TestCampaignMethods(OsfTestCase):
         super(TestCampaignMethods, self).setUp()
         set_preprint_providers()
         self.campaign_lists = [
-            'prereg',
             'erpc',
             'institution',
             'osf-preprints',
@@ -102,7 +100,7 @@ class TestCampaignMethods(OsfTestCase):
     def test_is_native_login(self):
         for campaign in self.campaign_lists:
             native = campaigns.is_native_login(campaign)
-            if campaign == 'prereg' or campaign == 'erpc':
+            if campaign == 'erpc':
                 assert_true(native)
             else:
                 assert_false(native)
@@ -167,10 +165,6 @@ class TestCampaignsAuthViews(OsfTestCase):
     def setUp(self):
         super(TestCampaignsAuthViews, self).setUp()
         self.campaigns = {
-            'prereg': {
-                'title_register': 'OSF Preregistration',
-                'title_landing': 'Welcome to the OSF Preregistration!'
-            },
             'erpc': {
                 'title_register': 'Election Research Preacceptance Competition',
                 'title_landing': 'The Election Research Preacceptance Competition is Now Closed'
@@ -209,11 +203,6 @@ class TestCampaignsAuthViews(OsfTestCase):
     def test_campaign_landing_logged_in(self):
         for key, value in self.campaigns.items():
             resp = self.app.get(value['url_landing'], auth=self.user.auth)
-            assert_equal(resp.status_code, http_status.HTTP_200_OK)
-
-    def test_auth_prereg_landing_page_logged_out(self):
-        for key, value in self.campaigns.items():
-            resp = self.app.get(value['url_landing'])
             assert_equal(resp.status_code, http_status.HTTP_200_OK)
 
 
