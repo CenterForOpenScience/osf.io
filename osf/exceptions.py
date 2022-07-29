@@ -243,8 +243,8 @@ class InvalidPIDError(OSFError):
 
 class NoPIDError(InvalidPIDError):
 
-    def __init__(self):
-        self.message = 'Must provide a PID value'
+    def __init__(self, message):
+        self.message = message
 
 
 class InvalidPIDFormatError(InvalidPIDError):

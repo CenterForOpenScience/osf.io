@@ -48,7 +48,6 @@ class DOIValidator(PIDValidator):
         #Local-development and test environments should
         if not self.validation_endpoint:
             return True
-
         # An Invalid DOI will not have a Registration Agency
         return self.get_registration_agency(doi_value) is not None
 

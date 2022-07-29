@@ -116,7 +116,7 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
         api_request: The api_request data from the API call that initiated the change.
         '''
         if not new_pid_value:
-            raise NoPIDError()
+            raise NoPIDError('Cannot assign an empty PID value')
 
         new_identifier, created = Identifier.objects.get_or_create(
             value=new_pid_value, category=pid_type
