@@ -113,6 +113,7 @@ class ResourceSerializer(JSONAPISerializer):
             self._update_finalized(instance, finalized)
 
         instance.save()
+        instance.pid = instance.identifier.value
         return instance
 
     def _update_finalized(self, instance, patched_finalized):

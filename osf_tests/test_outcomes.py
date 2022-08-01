@@ -1,6 +1,7 @@
 import mock
 
 import pytest
+from django.db import IntegrityError
 
 from osf.exceptions import (
     CannotFinalizeArtifactError,
@@ -258,6 +259,18 @@ class TestOutcomeArtifact:
         with pytest.raises(CannotFinalizeArtifactError) as caught:
             test_artifact.finalize()
         assert caught.value.incomplete_fields == ['identifier__value', 'artifact_type']
+
+    def test_finalize__enforces_uniqueness(self, outcome, project_doi):
+        test_artifact_1 = outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.DATA
+        )
+        test_artifact_2 = outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.DATA
+        )
+
+        test_artifact_1.finalize()   # First artifact can finalize
+        with pytest.raises(IntegrityError):
+            test_artifact_2.finalize()
 
     def test_delete_artifact__deletes_from_db_if_not_finalized(self, outcome, project_doi):
         test_artifact = outcome.artifact_metadata.create(
