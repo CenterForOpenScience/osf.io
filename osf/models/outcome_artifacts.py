@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, IntegrityError
 from django.utils import timezone
 
 from osf.exceptions import (
@@ -80,6 +80,7 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
     identifier = models.ForeignKey(
         'osf.identifier',
         null=True,
+        blank=True,
         on_delete=models.CASCADE,
         related_name='artifact_metadata'
     )
@@ -98,9 +99,8 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
     objects = ArtifactManager()
 
     class Meta:
-        unique_together = ('outcome', 'identifier', 'artifact_type')
         indexes = [
-            models.Index(fields=['outcome', 'artifact_type'])
+            models.Index(fields=['artifact_type', 'outcome'])
         ]
         ordering = ['artifact_type', 'title']
 
@@ -161,6 +161,17 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
             incomplete_fields.append('artifact_type')
         if incomplete_fields:
             raise CannotFinalizeArtifactError(self, incomplete_fields)
+
+        if OutcomeArtifact.objects.filter(
+            outcome=self.outcome,
+            identifier=self.identifier,
+            artifact_type=self.artifact_type,
+            finalized=True,
+        ).exists():
+            raise IntegrityError(
+                f'Finalized OutcomeArtifact with PID {self.identifier.value} and artifact_type '
+                f'{self.artifact_type} already exists on Outcome with ID [{self.outcome._id}].'
+            )
 
         self.finalized = True
         self.save()
