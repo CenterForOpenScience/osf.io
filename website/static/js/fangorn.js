@@ -29,11 +29,6 @@ require('css/fangorn.css');
 
 var tbOptions;
 
-var FILES = [];
-var FILES_SIZE = 0;
-var FILES_LENGTH = 0;
-var PATH_FILES_UPLOADED = [];
-
 var noop = function () { };
 
 var tempCounter = 1;
@@ -825,8 +820,6 @@ function _fangornUploadProgress(treebeard, file, progress) {
  * @private
  */
 function _fangornSending(treebeard, file, xhr, formData) {
-    // if(file.webkitRelativePath.length > 0 && PATH_FILES_UPLOADED.includes(file.webkitRelativePath))
-    //     return null;
     treebeard.options.uploadInProgress = true;
     var parent = file.treebeardParent || treebeard.dropzoneItemCache;
     xhr = $osf.setXHRAuthorization(xhr);
@@ -835,7 +828,6 @@ function _fangornSending(treebeard, file, xhr, formData) {
         _send.call(xhr, file);
     };
     var configOption = resolveconfigOption.call(treebeard, parent, 'uploadSending', [file, xhr, formData]);
-    // PATH_FILES_UPLOADED.push(file.webkitRelativePath);
     return configOption || null;
 }
 
@@ -959,7 +951,6 @@ function _fangornComplete(treebeard, file) {
  * @private
  */
 function _fangornDropzoneSuccess(treebeard, file, response) {
-    
     treebeard.options.uploadInProgress = false;
 
     var parent = file.treebeardParent, item,revisedItem, child;
@@ -1023,10 +1014,6 @@ function _fangornDropzoneRemovedFile(treebeard, file, message, xhr) {
 var DEFAULT_ERROR_MESSAGE = gettext('Could not upload file. The file may be invalid ') +
     gettext('or the file folder has been deleted.');
 function _fangornDropzoneError(treebeard, file, message, xhr) {
-    
-    // if(PATH_FILES_UPLOADED.includes(file.webkitRelativePath))
-    //     return;
-
     var tb = treebeard;
     var msgText;
 
@@ -1091,7 +1078,6 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
  */
 function _uploadEvent(event, item, col) {
     var self = this;  // jshint ignore:line
-    console.log("upload file callled");
     try {
         event.stopPropagation();
     } catch (e) {
@@ -1130,70 +1116,6 @@ function _downloadZipEvent (event, item, col) {
     }
     window.location = waterbutler.buildTreeBeardDownloadZip(item);
 }
-
-async function _uploadFolder(event, dismissCallback, helpText){
-    let tb = this;
-    let root_parent = tb.multiselected()[0];
-    let parent = tb.multiselected()[0];
-    parent.open = true;
-    let created_folders = [];
-    let created_path = [];
-    for (let _i = 0; _i < FILES.length; _i++) {
-        let list_paths = FILES[_i].webkitRelativePath.split('/');
-        for (let _j = 0; _j < list_paths.length - 1; _j++) {
-            let val = list_paths[_j];
-            let check = created_folders.find(x => x.name === val);
-            let check_path = '/' + val + '/';
-            parent.open = true;
-            if(parent.data.materialized)
-                check_path = parent.data.materialized + '/' + val + '/';
-            if(check && created_path.includes(check_path)){
-                parent = check.value;
-                continue;
-            }
-            created_path.push(check_path);
-            let extra = {};
-            let path = parent.data.path || '/';
-            let options = {name: val, kind: 'folder', waterbutlerURL: parent.data.waterbutlerURL};
-            if ((parent.data.provider === 'github') || (parent.data.provider === 'gitlab')) {
-                extra.branch = parent.data.branch;
-                options.branch = parent.data.branch;
-            }
-            await m.request({
-                method: 'PUT',
-                background: true,
-                config: $osf.setXHRAuthorization,
-                url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId, options, extra)
-            }).then( function(item) {
-                    item = tb.options.lazyLoadPreprocess.call(this, item).data;
-                    inheritFromParent({data: item}, parent, ['branch']);
-                    item = tb.createItem(item, parent.id);
-                    parent = item;
-                    orderFolder.call(tb, parent);
-                    if(dismissCallback) {
-                        dismissCallback();
-                    }
-            }, function(data) {
-                if (data && data.code === 409) {
-                    helpText(data.message);
-                    m.redraw();
-                } else {
-                    helpText(gettext('Folder creation failed.'));
-                }
-            });
-            let parent_folder = {
-                'name': val,
-                'value': parent,
-            };
-            created_folders.push(parent_folder);
-        }
-        parent.open = true;
-        tb.dropzoneItemCache = parent;
-        tb.dropzone.addFile(FILES[_i]);
-        parent = root_parent;
-    }
-}
-
 
 function _createFolder(event, dismissCallback, helpText) {
     var tb = this;
@@ -1443,7 +1365,6 @@ function doCheckout(item, checkout, showError) {
  * @private
  */
 function _fangornResolveLazyLoad(item) {
-    console.log("_fangornResolveLazyLoad");
     item.connected = true;
     var configOption = resolveconfigOption.call(this, item, 'lazyload', [item]);
     if (configOption) {
@@ -1482,7 +1403,6 @@ function reapplyTooltips () {
  * @private
  */
 function _fangornLazyLoadOnLoad (tree, event) {
-    console.log("_fangornLazyLoadOnLoad");
     tree.children.forEach(function(item) {
         inheritFromParent(item, tree);
     });
@@ -1996,10 +1916,8 @@ var toolbarModes = {
     'DEFAULT' : 'bar',
     'FILTER' : 'filter',
     'ADDFOLDER' : 'addFolder',
-    'UPLOADFOLDER' : 'uploadFolder',
     'UPLOADFOLDERCANCLE' : 'uploadFolderCancle',
     'UPLOADFOLDEREMPTY' : 'uploadFolderEmpty',
-    'UPLOADFOLDEREXIST' : 'uploadFolderExist',
     'RENAME' : 'rename',
     'ADDPROJECT' : 'addProject'
 };
@@ -2106,135 +2024,144 @@ var FGItemButtons = {
                 rowButtons.push(
                     m.component(FGButton, {
                         onclick: async function (event) {
-                            // clear cache of input before upload new folder
-                            if (tb.dropzone.hiddenFileInput)
-                                document.body.removeChild(tb.dropzone.hiddenFileInput);
-                            tb.dropzone.hiddenFileInput = document.createElement("input");
-                            tb.dropzone.hiddenFileInput.setAttribute("type", "file");
-                            if ((tb.dropzone.options.maxFiles == null) || tb.dropzone.options.maxFiles > 1) {
-                                tb.dropzone.hiddenFileInput.setAttribute("multiple", "multiple");
-                            }
-                            if (tb.dropzone.options.acceptedFiles != null) {
-                                tb.dropzone.hiddenFileInput.setAttribute("accept", tb.dropzone.options.acceptedFiles);
-                            }
-                            tb.dropzone.hiddenFileInput.style.visibility = "hidden";
-                            tb.dropzone.hiddenFileInput.style.position = "absolute";
-                            tb.dropzone.hiddenFileInput.style.top = "0";
-                            tb.dropzone.hiddenFileInput.style.left = "0";
-                            tb.dropzone.hiddenFileInput.style.height = "0";
-                            tb.dropzone.hiddenFileInput.style.width = "0";
-                            document.body.appendChild(tb.dropzone.hiddenFileInput);
-                            try {
-                                event.stopPropagation();
-                            } catch (e) {
-                                window.event.cancelBubble = true;
-                            }
-                            tb.dropzone.hiddenFileInput.setAttribute("webkitdirectory", "true");
-                            tb.dropzone.hiddenFileInput.click();
-                            if(!item.open)
-                                tb.updateFolder(null, item);
-                            let parent = tb.multiselected()[0];
-                            let root_parent = tb.multiselected()[0];
-                            let files = [];
-                            tb.dropzone.hiddenFileInput.addEventListener("change", async (event) => {
-                                files = tb.dropzone.hiddenFileInput.files;
-                                console.log("files: ", files);
-                                // console.log("PATH_FILES_UPLOADED ", PATH_FILES_UPLOADED);
-                                // console.log("parent before upload: ", parent);
-                                // console.log("tb.dropzone.hiddenFileInput after select: ", tb.dropzone.hiddenFileInput);
-                                let children_list = null;
-                                FILES = files;
-                                FILES_LENGTH = FILES.length;
-                                if(files.length === 0)
-                                    mode(toolbarModes.UPLOADFOLDEREMPTY);
-                                else{
-                                    // const folder_name = FILES[0].webkitRelativePath.split('/');
-                                    // children_list = parent.children.find((e) => {
-                                    //     return e.data.name === folder_name[0];
-                                    // });
-                                    // if(children_list)
-                                    //     mode(toolbarModes.UPLOADFOLDEREXIST);
-                                    // else{
-                                        for (let _i = 0; _i < FILES_LENGTH ; _i++){
-                                            const file = FILES[_i];
-                                            FILES_SIZE += file.size / 1024;
-                                        }
-                                        FILES_SIZE = parseFloat(FILES_SIZE).toFixed(2);
-                                        let quota = null;
-                                        if(item.data.provider === 'osfstorage'){
-                                            quota = $.ajax({
-                                                async: false,
-                                                method: 'GET',
-                                                url: item.data.nodeApiUrl + 'get_creator_quota/',
-                                            });
-                                            if (quota.responseJSON){
-                                                quota = quota.responseJSON;
-                                                if (quota.used + FILES_SIZE > quota.max)
-                                                    mode(toolbarModes.UPLOADFOLDERCANCLE);
-                                                else{
-                                                    if( parseFloat(quota.used) + parseFloat(FILES_SIZE) <= parseFloat(quota.max) ){
-                                                        let created_folders = [];
-                                                        let created_path = [];
-                                                        parent.open = true;
-                                                        for (let _i = 0; _i < FILES.length; _i++) {
-                                                            let list_paths = files[_i].webkitRelativePath.split('/');
-                                                            for (let _j = 0; _j < list_paths.length - 1; _j++) {
-                                                                let val = list_paths[_j];
-                                                                let check = created_folders.find(x => x.name === val);
-                                                                let check_path = '/' + val + '/';
-                                                                parent.open = true;
-                                                                if(parent.data.materialized)
-                                                                    check_path = parent.data.materialized + '/' + val + '/';
-                                                                if(check && created_path.includes(check_path)){
-                                                                    parent = check.value;
-                                                                    continue;
-                                                                }
-                                                                created_path.push(check_path);
-                                                                let extra = {};
-                                                                let path = parent.data.path || '/';
-                                                                let options = {name: val, kind: 'folder', waterbutlerURL: parent.data.waterbutlerURL};
-                                                                if ((parent.data.provider === 'github') || (parent.data.provider === 'gitlab')) {
-                                                                    extra.branch = parent.data.branch;
-                                                                    options.branch = parent.data.branch;
-                                                                }
-                                                                await m.request({
-                                                                    method: 'PUT',
-                                                                    background: true,
-                                                                    config: $osf.setXHRAuthorization,
-                                                                    url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId, options, extra)
-                                                                }).then( function(item) {
-                                                                        item = tb.options.lazyLoadPreprocess.call(this, item).data;
-                                                                        inheritFromParent({data: item}, parent, ['branch']);
-                                                                        item = tb.createItem(item, parent.id);
-                                                                        parent = item;
-                                                                        orderFolder.call(tb, parent);
-                                                                }, function(data) {
-                                                                    if (data && data.code === 409) {
-                                                                        m.redraw();
-                                                                    } else {
-                                                                        helpText(gettext('Folder creation failed.'));
-                                                                    }
-                                                                });
-                                                                let parent_folder = {
-                                                                    'name': val,
-                                                                    'value': parent,
-                                                                };
-                                                                created_folders.push(parent_folder);
-                                                            }
-                                                            parent.open = true;
-                                                            tb.dropzoneItemCache = parent;
-                                                            tb.dropzone.addFile(files[_i]);
-                                                            parent = root_parent;
-                                                        }
+                             // clear cache of input before upload new folder
+                             if (tb.dropzone.hiddenFileInput)
+                                 document.body.removeChild(tb.dropzone.hiddenFileInput);
+                             tb.dropzone.hiddenFileInput = document.createElement("input");
+                             tb.dropzone.hiddenFileInput.setAttribute("type", "file");
+                             if ((tb.dropzone.options.maxFiles == null) || tb.dropzone.options.maxFiles > 1) {
+                                 tb.dropzone.hiddenFileInput.setAttribute("multiple", "multiple");
+                             }
+                             if (tb.dropzone.options.acceptedFiles != null) {
+                                 tb.dropzone.hiddenFileInput.setAttribute("accept", tb.dropzone.options.acceptedFiles);
+                             }
+                             tb.dropzone.hiddenFileInput.style.visibility = "hidden";
+                             tb.dropzone.hiddenFileInput.style.position = "absolute";
+                             tb.dropzone.hiddenFileInput.style.top = "0";
+                             tb.dropzone.hiddenFileInput.style.left = "0";
+                             tb.dropzone.hiddenFileInput.style.height = "0";
+                             tb.dropzone.hiddenFileInput.style.width = "0";
+                             document.body.appendChild(tb.dropzone.hiddenFileInput);
+                             try {
+                                 event.stopPropagation();
+                             } catch (e) {
+                                 window.event.cancelBubble = true;
+                             }
+                             tb.dropzone.hiddenFileInput.setAttribute("webkitdirectory", "true");
+                             tb.dropzone.hiddenFileInput.click();
+                             if(!item.open)
+                                 tb.updateFolder(null, item);
+                             var parent = tb.multiselected()[0];
+                             var root_parent = tb.multiselected()[0];
+                             var files = [];
+                             tb.dropzone.hiddenFileInput.addEventListener("change", async (event) => {
+                                 files = tb.dropzone.hiddenFileInput.files;
+                                 // var children_list = null;
+                                 var total_files_size = 0;
+                                 if(files.length === 0)
+                                     mode(toolbarModes.UPLOADFOLDEREMPTY);   
+                                 else{
+                                    //  console.log("parent.children");
+                                    //  console.log(parent.children);
+                                    //  const folder_name = FILES[0].webkitRelativePath.split('/');
+                                    //  parent.children.find((e) => {
+                                    //      console.log(e.data.name);
+                                    //      if(e.data.name === folder_name[0])
+                                    //         children_list = true
+                                    //  });
+                                    //  if(children_list)
+                                    //      mode(toolbarModes.UPLOADFOLDEREXIST);
+                                    for (var _i = 0; _i < files.length ; _i++)
+                                        total_files_size += files[_i].size;
+                                    parent.open = true;
+                                    total_files_size = parseFloat(total_files_size).toFixed(2);
+                                    var quota = null;
+                                    if(item.data.provider){
+                                        quota = $.ajax({
+                                            async: false,
+                                            method: 'GET',
+                                            url: item.data.nodeApiUrl + 'get_creator_quota/',
+                                        });
+                                        if (quota.responseJSON){
+                                            quota = quota.responseJSON;
+                                            if (parseFloat(quota.used) + parseFloat(total_files_size) > quota.max)
+                                                mode(toolbarModes.UPLOADFOLDERCANCLE);
+                                            else{
+                                                var created_folders = [];
+                                                var created_path = [];
+                                                parent.open = true;
+                                                for (var _i = 0; _i < files.length; _i++) {
+                                                    if(files[_i].webkitRelativePath.length === 0){
+                                                        tb.dropzoneItemCache = tb.multiselected()[0];
+                                                        tb.dropzone.addFile(files[_i]);
+                                                        continue;
                                                     }
-                                                    else
-                                                        mode(toolbarModes.UPLOADFOLDER);
+                                                    else{
+                                                        var list_paths = files[_i].webkitRelativePath.split('/');
+                                                        for (var _j = 0; _j < list_paths.length - 1; _j++) {
+                                                            var val = list_paths[_j];
+                                                            var check = created_folders.find(x => x.name === val);
+                                                            var check_path = '/' + val + '/';
+                                                            var is_uploadedfolder = false;
+                                                            parent.open = true;
+                                                            if(parent.data.materialized)
+                                                                check_path = parent.data.materialized + val + '/';
+                                                            parent.children.find((e) => {
+                                                                if(e.data.materialized === check_path){
+                                                                    parent = e;
+                                                                    is_uploadedfolder = true;
+                                                                }
+                                                            });
+                                                            if(is_uploadedfolder)
+                                                                continue;
+                                                            if(check && created_path.includes(check_path)){
+                                                                parent = check.value;
+                                                                continue;
+                                                            }
+                                                            created_path.push(check_path);
+                                                            var extra = {};
+                                                            var path = parent.data.path || '/';
+                                                            var options = {name: val, kind: 'folder', waterbutlerURL: parent.data.waterbutlerURL};
+                                                            if ((parent.data.provider === 'github') || (parent.data.provider === 'gitlab')) {
+                                                                extra.branch = parent.data.branch;
+                                                                options.branch = parent.data.branch;
+                                                            }
+                                                            await m.request({
+                                                                method: 'PUT',
+                                                                background: true,
+                                                                config: $osf.setXHRAuthorization,
+                                                                url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId, options, extra)
+                                                            }).then( function(item) {
+                                                                    item = tb.options.lazyLoadPreprocess.call(this, item).data;
+                                                                    inheritFromParent({data: item}, parent, ['branch']);
+                                                                    item = tb.createItem(item, parent.id);
+                                                                    parent = item;
+                                                                    orderFolder.call(tb, parent);
+                                                            }, function(data) {
+                                                                if (data && data.code === 409) {
+                                                                    helpText(data.message);
+                                                                    m.redraw();
+                                                                } else {
+                                                                    helpText(gettext('Folder creation failed.'));
+                                                                }
+                                                            });
+                                                            var parent_folder = {
+                                                                'name': val,
+                                                                'value': parent,
+                                                            };
+                                                            created_folders.push(parent_folder);
+                                                        }
+                                                        parent.open = true;
+                                                        tb.dropzoneItemCache = parent;
+                                                        tb.dropzone.addFile(files[_i]);
+                                                        parent = root_parent;
+                                                    }
                                                 }
                                             }
                                         }
-                                   // }
-                                }
-                            });
+                                    }
+                                 }
+                             });
                         },
                         icon: 'fa fa-plus',
                         className: 'text-success'
@@ -2394,9 +2321,6 @@ var FGToolbar = {
         self.createFolder = function(event){
             _createFolder.call(self.tb, event, self.dismissToolbar, self.helpText);
         };
-        self.uploadFolder = function(event){
-            _uploadFolder.call(self.tb, event, self.dismissToolbar);
-        }
         self.nameData = m.prop('');
         self.renameId = m.prop('');
         self.renameData = m.prop('');
@@ -2461,26 +2385,6 @@ var FGToolbar = {
                     )
                 )
             ];
-            templates[toolbarModes.UPLOADFOLDER] = [
-                m('.col-xs-12',
-                    m('.fangorn-toolbar.pull-right',
-                        [
-                            m.component(FGSpan, {
-                                value: gettext(`Total files: ${FILES_LENGTH} with size ${FILES_SIZE}MB.You have used more than ${window.contextVars.threshold * 100}% of your quota.`),
-                                className: 'text-danger',
-                            }),
-                            m.component(FGButton, {
-                                onclick: ctrl.uploadFolder,
-                                className: 'btn btn-primary'
-                            }, gettext('Continue')),
-                            m.component(FGButton, {
-                                onclick: ctrl.dismissToolbar,
-                                className: 'btn btn-danger'
-                            }, gettext('End')),
-                        ]
-                    )
-                )
-            ];
             templates[toolbarModes.UPLOADFOLDERCANCLE] = [
                 m('.col-xs-12',
                     m('.fangorn-toolbar.pull-right',
@@ -2503,22 +2407,6 @@ var FGToolbar = {
                         [
                             m.component(FGSpan, {
                                 value: gettext('The folder that wants to upload is empty.'),
-                                className: 'text-danger'
-                            }),
-                            m.component(FGButton, {
-                                onclick: ctrl.dismissToolbar,
-                                className: 'btn btn-danger'
-                            }, gettext('End')),
-                        ]
-                    )
-                )
-            ];
-            templates[toolbarModes.UPLOADFOLDEREXIST] = [
-                m('.col-xs-12',
-                    m('.fangorn-toolbar.pull-right',
-                        [
-                            m.component(FGSpan, {
-                                value: gettext('The folder that wants to upload has already exists in this location.'),
                                 className: 'text-danger'
                             }),
                             m.component(FGButton, {
@@ -3436,7 +3324,6 @@ Fangorn.ButtonEvents = {
     _uploadEvent : _uploadEvent,
     _removeEvent : _removeEvent,
     createFolder : _createFolder,
-    uploadFolder : _uploadFolder,
     _gotoFileEvent : gotoFileEvent,
 };
 
