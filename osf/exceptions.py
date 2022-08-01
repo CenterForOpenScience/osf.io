@@ -252,7 +252,7 @@ class InvalidPIDFormatError(InvalidPIDError):
 
 
 class NoSuchPIDError(InvalidPIDError):
-    ERROR_MESSAGE = 'Could not find any record of PID of type {category} with valuea {value}'
+    ERROR_MESSAGE = 'Could not find any record of PID with type {category} and value {value}'
 
 
 class CannotFinalizeArtifactError(OSFError):

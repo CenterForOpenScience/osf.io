@@ -3,6 +3,7 @@ from urllib.parse import urljoin
 
 import requests
 
+from framework import sentry
 from osf.exceptions import (
     InvalidPIDError,
     InvalidPIDFormatError,
@@ -69,6 +70,10 @@ class DOIValidator(PIDValidator):
         elif error_status == 'Invalid DOI':
             pid_exception = InvalidPIDFormatError
         else:
+            sentry.log_message(
+                f'Unexpected response when checking Registration Agency for DOI {doi_value}: '
+                f'{response_data}'
+            )
             pid_exception = InvalidPIDError
 
         raise pid_exception(pid_value=doi_value, pid_category='DOI')
