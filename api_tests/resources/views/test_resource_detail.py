@@ -489,7 +489,7 @@ class TestResourceDetailPATCHBehavior:
         resp = app.patch_json_api(make_api_url(test_artifact), payload, auth=test_auth, expect_errors=True)
 
         assert resp.status_code == 400
-        error_info = resp.json()['errors'][0]
+        error_info = resp.json['errors'][0]
 
         assert 'already exists' in error_info['detail']
         assert error_info['source']['pointer'] == '/data/attributes'
