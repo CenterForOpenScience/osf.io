@@ -4,7 +4,7 @@ from django.utils.functional import cached_property
 from osf.exceptions import NoPIDError
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.mixins import EditableFieldsMixin
-from osf.models.nodelog import NodeLog
+from osf.models.nodelogs import NodeLog
 from osf.utils.outcomes import ArtifactTypes, OutcomeActions
 
 '''
@@ -81,13 +81,12 @@ class Outcome(ObjectIDMixin, EditableFieldsMixin, BaseModel):
     def primary_osf_resource(self):
         return self.artifact_metadata.get(artifact_type=ArtifactTypes.PRIMARY).identifier.referent
 
-    def log_artifact_change(self, action, artifact, api_request, **log_params):
+    def artifact_updated(self, action, artifact, api_request, **log_params):
         nodelog_action = NODE_LOGS_FOR_OUTCOME_ACTION[action]
         nodelog_params = {'artifact_id': artifact._id, **log_params}
 
-        self.primary_osf_resource.add_log(
+        self.primary_osf_resource.associated_resource_updated(
             action=nodelog_action,
-            params=nodelog_params,
-            auth=None,  # Grabbed from request
-            request=api_request,
+            api_request=api_request,
+            log_params=nodelog_params,
         )
