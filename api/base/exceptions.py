@@ -99,7 +99,14 @@ def json_api_exception_handler(exc, context):
             response['X-OSF-OTP'] = 'required; app'
 
         if isinstance(exc, JSONAPIException):
-            errors.extend([{'source': exc.source or {}, 'detail': exc.detail, 'meta': exc.meta or {}}])
+            errors.extend([
+                {
+                    'source': exc.source or {},
+                    'detail': exc.detail,
+                    'meta': exc.meta or {},
+                    'status': exc.status_code,
+                },
+            ])
         elif isinstance(message, dict):
             errors.extend(dict_error_formatting(message, context, index=None))
         else:
