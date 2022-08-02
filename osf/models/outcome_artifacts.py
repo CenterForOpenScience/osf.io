@@ -167,6 +167,7 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
             identifier=self.identifier,
             artifact_type=self.artifact_type,
             finalized=True,
+            deleted__isnull=True,
         ).exists():
             raise IntegrityError(
                 f'Finalized OutcomeArtifact with PID {self.identifier.value} and artifact_type '

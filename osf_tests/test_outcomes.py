@@ -2,6 +2,7 @@ import mock
 
 import pytest
 from django.db import IntegrityError
+from django.utils import timezone
 
 from osf.exceptions import (
     CannotFinalizeArtifactError,
@@ -261,16 +262,27 @@ class TestOutcomeArtifact:
         assert caught.value.incomplete_fields == ['identifier__value', 'artifact_type']
 
     def test_finalize__enforces_uniqueness(self, outcome, project_doi):
-        test_artifact_1 = outcome.artifact_metadata.create(
-            identifier=project_doi, artifact_type=ArtifactTypes.DATA
+        outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.DATA, finalized=True
         )
-        test_artifact_2 = outcome.artifact_metadata.create(
+        # Can create the new artifact, but fails on `finalize`
+        test_artifact = outcome.artifact_metadata.create(
             identifier=project_doi, artifact_type=ArtifactTypes.DATA
         )
 
-        test_artifact_1.finalize()   # First artifact can finalize
         with pytest.raises(IntegrityError):
-            test_artifact_2.finalize()
+            test_artifact.finalize()
+
+    def test_finalize__enforces_uniquenss__deleted_entry_okay(self, outcome, project_doi):
+        outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.DATA, finalized=True, deleted=timezone.now()
+        )
+        test_artifact = outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.DATA
+        )
+
+        test_artifact.finalize()
+        assert test_artifact.finalized
 
     def test_delete_artifact__deletes_from_db_if_not_finalized(self, outcome, project_doi):
         test_artifact = outcome.artifact_metadata.create(
