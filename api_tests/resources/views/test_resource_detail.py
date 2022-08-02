@@ -228,6 +228,7 @@ class TestResourceDetailPATCHPermissions:
 
 @pytest.mark.django_db
 @mock.patch('osf.utils.identifiers.PID_VALIDATION_ENABLED', False)
+@pytest.mark.enable_implicit_clean
 class TestResourceDetailPATCHBehavior:
 
     @pytest.mark.parametrize('previously_finalized', [True, False])
@@ -332,7 +333,7 @@ class TestResourceDetailPATCHBehavior:
         test_artifact, test_auth, _ = configure_test_preconditions()
         identifier = test_artifact.identifier
         identifier.value = ''
-        identifier.save()
+        identifier.save(clean=False)
 
         payload = make_patch_payload(test_artifact, new_pid='')
         resp = app.patch_json_api(make_api_url(test_artifact), payload, auth=test_auth, expect_errors=True)
@@ -437,7 +438,7 @@ class TestResourceDetailPATCHBehavior:
         if missing_pid:
             identifier = test_artifact.identifier
             identifier.value = ''
-            identifier.save()
+            identifier.save(clean=False)
         if missing_resource_type:
             test_artifact.artifact_type = ArtifactTypes.UNDEFINED
         test_artifact.finalized = False
@@ -475,7 +476,25 @@ class TestResourceDetailPATCHBehavior:
         assert test_artifact.identifier.value == original_identifier.value
         assert not test_artifact.finalized
 
-    def test_patch_finalized__adds_log(self, app):
+    def test_patch__finalized__reraises_integrity_error_as_400(self, app):
+        test_artifact, test_auth, _ = configure_test_preconditions()
+        OutcomeArtifact.objects.create(
+            outcome=test_artifact.outcome,
+            identifier=test_artifact.identifier,
+            artifact_type=test_artifact.artifact_type,
+            finalized=True
+        )
+
+        payload = make_patch_payload(test_artifact, is_finalized=True)
+        resp = app.patch_json_api(make_api_url(test_artifact), payload, auth=test_auth, expect_errors=True)
+
+        assert resp.status_code == 400
+        error_info = resp.json['errors'][0]
+
+        assert 'already exists' in error_info['detail']
+        assert error_info['source']['pointer'] == '/data/attributes'
+
+    def test_patch__finalized__adds_log(self, app):
         test_artifact, test_auth, registration = configure_test_preconditions()
         assert not registration.logs.filter(action=NodeLog.RESOURCE_ADDED).exists()
 

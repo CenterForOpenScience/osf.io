@@ -1,3 +1,4 @@
+from django.db import IntegrityError
 from rest_framework import serializers as ser
 
 from api.base.exceptions import Conflict, JSONAPIException
@@ -112,6 +113,7 @@ class ResourceSerializer(JSONAPISerializer):
             self._update_finalized(instance, finalized)
 
         instance.save()
+        instance.pid = instance.identifier.value
         return instance
 
     def _update_finalized(self, instance, patched_finalized):
@@ -135,6 +137,11 @@ class ResourceSerializer(JSONAPISerializer):
             error_sources = [
                 MODEL_TO_SERIALIZER_FIELD_MAPPINGS[field] for field in e.incomplete_fields
             ]
+        except IntegrityError as e:
+            raise JSONAPIException(
+                detail=str(e),
+                source={'pointer': '/data/attributes'},
+            )
         else:
             return
 
