@@ -104,7 +104,7 @@ def json_api_exception_handler(exc, context):
                     'source': exc.source or {},
                     'detail': exc.detail,
                     'meta': exc.meta or {},
-                    'status': exc.status_code,
+                    'status': str(exc.status_code),
                 },
             ])
         elif isinstance(message, dict):
