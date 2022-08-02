@@ -118,7 +118,7 @@
                 </div>
 
                 <div id="connectedEmails" class="panel panel-default scripted">
-                    <div class="panel-heading clearfix"><h3 class="panel-title">${_("Connected Emails")}</h3></div>
+                    <div class="panel-heading clearfix"><h3 class="panel-title">${_("Connected Emails")}</h3>&nbsp;<span style="color: red">*</span></div>
                     <div class="panel-body">
 % if False:
                         <table class="table">
