@@ -17,6 +17,104 @@
               <%include file="include/profile/settings_navpanel.mako" args="current_page='account'"/>
             </div>
             <div class="col-md-8">
+                <div style="margin-bottom: 10px;">
+                    <span style="color:red;">${_("If you do not have an email address registered, please enter/add your email address in the \'Registered email address\' entry field first.")}</span>
+                </div>
+
+                <div id="connectedEmails" class="panel panel-default scripted">
+                    <div class="panel-heading clearfix"><h3 class="panel-title">${_("Connected Emails")}<span style="color: red">*</span></h3></div>
+                    <div class="panel-body">
+% if False:
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th colspan="2">${_("Primary Email")} <span style="color: red">*</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span data-bind="text: profile().primaryEmail().address"></span></td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+% endif
+% if dev_mode:
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th colspan="2">${_("eduPersonPrincipalName (ePPN)")}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>${eppn}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+% endif
+% if False:
+
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th colspan="3">${_("Alternate Emails")}</th>
+                                </tr>
+                            </thead>
+                            <tbody data-bind="foreach: profile().alternateEmails()">
+                                <tr>
+                                    <td style="word-break: break-all;"><span data-bind="text: $data.address"></span></td>
+                                    <td style="width:150px;"><a data-bind="click: $parent.makeEmailPrimary.bind($parent)">${_("make&nbsp;primary") | n}</a></td>
+                                    <td style="width:50px;"><a data-bind="click: $parent.removeEmail.bind($parent)"><i class="fa fa-times text-danger"></i></a></td>
+                                </tr>
+                            </tbody>
+                        </table>
+% endif
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th colspan="3">${_("Unconfirmed Emails")}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- ko foreach: profile().unconfirmedEmails() -->
+                                <tr>
+                                    <td style="word-break: break-all;"><span data-bind="text: $data.address"></span></td>
+                                    <td style="width:150px;"><a data-bind="click: $parent.resendConfirmation.bind($parent)">${_("resend&nbsp;confirmation") | n}</a></td>
+                                    <td style="width:50px;" ><a data-bind="click: $parent.removeEmail.bind($parent)"><i class="fa fa-times text-danger"></i></a></td>
+                                </tr>
+                                <!-- /ko -->
+                                <tr>
+                                    <td colspan="3">
+                                        <form data-bind="submit: addEmail">
+                                            <p>
+                                            % if user_merge:
+                                            ${_("To merge an existing account with this one or to log in with multiple email addresses, add an alternate email address below.")}
+                                            <span class="fa fa-info-circle" data-bind="tooltip: {title: '${_("Merging accounts will move all projects and components associated with two emails into one account. All projects and components will be displayed under the email address listed as primary.")}',
+                                             placement: 'bottom', container : 'body'}"></span>
+                                            % else:
+                                            ${_("Add an email address below.")}
+					    % endif
+                                            </p>
+
+                                            <div class="form-group">
+                                                ## email input verification is not supported on safari
+                                              <input placeholder='${_("Email address")}' type="email" data-bind="value: emailInput" class="form-control" required maxlength="254">
+                                            </div>
+                                            <input type="submit" value="${_('Add email')}" class="btn btn-success">
+                                        </form>
+
+                                        <div class="help-block">
+                                            <p data-bind="html: message, attr: {class: messageClass}"></p>
+                                        </div>
+                                    </td>
+
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <div id="accountInformation" class="panel panel-default scripted">
                     <div class="panel-heading clearfix">
                         <h3 class="panel-title">${_("Account Information")}</h3>
@@ -116,101 +214,6 @@
                         </form>
                     </div>
                 </div>
-
-                <div id="connectedEmails" class="panel panel-default scripted">
-                    <div class="panel-heading clearfix"><h3 class="panel-title">${_("Connected Emails")}</h3></div>
-                    <div class="panel-body">
-% if False:
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th colspan="2">${_("Primary Email")} <span style="color: red">*</span></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td><span data-bind="text: profile().primaryEmail().address"></span></td>
-                                    <td></td>
-                                </tr>
-                            </tbody>
-                        </table>
-% endif
-% if dev_mode:
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th colspan="2">${_("eduPersonPrincipalName (ePPN)")}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>${eppn}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-% endif
-% if False:
-
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th colspan="3">${_("Alternate Emails")}</th>
-                                </tr>
-                            </thead>
-                            <tbody data-bind="foreach: profile().alternateEmails()">
-                                <tr>
-                                    <td style="word-break: break-all;"><span data-bind="text: $data.address"></span></td>
-                                    <td style="width:150px;"><a data-bind="click: $parent.makeEmailPrimary.bind($parent)">${_("make&nbsp;primary") | n}</a></td>
-                                    <td style="width:50px;"><a data-bind="click: $parent.removeEmail.bind($parent)"><i class="fa fa-times text-danger"></i></a></td>
-                                </tr>
-                            </tbody>
-                        </table>
-% endif
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th colspan="3">${_("Unconfirmed Emails")}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- ko foreach: profile().unconfirmedEmails() -->
-                                <tr>
-                                    <td style="word-break: break-all;"><span data-bind="text: $data.address"></span></td>
-                                    <td style="width:150px;"><a data-bind="click: $parent.resendConfirmation.bind($parent)">${_("resend&nbsp;confirmation") | n}</a></td>
-                                    <td style="width:50px;" ><a data-bind="click: $parent.removeEmail.bind($parent)"><i class="fa fa-times text-danger"></i></a></td>
-                                </tr>
-                                <!-- /ko -->
-                                <tr>
-                                    <td colspan="3">
-                                        <form data-bind="submit: addEmail">
-                                            <p>
-                                            % if user_merge:
-                                            ${_("To merge an existing account with this one or to log in with multiple email addresses, add an alternate email address below.")}
-                                            <span class="fa fa-info-circle" data-bind="tooltip: {title: '${_("Merging accounts will move all projects and components associated with two emails into one account. All projects and components will be displayed under the email address listed as primary.")}',
-                                             placement: 'bottom', container : 'body'}"></span>
-                                            % else:
-                                            ${_("Add an email address below.")}
-					    % endif
-                                            </p>
-
-                                            <div class="form-group">
-                                                ## email input verification is not supported on safari
-                                              <input placeholder='${_("Email address")}' type="email" data-bind="value: emailInput" class="form-control" required maxlength="254">
-                                            </div>
-                                            <input type="submit" value="${_('Add email')}" class="btn btn-success">
-                                        </form>
-
-                                        <div class="help-block">
-                                            <p data-bind="html: message, attr: {class: messageClass}"></p>
-                                        </div>
-                                    </td>
-
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
 		<!----------------------------------------------------------->
 		<div style="visibility:hidden; display:none;">
                 <div id="externalIdentity" class="panel panel-default">
