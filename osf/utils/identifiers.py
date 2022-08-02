@@ -23,6 +23,9 @@ class PIDValidator(abc.ABC):
         for subclass in cls.__subclasses__():
             if subclass.IDENTIFIER_CATEGORY == category:
                 return subclass()
+        sentry.log_message(
+            f'Attempted to validate Identifier with unsupported category {category}.'
+        )
         raise NoSuchPIDValidatorError(
             f'PID validation not currently supported for PIDs of type {category}'
         )
