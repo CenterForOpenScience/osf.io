@@ -1,4 +1,8 @@
+from unittest import mock
+from urllib.parse import urljoin
+
 import pytest
+import responses
 
 from api.providers.workflows import Workflows as ModerationWorkflows
 from api_tests.resources.utils import configure_test_preconditions
@@ -6,6 +10,7 @@ from api_tests.utils import UserRoles
 from osf.models import NodeLog, OutcomeArtifact
 from osf.utils.workflows import RegistrationModerationStates as RegStates
 from osf_tests.factories import PrivateLinkFactory
+from osf.utils.identifiers import PID_VALIDATION_ENDPOINTS
 from osf.utils.outcomes import ArtifactTypes
 
 
@@ -163,6 +168,7 @@ class TestResourceDetailGETBehavior:
 
 
 @pytest.mark.django_db
+@mock.patch('osf.utils.identifiers.PID_VALIDATION_ENABLED', False)
 class TestResourceDetailPATCHPermissions:
 
     # Don't bother exhaustive Registration state checking for PATCHing.
@@ -221,6 +227,7 @@ class TestResourceDetailPATCHPermissions:
 
 
 @pytest.mark.django_db
+@mock.patch('osf.utils.identifiers.PID_VALIDATION_ENABLED', False)
 class TestResourceDetailPATCHBehavior:
 
     @pytest.mark.parametrize('previously_finalized', [True, False])
@@ -356,9 +363,23 @@ class TestResourceDetailPATCHBehavior:
         assert resource_updated_log.params['obsolete_identifier'] == original_pid
         assert resource_updated_log.params['new_identifier'] == updated_pid
 
-    @pytest.mark.xfail(reason='Placeholder, not yet implemented')
+    @responses.activate
     def test_patch__pid__invalid(self, app):
-        assert False
+        test_artifact, test_auth, _ = configure_test_preconditions()
+
+        invalid_pid = 'InvalidDOI'
+        payload = make_patch_payload(test_artifact, new_pid=invalid_pid)
+        responses.add(
+            method=responses.GET,
+            url=urljoin(PID_VALIDATION_ENDPOINTS['doi'], invalid_pid),
+            body='[{"status": "Invalid DOI"}]',
+            status=200,
+            content_type='application/json',
+        )
+        with mock.patch('osf.utils.identifiers.PID_VALIDATION_ENABLED', True):
+            resp = app.patch_json_api(make_api_url(test_artifact), payload, auth=test_auth, expect_errors=True)
+        assert resp.status_code == 400
+        assert resp.json['errors'][0]['source']['pointer'] == '/data/attributes/pid'
 
     def test_patch__finalized__valid_resource(self, app):
         test_artifact, test_auth, _ = configure_test_preconditions()
