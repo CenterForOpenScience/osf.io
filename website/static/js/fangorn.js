@@ -2056,22 +2056,11 @@ var FGItemButtons = {
                              var files = [];
                              tb.dropzone.hiddenFileInput.addEventListener("change", async (event) => {
                                  files = tb.dropzone.hiddenFileInput.files;
-                                 // var children_list = null;
                                  var total_files_size = 0;
                                  if(files.length === 0)
                                      mode(toolbarModes.UPLOADFOLDEREMPTY);   
                                  else{
-                                    //  console.log("parent.children");
-                                    //  console.log(parent.children);
-                                    //  const folder_name = FILES[0].webkitRelativePath.split('/');
-                                    //  parent.children.find((e) => {
-                                    //      console.log(e.data.name);
-                                    //      if(e.data.name === folder_name[0])
-                                    //         children_list = true
-                                    //  });
-                                    //  if(children_list)
-                                    //      mode(toolbarModes.UPLOADFOLDEREXIST);
-                                    for (var _i = 0; _i < files.length ; _i++)
+                                    for (var _i = 0; _i < files.length; _i++)
                                         total_files_size += files[_i].size;
                                     parent.open = true;
                                     total_files_size = parseFloat(total_files_size).toFixed(2);
