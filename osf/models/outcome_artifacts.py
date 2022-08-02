@@ -4,6 +4,7 @@ from django.utils import timezone
 from osf.exceptions import (
     CannotFinalizeArtifactError,
     IdentifierHasReferencesError,
+    InvalidPIDError,
     NoPIDError
 )
 from osf.models.base import BaseModel, ObjectIDMixin
@@ -115,12 +116,20 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
         api_request: The api_request data from the API call that initiated the change.
         '''
         if not new_pid_value:
-            raise NoPIDError(f'Cannot assign an empty PID to OutcomeArtifact with ID {self._id}')
+            raise NoPIDError('Cannot assign an empty PID value')
 
-        previous_identifier = self.identifier
-        self.identifier, _ = Identifier.objects.get_or_create(
+        new_identifier, created = Identifier.objects.get_or_create(
             value=new_pid_value, category=pid_type
         )
+        if created:
+            try:
+                new_identifier.validate_identifier_value()
+            except InvalidPIDError as e:
+                new_identifier.delete()
+                raise e
+
+        previous_identifier = self.identifier
+        self.identifier = new_identifier
         self.save()
         if previous_identifier:
             try:

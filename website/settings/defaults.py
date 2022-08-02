@@ -320,6 +320,11 @@ WATERBUTLER_INTERNAL_URL = WATERBUTLER_URL
 ####################
 #   Identifiers   #
 ###################
+PID_VALIDATION_ENABLED = False
+PID_VALIDATION_ENDPOINTS = {
+    'doi': 'https://doi.org/ra/'
+}
+
 DOI_URL_PREFIX = 'https://doi.org/'
 
 # General Format for DOIs

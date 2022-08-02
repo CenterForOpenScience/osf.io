@@ -10,7 +10,7 @@ from api.base.serializers import (
     VersionedDateTimeField,
 )
 from api.base.utils import absolute_reverse
-from osf.exceptions import CannotFinalizeArtifactError, NoPIDError
+from osf.exceptions import CannotFinalizeArtifactError, InvalidPIDError, NoPIDError
 from osf.models import Outcome, OutcomeArtifact, Registration
 from osf.utils.outcomes import ArtifactTypes
 
@@ -97,9 +97,9 @@ class ResourceSerializer(JSONAPISerializer):
         if updated_pid is not None and updated_pid != instance.pid:
             try:
                 instance.update_identifier(updated_pid, api_request=self.context['request'])
-            except NoPIDError:
+            except InvalidPIDError as e:
                 raise JSONAPIException(
-                    detail=f'Cannot remove PID for Resource with id [{instance._id}].',
+                    detail=f'Error updating PID for Resource with id [{instance._id}]: {e.message}',
                     source={'pointer': '/data/attributes/pid'},
                 )
 
