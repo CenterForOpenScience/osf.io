@@ -18,11 +18,11 @@
             </div>
             <div class="col-md-8">
                 <div style="margin-bottom: 10px;">
-                    <span style="color:red;">${_("If you do not have an email address registered, please enter/add your email address in the \'Registered email address\' entry field first.")}</span>
+                    <span style="color:red;">${_("If you do not have an email address registered, please enter or add your email address in the \"Registered email address\" entry field first.")}</span>
                 </div>
 
                 <div id="connectedEmails" class="panel panel-default scripted">
-                    <div class="panel-heading clearfix"><h3 class="panel-title">${_("Connected Emails")}<span style="color: red">*</span></h3></div>
+                    <div class="panel-heading clearfix"><h3 class="panel-title">${_("Connected Emails")} <span style="color: red">*</span></h3></div>
                     <div class="panel-body">
 % if False:
                         <table class="table">

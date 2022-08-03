@@ -3993,5 +3993,5 @@ msgstr ""
 msgid "\"Full name\", \"Family name\", \"Given name\", \"Family name (EN)\", \"Given name (EN)\" on the Name tab, and \"Affiliation\" and \"Affiliation (English)\" on the Employment tab is required."
 msgstr ""
 
-msgid "If you do not have an email address registered, please enter/add your email address in the \'Registered email address\' entry field first."
+msgid "If you do not have an email address registered, please enter or add your email address in the \"Registered email address\" entry field first."
 msgstr ""
