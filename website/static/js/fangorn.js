@@ -1434,6 +1434,10 @@ function orderFolder(tree) {
         sortColumn = 0;
         sortDirection = 'asc';
     }
+    if (tree.is_sorted == false && sortDirection === 'desc') {
+        this.redraw();
+        return;
+    }
     tree.sortChildren(this, sortDirection, 'text', sortColumn, 1);
     this.redraw();
 }
