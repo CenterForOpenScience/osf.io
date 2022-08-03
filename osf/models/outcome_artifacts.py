@@ -4,7 +4,6 @@ from django.utils import timezone
 from osf.exceptions import (
     CannotFinalizeArtifactError,
     IdentifierHasReferencesError,
-    InvalidPIDError,
     NoPIDError,
     UnsupportedArtifactTypeError,
 )
@@ -155,12 +154,8 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
         new_identifier, created = Identifier.objects.get_or_create(
             value=new_pid_value, category=pid_type
         )
-        if created:
-            try:
-                new_identifier.validate_identifier_value()
-            except InvalidPIDError as e:
-                new_identifier.delete()
-                raise e
+        if created:  # Reraise errors
+            new_identifier.validate_identifier_value()
 
         previous_identifier = self.identifier
         self.identifier = new_identifier
