@@ -5,7 +5,6 @@ import json
 import logging
 import os
 
-from django.conf import settings
 from django.db import migrations
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -95,5 +94,4 @@ class Migration(migrations.Migration):
         ('osf', '0137_auto_20181012_1756'),
     ]
 
-    operations = [
-    ] if getattr(settings, 'TEST_ENV', False) else []
+    operations = []

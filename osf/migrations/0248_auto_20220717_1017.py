@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('contenttypes', '0002_remove_content_type_name'),
-        ('osf', '0245_auto_20220621_1950'),
+        ('osf', '0247_artifact_finalized_and_deleted'),
     ]
 
     operations = [

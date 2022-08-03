@@ -9,7 +9,9 @@ from osf.migrations import (
     update_blocked_email_domains,
     update_license,
     update_permission_groups,
+    update_storage_regions,
     update_waffle_flags,
+    update_default_providers
 )
 
 logger = logging.getLogger(__file__)
@@ -52,4 +54,19 @@ class AppConfig(BaseAppConfig):
         post_migrate.connect(
             update_blocked_email_domains,
             dispatch_uid='osf.apps.update_blocked_email_domains'
+        )
+
+        post_migrate.connect(
+            update_default_providers,
+            dispatch_uid='osf.apps.update_default_providers'
+        )
+
+        post_migrate.connect(
+            update_blocked_email_domains,
+            dispatch_uid='osf.apps.update_blocked_email_domains'
+        )
+
+        post_migrate.connect(
+            update_storage_regions,
+            dispatch_uid='osf.apps.update_storage_regions'
         )

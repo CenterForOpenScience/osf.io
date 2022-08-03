@@ -2,17 +2,18 @@
 import sys
 import os
 import json
+
 import logging
 
 from django.db.utils import ProgrammingError
 from website.settings import APP_PATH
-from addons.osfstorage.settings import DEFAULT_REGION_ID, DEFAULT_REGION_NAME
 
 from django.apps import apps
-from website import settings
 
 from django.core.management import call_command
 
+
+from addons.osfstorage.settings import DEFAULT_REGION_ID, DEFAULT_REGION_NAME
 from osf.management.commands.manage_switch_flags import manage_waffle
 from osf.utils.migrations import ensure_schemas, map_schemas_to_schemablocks
 from website import settings as osf_settings
@@ -22,7 +23,7 @@ logger = logging.getLogger(__file__)
 OSF_PREPRINTS_PROVIDER_DATA = {
     '_id': 'osf',
     'name': 'Open Science Framework',
-    'domain': settings.DOMAIN,
+    'domain': osf_settings.DOMAIN,
     'share_publish_type': 'Preprint',
     'domain_redirect_enabled': False,
 }
@@ -30,10 +31,11 @@ OSF_PREPRINTS_PROVIDER_DATA = {
 OSF_REGISTRIES_PROVIDER_DATA = {
     '_id': 'osf',
     'name': 'OSF Registries',
-    'domain': settings.DOMAIN,
+    'domain': osf_settings.DOMAIN,
     'share_publish_type': 'Registration',
     'domain_redirect_enabled': False,
 }
+
 
 # Admin group permissions
 def get_admin_read_permissions():
@@ -169,20 +171,6 @@ def update_storage_regions(sender, verbosity=0, **kwargs):
         ensure_default_storage_region()
 
 
-def ensure_default_storage_region():
-    osfstorage_config = apps.get_app_config('addons_osfstorage')
-    Region = apps.get_model('addons_osfstorage', 'Region')
-    Region.objects.update_or_create(
-        _id=DEFAULT_REGION_ID,
-        defaults={
-            'name': DEFAULT_REGION_NAME,
-            'waterbutler_credentials': osfstorage_config.WATERBUTLER_CREDENTIALS,
-            'waterbutler_settings': osfstorage_config.WATERBUTLER_SETTINGS,
-            'waterbutler_url': settings.WATERBUTLER_URL
-        }
-    )
-
-
 def ensure_subjects():
     Subject = apps.get_model('osf.subject')
     PreprintProvider = apps.get_model('osf.preprintprovider')
@@ -235,6 +223,8 @@ def update_default_providers(sender, verbosity=0, **kwargs):
     if getattr(sender, 'label', None) == 'osf':
         if 'pytest' in sys.modules:
             ensure_default_registration_provider()
+        else:
+            ensure_default_providers()
 
 
 def ensure_default_providers():
@@ -275,3 +265,17 @@ def update_blocked_email_domains(sender, verbosity=0, **kwargs):
                 domain=domain,
                 defaults={'note': NotableEmailDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION},
             )
+
+
+def ensure_default_storage_region():
+    osfstorage_config = apps.get_app_config('addons_osfstorage')
+    Region = apps.get_model('addons_osfstorage', 'Region')
+    Region.objects.get_or_create(
+        _id=DEFAULT_REGION_ID,
+        name=DEFAULT_REGION_NAME,
+        defaults={
+            'waterbutler_credentials': osfstorage_config.WATERBUTLER_CREDENTIALS,
+            'waterbutler_settings': osfstorage_config.WATERBUTLER_SETTINGS,
+            'waterbutler_url': osf_settings.WATERBUTLER_URL
+        }
+    )
