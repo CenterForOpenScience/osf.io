@@ -11,7 +11,12 @@ from api.base.serializers import (
     VersionedDateTimeField,
 )
 from api.base.utils import absolute_reverse
-from osf.exceptions import CannotFinalizeArtifactError, InvalidPIDError, NoPIDError
+from osf.exceptions import (
+    CannotFinalizeArtifactError,
+    InvalidPIDError,
+    NoPIDError,
+    UnsupportedArtifactTypeError,
+)
 from osf.models import Outcome, OutcomeArtifact, Registration
 from osf.utils.outcomes import ArtifactTypes
 
@@ -82,31 +87,39 @@ class ResourceSerializer(JSONAPISerializer):
         return OutcomeArtifact.objects.create(outcome=root_outcome)
 
     def update(self, instance, validated_data):
-        updated_artifact_type = validated_data.get('artifact_type')
-        if updated_artifact_type is not None and updated_artifact_type != instance.artifact_type:
-            if updated_artifact_type == ArtifactTypes.UNDEFINED:
-                raise JSONAPIException(
-                    detail=(
-                        f'Resource with id [{instance._id}] currently has a resource_type of '
-                        f'"{instance.artifact_type}", cannot return resource_type to "undefined".'
-                    ),
-                    source={'pointer': '/data/attributes/resource_type'},
-                )
-            instance.artifact_type = updated_artifact_type
-
-        updated_pid = validated_data.get('pid')
-        if updated_pid is not None and updated_pid != instance.pid:
-            try:
-                instance.update_identifier(updated_pid, api_request=self.context['request'])
-            except InvalidPIDError as e:
-                raise JSONAPIException(
-                    detail=f'Error updating PID for Resource with id [{instance._id}]: {e.message}',
-                    source={'pointer': '/data/attributes/pid'},
-                )
-
         updated_description = validated_data.get('description')
-        if updated_description is not None:
-            instance.description = updated_description
+        if updated_description == instance.description:
+            updated_description = None
+
+        updated_artifact_type = validated_data.get('artifact_type')
+        if updated_artifact_type == instance.artifact_type:
+            updated_artifact_type = None
+
+        updated_pid_value = validated_data.get('pid')
+        if updated_pid_value == instance.pid:
+            updated_pid_value = None
+
+        try:
+            instance.update(
+                new_description=updated_description,
+                new_artifact_type=updated_artifact_type,
+                new_pid_value=updated_pid_value,
+            )
+        except UnsupportedArtifactTypeError:
+            current_type = ArtifactTypes(instance.artifact_type).name.lower()
+            raise JSONAPIException(
+                detail=(
+                    f'Error updatning resource_type for Resource with id [{instance._id}]: '
+                    f'currently has a resource_type of "{current_type}", cannot return '
+                    'resource_type to "undefined".'
+                ),
+                source={'pointer': '/data/attributes/resource_type'},
+            )
+        except InvalidPIDError as e:
+            raise JSONAPIException(
+                detail=f'Error updating PID for Resource with id [{instance._id}]: {e.message}',
+                source={'pointer': '/data/attributes/pid'},
+            )
 
         finalized = validated_data.get('finalized')
         if finalized is not None:

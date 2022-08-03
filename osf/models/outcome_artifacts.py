@@ -203,7 +203,7 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
         self.save()
 
         if api_request:
-            self.outcome.log_artifact_change(
+            self.outcome.artifact_updated(
                 action=OutcomeActions.ADD,
                 artifact=self,
                 api_request=api_request,
@@ -223,7 +223,7 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
         identifier = self.identifier
         if self.finalized:
             if api_request:
-                self.outcome.log_artifact_change(
+                self.outcome.artifact_updated(
                     action=OutcomeActions.REMOVE,
                     artifact=self,
                     api_request=api_request,
