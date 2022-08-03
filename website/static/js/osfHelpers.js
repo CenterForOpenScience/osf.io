@@ -1016,6 +1016,12 @@ function onScrollToBottom(element, callback) {
     });
 }
 
+// Call a function when scrolled to the bottom of the element
+function onScroll(element, callback) {
+    $(element).scroll(function() {
+        callback();
+    });
+}
 
 /**
  * Return the current domain as a string, e.g. 'http://localhost:5000'
@@ -1105,6 +1111,7 @@ module.exports = window.$.osf = {
     findContribName: findContribName,
     extractContributorNamesFromAPIData: extractContributorNamesFromAPIData,
     onScrollToBottom: onScrollToBottom,
+    onScroll: onScroll,
     getDomain: getDomain,
     toRelativeUrl: toRelativeUrl,
     linkifyText: linkifyText,

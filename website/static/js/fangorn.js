@@ -1371,6 +1371,9 @@ function _fangornResolveLazyLoad(item) {
     if (item.data.provider === undefined) {
         return false;
     }
+    if(item.hasOwnProperty('next_marker')) {
+        return waterbutler.buildTreeBeardMetadata(item, {next_marker: item.next_marker});
+    }
     return waterbutler.buildTreeBeardMetadata(item);
 }
 
@@ -1764,6 +1767,21 @@ function _loadTopLevelChildren() {
     }
 }
 
+function _lazyLoadPreprocess (obj){
+    var next_marker = obj.next_marker;
+    if (next_marker !== undefined) {
+        if (obj.data.length > 0) {
+            var path = obj.data[0].attributes.kind === 'folder' ? obj.data[0].id.slice(0, -1).replace(obj.data[0].attributes.name, '') : obj.data[0].id.replace(obj.data[0].attributes.name, '');
+            var parent = this.flatData.filter(item => item.row.kind === 'folder' && item.row.provider === 's3' && item.row.id === path);
+            if(parent[0]) {
+                parent = this.find(parent[0].id);
+                parent.next_marker = next_marker;
+            }
+        }
+    }
+    return waterbutler.wbLazyLoadPreprocess(obj);
+}
+
 /**
  * Expand major addons on load
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
@@ -1791,6 +1809,9 @@ function expandStateLoad(item) {
             }
         } else {
             for (i = 0; i < item.children.length; i++) {
+                if (item.children[i].data.provider === 's3') {
+                    item.children[i].data.id = 's3/'
+                }
                 tb.updateFolder(null, item.children[i]);
             }
         }
@@ -2896,7 +2917,7 @@ tbOptions = {
     uploads : true,         // Turns dropzone on/off.
     columnTitles : _fangornColumnTitles,
     resolveRows : _fangornResolveRows,
-    lazyLoadPreprocess: waterbutler.wbLazyLoadPreprocess,
+    lazyLoadPreprocess: _lazyLoadPreprocess,
     hoverClassMultiselect : 'fangorn-selected',
     multiselect : true,
     placement : 'files',
@@ -2972,6 +2993,110 @@ tbOptions = {
                 dismissToolbar.call(tb);
             }
         });
+
+        function handleScroll() {
+            var rs, range, item, index;
+            rs = this.select('#tb-tbody > .tb-tbody-inner > div');
+            range = Array.from(rs[0].children).map(item => parseInt(item.getAttribute("data-id")));
+            for(var i = 0; i < range.length; i++) {
+                index = range[i];
+                item = this.find(index);
+                if(item) {
+                    parent = this.find(item.parentID);
+                    if (parent.children.length > 0 && parent.data.provider === 's3' && !parent.isFetching && parent.children[parent.children.length - 1].id === item.id) {
+                        fetchData.call(this, parent);
+                    }
+                }
+                else {
+                    continue;
+                }
+
+            }
+
+            function fetchData(tree) {
+                var self = this;
+                if (tree === undefined || tree === null) {
+                    self.redraw();
+                    return;
+                }
+                if (tree.open === true && !tree.isFetching && tree.next_marker) {
+                    tree.isFetching = true;
+
+                    var len = self.flatData.length,
+                        item = self.flatData.filter(item => item.id === tree.id)[0],
+                        child,
+                        child,
+                        skip = false,
+                        skipLevel = item.depth,
+                        level = item.depth,
+                        i,
+                        j,
+                        o,
+                        t,
+                        lazyLoad;
+
+                    $.when(self.options.resolveLazyloadUrl.call(self, tree)).done(function _resolveLazyloadDone(url) {
+                        lazyLoad = url;
+                        if (lazyLoad && item.row.kind === "folder" && tree.open === true) {
+                            m.request({
+                                method: "GET",
+                                url: lazyLoad,
+                                config: self.options.xhrconfig
+                            })
+                                .then(function _getUrlBuildtree(value) {
+                                    if (!value) {
+                                        self.options.lazyLoadError.call(self, tree);
+                                    } else {
+                                        if (self.options.lazyLoadPreprocess) {
+                                            value = self.options.lazyLoadPreprocess.call(self, value);
+                                        }
+                                        if (!$.isArray(value)) {
+                                            value = value.data;
+                                        }
+                                        var isUploadItem = function(element) {
+                                            return element.data.tmpID;
+                                        };
+
+                                        for (i = 0; i < value.length; i++) {
+                                            child = self.buildTree(value[i], tree);
+                                            child.data.permissions = {view: true, edit:true};
+
+
+                                            child.parentID = tree.id;
+                                            child.depth = tree.depth + 1;
+                                            child.open = false;
+                                            child.load = false;
+                                            if (child.depth > 1 && child.children.length === 0) {
+                                                child.open = false;
+                                            }
+                                            tree.children.push(child);
+                                        }
+                                        tree.open = true;
+                                        tree.load = true;
+                                        tree.is_sorted = false;
+                                    }
+                                }, function (info) {
+                                    self.options.lazyLoadError.call(self, tree);
+                                })
+                                .then(function _getUrlFlatten() {
+                                    if (self.options.lazyLoadOnLoad) {
+                                        self.options.lazyLoadOnLoad.call(self, tree, event);
+                                    }
+                                    tree.isFetching = false;
+                                    tree.is_sorted = true;
+                                });
+
+                        }
+                        if (self.options.allowMove) {
+                            self.moveOn();
+                        }
+                    });
+                }
+                else {
+                }
+            }
+        }
+        $osf.onScroll($('#tb-tbody'), handleScroll.bind(tb));
     },
     movecheck : function (to, from) { //This method gives the users an option to do checks and define their return
         return true;
