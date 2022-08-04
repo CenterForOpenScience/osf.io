@@ -82,6 +82,8 @@ class RegistrationSerializer(NodeSerializer):
         'has_data',
         'has_analytic_code',
         'has_materials',
+        'has_papers',
+        'has_supplements',
     ])
 
     ia_url = ser.URLField(read_only=True)
@@ -156,6 +158,8 @@ class RegistrationSerializer(NodeSerializer):
     has_data = HideIfWithdrawal(ser.BooleanField(read_only=True, required=False))
     has_analytic_code = HideIfWithdrawal(ser.BooleanField(read_only=True, required=False))
     has_materials = HideIfWithdrawal(ser.BooleanField(read_only=True, required=False))
+    has_papers = HideIfWithdrawal(ser.BooleanField(read_only=True, required=False))
+    has_supplements = HideIfWithdrawal(ser.BooleanField(read_only=True, required=False))
 
     registration_supplement = ser.SerializerMethodField()
     # Will be deprecated in favor of registration_responses

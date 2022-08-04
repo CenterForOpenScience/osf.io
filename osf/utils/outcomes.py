@@ -23,6 +23,16 @@ class ArtifactTypes(IntEnum):
     def choices(cls):
         return tuple((entry.value, entry.name) for entry in cls)
 
+    @classmethod
+    def public_types(cls):
+        return (
+            cls.DATA,
+            cls.ANALYTIC_CODE,
+            cls.MATERIALS,
+            cls.PAPERS,
+            cls.SUPPLEMENTS,
+        )
+
 
 class OutcomeActions(Enum):
     ADD = 0

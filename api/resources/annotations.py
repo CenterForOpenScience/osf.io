@@ -39,4 +39,6 @@ def make_open_practice_badge_annotations():
         'has_data': _make_badge_subquery(ArtifactTypes.DATA),
         'has_analytic_code': _make_badge_subquery(ArtifactTypes.ANALYTIC_CODE),
         'has_materials': _make_badge_subquery(ArtifactTypes.MATERIALS),
+        'has_papers': _make_badge_subquery(ArtifactTypes.PAPERS),
+        'has_supplements': _make_badge_subquery(ArtifactTypes.SUPPLEMENTS),
     }
