@@ -69,7 +69,6 @@ django-guardian==1.4.9
 
 # Admin requirements
 django-webpack-loader==0.5.0
-django-password-reset==2.0
 sendgrid-django==2.0.0
 
 # Analytics requirements
