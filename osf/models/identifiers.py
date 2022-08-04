@@ -98,11 +98,12 @@ class IdentifierMixin(models.Model):
         identifier = self.get_identifier(category)
         return identifier.value if identifier else None
 
-    def set_identifier_value(self, category, value):
+    def set_identifier_value(self, category, value=None):
+        defaults = {'value': value} if value is not None else {}
         identifier, created = Identifier.objects.get_or_create(object_id=self.pk,
                                                                content_type=ContentType.objects.get_for_model(self),
                                                                category=category,
-                                                               defaults=dict(value=value))
+                                                               defaults=defaults)
         if not created:
             identifier.value = value
             identifier.save()
