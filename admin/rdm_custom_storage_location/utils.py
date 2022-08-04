@@ -612,7 +612,7 @@ def save_s3_credentials(institution_id, storage_name, access_key, secret_key, bu
     }, http_status.HTTP_200_OK)
 
 def save_s3compat_credentials(institution_id, storage_name, host_url, access_key, secret_key,
-                              bucket):
+                              bucket, server_side_encryption=False):
 
     test_connection_result = test_s3compat_connection(host_url, access_key, secret_key, bucket)
     if test_connection_result[1] != http_status.HTTP_200_OK:
@@ -629,9 +629,8 @@ def save_s3compat_credentials(institution_id, storage_name, host_url, access_key
     }
     wb_settings = {
         'storage': {
-            'folder': {
-                'encrypt_uploads': True,
-            },
+            'folder': '',
+            'encrypt_uploads': server_side_encryption,
             'bucket': bucket,
             'provider': 's3compat',
         }

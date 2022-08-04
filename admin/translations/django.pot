@@ -8,13 +8,37 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-12-11 15:00+0000\n"
+"POT-Creation-Date: 2022-04-14 14:39+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: Takuya Ishibashi\n"
+"Last-Translator: Shunta Nishikawa\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+
+#: addons/base/models.py:466
+#, python-brace-format
+msgid ""
+"Because you have not configured the {addon} add-on, your authentication will "
+"not be transferred to the forked {category}. You may authorize and configure "
+"the {addon} add-on in the new fork on the settings page."
+msgstr ""
+
+#: addons/base/models.py:474
+#, python-brace-format
+msgid ""
+"Because you have authorized the {addon} add-on for this {category}, forking "
+"it will also transfer your authentication to the forked {category}."
+msgstr ""
+
+#: addons/base/models.py:481
+#, python-brace-format
+msgid ""
+"Because the {addon} add-on has been authorized by a different user, forking "
+"it will not transfer authentication to the forked {category}. You may "
+"authorize and configure the {addon} add-on in the new fork on the settings "
+"page."
+msgstr ""
 
 #: admin/banners/forms.py:18 admin/banners/forms.py:19
 #: admin/templates/messages.html:31
@@ -33,7 +57,8 @@ msgstr ""
 #: admin/templates/banners/list.html:20
 #: admin/templates/collection_providers/list.html:15
 #: admin/templates/desk/customer.html:16
-#: admin/templates/institutions/institution_list.html:21
+#: admin/templates/institutional_storage_quota_control/list_institution_storage.html:23
+#: admin/templates/institutions/institution_list.html:32
 #: admin/templates/institutions/list.html:21
 #: admin/templates/meetings/list.html:21 admin/templates/messages.html:16
 #: admin/templates/nodes/node.html:200
@@ -43,8 +68,11 @@ msgstr ""
 #: admin/templates/rdm_statistics/institution_list.html:29
 #: admin/templates/rdm_timestampadd/list.html:21
 #: admin/templates/rdm_timestampsettings/list.html:21
-#: admin/templates/users/user.html:171 admin/templates/users/user.html:291
+#: admin/templates/user_emails/search.html:45
+#: admin/templates/user_emails/user_emails.html:75
+#: admin/templates/users/user.html:171
 #: admin/templates/users/user_details.html:35
+#: admin/templates/util/node_preprint_paginated_list.html:52
 msgid "Name"
 msgstr ""
 
@@ -81,7 +109,7 @@ msgstr ""
 msgid "File"
 msgstr ""
 
-#: admin/base/utils.py:23
+#: admin/base/utils.py:22
 msgid "Enter a valid 'slug' consisting only of lowercase letters."
 msgstr ""
 
@@ -91,7 +119,7 @@ msgstr ""
 
 #: admin/institutions/forms.py:13
 #: admin/templates/collection_providers/list.html:16
-#: admin/templates/institutions/institution_list.html:22
+#: admin/templates/institutions/institution_list.html:33
 #: admin/templates/institutions/list.html:22 admin/templates/messages.html:17
 #: admin/templates/rdm_keymanagement/institutions.html:22
 #: admin/templates/rdm_timestampadd/list.html:22
@@ -141,7 +169,10 @@ msgstr ""
 
 #: admin/rdm_announcement/forms.py:16 admin/templates/desk/customer.html:35
 #: admin/templates/desk/customer.html:41 admin/templates/messages.html:8
-#: admin/templates/spam/detail.html:24 admin/templates/users/user.html:193
+#: admin/templates/spam/detail.html:24
+#: admin/templates/user_emails/search.html:53
+#: admin/templates/user_emails/user_emails.html:125
+#: admin/templates/users/user.html:193
 msgid "Email"
 msgstr ""
 
@@ -170,12 +201,12 @@ msgstr ""
 #: admin/templates/maintenance/delete_maintenance.html:12
 #: admin/templates/nodes/confirm_ham.html:9
 #: admin/templates/nodes/confirm_spam.html:9
-#: admin/templates/nodes/node.html:395 admin/templates/nodes/node_list.html:108
+#: admin/templates/nodes/node.html:395
 #: admin/templates/nodes/reindex_node_elastic.html:9
 #: admin/templates/nodes/reindex_node_share.html:9
 #: admin/templates/nodes/remove_contributor.html:15
 #: admin/templates/nodes/remove_node.html:12
-#: admin/templates/rdm_timestampadd/node_list.html:122
+#: admin/templates/rdm_timestampadd/node_list.html:123
 #: admin/templates/users/GDPR_delete_user.html:12
 #: admin/templates/users/add_system_tag.html:12
 #: admin/templates/users/reindex_user_elastic.html:9
@@ -183,7 +214,6 @@ msgstr ""
 #: admin/templates/users/remove_spam_user.html:12
 #: admin/templates/users/remove_user.html:12
 #: admin/templates/users/restore_ham_user.html:12
-#: admin/templates/users/user_list.html:71
 msgid "Confirm"
 msgstr ""
 
@@ -196,6 +226,7 @@ msgid "Schedule a banner"
 msgstr ""
 
 #: admin/templates/banners/create.html:29
+#: admin/templates/entitlements/list.html:91
 #: admin/templates/institutions/create.html:24
 #: admin/templates/rdm_addons/addons/dataverse_credentials_modal.html:57
 #: admin/templates/rdm_addons/addons/iqbrims_institution_settings.html:24
@@ -203,17 +234,18 @@ msgstr ""
 #: admin/templates/rdm_addons/addons/owncloud_credentials_modal.html:64
 #: admin/templates/rdm_addons/addons/s3_credentials_modal.html:31
 #: admin/templates/rdm_announcement/settings.html:94
-#: admin/templates/rdm_custom_storage_location/institutional_storage.html:63
+#: admin/templates/rdm_custom_storage_location/institutional_storage.html:64
 #: admin/templates/rdm_custom_storage_location/providers/box_modal.html:59
 #: admin/templates/rdm_custom_storage_location/providers/dropboxbusiness_modal.html:85
 #: admin/templates/rdm_custom_storage_location/providers/googledrive_modal.html:55
 #: admin/templates/rdm_custom_storage_location/providers/nextcloud_modal.html:59
 #: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:115
+#: admin/templates/rdm_custom_storage_location/providers/ociinstitutions_modal.html:42
 #: admin/templates/rdm_custom_storage_location/providers/onedrivebusiness_modal.html:55
 #: admin/templates/rdm_custom_storage_location/providers/osfstorage_modal.html:22
 #: admin/templates/rdm_custom_storage_location/providers/owncloud_modal.html:55
 #: admin/templates/rdm_custom_storage_location/providers/s3_modal.html:38
-#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:42
+#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:49
 #: admin/templates/rdm_custom_storage_location/providers/s3compatinstitutions_modal.html:42
 #: admin/templates/rdm_custom_storage_location/providers/swift_modal.html:59
 msgid "Save"
@@ -243,10 +275,13 @@ msgstr ""
 msgid "Delete banner"
 msgstr ""
 
-#: admin/templates/base.html:10 admin/templates/base.html:157
-#: admin/templates/base.html:233 admin/templates/base.html:236
-#: admin/templates/base.html:239 admin/templates/base.html:242
-#: admin/templates/base.html:246 admin/templates/base.html:279
+#: admin/templates/base.html:10 admin/templates/base.html:162
+#: admin/templates/base.html:170 admin/templates/base.html:260
+#: admin/templates/base.html:263 admin/templates/base.html:266
+#: admin/templates/base.html:273 admin/templates/base.html:306
+#: admin/templates/user_emails/search.html:19
+#: admin/templates/user_emails/user_emails.html:6
+#: admin/templates/user_emails/user_list.html:6
 msgid "RDM"
 msgstr ""
 
@@ -279,124 +314,134 @@ msgstr ""
 msgid "Menu"
 msgstr ""
 
-#: admin/templates/base.html:108 admin/templates/base.html:113
+#: admin/templates/base.html:110
+msgid "Login Availability Control"
+msgstr ""
+
+#: admin/templates/base.html:116 admin/templates/base.html:121
 msgid "RDM Nodes"
 msgstr ""
 
-#: admin/templates/base.html:114 admin/templates/base.html:131
-#: admin/templates/base.html:146
+#: admin/templates/base.html:122 admin/templates/base.html:139
+#: admin/templates/base.html:154
 msgid "Flagged Spam"
 msgstr ""
 
-#: admin/templates/base.html:115 admin/templates/base.html:132
-#: admin/templates/base.html:147
+#: admin/templates/base.html:123 admin/templates/base.html:140
+#: admin/templates/base.html:155
 msgid "Known Spam"
 msgstr ""
 
-#: admin/templates/base.html:116 admin/templates/base.html:133
-#: admin/templates/base.html:148
+#: admin/templates/base.html:124 admin/templates/base.html:141
+#: admin/templates/base.html:156
 msgid "Known Ham"
 msgstr ""
 
-#: admin/templates/base.html:124 admin/templates/base.html:130
+#: admin/templates/base.html:132 admin/templates/base.html:138
 #: admin/templates/metrics/osf_metrics.html:36
 msgid "Preprints"
 msgstr ""
 
-#: admin/templates/base.html:134
+#: admin/templates/base.html:142
 msgid "Withdrawal Requests"
 msgstr ""
 
-#: admin/templates/base.html:141 admin/templates/base.html:145
+#: admin/templates/base.html:149 admin/templates/base.html:153
 msgid "RDM Users"
 msgstr ""
 
-#: admin/templates/base.html:153
+#: admin/templates/base.html:162
+#: admin/templates/user_emails/user_emails.html:112
+msgid "User Emails"
+msgstr ""
+
+#: admin/templates/base.html:166
 msgid "RDM Spam"
 msgstr ""
 
-#: admin/templates/base.html:157
+#: admin/templates/base.html:170
 msgid "Registrations"
 msgstr ""
 
-#: admin/templates/base.html:161
+#: admin/templates/base.html:174
 msgid "All Registrations"
 msgstr ""
 
-#: admin/templates/base.html:162
+#: admin/templates/base.html:175
 msgid "Stuck Registrations"
 msgstr ""
 
-#: admin/templates/base.html:168
+#: admin/templates/base.html:176
+msgid "e-Rad Records"
+msgstr ""
+
+#: admin/templates/base.html:182
 msgid "RDM Institutions"
 msgstr ""
 
-#: admin/templates/base.html:172 admin/templates/base.html:185
-#: admin/templates/base.html:199 admin/templates/base.html:212
-#: admin/templates/base.html:225 admin/templates/base.html:251
-#: admin/templates/base.html:261
+#: admin/templates/base.html:186 admin/templates/base.html:212
+#: admin/templates/base.html:226 admin/templates/base.html:239
+#: admin/templates/base.html:252 admin/templates/base.html:278
+#: admin/templates/base.html:288
 msgid "List"
 msgstr ""
 
-#: admin/templates/base.html:174 admin/templates/base.html:188
-#: admin/templates/base.html:201 admin/templates/base.html:214
-#: admin/templates/base.html:227 admin/templates/base.html:263
+#: admin/templates/base.html:188 admin/templates/base.html:215
+#: admin/templates/base.html:228 admin/templates/base.html:241
+#: admin/templates/base.html:254 admin/templates/base.html:290
 msgid "Create"
 msgstr ""
 
-#: admin/templates/base.html:181
+#: admin/templates/base.html:208
 msgid "Preprint Providers"
 msgstr ""
 
-#: admin/templates/base.html:186
+#: admin/templates/base.html:213
 msgid "Whitelist"
 msgstr ""
 
-#: admin/templates/base.html:195
+#: admin/templates/base.html:222
 msgid "Provider Assets"
 msgstr ""
 
-#: admin/templates/base.html:208
+#: admin/templates/base.html:235
 msgid "Collection Providers"
 msgstr ""
 
-#: admin/templates/base.html:221
+#: admin/templates/base.html:248
 msgid "Registration Providers"
 msgstr ""
 
-#: admin/templates/base.html:233
+#: admin/templates/base.html:260
 msgid "Meetings"
 msgstr ""
 
-#: admin/templates/base.html:236
-msgid "Prereg"
-msgstr ""
-
-#: admin/templates/base.html:239
+#: admin/templates/base.html:263
 msgid "Metrics"
 msgstr ""
 
-#: admin/templates/base.html:242
+#: admin/templates/base.html:266
 msgid "Subjects"
 msgstr ""
 
-#: admin/templates/base.html:246
+#: admin/templates/base.html:273
 msgid "Groups"
 msgstr ""
 
-#: admin/templates/base.html:250
+#: admin/templates/base.html:277
+#: admin/templates/institutions/user_list_by_institute.html:159
 msgid "Search"
 msgstr ""
 
-#: admin/templates/base.html:257
+#: admin/templates/base.html:284
 msgid "Banners"
 msgstr ""
 
-#: admin/templates/base.html:270
+#: admin/templates/base.html:297
 msgid "Maintenance Alerts"
 msgstr ""
 
-#: admin/templates/base.html:273 admin/templates/rdm_addons/addon_list.html:6
+#: admin/templates/base.html:300 admin/templates/rdm_addons/addon_list.html:6
 #: admin/templates/rdm_addons/addon_list.html:17
 #: admin/templates/rdm_addons/addon_list.html:19
 #: admin/templates/rdm_addons/institution_list.html:13
@@ -404,7 +449,7 @@ msgstr ""
 msgid "RDM Addons"
 msgstr ""
 
-#: admin/templates/base.html:274 admin/templates/rdm_statistics/crawl.html:6
+#: admin/templates/base.html:301 admin/templates/rdm_statistics/crawl.html:6
 #: admin/templates/rdm_statistics/crawl.html:9
 #: admin/templates/rdm_statistics/index.html:6
 #: admin/templates/rdm_statistics/index.html:9
@@ -417,7 +462,7 @@ msgstr ""
 msgid "RDM Statistics"
 msgstr ""
 
-#: admin/templates/base.html:275 admin/templates/rdm_announcement/index.html:6
+#: admin/templates/base.html:302 admin/templates/rdm_announcement/index.html:6
 #: admin/templates/rdm_announcement/index.html:11
 #: admin/templates/rdm_announcement/index.html:13
 #: admin/templates/rdm_announcement/send.html:7
@@ -429,37 +474,41 @@ msgstr ""
 msgid "RDM Announcement"
 msgstr ""
 
-#: admin/templates/base.html:276
+#: admin/templates/base.html:303
 msgid "Timestamp Control"
 msgstr ""
 
-#: admin/templates/base.html:278
+#: admin/templates/base.html:305
 msgid "User Keys Management"
 msgstr ""
 
-#: admin/templates/base.html:279
+#: admin/templates/base.html:306
 msgid "Timestamp Environment"
 msgstr ""
 
-#: admin/templates/base.html:284
+#: admin/templates/base.html:311
 msgid "Quota for NII Storage"
 msgstr ""
 
-#: admin/templates/base.html:287
+#: admin/templates/base.html:314
 #: admin/templates/rdm_custom_storage_location/institutional_storage.html:16
 #: admin/templates/users/user_details.html:17
 msgid "Institutional Storage"
 msgstr ""
 
-#: admin/templates/base.html:288
+#: admin/templates/base.html:315
 msgid "Quota for Institutional Storage"
 msgstr ""
 
-#: admin/templates/base.html:303 admin/templates/home.html:10
+#: admin/templates/base.html:318
+msgid "Inst. Storage Quota Control"
+msgstr ""
+
+#: admin/templates/base.html:333 admin/templates/home.html:10
 msgid "Welcome to the GakuNin RDM Admin Home Page"
 msgstr ""
 
-#: admin/templates/base.html:313
+#: admin/templates/base.html:343
 msgid "National Institute of Informatics"
 msgstr ""
 
@@ -493,7 +542,7 @@ msgstr ""
 msgid "Create Collection Provider"
 msgstr ""
 
-#: admin/templates/collection_providers/create.html:12
+#: admin/templates/collection_providers/create.html:19
 msgid "Create A Collection Provider"
 msgstr ""
 
@@ -536,7 +585,7 @@ msgstr ""
 
 #: admin/templates/collection_providers/update_collection_provider_form.html:96
 #: admin/templates/institutions/create.html:29
-#: admin/templates/institutions/detail.html:80
+#: admin/templates/institutions/detail.html:83
 msgid "Import from JSON"
 msgstr ""
 
@@ -672,6 +721,60 @@ msgstr ""
 msgid "-GakuNin RDM Admin"
 msgstr ""
 
+#: admin/templates/entitlements/list.html:40
+msgid "List of Entitlements"
+msgstr ""
+
+#: admin/templates/entitlements/list.html:44
+#: admin/templates/entitlements/list.html:71
+msgid "Entitlements"
+msgstr ""
+
+#: admin/templates/entitlements/list.html:60
+msgid "Institutions"
+msgstr ""
+
+#: admin/templates/entitlements/list.html:75
+#: admin/templates/entitlements/list.html:145
+msgid "Enter new entitlement"
+msgstr ""
+
+#: admin/templates/entitlements/list.html:82
+#: admin/templates/entitlements/list.html:149
+msgid "login availability"
+msgstr ""
+
+#: admin/templates/entitlements/list.html:90
+msgid "New entitlement"
+msgstr ""
+
+#: admin/templates/entitlements/list.html:115
+msgid "Delete"
+msgstr ""
+
+#: admin/templates/entitlements/list.html:165
+msgid "Entitlement must be not empty"
+msgstr ""
+
+#: admin/templates/entitlements/list.html:169
+#: admin/templates/entitlements/list.html:173
+msgid "Entitlement '"
+msgstr ""
+
+#: admin/templates/entitlements/list.html:169
+msgid "' already exists"
+msgstr ""
+
+#: admin/templates/entitlements/list.html:173
+msgid "' have been inputted"
+msgstr ""
+
+#: admin/templates/entitlements/pagination.html:25
+#: admin/templates/util/pagination.html:25
+#, python-format
+msgid "Page %(itemsNumber)s of %(paginatorNumPage)s"
+msgstr ""
+
 #: admin/templates/home.html:5
 #, python-format
 msgid "Hello %(userfullname)s, "
@@ -683,6 +786,111 @@ msgstr ""
 
 #: admin/templates/home.html:12
 msgid " Use the menu on the left to access admin pages. "
+msgstr ""
+
+#: admin/templates/institutional_storage_quota_control/list_institute.html:10
+#: admin/templates/institutional_storage_quota_control/user_list_by_institute.html:2
+#: admin/templates/institutional_storage_quota_control/user_list_by_institute.html:6
+msgid "Institutional Storage Quota Control"
+msgstr ""
+
+#: admin/templates/institutional_storage_quota_control/list_institute.html:16
+#: admin/templates/institutions/list_institute.html:16
+#: admin/templates/institutions/statistical_status_default_storage.html:16
+#: admin/templates/rdm_keymanagement/delete_user_list.html:10
+#: admin/templates/user_emails/user_list.html:49
+#: admin/templates/users/list.html:11
+msgid "No results found"
+msgstr ""
+
+#: admin/templates/institutional_storage_quota_control/list_institution_storage.html:12
+#: admin/templates/institutional_storage_quota_control/list_institution_storage.html:16
+msgid "Institutional Storage for Institutions"
+msgstr ""
+
+#: admin/templates/institutional_storage_quota_control/list_institution_storage.html:22
+#: admin/templates/institutions/institution_list.html:31
+#: admin/templates/institutions/list.html:20
+#: admin/templates/rdm_addons/institution_list.html:29
+#: admin/templates/rdm_keymanagement/institutions.html:20
+#: admin/templates/rdm_statistics/institution_list.html:29
+#: admin/templates/rdm_timestampadd/list.html:20
+#: admin/templates/rdm_timestampsettings/list.html:20
+#: admin/templates/rdm_timestampsettings/list.html:50
+msgid "Logo"
+msgstr ""
+
+#: admin/templates/institutional_storage_quota_control/list_institution_storage.html:24
+msgid "Storage name"
+msgstr ""
+
+#: admin/templates/institutional_storage_quota_control/user_list_by_institute.html:123
+msgid "Each user Quota for Institutional Storage (GB)"
+msgstr ""
+
+#: admin/templates/institutional_storage_quota_control/user_list_by_institute.html:129
+#: admin/templates/institutions/user_list_by_institute.html:181
+msgid "Value must be an integer number greater than or equal 1"
+msgstr ""
+
+#: admin/templates/institutional_storage_quota_control/user_list_by_institute.html:134
+#: admin/templates/institutions/user_list_by_institute.html:186
+#: admin/templates/rdm_timestampadd/timestampadd.html:47
+#: admin/templates/users/user.html:305
+msgid "Apply"
+msgstr ""
+
+#: admin/templates/institutional_storage_quota_control/user_list_by_institute.html:147
+#: admin/templates/institutions/statistical_status_default_storage_user.html:22
+msgid "eduPersonPrincipleName"
+msgstr ""
+
+#: admin/templates/institutional_storage_quota_control/user_list_by_institute.html:153
+#: admin/templates/institutions/statistical_status_default_storage_user.html:27
+#: admin/templates/institutions/user_list_by_institute.html:204
+#: admin/templates/rdm_addons/addons/owncloud_credentials_modal.html:42
+#: admin/templates/rdm_custom_storage_location/providers/nextcloud_modal.html:35
+#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:38
+#: admin/templates/rdm_custom_storage_location/providers/owncloud_modal.html:32
+#: admin/templates/rdm_custom_storage_location/providers/swift_modal.html:34
+#: admin/templates/rdm_keymanagement/user_list.html:11
+#: admin/templates/user_emails/user_emails.html:79
+#: admin/templates/user_emails/user_list.html:17
+#: admin/templates/users/user.html:181 admin/templates/users/user_list.html:23
+msgid "Username"
+msgstr ""
+
+#: admin/templates/institutional_storage_quota_control/user_list_by_institute.html:158
+#: admin/templates/institutions/statistical_status_default_storage_user.html:32
+#: admin/templates/institutions/user_list_by_institute.html:209
+#: admin/templates/rdm_keymanagement/user_list.html:12
+#: admin/templates/user_emails/user_list.html:18
+#: admin/templates/users/user_list.html:24
+msgid "Fullname"
+msgstr ""
+
+#: admin/templates/institutional_storage_quota_control/user_list_by_institute.html:163
+#: admin/templates/institutions/statistical_status_default_storage_user.html:37
+#: admin/templates/institutions/user_list_by_institute.html:214
+msgid "Ratio"
+msgstr ""
+
+#: admin/templates/institutional_storage_quota_control/user_list_by_institute.html:168
+#: admin/templates/institutions/statistical_status_default_storage_user.html:42
+#: admin/templates/institutions/user_list_by_institute.html:219
+msgid "Usage"
+msgstr ""
+
+#: admin/templates/institutional_storage_quota_control/user_list_by_institute.html:173
+#: admin/templates/institutions/statistical_status_default_storage_user.html:47
+#: admin/templates/institutions/user_list_by_institute.html:224
+msgid "Remaining"
+msgstr ""
+
+#: admin/templates/institutional_storage_quota_control/user_list_by_institute.html:178
+#: admin/templates/institutions/statistical_status_default_storage_user.html:52
+#: admin/templates/institutions/user_list_by_institute.html:229
+msgid "Quota"
 msgstr ""
 
 #: admin/templates/institutions/cannot_delete.html:7
@@ -723,7 +931,7 @@ msgid "Create An Institution"
 msgstr ""
 
 #: admin/templates/institutions/create.html:30
-#: admin/templates/institutions/detail.html:81
+#: admin/templates/institutions/detail.html:84
 msgid ""
 "Choose a JSON file that has been previously exported from another "
 "Institution detail page. This will pre-populate the Institution change form "
@@ -756,11 +964,11 @@ msgid "Banner:"
 msgstr ""
 
 #: admin/templates/institutions/detail.html:52
-#: admin/templates/institutions/detail.html:103
+#: admin/templates/institutions/detail.html:106
 msgid "Modify Institution"
 msgstr ""
 
-#: admin/templates/institutions/detail.html:103
+#: admin/templates/institutions/detail.html:106
 msgid "Hide Form"
 msgstr ""
 
@@ -777,27 +985,14 @@ msgstr ""
 msgid "List of Institutions"
 msgstr ""
 
-#: admin/templates/institutions/institution_list.html:20
-#: admin/templates/institutions/list.html:20
-#: admin/templates/rdm_addons/institution_list.html:29
-#: admin/templates/rdm_keymanagement/institutions.html:20
-#: admin/templates/rdm_statistics/institution_list.html:29
-#: admin/templates/rdm_timestampadd/list.html:20
-#: admin/templates/rdm_timestampsettings/list.html:20
-#: admin/templates/rdm_timestampsettings/list.html:50
-msgid "Logo"
+#: admin/templates/institutions/institution_list.html:23
+#: admin/templates/institutions/statistical_status_default_storage_user.html:12
+msgid "Recalculate quota"
 msgstr ""
 
 #: admin/templates/institutions/list_institute.html:10
 #, python-format
 msgid "%(institution_name)s User List - Statistical Status of NII Storage"
-msgstr ""
-
-#: admin/templates/institutions/list_institute.html:16
-#: admin/templates/institutions/statistical_status_default_storage.html:16
-#: admin/templates/rdm_keymanagement/delete_user_list.html:10
-#: admin/templates/users/list.html:11
-msgid "No results found"
 msgstr ""
 
 #: admin/templates/institutions/node_list.html:11
@@ -832,49 +1027,6 @@ msgstr ""
 msgid "Institutional Storage > %(institution_name)s"
 msgstr ""
 
-#: ./admin/templates/institutions/statistical_status_default_storage_user.html:11
-msgid "eduPersonPrincipleName"
-msgstr ""
-
-#: admin/templates/institutions/statistical_status_default_storage_user.html:16
-#: admin/templates/institutions/user_list_by_institute.html:11
-#: admin/templates/rdm_addons/addons/owncloud_credentials_modal.html:42
-#: admin/templates/rdm_custom_storage_location/providers/nextcloud_modal.html:35
-#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:38
-#: admin/templates/rdm_custom_storage_location/providers/owncloud_modal.html:32
-#: admin/templates/rdm_custom_storage_location/providers/swift_modal.html:34
-#: admin/templates/rdm_keymanagement/user_list.html:10
-#: admin/templates/users/user.html:181 admin/templates/users/user_list.html:23
-msgid "Username"
-msgstr ""
-
-#: admin/templates/institutions/statistical_status_default_storage_user.html:21
-#: admin/templates/institutions/user_list_by_institute.html:16
-#: admin/templates/rdm_keymanagement/user_list.html:11
-#: admin/templates/users/user_list.html:24
-msgid "Fullname"
-msgstr ""
-
-#: admin/templates/institutions/statistical_status_default_storage_user.html:26
-#: admin/templates/institutions/user_list_by_institute.html:21
-msgid "Ratio"
-msgstr ""
-
-#: admin/templates/institutions/statistical_status_default_storage_user.html:31
-#: admin/templates/institutions/user_list_by_institute.html:26
-msgid "Usage"
-msgstr ""
-
-#: admin/templates/institutions/statistical_status_default_storage_user.html:36
-#: admin/templates/institutions/user_list_by_institute.html:31
-msgid "Remaining"
-msgstr ""
-
-#: admin/templates/institutions/statistical_status_default_storage_user.html:41
-#: admin/templates/institutions/user_list_by_institute.html:36
-msgid "Quota"
-msgstr ""
-
 #: admin/templates/institutions/user_list_by_institute.html:2
 msgid "Statistical Status of NII Storage"
 msgstr ""
@@ -882,6 +1034,50 @@ msgstr ""
 #: admin/templates/institutions/user_list_by_institute.html:3
 #, python-format
 msgid "NII Storage > %(institution_name)s"
+msgstr ""
+
+#: admin/templates/institutions/user_list_by_institute.html:129
+#: admin/templates/nodes/node.html:145
+#: admin/templates/rdm_keymanagement/user_list.html:10
+#: admin/templates/rdm_timestampadd/node_list.html:40
+#: admin/templates/rdm_timestampsettings/node_list.html:35
+#: admin/templates/user_emails/search.html:35
+#: admin/templates/user_emails/user_list.html:15
+#: admin/templates/users/user_details.html:34
+#: admin/templates/users/user_list.html:22
+#: admin/templates/util/node_preprint_paginated_list.html:51
+msgid "GUID"
+msgstr ""
+
+#: admin/templates/institutions/user_list_by_institute.html:135
+#: admin/templates/user_emails/search.html:40
+msgid "Please enter only contain alphanumeric in lowercase"
+msgstr ""
+
+#: admin/templates/institutions/user_list_by_institute.html:139
+msgid "EmailLabel"
+msgstr ""
+
+#: admin/templates/institutions/user_list_by_institute.html:143
+msgid "Please enter an valid email"
+msgstr ""
+
+#: admin/templates/institutions/user_list_by_institute.html:147
+#: admin/templates/user_emails/search.html:58
+#: admin/templates/user_emails/user_emails.html:124
+msgid "Please enter an email address"
+msgstr ""
+
+#: admin/templates/institutions/user_list_by_institute.html:151
+msgid "InfoLabel"
+msgstr ""
+
+#: admin/templates/institutions/user_list_by_institute.html:175
+msgid "Each user Quota for NII Storage (GB)"
+msgstr ""
+
+#: admin/templates/institutions/user_list_by_institute.html:193
+msgid "Export All Users Statistics (TSV)"
 msgstr ""
 
 #: admin/templates/login.html:6
@@ -1035,27 +1231,29 @@ msgstr ""
 msgid "None"
 msgstr ""
 
-#: admin/templates/messages.html:13 admin/users/forms.py:21
+#: admin/templates/messages.html:13 admin/user_emails/forms.py:14
+#: admin/users/forms.py:21
 msgid "name"
 msgstr ""
 
-#: admin/templates/messages.html:14 admin/users/forms.py:22
+#: admin/templates/messages.html:14 admin/user_emails/forms.py:15
+#: admin/users/forms.py:22
 msgid "email"
 msgstr ""
 
-#: admin/templates/messages.html:26 osf/models/institution.py:38
+#: admin/templates/messages.html:26 osf/models/institution.py:47
 msgid "CAS by pac4j"
 msgstr ""
 
-#: admin/templates/messages.html:27 osf/models/institution.py:39
+#: admin/templates/messages.html:27 osf/models/institution.py:48
 msgid "OAuth by pac4j"
 msgstr ""
 
-#: admin/templates/messages.html:28 osf/models/institution.py:40
+#: admin/templates/messages.html:28 osf/models/institution.py:49
 msgid "SAML by Shibboleth"
 msgstr ""
 
-#: admin/templates/messages.html:29 osf/models/institution.py:41
+#: admin/templates/messages.html:29 osf/models/institution.py:50
 msgid "No Delegation Protocol"
 msgstr ""
 
@@ -1720,7 +1918,8 @@ msgstr ""
 
 #: admin/templates/nodes/confirm_ham.html:11
 #: admin/templates/nodes/confirm_spam.html:11
-#: admin/templates/nodes/node.html:397 admin/templates/nodes/node_list.html:110
+#: admin/templates/nodes/ham_spam_modal.html:15
+#: admin/templates/nodes/node.html:397
 #: admin/templates/nodes/reindex_node_elastic.html:11
 #: admin/templates/nodes/reindex_node_share.html:11
 #: admin/templates/nodes/remove_contributor.html:18
@@ -1730,24 +1929,26 @@ msgstr ""
 #: admin/templates/rdm_addons/addons/s3_credentials_modal.html:29
 #: admin/templates/rdm_announcement/send.html:35
 #: admin/templates/rdm_announcement/settings.html:95
-#: admin/templates/rdm_custom_storage_location/institutional_storage.html:62
+#: admin/templates/rdm_custom_storage_location/institutional_storage.html:63
 #: admin/templates/rdm_custom_storage_location/providers/box_modal.html:57
 #: admin/templates/rdm_custom_storage_location/providers/dropboxbusiness_modal.html:83
 #: admin/templates/rdm_custom_storage_location/providers/googledrive_modal.html:53
 #: admin/templates/rdm_custom_storage_location/providers/nextcloud_modal.html:57
 #: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:113
+#: admin/templates/rdm_custom_storage_location/providers/ociinstitutions_modal.html:40
 #: admin/templates/rdm_custom_storage_location/providers/onedrivebusiness_modal.html:53
 #: admin/templates/rdm_custom_storage_location/providers/osfstorage_modal.html:21
 #: admin/templates/rdm_custom_storage_location/providers/owncloud_modal.html:53
 #: admin/templates/rdm_custom_storage_location/providers/s3_modal.html:36
-#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:40
+#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:47
 #: admin/templates/rdm_custom_storage_location/providers/s3compatinstitutions_modal.html:40
 #: admin/templates/rdm_custom_storage_location/providers/swift_modal.html:57
-#: admin/templates/rdm_timestampadd/node_list.html:124
-#: admin/templates/rdm_timestampadd/timestampadd.html:57
+#: admin/templates/rdm_timestampadd/node_list.html:125
+#: admin/templates/rdm_timestampadd/timestampadd.html:58
 #: admin/templates/users/GDPR_delete_user.html:15
 #: admin/templates/users/add_system_tag.html:15
 #: admin/templates/users/get_link.html:21
+#: admin/templates/users/ham_spam_modal.html:15
 #: admin/templates/users/merge_accounts_modal.html:14
 #: admin/templates/users/notes.html:18
 #: admin/templates/users/reindex_user_elastic.html:11
@@ -1756,7 +1957,6 @@ msgstr ""
 #: admin/templates/users/remove_user.html:15
 #: admin/templates/users/reset.html:16
 #: admin/templates/users/restore_ham_user.html:15
-#: admin/templates/users/user_list.html:73
 msgid "Cancel"
 msgstr ""
 
@@ -1769,12 +1969,22 @@ msgstr ""
 msgid "Flagged Spam Nodes"
 msgstr ""
 
+#: admin/templates/nodes/ham_spam_modal.html:3
+#: admin/templates/users/ham_spam_modal.html:3
+msgid "Confirm {{ target_type|capfirst }}"
+msgstr ""
+
+#: admin/templates/nodes/ham_spam_modal.html:10
+msgid "Are you sure the selected node(s) are {{ target_type }}?"
+msgstr ""
+
 #: admin/templates/nodes/known_spam_list.html:5
 msgid "Known Spam Nodes"
 msgstr ""
 
 #: admin/templates/nodes/node.html:11 admin/templates/nodes/node.html:299
-#: admin/templates/nodes/node.html:305 admin/templates/users/user.html:293
+#: admin/templates/nodes/node.html:305
+#: admin/templates/util/node_preprint_paginated_list.html:59
 msgid "Registration"
 msgstr ""
 
@@ -1786,12 +1996,11 @@ msgstr ""
 msgid "View Logs"
 msgstr ""
 
-#: admin/templates/nodes/node.html:34 admin/templates/users/user.html:327
+#: admin/templates/nodes/node.html:34
 msgid "Delete Node"
 msgstr ""
 
 #: admin/templates/nodes/node.html:47 admin/templates/nodes/node.html:273
-#: admin/templates/users/user.html:321
 msgid "Restore Node"
 msgstr ""
 
@@ -1803,9 +2012,8 @@ msgstr ""
 msgid "Remove Registration"
 msgstr ""
 
-#: admin/templates/nodes/node.html:70 admin/templates/nodes/node_list.html:98
-#: admin/templates/rdm_timestampadd/node_list.html:112
-#: admin/templates/users/user_list.html:61
+#: admin/templates/nodes/node.html:70
+#: admin/templates/rdm_timestampadd/node_list.html:113
 msgid "Confirm Spam"
 msgstr ""
 
@@ -1829,32 +2037,23 @@ msgstr ""
 msgid "Node Details"
 msgstr ""
 
-#: admin/templates/nodes/node.html:145
-#: admin/templates/rdm_keymanagement/user_list.html:9
-#: admin/templates/rdm_timestampadd/node_list.html:39
-#: admin/templates/rdm_timestampsettings/node_list.html:35
-#: admin/templates/users/user.html:290
-#: admin/templates/users/user_details.html:34
-#: admin/templates/users/user_list.html:22
-msgid "GUID"
-msgstr ""
-
 #: admin/templates/nodes/node.html:149 admin/templates/nodes/node.html:247
 #: admin/templates/nodes/node_list.html:26
-#: admin/templates/rdm_timestampadd/node_list.html:41
+#: admin/templates/rdm_timestampadd/node_list.html:42
 #: admin/templates/rdm_timestampsettings/node_list.html:38
 msgid "Title"
 msgstr ""
 
 #: admin/templates/nodes/node.html:153 admin/templates/nodes/node.html:248
 #: admin/templates/nodes/node_list.html:32
-#: admin/templates/rdm_timestampadd/node_list.html:46
-#: admin/templates/users/user.html:292
+#: admin/templates/rdm_timestampadd/node_list.html:47
+#: admin/templates/util/node_preprint_paginated_list.html:54
+#: admin/templates/util/node_preprint_paginated_list.html:56
 msgid "Public"
 msgstr ""
 
 #: admin/templates/nodes/node.html:157 admin/templates/nodes/node_list.html:29
-#: admin/templates/rdm_timestampadd/node_list.html:43
+#: admin/templates/rdm_timestampadd/node_list.html:44
 #: admin/templates/rdm_timestampsettings/node_list.html:41
 msgid "Parent"
 msgstr ""
@@ -1868,7 +2067,7 @@ msgid "OSF Groups"
 msgstr ""
 
 #: admin/templates/nodes/node.html:194 admin/templates/nodes/node_list.html:35
-#: admin/templates/rdm_timestampadd/node_list.html:49
+#: admin/templates/rdm_timestampadd/node_list.html:50
 msgid "Contributors"
 msgstr ""
 
@@ -1881,7 +2080,7 @@ msgid "Permissions"
 msgstr ""
 
 #: admin/templates/nodes/node.html:202 admin/templates/nodes/node.html:250
-#: admin/templates/users/user.html:296
+#: admin/templates/util/node_preprint_paginated_list.html:63
 msgid "Actions"
 msgstr ""
 
@@ -1909,13 +2108,13 @@ msgstr ""
 
 #: admin/templates/nodes/node.html:308 admin/templates/nodes/node.html:346
 #: admin/templates/nodes/node_list.html:33
-#: admin/templates/rdm_timestampadd/node_list.html:47
+#: admin/templates/rdm_timestampadd/node_list.html:48
 msgid "Withdrawn"
 msgstr ""
 
 #: admin/templates/nodes/node.html:309 admin/templates/nodes/node.html:350
 #: admin/templates/nodes/node_list.html:34
-#: admin/templates/rdm_timestampadd/node_list.html:48
+#: admin/templates/rdm_timestampadd/node_list.html:49
 msgid "Embargo"
 msgstr ""
 
@@ -1940,7 +2139,7 @@ msgid "SPAM Pro Tip"
 msgstr ""
 
 #: admin/templates/nodes/node.html:411 admin/templates/users/user.html:277
-#: admin/templates/users/user.html:295
+#: admin/templates/util/node_preprint_paginated_list.html:62
 msgid "SPAM Status"
 msgstr ""
 
@@ -1949,19 +2148,14 @@ msgid "SPAM Data"
 msgstr ""
 
 #: admin/templates/nodes/node_list.html:30
-#: admin/templates/rdm_timestampadd/node_list.html:44
+#: admin/templates/rdm_timestampadd/node_list.html:45
 #: admin/templates/rdm_timestampsettings/node_list.html:42
 msgid "Root"
 msgstr ""
 
 #: admin/templates/nodes/node_list.html:31
-#: admin/templates/rdm_timestampadd/node_list.html:45
+#: admin/templates/rdm_timestampadd/node_list.html:46
 msgid "Date created"
-msgstr ""
-
-#: admin/templates/nodes/node_list.html:105
-#: admin/templates/rdm_timestampadd/node_list.html:119
-msgid "Are you sure the selected node(s) are spam?"
 msgstr ""
 
 #: admin/templates/nodes/node_logs.html:6
@@ -1973,7 +2167,7 @@ msgid "Action"
 msgstr ""
 
 #: admin/templates/nodes/node_logs.html:19
-#: admin/templates/rdm_timestampadd/timestampadd.html:39
+#: admin/templates/rdm_timestampadd/timestampadd.html:40
 #: admin/templates/users/user.html:11
 msgid "User"
 msgstr ""
@@ -2023,12 +2217,14 @@ msgstr ""
 msgid "Node GUID:"
 msgstr ""
 
-#: admin/templates/nodes/search.html:20 admin/templates/users/search.html:21
+#: admin/templates/nodes/search.html:20
+#: admin/templates/user_emails/search.html:65
+#: admin/templates/users/search.html:21
 msgid "Submit@search"
 msgstr ""
 
 #: admin/templates/nodes/spam_status.html:3
-#: admin/templates/rdm_timestampadd/timestampadd.html:206
+#: admin/templates/rdm_timestampadd/timestampadd.html:207
 #: admin/templates/spam/detail.html:86
 msgid "Unknown"
 msgstr ""
@@ -2110,7 +2306,7 @@ msgstr ""
 
 #: admin/templates/osf/subject_form.html:9
 #: admin/templates/osf/subject_list.html:17
-#: admin/templates/rdm_timestampadd/timestampadd.html:128
+#: admin/templates/rdm_timestampadd/timestampadd.html:129
 msgid "Provider"
 msgstr ""
 
@@ -2278,6 +2474,7 @@ msgid "Connect an Amazon S3 Account"
 msgstr ""
 
 #: admin/templates/rdm_addons/addons/s3_credentials_modal.html:14
+#: admin/templates/rdm_custom_storage_location/providers/ociinstitutions_modal.html:21
 #: admin/templates/rdm_custom_storage_location/providers/s3_modal.html:17
 #: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:21
 #: admin/templates/rdm_custom_storage_location/providers/s3compatinstitutions_modal.html:21
@@ -2285,6 +2482,7 @@ msgid "Access Key"
 msgstr ""
 
 #: admin/templates/rdm_addons/addons/s3_credentials_modal.html:18
+#: admin/templates/rdm_custom_storage_location/providers/ociinstitutions_modal.html:25
 #: admin/templates/rdm_custom_storage_location/providers/s3_modal.html:21
 #: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:25
 #: admin/templates/rdm_custom_storage_location/providers/s3compatinstitutions_modal.html:25
@@ -2335,11 +2533,11 @@ msgstr ""
 msgid "Institutional Storage "
 msgstr ""
 
-#: admin/templates/rdm_custom_storage_location/institutional_storage.html:27
+#: admin/templates/rdm_custom_storage_location/institutional_storage.html:28
 msgid "Name:"
 msgstr ""
 
-#: admin/templates/rdm_custom_storage_location/institutional_storage.html:35
+#: admin/templates/rdm_custom_storage_location/institutional_storage.html:36
 msgid "Configure Institutional Storage Accounts"
 msgstr ""
 
@@ -2395,10 +2593,11 @@ msgstr ""
 #: admin/templates/rdm_custom_storage_location/providers/googledrive_modal.html:54
 #: admin/templates/rdm_custom_storage_location/providers/nextcloud_modal.html:58
 #: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:114
+#: admin/templates/rdm_custom_storage_location/providers/ociinstitutions_modal.html:41
 #: admin/templates/rdm_custom_storage_location/providers/onedrivebusiness_modal.html:54
 #: admin/templates/rdm_custom_storage_location/providers/owncloud_modal.html:54
 #: admin/templates/rdm_custom_storage_location/providers/s3_modal.html:37
-#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:41
+#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:48
 #: admin/templates/rdm_custom_storage_location/providers/s3compatinstitutions_modal.html:41
 #: admin/templates/rdm_custom_storage_location/providers/swift_modal.html:58
 msgid "Connect"
@@ -2501,7 +2700,7 @@ msgid "Download User Mapping file"
 msgstr ""
 
 #: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:80
-#: admin/templates/rdm_timestampadd/timestampadd.html:228
+#: admin/templates/rdm_timestampadd/timestampadd.html:229
 msgid "Download"
 msgstr ""
 
@@ -2523,6 +2722,25 @@ msgstr ""
 
 #: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:94
 msgid "Example of User Mapping file"
+msgstr ""
+
+#: admin/templates/rdm_custom_storage_location/providers/ociinstitutions_modal.html:9
+#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:9
+#: admin/templates/rdm_custom_storage_location/providers/s3compatinstitutions_modal.html:9
+msgid "Connect a S3 Compatible Storage Account"
+msgstr ""
+
+#: admin/templates/rdm_custom_storage_location/providers/ociinstitutions_modal.html:17
+#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:17
+#: admin/templates/rdm_custom_storage_location/providers/s3compatinstitutions_modal.html:17
+msgid "Endpoint URL"
+msgstr ""
+
+#: admin/templates/rdm_custom_storage_location/providers/ociinstitutions_modal.html:29
+#: admin/templates/rdm_custom_storage_location/providers/s3_modal.html:25
+#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:29
+#: admin/templates/rdm_custom_storage_location/providers/s3compatinstitutions_modal.html:29
+msgid "Bucket"
 msgstr ""
 
 #: admin/templates/rdm_custom_storage_location/providers/onedrivebusiness_modal.html:8
@@ -2568,20 +2786,12 @@ msgid ""
 "                                "
 msgstr ""
 
-#: admin/templates/rdm_custom_storage_location/providers/s3_modal.html:25
-#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:29
-#: admin/templates/rdm_custom_storage_location/providers/s3compatinstitutions_modal.html:29
-msgid "Bucket"
+#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:33
+msgid "Server Side Encryption"
 msgstr ""
 
-#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:9
-#: admin/templates/rdm_custom_storage_location/providers/s3compatinstitutions_modal.html:9
-msgid "Connect a S3 Compatible Storage Account"
-msgstr ""
-
-#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:17
-#: admin/templates/rdm_custom_storage_location/providers/s3compatinstitutions_modal.html:17
-msgid "Endpoint URL"
+#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:36
+msgid "Yes@institutional_storage"
 msgstr ""
 
 #: admin/templates/rdm_custom_storage_location/providers/swift_modal.html:8
@@ -2617,14 +2827,28 @@ msgstr ""
 msgid "User Search Results"
 msgstr ""
 
-#: admin/templates/rdm_keymanagement/user_list.html:12
+#: admin/templates/rdm_keymanagement/user_list.html:13
 #: admin/templates/users/user_list.html:25
 msgid "Date confirmed"
 msgstr ""
 
-#: admin/templates/rdm_keymanagement/user_list.html:13
+#: admin/templates/rdm_keymanagement/user_list.html:14
 #: admin/templates/users/user_list.html:26
 msgid "Date disabled"
+msgstr ""
+
+#: admin/templates/rdm_metadata/erad.html:11
+#: admin/templates/rdm_metadata/erad.html:14
+msgid "e-Rad records"
+msgstr ""
+
+#: admin/templates/rdm_metadata/erad.html:17
+msgid ""
+"Upload the TSV file containing the e-Rad record and press the Update button."
+msgstr ""
+
+#: admin/templates/rdm_metadata/erad.html:23
+msgid "Update"
 msgstr ""
 
 #: admin/templates/rdm_statistics/crawl.html:14
@@ -2670,6 +2894,10 @@ msgstr ""
 msgid "download CSV"
 msgstr ""
 
+#: admin/templates/rdm_timestampadd/node_list.html:120
+msgid "Are you sure the selected node(s) are spam?"
+msgstr ""
+
 #: admin/templates/rdm_timestampadd/timestampadd.html:15
 msgid "TimeStampAddList"
 msgstr ""
@@ -2679,52 +2907,47 @@ msgstr ""
 msgid "TimeStamp Add (%(project_title)s)"
 msgstr ""
 
-#: admin/templates/rdm_timestampadd/timestampadd.html:27
+#: admin/templates/rdm_timestampadd/timestampadd.html:28
 msgid "Start Date"
 msgstr ""
 
-#: admin/templates/rdm_timestampadd/timestampadd.html:33
+#: admin/templates/rdm_timestampadd/timestampadd.html:34
 msgid "End Date"
 msgstr ""
 
-#: admin/templates/rdm_timestampadd/timestampadd.html:46
-#: admin/templates/users/user.html:353
-msgid "Apply"
-msgstr ""
-
-#: admin/templates/rdm_timestampadd/timestampadd.html:55
+#: admin/templates/rdm_timestampadd/timestampadd.html:56
 msgid "Verify"
 msgstr ""
 
-#: admin/templates/rdm_timestampadd/timestampadd.html:56
+#: admin/templates/rdm_timestampadd/timestampadd.html:57
 msgid "Request Trusted Timestamp"
 msgstr ""
 
-#: admin/templates/rdm_timestampadd/timestampadd.html:67
+#: admin/templates/rdm_timestampadd/timestampadd.html:68
 msgid "Processing, please wait..."
 msgstr ""
 
-#: admin/templates/rdm_timestampadd/timestampadd.html:92
+#: admin/templates/rdm_timestampadd/timestampadd.html:93
 msgid "per page:"
 msgstr ""
 
-#: admin/templates/rdm_timestampadd/timestampadd.html:108
+#: admin/templates/rdm_timestampadd/timestampadd.html:109
 msgid "Page of "
 msgstr ""
 
-#: admin/templates/rdm_timestampadd/timestampadd.html:137
+#: admin/templates/rdm_timestampadd/timestampadd.html:138
 msgid "File Path"
 msgstr ""
 
-#: admin/templates/rdm_timestampadd/timestampadd.html:146
+#: admin/templates/rdm_timestampadd/timestampadd.html:147
 msgid "Timestamp by"
 msgstr ""
 
-#: admin/templates/rdm_timestampadd/timestampadd.html:155
+#: admin/templates/rdm_timestampadd/timestampadd.html:156
 msgid "Updated at"
 msgstr ""
 
-#: admin/templates/rdm_timestampadd/timestampadd.html:164
+#: admin/templates/rdm_timestampadd/timestampadd.html:165
 msgid "Timestamp Verification"
 msgstr ""
 
@@ -2864,8 +3087,57 @@ msgstr ""
 msgid "User's List of Spam"
 msgstr ""
 
-#: admin/templates/spam/user.html:15 admin/templates/users/user.html:157
+#: admin/templates/spam/user.html:15
+#: admin/templates/user_emails/user_emails.html:69
+#: admin/templates/users/user.html:157
 msgid "User details"
+msgstr ""
+
+#: admin/templates/user_emails/search.html:19
+#: admin/templates/user_emails/user_emails.html:6
+#: admin/templates/user_emails/user_list.html:6
+msgid "User-Emails"
+msgstr ""
+
+#: admin/templates/user_emails/search.html:19
+#: admin/templates/user_emails/search.html:26
+#: admin/templates/users/search.html:9 admin/templates/users/search.html:14
+#: admin/templates/users/workshop.html:6
+msgid "User Search"
+msgstr ""
+
+#: admin/templates/user_emails/user_emails.html:6
+msgid "User Emails Setting"
+msgstr ""
+
+#: admin/templates/user_emails/user_emails.html:83
+#: admin/templates/user_emails/user_list.html:16
+msgid "EPPN"
+msgstr ""
+
+#: admin/templates/user_emails/user_emails.html:94
+#: admin/templates/user_emails/user_list.html:19
+msgid "Affiliation"
+msgstr ""
+
+#: admin/templates/user_emails/user_emails.html:120
+msgid "Email address"
+msgstr ""
+
+#: admin/templates/user_emails/user_emails.html:129
+msgid "Add email as Primary"
+msgstr ""
+
+#: admin/templates/user_emails/user_emails.html:144
+msgid "Primary"
+msgstr ""
+
+#: admin/templates/user_emails/user_emails.html:149
+msgid "Set Primary"
+msgstr ""
+
+#: admin/templates/user_emails/user_list.html:6
+msgid "Search Results"
 msgstr ""
 
 #: admin/templates/users/GDPR_delete_user.html:5
@@ -2888,6 +3160,10 @@ msgstr ""
 #: admin/templates/users/get_link.html:4
 #, python-format
 msgid "%(title)s for user %(username)s"
+msgstr ""
+
+#: admin/templates/users/ham_spam_modal.html:10
+msgid "Are you sure the selected user(s) are {{ target_type }}?"
 msgstr ""
 
 #: admin/templates/users/known_spam_list.html:5
@@ -2963,11 +3239,6 @@ msgstr ""
 #: admin/templates/users/restore_ham_user.html:5
 #, python-format
 msgid "Are you sure you want to re-enable this user? %(guid)s"
-msgstr ""
-
-#: admin/templates/users/search.html:9 admin/templates/users/search.html:14
-#: admin/templates/users/workshop.html:6
-msgid "User Search"
 msgstr ""
 
 #: admin/templates/users/search.html:27
@@ -3090,7 +3361,7 @@ msgstr ""
 msgid "Profile content checked for spam"
 msgstr ""
 
-#: admin/templates/users/user.html:346
+#: admin/templates/users/user.html:298
 msgid "Quota for NII Storage (GB)"
 msgstr ""
 
@@ -3098,138 +3369,96 @@ msgstr ""
 msgid "Quota for Institutional Storage (GB)"
 msgstr ""
 
-#: admin/templates/users/user_list.html:68
-msgid "Are you sure the selected user(s) are spam?"
-msgstr ""
-
 #: admin/templates/users/workshop.html:15
 msgid "Upload"
 msgstr ""
 
-#: admin/templates/util/pagination.html:25
-#, python-format
-msgid "Page %(itemsNumber)s of %(paginatorNumPage)s"
+#: admin/templates/util/node_preprint_paginated_list.html:94
+msgid "Delete {{ resource_type|capfirst }}"
 msgstr ""
 
-# text of menuitem on left-side menu
-msgid "Login Availability Control"
+#: api/base/authentication/drf.py:188
+msgid "Invalid username/password."
 msgstr ""
 
-# page title
-msgid "List of Entitlements"
+#: api/base/authentication/drf.py:215
+msgid "Invalid two-factor authentication OTP code."
 msgstr ""
 
-# label for eduPersonEntitlement input box
-msgid "Entitlements"
+#: api/base/authentication/drf.py:246
+msgid "User provided an invalid OAuth2 access token"
 msgstr ""
 
-msgid "Institutions"
+#: api/base/authentication/drf.py:249
+msgid "CAS server failed to authenticate this token"
 msgstr ""
 
-# hint text of eduPersonEntitlement input box
-msgid "Enter new entitlement"
+#: api/base/authentication/drf.py:253
+msgid "Could not find the user associated with this token"
 msgstr ""
 
-# label for checkboxes
-msgid "login availability"
+#: api/base/exceptions.py:128
+msgid "This endpoint is not yet implemented."
 msgstr ""
 
-# text for button to add another eduPersonEntitlement input box
-msgid "New entitlement"
+#: api/base/exceptions.py:133
+msgid "Service is unavailable at this time."
 msgstr ""
 
-msgid "Delete"
+#: api/base/exceptions.py:226
+msgid "Query string contains a malformed filter."
 msgstr ""
 
-msgid "Entitlement must be not empty"
+#: api/base/exceptions.py:235
+msgid "Comparison operators are only supported for dates and numbers."
 msgstr ""
 
-msgid "Entitlement '"
+#: api/base/exceptions.py:241
+msgid "Match operators are only supported for strings and lists."
 msgstr ""
 
-msgid "' already exists"
+#: api/base/exceptions.py:247
+msgid "Query contained one or more filters for invalid fields."
 msgstr ""
 
-msgid "' have been inputted"
+#: api/base/exceptions.py:258
+msgid "Please confirm your account before using the API."
 msgstr ""
 
-# msgid "Configure NII Storage Quota"
-# msgstr ""
-
-msgid "Each user Quota for NII Storage (GB)"
+#: api/base/exceptions.py:263
+msgid "Please claim your account before using the API."
 msgstr ""
 
-msgid "Inst. Storage Quota Control"
+#: api/base/exceptions.py:268
+msgid ""
+"Making API requests with credentials associated with a deactivated account "
+"is not allowed."
 msgstr ""
 
-msgid "Institutional Storage Quota Control"
+#: api/base/exceptions.py:273
+msgid ""
+"Making API requests with credentials associated with a merged account is not "
+"allowed."
 msgstr ""
 
-msgid "Institutional Storage for Institutions"
+#: api/base/exceptions.py:278
+msgid ""
+"Making API requests with credentials associated with an invalid account is "
+"not allowed."
 msgstr ""
 
-msgid "Storage name"
+#: api/base/exceptions.py:282
+msgid "Must specify two-factor authentication OTP code."
 msgstr ""
 
-# msgid "Configure Institutional Storage Quota"
-# msgstr ""
-
-msgid "Each user Quota for Institutional Storage (GB)"
+#: api/base/exceptions.py:288
+msgid "Invalid value in POST/PUT/PATCH request."
 msgstr ""
 
-msgid "Value must be an integer number greater than or equal 1"
-msgstr ""
-
-msgid "Export All Users Statistics (TSV)"
-msgstr ""
-
-msgid "EmailLabel"
-msgstr ""
-
-msgid "InfoLabel"
-msgstr ""
-
-msgid "keyword"
-msgstr ""
-
-msgid "Please enter an valid email"
-msgstr ""
-
-msgid "User-Emails"
-msgstr ""
-
-msgid "Please enter only contain alphanumeric in lowercase"
-msgstr ""
-
-msgid "Please enter an email address"
-msgstr ""
-
-msgid "User Emails Setting"
-msgstr ""
-
-msgid "EPPN"
-msgstr ""
-
-msgid "Affiliation"
-msgstr ""
-
-msgid "User Emails"
-msgstr ""
-
-msgid "Email address"
-msgstr ""
-
-msgid "Add email as Primary"
-msgstr ""
-
-msgid "Primary"
-msgstr ""
-
-msgid "Set Primary"
-msgstr ""
-
-msgid "Search Results"
-msgstr ""
-
-msgid "Recalculate quota"
+#: api/base/exceptions.py:303
+#, python-brace-format
+msgid ""
+"The node {0} cannot be affiliated with this View Only Link because the node "
+"you're trying to affiliate is not descended from the node that the View Only "
+"Link is attached to."
 msgstr ""
