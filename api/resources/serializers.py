@@ -27,9 +27,6 @@ class ResourceSerializer(JSONAPISerializer):
         'date_modified',
         'resource_type',
     ])
-    writeable_method_fields = frozenset([
-        'revision_responses',
-    ])
 
     non_anonymized_fields = frozenset([
         'id',
