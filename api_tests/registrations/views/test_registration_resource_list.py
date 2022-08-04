@@ -16,7 +16,7 @@ from osf_tests.factories import (
 )
 
 
-def make_api_url(registration, vol_key=None):
+def make_api_url(registration, vol_key=None, query_filters=None):
     base_url = f'/v2/registrations/{registration._id}/resources/'
     if vol_key:
         return f'{base_url}?view_only={vol_key}'
@@ -173,13 +173,22 @@ class TestRegistrationResourceListGETBehavior:
         avol = PrivateLinkFactory(anonymous=True)
         avol.nodes.add(registration)
 
-        resp = app.get(make_api_url(registration, vol_key=avol.key), auth=admin_user)
+        resp = app.get(make_api_url(registration, vol_key=avol.key), auth=admin_user.auth)
         data = resp.json['data'][0]
         assert 'pid' not in data['attributes']
 
+    def test_filtering(self, app, registration, artifact_one, artifact_two, admin_user):
+        base_url = make_api_url(registration)
+        filter_url = f'{base_url}?filter[resource_type]=analytic_code'
+
+        resp = app.get(filter_url, auth=admin_user.auth)
+        data = resp.json['data']
+        assert len(data) == 1
+        assert data[0]['id'] == artifact_two._id
+
 
 @pytest.mark.django_db
-class TestResourceDetailUnsupportedMethods:
+class TestRegistrationResourceListUnsupportedMethods:
 
     @pytest.mark.parametrize('user_role', UserRoles)
     def test_cannot_POST(self, app, user_role):
