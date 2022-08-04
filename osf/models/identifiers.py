@@ -104,7 +104,7 @@ class IdentifierMixin(models.Model):
                                                                content_type=ContentType.objects.get_for_model(self),
                                                                category=category,
                                                                defaults=defaults)
-        if not created:
+        if value and not created:
             identifier.value = value
             identifier.save()
 
