@@ -109,7 +109,7 @@ class ResourceSerializer(JSONAPISerializer):
             current_type = ArtifactTypes(instance.artifact_type).name.lower()
             raise JSONAPIException(
                 detail=(
-                    f'Error updatning resource_type for Resource with id [{instance._id}]: '
+                    f'Error updating resource_type for Resource with id [{instance._id}]: '
                     f'currently has a resource_type of "{current_type}", cannot return '
                     'resource_type to "undefined".'
                 ),
