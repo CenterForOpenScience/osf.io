@@ -22,6 +22,11 @@ MODEL_TO_SERIALIZER_FIELD_MAPPINGS = {
 }
 
 class ResourceSerializer(JSONAPISerializer):
+    filterable_fields = frozenset([
+        'date_created',
+        'date_modified',
+        'resource_type',
+    ])
 
     non_anonymized_fields = frozenset([
         'id',
