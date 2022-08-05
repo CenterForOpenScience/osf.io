@@ -265,7 +265,6 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         'fork',
         'forked_from',
         'id',
-        'identifiers',
         'license',
         'linked_by_nodes',
         'linked_by_registrations',

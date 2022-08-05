@@ -50,7 +50,6 @@ class RegistrationSerializer(NodeSerializer):
     # if you don't need them to be anonymized
     non_anonymized_fields = NodeSerializer.non_anonymized_fields + [
         'archiving',
-        'article_doi',
         'date_registered',
         'date_withdrawn',
         'embargo_end_date',
@@ -63,8 +62,6 @@ class RegistrationSerializer(NodeSerializer):
         'pending_withdrawal',
         'provider',
         'provider_specific_metadata',
-        'registered_by',
-        'registered_from',
         'registered_meta',
         'registration_responses',
         'registration_schema',
