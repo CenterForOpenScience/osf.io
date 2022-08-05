@@ -59,7 +59,7 @@ var ViewModel = function(list) {
         var request = $osf.postJSON('/api/v1/settings/notifications/', payload);
         request.done(function (response) {
             console.log(response);
-            if (!response.results["Open Science Framework General"]){
+            if (!response.results['Open Science Framework General']){
                 self.showResubscribe(true);
             }
             self.changeMessage('Settings updated.', 'text-success', 5000);
