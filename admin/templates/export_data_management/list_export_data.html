@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+{% block title %}
+<title>{% trans "Export Data Management" %}</title>
+{% endblock title %}
+{% block content %}
+  {% include 'export_data_management/export_data.html' %}
+    {% comment %} {% if not users|length %}
+     <h3>{% trans "No results found" %}</h3>
+    {% endif %} {% endcomment %}
+{% endblock content %}

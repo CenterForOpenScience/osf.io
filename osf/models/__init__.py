@@ -64,3 +64,4 @@ from osf.models.user_quota import UserQuota  # noqa
 from osf.models.project_storage_type import ProjectStorageType  # noqa
 from osf.models.region_external_account import RegionExternalAccount  # noqa
 from osf.models.institution_entitlement import InstitutionEntitlement  # noqa
+# from osf.models.export_data_restore import ExportDataRestore  # noqa
