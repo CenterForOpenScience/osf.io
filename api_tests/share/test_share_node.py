@@ -215,7 +215,7 @@ class TestNodeShare:
             ]
             assert len(workidentifier_graph_nodes) == 1
 
-    def test_serialize_registration_sets_affiliated_resources(
+    def test_serialize_registration_sets_osf_related_resource_types(
         self, mock_share, registration, registration_outcome, user
     ):
         graph = serialize_registration(registration)['@graph']
