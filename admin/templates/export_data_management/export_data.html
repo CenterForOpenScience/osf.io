@@ -444,6 +444,29 @@
             type: "post",
             data: data
         }).done(function(response) {
+            let task_id = response["task_id"];
+            console.log(task_id);
+            checkTaskStatus(task_id);
+        }).fail(function(jqXHR, textStatus, error) {
+            $("#restoreBtn").removeClass("disabled");
+            $("#stopRestoreBtn").addClass("disabled");
+            $("#restoreBtn").attr("disabled", false);
+            $("#stopRestoreBtn").attr("disabled", true);
+        });
+    }
+
+    function checkTaskStatus(task_id){
+        let data = { task_id: task_id};
+        $.ajaxSetup({
+            data: { csrfmiddlewaretoken: '{{ csrf_token }}' },
+        });
+        $.ajax({
+            url: "task_status",
+            type: "get",
+            data: data
+        }).done(function(response) {
+            let state = response["state"];
+            console.log(state);
             $("#restoreBtn").removeClass("disabled");
             $("#stopRestoreBtn").addClass("disabled");
             $("#restoreBtn").attr("disabled", false);

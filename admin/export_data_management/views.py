@@ -6,7 +6,7 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from admin.export_data_management.tasks import test_celery_task
-
+from celery.result import AsyncResult
 
 class ExportDataManagement(RdmPermissionMixin, ListView):
     paginate_by = 100
@@ -35,11 +35,20 @@ class ExportDataRestore(RdmPermissionMixin, APIView):
     def post(self, request, *args, **kwargs):
         destination_id = request.POST.get('destination_id', default='-1')
         process = test_celery_task.delay()
-        print(process)
-        return Response({}, status=status.HTTP_200_OK)
+        return Response({'task_id': process.task_id}, status=status.HTTP_200_OK)
 
         # process_status = restore_export_data(self, 2, 3, destination_id)
         # if process_status == "TERMINATED":
         #     return Response({}, status=status.HTTP_400_BAD_REQUEST)
         # elif process_status == "SUCCESS":
         #     return Response({}, status=status.HTTP_200_OK)
+
+
+class ExportDataRestoreTaskStatus(RdmPermissionMixin, APIView):
+    def get(self, request, *args, **kwargs):
+        task_id = request.GET.get('task_id', default='-1')
+        task = AsyncResult(task_id)
+        response = {
+            'state': task.state,
+        }
+        return Response(response, status=status.HTTP_200_OK)
