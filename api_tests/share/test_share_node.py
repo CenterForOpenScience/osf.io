@@ -215,15 +215,17 @@ class TestNodeShare:
             ]
             assert len(workidentifier_graph_nodes) == 1
 
-    def test_serialize_registration_sets_open_badges(self, mock_share, registration, registration_outcome, user):
+    def test_serialize_registration_sets_affiliated_resources(
+        self, mock_share, registration, registration_outcome, user
+    ):
         graph = serialize_registration(registration)['@graph']
         registration_graph_node = [n for n in graph if n['@type'] == 'registration'][0]
 
-        expected_badges = {
+        expected_resource_types = {
             'data': True, 'papers': True, 'analytic_code': False, 'materials': False, 'supplements': False
         }
 
-        assert registration_graph_node['open_practice_badges'] == expected_badges
+        assert registration_graph_node['extra']['osf_related_resource_types'] == expected_resource_types
 
     def test_update_share_correctly_for_projects_with_qa_tags(self, mock_share, node, user):
         node.add_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user))
