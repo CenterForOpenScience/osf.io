@@ -866,6 +866,19 @@ class Registration(AbstractNode):
         for children in Registration.objects.get_children(self, active=True, include_root=True):
             archive_to_ia(children)
 
+    def associated_resource_updated(self, log_action=None, api_request=None, **log_params):
+        if settings.SHARE_ENABLED:
+            update_share(self)
+        if not log_action:
+            return
+
+        self.add_log(
+            action=log_action,
+            params=log_params,
+            auth=None,  # Grabbed from request
+            request=api_request,
+        )
+
     class Meta:
         # custom permissions for use in the OSF Admin App
         permissions = (

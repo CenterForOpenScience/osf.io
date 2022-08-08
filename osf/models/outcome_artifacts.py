@@ -1,11 +1,11 @@
-from django.db import models, IntegrityError
+from django.db import models, IntegrityError, transaction
 from django.utils import timezone
 
 from osf.exceptions import (
     CannotFinalizeArtifactError,
     IdentifierHasReferencesError,
-    InvalidPIDError,
-    NoPIDError
+    NoPIDError,
+    UnsupportedArtifactTypeError,
 )
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.identifiers import Identifier
@@ -104,7 +104,40 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
         ]
         ordering = ['artifact_type', 'title']
 
-    def update_identifier(self, new_pid_value, pid_type='doi', api_request=None):
+    def update(
+        self,
+        new_description=None,
+        new_artifact_type=None,
+        new_pid_value=None,
+        pid_type='doi',
+        api_request=None
+    ):
+        log_params = {}
+        if new_description is not None:
+            self.description = new_description
+
+        if new_artifact_type is not None:
+            if new_artifact_type == ArtifactTypes.UNDEFINED != self.artifact_type:
+                raise UnsupportedArtifactTypeError
+            self.artifact_type = new_artifact_type
+
+        if new_pid_value is not None:
+            log_params = {
+                'obsolete_identifier': self.identifier.value if self.identifier else '',
+                'new_identifier': new_pid_value
+            }
+            self._update_identifier(new_pid_value, pid_type, api_request)
+
+        if self.finalized:
+            self.outcome.artifact_updated(
+                artifact=self,
+                action=OutcomeActions.UPDATE if new_pid_value is not None else None,
+                api_request=api_request,
+                **log_params,
+            )
+
+    @transaction.atomic
+    def _update_identifier(self, new_pid_value, pid_type='doi', api_request=None):
         '''Changes the linked Identifer to one matching the new pid_value and handles callbacks.
 
         If `finalized` is True, will also log the change on the parent Outcome if invoked via API.
@@ -121,12 +154,8 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
         new_identifier, created = Identifier.objects.get_or_create(
             value=new_pid_value, category=pid_type
         )
-        if created:
-            try:
-                new_identifier.validate_identifier_value()
-            except InvalidPIDError as e:
-                new_identifier.delete()
-                raise e
+        if created:  # Reraise errors
+            new_identifier.validate_identifier_value()
 
         previous_identifier = self.identifier
         self.identifier = new_identifier
@@ -136,15 +165,6 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
                 previous_identifier.delete()
             except IdentifierHasReferencesError:
                 pass
-
-        if self.finalized and api_request:
-            self.outcome.log_artifact_change(
-                action=OutcomeActions.UPDATE,
-                artifact=self,
-                api_request=api_request,
-                obsolete_identifier=previous_identifier.value if previous_identifier else None,
-                new_identifier=new_pid_value
-            )
 
     def finalize(self, api_request=None):
         '''Sets `finalized` to True and handles callbacks.
@@ -178,7 +198,7 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
         self.save()
 
         if api_request:
-            self.outcome.log_artifact_change(
+            self.outcome.artifact_updated(
                 action=OutcomeActions.ADD,
                 artifact=self,
                 api_request=api_request,
@@ -198,7 +218,7 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
         identifier = self.identifier
         if self.finalized:
             if api_request:
-                self.outcome.log_artifact_change(
+                self.outcome.artifact_updated(
                     action=OutcomeActions.REMOVE,
                     artifact=self,
                     api_request=api_request,

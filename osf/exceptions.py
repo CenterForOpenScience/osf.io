@@ -255,6 +255,10 @@ class NoSuchPIDError(InvalidPIDError):
     ERROR_MESSAGE = 'Could not find any record of PID with type {category} and value {value}'
 
 
+class UnsupportedArtifactTypeError(OSFError):
+    pass
+
+
 class CannotFinalizeArtifactError(OSFError):
 
     def __init__(self, artifact, incomplete_fields):

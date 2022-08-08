@@ -81,13 +81,10 @@ class Outcome(ObjectIDMixin, EditableFieldsMixin, BaseModel):
     def primary_osf_resource(self):
         return self.artifact_metadata.get(artifact_type=ArtifactTypes.PRIMARY).identifier.referent
 
-    def log_artifact_change(self, action, artifact, api_request, **log_params):
-        nodelog_action = NODE_LOGS_FOR_OUTCOME_ACTION[action]
+    def artifact_updated(self, action, artifact, api_request, **log_params):
         nodelog_params = {'artifact_id': artifact._id, **log_params}
-
-        self.primary_osf_resource.add_log(
-            action=nodelog_action,
-            params=nodelog_params,
-            auth=None,  # Grabbed from request
-            request=api_request,
+        self.primary_osf_resource.associated_resource_updated(
+            log_action=NODE_LOGS_FOR_OUTCOME_ACTION.get(action),
+            api_request=api_request,
+            **nodelog_params,
         )

@@ -116,7 +116,7 @@ class GraphNode(object):
         for key, value in self.attrs.items():
             if isinstance(value, GraphNode):
                 ser[key] = value.ref
-            elif isinstance(value, list) or value in {None, ''}:
+            elif isinstance(value, list) or value in (None, '', {}):
                 continue
             else:
                 ser[key] = value
@@ -306,9 +306,18 @@ def serialize_registration(registration):
             'registration_type': registration.registered_schema.first().name if registration.registered_schema.exists() else None,
             'justification': registration.retraction.justification if registration.retraction else None,
             'withdrawn': registration.is_retracted,
+            'extra': {'osf_related_resource_types': _get_osf_related_resource_types(registration)},
         },
     )
 
+def _get_osf_related_resource_types(registration):
+    from osf.models import OutcomeArtifact
+    from osf.utils.outcomes import ArtifactTypes
+    artifacts = OutcomeArtifact.objects.for_registration(registration).filter(finalized=True, deleted__isnull=True)
+    return {
+        artifact_type.name.lower(): artifacts.filter(artifact_type=artifact_type).exists()
+        for artifact_type in ArtifactTypes.public_types()
+    }
 
 def serialize_osf_node(osf_node, additional_attrs=None):
     if osf_node.provider:
