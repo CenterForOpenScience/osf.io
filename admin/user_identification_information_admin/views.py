@@ -1,10 +1,12 @@
+import numpy as np
 from admin.base.views import GuidView
 from admin.rdm.utils import RdmPermissionMixin
 from api.base import settings as api_settings
+from django.db import connection
 from django.http import Http404
 from django.views.generic import ListView
+from osf.models import ExternalAccount
 from osf.models import OSFUser, UserQuota
-from osf.models.files import BaseFileNode, FileVersion, BaseFileVersionsThrough
 from website.util import quota
 
 
@@ -14,27 +16,70 @@ def custom_size_abbreviation(size, abbr, *kwargs):
     return size, abbr
 
 
-def check_extended_storage(user):
-    fileVersion = FileVersion.objects.filter(creator=user).values_list('id', flat=True)
-    base = BaseFileVersionsThrough.objects.filter(fileversion_id__in=fileVersion).values_list('basefilenode_id',
-                                                                                              flat=True)
-    check_provider = set(BaseFileNode.objects.filter(id__in=base).values_list('provider', flat=True))
+def get_list_extend_storage():
+    values = ExternalAccount.objects.values_list('provider', 'provider_name')
+    get_provider, get_provider_name = map(list, zip(*values))
+    dict_users_list = {}
+    storage_branch_name = None
+    cursor = connection.cursor()
 
-    if len(check_provider) > 1:
-        return True
-    elif len(check_provider) == 1:
-        for provider in check_provider:
-            if provider in 'osfstorage':
-                return False
+    for j in range(len(get_provider)):
+        provider_value = get_provider[j]
+        get_provider_name_value = get_provider_name[j]
+        if any(s in provider_value.lower() for s in
+               ('s3', 's3compat', 's3compatb3', 'azureblobstorage', 'box',
+                'figshare', 'onedrivebusiness', 'swift')):
+            storage_branch_name = 'folder_name'
+        elif any(s in provider_value.lower() for s in ('bitbucket', 'github',
+                                                       'gitlab')):
+            storage_branch_name = 'repo'
+        elif any(s in provider_value.lower() for s in ('googledrive',
+                                                       'onedrive', 'iqbrims')):
+            storage_branch_name = 'folder_path'
+        elif any(s in provider_value.lower() for s in ('dropbox')):
+            storage_branch_name = 'folder'
+        elif any(s in provider_value.lower() for s in ('weko')):
+            storage_branch_name = 'index_title'
+        elif any(s in provider_value.lower() for s in ('mendeley', 'zotero')):
+            storage_branch_name = 'list_id'
+        elif any(s in provider_value.lower() for s in ('owncloud')):
+            storage_branch_name = 'folder_id'
+        elif any(s in provider_value.lower() for s in ('dataverse')):
+            storage_branch_name = 'dataverse'
+
+        cursor.execute(
+            """
+            select addons_%s_nodesettings.%s, addons_%s_usersettings.owner_id as user_id
+            from addons_%s_usersettings inner join addons_%s_nodesettings
+            on addons_%s_nodesettings.user_settings_id = addons_%s_usersettings.id
+            where addons_%s_usersettings.id in(
+                select addons_%s_usersettings.id from osf_osfuser inner join addons_%s_usersettings
+                on osf_osfuser.id = addons_%s_usersettings.owner_id)
+            """ % (
+                provider_value, storage_branch_name, provider_value, provider_value, provider_value, provider_value,
+                provider_value, provider_value, provider_value, provider_value, provider_value)
+        )
+        result = np.asarray(cursor.fetchall())
+        list_users_provider = result[:, 0]
+        list_users_id = result[:, 1]
+
+        for i in range(len(list_users_id)):
+            if list_users_id[i] not in dict_users_list:
+                dict_users_list[list_users_id[i]] = [
+                    list_users_provider[i] + '/' +
+                    get_provider_name_value if list_users_provider[i] is not None else '/' + get_provider_name_value]
             else:
-                return True
-    else:
-        return False
+                current_val = dict_users_list.get(list_users_id[i])
+                current_val.append(
+                    list_users_provider[i] + '/' +
+                    get_provider_name_value if list_users_provider[i] is not None else '/' + get_provider_name_value)
+                dict_users_list[list_users_id[i]] = current_val
+        return list_users_id, dict_users_list
 
 
 class UserIdentificationInformation(ListView):
 
-    def get_user_quota_info(self, user, storage_type):
+    def get_user_quota_info(self, user, storage_type, extend_storage=''):
         _, used_quota = quota.get_quota_info(user, storage_type)
         used_quota_abbr = custom_size_abbreviation(*quota.abbreviate_size(used_quota))
 
@@ -48,7 +93,8 @@ class UserIdentificationInformation(ListView):
             'usage': used_quota,
             'usage_value': used_quota_abbr[0],
             'usage_abbr': used_quota_abbr[1],
-            'extended_storage': check_extended_storage(user),
+            'extended_storage': extend_storage,
+
         }
 
     def get_queryset(self):
@@ -69,6 +115,16 @@ class UserIdentificationInformation(ListView):
         kwargs['page'] = self.page
         return super(UserIdentificationInformation, self).get_context_data(**kwargs)
 
+    def get_list_data(self, queryset, list_users_id=[], dict_users_list={}):
+        list_data = []
+        for user in queryset:
+            if user.id in list_users_id:
+                list_data.append(
+                    self.get_user_quota_info(user, UserQuota.NII_STORAGE, '\n'.join(dict_users_list.get(user.id))))
+            else:
+                list_data.append(self.get_user_quota_info(user, UserQuota.NII_STORAGE))
+        return list_data
+
 
 class UserIdentificationList(RdmPermissionMixin, UserIdentificationInformation):
     template_name = 'user_identification_information/list_user_identification.html'
@@ -78,10 +134,16 @@ class UserIdentificationList(RdmPermissionMixin, UserIdentificationInformation):
 
     def get_userlist(self):
         queryset = []
-        institution = self.request.user.affiliated_institutions.first()
-        if institution is not None:  # and Region.objects.filter(_id=institution._id).exists():
-            queryset = OSFUser.objects.filter(affiliated_institutions=institution.id)
-        return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in queryset]
+        if self.request.user.is_superuser is False:
+            institution = self.request.user.affiliated_institutions.first()
+            if institution is not None:  # and Region.objects.filter(_id=institution._id).exists():
+                queryset = OSFUser.objects.filter(affiliated_institutions=institution.id).order_by('id')
+        else:
+            queryset = OSFUser.objects.all().order_by('id')
+
+        list_users_id, dict_users_list = get_list_extend_storage()
+
+        return self.get_list_data(queryset, list_users_id, dict_users_list)
 
 
 class UserIdentificationDetails(RdmPermissionMixin, GuidView):
@@ -94,6 +156,7 @@ class UserIdentificationDetails(RdmPermissionMixin, GuidView):
         if self.request.user.is_superuser:
             raise Http404('Page not found')
         user_details = OSFUser.load(self.kwargs.get('guid'))
+        user_id = int(user_details.id)
         max_quota, used_quota = quota.get_quota_info(user_details, UserQuota.NII_STORAGE)
         max_quota_bytes = max_quota * api_settings.SIZE_UNIT_GB
         remaining_quota = max_quota_bytes - used_quota
@@ -101,6 +164,11 @@ class UserIdentificationDetails(RdmPermissionMixin, GuidView):
         used_quota_abbr = custom_size_abbreviation(*quota.abbreviate_size(used_quota))
         remaining_abbr = custom_size_abbreviation(*quota.abbreviate_size(remaining_quota))
         max_quota, _ = quota.get_quota_info(user_details, UserQuota.NII_STORAGE)
+
+        list_users_id, dict_users_list = get_list_extend_storage()
+        extend_storage = ''
+        if user_id in list_users_id:
+            extend_storage = '\n'.join(dict_users_list.get(user_id))
 
         return {
             'username': user_details.username,
@@ -122,5 +190,5 @@ class UserIdentificationDetails(RdmPermissionMixin, GuidView):
             'remaining': remaining_quota,
             'remaining_value': remaining_abbr[0],
             'remaining_abbr': remaining_abbr[1],
-            'extended_storage': check_extended_storage(user_details),
+            'extended_storage': extend_storage,
         }

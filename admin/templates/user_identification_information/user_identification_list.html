@@ -128,6 +128,7 @@
   {% blocktrans %}{{ institution_name }}{% endblocktrans %}
 </h3>
 {% endif %}
+{% include "util/pagination.html" with items=page status=status %}
 <div style="overflow-x: auto">
   <table class="table table-striped table-hover table-responsive">
     <thead>
@@ -176,7 +177,7 @@
         <td class="col">{{ user_data.affiliation.name }}</td>
         <td class="col">{{ user_data.last_login }}</td>
         <td class="col">{{ user_data.usage_value }} {{ user_data.usage_abbr }}</td>
-        <td class="col">{{ user_data.extended_storage }}</td>
+        <td class="col">{{ user_data.extended_storage|linebreaks }}</td>
       </tr>
       {% endfor %}
     </tbody>
