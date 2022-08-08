@@ -29,7 +29,7 @@ class DataCiteClient(AbstractIdentifierClient):
             prefix=getattr(node.provider, 'doi_prefix', None) or settings.DATACITE_PREFIX
         )
 
-    def build_metadata(self, node):
+    def build_metadata(self, node, as_xml=True):
         """Return the formatted datacite metadata XML as a string.
          """
         non_bib_contributors = node.contributors.filter(
@@ -93,15 +93,9 @@ class DataCiteClient(AbstractIdentifierClient):
             ]
         }
 
-        article_doi = node.article_doi
-        if article_doi:
-            data['relatedIdentifiers'] = [
-                {
-                    'relatedIdentifier': article_doi,
-                    'relatedIdentifierType': 'DOI',
-                    'relationType': 'IsSupplementTo'
-                }
-            ]
+        related_identifiers = _format_related_identifiers(node)
+        if related_identifiers:
+            data['relatedIdentifiers'] = _format_related_identifiers(node)
 
         if node.description:
             data['descriptions'] = [{
@@ -120,6 +114,9 @@ class DataCiteClient(AbstractIdentifierClient):
         # Validate dictionary
         assert schema43.validate(data)
 
+        if not as_xml:
+            return data
+
         # Generate DataCite XML from dictionary.
         return schema43.tostring(data)
 
@@ -134,15 +131,15 @@ class DataCiteClient(AbstractIdentifierClient):
 
     def create_identifier(self, node, category):
         if category == 'doi':
+            metadata = self.build_metadata(node)
             if settings.DATACITE_ENABLED:
-                metadata = self.build_metadata(node)
                 resp = self._client.metadata_post(metadata)
                 # Typical response: 'OK (10.70102/FK2osf.io/cq695)' to doi 10.70102/FK2osf.io/cq695
                 doi = re.match(r'OK \((?P<doi>[a-zA-Z0-9 .\/]{0,})\)', resp).groupdict()['doi']
                 self._client.doi_post(doi, node.absolute_url)
-                return {'doi': doi}
+                return {'doi': doi, 'metadata': metadata}
             logger.info('TEST ENV: DOI built but not minted')
-            return {'doi': self.build_doi(node)}
+            return {'doi': self.build_doi(node), 'metadata': metadata}
         else:
             raise NotImplementedError('Creating an identifier with category {} is not supported'.format(category))
 
@@ -156,3 +153,28 @@ class DataCiteClient(AbstractIdentifierClient):
                 raise NotImplementedError('Updating metadata not supported for {}'.format(category))
         else:
             return self.create_identifier(node, category)
+
+
+def _format_related_identifiers(node):
+    from osf.models import OutcomeArtifact
+
+    related_identifiers = []
+    if node.type == 'osf.registration':
+        related_identifiers = [
+            {
+                'relatedIdentifier': artifact.pid,
+                'relatedIdentifierType': 'DOI',
+                'relationType': 'IsSupplementedBy',
+            }
+            for artifact in OutcomeArtifact.objects.for_registration(node)
+        ]
+
+    if node.article_doi:
+        related_identifiers.append(
+            {
+                'relatedIdentifier': node.article_doi,
+                'relatedIdentifierType': 'DOI',
+                'relationType': 'IsSupplementTo'
+            }
+        )
+    return related_identifiers

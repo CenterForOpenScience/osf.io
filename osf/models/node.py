@@ -1256,7 +1256,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         # Update existing identifiers
         if self.get_identifier('doi'):
-            enqueue_task(update_doi_metadata_on_change.s(self._id))
+            update_doi_metadata_on_change.s(self._id)
         elif self.is_registration:
             doi = self.request_identifier('doi')['doi']
             self.set_identifier_value('doi', doi)

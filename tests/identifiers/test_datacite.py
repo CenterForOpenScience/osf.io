@@ -6,15 +6,15 @@ import responses
 from datacite import schema40
 from tests.base import OsfTestCase
 
-
 from framework.auth import Auth
 
-from website.identifiers.utils import request_identifiers
-
+from osf.models import Outcome
+from osf.utils.outcomes import ArtifactTypes
+from osf_tests.factories import AuthUserFactory, IdentifierFactory, RegistrationFactory
 from tests.test_addons import assert_urls_equal
-from osf_tests.factories import AuthUserFactory, RegistrationFactory
 from website import settings
 from website.identifiers.clients import DataCiteClient
+from website.identifiers.utils import request_identifiers
 
 
 @pytest.mark.django_db
@@ -114,6 +114,41 @@ class TestDataCiteClient:
 
         assert f'<contributorName nameType="Personal">{invisible_contrib.fullname}</contributorName>' in metadata_xml
         assert f'<creatorName nameType="Personal">{invisible_contrib.fullname}</creatorName>' not in metadata_xml
+
+    def test_datacite_format_related_resources(self, datacite_client):
+        registration = RegistrationFactory(is_public=True, has_doi=True)
+        registration.article_doi = 'publication'
+        outcome = Outcome.objects.for_registration(registration, create=True)
+        data_artifact = outcome.artifact_metadata.create(
+            identifier=IdentifierFactory(category='doi'), artifact_type=ArtifactTypes.DATA
+        )
+        materials_artifact = outcome.artifact_metadata.create(
+            identifier=IdentifierFactory(category='doi'), artifact_type=ArtifactTypes.MATERIALS
+        )
+
+        metadata_dict = datacite_client.build_metadata(registration, as_xml=False)
+
+        # Artifact entries first, ordered by type, followed by article doi
+        expected_relationships = [
+            {
+                'relatedIdentifier': data_artifact.identifier.value,
+                'relatedIdentifierType': 'DOI',
+                'relationType': 'IsSupplementedBy',
+            },
+            {
+                'relatedIdentifier': materials_artifact.identifier.value,
+                'relatedIdentifierType': 'DOI',
+                'relationType': 'IsSupplementedBy',
+            },
+            {
+                'relatedIdentifier': 'publication',
+                'relatedIdentifierType': 'DOI',
+                'relationType': 'IsSupplementTo',
+            },
+        ]
+        assert metadata_dict['relatedIdentifiers'] == expected_relationships
+
+
 
 
 
