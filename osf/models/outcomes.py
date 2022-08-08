@@ -83,7 +83,7 @@ class Outcome(ObjectIDMixin, EditableFieldsMixin, BaseModel):
 
     def artifact_updated(self, action, artifact, api_request, **log_params):
         nodelog_params = {'artifact_id': artifact._id, **log_params}
-        self.primary_osf_resource.associated_resource_updated(
+        self.primary_osf_resource.related_resource_updated(
             log_action=NODE_LOGS_FOR_OUTCOME_ACTION.get(action),
             api_request=api_request,
             **nodelog_params,
