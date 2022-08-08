@@ -315,13 +315,13 @@
             </a>
           {% endif %}
         </td>
-        <td class="col">{{ user_data.eppn }}</td>
+        <td class="col">{{ user.eppn }}</td>
         <td class="col">{{ user_data.fullname }}</td>
         <td class="col">{{ user_data.email }}</td>
-        <td class="col">{{ user_data.affiliation.name }}</td>
+        <td class="col">{{ user_data.affiliation }}</td>
         <td class="col">{{ user_data.last_login }}</td>
         <td class="col">{{ user_data.usage_value }} {{ user_data.usage_abbr }}</td>
-        <td class="col">{{ user_data.extended_storage }}</td>
+        <td class="col">{{ user_data.extended_storage|linebreaks }}</td>
       </tr>
       {% endfor %}
     </tbody>

@@ -1,14 +1,16 @@
 import csv
+from operator import itemgetter
+
+import numpy as np
+from admin.base.views import GuidView
+from api.base import settings as api_settings
 from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.db import connection
 from django.db.models import Q
 from django.http import HttpResponse
 from django.views.generic import ListView
-from operator import itemgetter
-
-from admin.base.views import GuidView
-from api.base import settings as api_settings
+from osf.models import ExternalAccount
 from osf.models import OSFUser, UserQuota, Email
-from osf.models.files import BaseFileNode, FileVersion, BaseFileVersionsThrough
 from website.util import quota
 
 
@@ -18,27 +20,70 @@ def custom_size_abbreviation(size, abbr, *kwargs):
     return size, abbr
 
 
-def check_extended_storage(user):
-    fileVersion = FileVersion.objects.filter(creator=user).values_list('id', flat=True)
-    base = BaseFileVersionsThrough.objects.filter(fileversion_id__in=fileVersion).values_list('basefilenode_id',
-                                                                                              flat=True)
-    check_provider = set(BaseFileNode.objects.filter(id__in=base).values_list('provider', flat=True))
+def get_list_extend_storage():
+    values = ExternalAccount.objects.values_list('provider', 'provider_name')
+    get_provider, get_provider_name = map(list, zip(*values))
+    dict_users_list = {}
+    storage_branch_name = None
+    cursor = connection.cursor()
 
-    if len(check_provider) > 1:
-        return True
-    elif len(check_provider) == 1:
-        for provider in check_provider:
-            if provider in 'osfstorage':
-                return False
+    for j in range(len(get_provider)):
+        provider_value = get_provider[j]
+        get_provider_name_value = get_provider_name[j]
+        if any(s in provider_value.lower() for s in
+               ('s3', 's3compat', 's3compatb3', 'azureblobstorage', 'box',
+                'figshare', 'onedrivebusiness', 'swift')):
+            storage_branch_name = 'folder_name'
+        elif any(s in provider_value.lower() for s in ('bitbucket', 'github',
+                                                       'gitlab')):
+            storage_branch_name = 'repo'
+        elif any(s in provider_value.lower() for s in ('googledrive',
+                                                       'onedrive', 'iqbrims')):
+            storage_branch_name = 'folder_path'
+        elif any(s in provider_value.lower() for s in ('dropbox')):
+            storage_branch_name = 'folder'
+        elif any(s in provider_value.lower() for s in ('weko')):
+            storage_branch_name = 'index_title'
+        elif any(s in provider_value.lower() for s in ('mendeley', 'zotero')):
+            storage_branch_name = 'list_id'
+        elif any(s in provider_value.lower() for s in ('owncloud')):
+            storage_branch_name = 'folder_id'
+        elif any(s in provider_value.lower() for s in ('dataverse')):
+            storage_branch_name = 'dataverse'
+
+        cursor.execute(
+            """
+            select addons_%s_nodesettings.%s, addons_%s_usersettings.owner_id as user_id
+            from addons_%s_usersettings inner join addons_%s_nodesettings
+            on addons_%s_nodesettings.user_settings_id = addons_%s_usersettings.id
+            where addons_%s_usersettings.id in(
+                select addons_%s_usersettings.id from osf_osfuser inner join addons_%s_usersettings
+                on osf_osfuser.id = addons_%s_usersettings.owner_id)
+            """ % (
+                provider_value, storage_branch_name, provider_value, provider_value, provider_value, provider_value,
+                provider_value, provider_value, provider_value, provider_value, provider_value)
+        )
+        result = np.asarray(cursor.fetchall())
+        list_users_provider = result[:, 0]
+        list_users_id = result[:, 1]
+
+        for i in range(len(list_users_id)):
+            if list_users_id[i] not in dict_users_list:
+                dict_users_list[list_users_id[i]] = [
+                    list_users_provider[i] + '/' +
+                    get_provider_name_value if list_users_provider[i] is not None else '/' + get_provider_name_value]
             else:
-                return True
-    else:
-        return False
+                current_val = dict_users_list.get(list_users_id[i])
+                current_val.append(
+                    list_users_provider[i] + '/' +
+                    get_provider_name_value if list_users_provider[i] is not None else '/' + get_provider_name_value)
+                dict_users_list[list_users_id[i]] = current_val
+        return list_users_id, dict_users_list
 
 
 class UserIdentificationInformation(ListView):
 
-    def get_user_quota_info(self, user, storage_type):
+    def get_user_quota_info(self, user, storage_type, extend_storage=''):
         _, used_quota = quota.get_quota_info(user, storage_type)
         used_quota_abbr = custom_size_abbreviation(*quota.abbreviate_size(used_quota))
 
@@ -46,13 +91,13 @@ class UserIdentificationInformation(ListView):
             'id': user.guids.first()._id,
             'fullname': user.fullname,
             'eppn': user.eppn or '',
-            'affiliation': user.affiliated_institutions.first(),
+            'affiliation': user.affiliated_institutions.first().name if user.affiliated_institutions.first() else '',
             'email': user.emails.values_list('address', flat=True)[0] or '',
             'last_login': user.last_login or '',
             'usage': used_quota,
             'usage_value': used_quota_abbr[0],
             'usage_abbr': used_quota_abbr[1],
-            'extended_storage': check_extended_storage(user),
+            'extended_storage': extend_storage,
         }
 
     def get_queryset(self):
@@ -75,7 +120,6 @@ class UserIdentificationInformation(ListView):
         return direction
 
     def get_context_data(self, **kwargs):
-
         self.query_set = self.get_queryset()
         self.page_size = self.get_paginate_by(self.query_set)
         self.paginator, self.page, self.query_set, self.is_paginated = \
@@ -89,6 +133,16 @@ class UserIdentificationInformation(ListView):
         kwargs['order_by'] = self.get_order_by()
         kwargs['direction'] = self.get_direction()
         return super(UserIdentificationInformation, self).get_context_data(**kwargs)
+
+    def get_list_data(self, queryset, list_users_id=[], dict_users_list={}):
+        list_data = []
+        for user in queryset:
+            if user.id in list_users_id:
+                list_data.append(
+                    self.get_user_quota_info(user, UserQuota.NII_STORAGE, '\n'.join(dict_users_list.get(user.id))))
+            else:
+                list_data.append(self.get_user_quota_info(user, UserQuota.NII_STORAGE))
+        return list_data
 
 
 class UserIdentificationList(PermissionRequiredMixin, UserIdentificationInformation):
@@ -108,8 +162,12 @@ class UserIdentificationList(PermissionRequiredMixin, UserIdentificationInformat
                 queryset = OSFUser.objects.filter(affiliated_institutions=institution.id).order_by('id')
         else:
             queryset = OSFUser.objects.all().order_by('id')
+
+        list_users_id, dict_users_list = get_list_extend_storage()
+
         if not email and not guid and not name:
-            return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in queryset]
+            return self.get_list_data(queryset, list_users_id, dict_users_list)
+
         query_email = query_guid = query_name = None
         if email:
             existing_user_ids = list(Email.objects.filter(Q(address__exact=email)).values_list('user_id', flat=True))
@@ -126,11 +184,11 @@ class UserIdentificationList(PermissionRequiredMixin, UserIdentificationInformat
                                          Q(family_name__icontains=name))
 
         if query_email is not None and query_email.exists():
-            return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in query_email]
+            return self.get_list_data(query_email, list_users_id, dict_users_list)
         elif query_guid is not None and query_guid.exists():
-            return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in query_guid]
+            return self.get_list_data(query_guid, list_users_id, dict_users_list)
         elif query_name is not None and query_name.exists():
-            return [self.get_user_quota_info(user, UserQuota.NII_STORAGE) for user in query_name]
+            return self.get_list_data(query_name, list_users_id, dict_users_list)
         else:
             return []
 
@@ -143,6 +201,7 @@ class UserIdentificationDetails(PermissionRequiredMixin, GuidView):
 
     def get_object(self):
         user_details = OSFUser.load(self.kwargs.get('guid'))
+        user_id = int(user_details.id)
         max_quota, used_quota = quota.get_quota_info(user_details, UserQuota.NII_STORAGE)
         max_quota_bytes = max_quota * api_settings.SIZE_UNIT_GB
         remaining_quota = max_quota_bytes - used_quota
@@ -150,6 +209,11 @@ class UserIdentificationDetails(PermissionRequiredMixin, GuidView):
         used_quota_abbr = custom_size_abbreviation(*quota.abbreviate_size(used_quota))
         remaining_abbr = custom_size_abbreviation(*quota.abbreviate_size(remaining_quota))
         max_quota, _ = quota.get_quota_info(user_details, UserQuota.NII_STORAGE)
+
+        list_users_id, dict_users_list = get_list_extend_storage()
+        extend_storage = ''
+        if user_id in list_users_id:
+            extend_storage = '\n'.join(dict_users_list.get(user_id))
 
         return {
             'username': user_details.username,
@@ -171,7 +235,7 @@ class UserIdentificationDetails(PermissionRequiredMixin, GuidView):
             'remaining': remaining_quota,
             'remaining_value': remaining_abbr[0],
             'remaining_abbr': remaining_abbr[1],
-            'extended_storage': check_extended_storage(user_details),
+            'extended_storage': extend_storage,
         }
 
 
@@ -193,9 +257,13 @@ class ExportFileCSV(PermissionRequiredMixin, UserIdentificationInformation):
                 queryset = OSFUser.objects.filter(affiliated_institutions=institution.id).order_by('id')
         else:
             queryset = OSFUser.objects.all().order_by('id')
-        for user in queryset:
-            max_quota, used_quota = quota.get_quota_info(user, UserQuota.NII_STORAGE)
 
+        list_users_id, dict_users_list = get_list_extend_storage()
+        for user in queryset:
+            extend_storage = ''
+            max_quota, used_quota = quota.get_quota_info(user, UserQuota.NII_STORAGE)
+            if user.id in list_users_id:
+                extend_storage = '\n'.join(dict_users_list.get(user.id))
             writer.writerow([user.guids.first()._id,
                              user.eppn,
                              user.fullname,
@@ -203,5 +271,5 @@ class ExportFileCSV(PermissionRequiredMixin, UserIdentificationInformation):
                              user.affiliated_institutions.first().name if user.affiliated_institutions.first() else '',
                              user.last_login,
                              used_quota,
-                             check_extended_storage(user)])
+                             extend_storage])
         return response
