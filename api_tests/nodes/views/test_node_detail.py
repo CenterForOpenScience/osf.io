@@ -1421,7 +1421,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         )
         assert res.status_code == 200
 
-    @mock.patch('website.identifiers.tasks.update_doi_metadata_on_change')
+    @mock.patch('osf.models.node.update_doi_metadata_on_change')
     def test_set_node_private_updates_doi(
             self, mock_update_doi_metadata, app, user, project_public,
             url_public, make_node_payload):

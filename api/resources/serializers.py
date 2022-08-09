@@ -109,6 +109,7 @@ class ResourceSerializer(JSONAPISerializer):
                 new_description=updated_description,
                 new_artifact_type=updated_artifact_type,
                 new_pid_value=updated_pid_value,
+                api_request=self.context['request'],
             )
         except UnsupportedArtifactTypeError:
             current_type = ArtifactTypes(instance.artifact_type).name.lower()

@@ -867,9 +867,7 @@ class Registration(AbstractNode):
         if settings.SHARE_ENABLED:
             update_share(self)
         if not log_action:
-            print('hrmm')
             return
-        print('Updating')
 
         if api_request:  # Only log user-initiated changes
             self.add_log(

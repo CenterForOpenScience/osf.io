@@ -227,7 +227,8 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
         else:
             super().delete(**kwargs)
 
-        try:
-            identifier.delete()
-        except IdentifierHasReferencesError:
-            pass
+        if identifier:
+            try:
+                identifier.delete()
+            except IdentifierHasReferencesError:
+                pass
