@@ -85,6 +85,7 @@ msgstr "保存"
 #: github/templates/github_node_settings.mako:15
 #: gitlab/templates/gitlab_node_settings.mako:18
 #: gitlab/templates/gitlab_user_settings.mako:18
+#: googledrive/templates/googledrive_user_settings.mako:24
 #: nextcloud/templates/nextcloud_node_settings.mako:15
 #: nextcloud/templates/nextcloud_user_settings.mako:18
 #: owncloud/templates/owncloud_node_settings.mako:15
@@ -171,6 +172,7 @@ msgstr "<b>&ldquo;<span %(data_bind)s></span>&rdquo;</b>へ接続しますか？
 #: azureblobstorage/templates/azureblobstorage_user_settings.mako:12
 #: dataverse/templates/dataverse_user_settings.mako:12
 #: gitlab/templates/gitlab_user_settings.mako:12
+#: googledrive/templates/googledrive_user_settings.mako:17
 #: nextcloud/templates/nextcloud_user_settings.mako:12
 #: owncloud/templates/owncloud_user_settings.mako:12
 #: s3/templates/s3_user_settings.mako:12
@@ -187,6 +189,7 @@ msgstr "承認者：<em><span data-bind=\"text: name\"></span></em>"
 #: azureblobstorage/templates/azureblobstorage_user_settings.mako:32
 #: dataverse/templates/dataverse_user_settings.mako:31
 #: gitlab/templates/gitlab_user_settings.mako:31
+#: googledrive/templates/googledrive_user_settings.mako:38
 #: nextcloud/templates/nextcloud_user_settings.mako:31
 #: owncloud/templates/owncloud_user_settings.mako:31
 #: s3/templates/s3_user_settings.mako:32
@@ -563,6 +566,7 @@ msgstr "バケットを作成"
 msgid "Loading buckets..."
 msgstr "バケットをロード中..."
 
+#: googledrive/templates/googledrive_user_settings.mako:30
 #: s3/templates/s3_user_settings.mako:24
 #: s3compat/templates/s3compat_user_settings.mako:24
 #: swift/templates/swift_user_settings.mako:24
