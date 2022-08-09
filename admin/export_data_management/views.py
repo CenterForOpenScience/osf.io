@@ -5,7 +5,7 @@ from admin.base import settings
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from admin.export_data_management.tasks import test_celery_task
+from admin.export_data_management.tasks import pre_restore_export_data
 from celery.result import AsyncResult
 
 class ExportDataManagement(RdmPermissionMixin, ListView):
@@ -34,7 +34,7 @@ class ExportDataRestore(RdmPermissionMixin, APIView):
 
     def post(self, request, *args, **kwargs):
         destination_id = request.POST.get('destination_id', default='-1')
-        process = test_celery_task.delay()
+        process = pre_restore_export_data.delay(1, 1, destination_id)
         return Response({'task_id': process.task_id}, status=status.HTTP_200_OK)
 
         # process_status = restore_export_data(self, 2, 3, destination_id)
@@ -46,9 +46,13 @@ class ExportDataRestore(RdmPermissionMixin, APIView):
 
 class ExportDataRestoreTaskStatus(RdmPermissionMixin, APIView):
     def get(self, request, *args, **kwargs):
-        task_id = request.GET.get('task_id', default='-1')
-        task = AsyncResult(task_id)
+        # task_id = request.GET.get('task_id', default='-1')
+        # task = AsyncResult(task_id)
+        # response = {
+        #     'state': task.state,
+        # }
         response = {
-            'state': task.state,
+            'state': "SUCCESS",
+            'result': "Open Dialog",
         }
         return Response(response, status=status.HTTP_200_OK)

@@ -160,7 +160,7 @@
                             disabled
                             style="min-width: 90px; flex: initial;">Stop restoring
                     </button>
-                    <button type="button" class="btn btn-primary disabled"
+                    <button type="button" id="checkRestoreBtn" class="btn btn-primary disabled"
                             data-target="#checkRestoreData" data-toggle="modal"
                             style="min-width: 90px; flex: initial;">Check restore data
                     </button>
@@ -357,7 +357,7 @@
         </div>
     </div>
 
-    <div class="modal middle fade" id="restore" tabindex="-1" aria-labelledby="restoreLabel" aria-hidden="true">
+    <div class="modal middle fade" id="restore" tabindex="-1" data-backdrop="static" data-keyboard="false" aria-labelledby="restoreLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <!--<div class="modal-header">-->
@@ -371,8 +371,8 @@
                     </p>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    <a type="button" class="btn btn-primary" href="#">Restore</a>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="cancelRestore()">Close</button>
+                    <a type="button" class="btn btn-primary" href="javascript:void(0)" onclick="startRestore()">Restore</a>
                 </div>
             </div>
         </div>
@@ -445,18 +445,16 @@
             data: data
         }).done(function(response) {
             let task_id = response["task_id"];
-            console.log(task_id);
-            checkTaskStatus(task_id);
+            setTimeout(() => {
+                checkTaskStatus(task_id);
+            }, 1000);
         }).fail(function(jqXHR, textStatus, error) {
-            $("#restoreBtn").removeClass("disabled");
-            $("#stopRestoreBtn").addClass("disabled");
-            $("#restoreBtn").attr("disabled", false);
-            $("#stopRestoreBtn").attr("disabled", true);
+            cancelRestore();
         });
     }
 
     function checkTaskStatus(task_id){
-        let data = { task_id: task_id};
+        let data = { task_id: task_id };
         $.ajaxSetup({
             data: { csrfmiddlewaretoken: '{{ csrf_token }}' },
         });
@@ -466,16 +464,31 @@
             data: data
         }).done(function(response) {
             let state = response["state"];
-            console.log(state);
-            $("#restoreBtn").removeClass("disabled");
-            $("#stopRestoreBtn").addClass("disabled");
-            $("#restoreBtn").attr("disabled", false);
-            $("#stopRestoreBtn").attr("disabled", true);
+            let result = response["result"];
+            if (state === 'SUCCESS' && result === 'Open Dialog') {
+                // Open Dialog
+                $("#restore").modal('show');
+            } else {
+                cancelRestore();
+            }
         }).fail(function(jqXHR, textStatus, error) {
-            $("#restoreBtn").removeClass("disabled");
-            $("#stopRestoreBtn").addClass("disabled");
-            $("#restoreBtn").attr("disabled", false);
-            $("#stopRestoreBtn").attr("disabled", true);
+            cancelRestore();
         });
+    }
+
+    function cancelRestore() {
+        $("#restoreBtn").removeClass("disabled");
+        $("#stopRestoreBtn").addClass("disabled");
+        $("#restoreBtn").attr("disabled", false);
+        $("#stopRestoreBtn").attr("disabled", true);
+    }
+
+    function startRestore() {
+        $("#restore").modal('hide');
+        // Enable "Check export data" button, disable "Stop restoring" button
+        $("#checkRestoreBtn").removeClass("disabled");
+        $("#stopRestoreBtn").addClass("disabled");
+        $("#checkRestoreBtn").attr("disabled", false);
+        $("#stopRestoreBtn").attr("disabled", true);
     }
 </script>
