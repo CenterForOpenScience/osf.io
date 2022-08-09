@@ -333,3 +333,51 @@ class TestOutcomeArtifact:
 
         test_artifact.delete()
         assert Identifier.objects.filter(value=TEST_EXTERNAL_DOI).exists()
+
+    @mock.patch('osf.models.registrations.update_doi_metadata_on_change')
+    def test_doi_update__updated_on_finalize(self, mock_update_doi, outcome, project_doi):
+        test_artifact = outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.DATA, finalized=False
+        )
+        test_artifact.finalize()
+        mock_update_doi.assert_called_with(guid=outcome.primary_osf_resource._id)
+
+    @mock.patch('osf.models.registrations.update_doi_metadata_on_change')
+    def test_doi_update__updated_on_pid_update_if_finalized(self, mock_update_doi, outcome, project_doi):
+        test_artifact = outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.DATA, finalized=True
+        )
+        test_artifact.update(new_pid_value='something')
+        mock_update_doi.assert_called_with(guid=outcome.primary_osf_resource._id)
+
+    @mock.patch('osf.models.registrations.update_doi_metadata_on_change')
+    def test_doi_update__not_updated_on_non_pid_update(self, mock_update_doi, outcome, project_doi):
+        test_artifact = outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.DATA, finalized=True
+        )
+        test_artifact.update(new_description='new', new_artifact_type=ArtifactTypes.MATERIALS)
+        mock_update_doi.assert_not_called()
+
+    @mock.patch('osf.models.registrations.update_doi_metadata_on_change')
+    def test_doi_update__not_updated_on_pid_update_if_not_finalized(self, mock_update_doi, outcome, project_doi):
+        test_artifact = outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.DATA, finalized=False
+        )
+        test_artifact.update(new_pid_value='something')
+        mock_update_doi.assert_not_called()
+
+    @mock.patch('osf.models.registrations.update_doi_metadata_on_change')
+    def test_doi_update__updated_on_delete_if_finalized(self, mock_update_doi, outcome, project_doi):
+        test_artifact = outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.DATA, finalized=True
+        )
+        test_artifact.delete()
+        mock_update_doi.assert_called_with(guid=outcome.primary_osf_resource._id)
+
+    @mock.patch('osf.models.registrations.update_doi_metadata_on_change')
+    def test_doi_update__not_updated_on_delete_if_not_finalized(self, mock_update_doi, outcome, project_doi):
+        test_artifact = outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.DATA, finalized=False
+        )
+        test_artifact.delete()
+        mock_update_doi.assert_not_called()
