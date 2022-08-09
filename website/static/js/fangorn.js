@@ -1083,7 +1083,7 @@ function _uploadEvent(event, item, col) {
     } catch (e) {
         window.event.cancelBubble = true;
     }
-    self.dropzone.hiddenFileInput.removeAttribute("webkitdirectory");
+    self.dropzone.hiddenFileInput.removeAttribute('webkitdirectory');
     self.dropzoneItemCache = item;
     self.dropzone.hiddenFileInput.click();
     if (!item.open) {
@@ -1983,7 +1983,7 @@ var FGSpan = {
         var value = args.value || '';
         return m('span',{
             'innerHTML': value,
-            style: "margin: 8px;",
+            style: 'margin: 8px;',
             className: extraCSS,
         });
     }
@@ -2023,45 +2023,46 @@ var FGItemButtons = {
             if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions && item.data.permissions.edit) {
                 rowButtons.push(
                     m.component(FGButton, {
-                        onclick: async function (event) {
+                        onclick: async function(event){
                              // clear cache of input before upload new folder
-                             if (tb.dropzone.hiddenFileInput)
+                             if(tb.dropzone.hiddenFileInput)
                                  document.body.removeChild(tb.dropzone.hiddenFileInput);
-                             tb.dropzone.hiddenFileInput = document.createElement("input");
-                             tb.dropzone.hiddenFileInput.setAttribute("type", "file");
-                             if ((tb.dropzone.options.maxFiles == null) || tb.dropzone.options.maxFiles > 1) {
-                                 tb.dropzone.hiddenFileInput.setAttribute("multiple", "multiple");
+                             tb.dropzone.hiddenFileInput = document.createElement('input');
+                             tb.dropzone.hiddenFileInput.setAttribute('type', 'file');
+                             if((tb.dropzone.options.maxFiles == null) || tb.dropzone.options.maxFiles > 1) {
+                                 tb.dropzone.hiddenFileInput.setAttribute('multiple', 'multiple');
                              }
-                             if (tb.dropzone.options.acceptedFiles != null) {
-                                 tb.dropzone.hiddenFileInput.setAttribute("accept", tb.dropzone.options.acceptedFiles);
+                             if(tb.dropzone.options.acceptedFiles != null){
+                                 tb.dropzone.hiddenFileInput.setAttribute('accept', tb.dropzone.options.acceptedFiles);
                              }
-                             tb.dropzone.hiddenFileInput.style.visibility = "hidden";
-                             tb.dropzone.hiddenFileInput.style.position = "absolute";
-                             tb.dropzone.hiddenFileInput.style.top = "0";
-                             tb.dropzone.hiddenFileInput.style.left = "0";
-                             tb.dropzone.hiddenFileInput.style.height = "0";
-                             tb.dropzone.hiddenFileInput.style.width = "0";
+                             tb.dropzone.hiddenFileInput.style.visibility = 'hidden';
+                             tb.dropzone.hiddenFileInput.style.position = 'absolute';
+                             tb.dropzone.hiddenFileInput.style.top = '0';
+                             tb.dropzone.hiddenFileInput.style.left = '0';
+                             tb.dropzone.hiddenFileInput.style.height = '0';
+                             tb.dropzone.hiddenFileInput.style.width = '0';
                              document.body.appendChild(tb.dropzone.hiddenFileInput);
                              try {
                                  event.stopPropagation();
                              } catch (e) {
                                  window.event.cancelBubble = true;
                              }
-                             tb.dropzone.hiddenFileInput.setAttribute("webkitdirectory", "true");
+                             tb.dropzone.hiddenFileInput.setAttribute('webkitdirectory', 'true');
                              tb.dropzone.hiddenFileInput.click();
                              if(!item.open)
                                  tb.updateFolder(null, item);
                              var parent = tb.multiselected()[0];
                              var root_parent = tb.multiselected()[0];
                              var files = [];
-                             tb.dropzone.hiddenFileInput.addEventListener("change", async (event) => {
+                             var total_files_size = 0;
+                             tb.dropzone.hiddenFileInput.addEventListener('change', async (event) => {
                                  files = tb.dropzone.hiddenFileInput.files;
-                                 var total_files_size = 0;
+                                 total_files_size = 0;
                                  if(files.length === 0)
                                      mode(toolbarModes.UPLOADFOLDEREMPTY);   
                                  else{
-                                    for (var _i = 0; _i < files.length; _i++)
-                                        total_files_size += files[_i].size;
+                                    for (var i = 0; i < files.length; i++)
+                                        total_files_size += files[i].size;
                                     parent.open = true;
                                     total_files_size = parseFloat(total_files_size).toFixed(2);
                                     var quota = null;
@@ -2071,7 +2072,7 @@ var FGItemButtons = {
                                             method: 'GET',
                                             url: item.data.nodeApiUrl + 'get_creator_quota/',
                                         });
-                                        if (quota.responseJSON){
+                                        if(quota.responseJSON){
                                             quota = quota.responseJSON;
                                             if (parseFloat(quota.used) + parseFloat(total_files_size) > quota.max)
                                                 mode(toolbarModes.UPLOADFOLDERCANCLE);
@@ -2111,7 +2112,7 @@ var FGItemButtons = {
                                                             var extra = {};
                                                             var path = parent.data.path || '/';
                                                             var options = {name: val, kind: 'folder', waterbutlerURL: parent.data.waterbutlerURL};
-                                                            if ((parent.data.provider === 'github') || (parent.data.provider === 'gitlab')) {
+                                                            if((parent.data.provider === 'github') || (parent.data.provider === 'gitlab')){
                                                                 extra.branch = parent.data.branch;
                                                                 options.branch = parent.data.branch;
                                                             }
