@@ -196,8 +196,11 @@ class TestDOICreation:
         assert not registration.get_identifier(category='doi')
 
         registration.embargo.accept()
+        identifier = registration.get_identifier(category='doi')
+
         registration.terminate_embargo()
-        assert registration.get_identifier_value(category='doi')
+        identifier.refresh_from_db()
+        assert identifier.value
 
     @pytest.mark.parametrize('embargoed', [True, False])
     def test_moderated_sanction__no_identifier_created_until_moderator_approval(self, embargoed):
@@ -216,9 +219,11 @@ class TestDOICreation:
         with mock.patch('osf.models.node.AbstractNode.update_search'):
             registration.sanction.accept(user=moderator)
         assert registration.get_identifier(category='doi')
+        # No value should be set if the registration was embargoed
+        assert bool(registration.get_identifier_value(category='doi')) != embargoed
 
     @pytest.mark.parametrize('embargoed', [True, False])
-    def test_nested_registration_mints_identifier(self, embargoed):
+    def test_nested_registration__identifier_created_on_approval(self, embargoed):
         registration = self.make_test_registration(embargoed=embargoed, moderated=False)
 
         child_project = factories.ProjectFactory(parent=registration.registered_from)
@@ -233,3 +238,21 @@ class TestDOICreation:
         registration.sanction.accept()
         assert child_registration.get_identifier(category='doi')
         assert grandchild_registration.get_identifier(category='doi')
+        # No value should be set if the registrations were embargoed
+        assert bool(child_registration.get_identifier_value(category='doi')) != embargoed
+        assert bool(child_registration.get_identifier_value(category='doi')) != embargoed
+
+    def test_nested_registration__embargoed_registration_gets_doi_on_termination(self):
+        registration = self.make_test_registration(embargoed=True, moderated=False)
+
+        child_project = factories.ProjectFactory(parent=registration.registered_from)
+        grandchild_project = factories.ProjectFactory(parent=child_project)
+
+        child_registration = factories.RegistrationFactory(parent=registration, project=child_project)
+        grandchild_registration = factories.RegistrationFactory(parent=child_registration, project=grandchild_project)
+
+        registration.embargo.accept()
+        registration.terminate_embargo()
+
+        assert child_registration.get_identifier_value('doi')
+        assert grandchild_registration.get_identifier_value('doi')
