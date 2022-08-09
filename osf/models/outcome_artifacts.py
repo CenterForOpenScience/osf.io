@@ -197,13 +197,12 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
         self.finalized = True
         self.save()
 
-        if api_request:
-            self.outcome.artifact_updated(
-                action=OutcomeActions.ADD,
-                artifact=self,
-                api_request=api_request,
-                new_identifier=self.identifier.value
-            )
+        self.outcome.artifact_updated(
+            action=OutcomeActions.ADD,
+            artifact=self,
+            api_request=api_request,
+            new_identifier=self.identifier.value
+        )
 
     def delete(self, api_request=None, **kwargs):
         '''Intercept `delete` behavior on the model instance and handles callbacks.
@@ -217,15 +216,14 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
         '''
         identifier = self.identifier
         if self.finalized:
-            if api_request:
-                self.outcome.artifact_updated(
-                    action=OutcomeActions.REMOVE,
-                    artifact=self,
-                    api_request=api_request,
-                    obsolete_identifier=identifier.value
-                )
             self.deleted = timezone.now()
             self.save()
+            self.outcome.artifact_updated(
+                action=OutcomeActions.REMOVE,
+                artifact=self,
+                api_request=api_request,
+                obsolete_identifier=identifier.value
+            )
         else:
             super().delete(**kwargs)
 

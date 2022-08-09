@@ -867,14 +867,18 @@ class Registration(AbstractNode):
         if settings.SHARE_ENABLED:
             update_share(self)
         if not log_action:
+            print('hrmm')
             return
+        print('Updating')
 
-        self.add_log(
-            action=log_action,
-            params=log_params,
-            auth=None,  # Grabbed from request
-            request=api_request,
-        )
+        if api_request:  # Only log user-initiated changes
+            self.add_log(
+                action=log_action,
+                params=log_params,
+                auth=None,  # Grabbed from request
+                request=api_request,
+            )
+
         update_doi_metadata_on_change(guid=self._id)
 
     class Meta:
