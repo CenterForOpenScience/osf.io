@@ -104,6 +104,7 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
         ]
         ordering = ['artifact_type', 'title']
 
+    @transaction.atomic
     def update(
         self,
         new_description=None,
@@ -129,6 +130,17 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
             self._update_identifier(new_pid_value, pid_type, api_request)
 
         if self.finalized:
+            if OutcomeArtifact.objects.filter(
+                outcome=self.outcome,
+                identifier=self.identifier,
+                artifact_type=self.artifact_type,
+                finalized=True,
+                deleted__isnull=True,
+            ).exclude(
+                id=self.id
+            ).exists():
+                raise IntegrityError()
+
             self.outcome.artifact_updated(
                 artifact=self,
                 action=OutcomeActions.UPDATE if new_pid_value is not None else None,
@@ -136,12 +148,13 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
                 **log_params,
             )
 
-    @transaction.atomic
     def _update_identifier(self, new_pid_value, pid_type='doi', api_request=None):
         '''Changes the linked Identifer to one matching the new pid_value and handles callbacks.
 
         If `finalized` is True, will also log the change on the parent Outcome if invoked via API.
         Will attempt to delete the previous identifier to avoid orphaned entries.
+
+        Should only be called from within `update` to ensure atomicity
 
         Parameters:
         new_pid_value: The string value of the new PID
@@ -189,10 +202,7 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
             finalized=True,
             deleted__isnull=True,
         ).exists():
-            raise IntegrityError(
-                f'Finalized OutcomeArtifact with PID {self.identifier.value} and artifact_type '
-                f'{self.artifact_type} already exists on Outcome with ID [{self.outcome._id}].'
-            )
+            raise IntegrityError()
 
         self.finalized = True
         self.save()

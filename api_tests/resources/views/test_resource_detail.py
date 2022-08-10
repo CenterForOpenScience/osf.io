@@ -476,16 +476,24 @@ class TestResourceDetailPATCHBehavior:
         assert test_artifact.identifier.value == original_identifier.value
         assert not test_artifact.finalized
 
-    def test_patch__finalized__reraises_integrity_error_as_400(self, app):
+    @pytest.mark.parametrize('previously_finalized', [True, False])
+    def test_patch__finalized__reraises_integrity_error_as_400(self, app, previously_finalized):
         test_artifact, test_auth, _ = configure_test_preconditions()
-        OutcomeArtifact.objects.create(
+        test_artifact.finalized = previously_finalized
+        test_artifact.save()
+
+        duplicate_artifact = OutcomeArtifact.objects.create(
             outcome=test_artifact.outcome,
             identifier=test_artifact.identifier,
-            artifact_type=test_artifact.artifact_type,
+            artifact_type=ArtifactTypes.ANALYTIC_CODE,
             finalized=True
         )
 
-        payload = make_patch_payload(test_artifact, is_finalized=True)
+        payload = make_patch_payload(
+            test_artifact,
+            new_resource_type=duplicate_artifact.artifact_type,
+            is_finalized=True
+        )
         resp = app.patch_json_api(make_api_url(test_artifact), payload, auth=test_auth, expect_errors=True)
 
         assert resp.status_code == 400
