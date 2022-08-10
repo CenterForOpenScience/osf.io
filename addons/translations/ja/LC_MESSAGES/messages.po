@@ -34,6 +34,7 @@ msgstr "アカウントキー"
 #: azureblobstorage/templates/azureblobstorage_node_settings.mako:77
 #: dataverse/templates/dataverse_credentials_modal.mako:75
 #: gitlab/templates/gitlab_credentials_modal.mako:55
+#: googledrive/templates/googledrive_node_settings.mako:80
 #: jupyterhub/templates/jupyterhub_node_settings.mako:99
 #: nextcloud/templates/nextcloud_credentials_modal.mako:71
 #: nextcloud/templates/nextcloud_node_settings.mako:72
@@ -60,6 +61,7 @@ msgstr "キャンセル"
 #: github/templates/github_node_settings.mako:54
 #: gitlab/templates/gitlab_credentials_modal.mako:57
 #: gitlab/templates/gitlab_node_settings.mako:64
+#: googledrive/templates/googledrive_node_settings.mako:82
 #: jupyterhub/templates/jupyterhub_node_settings.mako:18
 #: nextcloud/templates/nextcloud_credentials_modal.mako:74
 #: nextcloud/templates/nextcloud_node_settings.mako:74
@@ -85,6 +87,7 @@ msgstr "保存"
 #: github/templates/github_node_settings.mako:15
 #: gitlab/templates/gitlab_node_settings.mako:18
 #: gitlab/templates/gitlab_user_settings.mako:18
+#: googledrive/templates/googledrive_node_settings.mako:10
 #: googledrive/templates/googledrive_user_settings.mako:24
 #: nextcloud/templates/nextcloud_node_settings.mako:15
 #: nextcloud/templates/nextcloud_user_settings.mako:18
@@ -106,6 +109,7 @@ msgstr "アカウントを切断"
 #: dataverse/templates/dataverse_node_settings.mako:22
 #: github/templates/github_node_settings.mako:21
 #: gitlab/templates/gitlab_node_settings.mako:24
+#: googledrive/templates/googledrive_node_settings.mako:17
 #: nextcloud/templates/nextcloud_node_settings.mako:22
 #: owncloud/templates/owncloud_node_settings.mako:22
 #: s3/templates/s3_node_settings.mako:21
@@ -116,6 +120,7 @@ msgstr "アカウントを切断"
 msgid "Import Account from Profile"
 msgstr "プロフィールからアカウントをインポート"
 
+#: googledrive/templates/googledrive_node_settings.mako:24
 #: azureblobstorage/templates/azureblobstorage_node_settings.mako:28
 #: s3/templates/s3_node_settings.mako:28
 #: s3compat/templates/s3compat_node_settings.mako:28
@@ -139,6 +144,7 @@ msgstr "アカウントを接続"
 #: bitbucket/templates/bitbucket_node_settings.mako:65
 #: github/templates/github_node_settings.mako:62
 #: gitlab/templates/gitlab_node_settings.mako:71
+#: googledrive/templates/googledrive_node_settings.mako:54
 #: owncloud/templates/owncloud_node_settings.mako:47
 #: s3/templates/s3_node_settings.mako:50
 #: s3compat/templates/s3compat_node_settings.mako:50
@@ -199,6 +205,7 @@ msgstr "承認者：<em><span data-bind=\"text: name\"></span></em>"
 msgid "Private project"
 msgstr "非公開プロジェクト"
 
+#: googledrive/templates/googledrive_node_settings.mako:38
 #: bitbucket/templates/bitbucket_node_settings.mako:25
 #: github/templates/github_node_settings.mako:25
 #: gitlab/templates/gitlab_node_settings.mako:28
@@ -478,6 +485,7 @@ msgstr ""
 msgid "Change"
 msgstr "変更"
 
+#: googledrive/templates/googledrive_node_settings.mako:66
 #: nextcloud/templates/nextcloud_node_settings.mako:58
 #: owncloud/templates/owncloud_node_settings.mako:58
 #: zotero/templates/zotero_node_settings.mako:113
@@ -530,6 +538,7 @@ msgstr ""
 "これらの資格情報は暗号化されます。 ただし、<a "
 "%(href_target)s>デバイス（またはアプリ）パスワード</a>の使用を<strong>強くお勧め</strong>します。"
 
+#: googledrive/templates/googledrive_node_settings.mako:49
 #: owncloud/templates/owncloud_node_settings.mako:42
 msgid "Current Folder:"
 msgstr "現在のフォルダ"
