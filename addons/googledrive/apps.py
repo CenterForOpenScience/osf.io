@@ -1,7 +1,12 @@
+import os
+
 from addons.base.apps import BaseAddonAppConfig, generic_root_folder
 from addons.googledrive.settings import MAX_UPLOAD_SIZE
 
 googledrive_root_folder = generic_root_folder('googledrive')
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+USER_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'googledrive_user_settings.mako')
 
 class GoogleDriveAddonConfig(BaseAddonAppConfig):
 
@@ -14,6 +19,7 @@ class GoogleDriveAddonConfig(BaseAddonAppConfig):
     categories = ['storage']
     has_hgrid_files = True
     max_file_size = MAX_UPLOAD_SIZE
+    user_settings_template = USER_SETTINGS_TEMPLATE
 
     @property
     def get_hgrid_data(self):
