@@ -1590,6 +1590,18 @@ class DraftRegistrationLegacySerializer(JSONAPISerializer):
     def create(self, validated_data):
         initiator = get_user_auth(self.context['request']).user
         node = self.get_node(validated_data)
+        branched_from_guid = self.context['request'].data.get('branched_from')
+        if not node and branched_from_guid:
+            node = get_object_or_error(Node, branched_from_guid, self.context['request'])
+            if not node.has_permission(initiator, 'write'):
+                raise exceptions.NotFound()
+
+        if node and node.is_deleted:
+            from api.base.exceptions import Gone
+            raise Gone(detail='The requested node is no longer available.')
+
+        if node and not node.has_permission(initiator, 'write'):
+            raise exceptions.PermissionDenied()
         # Old workflow - deeply nested
         metadata = validated_data.pop('registration_metadata', None)
         registration_responses = validated_data.pop('registration_responses', None)

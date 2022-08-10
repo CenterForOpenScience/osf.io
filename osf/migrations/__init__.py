@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
+import json
+
 import logging
 
 from django.apps import apps
@@ -7,7 +9,6 @@ from django.core.management import call_command
 from django.db.utils import ProgrammingError
 
 from addons.osfstorage.settings import DEFAULT_REGION_ID, DEFAULT_REGION_NAME
-from api.base import settings as api_settings
 from osf.management.commands.manage_switch_flags import manage_waffle
 from osf.utils.migrations import ensure_schemas, map_schemas_to_schemablocks
 from website import settings as osf_settings
@@ -162,7 +163,7 @@ def update_waffle_flags(sender, verbosity=0, **kwargs):
 
 def create_cache_table(sender, verbosity=0, **kwargs):
     if getattr(sender, 'label', None) == 'osf':
-        call_command('createcachetable', tablename=api_settings.CACHES[api_settings.STORAGE_USAGE_CACHE_NAME]['LOCATION'])
+        call_command('createcachetable')
 
 
 def update_default_providers(sender, verbosity=0, **kwargs):
@@ -229,4 +230,20 @@ def ensure_default_storage_region():
             'waterbutler_settings': osfstorage_config.WATERBUTLER_SETTINGS,
             'waterbutler_url': osf_settings.WATERBUTLER_URL
         }
+    )
+
+
+def add_datacite_schema():
+    ''' Test use only '''
+    from osf.models import FileMetadataSchema
+    with open('osf/metadata/schemas/datacite.json') as f:
+        jsonschema = json.load(f)
+    _, created = FileMetadataSchema.objects.get_or_create(
+        _id='datacite',
+        schema_version=1,
+        defaults={
+            'name': 'datacite',
+            'schema': jsonschema
+        }
+
     )

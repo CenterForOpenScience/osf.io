@@ -8,7 +8,7 @@ from rest_framework.exceptions import APIException, AuthenticationFailed, ErrorD
 
 def get_resource_object_member(error_key, context):
     from api.base.serializers import RelationshipField
-    field = context['view'].serializer_class._declared_fields.get(error_key, None)
+    field = context['view'].get_serializer_class()._declared_fields.get(error_key, None)
     if field:
         return 'relationships' if isinstance(field, RelationshipField) else 'attributes'
     # If field cannot be found (where read/write operations have different serializers,

@@ -10,7 +10,7 @@ from osf.models import FileMetadataSchema, NodeLicense, NodeLog
 from osf_tests.factories import ProjectFactory, SubjectFactory, AuthUserFactory
 from osf.utils.permissions import READ
 from api_tests.utils import create_test_file
-
+from osf.migrations import add_datacite_schema
 
 @pytest.fixture()
 def node():
@@ -30,6 +30,10 @@ def inject_placeholder_doi(json_data):
 
 @pytest.mark.django_db
 class TestFileMetadataRecordSerializer:
+
+    @pytest.fixture(autouse=True)
+    def datacite_file_schema(self):
+        return add_datacite_schema()
 
     def test_record_created_post_save(self, node, osf_file):
         # check there's a record for every FileMetadataSchema
@@ -121,6 +125,10 @@ class TestFileMetadataRecordSerializer:
 
 @pytest.mark.django_db
 class TestFileMetadataRecord:
+
+    @pytest.fixture(autouse=True)
+    def datacite_file_schema(self):
+        return add_datacite_schema()
 
     @pytest.fixture()
     def initial_metadata(self):

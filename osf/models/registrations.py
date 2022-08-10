@@ -105,9 +105,7 @@ class Registration(AbstractNode):
     )
     registered_date = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
 
-    # This is a NullBooleanField because of inheritance issues with using a BooleanField
-    # TODO: Update to BooleanField(default=False, null=True) when Django is updated to >=2.1
-    external_registration = models.NullBooleanField(default=False)
+    external_registration = models.BooleanField(default=False, null=True)
     registered_user = models.ForeignKey(OSFUser,
                                         related_name='related_to',
                                         on_delete=models.SET_NULL,
@@ -139,7 +137,7 @@ class Registration(AbstractNode):
                                                     null=True, blank=True,
                                                     on_delete=models.SET_NULL)
     files_count = models.PositiveIntegerField(blank=True, null=True)
-    branched_from_node = models.NullBooleanField(blank=True, null=True)
+    branched_from_node = models.BooleanField(blank=True, null=True)
 
     moderation_state = models.CharField(
         max_length=30,
@@ -153,7 +151,7 @@ class Registration(AbstractNode):
         help_text='Where the archive.org data for the registration is stored'
     )
     # A dictionary of key: value pairs to store additional metadata defined by third-party sources
-    additional_metadata = DateTimeAwareJSONField(blank=True)
+    additional_metadata = DateTimeAwareJSONField(blank=True, null=True)
 
     @staticmethod
     def find_failed_registrations(days_stuck=None):
@@ -866,11 +864,6 @@ class Registration(AbstractNode):
         for children in Registration.objects.get_children(self, active=True, include_root=True):
             archive_to_ia(children)
 
-    class Meta:
-        # custom permissions for use in the OSF Admin App
-        permissions = (
-            ('view_registration', 'Can view registration details'),
-        )
 
 class DraftRegistrationLog(ObjectIDMixin, BaseModel):
     """ Simple log to show status changes for DraftRegistrations
@@ -961,9 +954,9 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
     provider = models.ForeignKey(
         'RegistrationProvider',
         related_name='draft_registrations',
-        null=False,
+        null=True,
         on_delete=models.CASCADE,
-        default=get_default_id,
+        default=None,
     )
 
     # Dictionary field mapping question id to a question's comments and answer
@@ -1477,7 +1470,9 @@ class DraftRegistrationGroupObjectPermission(GroupObjectPermissionBase):
 def create_django_groups_for_draft_registration(sender, instance, created, **kwargs):
     if created:
         instance.update_group_permissions()
-
+        if not instance.provider:
+            instance.provider = RegistrationProvider.get_default()
+            instance.save()
         initiator = instance.initiator
 
         if instance.branched_from.contributor_set.filter(user=initiator).exists():

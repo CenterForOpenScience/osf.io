@@ -100,7 +100,9 @@ class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
 
     # Overrides TestDraftRegistrationList
     def test_cannot_create_draft_errors(
-            self, app, user, project_public, payload, url_draft_registrations):
+            self, app, user, project_public, payload, url_draft_registrations, provider, metaschema_open_ended):
+        provider.schemas.add(metaschema_open_ended)
+
         #   test_cannot_create_draft_from_a_registration
         registration = RegistrationFactory(
             project=project_public, creator=user)
@@ -174,7 +176,8 @@ class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
             self, app, user_write_contrib,
             user_read_contrib, user_non_contrib,
             project_public, payload, group,
-            url_draft_registrations, group_mem):
+            url_draft_registrations, group_mem, metaschema_open_ended, provider):
+        provider.schemas.add(metaschema_open_ended)
 
         #   test_write_only_contributor_cannot_create_draft
         assert user_write_contrib in project_public.contributors.all()

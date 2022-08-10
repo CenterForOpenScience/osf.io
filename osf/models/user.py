@@ -1746,11 +1746,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         secret = secret or settings.SECRET_KEY
 
         try:
-            token = itsdangerous.Signer(secret).unsign(cookie)
+            token = itsdangerous.Signer(secret).unsign(cookie).decode()
         except itsdangerous.BadSignature:
             return None
 
-        user_session = Session.load(token)
+        user_session = Session.load(token.split('.')[0])
 
         if user_session is None:
             return None
@@ -1905,11 +1905,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         return groups or nodes or preprints
 
-    class Meta:
-        # custom permissions for use in the OSF Admin App
-        permissions = (
-            ('view_osfuser', 'Can view user details'),
-        )
 
 @receiver(post_save, sender=OSFUser)
 def add_default_user_addons(sender, instance, created, **kwargs):

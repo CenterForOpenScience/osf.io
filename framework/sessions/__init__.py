@@ -158,7 +158,7 @@ def before_request():
     cookie = request.cookies.get(settings.COOKIE_NAME)
     if cookie:
         try:
-            session_id = itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie)
+            session_id = itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie).decode()
             user_session = Session.load(session_id) or Session(_id=session_id)
         except itsdangerous.BadData:
             return

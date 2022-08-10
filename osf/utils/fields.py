@@ -1,6 +1,6 @@
 import jwe
+import json
 from django.db import models
-from django.contrib.postgres.fields.jsonb import JSONField
 from website import settings
 from osf.utils.functional import rapply
 
@@ -71,7 +71,7 @@ class EncryptedTextField(models.TextField):
     def to_python(self, value):
         return decrypt_string(value, prefix=self.prefix)
 
-    def from_db_value(self, value, expression, connection, context):
+    def from_db_value(self, value, expression, connection):
         return self.to_python(value)
 
 
@@ -83,7 +83,7 @@ class NonNaiveDateTimeField(models.DateTimeField):
         return value
 
 
-class EncryptedJSONField(JSONField):
+class EncryptedJSONField(models.JSONField):
     """
     Very similar to EncryptedTextField, but for postgresql's JSONField
     """
@@ -91,11 +91,11 @@ class EncryptedJSONField(JSONField):
 
     def get_prep_value(self, value, **kwargs):
         value = rapply(value, encrypt_string, prefix=self.prefix)
-        return super(EncryptedJSONField, self).get_prep_value(value, **kwargs)
+        return super().get_prep_value(value, **kwargs)
 
     def to_python(self, value):
         value = rapply(value, decrypt_string, prefix=self.prefix)
-        return super(EncryptedJSONField, self).to_python(value)
+        return super().to_python(json.loads(value or '{}'))
 
-    def from_db_value(self, value, expression, connection, context):
+    def from_db_value(self, value, expression, connection):
         return self.to_python(value)

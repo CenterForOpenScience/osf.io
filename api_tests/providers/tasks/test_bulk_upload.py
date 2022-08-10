@@ -8,6 +8,7 @@ from osf.exceptions import RegistrationBulkCreationContributorError, Registratio
 from osf.models import RegistrationBulkUploadJob, RegistrationBulkUploadRow, RegistrationProvider, RegistrationSchema
 from osf.models.registration_bulk_upload_job import JobState
 from osf.models.registration_bulk_upload_row import RegistrationBulkUploadContributors
+from osf.migrations import ensure_default_registration_provider
 from osf.registrations.utils import get_registration_provider_submissions_url
 from osf.utils.permissions import ADMIN, READ, WRITE
 
@@ -95,7 +96,8 @@ class TestBulkUploadTasks:
 
     @pytest.fixture()
     def provider(self, schema, subjects):
-        provider = RegistrationProvider.load('osf')
+        ensure_default_registration_provider()
+        provider = RegistrationProvider.get_default()
         provider.allow_bulk_uploads = True
         provider.schemas.add(schema)
         provider.subjects.add(*subjects)

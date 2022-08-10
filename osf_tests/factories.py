@@ -26,6 +26,7 @@ from website.settings import FAKE_EMAIL_NAME, FAKE_EMAIL_DOMAIN
 from framework.auth.core import Auth
 
 from osf import models
+from osf.migrations import ensure_default_providers
 from osf.models.sanctions import Sanction
 from osf.models.storage import PROVIDER_ASSET_NAME_CHOICES
 from osf.utils.names import impute_names_model
@@ -46,7 +47,8 @@ PROVIDER_ASSET_NAME_CHOICES = tuple([t[0] for t in PROVIDER_ASSET_NAME_CHOICES])
 
 def get_default_metaschema():
     """This needs to be a method so it gets called after the test database is set up"""
-    return models.RegistrationSchema.objects.first()
+    from osf_tests.utils import get_default_test_schema
+    return get_default_test_schema()
 
 
 def FakeList(provider, n, *args, **kwargs):
@@ -59,8 +61,11 @@ class UserFactory(DjangoModelFactory):
     fullname = factory.Sequence(lambda n: 'Freddie Mercury{0}'.format(n))
 
     username = factory.LazyFunction(fake_email)
-    password = factory.PostGenerationMethodCall('set_password',
-                                                'queenfan86')
+    password = factory.PostGenerationMethodCall(
+        'set_password',
+        'queenfan86',
+        notify=False
+    )
     is_registered = True
     date_confirmed = factory.Faker('date_time_this_decade', tzinfo=pytz.utc)
     merged_by = None
@@ -399,7 +404,12 @@ class RegistrationFactory(BaseNodeFactory):
             user = project.creator
         user = kwargs.pop('user', None) or kwargs.get('creator') or user or AuthUserFactory()
         kwargs['creator'] = user
-        provider = provider or models.RegistrationProvider.get_default()
+        try:
+            provider = provider or models.RegistrationProvider.get_default()
+        except models.RegistrationProvider.DoesNotExist:
+            ensure_default_providers()
+            provider = models.RegistrationProvider.get_default()
+
         # Original project to be registered
         project = project or target_class(*args, **kwargs)
         if project.is_admin_contributor(user):
@@ -467,6 +477,8 @@ class RegistrationFactory(BaseNodeFactory):
         reg.files_count = reg.registered_from.files.filter(deleted_on__isnull=True).count()
         draft_registration.registered_node = reg
         draft_registration.save()
+        reg.creator = user
+        reg.registered_schema.add(schema)
         reg.save()
         return reg
 
@@ -560,7 +572,12 @@ class DraftRegistrationFactory(DjangoModelFactory):
         initiator = initiator or branched_from_creator or kwargs.get('user', None) or kwargs.get('creator', None) or UserFactory()
         registration_schema = registration_schema or get_default_metaschema()
         registration_metadata = registration_metadata or {}
-        provider = provider or models.RegistrationProvider.get_default()
+        try:
+            provider = provider or models.RegistrationProvider.get_default()
+        except models.RegistrationProvider.DoesNotExist:
+            ensure_default_providers()
+            provider = models.RegistrationProvider.get_default()
+
         provider.schemas.add(registration_schema)
         draft = models.DraftRegistration.create_from_node(
             node=branched_from,
@@ -1089,9 +1106,9 @@ class ChronosJournalFactory(DjangoModelFactory):
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
         kwargs['raw_response'] = kwargs.get('raw_response', {
-            'TITLE': kwargs.get('title', factory.Faker('sentence').generate([])),
-            'JOURNAL_ID': kwargs.get('title', factory.Faker('ean').generate([])),
-            'NAME': kwargs.get('name', factory.Faker('company').generate([])),
+            'TITLE': kwargs.get('title', factory.Faker('sentence')),
+            'JOURNAL_ID': kwargs.get('title', factory.Faker('ean')),
+            'NAME': kwargs.get('name', factory.Faker('company')),
             'JOURNAL_URL': factory.Faker('url').generate([]),
             'PUBLISHER_ID': factory.Faker('ean').generate([]),
             'PUBLISHER_NAME': factory.Faker('name').generate([])

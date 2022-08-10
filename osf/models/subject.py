@@ -23,7 +23,7 @@ class Subject(ObjectIDMixin, BaseModel, DirtyFieldsMixin):
     text = models.CharField(null=False, max_length=256, db_index=True)  # max length on prod: 73
     parent = models.ForeignKey('self', related_name='children', null=True, blank=True, on_delete=models.SET_NULL, validators=[validate_subject_hierarchy_length])
     bepress_subject = models.ForeignKey('self', related_name='aliases', null=True, blank=True, on_delete=models.deletion.CASCADE)
-    provider = models.ForeignKey('AbstractProvider', related_name='subjects', on_delete=models.deletion.CASCADE)
+    provider = models.ForeignKey('AbstractProvider', related_name='subjects', on_delete=models.deletion.CASCADE, null=True)
     highlighted = models.BooleanField(db_index=True, default=False)
 
     objects = SubjectQuerySet.as_manager()
@@ -31,9 +31,6 @@ class Subject(ObjectIDMixin, BaseModel, DirtyFieldsMixin):
     class Meta:
         base_manager_name = 'objects'
         unique_together = ('text', 'provider')
-        permissions = (
-            ('view_subject', 'Can view subject details'),
-        )
 
     def __unicode__(self):
         return '{} with id {}'.format(self.text, self.id)

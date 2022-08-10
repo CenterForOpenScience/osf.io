@@ -10,6 +10,8 @@ from osf_tests.factories import (
     RegistrationFactory,
     PreprintFactory,
 )
+from osf.migrations import add_datacite_schema
+
 
 @pytest.fixture()
 def user():
@@ -27,6 +29,10 @@ def preprint_record(user, preprint):
 
 @pytest.mark.django_db
 class TestFileMetadataRecordDetail:
+
+    @pytest.fixture(autouse=True)
+    def datacite_file_schema(self):
+        return add_datacite_schema()
 
     @pytest.fixture()
     def private_record(self, user):
@@ -101,6 +107,10 @@ class TestFileMetadataRecordDetail:
 
 @pytest.mark.django_db
 class TestFileMetadataRecordUpdate:
+
+    @pytest.fixture(autouse=True)
+    def datacite_file_schema(self):
+        return add_datacite_schema()
 
     @pytest.fixture()
     def user_write(self):

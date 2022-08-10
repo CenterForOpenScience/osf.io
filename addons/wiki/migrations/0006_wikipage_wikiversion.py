@@ -14,7 +14,6 @@ import osf.utils.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0077_add_maintenance_permissions'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ('addons_wiki', '0005_auto_20170713_1125'),
     ]

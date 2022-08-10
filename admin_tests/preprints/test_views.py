@@ -22,6 +22,7 @@ from osf_tests.factories import (
 )
 from osf.models.admin_log_entry import AdminLogEntry
 from osf.models.spam import SpamStatus
+from osf.migrations import update_admin_permissions
 from osf.utils.workflows import DefaultStates, RequestTypes
 
 from admin_tests.utilities import setup_view, setup_log_view
@@ -103,8 +104,8 @@ class TestPreprintView:
     def test_no_user_permissions_raises_error(self, user, preprint, plain_view):
         request = RequestFactory().get(reverse('preprints:preprint', kwargs={'guid': preprint._id}))
         request.user = user
-        resp = plain_view.as_view()(request, guid=preprint._id)
-        assert resp._headers['location'][1] == f'/accounts/login/?next=/preprints/{preprint._id}/'
+        with pytest.raises(PermissionDenied):
+            plain_view.as_view()(request, guid=preprint._id)
 
     def test_get_flagged_spam(self, superuser, preprint, ham_preprint, spam_preprint, flagged_preprint):
         request = RequestFactory().get(reverse('preprints:flagged-spam'))
@@ -183,8 +184,8 @@ class TestPreprintView:
         request = RequestFactory().get(reverse('preprints:preprint', kwargs={'guid': preprint._id}))
         request.user = user
 
-        response = plain_view.as_view()(request, guid=preprint._id)
-        assert response.status_code == 302
+        with pytest.raises(PermissionDenied):
+            plain_view.as_view()(request, guid=preprint._id)
 
     def test_change_preprint_provider(self, user, preprint, plain_view):
         change_permission = Permission.objects.get(codename='change_preprint')
@@ -495,6 +496,7 @@ class TestPreprintWithdrawalRequests:
     @pytest.fixture()
     def admin(self):
         admin = AuthUserFactory()
+        update_admin_permissions()
         osf_admin = Group.objects.get(name='osf_admin')
         admin.groups.add(osf_admin)
         return admin

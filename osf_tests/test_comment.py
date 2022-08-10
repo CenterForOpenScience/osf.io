@@ -979,7 +979,7 @@ class TestOsfstorageFileCommentMoveRename(FileCommentMoveRenameTestMixin):
         self.file.move_under(destination['node'].get_addon(self.provider).get_root())
         payload = self._create_payload('move', user, source, destination, self.file._id)
         update_file_guid_referent(self=None, target=destination['node'], event_type='addon_file_moved', payload=payload)
-        self.guid.reload()
+        self.guid.referent.reload()
 
         file_node = BaseFileNode.resolve_class(self.provider, BaseFileNode.FILE).get_or_create(destination['node'], self._format_path(destination['path'], file_id=self.file._id))
         assert self.guid._id == file_node.get_guid()._id
@@ -1002,7 +1002,7 @@ class TestOsfstorageFileCommentMoveRename(FileCommentMoveRenameTestMixin):
         self.file.move_under(destination['node'].get_addon(self.provider).get_root())
         payload = self._create_payload('move', user, source, destination, self.file._id)
         update_file_guid_referent(self=None, target=destination['node'], event_type='addon_file_moved', payload=payload)
-        self.guid.reload()
+        self.guid.referent.reload()
 
         file_node = BaseFileNode.resolve_class(self.provider, BaseFileNode.FILE).get_or_create(destination['node'], self._format_path(destination['path'], file_id=self.file._id))
         assert self.guid._id == file_node.get_guid()._id

@@ -28,6 +28,7 @@ from framework.auth.core import Auth
 from addons.osfstorage.models import OsfStorageFile
 from addons.base import views
 from osf.models import Tag, Preprint, PreprintLog, PreprintContributor, Subject, Session
+from osf.migrations import update_admin_permissions
 from osf.exceptions import PreprintStateError, ValidationError, ValidationValueError
 
 from osf.utils.permissions import READ, WRITE, ADMIN
@@ -2547,6 +2548,7 @@ class TestWithdrawnPreprint:
     @pytest.fixture()
     def admin(self):
         admin = AuthUserFactory()
+        update_admin_permissions()
         osf_admin = Group.objects.get(name='osf_admin')
         admin.groups.add(osf_admin)
         return admin
