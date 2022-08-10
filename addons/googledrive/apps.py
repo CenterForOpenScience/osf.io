@@ -6,6 +6,7 @@ from addons.googledrive.settings import MAX_UPLOAD_SIZE
 googledrive_root_folder = generic_root_folder('googledrive')
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+NODE_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'googledrive_node_settings.mako')
 USER_SETTINGS_TEMPLATE = os.path.join(HERE, 'templates', 'googledrive_user_settings.mako')
 
 class GoogleDriveAddonConfig(BaseAddonAppConfig):
@@ -19,6 +20,7 @@ class GoogleDriveAddonConfig(BaseAddonAppConfig):
     categories = ['storage']
     has_hgrid_files = True
     max_file_size = MAX_UPLOAD_SIZE
+    node_settings_template = NODE_SETTINGS_TEMPLATE
     user_settings_template = USER_SETTINGS_TEMPLATE
 
     @property
