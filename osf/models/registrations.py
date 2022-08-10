@@ -877,7 +877,7 @@ class Registration(AbstractNode):
                 request=api_request,
             )
 
-        update_doi_metadata_on_change(guid=self._id)
+        update_doi_metadata_on_change(target_guid=self._id)
 
     class Meta:
         # custom permissions for use in the OSF Admin App
