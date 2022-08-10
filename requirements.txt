@@ -11,7 +11,7 @@ Werkzeug==1.0.0
 Flask==1.0
 gevent==1.2.2
 Mako==1.0.7
-Markdown==2.6.9
+Markdown==3.3.7
 WTForms==1.0.4
 # Fork of celery 4.1.1 with https://github.com/celery/celery/pull/4278 backported,
 # which fixes a bug that was causing stuck registrations
@@ -53,7 +53,7 @@ raven==6.4.0
 
 # API requirements
 Django==3.2
-djangorestframework==3.12.0
+djangorestframework==3.13.1
 django-cors-headers==3.10.1
 djangorestframework-bulk==0.2.1
 hashids==1.2.0
