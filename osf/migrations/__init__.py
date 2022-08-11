@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys
+import json
 import logging
 
 from django.apps import apps
@@ -228,5 +229,20 @@ def ensure_default_storage_region():
             'waterbutler_credentials': osfstorage_config.WATERBUTLER_CREDENTIALS,
             'waterbutler_settings': osfstorage_config.WATERBUTLER_SETTINGS,
             'waterbutler_url': osf_settings.WATERBUTLER_URL
+        }
+    )
+
+
+def ensure_datacite_file_schema():
+    ''' Test use only '''
+    from osf.models import FileMetadataSchema
+    with open('osf/metadata/schemas/datacite.json') as f:
+        jsonschema = json.load(f)
+    _, created = FileMetadataSchema.objects.get_or_create(
+        _id='datacite',
+        schema_version=1,
+        defaults={
+            'name': 'datacite',
+            'schema': jsonschema
         }
     )

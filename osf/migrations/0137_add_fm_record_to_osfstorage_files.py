@@ -54,6 +54,4 @@ class Migration(migrations.Migration):
         ('osf', '0136_add_datacite_file_metadata_schema'),
     ]
 
-    operations = [
-        migrations.RunPython(add_records_to_files_sql, remove_records_from_files),
-    ]
+    operations = []
