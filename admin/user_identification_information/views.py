@@ -87,7 +87,8 @@ class UserIdentificationInformation(ListView):
             'fullname': user.fullname,
             'eppn': user.eppn or '',
             'affiliation': user.affiliated_institutions.first(),
-            'email': user.emails.values_list('address', flat=True)[0] or '',
+            'email': user.emails.values_list('address', flat=True)[0] if len(
+                user.emails.values_list('address', flat=True)) > 0 else '',
             'last_login': user.last_login or '',
             'usage': used_quota,
             'usage_value': used_quota_abbr[0],
