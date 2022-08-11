@@ -2023,10 +2023,11 @@ var FGItemButtons = {
             if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions && item.data.permissions.edit) {
                 rowButtons.push(
                     m.component(FGButton, {
-                        onclick: async function(event){
+                        onclick: function(event){
                              // clear cache of input before upload new folder
-                             if(tb.dropzone.hiddenFileInput)
-                                 document.body.removeChild(tb.dropzone.hiddenFileInput);
+                             if(tb.dropzone.hiddenFileInput){
+                                document.body.removeChild(tb.dropzone.hiddenFileInput);
+                             }
                              tb.dropzone.hiddenFileInput = document.createElement('input');
                              tb.dropzone.hiddenFileInput.setAttribute('type', 'file');
                              if(tb.dropzone.options.maxFiles == null || tb.dropzone.options.maxFiles > 1) {
@@ -2047,26 +2048,34 @@ var FGItemButtons = {
                              } catch (e) {
                                  window.event.cancelBubble = true;
                              }
+                             // set for select folder
                              tb.dropzone.hiddenFileInput.setAttribute('webkitdirectory', 'true');
                              tb.dropzone.hiddenFileInput.click();
-                             if(!item.open)
-                                 tb.updateFolder(null, item);
+                             if(!item.open){
+                                tb.updateFolder(null, item);
+                             }
                              var parent = tb.multiselected()[0];
                              var root_parent = tb.multiselected()[0];
                              var files = [];
                              var total_files_size = 0;
-                             tb.dropzone.hiddenFileInput.addEventListener('change', async (event) => {
+                             tb.dropzone.hiddenFileInput.addEventListener('change', async () => {
+                                 // get all files in folder
                                  files = tb.dropzone.hiddenFileInput.files;
                                  total_files_size = 0;
-                                 if(files.length === 0)
-                                     mode(toolbarModes.UPLOADFOLDEREMPTY);   
+                                 // check folder is empty
+                                 if(files.length === 0){
+                                    mode(toolbarModes.UPLOADFOLDEREMPTY);   
+                                 }
                                  else{
-                                    for (var i = 0; i < files.length; i++)
+                                    // calculate total files size in folder
+                                    for (var i = 0; i < files.length; i++){
                                         total_files_size += files[i].size;
+                                    }
                                     parent.open = true;
                                     total_files_size = parseFloat(total_files_size).toFixed(2);
                                     var quota = null;
                                     if(item.data.provider){
+                                        // call api get used quota and max quota
                                         quota = $.ajax({
                                             async: false,
                                             method: 'GET',
@@ -2074,8 +2083,10 @@ var FGItemButtons = {
                                         });
                                         if(quota.responseJSON){
                                             quota = quota.responseJSON;
-                                            if (parseFloat(quota.used) + parseFloat(total_files_size) > quota.max)
+                                            // check upload quota for upload folder
+                                            if (parseFloat(quota.used) + parseFloat(total_files_size) > quota.max){
                                                 mode(toolbarModes.UPLOADFOLDERCANCLE);
+                                            }
                                             else{
                                                 var created_folders = [];
                                                 var created_path = [];
@@ -2102,8 +2113,10 @@ var FGItemButtons = {
                                                                     is_uploadedfolder = true;
                                                                 }
                                                             });
-                                                            if(is_uploadedfolder)
+                                                            // check folder is created
+                                                            if(is_uploadedfolder){
                                                                 continue;
+                                                            }
                                                             if(check && created_path.includes(check_path)){
                                                                 parent = check.value;
                                                                 continue;
@@ -2116,6 +2129,7 @@ var FGItemButtons = {
                                                                 extra.branch = parent.data.branch;
                                                                 options.branch = parent.data.branch;
                                                             }
+                                                            // call api for create folder
                                                             await m.request({
                                                                 method: 'PUT',
                                                                 background: true,
@@ -2139,6 +2153,7 @@ var FGItemButtons = {
                                                                 'name': val,
                                                                 'value': parent,
                                                             };
+                                                            // store folder is created
                                                             created_folders.push(parent_folder);
                                                         }
                                                         parent.open = true;
