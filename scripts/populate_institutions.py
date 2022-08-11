@@ -592,7 +592,7 @@ INSTITUTIONS = {
             {
                 '_id': 'nationalmaglab',
                 'name': 'National High Magnetic Field Laboratory',
-                'description': 'This research project management platform is provided by the National MagLab to enable collaboration, sharing, and dissemination of the products of user research according to the principles of <a href="https://www.go-fair.org/fair-principles/">FAIR</a> and open science. All public projects must adhere to <a href="https://nationalmaglab.org/about/policies-procedures">MagLab policies & procedures</a> related to confidentiality and proper data management.',
+                'description': 'This platform is provided to enable collaboration, sharing, and dissemination of research products from the National High Magnetic Field Laboratory according to the principles of <a href="https://www.go-fair.org/fair-principles/">FAIR</a> and open science. All public projects must adhere to <a href="https://nationalmaglab.org/about/policies-procedures">National MagLab policies & procedures</a> related to confidentiality and proper data management.',
                 'banner_name': 'nationalmaglab-banner.png',
                 'logo_name': 'nationalmaglab-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://idp.fsu.edu')),
@@ -1701,7 +1701,7 @@ INSTITUTIONS = {
             {
                 '_id': 'nationalmaglab',
                 'name': 'National High Magnetic Field Laboratory [Test]',
-                'description': 'This research project management platform is provided by the National MagLab to enable collaboration, sharing, and dissemination of the products of user research according to the principles of <a href="https://www.go-fair.org/fair-principles/">FAIR</a> and open science. All public projects must adhere to <a href="https://nationalmaglab.org/about/policies-procedures">MagLab policies & procedures</a> related to confidentiality and proper data management.',
+                'description': 'This platform is provided to enable collaboration, sharing, and dissemination of research products from the National High Magnetic Field Laboratory according to the principles of <a href="https://www.go-fair.org/fair-principles/">FAIR</a> and open science. All public projects must adhere to <a href="https://nationalmaglab.org/about/policies-procedures">National MagLab policies & procedures</a> related to confidentiality and proper data management.',
                 'banner_name': 'nationalmaglab-banner.png',
                 'logo_name': 'nationalmaglab-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://idp.fsu.edu')),
