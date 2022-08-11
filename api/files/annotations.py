@@ -1,5 +1,5 @@
 from django.db.models import BooleanField, Case, Exists, F, IntegerField, Max, OuterRef, Q, Subquery, Value, When
-from django.db.models.functions.base import Cast
+from django.db.models.functions import Cast
 from django.contrib.postgres.fields.jsonb import KeyTextTransform
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
