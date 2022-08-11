@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys
 import json
-
 import logging
 
 from django.apps import apps
@@ -233,7 +232,7 @@ def ensure_default_storage_region():
     )
 
 
-def add_datacite_schema():
+def ensure_datacite_file_schema():
     ''' Test use only '''
     from osf.models import FileMetadataSchema
     with open('osf/metadata/schemas/datacite.json') as f:
@@ -245,5 +244,4 @@ def add_datacite_schema():
             'name': 'datacite',
             'schema': jsonschema
         }
-
     )

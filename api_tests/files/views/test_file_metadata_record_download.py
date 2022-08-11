@@ -7,14 +7,16 @@ from osf_tests.factories import (
     ProjectFactory
 )
 
-from osf.migrations import add_datacite_schema
+from osf.migrations import ensure_datacite_file_schema
+
+
+@pytest.fixture(autouse=True)
+def datacite_file_schema():
+    return ensure_datacite_file_schema()
+
 
 @pytest.mark.django_db
 class TestFileMetadataRecordDownload:
-
-    @pytest.fixture(autouse=True)
-    def datacite_file_schema(self):
-        return add_datacite_schema()
 
     @pytest.fixture()
     def user(self):
