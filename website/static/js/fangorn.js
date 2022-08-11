@@ -2029,7 +2029,7 @@ var FGItemButtons = {
                                  document.body.removeChild(tb.dropzone.hiddenFileInput);
                              tb.dropzone.hiddenFileInput = document.createElement('input');
                              tb.dropzone.hiddenFileInput.setAttribute('type', 'file');
-                             if((tb.dropzone.options.maxFiles == null) || tb.dropzone.options.maxFiles > 1) {
+                             if(tb.dropzone.options.maxFiles == null || tb.dropzone.options.maxFiles > 1) {
                                  tb.dropzone.hiddenFileInput.setAttribute('multiple', 'multiple');
                              }
                              if(tb.dropzone.options.acceptedFiles != null){
