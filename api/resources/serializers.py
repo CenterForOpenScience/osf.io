@@ -164,7 +164,7 @@ class ResourceSerializer(JSONAPISerializer):
             ]
         except IntegrityError:
             raise JSONAPIException(
-                detail='A Resource with the provided DOI and Resource Type already exists.',
+                detail='A Resource with the provided PID and Resource Type already exists.',
                 source={'pointer': '/data/attributes'},
             )
         else:
