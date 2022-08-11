@@ -40,7 +40,7 @@ pymongo==3.7.1
 PyYAML==6.0
 tqdm==4.28.1
 # Python markdown extensions for comment emails
-git+https://github.com/CenterForOpenScience/mdx_del_ins.git
+git+https://github.com/Johnetordoff/mdx_del_ins.git@django-3
 
 certifi==2020.12.5
 sendgrid==1.5.13
