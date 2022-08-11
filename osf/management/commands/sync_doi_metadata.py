@@ -32,7 +32,7 @@ def sync_doi_metadata(modified_date, batch_size=100, dry_run=True, sync_private=
 
     for identifier in identifiers:
         if not dry_run:
-            if (identifier.referent.is_public and not identifier.referent.deleted) or sync_private:
+            if (identifier.referent.is_public and not identifier.referent.deleted and not identifier.referent.is_retracted) or sync_private:
                 enqueue_task(sync_identifier_doi.s(identifier))
 
         logger.info(f'{"[DRY RUN]: " if dry_run else ""}'
