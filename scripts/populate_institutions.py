@@ -590,6 +590,18 @@ INSTITUTIONS = {
                 'delegation_protocol': 'saml-shib',
             },
             {
+                '_id': 'nationalmaglab',
+                'name': 'National High Magnetic Field Laboratory',
+                'description': 'This research project management platform is provided by the National MagLab to enable collaboration, sharing, and dissemination of the products of user research according to the principles of <a href="https://www.go-fair.org/fair-principles/">FAIR</a> and open science. All public projects must adhere to <a href="https://nationalmaglab.org/about/policies-procedures">MagLab policies & procedures</a> related to confidentiality and proper data management.',
+                'banner_name': 'nationalmaglab-banner.png',
+                'logo_name': 'nationalmaglab-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://idp.fsu.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
                 '_id': 'nesta',
                 'name': 'Nesta',
                 'description': '<a href="https://www.nesta.org.uk/">Nesta</a> is the UK\'s innovation agency for social good. We design, test and scale new solutions to society\'s biggest problems, changing millions of lives for the better.',
@@ -669,6 +681,18 @@ INSTITUTIONS = {
                 'banner_name': 'pu-banner.png',
                 'logo_name': 'pu-shield.png',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://idp.princeton.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
+                'domains': [],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
+                '_id': 'purdue',
+                'name': 'Purdue University',
+                'description': 'This open scholarship platform is provided by <a href="https://www.lib.purdue.edu/">Purdue University Libraries</a> in partnership with the University\'s <a href="https://www.purdue.edu/gradschool/">Graduate School</a>, <a href="https://www.purdue.edu/research/oevprp/regulatory-affairs/">Regulatory Affairs</a>, and <a href="https://www.purdue.edu/provost/researchIntegrity/">Research Integrity Office</a>.<br><br>All projects must adhere to Purdue\'s <a href="https://www.purdue.edu/policies/information-technology/viib8.html#statement">Information security</a>, <a href="https://www.purdue.edu/policies/academic-research-affairs/ic1.html">Human subjects research</a> policies, and related <a href="https://www.purdue.edu/securepurdue/data-handling/index.php">data classification and handling procedures</a>. Associated guidance on regulations is available via the <a href="https://www.purdue.edu/research/oevprp/regulatory-affairs/responsible-conduct.php">Responsible Conductof Research website</a> and the <a href="https://www.purdue.edu/provost/researchIntegrity/">Research Integrity Office</a>. For questions and support please reach out to <a href="mailto:riboehm@purdue.edu">Purdue\'s OSF contact</a>.',
+                'banner_name': 'purdue-banner.png',
+                'logo_name': 'purdue-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://idp.purdue.edu/idp/shibboleth')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': [],
                 'email_domains': [],
@@ -1675,6 +1699,18 @@ INSTITUTIONS = {
                 'delegation_protocol': 'saml-shib',
             },
             {
+                '_id': 'nationalmaglab',
+                'name': 'National High Magnetic Field Laboratory [Test]',
+                'description': 'This research project management platform is provided by the National MagLab to enable collaboration, sharing, and dissemination of the products of user research according to the principles of <a href="https://www.go-fair.org/fair-principles/">FAIR</a> and open science. All public projects must adhere to <a href="https://nationalmaglab.org/about/policies-procedures">MagLab policies & procedures</a> related to confidentiality and proper data management.',
+                'banner_name': 'nationalmaglab-banner.png',
+                'logo_name': 'nationalmaglab-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://idp.fsu.edu')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': ['test-osf-nationalmaglab.cos.io'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
                 '_id': 'nesta',
                 'name': 'Nesta [Test]',
                 'description': '<a href="https://www.nesta.org.uk/">Nesta</a> is the UK\'s innovation agency for social good. We design, test and scale new solutions to society\'s biggest problems, changing millions of lives for the better.',
@@ -1756,6 +1792,18 @@ INSTITUTIONS = {
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://idp.princeton.edu/idp/shibboleth')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-pu.cos.io'],
+                'email_domains': [],
+                'delegation_protocol': 'saml-shib',
+            },
+            {
+                '_id': 'purdue',
+                'name': 'Purdue University [Test]',
+                'description': 'This open scholarship platform is provided by <a href="https://www.lib.purdue.edu/">Purdue University Libraries</a> in partnership with the University\'s <a href="https://www.purdue.edu/gradschool/">Graduate School</a>, <a href="https://www.purdue.edu/research/oevprp/regulatory-affairs/">Regulatory Affairs</a>, and <a href="https://www.purdue.edu/provost/researchIntegrity/">Research Integrity Office</a>.<br><br>All projects must adhere to Purdue\'s <a href="https://www.purdue.edu/policies/information-technology/viib8.html#statement">Information security</a>, <a href="https://www.purdue.edu/policies/academic-research-affairs/ic1.html">Human subjects research</a> policies, and related <a href="https://www.purdue.edu/securepurdue/data-handling/index.php">data classification and handling procedures</a>. Associated guidance on regulations is available via the <a href="https://www.purdue.edu/research/oevprp/regulatory-affairs/responsible-conduct.php">Responsible Conductof Research website</a> and the <a href="https://www.purdue.edu/provost/researchIntegrity/">Research Integrity Office</a>. For questions and support please reach out to <a href="mailto:riboehm@purdue.edu">Purdue\'s OSF contact</a>.',
+                'banner_name': 'purdue-banner.png',
+                'logo_name': 'purdue-shield.png',
+                'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://idp.purdue.edu/idp/shibboleth')),
+                'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
+                'domains': [],
                 'email_domains': [],
                 'delegation_protocol': 'saml-shib',
             },
@@ -2192,7 +2240,7 @@ INSTITUTIONS = {
         },
         {
             '_id': 'osftype3',
-            'name': 'Fake SAML Institution - Shared SSO Primary',
+            'name': 'Fake SAML Institution - Shared SSO Primary (Criteria: EQUALS_TO)',
             'description': 'Fake OSF Institution Type 3. Its SSO is done via SAML (Shibboleth impl) where OSF-CAS '
                            'serves as the SP and the institution as the IdP. This institution is a primary one that '
                            'provides shared SSO to secondary institutions.',
@@ -2206,7 +2254,7 @@ INSTITUTIONS = {
         },
         {
             '_id': 'osftype4',
-            'name': 'Fake SAML Institution - Shared SSO Secondary',
+            'name': 'Fake SAML Institution - Shared SSO Secondary (Criteria: EQUALS_TO)',
             'description': 'Fake OSF Institution Type 3. Its SSO is done via SAML (Shibboleth impl) where OSF-CAS '
                            'serves as the SP and the institution as the IdP. This institution is a secondary one that '
                            'uses a primary institution\'s SSO.',
@@ -2256,6 +2304,34 @@ INSTITUTIONS = {
             'banner_name': 'placeholder-banner.png',
             'logo_name': 'placeholder-shield.png',
             'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('type-7-fake-saml-idp')),
+            'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('http://localhost:5000/goodbye')),
+            'domains': [],
+            'email_domains': [],
+            'delegation_protocol': 'saml-shib',
+        },
+        {
+            '_id': 'osftype8',
+            'name': 'Fake SAML Institution - Shared SSO Primary (Criteria: CONTAINS)',
+            'description': 'Fake OSF Institution Type 8. Its SSO is done via SAML (Shibboleth impl) where OSF-CAS '
+                           'serves as the SP and the institution as the IdP. This institution is a primary one that '
+                           'provides shared SSO to secondary institutions.',
+            'banner_name': 'placeholder-banner.png',
+            'logo_name': 'placeholder-shield.png',
+            'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('type-8-fake-saml-idp')),
+            'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('http://localhost:5000/goodbye')),
+            'domains': [],
+            'email_domains': [],
+            'delegation_protocol': 'saml-shib',
+        },
+        {
+            '_id': 'osftype9',
+            'name': 'Fake SAML Institution - Shared SSO Secondary (Criteria: CONTAINS)',
+            'description': 'Fake OSF Institution Type 9. Its SSO is done via SAML (Shibboleth impl) where OSF-CAS '
+                           'serves as the SP and the institution as the IdP. This institution is a secondary one that '
+                           'uses a primary institution\'s SSO.',
+            'banner_name': 'placeholder-banner.png',
+            'logo_name': 'placeholder-shield.png',
+            'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('type-9-fake-saml-idp')),
             'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('http://localhost:5000/goodbye')),
             'domains': [],
             'email_domains': [],

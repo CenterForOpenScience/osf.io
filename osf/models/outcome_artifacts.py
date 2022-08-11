@@ -79,7 +79,8 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
     identifier = models.ForeignKey(
         'osf.identifier',
         null=True,
-        on_delete=models.CASCADE,
+        blank=True,
+        on_delete=models.SET_NULL,
         related_name='artifact_metadata'
     )
 
@@ -97,9 +98,8 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
     objects = ArtifactManager()
 
     class Meta:
-        unique_together = ('outcome', 'identifier', 'artifact_type')
         indexes = [
-            models.Index(fields=['outcome', 'artifact_type'])
+            models.Index(fields=['artifact_type', 'outcome'])
         ]
         ordering = ['artifact_type', 'title']
 
