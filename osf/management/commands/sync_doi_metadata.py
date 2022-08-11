@@ -19,7 +19,8 @@ def sync_identifier_doi(identifier):
     logger.info(f' doi update for {identifier.value} complete')
 
 
-def sync_doi_metadata(modified_date, batch_size=100, dry_run=True):
+def sync_doi_metadata(modified_date, batch_size=100, dry_run=True, sync_private=False):
+
     identifiers = Identifier.objects.filter(
         category='doi',
         deleted__isnull=True,
@@ -31,7 +32,8 @@ def sync_doi_metadata(modified_date, batch_size=100, dry_run=True):
 
     for identifier in identifiers:
         if not dry_run:
-            enqueue_task(sync_identifier_doi.s(identifier))
+            if (identifier.referent.is_public and not identifier.referent.deleted) or sync_private:
+                enqueue_task(sync_identifier_doi.s(identifier))
 
         logger.info(f'{"[DRY RUN]: " if dry_run else ""}'
                     f' doi minting for {identifier.value} started')
@@ -45,6 +47,11 @@ class Command(BaseCommand):
             '--dry_run',
             action='store_true',
             dest='dry_run',
+        )
+        parser.add_argument(
+            '--sync_private',
+            action='store_true',
+            dest='sync_private',
         )
         parser.add_argument(
             '--batch_size',
@@ -63,6 +70,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         dry_run = options.get('dry_run')
+        sync_private = options.get('sync_private')
         batch_size = options.get('batch_size')
         modified_date = options.get('modified_date')
-        sync_doi_metadata(modified_date, batch_size, dry_run=dry_run)
+        sync_doi_metadata(modified_date, batch_size, dry_run=dry_run, sync_private=sync_private)

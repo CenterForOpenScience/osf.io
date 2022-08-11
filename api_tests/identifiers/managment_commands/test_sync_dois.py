@@ -33,6 +33,12 @@ class TestSyncDOIs:
         return registration
 
     @pytest.fixture()
+    def registration_private(self, registration):
+        registration.is_public = False
+        registration.save()
+        return registration
+
+    @pytest.fixture()
     def registration_identifier(self, registration):
         identifier = registration.identifiers.first()
         identifier.modified = timezone.now() - datetime.timedelta(days=1)
@@ -69,3 +75,23 @@ class TestSyncDOIs:
 
         preprint_identifier.reload()
         assert preprint_identifier.modified.date() == datetime.datetime.now().date()
+
+    @pytest.mark.enable_enqueue_task
+    def test_doi_sync_private(self, app, registration_private, registration_identifier, mock_datacite):
+
+        assert registration_identifier.modified.date() < datetime.datetime.now().date()
+
+        call_command('sync_doi_metadata', f'-m={datetime.datetime.now()}', '--sync_private')
+
+        datacite_request, = mock_datacite.calls
+        assert datacite_request.request.method == 'DELETE'  # removes metadata for private
+        assert datacite_request.request.url == f'{settings.DATACITE_URL}/metadata/10.70102/FK2osf.io/{registration_private._id}'
+
+        assert registration_identifier.modified.date() < datetime.datetime.now().date()
+        assert registration_identifier.modified.date() < datetime.datetime.now().date()
+
+    @pytest.mark.enable_enqueue_task
+    def test_doi_sync_public_only(self, app, registration_private, registration_identifier, mock_datacite):
+        call_command('sync_doi_metadata', f'-m={datetime.datetime.now()}')
+
+        assert len(mock_datacite.calls) == 0
