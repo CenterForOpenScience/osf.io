@@ -1,6 +1,6 @@
 from django.db.models import F
 from django.core.exceptions import PermissionDenied
-from django.core.urlresolvers import NoReverseMatch
+from django.urls import NoReverseMatch
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import redirect
