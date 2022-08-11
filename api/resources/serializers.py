@@ -26,6 +26,7 @@ MODEL_TO_SERIALIZER_FIELD_MAPPINGS = {
     'identifier__value': 'pid',
 }
 
+
 class ResourceSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'date_created',
@@ -126,6 +127,11 @@ class ResourceSerializer(JSONAPISerializer):
                 detail=f'Error updating PID for Resource with id [{instance._id}]: {e.message}',
                 source={'pointer': '/data/attributes/pid'},
             )
+        except IntegrityError:
+            raise JSONAPIException(
+                detail='A Resource with the provided PID and Resource Type already exists.',
+                source={'pointer': '/data/attributes'},
+            )
 
         finalized = validated_data.get('finalized')
         if finalized is not None:
@@ -156,9 +162,9 @@ class ResourceSerializer(JSONAPISerializer):
             error_sources = [
                 MODEL_TO_SERIALIZER_FIELD_MAPPINGS[field] for field in e.incomplete_fields
             ]
-        except IntegrityError as e:
+        except IntegrityError:
             raise JSONAPIException(
-                detail=str(e),
+                detail='A Resource with the provided PID and Resource Type already exists.',
                 source={'pointer': '/data/attributes'},
             )
         else:

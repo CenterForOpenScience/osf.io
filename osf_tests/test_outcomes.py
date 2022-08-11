@@ -10,6 +10,7 @@ from osf.exceptions import (
     InvalidPIDFormatError,
     NoPIDError,
     NoSuchPIDError,
+    UnsupportedArtifactTypeError
 )
 from osf.models import Identifier, Outcome, OutcomeArtifact
 from osf.utils.outcomes import ArtifactTypes
@@ -149,6 +150,18 @@ class TestOutcomeArtifact:
         assert retrieved_external_artifact.pid == TEST_EXTERNAL_DOI
         assert retrieved_external_artifact.primary_resource_guid == registration._id
 
+    def test_update__new_artifact_type__undefined_raises_if_not_undefined(self, outcome, project_doi):
+        test_artifact = outcome.artifact_metadata.create(identifier=project_doi, artifact_type=ArtifactTypes.DATA)
+
+        with pytest.raises(UnsupportedArtifactTypeError):
+            test_artifact.update(new_artifact_type=ArtifactTypes.UNDEFINED)
+
+    def test_update__new_artifact_type__undefined_allowed_if_already_undefined(self, outcome, project_doi):
+        test_artifact = outcome.artifact_metadata.create(identifier=project_doi)
+
+        test_artifact.update(new_artifact_type=ArtifactTypes.UNDEFINED)
+        assert test_artifact.artifact_type == ArtifactTypes.UNDEFINED
+
     def test_update__new_pid__get_existing_identifier(self, outcome, project_doi, external_doi):
         test_artifact = outcome.artifact_metadata.create(artifact_type=ArtifactTypes.DATA)
         test_artifact.update(new_pid_value=TEST_PROJECT_DOI)
@@ -227,6 +240,43 @@ class TestOutcomeArtifact:
 
         assert test_artifact.identifier == project_doi
         assert not Identifier.objects.filter(value=invalid_identifier).exists()
+
+    def test_update__enforces_uniqueness_if_finalized(self, outcome, project_doi):
+        outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.DATA, finalized=True
+        )
+        # Can create the new artifact, but fails on `finalize`
+        test_artifact = outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.MATERIALS,
+        )
+
+        test_artifact.finalize()  # Can finalize with same DOI but different artifact_type
+        with pytest.raises(IntegrityError):  # Raise when set to a duplicate artifact_type
+            test_artifact.update(new_artifact_type=ArtifactTypes.DATA)
+
+    def test_update__enforces_uniquenss_if_finalized__nonfinal_duplicate_okay(self, outcome, project_doi):
+        nonfinal_artifact = outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.DATA, finalized=False
+        )
+        test_artifact = outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.MATERIALS, finalized=True
+        )
+
+        test_artifact.update(new_artifact_type=nonfinal_artifact.artifact_type)
+        assert test_artifact.artifact_type == nonfinal_artifact.artifact_type
+        assert test_artifact.identifier == nonfinal_artifact.identifier
+
+    def test_update__enforces_uniquenss_if_finalized__deleted_duplicate_okay(self, outcome, project_doi):
+        deleted_artifact = outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.DATA, finalized=True, deleted=timezone.now()
+        )
+        test_artifact = outcome.artifact_metadata.create(
+            identifier=project_doi, artifact_type=ArtifactTypes.MATERIALS, finalized=True
+        )
+
+        test_artifact.update(new_artifact_type=deleted_artifact.artifact_type)
+        assert test_artifact.artifact_type == deleted_artifact.artifact_type
+        assert test_artifact.identifier == deleted_artifact.identifier
 
     def test_finalize__raises__missing_identifier(self, outcome):
         test_artifact = outcome.artifact_metadata.create(artifact_type=ArtifactTypes.DATA)
