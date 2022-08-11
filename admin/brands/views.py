@@ -6,7 +6,7 @@ from django.views.generic import (
     CreateView,
     UpdateView,
 )
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse_lazy
 from django.forms.models import model_to_dict
 from django.contrib import messages
 

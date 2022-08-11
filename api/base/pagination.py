@@ -1,4 +1,4 @@
-from django.utils import six
+import six
 from collections import OrderedDict
 from django.urls import reverse
 from django.core.paginator import InvalidPage, Paginator as DjangoPaginator
