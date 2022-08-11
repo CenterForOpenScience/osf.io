@@ -13,13 +13,20 @@ from osf.utils.permissions import READ
 from api_tests.utils import create_test_file
 
 
+@pytest.fixture(autouse=True)
+def datacite_file_schema():
+    return ensure_datacite_file_schema()
+
+
 @pytest.fixture()
 def node():
     return ProjectFactory()
 
+
 @pytest.fixture()
 def osf_file(node):
     return create_test_file(target=node, user=node.creator)
+
 
 def inject_placeholder_doi(json_data):
     # the OSF cannot currently issue DOIs for a file, which is required for datacite schema validation.
@@ -31,10 +38,6 @@ def inject_placeholder_doi(json_data):
 
 @pytest.mark.django_db
 class TestFileMetadataRecordSerializer:
-
-    @pytest.fixture(autouse=True)
-    def datacite_file_schema(self):
-        return ensure_datacite_file_schema()
 
     def test_record_created_post_save(self, node, osf_file):
         # check there's a record for every FileMetadataSchema
@@ -126,10 +129,6 @@ class TestFileMetadataRecordSerializer:
 
 @pytest.mark.django_db
 class TestFileMetadataRecord:
-
-    @pytest.fixture(autouse=True)
-    def datacite_file_schema(self):
-        return ensure_datacite_file_schema()
 
     @pytest.fixture()
     def initial_metadata(self):

@@ -13,13 +13,21 @@ from osf_tests.factories import (
 
 from osf.migrations import ensure_datacite_file_schema
 
+
+@pytest.fixture(autouse=True)
+def datacite_file_schema():
+    return ensure_datacite_file_schema()
+
+
 @pytest.fixture()
 def user():
     return AuthUserFactory()
 
+
 @pytest.fixture()
 def preprint(user):
     return PreprintFactory(creator=user)
+
 
 @pytest.fixture()
 def preprint_record(user, preprint):
@@ -29,10 +37,6 @@ def preprint_record(user, preprint):
 
 @pytest.mark.django_db
 class TestFileMetadataRecordDetail:
-
-    @pytest.fixture(autouse=True)
-    def datacite_file_schema(self):
-        return ensure_datacite_file_schema()
 
     @pytest.fixture()
     def private_record(self, user):
@@ -108,10 +112,6 @@ class TestFileMetadataRecordDetail:
 
 @pytest.mark.django_db
 class TestFileMetadataRecordUpdate:
-
-    @pytest.fixture(autouse=True)
-    def datacite_file_schema(self):
-        return ensure_datacite_file_schema()
 
     @pytest.fixture()
     def user_write(self):
