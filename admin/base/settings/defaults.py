@@ -84,7 +84,6 @@ INSTALLED_APPS = (
     'django_celery_results',
     'raven.contrib.django.raven_compat',
     'webpack_loader',
-    'password_reset',
     'guardian',
     'waffle',
     'elasticsearch_metrics.apps.ElasticsearchMetricsConfig',
