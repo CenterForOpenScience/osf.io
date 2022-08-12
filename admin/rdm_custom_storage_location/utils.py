@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-
+import inspect  # noqa
+import logging
 import traceback
 
 from boxsdk import Client as BoxClient, OAuth2
@@ -42,6 +43,9 @@ from osf.models.external import ExternalAccountTemporary, ExternalAccount
 from osf.utils import external_util
 import datetime
 
+from website.util import inspect_info  # noqa
+
+logger = logging.getLogger(__name__)
 
 providers = None
 
@@ -61,19 +65,26 @@ enabled_providers_list.extend(enabled_providers_forinstitutions_list)
 
 no_storage_name_providers = ['osfstorage', 'onedrivebusiness']
 
+
 def have_storage_name(provider_name):
     return provider_name not in no_storage_name_providers
 
-def get_providers():
+
+def get_providers(available_list=None):
     provider_list = []
     for provider in osf_settings.ADDONS_AVAILABLE:
+        # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+        # logger.debug(f'available_list: {osf_settings.ADDONS_AVAILABLE}')
         if 'storage' in provider.categories and provider.short_name in enabled_providers_list:
             provider.icon_url_admin = \
                 '/custom_storage_location/icon/{}/comicon.png'.format(provider.short_name)
             provider.modal_path = get_modal_path(provider.short_name)
             provider_list.append(provider)
     provider_list.sort(key=lambda x: x.full_name.lower())
+    if isinstance(available_list, list):
+        return [addon for addon in provider_list if addon.short_name in available_list]
     return provider_list
+
 
 def get_addon_by_name(addon_short_name):
     """get Addon object from Short Name."""

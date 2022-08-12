@@ -96,7 +96,7 @@
       </header>
       {% block sidebar %}
       <!-- Left side column. contains the logo and sidebar -->
-      <aside class="main-sidebar">
+      <aside class="main-sidebar" style="overflow-y: scroll; height: 95vh; scrollbar-width: none;">
 
         <!-- sidebar: style can be found in sidebar.less -->
         <section class="sidebar">
@@ -316,6 +316,16 @@
           {% endif %}
           {% if user.is_superuser or user.is_staff %}
             <li><a href="{% url 'institutional_storage_quota_control:list_institution_storage' %}"><i class='fa fa-link'></i> <span>{% trans "Inst. Storage Quota Control" %}</span></a></li>
+            <li class="{% if url_name == 'url_name' %}active{% endif %}">
+                <a href="{% url 'custom_storage_location:export_data_storage_location' %}">
+                    <i class="fa fa-link"></i> <span>{% trans "Export data storage location" %}</span>
+                </a>
+            </li>
+            <li class="{% if url_name == 'url_name' %}active{% endif %}">
+                <a href="javascript:void(0)">
+                    <i class="fa fa-link"></i> <span>{% trans "Export Data Management" %}</span>
+                </a>
+            </li>
           {% endif %}
           </ul><!-- /.sidebar-menu -->
         </section>

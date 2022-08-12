@@ -12,4 +12,6 @@ urlpatterns = [
     url(r'^fetch_temporary_token/$', views.FetchTemporaryTokenView.as_view(), name='fetch_temporary_token'),
     url(r'^remove_auth_data_temporary/$', views.RemoveTemporaryAuthData.as_view(), name='remove_auth_data_temporary'),
     url(r'^usermap/$', views.UserMapView.as_view(), name='usermap'),
+    # to register export data storage location
+    url(r'^export_data_storage_location/$', views.ExportStorageLocationView.as_view(), name='export_data_storage_location'),
 ]
