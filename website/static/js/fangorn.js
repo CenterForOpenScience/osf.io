@@ -953,7 +953,7 @@ function _fangornComplete(treebeard, file) {
 function _fangornDropzoneSuccess(treebeard, file, response) {
     treebeard.options.uploadInProgress = false;
 
-    var parent = file.treebeardParent, item,revisedItem, child;
+    var parent = file.treebeardParent, item, revisedItem, child;
 
     for (var i = 0; i < parent.children.length; i++) {
         child = parent.children[i];
@@ -965,8 +965,10 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
         }
     }
 
+    // in folder empty
     if(item  === undefined || item === null)
         return;
+
     // RESPONSES
     // OSF : Object with actionTake : "file_added"
     // DROPBOX : Object; addon : 'dropbox'
@@ -1070,7 +1072,7 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
 }
 
 /**
- * Click event for when upload buttonin Action Column, it essentially runs the hiddenFileInput.click
+ * Click event for when upload button in Action Column, it essentially runs the hiddenFileInput.click
  * @param event DOM event object for click
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
  * @param {Object} col Information pertinent to that column where this upload event is run from
@@ -1091,6 +1093,231 @@ function _uploadEvent(event, item, col) {
     }
 }
 
+/**
+ * Click event for when upload folder button in Action Column, it essentially runs the hiddenFileInput.click
+ * @param event DOM event object for click
+ * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
+ * @param {Object} mode
+ * @param {Object} col Information pertinent to that column where this upload event is run from
+ * @private
+ */
+function _uploadFolderEvent(event, item, mode, col) {
+    var tb = this;  // jshint ignore:line
+
+    // clear cache of input before upload new folder
+    if (tb.dropzone.hiddenFileInput) {
+        document.body.removeChild(tb.dropzone.hiddenFileInput);
+    }
+
+    tb.dropzone.hiddenFileInput = document.createElement('input');
+    tb.dropzone.hiddenFileInput.setAttribute('type', 'file');
+    if (tb.dropzone.options.maxFiles == null || tb.dropzone.options.maxFiles > 1) {
+        tb.dropzone.hiddenFileInput.setAttribute('multiple', 'multiple');
+    }
+    if (tb.dropzone.options.acceptedFiles != null) {
+        tb.dropzone.hiddenFileInput.setAttribute('accept', tb.dropzone.options.acceptedFiles);
+    }
+    tb.dropzone.hiddenFileInput.style.visibility = 'hidden';
+    tb.dropzone.hiddenFileInput.style.position = 'absolute';
+    tb.dropzone.hiddenFileInput.style.top = '0';
+    tb.dropzone.hiddenFileInput.style.left = '0';
+    tb.dropzone.hiddenFileInput.style.height = '0';
+    tb.dropzone.hiddenFileInput.style.width = '0';
+    document.body.appendChild(tb.dropzone.hiddenFileInput);
+
+    try {
+        event.stopPropagation();
+    } catch (e) {
+        window.event.cancelBubble = true;
+    }
+
+    // set for select folder
+    tb.dropzone.hiddenFileInput.setAttribute('webkitdirectory', 'true');
+    tb.dropzone.hiddenFileInput.click();
+    if (!item.open) {
+        tb.updateFolder(null, item);
+    }
+    tb.dropzone.hiddenFileInput.addEventListener('change', _onchange);
+
+    function _onchange() {
+        let parent = tb.multiselected()[0];
+        var root_parent = tb.multiselected()[0];
+        var files = [];
+        var total_files_size = 0;
+
+        // get all files in folder
+        files = tb.dropzone.hiddenFileInput.files;
+        total_files_size = 0;
+
+        // check folder is empty
+        if (files.length === 0) {
+            mode(toolbarModes.UPLOADFOLDEREMPTY);
+            return;
+        }
+
+        // calculate total files size in folder
+        for (let i = 0; i < files.length; i++) {
+            total_files_size += files[i].size;
+        }
+
+        parent.open = true;
+        total_files_size = parseFloat(total_files_size).toFixed(2);
+        let quota = null;
+
+        if (!item.data.provider) {
+            return;
+        }
+
+        // call api get used quota and max quota
+        quota = $.ajax({
+            async: false,
+            method: 'GET',
+            url: item.data.nodeApiUrl + 'get_creator_quota/',
+        });
+
+        if (!quota.responseJSON) {
+            return;
+        }
+
+        quota = quota.responseJSON;
+
+        // check upload quota for upload folder
+        if (parseFloat(quota.used) + parseFloat(total_files_size) > quota.max) {
+            mode(toolbarModes.UPLOADFOLDERCANCEL);
+            return;
+        }
+
+        var created_folders = [];
+        var created_path = [];
+
+        // Start
+        parent = _pushObject(parent, 0, files, files[0], 0, _pushObject);
+
+        function _pushObject(parent, index, list_paths, file, file_index, next) {
+            let _obj, folder_name;
+            // Stop
+            if (!file) {
+                // console.log('Stop');
+                return parent;
+            }
+            // get item object
+            if (index >=0 && index < list_paths.length) {
+                _obj = list_paths[index];
+            }
+            // check type of File
+            if (typeof _obj === typeof file) {
+                // console.log(file);
+                if (file.webkitRelativePath.length === 0) {
+                    tb.dropzoneItemCache = tb.multiselected()[0];
+                    tb.dropzone.addFile(file);
+                    // next file
+                    let next_file_index = ++file_index;
+                    return _pushObject(parent, 0, files, files[next_file_index], next_file_index, _pushObject);
+                }
+
+                // change list_paths of File obj
+                let list_paths = file.webkitRelativePath.split('/');
+                return _pushObject(parent, 0, list_paths, file, file_index, _pushObject);
+            }
+
+            // else, it is folder and file
+            folder_name = _obj;
+            if (file.name === folder_name) {
+                // next file
+                // console.log(folder_name, parent && parent.data.name);
+                return _pushFile(parent, file, file_index);
+            }
+            // Create each folder detected from file path
+            // console.log(folder_name, parent && parent.data.name);
+            return _pushFolder(parent, index, list_paths, file, file_index, next);
+        }
+
+        function _pushFile(parent, file, file_index) {
+            parent.open = true;
+            tb.dropzoneItemCache = parent;
+            tb.dropzone.addFile(file);
+            // console.log('Pushed');
+            // next file
+            let next_file_index = ++file_index;
+            return _pushObject(root_parent, 0, files, files[next_file_index], next_file_index, _pushObject);
+        }
+
+        function _pushFolder(parent, index, list_paths, file, file_index, next) {
+            let folder_name;
+            if (index >=0 && index < list_paths.length) {
+                folder_name = list_paths[index];
+            }
+            let currentFolder = created_folders.find(x => x.name === folder_name);
+            let currentFolderPath = '/' + folder_name + '/';
+
+            parent.open = true;
+
+            if (parent.data.materialized) {
+                currentFolderPath = parent.data.materialized + folder_name + '/';
+            }
+
+            // check folder is created
+            let child = parent.children.find((e) => {
+                return e.data.materialized === currentFolderPath;
+            });
+            if (!!child) {
+                // console.log('child', child);
+                let next_folder_index = ++index;
+                return next(child, next_folder_index, list_paths, file, file_index, next);
+            }
+
+            if (currentFolder && created_path.includes(currentFolderPath)) {
+                // console.log('currentFolder.parent', currentFolder.parent);
+                let next_folder_index = ++index;
+                return next(currentFolder.parent, next_folder_index, list_paths, file, file_index, next);
+            }
+
+            created_path.push(currentFolderPath);
+            // console.log('Creating');
+
+            // prepare data for request new folder
+            let extra = {};
+            let path = parent.data.path || '/';
+            let options = {name: folder_name, kind: 'folder', waterbutlerURL: parent.data.waterbutlerURL};
+            if ((parent.data.provider === 'github') || (parent.data.provider === 'gitlab')) {
+                extra.branch = parent.data.branch;
+                options.branch = parent.data.branch;
+            }
+
+            // call api for create folder
+            m.request({
+                method: 'PUT',
+                background: true,
+                config: $osf.setXHRAuthorization,
+                url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId, options, extra)
+            }).then(function (item) {
+                item = tb.options.lazyLoadPreprocess.call(this, item).data;
+                inheritFromParent({data: item}, parent, ['branch']);
+                item = tb.createItem(item, parent.id);
+                parent = item;
+                orderFolder.call(tb, parent);
+
+                // store folder is created
+                created_folders.push({
+                    'name': folder_name,
+                    'parent': parent,
+                });
+                // console.log('Created');
+                // nest folder
+                let next_folder_index = ++index;
+                return next(parent, next_folder_index, list_paths, file, file_index, next);
+            }, function (data) {
+                if (data && data.code === 409) {
+                    $osf.growl(data.message);
+                    m.redraw();
+                } else {
+                    $osf.growl(gettext('Folder creation failed.'));
+                }
+                return root_parent;
+            });
+        }
+    }
+}
 
 /**
  * Download button in Action Column
@@ -1137,10 +1364,12 @@ function _createFolder(event, dismissCallback, helpText) {
     var extra = {};
     var path = parent.data.path || '/';
     var options = {name: val, kind: 'folder', waterbutlerURL: parent.data.waterbutlerURL};
+
     if ((parent.data.provider === 'github') || (parent.data.provider === 'gitlab')) {
         extra.branch = parent.data.branch;
         options.branch = parent.data.branch;
     }
+
     m.request({
         method: 'PUT',
         background: true,
@@ -1780,6 +2009,7 @@ function expandStateLoad(item) {
         toggleIcon = tbOptions.resolveToggle(item),
         addonList = [],
         i;
+
     if (item.children.length > 0 && item.depth === 1) {
         // NOTE: On the RPP *only*: Load the top-level project's NII Storage
         // but do NOT lazy-load children in order to save hundreds of requests.
@@ -1805,6 +2035,7 @@ function expandStateLoad(item) {
             }
         }
     }
+
     if (item.depth > 2 && !item.data.isAddonRoot && !item.data.type && item.children.length === 0 && item.open) {
         // Displays loading indicator until request below completes
         // Copied from toggleFolder() in Treebeard
@@ -1911,12 +2142,11 @@ function _renameEvent () {
     tb.toolbarMode(toolbarModes.DEFAULT);
 }
 
-
 var toolbarModes = {
     'DEFAULT' : 'bar',
     'FILTER' : 'filter',
     'ADDFOLDER' : 'addFolder',
-    'UPLOADFOLDERCANCLE' : 'uploadFolderCancle',
+    'UPLOADFOLDERCANCEL' : 'uploadFolderCancel',
     'UPLOADFOLDEREMPTY' : 'uploadFolderEmpty',
     'RENAME' : 'rename',
     'ADDPROJECT' : 'addProject'
@@ -1968,7 +2198,7 @@ var FGInput = {
                 'data-toggle': tooltipText ? 'tooltip' : '',
                 'title': tooltipText,
                 'data-placement' : 'bottom',
-                'placeholder' : placeholder,
+                'placeholder' : placeholder
                 }),
             m('.text-danger', {
                 'id' : helpTextId
@@ -1977,9 +2207,11 @@ var FGInput = {
     }
 };
 
+// display message under tools bar
 var FGSpan = {
     view : function(ctrl, args) {
         var extraCSS = args.className || '';
+        // message
         var value = args.value || '';
         return m('span',{
             'innerHTML': value,
@@ -2022,157 +2254,14 @@ var FGItemButtons = {
         if (tb.options.placement !== 'fileview') {
             if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions && item.data.permissions.edit) {
                 rowButtons.push(
+                    // handler of Upload Folder button
                     m.component(FGButton, {
-                        onclick: function(event){
-                             // clear cache of input before upload new folder
-                             if(tb.dropzone.hiddenFileInput){
-                                document.body.removeChild(tb.dropzone.hiddenFileInput);
-                             }
-                             tb.dropzone.hiddenFileInput = document.createElement('input');
-                             tb.dropzone.hiddenFileInput.setAttribute('type', 'file');
-                             if(tb.dropzone.options.maxFiles == null || tb.dropzone.options.maxFiles > 1) {
-                                 tb.dropzone.hiddenFileInput.setAttribute('multiple', 'multiple');
-                             }
-                             if(tb.dropzone.options.acceptedFiles != null){
-                                 tb.dropzone.hiddenFileInput.setAttribute('accept', tb.dropzone.options.acceptedFiles);
-                             }
-                             tb.dropzone.hiddenFileInput.style.visibility = 'hidden';
-                             tb.dropzone.hiddenFileInput.style.position = 'absolute';
-                             tb.dropzone.hiddenFileInput.style.top = '0';
-                             tb.dropzone.hiddenFileInput.style.left = '0';
-                             tb.dropzone.hiddenFileInput.style.height = '0';
-                             tb.dropzone.hiddenFileInput.style.width = '0';
-                             document.body.appendChild(tb.dropzone.hiddenFileInput);
-                             try {
-                                 event.stopPropagation();
-                             } catch (e) {
-                                 window.event.cancelBubble = true;
-                             }
-                             // set for select folder
-                             tb.dropzone.hiddenFileInput.setAttribute('webkitdirectory', 'true');
-                             tb.dropzone.hiddenFileInput.click();
-                             if(!item.open){
-                                tb.updateFolder(null, item);
-                             }
-                             var parent = tb.multiselected()[0];
-                             var root_parent = tb.multiselected()[0];
-                             var files = [];
-                             var total_files_size = 0;
-                             tb.dropzone.hiddenFileInput.addEventListener('change', () => {
-                                 // get all files in folder
-                                 files = tb.dropzone.hiddenFileInput.files;
-                                 total_files_size = 0;
-                                 // check folder is empty
-                                 if(files.length === 0){
-                                    mode(toolbarModes.UPLOADFOLDEREMPTY);
-                                 }
-                                 else{
-                                    // calculate total files size in folder
-                                    for (var i = 0; i < files.length; i++){
-                                        total_files_size += files[i].size;
-                                    }
-                                    parent.open = true;
-                                    total_files_size = parseFloat(total_files_size).toFixed(2);
-                                    var quota = null;
-                                    if(item.data.provider){
-                                        // call api get used quota and max quota
-                                        quota = $.ajax({
-                                            async: false,
-                                            method: 'GET',
-                                            url: item.data.nodeApiUrl + 'get_creator_quota/',
-                                        });
-                                        if(quota.responseJSON){
-                                            quota = quota.responseJSON;
-                                            // check upload quota for upload folder
-                                            if (parseFloat(quota.used) + parseFloat(total_files_size) > quota.max){
-                                                mode(toolbarModes.UPLOADFOLDERCANCLE);
-                                            }
-                                            else{
-                                                var created_folders = [];
-                                                var created_path = [];
-                                                parent.open = true;
-                                                for (var _i = 0; _i < files.length; _i++) {
-                                                    if(files[_i].webkitRelativePath.length === 0){
-                                                        tb.dropzoneItemCache = tb.multiselected()[0];
-                                                        tb.dropzone.addFile(files[_i]);
-                                                        continue;
-                                                    }
-                                                    else{
-                                                        var list_paths = files[_i].webkitRelativePath.split('/');
-                                                        for (var _j = 0; _j < list_paths.length - 1; _j++) {
-                                                            var val = list_paths[_j];
-                                                            var check = created_folders.find(x => x.name === val);
-                                                            var check_path = '/' + val + '/';
-                                                            var is_uploadedfolder = false;
-                                                            parent.open = true;
-                                                            if(parent.data.materialized)
-                                                                check_path = parent.data.materialized + val + '/';
-                                                            parent.children.find((e) => {
-                                                                if(e.data.materialized === check_path){
-                                                                    parent = e;
-                                                                    is_uploadedfolder = true;
-                                                                }
-                                                            });
-                                                            // check folder is created
-                                                            if(is_uploadedfolder){
-                                                                continue;
-                                                            }
-                                                            if(check && created_path.includes(check_path)){
-                                                                parent = check.value;
-                                                                continue;
-                                                            }
-                                                            created_path.push(check_path);
-                                                            var extra = {};
-                                                            var path = parent.data.path || '/';
-                                                            var options = {name: val, kind: 'folder', waterbutlerURL: parent.data.waterbutlerURL};
-                                                            if((parent.data.provider === 'github') || (parent.data.provider === 'gitlab')){
-                                                                extra.branch = parent.data.branch;
-                                                                options.branch = parent.data.branch;
-                                                            }
-                                                            // call api for create folder
-                                                            m.request({
-                                                                method: 'PUT',
-                                                                background: true,
-                                                                config: $osf.setXHRAuthorization,
-                                                                url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId, options, extra)
-                                                            }).then( function(item) {
-                                                                    item = tb.options.lazyLoadPreprocess.call(this, item).data;
-                                                                    inheritFromParent({data: item}, parent, ['branch']);
-                                                                    item = tb.createItem(item, parent.id);
-                                                                    parent = item;
-                                                                    orderFolder.call(tb, parent);
-                                                            }, function(data) {
-                                                                if (data && data.code === 409) {
-                                                                    $osf.growl(data.message);
-                                                                    m.redraw();
-                                                                } else {
-                                                                    $osf.growl(gettext('Folder creation failed.'));
-                                                                }
-                                                            });
-                                                            var parent_folder = {
-                                                                'name': val,
-                                                                'value': parent,
-                                                            };
-                                                            // store folder is created
-                                                            created_folders.push(parent_folder);
-                                                        }
-                                                        parent.open = true;
-                                                        tb.dropzoneItemCache = parent;
-                                                        tb.dropzone.addFile(files[_i]);
-                                                        parent = root_parent;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                 }
-                             });
-                        },
+                        onclick: function (event) {_uploadFolderEvent.call(tb, event, item, mode); },
                         icon: 'fa fa-plus',
                         className: 'text-success'
                     }, gettext('Upload Folder')),
                     m.component(FGButton, {
-                        onclick: function(event) {_uploadEvent.call(tb, event, item);},
+                        onclick: function(event) {_uploadEvent.call(tb, event, item); },
                         icon: 'fa fa-upload',
                         className : 'text-success'
                     }, gettext('Upload')),
@@ -2255,6 +2344,7 @@ var FGItemButtons = {
                             icon: 'fa fa-trash',
                             className: 'text-danger'
                         }, gettext('Delete')));
+
                     }
                 }
                 if(storageAddons[item.data.provider].externalView) {
@@ -2390,7 +2480,8 @@ var FGToolbar = {
                     )
                 )
             ];
-            templates[toolbarModes.UPLOADFOLDERCANCLE] = [
+            // Display message and End button when not enough quota
+            templates[toolbarModes.UPLOADFOLDERCANCEL] = [
                 m('.col-xs-12',
                     m('.fangorn-toolbar.pull-right',
                         [
@@ -2406,6 +2497,7 @@ var FGToolbar = {
                     )
                 )
             ];
+            // Display message and End button when forlder is empty
             templates[toolbarModes.UPLOADFOLDEREMPTY] = [
                 m('.col-xs-12',
                     m('.fangorn-toolbar.pull-right',
