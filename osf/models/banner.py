@@ -22,12 +22,6 @@ def validate_banner_dates(banner_id, start_date, end_date):
 
 class ScheduledBanner(models.Model):
 
-    class Meta:
-        # Custom permissions for use in the OSF Admin App
-        permissions = (
-            ('view_scheduledbanner', 'Can view scheduled banner details'),
-        )
-
     name = models.CharField(unique=True, max_length=256)
     start_date = NonNaiveDateTimeField()
     end_date = NonNaiveDateTimeField()

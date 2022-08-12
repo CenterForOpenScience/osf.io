@@ -190,6 +190,10 @@ class NodeLog(ObjectIDMixin, BaseModel):
     class Meta:
         ordering = ['-date']
         get_latest_by = 'date'
+        indexes = [
+            models.Index(fields=['node', '-date'], name='nodelog__node_id_date_desc'),
+            models.Index(fields=['should_hide', 'node'], name='osf_nodelog_should_hide_nid')
+        ]
 
     @property
     def absolute_api_v2_url(self):

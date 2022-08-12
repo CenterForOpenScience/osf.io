@@ -89,10 +89,10 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     # Add regardless it can be pinned to a version or not
     _history = DateTimeAwareJSONField(default=list, blank=True)
     # A concrete version of a FileNode, must have an identifier
-    versions = models.ManyToManyField('FileVersion', through='BaseFileVersionsThrough')
+    versions = models.ManyToManyField('FileVersion', through='osf.BaseFileVersionsThrough')
 
-    target_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    target_object_id = models.PositiveIntegerField()
+    target_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, blank=True, null=True, default=None)
+    target_object_id = models.PositiveIntegerField(blank=True, null=True, default=None)
     target = GenericForeignKey('target_content_type', 'target_object_id')
 
     parent = models.ForeignKey('self', blank=True, null=True, default=None, related_name='_children', on_delete=models.CASCADE)

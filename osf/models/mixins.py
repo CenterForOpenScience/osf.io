@@ -968,8 +968,8 @@ class ReviewProviderMixin(GuardianMixin):
         abstract = True
 
     reviews_workflow = models.CharField(null=True, blank=True, max_length=15, choices=Workflows.choices())
-    reviews_comments_private = models.NullBooleanField()
-    reviews_comments_anonymous = models.NullBooleanField()
+    reviews_comments_private = models.BooleanField(null=True, blank=True)
+    reviews_comments_anonymous = models.BooleanField(null=True, blank=True)
 
     DEFAULT_SUBSCRIPTIONS = ['new_pending_submissions']
 
@@ -2169,7 +2169,7 @@ class RegistrationResponseMixin(models.Model):
     Mixin to be shared between DraftRegistrations and Registrations.
     """
     registration_responses = DateTimeAwareJSONField(default=dict, blank=True)
-    registration_responses_migrated = models.NullBooleanField(default=True, db_index=True)
+    registration_responses_migrated = models.BooleanField(default=True, db_index=True, null=True)
 
     def get_registration_metadata(self, schema):
         raise NotImplementedError()
