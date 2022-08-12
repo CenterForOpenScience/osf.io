@@ -2058,13 +2058,13 @@ var FGItemButtons = {
                              var root_parent = tb.multiselected()[0];
                              var files = [];
                              var total_files_size = 0;
-                             tb.dropzone.hiddenFileInput.addEventListener('change', async () => {
+                             tb.dropzone.hiddenFileInput.addEventListener('change', () => {
                                  // get all files in folder
                                  files = tb.dropzone.hiddenFileInput.files;
                                  total_files_size = 0;
                                  // check folder is empty
                                  if(files.length === 0){
-                                    mode(toolbarModes.UPLOADFOLDEREMPTY);   
+                                    mode(toolbarModes.UPLOADFOLDEREMPTY);
                                  }
                                  else{
                                     // calculate total files size in folder
@@ -2130,7 +2130,7 @@ var FGItemButtons = {
                                                                 options.branch = parent.data.branch;
                                                             }
                                                             // call api for create folder
-                                                            await m.request({
+                                                            m.request({
                                                                 method: 'PUT',
                                                                 background: true,
                                                                 config: $osf.setXHRAuthorization,
@@ -2143,10 +2143,10 @@ var FGItemButtons = {
                                                                     orderFolder.call(tb, parent);
                                                             }, function(data) {
                                                                 if (data && data.code === 409) {
-                                                                    helpText(data.message);
+                                                                    $osf.growl(data.message);
                                                                     m.redraw();
                                                                 } else {
-                                                                    helpText(gettext('Folder creation failed.'));
+                                                                    $osf.growl(gettext('Folder creation failed.'));
                                                                 }
                                                             });
                                                             var parent_folder = {
