@@ -121,6 +121,17 @@ class Migration(migrations.Migration):
             ),
         ),
         AlterFieldIfNotAlready(
+            model_name='subject',
+            name='provider',
+            field=models.ForeignKey(
+                'RegistrationProvider',
+                related_name='draft_registrations',
+                null=True,
+                on_delete=models.CASCADE,
+                default=None,
+            ),
+        ),
+        AlterFieldIfNotAlready(
             model_name='schemaresponse',
             name='schema',
             field=models.ForeignKey(

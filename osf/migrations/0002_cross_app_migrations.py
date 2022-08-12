@@ -17,7 +17,7 @@ class AddFieldIfNotExists(migrations.AddField):
 
 class Migration(migrations.Migration):
     '''
-    This migration is for local setup.
+    This migration is for local setup so historically dependent cross-app migrations can be squashed.
     '''
     atomic = False
 

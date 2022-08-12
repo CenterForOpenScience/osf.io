@@ -84,7 +84,7 @@ class DateTimeAwareJSONField(JSONField):
         defaults.update(kwargs)
         return super(DateTimeAwareJSONField, self).formfield(**defaults)
 
-    def from_db_value(self, value, expression, connection, context):
+    def from_db_value(self, value, expression, connection):
         if value is None:
             return None
         return super(DateTimeAwareJSONField, self).to_python(decode_datetime_objects(value))
