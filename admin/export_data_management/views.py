@@ -1,5 +1,5 @@
 from osf.models import Institution
-from django.views.generic import ListView, View
+from django.views.generic import ListView
 from admin.rdm.utils import RdmPermissionMixin
 from admin.base import settings
 from rest_framework import status
@@ -30,29 +30,23 @@ class ExportDataManagement(RdmPermissionMixin, ListView):
 
 class ExportDataRestore(RdmPermissionMixin, APIView):
     raise_exception = True
-    template_name = 'export_data_management/export_data.html'
 
     def post(self, request, *args, **kwargs):
         destination_id = request.POST.get('destination_id', default='-1')
         process = pre_restore_export_data.delay(1, 1, destination_id)
         return Response({'task_id': process.task_id}, status=status.HTTP_200_OK)
 
-        # process_status = restore_export_data(self, 2, 3, destination_id)
-        # if process_status == "TERMINATED":
-        #     return Response({}, status=status.HTTP_400_BAD_REQUEST)
-        # elif process_status == "SUCCESS":
-        #     return Response({}, status=status.HTTP_200_OK)
-
 
 class ExportDataRestoreTaskStatus(RdmPermissionMixin, APIView):
     def get(self, request, *args, **kwargs):
-        # task_id = request.GET.get('task_id', default='-1')
-        # task = AsyncResult(task_id)
-        # response = {
-        #     'state': task.state,
-        # }
+        task_id = request.GET.get('task_id', default='-1')
+        task = AsyncResult(task_id)
         response = {
-            'state': "SUCCESS",
-            'result': "Open Dialog",
+            'state': task.state,
         }
+        if task.state != 'FAILURE':
+            response = {
+                'state': task.state,
+                'result': task.result,
+            }
         return Response(response, status=status.HTTP_200_OK)

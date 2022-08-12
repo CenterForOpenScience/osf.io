@@ -468,6 +468,10 @@
             if (state === 'SUCCESS' && result === 'Open Dialog') {
                 // Open Dialog
                 $("#restore").modal('show');
+            } else if (state === 'PENDING') {
+               setTimeout(() => {
+                   checkTaskStatus(task_id);
+               }, 1000);
             } else {
                 cancelRestore();
             }
