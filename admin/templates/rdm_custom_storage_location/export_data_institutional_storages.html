@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% load render_bundle from webpack_loader %}
+
+{% block top_includes %}
+    <link rel="stylesheet" type="text/css" href="/static/css/institutions.css"/>
+{% endblock %}
+
+{% block title %}
+    <title>{% trans "List of the Institutional Storages" %}</title>
+{% endblock title %}
+
+{% block content %}
+    <h2>{% trans "List of the Institutional Storages" %}<br/><small>(for {{ institution.name }})</small></h2>
+
+    {% include "util/pagination.html" with items=page status=status %}
+    <table class="table table-striped table-hover table-responsive">
+        <thead>
+        <tr>
+            <th>{% trans "ID" %}</th>
+            <th>{% trans "Provider" %}</th>
+            <th>{% trans "Name" %}</th>
+            <th>{% trans "Export data storage location" %}</th>
+            <th>{% trans "Export Data" %}</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        {% if not institutions|length %}
+            <h3>{% trans "No results found" %}</h3>
+        {% endif %}
+        {% for institution in institutions %}
+            <tr>
+                <td>1</td>
+                <td>NII Storage</td>
+                <td>NII Storage</td>
+                <td><select class="form-control" title="" style="max-width: 320px;">
+                    <option>storage_1_1 (AWS S3 storage)</option>
+                </select></td>
+                <td>
+                    <div class="btn-group" role="group" aria-label="...">
+                        <button type="button" class="btn btn-primary" style="min-width: 90px;">{% trans "Export" %}</button>
+                        <button type="button" class="btn btn-primary disabled"
+                                disabled
+                                style="min-width: 90px;">{% trans "Stop exporting" %}</button>
+                    </div>
+                </td>
+                <td>
+                    <button type="button" class="btn btn-primary">{% trans "View export data list" %}</button>
+                </td>
+            </tr>
+        {% endfor %}
+        <!-- 1	NII Storage			NII Storage		storage_1_1 (AWS S3 storage)			▼	[ Export ]		[ View export data list ] -->
+        <tr>
+            <td>1</td>
+            <td>NII Storage</td>
+            <td>NII Storage</td>
+            <td><select class="form-control" title="" style="max-width: 320px;">
+                <option>storage_1_1 (AWS S3 storage)</option>
+            </select></td>
+            <td>
+                <div class="btn-group" role="group" aria-label="...">
+                    <button type="button" class="btn btn-primary" style="min-width: 90px;">Export</button>
+                    <button type="button" class="btn btn-primary disabled"
+                            disabled
+                            style="min-width: 90px;">Stop exporting
+                    </button>
+                </div>
+            </td>
+            <td>
+                <button type="button" class="btn btn-primary">View export data list</button>
+            </td>
+        </tr>
+        <!-- 2	AWS S3 storage			S3 storage		storage_2_1 (S3 compatible storage)			▼	[ Export ]		[ View export data list ] -->
+        <tr>
+            <td>2</td>
+            <td>AWS S3 storage</td>
+            <td>S3 storage</td>
+            <td><select class="form-control" title="" style="max-width: 320px;">
+                <option>storage_2_1 (S3 compatible storage)</option>
+            </select></td>
+            <td>
+                <div class="btn-group" role="group" aria-label="...">
+                    <button type="button" class="btn btn-primary" style="min-width: 90px;">Export</button>
+                    <button type="button" class="btn btn-primary disabled"
+                            disabled
+                            style="min-width: 90px;">Stop exporting
+                    </button>
+                </div>
+            </td>
+            <td>
+                <button type="button" class="btn btn-primary">View export data list</button>
+            </td>
+        </tr>
+        <!-- 3	S3 compatible storage			S3 compat storage		storage_1_1 (AWS S3 storage)			▼	[ Export ]		[ View export data list ] -->
+        <tr>
+            <td>3</td>
+            <td>S3 compatible storage</td>
+            <td>S3 compat storage</td>
+            <td><select class="form-control" title="" style="max-width: 320px;">
+                <option>storage_1_1 (AWS S3 storage)</option>
+            </select></td>
+            <td>
+                <div class="btn-group" role="group" aria-label="...">
+                    <button type="button" class="btn btn-primary" style="min-width: 90px;">Export</button>
+                    <button type="button" class="btn btn-primary disabled"
+                            disabled
+                            style="min-width: 90px;">Stop exporting
+                    </button>
+                </div>
+            </td>
+            <td>
+                <button type="button" class="btn btn-primary">View export data list</button>
+            </td>
+        </tr>
+        <!-- 4	Nextcloud			Nextcloud storage		storage_3_1 (Cloud storage)			▼	[ Stop exporting ]		 -->
+        <tr>
+            <td>4</td>
+            <td>Nextcloud</td>
+            <td>Nextcloud storage</td>
+            <td><select class="form-control" title="" style="max-width: 320px;">
+                <option>storage_3_1 (Cloud storage)</option>
+            </select></td>
+            <td>
+                <div class="btn-group" role="group" aria-label="...">
+                    <button type="button" class="btn btn-primary disabled" style="min-width: 90px;">Export</button>
+                    <button type="button" class="btn btn-primary"
+                            style="min-width: 90px;">Stop exporting
+                    </button>
+                </div>
+            </td>
+            <td>
+                <button type="button" class="btn btn-primary">View export data list</button>
+            </td>
+        </tr>
+        <!-- 5	Dropbox Business			Dropbox B storage		storage_3_2 (Cloud storage)			▼	[ Stop exporting ]		 -->
+        <tr>
+            <td>5</td>
+            <td>Dropbox Business</td>
+            <td>Dropbox B storage</td>
+            <td><select class="form-control" title="" style="max-width: 320px;">
+                <option>storage_3_2 (Cloud storage)</option>
+            </select></td>
+            <td>
+                <div class="btn-group" role="group" aria-label="...">
+                    <button type="button" class="btn btn-primary disabled" style="min-width: 90px;">Export</button>
+                    <button type="button" class="btn btn-primary"
+                            style="min-width: 90px;">Stop exporting
+                    </button>
+                </div>
+            </td>
+            <td>
+            </td>
+        </tr>
+        <!-- 6	Box			Box storage		storage_1_1 (AWS S3 storage)			▼	[ Export ]		 -->
+        <tr>
+            <td>6</td>
+            <td>Box</td>
+            <td>Box storage</td>
+            <td><select class="form-control" title="" style="max-width: 320px;">
+                <option>storage_1_1 (AWS S3 storage)</option>
+            </select></td>
+            <td>
+                <div class="btn-group" role="group" aria-label="...">
+                    <button type="button" class="btn btn-primary" style="min-width: 90px;">Export</button>
+                    <button type="button" class="btn btn-primary disabled"
+                            disabled
+                            style="min-width: 90px;">Stop exporting
+                    </button>
+                </div>
+            </td>
+            <td>
+            </td>
+        </tr>
+        <!-- 7	Google Drive			GDrive storage		storage_1_1 (AWS S3 storage)			▼	[ Export ]		 -->
+        <tr>
+            <td>7</td>
+            <td>Google Drive</td>
+            <td>GDrive storage</td>
+            <td><select class="form-control" title="" style="max-width: 320px;">
+                <option>storage_1_1 (AWS S3 storage)</option>
+            </select></td>
+            <td>
+                <div class="btn-group" role="group" aria-label="...">
+                    <button type="button" class="btn btn-primary" style="min-width: 90px;">Export</button>
+                    <button type="button" class="btn btn-primary disabled"
+                            disabled
+                            style="min-width: 90px;">Stop exporting
+                    </button>
+                </div>
+            </td>
+            <td>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+{% endblock content %}

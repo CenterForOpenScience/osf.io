@@ -1,16 +1,14 @@
 {% extends "base.html" %}
-{% load render_bundle from webpack_loader %}
-{% load static %}
 {% load i18n %}
+{% load static %}
+
+{% load render_bundle from webpack_loader %}
 
 {% block top_includes %}
     <link rel="stylesheet" type="text/css" href="/static/css/institutions.css"/>
     <link rel="stylesheet" href="/static/css/rdm_addons.css">
     <link rel="stylesheet" href="/static/css/rdm_institutional_storage.css">
 {% endblock %}
-
-{% load user_extras %}
-{% load spam_extras %}
 
 {% block title %}
     <title>{% trans "Export data storage location" %}</title>
@@ -78,15 +76,7 @@
 
     </div>
 
-    <div class="pagination pagination-lg" style=" margin: 15px 0;">
-            <span>
-                <div class="btn btn-primary disabled">|</div>
-                <div class="btn btn-primary disabled"><i class="fa fa-angle-left"></i></div>
-                <span class="current">Page 1 of 1</span>
-                <div class="btn btn-primary disabled"><i class="fa fa-angle-right"></i></div>
-                <div class="btn btn-primary disabled">|</div>
-            </span>
-    </div>
+    {% include "util/pagination.html" with items=page status=status %}
     <table class="table table-striped table-hover table-responsive">
         <thead>
         <tr>
@@ -97,46 +87,19 @@
         </tr>
         </thead>
         <tbody>
-        <tr>
-            <td>1</td>
-            <td>storage_1_1</td>
-            <td>AWS S3 storage</td>
-            <td>
-                <button class="btn btn-primary">Delete</button>
-            </td>
-        </tr>
-        <tr>
-            <td>2</td>
-            <td>storage_1_2</td>
-            <td>AWS S3 storage</td>
-            <td>
-                <button class="btn btn-primary">Delete</button>
-            </td>
-        </tr>
-        <tr>
-            <td>3</td>
-            <td>storage_2_1</td>
-            <td>S3 compatible storage</td>
-            <td>
-                <button class="btn btn-primary">Delete</button>
-            </td>
-        </tr>
-        <tr>
-            <td>4</td>
-            <td>storage_3_1</td>
-            <td>Nextcloud</td>
-            <td>
-                <button class="btn btn-primary">Delete</button>
-            </td>
-        </tr>
-        <tr>
-            <td>5</td>
-            <td>storage_3_2</td>
-            <td>Dropbox Business</td>
-            <td>
-                <button class="btn btn-primary">Delete</button>
-            </td>
-        </tr>
+        {% if not institutions|length %}
+            <h3>{% trans "No results found" %}</h3>
+        {% endif %}
+        {% for institution in institutions %}
+            <tr>
+                <td>1</td>
+                <td>storage_1_1</td>
+                <td>AWS S3 storage</td>
+                <td>
+                    <button class="btn btn-primary">Delete</button>
+                </td>
+            </tr>
+        {% endfor %}
         </tbody>
     </table>
 

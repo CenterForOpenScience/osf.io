@@ -1,4 +1,6 @@
 from django.conf.urls import url
+
+from . import export_data_views
 from . import views
 
 
@@ -13,5 +15,17 @@ urlpatterns = [
     url(r'^remove_auth_data_temporary/$', views.RemoveTemporaryAuthData.as_view(), name='remove_auth_data_temporary'),
     url(r'^usermap/$', views.UserMapView.as_view(), name='usermap'),
     # to register export data storage location
-    url(r'^export_data_storage_location/$', views.ExportStorageLocationView.as_view(), name='export_data_storage_location'),
+    url(r'^export_data/storage_location/$', export_data_views.ExportStorageLocationView.as_view(), name='export_data_storage_location'),
+    url(r'^export_data/institutions/$', export_data_views.ExportDataInstitutionList.as_view(), name='export_data_institutions'),
+    url(r'^export_data/institutions/(?P<institution_id>[0-9]+)/storages/$', export_data_views.ExportDataInstitutionalStorages.as_view(),
+        name='export_data_institution_storages'),
+    url(r'^export_data/institutions/(?P<institution_id>[0-9]+)/storages/(?P<storage_id>[0-9]+)/$',
+        export_data_views.ExportDataList.as_view(),
+        name='export_data_list'),
+    url(r'^export_data/institutions/(?P<institution_id>[0-9]+)/storages/(?P<storage_id>[0-9]+)/deleted/$',
+        export_data_views.ExportDataDeletedList.as_view(),
+        name='export_data_deleted_list'),
+    url(r'^export_data/(?P<data_id>[0-9]+)/$',
+        export_data_views.ExportDataInformation.as_view(),
+        name='export_data_information'),
 ]

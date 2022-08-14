@@ -312,17 +312,33 @@
           {% endif %}
           {% if not user.is_superuser and user.is_staff %}
             <li><a href="{% url 'custom_storage_location:institutional_storage' %}"><i class='fa fa-link'></i> <span>{% trans "Institutional Storage" %}</span></a></li>
+          {% endif %}
+          {% if user.is_superuser %}
+            <li class="{% if request.resolver_match.url_name == 'export_data_institutions' or request.resolver_match.url_name == 'export_data_institution_storages' %}active{% endif %}">
+                <a href="{% url 'custom_storage_location:export_data_institutions' %}">
+                    <i class="fa fa-link"></i> <span>{% trans "Institutional Storages Control" %}</span>
+                </a>
+            </li>
+          {% endif %}
+          {% if not user.is_superuser and user.is_staff %}
+            <li class="{% if request.resolver_match.url_name == 'export_data_institution_storages' %}active{% endif %}">
+                <a href="{% url 'custom_storage_location:export_data_institution_storages' institution_id=institution.id %}">
+                    <i class="fa fa-link"></i> <span>{% trans "Institutional Storages Control" %}</span>
+                </a>
+            </li>
+          {% endif %}
+          {% if not user.is_superuser and user.is_staff %}
             <li><a href="{% url 'institutions:statistical_status_default_storage' %}"><i class='fa fa-link'></i> <span>{% trans "Quota for Institutional Storage" %}</span></a></li>
           {% endif %}
           {% if user.is_superuser or user.is_staff %}
             <li><a href="{% url 'institutional_storage_quota_control:list_institution_storage' %}"><i class='fa fa-link'></i> <span>{% trans "Inst. Storage Quota Control" %}</span></a></li>
-            <li class="{% if url_name == 'url_name' %}active{% endif %}">
+            <li class="{% if request.resolver_match.url_name == 'export_data_storage_location'  %}active{% endif %}">
                 <a href="{% url 'custom_storage_location:export_data_storage_location' %}">
                     <i class="fa fa-link"></i> <span>{% trans "Export data storage location" %}</span>
                 </a>
             </li>
-            <li class="{% if url_name == 'url_name' %}active{% endif %}">
-                <a href="javascript:void(0)">
+            <li class="{% if request.resolver_match.url_name == 'export_data_list' or request.resolver_match.url_name == 'export_data_deleted_list' or request.resolver_match.url_name == 'export_data_information' %}active{% endif %}">
+                <a href="{% url 'custom_storage_location:export_data_storage_location' %}">
                     <i class="fa fa-link"></i> <span>{% trans "Export Data Management" %}</span>
                 </a>
             </li>

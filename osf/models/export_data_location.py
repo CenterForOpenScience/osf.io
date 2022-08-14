@@ -2,21 +2,18 @@ from __future__ import unicode_literals
 
 import logging
 
-from django.apps import apps
 from django.db import models
-from django_extensions.db.models import TimeStampedModel
 
+from osf.models import base
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import EncryptedJSONField
 from website import settings as website_settings
 from website.util import api_v2_url
 
-settings = apps.get_app_config('addons_osfstorage')
-
 logger = logging.getLogger(__name__)
 
 
-class ExportDataLocation(TimeStampedModel):
+class ExportDataLocation(base.BaseModel):
     institution_guid = models.CharField(max_length=255, db_index=True)
     name = models.CharField(max_length=255)
     waterbutler_credentials = EncryptedJSONField(default=dict)

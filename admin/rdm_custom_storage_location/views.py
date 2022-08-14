@@ -15,6 +15,7 @@ import logging
 from addons.osfstorage.models import Region
 from admin.rdm.utils import RdmPermissionMixin
 from admin.rdm_custom_storage_location import utils
+from admin.rdm_custom_storage_location.export_data_views import ExportStorageLocationViewBaseView
 from osf.models import Institution, OSFUser
 from osf.models.external import ExternalAccountTemporary
 from scripts import refresh_addon_tokens
@@ -23,18 +24,6 @@ from website import settings as osf_settings
 logger = logging.getLogger(__name__)
 
 SITE_KEY = 'rdm_custom_storage_location'
-
-
-class ExportStorageLocationViewBaseView(RdmPermissionMixin, UserPassesTestMixin):
-    """ Base class for all the Institutional Storage Views """
-    PROVIDERS_AVAILABLE = ['s3', 's3compat']
-
-    def test_func(self):
-        """ Check user permissions """
-        if self.is_admin and self.is_affiliated_institution:
-            self.PROVIDERS_AVAILABLE += ['dropboxbusiness', 'nextcloudinstitutions']
-
-        return self.is_super_admin or (self.is_admin and self.is_affiliated_institution)
 
 
 class InstitutionalStorageBaseView(RdmPermissionMixin, UserPassesTestMixin):
@@ -583,18 +572,3 @@ class UserMapView(InstitutionalStorageBaseView, View):
         resp = HttpResponse(s.getvalue(), content_type='text/%s' % ext)
         resp['Content-Disposition'] = 'attachment; filename=%s.%s' % (name, ext)
         return resp
-
-
-class ExportStorageLocationView(ExportStorageLocationViewBaseView, TemplateView):
-    """ View that shows the Export Data Storage Location's template """
-    model = Institution
-    template_name = 'rdm_custom_storage_location/export_data_storage_location.html'
-
-    def get_context_data(self, *args, **kwargs):
-        if self.is_affiliated_institution:
-            institution = self.request.user.affiliated_institutions.first()
-            kwargs['institution'] = institution
-
-        kwargs['providers'] = utils.get_providers(self.PROVIDERS_AVAILABLE)
-        kwargs['osf_domain'] = osf_settings.DOMAIN
-        return kwargs
