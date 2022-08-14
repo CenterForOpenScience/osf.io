@@ -1,0 +1,498 @@
+{% load static %} {% load i18n %} 
+{% block top_includes %}
+    <link rel="stylesheet" type="text/css" href="/static/css/base.css" />
+{% endblock %}
+<style type="text/css">
+    .nowrap {
+        white-space: nowrap;
+    }
+
+    .w-search-input {
+        width: 6em !important;
+        margin-right: 2px;
+    }
+
+    .form-group.flex-item {
+        max-width: 20em !important;
+    }
+
+    .flex-container,
+    .flex-container .form-group.flex-item {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        align-items: center;
+    }
+
+    .flex-container {
+        margin-top: 0;
+        margin-bottom: 15px;
+    }
+
+    .flex-container input[type=hiden],
+    .flex-container .form-group.flex-item input[type=hiden] {
+        flex: 0;
+    }
+
+    .row.flex-container {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    .form-group.flex-item .w-search-input,
+    .flex-container .flex-item {
+        flex-grow: 1;
+        flex-shrink: 1;
+        flex-basis: 0;
+        white-space: nowrap;
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .flex-item .flex-container,
+    .flex-item .flex-container .flex-item {
+        margin-bottom: 0;
+    }
+
+    .pagination-extra-div.flex-container .pagination {
+        margin: 0;
+    }
+
+    .pagination-extra-div.flex-container > .flex-item {
+        margin-top: 0;
+        margin-bottom: 15px;
+    }
+
+    .flex-item + .flex-item {
+        margin-left: 2px;
+        margin-right: 0;
+    }
+
+    .search-form .flex-item + .flex-item > label {
+        margin-left: 2px;
+    }
+
+    .search-form .flex-item > label {
+        margin-right: 2px;
+    }
+
+    @media screen and (max-width: 991px) {
+        .pagination-extra-div.flex-container > .flex-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .pagination-extra-div > .flex-item + .flex-item {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+        }
+    }
+
+    @media (min-width: 768px) and (max-width: 991px) {
+        .pagination-extra-div.flex-container {
+            flex-direction: column;
+            flex-wrap: wrap;
+            align-items: flex-start;
+        }
+
+        .pagination-extra-div .form-group.flex-item {
+            margin-top: 0;
+        }
+    }
+
+    @media screen and (max-width: 767px) {
+        .w-search-input {
+            width: auto !important;
+        }
+
+        .flex-container {
+            flex-direction: column;
+            flex-wrap: wrap;
+            align-items: flex-start;
+        }
+
+        .form-group.flex-item {
+            margin-top: 0;
+        }
+
+        .form-inline.flex-container .form-group.flex-item label {
+            min-width: 140px;
+            flex-grow: 1;
+        }
+    }
+</style>
+<section class="content">
+    <div class="list-btn" style="margin:0 0 10px; display: flex; gap: 10px;">
+        <button type="button" class="btn btn-primary"
+                data-target="#checkExportData" data-toggle="modal"
+                style="min-width:120px;">Check export data
+        </button>
+        <button type="button" class="btn btn-primary"
+                style="min-width:120px; margin-left:10px;">Export to CSV
+        </button>
+        <button type="button" class="btn btn-primary"
+                data-target="#revert" data-toggle="modal"
+                style="min-width:120px; margin-left:10px;">Revert
+        </button>
+        <button type="button" class="btn btn-danger"
+                data-target="#deleteExportData" data-toggle="modal"
+                style="min-width:120px; margin-left:10px;">Delete
+        </button>
+    </div>
+
+    <form action="." method="post" class="form-horizontal" id="entitlements_form" style="margin: 10px 0">
+        <div class="form-group">
+            <label class="col-sm-2 control-label text-left" style="">Restore destination storage</label>
+            <div class="col-sm-9" style="display: flex; gap: 10px;">
+                <select class="form-control" id="destination_storage" title="" style="max-width: 320px; flex: auto">
+                    <option value="3" selected="selected">AWS S3 storage</option>
+                    <option value="1">NII Storage</option>
+                    <option value="2">S3 compatible storage</option>
+                    <option value="4">Nextcloud</option>
+                    <option value="5">Dropbox Business</option>
+                </select>
+                <div class="btn-group" role="group" aria-label="...">
+                    <button type="button" id="restoreBtn" class="btn btn-primary"
+                            style="min-width: 90px; flex: initial;"
+                            onclick="restoreExportData()">Restore
+                    </button>
+                    <button type="button" id="stopRestoreBtn" class="btn btn-primary disabled"
+                            disabled
+                            style="min-width: 90px; flex: initial;">Stop restoring
+                    </button>
+                    <button type="button" id="checkRestoreBtn" class="btn btn-primary disabled"
+                            data-target="#checkRestoreData" data-toggle="modal"
+                            style="min-width: 90px; flex: initial;">Check restore data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <h2>Export Data Information of S3 compatible storage<br><small>(for GakuNin RDM IdP)</small></h2>
+    <table class="table table-striped">
+        <tbody>
+        <tr>
+            <td>Institutional information</td>
+            <td>GakuNin RDM IdP</td>
+        </tr>
+        <tr>
+            <td>Process start</td>
+            <td>2022-06-30 01:30:00</td>
+        </tr>
+        <tr>
+            <td>Process end</td>
+            <td>2022-06-30 02:30:00</td>
+        </tr>
+        <tr>
+            <td>Source institution storage type</td>
+            <td>NII Storage</td>
+        </tr>
+        <tr>
+            <td>Export data storage location</td>
+            <td>storage_2_1 (S3 compatible storage)</td>
+        </tr>
+        <tr>
+            <td>Number of projects</td>
+            <td>1</td>
+        </tr>
+        <tr>
+            <td>Number of files</td>
+            <td>4</td>
+        </tr>
+        <tr>
+            <td>Total file size</td>
+            <td>483 KB</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <div class="pagination pagination-lg">
+        <span>
+            <div class="btn btn-primary disabled" id="first-page">|</div>
+            <div class="btn btn-primary disabled" id="previous-page"><i class="fa fa-angle-left"></i></div>
+            <span class="current">Page 1 of 2</span>
+            <div class="btn btn-primary" id="next-page"><i class="fa fa-angle-right"></i></div>
+            <div class="btn btn-primary" id="last-page">|</div>
+        </span>
+    </div>
+
+    <table id="datatables" class="table table-striped table-hover table-bordered table-responsive">
+        <thead>
+        <!-- File path                      Project         Contributor     Timestamp by    Tags                    Size    Version ID  Created at -->
+        <tr>
+            <th>File path</th>
+            <th>Project</th>
+            <th>Contributor</th>
+            <th>Timestamp by</th>
+            <th>Tags</th>
+            <th>Size</th>
+            <th>Version ID</th>
+            <th>Created at</th>
+        </tr>
+        </thead>
+        <tbody class="list" id="timestamp_error_list">
+        <!-- /001/component.png             Project_7_A001  name_ierae07    name_ierae07    component, image, png   111 KB  2           2022-06-29 05:11 PM -->
+        <tr class="">
+            <td class="">/001/component.png</td>
+            <td class="">Project_7_A001</td>
+            <td class="">name_ierae07</td>
+            <td class="">name_ierae07</td>
+            <td class="">component, image, png</td>
+            <td class="">111 KB</td>
+            <td class="">2</td>
+            <td class="">2022-06-29 05:11 PM</td>
+        </tr>
+        <!-- /001/component.png             Project_7_A001  name_ierae07    name_ierae07    component, image, png   152 KB  1           2022-06-25 04:10 PM -->
+        <tr class="">
+            <td class="">/001/component.png</td>
+            <td class="">Project_7_A001</td>
+            <td class="">name_ierae07</td>
+            <td class="">name_ierae07</td>
+            <td class="">component, image, png</td>
+            <td class="">152 KB</td>
+            <td class="">1</td>
+            <td class="">2022-06-25 04:10 PM</td>
+        </tr>
+        <!-- /001/expand.png                Project_7_A001  name_ierae07    name_ierae07                            124 KB  1           2022-06-25 04:10 PM -->
+        <tr class="">
+            <td class="">/001/expand.png</td>
+            <td class="">Project_7_A001</td>
+            <td class="">name_ierae07</td>
+            <td class="">name_ierae07</td>
+            <td class=""></td>
+            <td class="">124 KB</td>
+            <td class="">1</td>
+            <td class="">2022-06-25 04:10 PM</td>
+        </tr>
+        <!-- /001/icon_1_document_x16.png   Project_7_A001  name_ierae07    name_ierae07                            96 KB   1           2022-06-25 04:10 PM -->
+        <tr class="">
+            <td class="">/001/icon_1_document_x16.png</td>
+            <td class="">Project_7_A001</td>
+            <td class="">name_ierae07</td>
+            <td class="">name_ierae07</td>
+            <td class=""></td>
+            <td class="">96 KB</td>
+            <td class="">1</td>
+            <td class="">2022-06-25 04:10 PM</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <style type="text/css">
+        .modal.middle {
+            text-align: center;
+            padding: 0 !important;
+        }
+
+        .modal.middle:before {
+            content: '';
+            display: inline-block;
+            height: 100%;
+            vertical-align: middle;
+            margin-right: -4px; /* Adjusts for spacing */
+        }
+
+        .modal.middle .modal-dialog {
+            display: inline-block;
+            text-align: left;
+            vertical-align: middle;
+        }
+    </style>
+
+    <div class="modal middle fade" id="checkExportData" tabindex="-1" aria-labelledby="checkExportDataLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <!--<div class="modal-header">-->
+                <!--    <h4 class="modal-title" id="checkExportDataLabel">The result of checking export data</h4>-->
+                <!--</div>-->
+                <div class="modal-body text-left">
+                    <p>
+                        The result of checking export data<br/>
+                        OK: 4/4 files<br/>
+                        NG: 0/4 files
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal middle fade" id="deleteExportData" tabindex="-1" aria-labelledby="deleteExportLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <!--<div class="modal-header">-->
+                <!--    <h4 class="modal-title" id="deleteExportLabel">Confirm to delete</h4>-->
+                <!--</div>-->
+                <div class="modal-body text-left">
+                    <p>Are you sure you want to delete this export data?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <a type="button" class="btn btn-danger" href="#">Delete</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal middle fade" id="revert" tabindex="-1" aria-labelledby="revertLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <!--<div class="modal-header">-->
+                <!--    <h4 class="modal-title" id="revertLabel">Confirm to revert</h4>-->
+                <!--</div>-->
+                <div class="modal-body text-left">
+                    <p>
+                        This function will actually change the files present on storage.<br/>
+                        Do you want to run it as it is?
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <a type="button" class="btn btn-primary" href="#">Revert</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal middle fade" id="restore" tabindex="-1" data-backdrop="static" data-keyboard="false" aria-labelledby="restoreLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <!--<div class="modal-header">-->
+                <!--    <h4 class="modal-title" id="restoreLabel">Confirm to restore</h4>-->
+                <!--</div>-->
+                <div class="modal-body text-left">
+                    <p>
+                        リストア先のストレージが空ではありません。<br/>
+                        本機能は空のストレージへの操作を想定しています。<br/>
+                        そのまま実行しますか？
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="cancelRestore()">Close</button>
+                    <a type="button" class="btn btn-primary" href="javascript:void(0)" onclick="startRestore()">Restore</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal middle fade" id="checkRestoreData" tabindex="-1" aria-labelledby="checkRestoreDataLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <!--<div class="modal-header">-->
+                <!--    <h4 class="modal-title" id="checkRestoreDataLabel">The result of checking restore data</h4>-->
+                <!--</div>-->
+                <div class="modal-body text-left">
+                    <p>
+                        The result of checking restore data<br/>
+                        OK: 2/4 files<br/>
+                        NG: 2/4 files
+                    </p>
+                    <table class="table table-striped table-hover table-bordered table-responsive">
+                        <thead>
+                        <!-- File path                      Project         Contributor     Timestamp by    Tags                    Size    Version ID  Created at -->
+                        <tr>
+                            <th>File path</th>
+                            <th>Size</th>
+                            <th>Version ID</th>
+                            <th>NG Reason</th>
+                        </tr>
+                        </thead>
+                        <tbody class="list" id="">
+                        <!-- /001/component.png             Project_7_A001  name_ierae07    name_ierae07    component, image, png   111 KB  2           2022-06-29 05:11 PM -->
+                        <tr class="">
+                            <td class="">/001/component.png</td>
+                            <td class="">111 KB</td>
+                            <td class="">2</td>
+                            <td class="">Missing file version</td>
+                        </tr>
+                        <!-- /001/component.png             Project_7_A001  name_ierae07    name_ierae07    component, image, png   152 KB  1           2022-06-25 04:10 PM -->
+                        <tr class="">
+                            <td class="">/001/component.png</td>
+                            <td class="">152 KB</td>
+                            <td class="">1</td>
+                            <td class="">Missing file version</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script>window.jQuery || document.write('<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js">\x3C/script>')</script>
+<script type="application/javascript">
+    function restoreExportData() {
+        let data = {};
+        data["destination_id"]= $("#destination_storage").val();
+        $("#restoreBtn").addClass("disabled");
+        $("#stopRestoreBtn").removeClass("disabled");
+        $("#restoreBtn").attr("disabled", true);
+        $("#stopRestoreBtn").attr("disabled", false);
+        $.ajaxSetup({
+            data: { csrfmiddlewaretoken: '{{ csrf_token }}' },
+        });
+        $.ajax({
+            url: "restore_export_data",
+            type: "post",
+            data: data
+        }).done(function(response) {
+            let task_id = response["task_id"];
+            setTimeout(() => {
+                checkTaskStatus(task_id);
+            }, 1000);
+        }).fail(function(jqXHR, textStatus, error) {
+            cancelRestore();
+        });
+    }
+
+    function checkTaskStatus(task_id){
+        let data = { task_id: task_id };
+        $.ajaxSetup({
+            data: { csrfmiddlewaretoken: '{{ csrf_token }}' },
+        });
+        $.ajax({
+            url: "task_status",
+            type: "get",
+            data: data
+        }).done(function(response) {
+            let state = response["state"];
+            let result = response["result"];
+            if (state === 'SUCCESS' && result === 'Open Dialog') {
+                // Open Dialog
+                $("#restore").modal('show');
+            } else if (state === 'PENDING') {
+               setTimeout(() => {
+                   checkTaskStatus(task_id);
+               }, 1000);
+            } else {
+                cancelRestore();
+            }
+        }).fail(function(jqXHR, textStatus, error) {
+            cancelRestore();
+        });
+    }
+
+    function cancelRestore() {
+        $("#restoreBtn").removeClass("disabled");
+        $("#stopRestoreBtn").addClass("disabled");
+        $("#restoreBtn").attr("disabled", false);
+        $("#stopRestoreBtn").attr("disabled", true);
+    }
+
+    function startRestore() {
+        $("#restore").modal('hide');
+        // Enable "Check export data" button, disable "Stop restoring" button
+        $("#checkRestoreBtn").removeClass("disabled");
+        $("#stopRestoreBtn").addClass("disabled");
+        $("#checkRestoreBtn").attr("disabled", false);
+        $("#stopRestoreBtn").attr("disabled", true);
+    }
+</script>

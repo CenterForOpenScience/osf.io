@@ -437,6 +437,7 @@ class CeleryConfig:
         'website.identifier.tasks',
         'website.preprints.tasks',
         'website.project.tasks',
+        'admin.export_data_management.tasks',
     }
 
     high_pri_modules = {
@@ -512,6 +513,7 @@ class CeleryConfig:
         'osf.management.commands.check_crossref_dois',
         'osf.management.commands.update_institution_project_counts',
         'nii.mapcore_refresh_tokens',
+        'admin.export_data_management.tasks',
     )
 
     # Modules that need metrics and release requirements
