@@ -1,5 +1,5 @@
 import jwe
-import json
+from django.contrib.postgres.fields.jsonb import JSONField
 from django.db import models
 from website import settings
 from osf.utils.functional import rapply
