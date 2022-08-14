@@ -8,7 +8,6 @@ from django.core.management import call_command
 from django.db.utils import ProgrammingError
 
 from addons.osfstorage.settings import DEFAULT_REGION_ID, DEFAULT_REGION_NAME
-from api.base import settings as api_settings
 from osf.management.commands.manage_switch_flags import manage_waffle
 from osf.utils.migrations import ensure_schemas, map_schemas_to_schemablocks
 from website import settings as osf_settings
