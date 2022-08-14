@@ -82,17 +82,12 @@ class DateTimeAwareJSONField(JSONField):
     def formfield(self, **kwargs):
         defaults = {'form_class': DateTimeAwareJSONFormField}
         defaults.update(kwargs)
-        return super().formfield(**defaults)
-
-    def from_db_value(self, value, expression, connection):
-        if value is None:
-            return None
-        return super().to_python(decode_datetime_objects(json.loads(value)))
+        return super(DateTimeAwareJSONField, self).formfield(**defaults)
 
     def get_prep_lookup(self, lookup_type, value):
         if lookup_type in ('has_key', 'has_keys', 'has_any_keys'):
             return value
-        return super().get_prep_lookup(lookup_type, value)
+        return super(JSONField, self).get_prep_lookup(lookup_type, value)
 
 
 class DateTimeAwareJSONFormField(JSONFormField):
@@ -105,6 +100,11 @@ class DateTimeAwareJSONFormField(JSONFormField):
                 code='invalid',
                 params={'value': value},
             )
+
+    def from_db_value(self, value, expression, connection):
+        if value is None:
+            return None
+        return super().to_python(decode_datetime_objects(value))
 
     def prepare_value(self, value):
         try:

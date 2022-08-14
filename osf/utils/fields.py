@@ -83,7 +83,7 @@ class NonNaiveDateTimeField(models.DateTimeField):
         return value
 
 
-class EncryptedJSONField(models.JSONField):
+class EncryptedJSONField(JSONField):
     """
     Very similar to EncryptedTextField, but for postgresql's JSONField
     """
@@ -91,11 +91,11 @@ class EncryptedJSONField(models.JSONField):
 
     def get_prep_value(self, value, **kwargs):
         value = rapply(value, encrypt_string, prefix=self.prefix)
-        return super().get_prep_value(value, **kwargs)
+        return super(EncryptedJSONField, self).get_prep_value(value, **kwargs)
 
     def to_python(self, value):
         value = rapply(value, decrypt_string, prefix=self.prefix)
-        return super().to_python(json.loads(value or '{}'))
+        return super(EncryptedJSONField, self).to_python(value)
 
     def from_db_value(self, value, expression, connection):
         return self.to_python(value)
