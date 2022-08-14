@@ -163,7 +163,7 @@ def update_waffle_flags(sender, verbosity=0, **kwargs):
 
 def create_cache_table(sender, verbosity=0, **kwargs):
     if getattr(sender, 'label', None) == 'osf':
-        call_command('createcachetable', tablename=api_settings.CACHES[api_settings.STORAGE_USAGE_CACHE_NAME]['LOCATION'])
+        call_command('createcachetable')
 
 
 def update_default_providers(sender, verbosity=0, **kwargs):
