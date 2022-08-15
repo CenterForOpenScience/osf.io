@@ -40,8 +40,9 @@ class ResourceSerializer(JSONAPISerializer):
         'date_created',
         'date_modified',
         'description',
-        'registration',
         'links',
+        'registration',
+        'resource_type',
     ])
 
     class Meta:
