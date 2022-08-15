@@ -222,6 +222,7 @@
           canEdit: ${ int(user['can_edit']) | sjson, n }
         },
         analyticsMeta: {
+            itemGuid: ${file_guid | sjson, n},
             pageMeta: {
                 title: 'File: ' + ${file_name | sjson, n},
                 public: true,
