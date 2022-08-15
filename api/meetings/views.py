@@ -14,7 +14,7 @@ from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error
 from api.base.versioning import PrivateVersioning
 from api.meetings.serializers import MeetingSerializer, MeetingSubmissionSerializer
-from api.meetings.permissions import IsPublic
+from api.nodes.permissions import MustBePublic
 from api.nodes.views import NodeMixin
 
 from framework.auth.oauth_scopes import CoreScopes
@@ -92,7 +92,7 @@ class BaseMeetingSubmission(JSONAPIBaseView, MeetingMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        IsPublic,
+        MustBePublic,
     )
 
     required_read_scopes = [CoreScopes.MEETINGS_READ, CoreScopes.NODE_BASE_READ]
