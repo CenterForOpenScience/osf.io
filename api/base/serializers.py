@@ -1111,7 +1111,7 @@ class LinksField(ser.Field):
         return obj
 
     def _extend_url_with_vol_key(self, url):
-        return utils.extend_query_string_if_key_exists(url, self.context['request'], 'view_only')
+        return utils.extend_querystring_if_key_exists(url, self.context['request'], 'view_only')
 
     def to_representation(self, obj):
         ret = {}
