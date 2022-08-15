@@ -45,25 +45,25 @@ class Migration(migrations.Migration):
                 'abstract': False,
             },
         ),
-        migrations.CreateModel(
-            name='NodeWikiPage',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('content_type_pk', models.PositiveIntegerField(blank=True, null=True)),
-                ('page_name', models.CharField(max_length=200, validators=[addons.wiki.models.validate_page_name])),
-                ('version', models.IntegerField(default=1)),
-                ('date', osf.utils.fields.NonNaiveDateTimeField(auto_now_add=True)),
-                ('content', models.TextField(blank=True, default='')),
-                ('node', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='osf.AbstractNode')),
-                ('user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
-                ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, default=datetime.datetime(1970, 1, 1, 0, 0, tzinfo=utc), verbose_name='created')),
-                ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
-                ('former_guid', models.CharField(blank=True, db_index=True, max_length=100, null=True)),
-            ],
-            options={
-                'abstract': False,
-            },
-        ),
+        # migrations.CreateModel(
+        #     name='NodeWikiPage',
+        #     fields=[
+        #         ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+        #         ('content_type_pk', models.PositiveIntegerField(blank=True, null=True)),
+        #         ('page_name', models.CharField(max_length=200, validators=[addons.wiki.models.validate_page_name])),
+        #         ('version', models.IntegerField(default=1)),
+        #         ('date', osf.utils.fields.NonNaiveDateTimeField(auto_now_add=True)),
+        #         ('content', models.TextField(blank=True, default='')),
+        #         ('node', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='osf.AbstractNode')),
+        #         ('user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+        #         ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, default=datetime.datetime(1970, 1, 1, 0, 0, tzinfo=utc), verbose_name='created')),
+        #         ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
+        #         ('former_guid', models.CharField(blank=True, db_index=True, max_length=100, null=True)),
+        #     ],
+        #     options={
+        #         'abstract': False,
+        #     },
+        # ),
         migrations.CreateModel(
             name='WikiPage',
             fields=[
@@ -108,17 +108,17 @@ class Migration(migrations.Migration):
         #     code=addons.wiki.migrations.0010_migrate_node_wiki_pages.migrate_node_wiki_pages,
         #     reverse_code=addons.wiki.migrations.0010_migrate_node_wiki_pages.reverse_func,
         # ),
-        migrations.RemoveField(
-            model_name='nodewikipage',
-            name='node',
-        ),
-        migrations.RemoveField(
-            model_name='nodewikipage',
-            name='user',
-        ),
-        migrations.DeleteModel(
-            name='NodeWikiPage',
-        ),
+        # migrations.RemoveField(
+        #     model_name='nodewikipage',
+        #     name='node',
+        # ),
+        # migrations.RemoveField(
+        #     model_name='nodewikipage',
+        #     name='user',
+        # ),
+        # migrations.DeleteModel(
+        #     name='NodeWikiPage',
+        # ),
         migrations.RenameField(
             model_name='nodesettings',
             old_name='deleted',

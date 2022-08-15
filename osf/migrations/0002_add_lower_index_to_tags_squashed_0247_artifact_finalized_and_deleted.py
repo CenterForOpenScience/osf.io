@@ -90,6 +90,86 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RenameModel(
+            old_name='PreprintService',
+            new_name='Preprint',
+        ),
+        migrations.CreateModel(
+            name='NotableEmailDomain',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('created',
+                 django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
+                ('modified',
+                 django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
+                ('domain', osf.utils.fields.LowercaseCharField(db_index=True, max_length=255, unique=True)),
+            ],
+            options={
+                'abstract': False,
+            },
+        ),
+        migrations.CreateModel(
+            name='AbstractProvider',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('created',
+                 django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
+                ('modified',
+                 django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
+                ('_id', models.CharField(db_index=True, default=osf.models.base.generate_object_id, max_length=24,
+                                         unique=True)),
+                ('reviews_workflow', models.CharField(blank=True,
+                                                      choices=[(None, 'None'), ('pre-moderation', 'Pre-Moderation'),
+                                                               ('post-moderation', 'Post-Moderation')], max_length=15,
+                                                      null=True)),
+                ('reviews_comments_private', models.NullBooleanField()),
+                ('reviews_comments_anonymous', models.NullBooleanField()),
+                ('type', models.CharField(choices=[('osf.preprintprovider', 'preprint provider')], db_index=True,
+                                          max_length=255)),
+                ('name', models.CharField(max_length=128)),
+                ('advisory_board', models.TextField(blank=True, default='')),
+                ('description', models.TextField(blank=True, default='')),
+                ('domain', models.URLField(blank=True, default='')),
+                ('domain_redirect_enabled', models.BooleanField(default=False)),
+                ('external_url', models.URLField(blank=True, null=True)),
+                ('email_contact', models.CharField(blank=True, max_length=200, null=True)),
+                ('email_support', models.CharField(blank=True, max_length=200, null=True)),
+                ('social_twitter', models.CharField(blank=True, max_length=200, null=True)),
+                ('social_facebook', models.CharField(blank=True, max_length=200, null=True)),
+                ('social_instagram', models.CharField(blank=True, max_length=200, null=True)),
+                ('footer_links', models.TextField(blank=True, default='')),
+                ('facebook_app_id', models.BigIntegerField(blank=True, null=True)),
+                ('example', models.CharField(blank=True, max_length=20, null=True)),
+                ('allow_submissions', models.BooleanField(default=True)),
+                ('share_publish_type',
+                 models.CharField(choices=[('Preprint', 'Preprint'), ('Thesis', 'Thesis')], default='Preprint',
+                                  help_text='This SHARE type will be used when pushing publications to SHARE',
+                                  max_length=32, null=True)),
+                ('share_source', models.CharField(blank=True, max_length=200, null=True)),
+                ('share_title', models.TextField(blank=True, default='', null=True)),
+                ('additional_providers',
+                 django.contrib.postgres.fields.ArrayField(base_field=models.CharField(max_length=200), blank=True,
+                                                           default=list, null=True, size=None)),
+                ('access_token', osf.utils.fields.EncryptedTextField(blank=True, null=True)),
+                ('preprint_word', models.CharField(
+                    choices=[('preprint', 'Preprint'), ('paper', 'Paper'), ('thesis', 'Thesis'), ('none', 'None')],
+                    default='preprint', max_length=10, null=True)),
+                ('subjects_acceptable',
+                 osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=list,
+                                                                           encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder,
+                                                                           null=True)),
+                ('default_license',
+                 models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE,
+                                   related_name='default_license', to='osf.NodeLicense')),
+                ('licenses_acceptable',
+                 models.ManyToManyField(blank=True, related_name='licenses_acceptable', to='osf.NodeLicense')),
+            ],
+            options={
+                'abstract': False,
+            },
+            bases=(dirtyfields.dirtyfields.DirtyFieldsMixin, models.Model),
+        ),
+
         migrations.RunSQL(
             sql=['\n                CREATE INDEX lowercase_tag_index ON osf_tag (lower(name), system);\n                '],
             reverse_sql=['\n                DROP INDEX IF EXISTS lowercase_tag_index RESTRICT;\n                '],
@@ -117,19 +197,19 @@ class Migration(migrations.Migration):
             name='comment_level',
             field=models.CharField(default='public', max_length=10),
         ),
-        migrations.AlterField(
-            model_name='preprintservice',
-            name='date_modified',
-            field=osf.utils.fields.NonNaiveDateTimeField(default=django.utils.timezone.now),
-        ),
+        # migrations.AlterField(
+        #     model_name='preprintservice',
+        #     name='date_modified',
+        #     field=osf.utils.fields.NonNaiveDateTimeField(default=django.utils.timezone.now),
+        # ),
         migrations.RunSQL(
             sql=["\n                CREATE INDEX fileversion_metadata_sha_arch_vault_index\n                  ON osf_fileversion ((osf_fileversion.metadata -> 'sha256'), (osf_fileversion.metadata -> 'archive'), (\n                    osf_fileversion.metadata -> 'vault'));\n                "],
             reverse_sql=['\n                DROP INDEX fileversion_metadata_sha_arch_vault_index;\n                '],
         ),
-        migrations.AlterModelOptions(
-            name='preprintservice',
-            options={'permissions': (('view_preprintservice', 'Can view preprint service details in the admin app.'),)},
-        ),
+        # migrations.AlterModelOptions(
+        #     name='preprintservice',
+        #     options={'permissions': (('view_preprintservice', 'Can view preprint service details in the admin app.'),)},
+        # ),
         migrations.RemoveField(
             model_name='osfuser',
             name='mailing_lists',
@@ -185,16 +265,16 @@ class Migration(migrations.Migration):
             name='date_registered',
             field=osf.utils.fields.NonNaiveDateTimeField(auto_now_add=True, db_index=True),
         ),
-        migrations.AlterField(
-            model_name='preprintservice',
-            name='date_created',
-            field=osf.utils.fields.NonNaiveDateTimeField(auto_now_add=True),
-        ),
-        migrations.AlterField(
-            model_name='preprintservice',
-            name='date_modified',
-            field=osf.utils.fields.NonNaiveDateTimeField(auto_now=True),
-        ),
+        # migrations.AlterField(
+        #     model_name='preprintservice',
+        #     name='date_created',
+        #     field=osf.utils.fields.NonNaiveDateTimeField(auto_now_add=True),
+        # ),
+        # migrations.AlterField(
+        #     model_name='preprintservice',
+        #     name='date_modified',
+        #     field=osf.utils.fields.NonNaiveDateTimeField(auto_now=True),
+        # ),
         migrations.AlterField(
             model_name='recentlyaddedcontributor',
             name='date_added',
@@ -244,11 +324,11 @@ class Migration(migrations.Migration):
             field=models.TextField(blank=True, default=''),
             preserve_default=False,
         ),
-        migrations.AddField(
-            model_name='preprintprovider',
-            name='domain',
-            field=models.URLField(blank=True, default=b''),
-        ),
+        # migrations.AddField(
+        #     model_name='preprintprovider',
+        #     name='domain',
+        #     field=models.URLField(blank=True, default=b''),
+        # ),
         migrations.AddField(
             model_name='preprintprovider',
             name='domain_redirect_enabled',
@@ -278,10 +358,10 @@ class Migration(migrations.Migration):
             model_name='osfuser',
             name='guid_string',
         ),
-        migrations.RemoveField(
-            model_name='preprintservice',
-            name='guid_string',
-        ),
+        # migrations.RemoveField(
+        #     model_name='preprintservice',
+        #     name='guid_string',
+        # ),
         # migrations.RunPython(
         #     code=osf.migrations.0021_unique_notificationsettings__ids.remove_duplicate_notificationsubscriptions,
         #     reverse_code=osf.migrations.0021_unique_notificationsettings__ids.noop,
@@ -337,24 +417,24 @@ class Migration(migrations.Migration):
             name='provider',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='subjects', to='osf.PreprintProvider'),
         ),
-        migrations.AddField(
-            model_name='preprintservice',
-            name='_subjects',
-            field=models.ManyToManyField(blank=True, related_name='preprint_services', to='osf.Subject'),
-        ),
+        # migrations.AddField(
+        #     model_name='preprintservice',
+        #     name='_subjects',
+        #     field=models.ManyToManyField(blank=True, related_name='preprint_services', to='osf.Subject'),
+        # ),
         # migrations.RunPython(
         #     code=osf.migrations.0025_migrate_preprint_subjects_to_fks.migrate_data,
         #     reverse_code=osf.migrations.0025_migrate_preprint_subjects_to_fks.unmigrate_data,
         # ),
-        migrations.RemoveField(
-            model_name='preprintservice',
-            name='subjects',
-        ),
-        migrations.RenameField(
-            model_name='preprintservice',
-            old_name='_subjects',
-            new_name='subjects',
-        ),
+        # migrations.RemoveField(
+        #     model_name='preprintservice',
+        #     name='subjects',
+        # ),
+        # migrations.RenameField(
+        #     model_name='preprintservice',
+        #     old_name='_subjects',
+        #     new_name='subjects',
+        # ),
         migrations.AlterField(
             model_name='subject',
             name='text',
@@ -368,11 +448,11 @@ class Migration(migrations.Migration):
             name='subject',
             options={'base_manager_name': 'objects'},
         ),
-        migrations.AddField(
-            model_name='preprintprovider',
-            name='default_license',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='default_license', to='osf.NodeLicense'),
-        ),
+        # migrations.AddField(
+        #     model_name='preprintprovider',
+        #     name='default_license',
+        #     field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='default_license', to='osf.NodeLicense'),
+        # ),
         migrations.AlterField(
             model_name='preprintprovider',
             name='licenses_acceptable',
@@ -673,21 +753,21 @@ class Migration(migrations.Migration):
             name='reviews_workflow',
             field=models.CharField(blank=True, choices=[(None, 'None'), ('pre-moderation', 'Pre-Moderation'), ('post-moderation', 'Post-Moderation')], max_length=15, null=True),
         ),
-        migrations.AddField(
-            model_name='preprintservice',
-            name='date_last_transitioned',
-            field=models.DateTimeField(blank=True, db_index=True, null=True),
-        ),
-        migrations.AddField(
-            model_name='preprintservice',
-            name='reviews_state',
-            field=models.CharField(choices=[('accepted', 'Accepted'), ('initial', 'Initial'), ('pending', 'Pending'), ('rejected', 'Rejected')], db_index=True, default='initial', max_length=15),
-        ),
-        migrations.AddField(
-            model_name='action',
-            name='target',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='actions', to='osf.PreprintService'),
-        ),
+        # migrations.AddField(
+        #     model_name='preprintservice',
+        #     name='date_last_transitioned',
+        #     field=models.DateTimeField(blank=True, db_index=True, null=True),
+        # ),
+        # migrations.AddField(
+        #     model_name='preprintservice',
+        #     name='reviews_state',
+        #     field=models.CharField(choices=[('accepted', 'Accepted'), ('initial', 'Initial'), ('pending', 'Pending'), ('rejected', 'Rejected')], db_index=True, default='initial', max_length=15),
+        # ),
+        # migrations.AddField(
+        #     model_name='action',
+        #     name='target',
+        #     field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='actions', to='osf.PreprintService'),
+        # ),
         # migrations.RunPython(
         #     code=osf.migrations.0061_add_reviews_notification_subscription.add_reviews_notification_subscription,
         # ),
@@ -703,11 +783,11 @@ class Migration(migrations.Migration):
             name='message',
             field=models.TextField(),
         ),
-        migrations.AddField(
-            model_name='preprintservice',
-            name='original_publication_date',
-            field=osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True),
-        ),
+        # migrations.AddField(
+        #     model_name='preprintservice',
+        #     name='original_publication_date',
+        #     field=osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True),
+        # ),
         migrations.CreateModel(
             name='GitLabFileNode',
             fields=[
@@ -792,16 +872,16 @@ class Migration(migrations.Migration):
             name='fileversion',
             options={'ordering': ('-created',)},
         ),
-        migrations.RenameField(
-            model_name='action',
-            old_name='date_modified',
-            new_name='modified',
-        ),
-        migrations.RenameField(
-            model_name='action',
-            old_name='date_created',
-            new_name='created',
-        ),
+        # migrations.RenameField(
+        #     model_name='action',
+        #     old_name='date_modified',
+        #     new_name='modified',
+        # ),
+        # migrations.RenameField(
+        #     model_name='action',
+        #     old_name='date_created',
+        #     new_name='created',
+        # ),
         migrations.RenameField(
             model_name='fileversion',
             old_name='date_modified',
@@ -837,16 +917,16 @@ class Migration(migrations.Migration):
             old_name='date_created',
             new_name='created',
         ),
-        migrations.RenameField(
-            model_name='preprintservice',
-            old_name='date_created',
-            new_name='created',
-        ),
-        migrations.RenameField(
-            model_name='preprintservice',
-            old_name='date_modified',
-            new_name='modified',
-        ),
+        # migrations.RenameField(
+        #     model_name='preprintservice',
+        #     old_name='date_created',
+        #     new_name='created',
+        # ),
+        # migrations.RenameField(
+        #     model_name='preprintservice',
+        #     old_name='date_modified',
+        #     new_name='modified',
+        # ),
         migrations.RenameField(
             model_name='privatelink',
             old_name='date_created',
@@ -1255,16 +1335,16 @@ class Migration(migrations.Migration):
             name='modified',
             field=django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified'),
         ),
-        migrations.AlterField(
-            model_name='action',
-            name='created',
-            field=django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created'),
-        ),
-        migrations.AlterField(
-            model_name='action',
-            name='modified',
-            field=django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified'),
-        ),
+        # migrations.AlterField(
+        #     model_name='action',
+        #     name='created',
+        #     field=django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created'),
+        # ),
+        # migrations.AlterField(
+        #     model_name='action',
+        #     name='modified',
+        #     field=django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified'),
+        # ),
         migrations.AlterField(
             model_name='abstractnode',
             name='created',
@@ -1295,16 +1375,16 @@ class Migration(migrations.Migration):
             name='created',
             field=django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created'),
         ),
-        migrations.AlterField(
-            model_name='preprintservice',
-            name='created',
-            field=django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created'),
-        ),
-        migrations.AlterField(
-            model_name='preprintservice',
-            name='modified',
-            field=django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified'),
-        ),
+        # migrations.AlterField(
+        #     model_name='preprintservice',
+        #     name='created',
+        #     field=django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created'),
+        # ),
+        # migrations.AlterField(
+        #     model_name='preprintservice',
+        #     name='modified',
+        #     field=django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified'),
+        # ),
         migrations.AlterField(
             model_name='privatelink',
             name='created',
@@ -1325,11 +1405,11 @@ class Migration(migrations.Migration):
             name='deleted',
             field=osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True),
         ),
-        migrations.AddField(
-            model_name='preprintservice',
-            name='preprint_doi_created',
-            field=osf.utils.fields.NonNaiveDateTimeField(blank=True, default=None, null=True),
-        ),
+        # migrations.AddField(
+        #     model_name='preprintservice',
+        #     name='preprint_doi_created',
+        #     field=osf.utils.fields.NonNaiveDateTimeField(blank=True, default=None, null=True),
+        # ),
         # migrations.RunPython(
         #     code=osf.migrations.0069_auto_20171127_1119.add_preprint_doi_created,
         #     reverse_code=osf.migrations.0069_auto_20171127_1119.reverse_func,
@@ -1344,15 +1424,15 @@ class Migration(migrations.Migration):
             name='content',
             field=models.TextField(validators=[osf.models.validators.CommentMaxLength(1000), osf.models.validators.string_required]),
         ),
-        migrations.RenameModel(
-            old_name='Action',
-            new_name='ReviewAction',
-        ),
-        migrations.RenameField(
-            model_name='preprintservice',
-            old_name='reviews_state',
-            new_name='machine_state',
-        ),
+        # migrations.RenameModel(
+        #     old_name='Action',
+        #     new_name='ReviewAction',
+        # ),
+        # migrations.RenameField(
+        #     model_name='preprintservice',
+        #     old_name='reviews_state',
+        #     new_name='machine_state',
+        # ),
         migrations.AddField(
             model_name='preprintprovider',
             name='facebook_app_id',
@@ -1447,70 +1527,26 @@ class Migration(migrations.Migration):
             name='noderequest',
             unique_together=set([('target', 'creator')]),
         ),
-        migrations.CreateModel(
-            name='AbstractProvider',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
-                ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
-                ('_id', models.CharField(db_index=True, default=osf.models.base.generate_object_id, max_length=24, unique=True)),
-                ('reviews_workflow', models.CharField(blank=True, choices=[(None, 'None'), ('pre-moderation', 'Pre-Moderation'), ('post-moderation', 'Post-Moderation')], max_length=15, null=True)),
-                ('reviews_comments_private', models.NullBooleanField()),
-                ('reviews_comments_anonymous', models.NullBooleanField()),
-                ('type', models.CharField(choices=[('osf.preprintprovider', 'preprint provider')], db_index=True, max_length=255)),
-                ('name', models.CharField(max_length=128)),
-                ('advisory_board', models.TextField(blank=True, default='')),
-                ('description', models.TextField(blank=True, default='')),
-                ('domain', models.URLField(blank=True, default='')),
-                ('domain_redirect_enabled', models.BooleanField(default=False)),
-                ('external_url', models.URLField(blank=True, null=True)),
-                ('email_contact', models.CharField(blank=True, max_length=200, null=True)),
-                ('email_support', models.CharField(blank=True, max_length=200, null=True)),
-                ('social_twitter', models.CharField(blank=True, max_length=200, null=True)),
-                ('social_facebook', models.CharField(blank=True, max_length=200, null=True)),
-                ('social_instagram', models.CharField(blank=True, max_length=200, null=True)),
-                ('footer_links', models.TextField(blank=True, default='')),
-                ('facebook_app_id', models.BigIntegerField(blank=True, null=True)),
-                ('example', models.CharField(blank=True, max_length=20, null=True)),
-                ('allow_submissions', models.BooleanField(default=True)),
-                ('share_publish_type', models.CharField(choices=[('Preprint', 'Preprint'), ('Thesis', 'Thesis')], default='Preprint', help_text='This SHARE type will be used when pushing publications to SHARE', max_length=32, null=True)),
-                ('share_source', models.CharField(blank=True, max_length=200, null=True)),
-                ('share_title', models.TextField(blank=True, default='', null=True)),
-                ('additional_providers', django.contrib.postgres.fields.ArrayField(base_field=models.CharField(max_length=200), blank=True, default=list, null=True, size=None)),
-                ('access_token', osf.utils.fields.EncryptedTextField(blank=True, null=True)),
-                ('preprint_word', models.CharField(choices=[('preprint', 'Preprint'), ('paper', 'Paper'), ('thesis', 'Thesis'), ('none', 'None')], default='preprint', max_length=10, null=True)),
-                ('subjects_acceptable', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=list, encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder, null=True)),
-                ('default_license', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='default_license', to='osf.NodeLicense')),
-                ('licenses_acceptable', models.ManyToManyField(blank=True, related_name='licenses_acceptable', to='osf.NodeLicense')),
-            ],
-            options={
-                'abstract': False,
-            },
-            bases=(dirtyfields.dirtyfields.DirtyFieldsMixin, models.Model),
-        ),
-        migrations.RunSQL(
-            sql=["\n                INSERT INTO osf_abstractprovider (id, created, modified, _id,\n                        reviews_workflow, reviews_comments_private, reviews_comments_anonymous, name, advisory_board, description,\n                        domain, domain_redirect_enabled, external_url, email_contact, email_support, social_twitter, social_facebook, social_instagram,\n                        footer_links, facebook_app_id, example, allow_submissions, share_publish_type, share_source, share_title, additional_providers,\n                        access_token, preprint_word, subjects_acceptable, default_license_id, type)\n                    SELECT id, created, modified, _id,\n                        reviews_workflow, reviews_comments_private, reviews_comments_anonymous, name, advisory_board, description,\n                        domain, domain_redirect_enabled, external_url, email_contact, email_support, social_twitter, social_facebook, social_instagram,\n                        footer_links, facebook_app_id, example, allow_submissions, share_publish_type, share_source, share_title, additional_providers,\n                        access_token, preprint_word, subjects_acceptable, default_license_id, 'osf.preprintprovider' as type\n                    FROM osf_preprintprovider;\n                INSERT INTO osf_abstractprovider_licenses_acceptable (id, abstractprovider_id, nodelicense_id)\n                    SELECT id, preprintprovider_id, nodelicense_id\n                    FROM osf_preprintprovider_licenses_acceptable\n                "],
-            reverse_sql=['\n                INSERT INTO osf_preprintprovider_licenses_acceptable (id, preprintprovider_id, nodelicense_id)\n                    SELECT id, abstractprovider_id, nodelicense_id\n                    FROM osf_abstractprovider_licenses_acceptable\n                '],
-        ),
+        # migrations.RunSQL(
+        #     sql=["\n                INSERT INTO osf_abstractprovider (id, created, modified, _id,\n                        reviews_workflow, reviews_comments_private, reviews_comments_anonymous, name, advisory_board, description,\n                        domain, domain_redirect_enabled, external_url, email_contact, email_support, social_twitter, social_facebook, social_instagram,\n                        footer_links, facebook_app_id, example, allow_submissions, share_publish_type, share_source, share_title, additional_providers,\n                        access_token, preprint_word, subjects_acceptable, default_license_id, type)\n                    SELECT id, created, modified, _id,\n                        reviews_workflow, reviews_comments_private, reviews_comments_anonymous, name, advisory_board, description,\n                        domain, domain_redirect_enabled, external_url, email_contact, email_support, social_twitter, social_facebook, social_instagram,\n                        footer_links, facebook_app_id, example, allow_submissions, share_publish_type, share_source, share_title, additional_providers,\n                        access_token, preprint_word, subjects_acceptable, default_license_id, 'osf.preprintprovider' as type\n                    FROM osf_preprintprovider;\n                INSERT INTO osf_abstractprovider_licenses_acceptable (id, abstractprovider_id, nodelicense_id)\n                    SELECT id, preprintprovider_id, nodelicense_id\n                    FROM osf_preprintprovider_licenses_acceptable\n                "],
+        #     reverse_sql=['\n                INSERT INTO osf_preprintprovider_licenses_acceptable (id, preprintprovider_id, nodelicense_id)\n                    SELECT id, abstractprovider_id, nodelicense_id\n                    FROM osf_abstractprovider_licenses_acceptable\n                '],
+        # ),
         migrations.AlterField(
             model_name='subject',
             name='provider',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='subjects', to='osf.AbstractProvider'),
         ),
-        migrations.RunSQL(
-            sql='',
-            reverse_sql=['\n                INSERT INTO osf_preprintprovider (id, created, modified, _id,\n                        reviews_workflow, reviews_comments_private, reviews_comments_anonymous, name, advisory_board, description,\n                        domain, domain_redirect_enabled, external_url, email_contact, email_support, social_twitter, social_facebook, social_instagram,\n                        footer_links, facebook_app_id, example, allow_submissions, share_publish_type, share_source, share_title, additional_providers,\n                        access_token, preprint_word, subjects_acceptable, default_license_id)\n                    SELECT id, created, modified, _id,\n                        reviews_workflow, reviews_comments_private, reviews_comments_anonymous, name, advisory_board, description,\n                        domain, domain_redirect_enabled, external_url, email_contact, email_support, social_twitter, social_facebook, social_instagram,\n                        footer_links, facebook_app_id, example, allow_submissions, share_publish_type, share_source, share_title, additional_providers,\n                        access_token, preprint_word, subjects_acceptable, default_license_id\n                    FROM osf_abstractprovider\n                '],
-        ),
-        migrations.RemoveField(
-            model_name='preprintprovider',
-            name='default_license',
-        ),
+        # migrations.RunSQL(
+        #     sql='',
+        #     reverse_sql=['\n                INSERT INTO osf_preprintprovider (id, created, modified, _id,\n                        reviews_workflow, reviews_comments_private, reviews_comments_anonymous, name, advisory_board, description,\n                        domain, domain_redirect_enabled, external_url, email_contact, email_support, social_twitter, social_facebook, social_instagram,\n                        footer_links, facebook_app_id, example, allow_submissions, share_publish_type, share_source, share_title, additional_providers,\n                        access_token, preprint_word, subjects_acceptable, default_license_id)\n                    SELECT id, created, modified, _id,\n                        reviews_workflow, reviews_comments_private, reviews_comments_anonymous, name, advisory_board, description,\n                        domain, domain_redirect_enabled, external_url, email_contact, email_support, social_twitter, social_facebook, social_instagram,\n                        footer_links, facebook_app_id, example, allow_submissions, share_publish_type, share_source, share_title, additional_providers,\n                        access_token, preprint_word, subjects_acceptable, default_license_id\n                    FROM osf_abstractprovider\n                '],
+        # ),
+        # migrations.RemoveField(
+        #     model_name='preprintprovider',
+        #     name='default_license',
+        # ),
         migrations.RemoveField(
             model_name='preprintprovider',
             name='licenses_acceptable',
-        ),
-        migrations.DeleteModel(
-            name='PreprintProvider',
         ),
         migrations.CreateModel(
             name='PreprintProvider',
@@ -1529,7 +1565,7 @@ class Migration(migrations.Migration):
             field=models.CharField(choices=[('preprint', 'Preprint'), ('paper', 'Paper'), ('thesis', 'Thesis'), ('work', 'Work'), ('none', 'None')], default='preprint', max_length=10, null=True),
         ),
         migrations.CreateModel(
-            name='CollectedGuidMetadata',
+            name='CollectionSubmission',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
@@ -1576,7 +1612,7 @@ class Migration(migrations.Migration):
                 ('is_bookmark_collection', models.BooleanField(db_index=True, default=False)),
                 ('collected_types', models.ManyToManyField(related_name='_collection_collected_types_+', to='contenttypes.ContentType')),
                 ('creator', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
-                ('guid_links', models.ManyToManyField(related_name='collections', through='osf.CollectedGuidMetadata', to='osf.Guid')),
+                ('guid_links', models.ManyToManyField(related_name='collections', through='osf.CollectionSubmission', to='osf.Guid')),
                 ('provider', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='osf.AbstractProvider')),
                 ('deleted', osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True)),
             ],
@@ -1585,22 +1621,22 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.AddField(
-            model_name='collectedguidmetadata',
+            model_name='collectionsubmission',
             name='collection',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='osf.Collection'),
         ),
         migrations.AlterOrderWithRespectTo(
-            name='collectedguidmetadata',
+            name='collectionsubmission',
             order_with_respect_to='collection',
         ),
         migrations.AlterUniqueTogether(
-            name='collectedguidmetadata',
+            name='collectionsubmission',
             unique_together=set([('collection', 'guid')]),
         ),
-        migrations.RunSQL(
-            sql=["\n                -- Copy all existing collections into new table, keeping old pks\n                INSERT INTO osf_collection (id, created, modified, content_type_pk, title, is_public, is_promoted,\n                deleted, is_bookmark_collection, creator_id, provider_id, collected_type_choices, status_choices)\n                    SELECT id, created, modified, CT.c_id, title, FALSE, FALSE,\n                    CASE WHEN is_deleted IS TRUE\n                      THEN\n                        'epoch' :: TIMESTAMP WITH TIME ZONE\n                      ELSE\n                        NULL :: TIMESTAMP WITH TIME ZONE\n                    END,\n                    is_bookmark_collection,\n                        creator_id, NULL, ARRAY[]::text[], ARRAY[]::text[]\n                    FROM osf_abstractnode\n                    LEFT JOIN LATERAL (\n                        SELECT id AS c_id\n                        FROM django_content_type\n                        WHERE app_label = 'osf' AND model = 'collection'\n                    ) CT ON TRUE\n                    WHERE type = 'osf.collection';\n                ", "\n                -- Copy collected refs into thru-table\n                INSERT INTO osf_collectedguidmetadata (id, created, modified, collected_type, status, creator_id, guid_id, collection_id, _order)\n                    SELECT nextval('osf_collectedguidmetadata_id_seq'), created, modified, '', '', C.creator_id, G.id, C.id, _order\n                    FROM osf_noderelation NR\n                    LEFT JOIN LATERAL (\n                        SELECT id, creator_id\n                        FROM osf_collection\n                        WHERE id = NR.parent_id\n                    ) C on TRUE\n                    LEFT JOIN LATERAL (\n                        SELECT id\n                        FROM osf_guid\n                        WHERE content_type_id = (SELECT id FROM django_content_type WHERE app_label = 'osf' AND model = 'abstractnode')\n                            AND object_id = NR.child_id\n                    ) G ON TRUE\n                    WHERE parent_id IN (SELECT id FROM osf_collection);\n                ", "\n                -- Populate thru-table for collection.collected_types. Until now, only nodes could be collected, so only populate with that type\n                INSERT INTO osf_collection_collected_types (id, collection_id, contenttype_id)\n                    SELECT nextval('osf_collection_collected_types_id_seq'), C.id, CT.id\n                    FROM osf_collection C\n                    LEFT JOIN LATERAL (\n                        SELECT id\n                        FROM django_content_type\n                        WHERE app_label = 'osf'\n                            AND model = 'abstractnode'\n                    ) CT ON TRUE;\n                -- Also populate with collection type. Until now, they were nodes, and several have already been collected\n                INSERT INTO osf_collection_collected_types (id, collection_id, contenttype_id)\n                    SELECT nextval('osf_collection_collected_types_id_seq'), C.id, CT.id\n                    FROM osf_collection C\n                    LEFT JOIN LATERAL (\n                        SELECT id\n                        FROM django_content_type\n                        WHERE app_label = 'osf'\n                            AND model = 'collection'\n                    ) CT ON TRUE;\n                ", "\n                -- Point old collection GUIDs to new object\n                UPDATE osf_guid\n                    SET content_type_id = (SELECT id FROM django_content_type WHERE app_label = 'osf' AND model = 'collection')\n                    WHERE id IN (\n                        SELECT id\n                        FROM osf_guid\n                        WHERE content_type_id = (SELECT id FROM django_content_type WHERE app_label = 'osf' and model = 'abstractnode')\n                            AND object_id IN (SELECT id FROM osf_collection)\n                    );\n                ", "\n                -- Make a system tag for old collections\n                INSERT INTO osf_tag (id, name, system, created, modified)\n                    SELECT nextval('osf_tag_id_seq'), 'old_node_collection', TRUE, current_timestamp, current_timestamp;\n                ", "\n                -- And tag all old collections with it\n                INSERT INTO osf_abstractnode_tags (id, abstractnode_id, tag_id)\n                    SELECT nextval('osf_abstractnode_tags_id_seq'), N.id, ONT.id\n                    FROM osf_abstractnode N\n                    LEFT JOIN LATERAL (\n                        SELECT id\n                        FROM osf_tag\n                        WHERE system = TRUE\n                            AND name = 'old_node_collection'\n                    ) ONT ON TRUE\n                    WHERE N.type = 'osf.collection';\n                ", '\n                -- "Delete" old collection nodes\n                UPDATE osf_abstractnode\n                    SET type=\'osf.node\',\n                        is_deleted = TRUE,\n                        deleted_date = current_timestamp\n                    WHERE type=\'osf.collection\';\n               ', "\n                -- Update the collection id seq to avoid conflicts when more are made\n                SELECT setval('osf_collection_id_seq', max(id)) FROM osf_collection;\n                "],
-            reverse_sql=["\n                -- Undelete nodes\n                UPDATE osf_abstractnode N\n                    SET type = 'osf.collection',\n                        is_deleted = FALSE,\n                        deleted_date = NULL\n                    FROM osf_abstractnode_tags ANT\n                    LEFT JOIN LATERAL (\n                        SELECT id\n                        FROM osf_tag\n                        WHERE system = TRUE\n                            AND name = 'old_node_collection'\n                    ) T ON TRUE\n                    WHERE ANT.tag_id = T.id AND ANT.abstractnode_id = N.id\n                ", "\n                -- Repoint GUIDs\n                UPDATE osf_guid\n                    SET content_type_id = (SELECT id FROM django_content_type WHERE app_label = 'osf' AND model = 'abstractnode')\n                    WHERE id IN (\n                        SELECT id\n                        FROM osf_guid\n                        WHERE content_type_id = (SELECT id FROM django_content_type WHERE app_label = 'osf' and model = 'collection')\n                            AND object_id IN (SELECT id FROM osf_collection)\n                    );\n                ", "\n                -- Delete everything inserted in the forward\n                DELETE FROM osf_collection;\n                DELETE FROM osf_collection_collected_types;\n                DELETE FROM osf_collectedguidmetadata;\n                DELETE FROM osf_abstractnode_tags\n                    WHERE tag_id = (SELECT id\n                                    FROM osf_tag\n                                    WHERE system = TRUE\n                                        AND name = 'old_node_collection');\n                DELETE FROM osf_tag\n                    WHERE system = TRUE\n                        AND name = 'old_node_collection';\n                ", "\n                -- Reset collection id sequence\n                SELECT setval('osf_collection_id_seq', 1);\n                "],
-        ),
+        # migrations.RunSQL(
+        #     sql=["\n                -- Copy all existing collections into new table, keeping old pks\n                INSERT INTO osf_collection (id, created, modified, content_type_pk, title, is_public, is_promoted,\n                deleted, is_bookmark_collection, creator_id, provider_id, collected_type_choices, status_choices)\n                    SELECT id, created, modified, CT.c_id, title, FALSE, FALSE,\n                    CASE WHEN is_deleted IS TRUE\n                      THEN\n                        'epoch' :: TIMESTAMP WITH TIME ZONE\n                      ELSE\n                        NULL :: TIMESTAMP WITH TIME ZONE\n                    END,\n                    is_bookmark_collection,\n                        creator_id, NULL, ARRAY[]::text[], ARRAY[]::text[]\n                    FROM osf_abstractnode\n                    LEFT JOIN LATERAL (\n                        SELECT id AS c_id\n                        FROM django_content_type\n                        WHERE app_label = 'osf' AND model = 'collection'\n                    ) CT ON TRUE\n                    WHERE type = 'osf.collection';\n                ", "\n                -- Copy collected refs into thru-table\n                INSERT INTO osf_collectedguidmetadata (id, created, modified, collected_type, status, creator_id, guid_id, collection_id, _order)\n                    SELECT nextval('osf_collectedguidmetadata_id_seq'), created, modified, '', '', C.creator_id, G.id, C.id, _order\n                    FROM osf_noderelation NR\n                    LEFT JOIN LATERAL (\n                        SELECT id, creator_id\n                        FROM osf_collection\n                        WHERE id = NR.parent_id\n                    ) C on TRUE\n                    LEFT JOIN LATERAL (\n                        SELECT id\n                        FROM osf_guid\n                        WHERE content_type_id = (SELECT id FROM django_content_type WHERE app_label = 'osf' AND model = 'abstractnode')\n                            AND object_id = NR.child_id\n                    ) G ON TRUE\n                    WHERE parent_id IN (SELECT id FROM osf_collection);\n                ", "\n                -- Populate thru-table for collection.collected_types. Until now, only nodes could be collected, so only populate with that type\n                INSERT INTO osf_collection_collected_types (id, collection_id, contenttype_id)\n                    SELECT nextval('osf_collection_collected_types_id_seq'), C.id, CT.id\n                    FROM osf_collection C\n                    LEFT JOIN LATERAL (\n                        SELECT id\n                        FROM django_content_type\n                        WHERE app_label = 'osf'\n                            AND model = 'abstractnode'\n                    ) CT ON TRUE;\n                -- Also populate with collection type. Until now, they were nodes, and several have already been collected\n                INSERT INTO osf_collection_collected_types (id, collection_id, contenttype_id)\n                    SELECT nextval('osf_collection_collected_types_id_seq'), C.id, CT.id\n                    FROM osf_collection C\n                    LEFT JOIN LATERAL (\n                        SELECT id\n                        FROM django_content_type\n                        WHERE app_label = 'osf'\n                            AND model = 'collection'\n                    ) CT ON TRUE;\n                ", "\n                -- Point old collection GUIDs to new object\n                UPDATE osf_guid\n                    SET content_type_id = (SELECT id FROM django_content_type WHERE app_label = 'osf' AND model = 'collection')\n                    WHERE id IN (\n                        SELECT id\n                        FROM osf_guid\n                        WHERE content_type_id = (SELECT id FROM django_content_type WHERE app_label = 'osf' and model = 'abstractnode')\n                            AND object_id IN (SELECT id FROM osf_collection)\n                    );\n                ", "\n                -- Make a system tag for old collections\n                INSERT INTO osf_tag (id, name, system, created, modified)\n                    SELECT nextval('osf_tag_id_seq'), 'old_node_collection', TRUE, current_timestamp, current_timestamp;\n                ", "\n                -- And tag all old collections with it\n                INSERT INTO osf_abstractnode_tags (id, abstractnode_id, tag_id)\n                    SELECT nextval('osf_abstractnode_tags_id_seq'), N.id, ONT.id\n                    FROM osf_abstractnode N\n                    LEFT JOIN LATERAL (\n                        SELECT id\n                        FROM osf_tag\n                        WHERE system = TRUE\n                            AND name = 'old_node_collection'\n                    ) ONT ON TRUE\n                    WHERE N.type = 'osf.collection';\n                ", '\n                -- "Delete" old collection nodes\n                UPDATE osf_abstractnode\n                    SET type=\'osf.node\',\n                        is_deleted = TRUE,\n                        deleted_date = current_timestamp\n                    WHERE type=\'osf.collection\';\n               ', "\n                -- Update the collection id seq to avoid conflicts when more are made\n                SELECT setval('osf_collection_id_seq', max(id)) FROM osf_collection;\n                "],
+        #     reverse_sql=["\n                -- Undelete nodes\n                UPDATE osf_abstractnode N\n                    SET type = 'osf.collection',\n                        is_deleted = FALSE,\n                        deleted_date = NULL\n                    FROM osf_abstractnode_tags ANT\n                    LEFT JOIN LATERAL (\n                        SELECT id\n                        FROM osf_tag\n                        WHERE system = TRUE\n                            AND name = 'old_node_collection'\n                    ) T ON TRUE\n                    WHERE ANT.tag_id = T.id AND ANT.abstractnode_id = N.id\n                ", "\n                -- Repoint GUIDs\n                UPDATE osf_guid\n                    SET content_type_id = (SELECT id FROM django_content_type WHERE app_label = 'osf' AND model = 'abstractnode')\n                    WHERE id IN (\n                        SELECT id\n                        FROM osf_guid\n                        WHERE content_type_id = (SELECT id FROM django_content_type WHERE app_label = 'osf' and model = 'collection')\n                            AND object_id IN (SELECT id FROM osf_collection)\n                    );\n                ", "\n                -- Delete everything inserted in the forward\n                DELETE FROM osf_collection;\n                DELETE FROM osf_collection_collected_types;\n                DELETE FROM osf_collectedguidmetadata;\n                DELETE FROM osf_abstractnode_tags\n                    WHERE tag_id = (SELECT id\n                                    FROM osf_tag\n                                    WHERE system = TRUE\n                                        AND name = 'old_node_collection');\n                DELETE FROM osf_tag\n                    WHERE system = TRUE\n                        AND name = 'old_node_collection';\n                ", "\n                -- Reset collection id sequence\n                SELECT setval('osf_collection_id_seq', 1);\n                "],
+        # ),
         migrations.RemoveField(
             model_name='abstractnode',
             name='is_bookmark_collection',
@@ -1688,11 +1724,11 @@ class Migration(migrations.Migration):
             name='subjects',
             field=models.ManyToManyField(blank=True, related_name='abstractnodes', to='osf.Subject'),
         ),
-        migrations.AlterField(
-            model_name='preprintservice',
-            name='subjects',
-            field=models.ManyToManyField(blank=True, related_name='preprintservices', to='osf.Subject'),
-        ),
+        # migrations.AlterField(
+        #     model_name='preprintservice',
+        #     name='subjects',
+        #     field=models.ManyToManyField(blank=True, related_name='preprintservices', to='osf.Subject'),
+        # ),
         # migrations.RunPython(
         #     code=osf.migrations.0094_update_preprintprovider_group_auth.noop,
         #     reverse_code=osf.migrations.0094_update_preprintprovider_group_auth.noop,
@@ -1775,9 +1811,9 @@ class Migration(migrations.Migration):
             field=osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='collectedguidmetadata',
+            model_name='collectionsubmission',
             name='subjects',
-            field=models.ManyToManyField(blank=True, related_name='collectedguidmetadatas', to='osf.Subject'),
+            field=models.ManyToManyField(blank=True, related_name='collectionsubmissions', to='osf.Subject'),
         ),
         migrations.AddField(
             model_name='abstractprovider',
@@ -1835,46 +1871,46 @@ class Migration(migrations.Migration):
                 'abstract': False,
             },
         ),
-        migrations.AddField(
-            model_name='preprintservice',
-            name='date_last_reported',
-            field=osf.utils.fields.NonNaiveDateTimeField(blank=True, db_index=True, default=None, null=True),
-        ),
-        migrations.AddField(
-            model_name='preprintservice',
-            name='date_retracted',
-            field=osf.utils.fields.NonNaiveDateTimeField(blank=True, default=None, null=True),
-        ),
-        migrations.AddField(
-            model_name='preprintservice',
-            name='ever_public',
-            field=models.BooleanField(default=False),
-        ),
-        migrations.AddField(
-            model_name='preprintservice',
-            name='reports',
-            field=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict, encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder, validators=[osf.models.spam._validate_reports]),
-        ),
-        migrations.AddField(
-            model_name='preprintservice',
-            name='retraction_justification',
-            field=models.TextField(blank=True, default=''),
-        ),
-        migrations.AddField(
-            model_name='preprintservice',
-            name='spam_data',
-            field=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict, encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder),
-        ),
-        migrations.AddField(
-            model_name='preprintservice',
-            name='spam_pro_tip',
-            field=models.CharField(blank=True, default=None, max_length=200, null=True),
-        ),
-        migrations.AddField(
-            model_name='preprintservice',
-            name='spam_status',
-            field=models.IntegerField(blank=True, db_index=True, default=None, null=True),
-        ),
+        # migrations.AddField(
+        #     model_name='preprintservice',
+        #     name='date_last_reported',
+        #     field=osf.utils.fields.NonNaiveDateTimeField(blank=True, db_index=True, default=None, null=True),
+        # ),
+        # migrations.AddField(
+        #     model_name='preprintservice',
+        #     name='date_retracted',
+        #     field=osf.utils.fields.NonNaiveDateTimeField(blank=True, default=None, null=True),
+        # ),
+        # migrations.AddField(
+        #     model_name='preprintservice',
+        #     name='ever_public',
+        #     field=models.BooleanField(default=False),
+        # ),
+        # migrations.AddField(
+        #     model_name='preprintservice',
+        #     name='reports',
+        #     field=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict, encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder, validators=[osf.models.spam._validate_reports]),
+        # ),
+        # migrations.AddField(
+        #     model_name='preprintservice',
+        #     name='retraction_justification',
+        #     field=models.TextField(blank=True, default=''),
+        # ),
+        # migrations.AddField(
+        #     model_name='preprintservice',
+        #     name='spam_data',
+        #     field=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict, encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder),
+        # ),
+        # migrations.AddField(
+        #     model_name='preprintservice',
+        #     name='spam_pro_tip',
+        #     field=models.CharField(blank=True, default=None, max_length=200, null=True),
+        # ),
+        # migrations.AddField(
+        #     model_name='preprintservice',
+        #     name='spam_status',
+        #     field=models.IntegerField(blank=True, db_index=True, default=None, null=True),
+        # ),
         migrations.AddField(
             model_name='scheduledbanner',
             name='link',
@@ -1916,36 +1952,36 @@ class Migration(migrations.Migration):
             name='trigger',
             field=models.CharField(choices=[('submit', 'Submit'), ('accept', 'Accept'), ('reject', 'Reject'), ('edit_comment', 'Edit_Comment')], max_length=31),
         ),
-        migrations.AlterField(
-            model_name='preprintservice',
-            name='machine_state',
-            field=models.CharField(choices=[('initial', 'Initial'), ('pending', 'Pending'), ('accepted', 'Accepted'), ('rejected', 'Rejected'), ('withdrawn', 'Withdrawn')], db_index=True, default='initial', max_length=15),
-        ),
-        migrations.AlterField(
-            model_name='reviewaction',
-            name='from_state',
-            field=models.CharField(choices=[('initial', 'Initial'), ('pending', 'Pending'), ('accepted', 'Accepted'), ('rejected', 'Rejected'), ('withdrawn', 'Withdrawn')], max_length=31),
-        ),
-        migrations.AlterField(
-            model_name='reviewaction',
-            name='to_state',
-            field=models.CharField(choices=[('initial', 'Initial'), ('pending', 'Pending'), ('accepted', 'Accepted'), ('rejected', 'Rejected'), ('withdrawn', 'Withdrawn')], max_length=31),
-        ),
-        migrations.AlterField(
-            model_name='reviewaction',
-            name='trigger',
-            field=models.CharField(choices=[('submit', 'Submit'), ('accept', 'Accept'), ('reject', 'Reject'), ('edit_comment', 'Edit_Comment'), ('withdraw', 'Withdraw')], max_length=31),
-        ),
-        migrations.RenameField(
-            model_name='preprintservice',
-            old_name='date_retracted',
-            new_name='date_withdrawn',
-        ),
-        migrations.RenameField(
-            model_name='preprintservice',
-            old_name='retraction_justification',
-            new_name='withdrawal_justification',
-        ),
+        # migrations.AlterField(
+        #     model_name='preprintservice',
+        #     name='machine_state',
+        #     field=models.CharField(choices=[('initial', 'Initial'), ('pending', 'Pending'), ('accepted', 'Accepted'), ('rejected', 'Rejected'), ('withdrawn', 'Withdrawn')], db_index=True, default='initial', max_length=15),
+        # ),
+        # migrations.AlterField(
+        #     model_name='reviewaction',
+        #     name='from_state',
+        #     field=models.CharField(choices=[('initial', 'Initial'), ('pending', 'Pending'), ('accepted', 'Accepted'), ('rejected', 'Rejected'), ('withdrawn', 'Withdrawn')], max_length=31),
+        # ),
+        # migrations.AlterField(
+        #     model_name='reviewaction',
+        #     name='to_state',
+        #     field=models.CharField(choices=[('initial', 'Initial'), ('pending', 'Pending'), ('accepted', 'Accepted'), ('rejected', 'Rejected'), ('withdrawn', 'Withdrawn')], max_length=31),
+        # ),
+        # migrations.AlterField(
+        #     model_name='reviewaction',
+        #     name='trigger',
+        #     field=models.CharField(choices=[('submit', 'Submit'), ('accept', 'Accept'), ('reject', 'Reject'), ('edit_comment', 'Edit_Comment'), ('withdraw', 'Withdraw')], max_length=31),
+        # ),
+        # migrations.RenameField(
+        #     model_name='preprintservice',
+        #     old_name='date_retracted',
+        #     new_name='date_withdrawn',
+        # ),
+        # migrations.RenameField(
+        #     model_name='preprintservice',
+        #     old_name='retraction_justification',
+        #     new_name='withdrawal_justification',
+        # ),
         migrations.AddField(
             model_name='nodelicense',
             name='url',
@@ -2007,7 +2043,7 @@ class Migration(migrations.Migration):
                 ('request_type', models.CharField(choices=[('access', 'Access'), ('withdrawal', 'Withdrawal')], max_length=31)),
                 ('comment', models.TextField(blank=True, null=True)),
                 ('creator', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='submitted_preprintrequest', to=settings.AUTH_USER_MODEL)),
-                ('target', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='requests', to='osf.PreprintService')),
+                ('target', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='requests', to='osf.Preprint')),
             ],
             options={
                 'abstract': False,
@@ -2102,11 +2138,11 @@ class Migration(migrations.Migration):
             name='auto',
             field=models.BooleanField(default=False),
         ),
-        migrations.AddField(
-            model_name='reviewaction',
-            name='auto',
-            field=models.BooleanField(default=False),
-        ),
+        # migrations.AddField(
+        #     model_name='reviewaction',
+        #     name='auto',
+        #     field=models.BooleanField(default=False),
+        # ),
         migrations.AddField(
             model_name='basefilenode',
             name='target_content_type',
@@ -2204,10 +2240,6 @@ class Migration(migrations.Migration):
             old_name='MetaSchema',
             new_name='RegistrationSchema',
         ),
-        migrations.RenameModel(
-            old_name='CollectedGuidMetadata',
-            new_name='CollectionSubmission',
-        ),
         migrations.AlterField(
             model_name='collectionsubmission',
             name='subjects',
@@ -2238,10 +2270,6 @@ class Migration(migrations.Migration):
             model_name='abstractnode',
             name='custom_citation',
             field=models.TextField(blank=True, null=True),
-        ),
-        migrations.RenameModel(
-            old_name='PreprintService',
-            new_name='Preprint',
         ),
         migrations.CreateModel(
             name='PreprintLog',
@@ -2290,11 +2318,11 @@ class Migration(migrations.Migration):
             name='provider',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='preprints', to='osf.PreprintProvider'),
         ),
-        migrations.AlterField(
-            model_name='preprint',
-            name='subjects',
-            field=models.ManyToManyField(blank=True, related_name='preprints', to='osf.Subject'),
-        ),
+        # migrations.AlterField(
+        #     model_name='preprint',
+        #     name='subjects',
+        #     field=models.ManyToManyField(blank=True, related_name='preprints', to='osf.Subject'),
+        # ),
         migrations.AddField(
             model_name='preprint',
             name='creator',
@@ -2358,10 +2386,10 @@ class Migration(migrations.Migration):
             name='preprintcontributor',
             order_with_respect_to='preprint',
         ),
-        migrations.RunSQL(
-            sql=["\n                -- Borrowed from https://gist.github.com/jamarparris/6100413\n                CREATE OR REPLACE FUNCTION generate_object_id() RETURNS varchar AS $$\n                DECLARE\n                    time_component bigint;\n                    machine_id bigint := FLOOR(random() * 16777215);\n                    process_id bigint;\n                    seq_id bigint := FLOOR(random() * 16777215);\n                    result varchar:= '';\n                BEGIN\n                    SELECT FLOOR(EXTRACT(EPOCH FROM clock_timestamp())) INTO time_component;\n                    SELECT pg_backend_pid() INTO process_id;\n\n                    result := result || lpad(to_hex(time_component), 8, '0');\n                    result := result || lpad(to_hex(machine_id), 6, '0');\n                    result := result || lpad(to_hex(process_id), 4, '0');\n                    result := result || lpad(to_hex(seq_id), 6, '0');\n                    RETURN result;\n                END;\n                $$ LANGUAGE PLPGSQL;\n                ", '\n                UPDATE osf_preprint P -- Copies basic preprint properties from node\n                SET title = N.title,\n                    description = N.description,\n                    article_doi = N.preprint_article_doi,\n                    is_public = N.is_public\n                FROM osf_abstractnode as N\n                WHERE P.node_id = N.id\n                AND P.node_id IS NOT NULL;\n                ', "\n                UPDATE osf_preprint P -- Copies node spam to preprint spam as long as preprint hasn't been confirmed as spam or ham\n                SET spam_status= N.spam_status,\n                    spam_pro_tip= N.spam_pro_tip,\n                    spam_data = N.spam_data,\n                    date_last_reported = N.date_last_reported,\n                    reports = N.reports\n                FROM osf_abstractnode as N\n                WHERE P.node_id = N.id\n                AND P.node_id IS NOT NULL\n                AND (P.spam_status is NULL\n                OR (P.spam_status != 4\n                AND P.spam_status != 2));\n                ", '\n                -- Creates PreprintContributor records from NodeContributors, except permissions\n                -- since preprints use django guardian\n                INSERT INTO osf_preprintcontributor (visible, user_id, preprint_id, _order)\n                  (SELECT C.visible, C.user_id, P.id, C._order\n                   FROM osf_preprint as P\n                   JOIN osf_abstractnode as N on P.node_id = N.id\n                   JOIN osf_contributor as C on N.id = C.node_id);\n                ', "\n                -- Copy the unclaimed record for the node and add it to the user using the preprint guid as the key\n                -- This is for preserving unregistered contributor info\n                CREATE OR REPLACE FUNCTION update_unclaimed_records_for_preprints()\n                  RETURNS SETOF varchar AS\n                $func$\n                DECLARE\n                  rec record;\n                BEGIN\n                  FOR rec IN\n                    SELECT jsonb_build_object(PG._id, unclaimed_records::jsonb-> NG._id) as newkeyvalue, U.id as user_id\n                    FROM osf_osfuser U, osf_contributor C, osf_abstractnode N, osf_preprint P, django_content_type NCT, django_content_type PCT, osf_guid NG, osf_guid PG\n                    WHERE C.user_id = U.id\n                    AND N.id = C.node_id\n                    AND P.node_id = N.id\n                    AND NCT.model = 'abstractnode'\n                    AND PCT.model = 'preprint'\n                    AND NG.object_id = N.id AND NG.content_type_id = NCT.id\n                    AND PG.object_id = P.id AND PG.content_type_id = PCT.id\n                    AND unclaimed_records::jsonb ? NG._id\n\n                  LOOP\n                    -- Loops through every row in temporary table above, and adding a new key/value pair to unclaimed_records, copying the node -> preprint\n                    -- Looping instead of joining to osf_user table because temporary table above has multiple rows with the same user\n                    UPDATE osf_osfuser\n                    SET unclaimed_records = unclaimed_records || rec.newkeyvalue\n                    WHERE osf_osfuser.id = rec.user_id;\n                  END LOOP;\n                END\n                $func$ LANGUAGE plpgsql;\n                SELECT update_unclaimed_records_for_preprints();\n                ", "\n                -- Creates Read, Write, and Admin groups for each preprint\n                INSERT INTO auth_group (name)\n                (SELECT 'preprint_' || P.id || '_read' FROM osf_preprint AS P WHERE P.node_id IS NOT NULL\n                UNION\n                SELECT 'preprint_' || P.id || '_write' FROM osf_preprint AS P WHERE P.node_id IS NOT NULL\n                UNION\n                SELECT 'preprint_' || P.id || '_admin' FROM osf_preprint AS P WHERE P.node_id IS NOT NULL);\n                ", '\n                -- Adds "read_preprint" permissions to all Preprint read groups\n                INSERT INTO guardian_groupobjectpermission (object_pk, group_id, content_type_id, permission_id)\n                SELECT P.id as object_pk, G.id as group_id, CT.id AS content_type_id, PERM.id AS permission_id\n                FROM osf_preprint AS P, auth_group G, django_content_type AS CT, auth_permission AS PERM\n                WHERE P.node_id IS NOT NULL\n                AND G.name = \'preprint_\' || P.id || \'_read\'\n                AND CT.model = \'preprint\' AND CT.app_label = \'osf\'\n                AND PERM.codename = \'read_preprint\';\n                ', '\n                -- Adds "read_preprint" and "write_preprint" permissions to all Preprint write groups\n                INSERT INTO guardian_groupobjectpermission (object_pk, group_id, content_type_id, permission_id)\n                SELECT P.id as object_pk, G.id as group_id, CT.id AS content_type_id, PERM.id AS permission_id\n                FROM osf_preprint AS P, auth_group G, django_content_type AS CT, auth_permission AS PERM\n                WHERE P.node_id IS NOT NULL\n                AND G.name = \'preprint_\' || P.id || \'_write\'\n                AND CT.model = \'preprint\' AND CT.app_label = \'osf\'\n                AND PERM.codename = \'read_preprint\';\n                ', "\n                INSERT INTO guardian_groupobjectpermission (object_pk, group_id, content_type_id, permission_id)\n                SELECT P.id as object_pk, G.id as group_id, CT.id AS content_type_id, PERM.id AS permission_id\n                FROM osf_preprint AS P, auth_group G, django_content_type AS CT, auth_permission AS PERM\n                WHERE P.node_id IS NOT NULL\n                AND G.name = 'preprint_' || P.id || '_write'\n                AND CT.model = 'preprint' AND CT.app_label = 'osf'\n                AND PERM.codename = 'write_preprint';\n                ", '\n                -- Adds "read_preprint", "write_preprint", and "admin_preprint" permissions to all Preprint admin groups\n                INSERT INTO guardian_groupobjectpermission (object_pk, group_id, content_type_id, permission_id)\n                SELECT P.id as object_pk, G.id as group_id, CT.id AS content_type_id, PERM.id AS permission_id\n                FROM osf_preprint AS P, auth_group G, django_content_type AS CT, auth_permission AS PERM\n                WHERE P.node_id IS NOT NULL\n                AND G.name = \'preprint_\' || P.id || \'_admin\'\n                AND CT.model = \'preprint\' AND CT.app_label = \'osf\'\n                AND PERM.codename = \'read_preprint\';\n                ', "\n                INSERT INTO guardian_groupobjectpermission (object_pk, group_id, content_type_id, permission_id)\n                SELECT P.id as object_pk, G.id as group_id, CT.id AS content_type_id, PERM.id AS permission_id\n                FROM osf_preprint AS P, auth_group G, django_content_type AS CT, auth_permission AS PERM\n                WHERE P.node_id IS NOT NULL\n                AND G.name = 'preprint_' || P.id || '_admin'\n                AND CT.model = 'preprint' AND CT.app_label = 'osf'\n                AND PERM.codename = 'write_preprint';\n                ", "\n                INSERT INTO guardian_groupobjectpermission (object_pk, group_id, content_type_id, permission_id)\n                SELECT P.id as object_pk, G.id as group_id, CT.id AS content_type_id, PERM.id AS permission_id\n                FROM osf_preprint AS P, auth_group G, django_content_type AS CT, auth_permission AS PERM\n                WHERE P.node_id IS NOT NULL\n                AND G.name = 'preprint_' || P.id || '_admin'\n                AND CT.model = 'preprint' AND CT.app_label = 'osf'\n                AND PERM.codename = 'admin_preprint';\n                ", "\n                -- Add users with read permissions only on preprint-node to the preprint's read group\n                INSERT INTO osf_osfuser_groups (osfuser_id, group_id)\n                SELECT C.user_id as osfuser_id, G.id as group_id\n                FROM osf_preprint as P, osf_abstractnode as N, osf_contributor as C, auth_group as G\n                WHERE P.node_id IS NOT NULL\n                AND P.node_id = N.id\n                AND C.node_id = N.id\n                AND C.read = TRUE\n                AND C.write = FALSE\n                AND C.admin = FALSE\n                AND G.name = 'preprint_' || P.id || '_read';\n                ", "\n                -- Add users with write permissions on preprint-node to the preprint's write group\n                INSERT INTO osf_osfuser_groups (osfuser_id, group_id)\n                SELECT C.user_id as osfuser_id, G.id as group_id\n                FROM osf_preprint as P, osf_abstractnode as N, osf_contributor as C, auth_group as G\n                WHERE P.node_id IS NOT NULL\n                AND P.node_id = N.id\n                AND C.node_id = N.id\n                AND C.read = TRUE\n                AND C.write = TRUE\n                AND C.admin = FALSE\n                AND G.name = 'preprint_' || P.id || '_write';\n                ", "\n                -- Add users with admin permissions on preprint-node to the preprint's admin group\n                INSERT INTO osf_osfuser_groups (osfuser_id, group_id)\n                SELECT C.user_id as osfuser_id, G.id as group_id\n                FROM osf_preprint as P, osf_abstractnode as N, osf_contributor as C, auth_group as G\n                WHERE P.node_id IS NOT NULL\n                AND P.node_id = N.id\n                AND C.node_id = N.id\n                AND C.read = TRUE\n                AND C.write = TRUE\n                AND C.admin = TRUE\n                AND G.name = 'preprint_' || P.id || '_admin';\n                ", '\n                -- Add all the tags on nodes to their corresponding preprint\n                INSERT INTO osf_preprint_tags (preprint_id, tag_id)\n                SELECT P.id, T.tag_id\n                FROM osf_preprint AS P, osf_abstractnode AS N, osf_abstractnode_tags as T\n                WHERE P.node_id IS NOT NULL\n                AND P.node_id = N.id\n                AND T.abstractnode_id = N.id;\n                ', "\n                -- Update preprint region to be the same as the node's region\n                UPDATE osf_preprint\n                SET region_id = NS.region_id\n                FROM addons_osfstorage_nodesettings NS\n                WHERE osf_preprint.node_id = NS.owner_id;\n                ", "\n                -- Create a root folder for each preprint\n                INSERT INTO osf_basefilenode\n                (created, modified, _id, type, target_content_type_id, target_object_id, provider, name,\n                  _path, _materialized_path, is_root, _history)\n                SELECT current_timestamp,\n                    current_timestamp,\n                    generate_object_id(),\n                    'osf.osfstoragefolder',\n                    CT.id,\n                    P.id,\n                   'osfstorage',\n                   '',\n                   '',\n                   '',\n                   true,\n                   '[]'\n                FROM osf_preprint as P, django_content_type as CT\n                WHERE P.node_id IS NOT NULL\n                AND CT.model = 'preprint' and CT.app_label = 'osf';\n                ", "\n                -- Move the node's preprint file target from the node -> preprint, and\n                -- set the file's parent as the preprint's root_folder\n                UPDATE osf_basefilenode Fi\n                SET target_object_id = P.id,\n                  target_content_type_id = CT.id,\n                  parent_id = Fo.id\n                FROM osf_preprint P, osf_abstractnode N, django_content_type CT, osf_basefilenode Fo\n                WHERE P.node_id = N.id\n                and P.node_id IS NOT NULL\n                and N.preprint_file_id = Fi.id\n                and CT.model = 'preprint' and CT.app_label = 'osf'\n                and Fo.is_root = TRUE\n                and Fo.target_object_id = P.id\n                and Fo.target_content_type_id = CT.id;\n                ", "\n                -- Set the preprint primary file as the node's preprint file\n                UPDATE osf_preprint P\n                SET primary_file_id = N.preprint_file_id\n                FROM osf_abstractnode N\n                WHERE P.node_id = N.id\n                AND P.node_id IS NOT NULL;\n                ", "\n                -- Set deleted date on preprint, if exists, pulling from attached node's project_deleted log\n                UPDATE osf_preprint as P\n                SET deleted = L.date\n                FROM osf_abstractnode N, osf_nodelog L\n                WHERE P.node_id = N.id\n                AND P.node_id IS NOT NULL\n                AND L.node_id = N.id\n                AND L.action = 'project_deleted';\n                ", "\n                -- Set preprint creator to equal the user attached to the node's preprint initiated log\n                UPDATE osf_preprint P\n                SET creator_id = L.user_id\n                FROM osf_abstractnode N, osf_nodelog L\n                WHERE P.node_id = N.id\n                AND L.node_id = N.id\n                and L.action = 'preprint_initiated';\n                ", "\n                -- For preprints whose nodes don't have preprint initiated log, just set preprint creator to equal the node creator\n                UPDATE osf_preprint P\n                SET creator_id = N.creator_id\n                FROM  osf_abstractnode N\n                WHERE P.creator_id IS NULL\n                AND P.node_id = N.id;\n                ", "\n                -- Set preprint modified date to be the date of the latest preprint-related nodelog, if date is more recent\n                -- than the preprint modified date\n                UPDATE osf_preprint\n                SET modified =\n                  GREATEST((SELECT L.date\n                   FROM osf_nodelog L\n                   WHERE (L.node_id = (osf_preprint.node_id)\n                          AND L.action IN ('contributor_added',\n                                              'made_contributor_invisible',\n                                              'made_public',\n                                              'made_contributor_visible',\n                                              'edit_description',\n                                              'preprint_file_updated',\n                                              'preprint_initiated',\n                                              'contributor_removed',\n                                              'made_private',\n                                              'edit_title',\n                                              'preprint_license_updated',\n                                              'subjects_updated',\n                                              'tag_removed',\n                                              'permissions_updated',\n                                              'tag_added',\n                                              'contributors_reordered',\n                                              'project_deleted'))\n                   ORDER BY L.date DESC\n                   LIMIT 1), osf_preprint.modified)\n                WHERE osf_preprint.node_id IS NOT NULL;\n                ", '\n                -- Final step - set migrated date to current datetime\n                UPDATE osf_preprint\n                SET migrated = current_timestamp\n                WHERE osf_preprint.node_id IS NOT NULL\n                '],
-            reverse_sql=[],
-        ),
+        # migrations.RunSQL(
+        #     sql=["\n                -- Borrowed from https://gist.github.com/jamarparris/6100413\n                CREATE OR REPLACE FUNCTION generate_object_id() RETURNS varchar AS $$\n                DECLARE\n                    time_component bigint;\n                    machine_id bigint := FLOOR(random() * 16777215);\n                    process_id bigint;\n                    seq_id bigint := FLOOR(random() * 16777215);\n                    result varchar:= '';\n                BEGIN\n                    SELECT FLOOR(EXTRACT(EPOCH FROM clock_timestamp())) INTO time_component;\n                    SELECT pg_backend_pid() INTO process_id;\n\n                    result := result || lpad(to_hex(time_component), 8, '0');\n                    result := result || lpad(to_hex(machine_id), 6, '0');\n                    result := result || lpad(to_hex(process_id), 4, '0');\n                    result := result || lpad(to_hex(seq_id), 6, '0');\n                    RETURN result;\n                END;\n                $$ LANGUAGE PLPGSQL;\n                ", '\n                UPDATE osf_preprint P -- Copies basic preprint properties from node\n                SET title = N.title,\n                    description = N.description,\n                    article_doi = N.preprint_article_doi,\n                    is_public = N.is_public\n                FROM osf_abstractnode as N\n                WHERE P.node_id = N.id\n                AND P.node_id IS NOT NULL;\n                ', "\n                UPDATE osf_preprint P -- Copies node spam to preprint spam as long as preprint hasn't been confirmed as spam or ham\n                SET spam_status= N.spam_status,\n                    spam_pro_tip= N.spam_pro_tip,\n                    spam_data = N.spam_data,\n                    date_last_reported = N.date_last_reported,\n                    reports = N.reports\n                FROM osf_abstractnode as N\n                WHERE P.node_id = N.id\n                AND P.node_id IS NOT NULL\n                AND (P.spam_status is NULL\n                OR (P.spam_status != 4\n                AND P.spam_status != 2));\n                ", '\n                -- Creates PreprintContributor records from NodeContributors, except permissions\n                -- since preprints use django guardian\n                INSERT INTO osf_preprintcontributor (visible, user_id, preprint_id, _order)\n                  (SELECT C.visible, C.user_id, P.id, C._order\n                   FROM osf_preprint as P\n                   JOIN osf_abstractnode as N on P.node_id = N.id\n                   JOIN osf_contributor as C on N.id = C.node_id);\n                ', "\n                -- Copy the unclaimed record for the node and add it to the user using the preprint guid as the key\n                -- This is for preserving unregistered contributor info\n                CREATE OR REPLACE FUNCTION update_unclaimed_records_for_preprints()\n                  RETURNS SETOF varchar AS\n                $func$\n                DECLARE\n                  rec record;\n                BEGIN\n                  FOR rec IN\n                    SELECT jsonb_build_object(PG._id, unclaimed_records::jsonb-> NG._id) as newkeyvalue, U.id as user_id\n                    FROM osf_osfuser U, osf_contributor C, osf_abstractnode N, osf_preprint P, django_content_type NCT, django_content_type PCT, osf_guid NG, osf_guid PG\n                    WHERE C.user_id = U.id\n                    AND N.id = C.node_id\n                    AND P.node_id = N.id\n                    AND NCT.model = 'abstractnode'\n                    AND PCT.model = 'preprint'\n                    AND NG.object_id = N.id AND NG.content_type_id = NCT.id\n                    AND PG.object_id = P.id AND PG.content_type_id = PCT.id\n                    AND unclaimed_records::jsonb ? NG._id\n\n                  LOOP\n                    -- Loops through every row in temporary table above, and adding a new key/value pair to unclaimed_records, copying the node -> preprint\n                    -- Looping instead of joining to osf_user table because temporary table above has multiple rows with the same user\n                    UPDATE osf_osfuser\n                    SET unclaimed_records = unclaimed_records || rec.newkeyvalue\n                    WHERE osf_osfuser.id = rec.user_id;\n                  END LOOP;\n                END\n                $func$ LANGUAGE plpgsql;\n                SELECT update_unclaimed_records_for_preprints();\n                ", "\n                -- Creates Read, Write, and Admin groups for each preprint\n                INSERT INTO auth_group (name)\n                (SELECT 'preprint_' || P.id || '_read' FROM osf_preprint AS P WHERE P.node_id IS NOT NULL\n                UNION\n                SELECT 'preprint_' || P.id || '_write' FROM osf_preprint AS P WHERE P.node_id IS NOT NULL\n                UNION\n                SELECT 'preprint_' || P.id || '_admin' FROM osf_preprint AS P WHERE P.node_id IS NOT NULL);\n                ", '\n                -- Adds "read_preprint" permissions to all Preprint read groups\n                INSERT INTO guardian_groupobjectpermission (object_pk, group_id, content_type_id, permission_id)\n                SELECT P.id as object_pk, G.id as group_id, CT.id AS content_type_id, PERM.id AS permission_id\n                FROM osf_preprint AS P, auth_group G, django_content_type AS CT, auth_permission AS PERM\n                WHERE P.node_id IS NOT NULL\n                AND G.name = \'preprint_\' || P.id || \'_read\'\n                AND CT.model = \'preprint\' AND CT.app_label = \'osf\'\n                AND PERM.codename = \'read_preprint\';\n                ', '\n                -- Adds "read_preprint" and "write_preprint" permissions to all Preprint write groups\n                INSERT INTO guardian_groupobjectpermission (object_pk, group_id, content_type_id, permission_id)\n                SELECT P.id as object_pk, G.id as group_id, CT.id AS content_type_id, PERM.id AS permission_id\n                FROM osf_preprint AS P, auth_group G, django_content_type AS CT, auth_permission AS PERM\n                WHERE P.node_id IS NOT NULL\n                AND G.name = \'preprint_\' || P.id || \'_write\'\n                AND CT.model = \'preprint\' AND CT.app_label = \'osf\'\n                AND PERM.codename = \'read_preprint\';\n                ', "\n                INSERT INTO guardian_groupobjectpermission (object_pk, group_id, content_type_id, permission_id)\n                SELECT P.id as object_pk, G.id as group_id, CT.id AS content_type_id, PERM.id AS permission_id\n                FROM osf_preprint AS P, auth_group G, django_content_type AS CT, auth_permission AS PERM\n                WHERE P.node_id IS NOT NULL\n                AND G.name = 'preprint_' || P.id || '_write'\n                AND CT.model = 'preprint' AND CT.app_label = 'osf'\n                AND PERM.codename = 'write_preprint';\n                ", '\n                -- Adds "read_preprint", "write_preprint", and "admin_preprint" permissions to all Preprint admin groups\n                INSERT INTO guardian_groupobjectpermission (object_pk, group_id, content_type_id, permission_id)\n                SELECT P.id as object_pk, G.id as group_id, CT.id AS content_type_id, PERM.id AS permission_id\n                FROM osf_preprint AS P, auth_group G, django_content_type AS CT, auth_permission AS PERM\n                WHERE P.node_id IS NOT NULL\n                AND G.name = \'preprint_\' || P.id || \'_admin\'\n                AND CT.model = \'preprint\' AND CT.app_label = \'osf\'\n                AND PERM.codename = \'read_preprint\';\n                ', "\n                INSERT INTO guardian_groupobjectpermission (object_pk, group_id, content_type_id, permission_id)\n                SELECT P.id as object_pk, G.id as group_id, CT.id AS content_type_id, PERM.id AS permission_id\n                FROM osf_preprint AS P, auth_group G, django_content_type AS CT, auth_permission AS PERM\n                WHERE P.node_id IS NOT NULL\n                AND G.name = 'preprint_' || P.id || '_admin'\n                AND CT.model = 'preprint' AND CT.app_label = 'osf'\n                AND PERM.codename = 'write_preprint';\n                ", "\n                INSERT INTO guardian_groupobjectpermission (object_pk, group_id, content_type_id, permission_id)\n                SELECT P.id as object_pk, G.id as group_id, CT.id AS content_type_id, PERM.id AS permission_id\n                FROM osf_preprint AS P, auth_group G, django_content_type AS CT, auth_permission AS PERM\n                WHERE P.node_id IS NOT NULL\n                AND G.name = 'preprint_' || P.id || '_admin'\n                AND CT.model = 'preprint' AND CT.app_label = 'osf'\n                AND PERM.codename = 'admin_preprint';\n                ", "\n                -- Add users with read permissions only on preprint-node to the preprint's read group\n                INSERT INTO osf_osfuser_groups (osfuser_id, group_id)\n                SELECT C.user_id as osfuser_id, G.id as group_id\n                FROM osf_preprint as P, osf_abstractnode as N, osf_contributor as C, auth_group as G\n                WHERE P.node_id IS NOT NULL\n                AND P.node_id = N.id\n                AND C.node_id = N.id\n                AND C.read = TRUE\n                AND C.write = FALSE\n                AND C.admin = FALSE\n                AND G.name = 'preprint_' || P.id || '_read';\n                ", "\n                -- Add users with write permissions on preprint-node to the preprint's write group\n                INSERT INTO osf_osfuser_groups (osfuser_id, group_id)\n                SELECT C.user_id as osfuser_id, G.id as group_id\n                FROM osf_preprint as P, osf_abstractnode as N, osf_contributor as C, auth_group as G\n                WHERE P.node_id IS NOT NULL\n                AND P.node_id = N.id\n                AND C.node_id = N.id\n                AND C.read = TRUE\n                AND C.write = TRUE\n                AND C.admin = FALSE\n                AND G.name = 'preprint_' || P.id || '_write';\n                ", "\n                -- Add users with admin permissions on preprint-node to the preprint's admin group\n                INSERT INTO osf_osfuser_groups (osfuser_id, group_id)\n                SELECT C.user_id as osfuser_id, G.id as group_id\n                FROM osf_preprint as P, osf_abstractnode as N, osf_contributor as C, auth_group as G\n                WHERE P.node_id IS NOT NULL\n                AND P.node_id = N.id\n                AND C.node_id = N.id\n                AND C.read = TRUE\n                AND C.write = TRUE\n                AND C.admin = TRUE\n                AND G.name = 'preprint_' || P.id || '_admin';\n                ", '\n                -- Add all the tags on nodes to their corresponding preprint\n                INSERT INTO osf_preprint_tags (preprint_id, tag_id)\n                SELECT P.id, T.tag_id\n                FROM osf_preprint AS P, osf_abstractnode AS N, osf_abstractnode_tags as T\n                WHERE P.node_id IS NOT NULL\n                AND P.node_id = N.id\n                AND T.abstractnode_id = N.id;\n                ', "\n                -- Update preprint region to be the same as the node's region\n                UPDATE osf_preprint\n                SET region_id = NS.region_id\n                FROM addons_osfstorage_nodesettings NS\n                WHERE osf_preprint.node_id = NS.owner_id;\n                ", "\n                -- Create a root folder for each preprint\n                INSERT INTO osf_basefilenode\n                (created, modified, _id, type, target_content_type_id, target_object_id, provider, name,\n                  _path, _materialized_path, is_root, _history)\n                SELECT current_timestamp,\n                    current_timestamp,\n                    generate_object_id(),\n                    'osf.osfstoragefolder',\n                    CT.id,\n                    P.id,\n                   'osfstorage',\n                   '',\n                   '',\n                   '',\n                   true,\n                   '[]'\n                FROM osf_preprint as P, django_content_type as CT\n                WHERE P.node_id IS NOT NULL\n                AND CT.model = 'preprint' and CT.app_label = 'osf';\n                ", "\n                -- Move the node's preprint file target from the node -> preprint, and\n                -- set the file's parent as the preprint's root_folder\n                UPDATE osf_basefilenode Fi\n                SET target_object_id = P.id,\n                  target_content_type_id = CT.id,\n                  parent_id = Fo.id\n                FROM osf_preprint P, osf_abstractnode N, django_content_type CT, osf_basefilenode Fo\n                WHERE P.node_id = N.id\n                and P.node_id IS NOT NULL\n                and N.preprint_file_id = Fi.id\n                and CT.model = 'preprint' and CT.app_label = 'osf'\n                and Fo.is_root = TRUE\n                and Fo.target_object_id = P.id\n                and Fo.target_content_type_id = CT.id;\n                ", "\n                -- Set the preprint primary file as the node's preprint file\n                UPDATE osf_preprint P\n                SET primary_file_id = N.preprint_file_id\n                FROM osf_abstractnode N\n                WHERE P.node_id = N.id\n                AND P.node_id IS NOT NULL;\n                ", "\n                -- Set deleted date on preprint, if exists, pulling from attached node's project_deleted log\n                UPDATE osf_preprint as P\n                SET deleted = L.date\n                FROM osf_abstractnode N, osf_nodelog L\n                WHERE P.node_id = N.id\n                AND P.node_id IS NOT NULL\n                AND L.node_id = N.id\n                AND L.action = 'project_deleted';\n                ", "\n                -- Set preprint creator to equal the user attached to the node's preprint initiated log\n                UPDATE osf_preprint P\n                SET creator_id = L.user_id\n                FROM osf_abstractnode N, osf_nodelog L\n                WHERE P.node_id = N.id\n                AND L.node_id = N.id\n                and L.action = 'preprint_initiated';\n                ", "\n                -- For preprints whose nodes don't have preprint initiated log, just set preprint creator to equal the node creator\n                UPDATE osf_preprint P\n                SET creator_id = N.creator_id\n                FROM  osf_abstractnode N\n                WHERE P.creator_id IS NULL\n                AND P.node_id = N.id;\n                ", "\n                -- Set preprint modified date to be the date of the latest preprint-related nodelog, if date is more recent\n                -- than the preprint modified date\n                UPDATE osf_preprint\n                SET modified =\n                  GREATEST((SELECT L.date\n                   FROM osf_nodelog L\n                   WHERE (L.node_id = (osf_preprint.node_id)\n                          AND L.action IN ('contributor_added',\n                                              'made_contributor_invisible',\n                                              'made_public',\n                                              'made_contributor_visible',\n                                              'edit_description',\n                                              'preprint_file_updated',\n                                              'preprint_initiated',\n                                              'contributor_removed',\n                                              'made_private',\n                                              'edit_title',\n                                              'preprint_license_updated',\n                                              'subjects_updated',\n                                              'tag_removed',\n                                              'permissions_updated',\n                                              'tag_added',\n                                              'contributors_reordered',\n                                              'project_deleted'))\n                   ORDER BY L.date DESC\n                   LIMIT 1), osf_preprint.modified)\n                WHERE osf_preprint.node_id IS NOT NULL;\n                ", '\n                -- Final step - set migrated date to current datetime\n                UPDATE osf_preprint\n                SET migrated = current_timestamp\n                WHERE osf_preprint.node_id IS NOT NULL\n                '],
+        #     reverse_sql=[],
+        # ),
         migrations.RemoveField(
             model_name='abstractnode',
             name='_has_abandoned_preprint',
@@ -2503,18 +2531,6 @@ class Migration(migrations.Migration):
         #     code=osf.migrations.0146_update_registration_schemas.update_v2_schemas,
         #     reverse_code=osf.migrations.0146_update_registration_schemas.noop,
         # ),
-        migrations.CreateModel(
-            name='BlacklistedEmailDomain',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
-                ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
-                ('domain', osf.utils.fields.LowercaseCharField(db_index=True, max_length=255, unique=True)),
-            ],
-            options={
-                'abstract': False,
-            },
-        ),
         # migrations.RunPython(
         #     code=osf.migrations.0150_fix_deleted_preprints.forward,
         #     reverse_code=osf.migrations.0150_fix_deleted_preprints.backward,
@@ -2872,11 +2888,11 @@ class Migration(migrations.Migration):
             name='scopes',
             field=models.CharField(max_length=300, null=True),
         ),
-        migrations.AddField(
-            model_name='apioauth2personaltoken',
-            name='scopes_temp',
-            field=models.ManyToManyField(related_name='tokens', to='osf.ApiOAuth2Scope'),
-        ),
+        # migrations.AddField(
+        #     model_name='apioauth2personaltoken',
+        #     name='scopes_temp',
+        #     field=models.ManyToManyField(related_name='tokens', to='osf.ApiOAuth2Scope'),
+        # ),
         # migrations.RunPython(
         #     code=osf.migrations.0179_apioauth2personaltoken_scopes_temp.migrate_scopes_from_char_to_m2m,
         #     reverse_code=osf.migrations.0179_apioauth2personaltoken_scopes_temp.remove_m2m_scopes,
@@ -2885,11 +2901,11 @@ class Migration(migrations.Migration):
             model_name='apioauth2personaltoken',
             name='scopes',
         ),
-        migrations.RenameField(
-            model_name='apioauth2personaltoken',
-            old_name='scopes_temp',
-            new_name='scopes',
-        ),
+        # migrations.RenameField(
+        #     model_name='apioauth2personaltoken',
+        #     old_name='scopes_temp',
+        #     new_name='scopes',
+        # ),
         migrations.AddField(
             model_name='osfuser',
             name='contacted_deactivation',
@@ -3575,7 +3591,7 @@ class Migration(migrations.Migration):
                 ('_id', models.CharField(db_index=True, default=osf.models.base.generate_object_id, max_length=24, unique=True)),
                 ('schema_key', models.CharField(max_length=255)),
                 ('response', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder, null=True)),
-                ('source_schema_block', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='osf.RegistrationSchemaBlock')),
+                # ('source_schema_block', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='osf.RegistrationSchemaBlock')),
                 ('source_schema_response', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='updated_response_blocks', to='osf.SchemaResponse')),
             ],
             bases=(models.Model, osf.models.base.QuerySetExplainMixin),
@@ -3728,10 +3744,6 @@ class Migration(migrations.Migration):
             name='allow_updates',
             field=models.NullBooleanField(default=False),
         ),
-        migrations.RenameModel(
-            old_name='BlacklistedEmailDomain',
-            new_name='NotableEmailDomain',
-        ),
         migrations.AddField(
             model_name='notableemaildomain',
             name='note',
@@ -3746,10 +3758,10 @@ class Migration(migrations.Migration):
             name='allow_bulk_uploads',
             field=models.NullBooleanField(default=False),
         ),
-        migrations.RemoveField(
-            model_name='schemaresponseblock',
-            name='source_schema_block',
-        ),
+        # migrations.RemoveField(
+        #     model_name='schemaresponseblock',
+        #     name='source_schema_block',
+        # ),
         migrations.AlterUniqueTogether(
             name='schemaresponseblock',
             unique_together=set([('source_schema_response', 'schema_key')]),
