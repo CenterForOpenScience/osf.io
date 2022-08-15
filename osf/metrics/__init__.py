@@ -10,8 +10,31 @@ from .institution_metrics import (
 
 from .registry_metrics import RegistriesModerationMetrics
 
+from .reports import (
+    AddonUsageReportV0,
+    DownloadCountReportV0,
+    InstitutionSummaryReportV0,
+    NewUserDomainReportV1,
+    NodeSummaryReportV0,
+    OsfstorageFileCountReportV0,
+    PreprintSummaryReportV0,
+    UserSummaryReportV0,
+)
+
+DAILY_REPORTS = (
+    AddonUsageReportV0,
+    DownloadCountReportV0,
+    InstitutionSummaryReportV0,
+    NewUserDomainReportV1,
+    NodeSummaryReportV0,
+    OsfstorageFileCountReportV0,
+    PreprintSummaryReportV0,
+    UserSummaryReportV0,
+)
+
 
 __all__ = (
+    'DAILY_REPORTS',
     'InstitutionProjectCounts',
     'PreprintView',
     'PreprintDownload',

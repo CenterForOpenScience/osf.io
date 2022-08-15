@@ -1,15 +1,13 @@
-from __future__ import absolute_import
-
+from datetime import timedelta
 import logging
 
-# App must be initialized before models or ADDONS_AVAILABLE are available
-from website.app import init_app
-init_app()
+from django.utils import timezone
 
+from osf.metrics.reports import AddonUsageReportV0
 from osf.models import OSFUser, AbstractNode
 from framework.database import paginated
-from scripts.analytics.base import SnapshotAnalytics
-from website.settings import ADDONS_AVAILABLE
+from website import settings
+from ._base import DailyReporter
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -65,17 +63,17 @@ def get_enabled_authorized_linked(user_settings_list, has_external_account, shor
     }
 
 
-class AddonSnapshot(SnapshotAnalytics):
+class AddonUsageReporter(DailyReporter):
+    def report(self, date):
+        yesterday = timezone.now().date() - timedelta(days=1)
+        if date != yesterday:
+            raise NotImplementedError
 
-    @property
-    def collection_name(self):
-        return 'addon_snapshot'
-
-    def get_events(self, date=None):
-        super(AddonSnapshot, self).get_events(date)
-
-        counts = []
-        addons_available = {k: v for k, v in [(addon.short_name, addon) for addon in ADDONS_AVAILABLE]}
+        reports = []
+        addons_available = {
+            addon.short_name: addon
+            for addon in settings.ADDONS_AVAILABLE
+        }
 
         for short_name, addon in addons_available.items():
 
@@ -100,18 +98,19 @@ class AddonSnapshot(SnapshotAnalytics):
             total = connected_count + deleted_count + disconnected_count
             usage_counts = get_enabled_authorized_linked(addon.models.get('usersettings'), has_external_account, addon.short_name)
 
-            counts.append({
-                'provider': {
-                    'name': short_name
-                },
-                'users': usage_counts,
-                'nodes': {
-                    'total': total,
-                    'connected': connected_count,
-                    'deleted': deleted_count,
-                    'disconnected': disconnected_count
-                }
-            })
+            reports.append(
+                AddonUsageReportV0(
+                    report_date=date,
+                    addon_shortname=short_name,
+                    users_enabled_count=usage_counts['enabled'],
+                    users_authorized_count=usage_counts['authorized'],
+                    users_linked_count=usage_counts['linked'],
+                    nodes_total_count=total,
+                    nodes_connected_count=connected_count,
+                    nodes_deleted_count=deleted_count,
+                    nodes_disconnected_count=disconnected_count,
+                )
+            )
 
             logger.info(
                 '{} counted. Users with a linked node: {}, Total connected nodes: {}.'.format(
@@ -120,14 +119,23 @@ class AddonSnapshot(SnapshotAnalytics):
                     total
                 )
             )
-        return counts
+        return reports
 
-
-def get_class():
-    return AddonSnapshot
-
-
-if __name__ == '__main__':
-    addon_snapshot = AddonSnapshot()
-    events = addon_snapshot.get_events()
-    addon_snapshot.send_events(events)
+    def keen_events_from_report(self, report):
+        event = {
+            'provider': {
+                'name': report.addon_shortname,
+            },
+            'users': {
+                'enabled': report.users_enabled_count,
+                'authorized': report.users_authorized_count,
+                'linked': report.users_linked_count,
+            },
+            'nodes': {
+                'total': report.nodes_total_count,
+                'connected': report.nodes_connected_count,
+                'deleted': report.nodes_deleted_count,
+                'disconnected': report.nodes_disconnected_count
+            },
+        }
+        return {'addon_snapshot': [event]}
