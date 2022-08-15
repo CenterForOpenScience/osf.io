@@ -3889,4 +3889,152 @@ class Migration(migrations.Migration):
             name='artifact_type',
             field=models.IntegerField(choices=[(0, 'UNDEFINED'), (1, 'DATA'), (11, 'ANALYTIC_CODE'), (21, 'MATERIALS'), (31, 'PAPERS'), (41, 'SUPPLEMENTS'), (1001, 'PRIMARY')], default=osf.utils.outcomes.ArtifactTypes(0)),
         ),
+        migrations.CreateModel(
+            name='ReviewAction',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('created',
+                 django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
+                ('modified',
+                 django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
+                ('_id', models.CharField(db_index=True, default=osf.models.base.generate_object_id, max_length=24,
+                                         unique=True)),
+                ('comment', models.TextField(blank=True)),
+                ('is_deleted', models.BooleanField(default=False)),
+                ('auto', models.BooleanField(default=False)),
+                ('trigger', models.CharField(choices=[('submit', 'Submit'), ('accept', 'Accept'), ('reject', 'Reject'),
+                                                      ('edit_comment', 'Edit_Comment'), ('withdraw', 'Withdraw')],
+                                             max_length=31)),
+                ('from_state', models.CharField(
+                    choices=[('initial', 'Initial'), ('pending', 'Pending'), ('accepted', 'Accepted'),
+                             ('rejected', 'Rejected'), ('withdrawn', 'Withdrawn')], max_length=31)),
+                ('to_state', models.CharField(
+                    choices=[('initial', 'Initial'), ('pending', 'Pending'), ('accepted', 'Accepted'),
+                             ('rejected', 'Rejected'), ('withdrawn', 'Withdrawn')], max_length=31)),
+                ('creator', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='+',
+                                              to=settings.AUTH_USER_MODEL)),
+            ],
+            options={
+                'abstract': False,
+            },
+            bases=(models.Model, osf.models.base.QuerySetExplainMixin),
+        ),
+        migrations.RemoveField(
+            model_name='action',
+            name='creator',
+        ),
+        migrations.RemoveField(
+            model_name='preprint',
+            name='date_created',
+        ),
+        migrations.RemoveField(
+            model_name='preprint',
+            name='date_modified',
+        ),
+        migrations.RemoveField(
+            model_name='preprint',
+            name='guid_string',
+        ),
+        migrations.AddField(
+            model_name='apioauth2personaltoken',
+            name='scopes',
+            field=models.ManyToManyField(related_name='tokens', to='osf.ApiOAuth2Scope'),
+        ),
+        migrations.AddField(
+            model_name='preprint',
+            name='created',
+            field=django_extensions.db.fields.CreationDateTimeField(auto_now_add=True,
+                                                                    default=django.utils.timezone.now,
+                                                                    verbose_name='created'),
+            preserve_default=False,
+        ),
+        migrations.AddField(
+            model_name='preprint',
+            name='date_last_reported',
+            field=osf.utils.fields.NonNaiveDateTimeField(blank=True, db_index=True, default=None, null=True),
+        ),
+        migrations.AddField(
+            model_name='preprint',
+            name='date_last_transitioned',
+            field=models.DateTimeField(blank=True, db_index=True, null=True),
+        ),
+        migrations.AddField(
+            model_name='preprint',
+            name='date_withdrawn',
+            field=osf.utils.fields.NonNaiveDateTimeField(blank=True, default=None, null=True),
+        ),
+        migrations.AddField(
+            model_name='preprint',
+            name='ever_public',
+            field=models.BooleanField(default=False),
+        ),
+        migrations.AddField(
+            model_name='preprint',
+            name='machine_state',
+            field=models.CharField(choices=[('initial', 'Initial'), ('pending', 'Pending'), ('accepted', 'Accepted'),
+                                            ('rejected', 'Rejected'), ('withdrawn', 'Withdrawn')], db_index=True,
+                                   default='initial', max_length=15),
+        ),
+        migrations.AddField(
+            model_name='preprint',
+            name='modified',
+            field=django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified'),
+        ),
+        migrations.AddField(
+            model_name='preprint',
+            name='original_publication_date',
+            field=osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True),
+        ),
+        migrations.AddField(
+            model_name='preprint',
+            name='preprint_doi_created',
+            field=osf.utils.fields.NonNaiveDateTimeField(blank=True, default=None, null=True),
+        ),
+        migrations.AddField(
+            model_name='preprint',
+            name='reports',
+            field=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict,
+                                                                            encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder,
+                                                                            validators=[
+                                                                                osf.models.spam._validate_reports]),
+        ),
+        migrations.AddField(
+            model_name='preprint',
+            name='spam_data',
+            field=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict,
+                                                                            encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder),
+        ),
+        migrations.AddField(
+            model_name='preprint',
+            name='spam_pro_tip',
+            field=models.CharField(blank=True, default=None, max_length=200, null=True),
+        ),
+        migrations.AddField(
+            model_name='preprint',
+            name='spam_status',
+            field=models.IntegerField(blank=True, db_index=True, default=None, null=True),
+        ),
+        migrations.AddField(
+            model_name='preprint',
+            name='withdrawal_justification',
+            field=models.TextField(blank=True, default=''),
+        ),
+        migrations.RemoveField(
+            model_name='preprint',
+            name='subjects',
+        ),
+        migrations.AddField(
+            model_name='preprint',
+            name='subjects',
+            field=models.ManyToManyField(blank=True, related_name='preprints', to='osf.Subject'),
+        ),
+        migrations.DeleteModel(
+            name='Action',
+        ),
+        migrations.AddField(
+            model_name='reviewaction',
+            name='target',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='actions',
+                                    to='osf.Preprint'),
+        ),
     ]
