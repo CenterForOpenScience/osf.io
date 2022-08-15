@@ -25,7 +25,7 @@ class Subject(ObjectIDMixin, BaseModel, DirtyFieldsMixin):
     bepress_subject = models.ForeignKey('self', related_name='aliases', null=True, blank=True, on_delete=models.deletion.CASCADE)
     provider = models.ForeignKey(
         'RegistrationProvider',
-        related_name='draft_registrations',
+        related_name='subjects',
         null=True,
         on_delete=models.CASCADE,
         default=None,

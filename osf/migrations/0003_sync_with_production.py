@@ -125,7 +125,7 @@ class Migration(migrations.Migration):
             name='provider',
             field=models.ForeignKey(
                 'RegistrationProvider',
-                related_name='draft_registrations',
+                related_name='subjects',
                 null=True,
                 on_delete=models.CASCADE,
                 default=None,
