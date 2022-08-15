@@ -717,22 +717,34 @@ class Migration(migrations.Migration):
         #     code=osf.migrations.0055_update_metaschema_active.update_metaschema_active,
         # ),
         migrations.CreateModel(
-            name='Action',
+            name='ReviewAction',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('_id', models.CharField(db_index=True, default=osf.models.base.generate_object_id, max_length=24, unique=True)),
-                ('trigger', models.CharField(choices=[('accept', 'Accept'), ('edit_comment', 'Edit_Comment'), ('reject', 'Reject'), ('submit', 'Submit')], max_length=31)),
-                ('from_state', models.CharField(choices=[('accepted', 'Accepted'), ('initial', 'Initial'), ('pending', 'Pending'), ('rejected', 'Rejected')], max_length=31)),
-                ('to_state', models.CharField(choices=[('accepted', 'Accepted'), ('initial', 'Initial'), ('pending', 'Pending'), ('rejected', 'Rejected')], max_length=31)),
+                ('created',
+                 django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
+                ('modified',
+                 django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
+                ('_id', models.CharField(db_index=True, default=osf.models.base.generate_object_id, max_length=24,
+                                         unique=True)),
                 ('comment', models.TextField(blank=True)),
                 ('is_deleted', models.BooleanField(default=False)),
-                ('date_created', osf.utils.fields.NonNaiveDateTimeField(auto_now_add=True)),
-                ('date_modified', osf.utils.fields.NonNaiveDateTimeField(auto_now=True)),
-                ('creator', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='+', to=settings.AUTH_USER_MODEL)),
+                ('auto', models.BooleanField(default=False)),
+                ('trigger', models.CharField(choices=[('submit', 'Submit'), ('accept', 'Accept'), ('reject', 'Reject'),
+                                                      ('edit_comment', 'Edit_Comment'), ('withdraw', 'Withdraw')],
+                                             max_length=31)),
+                ('from_state', models.CharField(
+                    choices=[('initial', 'Initial'), ('pending', 'Pending'), ('accepted', 'Accepted'),
+                             ('rejected', 'Rejected'), ('withdrawn', 'Withdrawn')], max_length=31)),
+                ('to_state', models.CharField(
+                    choices=[('initial', 'Initial'), ('pending', 'Pending'), ('accepted', 'Accepted'),
+                             ('rejected', 'Rejected'), ('withdrawn', 'Withdrawn')], max_length=31)),
+                ('creator', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='+',
+                                              to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'abstract': False,
             },
+            bases=(models.Model, osf.models.base.QuerySetExplainMixin),
         ),
         migrations.AlterModelOptions(
             name='preprintprovider',
@@ -1424,10 +1436,6 @@ class Migration(migrations.Migration):
             name='content',
             field=models.TextField(validators=[osf.models.validators.CommentMaxLength(1000), osf.models.validators.string_required]),
         ),
-        # migrations.RenameModel(
-        #     old_name='Action',
-        #     new_name='ReviewAction',
-        # ),
         # migrations.RenameField(
         #     model_name='preprintservice',
         #     old_name='reviews_state',
@@ -3889,40 +3897,10 @@ class Migration(migrations.Migration):
             name='artifact_type',
             field=models.IntegerField(choices=[(0, 'UNDEFINED'), (1, 'DATA'), (11, 'ANALYTIC_CODE'), (21, 'MATERIALS'), (31, 'PAPERS'), (41, 'SUPPLEMENTS'), (1001, 'PRIMARY')], default=osf.utils.outcomes.ArtifactTypes(0)),
         ),
-        migrations.CreateModel(
-            name='ReviewAction',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created',
-                 django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
-                ('modified',
-                 django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
-                ('_id', models.CharField(db_index=True, default=osf.models.base.generate_object_id, max_length=24,
-                                         unique=True)),
-                ('comment', models.TextField(blank=True)),
-                ('is_deleted', models.BooleanField(default=False)),
-                ('auto', models.BooleanField(default=False)),
-                ('trigger', models.CharField(choices=[('submit', 'Submit'), ('accept', 'Accept'), ('reject', 'Reject'),
-                                                      ('edit_comment', 'Edit_Comment'), ('withdraw', 'Withdraw')],
-                                             max_length=31)),
-                ('from_state', models.CharField(
-                    choices=[('initial', 'Initial'), ('pending', 'Pending'), ('accepted', 'Accepted'),
-                             ('rejected', 'Rejected'), ('withdrawn', 'Withdrawn')], max_length=31)),
-                ('to_state', models.CharField(
-                    choices=[('initial', 'Initial'), ('pending', 'Pending'), ('accepted', 'Accepted'),
-                             ('rejected', 'Rejected'), ('withdrawn', 'Withdrawn')], max_length=31)),
-                ('creator', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='+',
-                                              to=settings.AUTH_USER_MODEL)),
-            ],
-            options={
-                'abstract': False,
-            },
-            bases=(models.Model, osf.models.base.QuerySetExplainMixin),
-        ),
-        migrations.RemoveField(
-            model_name='action',
-            name='creator',
-        ),
+        # migrations.RemoveField(
+        #     model_name='action',
+        #     name='creator',
+        # ),
         migrations.RemoveField(
             model_name='preprint',
             name='date_created',
@@ -4028,9 +4006,9 @@ class Migration(migrations.Migration):
             name='subjects',
             field=models.ManyToManyField(blank=True, related_name='preprints', to='osf.Subject'),
         ),
-        migrations.DeleteModel(
-            name='Action',
-        ),
+        # migrations.DeleteModel(
+        #     name='Action',
+        # ),
         migrations.AddField(
             model_name='reviewaction',
             name='target',
