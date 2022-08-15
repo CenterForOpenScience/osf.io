@@ -14,7 +14,7 @@
     "@centerforopenscience/osf-style": "1.9.0",
     "URIjs": "^1.14.1",
     "assets-webpack-plugin": "^2.3.0",
-	"babel-core": "^6.0.0",
+    "babel-core": "^6.0.0",
     "babel-loader": "^6.4.1",
     "body-parser": "~1.19.1",
     "bootbox": "^5.5.2",
@@ -23,7 +23,7 @@
     "css-loader": "^0.28.11",
     "diff": "~5.0.0",
     "dropzone": "https://github.com/CenterForOpenScience/dropzone.git#aba21eb6b82cc823ac7a7a53d6e035791c082bae",
-	"exports-loader": "0.6.3",
+    "exports-loader": "0.6.3",
     "file-loader": "^0.11.2",
     "font-awesome": "^4.4.0",
     "font-awesome-webpack": "0.0.5-beta.2",
@@ -75,7 +75,7 @@
     "font-awesome-webpack/css-loader": "^0.28.11",
     "font-awesome-webpack/style-loader": "^0.23.1",
     "treebeard/mithril": "0.2.0",
-	"treebeard/bootstrap": "3.3.7",
+    "treebeard/bootstrap": "3.3.7",
     "webpack/uglifyjs-webpack-plugin": "1.3.0",
     "webpack/watchpack": "^2.3.1"
   }
