@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from admin.export_data_management.tasks import pre_restore_export_data
 from celery.result import AsyncResult
 
+
 class ExportDataManagement(RdmPermissionMixin, ListView):
     paginate_by = 100
     ordering = 'name'
@@ -33,7 +34,8 @@ class ExportDataRestore(RdmPermissionMixin, APIView):
 
     def post(self, request, *args, **kwargs):
         destination_id = request.POST.get('destination_id', default='-1')
-        process = pre_restore_export_data.delay(1, 1, destination_id)
+        cookies = request.COOKIES
+        process = pre_restore_export_data.delay(cookies, 1, 1, destination_id)
         return Response({'task_id': process.task_id}, status=status.HTTP_200_OK)
 
 

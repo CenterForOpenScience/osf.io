@@ -6,20 +6,20 @@ import requests
 
 from django.db import transaction
 from api.base.utils import waterbutler_api_url_for
-# from osf.models import ExportDataRestore
+from osf.models import ExportDataRestore
 from celery.contrib.abortable import AbortableTask
 from framework.celery_tasks import app as celery_app
 
 
 @celery_app.task(bind=True, base=AbortableTask)
-def pre_restore_export_data(self, source_id, export_id, destination_id):
+def pre_restore_export_data(self, cookie, source_id, export_id, destination_id):
     # Try to add new process record to DB
     # export_data_restore = ExportDataRestore(status="Running")
     # export_data_restore.save()
 
     # Get export file (export_data_{institution_guid}_{yyyymmddhhMMSS}.json)
-    export_file = "export_data_{export_id}_{timestamp}.json".format(export_id=export_id, timestamp=date.today())
-    export_file_url = waterbutler_api_url_for(export_file, provider="S3")
+    export_file_path = "/export_data_{export_id}_{timestamp}.json".format(export_id=export_id, timestamp=date.today())
+    export_file_url = waterbutler_api_url_for(export_id, "S3", path=export_file_path, cookie=cookie)
     res = requests.get(export_file_url)
     response_body = res.content
     if res.status_code != 200:
@@ -48,11 +48,13 @@ def pre_restore_export_data(self, source_id, export_id, destination_id):
     #     "file_path": "./"
     # }
 
+    # export_data_restore = ExportDataRestore(status="Stopped")
+    # export_data_restore.save()
     # return "The export data files are corrupted"
 
     # Check whether the restore destination storage is not empty
-    destination_storage_check_api = waterbutler_api_url_for("*", provider="S3")
-    res = requests.get(destination_storage_check_api)
+    destination_storage_check_api = waterbutler_api_url_for(destination_id, "S3", path="/", cookie=cookie)
+    res = requests.head(destination_storage_check_api)
     response_body = res.content
     if res.status_code != 200:
         # Error
@@ -67,11 +69,11 @@ def pre_restore_export_data(self, source_id, export_id, destination_id):
         return 'Open Dialog'
 
     # Start restore process
-    return self.restore_export_data(source_id, export_id, destination_id)
+    return self.restore_export_data(cookie, source_id, export_id, destination_id)
 
 
 @celery_app.task(bind=True, base=AbortableTask)
-def restore_export_data(self, source_id, export_id, destination_id):
+def restore_export_data(self, cookie, source_id, export_id, destination_id):
     # Check destination storage type
 
     # If destination storage is add-on institutional storage,
@@ -80,9 +82,9 @@ def restore_export_data(self, source_id, export_id, destination_id):
     with transaction.atomic():
         # Get file which have same information between export data and database
         # File info file: file_info_{institution_guid}_{yyyymmddhhMMSS}.json
-        info_file = "file_info_{institution_guid}_{timestamp}.json".format(institution_guid=export_id,
-                                                                           timestamp=date.today())
-        info_file_url = waterbutler_api_url_for(info_file, provider="S3")
+        info_file_path = "/file_info_{institution_guid}_{timestamp}.json".format(institution_guid=export_id,
+                                                                                 timestamp=date.today())
+        info_file_url = waterbutler_api_url_for(export_id, "S3", path=info_file_path, cookie=cookie)
         res = requests.get(info_file_url)
         response_body = res.content
         if res.status_code != 200:
@@ -94,17 +96,20 @@ def restore_export_data(self, source_id, export_id, destination_id):
 
         files = []
         for file in files:
+            # TODO: Get path from file
+            file_path = "/"
+
             # Add matched file information to related tables
 
             # Download file from source storage
-            download_api = waterbutler_api_url_for("*", provider="S3")
+            download_api = waterbutler_api_url_for(source_id, "S3", path=file_path, cookie=cookie)
             res = requests.get(download_api)
 
             # Prepare file name and file path for uploading
 
             # Upload downloaded file to destination storage
-            upload_api = waterbutler_api_url_for("*", provider="S3")
-            res = requests.post(upload_api)
+            upload_api = waterbutler_api_url_for(destination_id, "S3", path=file_path, cookie=cookie)
+            res = requests.put(upload_api)
 
         # Update process data with process_end timestamp
         # Update process data with "Completed" status
