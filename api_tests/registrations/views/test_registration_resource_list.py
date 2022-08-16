@@ -176,6 +176,15 @@ class TestRegistrationResourceListGETBehavior:
         resp = app.get(make_api_url(registration, vol_key=avol.key), auth=admin_user.auth)
         data = resp.json['data'][0]
         assert 'pid' not in data['attributes']
+        assert 'resource_type' in data['attributes']
+        assert 'description' in data['attributes']
+
+    def test_self_link_contains_vol_key(self, app, registration, artifact_one):
+        avol = PrivateLinkFactory(anonymous=True)
+        avol.nodes.add(registration)
+
+        resp = app.get(make_api_url(registration, vol_key=avol.key), auth=None)
+        assert resp.json['data'][0]['links']['self'].endswith(avol.key)
 
     def test_filtering(self, app, registration, artifact_one, artifact_two, admin_user):
         base_url = make_api_url(registration)

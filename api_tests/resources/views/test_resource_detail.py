@@ -165,7 +165,16 @@ class TestResourceDetailGETBehavior:
         resp = app.get(make_api_url(test_artifact, vol_key=avol.key), auth=None)
         data = resp.json['data']
         assert 'pid' not in data['attributes']
+        assert 'resource_type' in data['attributes']
+        assert 'description' in data['attributes']
 
+    def test_self_link_contains_vol_key(self, app):
+        test_artifact, test_auth, registration = configure_test_preconditions()
+        avol = PrivateLinkFactory(anonymous=True)
+        avol.nodes.add(registration)
+
+        resp = app.get(make_api_url(test_artifact, vol_key=avol.key), auth=None)
+        assert resp.json['data']['links']['self'].endswith(avol.key)
 
 @pytest.mark.django_db
 @mock.patch('osf.utils.identifiers.PID_VALIDATION_ENABLED', False)
