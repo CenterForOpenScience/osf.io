@@ -197,6 +197,12 @@ class Migration(migrations.Migration):
             },
             bases=('osf.abstractprovider',),
         ),
+        migrations.AlterField(
+            model_name='preprint',
+            name='provider',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
+                                    related_name='preprints', to='osf.AbstractProvider'),
+        ),
         migrations.AddField(
             model_name='subject',
             name='provider',
@@ -2341,11 +2347,6 @@ class Migration(migrations.Migration):
             model_name='preprint',
             name='primary_file',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='preprint', to='osf.OsfStorageFile'),
-        ),
-        migrations.AlterField(
-            model_name='preprint',
-            name='provider',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='preprints', to='osf.PreprintProvider'),
         ),
         # migrations.AlterField(
         #     model_name='preprint',
