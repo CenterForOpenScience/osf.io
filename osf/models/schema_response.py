@@ -54,7 +54,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         blank=True
     )
 
-    revision_justification = models.CharField(max_length=2048, null=True, blank=True)
+    revision_justification = models.TextField(null=True, blank=True)
     submitted_timestamp = NonNaiveDateTimeField(null=True, blank=True)
 
     pending_approvers = models.ManyToManyField('osf.osfuser', related_name='pending_submissions')
