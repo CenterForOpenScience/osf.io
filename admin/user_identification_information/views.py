@@ -1,7 +1,7 @@
 import numpy as np
 from admin.base.views import GuidView
+from admin.rdm.utils import RdmPermissionMixin
 from api.base import settings as api_settings
-from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.db import connection
 from django.views.generic import ListView
 from osf.models import ExternalAccount
@@ -124,27 +124,19 @@ class UserIdentificationInformation(ListView):
         return list_data
 
 
-class UserIdentificationList(PermissionRequiredMixin, UserIdentificationInformation):
+class UserIdentificationList(RdmPermissionMixin, UserIdentificationInformation):
     template_name = 'user_identification_information/list_user_identification.html'
     permission_required = ''
     raise_exception = True
     paginate_by = 20
 
     def get_userlist(self):
-        queryset = []
-        if self.request.user.is_superuser is False:
-            institution = self.request.user.affiliated_institutions.first()
-            if institution is not None:  # and Region.objects.filter(_id=institution._id).exists():
-                queryset = OSFUser.objects.filter(affiliated_institutions=institution.id).order_by('id')
-        else:
-            queryset = OSFUser.objects.all().order_by('id')
-
+        queryset = OSFUser.objects.all().order_by('id')
         list_users_id, dict_users_list = get_list_extend_storage()
-
         return self.get_list_data(queryset, list_users_id, dict_users_list)
 
 
-class UserIdentificationDetails(PermissionRequiredMixin, GuidView):
+class UserIdentificationDetails(RdmPermissionMixin, GuidView):
     template_name = 'user_identification_information/user_identification_details.html'
     context_object_name = 'user_details'
     permission_required = ''
