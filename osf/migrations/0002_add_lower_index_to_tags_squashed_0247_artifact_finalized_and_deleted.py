@@ -169,7 +169,42 @@ class Migration(migrations.Migration):
             },
             bases=(dirtyfields.dirtyfields.DirtyFieldsMixin, models.Model),
         ),
-
+        migrations.CreateModel(
+            name='PreprintProvider',
+            fields=[
+            ],
+            options={
+                'indexes': [],
+                'proxy': True,
+                'permissions': (('view_submissions', 'Can view all submissions to this provider'),
+                                ('add_moderator', 'Can add other users as moderators for this provider'),
+                                ('update_moderator', 'Can elevate or lower other moderators/admins'),
+                                ('view_actions', 'Can view actions on submissions to this provider'),
+                                ('add_reviewer', 'Can add other users as reviewers for this provider'), (
+                                'review_assigned_submissions',
+                                'Can submit reviews for submissions to this provider which have been assigned to this user'),
+                                ('assign_reviewer',
+                                 'Can assign reviewers to review specific submissions to this provider'), (
+                                'remove_moderator',
+                                'Can remove moderators from this provider. Implicitly granted to self'),
+                                ('set_up_moderation', 'Can set up moderation for this provider'), (
+                                'view_assigned_submissions',
+                                'Can view submissions to this provider which have been assigned to this user'),
+                                ('edit_reviews_settings', 'Can edit reviews settings for this provider'),
+                                ('accept_submissions', 'Can accept submissions to this provider'),
+                                ('reject_submissions', 'Can reject submissions to this provider'),
+                                ('edit_review_comments', 'Can edit comments on actions for this provider'),
+                                ('view_preprintprovider', 'Can view preprint provider details')),
+            },
+            bases=('osf.abstractprovider',),
+        ),
+        migrations.AddField(
+            model_name='subject',
+            name='provider',
+            field=models.ForeignKey(default=None, on_delete=django.db.models.deletion.CASCADE,
+                                    related_name='subjects', to='osf.AbstractProvider'),
+            preserve_default=False,
+        ),
         migrations.RunSQL(
             sql=['\n                CREATE INDEX lowercase_tag_index ON osf_tag (lower(name), system);\n                '],
             reverse_sql=['\n                DROP INDEX IF EXISTS lowercase_tag_index RESTRICT;\n                '],
@@ -329,11 +364,11 @@ class Migration(migrations.Migration):
         #     name='domain',
         #     field=models.URLField(blank=True, default=b''),
         # ),
-        migrations.AddField(
-            model_name='preprintprovider',
-            name='domain_redirect_enabled',
-            field=models.BooleanField(default=False),
-        ),
+        # migrations.AddField(
+        #     model_name='preprintprovider',
+        #     name='domain_redirect_enabled',
+        #     field=models.BooleanField(default=False),
+        # ),
         migrations.AlterModelOptions(
             name='abstractnode',
             options={'base_manager_name': 'objects'},
@@ -381,23 +416,15 @@ class Migration(migrations.Migration):
             name='parent',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='children', to='osf.Subject', validators=[osf.models.validators.validate_subject_hierarchy_length]),
         ),
-        migrations.AddField(
-            model_name='subject',
-            name='provider',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='subjects', to='osf.PreprintProvider'),
-        ),
+        # migrations.AddField(
+        #     model_name='subject',
+        #     name='provider',
+        #     field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='subjects', to='osf.AbstractProvider'),
+        # ),
         migrations.AddField(
             model_name='subject',
             name='bepress_subject',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='aliases', to='osf.Subject'),
-        ),
-        migrations.RunSQL(
-            sql=["\n            UPDATE osf_subject\n            SET provider_id = (SELECT id FROM osf_preprintprovider WHERE _id = 'osf');\n            "],
-            reverse_sql=['\n            UPDATE osf_subject\n            SET provider_id = NULL;\n            '],
-        ),
-        migrations.RunSQL(
-            sql=['\n            UPDATE osf_subject\n            SET parent_id=subquery.to_subject_id\n            FROM (SELECT from_subject_id, to_subject_id\n                  FROM  osf_subject_parents) AS subquery\n            WHERE osf_subject.id=subquery.from_subject_id;\n            '],
-            reverse_sql=['\n            INSERT INTO osf_subject_parents (from_subject_id, to_subject_id)\n            SELECT id, parent_id FROM osf_subject\n            WHERE parent_id IS NOT NULL;\n            '],
         ),
         # migrations.RunPython(
         #     code=osf.migrations.0024_migrate_subject_parents_to_parent.add_custom_mapping_constraint,
@@ -412,11 +439,11 @@ class Migration(migrations.Migration):
             name='parent',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='children', to='osf.Subject', validators=[osf.models.validators.validate_subject_hierarchy_length]),
         ),
-        migrations.AlterField(
-            model_name='subject',
-            name='provider',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='subjects', to='osf.PreprintProvider'),
-        ),
+        # migrations.AlterField(
+        #     model_name='subject',
+        #     name='provider',
+        #     field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='subjects', to='osf.PreprintProvider'),
+        # ),
         # migrations.AddField(
         #     model_name='preprintservice',
         #     name='_subjects',
@@ -466,11 +493,11 @@ class Migration(migrations.Migration):
             name='preprintprovider',
             options={'permissions': (('view_preprintprovider', 'Can view preprint provider details'),)},
         ),
-        migrations.AddField(
-            model_name='preprintprovider',
-            name='share_source',
-            field=models.CharField(blank=True, max_length=200),
-        ),
+        # migrations.AddField(
+        #     model_name='preprintprovider',
+        #     name='share_source',
+        #     field=models.CharField(blank=True, max_length=200),
+        # ),
         # migrations.RunPython(
         #     code=osf.migrations.0032_unquote_gd_nodesettings_folder_path.unquote_folder_paths,
         #     reverse_code=osf.migrations.0032_unquote_gd_nodesettings_folder_path.quote_folder_paths,
@@ -506,43 +533,43 @@ class Migration(migrations.Migration):
             name='active',
             field=models.BooleanField(default=True),
         ),
-        migrations.RemoveField(
-            model_name='preprintprovider',
-            name='banner_name',
-        ),
-        migrations.RemoveField(
-            model_name='preprintprovider',
-            name='header_text',
-        ),
-        migrations.RemoveField(
-            model_name='preprintprovider',
-            name='logo_name',
-        ),
-        migrations.AddField(
-            model_name='preprintprovider',
-            name='additional_providers',
-            field=django.contrib.postgres.fields.ArrayField(base_field=models.CharField(max_length=200), blank=True, default=list, size=None),
-        ),
-        migrations.AddField(
-            model_name='preprintprovider',
-            name='allow_submissions',
-            field=models.BooleanField(default=True),
-        ),
-        migrations.AddField(
-            model_name='preprintprovider',
-            name='footer_links',
-            field=models.TextField(blank=True, default=''),
-        ),
-        migrations.AlterField(
-            model_name='preprintprovider',
-            name='advisory_board',
-            field=models.TextField(blank=True, default=''),
-        ),
-        migrations.AlterField(
-            model_name='preprintprovider',
-            name='description',
-            field=models.TextField(blank=True, default=''),
-        ),
+        # migrations.RemoveField(
+        #     model_name='preprintprovider',
+        #     name='banner_name',
+        # ),
+        # migrations.RemoveField(
+        #     model_name='preprintprovider',
+        #     name='header_text',
+        # ),
+        # migrations.RemoveField(
+        #     model_name='preprintprovider',
+        #     name='logo_name',
+        # ),
+        # migrations.AddField(
+        #     model_name='preprintprovider',
+        #     name='additional_providers',
+        #     field=django.contrib.postgres.fields.ArrayField(base_field=models.CharField(max_length=200), blank=True, default=list, size=None),
+        # ),
+        # migrations.AddField(
+        #     model_name='preprintprovider',
+        #     name='allow_submissions',
+        #     field=models.BooleanField(default=True),
+        # ),
+        # migrations.AddField(
+        #     model_name='preprintprovider',
+        #     name='footer_links',
+        #     field=models.TextField(blank=True, default=''),
+        # ),
+        # migrations.AlterField(
+        #     model_name='preprintprovider',
+        #     name='advisory_board',
+        #     field=models.TextField(blank=True, default=''),
+        # ),
+        # migrations.AlterField(
+        #     model_name='preprintprovider',
+        #     name='description',
+        #     field=models.TextField(blank=True, default=''),
+        # ),
         migrations.CreateModel(
             name='MaintenanceState',
             fields=[
@@ -565,11 +592,11 @@ class Migration(migrations.Migration):
             name='text',
             field=models.CharField(db_index=True, max_length=256),
         ),
-        migrations.AddField(
-            model_name='preprintprovider',
-            name='share_title',
-            field=models.TextField(blank=True, default=b''),
-        ),
+        # migrations.AddField(
+        #     model_name='preprintprovider',
+        #     name='share_title',
+        #     field=models.TextField(blank=True, default=b''),
+        # ),
         migrations.CreateModel(
             name='BitbucketFileNode',
             fields=[
@@ -643,11 +670,11 @@ class Migration(migrations.Migration):
             sql=["\n                CREATE UNIQUE INDEX active_file_node_path_name_type_unique_index\n                ON public.osf_basefilenode (node_id, _path, name, type)\n                WHERE (type NOT IN ('osf.trashedfilenode', 'osf.trashedfile', 'osf.trashedfolder')\n                  AND parent_id IS NULL);\n                "],
             reverse_sql=['\n                DROP INDEX IF EXISTS active_file_node_path_name_type_unique_index RESTRICT;\n                '],
         ),
-        migrations.AddField(
-            model_name='preprintprovider',
-            name='preprint_word',
-            field=models.CharField(choices=[('preprint', 'Preprint'), ('paper', 'Paper'), ('thesis', 'Thesis'), ('none', 'None')], default='preprint', max_length=10),
-        ),
+        # migrations.AddField(
+        #     model_name='preprintprovider',
+        #     name='preprint_word',
+        #     field=models.CharField(choices=[('preprint', 'Preprint'), ('paper', 'Paper'), ('thesis', 'Thesis'), ('none', 'None')], default='preprint', max_length=10),
+        # ),
         migrations.AddField(
             model_name='maintenancestate',
             name='level',
@@ -661,11 +688,11 @@ class Migration(migrations.Migration):
         # migrations.RunPython(
         #     code=osf.migrations.0051_remove_invalid_social_entries.remove_invalid_social_entries,
         # ),
-        migrations.AddField(
-            model_name='preprintprovider',
-            name='share_publish_type',
-            field=models.CharField(choices=[(b'Preprint', b'Preprint'), (b'Thesis', b'Thesis')], default=b'Preprint', help_text=b'This SHARE type will be used when pushing publications to SHARE', max_length=32),
-        ),
+        # migrations.AddField(
+        #     model_name='preprintprovider',
+        #     name='share_publish_type',
+        #     field=models.CharField(choices=[(b'Preprint', b'Preprint'), (b'Thesis', b'Thesis')], default=b'Preprint', help_text=b'This SHARE type will be used when pushing publications to SHARE', max_length=32),
+        # ),
         migrations.CreateModel(
             name='QuickFilesNode',
             fields=[
@@ -750,21 +777,21 @@ class Migration(migrations.Migration):
             name='preprintprovider',
             options={'permissions': (('view_submissions', 'Can view all submissions to this provider'), ('add_moderator', 'Can add other users as moderators for this provider'), ('view_actions', 'Can view actions on submissions to this provider'), ('add_reviewer', 'Can add other users as reviewers for this provider'), ('review_assigned_submissions', 'Can submit reviews for submissions to this provider which have been assigned to this user'), ('assign_reviewer', 'Can assign reviewers to review specific submissions to this provider'), ('set_up_moderation', 'Can set up moderation for this provider'), ('view_assigned_submissions', 'Can view submissions to this provider which have been assigned to this user'), ('edit_reviews_settings', 'Can edit reviews settings for this provider'), ('accept_submissions', 'Can accept submissions to this provider'), ('reject_submissions', 'Can reject submissions to this provider'), ('edit_review_comments', 'Can edit comments on actions for this provider'), ('view_preprintprovider', 'Can view preprint provider details'))},
         ),
-        migrations.AddField(
-            model_name='preprintprovider',
-            name='reviews_comments_anonymous',
-            field=models.NullBooleanField(),
-        ),
-        migrations.AddField(
-            model_name='preprintprovider',
-            name='reviews_comments_private',
-            field=models.NullBooleanField(),
-        ),
-        migrations.AddField(
-            model_name='preprintprovider',
-            name='reviews_workflow',
-            field=models.CharField(blank=True, choices=[(None, 'None'), ('pre-moderation', 'Pre-Moderation'), ('post-moderation', 'Post-Moderation')], max_length=15, null=True),
-        ),
+        # migrations.AddField(
+        #     model_name='preprintprovider',
+        #     name='reviews_comments_anonymous',
+        #     field=models.NullBooleanField(),
+        # ),
+        # migrations.AddField(
+        #     model_name='preprintprovider',
+        #     name='reviews_comments_private',
+        #     field=models.NullBooleanField(),
+        # ),
+        # migrations.AddField(
+        #     model_name='preprintprovider',
+        #     name='reviews_workflow',
+        #     field=models.CharField(blank=True, choices=[(None, 'None'), ('pre-moderation', 'Pre-Moderation'), ('post-moderation', 'Post-Moderation')], max_length=15, null=True),
+        # ),
         # migrations.AddField(
         #     model_name='preprintservice',
         #     name='date_last_transitioned',
@@ -1265,17 +1292,17 @@ class Migration(migrations.Migration):
             name='modified',
             field=django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified'),
         ),
-        migrations.AddField(
-            model_name='preprintprovider',
-            name='created',
-            field=django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, default=django.utils.timezone.now, verbose_name='created'),
-            preserve_default=False,
-        ),
-        migrations.AddField(
-            model_name='preprintprovider',
-            name='modified',
-            field=django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified'),
-        ),
+        # migrations.AddField(
+        #     model_name='preprintprovider',
+        #     name='created',
+        #     field=django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, default=django.utils.timezone.now, verbose_name='created'),
+        #     preserve_default=False,
+        # ),
+        # migrations.AddField(
+        #     model_name='preprintprovider',
+        #     name='modified',
+        #     field=django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified'),
+        # ),
         migrations.AddField(
             model_name='privatelink',
             name='modified',
@@ -1441,11 +1468,11 @@ class Migration(migrations.Migration):
         #     old_name='reviews_state',
         #     new_name='machine_state',
         # ),
-        migrations.AddField(
-            model_name='preprintprovider',
-            name='facebook_app_id',
-            field=models.BigIntegerField(blank=True, null=True),
-        ),
+        # migrations.AddField(
+        #     model_name='preprintprovider',
+        #     name='facebook_app_id',
+        #     field=models.BigIntegerField(blank=True, null=True),
+        # ),
         # migrations.RunPython(
         #     code=osf.migrations.0077_add_maintenance_permissions.noop,
         #     reverse_code=osf.migrations.0077_add_maintenance_permissions.noop,
@@ -1539,11 +1566,11 @@ class Migration(migrations.Migration):
         #     sql=["\n                INSERT INTO osf_abstractprovider (id, created, modified, _id,\n                        reviews_workflow, reviews_comments_private, reviews_comments_anonymous, name, advisory_board, description,\n                        domain, domain_redirect_enabled, external_url, email_contact, email_support, social_twitter, social_facebook, social_instagram,\n                        footer_links, facebook_app_id, example, allow_submissions, share_publish_type, share_source, share_title, additional_providers,\n                        access_token, preprint_word, subjects_acceptable, default_license_id, type)\n                    SELECT id, created, modified, _id,\n                        reviews_workflow, reviews_comments_private, reviews_comments_anonymous, name, advisory_board, description,\n                        domain, domain_redirect_enabled, external_url, email_contact, email_support, social_twitter, social_facebook, social_instagram,\n                        footer_links, facebook_app_id, example, allow_submissions, share_publish_type, share_source, share_title, additional_providers,\n                        access_token, preprint_word, subjects_acceptable, default_license_id, 'osf.preprintprovider' as type\n                    FROM osf_preprintprovider;\n                INSERT INTO osf_abstractprovider_licenses_acceptable (id, abstractprovider_id, nodelicense_id)\n                    SELECT id, preprintprovider_id, nodelicense_id\n                    FROM osf_preprintprovider_licenses_acceptable\n                "],
         #     reverse_sql=['\n                INSERT INTO osf_preprintprovider_licenses_acceptable (id, preprintprovider_id, nodelicense_id)\n                    SELECT id, abstractprovider_id, nodelicense_id\n                    FROM osf_abstractprovider_licenses_acceptable\n                '],
         # ),
-        migrations.AlterField(
-            model_name='subject',
-            name='provider',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='subjects', to='osf.AbstractProvider'),
-        ),
+        # migrations.AlterField(
+        #     model_name='subject',
+        #     name='provider',
+        #     field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='subjects', to='osf.AbstractProvider'),
+        # ),
         # migrations.RunSQL(
         #     sql='',
         #     reverse_sql=['\n                INSERT INTO osf_preprintprovider (id, created, modified, _id,\n                        reviews_workflow, reviews_comments_private, reviews_comments_anonymous, name, advisory_board, description,\n                        domain, domain_redirect_enabled, external_url, email_contact, email_support, social_twitter, social_facebook, social_instagram,\n                        footer_links, facebook_app_id, example, allow_submissions, share_publish_type, share_source, share_title, additional_providers,\n                        access_token, preprint_word, subjects_acceptable, default_license_id)\n                    SELECT id, created, modified, _id,\n                        reviews_workflow, reviews_comments_private, reviews_comments_anonymous, name, advisory_board, description,\n                        domain, domain_redirect_enabled, external_url, email_contact, email_support, social_twitter, social_facebook, social_instagram,\n                        footer_links, facebook_app_id, example, allow_submissions, share_publish_type, share_source, share_title, additional_providers,\n                        access_token, preprint_word, subjects_acceptable, default_license_id\n                    FROM osf_abstractprovider\n                '],
@@ -1552,21 +1579,10 @@ class Migration(migrations.Migration):
         #     model_name='preprintprovider',
         #     name='default_license',
         # ),
-        migrations.RemoveField(
-            model_name='preprintprovider',
-            name='licenses_acceptable',
-        ),
-        migrations.CreateModel(
-            name='PreprintProvider',
-            fields=[
-            ],
-            options={
-                'indexes': [],
-                'proxy': True,
-                'permissions': (('view_submissions', 'Can view all submissions to this provider'), ('add_moderator', 'Can add other users as moderators for this provider'), ('update_moderator', 'Can elevate or lower other moderators/admins'), ('view_actions', 'Can view actions on submissions to this provider'), ('add_reviewer', 'Can add other users as reviewers for this provider'), ('review_assigned_submissions', 'Can submit reviews for submissions to this provider which have been assigned to this user'), ('assign_reviewer', 'Can assign reviewers to review specific submissions to this provider'), ('remove_moderator', 'Can remove moderators from this provider. Implicitly granted to self'), ('set_up_moderation', 'Can set up moderation for this provider'), ('view_assigned_submissions', 'Can view submissions to this provider which have been assigned to this user'), ('edit_reviews_settings', 'Can edit reviews settings for this provider'), ('accept_submissions', 'Can accept submissions to this provider'), ('reject_submissions', 'Can reject submissions to this provider'), ('edit_review_comments', 'Can edit comments on actions for this provider'), ('view_preprintprovider', 'Can view preprint provider details')),
-            },
-            bases=('osf.abstractprovider',),
-        ),
+        # migrations.RemoveField(
+        #     model_name='preprintprovider',
+        #     name='licenses_acceptable',
+        # ),
         migrations.AlterField(
             model_name='abstractprovider',
             name='preprint_word',
@@ -2240,10 +2256,10 @@ class Migration(migrations.Migration):
             name='abstractprovidergroupobjectpermission',
             unique_together=set([('group', 'permission', 'content_object')]),
         ),
-        migrations.RunSQL(
-            sql=["\n                UPDATE auth_group AG0\n                SET name = (\n                            SELECT 'reviews_' ||\n                                CASE\n                                WHEN P.type = 'osf.preprintprovider'\n                                    THEN 'preprint'\n                                WHEN P.type = 'osf.collectionprovider'\n                                    THEN 'collection'\n                                WHEN P.type = 'osf.registrationprovider'\n                                    THEN 'registration'\n                                END || '_' || id || '_' || split_part(AG0.name, '_', 3)\n                            FROM osf_abstractprovider P\n                            WHERE _id = split_part(AG0.name, '_', 2)\n                )\n                WHERE AG0.name LIKE 'reviews_%';\n                "],
-            reverse_sql=["\n                UPDATE auth_group AG0\n                SET name = (\n                            SELECT 'reviews_' || P._id || '_' || split_part(AG0.name, '_', 4)\n                                FROM osf_abstractprovider P\n                            WHERE id = split_part(AG0.name, '_', 3)::INT\n                )\n                WHERE AG0.name LIKE 'reviews_%';\n                "],
-        ),
+        # migrations.RunSQL(
+        #     sql=["\n                UPDATE auth_group AG0\n                SET name = (\n                            SELECT 'reviews_' ||\n                                CASE\n                                WHEN P.type = 'osf.preprintprovider'\n                                    THEN 'preprint'\n                                WHEN P.type = 'osf.collectionprovider'\n                                    THEN 'collection'\n                                WHEN P.type = 'osf.registrationprovider'\n                                    THEN 'registration'\n                                END || '_' || id || '_' || split_part(AG0.name, '_', 3)\n                            FROM osf_abstractprovider P\n                            WHERE _id = split_part(AG0.name, '_', 2)\n                )\n                WHERE AG0.name LIKE 'reviews_%';\n                "],
+        #     reverse_sql=["\n                UPDATE auth_group AG0\n                SET name = (\n                            SELECT 'reviews_' || P._id || '_' || split_part(AG0.name, '_', 4)\n                                FROM osf_abstractprovider P\n                            WHERE id = split_part(AG0.name, '_', 3)::INT\n                )\n                WHERE AG0.name LIKE 'reviews_%';\n                "],
+        # ),
         migrations.RenameModel(
             old_name='MetaSchema',
             new_name='RegistrationSchema',
@@ -4015,4 +4031,16 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='actions',
                                     to='osf.Preprint'),
         ),
+        # migrations.RunSQL(
+        #     sql=[
+        #         "\n            UPDATE osf_subject\n            SET provider_id = (SELECT id FROM osf_preprintprovider WHERE _id = 'osf');\n            "],
+        #     reverse_sql=['\n            UPDATE osf_subject\n            SET provider_id = NULL;\n            '],
+        # ),
+        # migrations.RunSQL(
+        #     sql=[
+        #         '\n            UPDATE osf_subject\n            SET parent_id=subquery.to_subject_id\n            FROM (SELECT from_subject_id, to_subject_id\n                  FROM  osf_subject_parents) AS subquery\n            WHERE osf_subject.id=subquery.from_subject_id;\n            '],
+        #     reverse_sql=[
+        #         '\n            INSERT INTO osf_subject_parents (from_subject_id, to_subject_id)\n            SELECT id, parent_id FROM osf_subject\n            WHERE parent_id IS NOT NULL;\n            '],
+        # ),
+
     ]
