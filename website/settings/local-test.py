@@ -14,7 +14,7 @@ DB_PORT = 5432
 OSF_DB_PASSWORD = 'postgres'
 
 DEV_MODE = True
-DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
+DEBUG_MODE = False  # Sets app to debug mode, turns off template caching, etc.
 SECURE_MODE = not DEBUG_MODE  # Disable osf secure cookie
 
 PROTOCOL = 'https://' if SECURE_MODE else 'http://'

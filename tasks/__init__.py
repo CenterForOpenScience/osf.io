@@ -554,8 +554,8 @@ def travis_addon_settings(ctx):
         path = os.path.join(settings.ADDON_PATH, directory, 'settings')
         if os.path.isdir(path):
             try:
-                open(os.path.join(path, 'local-travis.py'))
-                ctx.run('cp {path}/local-travis.py {path}/local.py'.format(path=path))
+                open(os.path.join(path, 'local-test.py'))
+                ctx.run('cp {path}/local-test.py {path}/local.py'.format(path=path))
             except IOError:
                 pass
 
