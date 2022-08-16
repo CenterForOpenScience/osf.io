@@ -19,17 +19,17 @@ EXPORT_DATA_STATUS_CHOICES = [
 
 
 class ExportDataRestore(base.BaseModel):
-    export_id = models.ForeignKey(ExportData, on_delete=models.CASCADE)
-    destination_id = models.ForeignKey(Region, on_delete=models.CASCADE)
+    export = models.ForeignKey(ExportData, on_delete=models.CASCADE)
+    destination = models.ForeignKey(Region, on_delete=models.CASCADE)
     process_start = models.DateTimeField(auto_now=False, auto_now_add=False)
     process_end = models.DateTimeField(auto_now=False, auto_now_add=False)
     last_check = models.DateTimeField(auto_now=False, auto_now_add=False)
     status = models.CharField(choices=EXPORT_DATA_STATUS_CHOICES, max_length=255)
 
     class Meta:
-        unique_together = ('export_id', 'destination_id')
+        unique_together = ('export', 'destination')
 
     def __repr__(self):
-        return f'"({self.export_id}-{self.destination_id})[self.status]"'
+        return f'"({self.export}-{self.destination})[self.status]"'
 
     __str__ = __repr__
