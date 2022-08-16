@@ -95,6 +95,8 @@ class EncryptedJSONField(JSONField):
 
     def to_python(self, value):
         value = rapply(value, decrypt_string, prefix=self.prefix)
+        if value:
+            value = value.decode()
         return super(EncryptedJSONField, self).to_python(value)
 
     def from_db_value(self, value, expression, connection):
