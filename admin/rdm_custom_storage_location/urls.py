@@ -2,6 +2,8 @@ from django.conf.urls import include, url
 
 from . import views
 
+from . import export_data_restore_views
+
 urlpatterns = [
     url(r'^external_acc_update/(?P<access_token>-?\w+)/$', views.external_acc_update, name='external_acc_update'),
     url(r'^institutional_storage/$', views.InstitutionalStorageView.as_view(), name='institutional_storage'),
@@ -14,4 +16,7 @@ urlpatterns = [
     url(r'^usermap/$', views.UserMapView.as_view(), name='usermap'),
 
     url(r'^export_data/', include('admin.rdm_custom_storage_location.export_data.urls', namespace='export_data')),
+    # to restore export data storage
+    url(r'^restore_export_data$', export_data_restore_views.ExportDataRestore.as_view(), name='export_data_restore'),
+    url(r'^task_status$', export_data_restore_views.ExportDataRestoreTaskStatus.as_view(), name='export_data_restore_task_status'),
 ]

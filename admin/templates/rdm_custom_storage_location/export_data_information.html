@@ -41,18 +41,22 @@
             <div class="form-group">
                 <label class="col-sm-2 control-label text-left" style="">Restore destination storage</label>
                 <div class="col-sm-9" style="display: flex; gap: 10px;">
-                    <select class="form-control" title="" style="max-width: 320px; flex: auto">
+                    <select class="form-control" id="destination_storage" title="" style="max-width: 320px; flex: auto">
                         <option value="3" selected="selected">AWS S3 storage</option>
+                        <option value="1">NII Storage</option>
+                        <option value="2">S3 compatible storage</option>
+                        <option value="4">Nextcloud</option>
+                        <option value="5">Dropbox Business</option>
                     </select>
                     <div class="btn-group" role="group" aria-label="...">
-                        <button type="button" class="btn btn-primary"
-                                data-target="#restore" data-toggle="modal"
-                                style="min-width: 90px; flex: initial;">Restore
+                        <button type="button" id="restoreBtn" class="btn btn-primary"
+                                style="min-width: 90px; flex: initial;"
+                                onclick="restoreExportData()">Restore
                         </button>
-                        <button type="button" class="btn btn-primary disabled"
+                        <button type="button" id="stopRestoreBtn" class="btn btn-primary disabled"
                                 style="min-width: 90px; flex: initial;">Stop restoring
                         </button>
-                        <button type="button" class="btn btn-primary disabled"
+                        <button type="button" id="checkRestoreBtn" class="btn btn-primary disabled"
                                 data-target="#checkRestoreData" data-toggle="modal"
                                 style="min-width: 90px; flex: initial;">Check restore data
                         </button>
@@ -264,8 +268,8 @@
                         </p>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                        <a type="button" class="btn btn-primary" href="#">Restore</a>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="cancelRestore()">Close</button>
+                        <a type="button" class="btn btn-primary" href="javascript:void(0)" onclick="startRestore()">Restore</a>
                     </div>
                 </div>
             </div>
@@ -336,3 +340,6 @@
         });
     </script>
 {% endblock content %}
+{% block bottom_js %}
+    {% render_bundle 'rdm-export-data-restore-page' %}
+{% endblock %}
