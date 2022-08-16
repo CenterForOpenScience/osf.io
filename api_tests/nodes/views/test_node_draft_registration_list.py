@@ -449,8 +449,9 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 404
 
     #   test_registration_supplement_must_be_active_metaschema
-        schema = RegistrationSchema.objects.get(
-            name='Election Research Preacceptance Competition', active=False)
+        schema = RegistrationSchema.objects.get(name='Election Research Preacceptance Competition')
+        schema.active = False
+        schema.save()
         draft_data = {
             'data': {
                 'type': 'draft_registrations',
