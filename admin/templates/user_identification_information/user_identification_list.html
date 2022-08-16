@@ -7,120 +7,6 @@
     .nowrap {
         white-space: nowrap;
     }
-
-    .w-search-input {
-        width: 6em !important;
-        margin-right: 2px;
-    }
-
-    .form-group.flex-item {
-        max-width: 20em !important;
-    }
-
-    .flex-container,
-    .flex-container .form-group.flex-item {
-        display: flex;
-        flex-direction: row;
-        flex-wrap: nowrap;
-        justify-content: flex-start;
-        align-items: center;
-    }
-
-    .flex-container {
-        margin-top: 0;
-        margin-bottom: 15px;
-    }
-
-    .flex-container input[type=hiden],
-    .flex-container .form-group.flex-item input[type=hiden] {
-        flex: 0;
-    }
-
-    .row.flex-container {
-        padding-left: 15px;
-        padding-right: 15px;
-    }
-
-    .form-group.flex-item .w-search-input,
-    .flex-container .flex-item {
-        flex-grow: 1;
-        flex-shrink: 1;
-        flex-basis: 0;
-        white-space: nowrap;
-        margin-left: 0;
-        margin-right: 0;
-    }
-
-    .flex-item .flex-container,
-    .flex-item .flex-container .flex-item {
-        margin-bottom: 0;
-    }
-
-    .pagination-extra-div.flex-container .pagination {
-        margin: 0;
-    }
-
-    .pagination-extra-div.flex-container > .flex-item {
-        margin-top: 0;
-        margin-bottom: 15px;
-    }
-
-    .flex-item + .flex-item {
-        margin-left: 2px;
-        margin-right: 0;
-    }
-
-    .search-form .flex-item + .flex-item > label {
-        margin-left: 2px;
-    }
-
-    .search-form .flex-item > label {
-        margin-right: 2px;
-    }
-
-    @media screen and (max-width: 991px) {
-        .pagination-extra-div.flex-container > .flex-item:last-child {
-            margin-bottom: 0;
-        }
-
-        .pagination-extra-div > .flex-item + .flex-item {
-            margin-left: 0 !important;
-            margin-right: 0 !important;
-        }
-    }
-
-    @media (min-width: 768px) and (max-width: 991px) {
-        .pagination-extra-div.flex-container {
-            flex-direction: column;
-            flex-wrap: wrap;
-            align-items: flex-start;
-        }
-
-        .pagination-extra-div .form-group.flex-item {
-            margin-top: 0;
-        }
-    }
-
-    @media screen and (max-width: 767px) {
-        .w-search-input {
-            width: auto !important;
-        }
-
-        .flex-container {
-            flex-direction: column;
-            flex-wrap: wrap;
-            align-items: flex-start;
-        }
-
-        .form-group.flex-item {
-            margin-top: 0;
-        }
-
-        .form-inline.flex-container .form-group.flex-item label {
-            min-width: 140px;
-            flex-grow: 1;
-        }
-    }
 </style>
 <h2 id="title">{% trans "User Identification Information" %}</h2>
 {% if user.is_superuser == False %}
@@ -134,10 +20,10 @@
     <thead>
       <tr class="row">
         <th class="col">{% trans "GUID" %}</th>
-        <th class="col" style="white-space: nowrap">
+        <th class="col nowrap" >
           {% trans "EPPN" %}
         </th>
-        <th class="col" style="white-space: nowrap">
+        <th class="col nowrap" >
           {% trans "Fullname" %}
         </th>
         <th class="col">
@@ -146,13 +32,13 @@
         <th class="col">
           {% trans "Affiliation" %}
         </th>
-        <th class="col" style="white-space: nowrap">
+        <th class="col nowrap" >
           {% trans "Last login" %}
         </th>
-        <th class="col" style="white-space: nowrap">
+        <th class="col nowrap" >
           {% trans "Usage" %}
         </th>
-        <th class="col" style="white-space: nowrap">
+        <th class="col nowrap" >
           {% trans "Extended storage" %}
         </th>
       </tr>

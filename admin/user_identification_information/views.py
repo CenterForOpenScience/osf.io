@@ -1,9 +1,11 @@
 import numpy as np
+from django.db import connection
+from django.http import Http404
+from django.views.generic import ListView
+
 from admin.base.views import GuidView
 from admin.rdm.utils import RdmPermissionMixin
 from api.base import settings as api_settings
-from django.db import connection
-from django.views.generic import ListView
 from osf.models import ExternalAccount
 from osf.models import OSFUser, UserQuota
 from website.util import quota
@@ -86,7 +88,7 @@ class UserIdentificationInformation(ListView):
             'id': user.guids.first()._id,
             'fullname': user.fullname,
             'eppn': user.eppn or '',
-            'affiliation': user.affiliated_institutions.first(),
+            'affiliation': user.affiliated_institutions.first() if user.affiliated_institutions.first() else '',
             'email': user.emails.values_list('address', flat=True)[0] if len(
                 user.emails.values_list('address', flat=True)) > 0 else '',
             'last_login': user.last_login or '',
@@ -94,7 +96,6 @@ class UserIdentificationInformation(ListView):
             'usage_value': used_quota_abbr[0],
             'usage_abbr': used_quota_abbr[1],
             'extended_storage': extend_storage,
-
         }
 
     def get_queryset(self):
@@ -102,7 +103,7 @@ class UserIdentificationInformation(ListView):
         return user_list
 
     def get_context_data(self, **kwargs):
-        self.query_set = self.get_userlist()
+        self.query_set = self.get_queryset()
         self.page_size = self.get_paginate_by(self.query_set)
         self.paginator, self.page, self.query_set, self.is_paginated = \
             self.paginate_queryset(self.query_set, self.page_size)
@@ -126,11 +127,12 @@ class UserIdentificationInformation(ListView):
 
 class UserIdentificationList(RdmPermissionMixin, UserIdentificationInformation):
     template_name = 'user_identification_information/list_user_identification.html'
-    permission_required = ''
     raise_exception = True
     paginate_by = 20
 
     def get_userlist(self):
+        if self.is_admin:
+            raise Http404('Page not found')
         queryset = OSFUser.objects.all().order_by('id')
         list_users_id, dict_users_list = get_list_extend_storage()
         return self.get_list_data(queryset, list_users_id, dict_users_list)
@@ -139,10 +141,11 @@ class UserIdentificationList(RdmPermissionMixin, UserIdentificationInformation):
 class UserIdentificationDetails(RdmPermissionMixin, GuidView):
     template_name = 'user_identification_information/user_identification_details.html'
     context_object_name = 'user_details'
-    permission_required = ''
     raise_exception = True
 
     def get_object(self):
+        if self.is_admin:
+            raise Http404('Page not found')
         user_details = OSFUser.load(self.kwargs.get('guid'))
         user_id = int(user_details.id)
         max_quota, used_quota = quota.get_quota_info(user_details, UserQuota.NII_STORAGE)
