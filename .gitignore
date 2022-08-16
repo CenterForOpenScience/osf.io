@@ -126,6 +126,7 @@ api/static/vendor
 # Local settings files
 local.py
 local.json
+requirements/debug.txt
 
 website/uploads/
 website/mfrcache/

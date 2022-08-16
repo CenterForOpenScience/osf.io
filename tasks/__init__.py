@@ -19,7 +19,7 @@ from .utils import pip_install, bin_prefix
 
 
 try:
-    from tasks import local  # noqa
+    from tasks import local as local_dist # noqa
 except ImportError:
     print('No tasks/local.py file found. '
           'Did you remember to copy local-dist.py to local.py?')
@@ -43,6 +43,13 @@ try:
     ns.add_collection(Collection.from_module(admin_tasks), name='admin')
 except ImportError:
     pass
+
+
+def install_from_txt(ctx, req_path):
+    ctx.run(
+        pip_install(req_path),
+        echo=True
+    )
 
 
 def task(*args, **kwargs):
@@ -234,7 +241,7 @@ def syntax(ctx):
 
 
 @task(aliases=['req'])
-def requirements(ctx, base=False, addons=False, release=False, dev=False, all=False):
+def requirements(ctx, base=False, addons=False, release=False, dev=False, debug=False, all=False):
     """Install python dependencies.
 
     Examples:
@@ -258,25 +265,15 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, all=Fa
         addon_requirements(ctx)
     # "release" takes precedence
     if release:
-        req_file = os.path.join(HERE, 'requirements', 'release.txt')
-        ctx.run(
-            pip_install(req_file),
-            echo=True
-        )
+        install_from_txt(ctx, os.path.join(HERE, 'requirements', 'release.txt'))
     else:
         if dev:  # then dev requirements
-            req_file = os.path.join(HERE, 'requirements', 'dev.txt')
-            ctx.run(
-                pip_install(req_file),
-                echo=True
-            )
-
+            install_from_txt(ctx, os.path.join(HERE, 'requirements', 'dev.txt'))
         if base:  # then base requirements
-            req_file = os.path.join(HERE, 'requirements.txt')
-            ctx.run(
-                pip_install(req_file),
-                echo=True
-            )
+            install_from_txt(ctx, os.path.join(HERE, 'requirements.txt'))
+        if debug:  # then local debugging tools
+            install_from_txt(ctx, os.path.join(HERE, 'requirements', 'debug.txt'))
+
     # fix URITemplate name conflict h/t @github
     ctx.run('pip3 uninstall uritemplate.py --yes || true')
     ctx.run('pip3 install --no-cache-dir uritemplate.py==0.3.0')
