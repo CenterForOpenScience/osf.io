@@ -33,6 +33,8 @@ class ExportStorageLocationView(ExportStorageLocationViewBaseView, TemplateView)
             kwargs['institution'] = institution
 
         kwargs['providers'] = utils.get_providers(self.PROVIDERS_AVAILABLE)
+        ins_user_id = self.request.user.affiliated_institutions.first()._id
+        kwargs['locations'] = utils.get_export_location_list(ins_user_id)
         kwargs['osf_domain'] = osf_settings.DOMAIN
         return kwargs
 

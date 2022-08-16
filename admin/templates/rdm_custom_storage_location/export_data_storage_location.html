@@ -87,14 +87,14 @@
         </tr>
         </thead>
         <tbody>
-        {% if not institutions|length %}
+        {% if not locations|length %}
             <h3>{% trans "No results found" %}</h3>
         {% endif %}
-        {% for institution in institutions %}
+        {% for location in locations %}
             <tr>
-                <td>1</td>
-                <td>storage_1_1</td>
-                <td>AWS S3 storage</td>
+                <td>{{ location.id }}</td>
+                <td>{{ location.name }}</td>
+                <td>{{ location.provider_name }}</td>
                 <td>
                     <button class="btn btn-primary">Delete</button>
                 </td>

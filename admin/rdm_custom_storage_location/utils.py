@@ -40,6 +40,7 @@ from addons.base.institutions_utils import (KEYNAME_BASE_FOLDER,
 from framework.exceptions import HTTPError
 from website import settings as osf_settings
 from osf.models.external import ExternalAccountTemporary, ExternalAccount
+from osf.models import ExportDataLocation
 from osf.utils import external_util
 import datetime
 
@@ -1135,3 +1136,17 @@ def save_usermap_from_tmp(provider_name, institution):
         rdm_addon_option.extended[KEYNAME_USERMAP] = new_usermap
         del rdm_addon_option.extended[KEYNAME_USERMAP_TMP]
         rdm_addon_option.save()
+
+
+def get_export_location_list(ins_user_id):
+    list_location = ExportDataLocation.objects.filter(institution_guid=ins_user_id)
+    list_location_dict = []
+    for location in list_location:
+        waterbutler_settings = location.waterbutler_settings
+        provider_name = None
+        if "storage" in waterbutler_settings:
+            storage = waterbutler_settings["storage"]
+            if "provider" in storage:
+                provider_name = storage["provider"]
+        list_location_dict.append({'id': location.id, 'name': location.name, 'provider_name': provider_name})
+    return list_location_dict
