@@ -49,10 +49,10 @@
                     <li><a data-bind="click: trackClick.bind($data, 'MyQuickFiles')" href="${domain}${user_id}/quickfiles/">${_("My Quick Files")}</a></li>
                     % endif
                     <li><a data-bind="click: trackClick.bind($data, 'MyProjects')" href="${domain}myprojects/">${_("My Projects")}</a></li>
-                % endif
                     % if nav_search:
                     <li><a id="navbar-search" data-bind="click: trackClick.bind($data, 'Search')" href="${domain}search/">${_("Search")}</a></li>
                     % endif
+                % endif
             % endif
             % if nav_support:
             <li class="dropdown">

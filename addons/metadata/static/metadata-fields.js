@@ -34,7 +34,10 @@ function createField(erad, question, valueEntry, options, callback) {
   throw new Error('Unsupported type: ' + question.type);
 }
 
-function validateField(erad, question, value) {
+function validateField(erad, question, value, fieldSetAndValues) {
+  if (question.qid == 'grdm-file:available-date') {
+    return validateAvailableDateField(erad, question, value, fieldSetAndValues);
+  }
   if (!value) {
     if (question.required) {
       throw new Error(_("This field can't be blank."))
@@ -175,6 +178,17 @@ function validateStringField(erad, question, value) {
 function validateChooseField(erad, question, value) {
 }
 
+function validateAvailableDateField(erad, question, value, fieldSetAndValues) {
+  const accessRightsPair = fieldSetAndValues.find(function(fieldSetAndValue) {
+    return fieldSetAndValue.fieldSet.question.qid === 'grdm-file:access-rights';
+  })
+  if (!accessRightsPair) return;
+  const requiredDateAccessRights = ['embargoed access'];
+  if (requiredDateAccessRights.includes(accessRightsPair.value) && !value) {
+    throw new Error(_("This field can't be blank."));
+  }
+}
+
 function createChooser(options) {
   const select = $('<select></select>');
   select.append($('<option></option>').attr('value', '').text(_('Choose...')));
@@ -185,6 +199,9 @@ function createChooser(options) {
       return;
     }
     const optElem = $('<option></option>').attr('value', opt.text).text(getLocalizedText(opt.tooltip));
+    if (opt.default) {
+      optElem.attr('selected', true);
+    }
     select.append(optElem);
   });
   return select;
