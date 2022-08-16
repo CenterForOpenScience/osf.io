@@ -193,8 +193,7 @@ class Migration(migrations.Migration):
                                 ('edit_reviews_settings', 'Can edit reviews settings for this provider'),
                                 ('accept_submissions', 'Can accept submissions to this provider'),
                                 ('reject_submissions', 'Can reject submissions to this provider'),
-                                ('edit_review_comments', 'Can edit comments on actions for this provider'),
-                                ('view_preprintprovider', 'Can view preprint provider details')),
+                                ('edit_review_comments', 'Can edit comments on actions for this provider')),
             },
             bases=('osf.abstractprovider',),
         ),
@@ -330,10 +329,10 @@ class Migration(migrations.Migration):
             name='child',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='_parents', to='osf.AbstractNode'),
         ),
-        migrations.AlterModelOptions(
-            name='osfuser',
-            options={'permissions': (('view_osfuser', 'Can view user details'),)},
-        ),
+        # migrations.AlterModelOptions(
+        #     name='osfuser',
+        #     options={'permissions': (('view_osfuser', 'Can view user details'),)},
+        # ),
         migrations.AlterField(
             model_name='fileversion',
             name='size',
@@ -480,19 +479,19 @@ class Migration(migrations.Migration):
         #     name='default_license',
         #     field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='default_license', to='osf.NodeLicense'),
         # ),
-        migrations.AlterField(
-            model_name='preprintprovider',
-            name='licenses_acceptable',
-            field=models.ManyToManyField(blank=True, related_name='licenses_acceptable', to='osf.NodeLicense'),
-        ),
+        # migrations.AlterField(
+        #     model_name='preprintprovider',
+        #     name='licenses_acceptable',
+        #     field=models.ManyToManyField(blank=True, related_name='licenses_acceptable', to='osf.NodeLicense'),
+        # ),
         migrations.AlterModelOptions(
             name='institution',
             options={'permissions': (('view_institution', 'Can view institution details'),)},
         ),
-        migrations.AlterModelOptions(
-            name='preprintprovider',
-            options={'permissions': (('view_preprintprovider', 'Can view preprint provider details'),)},
-        ),
+        # migrations.AlterModelOptions(
+        #     name='preprintprovider',
+        #     options={'permissions': (('view_preprintprovider', 'Can view preprint provider details'),)},
+        # ),
         # migrations.AddField(
         #     model_name='preprintprovider',
         #     name='share_source',
@@ -650,10 +649,10 @@ class Migration(migrations.Migration):
             model_name='comment',
             name='_ever_mentioned',
         ),
-        migrations.AlterModelOptions(
-            name='subject',
-            options={'base_manager_name': 'objects', 'permissions': (('view_subject', 'Can view subject details'),)},
-        ),
+        # migrations.AlterModelOptions(
+        #     name='subject',
+        #     options={'base_manager_name': 'objects', 'permissions': (('view_subject', 'Can view subject details'),)},
+        # ),
         # migrations.RunPython(
         #     code=osf.migrations.0043_set_share_title.set_share_titles,
         #     reverse_code=osf.migrations.0043_set_share_title.unset_share_titles,
@@ -1499,9 +1498,9 @@ class Migration(migrations.Migration):
                 ('mobile_photo', models.FileField(storage=osf.utils.storage.BannerImageStorage(), upload_to='')),
                 ('mobile_alt_text', models.TextField(blank=True, null=True)),
             ],
-            options={
-                'permissions': (('view_scheduledbanner', 'Can view scheduled banner details'),),
-            },
+            # options={
+            #     'permissions': (('view_scheduledbanner', 'Can view scheduled banner details'),),
+            # },
         ),
         # migrations.RunPython(
         #     code=osf.migrations.0078_add_banner_permissions.noop,
@@ -2042,10 +2041,10 @@ class Migration(migrations.Migration):
         #     code=osf.migrations.0115_auto_20180628_1253.add_doi_prefix,
         #     reverse_code=osf.migrations.0115_auto_20180628_1253.remove_doi_prefix,
         # ),
-        migrations.AlterModelOptions(
-            name='collectionprovider',
-            options={'permissions': (('view_collectionprovider', 'Can view collection provider details'),)},
-        ),
+        # migrations.AlterModelOptions(
+        #     name='collectionprovider',
+        #     options={'permissions': (('view_collectionprovider', 'Can view collection provider details'),)},
+        # ),
         # migrations.RunPython(
         #     code=osf.migrations.0113_add_view_collectionprovider_to_admin_perm.noop,
         #     reverse_code=osf.migrations.0113_add_view_collectionprovider_to_admin_perm.noop,
@@ -2127,10 +2126,10 @@ class Migration(migrations.Migration):
             name='deleted',
             field=osf.utils.fields.NonNaiveDateTimeField(blank=True, db_index=True, null=True),
         ),
-        migrations.AlterModelOptions(
-            name='providerassetfile',
-            options={'permissions': (('view_providerassetfile', 'Can view provider asset files'),)},
-        ),
+        # migrations.AlterModelOptions(
+        #     name='providerassetfile',
+        #     options={'permissions': (('view_providerassetfile', 'Can view provider asset files'),)},
+        # ),
         # migrations.RunPython(
         #     code=osf.migrations.0119_add_asset_perms.noop,
         #     reverse_code=osf.migrations.0119_add_asset_perms.noop,
@@ -2244,10 +2243,10 @@ class Migration(migrations.Migration):
             name='preprintprovider',
             options={'permissions': (('view_preprintprovider', 'Can view preprint provider details'),)},
         ),
-        migrations.AlterModelOptions(
-            name='registrationprovider',
-            options={'permissions': (('view_registrationprovider', 'Can view registration provider details'),)},
-        ),
+        # migrations.AlterModelOptions(
+        #     name='registrationprovider',
+        #     options={'permissions': (('view_registrationprovider', 'Can view registration provider details'),)},
+        # ),
         migrations.AlterUniqueTogether(
             name='abstractprovideruserobjectpermission',
             unique_together=set([('user', 'permission', 'content_object')]),
@@ -2325,7 +2324,13 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterModelOptions(
             name='preprint',
-            options={'permissions': (('view_preprint', 'Can view preprint details in the admin app.'), ('read_preprint', 'Can read the preprint'), ('write_preprint', 'Can write the preprint'), ('admin_preprint', 'Can manage the preprint'))},
+            options={'permissions': (
+                # ('view_preprint', 'Can view preprint details in the admin app.'),
+                ('read_preprint', 'Can read the preprint'),
+                ('write_preprint', 'Can write the preprint'),
+                ('admin_preprint', 'Can manage the preprint')
+            )
+            },
         ),
         migrations.AddField(
             model_name='preprint',
@@ -3337,7 +3342,11 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterModelOptions(
             name='institution',
-            options={'permissions': (('view_institution', 'Can view institution details'), ('view_institutional_metrics', 'Can access metrics endpoints for their Institution'))},
+            options={'permissions': (
+                # ('view_institution', 'Can view institution details'),
+                ('view_institutional_metrics', 'Can access metrics endpoints for their Institution')
+            )
+            },
         ),
         migrations.AddField(
             model_name='osfuser',
@@ -3369,7 +3378,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'abstract': False,
-                'permissions': (('view_brand', 'Can view brand details'), ('modify_brand', 'Can modify brands')),
+                'permissions': (('modify_brand', 'Can modify brands'),),
             },
             bases=(models.Model, osf.models.base.QuerySetExplainMixin),
         ),
@@ -4042,5 +4051,129 @@ class Migration(migrations.Migration):
         #     reverse_sql=[
         #         '\n            INSERT INTO osf_subject_parents (from_subject_id, to_subject_id)\n            SELECT id, parent_id FROM osf_subject\n            WHERE parent_id IS NOT NULL;\n            '],
         # ),
+        migrations.AlterModelOptions(
+            name='collectionprovider',
+            options={},
+        ),
+        migrations.AlterModelOptions(
+            name='conference',
+            options={},
+        ),
+        migrations.AlterModelOptions(
+            name='institution',
+            options={
+                'permissions': (('view_institutional_metrics', 'Can access metrics endpoints for their Institution'),)},
+        ),
+        migrations.AlterModelOptions(
+            name='osfuser',
+            options={},
+        ),
+        migrations.AlterModelOptions(
+            name='preprint',
+            options={'permissions': (
+                ('read_preprint', 'Can read the preprint'), ('write_preprint', 'Can write the preprint'),
+                ('admin_preprint', 'Can manage the preprint'))},
+        ),
+        migrations.AlterModelOptions(
+            name='preprintprovider',
+            options={},
+        ),
+        migrations.AlterModelOptions(
+            name='providerassetfile',
+            options={},
+        ),
+        migrations.AlterModelOptions(
+            name='registration',
+            options={},
+        ),
+        migrations.AlterModelOptions(
+            name='registrationprovider',
+            options={},
+        ),
+        migrations.AlterModelOptions(
+            name='scheduledbanner',
+            options={},
+        ),
+        migrations.AlterModelOptions(
+            name='subject',
+            options={'base_manager_name': 'objects'},
+        ),
+        migrations.AlterField(
+            model_name='abstractnode',
+            name='moderation_state',
+            field=models.CharField(
+                choices=[('undefined', 'Undefined'), ('initial', 'Initial'), ('reverted', 'Reverted'),
+                         ('pending', 'Pending'), ('rejected', 'Rejected'), ('accepted', 'Accepted'),
+                         ('embargo', 'Embargo'), ('pending_embargo_termination', 'PendingEmbargoTermination'),
+                         ('pending_withdraw_request', 'PendingWithdrawRequest'),
+                         ('pending_withdraw', 'PendingWithdraw'), ('withdrawn', 'Withdrawn')], default='initial',
+                max_length=30),
+        ),
+        migrations.AlterField(
+            model_name='abstractnode',
+            name='registered_meta',
+            field=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict,
+                                                                            encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder),
+        ),
+        migrations.AlterField(
+            model_name='abstractprovider',
+            name='additional_providers',
+            field=django.contrib.postgres.fields.ArrayField(base_field=models.CharField(max_length=200), blank=True,
+                                                            default=list, size=None),
+        ),
+        migrations.AlterField(
+            model_name='abstractprovider',
+            name='preprint_word',
+            field=models.CharField(
+                choices=[('preprint', 'Preprint'), ('paper', 'Paper'), ('thesis', 'Thesis'), ('work', 'Work'),
+                         ('none', 'None')], default='preprint', max_length=10),
+        ),
+        migrations.AlterField(
+            model_name='abstractprovider',
+            name='subjects_acceptable',
+            field=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=list,
+                                                                            encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder),
+        ),
+        migrations.AlterField(
+            model_name='collection',
+            name='collected_types',
+            field=models.ManyToManyField(
+                limit_choices_to={'model__in': ['abstractnode', 'basefilenode', 'collection', 'preprint']},
+                related_name='_osf_collection_collected_types_+', to='contenttypes.ContentType'),
+        ),
+        #### Django 3 Upgrade ####
+        migrations.AlterField(
+            model_name='pagecounter',
+            name='file',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.DO_NOTHING, related_name='pagecounters',
+                                    to='osf.basefilenode'),
+        ),
+        migrations.AlterField(
+            model_name='pagecounter',
+            name='resource',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.DO_NOTHING, related_name='pagecounters',
+                                    to='osf.guid'),
+        ),
+        migrations.AlterField(
+            model_name='preprint',
+            name='ever_public',
+            field=models.BooleanField(blank=True, default=False),
+        ),
+        migrations.AlterField(
+            model_name='schemaresponse',
+            name='initiator',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.DO_NOTHING, to=settings.AUTH_USER_MODEL),
+        ),
+        migrations.AlterField(
+            model_name='schemaresponse',
+            name='previous_response',
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.DO_NOTHING,
+                                    related_name='updated_response', to='osf.schemaresponse'),
+        ),
+        migrations.AlterField(
+            model_name='schemaresponse',
+            name='schema',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.DO_NOTHING, to='osf.registrationschema'),
+        ),
 
     ]

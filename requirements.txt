@@ -97,5 +97,3 @@ git+https://github.com/Johnetordoff/django-elasticsearch-metrics.git@update-djan
 
 # Impact Metrics CSV Export
 djangorestframework-csv==2.1.0
-
-git+https://github.com/Johnetordoff/django-include.git@django-3
