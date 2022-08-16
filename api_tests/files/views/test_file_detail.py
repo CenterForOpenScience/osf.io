@@ -10,14 +10,14 @@ from addons.base.utils import get_mfr_url
 from addons.github.models import GithubFileNode
 from addons.osfstorage import settings as osfstorage_settings
 from addons.osfstorage.listeners import checkin_files_task
+from addons.osfstorage.tests.factories import FileVersionFactory
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as api_utils
 from framework.auth.core import Auth
-<<<<<<< HEAD
-from osf.models import NodeLog, Session
-=======
-from osf.models import NodeLog, Session, QuickFilesNode, Node
->>>>>>> 313e31f680f8b92fc9355a902bfc99773d64bc89
+
+
+from osf.models import NodeLog, Session, Node, FileVersionUserMetadata
+
 from osf.utils.permissions import WRITE, READ
 from osf.utils.workflows import DefaultStates
 from osf_tests.factories import (
@@ -146,7 +146,7 @@ class TestFileView:
         assert mock_allow.call_count == 1
 
     def test_get_file(self, app, user, file_url, file):
-        res = app.get(file_url, auth=user.auth)
+        res = app.get(f'{file_url}?version=2.2', auth=user.auth)
         file.versions.first().reload()
         assert res.status_code == 200
         assert set(res.json.keys()) == {'meta', 'data'}
@@ -918,3 +918,62 @@ class TestPreprintFileView:
         # Admin contrib
         res = app.get(file_url, auth=user.auth, expect_errors=True)
         assert res.status_code == 403
+
+@pytest.mark.django_db
+class TestShowAsUnviewed:
+
+    @pytest.fixture
+    def node(self, user):
+        return ProjectFactory(creator=user, is_public=True)
+
+    @pytest.fixture
+    def test_file(self, user, node):
+        test_file = api_utils.create_test_file(node, user, create_guid=False)
+        test_file.add_version(FileVersionFactory())
+        return test_file
+
+    @pytest.fixture
+    def url(self, test_file):
+        return f'/{API_BASE}files/{test_file._id}/'
+
+    def test_show_as_unviewed__previously_seen(self, app, user, test_file, url):
+        FileVersionUserMetadata.objects.create(
+            user=user,
+            file_version=test_file.versions.order_by('created').first()
+        )
+
+        res = app.get(url, auth=user.auth)
+        assert res.json['data']['attributes']['show_as_unviewed']
+
+        FileVersionUserMetadata.objects.create(
+            user=user,
+            file_version=test_file.versions.order_by('-created').first()
+        )
+
+        res = app.get(url, auth=user.auth)
+        assert not res.json['data']['attributes']['show_as_unviewed']
+
+    def test_show_as_unviewed__not_previously_seen(self, app, user, test_file, url):
+        res = app.get(url, auth=user.auth)
+        assert not res.json['data']['attributes']['show_as_unviewed']
+
+    def test_show_as_unviewed__different_user(self, app, user, test_file, url):
+        FileVersionUserMetadata.objects.create(
+            user=user,
+            file_version=test_file.versions.order_by('created').first()
+        )
+        file_viewer = AuthUserFactory()
+
+        res = app.get(url, auth=file_viewer.auth)
+        assert not res.json['data']['attributes']['show_as_unviewed']
+
+    def test_show_as_unviewed__anonymous_user(self, app, test_file, url):
+        res = app.get(url)
+        assert not res.json['data']['attributes']['show_as_unviewed']
+
+    def test_show_as_unviewed__no_versions(self, app, user, test_file, url):
+        # Most Non-OSFStorage providers don't have versions; make sure this still works
+        test_file.versions.all().delete()
+
+        res = app.get(url, auth=user.auth)
+        assert not res.json['data']['attributes']['show_as_unviewed']

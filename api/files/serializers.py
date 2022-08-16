@@ -213,7 +213,12 @@ class BaseFileSerializer(JSONAPISerializer):
         read_only=True, help_text='The Unix-style path of this object relative to the provider root',
     )
     last_touched = VersionedDateTimeField(read_only=True, help_text='The last time this file had information fetched about it via the OSF')
-    date_modified = ser.SerializerMethodField(read_only=True, help_text='Timestamp when the file was last modified')
+    date_modified = VersionedDateTimeField(
+        read_only=True,
+        help_text='Timestamp when the file was last modified',
+        required=False,
+        allow_null=True,
+    )
     date_created = ser.SerializerMethodField(read_only=True, help_text='Timestamp when the file was created')
     extra = ser.SerializerMethodField(read_only=True, help_text='Additional metadata about this file')
     tags = JSONAPIListField(child=FileTagField(), required=False)
@@ -261,9 +266,12 @@ class BaseFileSerializer(JSONAPISerializer):
 
     def absolute_url(self, obj):
         if obj.is_file:
-            return furl.furl(settings.DOMAIN).set(
+            url = furl.furl(settings.DOMAIN).set(
                 path=(obj.target._id, 'files', obj.provider, obj.path.lstrip('/')),
-            ).url
+            )
+            if obj.provider == 'dataverse':
+                url.add(query_params={'version': obj.history[-1]['extra']['datasetVersion']})
+            return url.url
 
     def get_download_link(self, obj):
         if obj.is_file:
@@ -283,22 +291,6 @@ class BaseFileSerializer(JSONAPISerializer):
             self.size = obj.versions.first().size
             return self.size
         return None
-
-    def get_date_modified(self, obj):
-        mod_dt = None
-        if obj.provider == 'osfstorage' and obj.versions.exists():
-            # Each time an osfstorage file is added or uploaded, a new version object is created with its
-            # date_created equal to the time of the update.  The external_modified is the modified date
-            # from the backend the file is stored on.  This field refers to the modified date on osfstorage,
-            # so prefer to use the created of the latest version.
-            mod_dt = obj.versions.first().created
-        elif obj.provider != 'osfstorage' and obj.history:
-            mod_dt = obj.history[-1].get('modified', None)
-
-        if self.context['request'].version >= '2.2' and obj.is_file and mod_dt:
-            return datetime.strftime(mod_dt, '%Y-%m-%dT%H:%M:%S.%fZ')
-
-        return mod_dt and mod_dt.replace(tzinfo=pytz.utc)
 
     def get_date_created(self, obj):
         creat_dt = None
@@ -328,6 +320,10 @@ class BaseFileSerializer(JSONAPISerializer):
         }
         if obj.provider == 'osfstorage' and obj.is_file:
             extras['downloads'] = obj.get_download_count()
+
+        if obj.provider == 'dataverse':
+            extras.update(obj.history[-1]['extra'])
+
         return extras
 
     def get_current_user_can_comment(self, obj):
@@ -395,6 +391,14 @@ class FileSerializer(BaseFileSerializer):
     )
     target = TargetField(link_type='related', meta={'type': 'get_target_type'})
 
+    # Assigned via annotation. See api/files/annotations for info
+    show_as_unviewed = ser.BooleanField(
+        read_only=True,
+        required=False,
+        default=False,
+        help_text='Whether to mark the file as unviewed for the current user',
+    )
+
     def get_target_type(self, obj):
         if isinstance(obj, Preprint):
             return 'preprints'
@@ -420,9 +424,6 @@ class OsfStorageFileSerializer(FileSerializer):
         'provider',
         'tags',
     ])
-
-    def create(self, validated_data):
-        return super(OsfStorageFileSerializer, self).create(validated_data)
 
 
 class FileDetailSerializer(FileSerializer):

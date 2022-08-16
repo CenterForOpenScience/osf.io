@@ -662,6 +662,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def __str__(self):
         return self.get_short_name()
 
+    def get_verified_external_id(self, external_service, verified_only=False):
+        identifier_info = self.external_identity.get(external_service, {})
+        for external_id, status in identifier_info.items():
+            if status and status == 'VERIFIED' or not verified_only:
+                return external_id
+        return None
+
     @property
     def contributed(self):
         return self.nodes.all()
@@ -1875,11 +1882,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         If a user only has no resources or only deleted resources this will return false and they can safely be deactivated
         otherwise they must delete or transfer their outstanding resources.
 
-        :return bool: does the user have any active node, preprints, groups etc?
+        :return bool: does the user have any active node, preprints, groups, etc?
         """
         from osf.models import Preprint
 
-        nodes = self.nodes.exclude(is_deleted=True).exists()
+        nodes = self.nodes.filter(deleted__isnull=True).exists()
         groups = self.osf_groups.exists()
         preprints = Preprint.objects.filter(_contributors=self, ever_public=True, deleted__isnull=True).exists()
 

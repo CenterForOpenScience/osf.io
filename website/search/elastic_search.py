@@ -668,21 +668,6 @@ def update_user(user, index=None):
     if not user.is_active:
         try:
             client().delete(index=index, doc_type='user', id=user._id, refresh=True, ignore=[404])
-<<<<<<< HEAD
-=======
-            # update files in their quickfiles node if the user has been marked as spam
-            if user.spam_status == SpamStatus.SPAM:
-                quickfiles = QuickFilesNode.objects.get_for_user(user)
-                if quickfiles:
-                    for quickfile_id in quickfiles.files.values_list('_id', flat=True):
-                        client().delete(
-                            index=index,
-                            doc_type='file',
-                            id=quickfile_id,
-                            refresh=True,
-                            ignore=[404]
-                        )
->>>>>>> 313e31f680f8b92fc9355a902bfc99773d64bc89
         except NotFoundError:
             pass
         return

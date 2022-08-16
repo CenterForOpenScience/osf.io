@@ -2,6 +2,20 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+22.06.0 (2022-06-23)
+====================
+- Fix support for Dataverse files
+- Match Legacy behavior with new `show_as_unviewed` File field
+- Other assorted fixes for new Files page
+
+22.05.0 (2022-06-09)
+====================
+- Add institutional affiliations via ROR to minted DOIs
+- Improve file sorting by `date_modified`
+- Update help links
+- Add ability to create RegistrationSchemas via the Admin App
+- Update files page routing for upcoming FE release
+
 22.04.0 (2022-03-31)
 ====================
 - Update JS and Python dependencies

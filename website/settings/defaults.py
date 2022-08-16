@@ -341,6 +341,10 @@ CROSSREF_DEPOSITOR_EMAIL = 'None'  # This email will receive confirmation/error 
 ECSARXIV_CROSSREF_USERNAME = None
 ECSARXIV_CROSSREF_PASSWORD = None
 
+# ror
+OSF_ROR_ID = '05d5mza29'
+OSF_GRID_ID = 'grid.466501.0'
+
 # if our DOIs cannot be confirmed after X amount of days email the admin
 DAYS_CROSSREF_DOIS_MUST_BE_STUCK_BEFORE_EMAIL = 2
 
@@ -737,6 +741,13 @@ RUNNING_MIGRATION = False
 EXTERNAL_IDENTITY_PROFILE = {
     'OrcidProfile': 'ORCID',
 }
+
+ORCID_PUBLIC_API_ACCESS_TOKEN = None
+ORCID_PUBLIC_API_V3_URL = 'https://pub.orcid.org/v3.0/'
+ORCID_PUBLIC_API_REQUEST_TIMEOUT = None
+ORCID_RECORD_ACCEPT_TYPE = 'application/vnd.orcid+xml'
+ORCID_RECORD_EMPLOYMENT_PATH = '/employments'
+ORCID_RECORD_EDUCATION_PATH = '/educations'
 
 # Source: https://github.com/maxd/fake_email_validator/blob/master/config/fake_domains.list
 BLACKLISTED_DOMAINS = [

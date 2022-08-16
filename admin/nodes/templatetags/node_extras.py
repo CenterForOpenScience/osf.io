@@ -23,6 +23,11 @@ def reverse_node(value):
 
 
 @register.filter
+def reverse_registration_schema(value):
+    return reverse('registration_schemas:detail', kwargs={'registration_schema_id': value.id})
+
+
+@register.filter
 def reverse_preprint(value):
     return reverse('preprints:preprint', kwargs={'guid': value._id})
 

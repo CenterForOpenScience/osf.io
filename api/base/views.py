@@ -638,11 +638,23 @@ class WaterButlerMixin(object):
             )
 
             # mirrors BaseFileNode get_or_create
+            _path = '/' + attrs['path'].lstrip('/')
+            query = {
+                'target_object_id': node.id,
+                'target_content_type': content_type,
+                '_path': _path,
+            }
+
+            # Dataverse provides us two sets of files with the same path, so we disambiguate the paths, this
+            # preserves legacy behavior by distingishing them by version (Draft/Published).
+            if attrs['provider'] == 'dataverse':
+                query.update({'_history__0__extra__datasetVersion': attrs['extra']['datasetVersion']})
+
             try:
-                file_obj = base_class.objects.get(target_object_id=node.id, target_content_type=content_type, _path='/' + attrs['path'].lstrip('/'))
+                file_obj = base_class.objects.get(**query)
             except base_class.DoesNotExist:
                 # create method on BaseFileNode appends provider, bulk_create bypasses this step so it is added here
-                file_obj = base_class(target=node, _path='/' + attrs['path'].lstrip('/'), provider=base_class._provider)
+                file_obj = base_class(target=node, _path=_path, provider=base_class._provider)
                 objs_to_create[base_class].append(file_obj)
             else:
                 file_objs.append(file_obj)
@@ -655,7 +667,8 @@ class WaterButlerMixin(object):
             base_class.objects.bulk_create(objs_to_create[base_class])
             file_objs += objs_to_create[base_class]
 
-        return file_objs
+        # stuff list into QuerySet
+        return BaseFileNode.objects.filter(id__in=[item.id for item in file_objs])
 
     def get_file_node_from_wb_resp(self, item):
         """Takes file data from wb response, touches/updates metadata for it, and returns file object"""

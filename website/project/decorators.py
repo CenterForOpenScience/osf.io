@@ -465,7 +465,7 @@ def check_contributor_auth(node, auth, include_public, include_view_only_anon, i
                 redirect_url = check_key_expired(key=auth.private_key, node=node, url=request.url)
                 if request.headers.get('Content-Type') == 'application/json':
                     raise HTTPError(http_status.HTTP_401_UNAUTHORIZED)
-                else:
+                elif user is None:
                     response = redirect(cas.get_login_url(redirect_url))
 
     return response

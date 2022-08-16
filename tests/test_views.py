@@ -43,14 +43,9 @@ from framework.exceptions import HTTPError, TemplateHTTPError
 from framework.flask import redirect
 from framework.transactions.handlers import no_auto_transaction
 
-from waffle.testutils import override_flag
-
 from website import mailchimp_utils, mails, settings, language
-<<<<<<< HEAD
 from addons.osfstorage import settings as osfstorage_settings
 from osf.models import AbstractNode, NodeLog
-=======
->>>>>>> 313e31f680f8b92fc9355a902bfc99773d64bc89
 from website.profile.utils import add_contributor_json, serialize_unregistered
 from website.profile.views import update_osf_help_mails_subscription
 from website.project.decorators import check_can_access
@@ -62,21 +57,16 @@ from website.project.views.contributor import (
     send_claim_email,
     send_claim_registered_email,
 )
-<<<<<<< HEAD
-=======
 from website.settings import EXTERNAL_EMBER_APPS
->>>>>>> 313e31f680f8b92fc9355a902bfc99773d64bc89
 from website.project.views.node import _should_show_wiki_widget, abbrev_authors
 from website.util import api_url_for, web_url_for
 from website.util import rubeus
 from website.util.metrics import OsfSourceTags, OsfClaimedTags, provider_source_tag, provider_claimed_tag
 from osf import features
 from osf.utils import permissions
-<<<<<<< HEAD
 from osf.models import Comment
 from osf.models import OSFUser, Tag
 from osf.models.spam import SpamStatus
-=======
 from osf.models import (
     Comment,
     AbstractNode,
@@ -85,11 +75,9 @@ from osf.models import (
     Tag,
     SpamStatus,
     NodeRelation,
-    QuickFilesNode,
     NotableEmailDomain
 )
 
->>>>>>> 313e31f680f8b92fc9355a902bfc99773d64bc89
 from tests.base import (
     assert_is_redirect,
     capture_signals,
@@ -104,10 +92,8 @@ from tests.test_cas_authentication import generate_external_user_with_resp
 from api_tests.utils import create_test_file
 
 
-<<<<<<< HEAD
 from osf.models import NodeRelation, NotableEmailDomain
-=======
->>>>>>> 313e31f680f8b92fc9355a902bfc99773d64bc89
+
 from osf_tests.factories import (
     fake_email,
     ApiOAuth2ApplicationFactory,
@@ -4778,7 +4764,7 @@ class TestStaticFileViews(OsfTestCase):
     def test_getting_started_page(self):
         res = self.app.get('/getting-started/')
         assert_equal(res.status_code, 302)
-        assert_equal(res.location, 'https://openscience.zendesk.com/hc/en-us')
+        assert_equal(res.location, 'https://help.osf.io/article/342-getting-started-on-the-osf')
     def test_help_redirect(self):
         res = self.app.get('/help/')
         assert_equal(res.status_code,302)

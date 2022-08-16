@@ -23,44 +23,74 @@ DATACITE_RESOURCE_TYPE_MAP = {
 }
 
 
+def datacite_format_name_identifiers(user):
+    data = {
+        'nameIdentifiers': [
+            {
+                'nameIdentifier': f'{settings.DOMAIN}{user._id}/',
+                'nameIdentifierScheme': 'URL',
+            }
+        ]
+    }
+    orcid = user.get_verified_external_id('ORCID', verified_only=True)
+    if orcid:
+        data['nameIdentifiers'].append({
+            'nameIdentifier': orcid,
+            'nameIdentifierScheme': 'ORCID',
+            'schemeURI': 'http://orcid.org/'
+        })
+
+    return data
+
+
+def datacite_format_affiliations(user):
+    data = {'affiliation': []}
+    for affiliated_institution in user.affiliated_institutions.all():
+        data['affiliation'].append({
+            'name': affiliated_institution.name,
+        })
+
+        if affiliated_institution.identifier_domain:
+            data['affiliation'].append({
+                'name': affiliated_institution.name,
+                'affiliationIdentifier': affiliated_institution.identifier_domain,
+                'affiliationIdentifierScheme': 'URL',
+            })
+
+        if affiliated_institution.ror_uri:
+            data['affiliation'].append(
+                {
+                    'name': affiliated_institution.name,
+                    'affiliationIdentifier': affiliated_institution.ror_uri,
+                    'affiliationIdentifierScheme': 'ROR',
+                    'SchemeURI': 'https://ror.org/',
+                }
+            )
+
+    return data
+
+
 def datacite_format_creators(creators):
     """ Format a list of contributors to match the datacite schema
     Schema found here: https://schema.datacite.org/meta/kernel-4.3/doc/DataCite-MetadataKernel_v4.3.pdf
 
-    :param contributors_list: list of OSFUsers to format
+    :param creators: list of OSFUsers to format
     :return: formatted json for datacite
     """
     creators_json = []
     for creator in creators:
-        name_identifiers = [
-            {
-                'nameIdentifier': f'{creator._id}/',
-                'nameIdentifierScheme': 'OSF',
-                'schemeURI': settings.DOMAIN
-            }
-        ]
-        affiliated_institutions = [{
-            'affiliation': institution.name,
-            'affiliationIdentifier': 'OSF',
-            'schemeURI': settings.DOMAIN
-        } for institution in creator.affiliated_institutions.all()]
-
-        if creator.external_identity.get('ORCID'):
-            verified = list(creator.external_identity['ORCID'].values())[0] == 'VERIFIED'
-            if verified:
-                name_identifiers.append({
-                    'nameIdentifier': list(creator.external_identity['ORCID'].keys())[0],
-                    'nameIdentifierScheme': 'ORCID',
-                    'schemeURI': 'http://orcid.org/'
-                })
-
-        creators_json.append({
-            'nameIdentifiers': name_identifiers,
-            'affiliations': affiliated_institutions,
+        data = {}
+        if creator.affiliated_institutions.exists():
+            data.update(datacite_format_affiliations(creator))
+        data.update(datacite_format_name_identifiers(creator))
+        data.update({
+            'nameType': 'Personal',
             'creatorName': creator.fullname,
             'familyName': creator.family_name,
-            'givenName': creator.given_name
+            'givenName': creator.given_name,
+            'name': creator.fullname
         })
+        creators_json.append(data)
 
     return creators_json
 
@@ -69,36 +99,24 @@ def datacite_format_contributors(contributors):
     """ Format a list of contributors to match the datacite schema
     Schema found here: https://schema.datacite.org/meta/kernel-4.3/doc/DataCite-MetadataKernel_v4.3.pdf
 
-    :param contributors_list: list of OSFUsers to format
+    :param contributors: list of OSFUsers to format
     :return: formatted json for datacite
     """
     contributors_json = []
     for contributor in contributors:
-        name_identifiers = [
-            {
-                'nameIdentifier': f'{contributor._id}/',
-                'nameIdentifierScheme': 'OSF',
-                'schemeURI': settings.DOMAIN
-            }
-        ]
-
-        if contributor.external_identity.get('ORCID'):
-            verified = list(contributor.external_identity['ORCID'].values())[0] == 'VERIFIED'
-            if verified:
-                name_identifiers.append({
-                    'nameIdentifier': list(contributor.external_identity['ORCID'].keys())[0],
-                    'nameIdentifierScheme': 'ORCID',
-                    'schemeURI': 'http://orcid.org/'
-                })
-
-        contributors_json.append({
-            'nameIdentifiers': name_identifiers,
-            'contributorName': contributor.fullname,
+        data = {}
+        if contributor.affiliated_institutions.exists():
+            data.update(datacite_format_affiliations(contributor))
+        data.update(datacite_format_name_identifiers(contributor))
+        data.update({
+            'nameType': 'Personal',
             'contributorType': 'ProjectMember',
+            'contributorName': contributor.fullname,
             'familyName': contributor.family_name,
-            'givenName': contributor.given_name
+            'givenName': contributor.given_name,
+            'name': contributor.fullname,
         })
-
+        contributors_json.append(data)
     return contributors_json
 
 

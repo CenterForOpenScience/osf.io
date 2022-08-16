@@ -17,8 +17,12 @@ from framework.exceptions import HTTPError
 from nose.tools import *  # noqa
 from tests.base import OsfTestCase, get_default_metaschema
 from api_tests.utils import create_test_file
-from osf_tests.factories import (AuthUserFactory, ProjectFactory,
-                             RegistrationFactory, DraftRegistrationFactory,)
+from osf_tests.factories import (
+    AuthUserFactory,
+    ProjectFactory,
+    RegistrationFactory,
+    DraftRegistrationFactory,
+)
 from website import settings
 from addons.base import views
 from addons.github.exceptions import ApiError
@@ -26,12 +30,8 @@ from addons.github.models import GithubFolder, GithubFile, GithubFileNode
 from addons.github.tests.factories import GitHubAccountFactory
 from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder, OsfStorageFile
 from addons.osfstorage.tests.factories import FileVersionFactory
-<<<<<<< HEAD
-from osf.models import Session
-=======
 from osf import features
-from osf.models import Session, QuickFilesNode
->>>>>>> 313e31f680f8b92fc9355a902bfc99773d64bc89
+from osf.models import Session
 from osf.models import files as file_models
 from osf.models.files import BaseFileNode, TrashedFileNode
 from osf.utils.permissions import WRITE, READ
@@ -47,16 +47,6 @@ from framework import sentry
 from website.settings import EXTERNAL_EMBER_APPS
 from waffle.testutils import override_flag
 
-
-class SetEnvironMiddleware(object):
-
-    def __init__(self, app, **kwargs):
-        self.app = app
-        self.kwargs = kwargs
-
-    def __call__(self, environ, start_response):
-        environ.update(self.kwargs)
-        return self.app(environ, start_response)
 
 
 class TestAddonAuth(OsfTestCase):
@@ -167,7 +157,7 @@ class TestAddonAuth(OsfTestCase):
         res = self.app.get(url, headers={'Authorization': 'Bearer invalid_access_token'}, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    def test_action_downloads_marks_version_as_seen(self):
+    def test_action_render_marks_version_as_seen(self):
         noncontrib = AuthUserFactory()
         node = ProjectFactory(is_public=True)
         test_file = create_test_file(node, self.user)

@@ -10,10 +10,12 @@ from framework.auth.core import Auth
 
 from addons.github.models import GithubFolder
 from addons.github.tests.factories import GitHubAccountFactory
+from addons.osfstorage.tests.factories import FileVersionFactory
 from api.base.settings.defaults import API_BASE
 from api.base.utils import waterbutler_api_url_for
 from api_tests import utils as api_utils
 from tests.base import ApiTestCase
+from osf.models.files import FileVersionUserMetadata
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
@@ -21,6 +23,8 @@ from osf_tests.factories import (
     PrivateLinkFactory
 )
 from osf.utils.permissions import READ
+from dateutil.parser import parse as parse_date
+from website import settings
 
 
 def prepare_mock_wb_response(
@@ -614,15 +618,21 @@ class TestNodeFilesListPagination(ApiTestCase):
             oauth_settings._id: []}
         addon.user_settings.save()
 
-    def check_file_order(self, resp):
-        previous_file_name = 0
-        for file in resp.json['data']:
-            int_file_name = int(file['attributes']['name'])
-            assert int_file_name > previous_file_name, 'Files were not in order'
-            previous_file_name = int_file_name
+    def check_file_order(self, resp, attribute, key, ascending=False):
+        files = resp.json['data']
+        if ascending:
+            files.reverse()
+
+        previous_file_field_value = None
+        for file in files:
+            if file['attributes'][attribute] is not None:
+                file_field_value = key(file['attributes'][attribute])
+                if previous_file_field_value:
+                    assert file_field_value > previous_file_field_value, 'Files were not in order'
+                previous_file_field_value = file_field_value
 
     @responses.activate
-    def test_node_files_are_sorted_correctly(self):
+    def test_node_files_are_sorted_correctly_name(self):
         prepare_mock_wb_response(
             node=self.project, provider='github',
             files=[
@@ -656,7 +666,32 @@ class TestNodeFilesListPagination(ApiTestCase):
         url = '/{}nodes/{}/files/github/?page[size]=100'.format(
             API_BASE, self.project._id)
         res = self.app.get(url, auth=self.user.auth)
-        self.check_file_order(res)
+        self.check_file_order(res, 'name', key=int)
+
+    @responses.activate
+    def test_node_files_are_sorted_correctly_date_modified(self):
+        prepare_mock_wb_response(
+            node=self.project, provider='github',
+            files=[
+                {'name': '01', 'path': '/01', 'materialized': '/01', 'kind': 'file', 'modified': '2022-05-08T21:01:52.001Z'},
+                {'name': '02', 'path': '/02', 'materialized': '/02', 'kind': 'file', 'modified': '2021-05-08T21:01:52.020Z'},
+                {'name': '03', 'path': '/03', 'materialized': '/03', 'kind': 'file', 'modified': '2020-05-08T21:01:52.300Z'},
+                {'name': '04', 'path': '/04', 'materialized': '/04', 'kind': 'file', 'modified': '2023-05-08T21:01:52.020Z'},
+                {'name': '05', 'path': '/05', 'materialized': '/05', 'kind': 'file', 'modified': '2024-05-08T21:01:52.001Z'},
+                {'name': '06', 'path': '/06', 'materialized': '/06', 'kind': 'file', 'modified': '2025-05-08T21:01:52.000Z'},
+                {'name': '07', 'path': '/07/', 'materialized': '/07/', 'kind': 'folder'},
+                {'name': '01', 'path': '/01/', 'materialized': '/01/', 'kind': 'folder'},
+            ]
+        )
+        self.add_github()
+
+        url = f'/{API_BASE}nodes/{self.project._id}/files/github/?sort=date_modified'
+        res = self.app.get(url, auth=self.user.auth)
+        self.check_file_order(res, 'date_modified', key=parse_date)
+
+        url = f'/{API_BASE}nodes/{self.project._id}/files/github/?sort=-date_modified'
+        res = self.app.get(url, auth=self.user.auth)
+        self.check_file_order(res, 'date_modified', key=parse_date, ascending=True)
 
 
 class TestNodeStorageProviderDetail(ApiTestCase):
@@ -678,6 +713,10 @@ class TestNodeStorageProviderDetail(ApiTestCase):
             res.json['data']['id'],
             '{}:osfstorage'.format(self.private_project._id)
         )
+        assert_equal(
+            res.json['data']['relationships']['target']['links']['related']['href'],
+            f'{settings.API_DOMAIN}v2/nodes/{self.private_project._id}/'
+        )
 
     def test_can_view_if_public(self):
         res = self.app.get(self.public_url)
@@ -686,7 +725,64 @@ class TestNodeStorageProviderDetail(ApiTestCase):
             res.json['data']['id'],
             '{}:osfstorage'.format(self.public_project._id)
         )
+        assert_equal(
+            res.json['data']['relationships']['target']['links']['related']['href'],
+            f'{settings.API_DOMAIN}v2/nodes/{self.public_project._id}/'
+        )
 
     def test_cannot_view_if_private(self):
         res = self.app.get(self.private_url, expect_errors=True)
         assert_equal(res.status_code, 401)
+
+
+class TestShowAsUnviewed(ApiTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.user = AuthUserFactory()
+        self.node = ProjectFactory(is_public=True, creator=self.user)
+        self.test_file = api_utils.create_test_file(self.node, self.user, create_guid=False)
+        self.test_file.add_version(FileVersionFactory())
+        self.url = f'/{API_BASE}nodes/{self.node._id}/files/osfstorage/'
+
+    def test_show_as_unviewed__previously_seen(self):
+        FileVersionUserMetadata.objects.create(
+            user=self.user,
+            file_version=self.test_file.versions.order_by('created').first()
+        )
+
+        res = self.app.get(self.url, auth=self.user.auth)
+        assert res.json['data'][0]['attributes']['show_as_unviewed']
+
+        FileVersionUserMetadata.objects.create(
+            user=self.user,
+            file_version=self.test_file.versions.order_by('-created').first()
+        )
+
+        res = self.app.get(self.url, auth=self.user.auth)
+        assert not res.json['data'][0]['attributes']['show_as_unviewed']
+
+    def test_show_as_unviewed__not_previously_seen(self):
+        res = self.app.get(self.url, auth=self.user.auth)
+        assert not res.json['data'][0]['attributes']['show_as_unviewed']
+
+    def test_show_as_unviewed__different_user(self):
+        FileVersionUserMetadata.objects.create(
+            user=self.user,
+            file_version=self.test_file.versions.order_by('created').first()
+        )
+        file_viewer = AuthUserFactory()
+
+        res = self.app.get(self.url, auth=file_viewer.auth)
+        assert not res.json['data'][0]['attributes']['show_as_unviewed']
+
+    def test_show_as_unviewed__anonymous_user(self):
+        res = self.app.get(self.url)
+        assert not res.json['data'][0]['attributes']['show_as_unviewed']
+
+    def test_show_as_unviewed__no_versions(self):
+        # Most Non-OSFStorage providers don't have versions; make sure this still works
+        self.test_file.versions.all().delete()
+
+        res = self.app.get(self.url, auth=self.user.auth)
+        assert not res.json['data'][0]['attributes']['show_as_unviewed']

@@ -22,7 +22,8 @@ from api.base.parsers import (
     JSONAPIMultipleRelationshipsParser,
     JSONAPIMultipleRelationshipsParserForRegularJSON,
 )
-from api.base.utils import absolute_reverse, get_user_auth
+
+from api.base.utils import absolute_reverse, get_user_auth, get_object_or_error
 from api.base import permissions as base_permissions
 from api.citations.utils import render_citation
 from api.preprints.serializers import (
@@ -581,8 +582,8 @@ class PreprintFilesList(NodeFilesList, PreprintMixin):
         self.kwargs[self.provider_lookup_url_kwarg] = 'osfstorage'
         return super(PreprintFilesList, self).get_queryset()
 
-    def get_resource(self, check_object_permissions):
-        return self.get_preprint(check_object_permissions=check_object_permissions)
+    def get_resource(self):
+        return get_object_or_error(Preprint, self.kwargs['preprint_id'], self.request)
 
 
 class PreprintRequestListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, PreprintRequestMixin):

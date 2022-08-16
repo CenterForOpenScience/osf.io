@@ -33,6 +33,7 @@ urlpatterns = [
             url(r'^management/', include('admin.management.urls', namespace='management')),
             url(r'^internet_archive/', include('admin.internet_archive.urls', namespace='internet_archive')),
             url(r'^schema_responses/', include('admin.schema_responses.urls', namespace='schema_responses')),
+            url(r'^registration_schemas/', include('admin.registration_schemas.urls', namespace='registration_schemas')),
         ]),
     ),
 ]
