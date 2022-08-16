@@ -30,6 +30,6 @@ class ExportDataRestore(base.BaseModel):
         unique_together = ('export', 'destination')
 
     def __repr__(self):
-        return f'"({self.export}-{self.destination})[self.status]"'
+        return f'"({self.export}-{self.destination})[{self.status}]"'
 
     __str__ = __repr__

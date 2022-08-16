@@ -29,13 +29,5 @@ class ExportDataLocation(base.BaseModel):
     def __unicode__(self):
         return '{}'.format(self.name)
 
-    def get_absolute_url(self):
-        return '{}export_locations/{}'.format(self.absolute_api_v2_url, self.institution_guid)
-
-    @property
-    def absolute_api_v2_url(self):
-        path = '/export_locations/{}/'.format(self.institution_guid)
-        return api_v2_url(path)
-
     class Meta:
         unique_together = ('institution_guid', 'name')
