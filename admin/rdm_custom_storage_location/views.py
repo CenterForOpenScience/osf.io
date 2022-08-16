@@ -79,7 +79,7 @@ class IconView(ExportStorageLocationViewBaseView, View):
         raise Http404
 
 
-class TestConnectionView(InstitutionalStorageBaseView, View):
+class TestConnectionView(ExportStorageLocationViewBaseView, View):
     """ View for testing the credentials to connect to a provider.
     Called when clicking the 'Connect' Button.
     """

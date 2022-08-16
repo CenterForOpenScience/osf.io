@@ -14,8 +14,13 @@ urlpatterns = [
     url(r'^fetch_temporary_token/$', views.FetchTemporaryTokenView.as_view(), name='fetch_temporary_token'),
     url(r'^remove_auth_data_temporary/$', views.RemoveTemporaryAuthData.as_view(), name='remove_auth_data_temporary'),
     url(r'^usermap/$', views.UserMapView.as_view(), name='usermap'),
+
     # to register export data storage location
     url(r'^export_data/storage_location/$', export_data_views.ExportStorageLocationView.as_view(), name='export_data_storage_location'),
+    url(r'^export_data/test_connection/$', views.TestConnectionView.as_view(), name='export_data_test_connection'),
+    url(r'^export_data/save_credentials/$', export_data_views.SaveCredentialsView.as_view(), name='export_data_save_credentials'),
+
+    # to manage export data
     url(r'^export_data/institutions/$', export_data_views.ExportDataInstitutionList.as_view(), name='export_data_institutions'),
     url(r'^export_data/institutions/(?P<institution_id>[0-9]+)/storages/$', export_data_views.ExportDataInstitutionalStorages.as_view(),
         name='export_data_institution_storages'),

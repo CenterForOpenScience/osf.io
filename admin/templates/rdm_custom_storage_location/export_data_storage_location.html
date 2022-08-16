@@ -96,7 +96,7 @@
                 <td>{{ location.name }}</td>
                 <td>{{ location.provider_name }}</td>
                 <td>
-                    <button class="btn btn-primary">Delete</button>
+                    <a type="button" class="btn btn-primary" href="./{{ location.id }}/delete/">Delete</a>
                 </td>
             </tr>
         {% endfor %}
