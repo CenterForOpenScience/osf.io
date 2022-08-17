@@ -14,7 +14,8 @@ from admin.base import settings
 from admin.rdm.utils import RdmPermissionMixin
 from admin.rdm_custom_storage_location import utils
 from admin.rdm_custom_storage_location.export_data import utils as export_data_utils
-from osf.models import Institution, ExportDataLocation
+from osf.models import Institution, ExportData, ExportDataLocation
+from addons.osfstorage.models import Region
 from website import settings as osf_settings
 
 
@@ -146,7 +147,9 @@ class ExportDataInstitutionList(ExportStorageLocationViewBaseView, ListView):
 
 
 class ExportDataInstitutionalStorages(ExportStorageLocationViewBaseView, DetailView):
-    model = Institution
+    model = Region
+    paginate_by = 10
+    ordering = 'pk'
     template_name = 'rdm_custom_storage_location/export_data_institutional_storages.html'
     permission_required = 'osf.view_institution'
     raise_exception = True
@@ -157,11 +160,18 @@ class ExportDataInstitutionalStorages(ExportStorageLocationViewBaseView, DetailV
     def get_context_data(self, *args, **kwargs):
         institution = self.get_object()
         institution_dict = model_to_dict(institution)
+        institution_guid = institution._id
+        storages = Region.objects.filter(_id=institution_guid)
+        storages_dict = [{"id": storage.id, "name": storage.name, "provider_name": storage.waterbutler_settings["storage"]["provider"], "has_export_data": ExportData.objects.filter(source_id=storage.id).exists()} for storage in storages]
+        # page_size = self.get_paginate_by(query_set)
         kwargs.setdefault('page_number', self.request.GET.get('page', '1'))
         kwargs['institution'] = institution_dict
         kwargs['logohost'] = settings.OSF_URL
         kwargs['node_count'] = institution.nodes.count()
+        kwargs['storages'] = storages_dict
 
+        # paginator, page, locations, is_paginated = self.paginate_queryset(storages_dict, page_size)
+        # kwargs.setdefault('page', page)
         return kwargs
 
 
