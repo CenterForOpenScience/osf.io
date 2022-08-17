@@ -34,7 +34,6 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('auth', '0008_alter_user_username_max_length'),
-        ('admin', '0002_logentry_remove_auto_add'),
         ('contenttypes', '0002_remove_content_type_name'),
         ('addons_osfstorage', '0001_initial'),
     ]
@@ -1718,19 +1717,6 @@ class Migration(migrations.Migration):
                 'abstract': False,
             },
             bases=(models.Model, osf.models.base.QuerySetExplainMixin),
-        ),
-        migrations.CreateModel(
-            name='AdminLogEntry',
-            fields=[
-            ],
-            options={
-                'proxy': True,
-                'indexes': [],
-            },
-            bases=('admin.logentry',),
-            managers=[
-                ('objects', osf.models.admin_log_entry.AdminLogEntryManager()),
-            ],
         ),
         migrations.AlterUniqueTogether(
             name='tag',
