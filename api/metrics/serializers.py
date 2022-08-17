@@ -1,3 +1,5 @@
+import datetime
+
 from rest_framework import serializers as ser
 
 from api.base.serializers import BaseAPISerializer
@@ -95,12 +97,19 @@ class DailyReportSerializer(ser.BaseSerializer):
         # (don't use `to_dict` here)
         report_as_dict = instance.to_dict()
         report_name = self.context['report_name']
+        report_date = report_as_dict['report_date']
+
+        if isinstance(report_date, datetime.datetime):
+            report_date = report_date.date()
+        if isinstance(report_date, datetime.date):
+            report_date = str(report_date.date())
+
         return {
             'id': instance.meta.id,
             'type': f'daily-report:{report_name}',
             'attributes': {
                 **report_as_dict,
-                'report_date': report_as_dict['report_date'].date().isoformat(),
+                'report_date': report_date,
             },
         }
 

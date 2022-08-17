@@ -358,6 +358,7 @@ class RecentReportList(JSONAPIBaseView):
         serializer = self.serializer_class(
             search_response,
             many=True,
+            context={'report_name': report_name},
         )
         return JsonResponse({'data': serializer.data})
 

@@ -189,10 +189,6 @@ class TestComputedFields:
             item_guid='yxwvu',
             action_labels=['view', 'api'],
             item_public=False,
-            pageview_info={
-                'page_url': 'http://blibble.blop',
-                'referer_url': 'http://blopple.blip/',
-            },
         )
         headers = {
             'User-Agent': 'haha',
@@ -211,12 +207,6 @@ class TestComputedFields:
                 'session_id': '97098dd3f7cd26053c0d0264d1c84eaeea8e08d2c55ca34017ffbe53c749ba5a',
                 'item_public': False,
                 'action_labels': ['view', 'api'],
-                'pageview_info': {
-                    'page_url': 'http://blibble.blop',
-                    'page_path': '',
-                    'referer_url': 'http://blopple.blip/',
-                    'referer_domain': 'blopple.blip',
-                    'hour_of_day': 0,
-                },
+                'pageview_info': None,
             },
         )
