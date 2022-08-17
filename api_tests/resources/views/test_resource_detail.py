@@ -391,6 +391,15 @@ class TestResourceDetailPATCHBehavior:
         assert resp.status_code == 400
         assert resp.json['errors'][0]['source']['pointer'] == '/data/attributes/pid'
 
+    def test_patch__pid__primary_artifact_pid_is_invalid(self, app):
+        test_artifact, test_auth, registration = configure_test_preconditions()
+        primary_doi = registration.get_identifier_value('doi')
+
+        payload = make_patch_payload(test_artifact, new_pid=primary_doi)
+        resp = app.patch_json_api(make_api_url(test_artifact), payload, auth=test_auth, expect_errors=True)
+        assert resp.status_code == 400
+        assert resp.json['errors'][0]['source']['pointer'] == '/data/attributes/pid'
+
     def test_patch__finalized__valid_resource(self, app):
         test_artifact, test_auth, _ = configure_test_preconditions()
         assert test_artifact.identifier.value

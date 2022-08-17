@@ -4,6 +4,7 @@ from django.utils import timezone
 from osf.exceptions import (
     CannotFinalizeArtifactError,
     IdentifierHasReferencesError,
+    IsPrimaryArtifactPIDError,
     NoPIDError,
     UnsupportedArtifactTypeError,
 )
@@ -135,7 +136,7 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
                 identifier=self.identifier,
                 artifact_type=self.artifact_type,
                 finalized=True,
-                deleted__isnull=True,
+                deleted__isnull=True
             ).exclude(
                 id=self.id
             ).exists():
@@ -167,8 +168,16 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
         new_identifier, created = Identifier.objects.get_or_create(
             value=new_pid_value, category=pid_type
         )
-        if created:  # Reraise errors
+
+        # Reraise these errors all the way to API
+        if created:
             new_identifier.validate_identifier_value()
+        elif OutcomeArtifact.objects.filter(
+            outcome=self.outcome,
+            identifier=new_identifier,
+            artifact_type=ArtifactTypes.PRIMARY
+        ).exists():
+            raise IsPrimaryArtifactPIDError(pid_value=new_pid_value, pid_category=pid_type)
 
         previous_identifier = self.identifier
         self.identifier = new_identifier

@@ -255,6 +255,9 @@ class NoSuchPIDError(InvalidPIDError):
     ERROR_MESSAGE = 'Could not find any record of PID with type {category} and value {value}'
 
 
+class IsPrimaryArtifactPIDError(InvalidPIDError):
+    ERROR_MESSAGE = 'Cannot assign {value} as a Resource {category}, as it represents the Registration itself'
+
 class UnsupportedArtifactTypeError(OSFError):
     pass
 
