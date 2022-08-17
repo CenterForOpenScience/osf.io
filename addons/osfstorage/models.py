@@ -304,7 +304,12 @@ class OsfStorageFile(OsfStorageFileNode, File):
         if metadata:
             version.update_metadata(metadata, save=False)
 
-        version.region = self.target.osfstorage_region
+        if getattr(self.target, '_settings_model', None):
+            osfs_settings = self.target._settings_model('osfstorage')
+            region_subquery = osfs_settings.objects.filter(owner=self.target.id).values_list('region_id', flat=True)[0]
+            version.region = Region.objects.get(id=region_subquery)
+        else:
+            version.region = self.target.region
         version._find_matching_archive(save=False)
 
         version.save()
