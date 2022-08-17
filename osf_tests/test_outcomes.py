@@ -8,6 +8,7 @@ from osf.exceptions import (
     CannotFinalizeArtifactError,
     InvalidPIDError,
     InvalidPIDFormatError,
+    IsPrimaryArtifactPIDError,
     NoPIDError,
     NoSuchPIDError,
     UnsupportedArtifactTypeError
@@ -227,6 +228,11 @@ class TestOutcomeArtifact:
 
         with pytest.raises(NoPIDError):
             test_artifact.update(new_pid_value='')
+
+    def test_update__new_pid__primary_pid_cannot_be_reused(self, outcome, registration_doi):
+        test_artifact = outcome.artifact_metadata.create(finalized=False)
+        with pytest.raises(IsPrimaryArtifactPIDError):
+            test_artifact.update(new_pid_value=registration_doi.value)
 
     @pytest.mark.parametrize('validation_error', [InvalidPIDError, InvalidPIDFormatError, NoSuchPIDError])
     def test_update__new_pid__reverts_and_reraises_on_invalid_pid(self, outcome, project_doi, validation_error):

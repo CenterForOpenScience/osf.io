@@ -255,6 +255,9 @@ class NoSuchPIDError(InvalidPIDError):
     ERROR_MESSAGE = 'Could not find any record of PID with type {category} and value {value}'
 
 
+class IsPrimaryArtifactPIDError(InvalidPIDError):
+    ERROR_MESSAGE = '{value} is already in use as the PRIMARy PID for this Outcome'
+
 class UnsupportedArtifactTypeError(OSFError):
     pass
 
