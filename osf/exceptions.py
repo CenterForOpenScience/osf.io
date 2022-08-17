@@ -256,7 +256,7 @@ class NoSuchPIDError(InvalidPIDError):
 
 
 class IsPrimaryArtifactPIDError(InvalidPIDError):
-    ERROR_MESSAGE = '{value} is already in use as the PRIMARy PID for this Outcome'
+    ERROR_MESSAGE = 'Cannot assign {value} as a Resource {category}, as it represents the Registration itself'
 
 class UnsupportedArtifactTypeError(OSFError):
     pass
