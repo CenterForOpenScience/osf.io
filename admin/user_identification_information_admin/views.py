@@ -1,23 +1,21 @@
 from django.http import Http404
-
-from admin.base.views import GuidView
-from admin.rdm.utils import RdmPermissionMixin
-from admin.user_identification_information.views import (
-    UserIdentificationInformation as UserIdentificationInformationbaseclass,
-    custom_size_abbreviation,
-    get_list_extend_storage
-)
 from api.base import settings as api_settings
 from osf.models import OSFUser, UserQuota
 from website.util import quota
+from admin.user_identification_information.views import (
+    UserIdentificationInformation as UserIdentificationInformationBaseClass,
+    UserIdentificationList as UserIdentificationListBaseClass,
+    UserIdentificationDetails as UserIdentificationDetailsBaseClass,
+    custom_size_abbreviation,
+    get_list_extend_storage,
+)
 
-
-class UserIdentificationInformation(UserIdentificationInformationbaseclass):
+class UserIdentificationInformation(UserIdentificationInformationBaseClass):
 
     def get_context_data(self, **kwargs):
         if self.is_super_admin:
             raise Http404('Page not found')
-        self.query_set = self.get_userlist()
+        self.query_set = self.get_queryset()
         self.page_size = self.get_paginate_by(self.query_set)
         self.paginator, self.page, self.query_set, self.is_paginated = \
             self.paginate_queryset(self.query_set, self.page_size)
@@ -29,10 +27,7 @@ class UserIdentificationInformation(UserIdentificationInformationbaseclass):
         return super(UserIdentificationInformation, self).get_context_data(**kwargs)
 
 
-class UserIdentificationList(RdmPermissionMixin, UserIdentificationInformation):
-    template_name = 'user_identification_information/list_user_identification.html'
-    raise_exception = True
-    paginate_by = 20
+class UserIdentificationList(UserIdentificationListBaseClass):
 
     def get_userlist(self):
         if self.is_super_admin:
@@ -50,11 +45,7 @@ class UserIdentificationList(RdmPermissionMixin, UserIdentificationInformation):
         return self.get_list_data(queryset, list_users_id, dict_users_list)
 
 
-class UserIdentificationDetails(RdmPermissionMixin, GuidView):
-    template_name = 'user_identification_information/user_identification_details.html'
-    context_object_name = 'user_details'
-    permission_required = ''
-    raise_exception = True
+class UserIdentificationDetails(UserIdentificationDetailsBaseClass):
 
     def get_object(self):
         if self.is_super_admin:
