@@ -56,11 +56,11 @@
         margin-bottom: 0;
     }
 
-    .pagination-extra-div.flex-container .pagination {
+    .flex-container .pagination {
         margin: 0;
     }
 
-    .pagination-extra-div.flex-container > .flex-item {
+    .flex-container > .flex-item {
         margin-top: 0;
         margin-bottom: 15px;
     }
@@ -79,24 +79,24 @@
     }
 
     @media screen and (max-width: 991px) {
-        .pagination-extra-div.flex-container > .flex-item:last-child {
+        .flex-container > .flex-item:last-child {
             margin-bottom: 0;
         }
 
-        .pagination-extra-div > .flex-item + .flex-item {
+         > .flex-item + .flex-item {
             margin-left: 0 !important;
             margin-right: 0 !important;
         }
     }
 
     @media (min-width: 768px) and (max-width: 991px) {
-        .pagination-extra-div.flex-container {
+        .flex-container {
             flex-direction: column;
             flex-wrap: wrap;
             align-items: flex-start;
         }
 
-        .pagination-extra-div .form-group.flex-item {
+         .form-group.flex-item {
             margin-top: 0;
         }
     }
@@ -208,7 +208,7 @@
     <thead>
       <tr class="row">
         <th class="col">{% trans "GUID" %}</th>
-        <th class="col" style="white-space: nowrap">
+        <th class="col nowrap" >
           {% trans "EPPN" %}
           <a
             href="?order_by=eppn&amp;status=desc&amp;page={{ page.number }}"
@@ -221,7 +221,7 @@
             ></a
           ></span>
         </th>
-        <th class="col" style="white-space: nowrap">
+        <th class="col nowrap" >
           {% trans "Fullname" %}
           <a
             href="?order_by=fullname&amp;status=desc&amp;page={{ page.number }}"
@@ -260,7 +260,7 @@
             ></a
           ></span>
         </th>
-        <th class="col" style="white-space: nowrap">
+        <th class="col nowrap" >
           {% trans "Last login" %}
           <a
             href="?order_by=last_login&amp;status=desc&amp;page={{ page.number }}"
@@ -273,7 +273,7 @@
             ></a
           ></span>
         </th>
-        <th class="col" style="white-space: nowrap">
+        <th class="col nowrap" >
           {% trans "Usage" %}
           <a
             href="?order_by=usage&amp;status=desc&amp;page={{ page.number }}"
@@ -286,7 +286,7 @@
             ></a
           ></span>
         </th>
-        <th class="col" style="white-space: nowrap">
+        <th class="col nowrap" >
           {% trans "Extended storage" %}
           <a
             href="?order_by=extended_storage&amp;status=desc&amp;page={{ page.number }}"
@@ -305,7 +305,7 @@
       {% for user_data in users %}
       <tr class="row">
         <td class="col">
-	      {% if user.is_superuser %}
+	  {% if user.is_superuser %}
             <a href="{%  url 'user_identification_information:details' user_data.id %}" class="btn btn-primary">
               {{ user_data.id }}
             </a>
@@ -315,7 +315,7 @@
             </a>
           {% endif %}
         </td>
-        <td class="col">{{ user.eppn }}</td>
+        <td class="col">{{ user_data.eppn }}</td>
         <td class="col">{{ user_data.fullname }}</td>
         <td class="col">{{ user_data.email }}</td>
         <td class="col">{{ user_data.affiliation.name }}</td>

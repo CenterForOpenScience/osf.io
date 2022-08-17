@@ -1,14 +1,15 @@
 import csv
-from operator import itemgetter
-
-import numpy as np
-from admin.base.views import GuidView
-from api.base import settings as api_settings
-from django.contrib.auth.mixins import PermissionRequiredMixin
-from django.db import connection
 from django.db.models import Q
+from operator import itemgetter
 from django.http import HttpResponse
+import numpy as np
+from django.db import connection
+from django.http import Http404
 from django.views.generic import ListView
+
+from admin.base.views import GuidView
+from admin.rdm.utils import RdmPermissionMixin
+from api.base import settings as api_settings
 from osf.models import ExternalAccount
 from osf.models import OSFUser, UserQuota, Email
 from website.util import quota
@@ -126,8 +127,7 @@ class UserIdentificationInformation(ListView):
         self.paginator, self.page, self.query_set, self.is_paginated = \
             self.paginate_queryset(self.query_set, self.page_size)
         kwargs['requested_user'] = self.request.user
-        kwargs[
-            'institution_name'] = self.request.user.affiliated_institutions.first().name \
+        kwargs['institution_name'] = self.request.user.affiliated_institutions.first().name \
             if self.request.user.is_superuser is False else None
         kwargs['users'] = self.query_set
         kwargs['page'] = self.page
@@ -146,20 +146,21 @@ class UserIdentificationInformation(ListView):
         return list_data
 
 
-class UserIdentificationList(PermissionRequiredMixin, UserIdentificationInformation):
+class UserIdentificationList(RdmPermissionMixin, UserIdentificationInformation):
     template_name = 'user_identification_information/list_user_identification.html'
-    permission_required = 'osf.view_osfuser'
     raise_exception = True
     paginate_by = 20
 
     def get_userlist(self):
+        if self.is_admin:
+            raise Http404('Page not found')
         guid = self.request.GET.get('guid')
         name = self.request.GET.get('fullname')
         email = self.request.GET.get('username')
         queryset = []
         if self.request.user.is_superuser is False:
             institution = self.request.user.affiliated_institutions.first()
-            if institution is not None:  # and Region.objects.filter(_id=institution._id).exists():
+            if institution is not None:
                 queryset = OSFUser.objects.filter(affiliated_institutions=institution.id).order_by('id')
         else:
             queryset = OSFUser.objects.all().order_by('id')
@@ -194,13 +195,14 @@ class UserIdentificationList(PermissionRequiredMixin, UserIdentificationInformat
             return []
 
 
-class UserIdentificationDetails(PermissionRequiredMixin, GuidView):
+class UserIdentificationDetails(RdmPermissionMixin, GuidView):
     template_name = 'user_identification_information/user_identification_details.html'
     context_object_name = 'user_details'
-    permission_required = 'osf.view_osfuser'
     raise_exception = True
 
     def get_object(self):
+        if self.is_admin:
+            raise Http404('Page not found')
         user_details = OSFUser.load(self.kwargs.get('guid'))
         user_id = int(user_details.id)
         max_quota, used_quota = quota.get_quota_info(user_details, UserQuota.NII_STORAGE)
@@ -240,8 +242,7 @@ class UserIdentificationDetails(PermissionRequiredMixin, GuidView):
         }
 
 
-class ExportFileCSV(PermissionRequiredMixin, UserIdentificationInformation):
-    permission_required = 'osf.view_osfuser'
+class ExportFileCSV(RdmPermissionMixin, UserIdentificationInformation):
 
     def get(self, request, **kwargs):
 
