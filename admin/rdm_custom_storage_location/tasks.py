@@ -6,10 +6,13 @@ import requests
 
 from django.db import transaction
 from api.base.utils import waterbutler_api_url_for
-from osf.models import ExportDataRestore
 from celery.contrib.abortable import AbortableTask
 from framework.celery_tasks import app as celery_app
 
+__all__ = [
+    'pre_restore_export_data',
+    'restore_export_data',
+]
 
 @celery_app.task(bind=True, base=AbortableTask)
 def pre_restore_export_data(self, cookie, institution_guid, source_id, export_id, destination_id):
