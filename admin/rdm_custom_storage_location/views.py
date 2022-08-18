@@ -15,7 +15,7 @@ import logging
 from addons.osfstorage.models import Region
 from admin.rdm.utils import RdmPermissionMixin
 from admin.rdm_custom_storage_location import utils
-from admin.rdm_custom_storage_location.export_data_views import ExportStorageLocationViewBaseView
+from .export_data.views.location import ExportStorageLocationViewBaseView
 from osf.models import Institution, OSFUser
 from osf.models.external import ExternalAccountTemporary
 from scripts import refresh_addon_tokens

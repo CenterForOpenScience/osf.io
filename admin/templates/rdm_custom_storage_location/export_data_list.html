@@ -15,7 +15,7 @@
 {% block content %}
     <h2>{% trans "Export Data List" %}<br/><small>(for {{ institution_name }})</small></h2>
 
-    <form method="post" action={% url 'custom_storage_location:export_data_list' %} class="form-horizontal" id="entitlements_form">
+    <form method="post" action="{% url 'custom_storage_location:export_data:export_data_list' %}" class="form-horizontal" id="entitlements_form">
         {% csrf_token %}
         <div class="form-group">
             <label class="col-sm-2 control-label text-left">Export source storage</label>
@@ -23,9 +23,9 @@
                 <select class="form-control" name="storage_name" style="max-width: 320px;">
                     {% for storage in list_storage %}
                         {% if storage.id == selected_source %}
-                            <option value={{storage.id}} selected="selected">{{storage.name}}</option>
+                            <option value={{ storage.id }} selected="selected">{{ storage.name }}</option>
                         {% else %}
-                            <option value={{storage.id}}>{{storage.name}}</option>
+                            <option value={{ storage.id }}>{{ storage.name }}</option>
                         {% endif %}
                     {% endfor %}
                 </select>
@@ -37,9 +37,9 @@
                 <select class="form-control" name="location_export_name" style="max-width: 320px; flex: auto">
                     {% for location in list_location %}
                         {% if location.id == selected_location_export %}
-                            <option value={{location.id}} selected="selected">{{location.name}}</option>
+                            <option value={{ location.id }} selected="selected">{{ location.name }}</option>
                         {% else %}
-                            <option value={{location.id}}>{{location.name}}</option>
+                            <option value={{ location.id }}>{{ location.name }}</option>
                         {% endif %}
                     {% endfor %}
                 </select>
@@ -54,7 +54,7 @@
         <div class="form-group" id="formFilter">
             <div class="col-sm-12">
                 <button type="submit" id="filter_export" class="btn btn-primary" style="min-width: 90px;">{% trans "Filter" %}</button>
-                <a class="text-white" href={% url 'custom_storage_location:export_data_deleted_list' %}>
+                <a class="text-white" href={% url 'custom_storage_location:export_data:export_data_deleted_list' %}>
                     <button type="button" class="btn btn-primary" style="min-width: 90px; margin-left:10px;">
                         {% trans "Revert Export Data" %}
                     </button>
@@ -80,20 +80,22 @@
         </tr>
         </thead>
         <tbody>
-            {% for item in list_export_data %}
-                <tr class="">
-                    <td width="20px"><input type="checkBox" name="check_delete_export" id={{item.export_data.id}} title="" style="width: 14px; height: 14px;"></td>
-                    <td class=""><a href={% url 'custom_storage_location:export_data_information' item.export_data.id %}>{{item.export_data.id}}</a></td>
-                    <td class="">{{item.source_name}}</td>
-                    <td class="">{{item.location_name}}</td>
-                    <td class="">{{item.export_data.process_start}}</td>
-                    <td class="">{{item.export_data.process_end}}</td>
-                    <td class="">{{item.export_data.project_number}}</td>
-                    <td class="">{{item.export_data.file_number}}</td>
-                    <td class="">{{item.export_data.total_size}} KB</td>
-                    <!--<td class=""></td>-->
-                </tr>
-            {% endfor %}
+        {% for item in list_export_data %}
+            <tr class="">
+                <td width="20px">
+                    <input type="checkBox" name="check_delete_export" id={{ item.export_data.id }} title="" style="width: 14px; height: 14px;">
+                </td>
+                <td class=""><a href={% url 'custom_storage_location:export_data_information' item.export_data.id %}>{{ item.export_data.id }}</a></td>
+                <td class="">{{ item.source_name }}</td>
+                <td class="">{{ item.location_name }}</td>
+                <td class="">{{ item.export_data.process_start }}</td>
+                <td class="">{{ item.export_data.process_end }}</td>
+                <td class="">{{ item.export_data.project_number }}</td>
+                <td class="">{{ item.export_data.file_number }}</td>
+                <td class="">{{ item.export_data.total_size }} KB</td>
+                <!--<td class=""></td>-->
+            </tr>
+        {% endfor %}
         </tbody>
     </table>
     <button type="button" class="btn btn-danger" id="delete_button"
@@ -122,7 +124,7 @@
 
     <div class="modal middle fade" id="deleteExport" tabindex="-1" aria-labelledby="deleteExportLabel" aria-hidden="true">
         <div class="modal-dialog">
-            <form method="post" action={% url 'custom_storage_location:delete_export_data' %}>
+            <form method="post" action={% url 'custom_storage_location:export_data:export_data_delete' %}>
                 {% csrf_token %}
                 <div class="modal-content">
                     <!--<div class="modal-header">-->
@@ -145,49 +147,47 @@
         </div>
     </div>
 
-<script type="text/javascript">
-$(document).ready(() => {
-    $('#check_delete_export_all').on('change', () =>{
-        let check = $('#check_delete_export_all').is(':checked');
-        if(check){
-            $('input[type=checkbox][name=check_delete_export]').prop('checked', true);
-        }
-        else{
-            $('input[type=checkbox][name=check_delete_export]').prop('checked', false);
-        }
-    });
-    $('#delete_button').on('click', () => {
-        let list_export_data = $('input[type=checkbox][name=check_delete_export]');
-        let list_export_id = '';
-        for(let i = 0; i < list_export_data.length; i++){
-            if(list_export_data[i].checked){
-                list_export_id +=  list_export_data[i].id + '#';
-            }
-        }
-        if(list_export_id.length > 0){
-            $('#submitDeleteButton').removeAttr('disabled');
-        }
-        $('#bodydeleteExport').append(`<input type='text' value=${list_export_id} id='input_export_data' class='buckinput' name='list_id_export_data' style='display: none;' />`);
-        $('#bodydeleteExport').append(`<input type='text' value={{source_id}} id='source_id' class='buckinput' name='source_id' style='display: none;' />`);
-    });
-    $('input[type=checkbox][name=check_delete_export]').on('change', () => {
-        let list_export_data = $('input[type=checkbox][name=check_delete_export]');
-        let count_checked = $('input[type=checkbox][name=check_delete_export]:checked').length;
-        if(count_checked !== list_export_data.length){
-            $("#check_delete_export_all").prop('checked', false); 
-        }
-        else{
-            $("#check_delete_export_all").prop('checked', true);
-        }
-    });
-    $('.cancel_modal').on('click', () =>{
-        $('#input_export_data').remove();
-        $('#source_id').remove();
-    });
-});
-</script>
+    <script type="text/javascript">
+        $(document).ready(() => {
+            $('#check_delete_export_all').on('change', () => {
+                let check = $('#check_delete_export_all').is(':checked');
+                if (check) {
+                    $('input[type=checkbox][name=check_delete_export]').prop('checked', true);
+                } else {
+                    $('input[type=checkbox][name=check_delete_export]').prop('checked', false);
+                }
+            });
+            $('#delete_button').on('click', () => {
+                let list_export_data = $('input[type=checkbox][name=check_delete_export]');
+                let list_export_id = '';
+                for (let i = 0; i < list_export_data.length; i++) {
+                    if (list_export_data[i].checked) {
+                        list_export_id += list_export_data[i].id + '#';
+                    }
+                }
+                if (list_export_id.length > 0) {
+                    $('#submitDeleteButton').removeAttr('disabled');
+                }
+                $('#bodydeleteExport').append(`<input type='text' value=${list_export_id} id='input_export_data' class='buckinput' name='list_id_export_data' style='display: none;' />`);
+                $('#bodydeleteExport').append(`<input type='text' value={{source_id}} id='source_id' class='buckinput' name='source_id' style='display: none;' />`);
+            });
+            $('input[type=checkbox][name=check_delete_export]').on('change', () => {
+                let list_export_data = $('input[type=checkbox][name=check_delete_export]');
+                let count_checked = $('input[type=checkbox][name=check_delete_export]:checked').length;
+                if (count_checked !== list_export_data.length) {
+                    $("#check_delete_export_all").prop('checked', false);
+                } else {
+                    $("#check_delete_export_all").prop('checked', true);
+                }
+            });
+            $('.cancel_modal').on('click', () => {
+                $('#input_export_data').remove();
+                $('#source_id').remove();
+            });
+        });
+    </script>
 {% endblock content %}
 
 {% block bottom_js %}
-{% render_bundle 'rdm-institutional-storage-page' %}
+    {% render_bundle 'rdm-institutional-storage-page' %}
 {% endblock %}
