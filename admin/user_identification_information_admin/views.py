@@ -1,8 +1,6 @@
 from django.db.models import Q
 from django.http import Http404
-from api.base import settings as api_settings
-from osf.models import OSFUser, UserQuota, Email
-from website.util import quota
+
 from admin.user_identification_information.views import (
     UserIdentificationInformation as UserIdentificationInformationBaseClass,
     UserIdentificationList as UserIdentificationListBaseClass,
@@ -11,6 +9,9 @@ from admin.user_identification_information.views import (
     custom_size_abbreviation,
     get_list_extend_storage,
 )
+from api.base import settings as api_settings
+from osf.models import OSFUser, UserQuota, Email
+from website.util import quota
 
 
 class UserIdentificationInformation(UserIdentificationInformationBaseClass):

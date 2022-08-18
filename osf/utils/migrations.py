@@ -209,13 +209,14 @@ def remove_schemas(*args):
 
 
 def create_schema_block(state, schema_id, block_type, display_text='', required=False, help_text='',
-        registration_response_key=None, schema_block_group_key='', example_text=''):
+        registration_response_key=None, schema_block_group_key='', example_text='',
+        default=None):
     """
     For mapping schemas to schema blocks: creates a given block from the specified parameters
     """
     RegistrationSchemaBlock = state.get_model('osf', 'registrationschemablock')
 
-    return RegistrationSchemaBlock.objects.create(
+    block = RegistrationSchemaBlock.objects.create(
         schema_id=schema_id,
         block_type=block_type,
         required=required,
@@ -244,6 +245,13 @@ def create_schema_block(state, schema_id, block_type, display_text='', required=
         )
     )
 
+    if default is not None:
+        block.default = default
+        try:
+            block.save(update_fields=['default'])
+        except ValueError:
+            pass  # ignore for old migration
+
 # Split question multiple choice options into their own blocks
 def split_options_into_blocks(state, rs, question, schema_block_group_key):
     """
@@ -253,6 +261,7 @@ def split_options_into_blocks(state, rs, question, schema_block_group_key):
     for option in question.get('options', []):
         answer_text = option if isinstance(option, basestring) else option.get('text')
         help_text = '' if isinstance(option, basestring) else option.get('tooltip', '')
+        default = None if isinstance(option, basestring) else option.get('default', None)
 
         create_schema_block(
             state,
@@ -260,6 +269,7 @@ def split_options_into_blocks(state, rs, question, schema_block_group_key):
             'select-input-option',
             display_text=answer_text,
             help_text=help_text,
+            default=default,
             schema_block_group_key=schema_block_group_key,
         )
 

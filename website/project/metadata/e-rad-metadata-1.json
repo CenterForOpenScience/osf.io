@@ -6,7 +6,7 @@
     {
       "id": "page1",
       "title": "メタデータ登録|Metadata Registration",
-      "description": "ムーンショット型研究開発制度における研究プロジェクトの成果報告用のメタデータ入力画面です。GakuNin RDMをお使いの方は、登録することで資金配分機関へデータ提出するフォーマットでダウンロードできます。",
+      "description": "ムーンショット型研究開発制度における研究プロジェクトの成果報告用のメタデータ入力画面です。GakuNin RDMをお使いの方は、登録することで資金配分機関へデータ提出するフォーマットでダウンロードできます。|This is the metadata input form for reporting the progress of a research project in the Moonshot R&D Program. You may download the file in the format that can be submitted to the funding agencies by registering this form.",
       "questions": [
         {
           "qid": "funder",
@@ -29,7 +29,7 @@
             },
             {
               "text": "BRAIN",
-              "tooltip": "国立研究開発法人農業・食品産業技術総合研究機構|National Agriculture and Food Research Organization|1205"
+              "tooltip": "生物系特定産業技術研究支援センター|Bio-oriented Technology Research Advancement Institution|1205"
             }
           ],
           "required": true
@@ -117,7 +117,7 @@
     {
       "id": "page2",
       "title": "登録データ|Registered Data",
-      "description": "ムーンショット型研究開発制度における研究プロジェクトの成果報告用のメタデータ入力画面です。GakuNin RDMをお使いの方は、登録することで資金配分機関へデータ提出するフォーマットでダウンロードできます。",
+      "description": "ムーンショット型研究開発制度における研究プロジェクトの成果報告用のメタデータ入力画面です。GakuNin RDMをお使いの方は、登録することで資金配分機関へデータ提出するフォーマットでダウンロードできます。|This is the metadata input form for reporting the progress of a research project in the Moonshot R&D Program. You may download the file in the format that can be submitted to the funding agencies by registering this form.",
       "questions": [
         {
           "qid": "grdm-files",
@@ -133,7 +133,7 @@
           "title": "データ No.|Data No.",
           "type": "string",
           "format": "text",
-          "required": true
+          "required": false
         },
         {
           "qid": "grdm-file:title-ja",
@@ -157,7 +157,7 @@
           "title": "掲載日・掲載更新日|Date (Issued / Updated)",
           "type": "string",
           "format": "date",
-          "required": true
+          "required": false
         },
         {
           "qid": "grdm-file:data-description-ja",
@@ -184,7 +184,8 @@
           "options": [
               {
                 "text": "project",
-                "tooltip": "プロジェクトに指定された分野|The field specified for the project"
+                "tooltip": "プロジェクトの研究分野|Research field of the project",
+                "default": true
               },
               {
                 "text": "189",
@@ -242,7 +243,8 @@
           "options": [
               {
                 "text": "dataset",
-                "tooltip": "データセット|dataset"
+                "tooltip": "データセット|dataset",
+                "default": true
               },
               {
                   "text": "conference paper",
@@ -521,7 +523,7 @@
           "title": "リポジトリ情報 (日本語)|Repository information (Japanese)",
           "type": "string",
           "format": "text",
-          "required": true
+          "required": false
         },
         {
           "qid": "grdm-file:repo-information-en",
@@ -529,7 +531,7 @@
           "title": "Repository information (English)",
           "type": "string",
           "format": "text",
-          "required": true
+          "required": false
         },
         {
           "qid": "grdm-file:repo-url-doi-link",

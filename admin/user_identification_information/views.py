@@ -1,10 +1,11 @@
 import csv
-from django.db.models import Q
 from operator import itemgetter
-from django.http import HttpResponse
+
 import numpy as np
 from django.db import connection
+from django.db.models import Q
 from django.http import Http404
+from django.http import HttpResponse
 from django.views.generic import ListView
 
 from admin.base.views import GuidView
