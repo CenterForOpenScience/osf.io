@@ -2247,7 +2247,7 @@ class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, Contribut
         else:
             return []
 
-    def copy_editable_fields(self, resource, auth=None, alternative_resource=None, save=True):
+    def copy_editable_fields(self, resource, auth=None, alternative_resource=None, include_contributors=True, save=True):
         """
         Copy various editable fields from the 'resource' object to the current object.
         Includes, title, description, category, contributors, node_license, tags, subjects, and affiliated_institutions
@@ -2261,11 +2261,12 @@ class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, Contribut
         self.set_editable_attribute('category', resource, alternative_resource)
         self.set_editable_attribute('node_license', resource, alternative_resource)
 
-        # Contributors will always come from "resource", as contributor constraints
-        # will require contributors to be present on the resource
-        self.copy_contributors_from(resource)
-        # Copy unclaimed records for unregistered users
-        self.copy_unclaimed_records(resource)
+        if include_contributors:
+            # Contributors will always come from "resource", as contributor constraints
+            # will require contributors to be present on the resource
+            self.copy_contributors_from(resource)
+            # Copy unclaimed records for unregistered users
+            self.copy_unclaimed_records(resource)
 
         self.tags.add(*self.stage_m2m_values('all_tags', resource, alternative_resource))
         self.subjects.add(*self.stage_m2m_values('subjects', resource, alternative_resource))
