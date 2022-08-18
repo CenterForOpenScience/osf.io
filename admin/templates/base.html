@@ -320,9 +320,9 @@
                 </a>
             </li>
           {% endif %}
-          {% if not user.is_superuser and user.is_staff %}
+          {% if not user.is_superuser and user.is_institutional_admin %}
             <li class="{% if request.resolver_match.url_name == 'export_data_institution_storages' %}active{% endif %}">
-                <a href="{% url 'custom_storage_location:export_data_institution_storages' institution_id=institution.id %}">
+                <a href="{% url 'custom_storage_location:export_data_institution_storages' institution_id=user.representative_affiliated_institution.id %}">
                     <i class="fa fa-link"></i> <span>{% trans "Institutional Storages Control" %}</span>
                 </a>
             </li>
@@ -332,6 +332,8 @@
           {% endif %}
           {% if user.is_superuser or user.is_staff %}
             <li><a href="{% url 'institutional_storage_quota_control:list_institution_storage' %}"><i class='fa fa-link'></i> <span>{% trans "Inst. Storage Quota Control" %}</span></a></li>
+          {% endif %}
+          {% if user.is_superuser or user.is_institutional_admin %}
             <li class="{% if request.resolver_match.url_name == 'export_data_storage_location'  %}active{% endif %}">
                 <a href="{% url 'custom_storage_location:export_data_storage_location' %}">
                     <i class="fa fa-link"></i> <span>{% trans "Export data storage location" %}</span>

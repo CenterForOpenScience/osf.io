@@ -1799,6 +1799,40 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return '{base_url}user/{uid}/{project_id}/claim/?token={token}'\
                     .format(**locals())
 
+    @property
+    def is_valid_user(self):
+        """determine whether the user is an valid user"""
+        return self.is_active and self.is_registered
+
+    @property
+    def is_admin(self):
+        """determine whether the user is an institution administrator"""
+        if not self.is_valid_user:
+            return False
+        return self.is_staff and not self.is_superuser
+
+    @property
+    def is_super_admin(self):
+        """determine whether the user is super admin or not"""
+        if not self.is_valid_user:
+            return False
+        return self.is_staff and self.is_superuser
+
+    @property
+    def is_affiliated_institution(self):
+        """determine whether the user has affiliated institutions"""
+        return self.affiliated_institutions.exists()
+
+    @property
+    def is_institutional_admin(self):
+        """determine whether the user is staff has affiliated institutions"""
+        return self.is_admin and self.is_affiliated_institution
+
+    @property
+    def representative_affiliated_institution(self):
+        """Return representative ``institution`` this user is affiliated with."""
+        return self.affiliated_institutions.first()
+
     def is_affiliated_with_institution(self, institution):
         """Return if this user is affiliated with ``institution``."""
         return self.affiliated_institutions.filter(id=institution.id).exists()
