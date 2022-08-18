@@ -8,6 +8,7 @@ from api_tests.nodes.views.test_node_draft_registration_list import (
 )
 from api.base.settings.defaults import API_BASE
 
+from osf.migrations import ensure_invisible_and_inactive_schema
 from osf.models import DraftRegistration, NodeLicense, RegistrationProvider, Institution
 from osf_tests.factories import (
     RegistrationFactory,
@@ -19,6 +20,12 @@ from osf_tests.factories import (
 from osf.utils.permissions import READ, WRITE, ADMIN
 
 from website import mails, settings
+
+
+@pytest.fixture(autouse=True)
+def invisible_and_inactive_schema():
+    return ensure_invisible_and_inactive_schema()
+
 
 @pytest.mark.django_db
 class TestDraftRegistrationListNewWorkflow(TestDraftRegistrationList):

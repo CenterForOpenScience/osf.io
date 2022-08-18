@@ -3,6 +3,7 @@ from django.utils import timezone
 
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
+from osf.migrations import ensure_invisible_and_inactive_schema
 from osf.models import RegistrationSchema, RegistrationProvider
 from osf_tests.factories import (
     ProjectFactory,
@@ -19,6 +20,12 @@ from website import settings
 
 OPEN_ENDED_SCHEMA_VERSION = 3
 SCHEMA_VERSION = 2
+
+
+@pytest.fixture(autouse=True)
+def invisible_and_inactive_schema():
+    return ensure_invisible_and_inactive_schema()
+
 
 @pytest.mark.django_db
 class DraftRegistrationTestCase:
