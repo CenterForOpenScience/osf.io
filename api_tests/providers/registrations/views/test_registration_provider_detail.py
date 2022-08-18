@@ -8,7 +8,6 @@ from osf_tests.factories import (
 )
 
 
-@pytest.mark.skip('Clone test case from tests/test_quota.py for making coverage')
 class TestRegistrationProviderExists(ProviderDetailViewTestBaseMixin):
     provider_class = RegistrationProviderFactory
 
