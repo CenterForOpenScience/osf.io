@@ -12,6 +12,7 @@ from admin.user_identification_information.views import (
     get_list_extend_storage,
 )
 
+
 class UserIdentificationInformation(UserIdentificationInformationBaseClass):
 
     def get_context_data(self, **kwargs):
