@@ -234,7 +234,7 @@ def ensure_default_storage_region():
 
 
 def ensure_datacite_file_schema():
-    ''' Test use only '''
+    """ Test use only """
     from osf.models import FileMetadataSchema
     with open('osf/metadata/schemas/datacite.json') as f:
         jsonschema = json.load(f)
@@ -246,3 +246,18 @@ def ensure_datacite_file_schema():
             'schema': jsonschema
         }
     )
+
+
+def ensure_invisible_and_inactive_schema():
+    """ Test use only """
+    from osf.models import RegistrationSchema
+    v2_inactive_schema = [
+        'EGAP Project',
+        'OSF Preregistration',
+        'Confirmatory - General',
+        'RIDIE Registration - Study Complete',
+        'RIDIE Registration - Study Initiation',
+    ]
+    v2_inactive_schema = v2_inactive_schema + ['Election Research Preacceptance Competition']
+    RegistrationSchema.objects.filter(name__in=v2_inactive_schema).update(visible=False)
+    RegistrationSchema.objects.filter(name__in=v2_inactive_schema).update(active=False)
