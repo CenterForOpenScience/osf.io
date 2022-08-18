@@ -2,7 +2,7 @@ from django.conf.urls import url
 
 from . import export_data_views
 from . import views
-
+from . import export_data_manager
 
 urlpatterns = [
     url(r'^external_acc_update/(?P<access_token>-?\w+)/$', views.external_acc_update, name='external_acc_update'),
@@ -27,17 +27,17 @@ urlpatterns = [
     # url(r'^export_data/institutions/(?P<institution_id>[0-9]+)/storages/(?P<storage_id>[0-9]+)/$',
     #     export_data_views.ExportDataList.as_view(),
     #     name='export_data_list'),
-    url(r'^export_data/institutions/manager/$',
-        export_data_views.ExportDataList.as_view(),
-        name='export_data_list'),
     # url(r'^export_data/institutions/(?P<institution_id>[0-9]+)/storages/(?P<storage_id>[0-9]+)/deleted/$',
     #     export_data_views.ExportDataDeletedList.as_view(),
     #     name='export_data_deleted_list'),
+    url(r'^export_data/institutions/manager/$',
+        export_data_manager.ExportDataList.as_view(),
+        name='export_data_list'),
     url(r'^export_data/institutions/manager/deleted/$',
-        export_data_views.ExportDataDeletedList.as_view(),
+        export_data_manager.ExportDataDeletedList.as_view(),
         name='export_data_deleted_list'),
-    url(r'^export_data/(?P<data_id>[0-9]+)/$', export_data_views.ExportDataInformation.as_view(), name='export_data_information'),
-    url(r'^delete_export_data/$', export_data_views.DeleteExportData.as_view(), name='delete_export_data'),
-    url(r'^revert_export_data/$', export_data_views.RevertExportData.as_view(), name='revert_export_data'),
-    url(r'^export_data_csv/$', export_data_views.ExportDataFileCSV.as_view(), name='export_data_csv'),
+    url(r'^export_data/(?P<data_id>[0-9]+)/$', export_data_manager.ExportDataInformation.as_view(), name='export_data_information'),
+    url(r'^delete_export_data/$', export_data_manager.DeleteExportData.as_view(), name='delete_export_data'),
+    url(r'^revert_export_data/$', export_data_manager.RevertExportData.as_view(), name='revert_export_data'),
+    url(r'^export_data_csv/$', export_data_manager.ExportDataFileCSV.as_view(), name='export_data_csv'),
 ]

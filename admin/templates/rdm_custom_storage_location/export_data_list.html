@@ -168,6 +168,7 @@ $(document).ready(() => {
             $('#submitDeleteButton').removeAttr('disabled');
         }
         $('#bodydeleteExport').append(`<input type='text' value=${list_export_id} id='input_export_data' class='buckinput' name='list_id_export_data' style='display: none;' />`);
+        $('#bodydeleteExport').append(`<input type='text' value={{source_id}} id='source_id' class='buckinput' name='source_id' style='display: none;' />`);
     });
     $('input[type=checkbox][name=check_delete_export]').on('change', () => {
         let list_export_data = $('input[type=checkbox][name=check_delete_export]');
@@ -181,7 +182,12 @@ $(document).ready(() => {
     });
     $('.cancel_modal').on('click', () =>{
         $('#input_export_data').remove();
+        $('#source_id').remove();
     });
 });
 </script>
 {% endblock content %}
+
+{% block bottom_js %}
+{% render_bundle 'rdm-institutional-storage-page' %}
+{% endblock %}
