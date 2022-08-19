@@ -15,6 +15,7 @@ from admin.user_identification_information.utils import (
 from api.base import settings as api_settings
 from osf.models import OSFUser, UserQuota, Email
 from website.util import quota
+from datetime import datetime
 
 
 class UserIdentificationInformationListView(ListView):
@@ -184,11 +185,21 @@ class UserIdentificationDetailView(RdmPermissionMixin, GuidView):
 
 
 class ExportFileCSVView(RdmPermissionMixin, UserIdentificationInformationListView):
+    """Response a CSV file in name format:
+    - for super admin: export_user_identification_{institution_guid}_{yyyymmddhhMMSS}.csv
+    - for admin: filename=export_user_identification_{yyyymmddhhMMSS}.csv
+    """
 
     def get(self, request, **kwargs):
-
+        time_now = datetime.today().strftime('%Y%m%d%H%M%S')
         response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment;filename=export.csv'
+        if self.is_super_admin:
+            response['Content-Disposition'] = f'attachment;filename=export_user_identification_{time_now}.csv'
+        else:
+            institution = self.request.user.affiliated_institutions.first()._id
+            if institution is not None:
+                response['Content-Disposition'] = f'attachment;filename=export_user_identification_{institution}_{time_now}.csv'
+
         writer = csv.writer(response)
         writer.writerow(
             ['GUID', 'EPPN', 'Fullname', 'Email', 'Affiliation', 'Last login', 'Usage (Byte)', 'Extended storage'])
@@ -196,7 +207,7 @@ class ExportFileCSVView(RdmPermissionMixin, UserIdentificationInformationListVie
 
         if self.request.user.is_superuser is False:
             institution = self.request.user.affiliated_institutions.first()
-            if institution is not None:  # and Region.objects.filter(_id=institution._id).exists():
+            if institution is not None:
                 queryset = OSFUser.objects.filter(affiliated_institutions=institution.id).order_by('id')
         else:
             queryset = OSFUser.objects.all().order_by('id')
