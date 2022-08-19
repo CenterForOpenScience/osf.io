@@ -1776,7 +1776,7 @@ function _lazyLoadPreprocess (obj){
     if (next_token !== undefined) {
         if (obj.data.length > 0) {
             var path = obj.data[0].attributes.kind === 'folder' ? obj.data[0].id.slice(0, -1).replace(obj.data[0].attributes.name, '') : obj.data[0].id.replace(obj.data[0].attributes.name, '');
-            var parent = this.flatData.filter(item => item.row.kind === 'folder' && item.row.provider === 's3' && item.row.id === path);
+            var parent = this.flatData.filter(item => item.row.kind === 'folder' && (item.row.provider === 's3' || item.row.provider === 's3compat') && item.row.id === path);
             if(parent[0]) {
                 parent = this.find(parent[0].id);
                 parent.next_token = next_token;
@@ -1815,6 +1815,9 @@ function expandStateLoad(item) {
             for (i = 0; i < item.children.length; i++) {
                 if (item.children[i].data.provider === 's3') {
                     item.children[i].data.id = 's3/';
+                }
+                if (item.children[i].data.provider === 's3compat') {
+                    item.children[i].data.id = 's3compat/';
                 }
                 tb.updateFolder(null, item.children[i]);
             }
@@ -2926,13 +2929,7 @@ function fetchData(tree) {
         var len = self.flatData.length,
             item = self.flatData.filter(item => item.id === tree.id)[0],
             child,
-            skip = false,
-            skipLevel = item.depth,
-            level = item.depth,
             i,
-            j,
-            o,
-            t,
             lazyLoad;
 
         $.when(self.options.resolveLazyloadUrl.call(self, tree)).done(function _resolveLazyloadDone(url) {
@@ -3009,7 +3006,7 @@ function handleScroll() {
         item = this.find(index);
         if(item) {
             const parent = this.find(item.parentID);
-            if (parent.children.length > 0 && parent.data.provider === 's3' && !parent.isFetching && parent.children[parent.children.length - 1].id === item.id) {
+            if (parent.children.length > 0 && (parent.data.provider === 's3' || parent.data.provider === 's3compat') && !parent.isFetching && parent.children[parent.children.length - 1].id === item.id) {
                 fetchData.call(this, parent);
             }
         }
