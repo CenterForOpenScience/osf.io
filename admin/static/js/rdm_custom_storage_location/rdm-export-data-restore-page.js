@@ -6,10 +6,10 @@ var $osf = require('js/osfHelpers');
 function restoreExportData() {
     let data = {};
     data["destination_id"]= $("#destination_storage").val();
-    $("#restoreBtn").addClass("disabled");
-    $("#stopRestoreBtn").removeClass("disabled");
-    $("#restoreBtn").attr("disabled", true);
-    $("#stopRestoreBtn").attr("disabled", false);
+    $("#restore_button").addClass("disabled");
+    $("#stop_restore_button").removeClass("disabled");
+    $("#restore_button").attr("disabled", true);
+    $("#stop_restore_button").attr("disabled", false);
     $.ajaxSetup({
         data: { csrfmiddlewaretoken: '{{ csrf_token }}' },
     });
@@ -19,7 +19,7 @@ function restoreExportData() {
         data: data
     }).done(function(response) {
         let task_id = response["task_id"];
-        setTimeout(() => {
+        setTimeout(function() {
             checkTaskStatus(task_id);
         }, 1000);
     }).fail(function(jqXHR, textStatus, error) {
@@ -43,7 +43,7 @@ function checkTaskStatus(task_id){
             // Open Dialog
             $("#restore").modal('show');
         } else if (state === 'PENDING') {
-           setTimeout(() => {
+           setTimeout(function() {
                checkTaskStatus(task_id);
            }, 1000);
         } else {
@@ -55,17 +55,17 @@ function checkTaskStatus(task_id){
 }
 
 function cancelRestore() {
-    $("#restoreBtn").removeClass("disabled");
-    $("#stopRestoreBtn").addClass("disabled");
-    $("#restoreBtn").attr("disabled", false);
-    $("#stopRestoreBtn").attr("disabled", true);
+    $("#restore_button").removeClass("disabled");
+    $("#stop_restore_button").addClass("disabled");
+    $("#restore_button").attr("disabled", false);
+    $("#stop_restore_button").attr("disabled", true);
 }
 
 function startRestore() {
     $("#restore").modal('hide');
     // Enable "Check export data" button, disable "Stop restoring" button
-    $("#checkRestoreBtn").removeClass("disabled");
-    $("#stopRestoreBtn").addClass("disabled");
-    $("#checkRestoreBtn").attr("disabled", false);
-    $("#stopRestoreBtn").attr("disabled", true);
+    $("#check_restore_button").removeClass("disabled");
+    $("#stop_restore_button").addClass("disabled");
+    $("#check_restore_button").attr("disabled", false);
+    $("#stop_restore_button").attr("disabled", true);
 }

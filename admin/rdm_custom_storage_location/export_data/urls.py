@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.conf.urls import url
 
-from .views import location, institutional_storage, management
+from .views import location, institutional_storage, management, restore
 from ..views import TestConnectionView
 
 urlpatterns = [
@@ -52,4 +52,10 @@ urlpatterns = [
     url(r'^output_csv/$',
         management.ExportDataFileCSVView.as_view(),
         name='export_data_output_csv'),
+
+    # to manage restore export data storage
+    url(r'^(?P<institution_id>[0-9]+)/restore_export_data$',
+        restore.ExportDataRestore.as_view(), name='export_data_restore'),
+    url(r'^(?P<institution_id>[0-9]+)/task_status$',
+        restore.ExportDataRestoreTaskStatus.as_view(), name='export_data_restore_task_status'),
 ]

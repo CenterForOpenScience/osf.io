@@ -49,14 +49,13 @@
                         <option value="5">Dropbox Business</option>
                     </select>
                     <div class="btn-group" role="group" aria-label="...">
-                        <button type="button" id="restoreBtn" class="btn btn-primary"
-                                style="min-width: 90px; flex: initial;"
-                                onclick="restoreExportData()">Restore
+                        <button type="button" id="restore_button" class="btn btn-primary"
+                                style="min-width: 90px; flex: initial;">Restore
                         </button>
-                        <button type="button" id="stopRestoreBtn" class="btn btn-primary disabled"
+                        <button type="button" id="stop_restore_button" class="btn btn-primary disabled"
                                 style="min-width: 90px; flex: initial;">Stop restoring
                         </button>
-                        <button type="button" id="checkRestoreBtn" class="btn btn-primary disabled"
+                        <button type="button" id="check_restore_button" class="btn btn-primary disabled"
                                 data-target="#checkRestoreData" data-toggle="modal"
                                 style="min-width: 90px; flex: initial;">Check restore data
                         </button>
@@ -337,7 +336,73 @@
             $('.cancel_modal').on('click', () => {
                 $('#input_export_data').remove();
             });
+            $('#restore_button').on('click', () => {
+                let data = {};
+                data["destination_id"]= $("#destination_storage").val();
+                $("#restore_button").addClass("disabled");
+                $("#stop_restore_button").removeClass("disabled");
+                $("#restore_button").attr("disabled", true);
+                $("#stop_restore_button").attr("disabled", false);
+                $.ajaxSetup({
+                    data: { csrfmiddlewaretoken: '{{ csrf_token }}' },
+                });
+                $.ajax({
+                    url: "restore_export_data",
+                    type: "post",
+                    data: data
+                }).done(function(response) {
+                    let task_id = response["task_id"];
+                    setTimeout(() => {
+                        checkTaskStatus(task_id);
+                    }, 1000);
+                }).fail(function(jqXHR, textStatus, error) {
+                    cancelRestore();
+                });
+            });
         });
+
+        function checkTaskStatus(task_id) {
+            let data = { task_id: task_id };
+            $.ajaxSetup({
+                data: { csrfmiddlewaretoken: '{{ csrf_token }}' },
+            });
+            $.ajax({
+                url: "task_status",
+                type: "get",
+                data: data
+            }).done(function(response) {
+                let state = response["state"];
+                let result = response["result"];
+                if (state === 'SUCCESS' && result === 'Open Dialog') {
+                    // Open Dialog
+                    $("#restore").modal('show');
+                } else if (state === 'PENDING') {
+                   setTimeout(() => {
+                       checkTaskStatus(task_id);
+                   }, 1000);
+                } else {
+                    cancelRestore();
+                }
+            }).fail(function(jqXHR, textStatus, error) {
+                cancelRestore();
+            });
+        }
+
+        function cancelRestore() {
+            $("#restore_button").removeClass("disabled");
+            $("#stop_restore_button").addClass("disabled");
+            $("#restore_button").attr("disabled", false);
+            $("#stop_restore_button").attr("disabled", true);
+        }
+
+        function startRestore() {
+            $("#restore").modal('hide');
+            // Enable "Check export data" button, disable "Stop restoring" button
+            $("#check_restore_button").removeClass("disabled");
+            $("#stop_restore_button").addClass("disabled");
+            $("#check_restore_button").attr("disabled", false);
+            $("#stop_restore_button").attr("disabled", true);
+        }
     </script>
 {% endblock content %}
 {% block bottom_js %}
