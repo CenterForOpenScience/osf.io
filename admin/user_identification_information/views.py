@@ -201,11 +201,11 @@ class ExportFileCSVView(RdmPermissionMixin, UserIdentificationInformationListVie
         else:
             queryset = OSFUser.objects.all().order_by('id')
 
-        list_users_id, dict_users_list = get_list_extend_storage()
+        dict_users_list = get_list_extend_storage()
         for user in queryset:
             extend_storage = ''
             max_quota, used_quota = quota.get_quota_info(user, UserQuota.NII_STORAGE)
-            if user.id in list_users_id:
+            if user.id in dict_users_list:
                 extend_storage = '\n'.join(dict_users_list.get(user.id))
             writer.writerow([user.guids.first()._id,
                              user.eppn,
