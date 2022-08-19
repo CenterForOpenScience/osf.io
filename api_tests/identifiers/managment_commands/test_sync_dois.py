@@ -1,8 +1,10 @@
-import pytest
 import datetime
+import mock
+
+import pytest
+from django.core.management import call_command
 from django.utils import timezone
 
-from django.core.management import call_command
 
 from osf_tests.factories import (
     PreprintFactory,
@@ -14,6 +16,7 @@ from website.identifiers.clients import CrossRefClient
 
 
 @pytest.mark.django_db
+@mock.patch('website.settings.DATACITE_ENABLED', True)
 class TestSyncDOIs:
 
     @pytest.fixture()
@@ -26,8 +29,9 @@ class TestSyncDOIs:
     @pytest.fixture()
     def registration(self):
         registration = RegistrationFactory()
-        doi = registration.request_identifier_update('doi')
-        registration.set_identifier_value('doi', doi)
+        doi = registration.request_identifier('doi')['doi']
+        print(doi)
+        registration.set_identifier_value(category='doi', value=doi)
         registration.is_public = True
         registration.save()
         return registration
