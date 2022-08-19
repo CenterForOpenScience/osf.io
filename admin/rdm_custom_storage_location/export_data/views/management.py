@@ -7,13 +7,17 @@ import requests
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.http import JsonResponse, HttpResponse, Http404
 from django.shortcuts import render, redirect
+from django.urls import reverse
+from api.base.utils import waterbutler_api_url_for
+from datetime import date
 from django.views import View
 from django.views.generic import ListView, DetailView
 from rest_framework import status as http_status
+from website import settings
 
 from addons.osfstorage.models import Region
 from admin.rdm_custom_storage_location import utils
-from osf.models import ExportDataLocation, ExportData
+from osf.models import ExportDataLocation, ExportData, OSFUser
 from .location import ExportStorageLocationViewBaseView
 
 logger = logging.getLogger(__name__)
@@ -146,12 +150,15 @@ class ExportBaseView(ExportStorageLocationViewBaseView, ListView):
         return list_export_data
 
     def get_context_data(self, **kwargs):
-        user_institution_guid = self.request.user.representative_affiliated_institution.guid
+        user_institution_guid = self.INSTITUTION_DEFAULT
+        if not self.is_super_admin and self.is_affiliated_institution:
+            user_institution_guid = self.request.user.representative_affiliated_institution.guid
+        user_institution_name = Region.objects.get(_id=user_institution_guid).name
         self.query_set = self.get_queryset()
         self.page_size = self.get_paginate_by(self.query_set)
         self.paginator, self.page, self.query_set, self.is_paginated = \
             self.paginate_queryset(self.query_set, self.page_size)
-        kwargs['institution_name'] = self.request.user.affiliated_institutions.first().name
+        kwargs['institution_name'] = user_institution_name
         kwargs['list_export_data'] = self.query_set
         kwargs['list_location'] = ExportDataLocation.objects.filter(institution_guid=user_institution_guid)
         kwargs['list_storage'] = Region.objects.filter(_id=user_institution_guid)
@@ -171,42 +178,46 @@ class ExportDataListView(ExportBaseView):
     template_name = 'rdm_custom_storage_location/export_data_list.html'
 
     def post(self, request):
-        # logger.info('ExportDataList post method')
-        # logger.info(request.POST)
-        user_institution_guid = self.request.user.representative_affiliated_institution.guid
+        user_institution_guid = self.INSTITUTION_DEFAULT
+        if not self.is_super_admin and self.is_affiliated_institution:
+            user_institution_guid = self.request.user.representative_affiliated_institution.guid
+        user_institution_name = Region.objects.get(_id=user_institution_guid).name
         storage_name = request.POST.get('storage_name')
         location_export_name = request.POST.get('location_export_name')
         query = get_export_data(user_institution_guid, location_export_name, storage_name)
-        context = {'institution_name': self.request.user.affiliated_institutions.first().name,
-                   'list_export_data': query,
-                   'list_location': ExportDataLocation.objects.filter(institution_guid=user_institution_guid),
-                   'list_storage': Region.objects.filter(_id=user_institution_guid),
-                   'selected_source': int(storage_name),
-                   'selected_location_export': int(location_export_name),
-                   'source_id': query[0]['source_id'] if len(query) > 0 else 0,
-                   'page': 1}
+        context = {'institution_name': user_institution_name,
+                'list_export_data': query,
+                'list_location': ExportDataLocation.objects.filter(institution_guid=user_institution_guid),
+                'list_storage': Region.objects.filter(_id=user_institution_guid),
+                'selected_source': int(storage_name) or 0,
+                'selected_location_export': int(location_export_name),
+                'source_id': query[0]['source_id'] if len(query) > 0 else 0,
+                'page': 1}
         return render(request, self.template_name, context)
 
     def get_export_data_list(self):
-        return get_export_data(self.request.user.representative_affiliated_institution.guid)
-
+        user_institution_guid = self.INSTITUTION_DEFAULT
+        if not self.is_super_admin and self.is_affiliated_institution:
+            user_institution_guid = self.request.user.representative_affiliated_institution.guid
+        return get_export_data(user_institution_guid)
 
 class ExportDataDeletedListView(ExportBaseView):
     template_name = 'rdm_custom_storage_location/export_data_deleted_list.html'
 
     def post(self, request):
-        logger.info('ExportDataDeletedList post method')
-        logger.info(request.POST)
-        user_institution_guid = self.request.user.representative_affiliated_institution.guid
+        user_institution_guid = self.INSTITUTION_DEFAULT
+        if not self.is_super_admin and self.is_affiliated_institution:
+            user_institution_guid = self.request.user.representative_affiliated_institution.guid
+        user_institution_name = Region.objects.get(_id=user_institution_guid).name
         storage_name = request.POST.get('storage_name')
         location_export_name = request.POST.get('location_export_name')
         query = get_export_data(user_institution_guid, location_export_name, storage_name, deleted=True)
         context = {
-            'institution_name': self.request.user.affiliated_institutions.first().name,
+            'institution_name': user_institution_name,
             'list_export_data': query,
             'list_location': ExportDataLocation.objects.filter(institution_guid=user_institution_guid),
             'list_storage': Region.objects.filter(_id=user_institution_guid),
-            'selected_source': int(storage_name),
+            'selected_source': int(storage_name) or 0,
             'selected_location_export': int(location_export_name),
             'source_id': query[0]['source_id'] if len(query) > 0 else 0,
             'page': 1
@@ -214,7 +225,9 @@ class ExportDataDeletedListView(ExportBaseView):
         return render(request, self.template_name, context)
 
     def get_export_data_list(self):
-        user_institution_guid = self.request.user.representative_affiliated_institution.guid
+        user_institution_guid = self.INSTITUTION_DEFAULT
+        if not self.is_super_admin and self.is_affiliated_institution:
+            user_institution_guid = self.request.user.representative_affiliated_institution.guid
         return get_export_data(user_institution_guid, deleted=True)
 
 
@@ -290,7 +303,16 @@ class ExportDataFileCSVView(PermissionRequiredMixin, View):
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment;filename=file_info_{}_{}.csv'.format(guid, current_datetime)
         writer = csv.writer(response)
-        # url = 'localhost:7777/v1/resources/nxsm2/providers/osfstorage/?meta=&_=1660881434548'
+        user_info = OSFUser.objects.get(id=self.request.user.id)
+        cookie = user_info.get_or_create_cookie().decode()
+        cookies = {settings.COOKIE_NAME: cookie}
+        headers = {'content-type': 'application/json'}
+        info_file_url = waterbutler_api_url_for('nxsm2', 'osfstorage', path='/?meta=&_=1660881434548')
+        logger.info('ExportDataFileCSVView')
+        logger.info(info_file_url)
+        res = requests.get(info_file_url, headers=headers, cookies=cookies)
+        response_body = res.content
+        logger.info(response_body)
         writer.writerow(
             ['project_id', 'project_name', 'owner', 'file_id', 'file_path', 'filename', 'versions', 'size'])
         return response
