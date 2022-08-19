@@ -1,5 +1,4 @@
 import datetime
-import mock
 
 import pytest
 from django.core.management import call_command
@@ -16,7 +15,6 @@ from website.identifiers.clients import CrossRefClient
 
 
 @pytest.mark.django_db
-@mock.patch('website.settings.DATACITE_ENABLED', True)
 class TestSyncDOIs:
 
     @pytest.fixture()
