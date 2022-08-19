@@ -12,7 +12,7 @@ from osf.models import OSFUser, UserQuota
 from website.util import quota
 
 
-class UserIdentificationInformation(ListView):
+class UserIdentificationInformationListView(ListView):
 
     def get_user_quota_info(self, user, storage_type, extend_storage=''):
         _, used_quota = quota.get_quota_info(user, storage_type)
@@ -33,7 +33,7 @@ class UserIdentificationInformation(ListView):
         }
 
     def get_queryset(self):
-        user_list = self.get_userlist()
+        user_list = self.get_user_list()
         return user_list
 
     def get_context_data(self, **kwargs):
@@ -46,7 +46,7 @@ class UserIdentificationInformation(ListView):
             if self.request.user.is_superuser is False else None
         kwargs['users'] = self.query_set
         kwargs['page'] = self.page
-        return super(UserIdentificationInformation, self).get_context_data(**kwargs)
+        return super(UserIdentificationInformationListView, self).get_context_data(**kwargs)
 
     def get_list_data(self, queryset, list_users_id=[], dict_users_list={}):
         list_data = []
@@ -59,7 +59,7 @@ class UserIdentificationInformation(ListView):
         return list_data
 
 
-class UserIdentificationList(RdmPermissionMixin, UserIdentificationInformation):
+class UserIdentificationListViewListView(RdmPermissionMixin, UserIdentificationInformationListView):
     template_name = 'user_identification_information/list_user_identification.html'
     raise_exception = True
     paginate_by = 20
@@ -77,13 +77,13 @@ class UserIdentificationList(RdmPermissionMixin, UserIdentificationInformation):
 
         return self.get_list_data(queryset, list_users_id, dict_users_list)
 
-    def get_userlist(self):
+    def get_user_list(self):
         if self.is_admin:
             raise Http404('Page not found')
         return self.user_list()
 
 
-class UserIdentificationDetails(RdmPermissionMixin, GuidView):
+class UserIdentificationDetailView(RdmPermissionMixin, GuidView):
     template_name = 'user_identification_information/user_identification_details.html'
     context_object_name = 'user_details'
     raise_exception = True

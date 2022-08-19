@@ -1,7 +1,7 @@
 {% load static %}
 {% load i18n %}
 {% block top_includes %}
-    <link rel="stylesheet" type="text/css" href="/static/css/base.css" />
+    <link rel="stylesheet" type="text/css" href="/static/css/base.css"/>
 {% endblock %}
 <style type="text/css">
     .nowrap {
@@ -10,62 +10,62 @@
 </style>
 <h2 id="title">{% trans "User Identification Information" %}</h2>
 {% if user.is_superuser == False %}
-<h3 id="sub-title">
-  {% blocktrans %}{{ institution_name }}{% endblocktrans %}
-</h3>
+    <h3 id="sub-title">
+        {% blocktrans %}{{ institution_name }}{% endblocktrans %}
+    </h3>
 {% endif %}
 {% include "util/pagination.html" with items=page status=status %}
 <div style="overflow-x: auto">
-  <table class="table table-striped table-hover table-responsive">
-    <thead>
-      <tr class="row">
-        <th class="col">{% trans "GUID" %}</th>
-        <th class="col nowrap" >
-          {% trans "EPPN" %}
-        </th>
-        <th class="col nowrap" >
-          {% trans "Fullname" %}
-        </th>
-        <th class="col">
-          {% trans "Email" %}
-        </th>
-        <th class="col">
-          {% trans "Affiliation" %}
-        </th>
-        <th class="col nowrap" >
-          {% trans "Last login" %}
-        </th>
-        <th class="col nowrap" >
-          {% trans "Usage" %}
-        </th>
-        <th class="col nowrap" >
-          {% trans "Extended storage" %}
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for user_data in users %}
-      <tr class="row">
-        <td class="col">
-	  {% if user.is_superuser %}
-            <a href="{%  url 'user_identification_information:details' user_data.id %}" class="btn btn-primary">
-              {{ user_data.id }}
-            </a>
-          {% else %}
-            <a href="{%  url 'user_identification_information_admin:details' user_data.id %}" class="btn btn-primary">
-              {{ user_data.id }}
-            </a>
-          {% endif %}
-        </td>
-        <td class="col">{{ user_data.eppn }}</td>
-        <td class="col">{{ user_data.fullname }}</td>
-        <td class="col">{{ user_data.email }}</td>
-        <td class="col">{{ user_data.affiliation.name }}</td>
-        <td class="col">{{ user_data.last_login }}</td>
-        <td class="col">{{ user_data.usage_value }} {{ user_data.usage_abbr }}</td>
-        <td class="col">{{ user_data.extended_storage|linebreaks }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+    <table class="table table-striped table-hover table-responsive">
+        <thead>
+        <tr class="row">
+            <th class="col">{% trans "GUID" %}</th>
+            <th class="col nowrap">
+                {% trans "EPPN" %}
+            </th>
+            <th class="col nowrap">
+                {% trans "Fullname" %}
+            </th>
+            <th class="col">
+                {% trans "Email" %}
+            </th>
+            <th class="col">
+                {% trans "Affiliation" %}
+            </th>
+            <th class="col nowrap">
+                {% trans "Last login" %}
+            </th>
+            <th class="col nowrap">
+                {% trans "Usage" %}
+            </th>
+            <th class="col nowrap">
+                {% trans "Extended storage" %}
+            </th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for user_data in users %}
+            <tr class="row">
+                <td class="col">
+                    {% if user.is_superuser %}
+                        <a href="{% url 'user_identification_information:user_identification_detail' user_data.id %}" class="btn btn-primary">
+                            {{ user_data.id }}
+                        </a>
+                    {% else %}
+                        <a href="{% url 'user_identification_information_admin:user_identification_detail' user_data.id %}" class="btn btn-primary">
+                            {{ user_data.id }}
+                        </a>
+                    {% endif %}
+                </td>
+                <td class="col">{{ user_data.eppn }}</td>
+                <td class="col">{{ user_data.fullname }}</td>
+                <td class="col">{{ user_data.email }}</td>
+                <td class="col">{{ user_data.affiliation.name }}</td>
+                <td class="col">{{ user_data.last_login }}</td>
+                <td class="col">{{ user_data.usage_value }} {{ user_data.usage_abbr }}</td>
+                <td class="col">{{ user_data.extended_storage|linebreaks }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
 </div>
