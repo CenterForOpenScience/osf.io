@@ -152,7 +152,7 @@ class DataCiteClient(AbstractIdentifierClient):
             raise NotImplementedError('Updating metadata not supported for {}'.format(category))
 
         # Reuse create logic to post updated metadata if the resource is still public
-        if node.is_public and not node.is_deleted:
+        if node.is_public and not node.deleted:
             return self.create_identifier(node, category)
 
         doi = node.get_identifier_value('doi') or self.build_doi(node)
