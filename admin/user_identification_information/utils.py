@@ -32,7 +32,7 @@ def get_list_extend_storage():
             storage_branch_name = 'folder'
         elif any(s in provider.lower() for s in ('weko',)):
             storage_branch_name = 'index_title'
-        elif any(s in provider.lower() for s in ('mendeley', 'zotero')):
+        elif any(s in provider.lower() for s in ('mendeley', 'zotero',)):
             storage_branch_name = 'list_id'
         elif any(s in provider.lower() for s in ('owncloud',)):
             storage_branch_name = 'folder_id'

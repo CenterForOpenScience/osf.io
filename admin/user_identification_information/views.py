@@ -59,7 +59,7 @@ class UserIdentificationInformationListView(ListView):
         return list_data
 
 
-class UserIdentificationListViewListView(RdmPermissionMixin, UserIdentificationInformationListView):
+class UserIdentificationListView(RdmPermissionMixin, UserIdentificationInformationListView):
     template_name = 'user_identification_information/list_user_identification.html'
     raise_exception = True
     paginate_by = 20

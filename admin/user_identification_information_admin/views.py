@@ -2,12 +2,12 @@ from django.http import Http404
 
 from admin.user_identification_information.views import (
     UserIdentificationInformationListView,
-    UserIdentificationListViewListView,
+    UserIdentificationListView,
     UserIdentificationDetailView,
 )
 
 
-class UserIdentificationInformationListViewAdminView(UserIdentificationInformationListView):
+class UserIdentificationInformationAdminListView(UserIdentificationInformationListView):
 
     def get_context_data(self, **kwargs):
         if self.is_super_admin:
@@ -15,7 +15,7 @@ class UserIdentificationInformationListViewAdminView(UserIdentificationInformati
         return super(UserIdentificationInformationListView, self).get_context_data(**kwargs)
 
 
-class UserIdentificationListAdminView(UserIdentificationListViewListView):
+class UserIdentificationAdminListView(UserIdentificationListView):
 
     def get_user_list(self):
         if self.is_super_admin:
