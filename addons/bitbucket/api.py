@@ -3,14 +3,14 @@ from future.moves.urllib.parse import urlencode
 from addons.bitbucket import settings
 
 from framework.exceptions import HTTPError
-
+from osf.utils.fields import ensure_str
 from website.util.client import BaseClient
 
 
 class BitbucketClient(BaseClient):
 
     def __init__(self, access_token=None):
-        self.access_token = access_token
+        self.access_token = ensure_str(access_token)
 
     @property
     def _default_headers(self):
