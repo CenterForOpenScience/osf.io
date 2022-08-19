@@ -30,7 +30,6 @@ class TestSyncDOIs:
     def registration(self):
         registration = RegistrationFactory()
         doi = registration.request_identifier('doi')['doi']
-        print(doi)
         registration.set_identifier_value(category='doi', value=doi)
         registration.is_public = True
         registration.save()
