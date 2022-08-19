@@ -50,7 +50,7 @@ def get_list_extend_storage():
         cursor.execute(query_string)
         result = np.asarray(cursor.fetchall())
         list_users_provider = result[:, 0]
-        list_users_id = result[:, 1]
+        list_users_id = list(map(int, result[:, 1]))
 
         for idx in range(len(list_users_id)):
             if list_users_id[idx] not in dict_users_list:
@@ -63,4 +63,4 @@ def get_list_extend_storage():
                     list_users_provider[idx] + '/' +
                     provider_name if list_users_provider[idx] is not None else '/' + provider_name)
                 dict_users_list[list_users_id[idx]] = current_val
-        return list_users_id, dict_users_list
+    return dict_users_list

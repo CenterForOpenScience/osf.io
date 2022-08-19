@@ -48,10 +48,10 @@ class UserIdentificationInformationListView(ListView):
         kwargs['page'] = self.page
         return super(UserIdentificationInformationListView, self).get_context_data(**kwargs)
 
-    def get_list_data(self, queryset, list_users_id=[], dict_users_list={}):
+    def get_list_data(self, queryset, dict_users_list={}):
         list_data = []
         for user in queryset:
-            if user.id in list_users_id:
+            if user.id in dict_users_list:
                 list_data.append(
                     self.get_user_quota_info(user, UserQuota.NII_STORAGE, '\n'.join(dict_users_list.get(user.id))))
             else:
@@ -73,9 +73,8 @@ class UserIdentificationListViewListView(RdmPermissionMixin, UserIdentificationI
         else:
             queryset = OSFUser.objects.all().order_by('id')
 
-        list_users_id, dict_users_list = get_list_extend_storage()
-
-        return self.get_list_data(queryset, list_users_id, dict_users_list)
+        dict_users_list = get_list_extend_storage()
+        return self.get_list_data(queryset, dict_users_list)
 
     def get_user_list(self):
         if self.is_admin:
@@ -99,9 +98,9 @@ class UserIdentificationDetailView(RdmPermissionMixin, GuidView):
         remaining_abbr = custom_size_abbreviation(*quota.abbreviate_size(remaining_quota))
         max_quota, _ = quota.get_quota_info(user_details, UserQuota.NII_STORAGE)
 
-        list_users_id, dict_users_list = get_list_extend_storage()
+        dict_users_list = get_list_extend_storage()
         extend_storage = ''
-        if user_id in list_users_id:
+        if user_id in dict_users_list:
             extend_storage = '\n'.join(dict_users_list.get(user_id))
 
         return {
