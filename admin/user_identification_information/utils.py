@@ -7,66 +7,60 @@ from osf.models import ExternalAccount
 
 def custom_size_abbreviation(size, abbr):
     if abbr == 'B':
-        return (size / api_settings.BASE_FOR_METRIC_PREFIX, 'KB')
+        return size / api_settings.BASE_FOR_METRIC_PREFIX, 'KB'
     return size, abbr
 
 
 def get_list_extend_storage():
     values = ExternalAccount.objects.values_list('provider', 'provider_name')
-    get_provider, get_provider_name = map(list, zip(*values))
+    provider_list, provider_name_list = map(list, zip(*values))
     dict_users_list = {}
     storage_branch_name = None
     cursor = connection.cursor()
 
-    for j in range(len(get_provider)):
-        provider_value = get_provider[j]
-        get_provider_name_value = get_provider_name[j]
-        if any(s in provider_value.lower() for s in
-               ('s3', 's3compat', 's3compatb3', 'azureblobstorage', 'box',
-                'figshare', 'onedrivebusiness', 'swift')):
+    for index in range(len(provider_list)):
+        provider = provider_list[index]
+        provider_name = provider_name_list[index]
+        if any(s in provider.lower() for s in
+               ('s3', 's3compat', 's3compatb3', 'azureblobstorage', 'box', 'figshare', 'onedrivebusiness', 'swift',)):
             storage_branch_name = 'folder_name'
-        elif any(s in provider_value.lower() for s in ('bitbucket', 'github',
-                                                       'gitlab')):
+        elif any(s in provider.lower() for s in ('bitbucket', 'github', 'gitlab',)):
             storage_branch_name = 'repo'
-        elif any(s in provider_value.lower() for s in ('googledrive',
-                                                       'onedrive', 'iqbrims')):
+        elif any(s in provider.lower() for s in ('googledrive', 'onedrive', 'iqbrims',)):
             storage_branch_name = 'folder_path'
-        elif any(s in provider_value.lower() for s in ('dropbox')):
+        elif any(s in provider.lower() for s in ('dropbox',)):
             storage_branch_name = 'folder'
-        elif any(s in provider_value.lower() for s in ('weko')):
+        elif any(s in provider.lower() for s in ('weko',)):
             storage_branch_name = 'index_title'
-        elif any(s in provider_value.lower() for s in ('mendeley', 'zotero')):
+        elif any(s in provider.lower() for s in ('mendeley', 'zotero',)):
             storage_branch_name = 'list_id'
-        elif any(s in provider_value.lower() for s in ('owncloud')):
+        elif any(s in provider.lower() for s in ('owncloud',)):
             storage_branch_name = 'folder_id'
-        elif any(s in provider_value.lower() for s in ('dataverse')):
+        elif any(s in provider.lower() for s in ('dataverse',)):
             storage_branch_name = 'dataverse'
 
-        cursor.execute(
-            """
-            select addons_%s_nodesettings.%s, addons_%s_usersettings.owner_id as user_id
-            from addons_%s_usersettings inner join addons_%s_nodesettings
-            on addons_%s_nodesettings.user_settings_id = addons_%s_usersettings.id
-            where addons_%s_usersettings.id in(
-                select addons_%s_usersettings.id from osf_osfuser inner join addons_%s_usersettings
-                on osf_osfuser.id = addons_%s_usersettings.owner_id)
-            """ % (
-                provider_value, storage_branch_name, provider_value, provider_value, provider_value, provider_value,
-                provider_value, provider_value, provider_value, provider_value, provider_value)
-        )
+        query_string = """
+            select addons_{provider}_nodesettings.{storage_branch_name}, addons_{provider}_usersettings.owner_id as user_id
+            from addons_{provider}_usersettings inner join addons_{provider}_nodesettings
+            on addons_{provider}_nodesettings.user_settings_id = addons_{provider}_usersettings.id
+            where addons_{provider}_usersettings.id in(
+                select addons_{provider}_usersettings.id from osf_osfuser inner join addons_{provider}_usersettings
+                on osf_osfuser.id = addons_{provider}_usersettings.owner_id)
+            """.format(provider=provider, storage_branch_name=storage_branch_name)
+        cursor.execute(query_string)
         result = np.asarray(cursor.fetchall())
         list_users_provider = result[:, 0]
-        list_users_id = result[:, 1]
+        list_users_id = list(map(int, result[:, 1]))
 
-        for i in range(len(list_users_id)):
-            if list_users_id[i] not in dict_users_list:
-                dict_users_list[list_users_id[i]] = [
-                    list_users_provider[i] + '/' +
-                    get_provider_name_value if list_users_provider[i] is not None else '/' + get_provider_name_value]
+        for idx in range(len(list_users_id)):
+            if list_users_id[idx] not in dict_users_list:
+                dict_users_list[list_users_id[idx]] = [
+                    list_users_provider[idx] + '/' +
+                    provider_name if list_users_provider[idx] is not None else '/' + provider_name]
             else:
-                current_val = dict_users_list.get(list_users_id[i])
+                current_val = dict_users_list.get(list_users_id[idx])
                 current_val.append(
-                    list_users_provider[i] + '/' +
-                    get_provider_name_value if list_users_provider[i] is not None else '/' + get_provider_name_value)
-                dict_users_list[list_users_id[i]] = current_val
-        return list_users_id, dict_users_list
+                    list_users_provider[idx] + '/' +
+                    provider_name if list_users_provider[idx] is not None else '/' + provider_name)
+                dict_users_list[list_users_id[idx]] = current_val
+    return dict_users_list

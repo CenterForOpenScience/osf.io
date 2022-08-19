@@ -17,7 +17,7 @@ from osf.models import OSFUser, UserQuota, Email
 from website.util import quota
 
 
-class UserIdentificationInformation(ListView):
+class UserIdentificationInformationListView(ListView):
 
     def get_user_quota_info(self, user, storage_type, extend_storage=''):
         _, used_quota = quota.get_quota_info(user, storage_type)
@@ -38,7 +38,7 @@ class UserIdentificationInformation(ListView):
         }
 
     def get_queryset(self):
-        user_list = self.get_userlist()
+        user_list = self.get_user_list()
         order_by = self.get_order_by()
         reverse = self.get_direction() != 'asc'
         user_list.sort(key=itemgetter(order_by), reverse=reverse)
@@ -68,12 +68,12 @@ class UserIdentificationInformation(ListView):
         kwargs['page'] = self.page
         kwargs['order_by'] = self.get_order_by()
         kwargs['direction'] = self.get_direction()
-        return super(UserIdentificationInformation, self).get_context_data(**kwargs)
+        return super(UserIdentificationInformationListView, self).get_context_data(**kwargs)
 
-    def get_list_data(self, queryset, list_users_id=[], dict_users_list={}):
+    def get_list_data(self, queryset, dict_users_list={}):
         list_data = []
         for user in queryset:
-            if user.id in list_users_id:
+            if user.id in dict_users_list:
                 list_data.append(
                     self.get_user_quota_info(user, UserQuota.NII_STORAGE, '\n'.join(dict_users_list.get(user.id))))
             else:
@@ -81,7 +81,7 @@ class UserIdentificationInformation(ListView):
         return list_data
 
 
-class UserIdentificationList(RdmPermissionMixin, UserIdentificationInformation):
+class UserIdentificationListView(RdmPermissionMixin, UserIdentificationInformationListView):
     template_name = 'user_identification_information/list_user_identification.html'
     raise_exception = True
     paginate_by = 20
@@ -98,10 +98,10 @@ class UserIdentificationList(RdmPermissionMixin, UserIdentificationInformation):
         else:
             queryset = OSFUser.objects.all().order_by('id')
 
-        list_users_id, dict_users_list = get_list_extend_storage()
+        dict_users_list = get_list_extend_storage()
 
         if not email and not guid and not name:
-            return self.get_list_data(queryset, list_users_id, dict_users_list)
+            return self.get_list_data(queryset, dict_users_list)
 
         query_email = query_guid = query_name = None
         if email:
@@ -119,21 +119,21 @@ class UserIdentificationList(RdmPermissionMixin, UserIdentificationInformation):
                                          Q(family_name__icontains=name))
 
         if query_email is not None and query_email.exists():
-            return self.get_list_data(query_email, list_users_id, dict_users_list)
+            return self.get_list_data(query_email, dict_users_list)
         elif query_guid is not None and query_guid.exists():
-            return self.get_list_data(query_guid, list_users_id, dict_users_list)
+            return self.get_list_data(query_guid, dict_users_list)
         elif query_name is not None and query_name.exists():
-            return self.get_list_data(query_name, list_users_id, dict_users_list)
+            return self.get_list_data(query_name, dict_users_list)
         else:
             return []
 
-    def get_userlist(self):
+    def get_user_list(self):
         if self.is_admin:
             raise Http404('Page not found')
         return self.user_list()
 
 
-class UserIdentificationDetails(RdmPermissionMixin, GuidView):
+class UserIdentificationDetailView(RdmPermissionMixin, GuidView):
     template_name = 'user_identification_information/user_identification_details.html'
     context_object_name = 'user_details'
     raise_exception = True
@@ -149,9 +149,9 @@ class UserIdentificationDetails(RdmPermissionMixin, GuidView):
         remaining_abbr = custom_size_abbreviation(*quota.abbreviate_size(remaining_quota))
         max_quota, _ = quota.get_quota_info(user_details, UserQuota.NII_STORAGE)
 
-        list_users_id, dict_users_list = get_list_extend_storage()
+        dict_users_list = get_list_extend_storage()
         extend_storage = ''
-        if user_id in list_users_id:
+        if user_id in dict_users_list:
             extend_storage = '\n'.join(dict_users_list.get(user_id))
 
         return {
@@ -183,7 +183,7 @@ class UserIdentificationDetails(RdmPermissionMixin, GuidView):
         return self.user_details()
 
 
-class ExportFileCSV(RdmPermissionMixin, UserIdentificationInformation):
+class ExportFileCSVView(RdmPermissionMixin, UserIdentificationInformationListView):
 
     def get(self, request, **kwargs):
 

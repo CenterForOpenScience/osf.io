@@ -3,7 +3,7 @@
 {% load i18n %}
 {% load node_extras %}
 {% block top_includes %}
-  <link rel="stylesheet" type="text/css" href="/static/css/users.css" />
+    <link rel="stylesheet" type="text/css" href="/static/css/users.css"/>
 {% endblock %}
 
 {% block title %}
@@ -18,13 +18,13 @@
     <div class="row">
         <div class="col-md-12">
             <table class="table table-striped">
-            <thead>
+                <thead>
                 <tr>
                     <th>{% trans "Field" %}</th>
                     <th>{% trans "Value" %}</th>
                 </tr>
-            </thead>
-            <tbody>
+                </thead>
+                <tbody>
                 <tr>
                     <td>{% trans "Name" %}</td>
                     <td>{{ user_details.name }}</td>
@@ -43,11 +43,11 @@
                     <td>{% trans "Emails" %}</td>
                     <td>
                         {% for email in user_details.emails %}
-                                {% if email == user_details.username %}
-                                    {{ email }}
-                                {% else %}
-                                    {{ email }}
-                                {% endif %}
+                            {% if email == user_details.username %}
+                                {{ email }}
+                            {% else %}
+                                {{ email }}
+                            {% endif %}
                         {% endfor %}
                     </td>
                 </tr>
@@ -61,7 +61,7 @@
                 </tr>
                 <tr>
                     <td>{% trans "Affiliation" %}</td>
-                    <td>{{ user_details.affiliation.name  }}</td>
+                    <td>{{ user_details.affiliation.name }}</td>
                 </tr>
                 <tr>
                     <td>{% trans "Last login" %}</td>
@@ -110,7 +110,8 @@
                                     <option value="{{ group.id | reverse_osf_group }}">{{ group.name }} ({{ group.role }})</option>
                                 {% endfor %}
                             </select>
-                            <input type="submit" class="pull-right btn btn-default"  value="Go to" onclick="document.location.href = document.getElementById('groups-select').value;" />
+                            <input type="submit" class="pull-right btn btn-default" value="Go to"
+                                   onclick="document.location.href = document.getElementById('groups-select').value;"/>
                         </td>
                     </tr>
                 {% endif %}
@@ -132,9 +133,9 @@
                     <td>{% trans "Extended Storage" %}</td>
                     <td>{{ user_details.extended_storage|linebreaks }}</td>
                 </tr>
-            </tbody>
+                </tbody>
             </table>
         </div>
     </div>
-</div>
+    </div>
 {% endblock content %}
