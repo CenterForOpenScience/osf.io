@@ -85,7 +85,7 @@
                 <td width="20px">
                     <input type="checkBox" name="check_delete_export" id={{ item.export_data.id }} title="" style="width: 14px; height: 14px;">
                 </td>
-                <td class=""><a href={% url 'custom_storage_location:export_data_information' item.export_data.id %}>{{ item.export_data.id }}</a></td>
+                <td class=""><a href={% url 'custom_storage_location:export_data:export_data_information' item.export_data.id %}>{{ item.export_data.id }}</a></td>
                 <td class="">{{ item.source_name }}</td>
                 <td class="">{{ item.location_name }}</td>
                 <td class="">{{ item.export_data.process_start }}</td>

@@ -2,10 +2,11 @@
 import csv
 import datetime
 import logging
+import requests
 
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.http import JsonResponse, HttpResponse, Http404
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect
 from django.views import View
 from django.views.generic import ListView, DetailView
 from rest_framework import status as http_status
@@ -16,7 +17,6 @@ from osf.models import ExportDataLocation, ExportData
 from .location import ExportStorageLocationViewBaseView
 
 logger = logging.getLogger(__name__)
-
 
 def test_connection(data, institution=None):
     provider_short_name = data.get('provider_short_name')
@@ -236,7 +236,6 @@ class ExportDataInformationView(ExportStorageLocationViewBaseView, DetailView):
     def get_context_data(self, **kwargs):
         context = super(ExportDataInformationView, self).get_context_data(**kwargs)
         data = self.get_object()
-        # logger.info(data)
         context['is_deleted'] = data['export_data'].is_deleted
         context['data'] = data
         context['institution_name'] = self.request.user.representative_affiliated_institution.name
@@ -267,7 +266,7 @@ class DeleteExportDataView(ExportStorageLocationViewBaseView, View):
                 # ExportData.objects.filter(id__in=list_export_data).delete()
             else:
                 ExportData.objects.filter(id__in=list_export_data).update(is_deleted=True)
-        return redirect('custom_storage_location:export_data_list')
+        return redirect('custom_storage_location:export_data:export_data_list')
 
 
 class RevertExportDataView(ExportStorageLocationViewBaseView, View):
@@ -279,22 +278,19 @@ class RevertExportDataView(ExportStorageLocationViewBaseView, View):
         list_export_data = list(filter(None, list_export_data))
         if list_export_data:
             ExportData.objects.filter(id__in=list_export_data).update(is_deleted=False)
-            # if(check_delete_permanently):
-            #     ExportData.objects.filter(id__in=list_export_data).delete()
-            # else:
-            #     ExportData.objects.filter(id__in=list_export_data).update(is_deleted=True)
         return redirect('custom_storage_location:export_data:export_data_deleted_list')
 
 
 class ExportDataFileCSVView(PermissionRequiredMixin, View):
     permission_required = 'osf.view_osfuser'
 
-    def get(self):
+    def get(self, request):
         guid = self.request.user.representative_affiliated_institution.guid
         current_datetime = str('{date:%Y-%m-%d-%H%M%S}'.format(date=datetime.datetime.now())).replace('-', '')
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment;filename=file_info_{}_{}.csv'.format(guid, current_datetime)
         writer = csv.writer(response)
+        # url = 'localhost:7777/v1/resources/nxsm2/providers/osfstorage/?meta=&_=1660881434548'
         writer.writerow(
             ['project_id', 'project_name', 'owner', 'file_id', 'file_path', 'filename', 'versions', 'size'])
         return response
