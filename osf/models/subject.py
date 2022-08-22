@@ -31,9 +31,6 @@ class Subject(ObjectIDMixin, BaseModel, DirtyFieldsMixin):
     class Meta:
         base_manager_name = 'objects'
         unique_together = ('text', 'provider')
-        permissions = (
-            ('view_subject', 'Can view subject details'),
-        )
 
     def __unicode__(self):
         return '{} with id {}'.format(self.text, self.id)

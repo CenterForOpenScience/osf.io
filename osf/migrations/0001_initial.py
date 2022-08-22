@@ -1099,7 +1099,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 'proxy': True,
-                'permissions': (('view_registration', 'Can view registration details'),),
+                # 'permissions': (('view_registration', 'Can view registration details'),),
             },
             bases=('osf.abstractnode',),
         ),
