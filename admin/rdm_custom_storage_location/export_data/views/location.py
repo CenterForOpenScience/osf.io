@@ -5,7 +5,7 @@ import logging
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.http import JsonResponse
 from django.views import View
-from django.views.generic import TemplateView
+from django.views.generic import ListView
 from rest_framework import status as http_status
 
 from admin.rdm.utils import RdmPermissionMixin
@@ -28,6 +28,7 @@ class ExportStorageLocationViewBaseView(RdmPermissionMixin, UserPassesTestMixin)
     PROVIDERS_AVAILABLE = ['s3', 's3compat']
     INSTITUTION_DEFAULT = 'us'
     institution_guid = INSTITUTION_DEFAULT
+    institution = None
 
     def test_func(self):
         """ Check user permissions """
@@ -37,27 +38,48 @@ class ExportStorageLocationViewBaseView(RdmPermissionMixin, UserPassesTestMixin)
         return self.is_super_admin or (self.is_admin and self.is_affiliated_institution)
 
 
-class ExportStorageLocationView(ExportStorageLocationViewBaseView, TemplateView):
-    """ View that shows the Export Data Storage Location's template """
+class ExportStorageLocationView(ExportStorageLocationViewBaseView, ListView):
+    """ View that shows the Export Data Storage Location """
     template_name = 'rdm_custom_storage_location/export_data_storage_location.html'
     model = ExportDataLocation
     paginate_by = 10
     ordering = 'pk'
 
-    def get_context_data(self, *args, **kwargs):
-        institution_guid = self.INSTITUTION_DEFAULT
+    def get(self, request, *args, **kwargs):
+        self.institution_guid = self.INSTITUTION_DEFAULT
+        self.institution = None
 
-        if not self.is_super_admin and self.is_affiliated_institution:
-            institution = self.request.user.affiliated_institutions.first()
-            institution_guid = institution.guid
-            kwargs['institution'] = institution
+        if self.is_affiliated_institution:
+            self.institution = request.user.affiliated_institutions.first()
+            self.institution_guid = self.institution.guid
 
-        kwargs['providers'] = utils.get_providers(self.PROVIDERS_AVAILABLE)
-        kwargs['locations'] = location_list = export_data_utils.get_export_location_list(institution_guid)
-        kwargs['osf_domain'] = osf_settings.DOMAIN
-        # paginator, page, locations, is_paginated = self.paginate_queryset(location_list, page_size)
-        # kwargs.setdefault('page', page)
-        return kwargs
+        return super(ExportStorageLocationView, self).get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        list_location = ExportDataLocation.objects.filter(institution_guid=self.institution_guid)
+        list_location = list_location.order_by(self.ordering)
+        list_location_dict = []
+        for location in list_location:
+            list_location_dict.append({
+                'id': location.id,
+                'name': location.name,
+                'provider_name': location.provider_name,
+                'provider_short_name': location.provider_short_name
+            })
+        return list_location_dict
+
+    def get_context_data(self, **kwargs):
+        query_set = kwargs.pop('object_list', self.object_list)
+        page_size = self.get_paginate_by(query_set)
+        paginator, page, query_set, is_paginated = self.paginate_queryset(query_set, page_size)
+
+        kwargs.setdefault('institution', self.institution)
+        kwargs.setdefault('locations', query_set)
+        kwargs.setdefault('page', page)
+        kwargs.setdefault('providers', utils.get_providers(self.PROVIDERS_AVAILABLE))
+        kwargs.setdefault('osf_domain', osf_settings.DOMAIN)
+
+        return super(ExportStorageLocationView, self).get_context_data(**kwargs)
 
 
 class SaveCredentialsView(ExportStorageLocationViewBaseView, View):

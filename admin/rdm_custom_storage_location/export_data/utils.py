@@ -22,7 +22,6 @@ from website.util import inspect_info  # noqa
 logger = logging.getLogger(__name__)
 
 __all__ = [
-    'get_export_location_list',
     'update_storage_location',
     'save_s3_credentials',
     'save_s3compat_credentials',
@@ -30,19 +29,6 @@ __all__ = [
     'save_basic_storage_institutions_credentials_common',
     'save_nextcloudinstitutions_credentials',
 ]
-
-
-def get_export_location_list(ins_user_id):
-    list_location = ExportDataLocation.objects.filter(institution_guid=ins_user_id)
-    list_location_dict = []
-    for location in list_location:
-        list_location_dict.append({
-            'id': location.id,
-            'name': location.name,
-            'provider_name': location.provider_name,
-            'provider_short_name': location.provider_short_name
-        })
-    return list_location_dict
 
 
 def update_storage_location(institution_guid, storage_name, wb_credentials, wb_settings):
