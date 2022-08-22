@@ -2,27 +2,47 @@
 import inspect  # noqa
 import logging  # noqa
 
-from django.core.exceptions import ValidationError
 from rest_framework import status as http_status
 
-from addons.base.institutions_utils import (
-    KEYNAME_BASE_FOLDER,
-    sync_all
-)
+from addons.base.institutions_utils import KEYNAME_BASE_FOLDER
 from addons.nextcloudinstitutions import KEYNAME_NOTIFICATION_SECRET
 from addons.nextcloudinstitutions.models import NextcloudInstitutionsProvider
 from addons.osfstorage.models import Region
-from admin.rdm_addons.utils import get_rdm_addon_option
 from admin.rdm_custom_storage_location.utils import (
-    get_addon_by_name, test_s3_connection, test_s3compat_connection, test_owncloud_connection, use_https, wd_info_for_institutions,
-    save_usermap_from_tmp,
+    use_https,
+    test_dropboxbusiness_connection,
+    test_owncloud_connection,
+    test_s3_connection,
+    test_s3compat_connection,
+    wd_info_for_institutions,
 )
 from osf.models import ExportDataLocation
-from osf.models.external import ExternalAccount
 from website.util import inspect_info  # noqa
-from hmac import compare_digest
 
 logger = logging.getLogger(__name__)
+
+__all__ = [
+    'get_export_location_list',
+    'update_storage_location',
+    'save_s3_credentials',
+    'save_s3compat_credentials',
+    'save_dropboxbusiness_credentials',
+    'save_basic_storage_institutions_credentials_common',
+    'save_nextcloudinstitutions_credentials',
+]
+
+
+def get_export_location_list(ins_user_id):
+    list_location = ExportDataLocation.objects.filter(institution_guid=ins_user_id)
+    list_location_dict = []
+    for location in list_location:
+        list_location_dict.append({
+            'id': location.id,
+            'name': location.name,
+            'provider_name': location.provider_name,
+            'provider_short_name': location.provider_short_name
+        })
+    return list_location_dict
 
 
 def update_storage_location(institution_guid, storage_name, wb_credentials, wb_settings):
@@ -105,29 +125,54 @@ def save_s3compat_credentials(institution_guid, storage_name, host_url, access_k
             }, http_status.HTTP_200_OK)
 
 
-def get_export_location_list(ins_user_id):
-    list_location = ExportDataLocation.objects.filter(institution_guid=ins_user_id)
-    list_location_dict = []
-    for location in list_location:
-        waterbutler_settings = location.waterbutler_settings
-        provider_name = None
-        if "storage" in waterbutler_settings:
-            storage = waterbutler_settings["storage"]
-            if "provider" in storage:
-                provider_name = storage["provider"]
-                addon = get_addon_by_name(provider_name)
-                provider_name = addon.full_name
-        list_location_dict.append({'id': location.id, 'name': location.name, 'provider_name': provider_name})
-    return list_location_dict
+def save_dropboxbusiness_credentials(institution, storage_name, provider_name):
+    test_connection_result = test_dropboxbusiness_connection(institution)
+    if test_connection_result[1] != http_status.HTTP_200_OK:
+        return test_connection_result
+
+    wb_credentials, wb_settings = wd_info_for_institutions(provider_name)
+    storage_location = update_storage_location(institution.guid, storage_name, wb_credentials, wb_settings)
+
+    return ({
+                'message': 'Dropbox Business was set successfully!!'
+            }, http_status.HTTP_200_OK)
 
 
-def save_nextcloud_institutions_credentials(institution, storage_name, host_url, username, password, folder, notification_secret, provider_name):
+def save_basic_storage_institutions_credentials_common(institution, storage_name, folder, provider_name, provider, separator=':', extended_data=None):
+    """Don't need external account, save all to waterbutler_settings"""
+    external_account = {
+        'display_name': provider.username,
+        'oauth_key': provider.password,
+        'oauth_secret': provider.host,
+        'provider_id': '{}{}{}'.format(provider.host, separator, provider.username),
+        'profile_url': provider.host,
+        'provider': provider.short_name,
+        'provider_name': provider.name,
+    }
+    extended = {
+        KEYNAME_BASE_FOLDER: folder,
+    }
+    if type(extended_data) is dict:
+        extended.update(extended_data)
+
+    wb_credentials, wb_settings = wd_info_for_institutions(provider_name)
+    wb_settings["external_account"] = external_account
+    wb_settings["extended"] = extended
+
+    storage_location = update_storage_location(institution.guid, storage_name, wb_credentials, wb_settings)
+
+    return ({
+                'message': 'Saved credentials successfully!!'
+            }, http_status.HTTP_200_OK)
+
+
+def save_nextcloudinstitutions_credentials(institution, storage_name, host_url, username, password, folder, notification_secret, provider_name):
     test_connection_result = test_owncloud_connection(host_url, username, password, folder, provider_name)
     if test_connection_result[1] != http_status.HTTP_200_OK:
         return test_connection_result
 
     host = use_https(host_url)
-
+    # init with an ExternalAccount instance as account
     provider = NextcloudInstitutionsProvider(
         account=None, host=host.url,
         username=username, password=password
@@ -138,41 +183,3 @@ def save_nextcloud_institutions_credentials(institution, storage_name, host_url,
     }
 
     return save_basic_storage_institutions_credentials_common(institution, storage_name, folder, provider_name, provider, extended_data=extended_data)
-
-
-def save_basic_storage_institutions_credentials_common(institution, storage_name, folder, provider_name, provider, separator=':', extended_data=None):
-    try:
-        provider.account.save()
-    except ValidationError:
-        host = provider.host
-        username = provider.username
-        password = provider.password
-        # ... or get the old one
-        provider.account = ExternalAccount.objects.get(
-            provider=provider_name,
-            provider_id='{}{}{}'.format(host, separator, username)
-        )
-        if compare_digest(provider.account.oauth_key, password):
-            provider.account.oauth_key = password
-            provider.account.save()
-
-    # Storage Addons for Institutions must have only one ExternalAccount.
-    rdm_addon_option = get_rdm_addon_option(institution.id, provider_name)
-    if rdm_addon_option.external_accounts.count() > 0:
-        rdm_addon_option.external_accounts.clear()
-    rdm_addon_option.external_accounts.add(provider.account)
-
-    rdm_addon_option.extended[KEYNAME_BASE_FOLDER] = folder
-    if type(extended_data) is dict:
-        rdm_addon_option.extended.update(extended_data)
-    rdm_addon_option.save()
-
-    wb_credentials, wb_settings = wd_info_for_institutions(provider_name)
-    storage_location = update_storage_location(institution.guid, storage_name, wb_credentials, wb_settings)
-
-    save_usermap_from_tmp(provider_name, institution)
-    sync_all(institution.guid, target_addons=[provider_name])
-
-    return ({
-                'message': 'Saved credentials successfully!!'
-            }, http_status.HTTP_200_OK)

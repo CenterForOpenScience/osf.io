@@ -92,12 +92,14 @@
             <h3>{% trans "No results found" %}</h3>
         {% endif %}
         {% for location in locations %}
-            <tr>
+            <tr id="location_{{ location.id }}">
                 <td>{{ location.id }}</td>
                 <td>{{ location.name }}</td>
                 <td>{{ location.provider_name }}</td>
                 <td>
-                    <a type="button" class="btn btn-primary" href="./{{ location.id }}/delete/">Delete</a>
+                    <button type="button" class="btn btn-primary delete-location"
+                            data-id="{{ location.id }}" data-provide="{{ location.provider_short_name }}"
+                    >{% trans "Delete" %}</button>
                 </td>
             </tr>
         {% endfor %}

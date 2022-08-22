@@ -732,3 +732,45 @@ function usermapDownload(id, data) {
 function usermapDownloadFailed(id, message) {
     $('#csv_download_ng').html(message);
 }
+
+afterRequest.delete = {
+    'success': function (id, data) {
+        $('#location_'+id).remove();
+    },
+    'fail': function (id, message) {
+        $osf.growl('Error', 'Unable to delete location ' + id);
+    }
+}
+
+$('.delete-location').click(function () {
+    let id = this.dataset.id;
+    let providerShortName = this.dataset.provide;
+
+    deleteLocation(id, providerShortName);
+});
+
+function deleteLocation(id, providerShortName) {
+    // console.log("delete location id", id);
+    let route = 'delete';
+    let url = id + '/' + route + '/';
+    $.ajax({
+        url: url,
+        type: 'DELETE',
+        data: {},
+        contentType: 'application/json; charset=utf-8',
+        custom: id,
+        timeout: 120000,
+        success: function (data) {
+            afterRequest[route].success(this.custom, data);
+            window.location.reload();
+        },
+        error: function (jqXHR) {
+            if (jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)) {
+                afterRequest[route].fail(this.custom, jqXHR.responseJSON.message);
+            } else {
+                afterRequest[route].fail(this.custom, _('Some errors occurred'));
+            }
+        }
+    });
+
+}

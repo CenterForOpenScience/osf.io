@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+import logging
 
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.http import JsonResponse
@@ -12,6 +13,8 @@ from admin.rdm_custom_storage_location import utils
 from admin.rdm_custom_storage_location.export_data import utils as export_data_utils
 from osf.models import ExportDataLocation
 from website import settings as osf_settings
+
+logger = logging.getLogger(__name__)
 
 __all__ = [
     'ExportStorageLocationViewBaseView',
@@ -65,8 +68,9 @@ class SaveCredentialsView(ExportStorageLocationViewBaseView, View):
     def post(self, request):
         data = json.loads(request.body)
         institution_guid = self.INSTITUTION_DEFAULT
+        institution = None
 
-        if not self.is_super_admin and self.is_affiliated_institution:
+        if self.is_affiliated_institution:
             institution = request.user.affiliated_institutions.first()
             institution_guid = institution.guid
 
@@ -83,6 +87,8 @@ class SaveCredentialsView(ExportStorageLocationViewBaseView, View):
                 'message': 'Storage name is missing.'
             }, status=http_status.HTTP_400_BAD_REQUEST)
 
+        # Check provider and save credentials
+        result = ({'message': 'Invalid provider.'}, http_status.HTTP_400_BAD_REQUEST)
         if provider_short_name == 's3':
             result = export_data_utils.save_s3_credentials(
                 institution_guid,
@@ -100,27 +106,58 @@ class SaveCredentialsView(ExportStorageLocationViewBaseView, View):
                 data.get('s3compat_secret_key'),
                 data.get('s3compat_bucket'),
             )
-        elif provider_short_name == 'nextcloudinstitutions':
-            result = utils.save_nextcloudinstitutions_credentials(
-                institution,
-                storage_name,
-                data.get('nextcloudinstitutions_host'),
-                data.get('nextcloudinstitutions_username'),
-                data.get('nextcloudinstitutions_password'),
-                data.get('nextcloudinstitutions_folder'),  # base folder
-                data.get('nextcloudinstitutions_notification_secret'),
-                provider_short_name,
-            )
-        elif provider_short_name == 'dropboxbusiness':
-            result = utils.save_dropboxbusiness_credentials(
-                institution,
-                storage_name,
-                provider_short_name)
-        else:
-            result = ({'message': 'Invalid provider.'}, http_status.HTTP_400_BAD_REQUEST)
+        elif institution:
+            result = ({'message': 'Affiliated institution is missing.'}, http_status.HTTP_400_BAD_REQUEST)
+            if provider_short_name == 'dropboxbusiness':
+                result = export_data_utils.save_dropboxbusiness_credentials(
+                    institution,
+                    storage_name,
+                    provider_short_name)
+            elif provider_short_name == 'nextcloudinstitutions':
+                result = export_data_utils.save_nextcloudinstitutions_credentials(
+                    institution,
+                    storage_name,
+                    data.get('nextcloudinstitutions_host'),
+                    data.get('nextcloudinstitutions_username'),
+                    data.get('nextcloudinstitutions_password'),
+                    data.get('nextcloudinstitutions_folder'),  # base folder
+                    data.get('nextcloudinstitutions_notification_secret'),
+                    provider_short_name,
+                )
 
         status = result[1]
-        if status == http_status.HTTP_200_OK:
-            pass
-            # utils.change_allowed_for_institutions(institution, provider_short_name)
         return JsonResponse(result[0], status=status)
+
+
+class DeleteCredentialsView(ExportStorageLocationViewBaseView, View):
+    """ View for deleting the credentials to the provider in the database.
+    Called when clicking the 'Delete' Button.
+    """
+
+    def delete(self, request, location_id, **kwargs):
+        # logger.debug(f'location_id: {location_id}')
+        # logger.debug(f'kwargs: {kwargs}')
+        message = 'Do nothing'
+        status = http_status.HTTP_400_BAD_REQUEST
+
+        institution_guid = self.INSTITUTION_DEFAULT
+        if not self.is_super_admin and self.is_affiliated_institution:
+            institution = request.user.affiliated_institutions.first()
+            institution_guid = institution.guid
+
+        try:
+            storage_location = ExportDataLocation.objects.get(pk=location_id)
+        except ExportDataLocation.DoesNotExist:
+            return JsonResponse({
+                'message': message
+            }, status=status)
+
+        if storage_location.institution_guid == institution_guid:
+            # allow to delete
+            storage_location.delete()
+            message = 'storage_location.delete()'
+            status = http_status.HTTP_200_OK
+
+        return JsonResponse({
+            'message': message
+        }, status=status)

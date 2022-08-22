@@ -31,3 +31,27 @@ class ExportDataLocation(base.BaseModel):
 
     def __unicode__(self):
         return '{}'.format(self.name)
+
+    @property
+    def provider_name(self):
+        waterbutler_settings = self.waterbutler_settings
+        provider_name = None
+        if "storage" in waterbutler_settings:
+            storage = waterbutler_settings["storage"]
+            if "provider" in storage:
+                provider_name = storage["provider"]
+
+        return provider_name
+
+    @property
+    def addon(self):
+        for addon in website_settings.ADDONS_AVAILABLE:
+            if addon.short_name == self.provider_name:
+                return addon
+        return None
+
+    @property
+    def provider_short_name(self):
+        if hasattr(self.addon, 'short_name'):
+            return self.addon.short_name
+        return None
