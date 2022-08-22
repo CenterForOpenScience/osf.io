@@ -247,6 +247,16 @@ class TestOutcomeArtifact:
         assert test_artifact.identifier == project_doi
         assert not Identifier.objects.filter(value=invalid_identifier).exists()
 
+    @pytest.mark.parametrize('protocol', ['http://', 'https://', ''])
+    @pytest.mark.parametrize('domain', ['doi.org/', ''])
+    def test_update__new_pid__normalizes_pid_value(self, outcome, project_doi, protocol, domain):
+        test_artifact = outcome.artifact_metadata.create(identifier=project_doi)
+        base_pid_value = 'new_pid'
+        provided_pid_value = f'{protocol}{domain}{base_pid_value}'
+
+        test_artifact.update(new_pid_value=provided_pid_value)
+        assert test_artifact.identifier.value == base_pid_value
+
     def test_update__enforces_uniqueness_if_finalized(self, outcome, project_doi):
         outcome.artifact_metadata.create(
             identifier=project_doi, artifact_type=ArtifactTypes.DATA, finalized=True

@@ -12,6 +12,7 @@ from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.identifiers import Identifier
 from osf.utils import outcomes as outcome_utils
 from osf.utils.fields import NonNaiveDateTimeField
+from osf.utils.identifiers import normalize_identifier
 
 
 '''
@@ -165,8 +166,12 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
         if not new_pid_value:
             raise NoPIDError('Cannot assign an empty PID value')
 
+        normalized_pid_value = normalize_identifier(new_pid_value)
+        if self.identifier and normalized_pid_value == self.identifier.value:
+            return
+
         new_identifier, created = Identifier.objects.get_or_create(
-            value=new_pid_value, category=pid_type
+            value=normalized_pid_value, category=pid_type
         )
 
         # Reraise these errors all the way to API

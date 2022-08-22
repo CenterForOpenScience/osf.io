@@ -1,4 +1,5 @@
 import abc
+import re
 from urllib.parse import urljoin
 
 import requests
@@ -80,3 +81,9 @@ class DOIValidator(PIDValidator):
             pid_exception = InvalidPIDError
 
         raise pid_exception(pid_value=doi_value, pid_category='DOI')
+
+
+def normalize_identifier(pid_value):
+    '''Extract just the PID Value from a possible full URI.'''
+    pid_value_expression = '(http://|https://)?(doi.org/)?(?P<pid_value>.*)'
+    return re.match(pid_value_expression, pid_value).group('pid_value')
