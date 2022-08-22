@@ -30,6 +30,10 @@ class ExportStorageLocationViewBaseView(RdmPermissionMixin, UserPassesTestMixin)
     institution_guid = INSTITUTION_DEFAULT
     institution = None
 
+    def get_default_storage_location(self):
+        query_set = ExportDataLocation.objects.filter(institution_guid=self.INSTITUTION_DEFAULT)
+        return query_set
+
     def test_func(self):
         """ Check user permissions """
         if self.is_admin and self.is_affiliated_institution:

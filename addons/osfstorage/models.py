@@ -492,6 +492,37 @@ class Region(models.Model):
     class Meta:
         unique_together = ('_id', 'name')
 
+    @property
+    def provider_name(self):
+        waterbutler_settings = self.waterbutler_settings
+        provider_name = None
+        # json path storage/provider
+        if "storage" in waterbutler_settings:
+            storage = waterbutler_settings["storage"]
+            if "provider" in storage:
+                provider_name = storage["provider"]
+
+        return provider_name if provider_name != 'filesystem' else 'osfstorage'
+
+    @property
+    def addon(self):
+        for addon in website_settings.ADDONS_AVAILABLE:
+            if addon.short_name == self.provider_name:
+                return addon
+        return None
+
+    @property
+    def provider_short_name(self):
+        if hasattr(self.addon, 'short_name'):
+            return self.addon.short_name
+        return None
+
+    @property
+    def provider_full_name(self):
+        if hasattr(self.addon, 'full_name'):
+            return self.addon.full_name
+        return None
+
 
 class UserSettings(BaseUserSettings):
     default_region = models.ForeignKey(Region, null=True, on_delete=models.CASCADE)

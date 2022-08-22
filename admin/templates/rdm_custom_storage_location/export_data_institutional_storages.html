@@ -19,12 +19,12 @@
     <table class="table table-striped table-hover table-responsive">
         <thead>
         <tr>
-            <th>{% trans "ID" %}</th>
-            <th>{% trans "Provider" %}</th>
-            <th>{% trans "Name" %}</th>
-            <th>{% trans "Export data storage location" %}</th>
-            <th>{% trans "Export Data" %}</th>
-            <th></th>
+            <th style="width: auto;">{% trans "ID" %}</th>
+            <th style="width: 15%;">{% trans "Provider" %}</th>
+            <th style="width: 15%;">{% trans "Name" %}</th>
+            <th style="width: 25%;">{% trans "Export data storage location" %}</th>
+            <th style="width: 20%;">{% trans "Export Data" %}</th>
+            <th style="width: 20%;"></th>
         </tr>
         </thead>
         <tbody>
@@ -36,26 +36,32 @@
                 <td>{{ storage.id }}</td>
                 <td>{{ storage.provider_name }}</td>
                 <td>{{ storage.name }}</td>
-                <td><select id="export-data-storage-{{ storage.id }}" class="form-control" title="" style="max-width: 320px;">
-                    <option value="1">storage_1_1 (AWS S3 storage)</option>
-                </select></td>
                 <td>
-                    <div class="btn-group" role="group" aria-label="...">
-                        <button id="export-button-{{ storage.id }}"
-                                type="button"
-                                class="btn btn-primary"
-                                style="min-width: 90px;"
-                                onclick="exportData(storage.id)">
-                            {% trans "Export" %}
-                        </button>
-                        <button id="stop-export-button-{{ storage.id }}"
-                                type="button"
-                                class="btn btn-primary disabled"
-                                disabled
-                                style="min-width: 90px;">
-                            {% trans "Stop exporting" %}
-                        </button>
-                    </div>
+                    <select id="export-data-storage-{{ storage.id }}" class="form-control" title="" style="max-width: 320px;">
+                        {% for location in locations %}
+                            <option value="{{ location.id }}">{{ location.name }} ({{ location.provider_full_name }})</option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td>
+                    {% if locations|length %}
+                        <div class="btn-group" role="group" aria-label="...">
+                            <button id="export-button-{{ storage.id }}"
+                                    type="button"
+                                    class="btn btn-primary"
+                                    style="min-width: 90px;"
+                                    onclick="exportData(storage.id)">
+                                {% trans "Export" %}
+                            </button>
+                            <button id="stop-export-button-{{ storage.id }}"
+                                    type="button"
+                                    class="btn btn-primary disabled"
+                                    disabled
+                                    style="min-width: 90px;">
+                                {% trans "Stop exporting" %}
+                            </button>
+                        </div>
+                    {% endif %}
                 </td>
                 <td>
                     {% if storage.has_export_data %}

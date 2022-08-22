@@ -158,6 +158,15 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
         self.update_search()
         return rv
 
+    def get_storage_location(self):
+        try:
+            from osf.models import ExportDataLocation
+            query_set = ExportDataLocation.objects.filter(institution_guid=self.guid)
+            return query_set
+        except Exception as ex:
+            return []
+
+
 @receiver(post_save, sender=Institution)
 def create_institution_auth_groups(sender, instance, created, **kwargs):
     if created:

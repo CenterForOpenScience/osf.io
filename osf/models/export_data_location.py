@@ -55,3 +55,9 @@ class ExportDataLocation(base.BaseModel):
         if hasattr(self.addon, 'short_name'):
             return self.addon.short_name
         return None
+
+    @property
+    def provider_full_name(self):
+        if hasattr(self.addon, 'full_name'):
+            return self.addon.full_name
+        return None

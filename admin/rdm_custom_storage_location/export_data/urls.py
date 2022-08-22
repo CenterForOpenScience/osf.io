@@ -24,7 +24,7 @@ urlpatterns = [
         institutional_storage.ExportDataInstitutionListView.as_view(),
         name='export_data_institutions'),
     url(r'^institutions/(?P<institution_id>[0-9]+)/storages/$',
-        institutional_storage.ExportDataInstitutionalStorageView.as_view(),
+        institutional_storage.ExportDataInstitutionalStorageListView.as_view(),
         name='export_data_institutional_storage'),
 
     # to manage export data
