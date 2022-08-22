@@ -62,7 +62,7 @@ class DataCiteClient(AbstractIdentifierClient):
         data = {
             'identifiers': [
                 {
-                    'identifier': doi_value or self.build_doi(node),
+                    'identifier': doi_value or node.get_identifier_value('doi') or self.build_doi(node),
                     'identifierType': 'DOI',
                 }
             ],
@@ -130,11 +130,11 @@ class DataCiteClient(AbstractIdentifierClient):
     def get_identifier(self, identifier):
         self._client.doi_get(identifier)
 
-    def create_identifier(self, node, category):
+    def create_identifier(self, node, category, doi_value=None):
         if category != 'doi':
             raise NotImplementedError('Creating an identifier with category {} is not supported'.format(category))
 
-        doi_value = node.get_identifier_value('doi') or self.build_doi(node)
+        doi_value = doi_value or node.get_identifier_value('doi') or self.build_doi(node)
         metadata = self.build_metadata(node, doi_value=doi_value)
         if settings.DATACITE_ENABLED:
             resp = self._client.metadata_post(metadata)
@@ -147,18 +147,18 @@ class DataCiteClient(AbstractIdentifierClient):
 
         return {'doi': doi_value, 'metadata': metadata}
 
-    def update_identifier(self, node, category):
+    def update_identifier(self, node, category, doi_value=None):
         if category != 'doi':
             raise NotImplementedError('Updating metadata not supported for {}'.format(category))
+        doi_value = doi_value or node.get_identifier_value('doi') or self.build_doi(node)
 
         # Reuse create logic to post updated metadata if the resource is still public
         if node.is_public and not node.deleted:
-            return self.create_identifier(node, category)
+            return self.create_identifier(node, category, doi_value=doi_value)
 
-        doi = node.get_identifier_value('doi') or self.build_doi(node)
         if settings.DATACITE_ENABLED:
-            self._client.metadata_delete(doi)
-        return {'doi': doi}
+            self._client.metadata_delete(doi_value)
+        return {'doi': doi_value}
 
 
 def _format_related_identifiers(node):
