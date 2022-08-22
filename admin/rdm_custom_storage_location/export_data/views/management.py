@@ -4,20 +4,17 @@ import datetime
 import logging
 import requests
 
-from django.contrib.auth.mixins import PermissionRequiredMixin
+from admin.rdm.utils import RdmPermissionMixin
 from django.http import JsonResponse, HttpResponse, Http404
 from django.shortcuts import render, redirect
-from django.urls import reverse
 from api.base.utils import waterbutler_api_url_for
-from datetime import date
 from django.views import View
 from django.views.generic import ListView, DetailView
 from rest_framework import status as http_status
-from website import settings
 
 from addons.osfstorage.models import Region
 from admin.rdm_custom_storage_location import utils
-from osf.models import ExportDataLocation, ExportData, OSFUser
+from osf.models import ExportDataLocation, ExportData
 from .location import ExportStorageLocationViewBaseView
 
 logger = logging.getLogger(__name__)
@@ -108,6 +105,24 @@ def test_connection(data, institution=None):
 
     return JsonResponse(result[0], status=result[1])
 
+def get_list_file_info(pid, provider, path, request_cookie):
+    try:
+        url = waterbutler_api_url_for(
+            pid, provider, path=path, _internal=True, meta=''
+        )
+        response = requests.get(
+            url,
+            headers={'content-type': 'application/json'},
+            cookies=request_cookie
+        )
+    except Exception as err:
+        logger.error(err)
+        return None
+    content = None
+    if response.status_code == 200:
+        content = response.json()
+    response.close()
+    return content
 
 def get_export_data(user_institution_guid, selected_export_location=None, selected_source=None, deleted=False, check_delete=True):
     list_source_id = Region.objects.filter(_id=user_institution_guid).values_list('id', flat=True)
@@ -138,7 +153,6 @@ def get_export_data(user_institution_guid, selected_export_location=None, select
             list_data.append(data)
     logger.info(list_data)
     return list_data
-
 
 class ExportBaseView(ExportStorageLocationViewBaseView, ListView):
     permission_required = 'osf.view_institution'
@@ -173,7 +187,6 @@ class ExportBaseView(ExportStorageLocationViewBaseView, ListView):
             '{0} is missing the implementation of the get_export_data_list() method.'.format(self.__class__.__name__)
         )
 
-
 class ExportDataListView(ExportBaseView):
     template_name = 'rdm_custom_storage_location/export_data_list.html'
 
@@ -183,7 +196,7 @@ class ExportDataListView(ExportBaseView):
             user_institution_guid = self.request.user.representative_affiliated_institution.guid
         user_institution_name = Region.objects.get(_id=user_institution_guid).name
         storage_name = request.POST.get('storage_name')
-        location_export_name = request.POST.get('location_export_name')
+        location_export_name = request.POST.get('location_export_name') if 'location_export_name' in dict(request.POST) else ''
         query = get_export_data(user_institution_guid, location_export_name, storage_name)
         context = {'institution_name': user_institution_name,
                 'list_export_data': query,
@@ -210,7 +223,7 @@ class ExportDataDeletedListView(ExportBaseView):
             user_institution_guid = self.request.user.representative_affiliated_institution.guid
         user_institution_name = Region.objects.get(_id=user_institution_guid).name
         storage_name = request.POST.get('storage_name')
-        location_export_name = request.POST.get('location_export_name')
+        location_export_name = request.POST.get('location_export_name') if 'location_export_name' in dict(request.POST) else ''
         query = get_export_data(user_institution_guid, location_export_name, storage_name, deleted=True)
         context = {
             'institution_name': user_institution_name,
@@ -229,7 +242,6 @@ class ExportDataDeletedListView(ExportBaseView):
         if not self.is_super_admin and self.is_affiliated_institution:
             user_institution_guid = self.request.user.representative_affiliated_institution.guid
         return get_export_data(user_institution_guid, deleted=True)
-
 
 class ExportDataInformationView(ExportStorageLocationViewBaseView, DetailView):
     template_name = 'rdm_custom_storage_location/export_data_information.html'
@@ -253,7 +265,6 @@ class ExportDataInformationView(ExportStorageLocationViewBaseView, DetailView):
         context['data'] = data
         context['institution_name'] = self.request.user.representative_affiliated_institution.name
         return context
-
 
 class DeleteExportDataView(ExportStorageLocationViewBaseView, View):
     permission_required = 'osf.view_institution'
@@ -281,7 +292,6 @@ class DeleteExportDataView(ExportStorageLocationViewBaseView, View):
                 ExportData.objects.filter(id__in=list_export_data).update(is_deleted=True)
         return redirect('custom_storage_location:export_data:export_data_list')
 
-
 class RevertExportDataView(ExportStorageLocationViewBaseView, View):
     permission_required = 'osf.view_institution'
     raise_exception = True
@@ -293,9 +303,7 @@ class RevertExportDataView(ExportStorageLocationViewBaseView, View):
             ExportData.objects.filter(id__in=list_export_data).update(is_deleted=False)
         return redirect('custom_storage_location:export_data:export_data_deleted_list')
 
-
-class ExportDataFileCSVView(PermissionRequiredMixin, View):
-    permission_required = 'osf.view_osfuser'
+class ExportDataFileCSVView(RdmPermissionMixin, View):
 
     def get(self, request):
         guid = self.request.user.representative_affiliated_institution.guid
@@ -303,16 +311,12 @@ class ExportDataFileCSVView(PermissionRequiredMixin, View):
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment;filename=file_info_{}_{}.csv'.format(guid, current_datetime)
         writer = csv.writer(response)
-        user_info = OSFUser.objects.get(id=self.request.user.id)
-        cookie = user_info.get_or_create_cookie().decode()
-        cookies = {settings.COOKIE_NAME: cookie}
-        headers = {'content-type': 'application/json'}
-        info_file_url = waterbutler_api_url_for('nxsm2', 'osfstorage', path='/?meta=&_=1660881434548')
-        logger.info('ExportDataFileCSVView')
-        logger.info(info_file_url)
-        res = requests.get(info_file_url, headers=headers, cookies=cookies)
-        response_body = res.content
-        logger.info(response_body)
         writer.writerow(
             ['project_id', 'project_name', 'owner', 'file_id', 'file_path', 'filename', 'versions', 'size'])
+        data = get_list_file_info('nxsm2', 'osfstorage', '/', request.COOKIES)['data']
+        for item in data:
+            id = dict(item)['id']
+            item = dict(item)['attributes']
+            if(item['kind']) == 'file':
+                writer.writerow([item['resource'], item['resource'], 'name_ierae07', id, item['materialized'], item['name'], item['extra']['version'], item['size']])
         return response
