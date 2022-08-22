@@ -1,8 +1,9 @@
-import pytest
 import datetime
+
+import pytest
+from django.core.management import call_command
 from django.utils import timezone
 
-from django.core.management import call_command
 
 from osf_tests.factories import (
     PreprintFactory,
@@ -26,8 +27,8 @@ class TestSyncDOIs:
     @pytest.fixture()
     def registration(self):
         registration = RegistrationFactory()
-        doi = registration.request_identifier_update('doi')
-        registration.set_identifier_value('doi', doi)
+        doi = registration.request_identifier('doi')['doi']
+        registration.set_identifier_value(category='doi', value=doi)
         registration.is_public = True
         registration.save()
         return registration
