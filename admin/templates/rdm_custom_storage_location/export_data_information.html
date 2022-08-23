@@ -63,9 +63,9 @@
         </form>
     {% endif %}
 
-    <h2>{% trans "Export Data Information of S3 compatible storage" %}<br/><small>(for {{ institution_name }})</small></h2>
+    <h2>{% trans provider_name %}<br/><small>(for {{ institution_name }})</small></h2>
 
-    <table class="table table-striped" id={data.export_data.id}>
+    <table class="table table-striped" id={data_information.export_data.id}>
         <tbody>
         <tr>
             <td>Institutional information</td>
@@ -73,31 +73,31 @@
         </tr>
         <tr>
             <td>Process start</td>
-            <td>{{ data.export_data.process_start }}</td>
+            <td>{{ data_information.export_data.process_start }}</td>
         </tr>
         <tr>
             <td>Process end</td>
-            <td>{{ data.export_data.process_end }}</td>
+            <td>{{ data_information.export_data.process_end }}</td>
         </tr>
         <tr>
             <td>Source institution storage type</td>
-            <td>{{ data.source_name }}</td>
+            <td>{{ data_information.source_name }}</td>
         </tr>
         <tr>
             <td>Export data storage location</td>
-            <td>{{ data.location_name }}</td>
+            <td>{{ data_information.location_name }}</td>
         </tr>
         <tr>
             <td>Number of projects</td>
-            <td>{{ data.export_data.project_number }}</td>
+            <td>{{ data_information.export_data.project_number }}</td>
         </tr>
         <tr>
             <td>Number of files</td>
-            <td>{{ data.export_data.file_number }}</td>
+            <td>{{ data_information.export_data.file_number }}</td>
         </tr>
         <tr>
             <td>Total file size</td>
-            <td>{{ data.export_data.total_size }} KB</td>
+            <td>{{ data_information.export_data.total_size }} KB</td>
         </tr>
         </tbody>
     </table>
@@ -117,50 +117,18 @@
         </tr>
         </thead>
         <tbody>
-        <!-- /001/component.png             Project_7_A001  name_ierae07    name_ierae07    component, image, png   111 KB  2           2022-06-29 05:11 PM -->
-        <tr class="">
-            <td class="">/001/component.png</td>
-            <td class="">Project_7_A001</td>
-            <td class="">name_ierae07</td>
-            <td class="">name_ierae07</td>
-            <td class="">component, image, png</td>
-            <td class="">111 KB</td>
-            <td class="">2</td>
-            <td class="">2022-06-29 05:11 PM</td>
-        </tr>
-        <!-- /001/component.png             Project_7_A001  name_ierae07    name_ierae07    component, image, png   152 KB  1           2022-06-25 04:10 PM -->
-        <tr class="">
-            <td class="">/001/component.png</td>
-            <td class="">Project_7_A001</td>
-            <td class="">name_ierae07</td>
-            <td class="">name_ierae07</td>
-            <td class="">component, image, png</td>
-            <td class="">152 KB</td>
-            <td class="">1</td>
-            <td class="">2022-06-25 04:10 PM</td>
-        </tr>
-        <!-- /001/expand.png                Project_7_A001  name_ierae07    name_ierae07                            124 KB  1           2022-06-25 04:10 PM -->
-        <tr class="">
-            <td class="">/001/expand.png</td>
-            <td class="">Project_7_A001</td>
-            <td class="">name_ierae07</td>
-            <td class="">name_ierae07</td>
-            <td class=""></td>
-            <td class="">124 KB</td>
-            <td class="">1</td>
-            <td class="">2022-06-25 04:10 PM</td>
-        </tr>
-        <!-- /001/icon_1_document_x16.png   Project_7_A001  name_ierae07    name_ierae07                            96 KB   1           2022-06-25 04:10 PM -->
-        <tr class="">
-            <td class="">/001/icon_1_document_x16.png</td>
-            <td class="">Project_7_A001</td>
-            <td class="">name_ierae07</td>
-            <td class="">name_ierae07</td>
-            <td class=""></td>
-            <td class="">96 KB</td>
-            <td class="">1</td>
-            <td class="">2022-06-25 04:10 PM</td>
-        </tr>
+            {% for file_info in list_file_info %}
+                <tr class="">
+                    <td class="">{{file_info.materialized_path}}</td>
+                    <td class="">{{file_info.project.name}}</td>
+                    <td class="">name_ierae07</td>
+                    <td class="">{{file_info.timestamp.verify_user}}</td>
+                    <td class="">{{file_info.tags}}</td>
+                    <td class="">{{file_info.size}} KB</td>
+                    <td class="">1</td>
+                    <td class="">{{file_info.created_at}}</td>
+                </tr>
+            {% endfor %}
         </tbody>
     </table>
 
@@ -238,7 +206,7 @@
                             <p>本当にエクスポートデータを削除しますか?</p>
                             <div class="checkbox">
                                 <label>
-                                    <input type="checkbox"> 恒久的に削除（復帰ボタンで戻せません）
+                                    <input type="checkbox" name="delete_permanently"> 恒久的に削除（復帰ボタンで戻せません）
                                 </label>
                             </div>
                         </div>
@@ -286,7 +254,6 @@
                         </p>
                         <table class="table table-striped table-hover table-bordered table-responsive">
                             <thead>
-                            <!-- File path                      Project         Contributor     Timestamp by    Tags                    Size    Version ID  Created at -->
                             <tr>
                                 <th>File path</th>
                                 <th>Size</th>
@@ -295,14 +262,12 @@
                             </tr>
                             </thead>
                             <tbody class="list" id="">
-                            <!-- /001/component.png             Project_7_A001  name_ierae07    name_ierae07    component, image, png   111 KB  2           2022-06-29 05:11 PM -->
                             <tr class="">
                                 <td class="">/001/component.png</td>
                                 <td class="">111 KB</td>
                                 <td class="">2</td>
                                 <td class="">Missing file version</td>
                             </tr>
-                            <!-- /001/component.png             Project_7_A001  name_ierae07    name_ierae07    component, image, png   152 KB  1           2022-06-25 04:10 PM -->
                             <tr class="">
                                 <td class="">/001/component.png</td>
                                 <td class="">152 KB</td>
@@ -323,14 +288,13 @@
         $(document).ready(() => {
             var restore_task_id = null;
             $('#delete_button').on('click', () => {
-                let list_export_id = '{{data.export_data.id}}' + '#';
-                console.log(list_export_id);
-                $('#bodydeletemodal').append(`<input type='text' value=${list_export_id} id='input_export_data' class='buckinput' name='list_id_export_data' style='display: none;' />`);
+                let list_export_delete_id = '{{data_information.export_data.id}}' + '#';
+                $('#bodydeletemodal').append(`<input type='text' value=${list_export_delete_id} id='input_export_data' class='buckinput' name='list_id_export_data' style='display: none;' />`);
+                $('#bodydeletemodal').append(`<input type='text' value={{source_id}} id='source_id' class='buckinput' name='source_id' style='display: none;' />`);
             });
             $('#revert_button').on('click', () => {
-                let list_export_id = '{{data.export_data.id}}' + '#';
-                console.log(list_export_id);
-                $('#bodyrevertmodal').append(`<input type='text' value=${list_export_id} id='input_export_data' class='buckinput' name='list_id_export_data' style='display: none;' />`);
+                let list_export_revert_id = '{{data_information.export_data.id}}' + '#';
+                $('#bodyrevertmodal').append(`<input type='text' value=${list_export_revert_id} id='input_export_data' class='buckinput' name='list_id_export_data' style='display: none;' />`);
             });
             $('.cancel_modal').on('click', () => {
                 $('#input_export_data').remove();

@@ -14,13 +14,14 @@ from rest_framework import status as http_status
 
 from addons.osfstorage.models import Region
 from admin.rdm_custom_storage_location import utils
-from osf.models import ExportDataLocation, ExportData
+from osf.models import ExportDataLocation, ExportData, Institution
 from .location import ExportStorageLocationViewBaseView
 
 logger = logging.getLogger(__name__)
 
+
 def test_connection(data, institution=None):
-    provider_short_name = data.get('provider_short_name')
+    provider_short_name = data.get('provider')
     if not provider_short_name:
         response = {
             'message': 'Provider is missing.'
@@ -31,72 +32,72 @@ def test_connection(data, institution=None):
 
     if provider_short_name == 's3':
         result = utils.test_s3_connection(
-            data.get('s3_access_key'),
-            data.get('s3_secret_key'),
-            data.get('s3_bucket'),
+            data.get('access_key'),
+            data.get('secret_key'),
+            data.get('bucket'),
         )
     elif provider_short_name == 's3compat':
         result = utils.test_s3compat_connection(
-            data.get('s3compat_endpoint_url'),
-            data.get('s3compat_access_key'),
-            data.get('s3compat_secret_key'),
-            data.get('s3compat_bucket'),
+            data.get('endpoint_url'),
+            data.get('access_key'),
+            data.get('secret_key'),
+            data.get('bucket'),
         )
     elif provider_short_name == 's3compatb3':
         result = utils.test_s3compatb3_connection(
-            data.get('s3compatb3_endpoint_url'),
-            data.get('s3compatb3_access_key'),
-            data.get('s3compatb3_secret_key'),
-            data.get('s3compatb3_bucket'),
+            data.get('endpoint_url'),
+            data.get('access_key'),
+            data.get('secret_key'),
+            data.get('bucket'),
         )
     elif provider_short_name == 's3compatinstitutions':
         result = utils.test_s3compat_connection(
-            data.get('s3compatinstitutions_endpoint_url'),
-            data.get('s3compatinstitutions_access_key'),
-            data.get('s3compatinstitutions_secret_key'),
-            data.get('s3compatinstitutions_bucket'),
+            data.get('endpoint_url'),
+            data.get('access_key'),
+            data.get('secret_key'),
+            data.get('bucket'),
         )
     elif provider_short_name == 'ociinstitutions':
         result = utils.test_s3compatb3_connection(
-            data.get('ociinstitutions_endpoint_url'),
-            data.get('ociinstitutions_access_key'),
-            data.get('ociinstitutions_secret_key'),
-            data.get('ociinstitutions_bucket'),
+            data.get('endpoint_url'),
+            data.get('access_key'),
+            data.get('secret_key'),
+            data.get('bucket'),
         )
     elif provider_short_name == 'owncloud':
         result = utils.test_owncloud_connection(
-            data.get('owncloud_host'),
-            data.get('owncloud_username'),
-            data.get('owncloud_password'),
-            data.get('owncloud_folder'),
+            data.get('host'),
+            data.get('username'),
+            data.get('password'),
+            data.get('folder'),
             provider_short_name,
         )
     elif provider_short_name == 'nextcloud':
         result = utils.test_owncloud_connection(
-            data.get('nextcloud_host'),
-            data.get('nextcloud_username'),
-            data.get('nextcloud_password'),
-            data.get('nextcloud_folder'),
+            data.get('host'),
+            data.get('username'),
+            data.get('password'),
+            data.get('folder'),
             provider_short_name,
         )
     elif provider_short_name == 'nextcloudinstitutions':
         result = utils.test_owncloud_connection(
-            data.get('nextcloudinstitutions_host'),
-            data.get('nextcloudinstitutions_username'),
-            data.get('nextcloudinstitutions_password'),
-            data.get('nextcloudinstitutions_folder'),
+            data.get('host'),
+            data.get('username'),
+            data.get('password'),
+            data.get('folder'),
             provider_short_name,
         )
     elif provider_short_name == 'swift':
         result = utils.test_swift_connection(
-            data.get('swift_auth_version'),
-            data.get('swift_auth_url'),
-            data.get('swift_access_key'),
-            data.get('swift_secret_key'),
-            data.get('swift_tenant_name'),
-            data.get('swift_user_domain_name'),
-            data.get('swift_project_domain_name'),
-            data.get('swift_container'),
+            data.get('auth_version'),
+            data.get('auth_url'),
+            data.get('access_key'),
+            data.get('secret_key'),
+            data.get('tenant_name'),
+            data.get('user_domain_name'),
+            data.get('project_domain_name'),
+            data.get('container'),
         )
     elif provider_short_name == 'dropboxbusiness':
         result = utils.test_dropboxbusiness_connection(institution)
@@ -105,7 +106,31 @@ def test_connection(data, institution=None):
 
     return JsonResponse(result[0], status=result[1])
 
-def get_list_file_info(pid, provider, path, request_cookie):
+
+def get_list_file_detail(data, pid, provider, request_cookie, guid=None):
+    data_json = None
+    for file_info in data:
+        if file_info['attributes']['name'] == 'file_info_{}.json'.format(guid):
+            try:
+                url = waterbutler_api_url_for(
+                    pid, provider, path=file_info['id'].replace(provider, ''), _internal=True
+                )
+                rs = requests.get(
+                    url,
+                    cookies=request_cookie,
+                    stream=True,
+                )
+            except Exception as err:
+                logger.error(err)
+                return None
+            if rs.status_code == 200:
+                data_json = rs.json()
+            rs.close()
+            break
+    return data_json
+
+
+def get_list_file_info(pid, provider, path, request_cookie, guid=None):
     try:
         url = waterbutler_api_url_for(
             pid, provider, path=path, _internal=True, meta=''
@@ -113,7 +138,7 @@ def get_list_file_info(pid, provider, path, request_cookie):
         response = requests.get(
             url,
             headers={'content-type': 'application/json'},
-            cookies=request_cookie
+            cookies=request_cookie,
         )
     except Exception as err:
         logger.error(err)
@@ -122,11 +147,14 @@ def get_list_file_info(pid, provider, path, request_cookie):
     if response.status_code == 200:
         content = response.json()
     response.close()
-    return content
+    return get_list_file_detail(content['data'], pid, provider, request_cookie, guid)
 
-def get_export_data(user_institution_guid, selected_export_location=None, selected_source=None, deleted=False, check_delete=True):
+
+def get_export_data(user_institution_guid, selected_export_location=None, selected_source=None, deleted=False,
+                    check_delete=True):
     list_source_id = Region.objects.filter(_id=user_institution_guid).values_list('id', flat=True)
-    list_location_id = ExportDataLocation.objects.filter(institution_guid=user_institution_guid).values_list('id', flat=True)
+    list_location_id = ExportDataLocation.objects.filter(institution_guid=user_institution_guid).values_list('id',
+                                                                                                             flat=True)
     list_export_data = ExportData.objects.filter(is_deleted=deleted, location_id__in=list_location_id,
                                                  source_id__in=list_source_id).order_by(
         'id') if check_delete else ExportData.objects.filter(location_id__in=list_location_id,
@@ -154,8 +182,8 @@ def get_export_data(user_institution_guid, selected_export_location=None, select
     logger.info(list_data)
     return list_data
 
+
 class ExportBaseView(ExportStorageLocationViewBaseView, ListView):
-    permission_required = 'osf.view_institution'
     raise_exception = True
     paginate_by = 10
 
@@ -167,7 +195,8 @@ class ExportBaseView(ExportStorageLocationViewBaseView, ListView):
         user_institution_guid = self.INSTITUTION_DEFAULT
         if not self.is_super_admin and self.is_affiliated_institution:
             user_institution_guid = self.request.user.representative_affiliated_institution.guid
-        user_institution_name = Region.objects.get(_id=user_institution_guid).name
+        user_institution_name = Institution.objects.get(
+            id=self.request.user.representative_affiliated_institution.id).name
         self.query_set = self.get_queryset()
         self.page_size = self.get_paginate_by(self.query_set)
         self.paginator, self.page, self.query_set, self.is_paginated = \
@@ -187,25 +216,31 @@ class ExportBaseView(ExportStorageLocationViewBaseView, ListView):
             '{0} is missing the implementation of the get_export_data_list() method.'.format(self.__class__.__name__)
         )
 
+
 class ExportDataListView(ExportBaseView):
     template_name = 'rdm_custom_storage_location/export_data_list.html'
 
-    def post(self, request):
+    def get(self, request, institution_id):
         user_institution_guid = self.INSTITUTION_DEFAULT
         if not self.is_super_admin and self.is_affiliated_institution:
             user_institution_guid = self.request.user.representative_affiliated_institution.guid
-        user_institution_name = Region.objects.get(_id=user_institution_guid).name
-        storage_name = request.POST.get('storage_name')
-        location_export_name = request.POST.get('location_export_name') if 'location_export_name' in dict(request.POST) else ''
-        query = get_export_data(user_institution_guid, location_export_name, storage_name)
-        context = {'institution_name': user_institution_name,
-                'list_export_data': query,
-                'list_location': ExportDataLocation.objects.filter(institution_guid=user_institution_guid),
-                'list_storage': Region.objects.filter(_id=user_institution_guid),
-                'selected_source': int(storage_name) or 0,
-                'selected_location_export': int(location_export_name),
-                'source_id': query[0]['source_id'] if len(query) > 0 else 0,
-                'page': 1}
+        user_institution_name = Institution.objects.get(id=institution_id).name
+        selected_storage = request.GET.get('storage_name') if 'storage_name' in dict(request.GET) else 0
+        selected_location_export = request.GET.get('location_export_name') if 'location_export_name' in dict(
+            request.GET) else 0
+        query = get_export_data(user_institution_guid, selected_location_export, selected_storage)
+        page_size = self.get_paginate_by(query)
+        _, page, _, _ = self.paginate_queryset(query, page_size)
+        context = {
+            'institution_name': user_institution_name,
+            'list_export_data': query,
+            'list_location': ExportDataLocation.objects.filter(institution_guid=user_institution_guid),
+            'list_storage': Region.objects.filter(_id=user_institution_guid),
+            'selected_source': int(selected_storage),
+            'selected_location_export': int(selected_location_export),
+            'source_id': query[0]['source_id'] if len(query) > 0 else 0,
+            'page': page,
+        }
         return render(request, self.template_name, context)
 
     def get_export_data_list(self):
@@ -214,26 +249,30 @@ class ExportDataListView(ExportBaseView):
             user_institution_guid = self.request.user.representative_affiliated_institution.guid
         return get_export_data(user_institution_guid)
 
+
 class ExportDataDeletedListView(ExportBaseView):
     template_name = 'rdm_custom_storage_location/export_data_deleted_list.html'
 
-    def post(self, request):
+    def get(self, request, institution_id):
         user_institution_guid = self.INSTITUTION_DEFAULT
         if not self.is_super_admin and self.is_affiliated_institution:
             user_institution_guid = self.request.user.representative_affiliated_institution.guid
-        user_institution_name = Region.objects.get(_id=user_institution_guid).name
-        storage_name = request.POST.get('storage_name')
-        location_export_name = request.POST.get('location_export_name') if 'location_export_name' in dict(request.POST) else ''
-        query = get_export_data(user_institution_guid, location_export_name, storage_name, deleted=True)
+        user_institution_name = Institution.objects.get(id=institution_id).name
+        selected_storage = request.GET.get('storage_name') if 'storage_name' in dict(request.GET) else 0
+        selected_location_export = request.GET.get('location_export_name') if 'location_export_name' in dict(
+            request.GET) else 0
+        query = get_export_data(user_institution_guid, selected_location_export, selected_storage, deleted=True)
+        page_size = self.get_paginate_by(query)
+        _, page, _, _ = self.paginate_queryset(query, page_size)
         context = {
             'institution_name': user_institution_name,
             'list_export_data': query,
             'list_location': ExportDataLocation.objects.filter(institution_guid=user_institution_guid),
             'list_storage': Region.objects.filter(_id=user_institution_guid),
-            'selected_source': int(storage_name) or 0,
-            'selected_location_export': int(location_export_name),
+            'selected_source': int(selected_storage),
+            'selected_location_export': int(selected_location_export),
             'source_id': query[0]['source_id'] if len(query) > 0 else 0,
-            'page': 1
+            'page': page,
         }
         return render(request, self.template_name, context)
 
@@ -243,9 +282,9 @@ class ExportDataDeletedListView(ExportBaseView):
             user_institution_guid = self.request.user.representative_affiliated_institution.guid
         return get_export_data(user_institution_guid, deleted=True)
 
+
 class ExportDataInformationView(ExportStorageLocationViewBaseView, DetailView):
     template_name = 'rdm_custom_storage_location/export_data_information.html'
-    permission_required = 'osf.view_institution'
     raise_exception = True
 
     def get_object(self, **kwargs):
@@ -261,14 +300,23 @@ class ExportDataInformationView(ExportStorageLocationViewBaseView, DetailView):
     def get_context_data(self, **kwargs):
         context = super(ExportDataInformationView, self).get_context_data(**kwargs)
         data = self.get_object()
+        user_institution_name = Institution.objects.get(
+            id=self.request.user.representative_affiliated_institution.id).name
+        user_institution_guid = self.request.user.representative_affiliated_institution.guid
+        list_file_info = get_list_file_info('nxsm2', 'osfstorage', '/', self.request.COOKIES, user_institution_guid)
+        provider = Region.objects.get(id=data['source_id'])
         context['is_deleted'] = data['export_data'].is_deleted
-        context['data'] = data
-        context['institution_name'] = self.request.user.representative_affiliated_institution.name
+        context['data_information'] = data
+        context['list_file_info'] = list_file_info['files']
+        context['institution_name'] = user_institution_name
+        context['source_id'] = data['source_id'] if len(data) > 0 else 0
+        context['provider_name'] = 'Export Data Information of {} storage'.format(
+            provider.waterbutler_settings['storage']['provider'])
         context['storages'] = Region.objects.exclude(_id__in=self.request.user.representative_affiliated_institution.guid)
         return context
 
+
 class DeleteExportDataView(ExportStorageLocationViewBaseView, View):
-    permission_required = 'osf.view_institution'
     raise_exception = True
 
     def post(self, request):
@@ -279,22 +327,37 @@ class DeleteExportDataView(ExportStorageLocationViewBaseView, View):
             if check_delete_permanently:
                 # Check connection
                 logger.info('check_delete_permanently')
-                logger.info(check_delete_permanently)
                 source = Region.objects.get(id=request.POST.get('source_id'))
                 request_data = source.waterbutler_credentials['storage']
-                request_data['provider_short_name'] = source.waterbutler_settings['storage']['provider']
+                request_data = {**request_data, **dict(source.waterbutler_settings['storage'])}
+                logger.info(request_data)
                 respone_test_connect = test_connection(request_data)
                 logger.info('respone_test_connect')
                 logger.info(respone_test_connect)
+                try:
+                    url = waterbutler_api_url_for(
+                        'nxsm2', 'osfstorage', path='/62ff09aaa299d84a17c99f9d', _internal=True
+                    )
+                    response = requests.delete(
+                        url,
+                        headers={'content-type': 'application/json'},
+                        cookies=request.COOKIES
+                    )
+                except Exception as err:
+                    logger.error(err)
+                    return None
+                logger.info(response)
+                response.close()
                 # Delete export data in DB
                 ExportData.objects.filter(id__in=list_export_data).update(is_deleted=True)
                 # ExportData.objects.filter(id__in=list_export_data).delete()
             else:
                 ExportData.objects.filter(id__in=list_export_data).update(is_deleted=True)
-        return redirect('custom_storage_location:export_data:export_data_list')
+        return redirect('custom_storage_location:export_data:export_data_list',
+                        institution_id=self.request.user.representative_affiliated_institution.id)
+
 
 class RevertExportDataView(ExportStorageLocationViewBaseView, View):
-    permission_required = 'osf.view_institution'
     raise_exception = True
 
     def post(self, request):
@@ -302,7 +365,9 @@ class RevertExportDataView(ExportStorageLocationViewBaseView, View):
         list_export_data = list(filter(None, list_export_data))
         if list_export_data:
             ExportData.objects.filter(id__in=list_export_data).update(is_deleted=False)
-        return redirect('custom_storage_location:export_data:export_data_deleted_list')
+        return redirect('custom_storage_location:export_data:export_data_deleted_list',
+                        institution_id=self.request.user.representative_affiliated_institution.id)
+
 
 class ExportDataFileCSVView(RdmPermissionMixin, View):
 
@@ -314,10 +379,11 @@ class ExportDataFileCSVView(RdmPermissionMixin, View):
         writer = csv.writer(response)
         writer.writerow(
             ['project_id', 'project_name', 'owner', 'file_id', 'file_path', 'filename', 'versions', 'size'])
-        data = get_list_file_info('nxsm2', 'osfstorage', '/', request.COOKIES)['data']
-        for item in data:
-            id = dict(item)['id']
-            item = dict(item)['attributes']
-            if(item['kind']) == 'file':
-                writer.writerow([item['resource'], item['resource'], 'name_ierae07', id, item['materialized'], item['name'], item['extra']['version'], item['size']])
+        data = get_list_file_info('nxsm2', 'osfstorage', '/', request.COOKIES, guid)
+        logger.info(data)
+        for file in data['files']:
+            writer.writerow(
+                [file['project']['id'], file['project']['name'], 'name_ierae07', file['id'], file['materialized_path'],
+                 file['name'],
+                 file['version'][0]['identifier'], file['size']])
         return response

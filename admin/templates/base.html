@@ -340,7 +340,7 @@
                 </a>
             </li>
             <li class="{% if request.resolver_match.url_name == 'export_data_list' or request.resolver_match.url_name == 'export_data_deleted_list' or request.resolver_match.url_name == 'export_data_information' %}active{% endif %}">
-                <a href="{% url 'custom_storage_location:export_data:export_data_list' %}">
+                <a href="{% url 'custom_storage_location:export_data:export_data_list' institution_id=user.representative_affiliated_institution.id %}">
                     <i class="fa fa-link"></i> <span>{% trans "Export Data Management" %}</span>
                 </a>
             </li>

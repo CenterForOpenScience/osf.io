@@ -15,8 +15,7 @@
 {% block content %}
     <h2>{% trans "Export Data List" %}<br/><small>(for {{ institution_name }})</small></h2>
 
-    <form method="post" action="{% url 'custom_storage_location:export_data:export_data_list' %}" class="form-horizontal" id="entitlements_form">
-        {% csrf_token %}
+    <form method="get" action="{% url 'custom_storage_location:export_data:export_data_list' institution_id=user.representative_affiliated_institution.id %}" class="form-horizontal" id="entitlements_form">
         <div class="form-group">
             <label class="col-sm-2 control-label text-left">Export source storage</label>
             <div class="col-sm-9">
@@ -58,7 +57,7 @@
                 {% else %}
                     <button type="submit" id="filter_export" class="btn btn-primary" style="min-width: 90px;" disabled>{% trans "Filter" %}</button>
                 {% endif %}
-                <a class="text-white" href={% url 'custom_storage_location:export_data:export_data_deleted_list' %}>
+                <a class="text-white" href={% url 'custom_storage_location:export_data:export_data_deleted_list' institution_id=user.representative_affiliated_institution.id %}>
                     <button type="button" class="btn btn-primary" style="min-width: 90px; margin-left:10px;">
                         {% trans "Revert Export Data" %}
                     </button>
