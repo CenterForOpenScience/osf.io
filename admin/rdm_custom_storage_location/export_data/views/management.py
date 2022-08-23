@@ -216,26 +216,51 @@ class ExportBaseView(ExportStorageLocationViewBaseView, ListView):
             '{0} is missing the implementation of the get_export_data_list() method.'.format(self.__class__.__name__)
         )
 
+    def load_institution(self):
+        institution_id = self.kwargs.get('institution_id')
+
+        if institution_id:
+            # superuser admin can access it
+            self.institution = Institution.objects.get(id=institution_id)
+            self.institution_guid = self.institution.guid
+        else:
+            # institutional admin access without institution_id -> get from representative_affiliated_institution
+            if not institution_id and self.is_affiliated_institution:
+                self.institution = self.request.user.representative_affiliated_institution
+                if self.institution:
+                    self.institution_guid = self.institution.guid
+                    institution_id = self.institution.id
+
+            # skip if institution_id
+            if not institution_id and self.is_super_admin:
+                self.institution = Institution.objects.first()
+                self.institution_guid = self.institution.guid
+                institution_id = self.institution.id
+
+        # skip if is_affiliated_institution
+        # institutional admin access with invalid institution_id
+        if not self.is_super_admin and not self.is_affiliated_institution(institution_id):
+            self.handle_no_permission()
+
 
 class ExportDataListView(ExportBaseView):
     template_name = 'rdm_custom_storage_location/export_data_list.html'
 
-    def get(self, request, institution_id):
-        user_institution_guid = self.INSTITUTION_DEFAULT
-        if not self.is_super_admin and self.is_affiliated_institution:
-            user_institution_guid = self.request.user.representative_affiliated_institution.guid
-        user_institution_name = Institution.objects.get(id=institution_id).name
+    def get(self, request, *args, **kwargs):
+        self.load_institution()
+        storage_id = self.kwargs.get('storage_id')
+
         selected_storage = request.GET.get('storage_name') if 'storage_name' in dict(request.GET) else 0
         selected_location_export = request.GET.get('location_export_name') if 'location_export_name' in dict(
             request.GET) else 0
-        query = get_export_data(user_institution_guid, selected_location_export, selected_storage)
+        query = get_export_data(self.institution_guid, selected_location_export, selected_storage)
         page_size = self.get_paginate_by(query)
         _, page, _, _ = self.paginate_queryset(query, page_size)
         context = {
-            'institution_name': user_institution_name,
+            'institution': self.institution,
             'list_export_data': query,
-            'list_location': ExportDataLocation.objects.filter(institution_guid=user_institution_guid),
-            'list_storage': Region.objects.filter(_id=user_institution_guid),
+            'list_location': ExportDataLocation.objects.filter(institution_guid=self.institution_guid),
+            'list_storage': Region.objects.filter(_id=self.institution_guid),
             'selected_source': int(selected_storage),
             'selected_location_export': int(selected_location_export),
             'source_id': query[0]['source_id'] if len(query) > 0 else 0,
@@ -253,22 +278,21 @@ class ExportDataListView(ExportBaseView):
 class ExportDataDeletedListView(ExportBaseView):
     template_name = 'rdm_custom_storage_location/export_data_deleted_list.html'
 
-    def get(self, request, institution_id):
-        user_institution_guid = self.INSTITUTION_DEFAULT
-        if not self.is_super_admin and self.is_affiliated_institution:
-            user_institution_guid = self.request.user.representative_affiliated_institution.guid
-        user_institution_name = Institution.objects.get(id=institution_id).name
+    def get(self, request, *args, **kwargs):
+        self.load_institution()
+        storage_id = self.kwargs.get('storage_id')
+
         selected_storage = request.GET.get('storage_name') if 'storage_name' in dict(request.GET) else 0
         selected_location_export = request.GET.get('location_export_name') if 'location_export_name' in dict(
             request.GET) else 0
-        query = get_export_data(user_institution_guid, selected_location_export, selected_storage, deleted=True)
+        query = get_export_data(self.institution_guid, selected_location_export, selected_storage, deleted=True)
         page_size = self.get_paginate_by(query)
         _, page, _, _ = self.paginate_queryset(query, page_size)
         context = {
-            'institution_name': user_institution_name,
+            'institution': self.institution,
             'list_export_data': query,
-            'list_location': ExportDataLocation.objects.filter(institution_guid=user_institution_guid),
-            'list_storage': Region.objects.filter(_id=user_institution_guid),
+            'list_location': ExportDataLocation.objects.filter(institution_guid=self.institution_guid),
+            'list_storage': Region.objects.filter(_id=self.institution_guid),
             'selected_source': int(selected_storage),
             'selected_location_export': int(selected_location_export),
             'source_id': query[0]['source_id'] if len(query) > 0 else 0,

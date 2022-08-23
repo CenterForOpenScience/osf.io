@@ -13,9 +13,9 @@
 {% endblock title %}
 
 {% block content %}
-    <h2>{% trans "Deleted Export Data List" %}<br/><small>(for {{ institution_name }})</small></h2>
+    <h2>{% trans "Deleted Export Data List" %}<br/><small>(for {{ institution.name }})</small></h2>
 
-    <form method="get" action="{% url 'custom_storage_location:export_data:export_data_deleted_list' institution_id=user.representative_affiliated_institution.id %}" class="form-horizontal"
+    <form method="get" action="{% url 'custom_storage_location:export_data:export_data_deleted_list_institution' institution_id=institution.id %}" class="form-horizontal"
           id="entitlements_form">
         <div class="form-group">
             <label class="col-sm-2 control-label text-left" style="">Export source storage</label>
@@ -52,7 +52,7 @@
                 {% else %}
                     <button type="submit" id="filter_export" class="btn btn-primary" style="min-width: 90px;" disabled>{% trans "Filter" %}</button>
                 {% endif %}
-                <a href={% url 'custom_storage_location:export_data:export_data_deleted_list' institution_id=user.representative_affiliated_institution.id %}>
+                <a href={% url 'custom_storage_location:export_data:export_data_deleted_list_institution' institution_id=institution.id %}>
                     <button type="button" class="btn btn-primary" style="min-width: 90px; margin-left:10px;">
                         {% trans "Revert Export Data" %}
                     </button>
