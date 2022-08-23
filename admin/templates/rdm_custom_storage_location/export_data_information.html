@@ -42,11 +42,9 @@
                 <label class="col-sm-2 control-label text-left" style="">Restore destination storage</label>
                 <div class="col-sm-9" style="display: flex; gap: 10px;">
                     <select class="form-control" id="destination_storage" title="" style="max-width: 320px; flex: auto">
-                        <option value="3" selected="selected">AWS S3 storage</option>
-                        <option value="1">NII Storage</option>
-                        <option value="2">S3 compatible storage</option>
-                        <option value="4">Nextcloud</option>
-                        <option value="5">Dropbox Business</option>
+                        {% for storage in storages %}
+                            <option value="{{ storage.id }}" selected="selected">{{ storage.name }}</option>
+                        {% endfor %}
                     </select>
                     <div class="btn-group" role="group" aria-label="...">
                         <button type="button" id="restore_button" class="btn btn-primary"
@@ -354,7 +352,7 @@
                     let task_id = response["task_id"];
                     setTimeout(() => {
                         checkTaskStatus(task_id);
-                    }, 1000);
+                    }, 2000);
                 }).fail(function(jqXHR, textStatus, error) {
                     cancelRestore();
                 });
@@ -374,14 +372,15 @@
                 let state = response["state"];
                 let result = response["result"];
                 if (state === 'SUCCESS' && result === 'Open Dialog') {
-                    // Open Dialog
-                    $("#restore").modal('show');
+                   // Open Dialog
+                   $("#restore").modal('show');
                 } else if (state === 'PENDING') {
+                   // Redo check task status after 2 seconds
                    setTimeout(() => {
                        checkTaskStatus(task_id);
-                   }, 1000);
+                   }, 2000);
                 } else {
-                    cancelRestore();
+                   cancelRestore();
                 }
             }).fail(function(jqXHR, textStatus, error) {
                 cancelRestore();

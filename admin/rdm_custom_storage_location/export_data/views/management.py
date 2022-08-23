@@ -264,6 +264,7 @@ class ExportDataInformationView(ExportStorageLocationViewBaseView, DetailView):
         context['is_deleted'] = data['export_data'].is_deleted
         context['data'] = data
         context['institution_name'] = self.request.user.representative_affiliated_institution.name
+        context['storages'] = Region.objects.exclude(_id__in=self.request.user.representative_affiliated_institution.guid)
         return context
 
 class DeleteExportDataView(ExportStorageLocationViewBaseView, View):

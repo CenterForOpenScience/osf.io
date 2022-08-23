@@ -6,7 +6,7 @@ from django.db import transaction
 from api.base.utils import waterbutler_api_url_for
 from celery.contrib.abortable import AbortableTask
 from framework.celery_tasks import app as celery_app
-from osf.models import ExportData, ExportDataLocation
+from osf.models import ExportData, ExportDataLocation, ExportDataRestore
 from addons.osfstorage.models import Region
 from website.settings import WATERBUTLER_URL
 
@@ -18,7 +18,7 @@ __all__ = [
 @celery_app.task(bind=True, base=AbortableTask)
 def check_before_restore_export_data(self, cookie, export_id, destination_id):
     # Try to add new process record to DB
-    # export_data_restore = ExportDataRestore(status="Running")
+    # export_data_restore = ExportDataRestore(export_id=export_id, destination_id=destination_id, status="Running", process_start=date.today())
     # export_data_restore.save()
 
     # Get export file (export_data_{institution_guid}_{yyyymmddhhMMSS}.json)
@@ -31,12 +31,12 @@ def check_before_restore_export_data(self, cookie, export_id, destination_id):
                                                                                      "%Y%m%d%H%M%S"))
     internal = export_base_url == WATERBUTLER_URL
     export_file_url = waterbutler_api_url_for(export_institution_guid, export_provider, path=export_file_path, _internal=internal, meta="",
-                                              base_url=export_base_url)
+                                              base_url=export_base_url, cookie=cookie)
     response = requests.get(export_file_url)
     if response.status_code != 200:
         # Error
         print("Error: ", response.content)
-        # export_data_restore = ExportDataRestore(status="Stopped")
+        # export_data_restore.status = "Stopped"
         # export_data_restore.save()
         return "Cannot connect to the export data storage location"
 
@@ -60,7 +60,7 @@ def check_before_restore_export_data(self, cookie, export_id, destination_id):
     #     "file_path": "./"
     # }
 
-    # export_data_restore = ExportDataRestore(status="Stopped")
+    # export_data_restore.status = "Stopped"
     # export_data_restore.save()
     # return "The export data files are corrupted"
 
@@ -75,7 +75,7 @@ def check_before_restore_export_data(self, cookie, export_id, destination_id):
     if response.status_code != 200:
         # Error
         print("Error: ", response.content)
-        # export_data_restore = ExportDataRestore(status="Stopped")
+        # export_data_restore.status = "Stopped"
         # export_data_restore.save()
         return "Cannot connect to destination storage"
 
@@ -86,7 +86,7 @@ def check_before_restore_export_data(self, cookie, export_id, destination_id):
         return 'Open Confirm Dialog'
 
     # Destination storage is empty, start restore process
-    return self.restore_export_data(cookie, export_id, destination_id)
+    return restore_export_data(cookie, export_id, destination_id)
 
 
 @celery_app.task(bind=True, base=AbortableTask)
@@ -97,23 +97,23 @@ def restore_export_data(self, cookie, export_id, destination_id):
     # move all old data in restore destination storage to a folder to backup (such as '_backup' folder)
 
     with transaction.atomic():
+        # export_data_restore = ExportDataRestore.objects.get(export_id=export_id, destination_id=destination_id)
         # Get file which have same information between export data and database
         # File info file: file_info_{institution_guid}_{yyyymmddhhMMSS}.json
         export_data = ExportData.objects.filter(id=export_id, is_deleted=False)[0]
-        export_base_url, export_settings, export_institution_guid = ExportDataLocation.objects.filter(id=export_data.location_id).values_list('waterbutler_url',
-                                                                                  'waterbutler_settings',
-                                                                                  'institution_guid')[0]
+        export_base_url, export_settings, export_institution_guid = ExportDataLocation.objects.filter(id=export_data.location_id).values_list('waterbutler_url', 'waterbutler_settings', 'institution_guid')[0]
         export_provider = export_settings["storage"]["provider"]
         file_info_path = "/file_info_{institution_guid}_{timestamp}.json".format(institution_guid=export_institution_guid,
                                                                                  timestamp=export_data.modified.strftime(
                                                                                      "%Y%m%d%H%M%S"))
         internal = export_base_url == WATERBUTLER_URL
-        file_info_url = waterbutler_api_url_for(export_institution_guid, export_provider, path=file_info_path, _internal=internal, base_url=export_base_url)
+        file_info_url = waterbutler_api_url_for(export_institution_guid, export_provider, path=file_info_path,
+                                                _internal=internal, base_url=export_base_url, cookie=cookie)
         response = requests.get(file_info_url)
         if response.status_code != 200:
             # Error
             print("Error: ", response.content)
-            # export_data_restore = ExportDataRestore(status="Stopped")
+            # export_data_restore.status = "Stopped"
             # export_data_restore.save()
             return "Cannot get file infomation list"
 
@@ -139,7 +139,8 @@ def restore_export_data(self, cookie, export_id, destination_id):
 
         # Update process data with process_end timestamp
         # Update process data with "Completed" status
-        # export_data_restore = ExportDataRestore(status="Completed")
+        # export_data_restore.process_end = date.today()
+        # export_data_restore.status = "Completed"
         # export_data_restore.save()
 
     return 'Done'
