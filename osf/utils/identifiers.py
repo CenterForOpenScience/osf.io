@@ -85,5 +85,5 @@ class DOIValidator(PIDValidator):
 
 def normalize_identifier(pid_value):
     '''Extract just the PID Value from a possible full URI.'''
-    pid_value_expression = '(http://|https://)?(doi.org/)?(?P<pid_value>.*)'
+    pid_value_expression = '(.*://)?(doi.org/)?(?P<pid_value>.*)'
     return re.match(pid_value_expression, pid_value).group('pid_value')
