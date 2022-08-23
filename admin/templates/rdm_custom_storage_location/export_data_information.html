@@ -321,6 +321,7 @@
     {% endif %}
     <script type="text/javascript">
         $(document).ready(() => {
+            var restore_task_id = null;
             $('#delete_button').on('click', () => {
                 let list_export_id = '{{data.export_data.id}}' + '#';
                 console.log(list_export_id);
@@ -349,10 +350,28 @@
                     type: "post",
                     data: data
                 }).done(function(response) {
-                    let task_id = response["task_id"];
+                    restore_task_id = response["task_id"];
                     setTimeout(() => {
-                        checkTaskStatus(task_id);
+                        checkTaskStatus(restore_task_id);
                     }, 2000);
+                }).fail(function(jqXHR, textStatus, error) {
+                    cancelRestore();
+                });
+            });
+            $('#stop_restore_button').on('click', () => {
+                $("#stop_restore_button").addClass("disabled");
+                $("#stop_restore_button").attr("disabled", true);
+                let data = { task_id: restore_task_id };
+                $.ajaxSetup({
+                    data: { csrfmiddlewaretoken: '{{ csrf_token }}' },
+                });
+                $.ajax({
+                    url: "restore_export_data/stop",
+                    type: "post",
+                    data: data
+                }).done(function(response) {
+                    console.log("ABORTED");
+                    cancelRestore();
                 }).fail(function(jqXHR, textStatus, error) {
                     cancelRestore();
                 });
@@ -379,7 +398,7 @@
                    setTimeout(() => {
                        checkTaskStatus(task_id);
                    }, 2000);
-                } else {
+                } else if (state !== 'REVOKED' && state !== 'ABORTED') {
                    cancelRestore();
                 }
             }).fail(function(jqXHR, textStatus, error) {
@@ -392,6 +411,7 @@
             $("#stop_restore_button").addClass("disabled");
             $("#restore_button").attr("disabled", false);
             $("#stop_restore_button").attr("disabled", true);
+            restore_task_id = null;
         }
 
         function startRestore() {
