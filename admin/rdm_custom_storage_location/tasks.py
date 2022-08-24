@@ -189,33 +189,44 @@ def restore_export_data(self, cookies, export_id, destination_id):
     return 'Completed'
 
 
-def rollback_restore(cookie, export_id, destination_id, transaction=None):
+def rollback_restore(cookies, export_id, destination_id, transaction=None):
     # Rollback transaction
     if transaction is not None:
         transaction.set_rollback(True)
 
-    # export_data_restore = ExportDataRestore.objects.get(export_id=export_id, destination_id=destination_id)
+    export_data_restore = ExportDataRestore.objects.get(export_id=export_id, destination_id=destination_id)
 
     # Rollback file movements
     # Get export data with the file information from the source storage via API call
     export_data = ExportData.objects.filter(id=export_id, is_deleted=False)[0]
     export_base_url, export_settings, export_institution_guid = ExportDataLocation.objects.filter(id=export_data.location_id).values_list('waterbutler_url', 'waterbutler_settings', 'institution_guid')[0]
     export_provider = export_settings["storage"]["provider"]
-    file_info_path = "/file_info_{institution_guid}_{timestamp}.json".format(institution_guid=export_institution_guid,
-                                                                             timestamp=export_data.modified.strftime(
-                                                                                 "%Y%m%d%H%M%S"))
+    file_info_path = EXPORT_FILE_INFO_PATH.format(
+        institution_guid=export_institution_guid,
+        process_start=export_data.modified.strftime(DATETIME_FORMAT))
     internal = export_base_url == WATERBUTLER_URL
     file_info_url = waterbutler_api_url_for(export_institution_guid, export_provider, path=file_info_path,
-                                            _internal=internal, base_url=export_base_url, cookie=cookie)
-    response = requests.get(file_info_url)
-    if response.status_code != 200:
-        # Error
-        print("Error: ", response.content)
-        # export_data_restore.status = "Stopped"
-        # export_data_restore.save()
+                                            _internal=internal, base_url=export_base_url)
+    try:
+        response = requests.get(file_info_url,
+                                headers={'content-type': 'application/json'},
+                                cookies=cookies)
+        if response.status_code != 200:
+            # Error
+            logger.error("Return error with response: {}".format(response.content))
+            response.close()
+            export_data_restore.status = "Stopped"
+            export_data_restore.save()
+            return "Cannot get file infomation list"
+    except Exception as e:
+        print("Error: ", e)
+        response.close()
+        export_data_restore.status = "Stopped"
+        export_data_restore.save()
         return "Cannot get file infomation list"
 
     response_body = response.json()
+    response.close()
     source_institution = response_body["institution"]
     source_id = source_institution["id"]
     files = response_body["files"]
@@ -224,13 +235,14 @@ def rollback_restore(cookie, export_id, destination_id, transaction=None):
         file_materialized_path = file["materialized_path"]
         # In add-on institutional storage: Delete files, except the backup folder.
         # In bulk-mounted institutional storage: Delete only files created during the restore process.
-        delete_api = waterbutler_api_url_for(destination_id, "S3", path=file_path, cookie=cookie)
+        delete_api = waterbutler_api_url_for(destination_id, "S3", path=file_path)
         response = requests.delete(delete_api)
+        response.close()
 
     # If destination storage is add-on institutional storage
     # Move all files from the backup folder out
     # Delete the backup folder
 
-    # export_data_restore.status = "Stopped"
-    # export_data_restore.save()
-    return 'Aborted'
+    export_data_restore.status = "Stopped"
+    export_data_restore.save()
+    return 'Stopped'
