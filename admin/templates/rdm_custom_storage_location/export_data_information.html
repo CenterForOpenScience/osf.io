@@ -316,6 +316,9 @@
                     data: data
                 }).done(function(response) {
                     restore_task_id = response["task_id"];
+                    if (!restore_task_id) {
+                        return;
+                    }
                     setTimeout(() => {
                         checkTaskStatus(restore_task_id);
                     }, 2000);
