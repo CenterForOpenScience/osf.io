@@ -61,6 +61,7 @@ class ExportDataInstitutionalStorageListView(ExportStorageLocationViewBaseView, 
             "id": storage.id,
             "name": storage.name,
             "provider_name": storage.provider_name,
+            "provider_full_name": storage.provider_full_name,
             "has_export_data": ExportData.objects.filter(source_id=storage.id).exists()
         } for storage in storages]
         return storages_dict

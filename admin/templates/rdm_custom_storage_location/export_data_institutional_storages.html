@@ -34,7 +34,7 @@
         {% for storage in storages %}
             <tr>
                 <td>{{ storage.id }}</td>
-                <td>{{ storage.provider_name }}</td>
+                <td>{{ storage.provider_full_name }}</td>
                 <td>{{ storage.name }}</td>
                 <td>
                     <select id="export-data-storage-{{ storage.id }}" class="form-control" title="" style="max-width: 320px;">

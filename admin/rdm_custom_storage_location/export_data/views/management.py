@@ -185,13 +185,14 @@ class ExportDataListView(ExportBaseView):
         self.query_set = get_export_data(self.institution_guid, selected_location_export, selected_storage)
         self.page_size = self.get_paginate_by(self.query_set)
         self.paginator, self.page, self.query_set, self.is_paginated = self.paginate_queryset(self.query_set, self.page_size)
+        locations = self.get_default_storage_location().union(self.institution.get_storage_location())
         context = {
             'institution': self.institution,
             'list_export_data': self.query_set,
-            'list_location': ExportDataLocation.objects.filter(institution_guid=self.institution_guid),
+            'locations': locations,
+            'selected_location_id': int(selected_location_export),
             'list_storage': Region.objects.filter(_id=self.institution_guid),
             'selected_source': int(selected_storage),
-            'selected_location_export': int(selected_location_export),
             'source_id': self.query_set[0]['source_id'] if len(self.query_set) > 0 else 0,
             'page': self.page,
         }
@@ -217,13 +218,14 @@ class ExportDataDeletedListView(ExportBaseView):
         self.query_set = get_export_data(self.institution_guid, selected_location_export, selected_storage, deleted=True)
         self.page_size = self.get_paginate_by(self.query_set)
         self.paginator, self.page, self.query_set, self.is_paginated = self.paginate_queryset(self.query_set, self.page_size)
+        locations = self.get_default_storage_location().union(self.institution.get_storage_location())
         context = {
             'institution': self.institution,
             'list_export_data': self.query_set,
-            'list_location': ExportDataLocation.objects.filter(institution_guid=self.institution_guid),
+            'locations': locations,
+            'selected_location_id': int(selected_location_export),
             'list_storage': Region.objects.filter(_id=self.institution_guid),
             'selected_source': int(selected_storage),
-            'selected_location_export': int(selected_location_export),
             'source_id': self.query_set[0]['source_id'] if len(self.query_set) > 0 else 0,
             'page': self.page,
         }

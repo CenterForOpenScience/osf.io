@@ -21,9 +21,9 @@ EXPORT_DATA_STATUS_CHOICES = [
 class ExportData(base.BaseModel):
     source = models.ForeignKey(Region, on_delete=models.CASCADE)
     location = models.ForeignKey(ExportDataLocation, on_delete=models.CASCADE)
-    process_start = models.DateTimeField(auto_now=False, auto_now_add=False)
+    process_start = models.DateTimeField(auto_now=False, auto_now_add=True)
     process_end = models.DateTimeField(auto_now=False, auto_now_add=False)
-    last_check = models.DateTimeField(auto_now=False, auto_now_add=False)
+    last_check = models.DateTimeField(auto_now=False, auto_now_add=False, null=True)
     status = models.CharField(choices=EXPORT_DATA_STATUS_CHOICES, max_length=255)
     export_file = models.CharField(max_length=255, null=True, blank=True)
     project_number = models.PositiveIntegerField()
@@ -32,9 +32,9 @@ class ExportData(base.BaseModel):
     is_deleted = models.BooleanField(default=False)
 
     class Meta:
-        unique_together = ('source', 'location')
+        unique_together = ('source', 'location', 'process_start')
 
     def __repr__(self):
-        return f'"({self.source}-{self.location})[self.status]"'
+        return f'"({self.source}-{self.location})[{self.status}]"'
 
     __str__ = __repr__

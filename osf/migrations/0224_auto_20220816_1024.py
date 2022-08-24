@@ -13,7 +13,7 @@ import osf.utils.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('addons_osfstorage', '0009_auto_20220816_0945'),
+        ('addons_osfstorage', '0006_rename_deleted_field'),
         ('osf', '0223_ensure_schema_and_reports'),
     ]
 

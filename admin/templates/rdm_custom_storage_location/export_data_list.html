@@ -34,12 +34,11 @@
             <label class="col-sm-2 control-label text-left" style="">{% trans "Export data storage location" %}</label>
             <div class="col-sm-9" style="display: flex; gap: 10px;">
                 <select class="form-control" name="location_export_name" style="max-width: 320px; flex: auto">
-                    {% for location in list_location %}
-                        {% if location.id == selected_location_export %}
-                            <option value={{ location.id }} selected="selected">{{ location.name }}</option>
-                        {% else %}
-                            <option value={{ location.id }}>{{ location.name }}</option>
-                        {% endif %}
+                    {% for location in locations %}
+                        <option value={{ location.id }}
+                                        {% if location.id == selected_location_id %}selected="selected"{% endif %}
+                        >{{ location.name }} ({{ location.provider_full_name }})
+                        </option>
                     {% endfor %}
                 </select>
                 <div class="btn-group" role="group" aria-label="..." style="flex: initial;">
