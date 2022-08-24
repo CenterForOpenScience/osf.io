@@ -19,7 +19,9 @@
         <div class="form-group">
             <label class="col-sm-2 control-label text-left">Export source storage</label>
             <div class="col-sm-9">
-                <select class="form-control" name="storage_name" style="max-width: 320px;">
+                <select id="source-select"
+                        class="form-control"
+                        style="max-width: 320px;">
                     {% for storage in list_storage %}
                         {% if storage.id == selected_source %}
                             <option value={{ storage.id }} selected="selected">{{ storage.name }}</option>
@@ -33,18 +35,27 @@
         <div class="form-group">
             <label class="col-sm-2 control-label text-left" style="">{% trans "Export data storage location" %}</label>
             <div class="col-sm-9" style="display: flex; gap: 10px;">
-                <select class="form-control" name="location_export_name" style="max-width: 320px; flex: auto">
+                <select id="location-select"
+                        class="form-control"
+                        style="max-width: 320px; flex: auto">
                     {% for location in locations %}
-                        <option value={{ location.id }}
-                                        {% if location.id == selected_location_id %}selected="selected"{% endif %}
+                        <option value="{{ location.id }}"
+                                {% if location.id == selected_location_id %}selected="selected"{% endif %}
                         >{{ location.name }} ({{ location.provider_full_name }})
                         </option>
                     {% endfor %}
                 </select>
                 <div class="btn-group" role="group" aria-label="..." style="flex: initial;">
-                    <button type="button" class="btn btn-primary" style="min-width: 90px;">{% trans "Export" %}</button>
-                    <button type="button" class="btn btn-primary disabled"
-                            style="min-width: 90px;">{% trans "Stop exporting" %}
+                    <button type="button"
+                            class="btn btn-primary export-button"
+                            style="min-width: 90px;">
+                        {% trans "Export" %}
+                    </button>
+                    <button type="button"
+                            class="btn btn-primary stop-export-button disabled"
+                            disabled
+                            style="min-width: 90px;">
+                        {% trans "Stop exporting" %}
                     </button>
                 </div>
             </div>
@@ -192,4 +203,9 @@
 
 {% block bottom_js %}
     {% render_bundle 'rdm-institutional-storage-page' %}
+    <script>
+        window.contextVars = {
+            'institution_id': {{ institution.id }},
+        };
+    </script>
 {% endblock %}

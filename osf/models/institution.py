@@ -166,6 +166,18 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
         except Exception as ex:
             return []
 
+    def get_institutional_storage(self):
+        from addons.osfstorage.models import Region
+        return Region.objects.filter(_id=self._id).order_by('pk')
+
+    def get_allowed_institutional_storage(self):
+        from addons.osfstorage.models import Region
+        return Region.objects.filter(_id=self._id, is_allowed=True)
+
+    def get_default_region(self):
+        from addons.osfstorage.models import Region
+        return Region.objects.filter(_id=self._id, is_allowed=True, is_primary=True).first()
+
 
 @receiver(post_save, sender=Institution)
 def create_institution_auth_groups(sender, instance, created, **kwargs):

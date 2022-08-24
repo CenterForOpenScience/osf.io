@@ -735,7 +735,7 @@ function usermapDownloadFailed(id, message) {
 
 afterRequest.delete = {
     'success': function (id, data) {
-        $('#location_'+id).remove();
+        $('#location_' + id).remove();
     },
     'fail': function (id, message) {
         $osf.growl('Error', 'Unable to delete location ' + id);
@@ -772,5 +772,110 @@ function deleteLocation(id, providerShortName) {
             }
         }
     });
+}
 
+$('.export-button').click(function (event) {
+    event.preventDefault();
+    $(this).prop('disabled', true);
+    $(this).removeClass('disabled');
+    let institution_id = window.contextVars.institution_id;
+    let source_id = this.dataset.storage | $('#source-select').val();
+    let location_id = $('#location-select-' + source_id).val() | $('#location-select').val();
+
+    exportData(institution_id, source_id, location_id, this);
+});
+
+function exportData(institution_id, source_id, location_id, element) {
+    console.log(institution_id, source_id, location_id);
+    let params = {
+        'institution_id': institution_id,
+        'source_id': source_id,
+        'location_id': location_id,
+    };
+    let route = 'export';
+    let url = '/custom_storage_location/export_data/' + route + '/';
+    $.ajax({
+        url: url,
+        type: 'POST',
+        data: JSON.stringify(params),
+        contentType: 'application/json; charset=utf-8',
+        custom: {'element': element},
+        timeout: 120000,
+        success: function (data) {
+            let task_id = data.task_id;
+            console.log('success', task_id);
+
+            let $exportButton = $(this.custom.element);
+            $exportButton.prop('disabled', true);
+            $exportButton.addClass('disabled');
+
+            let $stopExportButton = $exportButton.parent().find('.stop-export-button');
+            $stopExportButton.prop('disabled', false);
+            $stopExportButton.toggleClass('disabled');
+            $stopExportButton.data('task_id', task_id);
+        },
+        error: function (jqXHR) {
+            let $exportButton = $(this.custom.element);
+            $exportButton.prop('disabled', false);
+            $exportButton.toggleClass('disabled');
+            if (jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)) {
+                console.log('fail', jqXHR.responseJSON.message);
+            } else {
+                console.log('fail', 'error');
+            }
+        }
+    });
+}
+
+$('.stop-export-button').click(function (event) {
+    event.preventDefault();
+    $(this).prop('disabled', true);
+    $(this).removeClass('disabled');
+    let institution_id = window.contextVars.institution_id;
+    let source_id = this.dataset.storage | $('#source-select').val();
+    let location_id = $('#location-select-' + source_id).val() | $('#location-select').val();
+    let task_id = $(this).data('task_id');
+
+    stopExportData(institution_id, source_id, location_id, task_id, this);
+});
+
+function stopExportData(institution_id, source_id, location_id, task_id, element) {
+    console.log(institution_id, source_id, location_id, task_id);
+    let params = {
+        'institution_id': institution_id,
+        'source_id': source_id,
+        'location_id': location_id,
+        'task_id': task_id,
+    };
+    let route = 'stop-export';
+    let url = '/custom_storage_location/export_data/' + route + '/';
+    $.ajax({
+        url: url,
+        type: 'POST',
+        data: JSON.stringify(params),
+        contentType: 'application/json; charset=utf-8',
+        custom: {'element': element},
+        timeout: 120000,
+        success: function (data) {
+            let task_id = data.task_id;
+            console.log('success', task_id);
+            let $stopExportButton = $(this.custom.element);
+            $stopExportButton.prop('disabled', true);
+            $stopExportButton.addClass('disabled');
+
+            let $exportButton = $stopExportButton.parent().find('.export-button');
+            $exportButton.prop('disabled', false);
+            $exportButton.toggleClass('disabled');
+        },
+        error: function (jqXHR) {
+            let $stopExportButton = $(this.custom.element);
+            $stopExportButton.prop('disabled', false);
+            $stopExportButton.toggleClass('disabled');
+            if (jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)) {
+                console.log('fail', jqXHR.responseJSON.message);
+            } else {
+                console.log('fail', 'error');
+            }
+        }
+    });
 }
