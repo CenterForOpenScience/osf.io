@@ -1109,7 +1109,7 @@ def _check_and_add_timestamp(team_info, file_attr):
         if node.is_deleted:
             return
         admin = _select_admin(node)
-        admin_cookie = admin.get_or_create_cookie()
+        admin_cookie = admin.get_or_create_cookie().decode()
         created = True
 
         cls = BaseFileNode.resolve_class(PROVIDER_NAME, BaseFileNode.FILE)
