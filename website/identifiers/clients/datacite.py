@@ -170,7 +170,7 @@ def _format_related_identifiers(node):
         related_pids = OutcomeArtifact.objects.for_registration(node).filter(
             finalized=True,
             deleted__isnull=True
-        ).order_by('artifact_type').values_list('pid', flat=True)
+        ).values_list('pid', flat=True)
         related_identifiers = [
             {
                 'relatedIdentifier': pid,

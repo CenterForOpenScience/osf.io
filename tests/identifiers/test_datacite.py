@@ -146,7 +146,9 @@ class TestDataCiteClient:
                 'relationType': 'IsSupplementTo',
             },
         ]
-        assert metadata_dict['relatedIdentifiers'] == expected_relationships
+        formatted_relationships = metadata_dict['relatedIdentifiers']
+        sort_func = lambda x: x['relatedIdentifier']
+        assert sorted(formatted_relationships, key=sort_func) == sorted(expected_relationships, key=sort_func)
 
     def test_datacite_format_related_resources__ignores_duplicate_pids(self, datacite_client):
         registration = RegistrationFactory(is_public=True, has_doi=True)
