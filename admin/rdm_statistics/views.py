@@ -530,7 +530,7 @@ class GatherView(TemplateView):
         return OSFUser.objects.all()
 
     def get_cookie(self, user):
-        cookie = user.get_or_create_cookie()
+        cookie = user.get_or_create_cookie().decode()
         return cookie
 
     def get_user_nodes(self, user):
