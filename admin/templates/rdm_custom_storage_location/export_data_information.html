@@ -121,12 +121,12 @@
                 <tr class="">
                     <td class="">{{file_info.materialized_path}}</td>
                     <td class="">{{file_info.project.name}}</td>
-                    <td class="">name_ierae07</td>
+                    <td class="">{{file_info.version.contributor}}</td>
                     <td class="">{{file_info.timestamp.verify_user}}</td>
                     <td class="">{{file_info.tags}}</td>
-                    <td class="">{{file_info.size}} KB</td>
-                    <td class="">1</td>
-                    <td class="">{{file_info.created_at}}</td>
+                    <td class="">{{file_info.version.size}} KB</td>
+                    <td class="">{{file_info.version.identifier}}</td>
+                    <td class="">{{file_info.version.created_at}}</td>
                 </tr>
             {% endfor %}
         </tbody>
@@ -295,6 +295,7 @@
             $('#revert_button').on('click', () => {
                 let list_export_revert_id = '{{data_information.export_data.id}}' + '#';
                 $('#bodyrevertmodal').append(`<input type='text' value=${list_export_revert_id} id='input_export_data' class='buckinput' name='list_id_export_data' style='display: none;' />`);
+                $('#bodyrevertmodal').append(`<input type='text' value={{source_id}} id='source_id' class='buckinput' name='source_id' style='display: none;' />`);
             });
             $('.cancel_modal').on('click', () => {
                 $('#input_export_data').remove();

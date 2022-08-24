@@ -94,6 +94,29 @@
         </nav>
         {% endblock %}
       </header>
+      {% if messages %}
+        <div
+          class="alert alert-dismissible mx-auto"
+          style="
+            width: max-content;
+            position: absolute;
+            z-index: 999;
+            right: 0;
+          "
+          role="alert"
+          >
+          {% for message in messages %}
+            <div class="container-fluid p-0">
+              <div class="alert {{ message.tags }} alert-dismissible bg-danger" role="alert" >
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                  <span aria-hidden="True">&times;</span>
+                </button>
+                {{ message }}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
       {% block sidebar %}
       <!-- Left side column. contains the logo and sidebar -->
       <aside class="main-sidebar" style="overflow-y: scroll; height: 95vh; scrollbar-width: none;">

@@ -4,133 +4,61 @@ import datetime
 import logging
 import requests
 
+from django.contrib import messages
 from admin.rdm.utils import RdmPermissionMixin
-from django.http import JsonResponse, HttpResponse, Http404
+from django.http import HttpResponse, Http404
 from django.shortcuts import render, redirect
 from api.base.utils import waterbutler_api_url_for
 from django.views import View
 from django.views.generic import ListView, DetailView
-from rest_framework import status as http_status
 
 from addons.osfstorage.models import Region
-from admin.rdm_custom_storage_location import utils
 from osf.models import ExportDataLocation, ExportData, Institution
 from .location import ExportStorageLocationViewBaseView
 
 logger = logging.getLogger(__name__)
 
 
-def test_connection(data, institution=None):
-    provider_short_name = data.get('provider')
-    if not provider_short_name:
-        response = {
-            'message': 'Provider is missing.'
-        }
-        return JsonResponse(response, status=http_status.HTTP_400_BAD_REQUEST)
+CURRENT_DATA_INFORMATION = []
 
-    result = None
-
-    if provider_short_name == 's3':
-        result = utils.test_s3_connection(
-            data.get('access_key'),
-            data.get('secret_key'),
-            data.get('bucket'),
-        )
-    elif provider_short_name == 's3compat':
-        result = utils.test_s3compat_connection(
-            data.get('endpoint_url'),
-            data.get('access_key'),
-            data.get('secret_key'),
-            data.get('bucket'),
-        )
-    elif provider_short_name == 's3compatb3':
-        result = utils.test_s3compatb3_connection(
-            data.get('endpoint_url'),
-            data.get('access_key'),
-            data.get('secret_key'),
-            data.get('bucket'),
-        )
-    elif provider_short_name == 's3compatinstitutions':
-        result = utils.test_s3compat_connection(
-            data.get('endpoint_url'),
-            data.get('access_key'),
-            data.get('secret_key'),
-            data.get('bucket'),
-        )
-    elif provider_short_name == 'ociinstitutions':
-        result = utils.test_s3compatb3_connection(
-            data.get('endpoint_url'),
-            data.get('access_key'),
-            data.get('secret_key'),
-            data.get('bucket'),
-        )
-    elif provider_short_name == 'owncloud':
-        result = utils.test_owncloud_connection(
-            data.get('host'),
-            data.get('username'),
-            data.get('password'),
-            data.get('folder'),
-            provider_short_name,
-        )
-    elif provider_short_name == 'nextcloud':
-        result = utils.test_owncloud_connection(
-            data.get('host'),
-            data.get('username'),
-            data.get('password'),
-            data.get('folder'),
-            provider_short_name,
-        )
-    elif provider_short_name == 'nextcloudinstitutions':
-        result = utils.test_owncloud_connection(
-            data.get('host'),
-            data.get('username'),
-            data.get('password'),
-            data.get('folder'),
-            provider_short_name,
-        )
-    elif provider_short_name == 'swift':
-        result = utils.test_swift_connection(
-            data.get('auth_version'),
-            data.get('auth_url'),
-            data.get('access_key'),
-            data.get('secret_key'),
-            data.get('tenant_name'),
-            data.get('user_domain_name'),
-            data.get('project_domain_name'),
-            data.get('container'),
-        )
-    elif provider_short_name == 'dropboxbusiness':
-        result = utils.test_dropboxbusiness_connection(institution)
-    else:
-        result = ({'message': 'Invalid provider.'}, http_status.HTTP_400_BAD_REQUEST)
-
-    return JsonResponse(result[0], status=result[1])
+def process_data_infomation(list_data):
+    list_data_version = []
+    for item in list_data:
+        for file_version in item['version']:
+            current_data = {**item}
+            current_data['version'] = file_version
+            current_data['tags'] = ', '.join(item['tags'])
+            list_data_version.append(current_data)
+    return list_data_version
 
 
 def get_list_file_detail(data, pid, provider, request_cookie, guid=None):
     data_json = None
+    status_code = 0
     for file_info in data:
         if file_info['attributes']['name'] == 'file_info_{}.json'.format(guid):
             try:
                 url = waterbutler_api_url_for(
                     pid, provider, path=file_info['id'].replace(provider, ''), _internal=True
                 )
-                rs = requests.get(
+                response = requests.get(
                     url,
                     cookies=request_cookie,
                     stream=True,
                 )
-            except Exception as err:
-                logger.error(err)
-                return None
-            if rs.status_code == 200:
-                data_json = rs.json()
-            rs.close()
+            except Exception:
+                return data_json, status_code
+            status_code = response.status_code
+            if status_code == 200:
+                data_json = response.json()
+            response.close()
             break
-    return data_json
+    return data_json, status_code
 
 
 def get_list_file_info(pid, provider, path, request_cookie, guid=None):
+    content = None
+    status_code = 0
     try:
         url = waterbutler_api_url_for(
             pid, provider, path=path, _internal=True, meta=''
@@ -140,18 +68,19 @@ def get_list_file_info(pid, provider, path, request_cookie, guid=None):
             headers={'content-type': 'application/json'},
             cookies=request_cookie,
         )
-    except Exception as err:
-        logger.error(err)
-        return None
-    content = None
+    except Exception:
+        return None, response.status_code
+    status_code = response.status_code
     if response.status_code == 200:
         content = response.json()
     response.close()
+    if status_code != 200:
+        return None, status_code
     return get_list_file_detail(content['data'], pid, provider, request_cookie, guid)
-
 
 def get_export_data(user_institution_guid, selected_export_location=None, selected_source=None, deleted=False,
                     check_delete=True):
+    # Get export data following user_institution_guid
     list_source_id = Region.objects.filter(_id=user_institution_guid).values_list('id', flat=True)
     list_location_id = ExportDataLocation.objects.filter(institution_guid=user_institution_guid).values_list('id',
                                                                                                              flat=True)
@@ -253,18 +182,18 @@ class ExportDataListView(ExportBaseView):
         selected_storage = request.GET.get('storage_name') if 'storage_name' in dict(request.GET) else 0
         selected_location_export = request.GET.get('location_export_name') if 'location_export_name' in dict(
             request.GET) else 0
-        query = get_export_data(self.institution_guid, selected_location_export, selected_storage)
-        page_size = self.get_paginate_by(query)
-        _, page, _, _ = self.paginate_queryset(query, page_size)
+        self.query_set = get_export_data(self.institution_guid, selected_location_export, selected_storage)
+        self.page_size = self.get_paginate_by(self.query_set)
+        self.paginator, self.page, self.query_set, self.is_paginated = self.paginate_queryset(self.query_set, self.page_size)
         context = {
             'institution': self.institution,
-            'list_export_data': query,
+            'list_export_data': self.query_set,
             'list_location': ExportDataLocation.objects.filter(institution_guid=self.institution_guid),
             'list_storage': Region.objects.filter(_id=self.institution_guid),
             'selected_source': int(selected_storage),
             'selected_location_export': int(selected_location_export),
-            'source_id': query[0]['source_id'] if len(query) > 0 else 0,
-            'page': page,
+            'source_id': self.query_set[0]['source_id'] if len(self.query_set) > 0 else 0,
+            'page': self.page,
         }
         return render(request, self.template_name, context)
 
@@ -285,18 +214,18 @@ class ExportDataDeletedListView(ExportBaseView):
         selected_storage = request.GET.get('storage_name') if 'storage_name' in dict(request.GET) else 0
         selected_location_export = request.GET.get('location_export_name') if 'location_export_name' in dict(
             request.GET) else 0
-        query = get_export_data(self.institution_guid, selected_location_export, selected_storage, deleted=True)
-        page_size = self.get_paginate_by(query)
-        _, page, _, _ = self.paginate_queryset(query, page_size)
+        self.query_set = get_export_data(self.institution_guid, selected_location_export, selected_storage, deleted=True)
+        self.page_size = self.get_paginate_by(self.query_set)
+        self.paginator, self.page, self.query_set, self.is_paginated = self.paginate_queryset(self.query_set, self.page_size)
         context = {
             'institution': self.institution,
-            'list_export_data': query,
+            'list_export_data': self.query_set,
             'list_location': ExportDataLocation.objects.filter(institution_guid=self.institution_guid),
             'list_storage': Region.objects.filter(_id=self.institution_guid),
             'selected_source': int(selected_storage),
             'selected_location_export': int(selected_location_export),
-            'source_id': query[0]['source_id'] if len(query) > 0 else 0,
-            'page': page,
+            'source_id': self.query_set[0]['source_id'] if len(self.query_set) > 0 else 0,
+            'page': self.page,
         }
         return render(request, self.template_name, context)
 
@@ -307,11 +236,12 @@ class ExportDataDeletedListView(ExportBaseView):
         return get_export_data(user_institution_guid, deleted=True)
 
 
-class ExportDataInformationView(ExportStorageLocationViewBaseView, DetailView):
+class ExportDataInformationView(ExportStorageLocationViewBaseView, DetailView, ListView):
     template_name = 'rdm_custom_storage_location/export_data_information.html'
     raise_exception = True
+    paginate_by = 1
 
-    def get_object(self, **kwargs):
+    def get_object(self):
         user_institution_guid = self.request.user.representative_affiliated_institution.guid
         for item in get_export_data(user_institution_guid, check_delete=False):
             if str(item['export_data'].id) == self.kwargs.get('data_id'):
@@ -322,21 +252,37 @@ class ExportDataInformationView(ExportStorageLocationViewBaseView, DetailView):
             ))
 
     def get_context_data(self, **kwargs):
-        context = super(ExportDataInformationView, self).get_context_data(**kwargs)
         data = self.get_object()
+        provider = Region.objects.get(id=data['source_id'])
+        processed_list_file_info = kwargs.pop('object_list', None)
         user_institution_name = Institution.objects.get(
             id=self.request.user.representative_affiliated_institution.id).name
         user_institution_guid = self.request.user.representative_affiliated_institution.guid
-        list_file_info = get_list_file_info('nxsm2', 'osfstorage', '/', self.request.COOKIES, user_institution_guid)
-        provider = Region.objects.get(id=data['source_id'])
+        list_file_info, status_code = get_list_file_info('28zuw', 'osfstorage', '/', self.request.COOKIES, user_institution_guid)
+        logger.info('status_code')
+        logger.info(status_code)
+        if status_code != 200:
+            messages.error(self.request, 'Cannot connect to the export data storage location')
+            self.object_list = []
+            self.query_set = []
+        else:
+            processed_list_file_info = process_data_infomation(list_file_info['files'])
+            global CURRENT_DATA_INFORMATION
+            CURRENT_DATA_INFORMATION = processed_list_file_info
+            self.object_list = processed_list_file_info
+            self.query_set = processed_list_file_info
+        self.page_size = self.get_paginate_by(self.query_set)
+        self.paginator, self.page, self.query_set, self.is_paginated = self.paginate_queryset(self.query_set, self.page_size)
+        context = super(ExportDataInformationView, self).get_context_data(**kwargs)
         context['is_deleted'] = data['export_data'].is_deleted
         context['data_information'] = data
-        context['list_file_info'] = list_file_info['files']
+        context['list_file_info'] = self.query_set
         context['institution_name'] = user_institution_name
         context['source_id'] = data['source_id'] if len(data) > 0 else 0
         context['provider_name'] = 'Export Data Information of {} storage'.format(
             provider.waterbutler_settings['storage']['provider'])
         context['storages'] = Region.objects.exclude(_id__in=self.request.user.representative_affiliated_institution.guid)
+        context['page'] = self.page
         return context
 
 
@@ -351,16 +297,13 @@ class DeleteExportDataView(ExportStorageLocationViewBaseView, View):
             if check_delete_permanently:
                 # Check connection
                 logger.info('check_delete_permanently')
-                source = Region.objects.get(id=request.POST.get('source_id'))
-                request_data = source.waterbutler_credentials['storage']
-                request_data = {**request_data, **dict(source.waterbutler_settings['storage'])}
-                logger.info(request_data)
-                respone_test_connect = test_connection(request_data)
-                logger.info('respone_test_connect')
-                logger.info(respone_test_connect)
+                # source = Region.objects.get(id=request.POST.get('source_id'))
+                # request_data = source.waterbutler_credentials['storage']
+                # request_data = {**request_data, **dict(source.waterbutler_settings['storage'])}
+                # logger.info(request_data)
                 try:
                     url = waterbutler_api_url_for(
-                        'nxsm2', 'osfstorage', path='/62ff09aaa299d84a17c99f9d', _internal=True
+                        '28zuw', 'osfstorage', path='/62ff09aaa299d84a17c99f9d', _internal=True
                     )
                     response = requests.delete(
                         url,
@@ -368,17 +311,20 @@ class DeleteExportDataView(ExportStorageLocationViewBaseView, View):
                         cookies=request.COOKIES
                     )
                 except Exception as err:
-                    logger.error(err)
-                    return None
-                logger.info(response)
+                    messages.error(request, err)
+                status_code = response.status_code
                 response.close()
-                # Delete export data in DB
-                ExportData.objects.filter(id__in=list_export_data).update(is_deleted=True)
-                # ExportData.objects.filter(id__in=list_export_data).delete()
+                logger.info('status_code')
+                logger.info(status_code)
+                if status_code == 200:
+                    # Delete export data in DB
+                    ExportData.objects.filter(id__in=list_export_data).update(is_deleted=True)
+                    # ExportData.objects.filter(id__in=list_export_data).delete()
+                else:
+                    messages.error(request, 'Cannot connect to the export data storage location')
             else:
                 ExportData.objects.filter(id__in=list_export_data).update(is_deleted=True)
-        return redirect('custom_storage_location:export_data:export_data_list',
-                        institution_id=self.request.user.representative_affiliated_institution.id)
+        return redirect('custom_storage_location:export_data:export_data_list')
 
 
 class RevertExportDataView(ExportStorageLocationViewBaseView, View):
@@ -389,13 +335,12 @@ class RevertExportDataView(ExportStorageLocationViewBaseView, View):
         list_export_data = list(filter(None, list_export_data))
         if list_export_data:
             ExportData.objects.filter(id__in=list_export_data).update(is_deleted=False)
-        return redirect('custom_storage_location:export_data:export_data_deleted_list',
-                        institution_id=self.request.user.representative_affiliated_institution.id)
+        return redirect('custom_storage_location:export_data:export_data_deleted_list')
 
 
 class ExportDataFileCSVView(RdmPermissionMixin, View):
 
-    def get(self, request):
+    def get(self):
         guid = self.request.user.representative_affiliated_institution.guid
         current_datetime = str('{date:%Y-%m-%d-%H%M%S}'.format(date=datetime.datetime.now())).replace('-', '')
         response = HttpResponse(content_type='text/csv')
@@ -403,11 +348,14 @@ class ExportDataFileCSVView(RdmPermissionMixin, View):
         writer = csv.writer(response)
         writer.writerow(
             ['project_id', 'project_name', 'owner', 'file_id', 'file_path', 'filename', 'versions', 'size'])
-        data = get_list_file_info('nxsm2', 'osfstorage', '/', request.COOKIES, guid)
-        logger.info(data)
-        for file in data['files']:
+        # data = request.POST.get('list_data') if 'list_data' in request.POST else []
+        # data = get_list_file_info('28zuw', 'osfstorage', '/', request.COOKIES, guid)
+        # processed_list_file_info = process_data_infomation(data['files'])
+        global CURRENT_DATA_INFORMATION
+        for file in CURRENT_DATA_INFORMATION:
             writer.writerow(
-                [file['project']['id'], file['project']['name'], 'name_ierae07', file['id'], file['materialized_path'],
+                [file['project']['id'], file['project']['name'], file['version']['contributor'], file['id'], file['materialized_path'],
                  file['name'],
-                 file['version'][0]['identifier'], file['size']])
+                 file['version']['identifier'], file['version']['size']])
+        CURRENT_DATA_INFORMATION = []
         return response
