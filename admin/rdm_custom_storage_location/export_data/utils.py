@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import inspect  # noqa
 import logging  # noqa
+import jsonschema
+import requests
 
 from rest_framework import status as http_status
 
@@ -18,6 +20,8 @@ from admin.rdm_custom_storage_location.utils import (
 )
 from osf.models import ExportDataLocation
 from website.util import inspect_info  # noqa
+from api.base.utils import waterbutler_api_url_for
+from admin.base.schemas.utils import from_json
 
 logger = logging.getLogger(__name__)
 
@@ -169,3 +173,91 @@ def save_nextcloudinstitutions_credentials(institution, storage_name, host_url, 
     }
 
     return save_basic_storage_institutions_credentials_common(institution, storage_name, folder, provider_name, provider, extended_data=extended_data)
+
+
+def process_data_infomation(list_data):
+    list_data_version = []
+    for item in list_data:
+        for file_version in item['version']:
+            current_data = {**item}
+            current_data['version'] = file_version
+            current_data['tags'] = ', '.join(item['tags'])
+            list_data_version.append(current_data)
+    return list_data_version
+
+
+def get_list_file_detail(data, pid, provider, request_cookie, guid, process_start):
+    data_json = None
+    status_code = 0
+    for file_info in data:
+        if file_info['attributes']['name'] == 'file_info_{}_{}.json'.format(guid, process_start):
+            try:
+                url = waterbutler_api_url_for(
+                    pid, provider, path=file_info['id'].replace(provider, ''), _internal=True
+                )
+                response = requests.get(
+                    url,
+                    cookies=request_cookie,
+                    stream=True,
+                )
+            except Exception:
+                return None, status_code
+            status_code = response.status_code
+            if status_code == 200:
+                data_json = response.json()
+            response.close()
+            break
+    try:
+        schema = from_json('export-data.json')
+        jsonschema.validate(data_json, schema)
+    except jsonschema.ValidationError:
+        # raise e
+        return None, 555
+    return data_json, status_code
+
+
+def get_list_file_info(pid, provider, path, request_cookie, guid=None, process_start=None):
+    content = None
+    status_code = 0
+    response = None
+    try:
+        url = waterbutler_api_url_for(
+            pid, provider, path=path, _internal=True, meta=''
+        )
+        response = requests.get(
+            url,
+            headers={'content-type': 'application/json'},
+            cookies=request_cookie,
+        )
+    except Exception:
+        return None, response.status_code
+    status_code = response.status_code
+    if response.status_code == 200:
+        content = response.json()
+        print(content['data'][0]['links'])
+    response.close()
+    if status_code != 200:
+        return None, status_code
+    return get_list_file_detail(content['data'], pid, provider, request_cookie, guid, process_start)
+
+
+def get_link_delete_export_data(pid, provider, path, request_cookie):
+    content = None
+    status_code = 0
+    response = None
+    try:
+        url = waterbutler_api_url_for(
+            pid, provider, path=path, _internal=True, meta=''
+        )
+        response = requests.get(
+            url,
+            headers={'content-type': 'application/json'},
+            cookies=request_cookie,
+        )
+    except Exception:
+        return None, response.status_code
+    status_code = response.status_code
+    if response.status_code == 200:
+        content = response.json()
+    response.close()
+    return content['data'], status_code

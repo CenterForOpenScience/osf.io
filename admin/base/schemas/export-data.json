@@ -1,0 +1,124 @@
+{
+	"type": "object",
+	"properties": {
+		"institution":{
+			"type":"object",
+			"properties": {
+				"institution_id": {
+					"type": "integer"
+				},
+				"institution_guid": {
+					"type": "string"
+				},
+				"institution_name": {
+					"type": "string"
+				}
+			},
+			"required": [
+				"institution_id", "institution_guid", "institution_name"
+			],
+			"additionalProperties": false
+		},
+		"files": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"id": {
+						"type": "integer"
+					},
+					"guid": {
+						"type": "string"
+					},
+					"path": {
+						"type": "string"
+					},
+					"materialized_path": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					},
+					"size": {
+						"type": "string"
+					},
+					"created_at": {
+						"type": "string"
+					},
+					"modified_at": {
+						"type": "string"
+					},
+					"tags": {
+						"type": "array"
+					},
+					"location": {
+						"type": "object",
+						"properties": {
+							"host": {
+								"type": [ "string", "null" ]
+							},
+							"folder": {
+								"type": [ "string", "null" ]
+							},
+							"object": {
+								"type": [ "string", "null" ]
+							},
+							"address": {
+								"type": [ "string", "null" ]
+							},
+							"service": {
+								"type": [ "string", "null" ]
+							},
+							"version": {
+								"type": [ "string", "null" ]
+							},
+							"provider": {
+								"type": [ "string", "null" ]
+							}
+						}
+					},
+					"project": {
+						"type": "object",
+						"properties": {
+							"id": {
+								"type": "string"
+							},
+							"string": {
+								"type": "string"
+							}
+						}
+					},
+					"version": {
+						"type": "array"
+					},
+					"timestamp": {
+						"type": "object",
+						"properties": {
+							"timestamp_token": {
+								"type": [ "string", "null" ]
+							},
+							"verify_user": {
+								"type": [ "string", "null" ]
+							},
+							"updated_at": {
+								"type": [ "string", "null" ]
+							},
+							"verify_date": {
+								"type": [ "string", "null" ]
+							}
+						},
+						"required": [
+							"timestamp_token", "verify_user", "updated_at", "verify_date"
+						],
+						"additionalProperties": false
+					}
+				},
+				"additionalProperties": false
+			}
+		}
+	},
+	"required": [
+		"institution", "files"
+	],
+	"additionalProperties": false
+}

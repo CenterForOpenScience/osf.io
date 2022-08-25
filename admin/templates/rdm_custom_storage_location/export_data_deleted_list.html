@@ -15,13 +15,14 @@
 {% block content %}
     <h2>{% trans "Deleted Export Data List" %}<br/><small>(for {{ institution.name }})</small></h2>
 
-    <form method="get" action="{% url 'custom_storage_location:export_data:export_data_deleted_list' %}"
-          class="form-horizontal" id="entitlements_form">
+    <form method="get" action="{% url 'custom_storage_location:export_data:export_data_list' %}"
+          class="form-horizontal" id="exportdata_form">
         <div class="form-group">
             <label class="col-sm-2 control-label text-left">Export source storage</label>
             <div class="col-sm-9">
                 <select id="source-select"
                         class="form-control"
+                        name="storage_name"
                         style="max-width: 320px;">
                     {% for storage in list_storage %}
                         {% if storage.id == selected_source %}
@@ -38,10 +39,11 @@
             <div class="col-sm-9" style="display: flex; gap: 10px;">
                 <select id="location-select"
                         class="form-control"
+                        name="location_export_name"
                         style="max-width: 320px; flex: auto">
                     {% for location in locations %}
                         <option value="{{ location.id }}"
-                                {% if location.id == selected_location_id %}selected="selected"{% endif %}
+                                {% if location.id == selected_location_id %} selected="selected" {% endif %}
                         >{{ location.name }} ({{ location.provider_full_name }})
                         </option>
                     {% endfor %}
@@ -50,17 +52,12 @@
         </div>
         <div class="form-group" id="formFilter">
             <div class="col-sm-12">
-                {% if list_location %}
-                    <button type="submit" id="filter_export" class="btn btn-primary" style="min-width: 90px;">{% trans "Filter" %}</button>
-                {% else %}
-                    <button type="submit" id="filter_export" class="btn btn-primary" style="min-width: 90px;" disabled>{% trans "Filter" %}</button>
-                {% endif %}
-                <a class="text-white"
-                   href={% url 'custom_storage_location:export_data:export_data_deleted_list' %}>
-                    <button type="button" class="btn btn-primary" style="min-width: 90px; margin-left:10px;">
-                        {% trans "Revert Export Data" %}
-                    </button>
-                </a>
+                <button type="submit" id="filter_export" {% if locations.length == 0 %} disabled {% endif %}
+                        class="btn btn-primary" style="min-width: 90px;">{% trans "Filter" %}</button>
+                <button type="submit" class="btn btn-primary" id="revert_button_data" {% if locations.length == 0 %} disabled {% endif %}
+                        style="min-width: 90px; margin-left:10px;">
+                    {% trans "Revert Export Data" %}
+                </button>
             </div>
         </div>
     </form>
@@ -151,7 +148,7 @@
         </div>
     </div>
 
-    <script type="text/javascript">
+    <script type='text/javascript'>
         $(document).ready(() => {
             $('#check_revert_all').on('change', () => {
                 let check = $('#check_revert_all').is(':checked');
@@ -178,13 +175,23 @@
                 let list_export_data = $('input[type=checkbox][name=check_revert_export]');
                 let count_checked = $('input[type=checkbox][name=check_revert_export]:checked').length;
                 if (count_checked !== list_export_data.length) {
-                    $("#check_revert_all").prop('checked', false);
+                    $('#check_revert_all').prop('checked', false);
                 } else {
-                    $("#check_revert_all").prop('checked', true);
+                    $('#check_revert_all').prop('checked', true);
                 }
             });
             $('.cancel_modal').on('click', () => {
                 $('#input_export_data').remove();
+            });
+            $('#revert_button_data').on('click', () => {
+                let selected_source = $('#source-select').val();
+                let selected_location = $('#location-select').val();
+                if(selected_source.length > 1 && selected_location.length > 1){
+                    $('#exportdata_form').attr('action', `/custom_storage_location/export_data/deleted/?storage_name=${selected_source}&location_export_name=${selected_location}`);
+                }
+                else{
+                    $('#exportdata_form').attr('action', '/custom_storage_location/export_data/deleted');
+                }
             });
         });
     </script>
