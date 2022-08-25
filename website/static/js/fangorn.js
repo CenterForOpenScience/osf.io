@@ -2957,8 +2957,6 @@ function fetchData(tree) {
                             for (i = 0; i < value.length; i++) {
                                 child = self.buildTree(value[i], tree);
                                 child.data.permissions = {view: true, edit:true};
-
-
                                 child.parentID = tree.id;
                                 child.depth = tree.depth + 1;
                                 child.open = false;
@@ -2982,7 +2980,6 @@ function fetchData(tree) {
                         tree.isFetching = false;
                         tree.is_sorted = true;
                     });
-
             }
             if (self.options.allowMove) {
                 self.moveOn();
@@ -3107,7 +3104,7 @@ tbOptions = {
             }
         });
 
-        $osf.onScroll($('#tb-tbody'), handleScroll.bind(tb));
+        $osf.onScroll(tb.select('#tb-tbody'), handleScroll.bind(tb));
     },
     movecheck : function (to, from) { //This method gives the users an option to do checks and define their return
         return true;
