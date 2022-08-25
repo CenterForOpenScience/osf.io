@@ -164,7 +164,10 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
             query_set = ExportDataLocation.objects.filter(institution_guid=self.guid)
             return query_set
         except Exception as ex:
-            return []
+            return ExportDataLocation.objects.none()
+
+    def have_storage_location_id(self, storage_id):
+        return self.get_storage_location().filter(pk=storage_id).exists()
 
     def get_institutional_storage(self):
         from addons.osfstorage.models import Region
@@ -177,6 +180,12 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
     def get_default_region(self):
         from addons.osfstorage.models import Region
         return Region.objects.filter(_id=self._id, is_allowed=True, is_primary=True).first()
+
+    def get_default_institutional_storage(self):
+        return self.get_default_region()
+
+    def is_allowed_institutional_storage_id(self, storage_id):
+        return self.get_allowed_institutional_storage().filter(pk=storage_id).exists()
 
 
 @receiver(post_save, sender=Institution)

@@ -1833,6 +1833,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """Return representative ``institution`` this user is affiliated with."""
         return self.affiliated_institutions.first()
 
+    def is_affiliated_with_institution_id(self, institution_id):
+        """Return if this user is affiliated with ``institution_id``."""
+        return self.affiliated_institutions.filter(id=institution_id).exists()
+
     def is_affiliated_with_institution(self, institution):
         """Return if this user is affiliated with ``institution``."""
         return self.affiliated_institutions.filter(id=institution.id).exists()

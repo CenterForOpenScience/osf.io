@@ -72,13 +72,14 @@
         {% endfor %}
         </tbody>
     </table>
+    {% csrf_token %}
 {% endblock content %}
 
 {% block bottom_js %}
     {% render_bundle 'rdm-institutional-storage-page' %}
     <script>
-        window.contextVars = {
+        window.contextVars = $.extend(true, {}, window.contextVars, {
             'institution_id': {{ institution.id }},
-        };
+        });
     </script>
 {% endblock %}
