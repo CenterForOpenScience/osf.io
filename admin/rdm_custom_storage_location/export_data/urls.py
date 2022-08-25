@@ -67,9 +67,9 @@ urlpatterns = [
 
     # to manage restore export data storage
     url(r'^(?P<export_id>[0-9]+)/restore_export_data$',
-        restore.ExportDataRestore.as_view(), name='export_data_restore'),
+        restore.ExportDataRestoreView.as_view(), name='export_data_restore'),
     url(r'^(?P<export_id>[0-9]+)/restore_export_data/stop$',
         restore.stop_export_data_restore, name='stop_export_data_restore'),
     url(r'^(?P<export_id>[0-9]+)/task_status$',
-        restore.ExportDataRestoreTaskStatus.as_view(), name='export_data_restore_task_status'),
+        restore.ExportDataRestoreTaskStatusView.as_view(), name='export_data_restore_task_status'),
 ]

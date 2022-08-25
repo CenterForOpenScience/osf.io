@@ -287,6 +287,17 @@
     <script type="text/javascript">
         $(document).ready(() => {
             var restore_task_id = null;
+            var export_data_restore_id = null;
+            var csrftoken = $('[name=csrfmiddlewaretoken]').val();
+            const source_id = "{{ data_information.source_id }}";
+            $.ajaxSetup({
+                crossDomain: false,
+                beforeSend: function (xhr, settings) {
+                    if (!csrfSafeMethod(settings.type)) {
+                        xhr.setRequestHeader('X-CSRFToken', csrftoken);
+                    }
+                }
+            });
             $('#delete_button').on('click', () => {
                 let list_export_delete_id = '{{data_information.export_data.id}}' + '#';
                 $('#bodydeletemodal').append(`<input type='text' value=${list_export_delete_id} id='input_export_data' class='buckinput' name='list_id_export_data' style='display: none;' />`);
@@ -302,55 +313,57 @@
             });
             $('#restore_button').on('click', () => {
                 let data = {};
+                data["source_id"] = source_id;
                 data["destination_id"]= $("#destination_storage").val();
-                $("#restore_button").addClass("disabled");
-                $("#stop_restore_button").removeClass("disabled");
-                $("#restore_button").attr("disabled", true);
-                $("#stop_restore_button").attr("disabled", false);
-                $.ajaxSetup({
-                    data: { csrfmiddlewaretoken: '{{ csrf_token }}' },
-                });
+                enableStopRestoreFunction();
                 $.ajax({
                     url: "restore_export_data",
                     type: "post",
                     data: data
                 }).done(function(response) {
-                    restore_task_id = response["task_id"];
-                    if (!restore_task_id) {
-                        return;
+                    if (response["error_message"]) {
+                        // Show error message
+                        enableRestoreFunction();
+                    } else if (response["task_id"]) {
+                        restore_task_id = response["task_id"];
+                        if (!restore_task_id) {
+                            return;
+                        }
+                        setTimeout(() => {
+                            checkTaskStatus(restore_task_id);
+                        }, 2000);
+                    } else {
+                        $("#restore").modal('show');
                     }
-                    setTimeout(() => {
-                        checkTaskStatus(restore_task_id);
-                    }, 2000);
                 }).fail(function(jqXHR, textStatus, error) {
-                    cancelRestore();
+                    enableRestoreFunction();
                 });
             });
             $('#stop_restore_button').on('click', () => {
                 $("#stop_restore_button").addClass("disabled");
                 $("#stop_restore_button").attr("disabled", true);
-                let data = { task_id: restore_task_id };
-                $.ajaxSetup({
-                    data: { csrfmiddlewaretoken: '{{ csrf_token }}' },
-                });
+                let data = {
+                    task_id: restore_task_id,
+                    destination_id: $("#destination_storage").val()
+                };
                 $.ajax({
                     url: "restore_export_data/stop",
                     type: "post",
                     data: data
                 }).done(function(response) {
-                    console.log("ABORTED");
-                    cancelRestore();
+                    enableRestoreFunction();
                 }).fail(function(jqXHR, textStatus, error) {
-                    cancelRestore();
+                    enableRestoreFunction();
                 });
             });
         });
 
+        function csrfSafeMethod(method) {
+            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+        }
+
         function checkTaskStatus(task_id) {
             let data = { task_id: task_id };
-            $.ajaxSetup({
-                data: { csrfmiddlewaretoken: '{{ csrf_token }}' },
-            });
             $.ajax({
                 url: "task_status",
                 type: "get",
@@ -358,32 +371,71 @@
             }).done(function(response) {
                 let state = response["state"];
                 let result = response["result"];
-                if (state === 'SUCCESS' && result === 'Open Dialog') {
-                   // Open Dialog
-                   $("#restore").modal('show');
+                if (state === 'SUCCESS') {
+                    if (result === 'Completed') {
+                        enableCheckRestoreFunction();
+                    } else {
+                        enableRestoreFunction();
+                    }
                 } else if (state === 'PENDING') {
-                   // Redo check task status after 2 seconds
-                   setTimeout(() => {
-                       checkTaskStatus(task_id);
-                   }, 2000);
+                    // Redo check task status after 2 seconds
+                    setTimeout(() => {
+                        checkTaskStatus(task_id);
+                    }, 2000);
                 } else if (state !== 'REVOKED' && state !== 'ABORTED') {
-                   cancelRestore();
+                    enableRestoreFunction();
                 }
             }).fail(function(jqXHR, textStatus, error) {
-                cancelRestore();
+                enableRestoreFunction();
             });
         }
 
         function cancelRestore() {
-            $("#restore_button").removeClass("disabled");
-            $("#stop_restore_button").addClass("disabled");
-            $("#restore_button").attr("disabled", false);
-            $("#stop_restore_button").attr("disabled", true);
-            restore_task_id = null;
+            enableRestoreFunction();
         }
 
         function startRestore() {
             $("#restore").modal('hide');
+            let data = {};
+            data["source_id"] = source_id;
+            data["destination_id"] = $("#destination_storage").val();
+            data["is_from_confirm_dialog"] = True;
+            data["export_data_restore_id"] = export_data_restore_id;
+            enableStopRestoreFunction();
+            $.ajax({
+                url: "restore_export_data",
+                type: "post",
+                data: data
+            }).done(function(response) {
+                restore_task_id = response["task_id"];
+                if (!restore_task_id) {
+                    return;
+                }
+                setTimeout(() => {
+                    checkTaskStatus(restore_task_id);
+                }, 2000);
+            }).fail(function(jqXHR, textStatus, error) {
+                enableRestoreFunction();
+            });
+        }
+
+        function enableStopRestoreFunction() {
+            // Enable "Stop restoring" button, disable "Restore" button
+            $("#restore_button").addClass("disabled");
+            $("#stop_restore_button").removeClass("disabled");
+            $("#restore_button").attr("disabled", true);
+            $("#stop_restore_button").attr("disabled", false);
+        }
+
+        function enableRestoreFunction() {
+            // Enable "Restore" button, disable "Stop restoring" button
+            $("#restore_button").removeClass("disabled");
+            $("#stop_restore_button").addClass("disabled");
+            $("#restore_button").attr("disabled", false);
+            $("#stop_restore_button").attr("disabled", true);
+        }
+
+        function enableCheckRestoreFunction() {
             // Enable "Check export data" button, disable "Stop restoring" button
             $("#check_restore_button").removeClass("disabled");
             $("#stop_restore_button").addClass("disabled");

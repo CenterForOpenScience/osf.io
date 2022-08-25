@@ -3,6 +3,7 @@ import inspect  # noqa
 import logging  # noqa
 import jsonschema
 import requests
+import json  # noqa
 
 from rest_framework import status as http_status
 
@@ -261,3 +262,25 @@ def get_link_delete_export_data(pid, provider, path, request_cookie):
         content = response.json()
     response.close()
     return content['data'], status_code
+
+
+def is_add_on_storage(waterbutler_settings):
+    destination_region = Region.objects.filter(id=destination_id)
+    destination_settings = destination_region.values_list("waterbutler_settings", flat=True)[0]
+    folder = waterbutler_settings["storage"]["folder"]
+    try:
+        folder_json = json.loads(folder)
+        if not folder_json["encrypt_uploads"]:
+            # If folder does not have "encrypt_uploads" then it is add-on storage
+            return True
+        # If folder has "encrypt_uploads" key and it is set to True then it is bulk-mounted storage
+        return False
+    except ValueError as e:
+        # Cannot parse folder as json, storage is add-on storage
+        return True
+
+
+def check_storage_type(storage_id):
+    region = Region.objects.filter(id=storage_id)
+    settings = region.values_list("waterbutler_settings", flat=True)[0]
+    return is_add_on_storage(settings)
