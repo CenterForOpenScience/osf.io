@@ -1,4 +1,5 @@
 from celery.contrib.abortable import AbortableAsyncResult
+from django.utils.decorators import method_decorator
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -10,9 +11,12 @@ from admin.rdm_custom_storage_location.tasks import (
     restore_export_data,
     rollback_restore
 )
+from django.db import transaction
 from osf.models import ExportDataRestore
+from osf.models.export_data import STATUS_RUNNING, STATUS_STOPPING, STATUS_STOPPED
 
 
+@method_decorator(transaction.non_atomic_requests, name='dispatch')
 class ExportDataRestoreView(RdmPermissionMixin, APIView):
     raise_exception = True
 
@@ -34,21 +38,28 @@ class ExportDataRestoreView(RdmPermissionMixin, APIView):
                 # If there is error message, return HTTP 400
                 return Response({'error_message': result["error_message"]}, status=status.HTTP_400_BAD_REQUEST)
             else:
+                # Try to add new process record to DB
+                export_data_restore = ExportDataRestore(export_id=export_id, destination_id=destination_id,
+                                                        status=STATUS_RUNNING)
+                export_data_restore.save()
                 # Otherwise, start restore data task and return task id
-                process = restore_export_data.delay(cookies, export_id, source_id, destination_id)
-                return Response({'task_id': process.task_id}, status=status.HTTP_200_OK)
+                process = restore_export_data.delay(cookies, export_id, source_id, destination_id, export_data_restore.pk)
+                return Response({'task_id': process.task_id, 'export_data_restore_id': export_data_restore.pk}, status=status.HTTP_200_OK)
         else:
+            # Try to add new process record to DB
+            export_data_restore = ExportDataRestore(export_id=export_id, destination_id=destination_id,
+                                                    status=STATUS_RUNNING)
+            export_data_restore.save()
             # If user clicked 'Restore' button in confirm dialog, start restore data task and return task id
-            export_data_restore_id = request.POST.get('export_data_restore_id')
-            process = restore_export_data.delay(cookies, export_id, source_id, destination_id, export_data_restore_id)
-            return Response({'task_id': process.task_id}, status=status.HTTP_200_OK)
+            process = restore_export_data.delay(cookies, export_id, source_id, destination_id, export_data_restore.pk)
+            return Response({'task_id': process.task_id, 'export_data_restore_id': export_data_restore.pk}, status=status.HTTP_200_OK)
 
 
 @api_view(http_method_names=["POST"])
 def stop_export_data_restore(request, *args, **kwargs):
     task_id = request.POST.get('task_id')
     source_id = request.POST.get('source_id')
-    destination_id = request.POST.get('destination_id', default='-1')
+    destination_id = request.POST.get('destination_id')
     export_id = kwargs.get('export_id')
     export_data_restore_id = request.POST.get('export_data_restore_id')
     cookies = request.COOKIES
@@ -58,7 +69,7 @@ def stop_export_data_restore(request, *args, **kwargs):
 
     # Update process status
     export_data_restore = ExportDataRestore.objects.get(id=export_data_restore_id)
-    export_data_restore.status = "Stopping"
+    export_data_restore.status = STATUS_STOPPING
     export_data_restore.save()
 
     # Abort current task
@@ -66,13 +77,14 @@ def stop_export_data_restore(request, *args, **kwargs):
     task.abort()
 
     # Rollback restore data
-    rollback_restore(cookies, export_id, source_id, destination_id)
+    rollback_restore(cookies, export_id, source_id, destination_id, export_data_restore_id)
     return Response({}, status=status.HTTP_200_OK)
 
 
 class ExportDataRestoreTaskStatusView(RdmPermissionMixin, APIView):
     def get(self, request, **kwargs):
         task_id = request.GET.get('task_id')
+        export_data_restore_id = request.POST.get('export_data_restore_id')
         if task_id is None:
             return Response({}, status=status.HTTP_400_BAD_REQUEST)
         task = AbortableAsyncResult(task_id)

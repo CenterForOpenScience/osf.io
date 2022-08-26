@@ -285,11 +285,11 @@
         </div>
     {% endif %}
     <script type="text/javascript">
+        const source_id = "{{ data_information.source_id }}";
         $(document).ready(() => {
             var restore_task_id = null;
             var export_data_restore_id = null;
             var csrftoken = $('[name=csrfmiddlewaretoken]').val();
-            const source_id = "{{ data_information.source_id }}";
             $.ajaxSetup({
                 crossDomain: false,
                 beforeSend: function (xhr, settings) {
@@ -326,9 +326,7 @@
                         enableRestoreFunction();
                     } else if (response["task_id"]) {
                         restore_task_id = response["task_id"];
-                        if (!restore_task_id) {
-                            return;
-                        }
+                        export_data_restore_id = response["export_data_restore_id"];
                         setTimeout(() => {
                             checkTaskStatus(restore_task_id);
                         }, 2000);
@@ -344,7 +342,8 @@
                 $("#stop_restore_button").attr("disabled", true);
                 let data = {
                     task_id: restore_task_id,
-                    destination_id: $("#destination_storage").val()
+                    destination_id: $("#destination_storage").val(),
+                    export_data_restore_id: export_data_restore_id
                 };
                 $.ajax({
                     url: "restore_export_data/stop",
@@ -399,8 +398,7 @@
             let data = {};
             data["source_id"] = source_id;
             data["destination_id"] = $("#destination_storage").val();
-            data["is_from_confirm_dialog"] = True;
-            data["export_data_restore_id"] = export_data_restore_id;
+            data["is_from_confirm_dialog"] = true;
             enableStopRestoreFunction();
             $.ajax({
                 url: "restore_export_data",
@@ -408,6 +406,7 @@
                 data: data
             }).done(function(response) {
                 restore_task_id = response["task_id"];
+                export_data_restore_id = response["export_data_restore_id"];
                 if (!restore_task_id) {
                     return;
                 }
