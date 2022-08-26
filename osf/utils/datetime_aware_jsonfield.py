@@ -8,8 +8,8 @@ from decimal import Decimal
 import pytz
 from dateutil.parser import isoparse
 from django.contrib.postgres import lookups
-from django.contrib.postgres.fields.jsonb import JSONField
-from django.contrib.postgres.forms.jsonb import JSONField as JSONFormField
+from django.db.models import JSONField
+from django.forms import JSONField as JSONFormField
 from django.core.serializers.json import DjangoJSONEncoder
 from osf.exceptions import NaiveDatetimeException, ValidationError
 
@@ -84,11 +84,14 @@ class DateTimeAwareJSONField(JSONField):
         defaults.update(kwargs)
         return super(DateTimeAwareJSONField, self).formfield(**defaults)
 
-    def from_db_value(self, value, expression, connection, context):
+    def from_db_value(self, value, expression, connection):
         if value is None:
-            return None
-        return super(DateTimeAwareJSONField, self).to_python(decode_datetime_objects(value))
+            return value
 
+        try:
+            return decode_datetime_objects(json.loads(value, cls=self.decoder))
+        except json.JSONDecodeError:
+            return value
     def get_prep_lookup(self, lookup_type, value):
         if lookup_type in ('has_key', 'has_keys', 'has_any_keys'):
             return value
@@ -98,13 +101,18 @@ class DateTimeAwareJSONField(JSONField):
 class DateTimeAwareJSONFormField(JSONFormField):
     def to_python(self, value):
         try:
-            return decode_datetime_objects(json.loads(value))
+            return decode_datetime_objects(value)
         except TypeError:
             raise ValidationError(
                 self.error_messages['invalid'],
                 code='invalid',
                 params={'value': value},
             )
+
+    def from_db_value(self, value, expression, connection):
+        if value is None:
+            return None
+        return super(DateTimeAwareJSONFormField).to_python(decode_datetime_objects(value))
 
     def prepare_value(self, value):
         try:

@@ -1,4 +1,5 @@
 import jwe
+import json
 from django.db import models
 from django.contrib.postgres.fields.jsonb import JSONField
 from website import settings
@@ -71,7 +72,7 @@ class EncryptedTextField(models.TextField):
     def to_python(self, value):
         return decrypt_string(value, prefix=self.prefix)
 
-    def from_db_value(self, value, expression, connection, context):
+    def from_db_value(self, value, expression, connection):
         return self.to_python(value)
 
 
@@ -95,7 +96,9 @@ class EncryptedJSONField(JSONField):
 
     def to_python(self, value):
         value = rapply(value, decrypt_string, prefix=self.prefix)
+        if value:
+            value = json.loads(value.decode())
         return super(EncryptedJSONField, self).to_python(value)
 
-    def from_db_value(self, value, expression, connection, context):
+    def from_db_value(self, value, expression, connection):
         return self.to_python(value)
