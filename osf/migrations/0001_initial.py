@@ -2246,7 +2246,7 @@ class Migration(migrations.Migration):
             fields=[
             ],
             options={
-                'permissions': (('view_registration', 'Can view registration details'),),
+                # 'permissions': (('view_registration', 'Can view registration details'),),
                 'proxy': True,
                 'indexes': [],
             },

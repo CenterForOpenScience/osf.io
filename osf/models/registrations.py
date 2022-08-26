@@ -153,7 +153,7 @@ class Registration(AbstractNode):
         help_text='Where the archive.org data for the registration is stored'
     )
     # A dictionary of key: value pairs to store additional metadata defined by third-party sources
-    additional_metadata = DateTimeAwareJSONField(blank=True)
+    additional_metadata = DateTimeAwareJSONField(blank=True, null=True)
 
     @staticmethod
     def find_failed_registrations(days_stuck=None):
@@ -866,11 +866,6 @@ class Registration(AbstractNode):
         for children in Registration.objects.get_children(self, active=True, include_root=True):
             archive_to_ia(children)
 
-    class Meta:
-        # custom permissions for use in the OSF Admin App
-        permissions = (
-            ('view_registration', 'Can view registration details'),
-        )
 
 class DraftRegistrationLog(ObjectIDMixin, BaseModel):
     """ Simple log to show status changes for DraftRegistrations
