@@ -12,7 +12,7 @@ from django.views.generic import ListView, DetailView
 from addons.osfstorage.models import Region
 from admin.rdm.utils import RdmPermissionMixin
 from admin.rdm_custom_storage_location.export_data.utils import process_data_infomation, get_list_file_info, \
-    get_link_delete_export_data
+    get_files_from_waterbutler, delete_file_export
 from osf.models import ExportDataLocation, ExportData, Institution
 from .location import ExportStorageLocationViewBaseView
 
@@ -51,8 +51,6 @@ def get_export_data(user_institution_guid, selected_export_location=None, select
                     data['source_name'] = source.name
         if 'location_name' in data and 'source_name' in data:
             list_data.append(data)
-    logger.info('get_export_data function')
-    logger.info(list_data)
     return list_data
 
 
@@ -61,33 +59,12 @@ class ExportBaseView(ExportStorageLocationViewBaseView, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        list_export_data = self.get_export_data_list()
-        return list_export_data
+        raise NotImplementedError(
+            '{0} is missing the implementation of the get_queryset() method.'.format(self.__class__.__name__)
+        )
 
     def get_context_data(self, **kwargs):
-        user_institution_guid = self.INSTITUTION_DEFAULT
-        if not self.is_super_admin and self.is_affiliated_institution:
-            user_institution_guid = self.request.user.representative_affiliated_institution.guid
-        user_institution_name = Institution.objects.get(
-            id=self.request.user.representative_affiliated_institution.id).name
-        self.query_set = self.get_queryset()
-        self.page_size = self.get_paginate_by(self.query_set)
-        self.paginator, self.page, self.query_set, self.is_paginated = \
-            self.paginate_queryset(self.query_set, self.page_size)
-        kwargs['institution_name'] = user_institution_name
-        kwargs['list_export_data'] = self.query_set
-        kwargs['list_location'] = ExportDataLocation.objects.filter(institution_guid=user_institution_guid)
-        kwargs['list_storage'] = Region.objects.filter(_id=user_institution_guid)
-        kwargs['selected_source'] = 0
-        kwargs['selected_location_export'] = 0
-        kwargs['page'] = self.page
-        kwargs['source_id'] = self.query_set[0]['source_id'] if len(self.query_set) > 0 else 0
         return super(ExportBaseView, self).get_context_data(**kwargs)
-
-    def get_export_data_list(self):
-        raise NotImplementedError(
-            '{0} is missing the implementation of the get_export_data_list() method.'.format(self.__class__.__name__)
-        )
 
     def load_institution(self):
         institution_id = self.kwargs.get('institution_id')
@@ -121,12 +98,12 @@ class ExportDataListView(ExportBaseView):
 
     def get(self, request, *args, **kwargs):
         self.load_institution()
-        storage_id = self.kwargs.get('storage_id')
-
+        user_institution_guid = self.institution_guid
+        # storage_id = self.kwargs.get('storage_id')
         selected_storage = request.GET.get('storage_name') if 'storage_name' in dict(request.GET) else 0
         selected_location_export = request.GET.get('location_export_name') if 'location_export_name' in dict(
             request.GET) else 0
-        self.query_set = get_export_data(self.institution_guid, selected_location_export, selected_storage)
+        self.query_set = get_export_data(user_institution_guid, selected_location_export, selected_storage)
         self.page_size = self.get_paginate_by(self.query_set)
         self.paginator, self.page, self.query_set, self.is_paginated = self.paginate_queryset(self.query_set,
                                                                                               self.page_size)
@@ -136,18 +113,13 @@ class ExportDataListView(ExportBaseView):
             'list_export_data': self.query_set,
             'locations': locations,
             'selected_location_id': int(selected_location_export),
-            'list_storage': Region.objects.filter(_id=self.institution_guid),
+            'list_storage': Region.objects.exclude(
+                _id__in=user_institution_guid),
             'selected_source': int(selected_storage),
             'source_id': self.query_set[0]['source_id'] if len(self.query_set) > 0 else 0,
             'page': self.page,
         }
         return render(request, self.template_name, context)
-
-    def get_export_data_list(self):
-        user_institution_guid = self.INSTITUTION_DEFAULT
-        if not self.is_super_admin and self.is_affiliated_institution:
-            user_institution_guid = self.request.user.representative_affiliated_institution.guid
-        return get_export_data(user_institution_guid)
 
 
 class ExportDataDeletedListView(ExportBaseView):
@@ -155,12 +127,12 @@ class ExportDataDeletedListView(ExportBaseView):
 
     def get(self, request, *args, **kwargs):
         self.load_institution()
-        storage_id = self.kwargs.get('storage_id')
-
+        user_institution_guid = self.institution_guid
+        # storage_id = self.kwargs.get('storage_id')
         selected_storage = request.GET.get('storage_name') if 'storage_name' in dict(request.GET) else 0
         selected_location_export = request.GET.get('location_export_name') if 'location_export_name' in dict(
             request.GET) else 0
-        self.query_set = get_export_data(self.institution_guid, selected_location_export, selected_storage,
+        self.query_set = get_export_data(user_institution_guid, selected_location_export, selected_storage,
                                          deleted=True)
         self.page_size = self.get_paginate_by(self.query_set)
         self.paginator, self.page, self.query_set, self.is_paginated = self.paginate_queryset(self.query_set,
@@ -171,18 +143,13 @@ class ExportDataDeletedListView(ExportBaseView):
             'list_export_data': self.query_set,
             'locations': locations,
             'selected_location_id': int(selected_location_export),
-            'list_storage': Region.objects.filter(_id=self.institution_guid),
+            'list_storage': Region.objects.exclude(
+                _id__in=user_institution_guid),
             'selected_source': int(selected_storage),
             'source_id': self.query_set[0]['source_id'] if len(self.query_set) > 0 else 0,
             'page': self.page,
         }
         return render(request, self.template_name, context)
-
-    def get_export_data_list(self):
-        user_institution_guid = self.INSTITUTION_DEFAULT
-        if not self.is_super_admin and self.is_affiliated_institution:
-            user_institution_guid = self.request.user.representative_affiliated_institution.guid
-        return get_export_data(user_institution_guid, deleted=True)
 
 
 class ExportDataInformationView(ExportStorageLocationViewBaseView, DetailView, ListView):
@@ -190,31 +157,35 @@ class ExportDataInformationView(ExportStorageLocationViewBaseView, DetailView, L
     raise_exception = True
     paginate_by = 1
 
-    def get_object(self):
-        user_institution_guid = self.request.user.representative_affiliated_institution.guid
+    def get_object(self, **kwargs):
+        user_institution_guid = self.INSTITUTION_DEFAULT
+        if not self.is_super_admin and self.is_affiliated_institution:
+            user_institution_guid = self.request.user.representative_affiliated_institution.guid
         for item in get_export_data(user_institution_guid, check_delete=False):
             if str(item['export_data'].id) == self.kwargs.get('data_id'):
                 return item
         raise Http404(
-            'Export data with id "{}" not found.'.format(
+            'Export data with id {} not found.'.format(
                 self.kwargs.get('data_id')
             ))
 
     def get_context_data(self, **kwargs):
+        user_institution_guid = self.INSTITUTION_DEFAULT
+        if not self.is_super_admin and self.is_affiliated_institution:
+            user_institution_guid = self.request.user.representative_affiliated_institution.guid
         self.object_list = []
         self.query_set = []
         data = self.get_object()
         process_start = data['export_data'].process_start
-        process_start = str(process_start).split('+')[0].replace('-', '').replace(':', '').replace(' ', '')
+        process_start = str(process_start).split('+')[0].replace('-', '').replace(':', '').replace(' ', 'T')
         provider = Region.objects.get(id=data['source_id'])
+        pid = '28zuw'
+        provider_name = 'osfstorage'
         processed_list_file_info = kwargs.pop('object_list', None)
         user_institution_name = Institution.objects.get(
             id=self.request.user.representative_affiliated_institution.id).name
-        user_institution_guid = self.request.user.representative_affiliated_institution.guid
-        list_file_info, status_code = get_list_file_info('28zuw', 'osfstorage', '/', self.request.COOKIES,
+        list_file_info, status_code = get_list_file_info(pid, provider_name, '/', self.request.COOKIES,
                                                          user_institution_guid, process_start)
-        logger.info('status_code')
-        logger.info(status_code)
         if status_code == 555:
             messages.error(self.request, 'The export data files are corrupted')
         elif status_code != 200:
@@ -237,7 +208,7 @@ class ExportDataInformationView(ExportStorageLocationViewBaseView, DetailView, L
         context['provider_name'] = 'Export Data Information of {} storage'.format(
             provider.waterbutler_settings['storage']['provider'])
         context['storages'] = Region.objects.exclude(
-            _id__in=self.request.user.representative_affiliated_institution.guid)
+            _id__in=user_institution_guid)
         context['page'] = self.page
         return context
 
@@ -249,43 +220,33 @@ class DeleteExportDataView(ExportStorageLocationViewBaseView, View):
         check_delete_permanently = True if request.POST.get('delete_permanently') == 'on' else False
         list_export_data = request.POST.get('list_id_export_data').split('#')
         list_export_data = list(filter(None, list_export_data))
+        pid = '28zuw'
+        provider = 'osfstorage'
         if list_export_data:
             if check_delete_permanently:
-                logger.info('check_delete_permanently = on')
-                logger.info(list_export_data)
                 user_institution_guid = request.user.representative_affiliated_institution.guid
-                list_content, status_code = get_link_delete_export_data('28zuw', 'osfstorage', '/', request.COOKIES)
+                list_content, status_code = get_files_from_waterbutler(pid, provider, '/', request.COOKIES)
                 if status_code == 200:
                     for item in get_export_data(user_institution_guid, check_delete=False):
                         if str(item['export_data'].id) in list_export_data:
-                            logger.info(str(item['export_data'].id))
                             process_start = item['export_data'].process_start
                             process_start = str(process_start).split('+')[0].replace('-', '').replace(':', '').replace(
                                 ' ',
-                                '')
+                                'T')
+                            link_delete = None
                             for export_file in list_content:
                                 if export_file['attributes']['name'] == 'file_info_{}_{}.json'.format(
                                         user_institution_guid,
                                         process_start):
-                                    logger.info(export_file['links'])
-                            # try:
-                            #     url = waterbutler_api_url_for(
-                            #         '28zuw', 'osfstorage', path='/6306f97a0521a816bf92a319', _internal=True
-                            #     )
-                            #     response = requests.delete(
-                            #         url,
-                            #         headers={'content-type': 'application/json'},
-                            #         cookies=request.COOKIES
-                            #     )
-                            # except Exception as err:
-                            #     messages.error(err)
-                            # status_code = response.status_code
-                            # response.close()
-                            # if status_code == 204:
-                            #     ExportData.objects.filter(id__in=list_export_data).update(is_deleted=True)
-                            #     # ExportData.objects.filter(id__in=list_export_data).delete()
-                            # else:
-                            #     messages.error(request, 'Cannot connect to the export data storage location')
+                                    link_delete = export_file['links']['delete']
+                                    break
+                            if link_delete:
+                                link_delete = link_delete.split('/')
+                                status_code = delete_file_export(pid, provider, link_delete[-1], request.COOKIES)
+                                if status_code == 204:
+                                    ExportData.objects.filter(id=item['export_data'].id).delete()
+                                else:
+                                    messages.error(request, 'Cannot connect to the export data storage location')
                 else:
                     messages.error(request, 'Cannot connect to the export data storage location')
             else:
@@ -306,7 +267,7 @@ class RevertExportDataView(ExportStorageLocationViewBaseView, View):
 
 class ExportDataFileCSVView(RdmPermissionMixin, View):
 
-    def get(self, data_id):
+    def get(self, *args, **kwargs):
         guid = self.request.user.representative_affiliated_institution.guid
         current_datetime = str('{date:%Y-%m-%d-%H%M%S}'.format(date=datetime.datetime.now())).replace('-', '')
         response = HttpResponse(content_type='text/csv')
@@ -314,9 +275,6 @@ class ExportDataFileCSVView(RdmPermissionMixin, View):
         writer = csv.writer(response)
         writer.writerow(
             ['project_id', 'project_name', 'owner', 'file_id', 'file_path', 'filename', 'versions', 'size'])
-        # data = request.POST.get('list_data') if 'list_data' in request.POST else []
-        # data = get_list_file_info('28zuw', 'osfstorage', '/', request.COOKIES, guid)
-        # processed_list_file_info = process_data_infomation(data['files'])
         global CURRENT_DATA_INFORMATION
         for file in CURRENT_DATA_INFORMATION:
             writer.writerow(

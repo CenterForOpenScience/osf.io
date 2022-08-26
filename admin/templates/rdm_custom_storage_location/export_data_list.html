@@ -65,9 +65,9 @@
         </div>
         <div class="form-group" id="formFilter">
             <div class="col-sm-12">
-                <button type="submit" id="filter_export" {% if locations.length == 0 %} disabled {% endif %}
+                <button type="submit" id="filter_export" {% if locations|length < 1 %} disabled {% endif %}
                     class="btn btn-primary" style="min-width: 90px;">{% trans "Filter" %}</button>
-                <button type="submit" class="btn btn-primary" id="revert_button_data" {% if locations.length == 0 %} disabled {% endif %}
+                <button type="submit" class="btn btn-primary" id="revert_button_data" {% if locations|length < 1 %} disabled {% endif %}
                     style="min-width: 90px; margin-left:10px;">
                     {% trans "Revert Export Data" %}
                 </button>
@@ -116,7 +116,7 @@
         {% endfor %}
         </tbody>
     </table>
-    <button type="button" class="btn btn-danger" id="delete_button"
+    <button type="button" class="btn btn-danger" id="delete_button" {% if list_export_data|length < 1 %} disabled {% endif %}
             data-target="#deleteExport" data-toggle="modal">{% trans "Delete" %}</button>
 
     <style type="text/css">

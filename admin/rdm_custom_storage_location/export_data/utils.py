@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
 import inspect  # noqa
+import json  # noqa
 import logging  # noqa
+
 import jsonschema
 import requests
-import json  # noqa
-
 from rest_framework import status as http_status
 
 from addons.base.institutions_utils import KEYNAME_BASE_FOLDER
 from addons.nextcloudinstitutions import KEYNAME_NOTIFICATION_SECRET
 from addons.nextcloudinstitutions.models import NextcloudInstitutionsProvider
 from addons.osfstorage.models import Region
+from admin.base.schemas.utils import from_json
 from admin.rdm_custom_storage_location.utils import (
     use_https,
     test_dropboxbusiness_connection,
@@ -19,10 +20,9 @@ from admin.rdm_custom_storage_location.utils import (
     test_s3compat_connection,
     wd_info_for_institutions,
 )
+from api.base.utils import waterbutler_api_url_for
 from osf.models import ExportDataLocation
 from website.util import inspect_info  # noqa
-from api.base.utils import waterbutler_api_url_for
-from admin.base.schemas.utils import from_json
 
 logger = logging.getLogger(__name__)
 
@@ -180,9 +180,7 @@ def process_data_infomation(list_data):
     list_data_version = []
     for item in list_data:
         for file_version in item['version']:
-            current_data = {**item}
-            current_data['version'] = file_version
-            current_data['tags'] = ', '.join(item['tags'])
+            current_data = {**item, 'version': file_version, 'tags': ', '.join(item['tags'])}
             list_data_version.append(current_data)
     return list_data_version
 
@@ -217,34 +215,8 @@ def get_list_file_detail(data, pid, provider, request_cookie, guid, process_star
     return data_json, status_code
 
 
-def get_list_file_info(pid, provider, path, request_cookie, guid=None, process_start=None):
+def get_files_from_waterbutler(pid, provider, path, request_cookie):
     content = None
-    status_code = 0
-    response = None
-    try:
-        url = waterbutler_api_url_for(
-            pid, provider, path=path, _internal=True, meta=''
-        )
-        response = requests.get(
-            url,
-            headers={'content-type': 'application/json'},
-            cookies=request_cookie,
-        )
-    except Exception:
-        return None, response.status_code
-    status_code = response.status_code
-    if response.status_code == 200:
-        content = response.json()
-        print(content['data'][0]['links'])
-    response.close()
-    if status_code != 200:
-        return None, status_code
-    return get_list_file_detail(content['data'], pid, provider, request_cookie, guid, process_start)
-
-
-def get_link_delete_export_data(pid, provider, path, request_cookie):
-    content = None
-    status_code = 0
     response = None
     try:
         url = waterbutler_api_url_for(
@@ -262,6 +234,31 @@ def get_link_delete_export_data(pid, provider, path, request_cookie):
         content = response.json()
     response.close()
     return content['data'], status_code
+
+
+def get_list_file_info(pid, provider, path, request_cookie, guid=None, process_start=None):
+    content_data, status_code = get_files_from_waterbutler(pid, provider, path, request_cookie)
+    if status_code != 200:
+        return None, status_code
+    return get_list_file_detail(content_data, pid, provider, request_cookie, guid, process_start)
+
+
+def delete_file_export(pid, provider, path, request_cookie):
+    status_code = 555
+    try:
+        url = waterbutler_api_url_for(
+            pid, provider, path='/{}'.format(path), _internal=True
+        )
+        response = requests.delete(
+            url,
+            headers={'content-type': 'application/json'},
+            cookies=request_cookie
+        )
+    except Exception:
+        return status_code
+    status_code = response.status_code
+    response.close()
+    return status_code
 
 
 def is_add_on_storage(waterbutler_settings):
