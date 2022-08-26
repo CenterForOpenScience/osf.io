@@ -774,10 +774,33 @@ function deleteLocation(id, providerShortName) {
     });
 }
 
+function exportState(element) {
+    let $parent = $(element).parent();
+    let $exportButton = $parent.find('.export-button');
+    $exportButton.prop('disabled', false);
+    $exportButton.removeClass('disabled');
+
+    let $stopExportButton = $parent.find('.stop-export-button');
+    $stopExportButton.prop('disabled', true);
+    $stopExportButton.addClass('disabled');
+}
+
+function stopExportState(element) {
+    let $parent = $(element).parent();
+    let $exportButton = $parent.find('.export-button');
+    $exportButton.prop('disabled', true);
+    $exportButton.addClass('disabled');
+
+    let $stopExportButton = $parent.find('.stop-export-button');
+    $stopExportButton.prop('disabled', false);
+    $stopExportButton.removeClass('disabled');
+
+}
+
 $('.export-button').click(function (event) {
     event.preventDefault();
     $(this).prop('disabled', true);
-    $(this).removeClass('disabled');
+    $(this).addClass('disabled');
     let institution_id = window.contextVars.institution_id;
     let source_id = this.dataset.storage | $('#source-select').val();
     let location_id = $('#location-select-' + source_id).val() | $('#location-select').val();
@@ -803,26 +826,31 @@ function exportData(institution_id, source_id, location_id, element) {
         timeout: 120000,
         success: function (data) {
             let task_id = data.task_id;
-            console.log('success', task_id);
+            let message;
 
-            let $exportButton = $(this.custom.element);
-            $exportButton.prop('disabled', true);
-            $exportButton.addClass('disabled');
+            // if (data.task_state === 'SUCCESS') {
+            if (data.task_state !== 'SUCCESS') {  // for dev
+                // task_state in (SUCCESS, )
+                exportState(this.custom.element);
+                message = 'Export data successfully';
+            } else {
+                // task_state in (PENDING, STARTED, )
+                stopExportState(this.custom.element);
+                message = 'Export data in background';
 
-            let $stopExportButton = $exportButton.parent().find('.stop-export-button');
-            $stopExportButton.prop('disabled', false);
-            $stopExportButton.toggleClass('disabled');
-            $stopExportButton.data('task_id', task_id);
+                let $exportButton = $(this.custom.element);
+                let $stopExportButton = $exportButton.parent().find('.stop-export-button');
+                $stopExportButton.data('task_id', task_id);
+            }
+            $osf.growl('Export Data', _(message), 'success', 2);
         },
         error: function (jqXHR) {
-            let $exportButton = $(this.custom.element);
-            $exportButton.prop('disabled', false);
-            $exportButton.toggleClass('disabled');
+            exportState(this.custom.element);
+            let message = 'Cannot export data';
             if (jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)) {
-                console.log('fail', jqXHR.responseJSON.message);
-            } else {
-                console.log('fail', 'error');
+                message = jqXHR.responseJSON.message;
             }
+            $osf.growl('Export Data', _(message), 'danger', 2);
         }
     });
 }
@@ -830,7 +858,7 @@ function exportData(institution_id, source_id, location_id, element) {
 $('.stop-export-button').click(function (event) {
     event.preventDefault();
     $(this).prop('disabled', true);
-    $(this).removeClass('disabled');
+    $(this).addClass('disabled');
     let institution_id = window.contextVars.institution_id;
     let source_id = this.dataset.storage | $('#source-select').val();
     let location_id = $('#location-select-' + source_id).val() | $('#location-select').val();
@@ -857,25 +885,25 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
         custom: {'element': element},
         timeout: 120000,
         success: function (data) {
-            let task_id = data.task_id;
-            console.log('success', task_id);
-            let $stopExportButton = $(this.custom.element);
-            $stopExportButton.prop('disabled', true);
-            $stopExportButton.addClass('disabled');
+            let message;
 
-            let $exportButton = $stopExportButton.parent().find('.export-button');
-            $exportButton.prop('disabled', false);
-            $exportButton.toggleClass('disabled');
+            if (data.task_state === 'ABORTED') {
+                // task_state in (ABORTED, )
+                exportState(this.custom.element);
+                message = 'Stop exporting successfully';
+            } else {
+                stopExportState(this.custom.element);
+                message = 'Stop exporting in background';
+            }
+            $osf.growl('Stop Export Data', _(message), 'success', 2);
         },
         error: function (jqXHR) {
-            let $stopExportButton = $(this.custom.element);
-            $stopExportButton.prop('disabled', false);
-            $stopExportButton.toggleClass('disabled');
+            stopExportState(this.custom.element);
+            let message = 'Cannot stop exporting data';
             if (jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)) {
-                console.log('fail', jqXHR.responseJSON.message);
-            } else {
-                console.log('fail', 'error');
+                message = jqXHR.responseJSON.message;
             }
+            $osf.growl('Stop Export Data', _(message), 'danger', 2);
         }
     });
 }

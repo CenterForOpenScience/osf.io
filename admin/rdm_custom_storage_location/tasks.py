@@ -1,21 +1,28 @@
 from __future__ import absolute_import
 
-import requests
+import logging
 
-from django.db import transaction
-from api.base.utils import waterbutler_api_url_for
+import requests
 from celery.contrib.abortable import AbortableTask
+from django.db import transaction
+from django.utils import timezone
+
+from addons.osfstorage.models import Region
+from admin.rdm_custom_storage_location.export_data import serializers, utils
+from admin.rdm_custom_storage_location.export_data.views.export import (
+    export_data_process,
+    export_data_rollback_process
+)
+from api.base.utils import waterbutler_api_url_for
 from framework.celery_tasks import app as celery_app
 from osf.models import ExportData, ExportDataLocation, ExportDataRestore
-from addons.osfstorage.models import Region
 from website.settings import WATERBUTLER_URL
-from admin.rdm_custom_storage_location.export_data import serializers, utils
-from django.utils import timezone
-import logging
 
 __all__ = [
     'check_before_restore_export_data',
     'restore_export_data',
+    'rollback_restore',
+    'run_export_data_process',
 ]
 
 logger = logging.getLogger(__name__)
@@ -224,3 +231,13 @@ def rollback_restore(cookies, export_id, source_id, destination_id, transaction=
     export_data_restore.status = "Stopped"
     export_data_restore.save()
     return 'Stopped'
+
+
+@celery_app.task(bind=True, base=AbortableTask, track_started=True)
+def run_export_data_process(self, cookies, export_data_id):
+    export_data_process(cookies, export_data_id)
+
+
+@celery_app.task(bind=True, base=AbortableTask, track_started=True)
+def run_export_data_rollback_process(self, cookies, export_data_id):
+    export_data_rollback_process(cookies, export_data_id)

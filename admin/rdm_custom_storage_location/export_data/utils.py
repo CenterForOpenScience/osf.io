@@ -33,6 +33,10 @@ __all__ = [
     'save_dropboxbusiness_credentials',
     'save_basic_storage_institutions_credentials_common',
     'save_nextcloudinstitutions_credentials',
+    'process_data_infomation',
+    'get_list_file_info',
+    'get_files_from_waterbutler',
+    'delete_file_export',
 ]
 
 

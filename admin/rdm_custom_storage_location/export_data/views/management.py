@@ -11,8 +11,12 @@ from django.views.generic import ListView, DetailView
 
 from addons.osfstorage.models import Region
 from admin.rdm.utils import RdmPermissionMixin
-from admin.rdm_custom_storage_location.export_data.utils import process_data_infomation, get_list_file_info, \
-    get_files_from_waterbutler, delete_file_export
+from admin.rdm_custom_storage_location.export_data.utils import (
+    process_data_infomation,
+    get_list_file_info,
+    get_files_from_waterbutler,
+    delete_file_export
+)
 from osf.models import ExportDataLocation, ExportData, Institution
 from .location import ExportStorageLocationViewBaseView
 
@@ -25,12 +29,15 @@ def get_export_data(user_institution_guid, selected_export_location=None, select
                     check_delete=True):
     # Get export data following user_institution_guid
     list_source_id = Region.objects.filter(_id=user_institution_guid).values_list('id', flat=True)
-    list_location_id = ExportDataLocation.objects.filter(institution_guid=user_institution_guid).values_list('id',
-                                                                                                             flat=True)
-    list_export_data = ExportData.objects.filter(is_deleted=deleted, location_id__in=list_location_id,
-                                                 source_id__in=list_source_id).order_by(
-        'id') if check_delete else ExportData.objects.filter(location_id__in=list_location_id,
-                                                             source_id__in=list_source_id).order_by('id')
+    list_location = ExportDataLocation.objects.filter(institution_guid=user_institution_guid)
+    list_location_id = list_location.values_list('id', flat=True)
+    if check_delete:
+        list_export_data = ExportData.objects.filter(
+            is_deleted=deleted, location_id__in=list_location_id, source_id__in=list_source_id
+        ).order_by('id')
+    else:
+        list_export_data = ExportData.objects.filter(
+            location_id__in=list_location_id, source_id__in=list_source_id).order_by('id')
     list_data = []
     for export_data in list_export_data:
         data = {'export_data': export_data}

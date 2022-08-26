@@ -11,29 +11,9 @@ from osf.models import base, ExportDataLocation
 logger = logging.getLogger(__name__)
 
 __all__ = [
-    'STATUS_RUNNING',
-    'STATUS_STOPPING',
-    'STATUS_CHECKING',
-    'STATUS_STOPPED',
-    'STATUS_COMPLETED',
-    'EXPORT_DATA_STATUS_CHOICES',
     'DateTruncMixin',
     'SecondDateTimeField',
     'ExportData',
-]
-
-STATUS_RUNNING = 'Running'
-STATUS_STOPPING = 'Stopping'
-STATUS_CHECKING = 'Checking'
-STATUS_STOPPED = 'Stopped'
-STATUS_COMPLETED = 'Completed'
-
-EXPORT_DATA_STATUS_CHOICES = [
-    (STATUS_RUNNING, STATUS_RUNNING),
-    (STATUS_STOPPING, STATUS_STOPPING),
-    (STATUS_CHECKING, STATUS_CHECKING),
-    (STATUS_STOPPED, STATUS_STOPPED),
-    (STATUS_COMPLETED, STATUS_COMPLETED),
 ]
 
 
@@ -54,6 +34,20 @@ class SecondDateTimeField(DateTruncMixin, DateTimeField):
 
 
 class ExportData(base.BaseModel):
+    STATUS_RUNNING = 'Running'
+    STATUS_STOPPING = 'Stopping'
+    STATUS_CHECKING = 'Checking'
+    STATUS_STOPPED = 'Stopped'
+    STATUS_COMPLETED = 'Completed'
+
+    EXPORT_DATA_STATUS_CHOICES = (
+        (STATUS_RUNNING, STATUS_RUNNING.title()),
+        (STATUS_STOPPING, STATUS_STOPPING.title()),
+        (STATUS_CHECKING, STATUS_CHECKING.title()),
+        (STATUS_STOPPED, STATUS_STOPPED.title()),
+        (STATUS_COMPLETED, STATUS_COMPLETED.title()),
+    )
+
     source = models.ForeignKey(Region, on_delete=models.CASCADE)
     location = models.ForeignKey(ExportDataLocation, on_delete=models.CASCADE)
     process_start = SecondDateTimeField(auto_now=False, auto_now_add=True)
@@ -73,3 +67,17 @@ class ExportData(base.BaseModel):
         return f'"({self.source}-{self.location})[{self.status}]"'
 
     __str__ = __repr__
+
+    @property
+    def process_start_timestamp(self):
+        return self.process_start.strftime('%s')
+
+    @property
+    def export_data_folder(self):
+        return f'export_{self.source.id}_{self.process_start_timestamp}'
+
+    def get_export_data_filename(self, institution_guid):
+        return f'export_data_{institution_guid}_{self.process_start_timestamp}.json'
+
+    def get_file_info_filename(self, institution_guid):
+        return f'file_info_{institution_guid}_{self.process_start_timestamp}.json'
