@@ -8,6 +8,7 @@ from hashids import Hashids
 from django.utils.http import urlquote
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import QuerySet
+from rest_framework import fields
 from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
 
@@ -26,8 +27,8 @@ from website import util as website_util  # noqa
 # These values are copied from rest_framework.fields.BooleanField
 # BooleanField cannot be imported here without raising an
 # ImproperlyConfigured error
-TRUTHY = set(('t', 'T', 'true', 'True', 'TRUE', '1', 1, True, 'on', 'ON', 'On', 'y', 'Y', 'YES', 'yes'))
-FALSY = set(('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False, 'off', 'OFF', 'Off', 'n', 'N', 'NO', 'no'))
+TRUTHY = fields.BooleanField.TRUE_VALUES
+FALSY = fields.BooleanField.FALSE_VALUES
 
 UPDATE_METHODS = ['PUT', 'PATCH']
 

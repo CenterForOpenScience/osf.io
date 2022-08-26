@@ -432,7 +432,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             expect_errors=True
         )
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == '"Dr.Strange" is not a valid boolean.'
+        assert res.json['errors'][0]['detail'] == 'Must be a valid boolean.'
 
         invalid_public_payload = make_payload(
             id=public_registration._id,
