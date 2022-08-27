@@ -1440,6 +1440,8 @@ function orderFolder(tree) {
     }
     tree.sortChildren(this, sortDirection, 'text', sortColumn, 1);
     this.redraw();
+    this.select('#tb-tbody > .tb-modal-shade').hide();
+    this.select('#tb-tbody').css('overflow', '')
 }
 
 /**
@@ -2935,6 +2937,8 @@ function fetchData(tree) {
         $.when(self.options.resolveLazyloadUrl.call(self, tree)).done(function _resolveLazyloadDone(url) {
             lazyLoad = url;
             if (lazyLoad && item.row.kind === 'folder' && tree.open === true) {
+                self.select('#tb-tbody > .tb-modal-shade').show();
+                self.select('#tb-tbody').css('overflow', 'hidden');
                 m.request({
                     method: 'GET',
                     url: lazyLoad,
@@ -3105,6 +3109,16 @@ tbOptions = {
         });
 
         $osf.onScroll(tb.select('#tb-tbody'), handleScroll.bind(tb));
+
+        tb.select('#tb-tbody').prepend(`<div style="width: 100%; height: 100%; padding: 50px 100px; position: sticky; top: 0px; left: 0px;background-color: white;" class="tb-modal-shade">
+                                    <div class="spinner-loading-wrapper" style="background-color: transparent;">
+                                        <div class="ball-scale ball-scale-blue">
+                                            <div>
+                                            </div>
+                                        </div>
+                                        <p class="m-t-sm fg-load-message">Loading files...</p>
+                                    </div>
+                                </div>`);
     },
     movecheck : function (to, from) { //This method gives the users an option to do checks and define their return
         return true;
