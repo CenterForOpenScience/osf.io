@@ -4,7 +4,9 @@ import json  # noqa
 import logging  # noqa
 
 import jsonschema
+import numpy as np
 import requests
+from django.db import connection
 from rest_framework import status as http_status
 
 from addons.base.institutions_utils import KEYNAME_BASE_FOLDER
@@ -21,7 +23,8 @@ from admin.rdm_custom_storage_location.utils import (
     wd_info_for_institutions,
 )
 from api.base.utils import waterbutler_api_url_for
-from osf.models import ExportDataLocation
+from osf.models import ExportDataLocation, Institution, FileVersion, BaseFileVersionsThrough, BaseFileNode, \
+    AbstractNode, OSFUser, RdmFileTimestamptokenVerifyResult
 from website.util import inspect_info  # noqa
 
 logger = logging.getLogger(__name__)
@@ -133,7 +136,8 @@ def save_dropboxbusiness_credentials(institution, storage_name, provider_name):
             }, http_status.HTTP_200_OK)
 
 
-def save_basic_storage_institutions_credentials_common(institution, storage_name, folder, provider_name, provider, separator=':', extended_data=None):
+def save_basic_storage_institutions_credentials_common(institution, storage_name, folder, provider_name, provider,
+                                                       separator=':', extended_data=None):
     """Don't need external account, save all to waterbutler_settings"""
     external_account = {
         'display_name': provider.username,
@@ -161,7 +165,8 @@ def save_basic_storage_institutions_credentials_common(institution, storage_name
             }, http_status.HTTP_200_OK)
 
 
-def save_nextcloudinstitutions_credentials(institution, storage_name, host_url, username, password, folder, notification_secret, provider_name):
+def save_nextcloudinstitutions_credentials(institution, storage_name, host_url, username, password, folder,
+                                           notification_secret, provider_name):
     test_connection_result = test_owncloud_connection(host_url, username, password, folder, provider_name)
     if test_connection_result[1] != http_status.HTTP_200_OK:
         return test_connection_result
@@ -177,7 +182,8 @@ def save_nextcloudinstitutions_credentials(institution, storage_name, host_url, 
         KEYNAME_NOTIFICATION_SECRET: notification_secret
     }
 
-    return save_basic_storage_institutions_credentials_common(institution, storage_name, folder, provider_name, provider, extended_data=extended_data)
+    return save_basic_storage_institutions_credentials_common(institution, storage_name, folder, provider_name,
+                                                              provider, extended_data=extended_data)
 
 
 def process_data_infomation(list_data):
@@ -285,3 +291,109 @@ def check_storage_type(storage_id):
     region = Region.objects.filter(id=storage_id)
     settings = region.values_list("waterbutler_settings", flat=True)[0]
     return is_add_on_storage(settings)
+
+
+def get_info_export_data(region_id):
+    # Get region by id
+    region = Region.objects.filter(id=region_id).first()
+    # Get Institution by guid
+    institution = Institution.objects.filter(_id=region._id).first()
+    if region is None or institution is None:
+        return None
+
+    data_rs = {
+        'institution': {
+            'institution_id': institution.id,
+            'institution_guid': institution._id,
+            'institution_name': institution.name,
+        }
+    }
+
+    # Get list FileVersion by region_id(source_id)
+    list_fileversion_id = FileVersion.objects.filter(region_id=region_id).values_list('id', flat=True)
+
+    # Get list_basefilenode_id by list_fileversion_id above via the BaseFileVersionsThrough model
+    list_basefileversion = BaseFileVersionsThrough.objects.filter(
+        fileversion_id__in=list_fileversion_id).values_list('basefilenode_id', 'version_name')
+    list_basefilenode_id, list_file_verson_name = zip(*list_basefileversion)
+
+    # Gte list_basefielnode by list_basefilenode_id above
+    list_basefielnode = BaseFileNode.objects.filter(id__in=list_basefilenode_id, deleted=None)
+    list_file = []
+    cursor = connection.cursor()
+    # Loop every basefilenode in list_basefielnode for get data
+    for basefilenode in list_basefielnode:
+        query_string = """
+                    select tag.name from osf_basefilenode_tags as bastag
+                    inner join osf_tag as tag
+                    on tag.id = bastag.tag_id
+                    where bastag.basefilenode_id = {basefilenode_id}
+                    """.format(basefilenode_id=basefilenode.id)
+        cursor.execute(query_string)
+        result = np.asarray(cursor.fetchall())
+        list_tags = []
+        if result.shape != (0,):
+            for tag in result[:, 0]:
+                list_tags.append(tag)
+        # Get project's data by basefilenode.target_object_id
+        project = AbstractNode.objects.get(id=basefilenode.target_object_id)
+        basefilenode_info = {
+            'id': basefilenode.id,
+            'path': basefilenode.path,
+            'materialized_path': basefilenode.materialized_path,
+            'name': basefilenode.name,
+            'size': 0,
+            'created_at': basefilenode.created.strftime("%Y-%m-%d %H:%M:%S"),
+            'modified_at': basefilenode.modified.strftime("%Y-%m-%d %H:%M:%S"),
+            'tags': list_tags,
+            'location': {},
+            'project': {
+                'id': project.id,
+                'name': project.title,
+            },
+            'version': [],
+            'timestamp': {},
+        }
+
+        # Get fileversion_id and version_name by basefilenode_id in the BaseFileVersionsThrough model
+        list_fileversion_data = BaseFileVersionsThrough.objects.filter(
+            basefilenode_id=basefilenode.id).values_list('fileversion_id', 'version_name')
+        list_fileversion_id, list_fileverson_name = zip(*list_fileversion_data)
+        dict_file_version_name = dict(zip(list_fileversion_id, list_fileverson_name))
+
+        list_fileversion = []
+
+        # Loop every file version of every basefilenode by basefilenode.id
+        for filerversion_id, fileverson_name in dict_file_version_name.items():
+            # get the file version by id
+            filerversion = FileVersion.objects.get(id=filerversion_id)
+
+            # Get file version's creator
+            creator = OSFUser.objects.get(id=filerversion.creator_id)
+            fileverison_data = {
+                'identifier': filerversion.identifier,
+                'created_at': filerversion.created.strftime("%Y-%m-%d %H:%M:%S"),
+                'size': filerversion.size,
+                'version_name': fileverson_name,
+                'contributor': creator.username,
+                'metadata': filerversion.metadata,
+                'location': filerversion.location,
+            }
+            list_fileversion.append(fileverison_data)
+        basefilenode_info['version'] = list_fileversion
+        basefilenode_info['size'] = list_fileversion[-1]['size']
+        basefilenode_info['location'] = list_fileversion[-1]['location']
+        list_file.append(basefilenode_info)
+
+        # Get timestamp by project_id and file_id
+        timestamp = RdmFileTimestamptokenVerifyResult.objects.filter(project_id=project.id,
+                                                                     file_id=basefilenode.id).first()
+        if timestamp:
+            basefilenode_info['timestamp'] = {
+                'timestamp_token': timestamp.timestamp_token,
+                'verify_user': timestamp.verify_user,
+                'verify_date': timestamp.verify_date,
+                'updated_at': timestamp.verify_file_created_at,
+            }
+    data_rs['files'] = list_file
+    return data_rs
