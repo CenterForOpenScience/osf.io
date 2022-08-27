@@ -16,8 +16,9 @@ from admin.rdm_custom_storage_location.export_data.views.export import (
 )
 from api.base.utils import waterbutler_api_url_for
 from framework.celery_tasks import app as celery_app
-from osf.models import ExportData, ExportDataLocation, ExportDataRestore
-from osf.models.export_data import STATUS_RUNNING, STATUS_COMPLETED, STATUS_STOPPED
+from osf.models import ExportData, ExportDataLocation, ExportDataRestore, BaseFileNode, \
+    FileInfo, FileLog, FileVersion, FileMetadataRecord, FileMetadataSchema
+from osf.models.export_data import  STATUS_COMPLETED, STATUS_STOPPED
 from addons.osfstorage.models import Region
 from website.settings import WATERBUTLER_URL
 
@@ -115,11 +116,8 @@ def restore_export_data(self, cookies, export_id, source_id, destination_id, exp
         export_data_restore = ExportDataRestore.objects.get(id=export_data_restore_id)
 
         # Check destination storage type (bulk-mounted or add-on)
-        is_addon_storage = utils.check_storage_type(destination_id)
-
-        if is_addon_storage:
-            logger.info("IS ADD-ON STORAGE")
-
+        is_destination_addon_storage = utils.check_storage_type(destination_id)
+        if is_destination_addon_storage:
             # If destination storage is add-on institutional storage,
             # move all old data in restore destination storage to a folder to back up (such as '_backup' folder)
             destination_region = Region.objects.filter(id=destination_id)
@@ -183,43 +181,97 @@ def restore_export_data(self, cookies, export_id, source_id, destination_id, exp
             response_body = response.json()
             response.close()
             files = response_body["files"]
+            destination_file_info = []
+            destination_file_latest_versions = []
+            is_export_addon_storage = utils.check_storage_type(export_id)
             for file in files:
                 file_path = file["path"]
                 file_materialized_path = file["materialized_path"]
+                file_created_at = file["created_at"]
+                file_modified_at = file["modified_at"]
+                file_version = file["version"]["identifier"]
 
-                # Add matched file information to related tables
+                # Get file which have following information that is the same between export data and database
+                file_node = BaseFileNode.active.filter(path=file_path, materialzed_path=file_materialized_path,
+                                                       created_at=file_created_at, modified_at=file_modified_at)
+                if len(file_node) == 0:
+                    # File not match with DB, pass this file
+                    continue
 
+                # List file paths with the latest version
+                if not is_export_addon_storage:
+                    index = next((i for i, item in destination_file_latest_versions if item["path"] == file_materialized_path), -1)
+                    if index == -1:
+                        destination_file_latest_versions.append({"path": file_materialized_path, "latest_version": file_version})
+                    else:
+                        current_version = destination_file_latest_versions[index]["latest_version"]
+                        destination_file_latest_versions[index]["latest_version"] = max(current_version, file_version)
+                destination_file_info.append(file)
+
+            for file in destination_file_info:
+                file_path = file["path"]
+                file_materialized_path = file["materialized_path"]
+                # Prepare file name and file path for uploading
+                # If the destination storage is add-on institutional storage and export data storage is bulk-mounted storage:
+                # - for past version files, rename and save each version as filename_{version} in '_version_files' folder
+                # - the latest version is saved as the original
+                if is_destination_addon_storage and not is_export_addon_storage:
+                    new_file_materialized_path = file_materialized_path
+                    if len(file_materialized_path) > 0:
+                        file_version = file["version"]["identifier"]
+                        eariler_verison_index = next((item for item in destination_file_latest_versions if item["path"] == file_materialized_path and item["latest_version"] > file_version), -1)
+                        if eariler_verison_index != -1:
+                            # - for past version files, rename and save each version as filename_{version} in '_version_files' folder
+                            path_splits = new_file_materialized_path.split("/")
+
+                            file_name = path_splits[len(path_splits) - 1]
+                            file_splits = file_name.split(".")
+                            file_splits[0] = file_splits[0] + "_{}".format(file_version)
+                            versioned_file_name = ".".join(file_splits)
+
+                            path_splits.insert(len(path_splits) - 2, "_version_files")
+                            path_splits[len(path_splits) - 1] = versioned_file_name
+                            new_file_materialized_path = "/".join(path_splits)
+                    new_file_path = new_file_materialized_path
+                else:
+                    new_file_path = file_path if is_export_addon_storage else file_materialized_path
 
                 # Download file from export data storage
                 try:
-                    download_api = waterbutler_api_url_for(export_id, "s3", path=file_path)
+                    destination_region = Region.objects.filter(id=destination_id)
+                    destination_base_url = destination_region.values_list("waterbutler_url", flat=True)[0]
+                    internal = destination_base_url == WATERBUTLER_URL
+                    download_api = waterbutler_api_url_for(export_id, "s3", path=file_materialized_path,
+                                                           _internal=internal, base_url=destination_base_url)
                     response = requests.get(download_api,
                                             headers={'content-type': 'application/json'},
                                             cookies=cookies)
                 except Exception as e:
                     response.close()
                     raise e
+                download_data = response.content
                 response.close()
-
-                # Prepare file name and file path for uploading
-                # If the destination storage is add-on institutional storage and source storage is bulk-mounted storage:
-                # - for past version files, rename and save each version as filename_{version} in '_version_files' folder
-                # - the latest version is saved as the original filename
-                if is_addon_storage:
-                    pass
-                else:
-                    pass
 
                 # Upload downloaded file to destination storage
                 try:
-                    upload_api = waterbutler_api_url_for(destination_id, "s3", path=file_path)
+                    upload_api = waterbutler_api_url_for(destination_id, "s3", path='/', kind="file", name=new_file_path,
+                                                         _internal=internal, base_url=export_base_url)
                     response = requests.put(upload_api,
                                             headers={'content-type': 'application/json'},
-                                            cookies=cookies)
+                                            cookies=cookies,
+                                            data=download_data)
                 except Exception as e:
                     response.close()
                     raise e
+                # Contain a WaterButler file entity that describes the new file
+                response_body = response.json()
                 response.close()
+
+                # Add matched file information to related tables such as osf_basefilenode, osf_fileversion, osf_basefileinfo, osf_filelog,...
+                # file_node.pk = None
+                # file_node.path = new_file_path
+                # file_node.materialized_path = new_file_materialized_path
+                # file_node.save()
 
             # Update process data with process_end timestamp and "Completed" status
             export_data_restore.process_end = timezone.now()
