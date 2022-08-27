@@ -300,7 +300,6 @@ def rollback_restore(cookies, export_id, source_id, destination_id, export_data_
     else:
         export_data_restore = ExportDataRestore.objects.get(export_id=export_id, destination_id=destination_id)
 
-
     # Rollback file movements
     # Get export data with the file information from the source storage via API call
     export_data = ExportData.objects.filter(id=export_id, is_deleted=False)[0]
@@ -337,18 +336,55 @@ def rollback_restore(cookies, export_id, source_id, destination_id, export_data_
     # Check destination storage type (bulk-mounted or add-on)
     is_addon_storage = utils.check_storage_type(destination_id)
 
+    destination_region = Region.objects.filter(id=destination_id)
+    destination_base_url, destination_guid, destination_settings = destination_region.values_list("waterbutler_url", "_id", "waterbutler_settings")[0]
+    destination_provider = destination_settings["storage"]["provider"]
+    internal = destination_base_url == WATERBUTLER_URL
+
     for file in files:
         file_path = file["path"]
         file_materialized_path = file["materialized_path"]
         # In add-on institutional storage: Delete files, except the backup folder.
         # In bulk-mounted institutional storage: Delete only files created during the restore process.
-        delete_api = waterbutler_api_url_for(destination_id, "S3", path=file_path)
-        response = requests.delete(delete_api)
-        response.close()
+        if is_addon_storage:
+            delete_api = waterbutler_api_url_for(destination_guid, destination_provider, path=file_materialized_path)
+        else:
+            delete_api = waterbutler_api_url_for(destination_guid, destination_provider, path=file_path)
+        try:
+            response = requests.delete(delete_api,
+                                       headers={'content-type': 'application/json'},
+                                       cookies=cookies)
+        except Exception as e:
+            logger.error("Exception: {}".format(e))
+            response.close()
+            export_data_restore.status = STATUS_STOPPED
+            export_data_restore.save()
+            return ""
 
     # If destination storage is add-on institutional storage
-    # Move all files from the backup folder out
-    # Delete the backup folder
+    if is_addon_storage:
+        # Move all files from the backup folder out
+
+        # Delete the backup folder
+        destination_storage_backup_meta_api = waterbutler_api_url_for('emx94', destination_provider, path="/_backup/", meta="",
+                                                                      _internal=internal, base_url=destination_base_url)
+        try:
+            response = requests.delete(destination_storage_backup_meta_api,
+                                       headers={'content-type': 'application/json'},
+                                       cookies=cookies)
+            if response.status_code != 200:
+                # Error
+                logger.error("Return error with response: {}".format(response.content))
+                response.close()
+                export_data_restore.status = STATUS_STOPPED
+                export_data_restore.save()
+                return ""
+        except Exception as e:
+            logger.error("Exception: {}".format(e))
+            response.close()
+            export_data_restore.status = STATUS_STOPPED
+            export_data_restore.save()
+            return ""
 
     export_data_restore.status = STATUS_STOPPED
     export_data_restore.save()
