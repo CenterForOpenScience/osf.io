@@ -1,12 +1,15 @@
 from __future__ import unicode_literals
 
 import logging
+import os.path
 
+import requests
 from django.db import models
 from django.db.models import DateTimeField
 
 from addons.osfstorage.models import Region
 from osf.models import base, ExportDataLocation
+from api.base.utils import waterbutler_api_url_for
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +62,7 @@ class ExportData(base.BaseModel):
     file_number = models.PositiveIntegerField(default=0)
     total_size = models.PositiveIntegerField(default=0)
     is_deleted = models.BooleanField(default=False)
+    task_id = models.CharField(max_length=255, null=True, blank=True)
 
     class Meta:
         unique_together = ('source', 'location', 'process_start')
@@ -73,11 +77,69 @@ class ExportData(base.BaseModel):
         return self.process_start.strftime('%s')
 
     @property
-    def export_data_folder(self):
+    def export_data_folder_name(self):
         return f'export_{self.source.id}_{self.process_start_timestamp}'
 
-    def get_export_data_filename(self, institution_guid):
+    @property
+    def export_data_folder_path(self):
+        return f'/export_{self.source.id}_{self.process_start_timestamp}/'
+
+    def create_export_data_folder(self, cookies, **kwargs):
+        node_id = 'export_location'
+        provider = self.location.provider_name
+        path = '/'
+        url = waterbutler_api_url_for(
+            node_id, provider, path=path,
+            name=self.export_data_folder_name,
+            kind='folder', meta='',
+            _internal=True, location_id=self.location.id,
+            **kwargs
+        )
+        return requests.put(url, cookies=cookies)
+
+    def delete_export_data_folder(self, cookies, **kwargs):
+        node_id = 'export_location'
+        provider = self.location.provider_name
+        path = self.export_data_folder_path
+        url = waterbutler_api_url_for(
+            node_id, provider, path=path,
+            confirm_delete=1,
+            _internal=True, location_id=self.location.id,
+            **kwargs
+        )
+        return requests.delete(url, cookies=cookies)
+
+    def get_export_data_filename(self, institution_guid=None):
+        if not institution_guid:
+            institution_guid = self.source.guid
         return f'export_data_{institution_guid}_{self.process_start_timestamp}.json'
 
-    def get_file_info_filename(self, institution_guid):
+    def get_export_data_file_path(self, institution_guid=None):
+        if not institution_guid:
+            institution_guid = self.source.guid
+        return os.path.join(self.export_data_folder_name, self.get_export_data_filename(institution_guid))
+
+    def get_file_info_filename(self, institution_guid=None):
+        if not institution_guid:
+            institution_guid = self.source.guid
         return f'file_info_{institution_guid}_{self.process_start_timestamp}.json'
+
+    def upload_export_data_file(self, cookies, file_path, **kwargs):
+        node_id = 'export_location'
+        provider = self.location.provider_name
+        path = self.export_data_folder_path
+        file_name = kwargs.get('file_name', self.get_export_data_filename(self.location.institution_guid))
+        with open(file_path, 'r') as fp:
+            url = waterbutler_api_url_for(
+                node_id, provider, path=path,
+                name=file_name,
+                kind='file',
+                _internal=True, location_id=self.location.id,
+                **kwargs
+            )
+            return requests.put(url, data=fp, cookies=cookies)
+
+    def upload_file_info_file(self, cookies, file_path, **kwargs):
+        file_name = self.get_file_info_filename(self.location.institution_guid)
+        kwargs.setdefault('file_name', file_name)
+        self.upload_export_data_file(cookies, file_path, **kwargs)

@@ -18,6 +18,7 @@ class ExportDataRestore(base.BaseModel):
     process_end = models.DateTimeField(auto_now=False, auto_now_add=False, null=True, blank=True)
     last_check = models.DateTimeField(auto_now=False, auto_now_add=False, null=True, blank=True)
     status = models.CharField(choices=ExportData.EXPORT_DATA_STATUS_CHOICES, max_length=255)
+    task_id = models.CharField(max_length=255, null=True, blank=True)
 
     class Meta:
         unique_together = ('export', 'destination', 'process_start')

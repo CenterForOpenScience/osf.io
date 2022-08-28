@@ -11,7 +11,7 @@ from rest_framework import status as http_status
 from admin.rdm.utils import RdmPermissionMixin
 from admin.rdm_custom_storage_location import utils
 from admin.rdm_custom_storage_location.export_data import utils as export_data_utils
-from osf.models import ExportDataLocation
+from osf.models import ExportDataLocation, Institution
 from website import settings as osf_settings
 
 logger = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ __all__ = [
 class ExportStorageLocationViewBaseView(RdmPermissionMixin, UserPassesTestMixin):
     """ Base class for all the Institutional Storage Views """
     PROVIDERS_AVAILABLE = ['s3', 's3compat']
-    INSTITUTION_DEFAULT = 'us'
+    INSTITUTION_DEFAULT = Institution.INSTITUTION_DEFAULT
     institution_guid = INSTITUTION_DEFAULT
     institution = None
 

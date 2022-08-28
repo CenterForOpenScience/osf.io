@@ -809,7 +809,7 @@ $('.export-button').click(function (event) {
 });
 
 function exportData(institution_id, source_id, location_id, element) {
-    console.log(institution_id, source_id, location_id);
+    // console.log(institution_id, source_id, location_id);
     let params = {
         'institution_id': institution_id,
         'source_id': source_id,
@@ -827,12 +827,17 @@ function exportData(institution_id, source_id, location_id, element) {
         success: function (data) {
             let task_id = data.task_id;
             let message;
+            let messageType = 'success';
 
-            // if (data.task_state === 'SUCCESS') {
-            if (data.task_state !== 'SUCCESS') {  // for dev
+            if (data.task_state === 'SUCCESS') {
                 // task_state in (SUCCESS, )
                 exportState(this.custom.element);
                 message = 'Export data successfully';
+            } else if (data.task_state === 'FAILURE') {
+                // task_state in (FAILURE, )
+                exportState(this.custom.element);
+                message = 'Error occurred while exporting data.';
+                messageType = 'danger';
             } else {
                 // task_state in (PENDING, STARTED, )
                 stopExportState(this.custom.element);
@@ -842,7 +847,7 @@ function exportData(institution_id, source_id, location_id, element) {
                 let $stopExportButton = $exportButton.parent().find('.stop-export-button');
                 $stopExportButton.data('task_id', task_id);
             }
-            $osf.growl('Export Data', _(message), 'success', 2);
+            $osf.growl('Export Data', _(message), messageType, 2);
         },
         error: function (jqXHR) {
             exportState(this.custom.element);
@@ -868,7 +873,7 @@ $('.stop-export-button').click(function (event) {
 });
 
 function stopExportData(institution_id, source_id, location_id, task_id, element) {
-    console.log(institution_id, source_id, location_id, task_id);
+    // console.log(institution_id, source_id, location_id, task_id);
     let params = {
         'institution_id': institution_id,
         'source_id': source_id,
@@ -886,22 +891,37 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
         timeout: 120000,
         success: function (data) {
             let message;
+            let messageType = 'success';
 
             if (data.task_state === 'ABORTED') {
-                // task_state in (ABORTED, )
+                // task_state in (ABORTED)
                 exportState(this.custom.element);
                 message = 'Stop exporting successfully';
-            } else {
+            } else if (data.task_state === 'FAILURE') {
+                // task_state in (FAILURE, )
                 stopExportState(this.custom.element);
+                message = 'Error occurred while stopping export data.';
+                messageType = 'danger';
+            } else {
+                // task_state in (PENDING)
+                // stopExportState(this.custom.element);
                 message = 'Stop exporting in background';
             }
-            $osf.growl('Stop Export Data', _(message), 'success', 2);
+            $osf.growl('Stop Export Data', _(message), messageType, 2);
         },
         error: function (jqXHR) {
             stopExportState(this.custom.element);
             let message = 'Cannot stop exporting data';
             if (jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)) {
-                message = jqXHR.responseJSON.message;
+                let data = jqXHR.responseJSON;
+                message = data.message;
+                if ('task_state' in data && 'status' in data
+                    && data.task_state === 'SUCCESS' && data.status === 'Completed') {
+                    // task_state in (SUCCESS)
+                    exportState(this.custom.element);
+                    message = 'Export data successfully';
+                    $osf.growl('Export Data', _(message), 'success', 2);
+                }
             }
             $osf.growl('Stop Export Data', _(message), 'danger', 2);
         }

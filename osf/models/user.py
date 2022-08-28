@@ -1,4 +1,5 @@
 import datetime as dt
+import inspect  # noqa
 import logging
 import re
 from urllib.parse import urlparse, parse_qs
@@ -58,6 +59,7 @@ from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, MANAGER, MEMBER, 
 from website import settings as website_settings
 from website import filters, mails
 from website.project import new_bookmark_collection
+from website.util import inspect_info  # noqa
 from website.util.metrics import OsfSourceTags
 
 logger = logging.getLogger(__name__)
@@ -1836,6 +1838,20 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def is_affiliated_with_institution_id(self, institution_id):
         """Return if this user is affiliated with ``institution_id``."""
         return self.affiliated_institutions.filter(id=institution_id).exists()
+
+    def is_allowed_storage_location_id(self, location_id):
+        """Return if this user is allowed to access ``location_id``."""
+        # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+        from osf.models import ExportDataLocation
+
+        location = ExportDataLocation.objects.get(pk=location_id)
+
+        if self.is_super_admin:
+            return True
+
+        institution = Institution.load(location.institution_guid)
+
+        return self.is_affiliated_with_institution(institution)
 
     def is_affiliated_with_institution(self, institution):
         """Return if this user is affiliated with ``institution``."""

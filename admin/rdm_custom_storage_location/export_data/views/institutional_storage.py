@@ -73,7 +73,7 @@ class ExportDataInstitutionalStorageListView(ExportStorageLocationViewBaseView, 
 
         kwargs.setdefault('institution', self.institution)
         kwargs.setdefault('storages', query_set)
-        locations = self.get_default_storage_location().union(self.institution.get_storage_location())
+        locations = self.institution.get_allowed_storage_location()
         kwargs.setdefault('locations', locations)
         kwargs.setdefault('page', page)
 

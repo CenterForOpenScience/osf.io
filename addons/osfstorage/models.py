@@ -493,6 +493,10 @@ class Region(models.Model):
         unique_together = ('_id', 'name')
 
     @property
+    def guid(self):
+        return self._id
+
+    @property
     def provider_name(self):
         waterbutler_settings = self.waterbutler_settings
         provider_name = None

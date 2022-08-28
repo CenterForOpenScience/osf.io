@@ -14,17 +14,25 @@ from addons.nextcloudinstitutions import KEYNAME_NOTIFICATION_SECRET
 from addons.nextcloudinstitutions.models import NextcloudInstitutionsProvider
 from addons.osfstorage.models import Region
 from admin.base.schemas.utils import from_json
+from admin.rdm_addons.utils import get_rdm_addon_option
 from admin.rdm_custom_storage_location.utils import (
     use_https,
-    test_dropboxbusiness_connection,
     test_owncloud_connection,
     test_s3_connection,
     test_s3compat_connection,
     wd_info_for_institutions,
 )
 from api.base.utils import waterbutler_api_url_for
-from osf.models import ExportDataLocation, Institution, FileVersion, BaseFileVersionsThrough, BaseFileNode, \
-    AbstractNode, OSFUser, RdmFileTimestamptokenVerifyResult
+from osf.models import (
+    ExportDataLocation,
+    Institution,
+    FileVersion,
+    BaseFileVersionsThrough,
+    BaseFileNode,
+    AbstractNode,
+    OSFUser,
+    RdmFileTimestamptokenVerifyResult
+)
 from website.util import inspect_info  # noqa
 
 logger = logging.getLogger(__name__)
@@ -85,7 +93,7 @@ def save_s3_credentials(institution_guid, storage_name, access_key, secret_key, 
         },
     }
 
-    storage_location = update_storage_location(institution_guid, storage_name, wb_credentials, wb_settings)
+    update_storage_location(institution_guid, storage_name, wb_credentials, wb_settings)
 
     return ({
                 'message': 'Saved credentials successfully!!'
@@ -116,11 +124,60 @@ def save_s3compat_credentials(institution_guid, storage_name, host_url, access_k
         }
     }
 
-    storage_location = update_storage_location(institution_guid, storage_name, wb_credentials, wb_settings)
+    update_storage_location(institution_guid, storage_name, wb_credentials, wb_settings)
 
     return ({
                 'message': 'Saved credentials successfully!!'
             }, http_status.HTTP_200_OK)
+
+
+def get_two_addon_options(institution_id, allowed_check=True):
+    # Todo: recheck
+    # avoid "ImportError: cannot import name"
+    from addons.dropboxbusiness.models import (
+        DropboxBusinessFileaccessProvider,
+        DropboxBusinessManagementProvider,
+    )
+    fileaccess_addon_option = get_rdm_addon_option(institution_id, DropboxBusinessFileaccessProvider.short_name, create=False)
+    management_addon_option = get_rdm_addon_option(institution_id, DropboxBusinessManagementProvider.short_name, create=False)
+
+    if fileaccess_addon_option is None or management_addon_option is None:
+        return None
+    if allowed_check and not fileaccess_addon_option.is_allowed:
+        return None
+
+    # NOTE: management_addon_option.is_allowed is ignored.
+    return fileaccess_addon_option, management_addon_option
+
+
+def test_dropboxbusiness_connection(institution):
+    # Todo: recheck
+    from addons.dropboxbusiness import utils as dropboxbusiness_utils
+
+    fm = get_two_addon_options(institution.id, allowed_check=False)
+
+    if fm is None:
+        return ({
+                    'message': u'Invalid Institution ID.: {}'.format(institution.id)
+                }, http_status.HTTP_400_BAD_REQUEST)
+
+    f_option, m_option = fm
+    f_token = dropboxbusiness_utils.addon_option_to_token(f_option)
+    m_token = dropboxbusiness_utils.addon_option_to_token(m_option)
+    if f_token is None or m_token is None:
+        return ({
+                    'message': 'No tokens.'
+                }, http_status.HTTP_400_BAD_REQUEST)
+    try:
+        # use two tokens and connect
+        dropboxbusiness_utils.TeamInfo(f_token, m_token, connecttest=True)
+        return ({
+                    'message': 'Credentials are valid',
+                }, http_status.HTTP_200_OK)
+    except Exception:
+        return ({
+                    'message': 'Invalid tokens.'
+                }, http_status.HTTP_400_BAD_REQUEST)
 
 
 def save_dropboxbusiness_credentials(institution, storage_name, provider_name):
@@ -129,15 +186,16 @@ def save_dropboxbusiness_credentials(institution, storage_name, provider_name):
         return test_connection_result
 
     wb_credentials, wb_settings = wd_info_for_institutions(provider_name)
-    storage_location = update_storage_location(institution.guid, storage_name, wb_credentials, wb_settings)
+    update_storage_location(institution.guid, storage_name, wb_credentials, wb_settings)
 
     return ({
                 'message': 'Dropbox Business was set successfully!!'
             }, http_status.HTTP_200_OK)
 
 
-def save_basic_storage_institutions_credentials_common(institution, storage_name, folder, provider_name, provider,
-                                                       separator=':', extended_data=None):
+def save_basic_storage_institutions_credentials_common(
+        institution, storage_name, folder, provider_name, provider,
+        separator=':', extended_data=None):
     """Don't need external account, save all to waterbutler_settings"""
     external_account = {
         'display_name': provider.username,
@@ -155,18 +213,19 @@ def save_basic_storage_institutions_credentials_common(institution, storage_name
         extended.update(extended_data)
 
     wb_credentials, wb_settings = wd_info_for_institutions(provider_name)
-    wb_settings["external_account"] = external_account
+    wb_credentials["external_account"] = external_account
     wb_settings["extended"] = extended
 
-    storage_location = update_storage_location(institution.guid, storage_name, wb_credentials, wb_settings)
+    update_storage_location(institution.guid, storage_name, wb_credentials, wb_settings)
 
     return ({
                 'message': 'Saved credentials successfully!!'
             }, http_status.HTTP_200_OK)
 
 
-def save_nextcloudinstitutions_credentials(institution, storage_name, host_url, username, password, folder,
-                                           notification_secret, provider_name):
+def save_nextcloudinstitutions_credentials(
+        institution, storage_name, host_url, username, password, folder,
+        notification_secret, provider_name):
     test_connection_result = test_owncloud_connection(host_url, username, password, folder, provider_name)
     if test_connection_result[1] != http_status.HTTP_200_OK:
         return test_connection_result
@@ -182,8 +241,9 @@ def save_nextcloudinstitutions_credentials(institution, storage_name, host_url, 
         KEYNAME_NOTIFICATION_SECRET: notification_secret
     }
 
-    return save_basic_storage_institutions_credentials_common(institution, storage_name, folder, provider_name,
-                                                              provider, extended_data=extended_data)
+    return save_basic_storage_institutions_credentials_common(
+        institution, storage_name, folder, provider_name,
+        provider, extended_data=extended_data)
 
 
 def process_data_infomation(list_data):
@@ -272,12 +332,9 @@ def delete_file_export(pid, provider, path, request_cookie):
 
 
 def is_add_on_storage(waterbutler_settings):
-    destination_region = Region.objects.filter(id=destination_id)
-    destination_settings = destination_region.values_list("waterbutler_settings", flat=True)[0]
     folder = waterbutler_settings["storage"]["folder"]
     try:
-        folder_json = json.loads(folder)
-        if not folder_json["encrypt_uploads"]:
+        if isinstance(folder, str) or not folder["encrypt_uploads"]:
             # If folder does not have "encrypt_uploads" then it is add-on storage
             return True
         # If folder has "encrypt_uploads" key and it is set to True then it is bulk-mounted storage

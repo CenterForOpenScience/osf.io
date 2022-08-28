@@ -17,7 +17,7 @@ from admin.rdm_custom_storage_location.export_data.utils import (
     get_files_from_waterbutler,
     delete_file_export
 )
-from osf.models import ExportDataLocation, ExportData, Institution
+from osf.models import ExportData, Institution
 from .location import ExportStorageLocationViewBaseView
 
 logger = logging.getLogger(__name__)
@@ -25,39 +25,37 @@ logger = logging.getLogger(__name__)
 CURRENT_DATA_INFORMATION = []
 
 
-def get_export_data(user_institution_guid, selected_export_location=None, selected_source=None, deleted=False,
+def get_export_data(institution_guid, selected_location_id=None, selected_source_id=None, deleted=False,
                     check_delete=True):
+    institution = Institution.load(institution_guid)
+    locations = institution.get_allowed_storage_location()
+    list_location_id = locations.values_list('id', flat=True)
+    logger.debug(f'list_location_id: {list_location_id}')
+
+    source_storages = institution.get_institutional_storage()
+    list_source_id = source_storages.values_list('id', flat=True)
+    logger.debug(f'list_source_id: {list_source_id}')
+
     # Get export data following user_institution_guid
-    list_source_id = Region.objects.filter(_id=user_institution_guid).values_list('id', flat=True)
-    list_location = ExportDataLocation.objects.filter(institution_guid=user_institution_guid)
-    list_location_id = list_location.values_list('id', flat=True)
+    list_export_data = ExportData.objects.filter(location_id__in=list_location_id, source_id__in=list_source_id)
     if check_delete:
-        list_export_data = ExportData.objects.filter(
-            is_deleted=deleted, location_id__in=list_location_id, source_id__in=list_source_id
-        ).order_by('id')
-    else:
-        list_export_data = ExportData.objects.filter(
-            location_id__in=list_location_id, source_id__in=list_source_id).order_by('id')
+        list_export_data = list_export_data.filter(is_deleted=deleted)
+    if selected_location_id:
+        list_export_data = list_export_data.filter(location_id=selected_location_id)
+    if selected_source_id:
+        list_export_data = list_export_data.filter(source_id=selected_source_id)
+    list_export_data = list_export_data.order_by('id')
+
     list_data = []
+    logger.debug(f'list_export_data: {len(list_export_data)}')
     for export_data in list_export_data:
-        data = {'export_data': export_data}
-        for location in ExportDataLocation.objects.filter(institution_guid=user_institution_guid):
-            if export_data.location_id == location.id:
-                if selected_export_location:
-                    if selected_export_location == str(location.id):
-                        data['location_name'] = location.name
-                else:
-                    data['location_name'] = location.name
-        for source in Region.objects.filter(_id=user_institution_guid):
-            if export_data.source_id == source.id:
-                data['source_id'] = source.id
-                if selected_source:
-                    if selected_source == str(source.id):
-                        data['source_name'] = source.name
-                else:
-                    data['source_name'] = source.name
-        if 'location_name' in data and 'source_name' in data:
-            list_data.append(data)
+        data = {
+            'export_data': export_data,
+            'location_name': export_data.location.name,
+            'source_id': export_data.source.id,
+            'source_name': export_data.source.name
+        }
+        list_data.append(data)
     return list_data
 
 
@@ -107,22 +105,20 @@ class ExportDataListView(ExportBaseView):
         self.load_institution()
         user_institution_guid = self.institution_guid
         # storage_id = self.kwargs.get('storage_id')
-        selected_storage = request.GET.get('storage_name') if 'storage_name' in dict(request.GET) else 0
-        selected_location_export = request.GET.get('location_export_name') if 'location_export_name' in dict(
-            request.GET) else 0
+        selected_storage = int(request.GET.get('storage_name'))
+        selected_location_export = int(request.GET.get('location_export_name'))
         self.query_set = get_export_data(user_institution_guid, selected_location_export, selected_storage)
         self.page_size = self.get_paginate_by(self.query_set)
         self.paginator, self.page, self.query_set, self.is_paginated = self.paginate_queryset(self.query_set,
                                                                                               self.page_size)
-        locations = self.get_default_storage_location().union(self.institution.get_storage_location())
+        locations = self.institution.get_allowed_storage_location()
         context = {
             'institution': self.institution,
             'list_export_data': self.query_set,
             'locations': locations,
-            'selected_location_id': int(selected_location_export),
-            'list_storage': Region.objects.exclude(
-                _id__in=user_institution_guid),
-            'selected_source': int(selected_storage),
+            'selected_location_id': selected_location_export,
+            'list_storage': Region.objects.filter(_id=user_institution_guid).order_by('pk'),
+            'selected_source': selected_storage,
             'source_id': self.query_set[0]['source_id'] if len(self.query_set) > 0 else 0,
             'page': self.page,
         }
@@ -136,23 +132,21 @@ class ExportDataDeletedListView(ExportBaseView):
         self.load_institution()
         user_institution_guid = self.institution_guid
         # storage_id = self.kwargs.get('storage_id')
-        selected_storage = request.GET.get('storage_name') if 'storage_name' in dict(request.GET) else 0
-        selected_location_export = request.GET.get('location_export_name') if 'location_export_name' in dict(
-            request.GET) else 0
+        selected_storage = int(request.GET.get('storage_name'))
+        selected_location_export = int(request.GET.get('location_export_name'))
         self.query_set = get_export_data(user_institution_guid, selected_location_export, selected_storage,
                                          deleted=True)
         self.page_size = self.get_paginate_by(self.query_set)
         self.paginator, self.page, self.query_set, self.is_paginated = self.paginate_queryset(self.query_set,
                                                                                               self.page_size)
-        locations = self.get_default_storage_location().union(self.institution.get_storage_location())
+        locations = self.institution.get_allowed_storage_location()
         context = {
             'institution': self.institution,
             'list_export_data': self.query_set,
             'locations': locations,
-            'selected_location_id': int(selected_location_export),
-            'list_storage': Region.objects.exclude(
-                _id__in=user_institution_guid),
-            'selected_source': int(selected_storage),
+            'selected_location_id': selected_location_export,
+            'list_storage': Region.objects.filter(_id=user_institution_guid).order_by('pk'),
+            'selected_source': selected_storage,
             'source_id': self.query_set[0]['source_id'] if len(self.query_set) > 0 else 0,
             'page': self.page,
         }

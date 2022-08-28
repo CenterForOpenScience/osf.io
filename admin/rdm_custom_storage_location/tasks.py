@@ -234,10 +234,10 @@ def rollback_restore(cookies, export_id, source_id, destination_id, transaction=
 
 
 @celery_app.task(bind=True, base=AbortableTask, track_started=True)
-def run_export_data_process(self, cookies, export_data_id):
-    export_data_process(cookies, export_data_id)
+def run_export_data_process(self, cookies, export_data_id, **kwargs):
+    export_data_process(cookies, export_data_id, **kwargs)
 
 
 @celery_app.task(bind=True, base=AbortableTask, track_started=True)
-def run_export_data_rollback_process(self, cookies, export_data_id):
-    export_data_rollback_process(cookies, export_data_id)
+def run_export_data_rollback_process(self, cookies, export_data_id, **kwargs):
+    export_data_rollback_process(cookies, export_data_id, **kwargs)

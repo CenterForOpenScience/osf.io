@@ -1,4 +1,6 @@
 import datetime
+import inspect  # noqa
+
 from rest_framework import status as http_status
 import os
 import uuid
@@ -42,7 +44,7 @@ from osf import features
 from osf.models import (BaseFileNode, TrashedFileNode, BaseFileVersionsThrough,
                         OSFUser, AbstractNode, Preprint,
                         NodeLog, DraftRegistration,
-                        Guid, FileVersionUserMetadata, FileVersion)
+                        Guid, FileVersionUserMetadata, FileVersion, ExportDataLocation)
 from osf.metrics import PreprintView, PreprintDownload
 from osf.utils import permissions
 from website.profile.utils import get_profile_image_url
@@ -50,8 +52,7 @@ from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project, check_contributor_auth
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.project.utils import serialize_node
-from website.util import rubeus, timestamp
-
+from website.util import rubeus, timestamp, inspect_info  # noqa
 
 from osf.features import (
     SLOAN_COI_DISPLAY,
@@ -257,6 +258,7 @@ def get_metric_class_for_action(action, from_mfr):
 
 @collect_auth
 def get_auth(auth, **kwargs):
+    # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
     cas_resp = None
     if not auth.user:
         # Central Authentication Server OAuth Bearer Token
@@ -273,6 +275,7 @@ def get_auth(auth, **kwargs):
             if cas_resp.authenticated:
                 auth.user = OSFUser.load(cas_resp.user)
 
+    # get data payload
     try:
         data = jwt.decode(
             jwe.decrypt(request.args.get('payload', '').encode('utf-8'), WATERBUTLER_JWE_KEY),
@@ -284,34 +287,45 @@ def get_auth(auth, **kwargs):
         sentry.log_message(str(err))
         raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
+    cookie = data.get('cookie', '')
     if not auth.user:
-        auth.user = OSFUser.from_cookie(data.get('cookie', ''))
+        auth.user = OSFUser.from_cookie(cookie)
 
     try:
         action = data['action']
         node_id = data['nid']
         provider_name = data['provider']
+        location_id = data.get('location_id')
     except KeyError:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
-    node = AbstractNode.load(node_id) or Preprint.load(node_id)
-    if node and node.is_deleted:
-        raise HTTPError(http_status.HTTP_410_GONE)
-    elif not node:
-        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
+    is_node_process = True
+    if node_id == 'export_location':
+        is_node_process = False
 
-    check_access(node, auth, action, cas_resp)
-    provider_settings = None
-    if hasattr(node, 'get_addon'):
-        provider_settings = node.get_addon(provider_name)
-        if not provider_settings:
+    if is_node_process:
+        node = AbstractNode.load(node_id) or Preprint.load(node_id)
+        if node and node.is_deleted:
+            raise HTTPError(http_status.HTTP_410_GONE)
+        elif not node:
+            raise HTTPError(http_status.HTTP_404_NOT_FOUND)
+
+        check_access(node, auth, action, cas_resp)
+        provider_settings = None
+        if hasattr(node, 'get_addon'):
+            provider_settings = node.get_addon(provider_name)
+            if not provider_settings:
+                raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+    else:
+        # check permission
+        if not auth.user.is_allowed_storage_location_id(location_id):
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     path = data.get('path')
     credentials = None
     waterbutler_settings = None
     fileversion = None
-    if provider_name == 'osfstorage':
+    if is_node_process and provider_name == 'osfstorage':
         if path:
             file_id = path.strip('/')
             # check to see if this is a file or a folder
@@ -329,7 +343,7 @@ def get_auth(auth, **kwargs):
                 if auth.user:
                     # mark fileversion as seen
                     FileVersionUserMetadata.objects.get_or_create(user=auth.user, file_version=fileversion)
-                if not node.is_contributor_or_group_member(auth.user):
+                if is_node_process and not node.is_contributor_or_group_member(auth.user):
                     from_mfr = download_is_from_mfr(request, payload=data)
                     # version index is 0 based
                     version_index = version - 1
@@ -365,26 +379,46 @@ def get_auth(auth, **kwargs):
                 root_id=provider_settings.root_node._id,
             )
     # If they haven't been set by version region, use the NodeSettings or Preprint directly
-    if not (credentials and waterbutler_settings):
+    if is_node_process and not (credentials and waterbutler_settings):
         credentials = node.serialize_waterbutler_credentials(provider_name)
         waterbutler_settings = node.serialize_waterbutler_settings(provider_name)
+
+    if not is_node_process:
+        location = ExportDataLocation.objects.get(pk=location_id)
+        credentials = location.serialize_waterbutler_credentials(provider_name)
+        waterbutler_settings = location.serialize_waterbutler_settings(provider_name)
 
     if isinstance(credentials.get('token'), bytes):
         credentials['token'] = credentials.get('token').decode()
 
-    return {'payload': jwe.encrypt(jwt.encode({
-        'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
-        'data': {
-            'auth': make_auth(auth.user),  # A waterbutler auth dict not an Auth object
-            'credentials': credentials,
-            'settings': waterbutler_settings,
-            'callback_url': node.api_url_for(
-                ('create_waterbutler_log' if not getattr(node, 'is_registration', False) else 'registration_callbacks'),
-                _absolute=True,
-                _internal=True
-            )
-        }
-    }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), WATERBUTLER_JWE_KEY).decode()}
+    payload_data = {
+        'auth': make_auth(auth.user),  # A waterbutler auth dict not an Auth object
+        'credentials': credentials,
+        'settings': waterbutler_settings,
+        'callback_url': ''
+    }
+
+    if is_node_process:
+        payload_data['callback_url'] = node.api_url_for(
+            ('create_waterbutler_log' if not getattr(node, 'is_registration', False) else 'registration_callbacks'),
+            _absolute=True,
+            _internal=True
+        )
+
+    ret = {
+        'payload': jwe.encrypt(
+            jwt.encode(
+                {
+                    'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
+                    'data': payload_data
+                },
+                settings.WATERBUTLER_JWT_SECRET,
+                algorithm=settings.WATERBUTLER_JWT_ALGORITHM),
+            WATERBUTLER_JWE_KEY
+        ).decode()
+    }
+
+    return ret
 
 
 LOG_ACTION_MAP = {
