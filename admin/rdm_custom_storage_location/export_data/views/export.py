@@ -101,10 +101,10 @@ def extract_file_information():
 
 def export_data_process(cookies, export_data_id, **kwargs):
     # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
-
     # get corresponding export data record
     export_data_set = ExportData.objects.filter(pk=export_data_id)
     export_data = export_data_set.first()
+    assert export_data
 
     # Todo
     extract_data()
@@ -113,13 +113,19 @@ def export_data_process(cookies, export_data_id, **kwargs):
     file_path = os.path.join(ROOT, 'addons.json')
 
     # create folder
-    export_data.create_export_data_folder(cookies, **kwargs)
+    response = export_data.create_export_data_folder(cookies, **kwargs)
+    if response.status_code != 201:
+        return export_data_rollback_process(cookies, export_data_id, **kwargs)
 
     # create export data file
-    export_data.upload_export_data_file(cookies, file_path, **kwargs)
+    response = export_data.upload_export_data_file(cookies, file_path, **kwargs)
+    if response.status_code != 201:
+        return export_data_rollback_process(cookies, export_data_id, **kwargs)
 
     # create files' information file
-    export_data.upload_file_info_file(cookies, file_path, **kwargs)
+    response = export_data.upload_file_info_file(cookies, file_path, **kwargs)
+    if response.status_code != 201:
+        return export_data_rollback_process(cookies, export_data_id, **kwargs)
 
     # complete process
     export_data_set.update(
@@ -181,17 +187,20 @@ class StopExportDataActionView(ExportDataBaseActionView):
 
 def export_data_rollback_process(cookies, export_data_id, **kwargs):
     # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
-
     # get corresponding export data record
     export_data_set = ExportData.objects.filter(pk=export_data_id)
     export_data = export_data_set.first()
+    assert export_data
 
+    export_data_status = ExportData.STATUS_STOPPED
     # delete export data file
-    export_data.delete_export_data_folder(cookies, **kwargs)
+    response = export_data.delete_export_data_folder(cookies, **kwargs)
+    if response.status_code != 204:
+        export_data_status = ExportData.STATUS_ERROR
 
     # stop it
     export_data_set.update(
-        status=ExportData.STATUS_STOPPED,
+        status=export_data_status,
         process_end=timezone.make_naive(timezone.now(), timezone.utc),
         export_file=None,
     )

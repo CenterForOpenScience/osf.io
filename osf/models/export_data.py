@@ -42,6 +42,7 @@ class ExportData(base.BaseModel):
     STATUS_CHECKING = 'Checking'
     STATUS_STOPPED = 'Stopped'
     STATUS_COMPLETED = 'Completed'
+    STATUS_ERROR = 'Error'
 
     EXPORT_DATA_STATUS_CHOICES = (
         (STATUS_RUNNING, STATUS_RUNNING.title()),
@@ -49,6 +50,7 @@ class ExportData(base.BaseModel):
         (STATUS_CHECKING, STATUS_CHECKING.title()),
         (STATUS_STOPPED, STATUS_STOPPED.title()),
         (STATUS_COMPLETED, STATUS_COMPLETED.title()),
+        (STATUS_ERROR, STATUS_ERROR.title()),
     )
 
     source = models.ForeignKey(Region, on_delete=models.CASCADE)
@@ -142,4 +144,4 @@ class ExportData(base.BaseModel):
     def upload_file_info_file(self, cookies, file_path, **kwargs):
         file_name = self.get_file_info_filename(self.location.institution_guid)
         kwargs.setdefault('file_name', file_name)
-        self.upload_export_data_file(cookies, file_path, **kwargs)
+        return self.upload_export_data_file(cookies, file_path, **kwargs)

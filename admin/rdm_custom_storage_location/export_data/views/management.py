@@ -30,14 +30,16 @@ def get_export_data(institution_guid, selected_location_id=None, selected_source
     institution = Institution.load(institution_guid)
     locations = institution.get_allowed_storage_location()
     list_location_id = locations.values_list('id', flat=True)
-    logger.debug(f'list_location_id: {list_location_id}')
 
     source_storages = institution.get_institutional_storage()
     list_source_id = source_storages.values_list('id', flat=True)
-    logger.debug(f'list_source_id: {list_source_id}')
 
     # Get export data following user_institution_guid
-    list_export_data = ExportData.objects.filter(location_id__in=list_location_id, source_id__in=list_source_id)
+    list_export_data = ExportData.objects.filter(
+        location_id__in=list_location_id,
+        source_id__in=list_source_id,
+        status__in=[ExportData.STATUS_COMPLETED, ExportData.STATUS_CHECKING]
+    )
     if check_delete:
         list_export_data = list_export_data.filter(is_deleted=deleted)
     if selected_location_id:
@@ -47,7 +49,6 @@ def get_export_data(institution_guid, selected_location_id=None, selected_source
     list_export_data = list_export_data.order_by('id')
 
     list_data = []
-    logger.debug(f'list_export_data: {len(list_export_data)}')
     for export_data in list_export_data:
         data = {
             'export_data': export_data,
@@ -103,24 +104,29 @@ class ExportDataListView(ExportBaseView):
 
     def get(self, request, *args, **kwargs):
         self.load_institution()
-        user_institution_guid = self.institution_guid
-        # storage_id = self.kwargs.get('storage_id')
-        selected_storage = int(request.GET.get('storage_name'))
-        selected_location_export = int(request.GET.get('location_export_name'))
-        self.query_set = get_export_data(user_institution_guid, selected_location_export, selected_storage)
-        self.page_size = self.get_paginate_by(self.query_set)
-        self.paginator, self.page, self.query_set, self.is_paginated = self.paginate_queryset(self.query_set,
-                                                                                              self.page_size)
+
         locations = self.institution.get_allowed_storage_location()
+        selected_location_id = request.GET.get('location_export_name')
+        if not selected_location_id and locations.exists():
+            selected_location_id = locations.first().id
+
+        source_storages = self.institution.get_institutional_storage()
+        selected_source_id = self.kwargs.get('storage_id', request.GET.get('storage_name'))
+        if not selected_source_id and source_storages.exists():
+            selected_source_id = source_storages.first().id
+
+        query_set = get_export_data(self.institution_guid, selected_location_id, selected_source_id)
+        page_size = self.get_paginate_by(query_set)
+        paginator, page, query_set, is_paginated = self.paginate_queryset(query_set, page_size)
         context = {
             'institution': self.institution,
-            'list_export_data': self.query_set,
+            'list_export_data': query_set,
             'locations': locations,
-            'selected_location_id': selected_location_export,
-            'list_storage': Region.objects.filter(_id=user_institution_guid).order_by('pk'),
-            'selected_source': selected_storage,
-            'source_id': self.query_set[0]['source_id'] if len(self.query_set) > 0 else 0,
-            'page': self.page,
+            'selected_location_id': selected_location_id,
+            'source_storages': source_storages,
+            'selected_source_id': selected_source_id,
+            'source_id': query_set[0]['source_id'] if len(query_set) > 0 else 0,
+            'page': page,
         }
         return render(request, self.template_name, context)
 
@@ -130,25 +136,29 @@ class ExportDataDeletedListView(ExportBaseView):
 
     def get(self, request, *args, **kwargs):
         self.load_institution()
-        user_institution_guid = self.institution_guid
-        # storage_id = self.kwargs.get('storage_id')
-        selected_storage = int(request.GET.get('storage_name'))
-        selected_location_export = int(request.GET.get('location_export_name'))
-        self.query_set = get_export_data(user_institution_guid, selected_location_export, selected_storage,
-                                         deleted=True)
-        self.page_size = self.get_paginate_by(self.query_set)
-        self.paginator, self.page, self.query_set, self.is_paginated = self.paginate_queryset(self.query_set,
-                                                                                              self.page_size)
+
         locations = self.institution.get_allowed_storage_location()
+        selected_location_id = request.GET.get('location_export_name')
+        if not selected_location_id and locations.exists():
+            selected_location_id = locations.first().id
+
+        source_storages = self.institution.get_institutional_storage()
+        selected_source_id = self.kwargs.get('storage_id', request.GET.get('storage_name'))
+        if not selected_source_id and source_storages.exists():
+            selected_source_id = source_storages.first().id
+
+        query_set = get_export_data(self.institution_guid, selected_location_id, selected_source_id, deleted=True)
+        page_size = self.get_paginate_by(query_set)
+        paginator, page, query_set, is_paginated = self.paginate_queryset(query_set, page_size)
         context = {
             'institution': self.institution,
-            'list_export_data': self.query_set,
+            'list_export_data': query_set,
             'locations': locations,
-            'selected_location_id': selected_location_export,
-            'list_storage': Region.objects.filter(_id=user_institution_guid).order_by('pk'),
-            'selected_source': selected_storage,
-            'source_id': self.query_set[0]['source_id'] if len(self.query_set) > 0 else 0,
-            'page': self.page,
+            'selected_location_id': selected_location_id,
+            'source_storages': source_storages,
+            'selected_source_id': selected_source_id,
+            'source_id': query_set[0]['source_id'] if len(query_set) > 0 else 0,
+            'page': page,
         }
         return render(request, self.template_name, context)
 

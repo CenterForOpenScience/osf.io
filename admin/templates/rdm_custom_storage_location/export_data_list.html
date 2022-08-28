@@ -24,8 +24,8 @@
                         class="form-control"
                         name="storage_name"
                         style="max-width: 320px;">
-                    {% for storage in list_storage %}
-                        {% if storage.id == selected_source %}
+                    {% for storage in source_storages %}
+                        {% if storage.id == selected_source_id %}
                             <option value={{ storage.id }} selected="selected">{{ storage.name }}</option>
                         {% else %}
                             <option value={{ storage.id }}>{{ storage.name }}</option>
@@ -66,9 +66,9 @@
         <div class="form-group" id="formFilter">
             <div class="col-sm-12">
                 <button type="submit" id="filter_export" {% if locations|length < 1 %} disabled {% endif %}
-                    class="btn btn-primary" style="min-width: 90px;">{% trans "Filter" %}</button>
+                        class="btn btn-primary" style="min-width: 90px;">{% trans "Filter" %}</button>
                 <button type="submit" class="btn btn-primary" id="revert_button_data" {% if locations|length < 1 %} disabled {% endif %}
-                    style="min-width: 90px; margin-left:10px;">
+                        style="min-width: 90px; margin-left:10px;">
                     {% trans "Revert Export Data" %}
                 </button>
             </div>
@@ -152,7 +152,8 @@
                         <p>{% trans "Are you sure you want to delete these export data?" %}</p>
                         <div class="checkbox">
                             <label>
-                                <input type="checkbox" name="delete_permanently"> {% trans "Permanently delete (Cannot be restored with the Revert button)" %}
+                                <input type="checkbox"
+                                       name="delete_permanently"> {% trans "Permanently delete (Cannot be restored with the Revert button)" %}
                             </label>
                         </div>
                     </div>
@@ -206,10 +207,9 @@
             $('#revert_button_data').on('click', () => {
                 let selected_source = $('#source-select').val();
                 let selected_location = $('#location-select').val();
-                if(selected_source.length > 1 && selected_location.length > 1){
+                if (selected_source.length > 1 && selected_location.length > 1) {
                     $('#exportdata_form').attr('action', `/custom_storage_location/export_data/deleted/?storage_name=${selected_source}&location_export_name=${selected_location}`);
-                }
-                else{
+                } else {
                     $('#exportdata_form').attr('action', '/custom_storage_location/export_data/deleted');
                 }
             });

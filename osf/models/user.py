@@ -1844,12 +1844,16 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
         from osf.models import ExportDataLocation
 
-        location = ExportDataLocation.objects.get(pk=location_id)
-
-        if self.is_super_admin:
+        locations = ExportDataLocation.objects.filter(pk=location_id)
+        if not locations.exists():
+            return False
+        location = locations.first()
+        if location.institution_guid == Institution.INSTITUTION_DEFAULT:
             return True
-
-        institution = Institution.load(location.institution_guid)
+        institutions = Institution.objects.filter(_id=location.institution_guid)
+        if not institutions.exists():
+            return False
+        institution = institutions.first()
 
         return self.is_affiliated_with_institution(institution)
 
