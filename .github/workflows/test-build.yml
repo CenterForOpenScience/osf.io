@@ -2,6 +2,9 @@ name: osf.io
 
 on: [push, pull_request]
 
+permissions:
+  contents: read
+
 env:
   WHEELHOUSE: ~/.cache/wheelhouse
   ELASTICSEARCH_ARCHIVE: elasticsearch-2.4.5.tar.gz
