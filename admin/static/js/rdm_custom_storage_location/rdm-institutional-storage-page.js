@@ -927,3 +927,147 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
         }
     });
 }
+
+$('#restore_button').on('click', () => {
+    let data = {};
+    data["source_id"] = source_id;
+    data["destination_id"]= $("#destination_storage").val();
+    enableStopRestoreFunction();
+    $.ajax({
+        url: "restore_export_data",
+        type: "post",
+        data: data
+    }).done(function(response) {
+        if (response["error_message"]) {
+            enableRestoreFunction();
+            // Show error message
+            $osf.growl('Restore Export Data', _(result["error_message"]), 'danger', 2);
+        } else if (response["task_id"]) {
+            restore_task_id = response["task_id"];
+            setTimeout(() => {
+                checkTaskStatus(restore_task_id);
+            }, 2000);
+        } else {
+            $("#restore").modal('show');
+        }
+    }).fail(function(jqXHR, textStatus, error) {
+        enableRestoreFunction();
+        let data = jqXHR.responseJSON;
+        if (data["error_message"]) {
+            $osf.growl('Restore Export Data', _(data["error_message"]), 'danger', 2);
+        }
+    });
+});
+
+$('#stop_restore_button').on('click', () => {
+    $("#stop_restore_button").addClass("disabled");
+    $("#stop_restore_button").attr("disabled", true);
+    let data = {
+        task_id: restore_task_id,
+        destination_id: $("#destination_storage").val(),
+    };
+    $.ajax({
+        url: "restore_export_data/stop",
+        type: "post",
+        data: data
+    }).done(function(response) {
+        enableRestoreFunction();
+    }).fail(function(jqXHR, textStatus, error) {
+        enableRestoreFunction();
+        let data = jqXHR.responseJSON;
+        if (data["error_message"]) {
+            $osf.growl('Stop Export Data', _(data["error_message"]), 'danger', 2);
+        }
+    });
+});
+
+function checkTaskStatus(task_id) {
+    let data = { task_id: task_id };
+    $.ajax({
+        url: "task_status",
+        type: "get",
+        data: data
+    }).done(function(response) {
+        let state = response["state"];
+        let result = response["result"];
+        if (state === 'SUCCESS') {
+            if (result === 'Completed') {
+                // Done restoring export data
+                enableCheckRestoreFunction();
+                $osf.growl('Restore Export Data', _("Restore completed"), 'success', 2);
+            } else {
+                // Done stopping restore export data
+                enableRestoreFunction();
+            }
+        } else if (state === 'PENDING') {
+            // Redo check task status after 2 seconds
+            setTimeout(() => {
+                checkTaskStatus(task_id);
+            }, 2000);
+        } else if (state !== 'REVOKED' && state !== 'ABORTED') {
+            enableRestoreFunction();
+            let data = jqXHR.responseJSON;
+            if (data["error_message"]) {
+                $osf.growl('Restore Export Data', _(data["error_message"]), 'danger', 2);
+            }
+        }
+    }).fail(function(jqXHR, textStatus, error) {
+        enableRestoreFunction();
+    });
+}
+
+function cancelRestore() {
+    enableRestoreFunction();
+}
+
+function startRestore() {
+    $("#restore").modal('hide');
+    let data = {};
+    data["source_id"] = source_id;
+    data["destination_id"] = $("#destination_storage").val();
+    data["is_from_confirm_dialog"] = true;
+    enableStopRestoreFunction();
+    $.ajax({
+        url: "restore_export_data",
+        type: "post",
+        data: data
+    }).done(function(response) {
+        restore_task_id = response["task_id"];
+        if (!restore_task_id) {
+            return;
+        }
+        setTimeout(() => {
+            checkTaskStatus(restore_task_id);
+        }, 2000);
+    }).fail(function(jqXHR, textStatus, error) {
+        enableRestoreFunction();
+        let data = jqXHR.responseJSON;
+        if (data["error_message"]) {
+            $osf.growl('Restore Export Data', _(data["error_message"]), 'danger', 2);
+        }
+    });
+}
+
+function enableStopRestoreFunction() {
+    // Enable "Stop restoring" button, disable "Restore" button
+    $("#restore_button").addClass("disabled");
+    $("#stop_restore_button").removeClass("disabled");
+    $("#restore_button").attr("disabled", true);
+    $("#stop_restore_button").attr("disabled", false);
+}
+
+function enableRestoreFunction() {
+    // Enable "Restore" button, disable "Stop restoring" button
+    $("#restore_button").removeClass("disabled");
+    $("#stop_restore_button").addClass("disabled");
+    $("#restore_button").attr("disabled", false);
+    $("#stop_restore_button").attr("disabled", true);
+}
+
+function enableCheckRestoreFunction() {
+    // Enable "Check export data" button, disable "Stop restoring" button
+    $("#check_restore_button").removeClass("disabled");
+    $("#stop_restore_button").addClass("disabled");
+    $("#check_restore_button").attr("disabled", false);
+    $("#stop_restore_button").attr("disabled", true);
+}

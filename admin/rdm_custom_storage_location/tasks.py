@@ -18,8 +18,6 @@ from api.base.utils import waterbutler_api_url_for
 from framework.celery_tasks import app as celery_app
 from osf.models import ExportData, ExportDataLocation, ExportDataRestore, BaseFileNode, \
     FileInfo, FileLog, FileVersion, FileMetadataRecord, FileMetadataSchema
-from osf.models.export_data import  STATUS_COMPLETED, STATUS_STOPPED
-from addons.osfstorage.models import Region
 from website.settings import WATERBUTLER_URL
 
 __all__ = [
@@ -33,7 +31,7 @@ logger = logging.getLogger(__name__)
 DATETIME_FORMAT = "%Y%m%dT%H%M%S"
 EXPORT_FILE_PATH = "/export_{source_id}_{process_start}/export_data_{institution_guid}_{process_start}.json"
 EXPORT_FILE_INFO_PATH = "/export_{source_id}_{process_start}/file_info_{institution_guid}_{process_start}.json"
-
+NODE_ID = 'export_location'
 
 def check_before_restore_export_data(cookies, export_id, source_id, destination_id):
     # Get export file (/export_{process_start}/export_data_{institution_guid}_{process_start}.json)
@@ -43,7 +41,7 @@ def check_before_restore_export_data(cookies, export_id, source_id, destination_
     export_file_path = EXPORT_FILE_PATH.format(institution_guid=export_institution_guid, source_id=source_id,
                                                process_start=export_data.process_start.strftime(DATETIME_FORMAT))
     internal = export_base_url == WATERBUTLER_URL
-    export_file_url = waterbutler_api_url_for('emx94', export_provider, path=export_file_path, _internal=internal,
+    export_file_url = waterbutler_api_url_for(NODE_ID, export_provider, path=export_file_path, _internal=internal,
                                               base_url=export_base_url)
     # export_file_url = waterbutler_api_url_for('emx94', "s3", path="/export_test/export_data_vcu.json",
     #                                           _internal=internal, base_url=export_base_url)
@@ -111,9 +109,9 @@ def check_before_restore_export_data(cookies, export_id, source_id, destination_
 
 
 @celery_app.task(bind=True, base=AbortableTask)
-def restore_export_data(self, cookies, export_id, source_id, destination_id, export_data_restore_id):
+def restore_export_data(self, cookies, export_id, source_id, destination_id, task_id):
     try:
-        export_data_restore = ExportDataRestore.objects.get(id=export_data_restore_id)
+        export_data_restore = ExportDataRestore.objects.get(task_id=task_id)
 
         # Check destination storage type (bulk-mounted or add-on)
         is_destination_addon_storage = utils.check_storage_type(destination_id)
@@ -138,13 +136,13 @@ def restore_export_data(self, cookies, export_id, source_id, destination_id, exp
                     # Error
                     logger.error("Return error with response: {}".format(response.content))
                     response.close()
-                    export_data_restore.status = STATUS_STOPPED
+                    export_data_restore.status = ExportData.STATUS_STOPPED
                     export_data_restore.save()
                     return {"error_message": ""}
             except Exception as e:
                 logger.error("Exception: {}".format(e))
                 response.close()
-                export_data_restore.status = STATUS_STOPPED
+                export_data_restore.status = ExportData.STATUS_STOPPED
                 export_data_restore.save()
                 return {"error_message": ""}
 
@@ -158,7 +156,7 @@ def restore_export_data(self, cookies, export_id, source_id, destination_id, exp
                 institution_guid=export_institution_guid, source_id=source_id,
                 process_start=export_data.process_start.strftime(DATETIME_FORMAT))
             internal = export_base_url == WATERBUTLER_URL
-            file_info_url = waterbutler_api_url_for(export_institution_guid, export_provider, path=file_info_path,
+            file_info_url = waterbutler_api_url_for(NODE_ID, export_provider, path=file_info_path,
                                                     _internal=internal, base_url=export_base_url)
             try:
                 response = requests.get(file_info_url,
@@ -168,13 +166,13 @@ def restore_export_data(self, cookies, export_id, source_id, destination_id, exp
                     # Error
                     logger.error("Return error with response: {}".format(response.content))
                     response.close()
-                    export_data_restore.status = STATUS_STOPPED
+                    export_data_restore.status = ExportData.STATUS_STOPPED
                     export_data_restore.save()
                     return {"error_message": "Cannot get file infomation list"}
             except Exception as e:
                 logger.error("Exception: {}".format(e))
                 response.close()
-                export_data_restore.status = STATUS_STOPPED
+                export_data_restore.status = ExportData.STATUS_STOPPED
                 export_data_restore.save()
                 return {"error_message": "Cannot get file infomation list"}
 
@@ -240,11 +238,9 @@ def restore_export_data(self, cookies, export_id, source_id, destination_id, exp
 
                 # Download file from export data storage
                 try:
-                    destination_region = Region.objects.filter(id=destination_id)
-                    destination_base_url = destination_region.values_list("waterbutler_url", flat=True)[0]
-                    internal = destination_base_url == WATERBUTLER_URL
-                    download_api = waterbutler_api_url_for(export_id, "s3", path=file_materialized_path,
-                                                           _internal=internal, base_url=destination_base_url)
+                    internal = export_base_url == WATERBUTLER_URL
+                    download_api = waterbutler_api_url_for(NODE_ID, export_provider, path=file_materialized_path,
+                                                           _internal=internal, base_url=export_base_url)
                     response = requests.get(download_api,
                                             headers={'content-type': 'application/json'},
                                             cookies=cookies)
@@ -259,8 +255,12 @@ def restore_export_data(self, cookies, export_id, source_id, destination_id, exp
 
                 # Upload downloaded file to destination storage
                 try:
-                    upload_api = waterbutler_api_url_for(destination_id, "s3", path='/', kind="file", name=new_file_path,
-                                                         _internal=internal, base_url=export_base_url)
+                    destination_region = Region.objects.filter(id=destination_id)
+                    destination_base_url, destination_settings = destination_region.values_list("waterbutler_url", "waterbutler_settings")[0]
+                    destination_provider = destination_settings["storage"]["provider"]
+                    internal = destination_base_url == WATERBUTLER_URL
+                    upload_api = waterbutler_api_url_for('emx94', destination_provider, path='/', kind="file", name=new_file_path,
+                                                         _internal=internal, base_url=destination_base_url)
                     response = requests.put(upload_api,
                                             headers={'content-type': 'application/json'},
                                             cookies=cookies,
@@ -283,26 +283,26 @@ def restore_export_data(self, cookies, export_id, source_id, destination_id, exp
 
             # Update process data with process_end timestamp and "Completed" status
             export_data_restore.process_end = timezone.now()
-            export_data_restore.status = STATUS_COMPLETED
+            export_data_restore.status = ExportData.STATUS_COMPLETED
             export_data_restore.save()
     except Exception as e:
         logger.error("Exception: {}".format(e))
-        export_data_restore = ExportDataRestore.objects.get(id=export_data_restore_id)
-        export_data_restore.status = STATUS_STOPPED
+        export_data_restore = ExportDataRestore.objects.get(task_id=task_id)
+        export_data_restore.status = ExportData.STATUS_STOPPED
         export_data_restore.save()
         raise e
 
     return {}
 
 
-def rollback_restore(cookies, export_id, source_id, destination_id, export_data_restore_id=None, transaction=None):
+def rollback_restore(cookies, export_id, source_id, destination_id, task_id=None, transaction=None):
     # Rollback transaction
     if transaction is not None:
         transaction.set_rollback(True)
 
-    if export_data_restore_id is not None:
+    if task_id is not None:
         try:
-            export_data_restore = ExportDataRestore.objects.get(id = export_data_restore_id)
+            export_data_restore = ExportDataRestore.objects.get(task_id=task_id)
         except Exception as e:
             export_data_restore = ExportDataRestore.objects.get(export_id=export_id, destination_id=destination_id)
     else:
@@ -317,7 +317,7 @@ def rollback_restore(cookies, export_id, source_id, destination_id, export_data_
         institution_guid=export_institution_guid, source_id=source_id,
         process_start=export_data.modified.strftime(DATETIME_FORMAT))
     internal = export_base_url == WATERBUTLER_URL
-    file_info_url = waterbutler_api_url_for(export_institution_guid, export_provider, path=file_info_path,
+    file_info_url = waterbutler_api_url_for(NODE_ID, export_provider, path=file_info_path,
                                             _internal=internal, base_url=export_base_url)
     try:
         response = requests.get(file_info_url,
@@ -327,16 +327,15 @@ def rollback_restore(cookies, export_id, source_id, destination_id, export_data_
             # Error
             logger.error("Return error with response: {}".format(response.content))
             response.close()
-            export_data_restore.status = STATUS_STOPPED
+            export_data_restore.status = ExportData.STATUS_STOPPED
             export_data_restore.save()
-            return "Cannot get file infomation list"
+            return {"error_message": "Cannot get file infomation list"}
     except Exception as e:
         logger.error("Exception: {}".format(e))
-        if response:
-            response.close()
-        export_data_restore.status = STATUS_STOPPED
+        response.close()
+        export_data_restore.status = ExportData.STATUS_STOPPED
         export_data_restore.save()
-        return "Cannot get file infomation list"
+        return {"error_message": "Cannot get file infomation list"}
 
     response_body = response.json()
     response.close()
@@ -356,19 +355,26 @@ def rollback_restore(cookies, export_id, source_id, destination_id, export_data_
         # In add-on institutional storage: Delete files, except the backup folder.
         # In bulk-mounted institutional storage: Delete only files created during the restore process.
         if is_destination_addon_storage:
-            delete_api = waterbutler_api_url_for(destination_guid, destination_provider, path=file_materialized_path)
+            delete_api = waterbutler_api_url_for('emx94', destination_provider, path=file_materialized_path)
         else:
-            delete_api = waterbutler_api_url_for(destination_guid, destination_provider, path=file_path)
+            delete_api = waterbutler_api_url_for('emx94', destination_provider, path=file_path)
         try:
             response = requests.delete(delete_api,
                                        headers={'content-type': 'application/json'},
                                        cookies=cookies)
+            if response.status_code != 200:
+                # Error
+                logger.error("Return error with response: {}".format(response.content))
+                response.close()
+                export_data_restore.status = ExportData.STATUS_STOPPED
+                export_data_restore.save()
+                return {"error_message": ""}
         except Exception as e:
             logger.error("Exception: {}".format(e))
             response.close()
-            export_data_restore.status = STATUS_STOPPED
+            export_data_restore.status = ExportData.STATUS_STOPPED
             export_data_restore.save()
-            return ""
+            return {"error_message": ""}
 
     # If destination storage is add-on institutional storage
     if is_destination_addon_storage:
@@ -388,13 +394,13 @@ def rollback_restore(cookies, export_id, source_id, destination_id, export_data_
                 # Error
                 logger.error("Return error with response: {}".format(response.content))
                 response.close()
-                export_data_restore.status = STATUS_STOPPED
+                export_data_restore.status = ExportData.STATUS_STOPPED
                 export_data_restore.save()
                 return {"error_message": ""}
         except Exception as e:
             logger.error("Exception: {}".format(e))
             response.close()
-            export_data_restore.status = STATUS_STOPPED
+            export_data_restore.status = ExportData.STATUS_STOPPED
             export_data_restore.save()
             return {"error_message": ""}
 
@@ -409,19 +415,19 @@ def rollback_restore(cookies, export_id, source_id, destination_id, export_data_
                 # Error
                 logger.error("Return error with response: {}".format(response.content))
                 response.close()
-                export_data_restore.status = STATUS_STOPPED
+                export_data_restore.status = ExportData.STATUS_STOPPED
                 export_data_restore.save()
-                return ""
+                return {"error_message": ""}
         except Exception as e:
             logger.error("Exception: {}".format(e))
             response.close()
-            export_data_restore.status = STATUS_STOPPED
+            export_data_restore.status = ExportData.STATUS_STOPPED
             export_data_restore.save()
-            return ""
+            return {"error_message": ""}
 
-    export_data_restore.status = STATUS_STOPPED
+    export_data_restore.status = ExportData.STATUS_STOPPED
     export_data_restore.save()
-    return 'Stopped'
+    return {}
 
 
 @celery_app.task(bind=True, base=AbortableTask, track_started=True)

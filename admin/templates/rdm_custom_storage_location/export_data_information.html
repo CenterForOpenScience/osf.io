@@ -286,18 +286,8 @@
     {% endif %}
     <script type="text/javascript">
         const source_id = "{{ data_information.source_id }}";
+        var restore_task_id = null;
         $(document).ready(() => {
-            var restore_task_id = null;
-            var export_data_restore_id = null;
-            var csrftoken = $('[name=csrfmiddlewaretoken]').val();
-            $.ajaxSetup({
-                crossDomain: false,
-                beforeSend: function (xhr, settings) {
-                    if (!csrfSafeMethod(settings.type)) {
-                        xhr.setRequestHeader('X-CSRFToken', csrftoken);
-                    }
-                }
-            });
             $('#delete_button').on('click', () => {
                 let list_export_delete_id = '{{data_information.export_data.id}}' + '#';
                 $('#bodydeletemodal').append(`<input type='text' value=${list_export_delete_id} id='input_export_data' class='buckinput' name='list_id_export_data' style='display: none;' />`);
@@ -311,136 +301,7 @@
             $('.cancel_modal').on('click', () => {
                 $('#input_export_data').remove();
             });
-            $('#restore_button').on('click', () => {
-                let data = {};
-                data["source_id"] = source_id;
-                data["destination_id"]= $("#destination_storage").val();
-                enableStopRestoreFunction();
-                $.ajax({
-                    url: "restore_export_data",
-                    type: "post",
-                    data: data
-                }).done(function(response) {
-                    if (response["error_message"]) {
-                        // Show error message
-                        enableRestoreFunction();
-                    } else if (response["task_id"]) {
-                        restore_task_id = response["task_id"];
-                        export_data_restore_id = response["export_data_restore_id"];
-                        setTimeout(() => {
-                            checkTaskStatus(restore_task_id);
-                        }, 2000);
-                    } else {
-                        $("#restore").modal('show');
-                    }
-                }).fail(function(jqXHR, textStatus, error) {
-                    enableRestoreFunction();
-                });
-            });
-            $('#stop_restore_button').on('click', () => {
-                $("#stop_restore_button").addClass("disabled");
-                $("#stop_restore_button").attr("disabled", true);
-                let data = {
-                    task_id: restore_task_id,
-                    destination_id: $("#destination_storage").val(),
-                    export_data_restore_id: export_data_restore_id
-                };
-                $.ajax({
-                    url: "restore_export_data/stop",
-                    type: "post",
-                    data: data
-                }).done(function(response) {
-                    enableRestoreFunction();
-                }).fail(function(jqXHR, textStatus, error) {
-                    enableRestoreFunction();
-                });
-            });
         });
-
-        function csrfSafeMethod(method) {
-            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
-        }
-
-        function checkTaskStatus(task_id) {
-            let data = { task_id: task_id };
-            $.ajax({
-                url: "task_status",
-                type: "get",
-                data: data
-            }).done(function(response) {
-                let state = response["state"];
-                let result = response["result"];
-                if (state === 'SUCCESS') {
-                    if (result === 'Completed') {
-                        enableCheckRestoreFunction();
-                    } else {
-                        enableRestoreFunction();
-                    }
-                } else if (state === 'PENDING') {
-                    // Redo check task status after 2 seconds
-                    setTimeout(() => {
-                        checkTaskStatus(task_id);
-                    }, 2000);
-                } else if (state !== 'REVOKED' && state !== 'ABORTED') {
-                    enableRestoreFunction();
-                }
-            }).fail(function(jqXHR, textStatus, error) {
-                enableRestoreFunction();
-            });
-        }
-
-        function cancelRestore() {
-            enableRestoreFunction();
-        }
-
-        function startRestore() {
-            $("#restore").modal('hide');
-            let data = {};
-            data["source_id"] = source_id;
-            data["destination_id"] = $("#destination_storage").val();
-            data["is_from_confirm_dialog"] = true;
-            enableStopRestoreFunction();
-            $.ajax({
-                url: "restore_export_data",
-                type: "post",
-                data: data
-            }).done(function(response) {
-                restore_task_id = response["task_id"];
-                export_data_restore_id = response["export_data_restore_id"];
-                if (!restore_task_id) {
-                    return;
-                }
-                setTimeout(() => {
-                    checkTaskStatus(restore_task_id);
-                }, 2000);
-            }).fail(function(jqXHR, textStatus, error) {
-                enableRestoreFunction();
-            });
-        }
-
-        function enableStopRestoreFunction() {
-            // Enable "Stop restoring" button, disable "Restore" button
-            $("#restore_button").addClass("disabled");
-            $("#stop_restore_button").removeClass("disabled");
-            $("#restore_button").attr("disabled", true);
-            $("#stop_restore_button").attr("disabled", false);
-        }
-
-        function enableRestoreFunction() {
-            // Enable "Restore" button, disable "Stop restoring" button
-            $("#restore_button").removeClass("disabled");
-            $("#stop_restore_button").addClass("disabled");
-            $("#restore_button").attr("disabled", false);
-            $("#stop_restore_button").attr("disabled", true);
-        }
-
-        function enableCheckRestoreFunction() {
-            // Enable "Check export data" button, disable "Stop restoring" button
-            $("#check_restore_button").removeClass("disabled");
-            $("#stop_restore_button").addClass("disabled");
-            $("#check_restore_button").attr("disabled", false);
-            $("#stop_restore_button").attr("disabled", true);
-        }
     </script>
 {% endblock content %}
 {% block bottom_js %}
