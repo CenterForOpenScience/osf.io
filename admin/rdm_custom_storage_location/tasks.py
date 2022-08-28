@@ -221,14 +221,16 @@ def restore_export_data(self, cookies, export_id, source_id, destination_id, exp
                         file_version = file["version"]["identifier"]
                         eariler_verison_index = next((item for item in destination_file_latest_versions if item["path"] == file_materialized_path and item["latest_version"] > file_version), -1)
                         if eariler_verison_index != -1:
-                            # - for past version files, rename and save each version as filename_{version} in '_version_files' folder
+                            # for past version files, rename and save each version as filename_{version} in '_version_files' folder
                             path_splits = new_file_materialized_path.split("/")
 
+                            # add _{version} to file name
                             file_name = path_splits[len(path_splits) - 1]
                             file_splits = file_name.split(".")
                             file_splits[0] = file_splits[0] + "_{}".format(file_version)
                             versioned_file_name = ".".join(file_splits)
 
+                            # add _version_files to folder path
                             path_splits.insert(len(path_splits) - 2, "_version_files")
                             path_splits[len(path_splits) - 1] = versioned_file_name
                             new_file_materialized_path = "/".join(path_splits)
@@ -246,9 +248,12 @@ def restore_export_data(self, cookies, export_id, source_id, destination_id, exp
                     response = requests.get(download_api,
                                             headers={'content-type': 'application/json'},
                                             cookies=cookies)
+                    if response.status_code != 200:
+                        continue
                 except Exception as e:
                     response.close()
-                    raise e
+                    # Did not download, pass this file
+                    continue
                 download_data = response.content
                 response.close()
 
@@ -260,9 +265,12 @@ def restore_export_data(self, cookies, export_id, source_id, destination_id, exp
                                             headers={'content-type': 'application/json'},
                                             cookies=cookies,
                                             data=download_data)
+                    if response.status_code != 201:
+                        continue
                 except Exception as e:
                     response.close()
-                    raise e
+                    # Did not upload, pass this file
+                    continue
                 # Contain a WaterButler file entity that describes the new file
                 response_body = response.json()
                 response.close()
@@ -324,7 +332,8 @@ def rollback_restore(cookies, export_id, source_id, destination_id, export_data_
             return "Cannot get file infomation list"
     except Exception as e:
         logger.error("Exception: {}".format(e))
-        response.close()
+        if response:
+            response.close()
         export_data_restore.status = STATUS_STOPPED
         export_data_restore.save()
         return "Cannot get file infomation list"
@@ -334,7 +343,7 @@ def rollback_restore(cookies, export_id, source_id, destination_id, export_data_
     files = response_body["files"]
 
     # Check destination storage type (bulk-mounted or add-on)
-    is_addon_storage = utils.check_storage_type(destination_id)
+    is_destination_addon_storage = utils.check_storage_type(destination_id)
 
     destination_region = Region.objects.filter(id=destination_id)
     destination_base_url, destination_guid, destination_settings = destination_region.values_list("waterbutler_url", "_id", "waterbutler_settings")[0]
@@ -346,7 +355,7 @@ def rollback_restore(cookies, export_id, source_id, destination_id, export_data_
         file_materialized_path = file["materialized_path"]
         # In add-on institutional storage: Delete files, except the backup folder.
         # In bulk-mounted institutional storage: Delete only files created during the restore process.
-        if is_addon_storage:
+        if is_destination_addon_storage:
             delete_api = waterbutler_api_url_for(destination_guid, destination_provider, path=file_materialized_path)
         else:
             delete_api = waterbutler_api_url_for(destination_guid, destination_provider, path=file_path)
@@ -362,8 +371,32 @@ def rollback_restore(cookies, export_id, source_id, destination_id, export_data_
             return ""
 
     # If destination storage is add-on institutional storage
-    if is_addon_storage:
+    if is_destination_addon_storage:
         # Move all files from the backup folder out
+        move_old_data_url = waterbutler_api_url_for('emx94', destination_provider, path="/_backup/", _internal=internal,
+                                                    base_url=destination_base_url)
+        request_body = {
+            "action": "move",
+            "path": "/",
+        }
+        try:
+            response = requests.post(move_old_data_url,
+                                     headers={'content-type': 'application/json'},
+                                     cookies=cookies,
+                                     json=request_body)
+            if response.status_code != 200 or response.status_code != 201:
+                # Error
+                logger.error("Return error with response: {}".format(response.content))
+                response.close()
+                export_data_restore.status = STATUS_STOPPED
+                export_data_restore.save()
+                return {"error_message": ""}
+        except Exception as e:
+            logger.error("Exception: {}".format(e))
+            response.close()
+            export_data_restore.status = STATUS_STOPPED
+            export_data_restore.save()
+            return {"error_message": ""}
 
         # Delete the backup folder
         destination_storage_backup_meta_api = waterbutler_api_url_for('emx94', destination_provider, path="/_backup/", meta="",
@@ -372,7 +405,7 @@ def rollback_restore(cookies, export_id, source_id, destination_id, export_data_
             response = requests.delete(destination_storage_backup_meta_api,
                                        headers={'content-type': 'application/json'},
                                        cookies=cookies)
-            if response.status_code != 200:
+            if response.status_code != 204:
                 # Error
                 logger.error("Return error with response: {}".format(response.content))
                 response.close()

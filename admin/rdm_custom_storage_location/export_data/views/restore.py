@@ -12,8 +12,9 @@ from admin.rdm_custom_storage_location.tasks import (
     rollback_restore
 )
 from django.db import transaction
+from django.db.models import Q
 from osf.models import ExportDataRestore
-from osf.models.export_data import STATUS_RUNNING, STATUS_STOPPING, STATUS_STOPPED
+from osf.models.export_data import STATUS_RUNNING, STATUS_STOPPING, STATUS_STOPPED, STATUS_COMPLETED
 
 
 @method_decorator(transaction.non_atomic_requests, name='dispatch')
@@ -30,6 +31,12 @@ class ExportDataRestoreView(RdmPermissionMixin, APIView):
             return Response({}, status=status.HTTP_400_BAD_REQUEST)
 
         if not is_from_confirm_dialog:
+            # Check the destination is available (not in restore process or checking restore data process)
+            any_process_running = ExportDataRestore.objects.filter(destination_id=destination_id).exclude(
+                Q(status=STATUS_STOPPED) | Q(status=STATUS_COMPLETED)).exists()
+            if any_process_running:
+                return Response({"error_message": "Cannot restore in this time."}, status=status.HTTP_400_BAD_REQUEST)
+
             result = check_before_restore_export_data(cookies, export_id, source_id, destination_id)
             if result["open_dialog"]:
                 # If open_dialog is True, return HTTP 200 with empty response
@@ -38,6 +45,13 @@ class ExportDataRestoreView(RdmPermissionMixin, APIView):
                 # If there is error message, return HTTP 400
                 return Response({'error_message': result["error_message"]}, status=status.HTTP_400_BAD_REQUEST)
             else:
+                # Recheck the destination is available (not in restore process or checking restore data process)
+                any_process_running = ExportDataRestore.objects.filter(destination_id=destination_id).exclude(
+                    Q(status=STATUS_STOPPED) | Q(status=STATUS_COMPLETED)).exists()
+                if any_process_running:
+                    return Response({"error_message": "Cannot restore in this time."},
+                                    status=status.HTTP_400_BAD_REQUEST)
+
                 # Try to add new process record to DB
                 export_data_restore = ExportDataRestore(export_id=export_id, destination_id=destination_id,
                                                         status=STATUS_RUNNING)
@@ -46,6 +60,12 @@ class ExportDataRestoreView(RdmPermissionMixin, APIView):
                 process = restore_export_data.delay(cookies, export_id, source_id, destination_id, export_data_restore.pk)
                 return Response({'task_id': process.task_id, 'export_data_restore_id': export_data_restore.pk}, status=status.HTTP_200_OK)
         else:
+            # Check the destination is available (not in restore process or checking restore data process)
+            any_process_running = ExportDataRestore.objects.filter(destination_id=destination_id).exclude(
+                Q(status=STATUS_STOPPED) | Q(status=STATUS_COMPLETED)).exists()
+            if any_process_running:
+                return Response({"error_message": "Cannot restore in this time."}, status=status.HTTP_400_BAD_REQUEST)
+
             # Try to add new process record to DB
             export_data_restore = ExportDataRestore(export_id=export_id, destination_id=destination_id,
                                                     status=STATUS_RUNNING)
