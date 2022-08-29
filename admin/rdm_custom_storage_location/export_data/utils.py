@@ -4,7 +4,6 @@ import json  # noqa
 import logging  # noqa
 
 import jsonschema
-import numpy as np
 import requests
 from django.db import connection
 from django.db.models import Q
@@ -34,7 +33,8 @@ from osf.models import (
     BaseFileNode,
     AbstractNode,
     OSFUser,
-    RdmFileTimestamptokenVerifyResult
+    RdmFileTimestamptokenVerifyResult,
+    Guid,
 )
 from website.util import inspect_info  # noqa
 from website.settings import WATERBUTLER_URL
@@ -259,11 +259,11 @@ def process_data_infomation(list_data):
     return list_data_version
 
 
-def get_list_file_detail(data, pid, provider, request_cookie, guid, process_start):
+def get_list_file_detail(data, pid, provider, request_cookie, process_start):
     data_json = None
     status_code = 0
     for file_info in data:
-        if file_info['attributes']['name'] == 'file_info_{}_{}.json'.format(guid, process_start):
+        if file_info['attributes']['name'] == process_start:
             try:
                 url = waterbutler_api_url_for(
                     pid, provider, path=file_info['id'].replace(provider, ''), _internal=True
@@ -284,7 +284,6 @@ def get_list_file_detail(data, pid, provider, request_cookie, guid, process_star
         schema = from_json('export-data.json')
         jsonschema.validate(data_json, schema)
     except jsonschema.ValidationError:
-        # raise e
         return None, 555
     return data_json, status_code
 
@@ -310,11 +309,11 @@ def get_files_from_waterbutler(pid, provider, path, request_cookie):
     return content['data'], status_code
 
 
-def get_list_file_info(pid, provider, path, request_cookie, guid=None, process_start=None):
+def get_list_file_info(pid, provider, path, request_cookie, process_start=None):
     content_data, status_code = get_files_from_waterbutler(pid, provider, path, request_cookie)
     if status_code != 200:
         return None, status_code
-    return get_list_file_detail(content_data, pid, provider, request_cookie, guid, process_start)
+    return get_list_file_detail(content_data, pid, provider, request_cookie, process_start)
 
 
 def delete_file_export(pid, provider, path, request_cookie):
@@ -354,48 +353,75 @@ def check_storage_type(storage_id):
     return is_add_on_storage(settings)
 
 
-def get_info_export_data(region_id):
+def get_export_data_json(export_id):
+    # Get export data
+    export_data = ExportData.objects.filter(id=export_id).first()
     # Get region by id
-    region = Region.objects.filter(id=region_id).first()
+    guid = export_data.source.guid
     # Get Institution by guid
-    institution = Institution.objects.filter(_id=region._id).first()
+    institution = Institution.objects.filter(_id=guid).first()
+    if institution is None or export_data is None:
+        return None
+    provider_name = export_data.source.waterbutler_settings['storage']['provider']
+    if provider_name == 'filesystem':
+        provider_name = 'NII Storage'
+    export_data = {
+        'institution': {
+            'institution_id': institution.id,
+            'institution_guid': guid,
+            'institution_name': institution.name,
+        },
+        'export_start': export_data.process_start.strftime('%Y-%m-%d %H:%M:%S'),
+        'export_end': export_data.process_end.strftime('%Y-%m-%d %H:%M:%S'),
+        'storage': {
+            'name': export_data.source.name,
+            'type': provider_name,
+        },
+        'projects_numb': export_data.project_number,
+        'files_numb': export_data.file_number,
+        'size': export_data.total_size,
+        'file_path': export_data.get_export_data_file_path(guid),
+    }
+    return export_data
+
+
+def get_file_info_json(source_id):
+    # Get region by id
+    region = Region.objects.filter(id=source_id).first()
+    # Get Institution by guid
+    institution = Institution.objects.filter(_id=region.guid).first()
     if region is None or institution is None:
         return None
 
     data_rs = {
         'institution': {
             'institution_id': institution.id,
-            'institution_guid': institution._id,
+            'institution_guid': institution.guid,
             'institution_name': institution.name,
         }
     }
 
     # Get list FileVersion by region_id(source_id)
-    list_fileversion_id = FileVersion.objects.filter(region_id=region_id).values_list('id', flat=True)
+    list_fileversion_id = FileVersion.objects.filter(region_id=source_id).values_list('id', flat=True)
 
     # Get list_basefilenode_id by list_fileversion_id above via the BaseFileVersionsThrough model
-    list_basefileversion = BaseFileVersionsThrough.objects.filter(
-        fileversion_id__in=list_fileversion_id).values_list('basefilenode_id', 'version_name')
-    list_basefilenode_id, list_file_verson_name = zip(*list_basefileversion)
+    list_basefilenode_id = BaseFileVersionsThrough.objects.filter(
+        fileversion_id__in=list_fileversion_id).values_list('basefilenode_id', flat=True)
 
-    # Gte list_basefielnode by list_basefilenode_id above
-    list_basefielnode = BaseFileNode.objects.filter(id__in=list_basefilenode_id, deleted=None)
+    # Get list project id
+    list_project_id = institution.nodes.filter(category='project').values_list('id', flat=True)
+
+    # Get list_basefielnode by list_basefilenode_id above
+    list_basefielnode = BaseFileNode.objects.filter(id__in=list_basefilenode_id, target_object_id__in=list_project_id,
+                                                    deleted=None)
     list_file = []
-    cursor = connection.cursor()
     # Loop every basefilenode in list_basefielnode for get data
     for basefilenode in list_basefielnode:
-        query_string = """
-                    select tag.name from osf_basefilenode_tags as bastag
-                    inner join osf_tag as tag
-                    on tag.id = bastag.tag_id
-                    where bastag.basefilenode_id = {basefilenode_id}
-                    """.format(basefilenode_id=basefilenode.id)
-        cursor.execute(query_string)
-        result = np.asarray(cursor.fetchall())
+        # Get file's tag
         list_tags = []
-        if result.shape != (0,):
-            for tag in result[:, 0]:
-                list_tags.append(tag)
+        if not basefilenode._state.adding:
+            list_tags = list(basefilenode.tags.filter(system=False).values_list('name', flat=True))
+
         # Get project's data by basefilenode.target_object_id
         project = AbstractNode.objects.get(id=basefilenode.target_object_id)
         basefilenode_info = {
@@ -404,12 +430,12 @@ def get_info_export_data(region_id):
             'materialized_path': basefilenode.materialized_path,
             'name': basefilenode.name,
             'size': 0,
-            'created_at': basefilenode.created.strftime("%Y-%m-%d %H:%M:%S"),
-            'modified_at': basefilenode.modified.strftime("%Y-%m-%d %H:%M:%S"),
+            'created_at': basefilenode.created.strftime('%Y-%m-%d %H:%M:%S'),
+            'modified_at': basefilenode.modified.strftime('%Y-%m-%d %H:%M:%S'),
             'tags': list_tags,
             'location': {},
             'project': {
-                'id': project.id,
+                'id': Guid.objects.get(object_id=project.id)._id,
                 'name': project.title,
             },
             'version': [],
@@ -417,30 +443,28 @@ def get_info_export_data(region_id):
         }
 
         # Get fileversion_id and version_name by basefilenode_id in the BaseFileVersionsThrough model
-        list_fileversion_data = BaseFileVersionsThrough.objects.filter(
-            basefilenode_id=basefilenode.id).values_list('fileversion_id', 'version_name')
-        list_fileversion_id, list_fileverson_name = zip(*list_fileversion_data)
-        dict_file_version_name = dict(zip(list_fileversion_id, list_fileverson_name))
+        list_basefileversion = BaseFileVersionsThrough.objects.filter(
+            basefilenode_id=basefilenode.id).order_by('fileversion_id')
 
         list_fileversion = []
 
         # Loop every file version of every basefilenode by basefilenode.id
-        for filerversion_id, fileverson_name in dict_file_version_name.items():
+        for item in list_basefileversion:
             # get the file version by id
-            filerversion = FileVersion.objects.get(id=filerversion_id)
+            fileversion = FileVersion.objects.get(id=item.fileversion_id)
 
             # Get file version's creator
-            creator = OSFUser.objects.get(id=filerversion.creator_id)
-            fileverison_data = {
-                'identifier': filerversion.identifier,
-                'created_at': filerversion.created.strftime("%Y-%m-%d %H:%M:%S"),
-                'size': filerversion.size,
-                'version_name': fileverson_name,
+            creator = OSFUser.objects.get(id=fileversion.creator_id)
+            fileversion_data = {
+                'identifier': fileversion.identifier,
+                'created_at': fileversion.created.strftime('%Y-%m-%d %H:%M:%S'),
+                'size': fileversion.size,
+                'version_name': basefilenode.name,
                 'contributor': creator.username,
-                'metadata': filerversion.metadata,
-                'location': filerversion.location,
+                'metadata': fileversion.metadata,
+                'location': fileversion.location,
             }
-            list_fileversion.append(fileverison_data)
+            list_fileversion.append(fileversion_data)
         basefilenode_info['version'] = list_fileversion
         basefilenode_info['size'] = list_fileversion[-1]['size']
         basefilenode_info['location'] = list_fileversion[-1]['location']

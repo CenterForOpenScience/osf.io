@@ -15,9 +15,9 @@ from admin.rdm_custom_storage_location.export_data.utils import (
     process_data_infomation,
     get_list_file_info,
     get_files_from_waterbutler,
-    delete_file_export
+    delete_file_export,
 )
-from osf.models import ExportData, Institution
+from osf.models import ExportData, Institution, ExportDataLocation
 from .location import ExportStorageLocationViewBaseView
 
 logger = logging.getLogger(__name__)
@@ -169,34 +169,27 @@ class ExportDataInformationView(ExportStorageLocationViewBaseView, DetailView, L
     paginate_by = 1
 
     def get_object(self, **kwargs):
-        user_institution_guid = self.INSTITUTION_DEFAULT
-        if not self.is_super_admin and self.is_affiliated_institution:
-            user_institution_guid = self.request.user.representative_affiliated_institution.guid
-        for item in get_export_data(user_institution_guid, check_delete=False):
-            if str(item['export_data'].id) == self.kwargs.get('data_id'):
-                return item
+        export_data = ExportData.objects.filter(id=self.kwargs.get('data_id')).first()
+        if export_data:
+            return export_data
         raise Http404(
             'Export data with id {} not found.'.format(
                 self.kwargs.get('data_id')
             ))
 
     def get_context_data(self, **kwargs):
+        kwargs.pop('object_list', None)
         user_institution_guid = self.INSTITUTION_DEFAULT
         if not self.is_super_admin and self.is_affiliated_institution:
             user_institution_guid = self.request.user.representative_affiliated_institution.guid
         self.object_list = []
         self.query_set = []
-        data = self.get_object()
-        process_start = data['export_data'].process_start
-        process_start = str(process_start).split('+')[0].replace('-', '').replace(':', '').replace(' ', 'T')
-        provider = Region.objects.get(id=data['source_id'])
         pid = '28zuw'
         provider_name = 'osfstorage'
-        processed_list_file_info = kwargs.pop('object_list', None)
-        user_institution_name = Institution.objects.get(
-            id=self.request.user.representative_affiliated_institution.id).name
-        list_file_info, status_code = get_list_file_info(pid, provider_name, '/', self.request.COOKIES,
-                                                         user_institution_guid, process_start)
+        export_data = self.get_object()
+        process_start = export_data.get_file_info_filename(user_institution_guid)
+        user_institution_name = Institution.objects.get(_id=user_institution_guid).name
+        list_file_info, status_code = get_list_file_info(pid, provider_name, '/', self.request.COOKIES, process_start)
         if status_code == 555:
             messages.error(self.request, 'The export data files are corrupted')
         elif status_code != 200:
@@ -208,16 +201,19 @@ class ExportDataInformationView(ExportStorageLocationViewBaseView, DetailView, L
             self.object_list = processed_list_file_info
             self.query_set = processed_list_file_info
         self.page_size = self.get_paginate_by(self.query_set)
-        self.paginator, self.page, self.query_set, self.is_paginated = self.paginate_queryset(self.query_set,
-                                                                                              self.page_size)
+        _, self.page, self.query_set, _ = self.paginate_queryset(self.query_set, self.page_size)
+        source = export_data.source
+        source_name = source.waterbutler_settings['storage']['provider']
+        if source_name == 'filesystem':
+            source_name = 'NII Storage'
         context = super(ExportDataInformationView, self).get_context_data(**kwargs)
-        context['is_deleted'] = data['export_data'].is_deleted
-        context['data_information'] = data
+        context['is_deleted'] = export_data.is_deleted
+        context['data_information'] = export_data
         context['list_file_info'] = self.query_set
         context['institution_name'] = user_institution_name
-        context['source_id'] = data['source_id'] if len(data) > 0 else 0
-        context['provider_name'] = 'Export Data Information of {} storage'.format(
-            provider.waterbutler_settings['storage']['provider'])
+        context['source_name'] = source_name
+        context['location'] = ExportDataLocation.objects.filter(id=export_data.location_id).first()
+        context['title'] = 'Export Data Information of {} storage'.format(source_name)
         context['storages'] = Region.objects.exclude(
             _id__in=user_institution_guid)
         context['page'] = self.page
@@ -229,39 +225,32 @@ class DeleteExportDataView(ExportStorageLocationViewBaseView, View):
 
     def post(self, request):
         check_delete_permanently = True if request.POST.get('delete_permanently') == 'on' else False
-        list_export_data = request.POST.get('list_id_export_data').split('#')
-        list_export_data = list(filter(None, list_export_data))
+        list_export_data_delete = request.POST.get('list_id_export_data').split('#')
+        list_export_data_delete = list(filter(None, list_export_data_delete))
         pid = '28zuw'
         provider = 'osfstorage'
-        if list_export_data:
-            if check_delete_permanently:
-                user_institution_guid = request.user.representative_affiliated_institution.guid
-                list_content, status_code = get_files_from_waterbutler(pid, provider, '/', request.COOKIES)
-                if status_code == 200:
-                    for item in get_export_data(user_institution_guid, check_delete=False):
-                        if str(item['export_data'].id) in list_export_data:
-                            process_start = item['export_data'].process_start
-                            process_start = str(process_start).split('+')[0].replace('-', '').replace(':', '').replace(
-                                ' ',
-                                'T')
-                            link_delete = None
-                            for export_file in list_content:
-                                if export_file['attributes']['name'] == 'file_info_{}_{}.json'.format(
-                                        user_institution_guid,
-                                        process_start):
-                                    link_delete = export_file['links']['delete']
-                                    break
-                            if link_delete:
-                                link_delete = link_delete.split('/')
-                                status_code = delete_file_export(pid, provider, link_delete[-1], request.COOKIES)
-                                if status_code == 204:
-                                    ExportData.objects.filter(id=item['export_data'].id).delete()
-                                else:
-                                    messages.error(request, 'Cannot connect to the export data storage location')
-                else:
-                    messages.error(request, 'Cannot connect to the export data storage location')
+        if check_delete_permanently:
+            user_institution_guid = request.user.representative_affiliated_institution.guid
+            list_content, status_code = get_files_from_waterbutler(pid, provider, '/', request.COOKIES)
+            if status_code == 200:
+                for item in ExportData.objects.filter(id__in=list_export_data_delete, is_deleted=False):
+                    filename_info = item.get_file_info_filename(user_institution_guid)
+                    link_delete = None
+                    for export_file in list_content:
+                        if export_file['attributes']['name'] == filename_info:
+                            link_delete = export_file['links']['delete']
+                            break
+                    if link_delete:
+                        link_delete = link_delete.split('/')
+                        status_code = delete_file_export(pid, provider, link_delete[-1], request.COOKIES)
+                        if status_code == 204:
+                            ExportData.objects.filter(id=item.id).delete()
+                        else:
+                            messages.error(request, 'Cannot connect to the export data storage location')
             else:
-                ExportData.objects.filter(id__in=list_export_data).update(is_deleted=True)
+                messages.error(request, 'Cannot connect to the export data storage location')
+        else:
+            ExportData.objects.filter(id__in=list_export_data_delete).update(is_deleted=True)
         return redirect('custom_storage_location:export_data:export_data_list')
 
 

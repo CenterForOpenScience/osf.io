@@ -63,7 +63,7 @@
         </form>
     {% endif %}
 
-    <h2>{% trans provider_name %}<br/><small>(for {{ institution_name }})</small></h2>
+    <h2>{% trans title %}<br/><small>(for {{ institution_name }})</small></h2>
 
     <table class="table table-striped" id={data_information.export_data.id}>
         <tbody>
@@ -73,31 +73,31 @@
         </tr>
         <tr>
             <td>Process start</td>
-            <td>{{ data_information.export_data.process_start }}</td>
+            <td>{{ data_information.process_start }}</td>
         </tr>
         <tr>
             <td>Process end</td>
-            <td>{{ data_information.export_data.process_end }}</td>
+            <td>{{ data_information.process_end }}</td>
         </tr>
         <tr>
             <td>Source institution storage type</td>
-            <td>{{ data_information.source_name }}</td>
+            <td>{{ source_name }}</td>
         </tr>
         <tr>
             <td>Export data storage location</td>
-            <td>{{ data_information.location_name }}</td>
+            <td>{{ location.name }}</td>
         </tr>
         <tr>
             <td>Number of projects</td>
-            <td>{{ data_information.export_data.project_number }}</td>
+            <td>{{ data_information.project_number }}</td>
         </tr>
         <tr>
             <td>Number of files</td>
-            <td>{{ data_information.export_data.file_number }}</td>
+            <td>{{ data_information.file_number }}</td>
         </tr>
         <tr>
             <td>Total file size</td>
-            <td>{{ data_information.export_data.total_size }} KB</td>
+            <td>{{ data_information.total_size }} KB</td>
         </tr>
         </tbody>
     </table>

@@ -76,7 +76,7 @@ class ExportData(base.BaseModel):
 
     @property
     def process_start_timestamp(self):
-        return self.process_start.strftime('%s')
+        return self.process_start.strftime('%Y%m%dT%H%M%S')
 
     @property
     def export_data_folder_name(self):
