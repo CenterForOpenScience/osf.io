@@ -13,7 +13,6 @@ from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from typedmodels.models import TypedModel, TypedModelManager
-from include import IncludeManager
 
 from framework.analytics import get_basic_counters
 from framework import sentry
@@ -40,7 +39,7 @@ PROVIDER_MAP = {}
 logger = logging.getLogger(__name__)
 
 
-class BaseFileNodeManager(TypedModelManager, IncludeManager):
+class BaseFileNodeManager(TypedModelManager):
 
     def get_queryset(self):
         qs = super(BaseFileNodeManager, self).get_queryset()
@@ -796,8 +795,6 @@ class FileVersion(ObjectIDMixin, BaseModel):
     region = models.ForeignKey('addons_osfstorage.Region', null=True, blank=True, on_delete=models.CASCADE)
 
     purged = NonNaiveDateTimeField(blank=True, null=True)
-
-    includable_objects = IncludeManager()
 
     @property
     def location_hash(self):

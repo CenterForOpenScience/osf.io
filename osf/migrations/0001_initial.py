@@ -805,9 +805,6 @@ class Migration(migrations.Migration):
                 'ordering': ('-created',),
             },
             bases=(models.Model, osf.models.base.QuerySetExplainMixin),
-            managers=[
-                ('includable_objects', django.db.models.manager.Manager()),
-            ],
         ),
         migrations.CreateModel(
             name='FileVersionUserMetadata',
