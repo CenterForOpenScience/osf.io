@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import date, timedelta
 import logging
 
 from django.core.management.base import BaseCommand
@@ -17,8 +17,7 @@ logger = logging.getLogger(__name__)
 def daily_reporters_go(also_send_to_keen=False, report_date=None):
     init_app()  # OSF-specific setup
 
-    if report_date is None:
-        # default: yesterday
+    if report_date is None:  # default to yesterday
         report_date = (timezone.now() - timedelta(days=1)).date()
 
     errors = {}
@@ -44,5 +43,16 @@ class Command(BaseCommand):
             default=False,
             help='also send reports to keen',
         )
+        parser.add_argument(
+            '--date',
+            type=date,
+            help='also send reports to keen',
+        )
     def handle(self, *args, **options):
-        daily_reporters_go(also_send_to_keen=options['keen'])
+        errors = daily_reporters_go(
+            report_date=options.get('date'),
+            also_send_to_keen=options['keen'],
+        )
+        for error_key, error_val in errors:
+            self.stdout.write(self.style.ERROR(f'error running {error_key}: ') + error_val)
+        self.stdout.write(self.style.SUCCESS('done.'))
