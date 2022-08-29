@@ -102,7 +102,7 @@ class DailyReportSerializer(ser.BaseSerializer):
         if isinstance(report_date, datetime.datetime):
             report_date = report_date.date()
         if isinstance(report_date, datetime.date):
-            report_date = str(report_date.date())
+            report_date = str(report_date)
 
         return {
             'id': instance.meta.id,
