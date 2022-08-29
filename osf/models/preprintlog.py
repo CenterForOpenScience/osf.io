@@ -1,5 +1,3 @@
-from include import IncludeManager
-
 from django.apps import apps
 from django.db import models
 from osf.models.base import BaseModel, ObjectIDMixin
@@ -13,8 +11,6 @@ class PreprintLog(ObjectIDMixin, BaseModel):
         'preprint': 'preprint__guids___id',
         'user': 'user__guids___id',
     }
-
-    objects = IncludeManager()
 
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
 
