@@ -24,7 +24,7 @@ from osf.models import PreprintProvider, ReviewAction, NodeRequestAction, Prepri
 
 
 def get_review_actions_queryset():
-    return ReviewAction.objects.include(
+    return ReviewAction.objects.prefetch_related(
         'creator__guids',
         'target__guids',
         'target__provider',
@@ -94,7 +94,7 @@ class ActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         ]
         if action_querysets:
             action = [action_queryset for action_queryset in action_querysets if action_queryset][0]  # clear empty querysets
-            action.include(
+            action.prefetch_related(
                 'creator__guids',
                 'target__guids',
                 'target__provider',

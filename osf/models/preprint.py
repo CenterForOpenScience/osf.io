@@ -5,7 +5,6 @@ import logging
 import re
 
 from dirtyfields import DirtyFieldsMixin
-from include import IncludeManager
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
@@ -57,7 +56,7 @@ from django.contrib.postgres.fields import ArrayField
 logger = logging.getLogger(__name__)
 
 
-class PreprintManager(IncludeManager):
+class PreprintManager(models.Manager):
     def get_queryset(self):
         return GuidMixinQuerySet(self.model, using=self._db)
 

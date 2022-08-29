@@ -22,8 +22,8 @@ def set_date_retracted(*args):
     registrations = (
         Registration.objects.filter(retraction__state=Sanction.APPROVED, retraction__date_retracted=None)
         .select_related('retraction')
-        .include('registered_from__logs')
-        .include('registered_from__guids')
+        .prefetch_related('registered_from__logs')
+        .prefetch_related('registered_from__guids')
     )
     total = registrations.count()
     logger.info('Migrating {} retractions.'.format(total))
