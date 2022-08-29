@@ -1371,6 +1371,7 @@ function _fangornResolveLazyLoad(item) {
     if (item.data.provider === undefined) {
         return false;
     }
+    // add 'next_token' query param to providers which using this one
     if(item.hasOwnProperty('next_token')) {
         return waterbutler.buildTreeBeardMetadata(item, {next_token: item.next_token});
     }
@@ -1440,6 +1441,7 @@ function orderFolder(tree) {
     }
     tree.sortChildren(this, sortDirection, 'text', sortColumn, 1);
     this.redraw();
+    // hide loading after redrawing new data
     this.select('#tb-tbody > .tb-modal-shade').hide();
     this.select('#tb-tbody').css('overflow', '')
 }
@@ -1773,12 +1775,23 @@ function _loadTopLevelChildren() {
     }
 }
 
-function _lazyLoadPreprocess (obj){
+/**
+ * Add next_token attribute to s3 and s3compat provider and turns a WB structure into a TB structure
+ * @param obj response data when expanding root folder
+ * @this Treebeard.controller
+ * @private
+ */
+function _lazyLoadPreprocess(obj){
     var next_token = obj.next_token;
     if (next_token !== undefined) {
         if (obj.data.length > 0) {
-            var path = obj.data[0].attributes.kind === 'folder' ? obj.data[0].id.slice(0, -1).replace(obj.data[0].attributes.name, '') : obj.data[0].id.replace(obj.data[0].attributes.name, '');
-            var parent = this.flatData.filter(item => item.row.kind === 'folder' && (item.row.provider === 's3' || item.row.provider === 's3compat') && item.row.id === path);
+            var attributes = obj.data[0].attributes;
+            var id = obj.data[0].id;
+            // look for parent folder based on id attribute
+            var path = attributes.kind === 'folder' ? id.slice(0, -1).replace(attributes.name, '') : id.replace(attributes.name, '');
+            var parent = this.flatData.filter(item => item.row.kind === 'folder' &&
+                                                      (item.row.provider === 's3' || item.row.provider === 's3compat') &&
+                                                      item.row.id === path);
             if(parent[0]) {
                 parent = this.find(parent[0].id);
                 parent.next_token = next_token;
@@ -1815,9 +1828,11 @@ function expandStateLoad(item) {
             }
         } else {
             for (i = 0; i < item.children.length; i++) {
+                // add id attribute for top-level folder of s3 provider
                 if (item.children[i].data.provider === 's3') {
                     item.children[i].data.id = 's3/';
                 }
+                // add id attribute for top-level folder of s3compat provider
                 if (item.children[i].data.provider === 's3compat') {
                     item.children[i].data.id = 's3compat/';
                 }
@@ -2916,7 +2931,8 @@ function _resizeHeight () {
 
 
 /**
- * Fetching children data of the parent folder
+ * Fetching children data of the parent folder when scrolling to the bottom of display list
+ * Clone from _toggleFolder method of Treebeard library
  * @param {Object} tree item of the parent folder
  */
 function fetchData(tree) {
@@ -2926,6 +2942,7 @@ function fetchData(tree) {
         return;
     }
     if (tree.open === true && !tree.isFetching && tree.next_token) {
+        // set isFetching flag to prevent calling api multiple times
         tree.isFetching = true;
 
         var len = self.flatData.length,
@@ -2934,61 +2951,63 @@ function fetchData(tree) {
             i,
             lazyLoad;
 
-        $.when(self.options.resolveLazyloadUrl.call(self, tree)).done(function _resolveLazyloadDone(url) {
-            lazyLoad = url;
-            if (lazyLoad && item.row.kind === 'folder' && tree.open === true) {
-                self.select('#tb-tbody > .tb-modal-shade').show();
-                self.select('#tb-tbody').css('overflow', 'hidden');
-                m.request({
-                    method: 'GET',
-                    url: lazyLoad,
-                    config: self.options.xhrconfig
-                })
-                    .then(function _getUrlBuildtree(value) {
-                        if (!value) {
-                            self.options.lazyLoadError.call(self, tree);
-                        } else {
-                            if (self.options.lazyLoadPreprocess) {
-                                value = self.options.lazyLoadPreprocess.call(self, value);
-                            }
-                            if (!$.isArray(value)) {
-                                value = value.data;
-                            }
-                            var isUploadItem = function(element) {
-                                return element.data.tmpID;
-                            };
-
-                            for (i = 0; i < value.length; i++) {
-                                child = self.buildTree(value[i], tree);
-                                child.data.permissions = {view: true, edit:true};
-                                child.parentID = tree.id;
-                                child.depth = tree.depth + 1;
-                                child.open = false;
-                                child.load = false;
-                                if (child.depth > 1 && child.children.length === 0) {
-                                    child.open = false;
-                                }
-                                tree.children.push(child);
-                            }
-                            tree.open = true;
-                            tree.load = true;
-                            tree.is_sorted = false;
-                        }
-                    }, function (info) {
-                        self.options.lazyLoadError.call(self, tree);
+        $.when(self.options.resolveLazyloadUrl.call(self, tree))
+            .done(function _resolveLazyloadDone(url) {
+                lazyLoad = url;
+                if (lazyLoad && item.row.kind === 'folder' && tree.open === true) {
+                    // show loading before calling API
+                    self.select('#tb-tbody > .tb-modal-shade').show();
+                    self.select('#tb-tbody').css('overflow', 'hidden');
+                    m.request({
+                        method: 'GET',
+                        url: lazyLoad,
+                        config: self.options.xhrconfig
                     })
-                    .then(function _getUrlFlatten() {
-                        if (self.options.lazyLoadOnLoad) {
-                            self.options.lazyLoadOnLoad.call(self, tree, event);
-                        }
-                        tree.isFetching = false;
-                        tree.is_sorted = true;
-                    });
-            }
-            if (self.options.allowMove) {
-                self.moveOn();
-            }
-        });
+                        .then(function _getUrlBuildtree(value) {
+                            if (!value) {
+                                self.options.lazyLoadError.call(self, tree);
+                            } else {
+                                if (self.options.lazyLoadPreprocess) {
+                                    value = self.options.lazyLoadPreprocess.call(self, value);
+                                }
+                                if (!$.isArray(value)) {
+                                    value = value.data;
+                                }
+                                var isUploadItem = function(element) {
+                                    return element.data.tmpID;
+                                };
+
+                                for (i = 0; i < value.length; i++) {
+                                    child = self.buildTree(value[i], tree);
+                                    child.data.permissions = {view: true, edit:true};
+                                    child.parentID = tree.id;
+                                    child.depth = tree.depth + 1;
+                                    child.open = false;
+                                    child.load = false;
+                                    if (child.depth > 1 && child.children.length === 0) {
+                                        child.open = false;
+                                    }
+                                    tree.children.push(child);
+                                }
+                                tree.open = true;
+                                tree.load = true;
+                                tree.is_sorted = false;
+                            }
+                        }, function (info) {
+                            self.options.lazyLoadError.call(self, tree);
+                        })
+                        .then(function _getUrlFlatten() {
+                            if (self.options.lazyLoadOnLoad) {
+                                self.options.lazyLoadOnLoad.call(self, tree, event);
+                            }
+                            tree.isFetching = false;
+                            tree.is_sorted = true;
+                        });
+                }
+                if (self.options.allowMove) {
+                    self.moveOn();
+                }
+            });
     }
     else {
     }
@@ -3001,13 +3020,22 @@ function fetchData(tree) {
 function handleScroll() {
     var rs, range, item, index;
     rs = this.select('#tb-tbody > .tb-tbody-inner > div');
+    // Get the list of id of the elements displayed when scrolling down
     range = Array.from(rs[0].children).map(item => parseInt(item.getAttribute('data-id')));
     for(var i = 0; i < range.length; i++) {
         index = range[i];
         item = this.find(index);
         if(item) {
             const parent = this.find(item.parentID);
-            if (parent.children.length > 0 && (parent.data.provider === 's3' || parent.data.provider === 's3compat') && !parent.isFetching && parent.children[parent.children.length - 1].id === item.id) {
+            var provider = parent.data.provider;
+            var length = parent.children.length;
+            // Check if this element is the last element or not
+            if (
+                length > 0 &&
+                (provider === 's3' || provider === 's3compat') &&
+                !parent.isFetching &&
+                parent.children[length - 1].id === item.id
+            ) {
                 fetchData.call(this, parent);
             }
         }
@@ -3108,8 +3136,10 @@ tbOptions = {
             }
         });
 
+        // register a scroll event to element which has 'tb-tbody' id
         $osf.onScroll(tb.select('#tb-tbody'), handleScroll.bind(tb));
 
+        // Add loading modal when loading page
         tb.select('#tb-tbody').prepend(`<div style="width: 100%; height: 100%; padding: 50px 100px; position: sticky; top: 0px; left: 0px;background-color: white;" class="tb-modal-shade">
                                     <div class="spinner-loading-wrapper" style="background-color: transparent;">
                                         <div class="ball-scale ball-scale-blue">
