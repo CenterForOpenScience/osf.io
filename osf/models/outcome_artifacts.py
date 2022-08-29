@@ -1,15 +1,18 @@
-from django.db import models
+from django.db import models, IntegrityError, transaction
 from django.utils import timezone
 
 from osf.exceptions import (
     CannotFinalizeArtifactError,
     IdentifierHasReferencesError,
-    NoPIDError
+    IsPrimaryArtifactPIDError,
+    NoPIDError,
+    UnsupportedArtifactTypeError,
 )
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.identifiers import Identifier
 from osf.utils import outcomes as outcome_utils
 from osf.utils.fields import NonNaiveDateTimeField
+from osf.utils.identifiers import normalize_identifier
 
 
 '''
@@ -103,11 +106,57 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
         ]
         ordering = ['artifact_type', 'title']
 
-    def update_identifier(self, new_pid_value, pid_type='doi', api_request=None):
+    @transaction.atomic
+    def update(
+        self,
+        new_description=None,
+        new_artifact_type=None,
+        new_pid_value=None,
+        pid_type='doi',
+        api_request=None
+    ):
+        log_params = {}
+        if new_description is not None:
+            self.description = new_description
+
+        if new_artifact_type is not None:
+            if new_artifact_type == ArtifactTypes.UNDEFINED != self.artifact_type:
+                raise UnsupportedArtifactTypeError
+            self.artifact_type = new_artifact_type
+
+        if new_pid_value is not None:
+            log_params = {
+                'obsolete_identifier': self.identifier.value if self.identifier else '',
+                'new_identifier': new_pid_value
+            }
+            self._update_identifier(new_pid_value, pid_type, api_request)
+
+        if self.finalized:
+            if OutcomeArtifact.objects.filter(
+                outcome=self.outcome,
+                identifier=self.identifier,
+                artifact_type=self.artifact_type,
+                finalized=True,
+                deleted__isnull=True
+            ).exclude(
+                id=self.id
+            ).exists():
+                raise IntegrityError()
+
+            self.outcome.artifact_updated(
+                artifact=self,
+                action=OutcomeActions.UPDATE if new_pid_value is not None else None,
+                api_request=api_request,
+                **log_params,
+            )
+
+    def _update_identifier(self, new_pid_value, pid_type='doi', api_request=None):
         '''Changes the linked Identifer to one matching the new pid_value and handles callbacks.
 
         If `finalized` is True, will also log the change on the parent Outcome if invoked via API.
         Will attempt to delete the previous identifier to avoid orphaned entries.
+
+        Should only be called from within `update` to ensure atomicity
 
         Parameters:
         new_pid_value: The string value of the new PID
@@ -115,27 +164,34 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
         api_request: The api_request data from the API call that initiated the change.
         '''
         if not new_pid_value:
-            raise NoPIDError(f'Cannot assign an empty PID to OutcomeArtifact with ID {self._id}')
+            raise NoPIDError('Cannot assign an empty PID value')
+
+        normalized_pid_value = normalize_identifier(new_pid_value)
+        if self.identifier and normalized_pid_value == self.identifier.value:
+            return
+
+        new_identifier, created = Identifier.objects.get_or_create(
+            value=normalized_pid_value, category=pid_type
+        )
+
+        # Reraise these errors all the way to API
+        if created:
+            new_identifier.validate_identifier_value()
+        elif OutcomeArtifact.objects.filter(
+            outcome=self.outcome,
+            identifier=new_identifier,
+            artifact_type=ArtifactTypes.PRIMARY
+        ).exists():
+            raise IsPrimaryArtifactPIDError(pid_value=new_pid_value, pid_category=pid_type)
 
         previous_identifier = self.identifier
-        self.identifier, _ = Identifier.objects.get_or_create(
-            value=new_pid_value, category=pid_type
-        )
+        self.identifier = new_identifier
         self.save()
         if previous_identifier:
             try:
                 previous_identifier.delete()
             except IdentifierHasReferencesError:
                 pass
-
-        if self.finalized and api_request:
-            self.outcome.log_artifact_change(
-                action=OutcomeActions.UPDATE,
-                artifact=self,
-                api_request=api_request,
-                obsolete_identifier=previous_identifier.value if previous_identifier else None,
-                new_identifier=new_pid_value
-            )
 
     def finalize(self, api_request=None):
         '''Sets `finalized` to True and handles callbacks.
@@ -153,16 +209,24 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
         if incomplete_fields:
             raise CannotFinalizeArtifactError(self, incomplete_fields)
 
+        if OutcomeArtifact.objects.filter(
+            outcome=self.outcome,
+            identifier=self.identifier,
+            artifact_type=self.artifact_type,
+            finalized=True,
+            deleted__isnull=True,
+        ).exists():
+            raise IntegrityError()
+
         self.finalized = True
         self.save()
 
-        if api_request:
-            self.outcome.log_artifact_change(
-                action=OutcomeActions.ADD,
-                artifact=self,
-                api_request=api_request,
-                new_identifier=self.identifier.value
-            )
+        self.outcome.artifact_updated(
+            action=OutcomeActions.ADD,
+            artifact=self,
+            api_request=api_request,
+            new_identifier=self.identifier.value
+        )
 
     def delete(self, api_request=None, **kwargs):
         '''Intercept `delete` behavior on the model instance and handles callbacks.
@@ -176,19 +240,19 @@ class OutcomeArtifact(ObjectIDMixin, BaseModel):
         '''
         identifier = self.identifier
         if self.finalized:
-            if api_request:
-                self.outcome.log_artifact_change(
-                    action=OutcomeActions.REMOVE,
-                    artifact=self,
-                    api_request=api_request,
-                    obsolete_identifier=identifier.value
-                )
             self.deleted = timezone.now()
             self.save()
+            self.outcome.artifact_updated(
+                action=OutcomeActions.REMOVE,
+                artifact=self,
+                api_request=api_request,
+                obsolete_identifier=identifier.value
+            )
         else:
             super().delete(**kwargs)
 
-        try:
-            identifier.delete()
-        except IdentifierHasReferencesError:
-            pass
+        if identifier:
+            try:
+                identifier.delete()
+            except IdentifierHasReferencesError:
+                pass

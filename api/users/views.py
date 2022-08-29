@@ -34,6 +34,7 @@ from api.osf_groups.serializers import GroupSerializer
 from api.preprints.serializers import PreprintSerializer
 from api.registrations import annotations as registration_annotations
 from api.registrations.serializers import RegistrationSerializer
+from api.resources import annotations as resource_annotations
 
 from api.users.permissions import (
     CurrentUser, ReadOnlyOrCurrentUser,
@@ -464,6 +465,7 @@ class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesF
             user=current_user,
             model_cls=Registration,
             revision_state=registration_annotations.REVISION_STATE,
+            **resource_annotations.make_open_practice_badge_annotations()
         )
         # OSF group members not copied to registration.  Only registration contributors need to be checked here.
         return qs.filter(contributor__user__id=user.id)

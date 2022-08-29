@@ -5,8 +5,6 @@ import pytest
 import datetime
 
 from django.utils import timezone
-
-from nose.tools import assert_raises
 from transitions import MachineError
 
 from osf.models import NodeLog
@@ -102,7 +100,7 @@ class TestRegistrationEmbargoTermination:
         user_1_tok = embargo_termination.token_for_user(user, 'rejection')
         user_2_tok = embargo_termination.token_for_user(user2, 'approval')
         embargo_termination.reject(user=user, token=user_1_tok)
-        with assert_raises(MachineError):
+        with pytest.raises(MachineError):
             embargo_termination.approve(user=user2, token=user_2_tok)
 
         assert embargo_termination.is_rejected
@@ -164,3 +162,97 @@ class TestSanctionEmailRendering:
 
         registration.sanction.ask([(contributor, registration)])
         assert True  # mail rendered successfully
+
+
+@pytest.mark.django_db
+class TestDOICreation:
+
+    def make_test_registration(self, embargoed=False, moderated=False):
+        sanction = factories.EmbargoFactory() if embargoed else factories.RegistrationApprovalFactory()
+        registration = sanction.target_registration
+        if moderated:
+            provider = registration.provider
+            provider.reviews_workflow = 'pre-moderation'
+            provider.save()
+        return registration
+
+    def test_registration_approval__doi_minted_on_approval(self):
+        registration = self.make_test_registration(embargoed=False, moderated=False)
+        assert not registration.get_identifier(category='doi')
+
+        registration.registration_approval.accept()
+        assert registration.get_identifier_value(category='doi')
+
+    def test_embargo__identifier_created_but_not_minted_on_aproval(self):
+        registration = self.make_test_registration(embargoed=True, moderated=False)
+        assert not registration.get_identifier(category='doi')
+
+        registration.embargo.accept()
+        assert registration.get_identifier(category='doi')
+        assert not registration.get_identifier_value(category='doi')
+
+    def test_embargo__identifier_minted_on_complete(self):
+        registration = self.make_test_registration(embargoed=True, moderated=False)
+        assert not registration.get_identifier(category='doi')
+
+        registration.embargo.accept()
+        identifier = registration.get_identifier(category='doi')
+
+        registration.terminate_embargo()
+        identifier.refresh_from_db()
+        assert identifier.value
+
+    @pytest.mark.parametrize('embargoed', [True, False])
+    def test_moderated_sanction__no_identifier_created_until_moderator_approval(self, embargoed):
+        registration = self.make_test_registration(embargoed=embargoed, moderated=True)
+        provider = registration.provider
+        provider.update_group_permissions()
+        moderator = factories.AuthUserFactory()
+        provider.get_group('moderator').user_set.add(moderator)
+
+        # Admin approval
+        registration.sanction.accept()
+        assert not registration.get_identifier(category='doi')
+
+        # Moderator approval
+
+        with mock.patch('osf.models.node.AbstractNode.update_search'):
+            registration.sanction.accept(user=moderator)
+        assert registration.get_identifier(category='doi')
+        # No value should be set if the registration was embargoed
+        assert bool(registration.get_identifier_value(category='doi')) != embargoed
+
+    @pytest.mark.parametrize('embargoed', [True, False])
+    def test_nested_registration__identifier_created_on_approval(self, embargoed):
+        registration = self.make_test_registration(embargoed=embargoed, moderated=False)
+
+        child_project = factories.ProjectFactory(parent=registration.registered_from)
+        grandchild_project = factories.ProjectFactory(parent=child_project)
+
+        child_registration = factories.RegistrationFactory(parent=registration, project=child_project)
+        grandchild_registration = factories.RegistrationFactory(parent=child_registration, project=grandchild_project)
+
+        assert not child_registration.get_identifier(category='doi')
+        assert not grandchild_registration.get_identifier(category='doi')
+
+        registration.sanction.accept()
+        assert child_registration.get_identifier(category='doi')
+        assert grandchild_registration.get_identifier(category='doi')
+        # No value should be set if the registrations were embargoed
+        assert bool(child_registration.get_identifier_value(category='doi')) != embargoed
+        assert bool(child_registration.get_identifier_value(category='doi')) != embargoed
+
+    def test_nested_registration__embargoed_registration_gets_doi_on_termination(self):
+        registration = self.make_test_registration(embargoed=True, moderated=False)
+
+        child_project = factories.ProjectFactory(parent=registration.registered_from)
+        grandchild_project = factories.ProjectFactory(parent=child_project)
+
+        child_registration = factories.RegistrationFactory(parent=registration, project=child_project)
+        grandchild_registration = factories.RegistrationFactory(parent=child_registration, project=grandchild_project)
+
+        registration.embargo.accept()
+        registration.terminate_embargo()
+
+        assert child_registration.get_identifier_value('doi')
+        assert grandchild_registration.get_identifier_value('doi')

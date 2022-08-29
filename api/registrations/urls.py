@@ -43,6 +43,7 @@ urlpatterns = [
     url(r'^(?P<node_id>\w+)/actions/$', views.RegistrationActionList.as_view(), name=views.RegistrationActionList.view_name),
     url(r'^(?P<node_id>\w+)/requests/$', views.RegistrationRequestList.as_view(), name=views.RegistrationRequestList.view_name),
     url(r'^(?P<node_id>\w+)/schema_responses/$', views.RegistrationSchemaResponseList.as_view(), name=views.RegistrationSchemaResponseList.view_name),
+    url(r'^(?P<node_id>\w+)/resources/$', views.RegistrationResourceList.as_view(), name=views.RegistrationResourceList.view_name),
 ]
 
 # Routes only active in local/staging environments

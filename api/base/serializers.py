@@ -15,6 +15,7 @@ from rest_framework.fields import get_attribute as get_nested_attributes
 from rest_framework.mixins import RetrieveModelMixin
 
 from api.base import utils
+from api.base.exceptions import EnumFieldMemberError
 from osf.utils import permissions as osf_permissions
 from osf.utils import sanitize
 from osf.utils import functional
@@ -1109,11 +1110,8 @@ class LinksField(ser.Field):
         # not just the field attribute.
         return obj
 
-    def extend_absolute_info_url(self, obj):
-        return utils.extend_querystring_if_key_exists(obj.get_absolute_info_url(), self.context['request'], 'view_only')
-
-    def extend_absolute_url(self, obj):
-        return utils.extend_querystring_if_key_exists(obj.get_absolute_url(), self.context['request'], 'view_only')
+    def _extend_url_with_vol_key(self, url):
+        return utils.extend_querystring_if_key_exists(url, self.context['request'], 'view_only')
 
     def to_representation(self, obj):
         ret = {}
@@ -1122,16 +1120,18 @@ class LinksField(ser.Field):
                 url = _url_val(value, obj=obj, serializer=self.parent, request=self.context['request'])
             except SkipField:
                 continue
+
+            if name in ['self', 'info']:
+                ret[name] = self._extend_url_with_vol_key(url)
             else:
                 ret[name] = url
-        if hasattr(obj, 'get_absolute_url') and 'self' not in self.links:
-            ret['self'] = self.extend_absolute_url(obj)
+
+        if 'self' not in ret and hasattr(obj, 'get_absolute_url'):
+            ret['self'] = self._extend_url_with_vol_key(obj.get_absolute_url())
 
         if 'info' in ret:
             if hasattr(obj, 'get_absolute_info_url'):
-                ret['info'] = self.extend_absolute_info_url(obj)
-            else:
-                ret['info'] = utils.extend_querystring_if_key_exists(ret['info'], self.context['request'], 'view_only')
+                ret['info'] = self._extend_url_with_vol_key(obj.get_absolute_info_url())
 
         return ret
 
@@ -1993,3 +1993,23 @@ class DisableIfSwitch(HideIfSwitch):
         """
         super(DisableIfSwitch, self).__init__(switch_name, field, hide_if, **kwargs)
         self.validators.append(SwitchValidator(self.switch_name))
+
+
+class EnumField(ser.ChoiceField):
+    """
+    Custom field for using Int enums internally in a human-readable way.
+    """
+    def __init__(self, enum_class, **kwargs):
+        self._enum_class = enum_class
+        # We usually define this on the Enum class
+        choices = tuple((entry.value, entry.name.lower()) for entry in enum_class)
+        super().__init__(choices=choices, **kwargs)
+
+    def to_representation(self, value):
+        return self._enum_class(value).name.lower()
+
+    def to_internal_value(self, data):
+        try:
+            return self._enum_class[data.upper()].value
+        except KeyError:
+            raise EnumFieldMemberError(self._enum_class, data)
