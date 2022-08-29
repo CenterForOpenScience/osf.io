@@ -97,13 +97,14 @@ class BanSpamByRegex(ManagementCommandPermissionView):
 class DailyReportersGo(ManagementCommandPermissionView):
 
     def post(self, request, *args, **kwargs):
+        also_keen = bool(request.POST.get('also_send_to_keen', False))
         report_date = request.POST.get('report_date', None)
         if report_date:
             report_date = isoparse(report_date).date()
         else:
             report_date = None
 
-        errors = daily_reporters_go(report_date=report_date)
+        errors = daily_reporters_go(report_date=report_date, also_send_to_keen=also_keen)
 
         if errors:
             for reporter_name, error_msg in errors.items():
