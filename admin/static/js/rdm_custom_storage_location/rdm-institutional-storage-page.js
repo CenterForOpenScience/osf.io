@@ -1017,11 +1017,11 @@ function checkTaskStatus(task_id) {
     });
 }
 
-function cancelRestore() {
+$("#cancel_restore_modal_button").on('click', () => {
     enableRestoreFunction();
-}
+});
 
-function startRestore() {
+$("#start_restore_modal_button").on('click', () => {
     $("#restore").modal('hide');
     let data = {};
     data["source_id"] = source_id;
@@ -1047,7 +1047,7 @@ function startRestore() {
             $osf.growl('Restore Export Data', _(data["error_message"]), 'danger', 2);
         }
     });
-}
+});
 
 function disableRestoreButton() {
     // Disable "Restore" button

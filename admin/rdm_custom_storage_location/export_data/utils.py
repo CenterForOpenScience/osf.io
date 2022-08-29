@@ -7,6 +7,7 @@ import jsonschema
 import numpy as np
 import requests
 from django.db import connection
+from django.db.models import Q
 from rest_framework import status as http_status
 
 from addons.base.institutions_utils import KEYNAME_BASE_FOLDER
@@ -24,6 +25,8 @@ from admin.rdm_custom_storage_location.utils import (
 )
 from api.base.utils import waterbutler_api_url_for
 from osf.models import (
+    ExportData,
+    ExportDataRestore,
     ExportDataLocation,
     Institution,
     FileVersion,
@@ -34,6 +37,7 @@ from osf.models import (
     RdmFileTimestamptokenVerifyResult
 )
 from website.util import inspect_info  # noqa
+from website.settings import WATERBUTLER_URL
 
 logger = logging.getLogger(__name__)
 
@@ -454,3 +458,59 @@ def get_info_export_data(region_id):
             }
     data_rs['files'] = list_file
     return data_rs
+
+
+def check_any_running_restore_process(destination_id):
+    return ExportDataRestore.objects.filter(destination_id=destination_id).exclude(
+        Q(status=ExportData.STATUS_STOPPED) | Q(status=ExportData.STATUS_COMPLETED)).exists()
+
+
+def validate_file_json(file_data, serializer):
+    try:
+        json_data = json.loads(file_data)
+    except Exception as e:
+        logger.error(f"Exception: {e}")
+        return False
+
+    schema = serializer(data=json_data)
+    if not schema.is_valid():
+        return False
+    return True
+
+
+def get_file_data(node_id, provider, file_path, cookies, internal=True, base_url=WATERBUTLER_URL, get_file_info=False):
+    file_url = waterbutler_api_url_for(node_id, provider, path=file_path, _internal=internal,
+                                       base_url=base_url, meta="" if get_file_info else None)
+    return requests.get(file_url,
+                        headers={'content-type': 'application/json'},
+                        cookies=cookies)
+
+
+def upload_file(node_id, provider, file_path, file_data, new_file_path, cookies, internal=True, base_url=WATERBUTLER_URL):
+    upload_url = waterbutler_api_url_for(node_id, provider, path=file_path, kind="file", name=new_file_path,
+                                         _internal=internal, base_url=base_url)
+    return requests.put(upload_url,
+                        headers={'content-type': 'application/json'},
+                        cookies=cookies,
+                        data=file_data)
+
+
+def move_file(node_id, provider, source_file_path, destination_file_path, cookies, internal=True, base_url=WATERBUTLER_URL):
+    move_old_data_url = waterbutler_api_url_for(node_id, provider, path=source_file_path, _internal=internal,
+                                                base_url=base_url)
+    request_body = {
+        "action": "move",
+        "path": destination_file_path,
+    }
+    return requests.post(move_old_data_url,
+                         headers={'content-type': 'application/json'},
+                         cookies=cookies,
+                         json=request_body)
+
+
+def delete_file(node_id, provider, file_path, cookies, internal=True, base_url=WATERBUTLER_URL):
+    destination_storage_backup_meta_api = waterbutler_api_url_for(node_id, provider, path=file_path,
+                                                                  _internal=internal, base_url=base_url)
+    return requests.delete(destination_storage_backup_meta_api,
+                           headers={'content-type': 'application/json'},
+                           cookies=cookies)
