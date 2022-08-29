@@ -1443,7 +1443,7 @@ function orderFolder(tree) {
     this.redraw();
     // hide loading after redrawing new data
     this.select('#tb-tbody > .tb-modal-shade').hide();
-    this.select('#tb-tbody').css('overflow', '')
+    this.select('#tb-tbody').css('overflow', '');
 }
 
 /**
@@ -1781,7 +1781,7 @@ function _loadTopLevelChildren() {
  * @this Treebeard.controller
  * @private
  */
-function _lazyLoadPreprocess(obj){
+function _lazyLoadPreprocess(obj) {
     var next_token = obj.next_token;
     if (next_token !== undefined) {
         if (obj.data.length > 0) {
@@ -1790,9 +1790,9 @@ function _lazyLoadPreprocess(obj){
             // look for parent folder based on id attribute
             var path = attributes.kind === 'folder' ? id.slice(0, -1).replace(attributes.name, '') : id.replace(attributes.name, '');
             var parent = this.flatData.filter(item => item.row.kind === 'folder' &&
-                                                      (item.row.provider === 's3' || item.row.provider === 's3compat') &&
-                                                      item.row.id === path);
-            if(parent[0]) {
+                (item.row.provider === 's3' || item.row.provider === 's3compat') &&
+                item.row.id === path);
+            if (parent[0]) {
                 parent = this.find(parent[0].id);
                 parent.next_token = next_token;
             }
@@ -2945,8 +2945,7 @@ function fetchData(tree) {
         // set isFetching flag to prevent calling api multiple times
         tree.isFetching = true;
 
-        var len = self.flatData.length,
-            item = self.flatData.filter(item => item.id === tree.id)[0],
+        var item = self.flatData.filter(item => item.id === tree.id)[0],
             child,
             i,
             lazyLoad;
@@ -2973,13 +2972,10 @@ function fetchData(tree) {
                                 if (!$.isArray(value)) {
                                     value = value.data;
                                 }
-                                var isUploadItem = function(element) {
-                                    return element.data.tmpID;
-                                };
 
                                 for (i = 0; i < value.length; i++) {
                                     child = self.buildTree(value[i], tree);
-                                    child.data.permissions = {view: true, edit:true};
+                                    child.data.permissions = {view: true, edit: true};
                                     child.parentID = tree.id;
                                     child.depth = tree.depth + 1;
                                     child.open = false;
@@ -3009,8 +3005,6 @@ function fetchData(tree) {
                 }
             });
     }
-    else {
-    }
 }
 
 
@@ -3022,10 +3016,10 @@ function handleScroll() {
     rs = this.select('#tb-tbody > .tb-tbody-inner > div');
     // Get the list of id of the elements displayed when scrolling down
     range = Array.from(rs[0].children).map(item => parseInt(item.getAttribute('data-id')));
-    for(var i = 0; i < range.length; i++) {
+    for (var i = 0; i < range.length; i++) {
         index = range[i];
         item = this.find(index);
-        if(item) {
+        if (item) {
             const parent = this.find(item.parentID);
             var provider = parent.data.provider;
             var length = parent.children.length;
@@ -3038,9 +3032,6 @@ function handleScroll() {
             ) {
                 fetchData.call(this, parent);
             }
-        }
-        else {
-            continue;
         }
 
     }
@@ -3140,7 +3131,7 @@ tbOptions = {
         $osf.onScroll(tb.select('#tb-tbody'), handleScroll.bind(tb));
 
         // Add loading modal when loading page
-        tb.select('#tb-tbody').prepend(`<div style="width: 100%; height: 100%; padding: 50px 100px; position: sticky; top: 0px; left: 0px;background-color: white;" class="tb-modal-shade">
+        tb.select('#tb-tbody').prepend(`<div style="width: 100%; height: 100%; padding: 50px 100px; position: sticky; top: 0; left: 0;background-color: white;" class="tb-modal-shade">
                                     <div class="spinner-loading-wrapper" style="background-color: transparent;">
                                         <div class="ball-scale ball-scale-blue">
                                             <div>

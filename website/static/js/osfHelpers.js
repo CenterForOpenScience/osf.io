@@ -1018,7 +1018,7 @@ function onScrollToBottom(element, callback) {
 
 // Call a function when scrolled to the bottom of the element
 function onScroll(element, callback) {
-    $(element).scroll(function() {
+    $(element).scroll(function () {
         callback();
     });
 }
