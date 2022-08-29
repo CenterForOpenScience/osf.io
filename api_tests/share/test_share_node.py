@@ -4,7 +4,8 @@ import responses
 from unittest.mock import patch
 
 from api.share.utils import serialize_registration
-from osf.models import CollectionSubmission, SpamStatus
+from osf.models import CollectionSubmission, SpamStatus, Outcome
+from osf.utils.outcomes import ArtifactTypes
 
 from osf_tests.factories import (
     AuthUserFactory,
@@ -83,6 +84,17 @@ class TestNodeShare:
         registration = RegistrationFactory(project=root_node)
         registration.refresh_from_db()
         return registration.get_nodes()[0].get_nodes()[0]
+
+    @pytest.fixture()
+    def registration_outcome(self, registration):
+        o = Outcome.objects.for_registration(registration, create=True)
+        o.artifact_metadata.create(
+            identifier=IdentifierFactory(), artifact_type=ArtifactTypes.DATA, finalized=True
+        )
+        o.artifact_metadata.create(
+            identifier=IdentifierFactory(), artifact_type=ArtifactTypes.PAPERS, finalized=True
+        )
+        return o
 
     def test_update_node_share(self, mock_share, node, user):
 
@@ -202,6 +214,18 @@ class TestNodeShare:
                 and n['creative_work']['@id'] == registration_graph_node['@id']
             ]
             assert len(workidentifier_graph_nodes) == 1
+
+    def test_serialize_registration_sets_osf_related_resource_types(
+        self, mock_share, registration, registration_outcome, user
+    ):
+        graph = serialize_registration(registration)['@graph']
+        registration_graph_node = [n for n in graph if n['@type'] == 'registration'][0]
+
+        expected_resource_types = {
+            'data': True, 'papers': True, 'analytic_code': False, 'materials': False, 'supplements': False
+        }
+
+        assert registration_graph_node['extra']['osf_related_resource_types'] == expected_resource_types
 
     def test_update_share_correctly_for_projects_with_qa_tags(self, mock_share, node, user):
         node.add_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user))

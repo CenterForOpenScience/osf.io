@@ -7,7 +7,6 @@ from django.core.management.base import BaseCommand
 from osf.models import Identifier
 
 from framework.celery_tasks import app
-from framework.celery_tasks.handlers import enqueue_task
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +32,7 @@ def sync_doi_metadata(modified_date, batch_size=100, dry_run=True, sync_private=
     for identifier in identifiers:
         if not dry_run:
             if (identifier.referent.is_public and not identifier.referent.deleted and not identifier.referent.is_retracted) or sync_private:
-                enqueue_task(sync_identifier_doi.s(identifier))
+                sync_identifier_doi.apply_async(kwargs={'identifier': identifier})
 
         logger.info(f'{"[DRY RUN]: " if dry_run else ""}'
                     f' doi minting for {identifier.value} started')

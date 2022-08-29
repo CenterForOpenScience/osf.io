@@ -37,6 +37,7 @@ from api.providers.serializers import (
 from api.registrations import annotations as registration_annotations
 from api.registrations.serializers import RegistrationSerializer
 from api.requests.serializers import PreprintRequestSerializer, RegistrationRequestSerializer
+from api.resources import annotations as resource_annotations
 from api.schemas.serializers import RegistrationSchemaSerializer
 from api.subjects.views import SubjectList
 from api.subjects.serializers import SubjectSerializer
@@ -742,6 +743,7 @@ class RegistrationProviderRegistrationList(JSONAPIBaseView, generics.ListAPIView
             provider=provider,
         ).annotate(
             revision_state=registration_annotations.REVISION_STATE,
+            **resource_annotations.make_open_practice_badge_annotations(),
         )
 
     # overrides ListAPIView

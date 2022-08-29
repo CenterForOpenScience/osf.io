@@ -617,6 +617,11 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
                 'embargo_id': self._id,
             },
             auth=Auth(self.initiated_by), )
+
+        # Make placeholder identifiers for all Registrations to allow resources to be added
+        # This Identifier will be grabbed and populated when the Registration is made public
+        for registration in parent_registration.node_and_primary_descendants():
+            registration.set_identifier_value(category='doi', value=None)
         self.save()
 
     def approve_embargo(self, user, token):
