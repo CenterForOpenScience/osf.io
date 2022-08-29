@@ -932,7 +932,7 @@ $('#restore_button').on('click', () => {
     let data = {};
     data["source_id"] = source_id;
     data["destination_id"]= $("#destination_storage").val();
-    enableStopRestoreFunction();
+    disableRestoreButton();
     $.ajax({
         url: "restore_export_data",
         type: "post",
@@ -943,6 +943,7 @@ $('#restore_button').on('click', () => {
             // Show error message
             $osf.growl('Restore Export Data', _(result["error_message"]), 'danger', 2);
         } else if (response["task_id"]) {
+            enableStopRestoreFunction();
             restore_task_id = response["task_id"];
             setTimeout(() => {
                 checkTaskStatus(restore_task_id);
@@ -1046,6 +1047,12 @@ function startRestore() {
             $osf.growl('Restore Export Data', _(data["error_message"]), 'danger', 2);
         }
     });
+}
+
+function disableRestoreButton() {
+    // Disable "Restore" button
+    $("#restore_button").addClass("disabled");
+    $("#restore_button").attr("disabled", true);
 }
 
 function enableStopRestoreFunction() {
