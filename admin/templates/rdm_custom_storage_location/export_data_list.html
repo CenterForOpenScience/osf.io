@@ -22,7 +22,7 @@
             <div class="col-sm-9">
                 <select id="source-select"
                         class="form-control"
-                        name="storage_name"
+                        name="storage_id"
                         style="max-width: 320px;">
                     {% for storage in source_storages %}
                         {% if storage.id == selected_source_id %}
@@ -39,7 +39,7 @@
             <div class="col-sm-9" style="display: flex; gap: 10px;">
                 <select id="location-select"
                         class="form-control"
-                        name="location_export_name"
+                        name="location_id"
                         style="max-width: 320px; flex: auto">
                     {% for location in locations %}
                         <option value="{{ location.id }}"
@@ -208,7 +208,7 @@
                 let selected_source = $('#source-select').val();
                 let selected_location = $('#location-select').val();
                 if (selected_source.length > 1 && selected_location.length > 1) {
-                    $('#exportdata_form').attr('action', `/custom_storage_location/export_data/deleted/?storage_name=${selected_source}&location_export_name=${selected_location}`);
+                    $('#exportdata_form').attr('action', `/custom_storage_location/export_data/deleted/?storage_id=${selected_source}&location_id=${selected_location}`);
                 } else {
                     $('#exportdata_form').attr('action', '/custom_storage_location/export_data/deleted');
                 }

@@ -106,12 +106,12 @@ class ExportDataListView(ExportBaseView):
         self.load_institution()
 
         locations = self.institution.get_allowed_storage_location()
-        selected_location_id = request.GET.get('location_export_name')
+        selected_location_id = request.GET.get('location_id')
         if not selected_location_id and locations.exists():
             selected_location_id = locations.first().id
 
         source_storages = self.institution.get_institutional_storage()
-        selected_source_id = self.kwargs.get('storage_id', request.GET.get('storage_name'))
+        selected_source_id = self.kwargs.get('storage_id', request.GET.get('storage_id'))
         if not selected_source_id and source_storages.exists():
             selected_source_id = source_storages.first().id
 
@@ -122,9 +122,9 @@ class ExportDataListView(ExportBaseView):
             'institution': self.institution,
             'list_export_data': query_set,
             'locations': locations,
-            'selected_location_id': selected_location_id,
+            'selected_location_id': int(selected_location_id),
             'source_storages': source_storages,
-            'selected_source_id': selected_source_id,
+            'selected_source_id': int(selected_source_id),
             'source_id': query_set[0]['source_id'] if len(query_set) > 0 else 0,
             'page': page,
         }
@@ -138,12 +138,12 @@ class ExportDataDeletedListView(ExportBaseView):
         self.load_institution()
 
         locations = self.institution.get_allowed_storage_location()
-        selected_location_id = request.GET.get('location_export_name')
+        selected_location_id = request.GET.get('location_id')
         if not selected_location_id and locations.exists():
             selected_location_id = locations.first().id
 
         source_storages = self.institution.get_institutional_storage()
-        selected_source_id = self.kwargs.get('storage_id', request.GET.get('storage_name'))
+        selected_source_id = self.kwargs.get('storage_id', request.GET.get('storage_id'))
         if not selected_source_id and source_storages.exists():
             selected_source_id = source_storages.first().id
 
@@ -154,9 +154,9 @@ class ExportDataDeletedListView(ExportBaseView):
             'institution': self.institution,
             'list_export_data': query_set,
             'locations': locations,
-            'selected_location_id': selected_location_id,
+            'selected_location_id': int(selected_location_id),
             'source_storages': source_storages,
-            'selected_source_id': selected_source_id,
+            'selected_source_id': int(selected_source_id),
             'source_id': query_set[0]['source_id'] if len(query_set) > 0 else 0,
             'page': page,
         }
@@ -187,6 +187,9 @@ class ExportDataInformationView(ExportStorageLocationViewBaseView, DetailView, L
         pid = '28zuw'
         provider_name = 'osfstorage'
         export_data = self.get_object()
+        logger.info('get_context_data')
+        res = export_data.create_export_data_folder(self.request.COOKIES, **kwargs)
+        logger.info(res)
         process_start = export_data.get_file_info_filename(user_institution_guid)
         user_institution_name = Institution.objects.get(_id=user_institution_guid).name
         list_file_info, status_code = get_list_file_info(pid, provider_name, '/', self.request.COOKIES, process_start)
