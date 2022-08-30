@@ -470,7 +470,8 @@ def check_any_running_restore_process(destination_id):
         Q(status=ExportData.STATUS_STOPPED) | Q(status=ExportData.STATUS_COMPLETED)).exists()
 
 
-def validate_file_json(file_data, serializer):
+def validate_file_json_old(file_data, serializer):
+    # TODO: Remove function after create export data schema file in admin/base/schemas
     try:
         json_data = json.loads(file_data)
     except Exception as e:
@@ -483,21 +484,106 @@ def validate_file_json(file_data, serializer):
     return True
 
 
-def get_file_data(node_id, provider, file_path, cookies, internal=True, base_url=WATERBUTLER_URL, get_file_info=False):
-    file_url = waterbutler_api_url_for(node_id, provider, path=file_path, _internal=internal,
+def validate_file_json(file_data, json_schema_file_name):
+    try:
+        schema = from_json(json_schema_file_name)
+        jsonschema.validate(file_data, schema)
+    except jsonschema.ValidationError as e:
+        logger.error(f"For '{e.path[-1]}' the field value {e.message}")
+        return False
+    except jsonschema.SchemaError as e:
+        return False
+    return True
+
+
+def get_file_data(node_id, provider, file_path, cookies, internal=True, base_url=WATERBUTLER_URL, get_file_info=False, version=None):
+    file_url = waterbutler_api_url_for(node_id, provider, path=file_path, _internal=internal, version=version,
                                        base_url=base_url, meta="" if get_file_info else None)
     return requests.get(file_url,
                         headers={'content-type': 'application/json'},
                         cookies=cookies)
 
 
-def upload_file(node_id, provider, file_path, file_data, new_file_path, cookies, internal=True, base_url=WATERBUTLER_URL):
-    upload_url = waterbutler_api_url_for(node_id, provider, path=file_path, kind="file", name=new_file_path,
+def create_folder(node_id, provider, parent_path, folder_name, cookies, internal=True, base_url=WATERBUTLER_URL):
+    upload_url = waterbutler_api_url_for(node_id, provider, path=parent_path, kind="folder", name=folder_name,
                                          _internal=internal, base_url=base_url)
-    return requests.put(upload_url,
-                        headers={'content-type': 'application/json'},
-                        cookies=cookies,
-                        data=file_data)
+    try:
+        response = requests.put(upload_url,
+                                headers={'content-type': 'application/json'},
+                                cookies=cookies)
+        return response.json() if response.status_code == 201 else None, response.status_code
+    except Exception as e:
+        return None, None
+
+
+def upload_file(node_id, provider, file_parent_path, file_data, file_name, cookies, internal=True, base_url=WATERBUTLER_URL):
+    upload_url = waterbutler_api_url_for(node_id, provider, path=file_parent_path, kind="file", name=file_name,
+                                         _internal=internal, base_url=base_url)
+    try:
+        response = requests.put(upload_url,
+                                headers={'content-type': 'application/json'},
+                                cookies=cookies,
+                                data=file_data)
+        return response.json() if response.status_code == 201 else None, response.status_code
+    except Exception as e:
+        return None, None
+
+
+def update_existing_file(node_id, provider, file_parent_path, file_data, file_name, cookies, internal=True, base_url=WATERBUTLER_URL):
+    upload_url = waterbutler_api_url_for(node_id, provider, path=f"{file_parent_path}{file_name}", kind="file",
+                                         _internal=internal, base_url=base_url)
+    try:
+        response = requests.put(upload_url,
+                                headers={'content-type': 'application/json'},
+                                cookies=cookies,
+                                data=file_data)
+        return response.json() if response.status_code == 200 else None, response.status_code
+    except Exception as e:
+        return None, None
+
+
+def upload_file_path(node_id, provider, file_path, file_data, cookies, internal=True, base_url=WATERBUTLER_URL):
+    if not file_path.startswith("/") or file_path.endswith("/"):
+        # Invalid file path, return immediately
+        return None
+
+    paths = file_path.split("/")[1:]
+    created_folder_path = "/"
+    for index, path in enumerate(paths):
+        if index < len(paths) - 1:
+            # Subpath is folder, try to create new folder
+            response_body, status_code = create_folder(node_id, provider, created_folder_path, path, cookies, internal,
+                                                       base_url)
+            if response_body is not None:
+                created_folder_path = response_body["data"]["attributes"]["path"]
+            elif status_code == 409:
+                # Folder already exists, get folder possibly encrypted path
+                try:
+                    response = get_file_data(node_id, provider, created_folder_path,
+                                             cookies, internal, base_url, get_file_info=True)
+                    if response.status_code != 200:
+                        return None
+                    response_body = response.json()
+                    existing_path_info = next((item for item in response_body["data"] if
+                                               item["attributes"]["materialized"] == f"{created_folder_path}{path}/"),
+                                              None)
+                    if existing_path_info is None:
+                        return None
+                    created_folder_path = existing_path_info["attributes"]["path"]
+                except Exception as e:
+                    return None
+            else:
+                return None
+        else:
+            # Subpath is file, try to create new file
+            response_body, status_code = upload_file(node_id, provider, created_folder_path, file_data, path, cookies,
+                                                     internal, base_url)
+            if status_code == 409:
+                update_response_body, update_status_code = update_existing_file(node_id, provider, created_folder_path,
+                                                                                file_data, path, cookies,
+                                                                                internal, base_url)
+                return update_response_body
+            return response_body
 
 
 def move_file(node_id, provider, source_file_path, destination_file_path, cookies, internal=True, base_url=WATERBUTLER_URL):

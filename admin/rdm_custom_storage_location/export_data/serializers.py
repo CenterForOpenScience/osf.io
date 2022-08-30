@@ -23,8 +23,3 @@ class ExportDataSerializer(serializers.Serializer):
     files_numb = serializers.IntegerField(required=True, min_value=0)
     size = serializers.IntegerField(required=True, min_value=0)
     file_path = serializers.CharField(required=True)
-
-
-class FileInfoSerializer(serializers.Serializer):
-    institution = InstitutionSerializer()
-    # TODO: complete fields
