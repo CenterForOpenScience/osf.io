@@ -12,7 +12,8 @@ logger = logging.getLogger(__name__)
 
 
 @app.task(name='osf.management.commands.sync_doi_metadata', max_retries=5, default_retry_delay=60)
-def sync_identifier_doi(identifier):
+def sync_identifier_doi(identifier_id):
+    identifier = Identifier.objects.get(id=identifier_id)
     identifier.referent.request_identifier_update('doi')
     identifier.save()
     logger.info(f' doi update for {identifier.value} complete')
@@ -32,7 +33,7 @@ def sync_doi_metadata(modified_date, batch_size=100, dry_run=True, sync_private=
     for identifier in identifiers:
         if not dry_run:
             if (identifier.referent.is_public and not identifier.referent.deleted and not identifier.referent.is_retracted) or sync_private:
-                sync_identifier_doi.apply_async(kwargs={'identifier': identifier})
+                sync_identifier_doi.apply_async(kwargs={'identifier_id': identifier.id})
 
         logger.info(f'{"[DRY RUN]: " if dry_run else ""}'
                     f' doi minting for {identifier.value} started')
