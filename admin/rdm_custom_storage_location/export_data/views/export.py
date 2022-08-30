@@ -16,8 +16,10 @@ from addons.osfstorage.models import Region
 from admin.rdm_custom_storage_location import tasks
 from osf.models import Institution, ExportDataLocation
 from osf.models.export_data import *
+from website import settings as web_settings
 from website.util import inspect_info
 from .location import ExportStorageLocationViewBaseView
+from ..utils import write_json_file
 
 logger = logging.getLogger(__name__)
 
@@ -91,47 +93,48 @@ class ExportDataActionView(ExportDataBaseActionView):
         }, status=status.HTTP_200_OK)
 
 
-def extract_data():
-    logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
-
-
-def extract_file_information():
-    logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
-
-
 def export_data_process(cookies, export_data_id, **kwargs):
-    # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+    logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
     # get corresponding export data record
     export_data_set = ExportData.objects.filter(pk=export_data_id)
     export_data = export_data_set.first()
     assert export_data
-
-    # Todo
-    extract_data()
-    extract_file_information()
-    from website.settings import ROOT
-    file_path = os.path.join(ROOT, 'addons.json')
 
     # create folder
     response = export_data.create_export_data_folder(cookies, **kwargs)
     if response.status_code != 201:
         return export_data_rollback_process(cookies, export_data_id, **kwargs)
 
-    # create export data file
-    response = export_data.upload_export_data_file(cookies, file_path, **kwargs)
-    if response.status_code != 201:
-        return export_data_rollback_process(cookies, export_data_id, **kwargs)
+    export_data_json, file_info_json = export_data.extract_file_information_json_from_source_storage()
 
     # create files' information file
+    file_path = os.path.join(web_settings.ROOT, 'admin', '_' + export_data.export_data_folder_name + '.json')
+    write_json_file(file_info_json, file_path)
     response = export_data.upload_file_info_file(cookies, file_path, **kwargs)
     if response.status_code != 201:
         return export_data_rollback_process(cookies, export_data_id, **kwargs)
 
+    process_end = timezone.make_naive(timezone.now(), timezone.utc)
+
+    # create export data file
+    export_data_json['export_end'] = process_end.strftime('%Y-%m-%d %H:%M:%S')
+    file_path = os.path.join(web_settings.ROOT, 'admin', '_' + export_data.export_data_folder_name + '.json')
+    write_json_file(export_data_json, file_path)
+    response = export_data.upload_export_data_file(cookies, file_path, **kwargs)
+    if response.status_code != 201:
+        return export_data_rollback_process(cookies, export_data_id, **kwargs)
+
+    if os.path.exists(file_path):
+        os.remove(file_path)
+
     # complete process
     export_data_set.update(
         status=ExportData.STATUS_COMPLETED,
-        process_end=timezone.make_naive(timezone.now(), timezone.utc),
+        process_end=process_end,
         export_file=export_data.get_export_data_file_path(),
+        project_number=export_data_json.get('projects_numb', 0),
+        file_number=export_data_json.get('files_numb', 0),
+        total_size=export_data_json.get('size', 0),
     )
 
 

@@ -51,7 +51,43 @@ __all__ = [
     'get_files_from_waterbutler',
     'validate_export_data',
     'get_file_info_json',
+    'write_json_file',
+    'read_json_file',
 ]
+
+
+def read_json_file(file_path):
+    """Read json from a file
+
+    Args:
+        file_path: the full path of json file
+
+    Returns:
+        json data
+    """
+    with open(file_path, "r", encoding='utf-8') as read_file:
+        try:
+            input_data = json.load(read_file)
+            return input_data
+        except Exception as exc:
+            raise Exception(f"Cannot read json file. Exception: {str(exc)}")
+
+
+def write_json_file(json_data, output_file):
+    """Write json data to a file
+
+    Args:
+        json_data: data in json or dictionary
+        output_file: the full path of output file
+
+    Raises:
+        Exception - Exception when writing the file
+    """
+    with open(output_file, "w", encoding='utf-8') as write_file:
+        try:
+            json.dump(json_data, write_file, ensure_ascii=False, indent=2, sort_keys=False)
+        except Exception as exc:
+            raise Exception(f"Cannot write json file. Exception: {str(exc)}")
 
 
 def update_storage_location(institution_guid, storage_name, wb_credentials, wb_settings):

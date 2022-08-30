@@ -8,8 +8,15 @@ from django.db import models
 from django.db.models import DateTimeField
 
 from addons.osfstorage.models import Region
-from osf.models import base, ExportDataLocation
 from api.base.utils import waterbutler_api_url_for
+from osf.models import (
+    base,
+    ExportDataLocation,
+    Institution,
+    BaseFileNode,
+    BaseFileVersionsThrough,
+    RdmFileTimestamptokenVerifyResult
+)
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +83,10 @@ class ExportData(base.BaseModel):
 
     @property
     def process_start_timestamp(self):
+        return self.process_start.strftime('%s')
+
+    @property
+    def process_start_display(self):
         return self.process_start.strftime('%Y%m%dT%H%M%S')
 
     @property
@@ -86,7 +97,137 @@ class ExportData(base.BaseModel):
     def export_data_folder_path(self):
         return f'/export_{self.source.id}_{self.process_start_timestamp}/'
 
+    def extract_file_information_json_from_source_storage(self):
+        # Get region guid == institution guid
+        source_storage_guid = self.source.guid
+        # logger.debug(f'source storage: {self.source}')
+
+        # Get Institution by guid
+        institution = Institution.load(source_storage_guid)
+
+        if not institution:
+            return None
+
+        institution_json = {
+            'institution_id': institution.id,
+            'institution_guid': institution.guid,
+            'institution_name': institution.name,
+        }
+
+        export_data_json = {
+            'institution': institution_json,
+            'export_start': self.process_start.strftime('%Y-%m-%d %H:%M:%S'),
+            'export_end': self.process_end.strftime('%Y-%m-%d %H:%M:%S') if self.process_end else None,
+            'storage': {
+                'name': self.source.name,
+                'type': self.source.provider_full_name,
+            },
+            'projects_numb': self.project_number,
+            'files_numb': self.file_number,
+            'size': self.total_size,
+            'file_path': self.get_file_info_file_path(),
+        }
+
+        file_info_json = {
+            'institution': institution_json,
+        }
+
+        # get list FileVersion linked to source storage
+        file_versions = self.source.fileversion_set.all()
+        # file_versions__ids = file_versions.values_list('id', flat=True)
+        # logger.debug(f'file_versions: {file_versions.count()} {file_versions__ids}')
+        export_data_json['files_numb'] = file_versions.count()
+
+        # get list_basefilenode_id by file_versions__ids above via the BaseFileVersionsThrough model
+        base_file_versions_set = BaseFileVersionsThrough.objects.filter(fileversion__in=file_versions)
+        base_file_nodes__ids = base_file_versions_set.values_list('basefilenode_id', flat=True).distinct('basefilenode_id')
+
+        # get project list
+        projects = institution.nodes.filter(category='project')
+        projects__ids = projects.values_list('id', flat=True)
+        # logger.debug(f'projects: {projects.count()} {projects}')
+        source_project_ids = set()
+
+        # get basefilenode
+        base_file_nodes = BaseFileNode.objects.filter(
+            id__in=base_file_nodes__ids,
+            target_object_id__in=projects__ids,
+            deleted=None)
+        # logger.debug(f'base_file_nodes: {base_file_nodes.count()} {base_file_nodes}')
+
+        total_size = 0
+        files = []
+        # get file information
+        for file in base_file_nodes:
+            file_info = {
+                'id': file.id,
+                'path': file.path,
+                'materialized_path': file.materialized_path,
+                'name': file.name,
+                'created_at': file.created.strftime('%Y-%m-%d %H:%M:%S'),
+                'modified_at': file.modified.strftime('%Y-%m-%d %H:%M:%S'),
+                'project': {},
+                'tags': [],
+                'version': [],
+                'size': 0,
+                'location': {},
+                'timestamp': {},
+            }
+
+            # project
+            project = file.target
+            source_project_ids.add(project.id)
+            project_info = {
+                'id': project._id,
+                'name': project.title,
+            }
+            file_info['project_info'] = project_info
+
+            # file's tags
+            if not file._state.adding:
+                tags = list(file.tags.filter(system=False).values_list('name', flat=True))
+                file_info['tags'] = tags
+
+            # timestamp by project_id and file_id
+            timestamp = RdmFileTimestamptokenVerifyResult.objects.filter(
+                project_id=file.target.id, file_id=file.id).first()
+            if timestamp:
+                timestamp_info = {
+                    'timestamp_token': timestamp.timestamp_token,
+                    'verify_user': timestamp.verify_user,
+                    'verify_date': timestamp.verify_date,
+                    'updated_at': timestamp.verify_file_created_at,
+                }
+                file_info['timestamp'] = timestamp_info
+
+            file_versions = file.versions.order_by('-created')
+            file_versions_info = []
+            for version in file_versions:
+                file_version_thru = version.get_basefilenode_version(file)
+                version_info = {
+                    'identifier': version.identifier,
+                    'created_at': version.created.strftime('%Y-%m-%d %H:%M:%S'),
+                    'size': version.size,
+                    'version_name': file_version_thru.version_name if file_version_thru else file.name,
+                    'contributor': version.creator.username,
+                    'metadata': version.metadata,
+                    'location': version.location,
+                }
+                file_versions_info.append(version_info)
+                total_size += version.size
+
+            file_info['version'] = file_versions_info
+            file_info['size'] = file_versions_info[-1]['size']
+            file_info['location'] = file_versions_info[-1]['location']
+            files.append(file_info)
+        file_info_json['files'] = files
+        export_data_json['size'] = total_size
+        export_data_json['projects_numb'] = len(source_project_ids)
+
+        return export_data_json, file_info_json
+
     def create_export_data_folder(self, cookies, **kwargs):
+        """Create export_{source.id}_{process_start_timestamp} folder on the storage location"""
         node_id = 'export_location'
         provider = self.location.provider_name
         path = '/'
@@ -100,6 +241,7 @@ class ExportData(base.BaseModel):
         return requests.put(url, cookies=cookies)
 
     def delete_export_data_folder(self, cookies, **kwargs):
+        """Delete export_{source.id}_{process_start_timestamp} folder and sub-files on the storage location"""
         node_id = 'export_location'
         provider = self.location.provider_name
         path = self.export_data_folder_path
@@ -126,7 +268,14 @@ class ExportData(base.BaseModel):
             institution_guid = self.source.guid
         return f'file_info_{institution_guid}_{self.process_start_timestamp}.json'
 
+    def get_file_info_file_path(self, institution_guid=None):
+        if not institution_guid:
+            institution_guid = self.source.guid
+        return os.path.join(self.export_data_folder_name, self.get_file_info_filename(institution_guid))
+
     def upload_export_data_file(self, cookies, file_path, **kwargs):
+        """Upload export_{source.id}_{process_start_timestamp}/export_data_{institution_guid}_{process_start_timestamp}.json file
+           to the storage location"""
         node_id = 'export_location'
         provider = self.location.provider_name
         path = self.export_data_folder_path
@@ -142,11 +291,15 @@ class ExportData(base.BaseModel):
             return requests.put(url, data=fp, cookies=cookies)
 
     def upload_file_info_file(self, cookies, file_path, **kwargs):
+        """Upload export_{source.id}_{process_start_timestamp}/file_info_{institution_guid}_{process_start_timestamp}.json file
+           to the storage location"""
         file_name = self.get_file_info_filename(self.location.institution_guid)
         kwargs.setdefault('file_name', file_name)
         return self.upload_export_data_file(cookies, file_path, **kwargs)
 
     def read_file_info(self, cookies, **kwargs):
+        """Get content of export_{source.id}_{process_start_timestamp}/file_info_{institution_guid}_{process_start_timestamp}.json file
+           from the storage location"""
         node_id = 'export_location'
         provider = self.location.provider_name
         filename_info = self.get_file_info_filename(self.location.institution_guid)
@@ -159,6 +312,8 @@ class ExportData(base.BaseModel):
         return requests.get(url, cookies=cookies, stream=True)
 
     def delete_file_export(self, cookies, **kwargs):
+        """Delete content of export_{source.id}_{process_start_timestamp}/file_info_{institution_guid}_{process_start_timestamp}.json file
+           from the storage location"""
         node_id = 'export_location'
         provider = self.location.provider_name
         filename_info = self.get_file_info_filename(self.location.institution_guid)
