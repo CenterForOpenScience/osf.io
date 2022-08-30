@@ -26,7 +26,7 @@ class NewUserDomainReporter(DailyReporter):
                 domain_name=domain_name,
                 new_user_count=count,
             )
-            for domain_name, count in domain_names
+            for domain_name, count in domain_names.items()
         ]
 
     def keen_events_from_report(self, report):

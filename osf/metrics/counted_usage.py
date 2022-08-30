@@ -69,7 +69,7 @@ def autofill_fields(sender, instance, **kwargs):
     pageview = getattr(instance, 'pageview_info', None)
     if pageview:
         pageview.hour_of_day = instance.timestamp.hour
-        pageview.page_path = urlsplit(pageview.page_url).path
+        pageview.page_path = urlsplit(pageview.page_url).path.rstrip('/')
         referer = getattr(pageview, 'referer_url', None)
         if referer:
             pageview.referer_domain = urlsplit(referer).netloc
