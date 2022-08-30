@@ -3,7 +3,7 @@ import csv
 import datetime
 import logging
 
-from django.http import HttpResponse, Http404
+from django.http import HttpResponse, Http404, JsonResponse
 from django.shortcuts import render, redirect
 from django.views import View
 from django.views.generic import ListView, DetailView
@@ -13,6 +13,7 @@ from admin.rdm.utils import RdmPermissionMixin
 from admin.rdm_custom_storage_location.export_data.utils import (
     process_data_infomation,
     validate_export_data,
+    get_file_info_json,
 )
 from osf.models import ExportData, Institution, ExportDataLocation
 from .location import ExportStorageLocationViewBaseView
@@ -270,3 +271,27 @@ class ExportDataFileCSVView(RdmPermissionMixin, View):
                  file['version']['identifier'], file['version']['size']])
         CURRENT_DATA_INFORMATION = []
         return response
+
+
+class CheckExportData(RdmPermissionMixin, View):
+
+    def get(self, request, data_id):
+        logger.info(data_id)
+        export_data = ExportData.objects.filter(id=data_id).first()
+        if export_data.status != 'Completed':
+            return JsonResponse({'message': 'Cannot check in this time. The process is {}'.format(export_data.status)}, status=400)
+        # export_data.status = 'Checking'
+        # export_data.last_check = datetime.datetime.now()
+        response = export_data.read_file_info(request.COOKIES)
+        status_code = response.status_code
+        if status_code != 200:
+            return JsonResponse({'message': 'Cannot connect to the export data storage location.'}, status=400)
+        list_file_info = response.json()
+        check = validate_export_data(list_file_info)
+        if not check:
+            return JsonResponse({'message': 'The export data files are corrupted.'}, status=400)
+        data_from_source = get_file_info_json(export_data.source.id)
+        # logger.info(list_file_info)
+        # logger.info(data_from_source)
+        # export_data.status = 'Completed'
+        return JsonResponse({'NG': 10, 'OK': 20, 'Total': 30}, status=200)

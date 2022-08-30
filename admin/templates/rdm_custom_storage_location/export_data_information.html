@@ -21,7 +21,7 @@
             </button>
         {% else %}
             <button type="button" class="btn btn-primary"
-                    data-target="#checkExportData" data-toggle="modal"
+                    id="checkExportData" data-toggle="modal"
                     style="min-width:120px;">Check export data
             </button>
             <a href="{% url 'custom_storage_location:export_data:export_data_output_csv' %}">
@@ -174,21 +174,21 @@
             </div>
         </div>
     {% else %}
-        <div class="modal middle fade" id="revert" tabindex="-1" aria-labelledby="revertLabel" aria-hidden="true">
+        <div class="modal middle fade" id="checkExportDataModal" tabindex="-1" aria-labelledby="revertLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <!--<div class="modal-header">-->
                     <!--    <h4 class="modal-title" id="checkExportDataLabel">The result of checking export data</h4>-->
                     <!--</div>-->
                     <div class="modal-body text-left">
-                        <p>
+                        <p class="text-check-export-data">
                             The result of checking export data<br/>
                             OK: 4/4 files<br/>
                             NG: 0/4 files
                         </p>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal" id="cancleExportDataModal">Cancel</button>
                     </div>
                 </div>
             </div>
@@ -298,6 +298,30 @@
             });
             $('.cancel_modal').on('click', () => {
                 $('#input_export_data').remove();
+            });
+            $('#checkExportData').on('click', () => {
+                let url = '../' + '{{data_information.id}}/' + 'check_export_data' + '/';
+                $('#checkExportData').prop('disabled', true);
+                $.ajax({
+                    url: url,
+                    type: 'GET',
+                    contentType: 'application/json; charset=utf-8',
+                    success: function (data) {
+                        let data_res = data;
+                        $('#checkExportDataModal').modal('show');
+                        let text_check = `The result of checking export data<br/>
+                            OK: ${data_res.OK}/${data.Total} files<br/>
+                            NG: ${data_res.NG}/${data.Total} files`;
+                        $('.text-check-export-data').html(text_check);
+                    },
+                    error: function (jqXHR) {
+                        $('#checkExportData').prop('disabled', false);
+                        alert(jqXHR.responseJSON.message);
+                    }
+                });
+            });
+            $('#cancleExportDataModal').on('click', () => {
+                 $('#checkExportData').prop('disabled', false);
             });
         });
     </script>

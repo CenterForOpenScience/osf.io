@@ -50,6 +50,7 @@ __all__ = [
     'process_data_infomation',
     'get_files_from_waterbutler',
     'validate_export_data',
+    'get_file_info_json',
 ]
 
 
