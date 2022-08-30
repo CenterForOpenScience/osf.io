@@ -5,7 +5,6 @@ import logging  # noqa
 
 import jsonschema
 import requests
-from django.db import connection
 from django.db.models import Q
 from rest_framework import status as http_status
 
@@ -36,8 +35,8 @@ from osf.models import (
     RdmFileTimestamptokenVerifyResult,
     Guid,
 )
-from website.util import inspect_info  # noqa
 from website.settings import WATERBUTLER_URL
+from website.util import inspect_info  # noqa
 
 logger = logging.getLogger(__name__)
 
@@ -49,9 +48,8 @@ __all__ = [
     'save_basic_storage_institutions_credentials_common',
     'save_nextcloudinstitutions_credentials',
     'process_data_infomation',
-    'get_list_file_info',
     'get_files_from_waterbutler',
-    'delete_file_export',
+    'validate_export_data',
 ]
 
 
@@ -259,35 +257,6 @@ def process_data_infomation(list_data):
     return list_data_version
 
 
-def get_list_file_detail(data, pid, provider, request_cookie, process_start):
-    data_json = None
-    status_code = 0
-    for file_info in data:
-        if file_info['attributes']['name'] == process_start:
-            try:
-                url = waterbutler_api_url_for(
-                    pid, provider, path=file_info['id'].replace(provider, ''), _internal=True
-                )
-                response = requests.get(
-                    url,
-                    cookies=request_cookie,
-                    stream=True,
-                )
-            except Exception:
-                return None, status_code
-            status_code = response.status_code
-            if status_code == 200:
-                data_json = response.json()
-            response.close()
-            break
-    try:
-        schema = from_json('export-data.json')
-        jsonschema.validate(data_json, schema)
-    except jsonschema.ValidationError:
-        return None, 555
-    return data_json, status_code
-
-
 def get_files_from_waterbutler(pid, provider, path, request_cookie):
     content = None
     response = None
@@ -307,31 +276,6 @@ def get_files_from_waterbutler(pid, provider, path, request_cookie):
         content = response.json()
     response.close()
     return content['data'], status_code
-
-
-def get_list_file_info(pid, provider, path, request_cookie, process_start=None):
-    content_data, status_code = get_files_from_waterbutler(pid, provider, path, request_cookie)
-    if status_code != 200:
-        return None, status_code
-    return get_list_file_detail(content_data, pid, provider, request_cookie, process_start)
-
-
-def delete_file_export(pid, provider, path, request_cookie):
-    status_code = 555
-    try:
-        url = waterbutler_api_url_for(
-            pid, provider, path='/{}'.format(path), _internal=True
-        )
-        response = requests.delete(
-            url,
-            headers={'content-type': 'application/json'},
-            cookies=request_cookie
-        )
-    except Exception:
-        return status_code
-    status_code = response.status_code
-    response.close()
-    return status_code
 
 
 def is_add_on_storage(waterbutler_settings):
@@ -538,3 +482,12 @@ def delete_file(node_id, provider, file_path, cookies, internal=True, base_url=W
     return requests.delete(destination_storage_backup_meta_api,
                            headers={'content-type': 'application/json'},
                            cookies=cookies)
+
+
+def validate_export_data(data_json):
+    try:
+        schema = from_json('export-data.json')
+        jsonschema.validate(data_json, schema)
+        return True
+    except jsonschema.ValidationError:
+        return False

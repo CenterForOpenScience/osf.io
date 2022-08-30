@@ -289,14 +289,12 @@
         var restore_task_id = null;
         $(document).ready(() => {
             $('#delete_button').on('click', () => {
-                let list_export_delete_id = '{{data_information.export_data.id}}' + '#';
+                let list_export_delete_id = '{{data_information.id}}' + '#';
                 $('#bodydeletemodal').append(`<input type='text' value=${list_export_delete_id} id='input_export_data' class='buckinput' name='list_id_export_data' style='display: none;' />`);
-                $('#bodydeletemodal').append(`<input type='text' value={{source_id}} id='source_id' class='buckinput' name='source_id' style='display: none;' />`);
             });
             $('#revert_button').on('click', () => {
-                let list_export_revert_id = '{{data_information.export_data.id}}' + '#';
+                let list_export_revert_id = '{{data_information.id}}' + '#';
                 $('#bodyrevertmodal').append(`<input type='text' value=${list_export_revert_id} id='input_export_data' class='buckinput' name='list_id_export_data' style='display: none;' />`);
-                $('#bodyrevertmodal').append(`<input type='text' value={{source_id}} id='source_id' class='buckinput' name='source_id' style='display: none;' />`);
             });
             $('.cancel_modal').on('click', () => {
                 $('#input_export_data').remove();

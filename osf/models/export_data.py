@@ -145,3 +145,27 @@ class ExportData(base.BaseModel):
         file_name = self.get_file_info_filename(self.location.institution_guid)
         kwargs.setdefault('file_name', file_name)
         return self.upload_export_data_file(cookies, file_path, **kwargs)
+
+    def read_file_info(self, cookies, **kwargs):
+        node_id = 'export_location'
+        provider = self.location.provider_name
+        filename_info = self.get_file_info_filename(self.location.institution_guid)
+        path = self.export_data_folder_path + filename_info
+        url = waterbutler_api_url_for(
+            node_id, provider, path=path,
+            _internal=True, location_id=self.location.id,
+            **kwargs
+        )
+        return requests.get(url, cookies=cookies, stream=True)
+
+    def delete_file_export(self, cookies, **kwargs):
+        node_id = 'export_location'
+        provider = self.location.provider_name
+        filename_info = self.get_file_info_filename(self.location.institution_guid)
+        path = self.export_data_folder_path + filename_info
+        url = waterbutler_api_url_for(
+            node_id, provider, path=path,
+            _internal=True, location_id=self.location.id,
+            **kwargs
+        )
+        return requests.delete(url, cookies=cookies)
