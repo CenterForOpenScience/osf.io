@@ -139,7 +139,7 @@ class TestComputedFields:
                 'action_labels': ['view', 'web'],
                 'pageview_info': {
                     'page_url': 'http://example.foo/bliz/',
-                    'page_path': '/bliz/',
+                    'page_path': '/bliz',
                     'referer_url': 'http://elsewhere.baz/index.php',
                     'referer_domain': 'elsewhere.baz',
                     'hour_of_day': 0,
