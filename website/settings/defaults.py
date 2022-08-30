@@ -427,6 +427,7 @@ class CeleryConfig:
         'osf.management.commands.addon_deleted_date',
         'osf.management.commands.migrate_registration_responses',
         'osf.management.commands.archive_registrations_on_IA'
+        'osf.management.commands.sync_doi_metadata',
         'osf.management.commands.sync_collection_provider_indices',
         'osf.management.commands.sync_datacite_doi_metadata',
         'osf.management.commands.update_institution_project_counts',
@@ -527,6 +528,7 @@ class CeleryConfig:
         'osf.management.commands.approve_pending_schema_responses',
         'osf.management.commands.delete_legacy_quickfiles_nodes',
         'osf.management.commands.fix_quickfiles_waterbutler_logs',
+        'osf.management.commands.sync_doi_metadata',
         'api.providers.tasks'
     )
 
