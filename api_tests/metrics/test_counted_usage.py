@@ -91,8 +91,8 @@ class TestComputedFields:
         assert resp.status_code == 201
         assert_saved_with(
             mock_save,
-            # doc_id: sha256(b'http://example.foo/|osf|zyxwv|5b7c8b0a740a5b23712258a9d1164d2af008df02a8e3d339f16ead1d19595b34|1981-01-01|3').hexdigest()
-            expected_doc_id='6fac366c096998fd23ae2ca654e8573cd4cb2e17b9691d45b22a381fa5f67c09',
+            # doc_id: sha256(b'http://example.foo/|osf|http://example.foo/blahblah/blee|5b7c8b0a740a5b23712258a9d1164d2af008df02a8e3d339f16ead1d19595b34|1981-01-01|3').hexdigest()
+            expected_doc_id='8a92beb12e160eb73cbe26fa4db91e231c1f051f5d262ff822a326cf4cd824b8',
             expected_attrs={
                 'platform_iri': 'http://example.foo/',
                 'provider_id': 'osf',
@@ -127,8 +127,8 @@ class TestComputedFields:
         assert resp.status_code == 201
         assert_saved_with(
             mock_save,
-            # doc_id: sha256(b'http://example.foo/|osf|zyxwv|5b7c8b0a740a5b23712258a9d1164d2af008df02a8e3d339f16ead1d19595b34|1981-01-01|3').hexdigest()
-            expected_doc_id='6fac366c096998fd23ae2ca654e8573cd4cb2e17b9691d45b22a381fa5f67c09',
+            # doc_id: sha256(b'http://example.foo/|osf|http://example.foo/bliz/|5b7c8b0a740a5b23712258a9d1164d2af008df02a8e3d339f16ead1d19595b34|1981-01-01|3').hexdigest()
+            expected_doc_id='7ed7936bba3be6a49c45680fd7be134cf8df7241c6b526c021d66f7134fcd728',
             expected_attrs={
                 'platform_iri': 'http://example.foo/',
                 'provider_id': 'osf',
@@ -164,8 +164,8 @@ class TestComputedFields:
         assert resp.status_code == 201
         assert_saved_with(
             mock_save,
-            # doc_id: sha256(b'http://example.foo/|osf|yxwvu|ec768abb16c3411570af99b9d635c2c32d1ca31d1b25eec8ee73759e7242e74a|1981-01-01|3').hexdigest()
-            expected_doc_id='da08c656cb1ef4198b986122803da3a1943ff64de01e34233a88e07f59d5b5ea',
+            # doc_id: sha256(b'http://example.foo/|osf|http://osf.io/mst3k|ec768abb16c3411570af99b9d635c2c32d1ca31d1b25eec8ee73759e7242e74a|1981-01-01|3').hexdigest()
+            expected_doc_id='f692855557be9f6be99f94339d925aede713ee1798d9692285bf9434e8639e43',
             expected_attrs={
                 'platform_iri': 'http://example.foo/',
                 'provider_id': 'osf',

@@ -73,10 +73,6 @@ class CountedUsageSerializer(ser.Serializer):
 
 class ReportNameSerializer(ser.BaseSerializer):
     def to_representation(self, instance):
-        latest_link = absolute_reverse(
-            'metrics:latest-report-detail',
-            kwargs={'report_name': instance},
-        )
         recent_link = absolute_reverse(
             'metrics:recent-report-list',
             kwargs={'report_name': instance},
@@ -85,7 +81,6 @@ class ReportNameSerializer(ser.BaseSerializer):
             'id': instance,
             'type': 'metrics-report-name',
             'links': {
-                'latest': latest_link,
                 'recent': recent_link,
             },
         }

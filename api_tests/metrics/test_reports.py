@@ -3,7 +3,7 @@ from unittest import mock
 import pytest
 
 expected_report_names = {
-    'addon_usage',
+    # 'addon_usage',
     'download_count',
     'institution_summary',
     'node_summary',
@@ -31,7 +31,6 @@ class TestMetricsReports:
                 'id': report_name,
                 'type': 'metrics-report-name',
                 'links': {
-                    'latest': f'http://here/_/metrics/reports/{report_name}/latest/',
                     'recent': f'http://here/_/metrics/reports/{report_name}/recent/',
                 },
             })
@@ -42,26 +41,6 @@ class TestMetricsReports:
             for datum in resp.json['data']
         }
         assert actual_data == expected_data
-
-    @pytest.mark.parametrize('report_name', expected_report_names)
-    def test_latest_report(self, app, mock_domain, mock_search, report_name):
-        mock_search.return_value = {
-            'hits': {
-                'hits': [
-                    {'_id': 'hi-by', '_source': {'report_date': '1234-12-12', 'hello': 'goodbye'}},
-                ],
-            },
-        }
-        resp = app.get(f'/_/metrics/reports/{report_name}/latest/')
-
-        assert resp.json == {'data': {
-            'id': 'hi-by',
-            'type': f'daily-report:{report_name}',
-            'attributes': {
-                'report_date': '1234-12-12',
-                'hello': 'goodbye',
-            },
-        }}
 
     @pytest.mark.parametrize('report_name', expected_report_names)
     def test_recent_reports(self, app, mock_domain, mock_search, report_name):

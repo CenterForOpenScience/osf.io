@@ -233,7 +233,7 @@ class RegistriesModerationMetricsView(GenericAPIView):
 
 
 VIEWABLE_REPORTS = {
-    'addon_usage': reports.AddonUsageReportV0,
+    # 'addon_usage': reports.AddonUsageReportV0,
     'download_count': reports.DownloadCountReportV0,
     'institution_summary': reports.InstitutionSummaryReportV0,
     'node_summary': reports.NodeSummaryReportV0,
@@ -261,56 +261,6 @@ class ReportNameList(JSONAPIBaseView):
         serializer = self.serializer_class(
             VIEWABLE_REPORTS.keys(),
             many=True,
-        )
-        return JsonResponse({'data': serializer.data})
-
-
-class LatestReportDetail(JSONAPIBaseView):
-    permission_classes = (
-        TokenHasScope,
-        drf_permissions.IsAuthenticatedOrReadOnly,
-    )
-
-    required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
-    required_write_scopes = [CoreScopes.NULL]
-
-    view_category = 'metrics'
-    view_name = 'latest-report-detail'
-
-    serializer_class = DailyReportSerializer
-
-    def get(self, request, *args, report_name):
-        try:
-            report_class = VIEWABLE_REPORTS[report_name]
-        except KeyError:
-            return JsonResponse(
-                {'errors': [{
-                    'title': 'unknown report name',
-                    'detail': f'unknown report: "{report_name}"',
-                }]},
-                status=404,
-            )
-
-        latest_search = (
-            report_class.search()
-            .sort('-report_date', '-timestamp')
-            [0]
-        )
-
-        search_response = latest_search.execute()
-        if not search_response.hits:
-            return JsonResponse(
-                {'errors': [{
-                    'title': 'no latest report found',
-                    'detail': f'no "{report_name}" reports found',
-                }]},
-                status=404,
-            )
-        latest_report = search_response.hits[0]
-
-        serializer = self.serializer_class(
-            latest_report,
-            context={'report_name': report_name},
         )
         return JsonResponse({'data': serializer.data})
 

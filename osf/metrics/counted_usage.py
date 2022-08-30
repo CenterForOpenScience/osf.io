@@ -86,10 +86,10 @@ def autofill_fields(sender, instance, **kwargs):
     time_in_seconds = (instance.timestamp - day_start).total_seconds()
     time_window = int(time_in_seconds / 30)
 
-    # handle pageviews that aren't associated with a guid
-    target_identifier = instance.item_guid
-    if target_identifier is None and pageview is not None:
+    if pageview is not None:
         target_identifier = pageview.page_url
+    else:
+        target_identifier = instance.item_guid
 
     # Set the document id to a hash of "unique together"
     # values to get "ON CONFLICT UPDATE" behavior -- if

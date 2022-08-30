@@ -16,11 +16,6 @@ urlpatterns = [
         name=views.ReportNameList.view_name,
     ),
     url(
-        r'^reports/(?P<report_name>[a-z0-9_]+)/latest/$',
-        views.LatestReportDetail.as_view(),
-        name=views.LatestReportDetail.view_name,
-    ),
-    url(
         r'^reports/(?P<report_name>[a-z0-9_]+)/recent/$',
         views.RecentReportList.as_view(),
         name=views.RecentReportList.view_name,
