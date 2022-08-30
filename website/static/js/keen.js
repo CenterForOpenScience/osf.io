@@ -139,6 +139,7 @@ var KeenTracker = (function() {
                     referer_url: document.referrer,
                     page_url: document.URL,
                     page_title: document.title,
+                    route_name: lodashGet(window, 'contextVars.analyticsMeta.pageMeta.routeName'),
                 },
             },
         };
@@ -146,10 +147,6 @@ var KeenTracker = (function() {
         $osf.ajaxJSON('POST', url.toString(), {
             isCors: true,
             data: {data},
-        }).done(function(response) {
-            console.debug('_logPageview: success, events were sent!', response);
-        }).fail(function(error) {
-            console.debug('_logPageview: error, plump fluff!', error);
         });
     }
 

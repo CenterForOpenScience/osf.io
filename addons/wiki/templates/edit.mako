@@ -401,6 +401,7 @@ ${parent.javascript_bottom()}
         }
     };
     window.contextVars.analyticsMeta = $.extend(true, {}, window.contextVars.analyticsMeta, {
+        itemGuid: ${node['id']},
         pageMeta: {
             title: 'Wiki: ' + ${wiki_name | sjson, n },
             public: true,
