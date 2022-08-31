@@ -32,12 +32,11 @@ class ExportDataRestoreView(RdmPermissionMixin, APIView):
     raise_exception = True
 
     def post(self, request, **kwargs):
-        source_id = request.POST.get('source_id')
         destination_id = request.POST.get('destination_id')
         export_id = self.kwargs.get('export_id')
         cookies = request.COOKIES
         is_from_confirm_dialog = request.POST.get('is_from_confirm_dialog', default=False)
-        if source_id is None or destination_id is None or export_id is None:
+        if destination_id is None or export_id is None:
             return Response({}, status=status.HTTP_400_BAD_REQUEST)
 
         if not is_from_confirm_dialog:
@@ -46,7 +45,7 @@ class ExportDataRestoreView(RdmPermissionMixin, APIView):
             if any_process_running:
                 return Response({"error_message": f"Cannot restore in this time."}, status=status.HTTP_400_BAD_REQUEST)
 
-            result = check_before_restore_export_data(cookies, export_id, source_id, destination_id)
+            result = check_before_restore_export_data(cookies, export_id, destination_id)
             if result["open_dialog"]:
                 # If open_dialog is True, return HTTP 200 with empty response
                 return Response({}, status=status.HTTP_200_OK)
@@ -65,7 +64,7 @@ class ExportDataRestoreView(RdmPermissionMixin, APIView):
                 export_data_restore = ExportDataRestore(export_id=export_id, destination_id=destination_id,
                                                         status=ExportData.STATUS_RUNNING)
                 export_data_restore.save()
-                process = tasks.run_restore_export_data_process.delay(cookies, export_id, source_id, destination_id,
+                process = tasks.run_restore_export_data_process.delay(cookies, export_id, destination_id,
                                                                       export_data_restore.pk)
                 return Response({'task_id': process.task_id}, status=status.HTTP_200_OK)
         else:
@@ -79,7 +78,7 @@ class ExportDataRestoreView(RdmPermissionMixin, APIView):
                                                     status=ExportData.STATUS_RUNNING)
             export_data_restore.save()
             # If user clicked 'Restore' button in confirm dialog, start restore data task and return task id
-            process = tasks.run_restore_export_data_process.delay(cookies, export_id, source_id, destination_id,
+            process = tasks.run_restore_export_data_process.delay(cookies, export_id, destination_id,
                                                                   export_data_restore.pk)
             return Response({'task_id': process.task_id}, status=status.HTTP_200_OK)
 
@@ -87,16 +86,15 @@ class ExportDataRestoreView(RdmPermissionMixin, APIView):
 @api_view(http_method_names=["POST"])
 def stop_export_data_restore(request, *args, **kwargs):
     task_id = request.POST.get('task_id')
-    source_id = request.POST.get('source_id')
     destination_id = request.POST.get('destination_id')
     export_id = kwargs.get('export_id')
     cookies = request.COOKIES
 
-    if source_id is None or destination_id is None or export_id is None or task_id is None:
+    if destination_id is None or export_id is None or task_id is None:
         return Response({}, status=status.HTTP_400_BAD_REQUEST)
 
     # Rollback restore data
-    rollback_restore(cookies, export_id, source_id, destination_id, task_id)
+    rollback_restore(cookies, export_id, destination_id, task_id)
     return Response({}, status=status.HTTP_200_OK)
 
 
@@ -117,7 +115,7 @@ class ExportDataRestoreTaskStatusView(RdmPermissionMixin, APIView):
         return Response(response, status=status.HTTP_200_OK)
 
 
-def check_before_restore_export_data(cookies, export_id, source_id, destination_id):
+def check_before_restore_export_data(cookies, export_id, destination_id):
     # Get export file (/export_{process_start}/export_data_{institution_guid}_{process_start}.json)
     export_data = ExportData.objects.filter(id=export_id, is_deleted=False)[0]
     export_base_url, export_settings, export_institution_guid = \
@@ -172,7 +170,7 @@ def check_before_restore_export_data(cookies, export_id, source_id, destination_
     return {'open_dialog': False}
 
 
-def restore_export_data_process(cookies, export_id, source_id, destination_id, export_data_restore_id):
+def restore_export_data_process(cookies, export_id, destination_id, export_data_restore_id):
     try:
         export_data_restore = ExportDataRestore.objects.get(id=export_data_restore_id)
 
@@ -305,7 +303,7 @@ def restore_export_data_process(cookies, export_id, source_id, destination_id, e
     return {}
 
 
-def rollback_restore(cookies, export_id, source_id, destination_id, task_id):
+def rollback_restore(cookies, export_id, destination_id, task_id):
     try:
         export_data_restore = ExportDataRestore.objects.get(task_id=task_id)
     except Exception as e:

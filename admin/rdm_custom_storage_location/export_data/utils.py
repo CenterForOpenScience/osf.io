@@ -615,6 +615,34 @@ def move_file(node_id, provider, source_file_path, destination_file_path, cookie
                          json=request_body)
 
 
+def get_all_file_paths(node_id, provider, file_path, cookies, internal=True, base_url=WATERBUTLER_URL):
+    try:
+        response = get_file_data(node_id, provider, file_path, cookies, internal=internal,
+                                 base_url=base_url, get_file_info=True)
+        if response.status_code != 200:
+            return []
+        response_body = response.json()
+        data = response_body["data"]
+        if len(data) != 0:
+            list_file_path = []
+            for item in data:
+                path = item["attributes"]["path"]
+                kind = item["attributes"]["kind"]
+                if kind == "file":
+                    list_file_path.append(path)
+                elif kind == "folder":
+                    # Call this function again
+                    sub_file_paths = get_all_file_paths(node_id, provider, path, cookies, internal, base_url)
+                    list_file_path.extend(sub_file_paths)
+                else:
+                    return []
+            return list_file_path
+        else:
+            return [file_path]
+    except Exception:
+        return []
+
+
 def delete_file(node_id, provider, file_path, cookies, internal=True, base_url=WATERBUTLER_URL):
     destination_storage_backup_meta_api = waterbutler_api_url_for(node_id, provider, path=file_path,
                                                                   _internal=internal, base_url=base_url)

@@ -1016,7 +1016,6 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
 
 $('#restore_button').on('click', () => {
     let data = {};
-    data["source_id"] = source_id;
     data["destination_id"] = $("#destination_storage").val();
     disableRestoreButton();
     $.ajax({
@@ -1110,7 +1109,6 @@ $("#cancel_restore_modal_button").on('click', () => {
 $("#start_restore_modal_button").on('click', () => {
     $("#restore").modal('hide');
     let data = {};
-    data["source_id"] = source_id;
     data["destination_id"] = $("#destination_storage").val();
     data["is_from_confirm_dialog"] = true;
     enableStopRestoreFunction();
