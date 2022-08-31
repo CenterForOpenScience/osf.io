@@ -496,7 +496,8 @@ def validate_file_json(file_data, json_schema_file_name):
     return True
 
 
-def get_file_data(node_id, provider, file_path, cookies, internal=True, base_url=WATERBUTLER_URL, get_file_info=False, version=None):
+def get_file_data(node_id, provider, file_path, cookies, internal=True, base_url=WATERBUTLER_URL,
+                  get_file_info=False, version=None):
     file_url = waterbutler_api_url_for(node_id, provider, path=file_path, _internal=internal, version=version,
                                        base_url=base_url, meta="" if get_file_info else None)
     return requests.get(file_url,
@@ -516,7 +517,8 @@ def create_folder(node_id, provider, parent_path, folder_name, cookies, internal
         return None, None
 
 
-def upload_file(node_id, provider, file_parent_path, file_data, file_name, cookies, internal=True, base_url=WATERBUTLER_URL):
+def upload_file(node_id, provider, file_parent_path, file_data, file_name, cookies,
+                internal=True, base_url=WATERBUTLER_URL):
     upload_url = waterbutler_api_url_for(node_id, provider, path=file_parent_path, kind="file", name=file_name,
                                          _internal=internal, base_url=base_url)
     try:
@@ -529,7 +531,8 @@ def upload_file(node_id, provider, file_parent_path, file_data, file_name, cooki
         return None, None
 
 
-def update_existing_file(node_id, provider, file_parent_path, file_data, file_name, cookies, internal=True, base_url=WATERBUTLER_URL):
+def update_existing_file(node_id, provider, file_parent_path, file_data, file_name, cookies,
+                         internal=True, base_url=WATERBUTLER_URL):
     upload_url = waterbutler_api_url_for(node_id, provider, path=f"{file_parent_path}{file_name}", kind="file",
                                          _internal=internal, base_url=base_url)
     try:
@@ -586,7 +589,27 @@ def upload_file_path(node_id, provider, file_path, file_data, cookies, internal=
             return response_body
 
 
-def move_file(node_id, provider, source_file_path, destination_file_path, cookies, internal=True, base_url=WATERBUTLER_URL):
+def download_then_upload_file(download_node_id, upload_node_id, download_provider, upload_provider, download_path, upload_path,
+                              cookies, download_base_url=WATERBUTLER_URL, upload_base_url=WATERBUTLER_URL, version=None):
+    # Download file by version
+    is_download_url_internal = download_base_url == WATERBUTLER_URL
+    response = get_file_data(download_node_id, download_provider, download_path,
+                             cookies, is_download_url_internal, download_base_url, version)
+    if response.status_code != 200:
+        return None
+    download_data = response.content
+
+    # Upload downloaded file to new storage
+    is_upload_url_internal = upload_base_url == WATERBUTLER_URL
+    response_body = upload_file_path(upload_node_id, upload_provider, upload_path,
+                                     download_data, cookies, is_upload_url_internal, upload_base_url)
+    if response_body is None:
+        return None
+    return response_body
+
+
+def move_file(node_id, provider, source_file_path, destination_file_path, cookies,
+              internal=True, base_url=WATERBUTLER_URL):
     move_old_data_url = waterbutler_api_url_for(node_id, provider, path=source_file_path, _internal=internal,
                                                 base_url=base_url)
     request_body = {

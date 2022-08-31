@@ -274,22 +274,15 @@ def restore_export_data_process(cookies, export_id, source_id, destination_id, e
                         else:
                             new_file_path = file_path if is_export_addon_storage else file_materialized_path
 
-                        # Download file from export data storage by version
-                        internal = export_base_url == WATERBUTLER_URL
-                        response = utils.get_file_data(NODE_ID, export_provider, file_materialized_path,
-                                                       cookies, internal, export_base_url, version)
-                        if response.status_code != 200:
-                            continue
-                        download_data = response.content
-
-                        # Upload downloaded file to destination storage
+                        # Download file from export data storage by version then upload that file to destination storage
                         destination_region = Region.objects.filter(id=destination_id)
                         destination_base_url, destination_settings = \
                             destination_region.values_list("waterbutler_url", "waterbutler_settings")[0]
                         destination_provider = destination_settings["storage"]["provider"]
-                        internal = destination_base_url == WATERBUTLER_URL
-                        response_body = utils.upload_file_path(file_node_id, destination_provider, new_file_path,
-                                                               download_data, cookies, internal, destination_base_url)
+                        response_body = utils.download_then_upload_file(NODE_ID, file_node_id, export_provider,
+                                                                        destination_provider, file_materialized_path,
+                                                                        new_file_path, cookies, export_base_url,
+                                                                        destination_base_url, version)
                         if response_body is None:
                             continue
 
