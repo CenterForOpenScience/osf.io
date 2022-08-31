@@ -36,10 +36,15 @@ COL_HEADERS = [
 ]
 
 logger = logging.getLogger(__name__)
-keen_client = KeenClient(
-    project_id=KEEN['public']['project_id'],
-    read_key=KEEN['public']['read_key']
-)
+
+keen_client = None
+keen_project = KEEN['public']['project_id'],
+keen_key = KEEN['public']['read_key']
+if keen_project and keen_key:
+    keen_client = KeenClient(
+        project_id=keen_project,
+        read_key=keen_key
+    )
 
 def bearer_token_auth(token):
     token_dict = {
