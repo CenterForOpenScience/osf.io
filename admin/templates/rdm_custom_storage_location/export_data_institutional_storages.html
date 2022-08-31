@@ -32,12 +32,13 @@
             <h3>{% trans "No results found" %}</h3>
         {% endif %}
         {% for storage in storages %}
-            <tr>
+            <tr id="row-storage-{{ storage.id }}">
                 <td>{{ storage.id }}</td>
                 <td>{{ storage.provider_full_name }}</td>
                 <td>{{ storage.name }}</td>
                 <td>
-                    <select id="location-select-{{ storage.id }}" class="form-control"
+                    <select id="location-select-{{ storage.id }}"
+                            class="form-control location-select"
                             title="" style="max-width: 320px;">
                         {% for location in locations %}
                             <option value="{{ location.id }}">{{ location.name }} ({{ location.provider_full_name }})</option>
@@ -64,9 +65,11 @@
                     {% endif %}
                 </td>
                 <td>
-                    {% if storage.has_export_data %}
-                        <button type="button" class="btn btn-primary">{% trans "View export data list" %}</button>
-                    {% endif %}
+                    <button type="button"
+                            data-storage="{{ storage.id }}"
+                            class="btn btn-primary {% if not storage.has_export_data %} hidden {% endif %}">
+                        {% trans "View export data list" %}
+                    </button>
                 </td>
             </tr>
         {% endfor %}
@@ -80,6 +83,7 @@
     <script>
         window.contextVars = $.extend(true, {}, window.contextVars, {
             'institution_id': {{ institution.id }},
+            'export_data_list_url': {% url 'custom_storage_location:export_data:export_data_list' %},
         });
     </script>
 {% endblock %}

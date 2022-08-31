@@ -16,7 +16,6 @@ from addons.osfstorage.models import Region
 from admin.rdm_custom_storage_location import tasks
 from osf.models import Institution, ExportDataLocation
 from osf.models.export_data import *
-from website import settings as web_settings
 from website.util import inspect_info
 from .location import ExportStorageLocationViewBaseView
 from ..utils import write_json_file
@@ -67,16 +66,12 @@ class ExportDataActionView(ExportDataBaseActionView):
             export_data = ExportData.objects.create(
                 source=source_storage,
                 location=location,
-                status=ExportData.STATUS_RUNNING,
+                status=ExportData.STATUS_ERROR,
             )
         except IntegrityError:
             return Response({'message': f'The equivalent process is running'}, status=status.HTTP_400_BAD_REQUEST)
 
-        export_data_folder_name = export_data.export_data_folder_name
-        export_data_filename = export_data.get_export_data_filename(institution.guid)
-        file_info_filename = export_data.get_file_info_filename(institution.guid)
-
-        # Todo create new task
+        # create new task
         cookies = request.COOKIES
         cookie = request.user.get_or_create_cookie().decode()
         task = tasks.run_export_data_process.delay(cookies, export_data.id, cookie=cookie)
@@ -87,9 +82,6 @@ class ExportDataActionView(ExportDataBaseActionView):
         return Response({
             'task_id': task_id,
             'task_state': task.state,
-            'export_data_folder_name': export_data_folder_name,
-            'export_data_filename': export_data_filename,
-            'file_info_filename': file_info_filename,
         }, status=status.HTTP_200_OK)
 
 
@@ -100,6 +92,9 @@ def export_data_process(cookies, export_data_id, **kwargs):
     export_data = export_data_set.first()
     assert export_data
 
+    export_data.status = ExportData.STATUS_RUNNING
+    export_data.save()
+
     # create folder
     response = export_data.create_export_data_folder(cookies, **kwargs)
     if response.status_code != 201:
@@ -108,7 +103,7 @@ def export_data_process(cookies, export_data_id, **kwargs):
     export_data_json, file_info_json = export_data.extract_file_information_json_from_source_storage()
 
     # create files' information file
-    file_path = os.path.join(web_settings.ROOT, 'admin', '_' + export_data.export_data_folder_name + '.json')
+    file_path = export_data.export_data_temp_file_path
     write_json_file(file_info_json, file_path)
     response = export_data.upload_file_info_file(cookies, file_path, **kwargs)
     if response.status_code != 201:
@@ -118,7 +113,6 @@ def export_data_process(cookies, export_data_id, **kwargs):
 
     # create export data file
     export_data_json['export_end'] = process_end.strftime('%Y-%m-%d %H:%M:%S')
-    file_path = os.path.join(web_settings.ROOT, 'admin', '_' + export_data.export_data_folder_name + '.json')
     write_json_file(export_data_json, file_path)
     response = export_data.upload_export_data_file(cookies, file_path, **kwargs)
     if response.status_code != 201:
@@ -127,15 +121,21 @@ def export_data_process(cookies, export_data_id, **kwargs):
     if os.path.exists(file_path):
         os.remove(file_path)
 
-    # complete process
-    export_data_set.update(
-        status=ExportData.STATUS_COMPLETED,
-        process_end=process_end,
-        export_file=export_data.get_export_data_file_path(),
-        project_number=export_data_json.get('projects_numb', 0),
-        file_number=export_data_json.get('files_numb', 0),
-        total_size=export_data_json.get('size', 0),
-    )
+    # re-check status to ensure that it is not in stopping process
+    export_data_set = ExportData.objects.filter(pk=export_data_id)
+    export_data = export_data_set.first()
+    assert export_data
+
+    if export_data.status == ExportData.STATUS_RUNNING:
+        # complete process
+        export_data_set.update(
+            status=ExportData.STATUS_COMPLETED,
+            process_end=process_end,
+            export_file=export_data.get_export_data_file_path(),
+            project_number=export_data_json.get('projects_numb', 0),
+            file_number=export_data_json.get('files_numb', 0),
+            total_size=export_data_json.get('size', 0),
+        )
 
 
 class StopExportDataActionView(ExportDataBaseActionView):
@@ -159,10 +159,6 @@ class StopExportDataActionView(ExportDataBaseActionView):
                 'message': f'Cannot stop this export process'
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        export_data_folder_name = export_data.export_data_folder_name
-        export_data_filename = export_data.get_export_data_filename(institution.guid)
-        file_info_filename = export_data.get_file_info_filename(institution.guid)
-
         # stop it
         export_data_set.update(
             status=ExportData.STATUS_STOPPING,
@@ -178,13 +174,13 @@ class StopExportDataActionView(ExportDataBaseActionView):
         cookie = request.user.get_or_create_cookie().decode()
         cookies = request.COOKIES
         task = tasks.run_export_data_rollback_process.delay(cookies, export_data.id, cookie=cookie)
+        task_id = task.task_id
+        export_data.task_id = task_id
+        export_data.save()
 
         return Response({
             'task_id': task_id,
             'task_state': task.state,
-            'export_data_folder_name': export_data_folder_name,
-            'export_data_filename': export_data_filename,
-            'file_info_filename': file_info_filename,
         }, status=status.HTTP_200_OK)
 
 
@@ -194,6 +190,10 @@ def export_data_rollback_process(cookies, export_data_id, **kwargs):
     export_data_set = ExportData.objects.filter(pk=export_data_id)
     export_data = export_data_set.first()
     assert export_data
+
+    file_path = export_data.export_data_temp_file_path
+    if os.path.exists(file_path):
+        os.remove(file_path)
 
     export_data_status = ExportData.STATUS_STOPPED
     # delete export data file
@@ -207,3 +207,25 @@ def export_data_rollback_process(cookies, export_data_id, **kwargs):
         process_end=timezone.make_naive(timezone.now(), timezone.utc),
         export_file=None,
     )
+
+
+class CheckStateExportDataActionView(ExportDataBaseActionView):
+
+    def post(self, request, **kwargs):
+        institution, source_storage, location = self.extract_input(request)
+        task_id = request.data.get('task_id')
+
+        # get corresponding export data record
+        export_data_set = ExportData.objects.filter(source=source_storage, location=location, task_id=task_id)
+        if not task_id or not export_data_set.exists():
+            return Response({'message': f'Permission denied for this export process'}, status=status.HTTP_400_BAD_REQUEST)
+
+        export_data = export_data_set.first()
+        task = AbortableAsyncResult(task_id)
+
+        return Response({
+            'task_id': task_id,
+            'task_state': task.state,
+            'result': task.result if isinstance(task.result, str) or isinstance(task.result, dict) else {},
+            'status': export_data.status,
+        }, status=status.HTTP_200_OK)

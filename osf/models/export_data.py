@@ -17,6 +17,7 @@ from osf.models import (
     BaseFileVersionsThrough,
     RdmFileTimestamptokenVerifyResult
 )
+from website import settings as web_settings
 
 logger = logging.getLogger(__name__)
 
@@ -90,6 +91,10 @@ class ExportData(base.BaseModel):
         return self.process_start.strftime('%Y%m%dT%H%M%S')
 
     @property
+    def export_data_temp_file_path(self):
+        return os.path.join(web_settings.ROOT, 'admin', '_' + self.export_data_folder_name + '.json')
+
+    @property
     def export_data_folder_name(self):
         return f'export_{self.source.id}_{self.process_start_timestamp}'
 
@@ -109,15 +114,15 @@ class ExportData(base.BaseModel):
             return None
 
         institution_json = {
-            'institution_id': institution.id,
-            'institution_guid': institution.guid,
-            'institution_name': institution.name,
+            'id': institution.id,
+            'guid': institution.guid,
+            'name': institution.name,
         }
 
         export_data_json = {
             'institution': institution_json,
-            'export_start': self.process_start.strftime('%Y-%m-%d %H:%M:%S'),
-            'export_end': self.process_end.strftime('%Y-%m-%d %H:%M:%S') if self.process_end else None,
+            'process_start': self.process_start.strftime('%Y-%m-%d %H:%M:%S'),
+            'process_end': self.process_end.strftime('%Y-%m-%d %H:%M:%S') if self.process_end else None,
             'storage': {
                 'name': self.source.name,
                 'type': self.source.provider_full_name,

@@ -4,20 +4,20 @@
     "institution": {
       "type": "object",
       "properties": {
-        "institution_id": {
+        "id": {
           "type": "integer"
         },
-        "institution_guid": {
+        "guid": {
           "type": "string"
         },
-        "institution_name": {
+        "name": {
           "type": "string"
         }
       },
       "required": [
-        "institution_id",
-        "institution_guid",
-        "institution_name"
+        "id",
+        "guid",
+        "name"
       ],
       "additionalProperties": false
     },

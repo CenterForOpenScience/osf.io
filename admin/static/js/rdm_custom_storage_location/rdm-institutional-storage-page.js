@@ -742,6 +742,8 @@ afterRequest.delete = {
     }
 }
 
+// Start - Storage location - Actions
+
 $('.delete-location').click(function () {
     let id = this.dataset.id;
     let providerShortName = this.dataset.provide;
@@ -773,6 +775,9 @@ function deleteLocation(id, providerShortName) {
         }
     });
 }
+
+
+// Start - Export data - Actions
 
 function exportState(element) {
     let $parent = $(element).parent();
@@ -817,6 +822,7 @@ function exportData(institution_id, source_id, location_id, element) {
     };
     let route = 'export';
     let url = '/custom_storage_location/export_data/' + route + '/';
+    let task_id;
     $.ajax({
         url: url,
         type: 'POST',
@@ -825,9 +831,9 @@ function exportData(institution_id, source_id, location_id, element) {
         custom: {'element': element},
         timeout: 120000,
         success: function (data) {
-            let task_id = data.task_id;
             let message;
             let messageType = 'success';
+            task_id = data.task_id;
 
             if (data.task_state === 'SUCCESS') {
                 // task_state in (SUCCESS, )
@@ -842,12 +848,21 @@ function exportData(institution_id, source_id, location_id, element) {
                 // task_state in (PENDING, STARTED, )
                 stopExportState(this.custom.element);
                 message = 'Export data in background';
+                window.contextVars.exportInBackground = true;
 
                 let $exportButton = $(this.custom.element);
                 let $stopExportButton = $exportButton.parent().find('.stop-export-button');
                 $stopExportButton.data('task_id', task_id);
             }
             $osf.growl('Export Data', _(message), messageType, 2);
+
+            if (window.contextVars.exportInBackground) {
+                // var x = 0;
+                window.contextVars.intervalID = window.setInterval(function () {
+                    checkStatusExportData(institution_id, source_id, location_id, task_id, element);
+                    // ++x === 5 && window.clearInterval(window.contextVars.intervalID);
+                }, 5000);
+            }
         },
         error: function (jqXHR) {
             exportState(this.custom.element);
@@ -874,6 +889,9 @@ $('.stop-export-button').click(function (event) {
 
 function stopExportData(institution_id, source_id, location_id, task_id, element) {
     // console.log(institution_id, source_id, location_id, task_id);
+    window.contextVars.exportInBackground && window.clearInterval(window.contextVars.intervalID);
+    window.contextVars.intervalID = undefined;
+    window.contextVars.exportInBackground = false;
     let params = {
         'institution_id': institution_id,
         'source_id': source_id,
@@ -892,9 +910,11 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
         success: function (data) {
             let message;
             let messageType = 'success';
+            task_id = data.task_id;
 
-            if (data.task_state === 'ABORTED') {
-                // task_state in (ABORTED)
+            if (data.task_state === 'SUCCESS') {
+                // task_state in (SUCCESS, )
+                // old task_state in (ABORTED, )
                 exportState(this.custom.element);
                 message = 'Stop exporting successfully';
             } else if (data.task_state === 'FAILURE') {
@@ -903,11 +923,19 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
                 message = 'Error occurred while stopping export data.';
                 messageType = 'danger';
             } else {
-                // task_state in (PENDING)
-                // stopExportState(this.custom.element);
+                // task_state in (PENDING, STARTED, )
                 message = 'Stop exporting in background';
+                window.contextVars.stopExportInBackground = true;
             }
             $osf.growl('Stop Export Data', _(message), messageType, 2);
+
+            if (window.contextVars.stopExportInBackground) {
+                // var x = 0;
+                window.contextVars.intervalID = window.setInterval(function () {
+                    checkStatusExportData(institution_id, source_id, location_id, task_id, element);
+                    // ++x === 5 && window.clearInterval(window.contextVars.intervalID);
+                }, 5000);
+            }
         },
         error: function (jqXHR) {
             stopExportState(this.custom.element);
@@ -928,16 +956,74 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
     });
 }
 
+function checkStatusExportData(institution_id, source_id, location_id, task_id, element) {
+    // console.log(institution_id, source_id, location_id, task_id);
+    console.log(window.contextVars.intervalID);
+    let params = {
+        'institution_id': institution_id,
+        'source_id': source_id,
+        'location_id': location_id,
+        'task_id': task_id,
+    };
+    let route = 'check-export';
+    let url = '/custom_storage_location/export_data/' + route + '/';
+    $.ajax({
+        url: url,
+        type: 'POST',
+        data: JSON.stringify(params),
+        contentType: 'application/json; charset=utf-8',
+        custom: {'element': element},
+        timeout: 120000,
+        success: function (data) {
+            let title = window.contextVars.stopExportInBackground ? 'Stop Export Data' : 'Export Data';
+            let message;
+            let messageType = 'success';
+
+            if (data.task_state === 'SUCCESS') {
+                // task_state in (SUCCESS, )
+                window.clearInterval(window.contextVars.intervalID);
+                window.contextVars.intervalID = undefined;
+
+                exportState(this.custom.element);
+                message = 'Export data successfully';
+                if (window.contextVars.stopExportInBackground) {
+                    message = 'Stop exporting successfully';
+                }
+            } else if (data.task_state === 'FAILURE') {
+                // task_state in (FAILURE, )
+                window.clearInterval(window.contextVars.intervalID);
+                window.contextVars.intervalID = undefined;
+
+                messageType = 'danger';
+                if (window.contextVars.stopExportInBackground) {
+                    stopExportState(this.custom.element);
+                    message = 'Error occurred while stopping export data.';
+                } else {
+                    exportState(this.custom.element);
+                    message = 'Error occurred while exporting data.';
+                }
+            }
+            console.log('checkStatusExportData', window.contextVars.stopExportInBackground, data);
+            !window.contextVars.intervalID && $osf.growl(title, _(message), messageType, 10);
+        },
+        error: function (jqXHR) {
+            console.log('checkStatusExportData', window.contextVars.stopExportInBackground, jqXHR.responseJSON);
+        }
+    });
+}
+
+// Start - Restore Export data - Actions
+
 $('#restore_button').on('click', () => {
     let data = {};
     data["source_id"] = source_id;
-    data["destination_id"]= $("#destination_storage").val();
+    data["destination_id"] = $("#destination_storage").val();
     disableRestoreButton();
     $.ajax({
         url: "restore_export_data",
         type: "post",
         data: data
-    }).done(function(response) {
+    }).done(function (response) {
         if (response["error_message"]) {
             enableRestoreFunction();
             // Show error message
@@ -951,7 +1037,7 @@ $('#restore_button').on('click', () => {
         } else {
             $("#restore").modal('show');
         }
-    }).fail(function(jqXHR, textStatus, error) {
+    }).fail(function (jqXHR, textStatus, error) {
         enableRestoreFunction();
         let data = jqXHR.responseJSON;
         if (data["error_message"]) {
@@ -971,9 +1057,9 @@ $('#stop_restore_button').on('click', () => {
         url: "restore_export_data/stop",
         type: "post",
         data: data
-    }).done(function(response) {
+    }).done(function (response) {
         enableRestoreFunction();
-    }).fail(function(jqXHR, textStatus, error) {
+    }).fail(function (jqXHR, textStatus, error) {
         enableRestoreFunction();
         let data = jqXHR.responseJSON;
         if (data["error_message"]) {
@@ -983,12 +1069,12 @@ $('#stop_restore_button').on('click', () => {
 });
 
 function checkTaskStatus(task_id) {
-    let data = { task_id: task_id };
+    let data = {task_id: task_id};
     $.ajax({
         url: "task_status",
         type: "get",
         data: data
-    }).done(function(response) {
+    }).done(function (response) {
         let state = response["state"];
         let result = response["result"];
         if (state === 'SUCCESS') {
@@ -1012,7 +1098,7 @@ function checkTaskStatus(task_id) {
                 $osf.growl('Restore Export Data', _(data["error_message"]), 'danger', 2);
             }
         }
-    }).fail(function(jqXHR, textStatus, error) {
+    }).fail(function (jqXHR, textStatus, error) {
         enableRestoreFunction();
     });
 }
@@ -1032,7 +1118,7 @@ $("#start_restore_modal_button").on('click', () => {
         url: "restore_export_data",
         type: "post",
         data: data
-    }).done(function(response) {
+    }).done(function (response) {
         restore_task_id = response["task_id"];
         if (!restore_task_id) {
             return;
@@ -1040,7 +1126,7 @@ $("#start_restore_modal_button").on('click', () => {
         setTimeout(() => {
             checkTaskStatus(restore_task_id);
         }, 2000);
-    }).fail(function(jqXHR, textStatus, error) {
+    }).fail(function (jqXHR, textStatus, error) {
         enableRestoreFunction();
         let data = jqXHR.responseJSON;
         if (data["error_message"]) {
@@ -1079,10 +1165,16 @@ function enableCheckRestoreFunction() {
     $("#stop_restore_button").attr("disabled", true);
 }
 
+
+// Start - Delete Export data - Actions
+
 $('#checkDelete').on('click', () => {
-  let list_export_delete_id = $("#checkDelete").val() + '#';
-  $('#bodydeletemodal').append(`<input type='text' value=${list_export_delete_id} id='input_export_data' class='buckinput' name='list_id_export_data' style='display: none;' />`);
+    let list_export_delete_id = $("#checkDelete").val() + '#';
+    $('#bodydeletemodal').append(`<input type='text' value=${list_export_delete_id} id='input_export_data' class='buckinput' name='list_id_export_data' style='display: none;' />`);
 });
+
+
+// Start - Revert Export data - Actions
 
 $('#revert_button').on('click', () => {
     let list_export_revert_id = $("#revert_button").val() + '#';
@@ -1093,6 +1185,9 @@ $('.cancel_modal').on('click', () => {
     $('#input_export_data').remove();
 });
 
+
+// Start - Check Export data - Actions
+
 $('#checkExportData').on('click', () => {
     let url = '../' + $('#checkExportData').val() + '/check_export_data' + '/';
     $('#checkExportData').prop('disabled', true);
@@ -1100,7 +1195,7 @@ $('#checkExportData').on('click', () => {
         url: url,
         type: 'GET',
         contentType: 'application/json; charset=utf-8',
-    }).done(function(response) {
+    }).done(function (response) {
         let data_res = response;
         console.log(data_res);
         $('#checkExportDataModal').modal('show');
@@ -1108,7 +1203,7 @@ $('#checkExportData').on('click', () => {
                     OK: ${data_res.OK}/${data_res.Total} files<br/>
                     NG: ${data_res.NG}/${data_res.Total} files</p>`
         let text_current = '';
-        data_res.list_file_ng.forEach(function(file){
+        data_res.list_file_ng.forEach(function (file) {
             text_current += `<tr>
                                 <td>${file.path}</td>
                                 <td>${file.size} KB</td>
@@ -1118,7 +1213,7 @@ $('#checkExportData').on('click', () => {
         });
         $('.text-check-export-data').html(text_check_export);
         $('.table-ng').html(text_current);
-    }).fail(function(jqXHR, textStatus, error) {
+    }).fail(function (jqXHR, textStatus, error) {
         $('#checkExportData').prop('disabled', false);
         let message = jqXHR.responseJSON.message;
         $osf.growl('Error', _(message), 'error');
@@ -1126,5 +1221,5 @@ $('#checkExportData').on('click', () => {
 });
 
 $('#cancleExportDataModal').on('click', () => {
-     $('#checkExportData').prop('disabled', false);
+    $('#checkExportData').prop('disabled', false);
 });
