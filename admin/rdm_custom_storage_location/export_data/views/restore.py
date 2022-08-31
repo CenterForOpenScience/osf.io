@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import logging
+import json
 
 from celery.contrib.abortable import AbortableAsyncResult
 from django.utils.decorators import method_decorator
@@ -12,11 +13,11 @@ from rest_framework.views import APIView
 from admin.rdm.utils import RdmPermissionMixin
 from admin.rdm_custom_storage_location import tasks
 
-from addons.osfstorage.models import Region, NodeSettings
-from admin.rdm_custom_storage_location.export_data import serializers, utils
+from addons.osfstorage.models import Region
+from admin.rdm_custom_storage_location.export_data import utils
 
 from django.db import transaction
-from osf.models import AbstractNode, ExportData, ExportDataLocation, ExportDataRestore, BaseFileNode
+from osf.models import ExportData, ExportDataLocation, ExportDataRestore, BaseFileNode
 from django.utils import timezone
 
 from website.settings import WATERBUTLER_URL
@@ -134,12 +135,13 @@ def check_before_restore_export_data(cookies, export_id, source_id, destination_
             return {'open_dialog': False, "error_message": f"Cannot connect to the export data storage location"}
         response_body = response.content
         response_file_content = response_body.decode('utf-8')
+        response_file_json = json.loads(response_file_content)
     except Exception as e:
         logger.error(f"Exception: {e}")
         return {'open_dialog': False, "error_message": f"Cannot connect to the export data storage location"}
 
     # Validate export file schema
-    is_file_valid = utils.validate_file_json_old(response_file_content, serializers.ExportDataSerializer)
+    is_file_valid = utils.validate_file_json(response_file_json, "export-data.json")
     if not is_file_valid:
         return {'open_dialog': False, "error_message": f"The export data files are corrupted"}
 
@@ -150,7 +152,7 @@ def check_before_restore_export_data(cookies, export_id, source_id, destination_
     destination_provider = destination_settings["storage"]["provider"]
     internal = destination_base_url == WATERBUTLER_URL
     try:
-        response = utils.get_file_data('emx94', destination_provider, "/", cookies, internal, destination_base_url,
+        response = utils.get_file_data(NODE_ID, destination_provider, "/", cookies, internal, destination_base_url,
                                        get_file_info=True)
         if response.status_code != 200:
             # Error
@@ -222,10 +224,11 @@ def restore_export_data_process(cookies, export_id, source_id, destination_id, e
                 export_data_restore.update(status=ExportData.STATUS_STOPPED)
                 return {"error_message": f"Cannot get file infomation list"}
 
-            response_body = response.json()
+            response_body = response.content
+            response_file_content = response_body.decode('utf-8')
 
             # Validate file info schema
-            is_file_valid = utils.validate_file_json(response_body, "export_data.json")
+            is_file_valid = utils.validate_file_json(response_file_content, "file-info.json")
             if not is_file_valid:
                 return {"error_message": f"The export data files are corrupted"}
 
@@ -341,10 +344,11 @@ def rollback_restore(cookies, export_id, source_id, destination_id, task_id):
         logger.error(f"Exception: {e}")
         return {"error_message": f"Cannot get file infomation list"}
 
-    response_body = response.json()
+    response_body = response.content
+    response_file_content = response_body.decode('utf-8')
 
     # Validate file info schema
-    is_file_valid = utils.validate_file_json(response_body, "export_data.json")
+    is_file_valid = utils.validate_file_json(response_file_content, "file-info.json")
     if not is_file_valid:
         return {"error_message": f"The export data files are corrupted"}
 

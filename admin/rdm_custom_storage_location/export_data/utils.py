@@ -5,6 +5,7 @@ import logging  # noqa
 
 import jsonschema
 import requests
+from datetime import datetime
 from django.db.models import Q
 from rest_framework import status as http_status
 
@@ -470,36 +471,26 @@ def check_any_running_restore_process(destination_id):
         Q(status=ExportData.STATUS_STOPPED) | Q(status=ExportData.STATUS_COMPLETED)).exists()
 
 
-def validate_file_json_old(file_data, serializer):
-    # TODO: Remove function after create export data schema file in admin/base/schemas
-    try:
-        json_data = json.loads(file_data)
-    except Exception as e:
-        logger.error(f"Exception: {e}")
-        return False
-
-    schema = serializer(data=json_data)
-    if not schema.is_valid():
-        return False
-    return True
-
-
 def validate_file_json(file_data, json_schema_file_name):
     try:
         schema = from_json(json_schema_file_name)
         jsonschema.validate(file_data, schema)
+        return True
     except jsonschema.ValidationError as e:
-        logger.error(f"For '{e.path[-1]}' the field value {e.message}")
+        logger.error(f"{e.message}")
         return False
-    except jsonschema.SchemaError as e:
+    except jsonschema.SchemaError:
         return False
-    return True
 
 
 def get_file_data(node_id, provider, file_path, cookies, internal=True, base_url=WATERBUTLER_URL,
                   get_file_info=False, version=None):
-    file_url = waterbutler_api_url_for(node_id, provider, path=file_path, _internal=internal, version=version,
-                                       base_url=base_url, meta="" if get_file_info else None)
+    if get_file_info:
+        file_url = waterbutler_api_url_for(node_id, provider, path=file_path, _internal=internal, version=version,
+                                           base_url=base_url, meta="")
+    else:
+        file_url = waterbutler_api_url_for(node_id, provider, path=file_path, _internal=internal, version=version,
+                                           base_url=base_url)
     return requests.get(file_url,
                         headers={'content-type': 'application/json'},
                         cookies=cookies)
