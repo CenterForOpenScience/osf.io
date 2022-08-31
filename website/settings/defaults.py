@@ -431,7 +431,8 @@ class CeleryConfig:
         'osf.management.commands.sync_collection_provider_indices',
         'osf.management.commands.sync_datacite_doi_metadata',
         'osf.management.commands.update_institution_project_counts',
-        'osf.management.commands.populate_branched_from'
+        'osf.management.commands.populate_branched_from',
+        'osf.management.commands.cumulative_plos_metrics'
     }
 
     med_pri_modules = {
@@ -529,6 +530,7 @@ class CeleryConfig:
         'osf.management.commands.delete_legacy_quickfiles_nodes',
         'osf.management.commands.fix_quickfiles_waterbutler_logs',
         'osf.management.commands.sync_doi_metadata',
+        'osf.management.commands.cumulative_plos_metrics',
         'api.providers.tasks'
     )
 
@@ -717,6 +719,11 @@ class CeleryConfig:
         #     'stuck_registration_audit': {
         #         'task': 'scripts.stuck_registration_audit',
         #         'schedule': crontab(minute=0, hour=11),  # Daily 6 a.m
+        #         'kwargs': {},
+        #     },
+        #     'cumulative_plos_metrics': {
+        #         'task': 'osf.management.commands.cumulative_plos_metrics',
+        #         'schedule': crontab(day_of_month=1, minute=30, hour=9),  # First of the month at 4:30 a.m.
         #         'kwargs': {},
         #     },
         # })
