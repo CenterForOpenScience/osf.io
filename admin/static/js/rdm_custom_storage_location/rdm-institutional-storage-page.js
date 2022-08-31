@@ -1199,9 +1199,8 @@ $('#checkExportData').on('click', () => {
         let data_res = response;
         console.log(data_res);
         $('#checkExportDataModal').modal('show');
-        let text_check_export = `<p> The result of checking export data<br/>
-                    OK: ${data_res.OK}/${data_res.Total} files<br/>
-                    NG: ${data_res.NG}/${data_res.Total} files</p>`
+        let text_check_export = `<p>OK: ${data_res.OK}/${data_res.Total} files<br/>
+                    NG: ${data_res.NG}/${data_res.Total} files</p>`;
         let text_current = '';
         data_res.list_file_ng.forEach(function (file) {
             text_current += `<tr>
@@ -1220,6 +1219,41 @@ $('#checkExportData').on('click', () => {
     });
 });
 
+$('#check_restore_button').on('click', () => {
+    let url = '../' + $('#check_restore_button').val() + '/check_restore_data' + '/';
+    $('#check_restore_button').prop('disabled', true);
+    $.ajax({
+        url: url,
+        type: 'GET',
+        contentType: 'application/json; charset=utf-8',
+    }).done(function(response) {
+        let data_res = response;
+        console.log(data_res);
+        $('#checkRestoreDataModal').modal('show');
+        let text_check_export = `<p>OK: ${data_res.OK}/${data_res.Total} files<br/>
+                    NG: ${data_res.NG}/${data_res.Total} files</p>`;
+        let text_current = '';
+        data_res.list_file_ng.forEach(function(file){
+            text_current += `<tr>
+                                <td>${file.path}</td>
+                                <td>${file.size} KB</td>
+                                <td>${file.version_id}</td>
+                                <td>${file.reason}</td>
+                            </tr>`;
+        });
+        $('.text-check-restore-data').html(text_check_export);
+        $('.table-ng-restore').html(text_current);
+    }).fail(function(jqXHR, textStatus, error) {
+        $('#check_restore_button').prop('disabled', false);
+        let message = jqXHR.responseJSON.message;
+        $osf.growl('Error', _(message), 'error');
+    });
+});
+
 $('#cancleExportDataModal').on('click', () => {
-    $('#checkExportData').prop('disabled', false);
+     $('#checkExportData').prop('disabled', false);
+});
+
+$('#cancelRestoreDataModal').on('click', () => {
+     $('#check_restore_button').prop('disabled', false);
 });

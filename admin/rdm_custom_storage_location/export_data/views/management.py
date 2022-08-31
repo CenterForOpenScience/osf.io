@@ -16,7 +16,7 @@ from admin.rdm_custom_storage_location.export_data.utils import (
     get_file_info_json,
     check_diff_between_version,
 )
-from osf.models import ExportData, Institution, ExportDataLocation
+from osf.models import ExportData, Institution, ExportDataLocation, ExportDataRestore
 from .location import ExportStorageLocationViewBaseView
 
 logger = logging.getLogger(__name__)
@@ -318,6 +318,53 @@ class CheckExportData(RdmPermissionMixin, View):
                     count_files += 1
                     break
         export_data.status = 'Completed'
+        data['Total'] = count_files
+        data['list_file_ng'] = list_file_ng
+        return JsonResponse(data, status=200)
+
+
+class CheckRestoreData(RdmPermissionMixin, View):
+
+    def get(self, request, data_id):
+        data = {
+            'NG': 0,
+            'OK': 0,
+        }
+        export_data_restore = ExportDataRestore.objects.filter(id=data_id).first()
+        if export_data_restore.status != 'Completed':
+            return JsonResponse({'message': 'Cannot check in this time. The process is {}'.format(export_data_restore.status)}, status=400)
+        export_data_restore.status = 'Checking'
+        export_data_restore.last_check = datetime.datetime.now()
+        response = export_data_restore.export.read_file_info(request.COOKIES)
+        if response.status_code != 200:
+            return JsonResponse({'message': 'Cannot connect to the export data storage location.'}, status=400)
+        destination_id = export_data_restore.destination.id
+        list_file_info = response.json()
+        check = validate_export_data(list_file_info)
+        if not check:
+            return JsonResponse({'message': 'The export data files are corrupted.'}, status=400)
+        # Get data from current source from database
+        data_from_destination = get_file_info_json(destination_id)
+        list_file_ng = []
+        count_files = 0
+        for item in list_file_info['files']:
+            for file_from_source in data_from_destination['files']:
+                if file_from_source['id'] == item['id']:
+                    is_diff, message, file_version = check_diff_between_version(item['version'], file_from_source['version'])
+                    if is_diff:
+                        data['OK'] += 1
+                    else:
+                        data['NG'] += 1
+                        ng_content = {
+                            'path': item['materialized_path'],
+                            'size': file_version['size'],
+                            'version_id': file_version['identifier'],
+                            'reason': message,
+                        }
+                        list_file_ng.append(ng_content)
+                    count_files += 1
+                    break
+        export_data_restore.status = 'Completed'
         data['Total'] = count_files
         data['list_file_ng'] = list_file_ng
         return JsonResponse(data, status=200)
