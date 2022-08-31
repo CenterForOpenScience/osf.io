@@ -62,10 +62,8 @@ def parse_base_file():
         headers={'Content-type': 'application/CSV'},
         auth=bearer_token_auth(PLOS_METRICS_OSF_TOKEN)
     )
-    csvr = csv.DictReader(ensure_str(r.content).splitlines(), fieldnames=COL_HEADERS)
-    headers = next(csvr)
-    for k, v in headers.items():
-        assert k == v, f'Unexpected header row: {k} and {v} do not match'
+    csvr = csv.DictReader(ensure_str(r.content).splitlines())
+    assert csvr.fieldnames == COL_HEADERS, f'Unexpected headers: expected {COL_HEADERS}, got {csvr.fieldnames}'
     return csvr
 
 def fetch_metric_data_by_guid(guid):
