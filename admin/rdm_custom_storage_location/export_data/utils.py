@@ -632,7 +632,7 @@ def delete_file(node_id, provider, file_path, cookies, internal=True, base_url=W
 
 def validate_export_data(data_json):
     try:
-        schema = from_json('export-data.json')
+        schema = from_json('file-info-schema.json')
         jsonschema.validate(data_json, schema)
         return True
     except jsonschema.ValidationError:
