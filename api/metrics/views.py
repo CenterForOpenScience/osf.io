@@ -437,11 +437,16 @@ class NodeAnalyticsQuery(JSONAPIBaseView):
                 'popular-pages': {
                     'terms': {
                         'field': 'pageview_info.page_path',
-                        'exclude': '.*/project/.*',
                         'size': 10,
                     },
                     'aggs': {
-                        'page-titles': {
+                        'route-for-path': {
+                            'terms': {
+                                'field': 'pageview_info.route_name',
+                                'size': 1,
+                            },
+                        },
+                        'title-for-path': {
                             'terms': {
                                 'field': 'pageview_info.page_title',
                                 'size': 1,

@@ -116,7 +116,8 @@ class NodeAnalyticsSerializer(ser.BaseSerializer):
         popular_pages = [
             {
                 'path': bucket['key'],
-                'title': bucket['page-titles'].buckets[0]['key'],
+                'route': bucket['route-for-path'].buckets[0]['key'],
+                'title': bucket['title-for-path'].buckets[0]['key'],
                 'count': bucket['doc_count'],
             }
             for bucket in aggs['popular-pages'].buckets

@@ -42,14 +42,20 @@ class TestNodeAnalyticsQuery:
                         {
                             'key': '/page/path',
                             'doc_count': 17,
-                            'page-titles': {
+                            'route-for-path': {
+                                'buckets': [{'key': 'page.route'}],
+                            },
+                            'title-for-path': {
                                 'buckets': [{'key': 'foo'}],
                             },
                         },
                         {
                             'key': '/page/another',
                             'doc_count': 7,
-                            'page-titles': {
+                            'route-for-path': {
+                                'buckets': [{'key': 'page.another'}],
+                            },
+                            'title-for-path': {
                                 'buckets': [{'key': 'blaz'}],
                             },
                         },
@@ -83,8 +89,8 @@ class TestNodeAnalyticsQuery:
             'type': 'node-analytics',
             'attributes': {
                 'popular_pages': [
-                    {'path': '/page/path', 'title': 'foo', 'count': 17},
-                    {'path': '/page/another', 'title': 'blaz', 'count': 7},
+                    {'route': 'page.route', 'path': '/page/path', 'title': 'foo', 'count': 17},
+                    {'route': 'page.another', 'path': '/page/another', 'title': 'blaz', 'count': 7},
                 ],
                 'unique_visits': [
                     {'date': '2022-03-03', 'count': 8},
