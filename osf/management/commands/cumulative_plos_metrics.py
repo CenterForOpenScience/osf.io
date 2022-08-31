@@ -15,10 +15,12 @@ from osf.metrics import PreprintView, PreprintDownload
 from osf.models import Guid, Node, OSFUser, Preprint, \
     Registration, TrashedFile
 from osf.utils.fields import ensure_str
-from website.settings import KEEN, \
-    PLOS_METRICS_BASE_FOLDER, \
-    PLOS_METRICS_OSF_TOKEN, \
-    PLOS_METRICS_INITIAL_FILE_DOWNLOAD_URL
+from website.settings import (
+    KEEN,
+    PLOS_METRICS_BASE_FOLDER,
+    PLOS_METRICS_INITIAL_FILE_DOWNLOAD_URL,
+    PLOS_METRICS_OSF_TOKEN,
+)
 
 
 DEFAULT_API_VERSION = '2.14'
