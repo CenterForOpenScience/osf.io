@@ -23,7 +23,7 @@ from website.settings import (
 )
 
 
-DEFAULT_API_VERSION = '2.14'
+DEFAULT_API_VERSION = '2.20'
 TEMP_FOLDER = tempfile.mkdtemp(suffix='/')
 COL_HEADERS = [
     'id',
