@@ -39,10 +39,16 @@ class ExportStorageLocationViewBaseView(RdmPermissionMixin, UserPassesTestMixin)
 
     def test_func(self):
         """ Check user permissions """
-        if self.is_admin and self.is_affiliated_institution:
+        user = self.request.user
+        if user.is_institutional_admin:
             self.PROVIDERS_AVAILABLE += ['dropboxbusiness', 'nextcloudinstitutions']
 
-        return self.is_super_admin or (self.is_admin and self.is_affiliated_institution)
+        return user.is_super_admin or user.is_institutional_admin
+
+    def is_affiliated_institution(self, institution_id):
+        """determine whether the user has affiliated institutions"""
+        user = self.request.user
+        return user.is_affiliated_with_institution_id(institution_id)
 
 
 class ExportStorageLocationView(ExportStorageLocationViewBaseView, ListView):
@@ -65,15 +71,7 @@ class ExportStorageLocationView(ExportStorageLocationViewBaseView, ListView):
     def get_queryset(self):
         list_location = ExportDataLocation.objects.filter(institution_guid=self.institution_guid)
         list_location = list_location.order_by(self.ordering)
-        list_location_dict = []
-        for location in list_location:
-            list_location_dict.append({
-                'id': location.id,
-                'name': location.name,
-                'provider_name': location.provider_name,
-                'provider_short_name': location.provider_short_name
-            })
-        return list_location_dict
+        return list_location
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)

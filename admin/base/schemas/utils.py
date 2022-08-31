@@ -1,7 +1,8 @@
-import os
 import json
+import os
 
 here = os.path.split(os.path.abspath(__file__))[0]
+
 
 def from_json(fname):
     with open(os.path.join(here, fname)) as f:

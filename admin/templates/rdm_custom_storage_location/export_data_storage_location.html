@@ -81,10 +81,10 @@
     <table class="table table-striped table-hover table-responsive">
         <thead>
         <tr>
-            <th style="width: 5%;">ID</th>
-            <th style="width: 15%;">Name</th>
-            <th style="width: 15%;">Provider</th>
-            <th style="width: 75%;"></th>
+            <th style="width: 5em;">ID</th>
+            <th style="width: 25em;">Name</th>
+            <th style="width: 25em;">Provider</th>
+            <th style="width: 10em;"></th>
         </tr>
         </thead>
         <tbody>
@@ -95,7 +95,7 @@
             <tr id="location_{{ location.id }}">
                 <td>{{ location.id }}</td>
                 <td>{{ location.name }}</td>
-                <td>{{ location.provider_name }}</td>
+                <td>{{ location.provider_full_name }}</td>
                 <td>
                     <button type="button" class="btn btn-primary delete-location"
                             data-id="{{ location.id }}" data-provide="{{ location.provider_short_name }}"
