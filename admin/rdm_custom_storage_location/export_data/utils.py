@@ -2,6 +2,7 @@
 import inspect  # noqa
 import json  # noqa
 import logging  # noqa
+from copy import deepcopy
 
 import jsonschema
 import requests
@@ -54,6 +55,7 @@ __all__ = [
     'get_file_info_json',
     'write_json_file',
     'read_json_file',
+    'check_diff_between_version',
 ]
 
 
@@ -628,3 +630,88 @@ def validate_export_data(data_json):
         return True
     except jsonschema.ValidationError:
         return False
+
+
+def float_or_None(x):
+    try:
+        return float(x)
+    except ValueError:
+        return None
+
+
+def deep_diff(x, y, parent_key=None, exclude_keys=[], epsilon_keys=[]):
+    logger.info('x')
+    logger.info(x)
+    logger.info('y')
+    logger.info(y)
+    """
+    Find the difference between 2 dictionary
+    Take the deep diff of JSON-like dictionaries
+    No warranties when keys, or values are None
+    """
+    EPSILON = 0.5
+    rho = 1 - EPSILON
+
+    if x == y:
+        return None
+
+    if parent_key in epsilon_keys:
+        xfl, yfl = float_or_None(x), float_or_None(y)
+        if xfl and yfl and xfl * yfl >= 0 and rho * xfl <= yfl and rho * yfl <= xfl:
+            return None
+
+    if type(x) != type(y) or type(x) not in [list, dict]:
+        return x, y
+
+    if type(x) == dict:
+        d = {}
+        for k in x.keys() ^ y.keys():
+            if k in exclude_keys:
+                continue
+            if k in x:
+                d[k] = (deepcopy(x[k]), None)
+            else:
+                d[k] = (None, deepcopy(y[k]))
+
+        for k in x.keys() & y.keys():
+            if k in exclude_keys:
+                continue
+
+            next_d = deep_diff(x[k], y[k], parent_key=k, exclude_keys=exclude_keys, epsilon_keys=epsilon_keys)
+            if next_d is None:
+                continue
+
+            d[k] = next_d
+
+        return d if d else None
+
+    # assume a list:
+    d = [None] * max(len(x), len(y))
+    flipped = False
+    if len(x) > len(y):
+        flipped = True
+        x, y = y, x
+
+    for i, x_val in enumerate(x):
+        d[i] = deep_diff(y[i], x_val, parent_key=i, exclude_keys=exclude_keys, epsilon_keys=epsilon_keys) if flipped else deep_diff(x_val, y[i],
+                                                                                                                                    parent_key=i,
+                                                                                                                                    exclude_keys=exclude_keys,
+                                                                                                                                    epsilon_keys=epsilon_keys)
+
+    for i in range(len(x), len(y)):
+        d[i] = (y[i], None) if flipped else (None, y[i])
+
+    return None if all(map(lambda x: x is None, d)) else d
+
+
+def check_diff_between_version(list_version_a, list_version_b):
+    for i in range(len(list_version_a)):
+        if list_version_a[i]['identifier'] != list_version_b[i]['identifier']:
+            return False, 'Missing file version', list_version_b[i]
+        check_diff = deep_diff(list_version_a[i], list_version_b[i])
+        if check_diff is None:
+            return True, '', None
+        else:
+            list_diff = list(check_diff)
+            text_error = ', '.join(list_diff) + 'not match'
+            return False, text_error, list_version_a[i]

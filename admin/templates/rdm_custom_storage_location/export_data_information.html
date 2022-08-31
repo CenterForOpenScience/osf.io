@@ -17,11 +17,13 @@
         {% if is_deleted %}
             <button type="button" class="btn btn-primary"
                     data-target="#revert" data-toggle="modal" id="revert_button"
+                    value= "{{ data_information.id }}"
                     style="min-width:120px; margin-left:10px;">Revert
             </button>
         {% else %}
             <button type="button" class="btn btn-primary"
                     id="checkExportData" data-toggle="modal"
+                    value= "{{ data_information.id }}"
                     style="min-width:120px;">Check export data
             </button>
             <a href="{% url 'custom_storage_location:export_data:export_data_output_csv' %}">
@@ -31,6 +33,8 @@
             </a>
             <button type="button" class="btn btn-danger"
                     data-target="#deleteExport" data-toggle="modal"
+                    id="checkDelete"
+                    value= "{{ data_information.id }}"
                     style="min-width:120px; margin-left:10px;">Delete
             </button>
         {% endif %}
@@ -182,10 +186,19 @@
                     <!--</div>-->
                     <div class="modal-body text-left">
                         <p class="text-check-export-data">
-                            The result of checking export data<br/>
-                            OK: 4/4 files<br/>
-                            NG: 0/4 files
                         </p>
+                        <table class="table table-striped table-hover table-bordered table-responsive">
+                            <thead>
+                            <tr>
+                                <th>File path</th>
+                                <th>Size</th>
+                                <th>Version ID</th>
+                                <th>NG Reason</th>
+                            </tr>
+                            </thead>
+                            <tbody class="list table-ng">
+                            </tbody>
+                        </table>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal" id="cancleExportDataModal">Cancel</button>
@@ -285,45 +298,7 @@
         </div>
     {% endif %}
     <script type="text/javascript">
-        const source_id = "{{ data_information.source_id }}";
         var restore_task_id = null;
-        $(document).ready(() => {
-            $('#delete_button').on('click', () => {
-                let list_export_delete_id = '{{data_information.id}}' + '#';
-                $('#bodydeletemodal').append(`<input type='text' value=${list_export_delete_id} id='input_export_data' class='buckinput' name='list_id_export_data' style='display: none;' />`);
-            });
-            $('#revert_button').on('click', () => {
-                let list_export_revert_id = '{{data_information.id}}' + '#';
-                $('#bodyrevertmodal').append(`<input type='text' value=${list_export_revert_id} id='input_export_data' class='buckinput' name='list_id_export_data' style='display: none;' />`);
-            });
-            $('.cancel_modal').on('click', () => {
-                $('#input_export_data').remove();
-            });
-            $('#checkExportData').on('click', () => {
-                let url = '../' + '{{data_information.id}}/' + 'check_export_data' + '/';
-                $('#checkExportData').prop('disabled', true);
-                $.ajax({
-                    url: url,
-                    type: 'GET',
-                    contentType: 'application/json; charset=utf-8',
-                    success: function (data) {
-                        let data_res = data;
-                        $('#checkExportDataModal').modal('show');
-                        let text_check = `The result of checking export data<br/>
-                            OK: ${data_res.OK}/${data.Total} files<br/>
-                            NG: ${data_res.NG}/${data.Total} files`;
-                        $('.text-check-export-data').html(text_check);
-                    },
-                    error: function (jqXHR) {
-                        $('#checkExportData').prop('disabled', false);
-                        alert(jqXHR.responseJSON.message);
-                    }
-                });
-            });
-            $('#cancleExportDataModal').on('click', () => {
-                 $('#checkExportData').prop('disabled', false);
-            });
-        });
     </script>
 {% endblock content %}
 {% block bottom_js %}

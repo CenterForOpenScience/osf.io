@@ -1078,3 +1078,53 @@ function enableCheckRestoreFunction() {
     $("#check_restore_button").attr("disabled", false);
     $("#stop_restore_button").attr("disabled", true);
 }
+
+$('#checkDelete').on('click', () => {
+  let list_export_delete_id = $("#checkDelete").val() + '#';
+  $('#bodydeletemodal').append(`<input type='text' value=${list_export_delete_id} id='input_export_data' class='buckinput' name='list_id_export_data' style='display: none;' />`);
+});
+
+$('#revert_button').on('click', () => {
+    let list_export_revert_id = $("#revert_button").val() + '#';
+    $('#bodyrevertmodal').append(`<input type='text' value=${list_export_revert_id} id='input_export_data' class='buckinput' name='list_id_export_data' style='display: none;' />`);
+});
+
+$('.cancel_modal').on('click', () => {
+    $('#input_export_data').remove();
+});
+
+$('#checkExportData').on('click', () => {
+    let url = '../' + $('#checkExportData').val() + '/check_export_data' + '/';
+    $('#checkExportData').prop('disabled', true);
+    $.ajax({
+        url: url,
+        type: 'GET',
+        contentType: 'application/json; charset=utf-8',
+    }).done(function(response) {
+        let data_res = response;
+        console.log(data_res);
+        $('#checkExportDataModal').modal('show');
+        let text_check_export = `<p> The result of checking export data<br/>
+                    OK: ${data_res.OK}/${data_res.Total} files<br/>
+                    NG: ${data_res.NG}/${data_res.Total} files</p>`
+        let text_current = '';
+        data_res.list_file_ng.forEach(function(file){
+            text_current += `<tr>
+                                <td>${file.path}</td>
+                                <td>${file.size} KB</td>
+                                <td>${file.version_id}</td>
+                                <td>${file.reason}</td>
+                            </tr>`;
+        });
+        $('.text-check-export-data').html(text_check_export);
+        $('.table-ng').html(text_current);
+    }).fail(function(jqXHR, textStatus, error) {
+        $('#checkExportData').prop('disabled', false);
+        let message = jqXHR.responseJSON.message;
+        $osf.growl('Error', _(message), 'error');
+    });
+});
+
+$('#cancleExportDataModal').on('click', () => {
+     $('#checkExportData').prop('disabled', false);
+});
