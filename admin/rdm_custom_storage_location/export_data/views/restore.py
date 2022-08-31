@@ -141,7 +141,7 @@ def check_before_restore_export_data(cookies, export_id, source_id, destination_
         return {'open_dialog': False, "error_message": f"Cannot connect to the export data storage location"}
 
     # Validate export file schema
-    is_file_valid = utils.validate_file_json(response_file_json, "export-data.json")
+    is_file_valid = utils.validate_file_json(response_file_json, "export-data-schema.json")
     if not is_file_valid:
         return {'open_dialog': False, "error_message": f"The export data files are corrupted"}
 
@@ -228,7 +228,7 @@ def restore_export_data_process(cookies, export_id, source_id, destination_id, e
             response_file_content = response_body.decode('utf-8')
 
             # Validate file info schema
-            is_file_valid = utils.validate_file_json(response_file_content, "file-info.json")
+            is_file_valid = utils.validate_file_json(response_file_content, "file-info-schema.json")
             if not is_file_valid:
                 return {"error_message": f"The export data files are corrupted"}
 
@@ -348,7 +348,7 @@ def rollback_restore(cookies, export_id, source_id, destination_id, task_id):
     response_file_content = response_body.decode('utf-8')
 
     # Validate file info schema
-    is_file_valid = utils.validate_file_json(response_file_content, "file-info.json")
+    is_file_valid = utils.validate_file_json(response_file_content, "file-info-schema.json")
     if not is_file_valid:
         return {"error_message": f"The export data files are corrupted"}
 
