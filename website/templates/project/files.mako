@@ -31,7 +31,6 @@
             window.contextVars.diskSavingMode = !${ disk_saving_mode | sjson, n };
         % endif
         window.contextVars.analyticsMeta = $.extend(true, {}, window.contextVars.analyticsMeta, {
-            itemGuid: ${node['id'] | sjson, n},
             pageMeta: {
                 title: 'Files',
                 public: true,

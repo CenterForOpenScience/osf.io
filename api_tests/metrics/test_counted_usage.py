@@ -3,7 +3,14 @@ from datetime import datetime, timezone
 import pytest
 from unittest import mock
 
-from osf_tests.factories import AuthUserFactory
+from osf_tests.factories import (
+    AuthUserFactory,
+    # PreprintFactory,
+    # NodeFactory,
+    # RegistrationFactory,
+    # FileFactory,
+    # UserFactory,
+)
 
 
 COUNTED_USAGE_URL = '/_/metrics/events/counted_usage/'
@@ -91,11 +98,10 @@ class TestComputedFields:
         assert resp.status_code == 201
         assert_saved_with(
             mock_save,
-            # doc_id: sha256(b'http://example.foo/|osf|http://example.foo/blahblah/blee|5b7c8b0a740a5b23712258a9d1164d2af008df02a8e3d339f16ead1d19595b34|1981-01-01|3').hexdigest()
-            expected_doc_id='8a92beb12e160eb73cbe26fa4db91e231c1f051f5d262ff822a326cf4cd824b8',
+            # doc_id: sha256(b'http://example.foo/|http://example.foo/blahblah/blee|5b7c8b0a740a5b23712258a9d1164d2af008df02a8e3d339f16ead1d19595b34|1981-01-01|3').hexdigest()
+            expected_doc_id='55fffffdc0d674d15a5e8763d14e4ae90f658fbfb6fbf94f88a5d24978f02e72',
             expected_attrs={
                 'platform_iri': 'http://example.foo/',
-                'provider_id': 'osf',
                 'item_guid': 'zyxwv',
                 # session_id: sha256(b'hello|1981-01-01').hexdigest()
                 'session_id': '5b7c8b0a740a5b23712258a9d1164d2af008df02a8e3d339f16ead1d19595b34',
@@ -127,11 +133,10 @@ class TestComputedFields:
         assert resp.status_code == 201
         assert_saved_with(
             mock_save,
-            # doc_id: sha256(b'http://example.foo/|osf|http://example.foo/bliz/|5b7c8b0a740a5b23712258a9d1164d2af008df02a8e3d339f16ead1d19595b34|1981-01-01|3').hexdigest()
-            expected_doc_id='7ed7936bba3be6a49c45680fd7be134cf8df7241c6b526c021d66f7134fcd728',
+            # doc_id: sha256(b'http://example.foo/|http://example.foo/bliz/|5b7c8b0a740a5b23712258a9d1164d2af008df02a8e3d339f16ead1d19595b34|1981-01-01|3').hexdigest()
+            expected_doc_id='e559ffbc4bd3e3e69252d34c273f0e771ec89ee455ec9b60fbbadf3944e4af4e',
             expected_attrs={
                 'platform_iri': 'http://example.foo/',
-                'provider_id': 'osf',
                 'item_guid': 'zyxwv',
                 # session_id: sha256(b'hello|1981-01-01').hexdigest()
                 'session_id': '5b7c8b0a740a5b23712258a9d1164d2af008df02a8e3d339f16ead1d19595b34',
@@ -164,11 +169,10 @@ class TestComputedFields:
         assert resp.status_code == 201
         assert_saved_with(
             mock_save,
-            # doc_id: sha256(b'http://example.foo/|osf|http://osf.io/mst3k|ec768abb16c3411570af99b9d635c2c32d1ca31d1b25eec8ee73759e7242e74a|1981-01-01|3').hexdigest()
-            expected_doc_id='f692855557be9f6be99f94339d925aede713ee1798d9692285bf9434e8639e43',
+            # doc_id: sha256(b'http://example.foo/|http://osf.io/mst3k|ec768abb16c3411570af99b9d635c2c32d1ca31d1b25eec8ee73759e7242e74a|1981-01-01|3').hexdigest()
+            expected_doc_id='743494d8a55079b91e202da1dbdfce5aea72e310c57a34b36df2c2af5ed4d362',
             expected_attrs={
                 'platform_iri': 'http://example.foo/',
-                'provider_id': 'osf',
                 'item_guid': 'yxwvu',
                 # session_id: sha256(b'guidy|1981-01-01|0').hexdigest()
                 'session_id': 'ec768abb16c3411570af99b9d635c2c32d1ca31d1b25eec8ee73759e7242e74a',
@@ -197,11 +201,10 @@ class TestComputedFields:
         assert resp.status_code == 201
         assert_saved_with(
             mock_save,
-            # doc_id: sha256(b'http://example.foo/|osf|yxwvu|97098dd3f7cd26053c0d0264d1c84eaeea8e08d2c55ca34017ffbe53c749ba5a|1981-01-01|3').hexdigest()
-            expected_doc_id='92dd6ec64045abb294958bebe523c68c5f8589ca44bbdfba5272ef299e7286a9',
+            # doc_id: sha256(b'http://example.foo/|yxwvu|97098dd3f7cd26053c0d0264d1c84eaeea8e08d2c55ca34017ffbe53c749ba5a|1981-01-01|3').hexdigest()
+            expected_doc_id='a50ac1b2dc1c918cdea7be50b005117fdb6ee00ea069ca3aa4aaf03c0f905fa0',
             expected_attrs={
                 'platform_iri': 'http://example.foo/',
-                'provider_id': 'osf',
                 'item_guid': 'yxwvu',
                 # session_id: sha256(b'localhost:80|haha|1981-01-01|0').hexdigest()
                 'session_id': '97098dd3f7cd26053c0d0264d1c84eaeea8e08d2c55ca34017ffbe53c749ba5a',

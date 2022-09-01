@@ -25,7 +25,7 @@ from api.base.views import JSONAPIBaseView
 from api.base.waffle_decorators import require_switch
 from api.nodes.permissions import MustBePublic
 from osf.features import ENABLE_RAW_METRICS
-from osf.metrics import PreprintDownload, PreprintView, RegistriesModerationMetrics, CountedUsageV2
+from osf.metrics import PreprintDownload, PreprintView, RegistriesModerationMetrics, CountedUsageV3
 from osf.metrics import reports
 from osf.metrics.utils import stable_key
 from osf.models import AbstractNode
@@ -397,7 +397,7 @@ class NodeAnalyticsQuery(JSONAPIBaseView):
 
     def _run_query(self, node_guid, timespan):
         query_dict = self._build_query_payload(node_guid, NodeAnalyticsQuery.Timespan(timespan))
-        analytics_search = CountedUsageV2.search().update_from_dict(query_dict)
+        analytics_search = CountedUsageV3.search().update_from_dict(query_dict)
         return analytics_search.execute()
 
     def _build_query_payload(self, node_guid, timespan):
@@ -406,7 +406,14 @@ class NodeAnalyticsQuery(JSONAPIBaseView):
             'query': {
                 'bool': {
                     'filter': [
-                        {'term': {'item_guid': node_guid}},
+                        {
+                            'bool': {
+                                'should': [
+                                    {'term': {'item_guid': node_guid}},
+                                    {'term': {'surrounding_guids': node_guid}},
+                                ],
+                            },
+                        },
                         {'term': {'item_public': True}},
                         {'term': {'action_labels': 'view'}},
                         {'term': {'action_labels': 'web'}},

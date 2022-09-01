@@ -4,7 +4,7 @@ from rest_framework import serializers as ser
 
 from api.base.serializers import BaseAPISerializer
 from api.base.utils import absolute_reverse
-from osf.metrics.counted_usage import CountedUsageV2
+from osf.metrics.counted_usage import CountedUsageV3
 from website import settings as website_settings
 
 
@@ -23,9 +23,9 @@ class RawMetricsSerializer():
 
 def validate_action_label(label):
     try:
-        CountedUsageV2.ActionLabel(label)
+        CountedUsageV3.ActionLabel(label)
     except ValueError:
-        valid_labels = ', '.join(label.value for label in CountedUsageV2.ActionLabel)
+        valid_labels = ', '.join(label.value for label in CountedUsageV3.ActionLabel)
         raise ser.ValidationError(
             f'Invalid value in action_labels! Valid labels: {valid_labels}',
         )
@@ -39,7 +39,6 @@ class PageviewInfoSerializer(ser.Serializer):
 
 
 class CountedUsageSerializer(ser.Serializer):
-    provider_id = ser.CharField(max_length=255, default='osf')
     item_guid = ser.CharField(max_length=255, required=False)
     item_public = ser.BooleanField(required=False)
     client_session_id = ser.CharField(max_length=255, required=False)
@@ -61,9 +60,8 @@ class CountedUsageSerializer(ser.Serializer):
         return data
 
     def create(self, validated_data):
-        return CountedUsageV2.record(
+        return CountedUsageV3.record(
             platform_iri=website_settings.DOMAIN,
-            provider_id=validated_data.get('provider_id'),
             item_guid=validated_data.get('item_guid'),
             item_public=validated_data.get('item_public'),
             session_id=validated_data['session_id'],  # must be provided by the view
