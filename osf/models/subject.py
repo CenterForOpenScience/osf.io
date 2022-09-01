@@ -32,7 +32,8 @@ class Subject(ObjectIDMixin, BaseModel, DirtyFieldsMixin):
         base_manager_name = 'objects'
         unique_together = ('text', 'provider')
         permissions = (
-            ('view_subject', 'Can view subject details'),
+            # Clashes with built-in permissions
+            # ('view_subject', 'Can view subject details'),
         )
 
     def __unicode__(self):

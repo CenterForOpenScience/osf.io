@@ -253,7 +253,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
     class Meta:
         permissions = (
-            ('view_preprint', 'Can view preprint details in the admin app'),
+            # Clashes with built-in permissions
+            # ('view_preprint', 'Can view preprint details in the admin app'),
             ('read_preprint', 'Can read the preprint'),
             ('write_preprint', 'Can write the preprint'),
             ('admin_preprint', 'Can manage the preprint'),
