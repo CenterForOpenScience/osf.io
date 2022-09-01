@@ -1421,7 +1421,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         )
         assert res.status_code == 200
 
-    @mock.patch('website.identifiers.tasks.update_doi_metadata_on_change.s')
+    @mock.patch('osf.models.node.update_doi_metadata_on_change')
     def test_set_node_private_updates_doi(
             self, mock_update_doi_metadata, app, user, project_public,
             url_public, make_node_payload):
@@ -1593,7 +1593,7 @@ class TestNodeDelete(NodeCRUDTestCase):
         # Bookmark collections are collections, so a 404 is returned
         assert res.status_code == 404
 
-    @mock.patch('website.identifiers.tasks.update_doi_metadata_on_change.s')
+    @mock.patch('website.identifiers.tasks.update_doi_metadata_on_change')
     def test_delete_node_with_preprint_calls_preprint_update_status(
             self, mock_update_doi_metadata_on_change, app, user,
             project_public, url_public):
@@ -1603,7 +1603,7 @@ class TestNodeDelete(NodeCRUDTestCase):
 
         assert not mock_update_doi_metadata_on_change.called
 
-    @mock.patch('website.identifiers.tasks.update_doi_metadata_on_change.s')
+    @mock.patch('website.identifiers.tasks.update_doi_metadata_on_change')
     def test_delete_node_with_identifier_calls_preprint_update_status(
             self, mock_update_doi_metadata_on_change, app, user,
             project_public, url_public):
