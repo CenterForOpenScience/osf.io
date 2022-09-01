@@ -6,6 +6,7 @@ from copy import deepcopy
 
 import jsonschema
 import requests
+import re
 from datetime import datetime
 from django.db.models import Q
 from rest_framework import status as http_status
@@ -607,7 +608,8 @@ def move_file(node_id, provider, source_file_path, destination_file_path, cookie
                                                 base_url=base_url)
     request_body = {
         "action": "move",
-        "path": destination_file_path,
+        "path": "/",
+        "rename": destination_file_path,
     }
     return requests.post(move_old_data_url,
                          headers={'content-type': 'application/json'},
@@ -615,7 +617,51 @@ def move_file(node_id, provider, source_file_path, destination_file_path, cookie
                          json=request_body)
 
 
-def get_all_file_paths(node_id, provider, file_path, cookies, internal=True, base_url=WATERBUTLER_URL):
+def move_folder_to_backup(node_id, provider, source_file_path, process_start, cookies,
+                          internal=True, base_url=WATERBUTLER_URL):
+    path_list = get_all_file_paths(node_id, provider, source_file_path, cookies, internal, base_url,
+                                   exclude_path_regex="^\\/backup_\\d{8}T\\d{6}_.+$")
+    # Move file
+    for path in path_list:
+        try:
+            paths = path.split("/")
+            paths[1] = f"backup_{process_start}_{paths[1]}"
+            new_path = "/".join(paths)
+            response = move_file(node_id, provider, path, new_path, cookies, internal, base_url)
+            if response.status_code != 200 and response.status_code != 201 and response.status_code != 202:
+                # Rollback
+                return {"error": response.content}
+        except Exception as e:
+            logger.error(f"Exception: {e}")
+            # Rollback
+            return {"error": e}
+    return {}
+
+
+def move_folder_from_backup(node_id, provider, source_file_path, process_start, cookies,
+                            internal=True, base_url=WATERBUTLER_URL):
+    path_list = get_all_file_paths(node_id, provider, source_file_path, cookies, internal, base_url,
+                                   include_path_regex="^\\/backup_\\d{8}T\\d{6}_.+$")
+    # Move file
+    for path in path_list:
+        try:
+            paths = path.split("/")
+            paths[1] = paths[1].replace(f"backup_{process_start}_", "")
+            new_path = "/".join(paths)
+            response = move_file(node_id, provider, path, new_path, cookies, internal, base_url)
+            if response.status_code != 200 and response.status_code != 201 and response.status_code != 202:
+                # Rollback
+                return {"error": response.content}
+        except Exception as e:
+            logger.error(f"Exception: {e}")
+            # Rollback
+            return {"error": e}
+
+    return {}
+
+
+def get_all_file_paths(node_id, provider, file_path, cookies, internal=True, base_url=WATERBUTLER_URL,
+                       include_path_regex="", exclude_path_regex=""):
     try:
         response = get_file_data(node_id, provider, file_path, cookies, internal=internal,
                                  base_url=base_url, get_file_info=True)
@@ -628,19 +674,43 @@ def get_all_file_paths(node_id, provider, file_path, cookies, internal=True, bas
             for item in data:
                 path = item["attributes"]["path"]
                 kind = item["attributes"]["kind"]
+
+                try:
+                    if isinstance(include_path_regex, str) and len(include_path_regex) != 0:
+                        pattern = re.compile(include_path_regex)
+                        if not pattern.match(path):
+                            continue
+                    if isinstance(exclude_path_regex, str) and len(exclude_path_regex) != 0:
+                        pattern = re.compile(exclude_path_regex)
+                        if pattern.match(path):
+                            continue
+                except Exception:
+                    continue
+
                 if kind == "file":
                     list_file_path.append(path)
                 elif kind == "folder":
                     # Call this function again
                     sub_file_paths = get_all_file_paths(node_id, provider, path, cookies, internal, base_url)
                     list_file_path.extend(sub_file_paths)
-                else:
-                    return []
+
             return list_file_path
         else:
             return [file_path]
     except Exception:
         return []
+
+
+def rename_file_or_folder(node_id, provider, old_path, new_path, cookies, internal=True, base_url=WATERBUTLER_URL):
+    rename_url = waterbutler_api_url_for(node_id, provider, old_path, _internal=internal, base_url=base_url)
+    request_body = {
+        "action": "rename",
+        "rename": new_path,
+    }
+    return requests.post(rename_url,
+                         headers={'content-type': 'application/json'},
+                         cookies=cookies,
+                         json=request_body)
 
 
 def delete_file(node_id, provider, file_path, cookies, internal=True, base_url=WATERBUTLER_URL):

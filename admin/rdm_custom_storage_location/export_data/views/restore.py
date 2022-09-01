@@ -185,12 +185,12 @@ def restore_export_data_process(cookies, export_id, destination_id, export_data_
             destination_provider = destination_settings["storage"]["provider"]
             internal = destination_base_url == WATERBUTLER_URL
             try:
-                response = utils.move_file('emx94', destination_provider, source_file_path="/",
-                                           destination_file_path="/_backup/", cookies=cookies,
-                                           internal=internal, base_url=destination_base_url)
-                if response.status_code != 200 and response.status_code != 201 and response.status_code != 202:
+                response = utils.move_folder_to_backup('emx94', destination_provider, source_file_path="/",
+                                                       process_start='20220101T000000' ,cookies=cookies,
+                                                       internal=internal, base_url=destination_base_url)
+                if response["error"] is not None:
                     # Error
-                    logger.error(f"Return error with response: {response.content}")
+                    logger.error(f"Return error with response: {response['error']}")
                     export_data_restore.update(status=ExportData.STATUS_STOPPED)
                     return {"error_message": f""}
             except Exception as e:
@@ -384,12 +384,12 @@ def rollback_restore(cookies, export_id, destination_id, task_id):
     if is_destination_addon_storage:
         # Move all files from the backup folder out
         try:
-            response = utils.move_file('emx94', destination_provider, source_file_path="/_backup/",
-                                       destination_file_path="/", cookies=cookies,
-                                       internal=internal, base_url=destination_base_url)
-            if response.status_code != 200 and response.status_code != 201 and response.status_code != 202:
+            response = utils.move_folder_from_backup('emx94', destination_provider, source_file_path="/",
+                                                     process_start="20220101T000000", cookies=cookies,
+                                                     internal=internal, base_url=destination_base_url)
+            if response["error"] is not None:
                 # Error
-                logger.error(f"Return error with response: {response.content}")
+                logger.error(f"Return error with response: {response['error']}")
                 export_data_restore.update(status=ExportData.STATUS_STOPPED)
                 return {"error_message": f"Failed to move backup folder to root"}
         except Exception as e:
