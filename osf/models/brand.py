@@ -10,8 +10,9 @@ class Brand(BaseModel):
     class Meta:
         # Custom permissions for use in the OSF Admin App
         permissions = (
-            ('view_brand', 'Can view brand details'),
-            ('modify_brand', 'Can modify brands')
+            # Clashes with built-in permissions
+            # ('view_brand', 'Can view brand details'),
+            ('modify_brand', 'Can modify brands'),
         )
 
     name = models.CharField(max_length=30, blank=True, null=True)
