@@ -125,6 +125,18 @@ var KeenTracker = (function() {
         );
     }
 
+    function _getActionLabels() {
+        const actionLabelMap = {
+            'web': true,
+            'view': Boolean(lodashGet(window, 'contextVars.analyticsMeta.itemGuid')),
+            'search': Boolean(lodashGet(window, 'contextVars.analyticsMeta.searchProviderId')),
+        };
+        return (
+            Object.keys(actionLabelMap)
+            .filter(label => Boolean(actionLabelMap[label]))
+        );
+    }
+
     function _logPageview() {
         const url = new URL('/_/metrics/events/counted_usage/', window.contextVars.apiV2Domain);
         const sessionId = _createOrUpdateKeenSession();
@@ -132,9 +144,10 @@ var KeenTracker = (function() {
             type: 'counted-usage',
             attributes: {
                 client_session_id: sessionId ? md5(sessionId) : null,
+                provider_id: lodashGet(window, 'contextVars.analyticsMeta.searchProviderId'),
                 item_guid: lodashGet(window, 'contextVars.analyticsMeta.itemGuid'),
                 item_public: _pageIsPublic(),
-                action_labels: ['web', 'view'],
+                action_labels: _getActionLabels(),
                 pageview_info: {
                     referer_url: document.referrer,
                     page_url: document.URL,

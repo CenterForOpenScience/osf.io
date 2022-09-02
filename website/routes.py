@@ -145,7 +145,7 @@ def get_globals():
         'reauth_url': util.web_url_for('auth_logout', redirect_url=request.url, reauth=True),
         'profile_url': cas.get_profile_url(),
         'enable_institutions': settings.ENABLE_INSTITUTIONS,
-        'page_route_name': request.url_rule.endpoint,
+        'page_route_name': request.url_rule.endpoint.replace('__', '.'),
         'keen': {
             'public': {
                 'project_id': settings.KEEN['public']['project_id'],

@@ -5,7 +5,7 @@ from unittest import mock
 
 from osf_tests.factories import (
     AuthUserFactory,
-    # PreprintFactory,
+    PreprintFactory,
     # NodeFactory,
     # RegistrationFactory,
     # FileFactory,
@@ -24,15 +24,16 @@ def counted_usage_payload(**attributes):
     }
 
 
-def assert_saved_with(mock_save, *, expected_doc_id, expected_attrs):
+def assert_saved_with(mock_save, *, expected_doc_id=None, expected_attrs):
     assert mock_save.call_count == 1
     args, kwargs = mock_save.call_args
     actual_instance = args[0]
+    if expected_doc_id is not None:
+        assert actual_instance.meta.id == expected_doc_id
     actual_attrs = actual_instance.to_dict()
     for attr_name, expected_value in expected_attrs.items():
         actual_value = actual_attrs.get(attr_name, None)
         assert actual_value == expected_value, repr(actual_value)
-    assert actual_instance.meta.id == expected_doc_id
 
 
 @pytest.mark.django_db
@@ -67,28 +68,27 @@ class TestComputedFields:
         with mock.patch('api.metrics.serializers.website_settings.DOMAIN', new=domain):
             yield domain
 
+    @pytest.fixture(autouse=True)
+    def mock_now(self):
+        timestamp = datetime(1981, 1, 1, 0, 1, 31, tzinfo=timezone.utc)
+        with mock.patch('django.utils.timezone.now', return_value=timestamp):
+            yield timestamp
+
     @pytest.fixture
     def mock_save(self):
         with mock.patch('elasticsearch_dsl.Document.save', autospec=True) as mock_save:
             yield mock_save
-
-    @pytest.fixture
-    def now(self):
-        timestamp = datetime(1981, 1, 1, 0, 1, 31, tzinfo=timezone.utc)
-        with mock.patch('django.utils.timezone.now', return_value=timestamp):
-            yield timestamp
 
     @pytest.fixture()
     def user(self):
         with mock.patch('osf.models.base.generate_guid', return_value='guidy'):
             return AuthUserFactory()
 
-    def test_by_client_session_id(self, app, mock_save, now, user):
+    def test_by_client_session_id(self, app, mock_save, user):
         payload = counted_usage_payload(
             client_session_id='hello',
             item_guid='zyxwv',
             action_labels=['view', 'api'],
-            item_public=True,
             pageview_info={'page_url': 'http://example.foo/blahblah/blee'},
         )
         headers = {
@@ -105,7 +105,6 @@ class TestComputedFields:
                 'item_guid': 'zyxwv',
                 # session_id: sha256(b'hello|1981-01-01').hexdigest()
                 'session_id': '5b7c8b0a740a5b23712258a9d1164d2af008df02a8e3d339f16ead1d19595b34',
-                'item_public': True,
                 'action_labels': ['view', 'api'],
                 'pageview_info': {
                     'page_url': 'http://example.foo/blahblah/blee',
@@ -115,12 +114,11 @@ class TestComputedFields:
             },
         )
 
-    def test_by_client_session_id_anon(self, app, mock_save, now):
+    def test_by_client_session_id_anon(self, app, mock_save):
         payload = counted_usage_payload(
             client_session_id='hello',
             item_guid='zyxwv',
             action_labels=['view', 'web'],
-            item_public=True,
             pageview_info={
                 'page_url': 'http://example.foo/bliz/',
                 'referer_url': 'http://elsewhere.baz/index.php',
@@ -140,7 +138,6 @@ class TestComputedFields:
                 'item_guid': 'zyxwv',
                 # session_id: sha256(b'hello|1981-01-01').hexdigest()
                 'session_id': '5b7c8b0a740a5b23712258a9d1164d2af008df02a8e3d339f16ead1d19595b34',
-                'item_public': True,
                 'action_labels': ['view', 'web'],
                 'pageview_info': {
                     'page_url': 'http://example.foo/bliz/',
@@ -152,11 +149,10 @@ class TestComputedFields:
             },
         )
 
-    def test_by_user_auth(self, app, mock_save, now, user):
+    def test_by_user_auth(self, app, mock_save, user):
         payload = counted_usage_payload(
             item_guid='yxwvu',
             action_labels=['view', 'web'],
-            item_public=False,
             pageview_info={
                 'page_url': 'http://osf.io/mst3k',
                 'referer_url': 'http://osf.io/registries/discover',
@@ -176,7 +172,6 @@ class TestComputedFields:
                 'item_guid': 'yxwvu',
                 # session_id: sha256(b'guidy|1981-01-01|0').hexdigest()
                 'session_id': 'ec768abb16c3411570af99b9d635c2c32d1ca31d1b25eec8ee73759e7242e74a',
-                'item_public': False,
                 'action_labels': ['view', 'web'],
                 'pageview_info': {
                     'page_url': 'http://osf.io/mst3k',
@@ -188,11 +183,10 @@ class TestComputedFields:
             },
         )
 
-    def test_by_useragent_header(self, app, mock_save, now):
+    def test_by_useragent_header(self, app, mock_save):
         payload = counted_usage_payload(
             item_guid='yxwvu',
             action_labels=['view', 'api'],
-            item_public=False,
         )
         headers = {
             'User-Agent': 'haha',
@@ -208,8 +202,74 @@ class TestComputedFields:
                 'item_guid': 'yxwvu',
                 # session_id: sha256(b'localhost:80|haha|1981-01-01|0').hexdigest()
                 'session_id': '97098dd3f7cd26053c0d0264d1c84eaeea8e08d2c55ca34017ffbe53c749ba5a',
-                'item_public': False,
                 'action_labels': ['view', 'api'],
                 'pageview_info': None,
             },
         )
+
+    def test_provider_and_surrounding_guids(self, app, mock_save):
+        preprint = PreprintFactory()
+
+        payload = counted_usage_payload(
+            item_guid=preprint._id,
+            action_labels=['view', 'web'],
+        )
+        resp = app.post_json_api(COUNTED_USAGE_URL, payload)
+        assert resp.status_code == 201
+        assert_saved_with(
+            mock_save,
+            expected_attrs={
+                'provider_id': preprint.provider._id,
+                'surrounding_guids': None,
+            },
+        )
+
+        mock_save.reset_mock()
+
+        payload = counted_usage_payload(
+            item_guid=preprint.primary_file.get_guid(create=True)._id,
+            action_labels=['view', 'web'],
+        )
+        resp = app.post_json_api(COUNTED_USAGE_URL, payload)
+        assert resp.status_code == 201
+        assert_saved_with(
+            mock_save,
+            expected_attrs={
+                'item_guid': preprint.primary_file.get_guid()._id,
+                'provider_id': preprint.primary_file.provider,
+                'surrounding_guids': [preprint._id],
+            },
+        )
+
+    def test_subregistration_file(self, app, mock_save):
+        expected_elastic_countedusage = {
+            'action_labels': [
+                'web',
+                'view'
+            ],
+            'item_guid': 'zcfv2',
+            'item_public': True,
+            'pageview_info': {
+                'hour_of_day': 19,
+                'page_path': '/zcfv2',
+                'page_title': 'OSF',
+                'page_url': 'http://localhost:5000/zcfv2/',
+                'referer_domain': 'localhost:5000',
+                'referer_url': 'http://localhost:5000/qxga7/files/osfstorage',
+                'route_name': 'ember-osf-web.guid-file'
+            },
+            'platform_iri': 'http://localhost:5000/',
+            'provider_id': 'osfstorage',
+            'session_id': 'a62e53e28e603e1c621b49076f9bd9c68b355e1a254738a84111720d749de638',
+            'surrounding_guids': [
+                'qxga7',
+                '4bs8c'
+            ],
+            'timestamp': '2022-09-02T19:50:49.740200+00:00',
+        }
+
+        payload = counted_usage_payload(
+            item_guid='zcfv2',
+            action_labels=['view', 'web'],
+        )
+        resp = app.post_json_api(COUNTED_USAGE_URL, payload)

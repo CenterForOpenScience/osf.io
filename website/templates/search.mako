@@ -390,7 +390,10 @@
     <script type="text/javascript">
         window.contextVars = $.extend(true, {}, window.contextVars, {
             search:true,
-            shareUrl: ${ shareUrl | sjson, n }
+            shareUrl: ${ shareUrl | sjson, n },
+            analyticsMeta: {
+                searchProviderId: 'osf',
+            },
         });
     </script>
 
