@@ -82,12 +82,22 @@ class ExportDataLocation(base.BaseModel):
                 'token': storage_credentials['fileaccess_token'],
             }
         elif provider_name == 'nextcloudinstitutions':
-            external_account = storage_credentials['external_account']
-            provider = external_account['provider']
+            """
+                /storage
+                /external_account
+                /external_account/provider
+                /external_account/oauth_key
+                /external_account/profile_url
+                /external_account/provider_id
+                /external_account/display_name
+                /external_account/oauth_secret
+                /external_account/provider_name
+            """
+            external_account = self.waterbutler_credentials['external_account']
             result = {
-                'host': provider['oauth_secret'],
-                'username': provider['display_name'],
-                'password': provider['oauth_key'],
+                'host': external_account['oauth_secret'],
+                'username': external_account['display_name'],
+                'password': external_account['oauth_key'],
             }
         return result
 
@@ -110,9 +120,17 @@ class ExportDataLocation(base.BaseModel):
                 'team_folder_id': storage_settings['team_folder_id'],
             }
         elif provider_name == 'nextcloudinstitutions':
+            """
+                /storage
+                /storage/provider
+                /disabled
+                /extended
+                /extended/base_folder
+                /extended/notification_secret
+            """
             from addons.nextcloudinstitutions import settings as nci_settings
             from addons.base.institutions_utils import KEYNAME_BASE_FOLDER
-            extended = storage_settings['extended']
+            extended = self.waterbutler_settings['extended']
             result = {
                 'folder': extended[KEYNAME_BASE_FOLDER],
                 'verify_ssl': nci_settings.USE_SSL
