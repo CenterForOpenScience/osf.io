@@ -4,17 +4,17 @@ import pytest
 import responses
 
 from datacite import schema40
-from tests.base import OsfTestCase
-
+from django.utils import timezone
 
 from framework.auth import Auth
-
-from website.identifiers.utils import request_identifiers
-
+from osf.models import Outcome
+from osf.utils.outcomes import ArtifactTypes
+from osf_tests.factories import AuthUserFactory, IdentifierFactory, RegistrationFactory
+from tests.base import OsfTestCase
 from tests.test_addons import assert_urls_equal
-from osf_tests.factories import AuthUserFactory, RegistrationFactory
 from website import settings
 from website.identifiers.clients import DataCiteClient
+from website.identifiers.utils import request_identifiers
 
 
 @pytest.mark.django_db
@@ -115,6 +115,89 @@ class TestDataCiteClient:
         assert f'<contributorName nameType="Personal">{invisible_contrib.fullname}</contributorName>' in metadata_xml
         assert f'<creatorName nameType="Personal">{invisible_contrib.fullname}</creatorName>' not in metadata_xml
 
+    def test_datacite_format_related_resources(self, datacite_client):
+        registration = RegistrationFactory(is_public=True, has_doi=True)
+        registration.article_doi = 'publication'
+        outcome = Outcome.objects.for_registration(registration, create=True)
+        data_artifact = outcome.artifact_metadata.create(
+            identifier=IdentifierFactory(category='doi'), artifact_type=ArtifactTypes.DATA, finalized=True
+        )
+        materials_artifact = outcome.artifact_metadata.create(
+            identifier=IdentifierFactory(category='doi'), artifact_type=ArtifactTypes.MATERIALS, finalized=True
+        )
+
+        metadata_dict = datacite_client.build_metadata(registration, as_xml=False)
+
+        # Artifact entries first, ordered by type, followed by article doi
+        expected_relationships = [
+            {
+                'relatedIdentifier': data_artifact.identifier.value,
+                'relatedIdentifierType': 'DOI',
+                'relationType': 'IsSupplementedBy',
+            },
+            {
+                'relatedIdentifier': materials_artifact.identifier.value,
+                'relatedIdentifierType': 'DOI',
+                'relationType': 'IsSupplementedBy',
+            },
+            {
+                'relatedIdentifier': 'publication',
+                'relatedIdentifierType': 'DOI',
+                'relationType': 'IsSupplementTo',
+            },
+        ]
+        formatted_relationships = metadata_dict['relatedIdentifiers']
+        sort_func = lambda x: x['relatedIdentifier']
+        assert sorted(formatted_relationships, key=sort_func) == sorted(expected_relationships, key=sort_func)
+
+    def test_datacite_format_related_resources__ignores_duplicate_pids(self, datacite_client):
+        registration = RegistrationFactory(is_public=True, has_doi=True)
+        outcome = Outcome.objects.for_registration(registration, create=True)
+        identifier = IdentifierFactory(category='doi')
+        outcome.artifact_metadata.create(
+            identifier=identifier, artifact_type=ArtifactTypes.DATA, finalized=True
+        )
+        outcome.artifact_metadata.create(
+            identifier=identifier, artifact_type=ArtifactTypes.MATERIALS, finalized=True
+        )
+
+        metadata_dict = datacite_client.build_metadata(registration, as_xml=False)
+
+        expected_relationships = [
+            {
+                'relatedIdentifier': identifier.value,
+                'relatedIdentifierType': 'DOI',
+                'relationType': 'IsSupplementedBy',
+            },
+        ]
+        assert metadata_dict['relatedIdentifiers'] == expected_relationships
+
+    def test_datacite_format_related_resources__ignores_inactive_resources(self, datacite_client):
+        registration = RegistrationFactory(is_public=True, has_doi=True)
+        outcome = Outcome.objects.for_registration(registration, create=True)
+        active_artifact = outcome.artifact_metadata.create(
+            identifier=IdentifierFactory(category='doi'), artifact_type=ArtifactTypes.DATA, finalized=True
+        )
+        nonfinal_artifact = outcome.artifact_metadata.create(
+            identifier=IdentifierFactory(category='doi'), artifact_type=ArtifactTypes.DATA, finalized=False
+        )
+        deleted_artifact = outcome.artifact_metadata.create(
+            identifier=IdentifierFactory(category='doi'),
+            artifact_type=ArtifactTypes.DATA,
+            finalized=False,
+            deleted=timezone.now()
+        )
+
+        metadata_dict = datacite_client.build_metadata(registration, as_xml=False)
+
+        expected_relationships = [
+            {
+                'relatedIdentifier': active_artifact.identifier.value,
+                'relatedIdentifierType': 'DOI',
+                'relationType': 'IsSupplementedBy',
+            },
+        ]
+        assert metadata_dict['relatedIdentifiers'] == expected_relationships
 
 
 @pytest.mark.django_db

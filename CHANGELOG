@@ -2,6 +2,19 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+22.08.0 (2022-08-18)
+====================
+- API support and remaining model work for associating Resources with Registrations
+- Updates to DOI metadata to include relatedIdentifiers on Registrations
+- Updates to SHARE integration to publish `osf_related_resource_types` for Registrations
+
+22.07.0 (2022-08-18)
+====================
+- Migrations in support of Registration Resources
+- Fix for Admin App colorpicker
+- Management command to sync all DOIs for OSF resources
+- Change "revision_justification" to TextField to alleviate max length concerns
+
 22.06.0 (2022-06-23)
 ====================
 - Fix support for Dataverse files

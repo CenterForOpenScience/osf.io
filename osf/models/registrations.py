@@ -14,16 +14,13 @@ from guardian.models import (
 )
 from dirtyfields import DirtyFieldsMixin
 
+from api.share.utils import update_share
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.permissions import ADMIN, READ, WRITE
 from osf.exceptions import NodeStateError, DraftRegistrationStateError
-from website.util import api_v2_url
-from website import settings
-from website.archiver import ARCHIVER_INITIATED
-from website.project import signals
-
+from osf.external.internet_archive.tasks import archive_to_ia, update_ia_metadata
 from osf.metrics import RegistriesModerationMetrics
 from osf.models import (
     Embargo,
@@ -35,35 +32,35 @@ from osf.models import (
     RegistrationSchema,
     Retraction,
 )
-
 from osf.models.action import RegistrationAction
 from osf.models.archive import ArchiveJob
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.draft_node import DraftNode
-from osf.models.node import AbstractNode
+from osf.models.licenses import NodeLicenseRecord
 from osf.models.mixins import (
     EditableFieldsMixin,
     Loggable,
     GuardianMixin,
+    RegistrationResponseMixin,
 )
+from osf.models.node import AbstractNode
 from osf.models.nodelog import NodeLog
 from osf.models.provider import RegistrationProvider
-from osf.models.mixins import RegistrationResponseMixin
 from osf.models.tag import Tag
-from osf.models.licenses import NodeLicenseRecord
 from osf.models.validators import validate_title
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils import notifications as notify
 from osf.utils.workflows import (
     RegistrationModerationStates,
     RegistrationModerationTriggers,
     ApprovalStates,
     SanctionTypes
 )
-
-from osf.external.internet_archive.tasks import archive_to_ia, update_ia_metadata
-
-import osf.utils.notifications as notify
-from api.share.utils import update_share
+from website import settings
+from website.archiver import ARCHIVER_INITIATED
+from website.identifiers.tasks import update_doi_metadata_on_change
+from website.project import signals
+from website.util import api_v2_url
 
 
 logger = logging.getLogger(__name__)
@@ -153,7 +150,7 @@ class Registration(AbstractNode):
         help_text='Where the archive.org data for the registration is stored'
     )
     # A dictionary of key: value pairs to store additional metadata defined by third-party sources
-    additional_metadata = DateTimeAwareJSONField(blank=True)
+    additional_metadata = DateTimeAwareJSONField(blank=True, null=True)
 
     @staticmethod
     def find_failed_registrations(days_stuck=None):
@@ -866,10 +863,27 @@ class Registration(AbstractNode):
         for children in Registration.objects.get_children(self, active=True, include_root=True):
             archive_to_ia(children)
 
+    def related_resource_updated(self, log_action=None, api_request=None, **log_params):
+        if settings.SHARE_ENABLED:
+            update_share(self)
+        if not log_action:
+            return
+
+        if api_request:  # Only log user-initiated changes
+            self.add_log(
+                action=log_action,
+                params=log_params,
+                auth=None,  # Grabbed from request
+                request=api_request,
+            )
+
+        update_doi_metadata_on_change(target_guid=self._id)
+
     class Meta:
         # custom permissions for use in the OSF Admin App
         permissions = (
-            ('view_registration', 'Can view registration details'),
+            # Clashes with built-in permissions
+            # ('view_registration', 'Can view registration details'),
         )
 
 class DraftRegistrationLog(ObjectIDMixin, BaseModel):

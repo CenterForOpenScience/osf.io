@@ -320,6 +320,11 @@ WATERBUTLER_INTERNAL_URL = WATERBUTLER_URL
 ####################
 #   Identifiers   #
 ###################
+PID_VALIDATION_ENABLED = False
+PID_VALIDATION_ENDPOINTS = {
+    'doi': 'https://doi.org/ra/'
+}
+
 DOI_URL_PREFIX = 'https://doi.org/'
 
 # General Format for DOIs
@@ -422,10 +427,12 @@ class CeleryConfig:
         'osf.management.commands.addon_deleted_date',
         'osf.management.commands.migrate_registration_responses',
         'osf.management.commands.archive_registrations_on_IA'
+        'osf.management.commands.sync_doi_metadata',
         'osf.management.commands.sync_collection_provider_indices',
         'osf.management.commands.sync_datacite_doi_metadata',
         'osf.management.commands.update_institution_project_counts',
-        'osf.management.commands.populate_branched_from'
+        'osf.management.commands.populate_branched_from',
+        'osf.management.commands.cumulative_plos_metrics'
     }
 
     med_pri_modules = {
@@ -522,6 +529,8 @@ class CeleryConfig:
         'osf.management.commands.approve_pending_schema_responses',
         'osf.management.commands.delete_legacy_quickfiles_nodes',
         'osf.management.commands.fix_quickfiles_waterbutler_logs',
+        'osf.management.commands.sync_doi_metadata',
+        'osf.management.commands.cumulative_plos_metrics',
         'api.providers.tasks'
     )
 
@@ -710,6 +719,11 @@ class CeleryConfig:
         #     'stuck_registration_audit': {
         #         'task': 'scripts.stuck_registration_audit',
         #         'schedule': crontab(minute=0, hour=11),  # Daily 6 a.m
+        #         'kwargs': {},
+        #     },
+        #     'cumulative_plos_metrics': {
+        #         'task': 'osf.management.commands.cumulative_plos_metrics',
+        #         'schedule': crontab(day_of_month=1, minute=30, hour=9),  # First of the month at 4:30 a.m.
         #         'kwargs': {},
         #     },
         # })
@@ -2049,6 +2063,9 @@ DS_METRICS_OSF_TOKEN = None
 DS_METRICS_BASE_FOLDER = None
 REG_METRICS_OSF_TOKEN = None
 REG_METRICS_BASE_FOLDER = None
+PLOS_METRICS_BASE_FOLDER = None
+PLOS_METRICS_INITIAL_FILE_DOWNLOAD_URL = None
+PLOS_METRICS_OSF_TOKEN = None
 
 STORAGE_WARNING_THRESHOLD = .9  # percent of maximum storage used before users get a warning message
 STORAGE_LIMIT_PUBLIC = 50
