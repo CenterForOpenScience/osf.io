@@ -185,9 +185,10 @@ def restore_export_data_process(cookies, export_id, destination_id, export_data_
             destination_provider = destination_settings["storage"]["provider"]
             internal = destination_base_url == WATERBUTLER_URL
             try:
-                response = utils.move_folder_to_backup('emx94', destination_provider, source_file_path="/",
-                                                       process_start='20220101T000000' ,cookies=cookies,
-                                                       internal=internal, base_url=destination_base_url)
+                response = utils.move_folder_to_backup('emx94', destination_provider,
+                                                       process_start=export_data_restore.process_start.strftime(DATETIME_FORMAT),
+                                                       cookies=cookies, internal=internal,
+                                                       base_url=destination_base_url)
                 if response["error"] is not None:
                     # Error
                     logger.error(f"Return error with response: {response['error']}")
@@ -384,9 +385,10 @@ def rollback_restore(cookies, export_id, destination_id, task_id):
     if is_destination_addon_storage:
         # Move all files from the backup folder out
         try:
-            response = utils.move_folder_from_backup('emx94', destination_provider, source_file_path="/",
-                                                     process_start="20220101T000000", cookies=cookies,
-                                                     internal=internal, base_url=destination_base_url)
+            response = utils.move_folder_from_backup('emx94', destination_provider,
+                                                     process_start=export_data_restore.process_start.strftime(DATETIME_FORMAT),
+                                                     cookies=cookies, internal=internal,
+                                                     base_url=destination_base_url)
             if response["error"] is not None:
                 # Error
                 logger.error(f"Return error with response: {response['error']}")

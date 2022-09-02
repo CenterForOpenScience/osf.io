@@ -606,6 +606,7 @@ def move_file(node_id, provider, source_file_path, destination_file_path, cookie
               internal=True, base_url=WATERBUTLER_URL):
     move_old_data_url = waterbutler_api_url_for(node_id, provider, path=source_file_path, _internal=internal,
                                                 base_url=base_url)
+    destination_file_path = destination_file_path[1:] if destination_file_path.startswith("/") else destination_file_path
     request_body = {
         "action": "move",
         "path": "/",
@@ -617,11 +618,14 @@ def move_file(node_id, provider, source_file_path, destination_file_path, cookie
                          json=request_body)
 
 
-def move_folder_to_backup(node_id, provider, source_file_path, process_start, cookies,
-                          internal=True, base_url=WATERBUTLER_URL):
-    path_list = get_all_file_paths(node_id, provider, source_file_path, cookies, internal, base_url,
-                                   exclude_path_regex="^\\/backup_\\d{8}T\\d{6}_.+$")
+def move_folder_to_backup(node_id, provider, process_start, cookies, internal=True, base_url=WATERBUTLER_URL):
+    path_list, root_child_folders = get_all_file_paths(node_id, provider, "/", cookies, internal, base_url,
+                                                       exclude_path_regex="^\\/backup_\\d{8}T\\d{6}_.+$")
     # Move file
+    moved_paths = []
+    created_folder_paths = set()
+    has_error = False
+    error_message = ""
     for path in path_list:
         try:
             paths = path.split("/")
@@ -629,20 +633,39 @@ def move_folder_to_backup(node_id, provider, source_file_path, process_start, co
             new_path = "/".join(paths)
             response = move_file(node_id, provider, path, new_path, cookies, internal, base_url)
             if response.status_code != 200 and response.status_code != 201 and response.status_code != 202:
+                logger.error(f"Response return error: {response.content}")
                 # Rollback
-                return {"error": response.content}
+                has_error = True
+                error_message = f"{response.status_code} - {response.content}"
+                break
+            moved_paths.append((path, new_path))
+            if len(paths) > 2:
+                created_folder_paths.add(f"/{paths[1]}/")
         except Exception as e:
             logger.error(f"Exception: {e}")
-            # Rollback
-            return {"error": e}
+            has_error = True
+            error_message = repr(e)
+            break
+
+    if has_error:
+        # Rollback
+        rollback_folder_movement(node_id, provider, moved_paths, created_folder_paths, cookies,
+                                 internal, base_url)
+        return {"error": error_message}
+
+    # S3: Clean root folders after moving
+    delete_folder_after_move(node_id, provider, root_child_folders, cookies, internal, base_url)
     return {}
 
 
-def move_folder_from_backup(node_id, provider, source_file_path, process_start, cookies,
-                            internal=True, base_url=WATERBUTLER_URL):
-    path_list = get_all_file_paths(node_id, provider, source_file_path, cookies, internal, base_url,
-                                   include_path_regex="^\\/backup_\\d{8}T\\d{6}_.+$")
+def move_folder_from_backup(node_id, provider, process_start, cookies, internal=True, base_url=WATERBUTLER_URL):
+    path_list, root_child_folders = get_all_file_paths(node_id, provider, "/", cookies, internal, base_url,
+                                                       include_path_regex="^\\/backup_\\d{8}T\\d{6}_.+$")
     # Move file
+    moved_paths = []
+    created_folder_paths = set()
+    has_error = False
+    error_message = ""
     for path in path_list:
         try:
             paths = path.split("/")
@@ -650,13 +673,28 @@ def move_folder_from_backup(node_id, provider, source_file_path, process_start, 
             new_path = "/".join(paths)
             response = move_file(node_id, provider, path, new_path, cookies, internal, base_url)
             if response.status_code != 200 and response.status_code != 201 and response.status_code != 202:
+                logger.error(f"Response return error: {response.content}")
                 # Rollback
-                return {"error": response.content}
+                has_error = True
+                error_message = f"{response.status_code} - {response.content}"
+                break
+            moved_paths.append((path, new_path))
+            if len(paths) > 2:
+                created_folder_paths.add(f"/{paths[1]}/")
         except Exception as e:
             logger.error(f"Exception: {e}")
-            # Rollback
-            return {"error": e}
+            has_error = True
+            error_message = repr(e)
+            break
 
+    if has_error:
+        # Rollback
+        rollback_folder_movement(node_id, provider, moved_paths, created_folder_paths, cookies,
+                                 internal, base_url)
+        return {"error": error_message}
+
+    # S3: Clean root folders after moving
+    delete_folder_after_move(node_id, provider, root_child_folders, cookies, internal, base_url)
     return {}
 
 
@@ -671,6 +709,7 @@ def get_all_file_paths(node_id, provider, file_path, cookies, internal=True, bas
         data = response_body["data"]
         if len(data) != 0:
             list_file_path = []
+            root_child_folders = []
             for item in data:
                 path = item["attributes"]["path"]
                 kind = item["attributes"]["kind"]
@@ -690,27 +729,44 @@ def get_all_file_paths(node_id, provider, file_path, cookies, internal=True, bas
                 if kind == "file":
                     list_file_path.append(path)
                 elif kind == "folder":
+                    if file_path == "/":
+                        # S3: Add to list need to delete
+                        root_child_folders.append(path)
                     # Call this function again
-                    sub_file_paths = get_all_file_paths(node_id, provider, path, cookies, internal, base_url)
+                    sub_file_paths, _ = get_all_file_paths(node_id, provider, path, cookies, internal, base_url)
                     list_file_path.extend(sub_file_paths)
 
-            return list_file_path
+            return list_file_path, root_child_folders
         else:
-            return [file_path]
+            return [file_path], []
     except Exception:
-        return []
+        return [], []
 
 
-def rename_file_or_folder(node_id, provider, old_path, new_path, cookies, internal=True, base_url=WATERBUTLER_URL):
-    rename_url = waterbutler_api_url_for(node_id, provider, old_path, _internal=internal, base_url=base_url)
-    request_body = {
-        "action": "rename",
-        "rename": new_path,
-    }
-    return requests.post(rename_url,
-                         headers={'content-type': 'application/json'},
-                         cookies=cookies,
-                         json=request_body)
+def rollback_folder_movement(node_id, provider, moved_paths, created_folder_paths, cookies,
+                             internal=True, base_url=WATERBUTLER_URL):
+    # Move files and folder back
+    for path, new_path in moved_paths:
+        try:
+            move_file(node_id, provider, new_path, path, cookies, internal, base_url)
+        except Exception as e:
+            logger.error(f"Exception: {e}")
+
+    # S3: Delete folders created by moving files and folders
+    for path in created_folder_paths:
+        try:
+            delete_file(node_id, provider, path, cookies, internal, base_url)
+        except Exception as e:
+            logger.error(f"Exception: {e}")
+
+
+def delete_folder_after_move(node_id, provider, root_child_folders, cookies,
+                             internal=True, base_url=WATERBUTLER_URL):
+    for path in root_child_folders:
+        try:
+            delete_file(node_id, provider, path, cookies, internal, base_url)
+        except Exception as e:
+            logger.error(f"Exception: {e}")
 
 
 def delete_file(node_id, provider, file_path, cookies, internal=True, base_url=WATERBUTLER_URL):
