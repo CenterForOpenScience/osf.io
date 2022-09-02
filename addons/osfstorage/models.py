@@ -469,6 +469,7 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
         for child in self.children.all().prefetch_related('versions'):
             child.update_region_from_latest_version(destination_parent)
 
+
 class Region(models.Model):
     # GRDM ver.: Region._id may be Institution._id
     _id = models.CharField(max_length=255, db_index=True)
@@ -526,6 +527,11 @@ class Region(models.Model):
         if hasattr(self.addon, 'full_name'):
             return self.addon.full_name
         return None
+
+    @property
+    def has_export_data(self):
+        from osf.models import ExportData
+        return self.exportdata_set.filter(status__in=ExportData.EXPORT_DATA_AVAILABLE).exists()
 
 
 class UserSettings(BaseUserSettings):

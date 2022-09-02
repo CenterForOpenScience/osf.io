@@ -60,6 +60,7 @@ class ExportData(base.BaseModel):
         (STATUS_COMPLETED, STATUS_COMPLETED.title()),
         (STATUS_ERROR, STATUS_ERROR.title()),
     )
+    EXPORT_DATA_AVAILABLE = [STATUS_COMPLETED, STATUS_CHECKING]
 
     source = models.ForeignKey(Region, on_delete=models.CASCADE)
     location = models.ForeignKey(ExportDataLocation, on_delete=models.CASCADE)

@@ -1855,7 +1855,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             return False
         institution = institutions.first()
 
-        return self.is_affiliated_with_institution(institution)
+        return self.is_super_admin or self.is_affiliated_with_institution(institution)
 
     def is_affiliated_with_institution(self, institution):
         """Return if this user is affiliated with ``institution``."""

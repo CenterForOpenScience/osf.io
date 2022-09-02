@@ -37,7 +37,7 @@ def get_export_data(institution_guid, selected_location_id=None, selected_source
     list_export_data = ExportData.objects.filter(
         location_id__in=list_location_id,
         source_id__in=list_source_id,
-        status__in=[ExportData.STATUS_COMPLETED, ExportData.STATUS_CHECKING]
+        status__in=ExportData.EXPORT_DATA_AVAILABLE
     )
     if check_delete:
         list_export_data = list_export_data.filter(is_deleted=deleted)

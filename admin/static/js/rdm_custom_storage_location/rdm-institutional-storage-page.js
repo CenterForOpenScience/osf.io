@@ -777,6 +777,65 @@ function deleteLocation(id, providerShortName) {
 }
 
 
+// Start - institutional storages screen - Actions
+
+function showViewExportDataButton(element, location_id) {
+    let $viewExportDataButton = $(element);
+    if ($viewExportDataButton.hasClass('hidden')) {
+        $viewExportDataButton.removeClass('hidden');
+    }
+    $viewExportDataButton.data('location', location_id);
+}
+
+function hiddenViewExportDataButton(element) {
+    let $viewExportDataButton = $(element);
+    if (!$viewExportDataButton.hasClass('hidden')) {
+        $viewExportDataButton.addClass('hidden');
+    }
+    $viewExportDataButton.removeData('location');
+}
+
+$('.row-storage select.location-select').change(function (event) {
+    event.preventDefault();
+    let institution_id = window.contextVars.institution_id;
+    let source_id = this.dataset.storage;
+    let location_id = $(this).val();
+    let $parent = $(this).parents('.row-storage');
+    let $viewExportDataButton = $parent.find('button.view-export-data');
+    let params = {
+        'institution_id': institution_id,
+        'source_id': source_id,
+        'location_id': location_id,
+    };
+    let route = 'check-data';
+    let url = '/custom_storage_location/export_data/' + route + '/';
+    $.ajax({
+        url: url,
+        type: 'POST',
+        data: JSON.stringify(params),
+        contentType: 'application/json; charset=utf-8',
+        custom: {'element': $viewExportDataButton, 'location_id': location_id},
+        timeout: 120000,
+        success: function (data) {
+            if (data.has_data === true) {
+                showViewExportDataButton(this.custom.element, this.custom.location_id);
+            } else {
+                hiddenViewExportDataButton(this.custom.element);
+            }
+        },
+        error: function (jqXHR) {
+            hiddenViewExportDataButton(this.custom.element);
+        }
+    });
+});
+
+$('.row-storage button.view-export-data').click(function (event) {
+    event.preventDefault();
+    let params = {'storage_id': $(this).data('storage'), 'location_id': $(this).data('location')}
+    let url = window.contextVars.export_data_list_url + '?' + $.param(params);
+    window.location.load(url);
+});
+
 // Start - Export data - Actions
 
 function exportState(element) {
@@ -799,7 +858,6 @@ function stopExportState(element) {
     let $stopExportButton = $parent.find('.stop-export-button');
     $stopExportButton.prop('disabled', false);
     $stopExportButton.removeClass('disabled');
-
 }
 
 $('.export-button').click(function (event) {
@@ -839,6 +897,13 @@ function exportData(institution_id, source_id, location_id, element) {
                 // task_state in (SUCCESS, )
                 exportState(this.custom.element);
                 message = 'Export data successfully';
+
+                let $parent = $(this.custom.element).parents('.row-storage');
+                if ($parent.length) {
+                    let $viewExportDataButton = $parent.find('button.view-export-data');
+                    console.log($parent, $viewExportDataButton, location_id);
+                    showViewExportDataButton($viewExportDataButton, location_id)
+                }
             } else if (data.task_state === 'FAILURE') {
                 // task_state in (FAILURE, )
                 exportState(this.custom.element);
@@ -943,12 +1008,22 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
             if (jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)) {
                 let data = jqXHR.responseJSON;
                 message = data.message;
-                if ('task_state' in data && 'status' in data
-                    && data.task_state === 'SUCCESS' && data.status === 'Completed') {
-                    // task_state in (SUCCESS)
-                    exportState(this.custom.element);
-                    message = 'Export data successfully';
-                    $osf.growl('Export Data', _(message), 'success', 2);
+                if ('task_state' in data && 'status' in data) {
+                    if (data.task_state === 'SUCCESS') {
+                        // task_state in (SUCCESS)
+                        exportState(this.custom.element);
+                    }
+
+                    if (data.status === 'Completed') {
+                        let $parent = $(this.custom.element).parents('.row-storage');
+                        if ($parent.length) {
+                            let $viewExportDataButton = $parent.find('button.view-export-data');
+                            showViewExportDataButton($viewExportDataButton, location_id)
+                        }
+                        $osf.growl('Export Data', _('Export data successfully'), 'success', 2);
+                    } else if (data.status === 'Error') {
+                        $osf.growl('Export Data', _('Export data failed'), 'danger', 2);
+                    }
                 }
             }
             $osf.growl('Stop Export Data', _(message), 'danger', 2);
@@ -958,7 +1033,6 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
 
 function checkStatusExportData(institution_id, source_id, location_id, task_id, element) {
     // console.log(institution_id, source_id, location_id, task_id);
-    console.log(window.contextVars.intervalID);
     let params = {
         'institution_id': institution_id,
         'source_id': source_id,
@@ -986,6 +1060,13 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
 
                 exportState(this.custom.element);
                 message = 'Export data successfully';
+
+                let $parent = $(this.custom.element).parents('.row-storage');
+                if ($parent.length) {
+                    let $viewExportDataButton = $parent.find('button.view-export-data');
+                    showViewExportDataButton($viewExportDataButton, location_id)
+                }
+
                 if (window.contextVars.stopExportInBackground) {
                     message = 'Stop exporting successfully';
                 }
@@ -1003,11 +1084,10 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
                     message = 'Error occurred while exporting data.';
                 }
             }
-            console.log('checkStatusExportData', window.contextVars.stopExportInBackground, data);
             !window.contextVars.intervalID && $osf.growl(title, _(message), messageType, 10);
         },
         error: function (jqXHR) {
-            console.log('checkStatusExportData', window.contextVars.stopExportInBackground, jqXHR.responseJSON);
+            // console.log('checkStatusExportData', window.contextVars.stopExportInBackground, jqXHR.responseJSON);
         }
     });
 }
@@ -1224,14 +1304,14 @@ $('#check_restore_button').on('click', () => {
         url: url,
         type: 'GET',
         contentType: 'application/json; charset=utf-8',
-    }).done(function(response) {
+    }).done(function (response) {
         let data_res = response;
         console.log(data_res);
         $('#checkRestoreDataModal').modal('show');
         let text_check_export = `<p>OK: ${data_res.OK}/${data_res.Total} files<br/>
                     NG: ${data_res.NG}/${data_res.Total} files</p>`;
         let text_current = '';
-        data_res.list_file_ng.forEach(function(file){
+        data_res.list_file_ng.forEach(function (file) {
             text_current += `<tr>
                                 <td>${file.path}</td>
                                 <td>${file.size} KB</td>
@@ -1241,7 +1321,7 @@ $('#check_restore_button').on('click', () => {
         });
         $('.text-check-restore-data').html(text_check_export);
         $('.table-ng-restore').html(text_current);
-    }).fail(function(jqXHR, textStatus, error) {
+    }).fail(function (jqXHR, textStatus, error) {
         $('#check_restore_button').prop('disabled', false);
         let message = jqXHR.responseJSON.message;
         $osf.growl('Error', _(message), 'error');
@@ -1249,9 +1329,9 @@ $('#check_restore_button').on('click', () => {
 });
 
 $('#cancleExportDataModal').on('click', () => {
-     $('#checkExportData').prop('disabled', false);
+    $('#checkExportData').prop('disabled', false);
 });
 
 $('#cancelRestoreDataModal').on('click', () => {
-     $('#check_restore_button').prop('disabled', false);
+    $('#check_restore_button').prop('disabled', false);
 });

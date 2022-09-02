@@ -44,7 +44,7 @@ class InstitutionalStorageView(InstitutionalStorageBaseView, TemplateView):
 
         region = None
         if Region.objects.filter(_id=institution._id).exists():
-            region = Region.objects.get(_id=institution._id)
+            region = Region.objects.filter(_id=institution._id).first()
         else:
             region = Region.objects.first()
             region.name = ''

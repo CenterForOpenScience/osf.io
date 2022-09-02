@@ -57,14 +57,7 @@ class ExportDataInstitutionalStorageListView(ExportStorageLocationViewBaseView, 
 
     def get_queryset(self):
         storages = Region.objects.filter(_id=self.institution_guid).order_by(self.ordering)
-        storages_dict = [{
-            "id": storage.id,
-            "name": storage.name,
-            "provider_name": storage.provider_name,
-            "provider_full_name": storage.provider_full_name,
-            "has_export_data": ExportData.objects.filter(source_id=storage.id).exists()
-        } for storage in storages]
-        return storages_dict
+        return storages
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
@@ -75,6 +68,8 @@ class ExportDataInstitutionalStorageListView(ExportStorageLocationViewBaseView, 
         kwargs.setdefault('storages', query_set)
         locations = self.institution.get_allowed_storage_location()
         kwargs.setdefault('locations', locations)
+        location_id = locations[0].id if locations else None
+        kwargs.setdefault('location_id', location_id)
         kwargs.setdefault('page', page)
 
         return super(ExportDataInstitutionalStorageListView, self).get_context_data(**kwargs)

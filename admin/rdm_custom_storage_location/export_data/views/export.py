@@ -229,3 +229,20 @@ class CheckStateExportDataActionView(ExportDataBaseActionView):
             'result': task.result if isinstance(task.result, str) or isinstance(task.result, dict) else {},
             'status': export_data.status,
         }, status=status.HTTP_200_OK)
+
+
+class CheckDataExportDataActionView(ExportDataBaseActionView):
+
+    def post(self, request, **kwargs):
+        institution, source_storage, location = self.extract_input(request)
+
+        has_data = ExportData.objects.filter(
+            location=location,
+            source=source_storage,
+            status__in=ExportData.EXPORT_DATA_AVAILABLE,
+            is_deleted=False
+        ).exists()
+
+        return Response({
+            'has_data': has_data,
+        }, status=status.HTTP_200_OK)
