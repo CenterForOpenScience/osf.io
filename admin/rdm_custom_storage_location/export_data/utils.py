@@ -777,6 +777,42 @@ def delete_file(node_id, provider, file_path, cookies, internal=True, base_url=W
                            cookies=cookies)
 
 
+def delete_all_files_except_backup(node_id, provider, cookies, internal=True, base_url=WATERBUTLER_URL):
+    # In add-on institutional storage: Delete files, except the backup folder.
+    regex = "^\\/backup_\\d{8}T\\d{6}_.+$"
+    list_backup_paths = []
+    try:
+        response = get_file_data(node_id, provider, "/", cookies, internal=internal,
+                                 base_url=base_url, get_file_info=True)
+        if response.status_code != 200:
+            return []
+        response_body = response.json()
+        data = response_body["data"]
+        if len(data) != 0:
+            for item in data:
+                path = item["attributes"]["path"]
+                kind = item["attributes"]["kind"]
+
+                try:
+                    pattern = re.compile(regex)
+                    if pattern.match(path):
+                        continue
+                except:
+                    continue
+
+                if kind == "file" or kind == "folder":
+                    list_backup_paths.append(path)
+    except:
+        pass
+
+    # Delete all paths
+    for path in list_backup_paths:
+        try:
+            delete_file(node_id, provider, path, cookies, internal, base_url)
+        except Exception as e:
+            logger.error(f"Exception: {e}")
+
+
 def validate_export_data(data_json):
     try:
         schema = from_json('file-info-schema.json')
