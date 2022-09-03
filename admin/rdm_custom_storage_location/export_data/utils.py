@@ -620,7 +620,7 @@ def move_file(node_id, provider, source_file_path, destination_file_path, cookie
 
 def move_folder_to_backup(node_id, provider, process_start, cookies, internal=True, base_url=WATERBUTLER_URL):
     path_list, root_child_folders = get_all_file_paths(node_id, provider, "/", cookies, internal, base_url,
-                                                       exclude_path_regex="^\\/backup_\\d{8}T\\d{6}_.+$")
+                                                       exclude_path_regex="^\\/backup_\\d{8}T\\d{6}\\/.*$")
     # Move file
     moved_paths = []
     created_folder_paths = set()
@@ -629,7 +629,7 @@ def move_folder_to_backup(node_id, provider, process_start, cookies, internal=Tr
     for path in path_list:
         try:
             paths = path.split("/")
-            paths[1] = f"backup_{process_start}_{paths[1]}"
+            paths.insert(1, f"backup_{process_start}")
             new_path = "/".join(paths)
             response = move_file(node_id, provider, path, new_path, cookies, internal, base_url)
             if response.status_code != 200 and response.status_code != 201 and response.status_code != 202:
@@ -660,7 +660,8 @@ def move_folder_to_backup(node_id, provider, process_start, cookies, internal=Tr
 
 def move_folder_from_backup(node_id, provider, process_start, cookies, internal=True, base_url=WATERBUTLER_URL):
     path_list, root_child_folders = get_all_file_paths(node_id, provider, "/", cookies, internal, base_url,
-                                                       include_path_regex="^\\/backup_\\d{8}T\\d{6}_.+$")
+                                                       include_path_regex="^\\/backup_\\d{8}T\\d{6}\\/.*$")
+
     # Move file
     moved_paths = []
     created_folder_paths = set()
@@ -669,7 +670,10 @@ def move_folder_from_backup(node_id, provider, process_start, cookies, internal=
     for path in path_list:
         try:
             paths = path.split("/")
-            paths[1] = paths[1].replace(f"backup_{process_start}_", "")
+            if paths[1] == f"backup_{process_start}":
+                del paths[1]
+            else:
+                continue
             new_path = "/".join(paths)
             response = move_file(node_id, provider, path, new_path, cookies, internal, base_url)
             if response.status_code != 200 and response.status_code != 201 and response.status_code != 202:
