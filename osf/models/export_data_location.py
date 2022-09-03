@@ -136,7 +136,7 @@ class ExportDataLocation(base.BaseModel):
         elif provider_name == 'dropboxbusiness':
             result = {
                 'folder': '/',
-                'admin_dbmid': storage_settings['admin_dbmid'],
-                'team_folder_id': storage_settings['team_folder_id'],
+                'admin_dbmid': self.waterbutler_settings['admin_dbmid'],
+                'team_folder_id': self.waterbutler_settings['team_folder_id'],
             }
         return result
