@@ -5,6 +5,7 @@ import json
 
 from celery.contrib.abortable import AbortableAsyncResult
 from django.utils.decorators import method_decorator
+from requests import ConnectionError, Timeout
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -189,7 +190,7 @@ def restore_export_data_process(cookies, export_id, destination_id, export_data_
                                                        process_start=export_data_restore.process_start.strftime(DATETIME_FORMAT),
                                                        cookies=cookies, internal=internal,
                                                        base_url=destination_base_url)
-                if response["error"] is not None:
+                if "error" in response and response["error"] is not None:
                     # Error
                     logger.error(f"Return error with response: {response['error']}")
                     export_data_restore.update(status=ExportData.STATUS_STOPPED)
@@ -311,8 +312,7 @@ def rollback_restore(cookies, export_id, destination_id, task_id):
         return {"error_message": f"Cannot get export data restore info"}
 
     # Update process status
-    export_data_restore.status = ExportData.STATUS_STOPPING
-    export_data_restore.save()
+    export_data_restore.update(status=ExportData.STATUS_STOPPING)
 
     # Abort current task
     task = AbortableAsyncResult(task_id)
@@ -362,34 +362,23 @@ def rollback_restore(cookies, export_id, destination_id, task_id):
     destination_provider = destination_settings["storage"]["provider"]
     internal = destination_base_url == WATERBUTLER_URL
 
-    for file in files:
-        file_path = file["path"]
-        file_materialized_path = file["materialized_path"]
-        file_node_id = file["project"]["id"]
+    if is_destination_addon_storage:
         # In add-on institutional storage: Delete files, except the backup folder.
-        # In bulk-mounted institutional storage: Delete only files created during the restore process.
         try:
-            response = utils.delete_file(file_node_id, destination_provider,
-                                         file_materialized_path if is_destination_addon_storage else file_path, cookies)
-            if response.status_code != 204:
-                # Error
-                logger.error(f"Return error with response: {response.content}")
-                export_data_restore.update(status=ExportData.STATUS_STOPPED)
-                return {"error_message": f"Failed to delete file"}
-        except Exception as e:
+            utils.delete_all_files_except_backup(NODE_ID, destination_provider, cookies, internal, destination_base_url)
+        except (ConnectionError, Timeout) as e:
             logger.error(f"Exception: {e}")
             export_data_restore.update(status=ExportData.STATUS_STOPPED)
-            return {"error_message": f"Failed to delete file"}
+            return {"error_message": f"Cannot connect to destination storage"}
 
-    # If destination storage is add-on institutional storage
-    if is_destination_addon_storage:
-        # Move all files from the backup folder out
+        # Move all files from the backup folder out and delete backup folder
         try:
             response = utils.move_folder_from_backup('emx94', destination_provider,
-                                                     process_start=export_data_restore.process_start.strftime(DATETIME_FORMAT),
+                                                     process_start=export_data_restore.process_start.strftime(
+                                                         DATETIME_FORMAT),
                                                      cookies=cookies, internal=internal,
                                                      base_url=destination_base_url)
-            if response["error"] is not None:
+            if "error" in response and response["error"] is not None:
                 # Error
                 logger.error(f"Return error with response: {response['error']}")
                 export_data_restore.update(status=ExportData.STATUS_STOPPED)
@@ -398,20 +387,23 @@ def rollback_restore(cookies, export_id, destination_id, task_id):
             logger.error(f"Exception: {e}")
             export_data_restore.update(status=ExportData.STATUS_STOPPED)
             return {"error_message": f"Failed to move backup folder to root"}
-
-        # Delete the backup folder
-        try:
-            response = utils.delete_file('emx94', destination_provider, "/_backup/", cookies, internal,
-                                         destination_base_url)
-            if response.status_code != 204:
-                # Error
-                logger.error(f"Return error with response: {response.content}")
+    else:
+        # In bulk-mounted institutional storage: Delete only files created during the restore process.
+        for file in files:
+            file_path = file["path"]
+            file_node_id = file["project"]["id"]
+            try:
+                response = utils.delete_file(file_node_id, destination_provider, file_path, cookies,
+                                             internal, destination_base_url)
+                if response.status_code != 204:
+                    # Error
+                    logger.error(f"Return error with response: {response.content}")
+                    export_data_restore.update(status=ExportData.STATUS_STOPPED)
+                    return {"error_message": f"Failed to delete file"}
+            except (ConnectionError, Timeout) as e:
+                logger.error(f"Exception: {e}")
                 export_data_restore.update(status=ExportData.STATUS_STOPPED)
-                return {"error_message": f"Failed to delete backup folder"}
-        except Exception as e:
-            logger.error(f"Exception: {e}")
-            export_data_restore.update(status=ExportData.STATUS_STOPPED)
-            return {"error_message": f"Failed to delete backup folder"}
+                return {"error_message": f"Cannot connect to destination storage"}
 
     export_data_restore.update(status=ExportData.STATUS_STOPPED)
     return {}

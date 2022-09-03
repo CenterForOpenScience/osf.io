@@ -660,7 +660,7 @@ def move_folder_to_backup(node_id, provider, process_start, cookies, internal=Tr
 
 def move_folder_from_backup(node_id, provider, process_start, cookies, internal=True, base_url=WATERBUTLER_URL):
     path_list, root_child_folders = get_all_file_paths(node_id, provider, "/", cookies, internal, base_url,
-                                                       include_path_regex="^\\/backup_\\d{8}T\\d{6}\\/.*$")
+                                                       include_path_regex=f"^\\/backup_{process_start}\\/.*$")
 
     # Move file
     moved_paths = []
@@ -783,8 +783,8 @@ def delete_file(node_id, provider, file_path, cookies, internal=True, base_url=W
 
 def delete_all_files_except_backup(node_id, provider, cookies, internal=True, base_url=WATERBUTLER_URL):
     # In add-on institutional storage: Delete files, except the backup folder.
-    regex = "^\\/backup_\\d{8}T\\d{6}_.+$"
-    list_backup_paths = []
+    regex = "^\\/backup_\\d{8}T\\d{6}\\/.*$"
+    list_not_backup_paths = []
     try:
         response = get_file_data(node_id, provider, "/", cookies, internal=internal,
                                  base_url=base_url, get_file_info=True)
@@ -805,16 +805,22 @@ def delete_all_files_except_backup(node_id, provider, cookies, internal=True, ba
                     continue
 
                 if kind == "file" or kind == "folder":
-                    list_backup_paths.append(path)
+                    list_not_backup_paths.append(path)
+    except (requests.ConnectionError, requests.Timeout) as e:
+        logger.error(f"Connection error: {e}")
+        raise e
     except:
         pass
 
     # Delete all paths
-    for path in list_backup_paths:
+    for path in list_not_backup_paths:
         try:
             delete_file(node_id, provider, path, cookies, internal, base_url)
-        except Exception as e:
-            logger.error(f"Exception: {e}")
+        except (requests.ConnectionError, requests.Timeout) as e:
+            logger.error(f"Connection error: {e}")
+            raise e
+        except:
+            continue
 
 
 def validate_export_data(data_json):
