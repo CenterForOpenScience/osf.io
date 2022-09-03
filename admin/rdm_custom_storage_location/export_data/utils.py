@@ -830,10 +830,6 @@ def float_or_None(x):
 
 
 def deep_diff(x, y, parent_key=None, exclude_keys=[], epsilon_keys=[]):
-    logger.info('x')
-    logger.info(x)
-    logger.info('y')
-    logger.info(y)
     """
     Find the difference between 2 dictionary
     Take the deep diff of JSON-like dictionaries
@@ -897,11 +893,11 @@ def deep_diff(x, y, parent_key=None, exclude_keys=[], epsilon_keys=[]):
 def check_diff_between_version(list_version_a, list_version_b):
     for i in range(len(list_version_a)):
         if list_version_a[i]['identifier'] != list_version_b[i]['identifier']:
-            return False, 'Missing file version', list_version_b[i]
+            return True, 'Missing file version', list_version_b[i]
         check_diff = deep_diff(list_version_a[i], list_version_b[i])
         if check_diff is None:
-            return True, '', None
+            return False, '', None
         else:
             list_diff = list(check_diff)
             text_error = ', '.join(list_diff) + 'not match'
-            return False, text_error, list_version_a[i]
+            return True, text_error, list_version_a[i]
