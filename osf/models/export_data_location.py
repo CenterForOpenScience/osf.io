@@ -65,6 +65,7 @@ class ExportDataLocation(base.BaseModel):
         return None
 
     def serialize_waterbutler_credentials(self, provider_name):
+        result = {}
         storage_credentials = self.waterbutler_credentials["storage"]
         if provider_name == 's3':
             result = {
@@ -76,10 +77,6 @@ class ExportDataLocation(base.BaseModel):
                 'access_key': storage_credentials['access_key'],
                 'secret_key': storage_credentials['secret_key'],
                 'host': storage_credentials['host'],
-            }
-        elif provider_name == 'dropboxbusiness':
-            result = {
-                'token': storage_credentials['fileaccess_token'],
             }
         elif provider_name == 'nextcloudinstitutions':
             """
@@ -99,9 +96,16 @@ class ExportDataLocation(base.BaseModel):
                 'username': external_account['display_name'],
                 'password': external_account['oauth_key'],
             }
+        elif provider_name == 'dropboxbusiness':
+            # /external_account/fileaccess_token
+            external_account = self.waterbutler_credentials['external_account']
+            result = {
+                'token': external_account['fileaccess_token'],
+            }
         return result
 
     def serialize_waterbutler_settings(self, provider_name):
+        result = {}
         storage_settings = self.waterbutler_settings["storage"]
         if provider_name == 's3':
             result = {
@@ -112,12 +116,6 @@ class ExportDataLocation(base.BaseModel):
             result = {
                 'bucket': storage_settings['bucket'],
                 'encrypt_uploads': storage_settings['folder']['encrypt_uploads'],
-            }
-        elif provider_name == 'dropboxbusiness':
-            result = {
-                'folder': '/',
-                'admin_dbmid': storage_settings['admin_dbmid'],
-                'team_folder_id': storage_settings['team_folder_id'],
             }
         elif provider_name == 'nextcloudinstitutions':
             """
@@ -134,5 +132,11 @@ class ExportDataLocation(base.BaseModel):
             result = {
                 'folder': extended[KEYNAME_BASE_FOLDER],
                 'verify_ssl': nci_settings.USE_SSL
+            }
+        elif provider_name == 'dropboxbusiness':
+            result = {
+                'folder': '/',
+                'admin_dbmid': storage_settings['admin_dbmid'],
+                'team_folder_id': storage_settings['team_folder_id'],
             }
         return result

@@ -10,6 +10,10 @@ from osf.models.export_data import SecondDateTimeField
 
 logger = logging.getLogger(__name__)
 
+__all__ = [
+    'ExportDataRestore',
+]
+
 
 class ExportDataRestore(base.BaseModel):
     export = models.ForeignKey(ExportData, on_delete=models.CASCADE)
@@ -27,3 +31,11 @@ class ExportDataRestore(base.BaseModel):
         return f'"({self.export}-{self.destination})[{self.status}]"'
 
     __str__ = __repr__
+
+    @property
+    def process_start_timestamp(self):
+        return self.process_start.strftime('%s')
+
+    @property
+    def process_start_display(self):
+        return self.process_start.strftime('%Y%m%dT%H%M%S')

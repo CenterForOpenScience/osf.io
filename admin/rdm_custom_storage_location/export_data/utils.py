@@ -2,21 +2,20 @@
 import inspect  # noqa
 import json  # noqa
 import logging  # noqa
+import re
 from copy import deepcopy
 
 import jsonschema
 import requests
-import re
-from datetime import datetime
 from django.db.models import Q
 from rest_framework import status as http_status
 
 from addons.base.institutions_utils import KEYNAME_BASE_FOLDER
+from addons.dropboxbusiness import utils as dropboxbusiness_utils
 from addons.nextcloudinstitutions import KEYNAME_NOTIFICATION_SECRET
 from addons.nextcloudinstitutions.models import NextcloudInstitutionsProvider
 from addons.osfstorage.models import Region
 from admin.base.schemas.utils import from_json
-from admin.rdm_addons.utils import get_rdm_addon_option
 from admin.rdm_custom_storage_location.utils import (
     use_https,
     test_owncloud_connection,
@@ -37,6 +36,7 @@ from osf.models import (
     OSFUser,
     RdmFileTimestamptokenVerifyResult,
     Guid,
+    ExternalAccount,
 )
 from website.settings import WATERBUTLER_URL
 from website.util import inspect_info  # noqa
@@ -115,6 +115,33 @@ def update_storage_location(institution_guid, storage_name, wb_credentials, wb_s
     return storage_location
 
 
+def test_dropboxbusiness_connection(institution):
+    fm = dropboxbusiness_utils.get_two_addon_options(institution.id, allowed_check=False)
+
+    if fm is None:
+        return ({
+                    'message': u'Invalid Institution ID.: {}'.format(institution.id)
+                }, http_status.HTTP_400_BAD_REQUEST)
+
+    f_option, m_option = fm
+    f_token = dropboxbusiness_utils.addon_option_to_token(f_option)
+    m_token = dropboxbusiness_utils.addon_option_to_token(m_option)
+    if f_token is None or m_token is None:
+        return ({
+                    'message': 'No tokens.'
+                }, http_status.HTTP_400_BAD_REQUEST)
+    try:
+        # use two tokens and connect
+        dropboxbusiness_utils.TeamInfo(f_token, m_token, connecttest=True)
+        return ({
+                    'message': 'Credentials are valid',
+                }, http_status.HTTP_200_OK)
+    except Exception:
+        return ({
+                    'message': 'Invalid tokens.'
+                }, http_status.HTTP_400_BAD_REQUEST)
+
+
 def save_s3_credentials(institution_guid, storage_name, access_key, secret_key, bucket):
     test_connection_result = test_s3_connection(access_key, secret_key, bucket)
     if test_connection_result[1] != http_status.HTTP_200_OK:
@@ -174,62 +201,59 @@ def save_s3compat_credentials(institution_guid, storage_name, host_url, access_k
             }, http_status.HTTP_200_OK)
 
 
-def get_two_addon_options(institution_id, allowed_check=True):
-    # Todo: recheck
-    # avoid "ImportError: cannot import name"
-    from addons.dropboxbusiness.models import (
-        DropboxBusinessFileaccessProvider,
-        DropboxBusinessManagementProvider,
-    )
-    fileaccess_addon_option = get_rdm_addon_option(institution_id, DropboxBusinessFileaccessProvider.short_name, create=False)
-    management_addon_option = get_rdm_addon_option(institution_id, DropboxBusinessManagementProvider.short_name, create=False)
-
-    if fileaccess_addon_option is None or management_addon_option is None:
-        return None
-    if allowed_check and not fileaccess_addon_option.is_allowed:
-        return None
-
-    # NOTE: management_addon_option.is_allowed is ignored.
-    return fileaccess_addon_option, management_addon_option
-
-
-def test_dropboxbusiness_connection(institution):
-    # Todo: recheck
-    from addons.dropboxbusiness import utils as dropboxbusiness_utils
-
-    fm = get_two_addon_options(institution.id, allowed_check=False)
-
-    if fm is None:
-        return ({
-                    'message': u'Invalid Institution ID.: {}'.format(institution.id)
-                }, http_status.HTTP_400_BAD_REQUEST)
-
-    f_option, m_option = fm
-    f_token = dropboxbusiness_utils.addon_option_to_token(f_option)
-    m_token = dropboxbusiness_utils.addon_option_to_token(m_option)
-    if f_token is None or m_token is None:
-        return ({
-                    'message': 'No tokens.'
-                }, http_status.HTTP_400_BAD_REQUEST)
-    try:
-        # use two tokens and connect
-        dropboxbusiness_utils.TeamInfo(f_token, m_token, connecttest=True)
-        return ({
-                    'message': 'Credentials are valid',
-                }, http_status.HTTP_200_OK)
-    except Exception:
-        return ({
-                    'message': 'Invalid tokens.'
-                }, http_status.HTTP_400_BAD_REQUEST)
-
-
 def save_dropboxbusiness_credentials(institution, storage_name, provider_name):
     test_connection_result = test_dropboxbusiness_connection(institution)
     if test_connection_result[1] != http_status.HTTP_200_OK:
         return test_connection_result
 
+    fm = dropboxbusiness_utils.get_two_addon_options(institution.id)
+    if fm is None:
+        institution = Institution.objects.get(id=institution.id)
+        logger.info(u'Institution({}) has no valid oauth keys.'.format(institution.name))
+        return  # disabled
+
+    f_option, m_option = fm
+    f_token = dropboxbusiness_utils.addon_option_to_token(f_option)
+    m_token = dropboxbusiness_utils.addon_option_to_token(m_option)
+    if f_token is None or m_token is None:
+        return  # disabled
+
+    # ## ----- enabled -----
+    # checking the validity of Dropbox API here
+    try:
+        team_info = dropboxbusiness_utils.TeamInfo(f_token, m_token, connecttest=True, admin=True, groups=True)
+        admin_group, admin_dbmid_list = dropboxbusiness_utils.get_current_admin_group_and_sync(team_info)
+        admin_dbmid = dropboxbusiness_utils.get_current_admin_dbmid(m_option, admin_dbmid_list)
+        # team_name = team_info.name
+        # fmt = six.u(dropboxbusiness_settings.TEAM_FOLDER_NAME_FORMAT)
+        # team_folder_name = fmt.format(title='Location', guid=institution.guid)
+        # fmt = six.u(dropboxbusiness_settings.GROUP_NAME_FORMAT)
+        # group_name = fmt.format(title='Location', guid=institution.guid)
+        team_folder_id = list(team_info.team_folders.keys())[0]
+        # member_emails = team_info.dbmid_to_email.values()
+        # team_folder_id, group_id = dropboxbusiness_utils.create_team_folder(
+        #     f_token, m_token, admin_dbmid, team_folder_name, group_name, member_emails, admin_group, team_name)
+    except Exception:
+        logger.exception('Dropbox Business API Error')
+        raise
+
     wb_credentials, wb_settings = wd_info_for_institutions(provider_name)
+    wb_credentials['external_account'] = {
+        'fileaccess_token': f_token,
+        'management_token': m_token,
+    }
+    wb_settings['admin_dbmid'] = admin_dbmid
+    wb_settings['team_folder_id'] = team_folder_id
+
     update_storage_location(institution.guid, storage_name, wb_credentials, wb_settings)
+
+    external_account__ids = f_option.external_accounts.all().union(m_option.external_accounts.all()).values_list('id', flat=True)
+    f_option.external_accounts.clear()
+    f_option.save()
+    m_option.external_accounts.clear()
+    m_option.save()
+    external_accounts = ExternalAccount.objects.filter(pk__in=external_account__ids)
+    external_accounts.delete()
 
     return ({
                 'message': 'Dropbox Business was set successfully!!'
@@ -256,8 +280,8 @@ def save_basic_storage_institutions_credentials_common(
         extended.update(extended_data)
 
     wb_credentials, wb_settings = wd_info_for_institutions(provider_name)
-    wb_credentials["external_account"] = external_account
-    wb_settings["extended"] = extended
+    wb_credentials['external_account'] = external_account
+    wb_settings['extended'] = extended
 
     update_storage_location(institution.guid, storage_name, wb_credentials, wb_settings)
 

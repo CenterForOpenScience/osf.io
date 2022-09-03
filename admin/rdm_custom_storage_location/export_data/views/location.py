@@ -87,6 +87,51 @@ class ExportStorageLocationView(ExportStorageLocationViewBaseView, ListView):
         return super(ExportStorageLocationView, self).get_context_data(**kwargs)
 
 
+class TestConnectionView(ExportStorageLocationViewBaseView, View):
+    """ View for testing the credentials to connect to a provider.
+    Called when clicking the 'Connect' Button.
+    """
+    def post(self, request):
+        data = json.loads(request.body)
+
+        provider_short_name = data.get('provider_short_name')
+        if not provider_short_name:
+            response = {
+                'message': 'Provider is missing.'
+            }
+            return JsonResponse(response, status=http_status.HTTP_400_BAD_REQUEST)
+
+        if provider_short_name == 's3':
+            result = utils.test_s3_connection(
+                data.get('s3_access_key'),
+                data.get('s3_secret_key'),
+                data.get('s3_bucket'),
+            )
+        elif provider_short_name == 's3compat':
+            result = utils.test_s3compat_connection(
+                data.get('s3compat_endpoint_url'),
+                data.get('s3compat_access_key'),
+                data.get('s3compat_secret_key'),
+                data.get('s3compat_bucket'),
+            )
+        elif provider_short_name == 'nextcloudinstitutions':
+            result = utils.test_owncloud_connection(
+                data.get('nextcloudinstitutions_host'),
+                data.get('nextcloudinstitutions_username'),
+                data.get('nextcloudinstitutions_password'),
+                data.get('nextcloudinstitutions_folder'),
+                provider_short_name,
+            )
+        elif provider_short_name == 'dropboxbusiness':
+            institution = request.user.affiliated_institutions.first()
+            result = export_data_utils.test_dropboxbusiness_connection(institution)
+
+        else:
+            result = ({'message': 'Invalid provider.'}, http_status.HTTP_400_BAD_REQUEST)
+
+        return JsonResponse(result[0], status=result[1])
+
+
 class SaveCredentialsView(ExportStorageLocationViewBaseView, View):
     """ View for saving the credentials to the provider into the database.
     Called when clicking the 'Save' Button.
@@ -135,12 +180,7 @@ class SaveCredentialsView(ExportStorageLocationViewBaseView, View):
             )
         elif institution:
             result = ({'message': 'Affiliated institution is missing.'}, http_status.HTTP_400_BAD_REQUEST)
-            if provider_short_name == 'dropboxbusiness':
-                result = export_data_utils.save_dropboxbusiness_credentials(
-                    institution,
-                    storage_name,
-                    provider_short_name)
-            elif provider_short_name == 'nextcloudinstitutions':
+            if provider_short_name == 'nextcloudinstitutions':
                 result = export_data_utils.save_nextcloudinstitutions_credentials(
                     institution,
                     storage_name,
@@ -151,6 +191,11 @@ class SaveCredentialsView(ExportStorageLocationViewBaseView, View):
                     data.get('nextcloudinstitutions_notification_secret'),
                     provider_short_name,
                 )
+            elif provider_short_name == 'dropboxbusiness':
+                result = export_data_utils.save_dropboxbusiness_credentials(
+                    institution,
+                    storage_name,
+                    provider_short_name)
 
         status = result[1]
         return JsonResponse(result[0], status=status)

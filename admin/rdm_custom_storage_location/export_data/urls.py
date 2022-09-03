@@ -2,7 +2,6 @@
 from django.conf.urls import url
 
 from .views import location, institutional_storage, management, restore, export
-from ..views import TestConnectionView
 
 urlpatterns = [
     # to register export data storage location
@@ -13,7 +12,7 @@ urlpatterns = [
         location.DeleteCredentialsView.as_view(),
         name='export_data_delete_credentials'),
     url(r'^test_connection/$',
-        TestConnectionView.as_view(),
+        location.TestConnectionView.as_view(),
         name='export_data_test_connection'),
     url(r'^save_credentials/$',
         location.SaveCredentialsView.as_view(),
