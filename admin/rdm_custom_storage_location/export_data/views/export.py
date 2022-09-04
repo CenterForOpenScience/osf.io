@@ -92,20 +92,42 @@ def export_data_process(cookies, export_data_id, **kwargs):
     export_data = export_data_set.first()
     assert export_data
 
+    # start process
     export_data.status = ExportData.STATUS_RUNNING
     export_data.save()
 
-    # create folder
+    # extract file information
+    export_data_json, file_info_json = export_data.extract_file_information_json_from_source_storage()
+
+    # create export data process folder
     response = export_data.create_export_data_folder(cookies, **kwargs)
     if response.status_code != 201:
         return export_data_rollback_process(cookies, export_data_id, **kwargs)
 
-    export_data_json, file_info_json = export_data.extract_file_information_json_from_source_storage()
+    # export target file and accompanying data
+    # create 'files' folder
+    response = export_data.create_export_data_files_folder(cookies, **kwargs)
+    if response.status_code != 201:
+        return export_data_rollback_process(cookies, export_data_id, **kwargs)
+
+    # upload file versions
+    file_versions = export_data.get_source_file_versions_min(file_info_json)
+    for file in file_versions:
+        project_id, provider, file_path, version, file_name = file
+        response = export_data.get_data_file_from_source(cookies, project_id, provider, file_path, **kwargs)
+        if response.status_code != 200:
+            return export_data_rollback_process(cookies, export_data_id, **kwargs)
+        file_data = response.content
+        response = export_data.transfer_export_data_file_to_location(cookies, file_name, file_data, **kwargs)
+        if response.status_code != 201:
+            return export_data_rollback_process(cookies, export_data_id, **kwargs)
+
+    # temporary file
+    temp_file_path = export_data.export_data_temp_file_path
 
     # create files' information file
-    file_path = export_data.export_data_temp_file_path
-    write_json_file(file_info_json, file_path)
-    response = export_data.upload_file_info_file(cookies, file_path, **kwargs)
+    write_json_file(file_info_json, temp_file_path)
+    response = export_data.upload_file_info_file(cookies, temp_file_path, **kwargs)
     if response.status_code != 201:
         return export_data_rollback_process(cookies, export_data_id, **kwargs)
 
@@ -113,13 +135,14 @@ def export_data_process(cookies, export_data_id, **kwargs):
 
     # create export data file
     export_data_json['export_end'] = process_end.strftime('%Y-%m-%d %H:%M:%S')
-    write_json_file(export_data_json, file_path)
-    response = export_data.upload_export_data_file(cookies, file_path, **kwargs)
+    write_json_file(export_data_json, temp_file_path)
+    response = export_data.upload_export_data_file(cookies, temp_file_path, **kwargs)
     if response.status_code != 201:
         return export_data_rollback_process(cookies, export_data_id, **kwargs)
 
-    if os.path.exists(file_path):
-        os.remove(file_path)
+    # remove temporary file
+    if os.path.exists(temp_file_path):
+        os.remove(temp_file_path)
 
     # re-check status to ensure that it is not in stopping process
     export_data_set = ExportData.objects.filter(pk=export_data_id)

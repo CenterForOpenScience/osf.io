@@ -50,9 +50,6 @@
           "tags": {
             "type": "array"
           },
-          "project": {
-            "type": "object"
-          },
           "location": {
             "type": "object",
             "properties": {
@@ -117,7 +114,7 @@
             ],
             "additionalProperties": false
           },
-          "project_info": {
+          "project": {
             "type": "object",
             "properties": {
               "id": {
@@ -378,7 +375,7 @@
           "modified_at",
           "tags",
           "location",
-          "project_info",
+          "project",
           "version",
           "timestamp"
         ],

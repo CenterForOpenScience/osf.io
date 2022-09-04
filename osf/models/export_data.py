@@ -61,6 +61,8 @@ class ExportData(base.BaseModel):
         (STATUS_ERROR, STATUS_ERROR.title()),
     )
     EXPORT_DATA_AVAILABLE = [STATUS_COMPLETED, STATUS_CHECKING]
+    EXPORT_DATA_FILES_FOLDER = 'file'
+    EXPORT_DATA_FAKE_NODE_ID = 'export_location'
 
     source = models.ForeignKey(Region, on_delete=models.CASCADE)
     location = models.ForeignKey(ExportDataLocation, on_delete=models.CASCADE)
@@ -82,26 +84,6 @@ class ExportData(base.BaseModel):
         return f'"({self.source}-{self.location})[{self.status}]"'
 
     __str__ = __repr__
-
-    @property
-    def process_start_timestamp(self):
-        return self.process_start.strftime('%s')
-
-    @property
-    def process_start_display(self):
-        return self.process_start.strftime('%Y%m%dT%H%M%S')
-
-    @property
-    def export_data_temp_file_path(self):
-        return os.path.join(web_settings.ROOT, 'admin', '_' + self.export_data_folder_name + '.json')
-
-    @property
-    def export_data_folder_name(self):
-        return f'export_{self.source.id}_{self.process_start_timestamp}'
-
-    @property
-    def export_data_folder_path(self):
-        return f'/export_{self.source.id}_{self.process_start_timestamp}/'
 
     def extract_file_information_json_from_source_storage(self):
         # Get region guid == institution guid
@@ -170,6 +152,7 @@ class ExportData(base.BaseModel):
                 'path': file.path,
                 'materialized_path': file.materialized_path,
                 'name': file.name,
+                'provider': file.provider,
                 'created_at': file.created.strftime('%Y-%m-%d %H:%M:%S'),
                 'modified_at': file.modified.strftime('%Y-%m-%d %H:%M:%S'),
                 'project': {},
@@ -187,7 +170,7 @@ class ExportData(base.BaseModel):
                 'id': project._id,
                 'name': project.title,
             }
-            file_info['project_info'] = project_info
+            file_info['project'] = project_info
 
             # file's tags
             if not file._state.adding:
@@ -206,6 +189,7 @@ class ExportData(base.BaseModel):
                 }
                 file_info['timestamp'] = timestamp_info
 
+            # file versions
             file_versions = file.versions.order_by('-created')
             file_versions_info = []
             for version in file_versions:
@@ -226,15 +210,46 @@ class ExportData(base.BaseModel):
             file_info['size'] = file_versions_info[-1]['size']
             file_info['location'] = file_versions_info[-1]['location']
             files.append(file_info)
+
         file_info_json['files'] = files
+
         export_data_json['size'] = total_size
         export_data_json['projects_numb'] = len(source_project_ids)
 
         return export_data_json, file_info_json
 
+    def get_source_file_versions_min(self, file_info_json):
+        file_versions = []
+        for file in file_info_json.get('files', []):
+            project_id = file.get('project').get('id')
+            provider = file.get('provider')
+            file_path = file.get('path')
+            versions = file.get('version', [])
+            for version in versions:
+                identifier = version.get('identifier')
+                metadata = version.get('metadata')
+                # metadata.get('sha256', metadata.get('md5', metadata.get('sha512', metadata.get('sha1', metadata.get('name')))))
+                file_name = metadata.get('sha256', metadata.get('md5'))
+                file_versions.append((project_id, provider, file_path, identifier, file_name,))
+
+        return file_versions
+
+    @property
+    def process_start_timestamp(self):
+        return self.process_start.strftime('%s')
+
+    @property
+    def process_start_display(self):
+        return self.process_start.strftime('%Y%m%dT%H%M%S')
+
+    @property
+    def export_data_folder_name(self):
+        """export_{source.id}_{process_start_timestamp} folder for each export process"""
+        return f'export_{self.source.id}_{self.process_start_timestamp}'
+
     def create_export_data_folder(self, cookies, **kwargs):
         """Create export_{source.id}_{process_start_timestamp} folder on the storage location"""
-        node_id = 'export_location'
+        node_id = self.EXPORT_DATA_FAKE_NODE_ID
         provider = self.location.provider_name
         path = '/'
         url = waterbutler_api_url_for(
@@ -248,7 +263,7 @@ class ExportData(base.BaseModel):
 
     def delete_export_data_folder(self, cookies, **kwargs):
         """Delete export_{source.id}_{process_start_timestamp} folder and sub-files on the storage location"""
-        node_id = 'export_location'
+        node_id = self.EXPORT_DATA_FAKE_NODE_ID
         provider = self.location.provider_name
         path = self.export_data_folder_path
         url = waterbutler_api_url_for(
@@ -259,30 +274,26 @@ class ExportData(base.BaseModel):
         )
         return requests.delete(url, cookies=cookies)
 
+    @property
+    def export_data_folder_path(self):
+        """export_{source.id}_{process_start_timestamp} folder path for each export data"""
+        return f'/export_{self.source.id}_{self.process_start_timestamp}/'
+
+    @property
+    def export_data_temp_file_path(self):
+        """~/admin/_export_{source.id}_{process_start_timestamp}.json as temporary file"""
+        return os.path.join(web_settings.ROOT, 'admin', '_' + self.export_data_folder_name + '.json')
+
     def get_export_data_filename(self, institution_guid=None):
+        """get export_data_{institution_guid}_{process_start_timestamp}.json file name for each institution"""
         if not institution_guid:
             institution_guid = self.source.guid
         return f'export_data_{institution_guid}_{self.process_start_timestamp}.json'
 
-    def get_export_data_file_path(self, institution_guid=None):
-        if not institution_guid:
-            institution_guid = self.source.guid
-        return os.path.join(self.export_data_folder_name, self.get_export_data_filename(institution_guid))
-
-    def get_file_info_filename(self, institution_guid=None):
-        if not institution_guid:
-            institution_guid = self.source.guid
-        return f'file_info_{institution_guid}_{self.process_start_timestamp}.json'
-
-    def get_file_info_file_path(self, institution_guid=None):
-        if not institution_guid:
-            institution_guid = self.source.guid
-        return os.path.join(self.export_data_folder_name, self.get_file_info_filename(institution_guid))
-
     def upload_export_data_file(self, cookies, file_path, **kwargs):
         """Upload export_{source.id}_{process_start_timestamp}/export_data_{institution_guid}_{process_start_timestamp}.json file
            to the storage location"""
-        node_id = 'export_location'
+        node_id = self.EXPORT_DATA_FAKE_NODE_ID
         provider = self.location.provider_name
         path = self.export_data_folder_path
         file_name = kwargs.get('file_name', self.get_export_data_filename(self.location.institution_guid))
@@ -296,20 +307,18 @@ class ExportData(base.BaseModel):
             )
             return requests.put(url, data=fp, cookies=cookies)
 
-    def upload_file_info_file(self, cookies, file_path, **kwargs):
-        """Upload export_{source.id}_{process_start_timestamp}/file_info_{institution_guid}_{process_start_timestamp}.json file
-           to the storage location"""
-        file_name = self.get_file_info_filename(self.location.institution_guid)
-        kwargs.setdefault('file_name', file_name)
-        return self.upload_export_data_file(cookies, file_path, **kwargs)
+    def get_export_data_file_path(self, institution_guid=None):
+        """get /export_{source.id}_{process_start_timestamp}/export_data_{institution_guid}_{process_start_timestamp}.json file path"""
+        if not institution_guid:
+            institution_guid = self.source.guid
+        return os.path.join(self.export_data_folder_name, self.get_export_data_filename(institution_guid))
 
-    def read_file_info(self, cookies, **kwargs):
-        """Get content of export_{source.id}_{process_start_timestamp}/file_info_{institution_guid}_{process_start_timestamp}.json file
+    def read_export_data_from_location(self, cookies, **kwargs):
+        """Get content of /export_{source.id}_{process_start_timestamp}/export_data_{institution_guid}_{process_start_timestamp}.json file
            from the storage location"""
-        node_id = 'export_location'
+        node_id = self.EXPORT_DATA_FAKE_NODE_ID
         provider = self.location.provider_name
-        filename_info = self.get_file_info_filename(self.location.institution_guid)
-        path = self.export_data_folder_path + filename_info
+        path = self.get_export_data_file_path(self.location.institution_guid)
         url = waterbutler_api_url_for(
             node_id, provider, path=path,
             _internal=True, location_id=self.location.id,
@@ -317,16 +326,103 @@ class ExportData(base.BaseModel):
         )
         return requests.get(url, cookies=cookies, stream=True)
 
-    def delete_file_export(self, cookies, **kwargs):
-        """Delete content of export_{source.id}_{process_start_timestamp}/file_info_{institution_guid}_{process_start_timestamp}.json file
+    def delete_export_data_file_from_location(self, cookies, **kwargs):
+        """Delete /export_{source.id}_{process_start_timestamp}/export_data_{institution_guid}_{process_start_timestamp}.json file
            from the storage location"""
-        node_id = 'export_location'
+        node_id = self.EXPORT_DATA_FAKE_NODE_ID
         provider = self.location.provider_name
-        filename_info = self.get_file_info_filename(self.location.institution_guid)
-        path = self.export_data_folder_path + filename_info
+        path = self.get_export_data_file_path(self.location.institution_guid)
         url = waterbutler_api_url_for(
             node_id, provider, path=path,
             _internal=True, location_id=self.location.id,
             **kwargs
         )
         return requests.delete(url, cookies=cookies)
+
+    def get_file_info_filename(self, institution_guid=None):
+        """get file_info_{institution_guid}_{process_start_timestamp}.json file name for each institution"""
+        if not institution_guid:
+            institution_guid = self.source.guid
+        return f'file_info_{institution_guid}_{self.process_start_timestamp}.json'
+
+    def upload_file_info_file(self, cookies, file_path, **kwargs):
+        """Upload export_{source.id}_{process_start_timestamp}/file_info_{institution_guid}_{process_start_timestamp}.json file
+           to the storage location"""
+        file_name = self.get_file_info_filename(self.location.institution_guid)
+        kwargs.setdefault('file_name', file_name)
+        return self.upload_export_data_file(cookies, file_path, **kwargs)
+
+    def get_file_info_file_path(self, institution_guid=None):
+        """get /export_{source.id}_{process_start_timestamp}/file_info_{institution_guid}_{process_start_timestamp}.json file path"""
+        if not institution_guid:
+            institution_guid = self.source.guid
+        return os.path.join(self.export_data_folder_name, self.get_file_info_filename(institution_guid))
+
+    def read_file_info_from_location(self, cookies, **kwargs):
+        """Get content of /export_{source.id}_{process_start_timestamp}/file_info_{institution_guid}_{process_start_timestamp}.json file
+           from the storage location"""
+        node_id = self.EXPORT_DATA_FAKE_NODE_ID
+        provider = self.location.provider_name
+        path = self.get_file_info_file_path(self.location.institution_guid)
+        url = waterbutler_api_url_for(
+            node_id, provider, path=path,
+            _internal=True, location_id=self.location.id,
+            **kwargs
+        )
+        return requests.get(url, cookies=cookies, stream=True)
+
+    def delete_file_info_file_from_location(self, cookies, **kwargs):
+        """Delete /export_{source.id}_{process_start_timestamp}/file_info_{institution_guid}_{process_start_timestamp}.json file
+           from the storage location"""
+        node_id = self.EXPORT_DATA_FAKE_NODE_ID
+        provider = self.location.provider_name
+        path = self.get_file_info_file_path(self.location.institution_guid)
+        url = waterbutler_api_url_for(
+            node_id, provider, path=path,
+            _internal=True, location_id=self.location.id,
+            **kwargs
+        )
+        return requests.delete(url, cookies=cookies)
+
+    @property
+    def export_data_files_folder_path(self):
+        """get /export_{source.id}_{process_start_timestamp}/files/ folder path"""
+        return f'/export_{self.source.id}_{self.process_start_timestamp}/{self.EXPORT_DATA_FILES_FOLDER}/'
+
+    def create_export_data_files_folder(self, cookies, **kwargs):
+        """Create export_{source.id}_{process_start_timestamp}/files/ folder on the storage location"""
+        node_id = self.EXPORT_DATA_FAKE_NODE_ID
+        provider = self.location.provider_name
+        path = self.export_data_folder_path
+        url = waterbutler_api_url_for(
+            node_id, provider, path=path,
+            name=self.EXPORT_DATA_FILES_FOLDER,
+            kind='folder', meta='',
+            _internal=True, location_id=self.location.id,
+            **kwargs
+        )
+        return requests.put(url, cookies=cookies)
+
+    def get_data_file_from_source(self, cookies, project_id, provider, file_path, **kwargs):
+        """Get data file from the source storage"""
+        url = waterbutler_api_url_for(
+            project_id, provider, path=file_path,
+            _internal=True,
+            **kwargs
+        )
+        return requests.get(url, cookies=cookies, stream=True)
+
+    def transfer_export_data_file_to_location(self, cookies, file_name, file_data, **kwargs):
+        """Upload data file to the storage location"""
+        node_id = self.EXPORT_DATA_FAKE_NODE_ID
+        provider = self.location.provider_name
+        path = self.export_data_files_folder_path
+        url = waterbutler_api_url_for(
+            node_id, provider, path=path,
+            name=file_name,
+            kind='file',
+            _internal=True, location_id=self.location.id,
+            **kwargs
+        )
+        return requests.put(url, data=file_data, cookies=cookies)
+

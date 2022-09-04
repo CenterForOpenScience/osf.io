@@ -192,7 +192,7 @@ class ExportDataInformationView(ExportStorageLocationViewBaseView, DetailView, L
             storage_name = 'NII Storage'
 
         user_institution_name = Institution.objects.get(_id=institution_guid).name
-        response = export_data.read_file_info(self.request.COOKIES)
+        response = export_data.read_file_info_from_location(self.request.COOKIES)
         status_code = response.status_code
         if status_code != 200:
             raise SuspiciousOperation('Cannot connect to the export data storage location.')
@@ -266,7 +266,7 @@ class ExportDataFileCSVView(RdmPermissionMixin, View):
         global CURRENT_DATA_INFORMATION
         for file in CURRENT_DATA_INFORMATION:
             writer.writerow(
-                [file['project_info']['id'], file['project_info']['name'], file['version']['contributor'], file['id'],
+                [file['project']['id'], file['project']['name'], file['version']['contributor'], file['id'],
                  file['materialized_path'],
                  file['name'],
                  file['version']['identifier'], file['version']['size']])
@@ -283,7 +283,7 @@ class CheckExportData(RdmPermissionMixin, View):
         export_data.status = 'Checking'
         export_data.last_check = datetime.datetime.now()
         # Get list file info from source storage
-        response = export_data.read_file_info(request.COOKIES)
+        response = export_data.read_file_info_from_location(request.COOKIES)
         status_code = response.status_code
         if status_code != 200:
             return JsonResponse({'message': 'Cannot connect to the export data storage location.'}, status=400)
@@ -306,7 +306,7 @@ class CheckRestoreData(RdmPermissionMixin, View):
             return JsonResponse({'message': 'Cannot check in this time. The process is {}'.format(export_data_restore.status)}, status=400)
         export_data_restore.status = 'Checking'
         export_data_restore.last_check = datetime.datetime.now()
-        response = export_data_restore.export.read_file_info(request.COOKIES)
+        response = export_data_restore.export.read_file_info_from_location(request.COOKIES)
         if response.status_code != 200:
             return JsonResponse({'message': 'Cannot connect to the export data storage location.'}, status=400)
         list_file_info = response.json()
