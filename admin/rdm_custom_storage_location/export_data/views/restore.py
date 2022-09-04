@@ -177,28 +177,33 @@ def restore_export_data_process(cookies, export_id, destination_id, export_data_
 
         # Check destination storage type (bulk-mounted or add-on)
         is_destination_addon_storage = utils.check_storage_type(destination_id)
-        if is_destination_addon_storage:
-            # If destination storage is add-on institutional storage,
-            # move all old data in restore destination storage to a folder to back up (such as '_backup' folder)
+        try:
             destination_region = Region.objects.filter(id=destination_id)
             destination_base_url, destination_guid, destination_settings = \
                 destination_region.values_list("waterbutler_url", "_id", "waterbutler_settings")[0]
             destination_provider = destination_settings["storage"]["provider"]
             internal = destination_base_url == WATERBUTLER_URL
-            try:
-                response = utils.move_folder_to_backup('emx94', destination_provider,
-                                                       process_start=export_data_restore.process_start.strftime(DATETIME_FORMAT),
-                                                       cookies=cookies, internal=internal,
-                                                       base_url=destination_base_url)
-                if "error" in response and response["error"] is not None:
-                    # Error
-                    logger.error(f"Return error with response: {response['error']}")
-                    export_data_restore.update(status=ExportData.STATUS_STOPPED)
-                    return {"error_message": f""}
-            except Exception as e:
-                logger.error(f"Exception: {e}")
+
+            # move all old data in restore destination storage to a folder to back up folder
+            if is_destination_addon_storage:
+                response = utils.move_addon_folder_to_backup('emx94', destination_provider,
+                                                             process_start=export_data_restore.process_start.strftime(DATETIME_FORMAT),
+                                                             cookies=cookies, internal=internal,
+                                                             base_url=destination_base_url)
+            else:
+                response = utils.move_bulk_mount_folder_to_backup('emx94', destination_provider,
+                                                                  process_start=export_data_restore.process_start.strftime(DATETIME_FORMAT),
+                                                                  cookies=cookies, internal=internal,
+                                                                  base_url=destination_base_url)
+            if "error" in response and response["error"] is not None:
+                # Error
+                logger.error(f"Return error with response: {response['error']}")
                 export_data_restore.update(status=ExportData.STATUS_STOPPED)
                 return {"error_message": f""}
+        except Exception as e:
+            logger.error(f"Exception: {e}")
+            export_data_restore.update(status=ExportData.STATUS_STOPPED)
+            return {"error_message": f""}
 
         with transaction.atomic():
             # Get file which have same information between export data and database
@@ -362,48 +367,37 @@ def rollback_restore(cookies, export_id, destination_id, task_id):
     destination_provider = destination_settings["storage"]["provider"]
     internal = destination_base_url == WATERBUTLER_URL
 
-    if is_destination_addon_storage:
-        # In add-on institutional storage: Delete files, except the backup folder.
-        try:
-            utils.delete_all_files_except_backup(NODE_ID, destination_provider, cookies, internal, destination_base_url)
-        except (ConnectionError, Timeout) as e:
-            logger.error(f"Exception: {e}")
-            export_data_restore.update(status=ExportData.STATUS_STOPPED)
-            return {"error_message": f"Cannot connect to destination storage"}
+    # In add-on institutional storage: Delete files, except the backup folder.
+    try:
+        utils.delete_all_files_except_backup(NODE_ID, destination_provider, cookies, internal, destination_base_url)
+    except (ConnectionError, Timeout) as e:
+        logger.error(f"Exception: {e}")
+        export_data_restore.update(status=ExportData.STATUS_STOPPED)
+        return {"error_message": f"Cannot connect to destination storage"}
 
-        # Move all files from the backup folder out and delete backup folder
-        try:
-            response = utils.move_folder_from_backup('emx94', destination_provider,
-                                                     process_start=export_data_restore.process_start.strftime(
-                                                         DATETIME_FORMAT),
-                                                     cookies=cookies, internal=internal,
-                                                     base_url=destination_base_url)
-            if "error" in response and response["error"] is not None:
-                # Error
-                logger.error(f"Return error with response: {response['error']}")
-                export_data_restore.update(status=ExportData.STATUS_STOPPED)
-                return {"error_message": f"Failed to move backup folder to root"}
-        except Exception as e:
-            logger.error(f"Exception: {e}")
+    # Move all files from the backup folder out and delete backup folder
+    try:
+        if is_destination_addon_storage:
+            response = utils.move_addon_folder_from_backup('emx94', destination_provider,
+                                                           process_start=export_data_restore.process_start.strftime(
+                                                               DATETIME_FORMAT),
+                                                           cookies=cookies, internal=internal,
+                                                           base_url=destination_base_url)
+        else:
+            response = utils.move_bulk_mount_folder_from_backup('emx94', destination_provider,
+                                                                process_start=export_data_restore.process_start.strftime(
+                                                                    DATETIME_FORMAT),
+                                                                cookies=cookies, internal=internal,
+                                                                base_url=destination_base_url)
+        if "error" in response and response["error"] is not None:
+            # Error
+            logger.error(f"Return error with response: {response['error']}")
             export_data_restore.update(status=ExportData.STATUS_STOPPED)
             return {"error_message": f"Failed to move backup folder to root"}
-    else:
-        # In bulk-mounted institutional storage: Delete only files created during the restore process.
-        for file in files:
-            file_path = file["path"]
-            file_node_id = file["project"]["id"]
-            try:
-                response = utils.delete_file(file_node_id, destination_provider, file_path, cookies,
-                                             internal, destination_base_url)
-                if response.status_code != 204:
-                    # Error
-                    logger.error(f"Return error with response: {response.content}")
-                    export_data_restore.update(status=ExportData.STATUS_STOPPED)
-                    return {"error_message": f"Failed to delete file"}
-            except (ConnectionError, Timeout) as e:
-                logger.error(f"Exception: {e}")
-                export_data_restore.update(status=ExportData.STATUS_STOPPED)
-                return {"error_message": f"Cannot connect to destination storage"}
+    except Exception as e:
+        logger.error(f"Exception: {e}")
+        export_data_restore.update(status=ExportData.STATUS_STOPPED)
+        return {"error_message": f"Failed to move backup folder to root"}
 
     export_data_restore.update(status=ExportData.STATUS_STOPPED)
     return {}
