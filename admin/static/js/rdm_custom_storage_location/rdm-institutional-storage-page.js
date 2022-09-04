@@ -1275,7 +1275,6 @@ $('#checkExportData').on('click', () => {
         contentType: 'application/json; charset=utf-8',
     }).done(function (response) {
         let data_res = response;
-        console.log(data_res);
         $('#checkExportDataModal').modal('show');
         let text_check_export = `<p>OK: ${data_res.OK}/${data_res.Total} files<br/>
                     NG: ${data_res.NG}/${data_res.Total} files</p>`;
@@ -1306,7 +1305,6 @@ $('#check_restore_button').on('click', () => {
         contentType: 'application/json; charset=utf-8',
     }).done(function (response) {
         let data_res = response;
-        console.log(data_res);
         $('#checkRestoreDataModal').modal('show');
         let text_check_export = `<p>OK: ${data_res.OK}/${data_res.Total} files<br/>
                     NG: ${data_res.NG}/${data_res.Total} files</p>`;
@@ -1334,4 +1332,16 @@ $('#cancleExportDataModal').on('click', () => {
 
 $('#cancelRestoreDataModal').on('click', () => {
     $('#check_restore_button').prop('disabled', false);
+});
+
+$('#checkExportDataModal').on('hidden.bs.modal', function (e) {
+  $('#checkExportData').prop('disabled', false);
+});
+
+$('#checkRestoreDataModal').on('hidden.bs.modal', function (e) {
+  $('#check_restore_button').prop('disabled', false);
+});
+
+$('#restore').on('hidden.bs.modal', function (e) {
+    enableRestoreFunction();
 });
