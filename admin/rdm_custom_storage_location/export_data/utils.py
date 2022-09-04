@@ -57,6 +57,7 @@ __all__ = [
     'write_json_file',
     'read_json_file',
     'check_diff_between_version',
+    'count_files_ng_ok',
 ]
 
 
@@ -935,3 +936,44 @@ def check_diff_between_version(list_version_a, list_version_b):
             list_diff = list(check_diff)
             text_error = ', '.join(list_diff) + 'not match'
             return True, text_error, list_version_a[i]
+
+
+def count_files_ng_ok(list_file_info, data_from_source):
+    data = {
+        'NG': 0,
+        'OK': 0,
+    }
+    list_file_ng = []
+    count_files = 0
+    for item in list_file_info['files']:
+        file_is_check = False
+        for file_from_source in data_from_source['files']:
+            if file_from_source['id'] == item['id']:
+                file_is_check = True
+                is_diff, message, file_version = check_diff_between_version(item['version'], file_from_source['version'])
+                if not is_diff:
+                    data['OK'] += 1
+                else:
+                    data['NG'] += 1
+                    ng_content = {
+                        'path': item['materialized_path'],
+                        'size': file_version['size'],
+                        'version_id': file_version['identifier'],
+                        'reason': message,
+                    }
+                    list_file_ng.append(ng_content)
+                count_files += 1
+                break
+        if not file_is_check:
+            data['NG'] += 1
+            ng_content = {
+                'path': item['materialized_path'],
+                'size': item['size'],
+                'version_id': 0,
+                'reason': 'File is not exist',
+            }
+            list_file_ng.append(ng_content)
+            count_files += 1
+    data['Total'] = count_files
+    data['list_file_ng'] = list_file_ng if len(list_file_ng) <= 10 else list_file_ng[:10]
+    return data

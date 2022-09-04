@@ -3,6 +3,7 @@ import csv
 import datetime
 import logging
 
+from django.core.exceptions import SuspiciousOperation
 from django.http import HttpResponse, Http404, JsonResponse
 from django.shortcuts import render, redirect
 from django.views import View
@@ -14,7 +15,7 @@ from admin.rdm_custom_storage_location.export_data.utils import (
     process_data_infomation,
     validate_export_data,
     get_file_info_json,
-    check_diff_between_version,
+    count_files_ng_ok,
 )
 from osf.models import ExportData, Institution, ExportDataLocation, ExportDataRestore
 from .location import ExportStorageLocationViewBaseView
@@ -194,12 +195,12 @@ class ExportDataInformationView(ExportStorageLocationViewBaseView, DetailView, L
         response = export_data.read_file_info(self.request.COOKIES)
         status_code = response.status_code
         if status_code != 200:
-            raise Http404('Cannot connect to the export data storage location.')
+            raise SuspiciousOperation('Cannot connect to the export data storage location.')
         else:
             list_file_info = response.json()
             check = validate_export_data(list_file_info)
             if not check:
-                raise Http404('The export data files are corrupted.')
+                raise SuspiciousOperation('The export data files are corrupted.')
             processed_list_file_info = process_data_infomation(list_file_info['files'])
             global CURRENT_DATA_INFORMATION
             CURRENT_DATA_INFORMATION = processed_list_file_info
@@ -236,7 +237,7 @@ class DeleteExportDataView(ExportStorageLocationViewBaseView, View):
                 if response.status_code == 204:
                     ExportData.objects.filter(id=item.id).delete()
                 else:
-                    raise Http404('Cannot connect to the export data storage location.')
+                    raise SuspiciousOperation('Cannot connect to the export data storage location.')
         else:
             ExportData.objects.filter(id__in=list_export_data_delete).update(is_deleted=True)
         return redirect('custom_storage_location:export_data:export_data_list')
@@ -293,54 +294,14 @@ class CheckExportData(RdmPermissionMixin, View):
             return JsonResponse({'message': 'The export data files are corrupted.'}, status=400)
         # Get data from current source from database
         data_from_source = get_file_info_json(export_data.source.id)
-        data = {
-            'NG': 0,
-            'OK': 0,
-        }
-        list_file_ng = []
-        count_files = 0
-        for item in list_file_info['files']:
-            file_is_check = False
-            for file_from_source in data_from_source['files']:
-                if file_from_source['id'] == item['id']:
-                    file_is_check = True
-                    is_diff, message, file_version = check_diff_between_version(item['version'], file_from_source['version'])
-                    if not is_diff:
-                        data['OK'] += 1
-                    else:
-                        data['NG'] += 1
-                        ng_content = {
-                            'path': item['materialized_path'],
-                            'size': file_version['size'],
-                            'version_id': file_version['identifier'],
-                            'reason': message,
-                        }
-                        list_file_ng.append(ng_content)
-                    count_files += 1
-                    break
-            if not file_is_check:
-                data['NG'] += 1
-                ng_content = {
-                    'path': item['materialized_path'],
-                    'size': item['size'],
-                    'version_id': 0,
-                    'reason': 'File is not exist',
-                }
-                list_file_ng.append(ng_content)
-                count_files += 1
+        data = count_files_ng_ok(list_file_info, data_from_source)
         export_data.status = 'Completed'
-        data['Total'] = count_files
-        data['list_file_ng'] = list_file_ng if len(list_file_ng) <= 10 else list_file_ng[:10]
         return JsonResponse(data, status=200)
 
 
 class CheckRestoreData(RdmPermissionMixin, View):
 
     def get(self, request, data_id):
-        data = {
-            'NG': 0,
-            'OK': 0,
-        }
         export_data_restore = ExportDataRestore.objects.filter(id=data_id).first()
         if export_data_restore.status != 'Completed':
             return JsonResponse({'message': 'Cannot check in this time. The process is {}'.format(export_data_restore.status)}, status=400)
@@ -356,38 +317,6 @@ class CheckRestoreData(RdmPermissionMixin, View):
         # Get data from current source from database
         destination_id = export_data_restore.destination.id
         data_from_destination = get_file_info_json(destination_id)
-        list_file_ng = []
-        count_files = 0
-        for item in list_file_info['files']:
-            file_is_check = False
-            for file_from_source in data_from_destination['files']:
-                if file_from_source['id'] == item['id']:
-                    file_is_check = True
-                    is_diff, message, file_version = check_diff_between_version(item['version'], file_from_source['version'])
-                    if not is_diff:
-                        data['OK'] += 1
-                    else:
-                        data['NG'] += 1
-                        ng_content = {
-                            'path': item['materialized_path'],
-                            'size': file_version['size'],
-                            'version_id': file_version['identifier'],
-                            'reason': message,
-                        }
-                        list_file_ng.append(ng_content)
-                    count_files += 1
-                    break
-            if not file_is_check:
-                data['NG'] += 1
-                ng_content = {
-                    'path': item['materialized_path'],
-                    'size': item['size'],
-                    'version_id': 0,
-                    'reason': 'File is not exist',
-                }
-                list_file_ng.append(ng_content)
-                count_files += 1
+        data = count_files_ng_ok(list_file_info, data_from_destination)
         export_data_restore.status = 'Completed'
-        data['Total'] = count_files
-        data['list_file_ng'] = list_file_ng if len(list_file_ng) <= 10 else list_file_ng[:10]
         return JsonResponse(data, status=200)
