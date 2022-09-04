@@ -166,7 +166,7 @@ class ExportDataDeletedListView(ExportBaseView):
 class ExportDataInformationView(ExportStorageLocationViewBaseView, DetailView, ListView):
     template_name = 'rdm_custom_storage_location/export_data_information.html'
     raise_exception = True
-    paginate_by = 1
+    paginate_by = 10
 
     def get_object(self, **kwargs):
         export_data = ExportData.objects.filter(id=self.kwargs.get('data_id')).first()
@@ -218,8 +218,7 @@ class ExportDataInformationView(ExportStorageLocationViewBaseView, DetailView, L
         context['source_name'] = storage_name
         context['location'] = ExportDataLocation.objects.filter(id=export_data.location_id).first()
         context['title'] = 'Export Data Information of {} storage'.format(storage_name)
-        context['storages'] = Region.objects.exclude(
-            _id__in=institution_guid)
+        context['storages'] = Region.objects.filter(_id=institution_guid).order_by('pk')
         context['page'] = self.page
         return context
 
@@ -267,7 +266,7 @@ class ExportDataFileCSVView(RdmPermissionMixin, View):
         global CURRENT_DATA_INFORMATION
         for file in CURRENT_DATA_INFORMATION:
             writer.writerow(
-                [file['project']['id'], file['project']['name'], file['version']['contributor'], file['id'],
+                [file['project_info']['id'], file['project_info']['name'], file['version']['contributor'], file['id'],
                  file['materialized_path'],
                  file['name'],
                  file['version']['identifier'], file['version']['size']])
