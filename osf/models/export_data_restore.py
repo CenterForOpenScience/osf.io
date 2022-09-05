@@ -39,3 +39,8 @@ class ExportDataRestore(base.BaseModel):
     @property
     def process_start_display(self):
         return self.process_start.strftime('%Y%m%dT%H%M%S')
+
+    def update(self, **kwargs):
+        for name, value in kwargs.items():
+            setattr(self, name, value)
+        self.save()

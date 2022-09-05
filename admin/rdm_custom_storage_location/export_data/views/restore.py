@@ -67,6 +67,7 @@ class ExportDataRestoreView(RdmPermissionMixin, APIView):
                 export_data_restore.save()
                 process = tasks.run_restore_export_data_process.delay(cookies, export_id, destination_id,
                                                                       export_data_restore.pk)
+                export_data_restore.update(task_id=process.task_id)
                 return Response({'task_id': process.task_id}, status=status.HTTP_200_OK)
         else:
             # Check the destination is available (not in restore process or checking restore data process)
@@ -81,6 +82,7 @@ class ExportDataRestoreView(RdmPermissionMixin, APIView):
             # If user clicked 'Restore' button in confirm dialog, start restore data task and return task id
             process = tasks.run_restore_export_data_process.delay(cookies, export_id, destination_id,
                                                                   export_data_restore.pk)
+            export_data_restore.update(task_id=process.task_id)
             return Response({'task_id': process.task_id}, status=status.HTTP_200_OK)
 
 

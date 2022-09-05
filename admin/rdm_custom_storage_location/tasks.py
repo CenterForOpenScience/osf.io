@@ -16,8 +16,8 @@ __all__ = [
 
 
 @celery_app.task(bind=True, base=AbortableTask)
-def run_restore_export_data_process(self, cookies, export_id, source_id, destination_id, task_id):
-    return restore.restore_export_data_process(cookies, export_id, source_id, destination_id, task_id)
+def run_restore_export_data_process(self, cookies, export_id, source_id, destination_id):
+    return restore.restore_export_data_process(self, cookies, export_id, source_id, destination_id)
 
 
 @celery_app.task(bind=True, base=AbortableTask, track_started=True)
