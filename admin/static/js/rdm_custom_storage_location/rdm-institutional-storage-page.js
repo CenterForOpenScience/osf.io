@@ -1103,24 +1103,24 @@ $('#restore_button').on('click', () => {
         type: "post",
         data: data
     }).done(function (response) {
-        if (response["error_message"]) {
+        if (response["message"]) {
             enableRestoreFunction();
             // Show error message
-            $osf.growl('Restore Export Data', _(result["error_message"]), 'danger', 2);
+            $osf.growl('Restore Export Data', _(result["message"]), 'danger', 2);
         } else if (response["task_id"]) {
             enableStopRestoreFunction();
             restore_task_id = response["task_id"];
             setTimeout(() => {
                 checkTaskStatus(restore_task_id, 'Restore');
-            }, 2000);
+            }, 5000);
         } else {
             $("#restore").modal('show');
         }
     }).fail(function (jqXHR, textStatus, error) {
         enableRestoreFunction();
         let data = jqXHR.responseJSON;
-        if (data["error_message"]) {
-            $osf.growl('Restore Export Data', _(data["error_message"]), 'danger', 2);
+        if (data["message"]) {
+            $osf.growl('Restore Export Data', _(data["message"]), 'danger', 2);
         }
     });
 });
@@ -1140,12 +1140,12 @@ $('#stop_restore_button').on('click', () => {
         restore_task_id = response["task_id"];
         setTimeout(() => {
             checkTaskStatus(restore_task_id, 'Stop Restore');
-        }, 2000);
+        }, 5000);
     }).fail(function (jqXHR, textStatus, error) {
         enableRestoreFunction();
         let data = jqXHR.responseJSON;
-        if (data["error_message"]) {
-            $osf.growl('Stop Export Data', _(data["error_message"]), 'danger', 2);
+        if (data["message"]) {
+            $osf.growl('Stop Export Data', _(data["message"]), 'danger', 2);
         }
     });
 });
@@ -1169,22 +1169,22 @@ function checkTaskStatus(task_id, task_type) {
                 enableRestoreFunction();
                 $osf.growl('Stop Restore Export Data', _("Stopped restoring data process."), 'success', 2);
             }
-        } else if (state === 'PENDING' || state === 'PROGRESS') {
+        } else if (state === 'PENDING' || state === 'STARTED') {
             // Redo check task status after 2 seconds
             setTimeout(() => {
                 checkTaskStatus(task_id, task_type);
-            }, 2000);
+            }, 5000);
         } else if (state !== 'REVOKED' && state !== 'ABORTED') {
             enableRestoreFunction();
             let data = jqXHR.responseJSON;
-            if (data["error_message"]) {
+            if (data["message"]) {
                 var title = '';
                 if (task_type === 'Restore'){
                     title = 'Restore Export Data';
                 } else if (task_type === 'Stop Restore') {
                     title = 'Stop Restore Export Data';
                 }
-                $osf.growl(title, _(data["error_message"]), 'danger', 2);
+                $osf.growl(title, _(data["message"]), 'danger', 2);
             }
         }
     }).fail(function (jqXHR, textStatus, error) {
@@ -1196,7 +1196,7 @@ $("#cancel_restore_modal_button").on('click', () => {
     enableRestoreFunction();
 });
 
-// Catch  event when click Restore button in modal on the DataInformation screen
+// Catch event when click Restore button in modal on the DataInformation screen
 $("#start_restore_modal_button").on('click', () => {
     $("#restore").modal('hide');
     let data = {};
@@ -1216,13 +1216,13 @@ $("#start_restore_modal_button").on('click', () => {
         }
         setTimeout(() => {
             checkTaskStatus(restore_task_id);
-        }, 2000);
+        }, 5000);
     }).fail(function (jqXHR, textStatus, error) {
         // Call enableRestoreFunction() when fail
         enableRestoreFunction();
         let data = jqXHR.responseJSON;
-        if (data["error_message"]) {
-            $osf.growl('Restore Export Data', _(data["error_message"]), 'danger', 2);
+        if (data["message"]) {
+            $osf.growl('Restore Export Data', _(data["message"]), 'danger', 2);
         }
     });
 });

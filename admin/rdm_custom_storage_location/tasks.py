@@ -15,12 +15,12 @@ __all__ = [
 ]
 
 
-@celery_app.task(bind=True, base=AbortableTask)
+@celery_app.task(bind=True, base=AbortableTask, track_started=True)
 def run_restore_export_data_process(self, cookies, export_id, destination_id, export_data_restore_id):
     return restore.restore_export_data_process(self, cookies, export_id, destination_id, export_data_restore_id)
 
 
-@celery_app.task(bind=True, base=AbortableTask)
+@celery_app.task(bind=True, base=AbortableTask, track_started=True)
 def run_restore_export_data_rollback_process(self, cookies, destination_id, export_data_restore_id, process_step):
     return restore.restore_export_data_rollback_process(cookies, destination_id, export_data_restore_id, process_step)
 
