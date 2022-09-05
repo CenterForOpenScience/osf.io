@@ -344,6 +344,14 @@ def get_files_from_waterbutler(pid, provider, path, request_cookie):
     return content['data'], status_code
 
 
+def get_provider_and_base_url_from_destination_storage(destination_id):
+    destination_region = Region.objects.filter(id=destination_id)
+    destination_base_url, destination_settings = destination_region.values_list("waterbutler_url",
+                                                                                "waterbutler_settings")[0]
+    destination_provider = destination_settings.get("storage", {}).get("provider")
+    return destination_provider, destination_base_url
+
+
 def is_add_on_storage(waterbutler_settings):
     folder = waterbutler_settings["storage"]["folder"]
     try:
@@ -606,25 +614,6 @@ def upload_file_path(node_id, provider, file_path, file_data, cookies, internal=
                                                                                 internal, base_url)
                 return update_response_body
             return response_body
-
-
-def download_then_upload_file(download_node_id, upload_node_id, download_provider, upload_provider, download_path, upload_path,
-                              cookies, download_base_url=WATERBUTLER_URL, upload_base_url=WATERBUTLER_URL, version=None):
-    # Download file by version
-    is_download_url_internal = download_base_url == WATERBUTLER_URL
-    response = get_file_data(download_node_id, download_provider, download_path,
-                             cookies, is_download_url_internal, download_base_url, version)
-    if response.status_code != 200:
-        return None
-    download_data = response.content
-
-    # Upload downloaded file to new storage
-    is_upload_url_internal = upload_base_url == WATERBUTLER_URL
-    response_body = upload_file_path(upload_node_id, upload_provider, upload_path,
-                                     download_data, cookies, is_upload_url_internal, upload_base_url)
-    if response_body is None:
-        return None
-    return response_body
 
 
 def move_file(node_id, provider, source_file_path, destination_file_path, cookies, internal=True,

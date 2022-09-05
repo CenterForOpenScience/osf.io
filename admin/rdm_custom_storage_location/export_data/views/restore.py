@@ -23,7 +23,6 @@ from website.settings import WATERBUTLER_URL
 
 logger = logging.getLogger(__name__)
 DATETIME_FORMAT = "%Y%m%dT%H%M%S"
-NODE_ID = 'export_location'
 
 
 @method_decorator(transaction.non_atomic_requests, name='dispatch')
@@ -130,7 +129,8 @@ def check_before_restore_export_data(cookies, export_id, destination_id):
     export_file_path = f"/{export_data.get_export_data_file_path(export_institution_guid)}"
     internal = export_base_url == WATERBUTLER_URL
     try:
-        response = utils.get_file_data(NODE_ID, export_provider, export_file_path, cookies, internal, export_base_url)
+        response = utils.get_file_data(ExportData.EXPORT_DATA_FAKE_NODE_ID, export_provider, export_file_path, cookies,
+                                       internal, export_base_url)
         if response.status_code != 200:
             # Error
             logger.error(f"Return error with response: {response.content}")
@@ -148,14 +148,11 @@ def check_before_restore_export_data(cookies, export_id, destination_id):
         return {'open_dialog': False, "message": f"The export data files are corrupted"}
 
     # Check whether the restore destination storage is not empty
-    destination_region = Region.objects.filter(id=destination_id)
-    destination_base_url, destination_settings = \
-        destination_region.values_list("waterbutler_url", "waterbutler_settings")[0]
-    destination_provider = destination_settings.get("storage", {}).get("provider")
+    destination_provider, destination_base_url = utils.get_provider_and_base_url_from_destination_storage(destination_id)
     internal = destination_base_url == WATERBUTLER_URL
     try:
-        response = utils.get_file_data(NODE_ID, destination_provider, "/", cookies, internal, destination_base_url,
-                                       get_file_info=True)
+        response = utils.get_file_data(ExportData.EXPORT_DATA_FAKE_NODE_ID, destination_provider, "/", cookies,
+                                       internal, destination_base_url, get_file_info=True)
         if response.status_code != 200:
             # Error
             logger.error(f"Return error with response: {response.content}")
@@ -199,21 +196,19 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
         # Check destination storage type (bulk-mounted or add-on)
         is_destination_addon_storage = utils.check_storage_type(destination_id)
         try:
-            destination_region = Region.objects.filter(id=destination_id)
-            destination_base_url, destination_guid, destination_settings = \
-                destination_region.values_list("waterbutler_url", "_id", "waterbutler_settings")[0]
-            destination_provider = destination_settings.get("storage", {}).get("provider")
+            destination_provider, destination_base_url = utils.get_provider_and_base_url_from_destination_storage(
+                destination_id)
             internal = destination_base_url == WATERBUTLER_URL
 
             check_if_restore_process_stopped(task, current_process_step)
             # move all old data in restore destination storage to a folder to back up folder
             if is_destination_addon_storage:
-                response = utils.move_addon_folder_to_backup(NODE_ID, destination_provider,
+                response = utils.move_addon_folder_to_backup(ExportData.EXPORT_DATA_FAKE_NODE_ID, destination_provider,
                                                              process_start=export_data_restore.process_start.strftime(DATETIME_FORMAT),
                                                              cookies=cookies, internal=internal,
                                                              base_url=destination_base_url)
             else:
-                response = utils.move_bulk_mount_folder_to_backup(NODE_ID, destination_provider,
+                response = utils.move_bulk_mount_folder_to_backup(ExportData.EXPORT_DATA_FAKE_NODE_ID, destination_provider,
                                                                   process_start=export_data_restore.process_start.strftime(DATETIME_FORMAT),
                                                                   cookies=cookies, internal=internal,
                                                                   base_url=destination_base_url)
@@ -243,7 +238,7 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
             file_info_path = f"/{export_data.get_file_info_file_path(export_institution_guid)}"
             internal = export_base_url == WATERBUTLER_URL
             try:
-                response = utils.get_file_data(NODE_ID, export_provider, file_info_path, cookies, internal,
+                response = utils.get_file_data(ExportData.EXPORT_DATA_FAKE_NODE_ID, export_provider, file_info_path, cookies, internal,
                                                export_base_url)
                 if response.status_code != 200:
                     # Error
@@ -277,7 +272,7 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
                 file_created_at = file.get("created_at")
                 file_modified_at = file.get("modified_at")
                 file_versions = file.get("version")
-                file_node_id = file.get("project", {}).get("id")
+                file_project_id = file.get("project", {}).get("id")
                 # Sort file by version id
                 file_versions.sort(key=lambda k: k.get('identifier', 0))
 
@@ -293,17 +288,17 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
                         check_if_restore_process_stopped(task, current_process_step)
 
                         # Prepare file name and file path for uploading
-                        # If the destination storage is add-on institutional storage and export data storage is bulk-mounted storage:
-                        # - for past version files, rename and save each version as filename_{version} in '_version_files' folder
-                        # - the latest version is saved as the original
-                        file_hash = version.get("metadata", {}).get("sha256")
-                        if file_hash is None:
-                            file_hash = version.get("metadata", {}).get("md5")
+                        metadata = version.get("metadata", {})
+                        file_hash = metadata.get("sha256", metadata.get("md5"))
                         if file_hash is None:
                             # Cannot get path in export data storage, pass this file
                             continue
 
                         file_hash_path = f"/{export_data.export_data_folder_name}/{ExportData.EXPORT_DATA_FILES_FOLDER}/{file_hash}"
+
+                        # If the destination storage is add-on institutional storage and export data storage is bulk-mounted storage:
+                        # - for past version files, rename and save each version as filename_{version} in '_version_files' folder
+                        # - the latest version is saved as the original
                         if is_destination_addon_storage and not is_export_addon_storage:
                             new_file_materialized_path = file_materialized_path
                             if len(file_materialized_path) > 0 and index < len(file_versions) - 1:
@@ -329,10 +324,20 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
                         destination_base_url, destination_settings = \
                             destination_region.values_list("waterbutler_url", "waterbutler_settings")[0]
                         destination_provider = destination_settings.get("storage", {}).get("provider")
-                        response_body = utils.download_then_upload_file(file_node_id, NODE_ID, export_provider,
-                                                                        destination_provider, file_hash_path,
-                                                                        new_file_path, cookies, export_base_url,
-                                                                        destination_base_url, version)
+
+                        # Download file by version
+                        is_download_url_internal = export_base_url == WATERBUTLER_URL
+                        response = utils.get_file_data(ExportData.EXPORT_DATA_FAKE_NODE_ID, export_provider, file_hash_path,
+                                                       cookies, is_download_url_internal, export_base_url, version)
+                        if response.status_code != 200:
+                            continue
+                        download_data = response.content
+
+                        # Upload downloaded file to new storage
+                        is_upload_url_internal = destination_base_url == WATERBUTLER_URL
+                        response_body = utils.upload_file_path(file_project_id, destination_provider, new_file_path,
+                                                               download_data, cookies, is_upload_url_internal,
+                                                               destination_base_url)
                         if response_body is None:
                             continue
                 except Exception:
@@ -361,16 +366,14 @@ def restore_export_data_rollback_process(cookies, destination_id, export_data_re
     # Check destination storage type (bulk-mounted or add-on)
     is_destination_addon_storage = utils.check_storage_type(destination_id)
 
-    destination_region = Region.objects.filter(id=destination_id)
-    destination_base_url, destination_guid, destination_settings = \
-        destination_region.values_list("waterbutler_url", "_id", "waterbutler_settings")[0]
-    destination_provider = destination_settings.get("storage", {}).get("provider")
+    destination_provider, destination_base_url = utils.get_provider_and_base_url_from_destination_storage(destination_id)
     internal = destination_base_url == WATERBUTLER_URL
 
     # Delete files, except the backup folder.
     if process_step == 1 or process_step == 2:
         try:
-            utils.delete_all_files_except_backup(NODE_ID, destination_provider, cookies, internal, destination_base_url)
+            utils.delete_all_files_except_backup(ExportData.EXPORT_DATA_FAKE_NODE_ID, destination_provider, cookies,
+                                                 internal, destination_base_url)
         except Exception as e:
             logger.error(f"Exception: {e}")
             export_data_restore.update(status=ExportData.STATUS_STOPPED)
@@ -380,13 +383,13 @@ def restore_export_data_rollback_process(cookies, destination_id, export_data_re
     if 0 <= process_step <= 2:
         try:
             if is_destination_addon_storage:
-                response = utils.move_addon_folder_from_backup(NODE_ID, destination_provider,
+                response = utils.move_addon_folder_from_backup(ExportData.EXPORT_DATA_FAKE_NODE_ID, destination_provider,
                                                                process_start=export_data_restore.process_start.strftime(
                                                                    DATETIME_FORMAT),
                                                                cookies=cookies, internal=internal,
                                                                base_url=destination_base_url)
             else:
-                response = utils.move_bulk_mount_folder_from_backup(NODE_ID, destination_provider,
+                response = utils.move_bulk_mount_folder_from_backup(ExportData.EXPORT_DATA_FAKE_NODE_ID, destination_provider,
                                                                     process_start=export_data_restore.process_start.strftime(
                                                                         DATETIME_FORMAT),
                                                                     cookies=cookies, internal=internal,
