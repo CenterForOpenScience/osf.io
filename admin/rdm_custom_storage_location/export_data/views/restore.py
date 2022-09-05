@@ -5,7 +5,6 @@ import json
 
 from celery.contrib.abortable import AbortableAsyncResult
 from django.utils.decorators import method_decorator
-from requests import ConnectionError, Timeout
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -46,12 +45,12 @@ class ExportDataRestoreView(RdmPermissionMixin, APIView):
                 return Response({"error_message": f"Cannot restore in this time."}, status=status.HTTP_400_BAD_REQUEST)
 
             result = check_before_restore_export_data(cookies, export_id, destination_id)
-            if result["open_dialog"]:
+            if result.get("open_dialog"):
                 # If open_dialog is True, return HTTP 200 with empty response
                 return Response({}, status=status.HTTP_200_OK)
-            elif result["error_message"]:
+            elif result.get("error_message"):
                 # If there is error message, return HTTP 400
-                return Response({'error_message': result["error_message"]}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error_message': result.get("error_message")}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 # Otherwise, start restore data task and return task id
                 # Recheck the destination is available (not in restore process or checking restore data process)
@@ -128,7 +127,7 @@ class ExportDataStopRestoreView(RdmPermissionMixin, APIView):
         #     ExportDataLocation.objects.filter(id=export_data.location_id).values_list('waterbutler_url',
         #                                                                               'waterbutler_settings',
         #                                                                               'institution_guid')[0]
-        # export_provider = export_settings["storage"]["provider"]
+        # export_provider = export_settings.get("storage", {}).get("provider")
         # file_info_path = f"/{export_data.get_file_info_file_path(export_institution_guid)}"
         # internal = export_base_url == WATERBUTLER_URL
         # try:
@@ -176,7 +175,7 @@ def check_before_restore_export_data(cookies, export_id, destination_id):
         ExportDataLocation.objects.filter(id=export_data.location_id).values_list('waterbutler_url',
                                                                                   'waterbutler_settings',
                                                                                   'institution_guid')[0]
-    export_provider = export_settings["storage"]["provider"]
+    export_provider = export_settings.get("storage", {}).get("provider")
     export_file_path = f"/{export_data.get_export_data_file_path(export_institution_guid)}"
     internal = export_base_url == WATERBUTLER_URL
     try:
@@ -201,7 +200,7 @@ def check_before_restore_export_data(cookies, export_id, destination_id):
     destination_region = Region.objects.filter(id=destination_id)
     destination_base_url, destination_settings = \
         destination_region.values_list("waterbutler_url", "waterbutler_settings")[0]
-    destination_provider = destination_settings["storage"]["provider"]
+    destination_provider = destination_settings.get("storage", {}).get("provider")
     internal = destination_base_url == WATERBUTLER_URL
     try:
         response = utils.get_file_data(NODE_ID, destination_provider, "/", cookies, internal, destination_base_url,
@@ -212,7 +211,7 @@ def check_before_restore_export_data(cookies, export_id, destination_id):
             return {'open_dialog': False, "error_message": f"Cannot connect to destination storage"}
 
         response_body = response.json()
-        data = response_body["data"]
+        data = response_body.get("data")
         if len(data) != 0:
             # Destination storage is not empty, show confirm dialog
             return {'open_dialog': True}
@@ -228,7 +227,7 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
     export_data_restore = ExportDataRestore.objects.get(pk=export_data_restore_id)
     current_process_step = 0
     task.update_state(state='PROGRESS',
-                      meta={'current': current_process_step, 'total': 3})
+                      meta={'current': current_process_step})
     try:
         # Check destination storage type (bulk-mounted or add-on)
         is_destination_addon_storage = utils.check_storage_type(destination_id)
@@ -236,7 +235,7 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
             destination_region = Region.objects.filter(id=destination_id)
             destination_base_url, destination_guid, destination_settings = \
                 destination_region.values_list("waterbutler_url", "_id", "waterbutler_settings")[0]
-            destination_provider = destination_settings["storage"]["provider"]
+            destination_provider = destination_settings.get("storage", {}).get("provider")
             internal = destination_base_url == WATERBUTLER_URL
 
             check_if_restore_process_stopped(task, current_process_step)
@@ -254,10 +253,10 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
             check_if_restore_process_stopped(task, current_process_step)
             current_process_step = 1
             task.update_state(state='PROGRESS',
-                              meta={'current': current_process_step, 'total': 3})
-            if "error" in response and response["error"] is not None:
+                              meta={'current': current_process_step})
+            if "error" in response:
                 # Error
-                logger.error(f"Return error with response: {response['error']}")
+                logger.error(f"Return error with response: {response.get('error')}")
                 restore_export_data_rollback_process(cookies, destination_id, export_data_restore_id,
                                                      current_process_step)
                 return {"error_message": f""}
@@ -274,7 +273,7 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
                 ExportDataLocation.objects.filter(id=export_data.location_id).values_list('waterbutler_url',
                                                                                           'waterbutler_settings',
                                                                                           'institution_guid')[0]
-            export_provider = export_settings["storage"]["provider"]
+            export_provider = export_settings.get("storage", {}).get("provider")
             file_info_path = f"/{export_data.get_file_info_file_path(export_institution_guid)}"
             internal = export_base_url == WATERBUTLER_URL
             try:
@@ -302,19 +301,19 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
                                                      current_process_step)
                 return {"error_message": f"The export data files are corrupted"}
 
-            files = response_body["files"]
+            files = response_body.get("files", [])
             is_export_addon_storage = utils.check_storage_type(export_id)
             for file in files:
                 check_if_restore_process_stopped(task, current_process_step)
 
-                file_path = file["path"]
-                file_materialized_path = file["materialized_path"]
-                file_created_at = file["created_at"]
-                file_modified_at = file["modified_at"]
-                file_versions = file["version"]
-                file_node_id = file["project"]["id"]
+                file_path = file.get("path")
+                file_materialized_path = file.get("materialized_path")
+                file_created_at = file.get("created_at")
+                file_modified_at = file.get("modified_at")
+                file_versions = file.get("version")
+                file_node_id = file.get("project", {}).get("id")
                 # Sort file by version id
-                file_versions.sort(key=lambda k: k['identifier'])
+                file_versions.sort(key=lambda k: k.get('identifier', 0))
 
                 # Get file which have the following information that is the same between export data and database
                 file_node = BaseFileNode.active.filter(path=file_path, materialzed_path=file_materialized_path,
@@ -331,10 +330,14 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
                         # If the destination storage is add-on institutional storage and export data storage is bulk-mounted storage:
                         # - for past version files, rename and save each version as filename_{version} in '_version_files' folder
                         # - the latest version is saved as the original
-                        file_hash = version["metadata"]["sha256"]
+                        file_hash = version.get("metadata", {}).get("sha256")
                         if file_hash is None:
-                            file_hash = version["metadata"]["md5"]
-                        file_hash_path = f"/{export_data.export_data_folder_name}/files/{file_hash}"
+                            file_hash = version.get("metadata", {}).get("md5")
+                        if file_hash is None:
+                            # Cannot get path in export data storage, pass this file
+                            continue
+
+                        file_hash_path = f"/{export_data.export_data_folder_name}/{ExportData.EXPORT_DATA_FILES_FOLDER}/{file_hash}"
                         if is_destination_addon_storage and not is_export_addon_storage:
                             new_file_materialized_path = file_materialized_path
                             if len(file_materialized_path) > 0 and index < len(file_versions) - 1:
@@ -359,7 +362,7 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
                         destination_region = Region.objects.filter(id=destination_id)
                         destination_base_url, destination_settings = \
                             destination_region.values_list("waterbutler_url", "waterbutler_settings")[0]
-                        destination_provider = destination_settings["storage"]["provider"]
+                        destination_provider = destination_settings.get("storage", {}).get("provider")
                         response_body = utils.download_then_upload_file(file_node_id, NODE_ID, export_provider,
                                                                         destination_provider, file_hash_path,
                                                                         new_file_path, cookies, export_base_url,
@@ -374,7 +377,7 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
 
             current_process_step = 2
             task.update_state(state='PROGRESS',
-                              meta={'current': current_process_step, 'total': 3})
+                              meta={'current': current_process_step})
             check_if_restore_process_stopped(task, 2)
 
             # Update process data with process_end timestamp and "Completed" status
@@ -382,7 +385,7 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
 
             current_process_step = 3
             task.update_state(state='PROGRESS',
-                              meta={'current': current_process_step, 'total': 3})
+                              meta={'current': current_process_step})
     except Exception as e:
         logger.error(f"Exception: {e}")
         restore_export_data_rollback_process(cookies, destination_id, export_data_restore_id, current_process_step)
@@ -399,14 +402,14 @@ def restore_export_data_rollback_process(cookies, destination_id, export_data_re
     destination_region = Region.objects.filter(id=destination_id)
     destination_base_url, destination_guid, destination_settings = \
         destination_region.values_list("waterbutler_url", "_id", "waterbutler_settings")[0]
-    destination_provider = destination_settings["storage"]["provider"]
+    destination_provider = destination_settings.get("storage", {}).get("provider")
     internal = destination_base_url == WATERBUTLER_URL
 
     # Delete files, except the backup folder.
-    if process_step == 0:
+    if 0 < process_step <= 2:
         try:
             utils.delete_all_files_except_backup(NODE_ID, destination_provider, cookies, internal, destination_base_url)
-        except (ConnectionError, Timeout) as e:
+        except Exception as e:
             logger.error(f"Exception: {e}")
             export_data_restore.update(status=ExportData.STATUS_STOPPED)
             return {"error_message": f"Cannot connect to destination storage"}
@@ -426,9 +429,9 @@ def restore_export_data_rollback_process(cookies, destination_id, export_data_re
                                                                         DATETIME_FORMAT),
                                                                     cookies=cookies, internal=internal,
                                                                     base_url=destination_base_url)
-            if "error" in response and response["error"] is not None:
+            if "error" in response:
                 # Error
-                logger.error(f"Return error with response: {response['error']}")
+                logger.error(f"Return error with response: {response.get('error')}")
                 export_data_restore.update(status=ExportData.STATUS_STOPPED)
                 return {"error_message": f"Failed to move backup folder to root"}
         except Exception as e:

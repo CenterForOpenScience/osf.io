@@ -743,14 +743,14 @@ def get_all_file_paths_in_addon_storage(node_id, provider, file_path, cookies, i
         if response.status_code != 200:
             return []
         response_body = response.json()
-        data = response_body["data"]
+        data = response_body.get("data")
         if len(data) != 0:
             list_file_path = []
             root_child_folders = []
             for item in data:
-                path = item["attributes"]["path"]
-                materialized_path = item["attributes"]["materialized"]
-                kind = item["attributes"]["kind"]
+                path = item.get("attributes", {}).get("path")
+                materialized_path = item.get("attributes", {}).get("materialized")
+                kind = item.get("attributes", {}).get("kind")
 
                 try:
                     if isinstance(include_path_regex, str) and len(include_path_regex) != 0:
@@ -884,13 +884,13 @@ def get_all_child_paths_in_bulk_mount_storage(node_id, provider, file_materializ
                 if response.status_code != 200:
                     return []
                 response_body = response.json()
-                data = response_body["data"]
+                data = response_body.get("data", [])
                 if index == len(paths) - 1:
                     if len(data) != 0:
                         list_file_path = []
                         for item in data:
-                            path = item["attributes"]["path"]
-                            materialized_path = item["attributes"]["materialized"]
+                            path = item.get("attributes", {}).get("path")
+                            materialized_path = item.get("attributes", {}).get("materialized")
                             try:
                                 if isinstance(exclude_path_regex, str) and len(exclude_path_regex) != 0:
                                     pattern = re.compile(exclude_path_regex)
@@ -904,7 +904,7 @@ def get_all_child_paths_in_bulk_mount_storage(node_id, provider, file_materializ
                         return []
                 else:
                     current_materialized_path = f"{current_materialized_path}{path}/"
-                    current_path_info = next((item for item in data if item["attributes"]["materialized"] ==
+                    current_path_info = next((item for item in data if item.get("attributes", {}).get("materialized") ==
                                               current_materialized_path), None)
                     if current_path_info is None:
                         return [], path_from_args
@@ -955,12 +955,12 @@ def delete_all_files_except_backup(node_id, provider, cookies, internal=True, ba
         if response.status_code != 200:
             return []
         response_body = response.json()
-        data = response_body["data"]
+        data = response_body.get("data")
         if len(data) != 0:
             for item in data:
-                path = item["attributes"]["path"]
-                materialized_path = item["attributes"]["materialized"]
-                kind = item["attributes"]["kind"]
+                path = item.get("attributes", {}).get("path")
+                materialized_path = item.get("attributes", {}).get("materialized")
+                kind = item.get("attributes", {}).get("kind")
 
                 try:
                     pattern = re.compile(regex)
