@@ -1111,7 +1111,7 @@ $('#restore_button').on('click', () => {
             enableStopRestoreFunction();
             restore_task_id = response["task_id"];
             setTimeout(() => {
-                checkTaskStatus(restore_task_id);
+                checkTaskStatus(restore_task_id, 'Restore');
             }, 2000);
         } else {
             $("#restore").modal('show');
@@ -1137,7 +1137,10 @@ $('#stop_restore_button').on('click', () => {
         type: "post",
         data: data
     }).done(function (response) {
-        enableRestoreFunction();
+        restore_task_id = response["task_id"];
+        setTimeout(() => {
+            checkTaskStatus(restore_task_id, 'Stop Restore');
+        }, 2000);
     }).fail(function (jqXHR, textStatus, error) {
         enableRestoreFunction();
         let data = jqXHR.responseJSON;
@@ -1147,7 +1150,7 @@ $('#stop_restore_button').on('click', () => {
     });
 });
 
-function checkTaskStatus(task_id) {
+function checkTaskStatus(task_id, task_type) {
     let data = {task_id: task_id};
     $.ajax({
         url: "task_status",
@@ -1157,24 +1160,31 @@ function checkTaskStatus(task_id) {
         let state = response["state"];
         let result = response["result"];
         if (state === 'SUCCESS') {
-            if (result === 'Completed') {
+            if (task_type === 'Restore') {
                 // Done restoring export data
                 enableCheckRestoreFunction();
                 $osf.growl('Restore Export Data', _("Restore completed"), 'success', 2);
-            } else {
+            } else if (task_type === 'Stop restore') {
                 // Done stopping restore export data
                 enableRestoreFunction();
+                $osf.growl('Stop Restore Export Data', _("Stopped restoring data process."), 'success', 2);
             }
-        } else if (state === 'PENDING') {
+        } else if (state === 'PENDING' || state === 'PROGRESS') {
             // Redo check task status after 2 seconds
             setTimeout(() => {
-                checkTaskStatus(task_id);
+                checkTaskStatus(task_id, task_type);
             }, 2000);
         } else if (state !== 'REVOKED' && state !== 'ABORTED') {
             enableRestoreFunction();
             let data = jqXHR.responseJSON;
             if (data["error_message"]) {
-                $osf.growl('Restore Export Data', _(data["error_message"]), 'danger', 2);
+                var title = '';
+                if (task_type === 'Restore'){
+                    title = 'Restore Export Data';
+                } else if (task_type === 'Stop Restore') {
+                    title = 'Stop Restore Export Data';
+                }
+                $osf.growl(title, _(data["error_message"]), 'danger', 2);
             }
         }
     }).fail(function (jqXHR, textStatus, error) {
