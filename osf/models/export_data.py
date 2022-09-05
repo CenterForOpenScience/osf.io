@@ -11,11 +11,11 @@ from addons.osfstorage.models import Region
 from api.base.utils import waterbutler_api_url_for
 from osf.models import (
     base,
-    ExportDataLocation,
-    Institution,
     BaseFileNode,
     BaseFileVersionsThrough,
-    RdmFileTimestamptokenVerifyResult
+    ExportDataLocation,
+    Institution,
+    RdmFileTimestamptokenVerifyResult,
 )
 from website import settings as web_settings
 
@@ -61,7 +61,7 @@ class ExportData(base.BaseModel):
         (STATUS_ERROR, STATUS_ERROR.title()),
     )
     EXPORT_DATA_AVAILABLE = [STATUS_COMPLETED, STATUS_CHECKING]
-    EXPORT_DATA_FILES_FOLDER = 'file'
+    EXPORT_DATA_FILES_FOLDER = 'files'
     EXPORT_DATA_FAKE_NODE_ID = 'export_location'
 
     source = models.ForeignKey(Region, on_delete=models.CASCADE)
@@ -311,7 +311,7 @@ class ExportData(base.BaseModel):
         """get /export_{source.id}_{process_start_timestamp}/export_data_{institution_guid}_{process_start_timestamp}.json file path"""
         if not institution_guid:
             institution_guid = self.source.guid
-        return os.path.join(self.export_data_folder_name, self.get_export_data_filename(institution_guid))
+        return os.path.join('/', self.export_data_folder_name, self.get_export_data_filename(institution_guid))
 
     def read_export_data_from_location(self, cookies, **kwargs):
         """Get content of /export_{source.id}_{process_start_timestamp}/export_data_{institution_guid}_{process_start_timestamp}.json file
@@ -356,7 +356,7 @@ class ExportData(base.BaseModel):
         """get /export_{source.id}_{process_start_timestamp}/file_info_{institution_guid}_{process_start_timestamp}.json file path"""
         if not institution_guid:
             institution_guid = self.source.guid
-        return os.path.join(self.export_data_folder_name, self.get_file_info_filename(institution_guid))
+        return os.path.join('/', self.export_data_folder_name, self.get_file_info_filename(institution_guid))
 
     def read_file_info_from_location(self, cookies, **kwargs):
         """Get content of /export_{source.id}_{process_start_timestamp}/file_info_{institution_guid}_{process_start_timestamp}.json file
@@ -403,7 +403,7 @@ class ExportData(base.BaseModel):
         )
         return requests.put(url, cookies=cookies)
 
-    def get_data_file_from_source(self, cookies, project_id, provider, file_path, **kwargs):
+    def read_data_file_from_source(self, cookies, project_id, provider, file_path, **kwargs):
         """Get data file from the source storage"""
         url = waterbutler_api_url_for(
             project_id, provider, path=file_path,
@@ -425,4 +425,20 @@ class ExportData(base.BaseModel):
             **kwargs
         )
         return requests.put(url, data=file_data, cookies=cookies)
+
+    def get_data_file_file_path(self, file_name):
+        """get /export_{source.id}_{process_start_timestamp}/files/{file_name} file path"""
+        return os.path.join('/', self.export_data_files_folder_path, file_name)
+
+    def read_data_file_from_location(self, cookies, file_name, **kwargs):
+        """Get data file from the storage location"""
+        node_id = self.EXPORT_DATA_FAKE_NODE_ID
+        provider = self.location.provider_name
+        path = self.get_data_file_file_path(file_name)
+        url = waterbutler_api_url_for(
+            node_id, provider, path=path,
+            _internal=True, location_id=self.location.id,
+            **kwargs
+        )
+        return requests.get(url, cookies=cookies, stream=True)
 

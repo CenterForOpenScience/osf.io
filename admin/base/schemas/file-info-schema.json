@@ -112,7 +112,7 @@
               "version",
               "provider"
             ],
-            "additionalProperties": false
+            "additionalProperties": true
           },
           "project": {
             "type": "object",
@@ -128,7 +128,7 @@
               "id",
               "name"
             ],
-            "additionalProperties": false
+            "additionalProperties": true
           },
           "version": {
             "type": "array",
@@ -357,7 +357,7 @@
                 "metadata",
                 "location"
               ],
-              "additionalProperties": false
+              "additionalProperties": true
             }
           },
           "timestamp": {
@@ -371,7 +371,6 @@
           "name",
           "size",
           "created_at",
-          "project",
           "modified_at",
           "tags",
           "location",
@@ -379,7 +378,7 @@
           "version",
           "timestamp"
         ],
-        "additionalProperties": false
+        "additionalProperties": true
       }
     }
   },

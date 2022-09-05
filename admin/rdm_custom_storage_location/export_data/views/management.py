@@ -115,18 +115,18 @@ class ExportDataListView(ExportBaseView):
         if not selected_source_id and source_storages.exists():
             selected_source_id = source_storages.first().id
 
-        query_set = get_export_data(self.institution_guid, selected_location_id, selected_source_id)
-        page_size = self.get_paginate_by(query_set)
-        paginator, page, query_set, is_paginated = self.paginate_queryset(query_set, page_size)
+        self.query_set = get_export_data(self.institution_guid, selected_location_id, selected_source_id)
+        self.page_size = self.get_paginate_by(self.query_set)
+        _, self.page, self.query_set, _ = self.paginate_queryset(self.query_set, self.page_size)
         context = {
             'institution': self.institution,
-            'list_export_data': query_set,
+            'list_export_data': self.query_set,
             'locations': locations,
             'selected_location_id': int(selected_location_id) if selected_location_id else 0,
             'source_storages': source_storages,
             'selected_source_id': int(selected_source_id) if selected_source_id else 0,
-            'source_id': query_set[0]['source_id'] if len(query_set) > 0 else 0,
-            'page': page,
+            'source_id': self.query_set[0]['source_id'] if len(self.query_set) > 0 else 0,
+            'page': self.page,
         }
         return render(request, self.template_name, context)
 
@@ -147,26 +147,24 @@ class ExportDataDeletedListView(ExportBaseView):
         if not selected_source_id and source_storages.exists():
             selected_source_id = source_storages.first().id
 
-        query_set = get_export_data(self.institution_guid, selected_location_id, selected_source_id, deleted=True)
-        page_size = self.get_paginate_by(query_set)
-        paginator, page, query_set, is_paginated = self.paginate_queryset(query_set, page_size)
+        self.query_set = get_export_data(self.institution_guid, selected_location_id, selected_source_id, deleted=True)
+        self.page_size = self.get_paginate_by(self.query_set)
+        _, self.page, self.query_set, _ = self.paginate_queryset(self.query_set, self.page_size)
         context = {
             'institution': self.institution,
-            'list_export_data': query_set,
+            'list_export_data': self.query_set,
             'locations': locations,
             'selected_location_id': int(selected_location_id) if selected_location_id else 0,
             'source_storages': source_storages,
             'selected_source_id': int(selected_source_id) if selected_source_id else 0,
-            'source_id': query_set[0]['source_id'] if len(query_set) > 0 else 0,
-            'page': page,
+            'source_id': self.query_set[0]['source_id'] if len(self.query_set) > 0 else 0,
+            'page': self.page,
         }
         return render(request, self.template_name, context)
 
 
-class ExportDataInformationView(ExportStorageLocationViewBaseView, DetailView, ListView):
+class ExportDataInformationView(ExportBaseView):
     template_name = 'rdm_custom_storage_location/export_data_information.html'
-    raise_exception = True
-    paginate_by = 10
 
     def get_object(self, **kwargs):
         export_data = ExportData.objects.filter(id=self.kwargs.get('data_id')).first()
@@ -177,62 +175,66 @@ class ExportDataInformationView(ExportStorageLocationViewBaseView, DetailView, L
                 self.kwargs.get('data_id')
             ))
 
-    def get_context_data(self, **kwargs):
+    def get(self, request, *args, **kwargs):
+        self.load_institution()
+
+        cookie = self.request.user.get_or_create_cookie().decode()
+        cookies = self.request.COOKIES
+
         kwargs.pop('object_list', None)
-        institution_guid = self.INSTITUTION_DEFAULT
-        if not self.is_super_admin and self.is_affiliated_institution:
-            institution_guid = self.request.user.representative_affiliated_institution.guid
         self.object_list = []
         self.query_set = []
         export_data = self.get_object()
 
+        source_storages = self.institution.get_institutional_storage()
         location = export_data.location
         storage_name = location.waterbutler_settings['storage']['provider']
         if storage_name == 'filesystem':
             storage_name = 'NII Storage'
 
-        user_institution_name = Institution.objects.get(_id=institution_guid).name
-        response = export_data.read_file_info_from_location(self.request.COOKIES)
+        # get file_info from location
+        response = export_data.read_file_info_from_location(cookies, cookie=cookie)
         status_code = response.status_code
         if status_code != 200:
             raise SuspiciousOperation('Cannot connect to the export data storage location.')
-        else:
-            list_file_info = response.json()
-            check = validate_export_data(list_file_info)
-            if not check:
-                raise SuspiciousOperation('The export data files are corrupted.')
-            processed_list_file_info = process_data_infomation(list_file_info['files'])
-            global CURRENT_DATA_INFORMATION
-            CURRENT_DATA_INFORMATION = processed_list_file_info
-            self.object_list = processed_list_file_info
-            self.query_set = processed_list_file_info
+        # validate list_file_info
+        list_file_info = response.json()
+        check = validate_export_data(list_file_info)
+        if not check:
+            raise SuspiciousOperation('The export data files are corrupted.')
+
+        processed_list_file_info = process_data_infomation(list_file_info['files'])
+        global CURRENT_DATA_INFORMATION
+        CURRENT_DATA_INFORMATION = processed_list_file_info
+        self.object_list = processed_list_file_info
+        self.query_set = processed_list_file_info
 
         self.page_size = self.get_paginate_by(self.query_set)
         _, self.page, self.query_set, _ = self.paginate_queryset(self.query_set, self.page_size)
 
-        context = super(ExportDataInformationView, self).get_context_data(**kwargs)
-        context['is_deleted'] = export_data.is_deleted
-        context['data_information'] = export_data
-        context['list_file_info'] = self.query_set
-        context['institution_name'] = user_institution_name
-        context['source_name'] = storage_name
-        context['location'] = ExportDataLocation.objects.filter(id=export_data.location_id).first()
-        context['title'] = 'Export Data Information of {} storage'.format(storage_name)
-        context['storages'] = Region.objects.filter(_id=institution_guid).order_by('pk')
-        context['page'] = self.page
-        return context
+        context = {
+            'institution': self.institution,
+            'destination_storages': source_storages,
+            'export_data': export_data,
+            'file_versions': self.query_set,
+            'page': self.page,
+        }
+        return render(request, self.template_name, context)
 
 
 class DeleteExportDataView(ExportStorageLocationViewBaseView, View):
     raise_exception = True
 
     def post(self, request):
+        cookie = request.user.get_or_create_cookie().decode()
+        cookies = request.COOKIES
+
         check_delete_permanently = True if request.POST.get('delete_permanently') == 'on' else False
         list_export_data_delete = request.POST.get('list_id_export_data').split('#')
         list_export_data_delete = list(filter(None, list_export_data_delete))
         if check_delete_permanently:
             for item in ExportData.objects.filter(id__in=list_export_data_delete, is_deleted=False):
-                response = item.delete_export_data_folder(request.COOKIES)
+                response = item.delete_export_data_folder(cookies, cookie=cookie)
                 if response.status_code == 204:
                     ExportData.objects.filter(id=item.id).delete()
                 else:
@@ -277,13 +279,16 @@ class ExportDataFileCSVView(RdmPermissionMixin, View):
 class CheckExportData(RdmPermissionMixin, View):
 
     def get(self, request, data_id):
+        cookie = request.user.get_or_create_cookie().decode()
+        cookies = request.COOKIES
+
         export_data = ExportData.objects.filter(id=data_id).first()
         if export_data.status != 'Completed':
             return JsonResponse({'message': 'Cannot check in this time. The process is {}'.format(export_data.status)}, status=400)
         export_data.status = 'Checking'
         export_data.last_check = datetime.datetime.now()
         # Get list file info from source storage
-        response = export_data.read_file_info_from_location(request.COOKIES)
+        response = export_data.read_file_info_from_location(cookies, cookie=cookie)
         status_code = response.status_code
         if status_code != 200:
             return JsonResponse({'message': 'Cannot connect to the export data storage location.'}, status=400)
@@ -301,12 +306,15 @@ class CheckExportData(RdmPermissionMixin, View):
 class CheckRestoreData(RdmPermissionMixin, View):
 
     def get(self, request, data_id):
+        cookie = request.user.get_or_create_cookie().decode()
+        cookies = request.COOKIES
+
         export_data_restore = ExportDataRestore.objects.filter(id=data_id).first()
         if export_data_restore.status != 'Completed':
             return JsonResponse({'message': 'Cannot check in this time. The process is {}'.format(export_data_restore.status)}, status=400)
         export_data_restore.status = 'Checking'
         export_data_restore.last_check = datetime.datetime.now()
-        response = export_data_restore.export.read_file_info_from_location(request.COOKIES)
+        response = export_data_restore.export.read_file_info_from_location(cookies, cookie=cookie)
         if response.status_code != 200:
             return JsonResponse({'message': 'Cannot connect to the export data storage location.'}, status=400)
         list_file_info = response.json()

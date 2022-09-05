@@ -833,7 +833,7 @@ $('.row-storage button.view-export-data').click(function (event) {
     event.preventDefault();
     let params = {'storage_id': $(this).data('storage'), 'location_id': $(this).data('location')}
     let url = window.contextVars.export_data_list_url + '?' + $.param(params);
-    window.location.load(url);
+    window.location.replace(url);
 });
 
 // Start - Export data - Actions

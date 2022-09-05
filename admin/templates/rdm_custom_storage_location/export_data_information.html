@@ -17,13 +17,13 @@
         {% if is_deleted %}
             <button type="button" class="btn btn-primary"
                     data-target="#revert" data-toggle="modal" id="revert_button"
-                    value= "{{ data_information.id }}"
+                    value= "{{ export_data.id }}"
                     style="min-width:120px; margin-left:10px;">Revert
             </button>
         {% else %}
             <button type="button" class="btn btn-primary"
                     id="checkExportData" data-toggle="modal"
-                    value= "{{ data_information.id }}"
+                    value= "{{ export_data.id }}"
                     style="min-width:120px;">Check export data
             </button>
             <a href="{% url 'custom_storage_location:export_data:export_data_output_csv' %}">
@@ -34,7 +34,7 @@
             <button type="button" class="btn btn-danger"
                     data-target="#deleteExport" data-toggle="modal"
                     id="checkDelete"
-                    value= "{{ data_information.id }}"
+                    value= "{{ export_data.id }}"
                     style="min-width:120px; margin-left:10px;">Delete
             </button>
         {% endif %}
@@ -46,8 +46,8 @@
                 <label class="col-sm-2 control-label text-left" style="">Restore destination storage</label>
                 <div class="col-sm-9" style="display: flex; gap: 10px;">
                     <select class="form-control" id="destination_storage" title="" style="max-width: 320px; flex: auto">
-                        {% for storage in storages %}
-                            <option value="{{ storage.id }}" selected="selected">{{ storage.name }}</option>
+                        {% for storage in destination_storages %}
+                            <option value={{ storage.id }}>{{ storage.name }}</option>
                         {% endfor %}
                     </select>
                     <div class="btn-group" role="group" aria-label="...">
@@ -68,9 +68,9 @@
         </form>
     {% endif %}
 
-    <h2>{% trans title %}<br/><small>(for {{ institution_name }})</small></h2>
+    <h2>{% trans 'Export Data Information of' %} {{ export_data.source.name }}<br/><small>(for {{ institution.name }})</small></h2>
 
-    <table class="table table-striped" id={data_information.export_data.id}>
+    <table class="table table-striped" id="{{ export_data.id }}">
         <tbody>
         <tr>
             <td>Institutional information</td>
@@ -78,31 +78,31 @@
         </tr>
         <tr>
             <td>Process start</td>
-            <td>{{ data_information.process_start }}</td>
+            <td>{{ export_data.process_start }}</td>
         </tr>
         <tr>
             <td>Process end</td>
-            <td>{{ data_information.process_end }}</td>
+            <td>{{ export_data.process_end }}</td>
         </tr>
         <tr>
             <td>Source institution storage type</td>
-            <td>{{ source_name }}</td>
+            <td>{{ export_data.source.name }}</td>
         </tr>
         <tr>
             <td>Export data storage location</td>
-            <td>{{ location.name }}</td>
+            <td>{{ export_data.location.name }}</td>
         </tr>
         <tr>
             <td>Number of projects</td>
-            <td>{{ data_information.project_number }}</td>
+            <td>{{ export_data.project_number }}</td>
         </tr>
         <tr>
             <td>Number of files</td>
-            <td>{{ data_information.file_number }}</td>
+            <td>{{ export_data.file_number }}</td>
         </tr>
         <tr>
             <td>Total file size</td>
-            <td>{{ data_information.total_size }} KB</td>
+            <td>{{ export_data.total_size }} KB</td>
         </tr>
         </tbody>
     </table>
@@ -122,7 +122,7 @@
         </tr>
         </thead>
         <tbody>
-            {% for file_info in list_file_info %}
+            {% for file_info in file_versions %}
                 <tr class="">
                     <td class="">{{file_info.materialized_path}}</td>
                     <td class="">{{file_info.project.name}}</td>
@@ -158,7 +158,7 @@
         }
     </style>
 
-    {% if is_deleted %}
+    {% if export_data.is_deleted %}
         <div class="modal middle fade" id="revert" tabindex="-1" aria-labelledby="revertLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <form method="post" action={% url 'custom_storage_location:export_data:export_data_revert' %}>
