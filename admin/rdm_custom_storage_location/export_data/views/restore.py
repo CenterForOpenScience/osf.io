@@ -331,6 +331,10 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
                         # If the destination storage is add-on institutional storage and export data storage is bulk-mounted storage:
                         # - for past version files, rename and save each version as filename_{version} in '_version_files' folder
                         # - the latest version is saved as the original
+                        file_hash = version["metadata"]["sha256"]
+                        if file_hash is None:
+                            file_hash = version["metadata"]["md5"]
+                        file_hash_path = f"/{export_data.export_data_folder_name}/files/{file_hash}"
                         if is_destination_addon_storage and not is_export_addon_storage:
                             new_file_materialized_path = file_materialized_path
                             if len(file_materialized_path) > 0 and index < len(file_versions) - 1:
@@ -357,7 +361,7 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
                             destination_region.values_list("waterbutler_url", "waterbutler_settings")[0]
                         destination_provider = destination_settings["storage"]["provider"]
                         response_body = utils.download_then_upload_file(file_node_id, NODE_ID, export_provider,
-                                                                        destination_provider, file_materialized_path,
+                                                                        destination_provider, file_hash_path,
                                                                         new_file_path, cookies, export_base_url,
                                                                         destination_base_url, version)
                         if response_body is None:
