@@ -51,30 +51,11 @@ __all__ = [
     'save_basic_storage_institutions_credentials_common',
     'save_nextcloudinstitutions_credentials',
     'process_data_information',
-    'get_files_from_waterbutler',
     'validate_export_data',
     'write_json_file',
-    'read_json_file',
     'check_diff_between_version',
     'count_files_ng_ok',
 ]
-
-
-def read_json_file(file_path):
-    """Read json from a file
-
-    Args:
-        file_path: the full path of json file
-
-    Returns:
-        json data
-    """
-    with open(file_path, "r", encoding='utf-8') as read_file:
-        try:
-            input_data = json.load(read_file)
-            return input_data
-        except Exception as exc:
-            raise Exception(f"Cannot read json file. Exception: {str(exc)}")
 
 
 def write_json_file(json_data, output_file):
@@ -313,27 +294,6 @@ def save_nextcloudinstitutions_credentials(
         provider, extended_data=extended_data)
 
 
-def get_files_from_waterbutler(pid, provider, path, request_cookie):
-    content = None
-    response = None
-    try:
-        url = waterbutler_api_url_for(
-            pid, provider, path=path, _internal=True, meta=''
-        )
-        response = requests.get(
-            url,
-            headers={'content-type': 'application/json'},
-            cookies=request_cookie,
-        )
-    except Exception:
-        return None, response.status_code
-    status_code = response.status_code
-    if response.status_code == 200:
-        content = response.json()
-    response.close()
-    return content['data'], status_code
-
-
 def get_provider_and_base_url_from_destination_storage(destination_id):
     destination_region = Region.objects.filter(id=destination_id)
     destination_base_url, destination_settings = destination_region.values_list("waterbutler_url",
@@ -393,38 +353,6 @@ def check_storage_type(storage_id):
     region = Region.objects.filter(id=storage_id)
     settings = region.values_list("waterbutler_settings", flat=True)[0]
     return is_add_on_storage(settings)
-
-
-def get_export_data_json(export_id):
-    # Get export data
-    export_data = ExportData.objects.filter(id=export_id).first()
-    # Get region by id
-    guid = export_data.source.guid
-    # Get Institution by guid
-    institution = Institution.objects.filter(_id=guid).first()
-    if institution is None or export_data is None:
-        return None
-    provider_name = export_data.source.waterbutler_settings['storage']['provider']
-    if provider_name == 'filesystem':
-        provider_name = 'NII Storage'
-    export_data = {
-        'institution': {
-            'id': institution.id,
-            'guid': guid,
-            'name': institution.name,
-        },
-        'process_start': export_data.process_start.strftime('%Y-%m-%d %H:%M:%S'),
-        'process_end': export_data.process_end.strftime('%Y-%m-%d %H:%M:%S'),
-        'storage': {
-            'name': export_data.source.name,
-            'type': provider_name,
-        },
-        'projects_numb': export_data.project_number,
-        'files_numb': export_data.file_number,
-        'size': export_data.total_size,
-        'file_path': export_data.get_export_data_file_path(guid),
-    }
-    return export_data
 
 
 def check_any_running_restore_process(destination_id):

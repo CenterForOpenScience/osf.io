@@ -125,7 +125,6 @@ class ExportData(base.BaseModel):
         file_versions = self.source.fileversion_set.filter(creator__affiliated_institutions___id=source_storage_guid)
         # file_versions__ids = file_versions.values_list('id', flat=True)
         # logger.debug(f'file_versions: {file_versions.count()} {file_versions__ids}')
-        export_data_json['files_numb'] = file_versions.count()
 
         # get list_basefilenode_id by file_versions__ids above via the BaseFileVersionsThrough model
         base_file_versions_set = BaseFileVersionsThrough.objects.filter(fileversion__in=file_versions)
@@ -145,6 +144,7 @@ class ExportData(base.BaseModel):
         # logger.debug(f'base_file_nodes: {base_file_nodes.count()} {base_file_nodes}')
 
         total_size = 0
+        total_file = 0
         files = []
         # get file information
         for file in base_file_nodes:
@@ -205,6 +205,7 @@ class ExportData(base.BaseModel):
                     'location': version.location,
                 }
                 file_versions_info.append(version_info)
+                total_file += 1
                 total_size += version.size
 
             file_info['version'] = file_versions_info
@@ -214,6 +215,7 @@ class ExportData(base.BaseModel):
 
         file_info_json['files'] = files
 
+        export_data_json['files_numb'] = total_file
         export_data_json['size'] = total_size
         export_data_json['projects_numb'] = len(source_project_ids)
 
