@@ -66,7 +66,6 @@ class TestUserIdentificationInformationListView(AdminTestCase):
 
         nt.assert_equal(self.user.fullname, result['fullname'])
         nt.assert_equal(self.user.eppn, result['eppn'])
-        nt.assert_equal(self.email, result['email'])
 
     def test_get_queryset(self):
         view = views.UserIdentificationListView()
