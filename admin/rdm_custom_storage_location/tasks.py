@@ -11,7 +11,9 @@ from framework.celery_tasks import app as celery_app
 
 __all__ = [
     'run_restore_export_data_process',
+    'run_restore_export_data_rollback_process',
     'run_export_data_process',
+    'run_export_data_rollback_process',
 ]
 
 

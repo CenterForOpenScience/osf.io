@@ -1098,7 +1098,7 @@ $('#restore_button').on('click', () => {
     data["destination_id"] = $("#destination_storage").val();
     disableRestoreButton();
     $.ajax({
-        url: "restore_export_data",
+        url: "restore_export_data/",
         type: "post",
         data: data
     }).done(function (response) {
@@ -1132,7 +1132,7 @@ $('#stop_restore_button').on('click', () => {
         destination_id: $("#destination_storage").val(),
     };
     $.ajax({
-        url: "restore_export_data/stop",
+        url: "stop_restore_export_data/",
         type: "post",
         data: data
     }).done(function (response) {
@@ -1152,7 +1152,7 @@ $('#stop_restore_button').on('click', () => {
 function checkTaskStatus(task_id, task_type) {
     let data = {task_id: task_id};
     $.ajax({
-        url: "task_status",
+        url: "task_status/",
         type: "get",
         data: data
     }).done(function (response) {
@@ -1204,7 +1204,7 @@ $("#start_restore_modal_button").on('click', () => {
     // Call enableStopRestoreFunction() when click Restore button
     enableStopRestoreFunction();
     $.ajax({
-        url: "restore_export_data",
+        url: "restore_export_data/",
         type: "post",
         data: data
     }).done(function (response) {

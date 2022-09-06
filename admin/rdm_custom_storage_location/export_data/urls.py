@@ -75,10 +75,10 @@ urlpatterns = [
         export.CheckDataExportDataActionView.as_view(), name='check_data_export_data_action'),
 
     # to manage restore export data storage
-    url(r'^(?P<export_id>[0-9]+)/restore_export_data$',
-        restore.ExportDataRestoreView.as_view(), name='export_data_restore'),
-    url(r'^(?P<export_id>[0-9]+)/restore_export_data/stop$',
-        restore.ExportDataStopRestoreView.as_view(), name='stop_export_data_restore'),
-    url(r'^(?P<export_id>[0-9]+)/task_status$',
-        restore.ExportDataRestoreTaskStatusView.as_view(), name='export_data_restore_task_status'),
+    url(r'^(?P<export_id>[0-9]+)/restore_export_data/$',
+        restore.RestoreDataActionView.as_view(), name='restore_data_action'),
+    url(r'^(?P<export_id>[0-9]+)/stop_restore_export_data/$',
+        restore.StopRestoreDataActionView.as_view(), name='stop_restore_data_action'),
+    url(r'^(?P<export_id>[0-9]+)/task_status/$',
+        restore.CheckTaskStatusRestoreDataActionView.as_view(), name='check_task_status_restore_data_action'),
 ]

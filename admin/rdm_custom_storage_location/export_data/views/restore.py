@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 @method_decorator(transaction.non_atomic_requests, name='dispatch')
-class ExportDataRestoreView(RdmPermissionMixin, APIView):
+class RestoreDataActionView(RdmPermissionMixin, APIView):
     raise_exception = True
 
     def post(self, request, **kwargs):
@@ -58,7 +58,7 @@ class ExportDataRestoreView(RdmPermissionMixin, APIView):
 
 
 @method_decorator(transaction.non_atomic_requests, name='dispatch')
-class ExportDataStopRestoreView(RdmPermissionMixin, APIView):
+class StopRestoreDataActionView(RdmPermissionMixin, APIView):
     raise_exception = True
 
     def post(self, request, *args, **kwargs):
@@ -99,7 +99,7 @@ class ExportDataStopRestoreView(RdmPermissionMixin, APIView):
         return Response({'task_id': process.task_id}, status=status.HTTP_200_OK)
 
 
-class ExportDataRestoreTaskStatusView(RdmPermissionMixin, APIView):
+class CheckTaskStatusRestoreDataActionView(RdmPermissionMixin, APIView):
     def get(self, request, **kwargs):
         task_id = request.GET.get('task_id')
         if task_id is None:
@@ -333,7 +333,7 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
                                                        file_hash_path, cookies, is_download_url_internal,
                                                        export_base_url, version, location_id=export_data.location.id)
                         if response.status_code != 200:
-                            logger.error(f"Download error content: {response.content}")
+                            logger.error(f'Download error content: {response.content}')
                             continue
                         download_data = response.content
 
@@ -342,11 +342,11 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
                         response_body = utils.upload_file_path(file_project_id, destination_provider, new_file_path,
                                                                download_data, cookies, is_upload_url_internal,
                                                                destination_base_url)
-                        logger.info(f"Upload :{response_body}")
+                        logger.info(f'Upload :{response_body}')
                         if response_body is None:
                             continue
                 except Exception as e:
-                    logger.error(f"Download or upload exception: {e}")
+                    logger.error(f'Download or upload exception: {e}')
                     # Did not download or upload, pass this file
                     continue
 
