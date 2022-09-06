@@ -489,7 +489,7 @@ def move_file(node_id, provider, source_file_path, destination_file_path, cookie
 
 def move_addon_folder_to_backup(node_id, provider, process_start, cookies, internal=True, base_url=WATERBUTLER_URL):
     path_list, root_child_folders = get_all_file_paths_in_addon_storage(node_id, provider, '/', cookies, internal,
-                                                                        base_url, exclude_path_regex='^\\/backup_\\d{8}T\\d{6}\\/.*$')
+                                                                        base_url, exclude_path_regex='^\\/backup_\\d{8,13}\\/.*$')
     if len(path_list) == 0:
         return {}
 
@@ -621,7 +621,7 @@ def get_all_file_paths_in_addon_storage(node_id, provider, file_path, cookies, i
 
 def move_bulk_mount_folder_to_backup(node_id, provider, process_start, cookies, internal=True, base_url=WATERBUTLER_URL):
     path_list, _ = get_all_child_paths_in_bulk_mount_storage(node_id, provider, '/', cookies, internal, base_url,
-                                                             exclude_path_regex='^\\/backup_\\d{8}T\\d{6}\\/.*$')
+                                                             exclude_path_regex='^\\/backup_\\d{8,13}\\/.*$')
     if len(path_list) == 0:
         return {}
 
@@ -784,7 +784,7 @@ def delete_file(node_id, provider, file_path, cookies, internal=True, base_url=W
 
 def delete_all_files_except_backup(node_id, provider, cookies, internal=True, base_url=WATERBUTLER_URL):
     # In add-on institutional storage: Delete files, except the backup folder.
-    regex = '^\\/backup_\\d{8}T\\d{6}\\/.*$'
+    regex = '^\\/backup_\\d{8,13}\\/.*$'
     list_not_backup_paths = []
     try:
         response = get_file_data(node_id, provider, '/', cookies, internal=internal,
