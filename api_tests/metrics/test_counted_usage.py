@@ -6,11 +6,11 @@ from unittest import mock
 from osf_tests.factories import (
     AuthUserFactory,
     PreprintFactory,
-    # NodeFactory,
-    # RegistrationFactory,
-    # FileFactory,
+    NodeFactory,
+    RegistrationFactory,
     # UserFactory,
 )
+from api_tests.utils import create_test_file
 
 
 COUNTED_USAGE_URL = '/_/metrics/events/counted_usage/'
@@ -34,6 +34,12 @@ def assert_saved_with(mock_save, *, expected_doc_id=None, expected_attrs):
     for attr_name, expected_value in expected_attrs.items():
         actual_value = actual_attrs.get(attr_name, None)
         assert actual_value == expected_value, repr(actual_value)
+
+
+@pytest.fixture
+def mock_save():
+    with mock.patch('elasticsearch_dsl.Document.save', autospec=True) as mock_save:
+        yield mock_save
 
 
 @pytest.mark.django_db
@@ -73,11 +79,6 @@ class TestComputedFields:
         timestamp = datetime(1981, 1, 1, 0, 1, 31, tzinfo=timezone.utc)
         with mock.patch('django.utils.timezone.now', return_value=timestamp):
             yield timestamp
-
-    @pytest.fixture
-    def mock_save(self):
-        with mock.patch('elasticsearch_dsl.Document.save', autospec=True) as mock_save:
-            yield mock_save
 
     @pytest.fixture()
     def user(self):
@@ -207,9 +208,50 @@ class TestComputedFields:
             },
         )
 
-    def test_provider_and_surrounding_guids(self, app, mock_save):
-        preprint = PreprintFactory()
 
+@pytest.mark.parametrize('item_public', [True, False])
+@pytest.mark.django_db
+class TestGuidFields:
+    @pytest.fixture
+    def preprint(self, item_public):
+        return PreprintFactory(
+            is_public=item_public,
+            is_published=item_public,
+        )
+
+    @pytest.fixture
+    def preprint_guid(self, preprint):
+        return preprint._id
+
+    @pytest.fixture
+    def preprint_file_guid(self, preprint):
+        return preprint.primary_file.get_guid(create=True)._id
+
+    @pytest.fixture
+    def parent_reg(self, item_public):
+        return RegistrationFactory(is_public=item_public)
+
+    @pytest.fixture
+    def child_reg(self, parent_reg, item_public):
+        return RegistrationFactory(
+            is_public=item_public,
+            project=NodeFactory(parent=parent_reg.registered_from),
+            parent=parent_reg,
+        )
+
+    @pytest.fixture
+    def child_reg_file(self, child_reg):
+        return create_test_file(
+            target=child_reg,
+            user=AuthUserFactory(),
+        )
+
+    @pytest.fixture
+    def child_reg_file_guid(self, child_reg_file):
+        return child_reg_file.get_guid(create=True)._id
+
+    def test_preprint_file(self, app, mock_save, preprint, item_public):
+        # test_preprint_guid
         payload = counted_usage_payload(
             item_guid=preprint._id,
             action_labels=['view', 'web'],
@@ -219,13 +261,16 @@ class TestComputedFields:
         assert_saved_with(
             mock_save,
             expected_attrs={
+                'item_guid': preprint._id,
+                'item_type': 'preprint',
+                'item_public': item_public,
                 'provider_id': preprint.provider._id,
                 'surrounding_guids': None,
             },
         )
-
         mock_save.reset_mock()
 
+        # test_preprint_file_guid
         payload = counted_usage_payload(
             item_guid=preprint.primary_file.get_guid(create=True)._id,
             action_labels=['view', 'web'],
@@ -236,40 +281,73 @@ class TestComputedFields:
             mock_save,
             expected_attrs={
                 'item_guid': preprint.primary_file.get_guid()._id,
+                'item_type': 'osfstoragefile',
+                'item_public': item_public,
                 'provider_id': preprint.primary_file.provider,
                 'surrounding_guids': [preprint._id],
             },
         )
 
-    def test_subregistration_file(self, app, mock_save):
-        expected_elastic_countedusage = {
-            'action_labels': [
-                'web',
-                'view'
-            ],
-            'item_guid': 'zcfv2',
-            'item_public': True,
-            'pageview_info': {
-                'hour_of_day': 19,
-                'page_path': '/zcfv2',
-                'page_title': 'OSF',
-                'page_url': 'http://localhost:5000/zcfv2/',
-                'referer_domain': 'localhost:5000',
-                'referer_url': 'http://localhost:5000/qxga7/files/osfstorage',
-                'route_name': 'ember-osf-web.guid-file'
-            },
-            'platform_iri': 'http://localhost:5000/',
-            'provider_id': 'osfstorage',
-            'session_id': 'a62e53e28e603e1c621b49076f9bd9c68b355e1a254738a84111720d749de638',
-            'surrounding_guids': [
-                'qxga7',
-                '4bs8c'
-            ],
-            'timestamp': '2022-09-02T19:50:49.740200+00:00',
-        }
-
+    def test_child_registration_file(self, app, mock_save, child_reg_file_guid, child_reg, parent_reg, item_public):
+        # test_child_registration_file_guid
         payload = counted_usage_payload(
-            item_guid='zcfv2',
+            item_guid=child_reg_file_guid,
             action_labels=['view', 'web'],
         )
         resp = app.post_json_api(COUNTED_USAGE_URL, payload)
+        assert resp.status_code == 201
+        assert_saved_with(
+            mock_save,
+            expected_attrs={
+                'action_labels': ['view', 'web'],
+                'item_guid': child_reg_file_guid,
+                'item_type': 'osfstoragefile',
+                'item_public': item_public,
+                'provider_id': 'osfstorage',
+                'surrounding_guids': [
+                    child_reg._id,
+                    parent_reg._id,
+                ],
+            },
+        )
+        mock_save.reset_mock()
+
+        # test_child_registration_guid
+        payload = counted_usage_payload(
+            item_guid=child_reg._id,
+            action_labels=['view', 'web'],
+        )
+        resp = app.post_json_api(COUNTED_USAGE_URL, payload)
+        assert resp.status_code == 201
+        assert_saved_with(
+            mock_save,
+            expected_attrs={
+                'action_labels': ['view', 'web'],
+                'item_guid': child_reg._id,
+                'item_type': 'registration',
+                'item_public': item_public,
+                'provider_id': 'osf',
+                'surrounding_guids': [
+                    parent_reg._id,
+                ],
+            },
+        )
+        mock_save.reset_mock()
+
+        # test_parent_registration_guid
+        payload = counted_usage_payload(
+            item_guid=parent_reg._id,
+            action_labels=['view', 'web'],
+        )
+        resp = app.post_json_api(COUNTED_USAGE_URL, payload)
+        assert resp.status_code == 201
+        assert_saved_with(
+            mock_save,
+            expected_attrs={
+                'action_labels': ['view', 'web'],
+                'item_guid': parent_reg._id,
+                'item_public': item_public,
+                'provider_id': 'osf',
+                'surrounding_guids': None,
+            },
+        )
