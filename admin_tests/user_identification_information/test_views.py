@@ -58,8 +58,7 @@ class TestUserIdentificationInformationListView(AdminTestCase):
         self.user.emails.create(address=self.email)
         self.user.save()
 
-        user_quota = UserQuota.objects.create(user=self.user, storage_type=UserQuota.NII_STORAGE, max_quota=200,
-                                              used=1000)
+        UserQuota.objects.create(user=self.user, storage_type=UserQuota.NII_STORAGE, max_quota=200, used=1000)
 
         view = views.UserIdentificationInformationListView()
         view.kwargs = {'guid': self.user._id}
@@ -67,7 +66,6 @@ class TestUserIdentificationInformationListView(AdminTestCase):
 
         nt.assert_equal(self.user.fullname, result['fullname'])
         nt.assert_equal(self.user.eppn, result['eppn'])
-        nt.assert_equal(self.email, result['email'])
 
     def test_get_queryset(self):
         view = views.UserIdentificationListView()
@@ -85,7 +83,7 @@ class TestUserIdentificationInformationListView(AdminTestCase):
              'extended_storage': '/Github name\n/Amazon S3'}]
         view = views.UserIdentificationInformationListView()
         view = setup_view(view, self.request)
-        results = view.get_queryset()
+        view.get_queryset()
         assert mock_method.called
 
     @mock.patch('admin.user_identification_information.views.UserIdentificationInformationListView.get_context_data')
@@ -94,7 +92,7 @@ class TestUserIdentificationInformationListView(AdminTestCase):
             {'id': 'dsyem', 'fullname': 'superuser01', 'eppn': '', 'email': 'superuser01@example.com.vn', 'usage': 1352,
              'usage_value': 1.352, 'usage_abbr': 'KB', 'extended_storage': '/Amazon S3'}, ]
         view = views.UserIdentificationInformationListView()
-        results = view.get_context_data()
+        view.get_context_data()
         assert mock_method.called
 
 
@@ -138,16 +136,18 @@ class TestUserIdentificationInformationListSorted(AdminTestCase):
         nt.assert_equal(result, expected)
 
     def test_get_order_without_order_by(self):
-        result = []
         expected = sorted(map(lambda u: u.fullname, self.users), reverse=True)
         response = self.view_get('order_by=&status=desc')
         list_map = list(map(itemgetter('fullname'), response.context_data['users']))
+        nt.assert_is_instance(expected, list)
+        nt.assert_is_instance(list_map, list)
 
     def test_get_order_without_status(self):
-        result = []
         expected = sorted(map(lambda u: u.fullname, self.users), reverse=True)
         response = self.view_get('order_by=fullname&status=')
         list_map = list(map(itemgetter('fullname'), response.context_data['users']))
+        nt.assert_is_instance(expected, list)
+        nt.assert_is_instance(list_map, list)
 
 
 class TestUserIdentificationListView(AdminTestCase):
