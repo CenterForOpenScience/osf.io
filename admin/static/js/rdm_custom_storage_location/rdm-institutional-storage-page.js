@@ -901,7 +901,6 @@ function exportData(institution_id, source_id, location_id, element) {
                 let $parent = $(this.custom.element).parents('.row-storage');
                 if ($parent.length) {
                     let $viewExportDataButton = $parent.find('button.view-export-data');
-                    console.log($parent, $viewExportDataButton, location_id);
                     showViewExportDataButton($viewExportDataButton, location_id)
                 }
             } else if (data.task_state === 'FAILURE') {
@@ -1229,32 +1228,42 @@ $("#start_restore_modal_button").on('click', () => {
 
 function disableRestoreButton() {
     // Disable "Restore" button
-    $("#restore_button").addClass("disabled");
-    $("#restore_button").attr("disabled", true);
+    let $restore_button = $("#restore_button");
+    $restore_button.addClass("disabled");
+    $restore_button.attr("disabled", true);
 }
 
 function enableStopRestoreFunction() {
     // Enable "Stop restoring" button, disable "Restore" button
-    $("#restore_button").addClass("disabled");
-    $("#stop_restore_button").removeClass("disabled");
-    $("#restore_button").attr("disabled", true);
-    $("#stop_restore_button").attr("disabled", false);
+    let $restore_button = $("#restore_button");
+    $restore_button.addClass("disabled");
+    $restore_button.attr("disabled", true);
+
+    let $stop_restore_button = $("#stop_restore_button");
+    $stop_restore_button.removeClass("disabled");
+    $stop_restore_button.attr("disabled", false);
 }
 
 function enableRestoreFunction() {
     // Enable "Restore" button, disable "Stop restoring" button
-    $("#restore_button").removeClass("disabled");
-    $("#stop_restore_button").addClass("disabled");
-    $("#restore_button").attr("disabled", false);
-    $("#stop_restore_button").attr("disabled", true);
+    let $restore_button = $("#restore_button");
+    $restore_button.removeClass("disabled");
+    $restore_button.attr("disabled", false);
+
+    let $stop_restore_button = $("#stop_restore_button");
+    $stop_restore_button.addClass("disabled");
+    $stop_restore_button.attr("disabled", true);
 }
 
 function enableCheckRestoreFunction() {
     // Enable "Check export data" button, disable "Stop restoring" button
-    $("#check_restore_button").removeClass("disabled");
-    $("#stop_restore_button").addClass("disabled");
-    $("#check_restore_button").attr("disabled", false);
-    $("#stop_restore_button").attr("disabled", true);
+    let $check_restore_button = $("#check_restore_button");
+    $check_restore_button.removeClass("disabled");
+    $check_restore_button.attr("disabled", false);
+
+    let $stop_restore_button = $("#stop_restore_button");
+    $stop_restore_button.addClass("disabled");
+    $stop_restore_button.attr("disabled", true);
 }
 
 
@@ -1340,7 +1349,7 @@ $('#check_restore_button').on('click', () => {
     });
 });
 
-$('#cancleExportDataModal').on('click', () => {
+$('#cancelExportDataModal').on('click', () => {
     $('#checkExportData').prop('disabled', false);
 });
 

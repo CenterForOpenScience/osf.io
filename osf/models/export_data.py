@@ -121,7 +121,8 @@ class ExportData(base.BaseModel):
         }
 
         # get list FileVersion linked to source storage
-        file_versions = self.source.fileversion_set.all()
+        # but the creator must be affiliated with current institution
+        file_versions = self.source.fileversion_set.filter(creator__affiliated_institutions___id=source_storage_guid)
         # file_versions__ids = file_versions.values_list('id', flat=True)
         # logger.debug(f'file_versions: {file_versions.count()} {file_versions__ids}')
         export_data_json['files_numb'] = file_versions.count()

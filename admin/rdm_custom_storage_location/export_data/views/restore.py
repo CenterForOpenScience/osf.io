@@ -1,25 +1,25 @@
+# -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
-import logging
+import inspect  # noqa
 import json
+import logging
 
 from celery.contrib.abortable import AbortableAsyncResult
+from django.db import transaction
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from addons.osfstorage.models import Region
 from admin.rdm.utils import RdmPermissionMixin
 from admin.rdm_custom_storage_location import tasks
-
-from addons.osfstorage.models import Region
 from admin.rdm_custom_storage_location.export_data import utils
-
-from django.db import transaction
 from osf.models import ExportData, ExportDataLocation, ExportDataRestore, BaseFileNode
-from django.utils import timezone
-
 from website.settings import WATERBUTLER_URL
+from website.util import inspect_info  # noqa
 
 logger = logging.getLogger(__name__)
 DATETIME_FORMAT = "%Y%m%dT%H%M%S"

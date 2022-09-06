@@ -1,23 +1,23 @@
 # -*- coding: utf-8 -*-
 import csv
 import datetime
+import inspect  # noqa
 import logging
 
 from django.core.exceptions import SuspiciousOperation
 from django.http import HttpResponse, Http404, JsonResponse
 from django.shortcuts import render, redirect
 from django.views import View
-from django.views.generic import ListView, DetailView
+from django.views.generic import ListView
 
-from addons.osfstorage.models import Region
 from admin.rdm.utils import RdmPermissionMixin
 from admin.rdm_custom_storage_location.export_data.utils import (
-    process_data_infomation,
+    process_data_information,
     validate_export_data,
-    get_file_info_json,
     count_files_ng_ok,
 )
-from osf.models import ExportData, Institution, ExportDataLocation, ExportDataRestore
+from osf.models import ExportData, Institution, ExportDataRestore
+from website.util import inspect_info  # noqa
 from .location import ExportStorageLocationViewBaseView
 
 logger = logging.getLogger(__name__)
@@ -203,7 +203,7 @@ class ExportDataInformationView(ExportBaseView):
         if not check:
             raise SuspiciousOperation('The export data files are corrupted.')
 
-        processed_list_file_info = process_data_infomation(list_file_info['files'])
+        processed_list_file_info = process_data_information(list_file_info['files'])
         global CURRENT_DATA_INFORMATION
         CURRENT_DATA_INFORMATION = processed_list_file_info
         self.object_list = processed_list_file_info
@@ -285,21 +285,30 @@ class CheckExportData(RdmPermissionMixin, View):
         export_data = ExportData.objects.filter(id=data_id).first()
         if export_data.status != 'Completed':
             return JsonResponse({'message': 'Cannot check in this time. The process is {}'.format(export_data.status)}, status=400)
-        export_data.status = 'Checking'
+
+        # start check
+        export_data.status = ExportData.STATUS_CHECKING
         export_data.last_check = datetime.datetime.now()
-        # Get list file info from source storage
+        export_data.save()
+
+        # get file information exported
         response = export_data.read_file_info_from_location(cookies, cookie=cookie)
         status_code = response.status_code
         if status_code != 200:
             return JsonResponse({'message': 'Cannot connect to the export data storage location.'}, status=400)
-        list_file_info = response.json()
-        check = validate_export_data(list_file_info)
+        exported_file_info = response.json()
+        check = validate_export_data(exported_file_info)
         if not check:
             return JsonResponse({'message': 'The export data files are corrupted.'}, status=400)
-        # Get data from current source from database
-        data_from_source = get_file_info_json(export_data.source.id)
-        data = count_files_ng_ok(list_file_info, data_from_source)
-        export_data.status = 'Completed'
+
+        # Get data from current source storage
+        _, storage_file_info = export_data.extract_file_information_json_from_source_storage()
+        data = count_files_ng_ok(exported_file_info, storage_file_info)
+
+        # end check
+        export_data.status = ExportData.STATUS_COMPLETED
+        export_data.save()
+
         return JsonResponse(data, status=200)
 
 
@@ -312,18 +321,27 @@ class CheckRestoreData(RdmPermissionMixin, View):
         export_data_restore = ExportDataRestore.objects.filter(id=data_id).first()
         if export_data_restore.status != 'Completed':
             return JsonResponse({'message': 'Cannot check in this time. The process is {}'.format(export_data_restore.status)}, status=400)
-        export_data_restore.status = 'Checking'
+
+        # start check
+        export_data_restore.status = ExportData.STATUS_CHECKING
         export_data_restore.last_check = datetime.datetime.now()
+        export_data_restore.save()
+
+        # get file information exported
         response = export_data_restore.export.read_file_info_from_location(cookies, cookie=cookie)
         if response.status_code != 200:
             return JsonResponse({'message': 'Cannot connect to the export data storage location.'}, status=400)
-        list_file_info = response.json()
-        check = validate_export_data(list_file_info)
+        exported_file_info = response.json()
+        check = validate_export_data(exported_file_info)
         if not check:
             return JsonResponse({'message': 'The export data files are corrupted.'}, status=400)
-        # Get data from current source from database
-        destination_id = export_data_restore.destination.id
-        data_from_destination = get_file_info_json(destination_id)
-        data = count_files_ng_ok(list_file_info, data_from_destination)
-        export_data_restore.status = 'Completed'
+
+        # Get data from current destination storage
+        _, storage_file_info = export_data_restore.extract_file_information_json_from_destination_storage()
+        data = count_files_ng_ok(exported_file_info, storage_file_info)
+
+        # end check
+        export_data_restore.status = ExportData.STATUS_COMPLETED
+        export_data_restore.save()
+
         return JsonResponse(data, status=200)

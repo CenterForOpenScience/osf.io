@@ -15,10 +15,15 @@
 {% block content %}
     <h2>{% trans "Deleted Export Data List" %}<br/><small>(for {{ institution.name }})</small></h2>
 
-    <form method="get" action="{% url 'custom_storage_location:export_data:export_data_list' %}"
+    <form method="get"
+            {% if user.is_superuser %}
+          action="{% url 'custom_storage_location:export_data:export_data_list_institution' institution.id %}"
+            {% else %}
+          action="{% url 'custom_storage_location:export_data:export_data_list' %}"
+            {% endif %}
           class="form-horizontal" id="exportdata_form">
         <div class="form-group">
-            <label class="col-sm-2 control-label text-left">Export source storage</label>
+            <label class="col-sm-2 control-label text-left">{% trans "Export source storage" %}</label>
             <div class="col-sm-9">
                 <select id="source-select"
                         class="form-control"
@@ -52,12 +57,14 @@
         </div>
         <div class="form-group" id="formFilter">
             <div class="col-sm-12">
-                <button type="submit" id="filter_export" {% if locations|length < 1 %} disabled {% endif %}
-                        class="btn btn-primary" style="min-width: 90px;">{% trans "Filter" %}</button>
-                <button type="submit" class="btn btn-primary" id="revert_button_data" {% if locations|length < 1 %} disabled {% endif %}
+                <button type="submit" id="filter_export"
+                        {% if not source_storages|length or not locations|length %} disabled {% endif %}
+                        class="btn btn-primary"
+                        style="min-width: 90px;">{% trans "Filter" %}</button>
+                <button type="submit" class="btn btn-primary" id="revert_button_data"
+                        {% if not source_storages|length or not locations|length %} disabled {% endif %}
                         style="min-width: 90px; margin-left:10px;">
-                    {% trans "Revert Export Data" %}
-                </button>
+                    {% trans "Revert Export Data" %}</button>
             </div>
         </div>
     </form>
@@ -81,6 +88,9 @@
         </tr>
         </thead>
         <tbody>
+        {% if not list_export_data|length %}
+            <h3>{% trans "No results found" %}</h3>
+        {% endif %}
         {% for item in list_export_data %}
             <tr class="">
                 <td width="20px">
@@ -103,8 +113,11 @@
         {% endfor %}
         </tbody>
     </table>
-    <button type="button" class="btn btn-primary" id="revert_button" {% if list_export_data|length < 1 %} disabled {% endif %}
-            data-target="#revert" data-toggle="modal">{% trans "Revert" %}</button>
+    <button type="button" id="revert_button"
+            class="btn btn-primary"
+            {% if list_export_data|length < 1 %} disabled {% endif %}
+            data-target="#revert"
+            data-toggle="modal">{% trans "Revert" %}</button>
 
     <style type="text/css">
         .modal.middle {
@@ -131,17 +144,20 @@
         <div class="modal-dialog">
             <form method="post" action={% url 'custom_storage_location:export_data:export_data_revert' %}>
                 {% csrf_token %}
-                <div class="modal-content" id="bodyrevertmodal">
+                <div class="modal-content">
                     <!--<div class="modal-header">-->
                     <!--    <h4 class="modal-title" id="revertLabel">Confirm to revert</h4>-->
                     <!--</div>-->
-                    <div class="modal-body text-left">
+                    <div class="modal-body text-left" id="bodyrevertmodal">
                         <p>{% trans "Are you sure you want to revert these export data?" %}</p>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary cancel_modal" data-dismiss="modal">Cancel</button>
+                        <button type="button"
+                                class="btn btn-secondary cancel_modal"
+                                data-dismiss="modal">{% trans "Cancel" %}</button>
                         <button type="submit" id="submitRevertButton"
-                                class="btn btn-primary" disabled>{% trans "Revert" %}</button>
+                                disabled
+                                class="btn btn-primary">{% trans "Revert" %}</button>
                     </div>
                 </div>
             </form>
@@ -187,9 +203,9 @@
                 let selected_source = $('#source-select').val();
                 let selected_location = $('#location-select').val();
                 if (selected_source.length > 1 && selected_location.length > 1) {
-                    $('#exportdata_form').attr('action', `/custom_storage_location/export_data/deleted/?storage_id=${selected_source}&location_id=${selected_location}`);
+                    $('#exportdata_form').attr('action', window.contextVars.export_data_deleted_list_url + `?storage_id=${selected_source}&location_id=${selected_location}`);
                 } else {
-                    $('#exportdata_form').attr('action', '/custom_storage_location/export_data/deleted');
+                    $('#exportdata_form').attr('action', window.contextVars.export_data_deleted_list_url);
                 }
             });
         });
@@ -201,6 +217,12 @@
     <script>
         window.contextVars = $.extend(true, {}, window.contextVars, {
             'institution_id': {{ institution.id }},
+            'export_data_deleted_list_url':
+                {% if user.is_superuser %}
+                    "{% url 'custom_storage_location:export_data:export_data_deleted_list_institution' institution.id %}"
+                {% else %}
+                    "{% url 'custom_storage_location:export_data:export_data_deleted_list' %}"
+                {% endif %},
         });
     </script>
 {% endblock %}

@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
+import inspect  # noqa
 import logging
 
 from django.views.generic import ListView
 
 from addons.osfstorage.models import Region
 from admin.base import settings
-from osf.models import Institution, ExportData
+from osf.models import Institution
+from website.util import inspect_info  # noqa
 from .location import ExportStorageLocationViewBaseView
 
 logger = logging.getLogger(__name__)

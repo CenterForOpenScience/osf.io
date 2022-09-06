@@ -50,10 +50,9 @@ __all__ = [
     'save_dropboxbusiness_credentials',
     'save_basic_storage_institutions_credentials_common',
     'save_nextcloudinstitutions_credentials',
-    'process_data_infomation',
+    'process_data_information',
     'get_files_from_waterbutler',
     'validate_export_data',
-    'get_file_info_json',
     'write_json_file',
     'read_json_file',
     'check_diff_between_version',
@@ -314,15 +313,6 @@ def save_nextcloudinstitutions_credentials(
         provider, extended_data=extended_data)
 
 
-def process_data_infomation(list_data):
-    list_data_version = []
-    for item in list_data:
-        for file_version in item['version']:
-            current_data = {**item, 'version': file_version, 'tags': ', '.join(item['tags'])}
-            list_data_version.append(current_data)
-    return list_data_version
-
-
 def get_files_from_waterbutler(pid, provider, path, request_cookie):
     content = None
     response = None
@@ -401,105 +391,6 @@ def get_export_data_json(export_id):
         'file_path': export_data.get_export_data_file_path(guid),
     }
     return export_data
-
-
-def get_file_info_json(source_id):
-    # Get region by id
-    region = Region.objects.filter(id=source_id).first()
-    # Get Institution by guid
-    institution = Institution.objects.filter(_id=region.guid).first()
-    if region is None or institution is None:
-        return None
-
-    data_rs = {
-        'institution': {
-            'institution_id': institution.id,
-            'institution_guid': institution.guid,
-            'institution_name': institution.name,
-        }
-    }
-
-    # Get list FileVersion by region_id(source_id)
-    list_fileversion_id = FileVersion.objects.filter(region_id=source_id).values_list('id', flat=True)
-
-    # Get list_basefilenode_id by list_fileversion_id above via the BaseFileVersionsThrough model
-    list_basefilenode_id = BaseFileVersionsThrough.objects.filter(
-        fileversion_id__in=list_fileversion_id).values_list('basefilenode_id', flat=True)
-
-    # Get list project id
-    list_project_id = institution.nodes.filter(category='project').values_list('id', flat=True)
-
-    # Get list_basefielnode by list_basefilenode_id above
-    list_basefielnode = BaseFileNode.objects.filter(id__in=list_basefilenode_id, target_object_id__in=list_project_id,
-                                                    deleted=None)
-    list_file = []
-    # Loop every basefilenode in list_basefielnode for get data
-    for basefilenode in list_basefielnode:
-        # Get file's tag
-        list_tags = []
-        if not basefilenode._state.adding:
-            list_tags = list(basefilenode.tags.filter(system=False).values_list('name', flat=True))
-
-        # Get project's data by basefilenode.target_object_id
-        project = AbstractNode.objects.get(id=basefilenode.target_object_id)
-        basefilenode_info = {
-            'id': basefilenode.id,
-            'path': basefilenode.path,
-            'materialized_path': basefilenode.materialized_path,
-            'name': basefilenode.name,
-            'size': 0,
-            'created_at': basefilenode.created.strftime('%Y-%m-%d %H:%M:%S'),
-            'modified_at': basefilenode.modified.strftime('%Y-%m-%d %H:%M:%S'),
-            'tags': list_tags,
-            'location': {},
-            'project': {
-                'id': Guid.objects.get(object_id=project.id)._id,
-                'name': project.title,
-            },
-            'version': [],
-            'timestamp': {},
-        }
-
-        # Get fileversion_id and version_name by basefilenode_id in the BaseFileVersionsThrough model
-        list_basefileversion = BaseFileVersionsThrough.objects.filter(
-            basefilenode_id=basefilenode.id).order_by('fileversion_id')
-
-        list_fileversion = []
-
-        # Loop every file version of every basefilenode by basefilenode.id
-        for item in list_basefileversion:
-            # get the file version by id
-            fileversion = FileVersion.objects.get(id=item.fileversion_id)
-
-            # Get file version's creator
-            creator = OSFUser.objects.get(id=fileversion.creator_id)
-            fileversion_data = {
-                'identifier': fileversion.identifier,
-                'created_at': fileversion.created.strftime('%Y-%m-%d %H:%M:%S'),
-                'size': fileversion.size,
-                'version_name': basefilenode.name,
-                'contributor': creator.username,
-                'metadata': fileversion.metadata,
-                'location': fileversion.location,
-            }
-            list_fileversion.append(fileversion_data)
-        basefilenode_info['version'] = list_fileversion
-        basefilenode_info['size'] = list_fileversion[-1]['size']
-        basefilenode_info['location'] = list_fileversion[-1]['location']
-        list_file.append(basefilenode_info)
-
-        # Get timestamp by project_id and file_id
-        timestamp = RdmFileTimestamptokenVerifyResult.objects.filter(project_id=project.id,
-                                                                     file_id=basefilenode.id).first()
-        if timestamp:
-            basefilenode_info['timestamp'] = {
-                'timestamp_token': timestamp.timestamp_token,
-                'verify_user': timestamp.verify_user,
-                'verify_date': timestamp.verify_date,
-                'updated_at': timestamp.verify_file_created_at,
-            }
-    data_rs['files'] = list_file
-    return data_rs
 
 
 def check_any_running_restore_process(destination_id):
@@ -993,7 +884,16 @@ def float_or_None(x):
         return None
 
 
-def deep_diff(x, y, parent_key=None, exclude_keys=[], epsilon_keys=[]):
+def process_data_information(list_data):
+    list_data_version = []
+    for item in list_data:
+        for file_version in item['version']:
+            current_data = {**item, 'version': file_version, 'tags': ', '.join(item['tags'])}
+            list_data_version.append(current_data)
+    return list_data_version
+
+
+def deep_diff(x, y, parent_key=None, exclude_keys=None, epsilon_keys=None):
     """
     Find the difference between 2 dictionary
     Take the deep diff of JSON-like dictionaries
@@ -1001,6 +901,11 @@ def deep_diff(x, y, parent_key=None, exclude_keys=[], epsilon_keys=[]):
     """
     EPSILON = 0.5
     rho = 1 - EPSILON
+
+    if epsilon_keys is None:
+        epsilon_keys = []
+    if exclude_keys is None:
+        exclude_keys = []
 
     if x == y:
         return None
@@ -1059,33 +964,36 @@ def check_diff_between_version(list_version_a, list_version_b):
         if list_version_a[i]['identifier'] != list_version_b[i]['identifier']:
             return True, 'Missing file version', list_version_b[i]
         check_diff = deep_diff(list_version_a[i], list_version_b[i])
-        if check_diff is None:
-            return False, '', None
-        else:
+        if check_diff:
             list_diff = list(check_diff)
             text_error = ', '.join(list_diff) + 'not match'
             return True, text_error, list_version_a[i]
+        return False, '', None
 
 
-def count_files_ng_ok(list_file_info, data_from_source):
+def count_files_ng_ok(exported_file_info, storage_file_info):
     data = {
         'NG': 0,
         'OK': 0,
     }
     list_file_ng = []
     count_files = 0
-    for item in list_file_info['files']:
+    exported_file_versions = process_data_information(exported_file_info['files'])
+    storage_file_versions = process_data_information(storage_file_info['files'])
+    for file_a in exported_file_versions:
         file_is_check = False
-        for file_from_source in data_from_source['files']:
-            if file_from_source['id'] == item['id']:
+        version_a = [file_a['version']]
+        for file_b in storage_file_versions:
+            version_b = [file_b['version']]
+            if file_b['id'] == file_a['id'] and file_b['version']['identifier'] == file_a['version']['identifier']:
                 file_is_check = True
-                is_diff, message, file_version = check_diff_between_version(item['version'], file_from_source['version'])
+                is_diff, message, file_version = check_diff_between_version(version_a, version_b)
                 if not is_diff:
                     data['OK'] += 1
                 else:
                     data['NG'] += 1
                     ng_content = {
-                        'path': item['materialized_path'],
+                        'path': file_a['materialized_path'],
                         'size': file_version['size'],
                         'version_id': file_version['identifier'],
                         'reason': message,
@@ -1096,8 +1004,8 @@ def count_files_ng_ok(list_file_info, data_from_source):
         if not file_is_check:
             data['NG'] += 1
             ng_content = {
-                'path': item['materialized_path'],
-                'size': item['size'],
+                'path': file_a['materialized_path'],
+                'size': file_a['size'],
                 'version_id': 0,
                 'reason': 'File is not exist',
             }
