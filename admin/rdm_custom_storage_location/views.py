@@ -19,6 +19,7 @@ from osf.models import Institution, OSFUser
 from osf.models.external import ExternalAccountTemporary
 from scripts import refresh_addon_tokens
 from website import settings as osf_settings
+from distutils.util import strtobool
 
 logger = logging.getLogger(__name__)
 
@@ -212,6 +213,7 @@ class SaveCredentialsView(InstitutionalStorageBaseView, View):
                 data.get('s3compat_access_key'),
                 data.get('s3compat_secret_key'),
                 data.get('s3compat_bucket'),
+                bool(strtobool(data.get('s3compat_server_side_encryption'))),
             )
         elif provider_short_name == 's3compatb3':
             result = utils.save_s3compatb3_credentials(
