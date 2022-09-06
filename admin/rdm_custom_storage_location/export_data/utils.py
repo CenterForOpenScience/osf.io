@@ -343,16 +343,50 @@ def get_provider_and_base_url_from_destination_storage(destination_id):
 
 
 def is_add_on_storage(waterbutler_settings):
-    folder = waterbutler_settings["storage"]["folder"]
-    try:
-        if isinstance(folder, str) or not folder["encrypt_uploads"]:
-            # If folder does not have "encrypt_uploads" then it is add-on storage
-            return True
-        # If folder has "encrypt_uploads" key and it is set to True then it is bulk-mounted storage
-        return False
-    except ValueError as e:
-        # Cannot parse folder as json, storage is add-on storage
+    storage = waterbutler_settings.get("storage")
+    if not storage:
+        return None
+    provider = storage.get("provider")
+    if not provider:
+        return None
+
+    addon_only_providers = [
+        "nextcloudinstitutions",
+        "dropboxbusiness",
+        "s3compatinstitutions"
+    ]
+    bulk_mount_only_providers = [
+        "box",
+        "nextcloud",
+        "osfstorage",
+        "swift"
+    ]
+
+    # If provider is institutional addon only providers then return True
+    if provider in addon_only_providers:
         return True
+
+    # If provider is institutional bulk-mount only providers then return False
+    if provider in bulk_mount_only_providers:
+        return False
+
+    # If provider is S3 or S3 compatible then do additional check for folder setting
+    if provider == "s3" or provider == "s3compat":
+        folder = storage.get("folder")
+        if not folder:
+            return None
+        try:
+            if isinstance(folder, str) or not "encrypt_uploads" in folder:
+                # If folder does not have "encrypt_uploads" then it is add-on storage
+                return True
+            # If folder has "encrypt_uploads" key and it is set to True then it is bulk-mounted storage
+            return False
+        except ValueError as e:
+            # Cannot parse folder as json, storage is add-on storage
+            return True
+
+    # Default value for unknown provider
+    return None
 
 
 def check_storage_type(storage_id):
@@ -411,13 +445,15 @@ def validate_file_json(file_data, json_schema_file_name):
 
 
 def get_file_data(node_id, provider, file_path, cookies, internal=True, base_url=WATERBUTLER_URL,
-                  get_file_info=False, version=None):
+                  get_file_info=False, version=None, location_id=None):
+    kwargs = {}
     if get_file_info:
-        file_url = waterbutler_api_url_for(node_id, provider, path=file_path, _internal=internal, version=version,
-                                           base_url=base_url, meta="")
-    else:
-        file_url = waterbutler_api_url_for(node_id, provider, path=file_path, _internal=internal, version=version,
-                                           base_url=base_url)
+        kwargs["meta"] = ""
+    if version:
+        kwargs["version"] = version
+    if location_id:
+        kwargs["location_id"] = location_id
+    file_url = waterbutler_api_url_for(node_id, provider, path=file_path, _internal=internal, base_url=base_url, **kwargs)
     return requests.get(file_url,
                         headers={'content-type': 'application/json'},
                         cookies=cookies)

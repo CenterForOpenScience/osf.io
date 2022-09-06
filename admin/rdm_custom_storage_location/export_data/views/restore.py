@@ -121,16 +121,8 @@ class ExportDataRestoreTaskStatusView(RdmPermissionMixin, APIView):
 def check_before_restore_export_data(cookies, export_id, destination_id):
     # Get export file (/export_{process_start}/export_data_{institution_guid}_{process_start}.json)
     export_data = ExportData.objects.filter(id=export_id, is_deleted=False)[0]
-    export_base_url, export_settings, export_institution_guid = \
-        ExportDataLocation.objects.filter(id=export_data.location_id).values_list('waterbutler_url',
-                                                                                  'waterbutler_settings',
-                                                                                  'institution_guid')[0]
-    export_provider = export_settings.get("storage", {}).get("provider")
-    export_file_path = f"/{export_data.get_export_data_file_path(export_institution_guid)}"
-    internal = export_base_url == WATERBUTLER_URL
     try:
-        response = utils.get_file_data(ExportData.EXPORT_DATA_FAKE_NODE_ID, export_provider, export_file_path, cookies,
-                                       internal, export_base_url)
+        response = export_data.read_export_data_from_location(cookies)
         if response.status_code != 200:
             # Error
             logger.error(f"Return error with response: {response.content}")
@@ -147,11 +139,32 @@ def check_before_restore_export_data(cookies, export_id, destination_id):
     if not is_file_valid:
         return {'open_dialog': False, "message": f"The export data files are corrupted"}
 
+    # Get file info file: /export_{process_start}/file_info_{institution_guid}_{process_start}.json
+    try:
+        response = export_data.read_file_info_from_location(cookies)
+        if response.status_code != 200:
+            # Error
+            logger.error(f"Return error with response: {response.content}")
+            return {'open_dialog': False, "message": f"Cannot connect to the export data storage location"}
+        response_body = response.content
+        response_file_content = response_body.decode('utf-8')
+        response_file_json = json.loads(response_file_content)
+    except Exception as e:
+        logger.error(f"Exception: {e}")
+        return {'open_dialog': False, "message": f"Cannot connect to the export data storage location"}
+
+    # Validate file info schema
+    is_file_valid = utils.validate_file_json(response_file_json, "file-info-schema.json")
+    if not is_file_valid:
+        return {'open_dialog': False, "message": f"The export data files are corrupted"}
+
+    first_project_id = response_file_json.get('files', [{}])[0].get('project', {}).get('id')
+
     # Check whether the restore destination storage is not empty
     destination_provider, destination_base_url = utils.get_provider_and_base_url_from_destination_storage(destination_id)
     internal = destination_base_url == WATERBUTLER_URL
     try:
-        response = utils.get_file_data(ExportData.EXPORT_DATA_FAKE_NODE_ID, destination_provider, "/", cookies,
+        response = utils.get_file_data(first_project_id, destination_provider, "/", cookies,
                                        internal, destination_base_url, get_file_info=True)
         if response.status_code != 200:
             # Error
@@ -193,6 +206,37 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
     current_process_step = 0
     task.update_state(state='PENDING', meta={'current_restore_step': current_process_step})
     try:
+        export_data = ExportData.objects.filter(id=export_id, is_deleted=False)[0]
+        export_base_url = export_data.location.waterbutler_url
+
+        # Get file which have same information between export data and database
+        # File info file: /export_{process_start}/file_info_{institution_guid}_{process_start}.json
+        try:
+            response = export_data.read_file_info_from_location(cookies)
+            if response.status_code != 200:
+                # Error
+                logger.error(f"Return error with response: {response.content}")
+                export_data_restore.update(status=ExportData.STATUS_STOPPED)
+                return {"message": f"Cannot get file infomation list"}
+            response_body = response.content
+            response_file_content = response_body.decode('utf-8')
+            response_file_json = json.loads(response_file_content)
+        except Exception as e:
+            logger.error(f"Exception: {e}")
+            export_data_restore.update(status=ExportData.STATUS_STOPPED)
+            return {"message": f"Cannot get file infomation list"}
+
+        # Validate file info schema
+        is_file_valid = utils.validate_file_json(response_file_json, "file-info-schema.json")
+        if not is_file_valid:
+            export_data_restore.update(status=ExportData.STATUS_STOPPED)
+            return {"message": f"The export data files are corrupted"}
+
+        files = response_file_json.get("files", [])
+        if len(files) == 0:
+            return {}
+        first_project_id = files[0].get('project', {}).get('id')
+
         # Check destination storage type (bulk-mounted or add-on)
         is_destination_addon_storage = utils.check_storage_type(destination_id)
         try:
@@ -203,12 +247,12 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
             check_if_restore_process_stopped(task, current_process_step)
             # move all old data in restore destination storage to a folder to back up folder
             if is_destination_addon_storage:
-                response = utils.move_addon_folder_to_backup(ExportData.EXPORT_DATA_FAKE_NODE_ID, destination_provider,
+                response = utils.move_addon_folder_to_backup(first_project_id, destination_provider,
                                                              process_start=export_data_restore.process_start.strftime(DATETIME_FORMAT),
                                                              cookies=cookies, internal=internal,
                                                              base_url=destination_base_url)
             else:
-                response = utils.move_bulk_mount_folder_to_backup(ExportData.EXPORT_DATA_FAKE_NODE_ID, destination_provider,
+                response = utils.move_bulk_mount_folder_to_backup(first_project_id, destination_provider,
                                                                   process_start=export_data_restore.process_start.strftime(DATETIME_FORMAT),
                                                                   cookies=cookies, internal=internal,
                                                                   base_url=destination_base_url)
@@ -218,52 +262,19 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
             if "error" in response:
                 # Error
                 logger.error(f"Return error with response: {response.get('error')}")
-                restore_export_data_rollback_process(cookies, destination_id, export_data_restore_id,
-                                                     current_process_step)
+                export_data_restore.update(status=ExportData.STATUS_STOPPED)
+                # restore_export_data_rollback_process(cookies, export_id, destination_id, export_data_restore_id,
+                #                                       current_process_step)
                 return {"message": f"Failed to move files to backup folder."}
         except Exception as e:
             logger.error(f"Exception: {e}")
-            restore_export_data_rollback_process(cookies, destination_id, export_data_restore_id, current_process_step)
+            export_data_restore.update(status=ExportData.STATUS_STOPPED)
+            # restore_export_data_rollback_process(cookies, export_id, destination_id, export_data_restore_id,
+            #                                       current_process_step)
             return {"message": f"Failed to move files to backup folder."}
 
         with transaction.atomic():
-            # Get file which have same information between export data and database
-            # File info file: /export_{process_start}/file_info_{institution_guid}_{process_start}.json
-            export_data = ExportData.objects.filter(id=export_id, is_deleted=False)[0]
-            export_base_url, export_settings, export_institution_guid = \
-                ExportDataLocation.objects.filter(id=export_data.location_id).values_list('waterbutler_url',
-                                                                                          'waterbutler_settings',
-                                                                                          'institution_guid')[0]
-            export_provider = export_settings.get("storage", {}).get("provider")
-            file_info_path = f"/{export_data.get_file_info_file_path(export_institution_guid)}"
-            internal = export_base_url == WATERBUTLER_URL
-            try:
-                response = utils.get_file_data(ExportData.EXPORT_DATA_FAKE_NODE_ID, export_provider, file_info_path, cookies, internal,
-                                               export_base_url)
-                if response.status_code != 200:
-                    # Error
-                    logger.error(f"Return error with response: {response.content}")
-                    restore_export_data_rollback_process(cookies, destination_id, export_data_restore_id,
-                                                         current_process_step)
-                    return {"message": f"Cannot get file infomation list"}
-            except Exception as e:
-                logger.error(f"Exception: {e}")
-                restore_export_data_rollback_process(cookies, destination_id, export_data_restore_id,
-                                                     current_process_step)
-                return {"message": f"Cannot get file infomation list"}
-
-            response_body = response.content
-            response_file_content = response_body.decode('utf-8')
-
-            # Validate file info schema
-            is_file_valid = utils.validate_file_json(response_file_content, "file-info-schema.json")
-            if not is_file_valid:
-                restore_export_data_rollback_process(cookies, destination_id, export_data_restore_id,
-                                                     current_process_step)
-                return {"message": f"The export data files are corrupted"}
-
-            files = response_body.get("files", [])
-            is_export_addon_storage = utils.check_storage_type(export_id)
+            is_export_addon_storage = utils.is_add_on_storage(export_data.location.waterbutler_settings)
             for file in files:
                 check_if_restore_process_stopped(task, current_process_step)
 
@@ -277,8 +288,8 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
                 file_versions.sort(key=lambda k: k.get('identifier', 0))
 
                 # Get file which have the following information that is the same between export data and database
-                file_node = BaseFileNode.active.filter(path=file_path, materialzed_path=file_materialized_path,
-                                                       created_at=file_created_at, modified_at=file_modified_at)
+                file_node = BaseFileNode.active.filter(_path=file_path, _materialized_path=file_materialized_path,
+                                                       created=file_created_at, modified=file_modified_at)
                 if len(file_node) == 0:
                     # File not match with DB, pass this file
                     continue
@@ -294,7 +305,7 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
                             # Cannot get path in export data storage, pass this file
                             continue
 
-                        file_hash_path = f"/{export_data.export_data_folder_name}/{ExportData.EXPORT_DATA_FILES_FOLDER}/{file_hash}"
+                        file_hash_path = f"{export_data.export_data_folder_name}/{ExportData.EXPORT_DATA_FILES_FOLDER}/{file_hash}"
 
                         # If the destination storage is add-on institutional storage and export data storage is bulk-mounted storage:
                         # - for past version files, rename and save each version as filename_{version} in '_version_files' folder
@@ -327,8 +338,9 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
 
                         # Download file by version
                         is_download_url_internal = export_base_url == WATERBUTLER_URL
-                        response = utils.get_file_data(ExportData.EXPORT_DATA_FAKE_NODE_ID, export_provider, file_hash_path,
-                                                       cookies, is_download_url_internal, export_base_url, version)
+                        response = utils.get_file_data(ExportData.EXPORT_DATA_FAKE_NODE_ID, export_data.location.provider_name,
+                                                       file_hash_path, cookies, is_download_url_internal,
+                                                       export_base_url, version, location_id=export_data.location.id)
                         if response.status_code != 200:
                             continue
                         download_data = response.content
@@ -355,13 +367,39 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
             task.update_state(state='PENDING', meta={'current_restore_step': current_process_step})
     except Exception as e:
         logger.error(f"Exception: {e}")
-        restore_export_data_rollback_process(cookies, destination_id, export_data_restore_id, current_process_step)
+        export_data_restore.update(status=ExportData.STATUS_STOPPED)
+        # restore_export_data_rollback_process(cookies, export_id, destination_id, export_data_restore_id, current_process_step)
         raise e
 
     return {}
 
 
-def restore_export_data_rollback_process(cookies, destination_id, export_data_restore_id, process_step):
+def restore_export_data_rollback_process(cookies, export_id, destination_id, export_data_restore_id, process_step):
+    export_data = ExportData.objects.filter(id=export_id, is_deleted=False)[0]
+    # File info file: /export_{process_start}/file_info_{institution_guid}_{process_start}.json
+    try:
+        response = export_data.read_file_info_from_location(cookies)
+        if response.status_code != 200:
+            # Error
+            logger.error(f"Return error with response: {response.content}")
+            return {"message": f"Cannot get file infomation list"}
+        response_body = response.content
+        response_file_content = response_body.decode('utf-8')
+        response_file_json = json.loads(response_file_content)
+    except Exception as e:
+        logger.error(f"Exception: {e}")
+        return {"message": f"Cannot get file infomation list"}
+
+    # Validate file info schema
+    is_file_valid = utils.validate_file_json(response_file_json, "file-info-schema.json")
+    if not is_file_valid:
+        return {"message": f"The file info file is corrupted"}
+
+    files = response_file_json.get("files", [])
+    if len(files) == 0:
+        return {}
+    first_project_id = files[0].get('project', {}).get('id')
+
     export_data_restore = ExportDataRestore.objects.get(pk=export_data_restore_id)
     # Check destination storage type (bulk-mounted or add-on)
     is_destination_addon_storage = utils.check_storage_type(destination_id)
@@ -372,7 +410,7 @@ def restore_export_data_rollback_process(cookies, destination_id, export_data_re
     # Delete files, except the backup folder.
     if process_step == 1 or process_step == 2:
         try:
-            utils.delete_all_files_except_backup(ExportData.EXPORT_DATA_FAKE_NODE_ID, destination_provider, cookies,
+            utils.delete_all_files_except_backup(first_project_id, destination_provider, cookies,
                                                  internal, destination_base_url)
         except Exception as e:
             logger.error(f"Exception: {e}")
@@ -383,13 +421,13 @@ def restore_export_data_rollback_process(cookies, destination_id, export_data_re
     if 0 <= process_step <= 2:
         try:
             if is_destination_addon_storage:
-                response = utils.move_addon_folder_from_backup(ExportData.EXPORT_DATA_FAKE_NODE_ID, destination_provider,
+                response = utils.move_addon_folder_from_backup(first_project_id, destination_provider,
                                                                process_start=export_data_restore.process_start.strftime(
                                                                    DATETIME_FORMAT),
                                                                cookies=cookies, internal=internal,
                                                                base_url=destination_base_url)
             else:
-                response = utils.move_bulk_mount_folder_from_backup(ExportData.EXPORT_DATA_FAKE_NODE_ID, destination_provider,
+                response = utils.move_bulk_mount_folder_from_backup(first_project_id, destination_provider,
                                                                     process_start=export_data_restore.process_start.strftime(
                                                                         DATETIME_FORMAT),
                                                                     cookies=cookies, internal=internal,
