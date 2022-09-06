@@ -385,12 +385,12 @@ def get_export_data_json(export_id):
         provider_name = 'NII Storage'
     export_data = {
         'institution': {
-            'institution_id': institution.id,
-            'institution_guid': guid,
-            'institution_name': institution.name,
+            'id': institution.id,
+            'guid': guid,
+            'name': institution.name,
         },
-        'export_start': export_data.process_start.strftime('%Y-%m-%d %H:%M:%S'),
-        'export_end': export_data.process_end.strftime('%Y-%m-%d %H:%M:%S'),
+        'process_start': export_data.process_start.strftime('%Y-%m-%d %H:%M:%S'),
+        'process_end': export_data.process_end.strftime('%Y-%m-%d %H:%M:%S'),
         'storage': {
             'name': export_data.source.name,
             'type': provider_name,

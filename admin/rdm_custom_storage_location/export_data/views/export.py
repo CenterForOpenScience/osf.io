@@ -153,7 +153,7 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
     if task.is_aborted(): return None  # check before each steps
     # create export data file
     # logger.debug(f'creating export data file')
-    export_data_json['export_end'] = process_end.strftime('%Y-%m-%d %H:%M:%S')
+    export_data_json['process_end'] = process_end.strftime('%Y-%m-%d %H:%M:%S')
     write_json_file(export_data_json, temp_file_path)
     response = export_data.upload_export_data_file(cookies, temp_file_path, **kwargs)
     if not task.is_aborted() and response.status_code != 201:
