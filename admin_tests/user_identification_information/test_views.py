@@ -58,8 +58,7 @@ class TestUserIdentificationInformationListView(AdminTestCase):
         self.user.emails.create(address=self.email)
         self.user.save()
 
-        user_quota = UserQuota.objects.create(user=self.user, storage_type=UserQuota.NII_STORAGE, max_quota=200,
-                                              used=1000)
+        UserQuota.objects.create(user=self.user, storage_type=UserQuota.NII_STORAGE, max_quota=200, used=1000)
 
         view = views.UserIdentificationInformationListView()
         view.kwargs = {'guid': self.user._id}
@@ -161,7 +160,6 @@ class TestUserIdentificationListView(AdminTestCase):
         self.user2.is_superuser = True
         self.user3.is_staff = True
 
-        # self.view_permission = views.UserIdentificationInformationListView
         self.request = RequestFactory().get('/fake_path')
         self.request.user = self.user
 
@@ -272,7 +270,6 @@ class TestUserIdentificationDetailView(AdminTestCase):
         self.user2.is_superuser = True
         self.user3.is_staff = True
 
-        # self.view_permission = views.UserIdentificationDetailAdminView
         self.request = RequestFactory().get('/fake_path')
         self.request.user = self.user3
 

@@ -4,7 +4,6 @@ from nose import tools as nt
 from addons.dataverse.tests.factories import DataverseNodeSettingsFactory, DataverseAccountFactory
 from addons.github.tests.factories import GitHubNodeSettingsFactory, GitHubAccountFactory
 from addons.googledrive.tests.factories import GoogleDriveNodeSettingsFactory, GoogleDriveAccountFactory
-# from addons.dropbox.tests.factories import DropboxNodeSettingsFactory, DropboxAccountFactory
 from addons.mendeley.tests.factories import MendeleyNodeSettingsFactory, MendeleyAccountFactory
 from addons.owncloud.tests.factories import OwnCloudNodeSettingsFactory, OwnCloudAccountFactory
 from addons.s3.tests.factories import (S3NodeSettingsFactory, S3AccountFactory, )
@@ -165,19 +164,3 @@ class TestUtils(AdminTestCase):
             list_name.append(v[0])
 
         nt.assert_in('/dataverse name', list_name[0])
-
-    # def test_get_list_extend_storage_dropbox(self):
-    #     self.user.add_addon('dropbox')
-    #     self.user_settings = self.user.get_addon('dropbox')
-    #     self.external_account = DropboxAccountFactory(provider_name='dropbox name')
-    #     self.user_settings.owner.external_accounts.add(self.external_account)
-    #     self.user_settings.owner.save()
-    #     self.DropboxNode_settings = DropboxNodeSettingsFactory(user_settings=self.user_settings)
-    #
-    #     list_name = []
-    #     results = utils.get_list_extend_storage()
-    #
-    #     for k, v in results.items():
-    #         list_name.append(v[0])
-    #
-    #     nt.assert_in('/dropbox name', list_name[0])
