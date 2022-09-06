@@ -81,7 +81,7 @@ class ExportBaseView(ExportStorageLocationViewBaseView, ListView):
             self.institution_guid = self.institution.guid
         else:
             # institutional admin access without institution_id -> get from representative_affiliated_institution
-            if not institution_id and self.is_affiliated_institution:
+            if not institution_id and self.request.user.is_affiliated_institution:
                 self.institution = self.request.user.representative_affiliated_institution
                 if self.institution:
                     self.institution_guid = self.institution.guid

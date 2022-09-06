@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import inspect  # noqa
 import json
 import logging
 
@@ -13,6 +14,7 @@ from admin.rdm_custom_storage_location import utils
 from admin.rdm_custom_storage_location.export_data import utils as export_data_utils
 from osf.models import ExportDataLocation, Institution
 from website import settings as osf_settings
+from website.util import inspect_info  # noqa
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +64,7 @@ class ExportStorageLocationView(ExportStorageLocationViewBaseView, ListView):
         self.institution_guid = self.INSTITUTION_DEFAULT
         self.institution = None
 
-        if self.is_affiliated_institution:
+        if self.request.user.is_affiliated_institution:
             self.institution = request.user.affiliated_institutions.first()
             self.institution_guid = self.institution.guid
 
@@ -142,7 +144,7 @@ class SaveCredentialsView(ExportStorageLocationViewBaseView, View):
         institution_guid = self.INSTITUTION_DEFAULT
         institution = None
 
-        if self.is_affiliated_institution:
+        if self.request.user.is_affiliated_institution:
             institution = request.user.affiliated_institutions.first()
             institution_guid = institution.guid
 
@@ -213,7 +215,7 @@ class DeleteCredentialsView(ExportStorageLocationViewBaseView, View):
         status = http_status.HTTP_400_BAD_REQUEST
 
         institution_guid = self.INSTITUTION_DEFAULT
-        if not self.is_super_admin and self.is_affiliated_institution:
+        if not self.is_super_admin and self.request.user.is_affiliated_institution:
             institution = request.user.affiliated_institutions.first()
             institution_guid = institution.guid
 
