@@ -287,14 +287,6 @@ def save_nextcloudinstitutions_credentials(
         provider, extended_data=extended_data)
 
 
-def get_provider_and_base_url_from_destination_storage(destination_id):
-    destination_region = Region.objects.filter(id=destination_id)
-    destination_base_url, destination_settings = destination_region.values_list('waterbutler_url',
-                                                                                'waterbutler_settings')[0]
-    destination_provider = destination_settings.get('storage', {}).get('provider')
-    return destination_provider, destination_base_url
-
-
 def is_add_on_storage(waterbutler_settings):
     storage = waterbutler_settings.get('storage')
     if not storage:
@@ -325,18 +317,20 @@ def is_add_on_storage(waterbutler_settings):
 
     # If provider is S3 or S3 compatible then do additional check for folder setting
     if provider == 's3' or provider == 's3compat':
-        folder = storage.get('folder')
-        if not folder:
-            return None
-        try:
-            if isinstance(folder, str) or not 'encrypt_uploads' in folder:
-                # If folder does not have 'encrypt_uploads' then it is add-on storage
-                return True
-            # If folder has 'encrypt_uploads' key and it is set to True then it is bulk-mounted storage
-            return False
-        except ValueError as e:
-            # Cannot parse folder as json, storage is add-on storage
-            return True
+        # Temporarily assume s3 is add-on storage
+        return True
+        # folder = storage.get('folder')
+        # if not folder:
+        #     return None
+        # try:
+        #     if isinstance(folder, str) or not 'encrypt_uploads' in folder:
+        #         # If folder does not have 'encrypt_uploads' then it is add-on storage
+        #         return True
+        #     # If folder has 'encrypt_uploads' key and it is set to True then it is bulk-mounted storage
+        #     return False
+        # except ValueError as e:
+        #     # Cannot parse folder as json, storage is add-on storage
+        #     return True
 
     # Default value for unknown provider
     return None
@@ -348,7 +342,7 @@ def check_storage_type(storage_id):
     return is_add_on_storage(settings)
 
 
-def check_any_running_restore_process(destination_id):
+def check_for_any_running_restore_process(destination_id):
     return ExportDataRestore.objects.filter(destination_id=destination_id).exclude(
         Q(status=ExportData.STATUS_STOPPED) | Q(status=ExportData.STATUS_COMPLETED)).exists()
 
@@ -429,7 +423,7 @@ def upload_file_path(node_id, provider, file_path, file_data, cookies, internal=
     created_folder_path = '/'
     for index, path in enumerate(paths):
         if index < len(paths) - 1:
-            # Subpath is folder, try to create new folder
+            # Path is folder, try to create new folder
             response_body, status_code = create_folder(node_id, provider, created_folder_path, path, cookies, internal,
                                                        base_url)
             if response_body is not None:
@@ -453,7 +447,7 @@ def upload_file_path(node_id, provider, file_path, file_data, cookies, internal=
             else:
                 return None
         else:
-            # Subpath is file, try to create new file
+            # Path is file, try to create new file
             response_body, status_code = upload_file(node_id, provider, created_folder_path, file_data, path, cookies,
                                                      internal, base_url)
             if status_code == 409:
@@ -469,6 +463,7 @@ def move_file(node_id, provider, source_file_path, destination_file_path, cookie
     move_old_data_url = waterbutler_api_url_for(node_id, provider, path=source_file_path, _internal=internal,
                                                 base_url=base_url)
     if is_addon_storage:
+        # Add on storage: move whole source path to root and rename to destination path
         destination_file_path = destination_file_path[1:] if destination_file_path.startswith('/') \
             else destination_file_path
         request_body = {
@@ -477,6 +472,7 @@ def move_file(node_id, provider, source_file_path, destination_file_path, cookie
             'rename': destination_file_path,
         }
     else:
+        # Bulk mount storage: move source folder to destination folder
         request_body = {
             'action': 'move',
             'path': destination_file_path,
