@@ -3,13 +3,13 @@ from enum import IntEnum
 from django.db import models
 
 from osf.models.base import BaseModel
-from osf.utils.fields import LowercaseCharField
 
 
-class NotableEmailDomain(BaseModel):
+class NotableDomain(BaseModel):
     class Note(IntEnum):
-        EXCLUDE_FROM_ACCOUNT_CREATION = 0
-        ASSUME_HAM_UNTIL_REPORTED = 1
+        SPAM = 0
+        HAM = 1
+        UNKNOWN = 2
 
         @classmethod
         def choices(cls):
@@ -18,11 +18,11 @@ class NotableEmailDomain(BaseModel):
                 for enum_item in cls
             ]
 
-    domain = LowercaseCharField(max_length=255, unique=True, db_index=True)
+    domain = models.URLField(max_length=255, unique=True, db_index=True)
 
     note = models.IntegerField(
         choices=Note.choices(),
-        default=Note.EXCLUDE_FROM_ACCOUNT_CREATION,
+        default=Note.SPAM,
     )
 
     def __repr__(self):
