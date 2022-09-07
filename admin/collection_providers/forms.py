@@ -201,6 +201,7 @@ class CollectionProviderForm(forms.ModelForm):
         if primary_collection:  # Modifying an existing CollectionProvider
             old_choices = {c.strip(' ') for c in primary_collection.school_type_choices}
             updated_choices = {c.strip(' ') for c in json.loads(self.data.get('school_type_choices'))}
+            updated_choices = {c.strip(' ') for c in json.loads(self.data.get('school_type_choices') or '{}')}
             added_choices = updated_choices - old_choices
             removed_choices = old_choices - updated_choices
             active_removed_choices = set(
@@ -226,7 +227,7 @@ class CollectionProviderForm(forms.ModelForm):
         primary_collection = collection_provider.primary_collection
         if primary_collection:  # Modifying an existing CollectionProvider
             old_choices = {c.strip(' ') for c in primary_collection.study_design_choices}
-            updated_choices = {c.strip(' ') for c in json.loads(self.data.get('study_design_choices'))}
+            updated_choices = {c.strip(' ') for c in json.loads(self.data.get('study_design_choices') or '{}')}
             added_choices = updated_choices - old_choices
             removed_choices = old_choices - updated_choices
 
