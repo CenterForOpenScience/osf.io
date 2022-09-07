@@ -1109,7 +1109,7 @@ $('#restore_button').on('click', () => {
         if (response['message']) {
             enableRestoreFunction();
             // Show error message
-            $osf.growl('Restore Export Data', _(result['message']), 'danger', 2);
+            $osf.growl('Restore Export Data', _(result['message']), 'danger', 2000);
         } else if (response['task_id']) {
             enableStopRestoreFunction();
             restore_task_id = response['task_id'];
@@ -1122,8 +1122,8 @@ $('#restore_button').on('click', () => {
     }).fail(function (jqXHR, textStatus, error) {
         enableRestoreFunction();
         let data = jqXHR.responseJSON;
-        if (data['message']) {
-            $osf.growl('Restore Export Data', _(data['message']), 'danger', 2);
+        if (data && data['message']) {
+            $osf.growl('Restore Export Data', _(data['message']), 'danger', 2000);
         }
     });
 });
@@ -1145,10 +1145,10 @@ $('#stop_restore_button').on('click', () => {
             checkTaskStatus(restore_task_id, 'Stop Restore');
         }, 5000);
     }).fail(function (jqXHR, textStatus, error) {
-        enableRestoreFunction();
+        enableStopRestoreFunction();
         let data = jqXHR.responseJSON;
-        if (data['message']) {
-            $osf.growl('Stop Export Data', _(data['message']), 'danger', 2);
+        if (data && data['message']) {
+            $osf.growl('Stop Export Data', _(data['message']), 'danger', 2000);
         }
     });
 });
@@ -1166,40 +1166,42 @@ function checkTaskStatus(task_id, task_type) {
             if (task_type === 'Restore') {
                 // Done restoring export data
                 enableCheckRestoreFunction();
-                $osf.growl('Restore Export Data', _('Restore completed'), 'success', 2);
+                $osf.growl('Restore Export Data', _('Restore completed'), 'success', 2000);
             } else if (task_type === 'Stop restore') {
                 // Done stopping restore export data
                 enableRestoreFunction();
-                $osf.growl('Stop Restore Export Data', _('Stopped restoring data process.'), 'success', 2);
+                $osf.growl('Stop Restore Export Data', _('Stopped restoring data process.'), 'success', 2000);
             }
         } else if (state === 'PENDING' || state === 'STARTED') {
             // Redo check task status after 2 seconds
             setTimeout(() => {
                 checkTaskStatus(task_id, task_type);
             }, 5000);
-        } else if (state !== 'REVOKED' && state !== 'ABORTED') {
-            enableRestoreFunction();
-            if (result['message']) {
+        } else {
+            if (state !== 'ABORTED') {
+                enableRestoreFunction();
+            }
+            if (result && result['message']) {
                 var title = '';
                 if (task_type === 'Restore'){
                     title = 'Restore Export Data';
                 } else if (task_type === 'Stop Restore') {
                     title = 'Stop Restore Export Data';
                 }
-                $osf.growl(title, _(result['message']), 'danger', 2);
+                $osf.growl(title, _(result['message']), 'danger', 2000);
             }
         }
     }).fail(function (jqXHR, textStatus, error) {
         enableRestoreFunction();
         let data = jqXHR.responseJSON;
-        if (data['result']) {
+        if (data && data['result']) {
             var title = '';
             if (task_type === 'Restore'){
                 title = 'Restore Export Data';
             } else if (task_type === 'Stop Restore') {
                 title = 'Stop Restore Export Data';
             }
-            $osf.growl(title, _(data['result']), 'danger', 2);
+            $osf.growl(title, _(data['result']), 'danger', 2000);
         }
     });
 }
@@ -1232,8 +1234,8 @@ $('#start_restore_modal_button').on('click', () => {
         // Call enableRestoreFunction() when fail
         enableRestoreFunction();
         let data = jqXHR.responseJSON;
-        if (data['message']) {
-            $osf.growl('Restore Export Data', _(data['message']), 'danger', 2);
+        if (data && data['message']) {
+            $osf.growl('Restore Export Data', _(data['message']), 'danger', 2000);
         }
     });
 });

@@ -373,6 +373,7 @@ def get_file_data(node_id, provider, file_path, cookies, internal=True, base_url
         kwargs['meta'] = ''
     if version:
         kwargs['version'] = version
+        kwargs['revision'] = version
     if location_id:
         kwargs['location_id'] = location_id
     file_url = waterbutler_api_url_for(node_id, provider, path=file_path, _internal=internal, base_url=base_url, **kwargs)
