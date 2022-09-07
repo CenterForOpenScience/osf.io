@@ -1210,12 +1210,10 @@ $('#cancel_restore_modal_button').on('click', () => {
 
 // Catch event when click Restore button in modal on the DataInformation screen
 $('#start_restore_modal_button').on('click', () => {
-    $('#restore').modal('hide');
     let data = {};
     data['destination_id'] = $('#destination_storage').val();
     data['is_from_confirm_dialog'] = true;
     // Call enableStopRestoreFunction() when click Restore button
-    enableStopRestoreFunction();
     $.ajax({
         url: 'restore_export_data/',
         type: 'post',
@@ -1226,8 +1224,9 @@ $('#start_restore_modal_button').on('click', () => {
         if (!restore_task_id) {
             return;
         }
+        enableStopRestoreFunction();
         setTimeout(() => {
-            checkTaskStatus(restore_task_id);
+            checkTaskStatus(restore_task_id, 'Restore');
         }, 5000);
     }).fail(function (jqXHR, textStatus, error) {
         // Call enableRestoreFunction() when fail

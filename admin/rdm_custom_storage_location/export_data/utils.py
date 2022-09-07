@@ -298,13 +298,16 @@ def is_add_on_storage(waterbutler_settings):
     addon_only_providers = [
         'nextcloudinstitutions',
         'dropboxbusiness',
-        's3compatinstitutions'
+        's3compatinstitutions',
+        'ociinstitutions'
     ]
     bulk_mount_only_providers = [
         'box',
         'nextcloud',
         'osfstorage',
-        'swift'
+        'swift',
+        'nextcloud',
+        'onedrive'
     ]
 
     # If provider is institutional addon only providers then return True
@@ -331,6 +334,10 @@ def is_add_on_storage(waterbutler_settings):
         # except ValueError as e:
         #     # Cannot parse folder as json, storage is add-on storage
         #     return True
+
+    # TODO:
+    if provider == 'owncloud':
+        pass
 
     # Default value for unknown provider
     return None

@@ -193,7 +193,7 @@ def check_before_restore_export_data(cookies, export_id, destination_id):
 
 def prepare_for_restore_export_data_process(cookies, export_id, destination_id):
     # Check the destination is available (not in restore process or checking restore data process)
-    any_process_running = utils.check_any_running_restore_process(destination_id)
+    any_process_running = utils.check_for_any_running_restore_process(destination_id)
     if any_process_running:
         return Response({'message': f'Cannot restore in this time.'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -244,6 +244,7 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
 
         # Check destination storage type (bulk-mounted or add-on)
         is_destination_addon_storage = utils.check_storage_type(destination_id)
+        is_source_addon_storage = utils.check_storage_type(export_data.source.id)
         try:
             # Download file from export data storage by version then upload that file to destination storage
             destination_region = Region.objects.filter(id=destination_id).first()
@@ -307,7 +308,6 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
                         # If the destination storage is add-on institutional storage and source data storage is bulk-mounted storage:
                         # - for past version files, rename and save each version as filename_{version} in '_version_files' folder
                         # - the latest version is saved as the original
-                        is_source_addon_storage = utils.check_storage_type(export_data.source.id)
                         if is_destination_addon_storage and not is_source_addon_storage:
                             new_file_materialized_path = file_materialized_path
                             if len(file_materialized_path) > 0 and index < len(file_versions) - 1:
