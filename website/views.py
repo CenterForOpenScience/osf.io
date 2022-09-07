@@ -388,6 +388,10 @@ def redirect_to_registration_workflow(**kwargs):
     return redirect(furl.furl(DOMAIN).add(path='registries/osf/new').url)
 
 
+def redirect_to_registration_workflow_from_rr(**kwargs):
+    return redirect_to_registration_workflow(**kwargs)
+
+
 # Return error for legacy SHARE v1 search route
 def legacy_share_v1_search(**kwargs):
     return HTTPError(

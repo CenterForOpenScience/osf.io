@@ -504,8 +504,8 @@ def make_url_map(app):
                 '/registeredreport/',
             ],
             'get',
-            registries_views.registered_reports_landing,
-            OsfWebRenderer('registered_reports_landing.mako', trust=False)
+            website_views.redirect_to_registration_workflow_from_rr,
+            notemplate
         ),
 
         Rule(
