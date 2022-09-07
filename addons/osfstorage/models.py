@@ -533,6 +533,12 @@ class Region(models.Model):
         from osf.models import ExportData
         return self.exportdata_set.filter(status__in=ExportData.EXPORT_DATA_AVAILABLE).exists()
 
+    @property
+    def location_ids_has_exported_data(self):
+        from osf.models import ExportData
+        locations = self.exportdata_set.filter(status__in=ExportData.EXPORT_DATA_AVAILABLE)
+        return list(locations.values_list('location_id', flat=True).distinct('location_id'))
+
 
 class UserSettings(BaseUserSettings):
     default_region = models.ForeignKey(Region, null=True, on_delete=models.CASCADE)

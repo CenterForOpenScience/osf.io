@@ -1059,15 +1059,19 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
 
                 exportState(this.custom.element);
                 message = 'Export data successfully';
-
-                let $parent = $(this.custom.element).parents('.row-storage');
-                if ($parent.length) {
-                    let $viewExportDataButton = $parent.find('button.view-export-data');
-                    showViewExportDataButton($viewExportDataButton, location_id)
-                }
-
                 if (window.contextVars.stopExportInBackground) {
                     message = 'Stop exporting successfully';
+                }
+
+                if (data.status === 'Completed') {
+                    let $parent = $(this.custom.element).parents('.row-storage');
+                    if ($parent.length) {
+                        let $viewExportDataButton = $parent.find('button.view-export-data');
+                        showViewExportDataButton($viewExportDataButton, location_id)
+                    }
+                    $osf.growl('Export Data', _('Export data successfully'), 'success', 2);
+                } else {
+                    $osf.growl('Export Data', _('Export data failed'), 'danger', 2);
                 }
             } else if (data.task_state === 'FAILURE') {
                 // task_state in (FAILURE, )

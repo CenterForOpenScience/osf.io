@@ -42,8 +42,14 @@
                             class="form-control location-select"
                             title="" style="max-width: 320px;">
                         {% for location in locations %}
-                            <option {% if forloop.first %}selected{% endif %}
-                                    value="{{ location.id }}">{{ location.name }} ({{ location.provider_full_name }})</option>
+                            <option
+                                    {% if storage.location_ids_has_exported_data %}
+                                        {% if location.id == storage.location_ids_has_exported_data.0 %}selected{% endif %}
+                                    {% else %}
+                                        {% if forloop.first %}selected{% endif %}
+                                    {% endif %}
+                                        value="{{ location.id }}">{{ location.name }} ({{ location.provider_full_name }})
+                            </option>
                         {% endfor %}
                     </select>
                 </td>
@@ -69,8 +75,12 @@
                 <td>
                     <button type="button"
                             data-storage="{{ storage.id }}"
-                            {% if location_id and storage.has_export_data %} data-location="{{ location_id }}" {% endif %}
-                            class="btn btn-primary view-export-data {% if not location_id or not storage.has_export_data %} hidden {% endif %}">
+                            {% if storage.location_ids_has_exported_data %}
+                            data-location="{{ storage.location_ids_has_exported_data.0 }}"
+                            {% elif location_id %}
+                            data-location="{{ location_id }}"
+                            {% endif %}
+                            class="btn btn-primary view-export-data {% if not location_id or not storage.location_ids_has_exported_data %} hidden {% endif %}">
                         {% trans "View export data list" %}
                     </button>
                 </td>

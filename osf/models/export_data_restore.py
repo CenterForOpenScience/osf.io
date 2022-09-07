@@ -188,7 +188,7 @@ class ExportDataRestore(base.BaseModel):
             project_id, provider, path=folder_path,
             name=file_name,
             kind='file',
-            _internal=True, location_id=self.location.id,
+            _internal=True, location_id=self.destination.id,
             **kwargs
         )
         return requests.put(url, data=file_data, cookies=cookies)
