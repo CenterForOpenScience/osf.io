@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 # Tests ported from tests/test_models.py and tests/test_user.py
-import os
-import json
 import datetime as dt
 from future.moves.urllib.parse import urlparse, urljoin, parse_qs
 
@@ -2124,33 +2122,6 @@ class TestUserValidation(OsfTestCase):
         self.user.social = {'profileWebsites': []}
         self.user.save()
         assert self.user.social['profileWebsites'] == []
-
-    def test_validate_social_profile_website_many_different(self):
-        basepath = os.path.dirname(__file__)
-        url_data_path = os.path.join(basepath, '../website/static/urlValidatorTest.json')
-        with open(url_data_path) as url_test_data:
-            data = json.load(url_test_data)
-
-        fails_at_end = False
-        for should_pass in data['testsPositive']:
-            try:
-                self.user.social = {'profileWebsites': [should_pass]}
-                self.user.save()
-                assert self.user.social['profileWebsites'] == [should_pass]
-            except ValidationError:
-                fails_at_end = True
-                print('\"' + should_pass + '\" failed but should have passed while testing that the validator ' + data['testsPositive'][should_pass])
-
-        for should_fail in data['testsNegative']:
-            self.user.social = {'profileWebsites': [should_fail]}
-            try:
-                with pytest.raises(ValidationError):
-                    self.user.save()
-            except AssertionError:
-                fails_at_end = True
-                print('\"' + should_fail + '\" passed but should have failed while testing that the validator ' + data['testsNegative'][should_fail])
-        if fails_at_end:
-            raise
 
     def test_validate_multiple_profile_websites_valid(self):
         self.user.social = {'profileWebsites': ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com']}
