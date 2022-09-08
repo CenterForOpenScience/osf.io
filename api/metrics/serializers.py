@@ -122,7 +122,7 @@ class NodeAnalyticsSerializer(ser.BaseSerializer):
         ]
         unique_visits = [
             {
-                'date': bucket['key_as_string'],
+                'date': bucket['key'].date(),
                 'count': bucket['doc_count'],
             }
             for bucket in aggs['unique-visits'].buckets

@@ -63,8 +63,8 @@ class TestNodeAnalyticsQuery:
                 },
                 'unique-visits': {
                     'buckets': [
-                        {'key_as_string': '2022-03-03', 'doc_count': 8},
-                        {'key_as_string': '2022-03-04', 'doc_count': 1},
+                        {'key': 1646265600000, 'key_as_string': '2022-03-03', 'doc_count': 8},
+                        {'key': 1646352000000, 'key_as_string': '2022-03-04', 'doc_count': 1},
                     ],
                 },
                 'time-of-day': {

@@ -426,7 +426,6 @@ class NodeAnalyticsQuery(JSONAPIBaseView):
                     'date_histogram': {
                         'field': 'timestamp',
                         'interval': 'day',
-                        'format': 'yyyy-MM-dd',
                     },
                 },
                 'time-of-day': {
