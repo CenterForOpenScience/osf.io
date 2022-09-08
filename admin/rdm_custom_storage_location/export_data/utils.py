@@ -382,9 +382,14 @@ def get_file_data(node_id, provider, file_path, cookies, internal=True, base_url
                         cookies=cookies)
 
 
-def create_folder(node_id, provider, parent_path, folder_name, cookies, internal=True, base_url=WATERBUTLER_URL):
-    upload_url = waterbutler_api_url_for(node_id, provider, path=parent_path, kind='folder', name=folder_name,
-                                         _internal=internal, base_url=base_url)
+def create_folder(node_id, provider, parent_path, folder_name, cookies, callback_log=False, internal=True, base_url=WATERBUTLER_URL):
+    # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+    kwargs = {
+        "kind": 'folder',
+        'callback_log': callback_log,
+        "name": folder_name
+    }
+    upload_url = waterbutler_api_url_for(node_id, provider, path=parent_path, _internal=internal, base_url=base_url, **kwargs)
     try:
         response = requests.put(upload_url,
                                 headers={'content-type': 'application/json'},
@@ -425,35 +430,36 @@ def update_existing_file(node_id, provider, file_parent_path, file_data, file_na
 def upload_file_path(node_id, provider, file_path, file_data, cookies, internal=True, base_url=WATERBUTLER_URL):
     if not file_path.startswith('/') or file_path.endswith('/'):
         # Invalid file path, return immediately
-        return None
+        return {}
 
     paths = file_path.split('/')[1:]
     created_folder_path = '/'
+    created_folder_materialized_path = '/'
     for index, path in enumerate(paths):
         if index < len(paths) - 1:
-            # Path is folder, try to create new folder
-            response_body, status_code = create_folder(node_id, provider, created_folder_path, path, cookies, internal,
-                                                       base_url)
-            if response_body is not None:
-                created_folder_path = response_body['data']['attributes']['path']
-            elif status_code == 409:
-                # Folder already exists, get folder possibly encrypted path
-                try:
-                    response = get_file_data(node_id, provider, created_folder_path,
-                                             cookies, internal, base_url, get_file_info=True)
-                    if response.status_code != 200:
-                        return None
-                    response_body = response.json()
-                    existing_path_info = next((item for item in response_body['data'] if
-                                               item['attributes']['materialized'] == f'{created_folder_path}{path}/'),
-                                              None)
-                    if existing_path_info is None:
-                        return None
-                    created_folder_path = existing_path_info['attributes']['path']
-                except Exception as e:
-                    return None
-            else:
-                return None
+            # Path is folder, try to get folder
+            try:
+                response = get_file_data(node_id, provider, created_folder_path,
+                                         cookies, internal, base_url, get_file_info=True)
+                if response.status_code != 200:
+                    raise Exception('Cannot get folder info')
+                response_body = response.json()
+                existing_path_info = next((item for item in response_body['data'] if
+                                           item['attributes']['materialized'] == f'{created_folder_materialized_path}{path}/'),
+                                          None)
+                if existing_path_info is None:
+                    raise Exception('Folder not found')
+                created_folder_path = existing_path_info['attributes']['path']
+                created_folder_materialized_path = existing_path_info['attributes']['materialized']
+            except Exception:
+                response_body, status_code = create_folder(
+                    node_id, provider, created_folder_path, path, cookies,
+                    callback_log=True, internal=internal, base_url=base_url)
+                if response_body is not None:
+                    created_folder_path = response_body['data']['attributes']['path']
+                    created_folder_materialized_path = response_body['data']['attributes']['materialized']
+                else:
+                    return {}
         else:
             # Path is file, try to create new file
             response_body, status_code = upload_file(node_id, provider, created_folder_path, file_data, path, cookies,
@@ -466,10 +472,13 @@ def upload_file_path(node_id, provider, file_path, file_data, cookies, internal=
             return response_body
 
 
-def move_file(node_id, provider, source_file_path, destination_file_path, cookies, internal=True,
+def move_file(node_id, provider, source_file_path, destination_file_path, cookies, callback_log=False, internal=True,
               base_url=WATERBUTLER_URL, is_addon_storage=True):
-    move_old_data_url = waterbutler_api_url_for(node_id, provider, path=source_file_path, _internal=internal,
-                                                base_url=base_url)
+    move_old_data_url = waterbutler_api_url_for(
+        node_id, provider, path=source_file_path, _internal=internal,
+        base_url=base_url, callback_log=callback_log)
+    # logger.info(f'move_old_data_url {move_old_data_url}')
+    # logger.info(f'destination_file_path: {destination_file_path}')
     if is_addon_storage:
         # Add on storage: move whole source path to root and rename to destination path
         destination_file_path = destination_file_path[1:] if destination_file_path.startswith('/') \
@@ -491,9 +500,10 @@ def move_file(node_id, provider, source_file_path, destination_file_path, cookie
                          json=request_body)
 
 
-def move_addon_folder_to_backup(node_id, provider, process_start, cookies, internal=True, base_url=WATERBUTLER_URL):
-    path_list, root_child_folders = get_all_file_paths_in_addon_storage(node_id, provider, '/', cookies, internal,
-                                                                        base_url, exclude_path_regex='^\\/backup_\\d{8,13}\\/.*$')
+def move_addon_folder_to_backup(node_id, provider, process_start, cookies, callback_log=False, internal=True, base_url=WATERBUTLER_URL):
+    path_list, root_child_folders = get_all_file_paths_in_addon_storage(
+        node_id, provider, '/', cookies, internal,
+        base_url, exclude_path_regex='^\\/backup_\\d{8,13}\\/.*$')
     if len(path_list) == 0:
         return {}
 
@@ -507,7 +517,8 @@ def move_addon_folder_to_backup(node_id, provider, process_start, cookies, inter
             paths = path.split('/')
             paths.insert(1, f'backup_{process_start}')
             new_path = '/'.join(paths)
-            response = move_file(node_id, provider, path, new_path, cookies, internal, base_url, is_addon_storage=True)
+            response = move_file(node_id, provider, path, new_path, cookies,
+                                 callback_log, internal, base_url, is_addon_storage=True)
             if response.status_code != 200 and response.status_code != 201 and response.status_code != 202:
                 logger.error(f'Response return error: {response.content}')
                 has_error = True
@@ -524,17 +535,21 @@ def move_addon_folder_to_backup(node_id, provider, process_start, cookies, inter
 
     if has_error:
         # Rollback
-        rollback_folder_movement(node_id, provider, moved_paths, created_folder_paths, cookies, internal, base_url)
+        rollback_folder_movement(
+            node_id, provider, moved_paths, created_folder_paths,
+            cookies, callback_log, internal, base_url)
         return {'error': error_message}
 
     # S3: Clean root folders after moving
-    delete_paths(node_id, provider, root_child_folders, cookies, internal, base_url)
+    delete_paths(node_id, provider, root_child_folders,
+                 cookies, callback_log, internal, base_url)
     return {}
 
 
-def move_addon_folder_from_backup(node_id, provider, process_start, cookies, internal=True, base_url=WATERBUTLER_URL):
-    path_list, root_child_folders = get_all_file_paths_in_addon_storage(node_id, provider, '/', cookies, internal,
-                                                                        base_url, include_path_regex=f'^\\/backup_{process_start}\\/.*$')
+def move_addon_folder_from_backup(node_id, provider, process_start, cookies, callback_log=False, internal=True, base_url=WATERBUTLER_URL):
+    path_list, root_child_folders = get_all_file_paths_in_addon_storage(
+        node_id, provider, '/', cookies, internal,
+        base_url, include_path_regex=f'^\\/backup_{process_start}\\/.*$')
     if len(path_list) == 0:
         return {}
 
@@ -551,7 +566,8 @@ def move_addon_folder_from_backup(node_id, provider, process_start, cookies, int
             else:
                 continue
             new_path = '/'.join(paths)
-            response = move_file(node_id, provider, path, new_path, cookies, internal, base_url, is_addon_storage=True)
+            response = move_file(node_id, provider, path, new_path,
+                                 cookies, callback_log, internal, base_url, is_addon_storage=True)
             if response.status_code != 200 and response.status_code != 201 and response.status_code != 202:
                 logger.error(f'Response return error: {response.content}')
                 has_error = True
@@ -568,11 +584,13 @@ def move_addon_folder_from_backup(node_id, provider, process_start, cookies, int
 
     if has_error:
         # Rollback
-        rollback_folder_movement(node_id, provider, moved_paths, created_folder_paths, cookies, internal, base_url)
+        rollback_folder_movement(node_id, provider, moved_paths, created_folder_paths,
+                                 cookies, callback_log, internal, base_url)
         return {'error': error_message}
 
     # S3: Clean backup folders after moving
-    delete_paths(node_id, provider, root_child_folders, cookies, internal, base_url)
+    delete_paths(node_id, provider, root_child_folders,
+                 cookies, callback_log, internal, base_url)
     return {}
 
 
@@ -623,9 +641,10 @@ def get_all_file_paths_in_addon_storage(node_id, provider, file_path, cookies, i
         return [], []
 
 
-def move_bulk_mount_folder_to_backup(node_id, provider, process_start, cookies, internal=True, base_url=WATERBUTLER_URL):
-    path_list, _ = get_all_child_paths_in_bulk_mount_storage(node_id, provider, '/', cookies, internal, base_url,
-                                                             exclude_path_regex='^\\/backup_\\d{8,13}\\/.*$')
+def move_bulk_mount_folder_to_backup(node_id, provider, process_start, cookies, callback_log=False, internal=True, base_url=WATERBUTLER_URL):
+    path_list, _ = get_all_child_paths_in_bulk_mount_storage(
+        node_id, provider, '/', cookies, internal, base_url,
+        exclude_path_regex='^\\/backup_\\d{8,13}\\/.*$')
     if len(path_list) == 0:
         return {}
 
@@ -638,7 +657,7 @@ def move_bulk_mount_folder_to_backup(node_id, provider, process_start, cookies, 
     # OSF storage: create new backup folder
     try:
         response_body, status_code = create_folder(node_id, provider, '/', new_materialized_path[1:],
-                                                   cookies, internal, base_url)
+                                                   cookies, callback_log, internal, base_url)
         if status_code != 201:
             return {'error': 'Cannot create backup folder'}
         new_path = response_body['data']['attributes']['path']
@@ -649,7 +668,10 @@ def move_bulk_mount_folder_to_backup(node_id, provider, process_start, cookies, 
     # Move all root child files and folders to backup folder
     for path, materialized_path in path_list:
         try:
-            response = move_file(node_id, provider, path, new_path, cookies, internal, base_url, is_addon_storage=False)
+            response = move_file(node_id, provider, path, new_path,
+                                 cookies, callback_log, internal, base_url, is_addon_storage=False)
+            # logger.info(response.status_code)
+            # logger.info(response.content)
             if response.status_code != 200 and response.status_code != 201 and response.status_code != 202:
                 logger.error(f'Response return error: {response.content}')
                 # Rollback
@@ -665,16 +687,18 @@ def move_bulk_mount_folder_to_backup(node_id, provider, process_start, cookies, 
 
     if has_error:
         # Rollback
-        rollback_folder_movement(node_id, provider, moved_paths, [new_path], cookies, internal, base_url,
+        rollback_folder_movement(node_id, provider, moved_paths, [new_path],
+                                 cookies, callback_log, internal, base_url,
                                  is_addon_storage=False)
         return {'error': error_message}
     return {}
 
 
-def move_bulk_mount_folder_from_backup(node_id, provider, process_start, cookies, internal=True, base_url=WATERBUTLER_URL):
-    path_list, backup_path = get_all_child_paths_in_bulk_mount_storage(node_id, provider, f'/backup_{process_start}/',
-                                                                       cookies, internal, base_url,
-                                                                       get_path_from=f'/backup_{process_start}/')
+def move_bulk_mount_folder_from_backup(node_id, provider, process_start, cookies, callback_log=False, internal=True, base_url=WATERBUTLER_URL):
+    path_list, backup_path = get_all_child_paths_in_bulk_mount_storage(
+        node_id, provider, f'/backup_{process_start}/',
+        cookies, internal, base_url,
+        get_path_from=f'/backup_{process_start}/')
     if len(path_list) == 0:
         return {}
 
@@ -685,7 +709,8 @@ def move_bulk_mount_folder_from_backup(node_id, provider, process_start, cookies
     root_path = '/'
     for path, materialized_path in path_list:
         try:
-            response = move_file(node_id, provider, path, root_path, cookies, internal, base_url, is_addon_storage=False)
+            response = move_file(node_id, provider, path, root_path,
+                                 cookies, callback_log, internal, base_url, is_addon_storage=False)
             if response.status_code != 200 and response.status_code != 201 and response.status_code != 202:
                 logger.error(f'Response return error: {response.content}')
                 has_error = True
@@ -700,12 +725,14 @@ def move_bulk_mount_folder_from_backup(node_id, provider, process_start, cookies
 
     if has_error:
         # Rollback
-        rollback_folder_movement(node_id, provider, moved_paths, [], cookies, internal, base_url,
+        rollback_folder_movement(node_id, provider, moved_paths, [],
+                                 cookies, callback_log, internal, base_url,
                                  is_addon_storage=False)
         return {'error': error_message}
 
     # OSF storage: Delete backup folder after moving
-    delete_paths(node_id, provider, [backup_path], cookies, internal, base_url)
+    delete_paths(node_id, provider, [backup_path],
+                 cookies, callback_log, internal, base_url)
     return {}
 
 
@@ -742,7 +769,7 @@ def get_all_child_paths_in_bulk_mount_storage(node_id, provider, file_materializ
                             list_file_path.append((path, materialized_path))
                         return list_file_path, path_from_args
                     else:
-                        return []
+                        return [], path_from_args
                 else:
                     current_materialized_path = f'{current_materialized_path}{path}/'
                     current_path_info = next((item for item in data if item.get('attributes', {}).get('materialized') ==
@@ -753,40 +780,49 @@ def get_all_child_paths_in_bulk_mount_storage(node_id, provider, file_materializ
                     current_path = current_path_info['attributes']['path']
                     if current_path_info['attributes']['materialized'] == get_path_from:
                         path_from_args = current_path
+        return [], path_from_args
     except Exception:
         return [], path_from_args
 
 
-def rollback_folder_movement(node_id, provider, moved_paths, created_folder_paths, cookies, internal=True,
+def rollback_folder_movement(node_id, provider, moved_paths, created_folder_paths,
+                             cookies, callback_log=False, internal=True,
                              base_url=WATERBUTLER_URL, is_addon_storage=True):
     # Move files and folder back
     for path, new_path in moved_paths:
         try:
-            move_file(node_id, provider, new_path, path, cookies, internal, base_url, is_addon_storage)
+            move_file(node_id, provider, new_path, path,
+                      cookies, callback_log, internal, base_url, is_addon_storage)
         except Exception as e:
             logger.error(f'Exception: {e}')
 
     # Delete folders created by moving files and folders
-    delete_paths(node_id, provider, created_folder_paths, cookies, internal, base_url)
+    delete_paths(node_id, provider, created_folder_paths,
+                 cookies, callback_log, internal, base_url)
 
 
-def delete_paths(node_id, provider, paths, cookies, internal=True, base_url=WATERBUTLER_URL):
+def delete_paths(node_id, provider, paths,
+                 cookies, callback_log=False,
+                 internal=True, base_url=WATERBUTLER_URL):
     for path in paths:
         try:
-            delete_file(node_id, provider, path, cookies, internal, base_url)
+            delete_file(node_id, provider, path,
+                        cookies, callback_log, internal, base_url)
         except Exception as e:
             logger.error(f'Exception: {e}')
 
 
-def delete_file(node_id, provider, file_path, cookies, internal=True, base_url=WATERBUTLER_URL):
-    destination_storage_backup_meta_api = waterbutler_api_url_for(node_id, provider, path=file_path,
-                                                                  _internal=internal, base_url=base_url)
+def delete_file(node_id, provider, file_path, cookies, callback_log=False, internal=True, base_url=WATERBUTLER_URL):
+    destination_storage_backup_meta_api = waterbutler_api_url_for(
+        node_id, provider, path=file_path,
+        _internal=internal, base_url=base_url,
+        callback_log=callback_log)
     return requests.delete(destination_storage_backup_meta_api,
                            headers={'content-type': 'application/json'},
                            cookies=cookies)
 
 
-def delete_all_files_except_backup(node_id, provider, cookies, internal=True, base_url=WATERBUTLER_URL):
+def delete_all_files_except_backup(node_id, provider, cookies, callback_log=False, internal=True, base_url=WATERBUTLER_URL):
     # In add-on institutional storage: Delete files, except the backup folder.
     regex = '^\\/backup_\\d{8,13}\\/.*$'
     list_not_backup_paths = []
@@ -819,7 +855,7 @@ def delete_all_files_except_backup(node_id, provider, cookies, internal=True, ba
     # Delete all paths
     for path in list_not_backup_paths:
         try:
-            delete_file(node_id, provider, path, cookies, internal, base_url)
+            delete_file(node_id, provider, path, cookies, callback_log, internal, base_url)
         except (requests.ConnectionError, requests.Timeout) as e:
             logger.error(f'Connection error: {e}')
             raise e

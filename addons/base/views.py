@@ -23,7 +23,7 @@ from elasticsearch import exceptions as es_exceptions
 from api.base.settings.defaults import SLOAN_ID_COOKIE_NAME
 
 from addons.base.models import BaseStorageAddon
-from addons.osfstorage.models import OsfStorageFile
+from addons.osfstorage.models import OsfStorageFile, Region
 from addons.osfstorage.models import OsfStorageFileNode
 from addons.osfstorage.utils import update_analytics
 
@@ -44,7 +44,8 @@ from osf import features
 from osf.models import (BaseFileNode, TrashedFileNode, BaseFileVersionsThrough,
                         OSFUser, AbstractNode, Preprint,
                         NodeLog, DraftRegistration,
-                        Guid, FileVersionUserMetadata, FileVersion, ExportDataLocation)
+                        Guid, FileVersionUserMetadata, FileVersion,
+                        ExportDataLocation, ExportData)
 from osf.metrics import PreprintView, PreprintDownload
 from osf.utils import permissions
 from website.profile.utils import get_profile_image_url
@@ -295,12 +296,26 @@ def get_auth(auth, **kwargs):
         action = data['action']
         node_id = data['nid']
         provider_name = data['provider']
+        # only has location_id or region_id
         location_id = data.get('location_id')
+        region_id = data.get('region_id') if location_id is None else None
     except KeyError:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
+    try:
+        metrics = data.get('metrics', {})
+        uri = metrics.get('uri', '')
+        from urllib.parse import urlparse
+        from urllib.parse import parse_qs
+
+        parsed_url = urlparse(uri)
+        callback_log = parse_qs(parsed_url.query)['callback_log'][0]
+    except KeyError:
+        callback_log = data.get('callback_log', True)
+
+    # logger.debug(f'callback_log: {callback_log}')
     is_node_process = True
-    if node_id == 'export_location':
+    if node_id == ExportData.EXPORT_DATA_FAKE_NODE_ID:
         is_node_process = False
 
     if is_node_process:
@@ -318,7 +333,16 @@ def get_auth(auth, **kwargs):
                 raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
     else:
         # check permission
-        if not auth.user.is_allowed_storage_location_id(location_id):
+        # only location_id or region_id has value
+        if not location_id and not region_id:
+            # logger.debug(f'missing location_id and region_id')
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+
+        if location_id and not auth.user.is_allowed_storage_location_id(location_id):
+            # logger.debug(f'not auth.user.is_allowed_storage_location_id({location_id})')
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+        if region_id and not auth.user.is_allowed_storage_id(region_id):
+            # logger.debug(f'not auth.user.is_allowed_storage_id({region_id})')
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     path = data.get('path')
@@ -384,9 +408,13 @@ def get_auth(auth, **kwargs):
         waterbutler_settings = node.serialize_waterbutler_settings(provider_name)
 
     if not is_node_process:
-        location = ExportDataLocation.objects.get(pk=location_id)
-        credentials = location.serialize_waterbutler_credentials(provider_name)
-        waterbutler_settings = location.serialize_waterbutler_settings(provider_name)
+        # only location_id or region_id has value
+        if location_id:
+            storage = ExportDataLocation.objects.get(pk=location_id)
+        else:
+            storage = Region.objects.get(pk=region_id)
+        credentials = storage.serialize_waterbutler_credentials(provider_name)
+        waterbutler_settings = storage.serialize_waterbutler_settings(provider_name)
 
     if isinstance(credentials.get('token'), bytes):
         credentials['token'] = credentials.get('token').decode()
@@ -398,7 +426,8 @@ def get_auth(auth, **kwargs):
         'callback_url': ''
     }
 
-    if is_node_process:
+    # logger.debug(f'callback_log and is_node_process {callback_log} {is_node_process}')
+    if callback_log and is_node_process:
         payload_data['callback_url'] = node.api_url_for(
             ('create_waterbutler_log' if not getattr(node, 'is_registration', False) else 'registration_callbacks'),
             _absolute=True,

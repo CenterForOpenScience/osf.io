@@ -1857,6 +1857,24 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         return self.is_super_admin or self.is_affiliated_with_institution(institution)
 
+    def is_allowed_storage_id(self, storage_id):
+        """Return if this user is allowed to access ``storage_id``."""
+        # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+        from addons.osfstorage.models import Region
+
+        storages = Region.objects.filter(pk=storage_id)
+        if not storages.exists():
+            return False
+        storage = storages.first()
+        if storage.guid == Institution.INSTITUTION_DEFAULT:
+            return True
+        institutions = Institution.objects.filter(_id=storage.guid)
+        if not institutions.exists():
+            return False
+        institution = institutions.first()
+
+        return self.is_super_admin or self.is_affiliated_with_institution(institution)
+
     def is_affiliated_with_institution(self, institution):
         """Return if this user is affiliated with ``institution``."""
         return self.affiliated_institutions.filter(id=institution.id).exists()

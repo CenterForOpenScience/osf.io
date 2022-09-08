@@ -68,6 +68,7 @@
               "folder": {
                 "type": [
                   "object",
+                  "string",
                   "null"
                 ]
               },
@@ -177,6 +178,7 @@
                     "folder": {
                       "type": [
                         "object",
+                        "string",
                         "null"
                       ]
                     },
@@ -289,6 +291,7 @@
                     "size": {
                       "type": [
                         "string",
+                        "integer",
                         "null"
                       ]
                     },

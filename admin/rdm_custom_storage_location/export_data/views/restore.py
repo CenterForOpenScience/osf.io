@@ -17,11 +17,12 @@ from addons.osfstorage.models import Region
 from admin.rdm.utils import RdmPermissionMixin
 from admin.rdm_custom_storage_location import tasks
 from admin.rdm_custom_storage_location.export_data import utils
-from osf.models import ExportData, ExportDataRestore, BaseFileNode
+from osf.models import ExportData, ExportDataRestore
 from website.settings import WATERBUTLER_URL
 from website.util import inspect_info  # noqa
 
 logger = logging.getLogger(__name__)
+INSTITUTIONAL_STORAGE_PROVIDER_NAME = 'osfstorage'
 
 
 class ProcessError(Exception):
@@ -97,9 +98,12 @@ class StopRestoreDataActionView(RdmPermissionMixin, APIView):
         if current_progress_step >= 4:
             return Response({'message': f'Cannot stop restore process at this time.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Abort current task
+        # Abort current
+        transaction.set_rollback(True)
         task.abort()
-        if task.state != 'ABORTED':
+        # task.revoke(terminate=True)
+
+        if task.state != 'ABORTED' and task.state != 'REVOKED':
             return Response({'message': f'Cannot stop restore process at this time.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Start rollback restore export data process
@@ -165,17 +169,17 @@ def check_before_restore_export_data(cookies, export_id, destination_id):
     if not is_file_valid:
         return {'open_dialog': False, 'message': f'The export data files are corrupted'}
 
-    first_project_id = response_file_json.get('files', [{}])[0].get('project', {}).get('id')
+    destination_first_project_id = response_file_json.get('files', [{}])[0].get('project', {}).get('id')
 
     # Check whether the restore destination storage is not empty
     destination_region = Region.objects.filter(id=destination_id).first()
     if not destination_region:
         raise {'open_dialog': False, 'message': f'Failed to get destination storage information'}
     destination_base_url = destination_region.waterbutler_url
-    destination_provider = destination_region.provider_name
+    destination_provider = INSTITUTIONAL_STORAGE_PROVIDER_NAME
     internal = destination_base_url == WATERBUTLER_URL
     try:
-        response = utils.get_file_data(first_project_id, destination_provider, '/', cookies,
+        response = utils.get_file_data(destination_first_project_id, destination_provider, '/', cookies,
                                        internal, destination_base_url, get_file_info=True)
         if response.status_code != 200:
             # Error
@@ -246,7 +250,7 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
             export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
                                        status=ExportData.STATUS_COMPLETED)
             return None
-        first_project_id = files[0].get('project', {}).get('id')
+        destination_first_project_id = files[0].get('project', {}).get('id')
 
         # Check destination storage type (bulk-mounted or add-on)
         is_destination_addon_storage = utils.check_storage_type(destination_id)
@@ -257,7 +261,7 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
                 if not destination_region:
                     raise ProcessError(f'Failed to get destination storage information')
                 destination_base_url = destination_region.waterbutler_url
-                destination_provider = destination_region.provider_name
+                destination_provider = INSTITUTIONAL_STORAGE_PROVIDER_NAME
                 internal = destination_base_url == WATERBUTLER_URL
 
                 check_if_restore_process_stopped(task, current_process_step)
@@ -265,17 +269,25 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
                 task.update_state(state='PENDING', meta={'current_restore_step': current_process_step})
                 # move all old data in restore destination storage to a folder to back up folder
                 if is_destination_addon_storage:
-                    response = utils.move_addon_folder_to_backup(first_project_id, destination_provider,
-                                                                 process_start=export_data_restore.process_start_timestamp,
-                                                                 cookies=cookies, internal=internal,
-                                                                 base_url=destination_base_url)
+                    response = utils.move_addon_folder_to_backup(
+                        destination_first_project_id,
+                        destination_provider,
+                        process_start=export_data_restore.process_start_timestamp,
+                        cookies=cookies,
+                        callback_log=False,
+                        internal=internal,
+                        base_url=destination_base_url)
                 else:
-                    response = utils.move_bulk_mount_folder_to_backup(first_project_id, destination_provider,
-                                                                      process_start=export_data_restore.process_start_timestamp,
-                                                                      cookies=cookies, internal=internal,
-                                                                      base_url=destination_base_url)
+                    response = utils.move_bulk_mount_folder_to_backup(
+                        destination_first_project_id,
+                        destination_provider,
+                        process_start=export_data_restore.process_start_timestamp,
+                        cookies=cookies,
+                        callback_log=False,
+                        internal=internal,
+                        base_url=destination_base_url)
                 check_if_restore_process_stopped(task, current_process_step)
-                if 'error' in response:
+                if response and 'error' in response:
                     # Error
                     error_msg = response.get('error')
                     logger.error(f'Return error with response: {error_msg}')
@@ -311,7 +323,7 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
 
                         file_hash_path = f'/{export_data.export_data_folder_name}/{ExportData.EXPORT_DATA_FILES_FOLDER}/{file_hash}'
 
-                        # If the destination storage is add-on institutional storage and source data storage is bulk-mounted storage:
+                        # If the destination storage is add-on institutional storage:
                         # - for past version files, rename and save each version as filename_{version} in '_version_files' folder
                         # - the latest version is saved as the original
                         if is_destination_addon_storage:
@@ -420,7 +432,7 @@ def restore_export_data_rollback_process(task, cookies, export_id, destination_i
                 export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
                                            status=ExportData.STATUS_STOPPED)
                 return None
-            first_project_id = files[0].get('project', {}).get('id')
+            destination_first_project_id = files[0].get('project', {}).get('id')
 
             # Check destination storage type (bulk-mounted or add-on)
             is_destination_addon_storage = utils.check_storage_type(destination_id)
@@ -429,14 +441,17 @@ def restore_export_data_rollback_process(task, cookies, export_id, destination_i
             if not destination_region:
                 raise ProcessError(f'Failed to get destination storage information')
             destination_base_url = destination_region.waterbutler_url
-            destination_provider = destination_region.provider_name
+            destination_provider = INSTITUTIONAL_STORAGE_PROVIDER_NAME
             internal = destination_base_url == WATERBUTLER_URL
 
+            location_id = export_data.location.id
             # Delete files, except the backup folder.
             if process_step == 2 or process_step == 3:
                 try:
-                    utils.delete_all_files_except_backup(first_project_id, destination_provider, cookies,
-                                                         internal, destination_base_url)
+                    utils.delete_all_files_except_backup(
+                        destination_first_project_id, destination_provider,
+                        cookies, location_id,
+                        internal, destination_base_url)
                 except Exception as e:
                     logger.error(f'Exception: {e}')
                     raise ProcessError(f'Cannot connect to destination storage')
@@ -445,15 +460,23 @@ def restore_export_data_rollback_process(task, cookies, export_id, destination_i
             if 0 < process_step < 4:
                 try:
                     if is_destination_addon_storage:
-                        response = utils.move_addon_folder_from_backup(first_project_id, destination_provider,
-                                                                       process_start=export_data_restore.process_start_timestamp,
-                                                                       cookies=cookies, internal=internal,
-                                                                       base_url=destination_base_url)
+                        response = utils.move_addon_folder_from_backup(
+                            destination_first_project_id,
+                            destination_provider,
+                            process_start=export_data_restore.process_start_timestamp,
+                            cookies=cookies,
+                            callback_log=False,
+                            internal=internal,
+                            base_url=destination_base_url)
                     else:
-                        response = utils.move_bulk_mount_folder_from_backup(first_project_id, destination_provider,
-                                                                            process_start=export_data_restore.process_start_timestamp,
-                                                                            cookies=cookies, internal=internal,
-                                                                            base_url=destination_base_url)
+                        response = utils.move_bulk_mount_folder_from_backup(
+                            destination_first_project_id,
+                            destination_provider,
+                            process_start=export_data_restore.process_start_timestamp,
+                            cookies=cookies,
+                            callback_log=False,
+                            internal=internal,
+                            base_url=destination_base_url)
                     if 'error' in response:
                         # Error
                         error_msg = response.get('error')

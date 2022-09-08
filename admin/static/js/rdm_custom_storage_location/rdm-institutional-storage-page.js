@@ -881,12 +881,14 @@ function exportData(institution_id, source_id, location_id, element) {
     let route = 'export';
     let url = '/custom_storage_location/export_data/' + route + '/';
     let task_id;
+    let key = source_id + '_' + location_id;
+    window.contextVars[key] = {};
     $.ajax({
         url: url,
         type: 'POST',
         data: JSON.stringify(params),
         contentType: 'application/json; charset=utf-8',
-        custom: {'element': element},
+        custom: {'element': element, 'key': key},
         timeout: 120000,
         success: function (data) {
             let message;
@@ -912,7 +914,7 @@ function exportData(institution_id, source_id, location_id, element) {
                 // task_state in (PENDING, STARTED, )
                 stopExportState(this.custom.element);
                 message = 'Export data in background';
-                window.contextVars.exportInBackground = true;
+                window.contextVars[this.custom.key].exportInBackground = true;
 
                 let $exportButton = $(this.custom.element);
                 let $stopExportButton = $exportButton.parent().find('.stop-export-button');
@@ -920,11 +922,11 @@ function exportData(institution_id, source_id, location_id, element) {
             }
             $osf.growl('Export Data', _(message), messageType, 2);
 
-            if (window.contextVars.exportInBackground) {
+            if (window.contextVars[this.custom.key].exportInBackground) {
                 // var x = 0;
-                window.contextVars.intervalID = window.setInterval(function () {
+                window.contextVars[this.custom.key].intervalID = window.setInterval(function () {
                     checkStatusExportData(institution_id, source_id, location_id, task_id, element);
-                    // ++x === 5 && window.clearInterval(window.contextVars.intervalID);
+                    // ++x === 5 && window.clearInterval(window.contextVars[this.custom.key].intervalID);
                 }, 5000);
             }
         },
@@ -953,9 +955,10 @@ $('.stop-export-button').click(function (event) {
 
 function stopExportData(institution_id, source_id, location_id, task_id, element) {
     // console.log(institution_id, source_id, location_id, task_id);
-    window.contextVars.exportInBackground && window.clearInterval(window.contextVars.intervalID);
-    window.contextVars.intervalID = undefined;
-    window.contextVars.exportInBackground = false;
+    let key = source_id + '_' + location_id;
+    window.contextVars[key].exportInBackground && window.clearInterval(window.contextVars[key].intervalID);
+    window.contextVars[key].intervalID = undefined;
+    window.contextVars[key].exportInBackground = false;
     let params = {
         'institution_id': institution_id,
         'source_id': source_id,
@@ -969,7 +972,7 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
         type: 'POST',
         data: JSON.stringify(params),
         contentType: 'application/json; charset=utf-8',
-        custom: {'element': element},
+        custom: {'element': element, 'key': key},
         timeout: 120000,
         success: function (data) {
             let message;
@@ -989,15 +992,15 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
             } else {
                 // task_state in (PENDING, STARTED, )
                 message = 'Stop exporting in background';
-                window.contextVars.stopExportInBackground = true;
+                window.contextVars[this.custom.key].stopExportInBackground = true;
             }
             $osf.growl('Stop Export Data', _(message), messageType, 2);
 
-            if (window.contextVars.stopExportInBackground) {
+            if (window.contextVars[this.custom.key].stopExportInBackground) {
                 // var x = 0;
-                window.contextVars.intervalID = window.setInterval(function () {
+                window.contextVars[this.custom.key].intervalID = window.setInterval(function () {
                     checkStatusExportData(institution_id, source_id, location_id, task_id, element);
-                    // ++x === 5 && window.clearInterval(window.contextVars.intervalID);
+                    // ++x === 5 && window.clearInterval(window.contextVars[this.custom.key].intervalID);
                 }, 5000);
             }
         },
@@ -1040,26 +1043,27 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
     };
     let route = 'check-export';
     let url = '/custom_storage_location/export_data/' + route + '/';
+    let key = source_id + '_' + location_id;
     $.ajax({
         url: url,
         type: 'POST',
         data: JSON.stringify(params),
         contentType: 'application/json; charset=utf-8',
-        custom: {'element': element},
+        custom: {'element': element, 'key': key},
         timeout: 120000,
         success: function (data) {
-            let title = window.contextVars.stopExportInBackground ? 'Stop Export Data' : 'Export Data';
+            let title = window.contextVars[this.custom.key].stopExportInBackground ? 'Stop Export Data' : 'Export Data';
             let message;
             let messageType = 'success';
 
             if (data.task_state === 'SUCCESS') {
                 // task_state in (SUCCESS, )
-                window.clearInterval(window.contextVars.intervalID);
-                window.contextVars.intervalID = undefined;
+                window.clearInterval(window.contextVars[this.custom.key].intervalID);
+                window.contextVars[this.custom.key].intervalID = undefined;
 
                 exportState(this.custom.element);
                 message = 'Export data successfully';
-                if (window.contextVars.stopExportInBackground) {
+                if (window.contextVars[this.custom.key].stopExportInBackground) {
                     message = 'Stop exporting successfully';
                 }
 
@@ -1071,15 +1075,16 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
                     }
                     $osf.growl('Export Data', _('Export data successfully'), 'success', 2);
                 } else {
-                    $osf.growl('Export Data', _('Export data failed'), 'danger', 2);
+                    messageType = 'danger';
+                    message = 'Export data failed';
                 }
             } else if (data.task_state === 'FAILURE') {
                 // task_state in (FAILURE, )
-                window.clearInterval(window.contextVars.intervalID);
-                window.contextVars.intervalID = undefined;
+                window.clearInterval(window.contextVars[this.custom.key].intervalID);
+                window.contextVars[this.custom.key].intervalID = undefined;
 
                 messageType = 'danger';
-                if (window.contextVars.stopExportInBackground) {
+                if (window.contextVars[this.custom.key].stopExportInBackground) {
                     stopExportState(this.custom.element);
                     message = 'Error occurred while stopping export data.';
                 } else {
@@ -1087,10 +1092,10 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
                     message = 'Error occurred while exporting data.';
                 }
             }
-            !window.contextVars.intervalID && $osf.growl(title, _(message), messageType, 10);
+            !window.contextVars[this.custom.key].intervalID && $osf.growl(title, _(message), messageType, 10);
         },
         error: function (jqXHR) {
-            // console.log('checkStatusExportData', window.contextVars.stopExportInBackground, jqXHR.responseJSON);
+            // console.log('checkStatusExportData', window.contextVars[this.custom.key].stopExportInBackground, jqXHR.responseJSON);
         }
     });
 }

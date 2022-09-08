@@ -136,7 +136,7 @@ class ExportData(base.BaseModel):
         # logger.debug(f'projects: {projects.count()} {projects}')
         source_project_ids = set()
 
-        # get basefilenode
+        # get base_file_nodes
         base_file_nodes = BaseFileNode.objects.filter(
             id__in=base_file_nodes__ids,
             target_object_id__in=projects__ids,
