@@ -12,6 +12,7 @@ from weakref import WeakKeyDictionary
 from werkzeug.local import LocalProxy
 
 from framework.celery_tasks.handlers import enqueue_task
+from osf.utils.fields import ensure_str
 from framework.flask import redirect
 from framework.sessions.utils import remove_session
 from website import settings
@@ -158,10 +159,10 @@ def before_request():
     cookie = request.cookies.get(settings.COOKIE_NAME)
     if cookie:
         try:
-            session_id = itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie)
+            session_id = ensure_str(itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie))
             user_session = Session.load(session_id) or Session(_id=session_id)
         except itsdangerous.BadData:
-            return
+            return None
         if not throttle_period_expired(user_session.created, settings.OSF_SESSION_TIMEOUT):
             # Update date last login when making non-api requests
             from framework.auth.tasks import update_user_from_activity
