@@ -49,6 +49,7 @@ def update_file_guid_referent(self, target, event_type, payload, user=None):
             old_file = BaseFileNode.load(obj.referent._id)
             obj.referent = create_new_file(obj, source, destination, destination_node)
             obj.save()
+            obj.referent.reload()
             if old_file and not TrashedFileNode.load(old_file._id):
                 old_file.delete()
 

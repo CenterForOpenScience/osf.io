@@ -246,7 +246,7 @@ class TestRegistrationSchemaResponseListGETBehavior:
         assert encountered_ids == expected_ids
 
     def test_GET__nested_registration_returns_root_responses(self, app):
-        root_registration = RegistrationFactory()
+        root_registration = RegistrationFactory(creator=AuthUserFactory())
         admin = root_registration.creator
 
         nested_registration = RegistrationFactory(
