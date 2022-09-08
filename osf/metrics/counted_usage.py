@@ -84,7 +84,7 @@ class CountedUsageV5(metrics.Metric):
 def autofill_fields(sender, instance, **kwargs):
     pageview = getattr(instance, 'pageview_info', None)
     if pageview:
-        fill_pageview_info(instance, pageview)
+        fill_pageview_info(instance)
     item_guid = getattr(instance, 'item_guid', None)
     if item_guid:
         guid_instance = Guid.load(item_guid)
@@ -93,7 +93,8 @@ def autofill_fields(sender, instance, **kwargs):
     fill_document_id(instance)
 
 
-def fill_pageview_info(counted_usage, pageview):
+def fill_pageview_info(counted_usage):
+    pageview = counted_usage.pageview_info
     pageview.hour_of_day = counted_usage.timestamp.hour
     pageview.page_path = urlsplit(pageview.page_url).path.rstrip('/')
     referer = getattr(pageview, 'referer_url', None)
@@ -146,7 +147,7 @@ def fill_document_id(counted_usage):
 
 def get_ispublic(guid_referent):
     # if it quacks like BaseFileNode, look at .target instead
-    maybe_public = getattr(guid_referent, 'target', guid_referent)
+    maybe_public = getattr(guid_referent, 'target', None) or guid_referent
     return bool(
         getattr(maybe_public, 'verified_publishable', None)  # quacks like Preprint
         or getattr(maybe_public, 'is_public', None)          # quacks like AbstractNode
