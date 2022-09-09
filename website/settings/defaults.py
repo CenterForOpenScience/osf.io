@@ -630,10 +630,10 @@ class CeleryConfig:
                 'schedule': crontab(minute=0, hour=6),  # Daily 1:00 a.m.
                 'kwargs': {'yesterday': True}
             },
-            # 'run_keen_snapshots': {
-            #     'task': 'scripts.analytics.run_keen_snapshots',
-            #     'schedule': crontab(minute=0, hour=8),  # Daily 3:00 a.m.
-            # },
+            'run_keen_snapshots': {
+                'task': 'scripts.analytics.run_keen_snapshots',
+                'schedule': crontab(minute=0, hour=8),  # Daily 3:00 a.m.
+            },
             'run_keen_events': {
                 'task': 'scripts.analytics.run_keen_events',
                 'schedule': crontab(minute=0, hour=9),  # Daily 4:00 a.m.
@@ -2073,7 +2073,6 @@ STORAGE_LIMIT_PRIVATE = 5
 
 GBs = 10 ** 9
 
-
 #  Needs to be here so the enum can be used in the admin template
 def forDjango(cls):
     cls.do_not_call_in_templates = True
@@ -2096,7 +2095,6 @@ class StorageLimits(enum.IntEnum):
     @classmethod
     def from_node_usage(cls,  usage_bytes, private_limit=None, public_limit=None):
         """ This should indicate if a node is at or over a certain storage threshold indicating a status."""
-
         public_limit = public_limit or STORAGE_LIMIT_PUBLIC
         private_limit = private_limit or STORAGE_LIMIT_PRIVATE
 

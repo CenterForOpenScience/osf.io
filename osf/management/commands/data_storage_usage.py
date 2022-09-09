@@ -20,7 +20,8 @@ except ImportError:
 
 from framework import sentry
 from framework.celery_tasks import app as celery_app
-from website.settings import DS_METRICS_BASE_FOLDER, DS_METRICS_OSF_TOKEN
+from website.settings import DS_METRICS_BASE_FOLDER, DS_METRICS_OSF_TOKEN, STORAGE_LIMIT_PUBLIC, STORAGE_LIMIT_PRIVATE, GBs
+
 
 DEFAULT_API_VERSION = '2.14'
 TEMP_FOLDER = tempfile.mkdtemp(suffix='/')
@@ -41,7 +42,8 @@ VALUES = [
     'target_root',
     'target_is_deleted',
     'target_spam_status',
-    'target_is_supplementary_node'
+    'target_is_supplementary_node',
+    'target_custom_cap'
 ]
 
 # Grab the id of end of the basefilenode_version table for query limiting
@@ -56,23 +58,35 @@ LAST_ROW_SQL = """
 # Get the raw data for all of the node-based items
 NODE_LIST_SQL = """
         SELECT
-           obfnv.id AS basefileversion_id,
-           obfnv.basefilenode_id,
-           obfnv.fileversion_id,
-           file.target_object_id,
-           file.target_content_type_id,
-           file.deleted_on,
-           version.size,
-           region.name AS region,
-           guid._id AS guid,
-           node.title AS node_title,
-           node.type AS node_type,
-           node.is_public,
-           node.is_fork,
-           root_guid._id AS root_guid,
-           node.is_deleted AS node_deleted,
-           node.spam_status,
-           preprint.id IS NOT NULL AS is_supplementary_node
+            obfnv.id AS basefileversion_id,
+            obfnv.basefilenode_id,
+            obfnv.fileversion_id,
+            file.target_object_id,
+            file.target_content_type_id,
+            file.deleted_on,
+            version.size,
+            region.name AS region,
+            guid._id AS guid,
+            node.title AS node_title,
+            node.type AS node_type,
+            node.is_public,
+            node.is_fork,
+            root_guid._id AS root_guid,
+            node.is_deleted AS node_deleted,
+            node.spam_status,
+            preprint.id IS NOT NULL AS is_supplementary_node,
+            CASE node.is_public
+                WHEN 'TRUE' THEN
+                    CASE
+                        WHEN node.custom_storage_usage_limit_public IS NULL THEN %s
+                            ELSE node.custom_storage_usage_limit_public
+                    END
+                ELSE
+                    CASE
+                        WHEN node.custom_storage_usage_limit_private IS NULL THEN %s
+                            ELSE node.custom_storage_usage_limit_private
+                    END
+            END target_custom_cap
         FROM osf_basefileversionsthrough AS obfnv
         LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
         LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
@@ -293,6 +307,8 @@ def gather_usage_data(start, end, dry_run, zip_file):
         cursor.execute(
             NODE_LIST_SQL,
             [
+                STORAGE_LIMIT_PUBLIC * GBs,
+                STORAGE_LIMIT_PRIVATE * GBs,
                 abstractnode_content_type,
                 abstractnode_content_type,
                 abstractnode_content_type,
