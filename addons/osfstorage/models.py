@@ -539,6 +539,46 @@ class Region(models.Model):
         locations = self.exportdata_set.filter(status__in=ExportData.EXPORT_DATA_AVAILABLE)
         return list(locations.values_list('location_id', flat=True).distinct('location_id'))
 
+    @property
+    def is_add_on_storage(self):
+        provider = self.waterbutler_settings.get('storage', {}).get('provider')
+        if not provider:
+            return None
+
+        addon_only_providers = [
+            'nextcloudinstitutions',
+            'dropboxbusiness',
+            's3compatinstitutions',
+            'ociinstitutions'
+        ]
+        bulk_mount_only_providers = [
+            'box',
+            'nextcloud',
+            'osfstorage',
+            'swift',
+            'nextcloud',
+            'onedrive'
+        ]
+
+        # If provider is institutional addon only providers then return True
+        if provider in addon_only_providers:
+            return True
+
+        # If provider is institutional bulk-mount only providers then return False
+        if provider in bulk_mount_only_providers:
+            return False
+
+        # If provider is S3 or S3 compatible then do additional check for folder setting
+        if provider == 's3' or provider == 's3compat':
+            # Temporarily assume s3 is add-on storage
+            return True
+
+        if provider == 'owncloud':
+            pass
+
+        # Default value for unknown provider
+        return None
+
 
 class UserSettings(BaseUserSettings):
     default_region = models.ForeignKey(Region, null=True, on_delete=models.CASCADE)

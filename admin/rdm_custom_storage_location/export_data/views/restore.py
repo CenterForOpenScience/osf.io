@@ -82,30 +82,26 @@ class StopRestoreDataActionView(RdmPermissionMixin, APIView):
             return Response({'message': f'Permission denied for this restore process'}, status=status.HTTP_400_BAD_REQUEST)
         export_data_restore = export_data_restore_set.first()
 
-        # Update process status
-        export_data_restore.update(status=ExportData.STATUS_STOPPING)
-
         # Get current task's result
         task = AbortableAsyncResult(task_id)
         state = task.state
         result = task.result
-
-        if state != 'STARTED' or state != 'PENDING':
-            return Response({'message': f'Cannot stop restore process at this time.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Get current restore progress step
         current_progress_step = result.get('current_restore_step', -1)
         if current_progress_step >= 4:
             return Response({'message': f'Cannot stop restore process at this time.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Abort current
-        transaction.set_rollback(True)
-        task.abort()
-        # task.revoke(terminate=True)
+        # Update process status
+        export_data_restore.update(status=ExportData.STATUS_STOPPING)
 
-        if task.state != 'ABORTED' and task.state != 'REVOKED':
+        if state != 'STARTED' and state != 'PENDING':
+            export_data_restore.update(status=ExportData.STATUS_ERROR)
             return Response({'message': f'Cannot stop restore process at this time.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Abort current task
+        task.abort()
+        # task.revoke(terminate=True)
         # Start rollback restore export data process
         process = tasks.run_restore_export_data_rollback_process.delay(cookies, export_id, destination_id,
                                                                        export_data_restore.pk, current_progress_step)
@@ -253,20 +249,17 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
         destination_first_project_id = files[0].get('project', {}).get('id')
 
         # Check destination storage type (bulk-mounted or add-on)
-        is_destination_addon_storage = utils.check_storage_type(destination_id)
+        destination_region = export_data_restore.destination
+        is_destination_addon_storage = export_data_restore.destination.is_add_on_storage
+        destination_base_url = destination_region.waterbutler_url
+        destination_provider = INSTITUTIONAL_STORAGE_PROVIDER_NAME
+        internal = destination_base_url == WATERBUTLER_URL
+
+        check_if_restore_process_stopped(task, current_process_step)
+        current_process_step = 1
+        task.update_state(state='PENDING', meta={'current_restore_step': current_process_step})
         with transaction.atomic():
             try:
-                # Download file from export data storage by version then upload that file to destination storage
-                destination_region = Region.objects.filter(id=destination_id).first()
-                if not destination_region:
-                    raise ProcessError(f'Failed to get destination storage information')
-                destination_base_url = destination_region.waterbutler_url
-                destination_provider = INSTITUTIONAL_STORAGE_PROVIDER_NAME
-                internal = destination_base_url == WATERBUTLER_URL
-
-                check_if_restore_process_stopped(task, current_process_step)
-                current_process_step = 1
-                task.update_state(state='PENDING', meta={'current_restore_step': current_process_step})
                 # move all old data in restore destination storage to a folder to back up folder
                 if is_destination_addon_storage:
                     response = utils.move_addon_folder_to_backup(
@@ -371,20 +364,24 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
                     # Did not download or upload, pass this file
                     continue
 
-            current_process_step = 3
-            task.update_state(state='PENDING', meta={'current_restore_step': current_process_step})
-            check_if_restore_process_stopped(task, current_process_step)
+        check_if_restore_process_stopped(task, current_process_step)
+        current_process_step = 3
+        task.update_state(state='PENDING', meta={'current_restore_step': current_process_step})
 
-            # Update process data with process_end timestamp and 'Completed' status
-            export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
-                                       status=ExportData.STATUS_COMPLETED)
+        # Update process data with process_end timestamp and 'Completed' status
+        export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
+                                   status=ExportData.STATUS_COMPLETED)
 
-            current_process_step = 4
-            task.update_state(state='PENDING', meta={'current_restore_step': current_process_step})
+        check_if_restore_process_stopped(task, current_process_step)
+        current_process_step = 4
+        task.update_state(state='PENDING', meta={'current_restore_step': current_process_step})
     except Exception as e:
         logger.error(f'Exception: {e}')
-        check_if_restore_process_stopped(task, current_process_step)
-        restore_export_data_rollback_process(task, cookies, export_id, destination_id, export_data_restore_id, process_step=0)
+        if task.is_aborted():
+            task.update_state(state='ABORTED',
+                              meta={'current_restore_step': current_process_step})
+        else:
+            restore_export_data_rollback_process(task, cookies, export_id, destination_id, export_data_restore_id, process_step=current_process_step)
         raise e
 
     return None
@@ -435,11 +432,8 @@ def restore_export_data_rollback_process(task, cookies, export_id, destination_i
             destination_first_project_id = files[0].get('project', {}).get('id')
 
             # Check destination storage type (bulk-mounted or add-on)
-            is_destination_addon_storage = utils.check_storage_type(destination_id)
-
-            destination_region = Region.objects.filter(id=destination_id).first()
-            if not destination_region:
-                raise ProcessError(f'Failed to get destination storage information')
+            destination_region = export_data_restore.destination
+            is_destination_addon_storage = export_data_restore.destination.is_add_on_storage
             destination_base_url = destination_region.waterbutler_url
             destination_provider = INSTITUTIONAL_STORAGE_PROVIDER_NAME
             internal = destination_base_url == WATERBUTLER_URL
@@ -486,8 +480,8 @@ def restore_export_data_rollback_process(task, cookies, export_id, destination_i
                     logger.error(f'Exception: {e}')
                     raise ProcessError(f'Failed to move backup folder to root')
 
-            export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
-                                       status=ExportData.STATUS_STOPPED)
+        export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
+                                   status=ExportData.STATUS_STOPPED)
     except Exception as e:
         export_data_restore.update(status=ExportData.STATUS_ERROR)
         raise e

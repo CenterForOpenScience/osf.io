@@ -287,71 +287,9 @@ def save_nextcloudinstitutions_credentials(
         provider, extended_data=extended_data)
 
 
-def is_add_on_storage(waterbutler_settings):
-    storage = waterbutler_settings.get('storage')
-    if not storage:
-        return None
-    provider = storage.get('provider')
-    if not provider:
-        return None
-
-    addon_only_providers = [
-        'nextcloudinstitutions',
-        'dropboxbusiness',
-        's3compatinstitutions',
-        'ociinstitutions'
-    ]
-    bulk_mount_only_providers = [
-        'box',
-        'nextcloud',
-        'osfstorage',
-        'swift',
-        'nextcloud',
-        'onedrive'
-    ]
-
-    # If provider is institutional addon only providers then return True
-    if provider in addon_only_providers:
-        return True
-
-    # If provider is institutional bulk-mount only providers then return False
-    if provider in bulk_mount_only_providers:
-        return False
-
-    # If provider is S3 or S3 compatible then do additional check for folder setting
-    if provider == 's3' or provider == 's3compat':
-        # Temporarily assume s3 is add-on storage
-        return True
-        # folder = storage.get('folder')
-        # if not folder:
-        #     return None
-        # try:
-        #     if isinstance(folder, str) or not 'encrypt_uploads' in folder:
-        #         # If folder does not have 'encrypt_uploads' then it is add-on storage
-        #         return True
-        #     # If folder has 'encrypt_uploads' key and it is set to True then it is bulk-mounted storage
-        #     return False
-        # except ValueError as e:
-        #     # Cannot parse folder as json, storage is add-on storage
-        #     return True
-
-    # TODO:
-    if provider == 'owncloud':
-        pass
-
-    # Default value for unknown provider
-    return None
-
-
-def check_storage_type(storage_id):
-    region = Region.objects.filter(id=storage_id)
-    settings = region.values_list('waterbutler_settings', flat=True)[0]
-    return is_add_on_storage(settings)
-
-
 def check_for_any_running_restore_process(destination_id):
     return ExportDataRestore.objects.filter(destination_id=destination_id).exclude(
-        Q(status=ExportData.STATUS_STOPPED) | Q(status=ExportData.STATUS_COMPLETED)).exists()
+        Q(status=ExportData.STATUS_STOPPED) | Q(status=ExportData.STATUS_COMPLETED) | Q(status=ExportData.STATUS_ERROR)).exists()
 
 
 def validate_file_json(file_data, json_schema_file_name):
