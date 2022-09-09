@@ -190,7 +190,7 @@ class BaseNodeFactory(DjangoModelFactory):
     title = factory.Faker('catch_phrase')
     description = factory.Faker('sentence')
     created = factory.LazyFunction(timezone.now)
-    creator = factory.LazyFunction(lambda: AuthUserFactory())
+    creator = factory.SubFactory(AuthUserFactory)
 
     class Meta:
         model = models.Node
@@ -700,7 +700,7 @@ class PreprintFactory(DjangoModelFactory):
     title = factory.Faker('catch_phrase')
     description = factory.Faker('sentence')
     created = factory.LazyFunction(timezone.now)
-    creator = factory.LazyFunction(lambda: AuthUserFactory())
+    creator = factory.SubFactory(AuthUserFactory)
 
     doi = factory.Sequence(lambda n: '10.123/{}'.format(n))
 
