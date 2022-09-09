@@ -351,9 +351,9 @@ def upload_file(node_id, provider, file_parent_path, file_data, file_name, cooki
         return None, None
 
 
-def update_existing_file(node_id, provider, file_parent_path, file_data, file_name, cookies,
+def update_existing_file(node_id, provider, file_path, file_data, cookies,
                          internal=True, base_url=WATERBUTLER_URL):
-    upload_url = waterbutler_api_url_for(node_id, provider, path=f'{file_parent_path}{file_name}', kind='file',
+    upload_url = waterbutler_api_url_for(node_id, provider, path=file_path, kind='file',
                                          _internal=internal, base_url=base_url)
     try:
         response = requests.put(upload_url,
@@ -371,43 +371,54 @@ def upload_file_path(node_id, provider, file_path, file_data, cookies, internal=
         return {}
 
     paths = file_path.split('/')[1:]
-    created_folder_path = '/'
-    created_folder_materialized_path = '/'
+    created_path = '/'
+    created_materialized_path = '/'
     for index, path in enumerate(paths):
-        if index < len(paths) - 1:
-            # Path is folder, try to get folder
-            try:
-                response = get_file_data(node_id, provider, created_folder_path,
-                                         cookies, internal, base_url, get_file_info=True)
-                if response.status_code != 200:
-                    raise Exception('Cannot get folder info')
-                response_body = response.json()
-                existing_path_info = next((item for item in response_body['data'] if
-                                           item['attributes']['materialized'] == f'{created_folder_materialized_path}{path}/'),
-                                          None)
-                if existing_path_info is None:
-                    raise Exception('Folder not found')
-                created_folder_path = existing_path_info['attributes']['path']
-                created_folder_materialized_path = existing_path_info['attributes']['materialized']
-            except Exception:
-                response_body, status_code = create_folder(
-                    node_id, provider, created_folder_path, path, cookies,
-                    callback_log=True, internal=internal, base_url=base_url)
-                if response_body is not None:
-                    created_folder_path = response_body['data']['attributes']['path']
-                    created_folder_materialized_path = response_body['data']['attributes']['materialized']
-                else:
-                    return {}
-        else:
-            # Path is file, try to create new file
-            response_body, status_code = upload_file(node_id, provider, created_folder_path, file_data, path, cookies,
-                                                     internal, base_url)
-            if status_code == 409:
-                update_response_body, update_status_code = update_existing_file(node_id, provider, created_folder_path,
-                                                                                file_data, path, cookies,
+        try:
+            # Try to get path information
+            response = get_file_data(node_id, provider, created_path,
+                                     cookies, internal, base_url, get_file_info=True)
+            if response.status_code != 200:
+                raise Exception('Cannot get folder info')
+            response_body = response.json()
+
+            if index == len(paths) - 1:
+                new_path = f'{created_materialized_path}{path}'
+            else:
+                new_path = f'{created_materialized_path}{path}/'
+
+            existing_path_info = next((item for item in response_body['data'] if
+                                       item['attributes']['materialized'] == new_path),
+                                      None)
+            if existing_path_info is None:
+                raise Exception('Folder not found')
+
+            created_path = existing_path_info['attributes']['path']
+            created_materialized_path = existing_path_info['attributes']['materialized']
+            if index == len(paths) - 1:
+                # If currently at file name, update file
+                update_response_body, update_status_code = update_existing_file(node_id, provider,
+                                                                                created_path,
+                                                                                file_data, cookies,
                                                                                 internal, base_url)
                 return update_response_body
-            return response_body
+        except Exception:
+            if index == len(paths) - 1:
+                # If currently at file name, upload file
+                response_body, status_code = upload_file(node_id, provider, created_path, file_data, path,
+                                                         cookies,
+                                                         internal, base_url)
+                return response_body
+            else:
+                # If currently at folder, create folder
+                response_body, status_code = create_folder(
+                    node_id, provider, created_path, path, cookies,
+                    callback_log=True, internal=internal, base_url=base_url)
+                if response_body is not None:
+                    created_path = response_body['data']['attributes']['path']
+                    created_materialized_path = response_body['data']['attributes']['materialized']
+                else:
+                    return {}
 
 
 def move_file(node_id, provider, source_file_path, destination_file_path, cookies, callback_log=False, internal=True,

@@ -17,7 +17,7 @@ from addons.osfstorage.models import Region
 from admin.rdm.utils import RdmPermissionMixin
 from admin.rdm_custom_storage_location import tasks
 from admin.rdm_custom_storage_location.export_data import utils
-from osf.models import ExportData, ExportDataRestore
+from osf.models import ExportData, ExportDataRestore, BaseFileNode, Tag, RdmFileTimestamptokenVerifyResult
 from website.settings import WATERBUTLER_URL
 from website.util import inspect_info  # noqa
 
@@ -102,6 +102,10 @@ class StopRestoreDataActionView(RdmPermissionMixin, APIView):
         # Abort current task
         task.abort()
         # task.revoke(terminate=True)
+        if task.state != 'ABORTED' and task.state != 'REVOKED':
+            export_data_restore.update(status=ExportData.STATUS_ERROR)
+            return Response({'message': f'Cannot stop restore process at this time.'}, status=status.HTTP_400_BAD_REQUEST)
+
         # Start rollback restore export data process
         process = tasks.run_restore_export_data_rollback_process.delay(cookies, export_id, destination_id,
                                                                        export_data_restore.pk, current_progress_step)
@@ -298,12 +302,17 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
                 file_versions = file.get('version')
                 file_project_id = file.get('project', {}).get('id')
                 file_tags = file.get('tags')
-                file_timestamp = file.get('timestamp')
+                # file_timestamp = file.get('timestamp')
+                file_timestamp = {
+                    "verify_user": "z6pya@gmail.com",
+                    "updated_at": "2022-03-08T06:48:59.699135+00:00",
+                    "verify_date": "2022-06-09 08:34:56.880854+00"
+                }
                 # Sort file by version id
                 file_versions.sort(key=lambda k: k.get('identifier', 0))
 
-                try:
-                    for index, version in enumerate(file_versions):
+                for index, version in enumerate(file_versions):
+                    try:
                         check_if_restore_process_stopped(task, current_process_step)
 
                         # Prepare file name and file path for uploading
@@ -339,7 +348,7 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
                             new_file_path = new_file_materialized_path
                         else:
                             new_file_path = file_materialized_path
-                        logger.info(new_file_path)
+
                         # Download file by version
                         response = export_data.read_data_file_from_location(cookies, file_hash_path,
                                                                             base_url=export_base_url)
@@ -357,12 +366,25 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
                             continue
 
                         # Add info to DB
+                        response_id = response_body.get('data', {}).get('id')
+                        if response_id.startswith('osfstorage'):
+                            # If id is osfstorage/[_id] then get _id
+                            file_path_splits = response_id.split('/')
+                            if len(file_path_splits) == 2:
+                                file_node_id = file_path_splits[1]
+                                node_set = BaseFileNode.objects.filter(_id=file_node_id)
+                                if node_set.exists():
+                                    node = node_set.first()
+                                    # Add tags to DB
+                                    add_tags_to_file_node(node, file_tags)
 
-                except Exception as e:
-                    logger.error(f'Download or upload exception: {e}')
-                    check_if_restore_process_stopped(task, current_process_step)
-                    # Did not download or upload, pass this file
-                    continue
+                                    # Add timestmap to DB
+                                    add_timestamp_to_file_node(node, file_project_id, file_timestamp)
+                    except Exception as e:
+                        logger.error(f'Download or upload exception: {e}')
+                        check_if_restore_process_stopped(task, current_process_step)
+                        # Did not download or upload, pass this file
+                        continue
 
         check_if_restore_process_stopped(task, current_process_step)
         current_process_step = 3
@@ -494,3 +516,34 @@ def check_if_restore_process_stopped(task, current_process_step):
         task.update_state(state='ABORTED',
                           meta={'current_restore_step': current_process_step})
         raise ProcessError(f'Restore process is stopped')
+
+
+def add_tags_to_file_node(file_node, tags):
+    if len(tags) == 0:
+        return
+
+    for tag in tags:
+        if not file_node.tags.filter(system=False, name=tag).exists():
+            new_tag = Tag.load(tag)
+            if not new_tag:
+                new_tag = Tag(name=tag)
+            new_tag.save()
+            file_node.tags.add(new_tag)
+            file_node.save()
+
+
+def add_timestamp_to_file_node(file_node, project_id, timestamp):
+    try:
+        verify_data = RdmFileTimestamptokenVerifyResult.objects.get(
+            file_id=file_node.id)
+    except RdmFileTimestamptokenVerifyResult.DoesNotExist:
+        verify_data = RdmFileTimestamptokenVerifyResult()
+        verify_data.file_id = file_node.id
+        verify_data.project_id = project_id
+        verify_data.provider = file_node.provider
+        verify_data.path = file_node.path
+        verify_data.inspection_result_status = timestamp.get('inspection_result_status', 0)
+
+    verify_data.key_file_name = timestamp.get('key_file_name', file_node.path)
+    verify_data.timestamp_token = timestamp.get('timestamp_token')
+    verify_data.save()
