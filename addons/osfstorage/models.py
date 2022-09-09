@@ -502,10 +502,10 @@ class Region(models.Model):
         waterbutler_settings = self.waterbutler_settings
         provider_name = None
         # json path storage/provider
-        if "storage" in waterbutler_settings:
-            storage = waterbutler_settings["storage"]
-            if "provider" in storage:
-                provider_name = storage["provider"]
+        if 'storage' in waterbutler_settings:
+            storage = waterbutler_settings['storage']
+            if 'provider' in storage:
+                provider_name = storage['provider']
 
         return provider_name if provider_name != 'filesystem' else 'osfstorage'
 

@@ -93,27 +93,20 @@ def test_dropboxbusiness_connection(institution):
     fm = dropboxbusiness_utils.get_two_addon_options(institution.id, allowed_check=False)
 
     if fm is None:
-        return ({
-                    'message': u'Invalid Institution ID.: {}'.format(institution.id)
-                }, http_status.HTTP_400_BAD_REQUEST)
+        message = u'Invalid Institution ID.: {}'.format(institution.id)
+        return {'message': message}, http_status.HTTP_400_BAD_REQUEST
 
     f_option, m_option = fm
     f_token = dropboxbusiness_utils.addon_option_to_token(f_option)
     m_token = dropboxbusiness_utils.addon_option_to_token(m_option)
     if f_token is None or m_token is None:
-        return ({
-                    'message': 'No tokens.'
-                }, http_status.HTTP_400_BAD_REQUEST)
+        return {'message': 'No tokens.'}, http_status.HTTP_400_BAD_REQUEST
     try:
         # use two tokens and connect
         dropboxbusiness_utils.TeamInfo(f_token, m_token, connecttest=True)
-        return ({
-                    'message': 'Credentials are valid',
-                }, http_status.HTTP_200_OK)
+        return {'message': 'Credentials are valid', }, http_status.HTTP_200_OK
     except Exception:
-        return ({
-                    'message': 'Invalid tokens.'
-                }, http_status.HTTP_400_BAD_REQUEST)
+        return {'message': 'Invalid tokens.'}, http_status.HTTP_400_BAD_REQUEST
 
 
 def save_s3_credentials(institution_guid, storage_name, access_key, secret_key, bucket):
@@ -139,9 +132,7 @@ def save_s3_credentials(institution_guid, storage_name, access_key, secret_key, 
 
     update_storage_location(institution_guid, storage_name, wb_credentials, wb_settings)
 
-    return ({
-                'message': 'Saved credentials successfully!!'
-            }, http_status.HTTP_200_OK)
+    return {'message': 'Saved credentials successfully!!'}, http_status.HTTP_200_OK
 
 
 def save_s3compat_credentials(institution_guid, storage_name, host_url, access_key, secret_key, bucket):
@@ -170,9 +161,7 @@ def save_s3compat_credentials(institution_guid, storage_name, host_url, access_k
 
     update_storage_location(institution_guid, storage_name, wb_credentials, wb_settings)
 
-    return ({
-                'message': 'Saved credentials successfully!!'
-            }, http_status.HTTP_200_OK)
+    return {'message': 'Saved credentials successfully!!'}, http_status.HTTP_200_OK
 
 
 def save_dropboxbusiness_credentials(institution, storage_name, provider_name):
@@ -229,9 +218,7 @@ def save_dropboxbusiness_credentials(institution, storage_name, provider_name):
     external_accounts = ExternalAccount.objects.filter(pk__in=external_account__ids)
     external_accounts.delete()
 
-    return ({
-                'message': 'Dropbox Business was set successfully!!'
-            }, http_status.HTTP_200_OK)
+    return {'message': 'Dropbox Business was set successfully!!'}, http_status.HTTP_200_OK
 
 
 def save_basic_storage_institutions_credentials_common(
@@ -259,9 +246,7 @@ def save_basic_storage_institutions_credentials_common(
 
     update_storage_location(institution.guid, storage_name, wb_credentials, wb_settings)
 
-    return ({
-                'message': 'Saved credentials successfully!!'
-            }, http_status.HTTP_200_OK)
+    return {'message': 'Saved credentials successfully!!'}, http_status.HTTP_200_OK
 
 
 def save_nextcloudinstitutions_credentials(
@@ -323,9 +308,9 @@ def get_file_data(node_id, provider, file_path, cookies, internal=True, base_url
 def create_folder(node_id, provider, parent_path, folder_name, cookies, callback_log=False, internal=True, base_url=WATERBUTLER_URL):
     # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
     kwargs = {
-        "kind": 'folder',
+        'kind': 'folder',
         'callback_log': callback_log,
-        "name": folder_name
+        'name': folder_name
     }
     upload_url = waterbutler_api_url_for(node_id, provider, path=parent_path, _internal=internal, base_url=base_url, **kwargs)
     try:
@@ -333,7 +318,7 @@ def create_folder(node_id, provider, parent_path, folder_name, cookies, callback
                                 headers={'content-type': 'application/json'},
                                 cookies=cookies)
         return response.json() if response.status_code == 201 else None, response.status_code
-    except Exception as e:
+    except Exception:
         return None, None
 
 
@@ -347,7 +332,7 @@ def upload_file(node_id, provider, file_parent_path, file_data, file_name, cooki
                                 cookies=cookies,
                                 data=file_data)
         return response.json() if response.status_code == 201 else None, response.status_code
-    except Exception as e:
+    except Exception:
         return None, None
 
 
@@ -361,7 +346,7 @@ def update_existing_file(node_id, provider, file_path, file_data, cookies,
                                 cookies=cookies,
                                 data=file_data)
         return response.json() if response.status_code == 200 else None, response.status_code
-    except Exception as e:
+    except Exception:
         return None, None
 
 

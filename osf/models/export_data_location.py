@@ -37,10 +37,10 @@ class ExportDataLocation(base.BaseModel):
     def provider_name(self):
         waterbutler_settings = self.waterbutler_settings
         provider_name = None
-        if "storage" in waterbutler_settings:
-            storage = waterbutler_settings["storage"]
-            if "provider" in storage:
-                provider_name = storage["provider"]
+        if 'storage' in waterbutler_settings:
+            storage = waterbutler_settings['storage']
+            if 'provider' in storage:
+                provider_name = storage['provider']
 
         return provider_name
 
@@ -66,7 +66,7 @@ class ExportDataLocation(base.BaseModel):
 
     def serialize_waterbutler_credentials(self, provider_name):
         result = {}
-        storage_credentials = self.waterbutler_credentials["storage"]
+        storage_credentials = self.waterbutler_credentials['storage']
         if provider_name == 's3':
             result = {
                 'access_key': storage_credentials['access_key'],
@@ -106,7 +106,7 @@ class ExportDataLocation(base.BaseModel):
 
     def serialize_waterbutler_settings(self, provider_name):
         result = {}
-        storage_settings = self.waterbutler_settings["storage"]
+        storage_settings = self.waterbutler_settings['storage']
         if provider_name == 's3':
             result = {
                 'bucket': storage_settings['bucket'],

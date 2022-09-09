@@ -302,12 +302,7 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
                 file_versions = file.get('version')
                 file_project_id = file.get('project', {}).get('id')
                 file_tags = file.get('tags')
-                # file_timestamp = file.get('timestamp')
-                file_timestamp = {
-                    "verify_user": "z6pya@gmail.com",
-                    "updated_at": "2022-03-08T06:48:59.699135+00:00",
-                    "verify_date": "2022-06-09 08:34:56.880854+00"
-                }
+                file_timestamp = file.get('timestamp')
                 # Sort file by version id
                 file_versions.sort(key=lambda k: k.get('identifier', 0))
 
