@@ -47,7 +47,9 @@
                 <div class="col-sm-9" style="display: flex; gap: 10px;">
                     <select class="form-control" id="destination_storage" title="" style="max-width: 320px; flex: auto">
                         {% for storage in destination_storages %}
-                            <option value={{ storage.id }}>{{ storage.name }}</option>
+                            <option
+                                {% if export_data.has_restored and storage.id == export_data.get_latest_restored.destination.id %} selected="selected" {% endif %}
+                                    value={{ storage.id }}>{{ storage.name }}</option>
                         {% endfor %}
                     </select>
                     <div class="btn-group" role="group" aria-label="...">
@@ -57,11 +59,15 @@
                         </button>
                         <button type="button" id="stop_restore_button"
                                 class="btn btn-primary disabled"
+                                disabled
                                 style="min-width: 90px; flex: initial;">{% trans "Stop restoring" %}
                         </button>
                         <button type="button" id="check_restore_button"
-                                class="btn btn-primary disabled"
-                                data-target="#checkRestoreData" data-toggle="modal"
+                                class="btn btn-primary {% if not export_data.has_restored %}disabled{% endif %}"
+                                {% if not export_data.has_restored %}disabled{% endif %}
+                                data-target="#checkRestoreData"
+                                data-toggle="modal"
+                                data-restore="{{ export_data.get_latest_restored.id }}"
                                 style="min-width: 90px; flex: initial;">{% trans "Check restore data" %}
                         </button>
                     </div>
@@ -70,7 +76,7 @@
         </form>
     {% endif %}
 
-    <h2>{% trans 'Export Data Information of' %} {{ export_data.source.name }}<br/><small>(for {{ institution.name }})</small></h2>
+    <h2>{% trans 'Export Data Information of' %} {{ exported_info.storage.name }}<br/><small>(for {{ institution.name }})</small></h2>
 
     <table class="table table-striped" id="{{ export_data.id }}">
         <tbody>
@@ -88,7 +94,7 @@
         </tr>
         <tr>
             <td>{% trans "Source institution storage type" %}</td>
-            <td>{{ export_data.source.name }}</td>
+            <td>{{ exported_info.storage.name }}</td>
         </tr>
         <tr>
             <td>{% trans "Export data storage location" %}</td>
@@ -131,12 +137,12 @@
             <tr class="">
                 <td class="">{{ file_info.materialized_path }}</td>
                 <td class="">{{ file_info.project.name }}</td>
-                <td class="">{{ file_info.version.contributor }}</td>
+                <td class="">{{ file_info.contributor }}</td>
                 <td class="">{{ file_info.timestamp.verify_user }}</td>
-                <td class="">{{ file_info.tags }}</td>
-                <td class="">{{ file_info.version.size }} KB</td>
-                <td class="">{{ file_info.version.identifier }}</td>
-                <td class="">{{ file_info.version.created_at }}</td>
+                <td class="">{{ file_info.tags|join:", " }}</td>
+                <td class="">{{ file_info.size }} KB</td>
+                <td class="">{{ file_info.identifier }}</td>
+                <td class="">{{ file_info.created_at }}</td>
             </tr>
         {% endfor %}
         </tbody>

@@ -19,7 +19,7 @@
         "guid",
         "name"
       ],
-      "additionalProperties": false
+      "additionalProperties": true
     },
     "process_start": {
       "type": "string"
@@ -37,7 +37,7 @@
           "type": "string"
         }
       },
-      "additionalProperties": false
+      "additionalProperties": true
     },
     "projects_numb": {
       "type": "integer"
@@ -62,5 +62,5 @@
     "size",
     "file_path"
   ],
-  "additionalProperties": false
+  "additionalProperties": true
 }

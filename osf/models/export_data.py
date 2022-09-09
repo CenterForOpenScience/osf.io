@@ -121,8 +121,9 @@ class ExportData(base.BaseModel):
         }
 
         # get list FileVersion linked to source storage
+        file_versions = self.source.fileversion_set.all()
         # but the creator must be affiliated with current institution
-        file_versions = self.source.fileversion_set.filter(creator__affiliated_institutions___id=source_storage_guid)
+        file_versions = file_versions.filter(creator__affiliated_institutions___id=source_storage_guid)
         # file_versions__ids = file_versions.values_list('id', flat=True)
         # logger.debug(f'file_versions: {file_versions.count()} {file_versions__ids}')
 
@@ -133,7 +134,7 @@ class ExportData(base.BaseModel):
         # get project list
         projects = institution.nodes.filter(category='project')
         projects__ids = projects.values_list('id', flat=True)
-        # logger.debug(f'projects: {projects.count()} {projects}')
+        # logger.debug(f'projects: {projects.count()} {projects__ids}')
         source_project_ids = set()
 
         # get base_file_nodes
@@ -141,7 +142,8 @@ class ExportData(base.BaseModel):
             id__in=base_file_nodes__ids,
             target_object_id__in=projects__ids,
             deleted=None)
-        # logger.debug(f'base_file_nodes: {base_file_nodes.count()} {base_file_nodes}')
+        # base_file_nodes__ids = base_file_nodes.values_list('id', flat=True)
+        # logger.debug(f'base_file_nodes: {base_file_nodes.count()} {base_file_nodes__ids}')
 
         total_size = 0
         total_file = 0
@@ -445,3 +447,14 @@ class ExportData(base.BaseModel):
         )
         return requests.get(url, cookies=cookies, stream=True)
 
+    def get_all_restored(self):
+        return self.exportdatarestore_set.filter(status__in=self.EXPORT_DATA_AVAILABLE)
+
+    def has_restored(self):
+        return self.get_all_restored().exists()
+
+    def get_latest_restored(self):
+        return self.get_all_restored().latest('process_end')
+
+    def get_latest_restored_data_with_destination_id(self, destination_id):
+        return self.get_all_restored().filter(destination_id=destination_id).latest('process_end')

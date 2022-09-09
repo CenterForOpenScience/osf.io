@@ -44,7 +44,7 @@ __all__ = [
     'save_basic_storage_institutions_credentials_common',
     'save_nextcloudinstitutions_credentials',
     'process_data_information',
-    'validate_export_data',
+    'validate_exported_data',
     'write_json_file',
     'check_diff_between_version',
     'count_files_ng_ok',
@@ -810,12 +810,13 @@ def delete_all_files_except_backup(node_id, provider, cookies, callback_log=Fals
             raise e
 
 
-def validate_export_data(data_json):
+def validate_exported_data(data_json, schema_filename='file-info-schema.json'):
     try:
-        schema = from_json('file-info-schema.json')
+        schema = from_json(schema_filename)
         jsonschema.validate(data_json, schema)
         return True
-    except jsonschema.ValidationError:
+    except jsonschema.ValidationError as e:
+        logger.error(f'jsonschema.ValidationError: {e}')
         return False
 
 
@@ -830,7 +831,8 @@ def process_data_information(list_data):
     list_data_version = []
     for item in list_data:
         for file_version in item['version']:
-            current_data = {**item, 'version': file_version, 'tags': ', '.join(item['tags'])}
+            current_data = {**item, **file_version}
+            del current_data['version']
             list_data_version.append(current_data)
     return list_data_version
 
@@ -901,58 +903,60 @@ def deep_diff(x, y, parent_key=None, exclude_keys=None, epsilon_keys=None):
     return None if all(map(lambda x: x is None, d)) else d
 
 
-def check_diff_between_version(list_version_a, list_version_b):
+def check_diff_between_version(list_version_a, list_version_b, parent_key=None, exclude_keys=None, epsilon_keys=None):
     for i in range(len(list_version_a)):
         if list_version_a[i]['identifier'] != list_version_b[i]['identifier']:
             return True, 'Missing file version', list_version_b[i]
-        check_diff = deep_diff(list_version_a[i], list_version_b[i])
+        check_diff = deep_diff(list_version_a[i], list_version_b[i], parent_key=parent_key, exclude_keys=exclude_keys, epsilon_keys=epsilon_keys)
         if check_diff:
             list_diff = list(check_diff)
-            text_error = ', '.join(list_diff) + 'not match'
+            text_error = '"' + ', '.join(list_diff) + '" not match'
             return True, text_error, list_version_a[i]
         return False, '', None
 
 
-def count_files_ng_ok(exported_file_info, storage_file_info):
+def count_files_ng_ok(exported_file_versions, storage_file_versions, exclude_keys=None):
+    exported_file_versions = sorted(exported_file_versions, key=lambda kv: kv['materialized_path'])
+    storage_file_versions = sorted(storage_file_versions, key=lambda kv: kv['materialized_path'])
     data = {
-        'NG': 0,
-        'OK': 0,
+        'ng': 0,
+        'ok': 0,
     }
     list_file_ng = []
     count_files = 0
-    exported_file_versions = process_data_information(exported_file_info['files'])
-    storage_file_versions = process_data_information(storage_file_info['files'])
     for file_a in exported_file_versions:
-        file_is_check = False
-        version_a = [file_a['version']]
-        for file_b in storage_file_versions:
-            version_b = [file_b['version']]
-            if file_b['id'] == file_a['id'] and file_b['version']['identifier'] == file_a['version']['identifier']:
-                file_is_check = True
-                is_diff, message, file_version = check_diff_between_version(version_a, version_b)
-                if not is_diff:
-                    data['OK'] += 1
-                else:
-                    data['NG'] += 1
-                    ng_content = {
-                        'path': file_a['materialized_path'],
-                        'size': file_version['size'],
-                        'version_id': file_version['identifier'],
-                        'reason': message,
-                    }
-                    list_file_ng.append(ng_content)
-                count_files += 1
-                break
-        if not file_is_check:
-            data['NG'] += 1
+        version_identifier_a = file_a['identifier']
+        materialized_path_a = file_a.get('materialized_path')
+
+        file_b = next((
+            file for file in storage_file_versions
+            if file.get('materialized_path') == materialized_path_a
+               and file.get('identifier') == version_identifier_a
+        ), None)
+        if file_b:
+            is_diff, message, file_version = check_diff_between_version([file_a], [file_b], exclude_keys=exclude_keys)
+            if not is_diff:
+                data['ok'] += 1
+            else:
+                data['ng'] += 1
+                ng_content = {
+                    'path': materialized_path_a,
+                    'size': file_a['size'],
+                    'version_id': file_a['identifier'],
+                    'reason': message,
+                }
+                list_file_ng.append(ng_content)
+            count_files += 1
+        else:
+            data['ng'] += 1
             ng_content = {
-                'path': file_a['materialized_path'],
+                'path': materialized_path_a,
                 'size': file_a['size'],
-                'version_id': 0,
+                'version_id': file_a.get('identifier', 0),
                 'reason': 'File is not exist',
             }
             list_file_ng.append(ng_content)
             count_files += 1
-    data['Total'] = count_files
+    data['total'] = count_files
     data['list_file_ng'] = list_file_ng if len(list_file_ng) <= 10 else list_file_ng[:10]
     return data

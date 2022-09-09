@@ -19,7 +19,7 @@
         "guid",
         "name"
       ],
-      "additionalProperties": false
+      "additionalProperties": true
     },
     "files": {
       "type": "array",
@@ -107,7 +107,6 @@
               "host",
               "object",
               "folder",
-              "bucket",
               "address",
               "service",
               "version",
@@ -217,13 +216,12 @@
                     "host",
                     "object",
                     "folder",
-                    "bucket",
                     "address",
                     "service",
                     "version",
                     "provider"
                   ],
-                  "additionalProperties": false
+                  "additionalProperties": true
                 },
                 "metadata": {
                   "type": "object",
@@ -348,7 +346,7 @@
                     "modified",
                     "modified_utc"
                   ],
-                  "additionalProperties": false
+                  "additionalProperties": true
                 }
               },
               "required": [
@@ -389,5 +387,5 @@
     "institution",
     "files"
   ],
-  "additionalProperties": false
+  "additionalProperties": true
 }

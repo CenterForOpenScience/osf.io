@@ -78,9 +78,10 @@ class ExportDataRestore(base.BaseModel):
 
         # get list FileVersion linked to destination storage
         file_versions = self.destination.fileversion_set.all()
+        # but the creator must be affiliated with current institution
+        file_versions = file_versions.filter(creator__affiliated_institutions___id=destination_storage_guid)
         # file_versions__ids = file_versions.values_list('id', flat=True)
         # logger.debug(f'file_versions: {file_versions.count()} {file_versions__ids}')
-        export_data_json['files_numb'] = file_versions.count()
 
         # get list_basefilenode_id by file_versions__ids above via the BaseFileVersionsThrough model
         base_file_versions_set = BaseFileVersionsThrough.objects.filter(fileversion__in=file_versions)
@@ -89,17 +90,19 @@ class ExportDataRestore(base.BaseModel):
         # get project list
         projects = institution.nodes.filter(category='project')
         projects__ids = projects.values_list('id', flat=True)
-        # logger.debug(f'projects: {projects.count()} {projects}')
+        # logger.debug(f'projects: {projects.count()} {projects__ids}')
         destination_project_ids = set()
 
-        # get basefilenode
+        # get base_file_nodes
         base_file_nodes = BaseFileNode.objects.filter(
             id__in=base_file_nodes__ids,
             target_object_id__in=projects__ids,
             deleted=None)
-        # logger.debug(f'base_file_nodes: {base_file_nodes.count()} {base_file_nodes}')
+        # base_file_nodes__ids = base_file_nodes.values_list('id', flat=True)
+        # logger.debug(f'base_file_nodes: {base_file_nodes.count()} {base_file_nodes__ids}')
 
         total_size = 0
+        total_file = 0
         files = []
         # get file information
         for file in base_file_nodes:
@@ -160,6 +163,7 @@ class ExportDataRestore(base.BaseModel):
                     'location': version.location,
                 }
                 file_versions_info.append(version_info)
+                total_file += 1
                 total_size += version.size
 
             file_info['version'] = file_versions_info
@@ -169,6 +173,7 @@ class ExportDataRestore(base.BaseModel):
 
         file_info_json['files'] = files
 
+        export_data_json['files_numb'] = total_file
         export_data_json['size'] = total_size
         export_data_json['projects_numb'] = len(destination_project_ids)
 

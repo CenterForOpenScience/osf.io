@@ -1134,8 +1134,8 @@ $('#restore_button').on('click', () => {
 });
 
 $('#stop_restore_button').on('click', () => {
-    $('#stop_restore_button').addClass('disabled');
-    $('#stop_restore_button').attr('disabled', true);
+    $(this).addClass('disabled');
+    $(this).attr('disabled', true);
     let data = {
         task_id: restore_task_id,
         destination_id: $('#destination_storage').val(),
@@ -1309,7 +1309,7 @@ $('.cancel_modal').on('click', () => {
 // Start - Check Export data - Actions
 
 $('#checkExportData').on('click', () => {
-    let url = '../' + $('#checkExportData').val() + '/check_export_data' + '/';
+    let url = './check_export_data/';
     $('#checkExportData').prop('disabled', true);
     $.ajax({
         url: url,
@@ -1318,8 +1318,8 @@ $('#checkExportData').on('click', () => {
     }).done(function (response) {
         let data_res = response;
         $('#checkExportDataModal').modal('show');
-        let text_check_export = `<p>OK: ${data_res.OK}/${data_res.Total} files<br/>
-                    NG: ${data_res.NG}/${data_res.Total} files</p>`;
+        let text_check_export = `<p>OK: ${data_res.ok}/${data_res.total} files<br/>
+                    NG: ${data_res.ng}/${data_res.total} files</p>`;
         let text_current = '';
         data_res.list_file_ng.forEach(function (file) {
             text_current += `<tr>
@@ -1339,8 +1339,9 @@ $('#checkExportData').on('click', () => {
 });
 
 $('#check_restore_button').on('click', () => {
-    let url = '../' + $('#check_restore_button').val() + '/check_restore_data' + '/';
-    $('#check_restore_button').prop('disabled', true);
+    let destination_id = $('select#destination_storage').val();
+    let url = 'check_restore_data/?destination_id=' + destination_id;
+    $(this).prop('disabled', true);
     $.ajax({
         url: url,
         type: 'GET',
@@ -1348,8 +1349,8 @@ $('#check_restore_button').on('click', () => {
     }).done(function (response) {
         let data_res = response;
         $('#checkRestoreDataModal').modal('show');
-        let text_check_export = `<p>OK: ${data_res.OK}/${data_res.Total} files<br/>
-                    NG: ${data_res.NG}/${data_res.Total} files</p>`;
+        let text_check_export = `<p>OK: ${data_res.ok}/${data_res.total} files<br/>
+                    NG: ${data_res.ng}/${data_res.total} files</p>`;
         let text_current = '';
         data_res.list_file_ng.forEach(function (file) {
             text_current += `<tr>

@@ -13,7 +13,7 @@ from django.views.generic import ListView
 from admin.rdm.utils import RdmPermissionMixin
 from admin.rdm_custom_storage_location.export_data.utils import (
     process_data_information,
-    validate_export_data,
+    validate_exported_data,
     count_files_ng_ok,
 )
 from osf.models import ExportData, Institution, ExportDataRestore
@@ -193,17 +193,28 @@ class ExportDataInformationView(ExportBaseView):
             storage_name = 'NII Storage'
 
         # get file_info from location
+        response = export_data.read_export_data_from_location(cookies, cookie=cookie)
+        status_code = response.status_code
+        if status_code != 200:
+            raise SuspiciousOperation('Cannot connect to the export data storage location.')
+        # validate export_data
+        exported_info = response.json()
+        check = validate_exported_data(exported_info, schema_filename='export-data-schema.json')
+        if not check:
+            raise SuspiciousOperation('The export data files are corrupted.')
+
+        # get file_info from location
         response = export_data.read_file_info_from_location(cookies, cookie=cookie)
         status_code = response.status_code
         if status_code != 200:
             raise SuspiciousOperation('Cannot connect to the export data storage location.')
         # validate list_file_info
-        list_file_info = response.json()
-        check = validate_export_data(list_file_info)
+        file_info = response.json()
+        check = validate_exported_data(file_info)
         if not check:
             raise SuspiciousOperation('The export data files are corrupted.')
 
-        processed_list_file_info = process_data_information(list_file_info['files'])
+        processed_list_file_info = process_data_information(file_info['files'])
         global CURRENT_DATA_INFORMATION
         CURRENT_DATA_INFORMATION = processed_list_file_info
         self.object_list = processed_list_file_info
@@ -215,6 +226,7 @@ class ExportDataInformationView(ExportBaseView):
         context = {
             'institution': self.institution,
             'destination_storages': source_storages,
+            'exported_info': exported_info,
             'export_data': export_data,
             'file_versions': self.query_set,
             'page': self.page,
@@ -283,8 +295,9 @@ class CheckExportData(RdmPermissionMixin, View):
         cookies = request.COOKIES
 
         export_data = ExportData.objects.filter(id=data_id).first()
-        if export_data.status != 'Completed':
-            return JsonResponse({'message': 'Cannot check in this time. The process is {}'.format(export_data.status)}, status=400)
+        if export_data.status != ExportData.STATUS_COMPLETED:
+            message = 'Cannot check in this time. The process is {}'.format(export_data.status)
+            return JsonResponse({'message': message}, status=400)
 
         # start check
         export_data.status = ExportData.STATUS_CHECKING
@@ -295,15 +308,20 @@ class CheckExportData(RdmPermissionMixin, View):
         response = export_data.read_file_info_from_location(cookies, cookie=cookie)
         status_code = response.status_code
         if status_code != 200:
-            return JsonResponse({'message': 'Cannot connect to the export data storage location.'}, status=400)
+            message = 'Cannot connect to the export data storage location.'
+            return JsonResponse({'message': message}, status=400)
         exported_file_info = response.json()
-        check = validate_export_data(exported_file_info)
+        check = validate_exported_data(exported_file_info)
         if not check:
-            return JsonResponse({'message': 'The export data files are corrupted.'}, status=400)
+            message = 'The export data files are corrupted.'
+            return JsonResponse({'message': message}, status=400)
 
         # Get data from current source storage
         _, storage_file_info = export_data.extract_file_information_json_from_source_storage()
-        data = count_files_ng_ok(exported_file_info, storage_file_info)
+        exported_file_versions = process_data_information(exported_file_info['files'])
+        storage_file_versions = process_data_information(storage_file_info['files'])
+        exclude_keys = []
+        data = count_files_ng_ok(exported_file_versions, storage_file_versions, exclude_keys=exclude_keys)
 
         # end check
         export_data.status = ExportData.STATUS_COMPLETED
@@ -318,30 +336,47 @@ class CheckRestoreData(RdmPermissionMixin, View):
         cookie = request.user.get_or_create_cookie().decode()
         cookies = request.COOKIES
 
-        export_data_restore = ExportDataRestore.objects.filter(id=data_id).first()
-        if export_data_restore.status != 'Completed':
-            return JsonResponse({'message': 'Cannot check in this time. The process is {}'.format(export_data_restore.status)}, status=400)
+        export_data = ExportData.objects.filter(id=data_id).first()
+
+        if 'destination_id' in request.GET:
+            destination_id = request.GET.get('destination_id')
+            restore_data = export_data.get_latest_restored_data_with_destination_id(destination_id)
+        else:
+            restore_data = export_data.get_latest_restored()
+
+        if restore_data.status != ExportData.STATUS_COMPLETED:
+            message = 'Cannot check in this time. The process is {}'.format(restore_data.status)
+            return JsonResponse({'message': message}, status=400)
 
         # start check
-        export_data_restore.status = ExportData.STATUS_CHECKING
-        export_data_restore.last_check = datetime.datetime.now()
-        export_data_restore.save()
+        restore_data.status = ExportData.STATUS_CHECKING
+        restore_data.last_check = datetime.datetime.now()
+        restore_data.save()
 
         # get file information exported
-        response = export_data_restore.export.read_file_info_from_location(cookies, cookie=cookie)
+        response = restore_data.export.read_file_info_from_location(cookies, cookie=cookie)
         if response.status_code != 200:
-            return JsonResponse({'message': 'Cannot connect to the export data storage location.'}, status=400)
+            message = 'Cannot connect to the export data storage location.'
+            return JsonResponse({'message': message}, status=400)
         exported_file_info = response.json()
-        check = validate_export_data(exported_file_info)
+        check = validate_exported_data(exported_file_info)
         if not check:
-            return JsonResponse({'message': 'The export data files are corrupted.'}, status=400)
+            message = 'The export data files are corrupted.'
+            return JsonResponse({'message': message}, status=400)
 
         # Get data from current destination storage
-        _, storage_file_info = export_data_restore.extract_file_information_json_from_destination_storage()
-        data = count_files_ng_ok(exported_file_info, storage_file_info)
+        _, storage_file_info = restore_data.extract_file_information_json_from_destination_storage()
+        exported_file_versions = process_data_information(exported_file_info['files'])
+        storage_file_versions = process_data_information(storage_file_info['files'])
+        exclude_keys = ['id', 'path', 'created_at', 'modified_at',
+                        # location/
+                        'host', 'bucket', 'folder', 'service', 'provider', 'verify_ssl', 'address', 'version',
+                        # metadata/
+                        'etag', 'extra', 'modified', 'provider', 'contentType', 'modified_utc']
+        data = count_files_ng_ok(exported_file_versions, storage_file_versions, exclude_keys=exclude_keys)
 
         # end check
-        export_data_restore.status = ExportData.STATUS_COMPLETED
-        export_data_restore.save()
+        restore_data.status = ExportData.STATUS_COMPLETED
+        restore_data.save()
 
         return JsonResponse(data, status=200)
