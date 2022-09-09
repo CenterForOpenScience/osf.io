@@ -758,6 +758,7 @@ class TestArchiverUtils(ArchiverTestCase):
             {}
         )
         assert_equal(mock_send_mail.call_count, 2)
+        self.dst.refresh_from_db()
         assert_true(self.dst.is_deleted)
 
     @mock.patch('website.mails.send_mail')

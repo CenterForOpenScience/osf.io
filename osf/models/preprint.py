@@ -29,6 +29,7 @@ from osf.models.validators import validate_doi
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.workflows import DefaultStates, ReviewStates
 from osf.utils import sanitize
+from django.utils.functional import cached_property
 from osf.utils.permissions import ADMIN, WRITE
 from osf.utils.requests import get_request_and_user_id, string_type_request_headers
 from website.notifications.emails import get_user_subscriptions
@@ -282,7 +283,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         except BaseFileNode.DoesNotExist:
             return None
 
-    @property
+    @cached_property
     def osfstorage_region(self):
         return self.region
 

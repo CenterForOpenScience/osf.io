@@ -310,13 +310,6 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
             **kwargs
         )
 
-    def update_version_metadata(self, location, metadata):
-        try:
-            self.versions.get(location=location).update_metadata(metadata)
-            return
-        except ObjectDoesNotExist:
-            raise VersionNotFoundError(location)
-
     def touch(self, auth_header, revision=None, **kwargs):
         """The bread and butter of File, collects metadata about self
         and creates versions and updates self when required.

@@ -304,6 +304,9 @@ class OsfStorageFile(OsfStorageFileNode, File):
         if metadata:
             version.update_metadata(metadata, save=False)
 
+        if hasattr(self.target, 'osfstorage_region'):  # clear cache if cached
+            del self.target.osfstorage_region
+
         version.region = self.target.osfstorage_region
         version._find_matching_archive(save=False)
 
