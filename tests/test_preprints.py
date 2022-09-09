@@ -2526,19 +2526,19 @@ class TestWithdrawnPreprint:
 
     @pytest.fixture()
     def unpublished_preprint_pre_mod(self):
-        return PreprintFactory(provider__reviews_workflow='pre-moderation', is_published=False)
+        return PreprintFactory(reviews_workflow='pre-moderation', is_published=False)
 
     @pytest.fixture()
     def preprint_pre_mod(self):
-        return PreprintFactory(provider__reviews_workflow='pre-moderation')
+        return PreprintFactory(reviews_workflow='pre-moderation')
 
     @pytest.fixture()
     def unpublished_preprint_post_mod(self):
-        return PreprintFactory(provider__reviews_workflow='post-moderation', is_published=False)
+        return PreprintFactory(reviews_workflow='post-moderation', is_published=False)
 
     @pytest.fixture()
     def preprint_post_mod(self):
-        return PreprintFactory(provider__reviews_workflow='post-moderation')
+        return PreprintFactory(reviews_workflow='post-moderation')
 
     @pytest.fixture()
     def preprint(self):

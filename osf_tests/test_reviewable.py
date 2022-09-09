@@ -11,7 +11,7 @@ class TestReviewable:
     @mock.patch('website.identifiers.utils.request_identifiers')
     def test_state_changes(self, _):
         user = AuthUserFactory()
-        preprint = PreprintFactory(provider__reviews_workflow='pre-moderation', is_published=False)
+        preprint = PreprintFactory(reviews_workflow='pre-moderation', is_published=False)
         assert preprint.machine_state == DefaultStates.INITIAL.value
 
         preprint.run_submit(user)
