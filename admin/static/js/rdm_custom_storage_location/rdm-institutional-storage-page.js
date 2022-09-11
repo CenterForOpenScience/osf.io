@@ -1131,8 +1131,9 @@ $('#restore_button').on('click', () => {
 });
 
 $('#stop_restore_button').on('click', () => {
-    $(this).addClass('disabled');
-    $(this).attr('disabled', true);
+    let $stop_restore_button = $('#stop_restore_button');
+    $stop_restore_button.addClass('disabled');
+    $stop_restore_button.attr('disabled', true);
     let data = {
         task_id: restore_task_id,
         destination_id: $('#destination_storage').val(),
@@ -1142,9 +1143,9 @@ $('#stop_restore_button').on('click', () => {
         type: 'post',
         data: data
     }).done(function (response) {
-        restore_task_id = response['task_id'];
+        stop_restore_task_id = response['task_id'];
         setTimeout(() => {
-            checkTaskStatus(restore_task_id, 'Stop Restore');
+            checkTaskStatus(stop_restore_task_id, 'Stop Restore');
         }, 5000);
     }).fail(function (jqXHR) {
         enableStopRestoreFunction();
@@ -1156,7 +1157,7 @@ $('#stop_restore_button').on('click', () => {
 });
 
 function checkTaskStatus(task_id, task_type) {
-    let data = {task_id: task_id};
+    let data = {task_id: task_id, task_type: task_type};
     $.ajax({
         url: 'task_status/',
         type: 'get',
@@ -1164,12 +1165,14 @@ function checkTaskStatus(task_id, task_type) {
     }).done(function (response) {
         let state = response['state'];
         let result = response['result'];
+        let result_task_id = response['task_id'];
+        let result_task_type = response['task_type'];
         if (state === 'SUCCESS') {
-            if (task_type === 'Restore') {
+            if (result_task_type === 'Restore') {
                 // Done restoring export data
                 enableCheckRestoreFunction();
                 $osf.growl('Restore Export Data', _('Restore completed'), 'success', 2000);
-            } else if (task_type === 'Stop Restore') {
+            } else if (result_task_type === 'Stop Restore') {
                 // Done stopping restore export data
                 enableRestoreFunction();
                 $osf.growl('Stop Restore Export Data', _('Stopped restoring data process.'), 'success', 2000);
@@ -1185,9 +1188,9 @@ function checkTaskStatus(task_id, task_type) {
             }
             if (result && result['message']) {
                 var title = '';
-                if (task_type === 'Restore'){
+                if (result_task_type === 'Restore'){
                     title = 'Restore Export Data';
-                } else if (task_type === 'Stop Restore') {
+                } else if (result_task_type === 'Stop Restore') {
                     title = 'Stop Restore Export Data';
                 }
                 $osf.growl(title, _(result['message']), 'danger', 2000);

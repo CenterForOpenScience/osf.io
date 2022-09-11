@@ -30,6 +30,7 @@ from osf.models import (
     ExportDataLocation,
     Institution,
     ExternalAccount,
+    BaseFileNode
 )
 from website.settings import WATERBUTLER_URL
 from website.util import inspect_info  # noqa
@@ -327,10 +328,12 @@ def upload_file(node_id, provider, file_parent_path, file_data, file_name, cooki
     upload_url = waterbutler_api_url_for(node_id, provider, path=file_parent_path, kind='file', name=file_name,
                                          _internal=internal, base_url=base_url)
     try:
+        logger.debug(f'Upload url: {upload_url}')
         response = requests.put(upload_url,
                                 headers={'content-type': 'application/json'},
                                 cookies=cookies,
                                 data=file_data)
+        # logger.debug(f'Upload response: {response.status_code} - {response.content}')
         return response.json() if response.status_code == 201 else None, response.status_code
     except Exception:
         return None, None
@@ -341,10 +344,12 @@ def update_existing_file(node_id, provider, file_path, file_data, cookies,
     upload_url = waterbutler_api_url_for(node_id, provider, path=file_path, kind='file',
                                          _internal=internal, base_url=base_url)
     try:
+        logger.debug(f'Update url: {upload_url}')
         response = requests.put(upload_url,
                                 headers={'content-type': 'application/json'},
                                 cookies=cookies,
                                 data=file_data)
+        # logger.debug(f'Update response: {response.status_code} - {response.content}')
         return response.json() if response.status_code == 200 else None, response.status_code
     except Exception:
         return None, None
@@ -768,6 +773,7 @@ def delete_all_files_except_backup(node_id, provider, cookies, callback_log=Fals
     # In add-on institutional storage: Delete files, except the backup folder.
     regex = '^\\/backup_\\d{8,13}\\/.*$'
     list_not_backup_paths = []
+    list_not_backup_ids = []
     try:
         response = get_file_data(node_id, provider, '/', cookies, internal=internal,
                                  base_url=base_url, get_file_info=True)
@@ -777,6 +783,7 @@ def delete_all_files_except_backup(node_id, provider, cookies, callback_log=Fals
         data = response_body.get('data')
         if len(data) != 0:
             for item in data:
+                file_id = item.get('id')
                 path = item.get('attributes', {}).get('path')
                 materialized_path = item.get('attributes', {}).get('materialized')
                 kind = item.get('attributes', {}).get('kind')
@@ -790,6 +797,13 @@ def delete_all_files_except_backup(node_id, provider, cookies, callback_log=Fals
 
                 if kind == 'file' or kind == 'folder':
                     list_not_backup_paths.append(path)
+
+                    if file_id.startswith('osfstorage'):
+                        # If id is osfstorage/[_id] then get _id
+                        file_path_splits = file_id.split('/')
+                        if len(file_path_splits) == 2 or len(file_path_splits) == 3:
+                            file_node_id = file_path_splits[1]
+                            list_not_backup_ids.append(file_node_id)
     except (requests.ConnectionError, requests.Timeout) as e:
         logger.error(f'Connection error: {e}')
         raise e
@@ -801,6 +815,11 @@ def delete_all_files_except_backup(node_id, provider, cookies, callback_log=Fals
         except (requests.ConnectionError, requests.Timeout) as e:
             logger.error(f'Connection error: {e}')
             raise e
+
+    # Delete file nodes by ids
+    if len(list_not_backup_ids):
+        logger.debug(f'Delete file node with ids: {list_not_backup_ids}')
+        BaseFileNode.objects.filter(_id__in=list_not_backup_ids).delete()
 
 
 def validate_exported_data(data_json, schema_filename='file-info-schema.json'):

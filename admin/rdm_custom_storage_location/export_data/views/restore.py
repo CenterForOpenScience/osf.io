@@ -96,6 +96,7 @@ class StopRestoreDataActionView(RdmPermissionMixin, APIView):
             return Response({'message': f'Cannot stop restore process at this time.'}, status=status.HTTP_400_BAD_REQUEST)
 
         current_progress_step = result.get('current_restore_step', -1)
+        logger.debug(f'Current progress step before abort: {current_progress_step}')
         if current_progress_step >= 4 or current_progress_step < 0:
             return Response({'message': f'Cannot stop restore process at this time.'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -122,6 +123,7 @@ class StopRestoreDataActionView(RdmPermissionMixin, APIView):
 class CheckTaskStatusRestoreDataActionView(RdmPermissionMixin, APIView):
     def get(self, request, **kwargs):
         task_id = request.GET.get('task_id')
+        task_type = request.GET.get('task_type')
         if task_id is None:
             return Response({'message': f'Missing required parameters.'}, status=status.HTTP_400_BAD_REQUEST)
         task = AbortableAsyncResult(task_id)
@@ -132,6 +134,8 @@ class CheckTaskStatusRestoreDataActionView(RdmPermissionMixin, APIView):
             response = {
                 'state': task.state,
                 'result': task.result if isinstance(task.result, dict) else str(task.result),
+                'task_id': task_id,
+                'task_type': task_type,
             }
         return Response(response, status=status.HTTP_200_OK if task.state != 'FAILURE' else status.HTTP_400_BAD_REQUEST)
 
@@ -309,7 +313,7 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
                 file_versions = file.get('version')
                 file_project_id = file.get('project', {}).get('id')
                 file_tags = file.get('tags')
-                file_timestamp = file.get('timestamp')
+                file_timestamp = file.get('timestamp', {})
                 # Sort file by version id
                 file_versions.sort(key=lambda k: k.get('identifier', 0))
 
@@ -354,6 +358,7 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
                         # Download file by version
                         response = export_data.read_data_file_from_location(cookies, file_hash_path,
                                                                             base_url=export_base_url)
+                        # logger.debug(f'Download file response: {response.status_code} - {response.content}')
                         if response.status_code != 200:
                             logger.error(f'Download error content: {response.content}')
                             continue
@@ -447,7 +452,10 @@ def restore_export_data_rollback_process(task, cookies, export_id, destination_i
             if not is_file_valid:
                 raise ProcessError(f'The file info file is corrupted')
 
-            files = response_file_json.get('files', [])
+            files = response_file_json.get('files')
+            if files is None:
+                raise ProcessError(f'Cannot get file infomation list')
+
             if len(files) == 0:
                 export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
                                            status=ExportData.STATUS_STOPPED)
@@ -464,6 +472,7 @@ def restore_export_data_rollback_process(task, cookies, export_id, destination_i
             location_id = export_data.location.id
             # Delete files, except the backup folder.
             if process_step == 2 or process_step == 3:
+                logger.info(f'Delete all files except backup folder')
                 try:
                     utils.delete_all_files_except_backup(
                         destination_first_project_id, destination_provider,
@@ -471,10 +480,11 @@ def restore_export_data_rollback_process(task, cookies, export_id, destination_i
                         internal, destination_base_url)
                 except Exception as e:
                     logger.error(f'Exception: {e}')
-                    raise ProcessError(f'Cannot connect to destination storage')
+                    raise ProcessError(f'Cannot delete files except backup folders')
 
             # Move all files from the backup folder out and delete backup folder
             if 0 < process_step < 4:
+                logger.info(f'Move all files from the backup folder out and delete backup folder')
                 try:
                     if is_destination_addon_storage:
                         move_folder_from_backup = partial(utils.move_addon_folder_from_backup)
@@ -514,7 +524,7 @@ def check_if_restore_process_stopped(task, current_process_step):
 
 
 def add_tags_to_file_node(file_node, tags):
-    if len(tags) == 0:
+    if len(tags) == 0 or not file_node:
         return
 
     for tag in tags:
@@ -528,6 +538,9 @@ def add_tags_to_file_node(file_node, tags):
 
 
 def add_timestamp_to_file_node(file_node, project_id, timestamp):
+    if not file_node or not project_id or not timestamp:
+        return
+
     try:
         verify_data = RdmFileTimestamptokenVerifyResult.objects.get(
             file_id=file_node.id)
