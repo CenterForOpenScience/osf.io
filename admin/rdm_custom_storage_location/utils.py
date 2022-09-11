@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 import inspect  # noqa
 import logging
 import traceback
@@ -65,16 +66,13 @@ enabled_providers_list.extend(enabled_providers_forinstitutions_list)
 
 no_storage_name_providers = ['osfstorage', 'onedrivebusiness']
 
-
 def have_storage_name(provider_name):
     return provider_name not in no_storage_name_providers
-
 
 def get_providers(available_list=None):
     provider_list = []
     for provider in osf_settings.ADDONS_AVAILABLE:
         # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
-        # logger.debug(f'available_list: {osf_settings.ADDONS_AVAILABLE}')
         if 'storage' in provider.categories and provider.short_name in enabled_providers_list:
             provider.icon_url_admin = \
                 '/custom_storage_location/icon/{}/comicon.png'.format(provider.short_name)
@@ -84,7 +82,6 @@ def get_providers(available_list=None):
     if isinstance(available_list, list):
         return [addon for addon in provider_list if addon.short_name in available_list]
     return provider_list
-
 
 def get_addon_by_name(addon_short_name):
     """get Addon object from Short Name."""
@@ -929,7 +926,7 @@ def save_basic_storage_institutions_credentials_common(
             provider.account.oauth_key = password
             provider.account.save()
 
-    # Storage Addons for Institutions must have only one ExternalAccount.
+    # Storage Addons for Institutions must have only one ExternalAccont.
     rdm_addon_option = get_rdm_addon_option(institution.id, provider_name)
     if rdm_addon_option.external_accounts.count() > 0:
         rdm_addon_option.external_accounts.clear()

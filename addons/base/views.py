@@ -1,6 +1,5 @@
 import datetime
 import inspect  # noqa
-
 from rest_framework import status as http_status
 import os
 import uuid
@@ -313,7 +312,6 @@ def get_auth(auth, **kwargs):
     except KeyError:
         callback_log = data.get('callback_log', True)
 
-    # logger.debug(f'callback_log: {callback_log}')
     is_node_process = True
     if node_id == ExportData.EXPORT_DATA_FAKE_NODE_ID:
         is_node_process = False
@@ -426,7 +424,6 @@ def get_auth(auth, **kwargs):
         'callback_url': ''
     }
 
-    # logger.debug(f'callback_log and is_node_process {callback_log} {is_node_process}')
     if callback_log and is_node_process:
         payload_data['callback_url'] = node.api_url_for(
             ('create_waterbutler_log' if not getattr(node, 'is_registration', False) else 'registration_callbacks'),

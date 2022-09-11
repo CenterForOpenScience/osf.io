@@ -9,20 +9,13 @@ var sprintf = require('agh.sprintf').sprintf;
 
 var clipboard = require('js/clipboard');
 
-var no_storage_name_providers = [
-    'osfstorage',
-    'onedrivebusiness'
-];
+var no_storage_name_providers = ['osfstorage', 'onedrivebusiness'];
 // type1: get from admin/rdm_addons/api_v1/views.py
-var preload_accounts_type1 = [
-    'dropboxbusiness'
-];
+var preload_accounts_type1 = ['dropboxbusiness'];
 // type2: get from admin/rdm_custom_storage_location/views.py
-var preload_accounts_type2 = [
-    'nextcloudinstitutions',
-    'ociinstitutions',
-    's3compatinstitutions'
-]
+var preload_accounts_type2 = ['nextcloudinstitutions',
+                'ociinstitutions',
+                's3compatinstitutions']
 
 function preload(provider, callback) {
     if (preload_accounts_type1.indexOf(provider) >= 0) {
@@ -37,7 +30,7 @@ function preload(provider, callback) {
         }
     } else if (preload_accounts_type2.indexOf(provider) >= 0) {
         // getCredentials(provider, callback);
-        getCredentials(provider, null);
+ 	getCredentials(provider, null);
         if (callback) {
             callback();
         }
@@ -50,11 +43,11 @@ function preload(provider, callback) {
 
 function disable_storage_name(provider) {
     $('#storage_name').attr('disabled',
-        no_storage_name_providers.indexOf(provider) >= 0);
+			    no_storage_name_providers.indexOf(provider) >= 0);
 }
 
 function selectedProvider() {
-    return $('input[name=\'options\']:checked').val();
+     return $('input[name=\'options\']:checked').val();
 }
 
 $(window).on('load', function () {
@@ -105,7 +98,7 @@ $('#s3_modal input').keyup(function () {
     validateRequiredFields('s3');
 });
 
-$('#s3_modal input').on('paste', function (e) {
+$('#s3_modal input').on('paste', function(e) {
     validateRequiredFields('s3');
 });
 
@@ -113,7 +106,7 @@ $('#s3compat_modal input').keyup(function () {
     validateRequiredFields('s3compat');
 });
 
-$('#s3compat_modal input').on('paste', function (e) {
+$('#s3compat_modal input').on('paste', function(e) {
     validateRequiredFields('s3compat');
 });
 
@@ -121,7 +114,7 @@ $('#s3compatinstitutions_modal input').keyup(function () {
     validateRequiredFields('s3compatinstitutions');
 });
 
-$('#s3compatinstitutions_modal input').on('paste', function (e) {
+$('#s3compatinstitutions_modal input').on('paste', function(e) {
     validateRequiredFields('s3compatinstitutions');
 });
 
@@ -129,7 +122,7 @@ $('#ociinstitutions_modal input').keyup(function () {
     validateRequiredFields('ociinstitutions');
 });
 
-$('#ociinstitutions_modal input').on('paste', function (e) {
+$('#ociinstitutions_modal input').on('paste', function(e) {
     validateRequiredFields('ociinstitutions');
 });
 
@@ -137,7 +130,7 @@ $('#swift_modal input').keyup(function () {
     validateRequiredFields('swift');
 });
 
-$('#swift_modal input').on('paste', function (e) {
+$('#swift_modal input').on('paste', function(e) {
     validateRequiredFields('swift');
 });
 
@@ -145,7 +138,7 @@ $('#owncloud_modal input').keyup(function () {
     validateRequiredFields('owncloud');
 });
 
-$('#owncloud_modal input').on('paste', function (e) {
+$('#owncloud_modal input').on('paste', function(e) {
     validateRequiredFields('owncloud');
 });
 
@@ -153,7 +146,7 @@ $('#nextcloud_modal input').keyup(function () {
     validateRequiredFields('nextcloud');
 });
 
-$('#nextcloud_modal input').on('paste', function (e) {
+$('#nextcloud_modal input').on('paste', function(e) {
     validateRequiredFields('nextcloud');
 });
 
@@ -161,7 +154,7 @@ $('#nextcloudinstitutions_modal input').keyup(function () {
     validateRequiredFields('nextcloudinstitutions');
 });
 
-$('#nextcloudinstitutions_modal input').on('paste', function (e) {
+$('#nextcloudinstitutions_modal input').on('paste', function(e) {
     validateRequiredFields('nextcloudinstitutions');
 });
 
@@ -169,7 +162,7 @@ $('#googledrive_modal input').keyup(function () {
     authSaveButtonState('googledrive');
 });
 
-$('#googledrive_modal input').on('paste', function (e) {
+$('#googledrive_modal input').on('paste', function(e) {
     authSaveButtonState('googledrive');
 });
 
@@ -177,7 +170,7 @@ $('#box_modal input').keyup(function () {
     authSaveButtonState('box');
 });
 
-$('#box_modal input').on('paste', function (e) {
+$('#box_modal input').on('paste', function(e) {
     authSaveButtonState('box');
 });
 
@@ -185,7 +178,7 @@ $('#onedrivebusiness_modal input').keyup(function () {
     authSaveButtonState('onedrivebusiness');
 });
 
-$('#onedrivebusiness_modal input').on('paste', function (e) {
+$('#onedrivebusiness_modal input').on('paste', function(e) {
     authSaveButtonState('onedrivebusiness');
 });
 
@@ -219,7 +212,7 @@ $('#nextcloudinstitutions_username').on('keyup paste', function () {
     update_nextcloudinstitutions_notification_connid();
 });
 
-$('#csv_file').on('change', function () {
+$('#csv_file').on('change', function() {
     var filename = '';
     var fileLists = $(this).prop('files');
     if (fileLists.length > 0) {
@@ -279,7 +272,7 @@ function buttonClicked(button, route) {
     var providerShortName = $(button).attr('id').replace('_' + action[route], '');
     if (have_csv_ng()) {
         disableButtons(providerShortName);
-        return;
+	return;
     }
 
     var params = {
@@ -439,7 +432,7 @@ function authoriseOnClick(elm) {
     oauthOpener(elm.href, providerShortName, institutionId);
 }
 
-$('.auth-permission-button').click(function (e) {
+$('.auth-permission-button').click(function(e) {
     $(this).click(false);
     $(this).addClass('disabled');
     authoriseOnClick(this);
@@ -460,9 +453,9 @@ function disconnectOnClick(elm, properName, accountName) {
             sprintf(_("Type the following to continue: <strong>%1$s</strong><br><br>"), $osf.htmlEscape(deletionKey)) +
             "<input id='" + $osf.htmlEscape(id) + "' type='text' class='bootbox-input bootbox-input-text form-control'>" +
             '</p>',
-        callback: function (confirm) {
+        callback: function(confirm) {
             if (confirm) {
-                if ($('#' + id).val() == deletionKey) {
+                if ($('#'+id).val() == deletionKey) {
                     disconnectAccount(providerShortName, institutionId);
                 } else {
                     $osf.growl('Verification failed', 'Strings did not match');
@@ -471,16 +464,16 @@ function disconnectOnClick(elm, properName, accountName) {
                 $(elm).removeClass('disabled');
             }
         },
-        buttons: {
-            confirm: {
-                label: _('Disconnect'),
-                className: 'btn-danger'
+        buttons:{
+            confirm:{
+                label:_('Disconnect'),
+                className:'btn-danger'
             }
         }
     });
 }
 
-$('.auth-cancel').click(function (e) {
+$('.auth-cancel').click(function(e) {
     var providerShortName = this.id.replace('_cancel', '');
     authPermissionFailed(providerShortName, '');
     var route = 'remove_auth_data_temporary';
@@ -506,16 +499,16 @@ function getCredentials(providerShortName, callback) {
 
 function setParameters(provider_short_name, data) {
     var providerClass = provider_short_name + '-params';
-    $('.' + providerClass).each(function (i, e) {
+    $('.' + providerClass).each(function(i, e) {
         var val = data[$(e).attr('id')];
-        if (val) {
+	if (val) {
             $(e).val(val);
         }
     });
 
     if (provider_short_name === 'nextcloudinstitutions') {
-        update_nextcloudinstitutions_notification_connid();
-        update_nextcloudinstitutions_notification_url();
+	update_nextcloudinstitutions_notification_connid();
+	update_nextcloudinstitutions_notification_url();
     }
 }
 
@@ -579,7 +572,7 @@ function disconnectAccount(providerShortName, institutionId) {
     );
 }
 
-function oauthOpener(url, providerShortName, institutionId) {
+function oauthOpener(url,providerShortName,institutionId){
     var win = window.open(
         url,
         'OAuth');
@@ -587,7 +580,7 @@ function oauthOpener(url, providerShortName, institutionId) {
         'provider_short_name': providerShortName
     };
     var route = 'fetch_temporary_token';
-    var timer = setInterval(function () {
+    var timer = setInterval(function() {
         if (win.closed) {
             clearInterval(timer);
             if (providerShortName === 'dropboxbusiness' ||
@@ -600,7 +593,7 @@ function oauthOpener(url, providerShortName, institutionId) {
     }, 1000, [providerShortName, route]);
 }
 
-function authPermissionSucceed(providerShortName, authorizedBy, currentToken) {
+function authPermissionSucceed(providerShortName, authorizedBy, currentToken){
     var providerClass = providerShortName + '-auth-callback';
     var allFeedbackFields = $('.' + providerClass);
     allFeedbackFields.removeClass('hidden');
@@ -609,14 +602,14 @@ function authPermissionSucceed(providerShortName, authorizedBy, currentToken) {
     authSaveButtonState(providerShortName);
 }
 
-function authPermissionSucceedWithoutToken(providerShortName, authorizedBy) {
+function authPermissionSucceedWithoutToken(providerShortName, authorizedBy){
     var providerClass = providerShortName + '-auth-callback';
     var allFeedbackFields = $('.' + providerClass);
     allFeedbackFields.removeClass('hidden');
     $('#' + providerShortName + '_authorized_by').text(authorizedBy);
 }
 
-function authPermissionFailed(providerShortName, message) {
+function authPermissionFailed(providerShortName, message){
     var providerClass = providerShortName + '-auth-callback';
     var allFeedbackFields = $('.' + providerClass);
     allFeedbackFields.addClass('hidden');
@@ -627,7 +620,7 @@ function authPermissionFailed(providerShortName, message) {
     authSaveButtonState(providerShortName);
 }
 
-function authPermissionFailedWithoutToken(providerShortName, message) {
+function authPermissionFailedWithoutToken(providerShortName, message){
     var providerClass = providerShortName + '-auth-callback';
     var allFeedbackFields = $('.' + providerClass);
     allFeedbackFields.addClass('hidden');
@@ -638,7 +631,7 @@ function authPermissionFailedWithoutToken(providerShortName, message) {
 
 function authSaveButtonState(providerShortName) {
     var is_folder_valid = $('#' + providerShortName + '_folder').val() !== '';
-    var is_token_valid = $('#' + providerShortName + '_current_token').text().length > 0;
+    var is_token_valid = $('#' + providerShortName + '_current_token').text().length>0;
     $('#' + providerShortName + '_save').attr('disabled', !(is_folder_valid && is_token_valid));
 }
 
@@ -674,8 +667,8 @@ $('#csv_file').change(function () {
     } else {
         fd.append($(this).attr('name'), file);
         var providerClass = provider + '-params';
-        $('.' + providerClass).each(function (i, e) {
-            fd.append($(e).attr('id'), $(e).val());
+        $('.' + providerClass).each(function(i, e) {
+             fd.append($(e).attr('id'), $(e).val());
         });
         fd.append('check_extuser', $('#csv_check_extuser').is(':checked'));
     }
@@ -687,7 +680,7 @@ $('#csv_file').change(function () {
         contentType: false,
         timeout: 30000
     }).done(function (data) {
-        reflect_csv_results(data, provider);
+	reflect_csv_results(data, provider);
     }).fail(function (jqXHR) {
         if (jqXHR.responseJSON != null) {
             reflect_csv_results(jqXHR.responseJSON, provider);
@@ -713,7 +706,8 @@ function saveFile(filename, type, content) {
     if (window.navigator.msSaveOrOpenBlob) {
         var blob = new Blob([content], {type: type});
         window.navigator.msSaveOrOpenBlob(blob, filename);
-    } else {
+    }
+    else {
         var element = document.createElement('a');
         element.setAttribute('href', 'data:' + type + ',' + encodeURIComponent(content));
         element.setAttribute('download', filename);
@@ -725,7 +719,7 @@ function saveFile(filename, type, content) {
 }
 
 function usermapDownload(id, data) {
-    var name = 'usermap-' + selectedProvider() + '.csv';
+    var name = 'usermap-' + selectedProvider() +'.csv';
     saveFile(name, 'text/csv; charset=utf-8', data);
 }
 
@@ -733,26 +727,26 @@ function usermapDownloadFailed(id, message) {
     $('#csv_download_ng').html(message);
 }
 
-afterRequest.delete = {
-    'success': function (id, data) {
-        $('#location_' + id).remove();
-    },
-    'fail': function (id, message) {
-        $osf.growl('Error', 'Unable to delete location ' + id);
-    }
-}
 
 // Start - Storage location - Actions
 
+afterRequest.delete = {
+    'success': function (id) {
+        $('#location_' + id).remove();
+    },
+    'fail': function (id) {
+        $osf.growl('Error', 'Unable to delete location ' + id, 'success', 2000);
+    }
+}
+
 $('.delete-location').click(function () {
     let id = this.dataset.id;
-    let providerShortName = this.dataset.provide;
+    // let providerShortName = this.dataset.provide;
 
-    deleteLocation(id, providerShortName);
+    deleteLocation(id);
 });
 
-function deleteLocation(id, providerShortName) {
-    // console.log("delete location id", id);
+function deleteLocation(id) {
     let route = 'delete';
     let url = id + '/' + route + '/';
     $.ajax({
@@ -823,7 +817,7 @@ $('.row-storage select.location-select').change(function (event) {
                 hiddenViewExportDataButton(this.custom.element);
             }
         },
-        error: function (jqXHR) {
+        error: function () {
             hiddenViewExportDataButton(this.custom.element);
         }
     });
@@ -835,6 +829,7 @@ $('.row-storage button.view-export-data').click(function (event) {
     let url = window.contextVars.export_data_list_url + '?' + $.param(params);
     window.location.replace(url);
 });
+
 
 // Start - Export data - Actions
 
@@ -920,7 +915,7 @@ function exportData(institution_id, source_id, location_id, element) {
                 let $stopExportButton = $exportButton.parent().find('.stop-export-button');
                 $stopExportButton.data('task_id', task_id);
             }
-            $osf.growl('Export Data', _(message), messageType, 2);
+            $osf.growl('Export Data', _(message), messageType, 2000);
 
             if (window.contextVars[this.custom.key].exportInBackground) {
                 // var x = 0;
@@ -936,7 +931,7 @@ function exportData(institution_id, source_id, location_id, element) {
             if (jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)) {
                 message = jqXHR.responseJSON.message;
             }
-            $osf.growl('Export Data', _(message), 'danger', 2);
+            $osf.growl('Export Data', _(message), 'danger', 2000);
         }
     });
 }
@@ -994,7 +989,7 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
                 message = 'Stop exporting in background';
                 window.contextVars[this.custom.key].stopExportInBackground = true;
             }
-            $osf.growl('Stop Export Data', _(message), messageType, 2);
+            $osf.growl('Stop Export Data', _(message), messageType, 2000);
 
             if (window.contextVars[this.custom.key].stopExportInBackground) {
                 // var x = 0;
@@ -1022,13 +1017,13 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
                             let $viewExportDataButton = $parent.find('button.view-export-data');
                             showViewExportDataButton($viewExportDataButton, location_id)
                         }
-                        $osf.growl('Export Data', _('Export data successfully'), 'success', 2);
+                        $osf.growl('Export Data', _('Export data successfully'), 'success', 2000);
                     } else if (data.status === 'Error') {
-                        $osf.growl('Export Data', _('Export data failed'), 'danger', 2);
+                        $osf.growl('Export Data', _('Export data failed'), 'danger', 2000);
                     }
                 }
             }
-            $osf.growl('Stop Export Data', _(message), 'danger', 2);
+            $osf.growl('Stop Export Data', _(message), 'danger', 2000);
         }
     });
 }
@@ -1073,7 +1068,7 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
                         let $viewExportDataButton = $parent.find('button.view-export-data');
                         showViewExportDataButton($viewExportDataButton, location_id)
                     }
-                    $osf.growl('Export Data', _('Export data successfully'), 'success', 2);
+                    $osf.growl('Export Data', _('Export data successfully'), 'success', 2000);
                 } else {
                     messageType = 'danger';
                     message = 'Export data failed';
@@ -1092,13 +1087,15 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
                     message = 'Error occurred while exporting data.';
                 }
             }
-            !window.contextVars[this.custom.key].intervalID && $osf.growl(title, _(message), messageType, 10);
+            !window.contextVars[this.custom.key].intervalID && $osf.growl(title, _(message), messageType, 2000);
         },
         error: function (jqXHR) {
+            // keep for debug
             // console.log('checkStatusExportData', window.contextVars[this.custom.key].stopExportInBackground, jqXHR.responseJSON);
         }
     });
 }
+
 
 // Start - Restore Export data - Actions
 
@@ -1124,7 +1121,7 @@ $('#restore_button').on('click', () => {
         } else {
             $('#restore').modal('show');
         }
-    }).fail(function (jqXHR, textStatus, error) {
+    }).fail(function (jqXHR) {
         enableRestoreFunction();
         let data = jqXHR.responseJSON;
         if (data && data['message']) {
@@ -1149,7 +1146,7 @@ $('#stop_restore_button').on('click', () => {
         setTimeout(() => {
             checkTaskStatus(restore_task_id, 'Stop Restore');
         }, 5000);
-    }).fail(function (jqXHR, textStatus, error) {
+    }).fail(function (jqXHR) {
         enableStopRestoreFunction();
         let data = jqXHR.responseJSON;
         if (data && data['message']) {
@@ -1196,7 +1193,7 @@ function checkTaskStatus(task_id, task_type) {
                 $osf.growl(title, _(result['message']), 'danger', 2000);
             }
         }
-    }).fail(function (jqXHR, textStatus, error) {
+    }).fail(function (jqXHR) {
         enableRestoreFunction();
         let data = jqXHR.responseJSON;
         if (data && data['result']) {
@@ -1235,7 +1232,7 @@ $('#start_restore_modal_button').on('click', () => {
         setTimeout(() => {
             checkTaskStatus(restore_task_id, 'Restore');
         }, 5000);
-    }).fail(function (jqXHR, textStatus, error) {
+    }).fail(function (jqXHR) {
         // Call enableRestoreFunction() when fail
         enableRestoreFunction();
         let data = jqXHR.responseJSON;
@@ -1331,10 +1328,10 @@ $('#checkExportData').on('click', () => {
         });
         $('.text-check-export-data').html(text_check_export);
         $('.table-ng').html(text_current);
-    }).fail(function (jqXHR, textStatus, error) {
+    }).fail(function (jqXHR) {
         $('#checkExportData').prop('disabled', false);
         let message = jqXHR.responseJSON.message;
-        $osf.growl('Error', _(message), 'error');
+        $osf.growl('Error', _(message), 'error', 2000);
     });
 });
 
@@ -1362,10 +1359,10 @@ $('#check_restore_button').on('click', () => {
         });
         $('.text-check-restore-data').html(text_check_export);
         $('.table-ng-restore').html(text_current);
-    }).fail(function (jqXHR, textStatus, error) {
+    }).fail(function (jqXHR) {
         $('#check_restore_button').prop('disabled', false);
         let message = jqXHR.responseJSON.message;
-        $osf.growl('Error', _(message), 'error');
+        $osf.growl('Error', _(message), 'error', 2000);
     });
 });
 
@@ -1377,14 +1374,14 @@ $('#cancelRestoreDataModal').on('click', () => {
     $('#check_restore_button').prop('disabled', false);
 });
 
-$('#checkExportDataModal').on('hidden.bs.modal', function (e) {
+$('#checkExportDataModal').on('hidden.bs.modal', function () {
   $('#checkExportData').prop('disabled', false);
 });
 
-$('#checkRestoreDataModal').on('hidden.bs.modal', function (e) {
+$('#checkRestoreDataModal').on('hidden.bs.modal', function () {
   $('#check_restore_button').prop('disabled', false);
 });
 
-$('#restore').on('hidden.bs.modal', function (e) {
+$('#restore').on('hidden.bs.modal', function () {
     enableRestoreFunction();
 });

@@ -469,7 +469,6 @@ class OsfStorageFolder(OsfStorageFileNode, Folder):
         for child in self.children.all().prefetch_related('versions'):
             child.update_region_from_latest_version(destination_parent)
 
-
 class Region(models.Model):
     # GRDM ver.: Region._id may be Institution._id
     _id = models.CharField(max_length=255, db_index=True)

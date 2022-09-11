@@ -25,7 +25,6 @@ logger = logging.getLogger(__name__)
 
 SITE_KEY = 'rdm_custom_storage_location'
 
-
 class InstitutionalStorageBaseView(RdmPermissionMixin, UserPassesTestMixin):
     """ Base class for all the Institutional Storage Views """
     def test_func(self):
@@ -44,7 +43,7 @@ class InstitutionalStorageView(InstitutionalStorageBaseView, TemplateView):
 
         region = None
         if Region.objects.filter(_id=institution._id).exists():
-            region = Region.objects.filter(_id=institution._id).first()
+            region = Region.objects.get(_id=institution._id)
         else:
             region = Region.objects.first()
             region.name = ''
