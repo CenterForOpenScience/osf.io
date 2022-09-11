@@ -1172,7 +1172,7 @@ function checkTaskStatus(task_id, task_type) {
                 // Done restoring export data
                 enableCheckRestoreFunction();
                 $osf.growl('Restore Export Data', _('Restore completed'), 'success', 2000);
-            } else if (task_type === 'Stop restore') {
+            } else if (task_type === 'Stop Restore') {
                 // Done stopping restore export data
                 enableRestoreFunction();
                 $osf.growl('Stop Restore Export Data', _('Stopped restoring data process.'), 'success', 2000);

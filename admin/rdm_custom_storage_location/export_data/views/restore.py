@@ -4,6 +4,7 @@ from __future__ import absolute_import
 import inspect  # noqa
 import json
 import logging
+from functools import partial
 
 from celery.contrib.abortable import AbortableAsyncResult
 from django.db import transaction
@@ -20,6 +21,7 @@ from admin.rdm_custom_storage_location.export_data import utils
 from osf.models import ExportData, ExportDataRestore, BaseFileNode, Tag, RdmFileTimestamptokenVerifyResult
 from website.settings import WATERBUTLER_URL
 from website.util import inspect_info  # noqa
+from framework.transactions.handlers import no_auto_transaction
 
 logger = logging.getLogger(__name__)
 INSTITUTIONAL_STORAGE_PROVIDER_NAME = 'osfstorage'
@@ -30,6 +32,7 @@ class ProcessError(Exception):
     pass
 
 
+@no_auto_transaction
 @method_decorator(transaction.non_atomic_requests, name='dispatch')
 class RestoreDataActionView(RdmPermissionMixin, APIView):
     raise_exception = True
@@ -63,6 +66,7 @@ class RestoreDataActionView(RdmPermissionMixin, APIView):
             return prepare_for_restore_export_data_process(cookies, export_id, destination_id)
 
 
+@no_auto_transaction
 @method_decorator(transaction.non_atomic_requests, name='dispatch')
 class StopRestoreDataActionView(RdmPermissionMixin, APIView):
     raise_exception = True
@@ -88,8 +92,11 @@ class StopRestoreDataActionView(RdmPermissionMixin, APIView):
         result = task.result
 
         # Get current restore progress step
+        if not task.result:
+            return Response({'message': f'Cannot stop restore process at this time.'}, status=status.HTTP_400_BAD_REQUEST)
+
         current_progress_step = result.get('current_restore_step', -1)
-        if current_progress_step >= 4:
+        if current_progress_step >= 4 or current_progress_step < 0:
             return Response({'message': f'Cannot stop restore process at this time.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Update process status
@@ -249,7 +256,7 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
         if len(files) == 0:
             export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
                                        status=ExportData.STATUS_COMPLETED)
-            return None
+            return {'message': 'Restore data successfully.'}
         destination_first_project_id = files[0].get('project', {}).get('id')
 
         # Check destination storage type (bulk-mounted or add-on)
@@ -266,35 +273,35 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
             try:
                 # move all old data in restore destination storage to a folder to back up folder
                 if is_destination_addon_storage:
-                    response = utils.move_addon_folder_to_backup(
-                        destination_first_project_id,
-                        destination_provider,
-                        process_start=export_data_restore.process_start_timestamp,
-                        cookies=cookies,
-                        callback_log=False,
-                        internal=internal,
-                        base_url=destination_base_url)
+                    move_folder_to_backup = partial(utils.move_addon_folder_to_backup)
                 else:
-                    response = utils.move_bulk_mount_folder_to_backup(
-                        destination_first_project_id,
-                        destination_provider,
-                        process_start=export_data_restore.process_start_timestamp,
-                        cookies=cookies,
-                        callback_log=False,
-                        internal=internal,
-                        base_url=destination_base_url)
+                    move_folder_to_backup = partial(utils.move_bulk_mount_folder_to_backup)
+                response = move_folder_to_backup(
+                    destination_first_project_id,
+                    destination_provider,
+                    process_start=export_data_restore.process_start_timestamp,
+                    cookies=cookies,
+                    callback_log=False,
+                    internal=internal,
+                    base_url=destination_base_url,
+                    check_abort_task=partial(
+                        check_if_restore_process_stopped,
+                        task=task,
+                        current_process_step=current_process_step))
                 check_if_restore_process_stopped(task, current_process_step)
                 if response and 'error' in response:
                     # Error
                     error_msg = response.get('error')
                     logger.error(f'Return error with response: {error_msg}')
                     raise ProcessError(f'Failed to move files to backup folder.')
-                current_process_step = 2
-                task.update_state(state='PENDING', meta={'current_restore_step': current_process_step})
             except Exception as e:
                 logger.error(f'Exception: {e}')
                 raise ProcessError(f'Failed to move files to backup folder.')
 
+        current_process_step = 2
+        task.update_state(state='PENDING', meta={'current_restore_step': current_process_step})
+
+        with transaction.atomic():
             for file in files:
                 check_if_restore_process_stopped(task, current_process_step)
 
@@ -401,23 +408,22 @@ def restore_export_data_process(task, cookies, export_id, destination_id, export
             restore_export_data_rollback_process(task, cookies, export_id, destination_id, export_data_restore_id, process_step=current_process_step)
         raise e
 
-    return None
+    return {'message': 'Restore data successfully.'}
 
 
 def restore_export_data_rollback_process(task, cookies, export_id, destination_id, export_data_restore_id, process_step):
     if process_step >= 4:
         # Restore process is already done, cannot stop anymore
-        return None
+        return {'message': 'Stop restore data successfully.'}
 
     export_data_restore = ExportDataRestore.objects.get(pk=export_data_restore_id)
-    if export_data_restore.task_id != task.request.id:
-        export_data_restore.update(task_id=task.request.id)
+    export_data_restore.update(task_id=task.request.id)
 
     if process_step == 0 or process_step is None:
         # Restore process has not done anything related to files
         export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
                                    status=ExportData.STATUS_STOPPED)
-        return None
+        return {'message': 'Stop restore data successfully.'}
 
     try:
         with transaction.atomic():
@@ -445,7 +451,7 @@ def restore_export_data_rollback_process(task, cookies, export_id, destination_i
             if len(files) == 0:
                 export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
                                            status=ExportData.STATUS_STOPPED)
-                return None
+                return {'message': 'Stop restore data successfully.'}
             destination_first_project_id = files[0].get('project', {}).get('id')
 
             # Check destination storage type (bulk-mounted or add-on)
@@ -471,23 +477,17 @@ def restore_export_data_rollback_process(task, cookies, export_id, destination_i
             if 0 < process_step < 4:
                 try:
                     if is_destination_addon_storage:
-                        response = utils.move_addon_folder_from_backup(
-                            destination_first_project_id,
-                            destination_provider,
-                            process_start=export_data_restore.process_start_timestamp,
-                            cookies=cookies,
-                            callback_log=False,
-                            internal=internal,
-                            base_url=destination_base_url)
+                        move_folder_from_backup = partial(utils.move_addon_folder_from_backup)
                     else:
-                        response = utils.move_bulk_mount_folder_from_backup(
-                            destination_first_project_id,
-                            destination_provider,
-                            process_start=export_data_restore.process_start_timestamp,
-                            cookies=cookies,
-                            callback_log=False,
-                            internal=internal,
-                            base_url=destination_base_url)
+                        move_folder_from_backup = partial(utils.move_bulk_mount_folder_from_backup)
+                    response = move_folder_from_backup(
+                        destination_first_project_id,
+                        destination_provider,
+                        process_start=export_data_restore.process_start_timestamp,
+                        cookies=cookies,
+                        callback_log=False,
+                        internal=internal,
+                        base_url=destination_base_url)
                     if 'error' in response:
                         # Error
                         error_msg = response.get('error')
@@ -503,7 +503,7 @@ def restore_export_data_rollback_process(task, cookies, export_id, destination_i
         export_data_restore.update(status=ExportData.STATUS_ERROR)
         raise e
 
-    return None
+    return {'message': 'Stop restore data successfully.'}
 
 
 def check_if_restore_process_stopped(task, current_process_step):

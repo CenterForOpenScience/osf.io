@@ -434,7 +434,7 @@ def move_file(node_id, provider, source_file_path, destination_file_path, cookie
                          json=request_body)
 
 
-def move_addon_folder_to_backup(node_id, provider, process_start, cookies, callback_log=False, internal=True, base_url=WATERBUTLER_URL):
+def move_addon_folder_to_backup(node_id, provider, process_start, cookies, callback_log=False, internal=True, base_url=WATERBUTLER_URL, check_abort_task=None):
     path_list, root_child_folders = get_all_file_paths_in_addon_storage(
         node_id, provider, '/', cookies, internal,
         base_url, exclude_path_regex='^\\/backup_\\d{8,13}\\/.*$')
@@ -447,6 +447,8 @@ def move_addon_folder_to_backup(node_id, provider, process_start, cookies, callb
     has_error = False
     error_message = ''
     for path in path_list:
+        if callable(check_abort_task):
+            check_abort_task()
         try:
             paths = path.split('/')
             paths.insert(1, f'backup_{process_start}')
@@ -462,6 +464,8 @@ def move_addon_folder_to_backup(node_id, provider, process_start, cookies, callb
             if len(paths) > 2:
                 created_folder_paths.add(f'/{paths[1]}/')
         except Exception as e:
+            if callable(check_abort_task):
+                check_abort_task()
             logger.error(f'Exception: {e}')
             has_error = True
             error_message = repr(e)
@@ -469,9 +473,9 @@ def move_addon_folder_to_backup(node_id, provider, process_start, cookies, callb
 
     if has_error:
         # Rollback
-        rollback_folder_movement(
-            node_id, provider, moved_paths, created_folder_paths,
-            cookies, callback_log, internal, base_url)
+        # rollback_folder_movement(
+        #     node_id, provider, moved_paths, created_folder_paths,
+        #     cookies, callback_log, internal, base_url)
         return {'error': error_message}
 
     # S3: Clean root folders after moving
@@ -518,8 +522,8 @@ def move_addon_folder_from_backup(node_id, provider, process_start, cookies, cal
 
     if has_error:
         # Rollback
-        rollback_folder_movement(node_id, provider, moved_paths, created_folder_paths,
-                                 cookies, callback_log, internal, base_url)
+        # rollback_folder_movement(node_id, provider, moved_paths, created_folder_paths,
+        #                          cookies, callback_log, internal, base_url)
         return {'error': error_message}
 
     # S3: Clean backup folders after moving
@@ -575,7 +579,7 @@ def get_all_file_paths_in_addon_storage(node_id, provider, file_path, cookies, i
         return [], []
 
 
-def move_bulk_mount_folder_to_backup(node_id, provider, process_start, cookies, callback_log=False, internal=True, base_url=WATERBUTLER_URL):
+def move_bulk_mount_folder_to_backup(node_id, provider, process_start, cookies, callback_log=False, internal=True, base_url=WATERBUTLER_URL, check_abort_task=None):
     path_list, _ = get_all_child_paths_in_bulk_mount_storage(
         node_id, provider, '/', cookies, internal, base_url,
         exclude_path_regex='^\\/backup_\\d{8,13}\\/.*$')
@@ -590,6 +594,8 @@ def move_bulk_mount_folder_to_backup(node_id, provider, process_start, cookies, 
 
     # OSF storage: create new backup folder
     try:
+        if callable(check_abort_task):
+            check_abort_task()
         response_body, status_code = create_folder(node_id, provider, '/', new_materialized_path[1:],
                                                    cookies, callback_log, internal, base_url)
         if status_code != 201:
@@ -601,6 +607,8 @@ def move_bulk_mount_folder_to_backup(node_id, provider, process_start, cookies, 
 
     # Move all root child files and folders to backup folder
     for path, materialized_path in path_list:
+        if callable(check_abort_task):
+            check_abort_task()
         try:
             response = move_file(node_id, provider, path, new_path,
                                  cookies, callback_log, internal, base_url, is_addon_storage=False)
@@ -621,9 +629,9 @@ def move_bulk_mount_folder_to_backup(node_id, provider, process_start, cookies, 
 
     if has_error:
         # Rollback
-        rollback_folder_movement(node_id, provider, moved_paths, [new_path],
-                                 cookies, callback_log, internal, base_url,
-                                 is_addon_storage=False)
+        # rollback_folder_movement(node_id, provider, moved_paths, [new_path],
+        #                          cookies, callback_log, internal, base_url,
+        #                          is_addon_storage=False)
         return {'error': error_message}
     return {}
 
@@ -659,9 +667,9 @@ def move_bulk_mount_folder_from_backup(node_id, provider, process_start, cookies
 
     if has_error:
         # Rollback
-        rollback_folder_movement(node_id, provider, moved_paths, [],
-                                 cookies, callback_log, internal, base_url,
-                                 is_addon_storage=False)
+        # rollback_folder_movement(node_id, provider, moved_paths, [],
+        #                          cookies, callback_log, internal, base_url,
+        #                          is_addon_storage=False)
         return {'error': error_message}
 
     # OSF storage: Delete backup folder after moving
