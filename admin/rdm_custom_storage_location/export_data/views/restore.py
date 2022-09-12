@@ -444,7 +444,7 @@ def move_all_files_to_backup_folder(task, current_process_step, destination_firs
 
 def copy_files_from_export_data_to_destination(task, current_process_step, export_data_files, export_data_restore, cookies):
     export_data = export_data_restore.export
-    export_base_url = export_data.waterbutler_url
+    export_base_url = export_data.location.waterbutler_url
 
     destination_region = export_data_restore.destination
     is_destination_addon_storage = destination_region.is_add_on_storage
