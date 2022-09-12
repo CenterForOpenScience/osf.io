@@ -15,7 +15,6 @@ from api.base.serializers import (
     WaterbutlerLink, relationship_diff, BaseAPISerializer,
     HideIfWikiDisabled, ShowIfAdminScopeOrAnonymous,
     ValuesListField, TargetField,
-
 )
 from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
 from api.base.utils import (
@@ -223,17 +222,6 @@ def get_license_details(node, validated_data):
         'copyrightHolders': license_holders,
     }
 
-
-class RegistrationSchemaRelationshipField(RelationshipField):
-
-    def to_internal_value(self, registration_schema_id):
-        schema = get_object_or_error(RegistrationSchema, registration_schema_id, self.context['request'])
-        latest_version = RegistrationSchema.objects.get_latest_version(schema.name).schema_version
-        if latest_version != schema.schema_version or not schema.active:
-            raise exceptions.ValidationError('Registration supplement must be an active schema.')
-        return {'registration_schema': schema}
-
-
 class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
     # handle blank choices properly. Currently DRF ChoiceFields ignore blank options, which is incorrect in this
@@ -326,12 +314,6 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     tags = ValuesListField(attr_name='name', child=ser.CharField(), required=False)
     access_requests_enabled = ShowIfVersion(ser.BooleanField(read_only=False, required=False), min_version='2.0', max_version='2.8')
     node_license = NodeLicenseSerializer(required=False, source='license')
-    registration_schema = RegistrationSchemaRelationshipField(
-        related_view='schemas:registration-schema-detail',
-        related_view_kwargs={'schema_id': '<registration_schema._id>'},
-        required=False,
-        read_only=False,
-    )
     analytics_key = ShowIfAdminScopeOrAnonymous(ser.CharField(read_only=True, source='keenio_read_key'))
     template_from = ser.CharField(
         required=False, allow_blank=False, allow_null=False,
@@ -1519,6 +1501,15 @@ class NodeInstitutionsRelationshipSerializer(BaseAPISerializer):
 
         return self.make_instance_obj(node)
 
+class RegistrationSchemaRelationshipField(RelationshipField):
+
+    def to_internal_value(self, registration_schema_id):
+        schema = get_object_or_error(RegistrationSchema, registration_schema_id, self.context['request'])
+        latest_version = RegistrationSchema.objects.get_latest_version(schema.name).schema_version
+        if latest_version != schema.schema_version or not schema.active:
+            raise exceptions.ValidationError('Registration supplement must be an active schema.')
+        return {'registration_schema': schema}
+
 
 class DraftRegistrationLegacySerializer(JSONAPISerializer):
 
@@ -1599,19 +1590,6 @@ class DraftRegistrationLegacySerializer(JSONAPISerializer):
     def create(self, validated_data):
         initiator = get_user_auth(self.context['request']).user
         node = self.get_node(validated_data)
-        branched_from_guid = self.context['request'].data.get('branched_from')
-        if not node and branched_from_guid:
-            node = get_object_or_error(Node, branched_from_guid, self.context['request'])
-            if not node.has_permission(initiator, 'write'):
-                raise exceptions.NotFound()
-
-        if node and node.is_deleted:
-            from api.base.exceptions import Gone
-            raise Gone(detail='The requested node is no longer available.')
-
-        if node and not node.has_permission(initiator, 'write'):
-            raise exceptions.PermissionDenied()
-
         # Old workflow - deeply nested
         metadata = validated_data.pop('registration_metadata', None)
         registration_responses = validated_data.pop('registration_responses', None)
