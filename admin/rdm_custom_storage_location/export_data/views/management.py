@@ -16,7 +16,7 @@ from admin.rdm_custom_storage_location.export_data.utils import (
     validate_exported_data,
     count_files_ng_ok,
 )
-from osf.models import ExportData, Institution, ExportDataRestore
+from osf.models import ExportData, Institution
 from website.util import inspect_info  # noqa
 from .location import ExportStorageLocationViewBaseView
 
