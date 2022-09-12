@@ -85,7 +85,7 @@ class ExportDataActionView(ExportDataBaseActionView):
 
 
 def export_data_process(task, cookies, export_data_id, **kwargs):
-    logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+    # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
     # get corresponding export data record
     export_data = None
     while export_data is None:
@@ -235,7 +235,7 @@ class StopExportDataActionView(ExportDataBaseActionView):
 
 
 def export_data_rollback_process(cookies, export_data_id, **kwargs):
-    logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+    # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
     # get corresponding export data record
     export_data_set = export_data = None
     while export_data is None:

@@ -6,7 +6,8 @@ import json
 import logging
 from functools import partial
 
-from celery.contrib.abortable import AbortableAsyncResult
+from celery.states import PENDING
+from celery.contrib.abortable import AbortableAsyncResult, ABORTED
 from django.db import transaction
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -125,7 +126,7 @@ def prepare_for_restore_export_data_process(cookies, export_id, destination_id):
 
 def restore_export_data_process(task, cookies, export_id, export_data_restore_id):
     current_process_step = 0
-    task.update_state(state='PENDING', meta={'current_restore_step': current_process_step})
+    task.update_state(state=PENDING, meta={'current_restore_step': current_process_step})
     try:
         export_data_restore = ExportDataRestore.objects.get(pk=export_data_restore_id)
         export_data_restore.update(task_id=task.request.id)
@@ -144,13 +145,13 @@ def restore_export_data_process(task, cookies, export_id, export_data_restore_id
 
         check_if_restore_process_stopped(task, current_process_step)
         current_process_step = 1
-        task.update_state(state='PENDING', meta={'current_restore_step': current_process_step})
+        task.update_state(state=PENDING, meta={'current_restore_step': current_process_step})
 
         # Move all existing files/folders in destination to backup_{process_start} folder
         move_all_files_to_backup_folder(task, current_process_step, destination_first_project_id, export_data_restore, cookies)
 
         current_process_step = 2
-        task.update_state(state='PENDING', meta={'current_restore_step': current_process_step})
+        task.update_state(state=PENDING, meta={'current_restore_step': current_process_step})
 
         # Download files from export data, then upload files to destination. Returns list of created file node in DB
         list_created_file_nodes = copy_files_from_export_data_to_destination(task, current_process_step,
@@ -159,7 +160,7 @@ def restore_export_data_process(task, cookies, export_id, export_data_restore_id
 
         check_if_restore_process_stopped(task, current_process_step)
         current_process_step = 3
-        task.update_state(state='PENDING', meta={'current_restore_step': current_process_step})
+        task.update_state(state=PENDING, meta={'current_restore_step': current_process_step})
 
         # Add tags, timestamp to created file nodes
         add_tag_and_timestamp_to_database(task, current_process_step, list_created_file_nodes)
@@ -170,12 +171,12 @@ def restore_export_data_process(task, cookies, export_id, export_data_restore_id
 
         check_if_restore_process_stopped(task, current_process_step)
         current_process_step = 4
-        task.update_state(state='PENDING', meta={'current_restore_step': current_process_step})
+        task.update_state(state=PENDING, meta={'current_restore_step': current_process_step})
         return {'message': 'Restore data successfully.'}
     except Exception as e:
-        logger.error(f'Exception: {e}')
+        logger.error(f'Restore data process exception: {e}')
         if task.is_aborted():
-            task.update_state(state='ABORTED',
+            task.update_state(state=ABORTED,
                               meta={'current_restore_step': current_process_step})
         else:
             restore_export_data_rollback_process(task, cookies, export_id, export_data_restore_id, process_step=current_process_step)
@@ -184,7 +185,7 @@ def restore_export_data_process(task, cookies, export_id, export_data_restore_id
 
 def check_if_restore_process_stopped(task, current_process_step):
     if task.is_aborted():
-        task.update_state(state='ABORTED',
+        task.update_state(state=ABORTED,
                           meta={'current_restore_step': current_process_step})
         raise ProcessError(f'Restore process is stopped')
 
@@ -218,7 +219,7 @@ class StopRestoreDataActionView(RdmPermissionMixin, APIView):
             return Response({'message': f'Cannot stop restore process at this time.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # If process state is not STARTED and not PENDING then return error message
-        if task.state != 'STARTED' and task.state != 'PENDING':
+        if task.state != 'STARTED' and task.state != PENDING:
             export_data_restore.update(status=ExportData.STATUS_ERROR)
             return Response({'message': f'Cannot stop restore process at this time.'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -235,7 +236,7 @@ class StopRestoreDataActionView(RdmPermissionMixin, APIView):
         task.abort()
 
         # If task does not abort then return error response
-        if task.state != 'ABORTED':
+        if task.state != ABORTED:
             export_data_restore.update(status=ExportData.STATUS_ERROR)
             return Response({'message': f'Cannot stop restore process at this time.'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -348,13 +349,11 @@ def read_export_data_and_check_schema(export_data, cookies):
         response = export_data.read_export_data_from_location(cookies)
         if response.status_code != 200:
             # Error
-            logger.error(f'Return error with response: {response.content}')
             return {'open_dialog': False, 'message': f'Cannot connect to the export data storage location'}
         response_body = response.content
         response_file_content = response_body.decode('utf-8')
         response_file_json = json.loads(response_file_content)
-    except Exception as e:
-        logger.error(f'Exception: {e}')
+    except Exception:
         return {'open_dialog': False, 'message': f'Cannot connect to the export data storage location'}
 
     # Validate export file schema
@@ -368,14 +367,11 @@ def read_file_info_and_check_schema(export_data, cookies):
     try:
         response = export_data.read_file_info_from_location(cookies)
         if response.status_code != 200:
-            # Error
-            logger.error(f'Return error with response: {response.content}')
             raise ProcessError(f'Cannot get file infomation list')
         response_body = response.content
         response_file_content = response_body.decode('utf-8')
         response_file_json = json.loads(response_file_content)
     except Exception as e:
-        logger.error(f'Exception: {e}')
         raise ProcessError(f'Cannot get file infomation list')
 
     # Validate file info schema
@@ -435,10 +431,10 @@ def move_all_files_to_backup_folder(task, current_process_step, destination_firs
             if response and 'error' in response:
                 # Error
                 error_msg = response.get('error')
-                logger.error(f'Return error with response: {error_msg}')
+                logger.error(f'Move all files to backup folder error message: {error_msg}')
                 raise ProcessError(f'Failed to move files to backup folder.')
     except Exception as e:
-        logger.error(f'Exception: {e}')
+        logger.error(f'Move all files to backup folder exception: {e}')
         raise ProcessError(f'Failed to move files to backup folder.')
 
 
@@ -495,7 +491,7 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
                                                                     base_url=export_base_url)
                 # logger.debug(f'Download file response: {response.status_code} - {response.content}')
                 if response.status_code != 200:
-                    logger.error(f'Download error content: {response.content}')
+                    logger.error(f'Download error: {response.content}')
                     continue
                 download_data = response.content
 
@@ -552,13 +548,12 @@ def delete_all_files_except_backup_folder(export_data_restore, location_id, dest
     destination_base_url = destination_region.waterbutler_url
     destination_provider = INSTITUTIONAL_STORAGE_PROVIDER_NAME
 
-    logger.info(f'Delete all files except backup folder')
     try:
         utils.delete_all_files_except_backup(
             destination_first_project_id, destination_provider,
             cookies, location_id, destination_base_url)
     except Exception as e:
-        logger.error(f'Exception: {e}')
+        logger.error(f'Delete all files exception: {e}')
         raise ProcessError(f'Cannot delete files except backup folders')
 
 
@@ -568,7 +563,6 @@ def move_all_files_from_backup_folder_to_root(export_data_restore, destination_f
     destination_provider = INSTITUTIONAL_STORAGE_PROVIDER_NAME
     is_destination_addon_storage = destination_region.is_add_on_storage
 
-    logger.info(f'Move all files from the backup folder out and delete backup folder')
     try:
         if is_destination_addon_storage:
             move_folder_from_backup = partial(utils.move_addon_folder_from_backup)
@@ -584,8 +578,8 @@ def move_all_files_from_backup_folder_to_root(export_data_restore, destination_f
         if 'error' in response:
             # Error
             error_msg = response.get('error')
-            logger.error(f'Return error with response: {error_msg}')
+            logger.error(f'Move all files from back up error message: {error_msg}')
             raise ProcessError(f'Failed to move backup folder to root')
     except Exception as e:
-        logger.error(f'Exception: {e}')
+        logger.error(f'Move all files from back up exception: {e}')
         raise ProcessError(f'Failed to move backup folder to root')

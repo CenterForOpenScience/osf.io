@@ -172,7 +172,7 @@ def save_dropboxbusiness_credentials(institution, storage_name, provider_name):
     fm = dropboxbusiness_utils.get_two_addon_options(institution.id)
     if fm is None:
         institution = Institution.objects.get(id=institution.id)
-        logger.info(u'Institution({}) has no valid oauth keys.'.format(institution.name))
+        # logger.info(u'Institution({}) has no valid oauth keys.'.format(institution.name))
         return  # disabled
 
     f_option, m_option = fm
@@ -283,7 +283,7 @@ def validate_file_json(file_data, json_schema_file_name):
         jsonschema.validate(file_data, schema)
         return True
     except jsonschema.ValidationError as e:
-        logger.error(f'{e.message}')
+        logger.error(f'jsonschema.ValidationError: {e.message}')
         return False
     except jsonschema.SchemaError:
         return False
@@ -326,7 +326,7 @@ def upload_file(node_id, provider, file_parent_path, file_data, file_name, cooki
     upload_url = waterbutler_api_url_for(node_id, provider, path=file_parent_path, kind='file', name=file_name,
                                          _internal=base_url == WATERBUTLER_URL, base_url=base_url)
     try:
-        logger.debug(f'Upload url: {upload_url}')
+        # logger.debug(f'Upload url: {upload_url}')
         response = requests.put(upload_url,
                                 headers={'content-type': 'application/json'},
                                 cookies=cookies,
@@ -341,7 +341,7 @@ def update_existing_file(node_id, provider, file_path, file_data, cookies, base_
     upload_url = waterbutler_api_url_for(node_id, provider, path=file_path, kind='file',
                                          _internal=base_url == WATERBUTLER_URL, base_url=base_url)
     try:
-        logger.debug(f'Update url: {upload_url}')
+        # logger.debug(f'Update url: {upload_url}')
         response = requests.put(upload_url,
                                 headers={'content-type': 'application/json'},
                                 cookies=cookies,
