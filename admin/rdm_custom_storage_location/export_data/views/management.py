@@ -248,7 +248,7 @@ class DeleteExportDataView(ExportStorageLocationViewBaseView, View):
             for item in ExportData.objects.filter(id__in=list_export_data_delete, is_deleted=False):
                 response = item.delete_export_data_folder(cookies, cookie=cookie)
                 if response.status_code == 204:
-                    ExportData.objects.filter(id=item.id).delete()
+                    item.delete()
                 else:
                     raise SuspiciousOperation('Cannot connect to the export data storage location.')
         else:
