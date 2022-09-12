@@ -131,7 +131,6 @@ def restore_export_data_process(task, cookies, export_id, export_data_restore_id
         export_data_restore.update(task_id=task.request.id)
 
         export_data = ExportData.objects.filter(id=export_id, is_deleted=False)[0]
-        export_base_url = export_data.location.waterbutler_url
 
         # Get file which have same information between export data and database
         # File info file: /export_{process_start}/file_info_{institution_guid}_{process_start}.json
@@ -143,146 +142,27 @@ def restore_export_data_process(task, cookies, export_id, export_data_restore_id
             return {'message': 'Restore data successfully.'}
         destination_first_project_id = export_data_files[0].get('project', {}).get('id')
 
-        # Check destination storage type (bulk-mounted or add-on)
-        destination_region = export_data_restore.destination
-        is_destination_addon_storage = destination_region.is_add_on_storage
-        destination_base_url = destination_region.waterbutler_url
-        destination_provider = INSTITUTIONAL_STORAGE_PROVIDER_NAME
-
         check_if_restore_process_stopped(task, current_process_step)
         current_process_step = 1
         task.update_state(state='PENDING', meta={'current_restore_step': current_process_step})
-        try:
-            with transaction.atomic():
-                # Preload params to function
-                check_task_aborted_function = partial(
-                    check_if_restore_process_stopped,
-                    task=task,
-                    current_process_step=current_process_step)
 
-                # move all old data in restore destination storage to a folder to back up folder
-                if is_destination_addon_storage:
-                    move_folder_to_backup = partial(utils.move_addon_folder_to_backup)
-                else:
-                    move_folder_to_backup = partial(utils.move_bulk_mount_folder_to_backup)
-                response = move_folder_to_backup(
-                    destination_first_project_id,
-                    destination_provider,
-                    process_start=export_data_restore.process_start_timestamp,
-                    cookies=cookies,
-                    callback_log=False,
-                    base_url=destination_base_url,
-                    check_abort_task=check_task_aborted_function)
-                check_if_restore_process_stopped(task, current_process_step)
-                if response and 'error' in response:
-                    # Error
-                    error_msg = response.get('error')
-                    logger.error(f'Return error with response: {error_msg}')
-                    raise ProcessError(f'Failed to move files to backup folder.')
-        except Exception as e:
-            logger.error(f'Exception: {e}')
-            raise ProcessError(f'Failed to move files to backup folder.')
+        # Move all existing files/folders in destination to backup_{process_start} folder
+        move_all_files_to_backup_folder(task, current_process_step, destination_first_project_id, export_data_restore, cookies)
 
         current_process_step = 2
         task.update_state(state='PENDING', meta={'current_restore_step': current_process_step})
 
-        list_created_file_nodes = []
-        for file in export_data_files:
-            check_if_restore_process_stopped(task, current_process_step)
-
-            file_materialized_path = file.get('materialized_path')
-            file_versions = file.get('version')
-            file_project_id = file.get('project', {}).get('id')
-            file_tags = file.get('tags')
-            file_timestamp = file.get('timestamp', {})
-
-            # Sort file by version id
-            file_versions.sort(key=lambda k: k.get('identifier', 0))
-
-            for index, version in enumerate(file_versions):
-                try:
-                    check_if_restore_process_stopped(task, current_process_step)
-
-                    # Prepare file name and file path for uploading
-                    metadata = version.get('metadata', {})
-                    file_hash = metadata.get('sha256', metadata.get('md5'))
-                    version_id = version.get('identifier')
-                    if file_hash is None or version_id is None:
-                        # Cannot get path in export data storage, pass this file
-                        continue
-
-                    file_hash_path = f'/{export_data.export_data_folder_name}/{ExportData.EXPORT_DATA_FILES_FOLDER}/{file_hash}'
-
-                    # If the destination storage is add-on institutional storage:
-                    # - for past version files, rename and save each version as filename_{version} in '_version_files' folder
-                    # - the latest version is saved as the original
-                    if is_destination_addon_storage:
-                        is_file_not_latest_version = index < len(file_versions) - 1
-                        new_file_path = generate_new_file_path(
-                            file_materialized_path=file_materialized_path,
-                            version_id=version_id,
-                            is_file_not_latest_version=is_file_not_latest_version)
-                    else:
-                        new_file_path = file_materialized_path
-
-                    # Download file by version
-                    response = export_data.read_data_file_from_location(cookies, file_hash_path,
-                                                                        base_url=export_base_url)
-                    # logger.debug(f'Download file response: {response.status_code} - {response.content}')
-                    if response.status_code != 200:
-                        logger.error(f'Download error content: {response.content}')
-                        continue
-                    download_data = response.content
-
-                    # Upload downloaded file to new storage
-                    response_body = utils.upload_file_path(file_project_id, destination_provider, new_file_path,
-                                                           download_data, cookies, base_url=destination_base_url)
-                    if response_body is None:
-                        continue
-
-                    # Add info to DB
-                    response_id = response_body.get('data', {}).get('id')
-                    if response_id.startswith('osfstorage'):
-                        # If id is osfstorage/[_id] then get _id
-                        file_path_splits = response_id.split('/')
-                        # Check if path is file (/_id)
-                        if len(file_path_splits) == 2:
-                            file_node_id = file_path_splits[1]
-                            node_set = BaseFileNode.objects.filter(_id=file_node_id)
-                            if node_set.exists():
-                                node = node_set.first()
-                                list_created_file_nodes.append({
-                                    'node': node,
-                                    'file_tags': file_tags,
-                                    'file_timestamp': file_timestamp,
-                                    'project_id': file_project_id
-                                })
-                except Exception as e:
-                    logger.error(f'Download or upload exception: {e}')
-                    check_if_restore_process_stopped(task, current_process_step)
-                    # Did not download or upload, pass this file
-                    continue
+        # Download files from export data, then upload files to destination. Returns list of created file node in DB
+        list_created_file_nodes = copy_files_from_export_data_to_destination(task, current_process_step,
+                                                                             export_data_files, export_data_restore,
+                                                                             cookies)
 
         check_if_restore_process_stopped(task, current_process_step)
         current_process_step = 3
         task.update_state(state='PENDING', meta={'current_restore_step': current_process_step})
 
         # Add tags, timestamp to created file nodes
-        with transaction.atomic():
-            for item in list_created_file_nodes:
-                check_if_restore_process_stopped(task, current_process_step)
-
-                node = item.get('node')
-                file_tags = item.get('file_tags')
-                file_timestamp = item.get('file_timestamp')
-                project_id = item.get('project_id')
-
-                # Add tags to DB
-                add_tags_to_file_node(node, file_tags)
-
-                # Add timestamp to DB
-                add_timestamp_to_file_node(node, project_id, file_timestamp)
-            check_if_restore_process_stopped(task, current_process_step)
+        add_tag_and_timestamp_to_database(task, current_process_step, list_created_file_nodes)
 
         # Update process data with process_end timestamp and 'Completed' status
         export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
@@ -392,47 +272,15 @@ def restore_export_data_rollback_process(task, cookies, export_id, export_data_r
                 return {'message': 'Stop restore data successfully.'}
             destination_first_project_id = file_info_files[0].get('project', {}).get('id')
 
-            # Check destination storage type (bulk-mounted or add-on)
-            destination_region = export_data_restore.destination
-            is_destination_addon_storage = export_data_restore.destination.is_add_on_storage
-            destination_base_url = destination_region.waterbutler_url
-            destination_provider = INSTITUTIONAL_STORAGE_PROVIDER_NAME
-
             location_id = export_data.location.id
             # Delete files, except the backup folder.
             if process_step == 2 or process_step == 3:
-                logger.info(f'Delete all files except backup folder')
-                try:
-                    utils.delete_all_files_except_backup(
-                        destination_first_project_id, destination_provider,
-                        cookies, location_id, destination_base_url)
-                except Exception as e:
-                    logger.error(f'Exception: {e}')
-                    raise ProcessError(f'Cannot delete files except backup folders')
+                delete_all_files_except_backup_folder(export_data_restore, location_id, destination_first_project_id,
+                                                      cookies)
 
             # Move all files from the backup folder out and delete backup folder
             if 0 < process_step < 4:
-                logger.info(f'Move all files from the backup folder out and delete backup folder')
-                try:
-                    if is_destination_addon_storage:
-                        move_folder_from_backup = partial(utils.move_addon_folder_from_backup)
-                    else:
-                        move_folder_from_backup = partial(utils.move_bulk_mount_folder_from_backup)
-                    response = move_folder_from_backup(
-                        destination_first_project_id,
-                        destination_provider,
-                        process_start=export_data_restore.process_start_timestamp,
-                        cookies=cookies,
-                        callback_log=False,
-                        base_url=destination_base_url)
-                    if 'error' in response:
-                        # Error
-                        error_msg = response.get('error')
-                        logger.error(f'Return error with response: {error_msg}')
-                        raise ProcessError(f'Failed to move backup folder to root')
-                except Exception as e:
-                    logger.error(f'Exception: {e}')
-                    raise ProcessError(f'Failed to move backup folder to root')
+                move_all_files_from_backup_folder_to_root(export_data_restore, destination_first_project_id, cookies)
 
         export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
                                    status=ExportData.STATUS_STOPPED)
@@ -555,3 +403,189 @@ def generate_new_file_path(file_materialized_path, version_id, is_file_not_lates
         path_splits[len(path_splits) - 1] = versioned_file_name
         new_file_materialized_path = '/'.join(path_splits)
     return new_file_materialized_path
+
+
+def move_all_files_to_backup_folder(task, current_process_step, destination_first_project_id, export_data_restore, cookies):
+    try:
+        destination_region = export_data_restore.destination
+        is_destination_addon_storage = destination_region.is_add_on_storage
+        destination_base_url = destination_region.waterbutler_url
+        destination_provider = INSTITUTIONAL_STORAGE_PROVIDER_NAME
+        with transaction.atomic():
+            # Preload params to function
+            check_task_aborted_function = partial(
+                check_if_restore_process_stopped,
+                task=task,
+                current_process_step=current_process_step)
+
+            # move all old data in restore destination storage to a folder to back up folder
+            if is_destination_addon_storage:
+                move_folder_to_backup = partial(utils.move_addon_folder_to_backup)
+            else:
+                move_folder_to_backup = partial(utils.move_bulk_mount_folder_to_backup)
+            response = move_folder_to_backup(
+                destination_first_project_id,
+                destination_provider,
+                process_start=export_data_restore.process_start_timestamp,
+                cookies=cookies,
+                callback_log=False,
+                base_url=destination_base_url,
+                check_abort_task=check_task_aborted_function)
+            check_if_restore_process_stopped(task, current_process_step)
+            if response and 'error' in response:
+                # Error
+                error_msg = response.get('error')
+                logger.error(f'Return error with response: {error_msg}')
+                raise ProcessError(f'Failed to move files to backup folder.')
+    except Exception as e:
+        logger.error(f'Exception: {e}')
+        raise ProcessError(f'Failed to move files to backup folder.')
+
+
+def copy_files_from_export_data_to_destination(task, current_process_step, export_data_files, export_data_restore, cookies):
+    export_data = export_data_restore.export
+    export_base_url = export_data.waterbutler_url
+
+    destination_region = export_data_restore.destination
+    is_destination_addon_storage = destination_region.is_add_on_storage
+    destination_base_url = destination_region.waterbutler_url
+    destination_provider = INSTITUTIONAL_STORAGE_PROVIDER_NAME
+
+    list_created_file_nodes = []
+    for file in export_data_files:
+        check_if_restore_process_stopped(task, current_process_step)
+
+        file_materialized_path = file.get('materialized_path')
+        file_versions = file.get('version')
+        file_project_id = file.get('project', {}).get('id')
+        file_tags = file.get('tags')
+        file_timestamp = file.get('timestamp', {})
+
+        # Sort file by version id
+        file_versions.sort(key=lambda k: k.get('identifier', 0))
+
+        for index, version in enumerate(file_versions):
+            try:
+                check_if_restore_process_stopped(task, current_process_step)
+
+                # Prepare file name and file path for uploading
+                metadata = version.get('metadata', {})
+                file_hash = metadata.get('sha256', metadata.get('md5'))
+                version_id = version.get('identifier')
+                if file_hash is None or version_id is None:
+                    # Cannot get path in export data storage, pass this file
+                    continue
+
+                file_hash_path = f'/{export_data.export_data_folder_name}/{ExportData.EXPORT_DATA_FILES_FOLDER}/{file_hash}'
+
+                # If the destination storage is add-on institutional storage:
+                # - for past version files, rename and save each version as filename_{version} in '_version_files' folder
+                # - the latest version is saved as the original
+                if is_destination_addon_storage:
+                    is_file_not_latest_version = index < len(file_versions) - 1
+                    new_file_path = generate_new_file_path(
+                        file_materialized_path=file_materialized_path,
+                        version_id=version_id,
+                        is_file_not_latest_version=is_file_not_latest_version)
+                else:
+                    new_file_path = file_materialized_path
+
+                # Download file by version
+                response = export_data.read_data_file_from_location(cookies, file_hash_path,
+                                                                    base_url=export_base_url)
+                # logger.debug(f'Download file response: {response.status_code} - {response.content}')
+                if response.status_code != 200:
+                    logger.error(f'Download error content: {response.content}')
+                    continue
+                download_data = response.content
+
+                # Upload downloaded file to new storage
+                response_body = utils.upload_file_path(file_project_id, destination_provider, new_file_path,
+                                                       download_data, cookies, base_url=destination_base_url)
+                if response_body is None:
+                    continue
+
+                response_id = response_body.get('data', {}).get('id')
+                if response_id.startswith('osfstorage'):
+                    # If id is osfstorage/[_id] then get _id
+                    file_path_splits = response_id.split('/')
+                    # Check if path is file (/_id)
+                    if len(file_path_splits) == 2:
+                        file_node_id = file_path_splits[1]
+                        node_set = BaseFileNode.objects.filter(_id=file_node_id)
+                        if node_set.exists():
+                            node = node_set.first()
+                            list_created_file_nodes.append({
+                                'node': node,
+                                'file_tags': file_tags,
+                                'file_timestamp': file_timestamp,
+                                'project_id': file_project_id
+                            })
+            except Exception as e:
+                logger.error(f'Download or upload exception: {e}')
+                check_if_restore_process_stopped(task, current_process_step)
+                # Did not download or upload, pass this file
+                continue
+    return list_created_file_nodes
+
+
+def add_tag_and_timestamp_to_database(task, current_process_step, list_created_file_nodes):
+    with transaction.atomic():
+        for item in list_created_file_nodes:
+            check_if_restore_process_stopped(task, current_process_step)
+
+            node = item.get('node')
+            file_tags = item.get('file_tags')
+            file_timestamp = item.get('file_timestamp')
+            project_id = item.get('project_id')
+
+            # Add tags to DB
+            add_tags_to_file_node(node, file_tags)
+
+            # Add timestamp to DB
+            add_timestamp_to_file_node(node, project_id, file_timestamp)
+        check_if_restore_process_stopped(task, current_process_step)
+
+
+def delete_all_files_except_backup_folder(export_data_restore, location_id, destination_first_project_id, cookies):
+    destination_region = export_data_restore.destination
+    destination_base_url = destination_region.waterbutler_url
+    destination_provider = INSTITUTIONAL_STORAGE_PROVIDER_NAME
+
+    logger.info(f'Delete all files except backup folder')
+    try:
+        utils.delete_all_files_except_backup(
+            destination_first_project_id, destination_provider,
+            cookies, location_id, destination_base_url)
+    except Exception as e:
+        logger.error(f'Exception: {e}')
+        raise ProcessError(f'Cannot delete files except backup folders')
+
+
+def move_all_files_from_backup_folder_to_root(export_data_restore, destination_first_project_id, cookies):
+    destination_region = export_data_restore.destination
+    destination_base_url = destination_region.waterbutler_url
+    destination_provider = INSTITUTIONAL_STORAGE_PROVIDER_NAME
+    is_destination_addon_storage = destination_region.is_add_on_storage
+
+    logger.info(f'Move all files from the backup folder out and delete backup folder')
+    try:
+        if is_destination_addon_storage:
+            move_folder_from_backup = partial(utils.move_addon_folder_from_backup)
+        else:
+            move_folder_from_backup = partial(utils.move_bulk_mount_folder_from_backup)
+        response = move_folder_from_backup(
+            destination_first_project_id,
+            destination_provider,
+            process_start=export_data_restore.process_start_timestamp,
+            cookies=cookies,
+            callback_log=False,
+            base_url=destination_base_url)
+        if 'error' in response:
+            # Error
+            error_msg = response.get('error')
+            logger.error(f'Return error with response: {error_msg}')
+            raise ProcessError(f'Failed to move backup folder to root')
+    except Exception as e:
+        logger.error(f'Exception: {e}')
+        raise ProcessError(f'Failed to move backup folder to root')
