@@ -16,6 +16,7 @@ from api.nodes.serializers import (
     NodeContributorsSerializer,
     NodeContributorsCreateSerializer,
     NodeContributorDetailSerializer,
+    RegistrationSchemaRelationshipField,
 )
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from osf.exceptions import DraftRegistrationStateError
@@ -142,6 +143,13 @@ class DraftRegistrationDetailSerializer(DraftRegistrationSerializer, DraftRegist
     Overrides DraftRegistrationLegacySerializer to make id required.
     registration_supplement, node, cannot be changed after draft has been created.
     """
+
+    registration_schema = RegistrationSchemaRelationshipField(
+        related_view='schemas:registration-schema-detail',
+        related_view_kwargs={'schema_id': '<registration_schema._id>'},
+        required=False,
+        read_only=False,
+    )
 
     links = LinksField({
         'self': 'get_self_url',
