@@ -251,4 +251,3 @@ class DraftRegistrationContributorDetailSerializer(NodeContributorDetailSerializ
     """
     id = IDField(required=True, source='_id')
     index = ser.IntegerField(required=False, read_only=False, source='_order')
-
