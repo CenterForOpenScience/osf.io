@@ -265,7 +265,7 @@ def restore_export_data_rollback_process(task, cookies, export_id, export_data_r
             # File info file: /export_{process_start}/file_info_{institution_guid}_{process_start}.json
             file_info_files = read_file_info_and_check_schema(export_data, cookies)
             if file_info_files is None:
-                raise ProcessError(f'Cannot get file infomation list')
+                raise ProcessError(f'Cannot get file information list')
 
             if len(file_info_files) == 0:
                 export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
@@ -367,12 +367,12 @@ def read_file_info_and_check_schema(export_data, cookies):
     try:
         response = export_data.read_file_info_from_location(cookies)
         if response.status_code != 200:
-            raise ProcessError(f'Cannot get file infomation list')
+            raise ProcessError(f'Cannot get file information list')
         response_body = response.content
         response_file_content = response_body.decode('utf-8')
         response_file_json = json.loads(response_file_content)
-    except Exception as e:
-        raise ProcessError(f'Cannot get file infomation list')
+    except Exception :
+        raise ProcessError(f'Cannot get file information list')
 
     # Validate file info schema
     is_file_valid = utils.validate_file_json(response_file_json, 'file-info-schema.json')
