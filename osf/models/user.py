@@ -576,7 +576,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         Nodes where user is a bibliographic contributor (group membership not factored in)
         """
-        return self.nodes.filter(is_deleted=False, contributor__visible=True, type__in=['osf.node', 'osf.registration'])
+        return self.nodes.filter(is_deleted=False, contributor__visible=True, contributor__user=self, type__in=['osf.node', 'osf.registration'])
 
     @property
     def all_nodes(self):
