@@ -143,6 +143,7 @@ class DraftRegistrationDetailSerializer(DraftRegistrationSerializer, DraftRegist
     Overrides DraftRegistrationLegacySerializer to make id required.
     registration_supplement, node, cannot be changed after draft has been created.
     """
+    id = IDField(source='_id', required=True)
 
     registration_schema = RegistrationSchemaRelationshipField(
         related_view='schemas:registration-schema-detail',
