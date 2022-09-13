@@ -16,7 +16,9 @@ from api.nodes.serializers import (
     NodeContributorsSerializer,
     NodeContributorsCreateSerializer,
     NodeContributorDetailSerializer,
+    RegistrationSchemaRelationshipField,
 )
+
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from osf.exceptions import DraftRegistrationStateError
 from website import settings
@@ -45,6 +47,13 @@ class DraftRegistrationSerializer(DraftRegistrationLegacySerializer, Taxonomizab
     category = ser.ChoiceField(required=False, choices=category_choices, help_text='Choices: ' + category_choices_string)
     tags = ValuesListField(attr_name='name', child=ser.CharField(), required=False)
     node_license = NodeLicenseSerializer(required=False, source='license')
+
+    registration_schema = RegistrationSchemaRelationshipField(
+        related_view='schemas:registration-schema-detail',
+        related_view_kwargs={'schema_id': '<registration_schema._id>'},
+        required=True,
+        read_only=False,
+    )
 
     links = LinksField({
         'self': 'get_absolute_url',
@@ -142,6 +151,7 @@ class DraftRegistrationDetailSerializer(DraftRegistrationSerializer, DraftRegist
     Overrides DraftRegistrationLegacySerializer to make id required.
     registration_supplement, node, cannot be changed after draft has been created.
     """
+    id = IDField(source='_id', required=True)
 
     links = LinksField({
         'self': 'get_self_url',
@@ -155,6 +165,13 @@ class DraftRegistrationDetailSerializer(DraftRegistrationSerializer, DraftRegist
                 'draft_id': self.context['request'].parser_context['kwargs']['draft_id'],
             },
         )
+
+    registration_schema = RegistrationSchemaRelationshipField(
+        related_view='schemas:registration-schema-detail',
+        related_view_kwargs={'schema_id': '<registration_schema._id>'},
+        required=False,
+        read_only=False,
+    )
 
     def update(self, draft, validated_data):
         draft = super(DraftRegistrationDetailSerializer, self).update(draft, validated_data)
