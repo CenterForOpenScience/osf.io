@@ -26,8 +26,9 @@ class NodeCountReporter(DailyReporter):
         public_query = Q(is_public=True)
         private_query = Q(is_public=False)
 
-        daily_query = Q(created__date=date)
+        created_today_query = Q(created__date=date)
         retracted_query = Q(retraction__isnull=False)
+        retracted_today_query = Q(retraction__date_retracted__date=date)
 
         # `embargoed` used private status to determine embargoes, but old registrations could be private and unapproved registrations can also be private
         # `embargoed_v2` uses future embargo end dates on root
@@ -43,10 +44,10 @@ class NodeCountReporter(DailyReporter):
                 total_excluding_spam=node_qs.filter(exclude_spam).count(),
                 public=node_qs.filter(public_query).count(),
                 private=node_qs.filter(private_query).count(),
-                total_daily=node_qs.filter(daily_query).count(),
-                total_daily_excluding_spam=node_qs.filter(daily_query).filter(exclude_spam).count(),
-                public_daily=node_qs.filter(public_query & daily_query).count(),
-                private_daily=node_qs.filter(private_query & daily_query).count(),
+                total_daily=node_qs.filter(created_today_query).count(),
+                total_daily_excluding_spam=node_qs.filter(created_today_query).filter(exclude_spam).count(),
+                public_daily=node_qs.filter(public_query & created_today_query).count(),
+                private_daily=node_qs.filter(private_query & created_today_query).count(),
             ),
             # Projects - the number of top-level only projects
             projects=NodeRunningTotals(
@@ -54,10 +55,10 @@ class NodeCountReporter(DailyReporter):
                 total_excluding_spam=node_qs.get_roots().filter(exclude_spam).count(),
                 public=node_qs.filter(public_query).get_roots().count(),
                 private=node_qs.filter(private_query).get_roots().count(),
-                total_daily=node_qs.filter(daily_query).get_roots().count(),
-                total_daily_excluding_spam=node_qs.filter(daily_query).get_roots().filter(exclude_spam).count(),
-                public_daily=node_qs.filter(public_query & daily_query).get_roots().count(),
-                private_daily=node_qs.filter(private_query & daily_query).get_roots().count(),
+                total_daily=node_qs.filter(created_today_query).get_roots().count(),
+                total_daily_excluding_spam=node_qs.filter(created_today_query).get_roots().filter(exclude_spam).count(),
+                public_daily=node_qs.filter(public_query & created_today_query).get_roots().count(),
+                private_daily=node_qs.filter(private_query & created_today_query).get_roots().count(),
             ),
             # Registered Nodes - the number of registered projects and components
             registered_nodes=RegistrationRunningTotals(
@@ -66,11 +67,11 @@ class NodeCountReporter(DailyReporter):
                 embargoed=registration_qs.filter(private_query).count(),
                 embargoed_v2=registration_qs.filter(private_query & embargo_v2_query).count(),
                 withdrawn=registration_qs.filter(retracted_query).count(),
-                total_daily=registration_qs.filter(daily_query).count(),
-                public_daily=registration_qs.filter(public_query & daily_query).count(),
-                embargoed_daily=registration_qs.filter(private_query & daily_query).count(),
-                embargoed_v2_daily=registration_qs.filter(private_query & daily_query & embargo_v2_query).count(),
-                withdrawn_daily=registration_qs.filter(retracted_query & daily_query).count(),
+                total_daily=registration_qs.filter(created_today_query).count(),
+                public_daily=registration_qs.filter(public_query & created_today_query).count(),
+                embargoed_daily=registration_qs.filter(private_query & created_today_query).count(),
+                embargoed_v2_daily=registration_qs.filter(private_query & created_today_query & embargo_v2_query).count(),
+                withdrawn_daily=registration_qs.filter(retracted_query & retracted_today_query).count(),
 
             ),
             # Registered Projects - the number of registered top level projects
@@ -80,11 +81,11 @@ class NodeCountReporter(DailyReporter):
                 embargoed=registration_qs.filter(private_query).get_roots().count(),
                 embargoed_v2=registration_qs.filter(private_query & embargo_v2_query).get_roots().count(),
                 withdrawn=registration_qs.filter(retracted_query).get_roots().count(),
-                total_daily=registration_qs.filter(daily_query).get_roots().count(),
-                public_daily=registration_qs.filter(public_query & daily_query).get_roots().count(),
-                embargoed_daily=registration_qs.filter(private_query & daily_query).get_roots().count(),
-                embargoed_v2_daily=registration_qs.filter(private_query & daily_query & embargo_v2_query).get_roots().count(),
-                withdrawn_daily=registration_qs.filter(retracted_query & daily_query).get_roots().count(),
+                total_daily=registration_qs.filter(created_today_query).get_roots().count(),
+                public_daily=registration_qs.filter(public_query & created_today_query).get_roots().count(),
+                embargoed_daily=registration_qs.filter(private_query & created_today_query).get_roots().count(),
+                embargoed_v2_daily=registration_qs.filter(private_query & created_today_query & embargo_v2_query).get_roots().count(),
+                withdrawn_daily=registration_qs.filter(retracted_query & retracted_today_query).get_roots().count(),
             ),
         )
 
