@@ -2,6 +2,7 @@ import logging
 import requests
 
 from osf.metrics import PreprintSummaryReportV0
+from website import settings
 from ._base import DailyReporter
 
 logger = logging.getLogger(__name__)
@@ -46,7 +47,7 @@ class PreprintCountReporter(DailyReporter):
         for preprint_provider in PreprintProvider.objects.all():
             name = preprint_provider.name if preprint_provider.name != 'Open Science Framework' else 'OSF'
             elastic_query['query']['bool']['must'][1]['match']['sources'] = name
-            resp = requests.post('https://share.osf.io/api/v2/search/creativeworks/_search', json=elastic_query).json()
+            resp = requests.post(f'{settings.SHARE_URL}api/v2/search/creativeworks/_search', json=elastic_query).json()
             reports.append(
                 PreprintSummaryReportV0(
                     report_date=date,
