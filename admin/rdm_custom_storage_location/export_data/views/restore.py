@@ -371,7 +371,7 @@ def read_file_info_and_check_schema(export_data, cookies):
         response_body = response.content
         response_file_content = response_body.decode('utf-8')
         response_file_json = json.loads(response_file_content)
-    except Exception :
+    except Exception:
         raise ProcessError(f'Cannot get file information list')
 
     # Validate file info schema
