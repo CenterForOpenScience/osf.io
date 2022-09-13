@@ -1140,7 +1140,7 @@ function _uploadFolderEvent(event, item, mode, col) {
     tb.dropzone.hiddenFileInput.addEventListener('change', _onchange);
 
     function _onchange() {
-        let parent = tb.multiselected()[0];
+        var node_parent = tb.multiselected()[0];
         var root_parent = tb.multiselected()[0];
         var files = [];
         var total_files_size = 0;
@@ -1156,13 +1156,13 @@ function _uploadFolderEvent(event, item, mode, col) {
         }
 
         // calculate total files size in folder
-        for (let i = 0; i < files.length; i++) {
+        for (var i = 0; i < files.length; i++) {
             total_files_size += files[i].size;
         }
 
-        parent.open = true;
+        node_parent.open = true;
         total_files_size = parseFloat(total_files_size).toFixed(2);
-        let quota = null;
+        var quota = null;
 
         if (!item.data.provider) {
             return;
@@ -1191,14 +1191,14 @@ function _uploadFolderEvent(event, item, mode, col) {
         var created_path = [];
 
         // Start
-        parent = _pushObject(parent, 0, files, files[0], 0, _pushObject);
+        node_parent = _pushObject(node_parent, 0, files, files[0], 0, _pushObject);
 
-        function _pushObject(parent, index, list_paths, file, file_index, next) {
-            let _obj, folder_name;
+        function _pushObject(node_parent, index, list_paths, file, file_index, next) {
+            var _obj, folder_name;
             // Stop
             if (!file) {
                 // console.log('Stop');
-                return parent;
+                return node_parent;
             }
             // get item object
             if (index >=0 && index < list_paths.length) {
@@ -1211,13 +1211,13 @@ function _uploadFolderEvent(event, item, mode, col) {
                     tb.dropzoneItemCache = tb.multiselected()[0];
                     tb.dropzone.addFile(file);
                     // next file
-                    let next_file_index = ++file_index;
-                    return _pushObject(parent, 0, files, files[next_file_index], next_file_index, _pushObject);
+                    var next_file_index = ++file_index;
+                    return _pushObject(node_parent, 0, files, files[next_file_index], next_file_index, _pushObject);
                 }
 
                 // change list_paths of File obj
-                let list_paths = file.webkitRelativePath.split('/');
-                return _pushObject(parent, 0, list_paths, file, file_index, _pushObject);
+                var list_paths = file.webkitRelativePath.split('/');
+                return _pushObject(node_parent, 0, list_paths, file, file_index, _pushObject);
             }
 
             // else, it is folder and file
@@ -1225,50 +1225,64 @@ function _uploadFolderEvent(event, item, mode, col) {
             if (file.name === folder_name) {
                 // next file
                 // console.log(folder_name, parent && parent.data.name);
-                return _pushFile(parent, file, file_index);
+                return _pushFile(node_parent, file, file_index);
             }
             // Create each folder detected from file path
             // console.log(folder_name, parent && parent.data.name);
-            return _pushFolder(parent, index, list_paths, file, file_index, next);
+            return _pushFolder(node_parent, index, list_paths, file, file_index, next);
         }
 
-        function _pushFile(parent, file, file_index) {
-            parent.open = true;
-            tb.dropzoneItemCache = parent;
+        function _pushFile(node_parent, file, file_index) {
+            node_parent.open = true;
+            tb.dropzoneItemCache = node_parent;
             tb.dropzone.addFile(file);
             // console.log('Pushed');
             // next file
-            let next_file_index = ++file_index;
+            var next_file_index = ++file_index;
             return _pushObject(root_parent, 0, files, files[next_file_index], next_file_index, _pushObject);
         }
 
-        function _pushFolder(parent, index, list_paths, file, file_index, next) {
-            let folder_name;
+        function _pushFolder(node_parent, index, list_paths, file, file_index, next) {
+            var folder_name;
             if (index >=0 && index < list_paths.length) {
                 folder_name = list_paths[index];
             }
-            let currentFolder = created_folders.find(x => x.name === folder_name);
-            let currentFolderPath = '/' + folder_name + '/';
+            // var currentFolder = created_folders.find(x => x.name === folder_name);
+            var currentFolder = null;
+            for(var i = 0; i < created_folders.length; i++){
+                if(created_folders[i].name === folder_name){
+                    currentFolder = created_folders[i];
+                    break;
+                }
+            }
+            var currentFolderPath = '/' + folder_name + '/';
 
-            parent.open = true;
+            node_parent.open = true;
 
-            if (parent.data.materialized) {
-                currentFolderPath = parent.data.materialized + folder_name + '/';
+            if (node_parent.data.materialized) {
+                currentFolderPath = node_parent.data.materialized + folder_name + '/';
             }
 
             // check folder is created
-            let child = parent.children.find((e) => {
-                return e.data.materialized === currentFolderPath;
-            });
+            // var child = node_parent.children.find((e) => {
+            //     return e.data.materialized === currentFolderPath;
+            // });
+            var child = null;
+            for(var i = 0; i < node_parent.children.length; i++){
+                if(node_parent.children[i].data.materialized === currentFolderPath){
+                    child = node_parent.children[i];
+                    break;
+                }
+            }
             if (!!child) {
                 // console.log('child', child);
-                let next_folder_index = ++index;
+                var next_folder_index = ++index;
                 return next(child, next_folder_index, list_paths, file, file_index, next);
             }
 
             if (currentFolder && created_path.includes(currentFolderPath)) {
                 // console.log('currentFolder.parent', currentFolder.parent);
-                let next_folder_index = ++index;
+                var next_folder_index = ++index;
                 return next(currentFolder.parent, next_folder_index, list_paths, file, file_index, next);
             }
 
@@ -1276,12 +1290,12 @@ function _uploadFolderEvent(event, item, mode, col) {
             // console.log('Creating');
 
             // prepare data for request new folder
-            let extra = {};
-            let path = parent.data.path || '/';
-            let options = {name: folder_name, kind: 'folder', waterbutlerURL: parent.data.waterbutlerURL};
-            if ((parent.data.provider === 'github') || (parent.data.provider === 'gitlab')) {
-                extra.branch = parent.data.branch;
-                options.branch = parent.data.branch;
+            var extra = {};
+            var path = node_parent.data.path || '/';
+            var options = {name: folder_name, kind: 'folder', waterbutlerURL: node_parent.data.waterbutlerURL};
+            if ((node_parent.data.provider === 'github') || (node_parent.data.provider === 'gitlab')) {
+                extra.branch = node_parent.data.branch;
+                options.branch = node_parent.data.branch;
             }
 
             // call api for create folder
@@ -1289,23 +1303,23 @@ function _uploadFolderEvent(event, item, mode, col) {
                 method: 'PUT',
                 background: true,
                 config: $osf.setXHRAuthorization,
-                url: waterbutler.buildCreateFolderUrl(path, parent.data.provider, parent.data.nodeId, options, extra)
+                url: waterbutler.buildCreateFolderUrl(path, node_parent.data.provider, node_parent.data.nodeId, options, extra)
             }).then(function (item) {
                 item = tb.options.lazyLoadPreprocess.call(this, item).data;
-                inheritFromParent({data: item}, parent, ['branch']);
-                item = tb.createItem(item, parent.id);
-                parent = item;
-                orderFolder.call(tb, parent);
+                inheritFromParent({data: item}, node_parent, ['branch']);
+                item = tb.createItem(item, node_parent.id);
+                node_parent = item;
+                orderFolder.call(tb, node_parent);
 
                 // store folder is created
                 created_folders.push({
                     'name': folder_name,
-                    'parent': parent,
+                    'node_parent': node_parent,
                 });
                 // console.log('Created');
                 // nest folder
-                let next_folder_index = ++index;
-                return next(parent, next_folder_index, list_paths, file, file_index, next);
+                var next_folder_index = ++index;
+                return next(node_parent, next_folder_index, list_paths, file, file_index, next);
             }, function (data) {
                 if (data && data.code === 409) {
                     $osf.growl(data.message);
