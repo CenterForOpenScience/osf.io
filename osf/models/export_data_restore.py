@@ -34,6 +34,7 @@ class ExportDataRestore(base.BaseModel):
     task_id = models.CharField(max_length=255, null=True, blank=True)
 
     class Meta:
+        db_table = "osf_export_data_restore"
         unique_together = ('export', 'destination', 'process_start')
 
     def __repr__(self):

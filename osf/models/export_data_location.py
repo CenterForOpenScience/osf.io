@@ -22,6 +22,7 @@ class ExportDataLocation(base.BaseModel):
     waterbutler_settings = DateTimeAwareJSONField(default=dict)
 
     class Meta:
+        db_table = "osf_export_data_location"
         unique_together = ('institution_guid', 'name')
         ordering = ['pk']
 
