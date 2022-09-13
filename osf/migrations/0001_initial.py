@@ -148,7 +148,7 @@ class Migration(migrations.Migration):
                 ('additional_metadata', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder, null=True)),
             ],
             options={
-                'permissions': (('view_node', 'Can view node details'), ('read_node', 'Can read the node'), ('write_node', 'Can edit the node'), ('admin_node', 'Can manage the node')),
+                'permissions': (('read_node', 'Can read the node'), ('write_node', 'Can edit the node'), ('admin_node', 'Can manage the node')),
                 'base_manager_name': 'objects',
             },
             bases=(dirtyfields.dirtyfields.DirtyFieldsMixin, osf.models.mixins.CommentableMixin, models.Model, osf.models.base.QuerySetExplainMixin),
