@@ -489,7 +489,6 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
                 # Download file by version
                 response = export_data.read_data_file_from_location(cookies, file_hash_path,
                                                                     base_url=export_base_url)
-                # logger.debug(f'Download file response: {response.status_code} - {response.content}')
                 if response.status_code != 200:
                     logger.error(f'Download error: {response.content}')
                     continue

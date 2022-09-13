@@ -28,7 +28,6 @@ from osf.models import (
     ExportData,
     ExportDataRestore,
     ExportDataLocation,
-    Institution,
     ExternalAccount
 )
 from website.settings import WATERBUTLER_URL
@@ -50,6 +49,7 @@ __all__ = [
     'count_files_ng_ok',
 ]
 ANY_BACKUP_FOLDER_REGEX = '^\\/backup_\\d{8,13}\\/.*$'
+
 
 def write_json_file(json_data, output_file):
     """Write json data to a file
@@ -171,8 +171,7 @@ def save_dropboxbusiness_credentials(institution, storage_name, provider_name):
 
     fm = dropboxbusiness_utils.get_two_addon_options(institution.id)
     if fm is None:
-        institution = Institution.objects.get(id=institution.id)
-        # logger.info(u'Institution({}) has no valid oauth keys.'.format(institution.name))
+        # Institution has no valid oauth keys.
         return  # disabled
 
     f_option, m_option = fm
@@ -187,15 +186,7 @@ def save_dropboxbusiness_credentials(institution, storage_name, provider_name):
         team_info = dropboxbusiness_utils.TeamInfo(f_token, m_token, connecttest=True, admin=True, groups=True)
         admin_group, admin_dbmid_list = dropboxbusiness_utils.get_current_admin_group_and_sync(team_info)
         admin_dbmid = dropboxbusiness_utils.get_current_admin_dbmid(m_option, admin_dbmid_list)
-        # team_name = team_info.name
-        # fmt = six.u(dropboxbusiness_settings.TEAM_FOLDER_NAME_FORMAT)
-        # team_folder_name = fmt.format(title='Location', guid=institution.guid)
-        # fmt = six.u(dropboxbusiness_settings.GROUP_NAME_FORMAT)
-        # group_name = fmt.format(title='Location', guid=institution.guid)
         team_folder_id = list(team_info.team_folders.keys())[0]
-        # member_emails = team_info.dbmid_to_email.values()
-        # team_folder_id, group_id = dropboxbusiness_utils.create_team_folder(
-        #     f_token, m_token, admin_dbmid, team_folder_name, group_name, member_emails, admin_group, team_name)
     except Exception:
         logger.exception('Dropbox Business API Error')
         raise
@@ -272,9 +263,14 @@ def save_nextcloudinstitutions_credentials(
         provider, extended_data=extended_data)
 
 
-def check_for_any_running_restore_process(destination_id):
-    return ExportDataRestore.objects.filter(destination_id=destination_id).exclude(
-        Q(status=ExportData.STATUS_STOPPED) | Q(status=ExportData.STATUS_COMPLETED) | Q(status=ExportData.STATUS_ERROR)).exists()
+def validate_exported_data(data_json, schema_filename='file-info-schema.json'):
+    try:
+        schema = from_json(schema_filename)
+        jsonschema.validate(data_json, schema)
+        return True
+    except jsonschema.ValidationError as e:
+        logger.error(f'jsonschema.ValidationError: {e}')
+        return False
 
 
 def validate_file_json(file_data, json_schema_file_name):
@@ -287,6 +283,153 @@ def validate_file_json(file_data, json_schema_file_name):
         return False
     except jsonschema.SchemaError:
         return False
+
+
+def process_data_information(list_data):
+    list_data_version = []
+    for item in list_data:
+        for file_version in item['version']:
+            current_data = {**item, **file_version}
+            del current_data['version']
+            list_data_version.append(current_data)
+    return list_data_version
+
+
+def float_or_none(x):
+    try:
+        return float(x)
+    except ValueError:
+        return None
+
+
+def deep_diff(x, y, parent_key=None, exclude_keys=None, epsilon_keys=None):
+    """
+    Find the difference between 2 dictionary
+    Take the deep diff of JSON-like dictionaries
+    No warranties when keys, or values are None
+    """
+    EPSILON = 0.5
+    rho = 1 - EPSILON
+
+    if epsilon_keys is None:
+        epsilon_keys = []
+    if exclude_keys is None:
+        exclude_keys = []
+
+    if x == y:
+        return None
+
+    if parent_key in epsilon_keys:
+        xfl, yfl = float_or_none(x), float_or_none(y)
+        if xfl and yfl and xfl * yfl >= 0 and rho * xfl <= yfl and rho * yfl <= xfl:
+            return None
+
+    if type(x) != type(y) or type(x) not in [list, dict]:
+        return x, y
+
+    if type(x) == dict:
+        d = {}
+        for k in x.keys() ^ y.keys():
+            if k in exclude_keys:
+                continue
+            if k in x:
+                d[k] = (deepcopy(x[k]), None)
+            else:
+                d[k] = (None, deepcopy(y[k]))
+
+        for k in x.keys() & y.keys():
+            if k in exclude_keys:
+                continue
+
+            next_d = deep_diff(x[k], y[k], parent_key=k, exclude_keys=exclude_keys, epsilon_keys=epsilon_keys)
+            if next_d is None:
+                continue
+
+            d[k] = next_d
+
+        return d if d else None
+
+    # assume a list:
+    d = [None] * max(len(x), len(y))
+    flipped = False
+    if len(x) > len(y):
+        flipped = True
+        x, y = y, x
+
+    for i, x_val in enumerate(x):
+        if flipped:
+            d[i] = deep_diff(y[i], x_val, parent_key=i, exclude_keys=exclude_keys, epsilon_keys=epsilon_keys)
+        else:
+            d[i] = deep_diff(x_val, y[i], parent_key=i, exclude_keys=exclude_keys, epsilon_keys=epsilon_keys)
+
+    for i in range(len(x), len(y)):
+        d[i] = (y[i], None) if flipped else (None, y[i])
+
+    return None if all(map(lambda z: z is None, d)) else d
+
+
+def check_diff_between_version(list_version_a, list_version_b, parent_key=None, exclude_keys=None, epsilon_keys=None):
+    for i in range(len(list_version_a)):
+        if list_version_a[i]['identifier'] != list_version_b[i]['identifier']:
+            return True, 'Missing file version', list_version_b[i]
+        check_diff = deep_diff(list_version_a[i], list_version_b[i], parent_key=parent_key, exclude_keys=exclude_keys, epsilon_keys=epsilon_keys)
+        if check_diff:
+            list_diff = list(check_diff)
+            text_error = '"' + ', '.join(list_diff) + '" not match'
+            return True, text_error, list_version_a[i]
+        return False, '', None
+
+
+def count_files_ng_ok(exported_file_versions, storage_file_versions, exclude_keys=None):
+    exported_file_versions = sorted(exported_file_versions, key=lambda kv: kv['materialized_path'])
+    storage_file_versions = sorted(storage_file_versions, key=lambda kv: kv['materialized_path'])
+    data = {
+        'ng': 0,
+        'ok': 0,
+    }
+    list_file_ng = []
+    count_files = 0
+    for file_a in exported_file_versions:
+        version_identifier_a = file_a['identifier']
+        materialized_path_a = file_a.get('materialized_path')
+
+        file_b = next((
+            file for file in storage_file_versions
+            if file.get('materialized_path') == materialized_path_a
+               and file.get('identifier') == version_identifier_a
+        ), None)
+        if file_b:
+            is_diff, message, file_version = check_diff_between_version([file_a], [file_b], exclude_keys=exclude_keys)
+            if not is_diff:
+                data['ok'] += 1
+            else:
+                data['ng'] += 1
+                ng_content = {
+                    'path': materialized_path_a,
+                    'size': file_a['size'],
+                    'version_id': file_a['identifier'],
+                    'reason': message,
+                }
+                list_file_ng.append(ng_content)
+            count_files += 1
+        else:
+            data['ng'] += 1
+            ng_content = {
+                'path': materialized_path_a,
+                'size': file_a['size'],
+                'version_id': file_a.get('identifier', 0),
+                'reason': 'File is not exist',
+            }
+            list_file_ng.append(ng_content)
+            count_files += 1
+    data['total'] = count_files
+    data['list_file_ng'] = list_file_ng if len(list_file_ng) <= 10 else list_file_ng[:10]
+    return data
+
+
+def check_for_any_running_restore_process(destination_id):
+    return ExportDataRestore.objects.filter(destination_id=destination_id).exclude(
+        Q(status=ExportData.STATUS_STOPPED) | Q(status=ExportData.STATUS_COMPLETED) | Q(status=ExportData.STATUS_ERROR)).exists()
 
 
 def get_file_data(node_id, provider, file_path, cookies, base_url=WATERBUTLER_URL,
@@ -306,7 +449,6 @@ def get_file_data(node_id, provider, file_path, cookies, base_url=WATERBUTLER_UR
 
 
 def create_folder(node_id, provider, parent_path, folder_name, cookies, callback_log=False, base_url=WATERBUTLER_URL):
-    # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
     kwargs = {
         'kind': 'folder',
         'callback_log': callback_log,
@@ -326,12 +468,10 @@ def upload_file(node_id, provider, file_parent_path, file_data, file_name, cooki
     upload_url = waterbutler_api_url_for(node_id, provider, path=file_parent_path, kind='file', name=file_name,
                                          _internal=base_url == WATERBUTLER_URL, base_url=base_url)
     try:
-        # logger.debug(f'Upload url: {upload_url}')
         response = requests.put(upload_url,
                                 headers={'content-type': 'application/json'},
                                 cookies=cookies,
                                 data=file_data)
-        # logger.debug(f'Upload response: {response.status_code} - {response.content}')
         return response.json() if response.status_code == 201 else None, response.status_code
     except Exception:
         return None, None
@@ -341,12 +481,10 @@ def update_existing_file(node_id, provider, file_path, file_data, cookies, base_
     upload_url = waterbutler_api_url_for(node_id, provider, path=file_path, kind='file',
                                          _internal=base_url == WATERBUTLER_URL, base_url=base_url)
     try:
-        # logger.debug(f'Update url: {upload_url}')
         response = requests.put(upload_url,
                                 headers={'content-type': 'application/json'},
                                 cookies=cookies,
                                 data=file_data)
-        # logger.debug(f'Update response: {response.status_code} - {response.content}')
         return response.json() if response.status_code == 200 else None, response.status_code
     except Exception:
         return None, None
@@ -412,8 +550,6 @@ def move_file(node_id, provider, source_file_path, destination_file_path, cookie
     move_old_data_url = waterbutler_api_url_for(
         node_id, provider, path=source_file_path, _internal=base_url == WATERBUTLER_URL,
         base_url=base_url, callback_log=callback_log)
-    # logger.debug(f'move_old_data_url {move_old_data_url}')
-    # logger.debug(f'destination_file_path: {destination_file_path}')
     if is_addon_storage:
         # Add on storage: move whole source path to root and rename to destination path
         destination_file_path = destination_file_path[1:] if destination_file_path.startswith('/') \
@@ -549,7 +685,8 @@ def get_all_file_paths_in_addon_storage(node_id, provider, file_path, cookies, b
                         pattern = re.compile(exclude_path_regex)
                         if pattern.match(materialized_path):
                             continue
-                except Exception:
+                except Exception as e:
+                    logger.error(f'Exception: {e}')
                     continue
 
                 if kind == 'file':
@@ -651,8 +788,7 @@ def move_bulk_mount_folder_from_backup(node_id, provider, process_start, cookies
         return {'error': error_message}
 
     # OSF storage: Delete backup folder after moving
-    delete_paths(node_id, provider, [backup_path],
-                 cookies, callback_log, base_url)
+    delete_paths(node_id, provider, [backup_path], cookies, callback_log, base_url)
     return {}
 
 
@@ -683,7 +819,8 @@ def get_all_child_paths_in_bulk_mount_storage(node_id, provider, file_materializ
                                     pattern = re.compile(exclude_path_regex)
                                     if pattern.match(materialized_path):
                                         continue
-                            except Exception:
+                            except Exception as e:
+                                logger.error(f'Exception: {e}')
                                 continue
                             list_file_path.append((path, materialized_path))
                         return list_file_path, path_from_args
@@ -756,7 +893,8 @@ def delete_all_files_except_backup(node_id, provider, cookies, callback_log=Fals
                     pattern = re.compile(ANY_BACKUP_FOLDER_REGEX)
                     if pattern.match(materialized_path):
                         continue
-                except Exception:
+                except Exception as e:
+                    logger.error(f'Exception: {e}')
                     continue
 
                 if kind == 'file' or kind == 'folder':
@@ -772,155 +910,3 @@ def delete_all_files_except_backup(node_id, provider, cookies, callback_log=Fals
         except (requests.ConnectionError, requests.Timeout) as e:
             logger.error(f'Connection error: {e}')
             raise e
-
-
-def validate_exported_data(data_json, schema_filename='file-info-schema.json'):
-    try:
-        schema = from_json(schema_filename)
-        jsonschema.validate(data_json, schema)
-        return True
-    except jsonschema.ValidationError as e:
-        logger.error(f'jsonschema.ValidationError: {e}')
-        return False
-
-
-def float_or_None(x):
-    try:
-        return float(x)
-    except ValueError:
-        return None
-
-
-def process_data_information(list_data):
-    list_data_version = []
-    for item in list_data:
-        for file_version in item['version']:
-            current_data = {**item, **file_version}
-            del current_data['version']
-            list_data_version.append(current_data)
-    return list_data_version
-
-
-def deep_diff(x, y, parent_key=None, exclude_keys=None, epsilon_keys=None):
-    """
-    Find the difference between 2 dictionary
-    Take the deep diff of JSON-like dictionaries
-    No warranties when keys, or values are None
-    """
-    EPSILON = 0.5
-    rho = 1 - EPSILON
-
-    if epsilon_keys is None:
-        epsilon_keys = []
-    if exclude_keys is None:
-        exclude_keys = []
-
-    if x == y:
-        return None
-
-    if parent_key in epsilon_keys:
-        xfl, yfl = float_or_None(x), float_or_None(y)
-        if xfl and yfl and xfl * yfl >= 0 and rho * xfl <= yfl and rho * yfl <= xfl:
-            return None
-
-    if type(x) != type(y) or type(x) not in [list, dict]:
-        return x, y
-
-    if type(x) == dict:
-        d = {}
-        for k in x.keys() ^ y.keys():
-            if k in exclude_keys:
-                continue
-            if k in x:
-                d[k] = (deepcopy(x[k]), None)
-            else:
-                d[k] = (None, deepcopy(y[k]))
-
-        for k in x.keys() & y.keys():
-            if k in exclude_keys:
-                continue
-
-            next_d = deep_diff(x[k], y[k], parent_key=k, exclude_keys=exclude_keys, epsilon_keys=epsilon_keys)
-            if next_d is None:
-                continue
-
-            d[k] = next_d
-
-        return d if d else None
-
-    # assume a list:
-    d = [None] * max(len(x), len(y))
-    flipped = False
-    if len(x) > len(y):
-        flipped = True
-        x, y = y, x
-
-    for i, x_val in enumerate(x):
-        d[i] = deep_diff(y[i], x_val, parent_key=i, exclude_keys=exclude_keys, epsilon_keys=epsilon_keys) if flipped else deep_diff(x_val, y[i],
-                                                                                                                                    parent_key=i,
-                                                                                                                                    exclude_keys=exclude_keys,
-                                                                                                                                    epsilon_keys=epsilon_keys)
-
-    for i in range(len(x), len(y)):
-        d[i] = (y[i], None) if flipped else (None, y[i])
-
-    return None if all(map(lambda x: x is None, d)) else d
-
-
-def check_diff_between_version(list_version_a, list_version_b, parent_key=None, exclude_keys=None, epsilon_keys=None):
-    for i in range(len(list_version_a)):
-        if list_version_a[i]['identifier'] != list_version_b[i]['identifier']:
-            return True, 'Missing file version', list_version_b[i]
-        check_diff = deep_diff(list_version_a[i], list_version_b[i], parent_key=parent_key, exclude_keys=exclude_keys, epsilon_keys=epsilon_keys)
-        if check_diff:
-            list_diff = list(check_diff)
-            text_error = '"' + ', '.join(list_diff) + '" not match'
-            return True, text_error, list_version_a[i]
-        return False, '', None
-
-
-def count_files_ng_ok(exported_file_versions, storage_file_versions, exclude_keys=None):
-    exported_file_versions = sorted(exported_file_versions, key=lambda kv: kv['materialized_path'])
-    storage_file_versions = sorted(storage_file_versions, key=lambda kv: kv['materialized_path'])
-    data = {
-        'ng': 0,
-        'ok': 0,
-    }
-    list_file_ng = []
-    count_files = 0
-    for file_a in exported_file_versions:
-        version_identifier_a = file_a['identifier']
-        materialized_path_a = file_a.get('materialized_path')
-
-        file_b = next((
-            file for file in storage_file_versions
-            if file.get('materialized_path') == materialized_path_a
-               and file.get('identifier') == version_identifier_a
-        ), None)
-        if file_b:
-            is_diff, message, file_version = check_diff_between_version([file_a], [file_b], exclude_keys=exclude_keys)
-            if not is_diff:
-                data['ok'] += 1
-            else:
-                data['ng'] += 1
-                ng_content = {
-                    'path': materialized_path_a,
-                    'size': file_a['size'],
-                    'version_id': file_a['identifier'],
-                    'reason': message,
-                }
-                list_file_ng.append(ng_content)
-            count_files += 1
-        else:
-            data['ng'] += 1
-            ng_content = {
-                'path': materialized_path_a,
-                'size': file_a['size'],
-                'version_id': file_a.get('identifier', 0),
-                'reason': 'File is not exist',
-            }
-            list_file_ng.append(ng_content)
-            count_files += 1
-    data['total'] = count_files
-    data['list_file_ng'] = list_file_ng if len(list_file_ng) <= 10 else list_file_ng[:10]
-    return data

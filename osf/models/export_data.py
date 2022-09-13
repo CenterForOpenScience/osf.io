@@ -78,7 +78,7 @@ class ExportData(base.BaseModel):
     task_id = models.CharField(max_length=255, null=True, blank=True)
 
     class Meta:
-        db_table = "osf_export_data"
+        db_table = 'osf_export_data'
         unique_together = ('source', 'location', 'process_start')
 
     def __repr__(self):
@@ -89,7 +89,6 @@ class ExportData(base.BaseModel):
     def extract_file_information_json_from_source_storage(self):
         # Get region guid == institution guid
         source_storage_guid = self.source.guid
-        # logger.debug(f'source storage: {self.source}')
 
         # Get Institution by guid
         institution = Institution.load(source_storage_guid)
@@ -125,17 +124,14 @@ class ExportData(base.BaseModel):
         file_versions = self.source.fileversion_set.all()
         # but the creator must be affiliated with current institution
         file_versions = file_versions.filter(creator__affiliated_institutions___id=source_storage_guid)
-        # file_versions__ids = file_versions.values_list('id', flat=True)
-        # logger.debug(f'file_versions: {file_versions.count()} {file_versions__ids}')
 
-        # get list_basefilenode_id by file_versions__ids above via the BaseFileVersionsThrough model
+        # get base_file_nodes__ids by file_versions__ids above via the BaseFileVersionsThrough model
         base_file_versions_set = BaseFileVersionsThrough.objects.filter(fileversion__in=file_versions)
         base_file_nodes__ids = base_file_versions_set.values_list('basefilenode_id', flat=True).distinct('basefilenode_id')
 
         # get project list
         projects = institution.nodes.filter(category='project')
         projects__ids = projects.values_list('id', flat=True)
-        # logger.debug(f'projects: {projects.count()} {projects__ids}')
         source_project_ids = set()
 
         # get base_file_nodes
@@ -143,8 +139,6 @@ class ExportData(base.BaseModel):
             id__in=base_file_nodes__ids,
             target_object_id__in=projects__ids,
             deleted=None)
-        # base_file_nodes__ids = base_file_nodes.values_list('id', flat=True)
-        # logger.debug(f'base_file_nodes: {base_file_nodes.count()} {base_file_nodes__ids}')
 
         total_size = 0
         total_file = 0
@@ -234,7 +228,7 @@ class ExportData(base.BaseModel):
             for version in versions:
                 identifier = version.get('identifier')
                 metadata = version.get('metadata')
-                # metadata.get('sha256', metadata.get('md5', metadata.get('sha512', metadata.get('sha1', metadata.get('name')))))
+                # get metadata.get('sha256', metadata.get('md5', metadata.get('sha512', metadata.get('sha1', metadata.get('name')))))
                 file_name = metadata.get('sha256', metadata.get('md5'))
                 file_versions.append((project_id, provider, file_path, identifier, file_name,))
 

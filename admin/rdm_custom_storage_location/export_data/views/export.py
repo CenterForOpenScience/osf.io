@@ -85,7 +85,7 @@ class ExportDataActionView(ExportDataBaseActionView):
 
 
 def export_data_process(task, cookies, export_data_id, **kwargs):
-    # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+    logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
     # get corresponding export data record
     export_data = None
     while export_data is None:
@@ -103,26 +103,26 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
     if task.is_aborted():  # check before each steps
         return None
     # create export data process folder
-    # logger.debug(f'creating export data process folder')
+    logger.debug(f'creating export data process folder')
     response = export_data.create_export_data_folder(cookies, **kwargs)
     if not task.is_aborted() and response.status_code != 201:
         return export_data_rollback_process(cookies, export_data_id, **kwargs)
-    # logger.debug(f'created export data process folder')
+    logger.debug(f'created export data process folder')
 
     # export target file and accompanying data
     if task.is_aborted():  # check before each steps
         return None
     # create 'files' folder
-    # logger.debug(f'creating files folder')
+    logger.debug(f'creating files folder')
     response = export_data.create_export_data_files_folder(cookies, **kwargs)
     if not task.is_aborted() and response.status_code != 201:
         return export_data_rollback_process(cookies, export_data_id, **kwargs)
-    # logger.debug(f'created files folder')
+    logger.debug(f'created files folder')
 
     if task.is_aborted():  # check before each steps
         return None
     # upload file versions
-    # logger.debug(f'uploading file versions')
+    logger.debug(f'uploading file versions')
     file_versions = export_data.get_source_file_versions_min(file_info_json)
     for file in file_versions:
         project_id, provider, file_path, version, file_name = file
@@ -140,7 +140,7 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
         response = export_data.transfer_export_data_file_to_location(cookies, file_name, file_data, **kwargs)
         if not task.is_aborted() and response.status_code != 201:
             return export_data_rollback_process(cookies, export_data_id, **kwargs)
-    # logger.debug(f'uploaded file versions')
+    logger.debug(f'uploaded file versions')
 
     # temporary file
     temp_file_path = export_data.export_data_temp_file_path
@@ -148,30 +148,30 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
     if task.is_aborted():  # check before each steps
         return None
     # create files' information file
-    # logger.debug(f'creating files information file')
+    logger.debug(f'creating files information file')
     write_json_file(file_info_json, temp_file_path)
     response = export_data.upload_file_info_file(cookies, temp_file_path, **kwargs)
     if not task.is_aborted() and response.status_code != 201:
         return export_data_rollback_process(cookies, export_data_id, **kwargs)
-    # logger.debug(f'created files information file')
+    logger.debug(f'created files information file')
 
     process_end = timezone.make_naive(timezone.now(), timezone.utc)
 
     if task.is_aborted():  # check before each steps
         return None
     # create export data file
-    # logger.debug(f'creating export data file')
+    logger.debug(f'creating export data file')
     export_data_json['process_end'] = process_end.strftime('%Y-%m-%d %H:%M:%S')
     write_json_file(export_data_json, temp_file_path)
     response = export_data.upload_export_data_file(cookies, temp_file_path, **kwargs)
     if not task.is_aborted() and response.status_code != 201:
         return export_data_rollback_process(cookies, export_data_id, **kwargs)
-    # logger.debug(f'created export data file')
+    logger.debug(f'created export data file')
 
     # remove temporary file
     if os.path.exists(temp_file_path):
         os.remove(temp_file_path)
-    # logger.debug(f'removed temporary file')
+    logger.debug(f'removed temporary file')
 
     if task.is_aborted():  # check before each steps
         return None
@@ -190,7 +190,7 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
             file_number=export_data_json.get('files_numb', 0),
             total_size=export_data_json.get('size', 0),
         )
-    # logger.debug(f'completed process')
+    logger.debug(f'completed process')
 
 
 class StopExportDataActionView(ExportDataBaseActionView):
@@ -235,7 +235,7 @@ class StopExportDataActionView(ExportDataBaseActionView):
 
 
 def export_data_rollback_process(cookies, export_data_id, **kwargs):
-    # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+    logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
     # get corresponding export data record
     export_data_set = export_data = None
     while export_data is None:
@@ -245,7 +245,7 @@ def export_data_rollback_process(cookies, export_data_id, **kwargs):
 
     # when exception
     if export_data.status in [ExportData.STATUS_STOPPING, ExportData.STATUS_STOPPED]:
-        # logger.debug(f'stop-processing')
+        logger.debug(f'stop-processing')
         return None
 
     if export_data.status == ExportData.STATUS_RUNNING:
@@ -253,20 +253,20 @@ def export_data_rollback_process(cookies, export_data_id, **kwargs):
         export_data_set.update(
             status=ExportData.STATUS_STOPPING,
         )
-    # logger.debug(f'stopping process')
+    logger.debug(f'stopping process')
 
     file_path = export_data.export_data_temp_file_path
     if os.path.exists(file_path):
         os.remove(file_path)
-    # logger.debug(f'removed temporary file')
+    logger.debug(f'removed temporary file')
 
     export_data_status = ExportData.STATUS_STOPPED
     # delete export data file
-    # logger.debug(f'deleting export data file')
+    logger.debug(f'deleting export data file')
     response = export_data.delete_export_data_folder(cookies, **kwargs)
     if response.status_code != 204:
         export_data_status = ExportData.STATUS_ERROR
-    # logger.debug(f'deleted export data file')
+    logger.debug(f'deleted export data file')
 
     # stop it
     export_data_set.update(
@@ -274,7 +274,7 @@ def export_data_rollback_process(cookies, export_data_id, **kwargs):
         process_end=timezone.make_naive(timezone.now(), timezone.utc),
         export_file=None,
     )
-    # logger.debug(f'stopped process')
+    logger.debug(f'stopped process')
 
 
 class CheckStateExportDataActionView(ExportDataBaseActionView):

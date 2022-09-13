@@ -209,8 +209,6 @@ class DeleteCredentialsView(ExportStorageLocationViewBaseView, View):
     """
 
     def delete(self, request, location_id, **kwargs):
-        # logger.debug(f'location_id: {location_id}')
-        # logger.debug(f'kwargs: {kwargs}')
         message = 'Do nothing'
         status = http_status.HTTP_400_BAD_REQUEST
 

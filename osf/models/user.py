@@ -1841,7 +1841,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     def is_allowed_storage_location_id(self, location_id):
         """Return if this user is allowed to access ``location_id``."""
-        # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
         from osf.models import ExportDataLocation
 
         locations = ExportDataLocation.objects.filter(pk=location_id)
@@ -1859,7 +1858,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     def is_allowed_storage_id(self, storage_id):
         """Return if this user is allowed to access ``storage_id``."""
-        # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
         from addons.osfstorage.models import Region
 
         storages = Region.objects.filter(pk=storage_id)

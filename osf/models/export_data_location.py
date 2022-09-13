@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 
 
 class ExportDataLocation(base.BaseModel):
-    # PROVIDERS_AVAILABLE = ['s3', 's3compat', 'dropboxbusiness', 'nextcloudinstitutions']
     institution_guid = models.CharField(max_length=255, db_index=True)
     name = models.CharField(max_length=255)
     waterbutler_credentials = EncryptedJSONField(default=dict)
@@ -22,7 +21,7 @@ class ExportDataLocation(base.BaseModel):
     waterbutler_settings = DateTimeAwareJSONField(default=dict)
 
     class Meta:
-        db_table = "osf_export_data_location"
+        db_table = 'osf_export_data_location'
         unique_together = ('institution_guid', 'name')
         ordering = ['pk']
 

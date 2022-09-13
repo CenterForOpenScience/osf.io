@@ -258,7 +258,7 @@ def get_metric_class_for_action(action, from_mfr):
 
 @collect_auth
 def get_auth(auth, **kwargs):
-    # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+    logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
     cas_resp = None
     if not auth.user:
         # Central Authentication Server OAuth Bearer Token
@@ -333,14 +333,14 @@ def get_auth(auth, **kwargs):
         # check permission
         # only location_id or region_id has value
         if not location_id and not region_id:
-            # logger.debug(f'missing location_id and region_id')
+            logger.debug(f'Missing location_id and region_id')
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
         if location_id and not auth.user.is_allowed_storage_location_id(location_id):
-            # logger.debug(f'not auth.user.is_allowed_storage_location_id({location_id})')
+            logger.debug(f'Authenticated user do not have permission on storage location id {location_id}')
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
         if region_id and not auth.user.is_allowed_storage_id(region_id):
-            # logger.debug(f'not auth.user.is_allowed_storage_id({region_id})')
+            logger.debug(f'Authenticated user do not have permission on institution storage id {region_id}')
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     path = data.get('path')

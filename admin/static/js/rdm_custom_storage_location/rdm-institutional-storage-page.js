@@ -867,7 +867,6 @@ $('.export-button').click(function (event) {
 });
 
 function exportData(institution_id, source_id, location_id, element) {
-    // console.log(institution_id, source_id, location_id);
     let params = {
         'institution_id': institution_id,
         'source_id': source_id,
@@ -949,7 +948,6 @@ $('.stop-export-button').click(function (event) {
 });
 
 function stopExportData(institution_id, source_id, location_id, task_id, element) {
-    // console.log(institution_id, source_id, location_id, task_id);
     let key = source_id + '_' + location_id;
     window.contextVars[key].exportInBackground && window.clearInterval(window.contextVars[key].intervalID);
     window.contextVars[key].intervalID = undefined;
@@ -1029,7 +1027,6 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
 }
 
 function checkStatusExportData(institution_id, source_id, location_id, task_id, element) {
-    // console.log(institution_id, source_id, location_id, task_id);
     let params = {
         'institution_id': institution_id,
         'source_id': source_id,
@@ -1091,13 +1088,121 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
         },
         error: function (jqXHR) {
             // keep for debug
-            // console.log('checkStatusExportData', window.contextVars[this.custom.key].stopExportInBackground, jqXHR.responseJSON);
         }
     });
 }
 
 
+// Start - Delete Export data - Actions
+
+$('#checkDelete').on('click', () => {
+    let list_export_delete_id = $("#checkDelete").val() + '#';
+    $('#bodydeletemodal').append(`<input type='text' value=${list_export_delete_id} id='input_export_data' class='buckinput' name='list_id_export_data' style='display: none;' />`);
+});
+
+
+// Start - Revert Export data - Actions
+
+$('#revert_button').on('click', () => {
+    let list_export_revert_id = $("#revert_button").val() + '#';
+    $('#bodyrevertmodal').append(`<input type='text' value=${list_export_revert_id} id='input_export_data' class='buckinput' name='list_id_export_data' style='display: none;' />`);
+});
+
+$('.cancel_modal').on('click', () => {
+    $('#input_export_data').remove();
+});
+
+
+// Start - Check Export data - Actions
+
+$('#checkExportData').on('click', () => {
+    let url = './check_export_data/';
+    $('#checkExportData').prop('disabled', true);
+    $.ajax({
+        url: url,
+        type: 'GET',
+        contentType: 'application/json; charset=utf-8',
+    }).done(function (response) {
+        let data_res = response;
+        $('#checkExportDataModal').modal('show');
+        let text_check_export = `<p>OK: ${data_res.ok}/${data_res.total} files<br/>
+                    NG: ${data_res.ng}/${data_res.total} files</p>`;
+        let text_current = '';
+        data_res.list_file_ng.forEach(function (file) {
+            text_current += `<tr>
+                                <td>${file.path}</td>
+                                <td>${file.size} KB</td>
+                                <td>${file.version_id}</td>
+                                <td>${file.reason}</td>
+                            </tr>`;
+        });
+        $('.text-check-export-data').html(text_check_export);
+        $('.table-ng').html(text_current);
+    }).fail(function (jqXHR) {
+        $('#checkExportData').prop('disabled', false);
+        let message = jqXHR.responseJSON.message;
+        $osf.growl('Error', _(message), 'error', 2000);
+    });
+});
+
+$('#cancelExportDataModal').on('click', () => {
+    $('#checkExportData').prop('disabled', false);
+});
+
+$('#checkExportDataModal').on('hidden.bs.modal', function () {
+  $('#checkExportData').prop('disabled', false);
+});
+
+
 // Start - Restore Export data - Actions
+
+function disableRestoreButton() {
+    // Disable 'Restore' button
+    let $restore_button = $('#restore_button');
+    $restore_button.addClass('disabled');
+    $restore_button.attr('disabled', true);
+}
+
+function enableRestoreFunction() {
+    // Enable 'Restore' button, disable 'Stop restoring' button
+    let $restore_button = $('#restore_button');
+    $restore_button.removeClass('disabled');
+    $restore_button.attr('disabled', false);
+
+    let $stop_restore_button = $('#stop_restore_button');
+    $stop_restore_button.addClass('disabled');
+    $stop_restore_button.attr('disabled', true);
+}
+
+function enableStopRestoreFunction() {
+    // Enable 'Stop restoring' button, disable 'Restore' button
+    let $restore_button = $('#restore_button');
+    $restore_button.addClass('disabled');
+    $restore_button.attr('disabled', true);
+
+    let $stop_restore_button = $('#stop_restore_button');
+    $stop_restore_button.removeClass('disabled');
+    $stop_restore_button.attr('disabled', false);
+}
+
+function enableCheckRestoreFunction() {
+    // Enable 'Check export data' button, disable 'Stop restoring' button
+    let $check_restore_button = $('#check_restore_button');
+    $check_restore_button.removeClass('disabled');
+    $check_restore_button.attr('disabled', false);
+
+    let $stop_restore_button = $('#stop_restore_button');
+    $stop_restore_button.addClass('disabled');
+    $stop_restore_button.attr('disabled', true);
+}
+
+$('#cancel_restore_modal_button').on('click', () => {
+    enableRestoreFunction();
+});
+
+$('#restore').on('hidden.bs.modal', function () {
+    enableRestoreFunction();
+});
 
 $('#restore_button').on('click', () => {
     let data = {};
@@ -1211,10 +1316,6 @@ function checkTaskStatus(task_id, task_type) {
     });
 }
 
-$('#cancel_restore_modal_button').on('click', () => {
-    enableRestoreFunction();
-});
-
 // Catch event when click Restore button in modal on the DataInformation screen
 $('#start_restore_modal_button').on('click', () => {
     let data = {};
@@ -1245,98 +1346,8 @@ $('#start_restore_modal_button').on('click', () => {
     });
 });
 
-function disableRestoreButton() {
-    // Disable 'Restore' button
-    let $restore_button = $('#restore_button');
-    $restore_button.addClass('disabled');
-    $restore_button.attr('disabled', true);
-}
 
-function enableStopRestoreFunction() {
-    // Enable 'Stop restoring' button, disable 'Restore' button
-    let $restore_button = $('#restore_button');
-    $restore_button.addClass('disabled');
-    $restore_button.attr('disabled', true);
-
-    let $stop_restore_button = $('#stop_restore_button');
-    $stop_restore_button.removeClass('disabled');
-    $stop_restore_button.attr('disabled', false);
-}
-
-function enableRestoreFunction() {
-    // Enable 'Restore' button, disable 'Stop restoring' button
-    let $restore_button = $('#restore_button');
-    $restore_button.removeClass('disabled');
-    $restore_button.attr('disabled', false);
-
-    let $stop_restore_button = $('#stop_restore_button');
-    $stop_restore_button.addClass('disabled');
-    $stop_restore_button.attr('disabled', true);
-}
-
-function enableCheckRestoreFunction() {
-    // Enable 'Check export data' button, disable 'Stop restoring' button
-    let $check_restore_button = $('#check_restore_button');
-    $check_restore_button.removeClass('disabled');
-    $check_restore_button.attr('disabled', false);
-
-    let $stop_restore_button = $('#stop_restore_button');
-    $stop_restore_button.addClass('disabled');
-    $stop_restore_button.attr('disabled', true);
-}
-
-
-// Start - Delete Export data - Actions
-
-$('#checkDelete').on('click', () => {
-    let list_export_delete_id = $("#checkDelete").val() + '#';
-    $('#bodydeletemodal').append(`<input type='text' value=${list_export_delete_id} id='input_export_data' class='buckinput' name='list_id_export_data' style='display: none;' />`);
-});
-
-
-// Start - Revert Export data - Actions
-
-$('#revert_button').on('click', () => {
-    let list_export_revert_id = $("#revert_button").val() + '#';
-    $('#bodyrevertmodal').append(`<input type='text' value=${list_export_revert_id} id='input_export_data' class='buckinput' name='list_id_export_data' style='display: none;' />`);
-});
-
-$('.cancel_modal').on('click', () => {
-    $('#input_export_data').remove();
-});
-
-
-// Start - Check Export data - Actions
-
-$('#checkExportData').on('click', () => {
-    let url = './check_export_data/';
-    $('#checkExportData').prop('disabled', true);
-    $.ajax({
-        url: url,
-        type: 'GET',
-        contentType: 'application/json; charset=utf-8',
-    }).done(function (response) {
-        let data_res = response;
-        $('#checkExportDataModal').modal('show');
-        let text_check_export = `<p>OK: ${data_res.ok}/${data_res.total} files<br/>
-                    NG: ${data_res.ng}/${data_res.total} files</p>`;
-        let text_current = '';
-        data_res.list_file_ng.forEach(function (file) {
-            text_current += `<tr>
-                                <td>${file.path}</td>
-                                <td>${file.size} KB</td>
-                                <td>${file.version_id}</td>
-                                <td>${file.reason}</td>
-                            </tr>`;
-        });
-        $('.text-check-export-data').html(text_check_export);
-        $('.table-ng').html(text_current);
-    }).fail(function (jqXHR) {
-        $('#checkExportData').prop('disabled', false);
-        let message = jqXHR.responseJSON.message;
-        $osf.growl('Error', _(message), 'error', 2000);
-    });
-});
+// Start - Check Restore exported data - Actions
 
 $('#check_restore_button').on('click', () => {
     let destination_id = $('select#destination_storage').val();
@@ -1369,22 +1380,10 @@ $('#check_restore_button').on('click', () => {
     });
 });
 
-$('#cancelExportDataModal').on('click', () => {
-    $('#checkExportData').prop('disabled', false);
-});
-
 $('#cancelRestoreDataModal').on('click', () => {
     $('#check_restore_button').prop('disabled', false);
 });
 
-$('#checkExportDataModal').on('hidden.bs.modal', function () {
-  $('#checkExportData').prop('disabled', false);
-});
-
 $('#checkRestoreDataModal').on('hidden.bs.modal', function () {
   $('#check_restore_button').prop('disabled', false);
-});
-
-$('#restore').on('hidden.bs.modal', function () {
-    enableRestoreFunction();
 });

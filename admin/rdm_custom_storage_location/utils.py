@@ -69,10 +69,10 @@ no_storage_name_providers = ['osfstorage', 'onedrivebusiness']
 def have_storage_name(provider_name):
     return provider_name not in no_storage_name_providers
 
+
 def get_providers(available_list=None):
     provider_list = []
     for provider in osf_settings.ADDONS_AVAILABLE:
-        # logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
         if 'storage' in provider.categories and provider.short_name in enabled_providers_list:
             provider.icon_url_admin = \
                 '/custom_storage_location/icon/{}/comicon.png'.format(provider.short_name)

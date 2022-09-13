@@ -34,7 +34,7 @@ class ExportDataRestore(base.BaseModel):
     task_id = models.CharField(max_length=255, null=True, blank=True)
 
     class Meta:
-        db_table = "osf_export_data_restore"
+        db_table = 'osf_export_data_restore'
         unique_together = ('export', 'destination', 'process_start')
 
     def __repr__(self):
@@ -45,7 +45,6 @@ class ExportDataRestore(base.BaseModel):
     def extract_file_information_json_from_destination_storage(self):
         # Get region guid == institution guid
         destination_storage_guid = self.destination.guid
-        # logger.debug(f'destination storage: {self.destination}')
 
         # Get Institution by guid
         institution = Institution.load(destination_storage_guid)
@@ -81,17 +80,14 @@ class ExportDataRestore(base.BaseModel):
         file_versions = self.destination.fileversion_set.all()
         # but the creator must be affiliated with current institution
         file_versions = file_versions.filter(creator__affiliated_institutions___id=destination_storage_guid)
-        # file_versions__ids = file_versions.values_list('id', flat=True)
-        # logger.debug(f'file_versions: {file_versions.count()} {file_versions__ids}')
 
-        # get list_basefilenode_id by file_versions__ids above via the BaseFileVersionsThrough model
+        # get base_file_nodes__ids by file_versions__ids above via the BaseFileVersionsThrough model
         base_file_versions_set = BaseFileVersionsThrough.objects.filter(fileversion__in=file_versions)
         base_file_nodes__ids = base_file_versions_set.values_list('basefilenode_id', flat=True).distinct('basefilenode_id')
 
         # get project list
         projects = institution.nodes.filter(category='project')
         projects__ids = projects.values_list('id', flat=True)
-        # logger.debug(f'projects: {projects.count()} {projects__ids}')
         destination_project_ids = set()
 
         # get base_file_nodes
@@ -99,8 +95,6 @@ class ExportDataRestore(base.BaseModel):
             id__in=base_file_nodes__ids,
             target_object_id__in=projects__ids,
             deleted=None)
-        # base_file_nodes__ids = base_file_nodes.values_list('id', flat=True)
-        # logger.debug(f'base_file_nodes: {base_file_nodes.count()} {base_file_nodes__ids}')
 
         total_size = 0
         total_file = 0

@@ -187,10 +187,6 @@ class ExportDataInformationView(ExportBaseView):
         export_data = self.get_object()
 
         source_storages = self.institution.get_institutional_storage()
-        location = export_data.location
-        storage_name = location.waterbutler_settings['storage']['provider']
-        if storage_name == 'filesystem':
-            storage_name = 'NII Storage'
 
         # get file_info from location
         response = export_data.read_export_data_from_location(cookies, cookie=cookie)
@@ -279,11 +275,16 @@ class ExportDataFileCSVView(RdmPermissionMixin, View):
             ['project_id', 'project_name', 'owner', 'file_id', 'file_path', 'filename', 'versions', 'size'])
         global CURRENT_DATA_INFORMATION
         for file in CURRENT_DATA_INFORMATION:
-            writer.writerow(
-                [file['project']['id'], file['project']['name'], file['version']['contributor'], file['id'],
-                 file['materialized_path'],
-                 file['name'],
-                 file['version']['identifier'], file['version']['size']])
+            writer.writerow([
+                file['project']['id'],
+                file['project']['name'],
+                file['contributor'],
+                file['id'],
+                file['materialized_path'],
+                file['name'],
+                file['identifier'],
+                file['size']
+            ])
         CURRENT_DATA_INFORMATION = []
         return response
 
