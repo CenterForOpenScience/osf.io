@@ -1,11 +1,11 @@
 
-from django.conf.urls import url
+from django.conf.urls import re_path
 
 from api.regions import views
 
 app_name = 'osf'
 
 urlpatterns = [
-    url(r'^$', views.RegionList.as_view(), name=views.RegionList.view_name),
-    url(r'^(?P<region_id>[-\w]+)/$', views.RegionDetail.as_view(), name=views.RegionDetail.view_name),
+    re_path(r'^$', views.RegionList.as_view(), name=views.RegionList.view_name),
+    re_path(r'^(?P<region_id>[-\w]+)/$', views.RegionDetail.as_view(), name=views.RegionDetail.view_name),
 ]

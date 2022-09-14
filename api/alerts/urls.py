@@ -1,7 +1,7 @@
-from django.conf.urls import url
+from django.conf.urls import re_path
 from . import views
 
 urlpatterns = [
-    url(r'^$', views.DismissedAlertList.as_view(), name=views.DismissedAlertList.view_name),
-    url(r'^(?P<_id>\w+)/$', views.DismissedAlertDetail.as_view(), name=views.DismissedAlertDetail.view_name),
+    re_path(r'^$', views.DismissedAlertList.as_view(), name=views.DismissedAlertList.view_name),
+    re_path(r'^(?P<_id>\w+)/$', views.DismissedAlertDetail.as_view(), name=views.DismissedAlertDetail.view_name),
 ]
