@@ -98,8 +98,8 @@ class EncryptedJSONField(JSONField):
         return super(EncryptedJSONField, self).get_prep_value(value, **kwargs)
 
     def to_python(self, value):
-        value = rapply(value, decrypt_string, prefix=self.prefix)
-        return super(EncryptedJSONField, self).from_db_value(value, None, None)
+        return rapply(value, decrypt_string, prefix=self.prefix)
 
     def from_db_value(self, value, expression, connection):
+        value = super(EncryptedJSONField, self).from_db_value(value, expression, connection)
         return self.to_python(value)
