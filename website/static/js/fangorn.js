@@ -1216,8 +1216,8 @@ function _uploadFolderEvent(event, item, mode, col) {
                 }
 
                 // change list_paths of File obj
-                var list_paths = file.webkitRelativePath.split('/');
-                return _pushObject(node_parent, 0, list_paths, file, file_index, _pushObject);
+                var new_list_paths = file.webkitRelativePath.split('/');
+                return _pushObject(node_parent, 0, new_list_paths, file, file_index, _pushObject);
             }
 
             // else, it is folder and file
@@ -1268,9 +1268,9 @@ function _uploadFolderEvent(event, item, mode, col) {
             //     return e.data.materialized === currentFolderPath;
             // });
             var child = null;
-            for(var i = 0; i < node_parent.children.length; i++){
-                if(node_parent.children[i].data.materialized === currentFolderPath){
-                    child = node_parent.children[i];
+            for(var j = 0; j < node_parent.children.length; j++){
+                if(node_parent.children[j].data.materialized === currentFolderPath){
+                    child = node_parent.children[j];
                     break;
                 }
             }
@@ -1282,8 +1282,8 @@ function _uploadFolderEvent(event, item, mode, col) {
 
             if (currentFolder && created_path.includes(currentFolderPath)) {
                 // console.log('currentFolder.parent', currentFolder.parent);
-                var next_folder_index = ++index;
-                return next(currentFolder.parent, next_folder_index, list_paths, file, file_index, next);
+                var new_next_folder_index = ++index;
+                return next(currentFolder.parent, new_next_folder_index, list_paths, file, file_index, next);
             }
 
             created_path.push(currentFolderPath);
