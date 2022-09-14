@@ -45,8 +45,7 @@ class PreprintCountReporter(DailyReporter):
 
         reports = []
         for preprint_provider in PreprintProvider.objects.all():
-            name = preprint_provider.name if preprint_provider.name != 'Open Science Framework' else 'OSF'
-            elastic_query['query']['bool']['must'][1]['match']['sources'] = name
+            elastic_query['query']['bool']['must'][1]['match']['sources'] = preprint_provider.share_source
             resp = requests.post(f'{settings.SHARE_URL}api/v2/search/creativeworks/_search', json=elastic_query).json()
             reports.append(
                 PreprintSummaryReportV0(
