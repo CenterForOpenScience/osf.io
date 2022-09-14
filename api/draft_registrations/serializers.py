@@ -48,13 +48,6 @@ class DraftRegistrationSerializer(DraftRegistrationLegacySerializer, Taxonomizab
     tags = ValuesListField(attr_name='name', child=ser.CharField(), required=False)
     node_license = NodeLicenseSerializer(required=False, source='license')
 
-    registration_schema = RegistrationSchemaRelationshipField(
-        related_view='schemas:registration-schema-detail',
-        related_view_kwargs={'schema_id': '<registration_schema._id>'},
-        required=True,
-        read_only=False,
-    )
-
     links = LinksField({
         'self': 'get_absolute_url',
     })
@@ -153,6 +146,13 @@ class DraftRegistrationDetailSerializer(DraftRegistrationSerializer, DraftRegist
     """
     id = IDField(source='_id', required=True)
 
+    registration_schema = RegistrationSchemaRelationshipField(
+        related_view='schemas:registration-schema-detail',
+        related_view_kwargs={'schema_id': '<registration_schema._id>'},
+        required=False,
+        read_only=False,
+    )
+
     links = LinksField({
         'self': 'get_self_url',
     })
@@ -165,13 +165,6 @@ class DraftRegistrationDetailSerializer(DraftRegistrationSerializer, DraftRegist
                 'draft_id': self.context['request'].parser_context['kwargs']['draft_id'],
             },
         )
-
-    registration_schema = RegistrationSchemaRelationshipField(
-        related_view='schemas:registration-schema-detail',
-        related_view_kwargs={'schema_id': '<registration_schema._id>'},
-        required=False,
-        read_only=False,
-    )
 
     def update(self, draft, validated_data):
         draft = super(DraftRegistrationDetailSerializer, self).update(draft, validated_data)
