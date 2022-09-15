@@ -2,6 +2,11 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+22.09.0 (2022-09-15)
+====================
+- Add metric classes for storing analytic data
+- Refactor existing Keen analytic scripts
+
 22.08.0 (2022-08-18)
 ====================
 - API support and remaining model work for associating Resources with Registrations
