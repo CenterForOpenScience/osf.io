@@ -28,7 +28,7 @@ class TestUtils(AdminTestCase):
         self.user2.is_superuser = True
         self.user3.is_staff = True
 
-    def test_custom_size_abbreviation_abbr_is_B(self):
+    def test_custom_size_abbreviation(self):
         size = 9
         abbr = 'GB'
         results = views.custom_size_abbreviation(size, abbr)
@@ -36,7 +36,7 @@ class TestUtils(AdminTestCase):
         nt.assert_equal(results[0], 9)
         nt.assert_equal(results[1], 'GB')
 
-    def test_custom_size_abbreviation(self):
+    def test_custom_size_abbreviation_abbr_is_B(self):
         size = 90000
         abbr = 'B'
         results = views.custom_size_abbreviation(size, abbr)
@@ -44,8 +44,11 @@ class TestUtils(AdminTestCase):
         nt.assert_equal(results[0], 90)
         nt.assert_equal(results[1], 'KB')
 
-    def test_get_list_extend_storage_s3(self):
-
+    def test_get_list_extend_storage_with_branch_name_is_folder_name(self):
+        """
+        this case check get_list_extend_storage() include  s3, s3compat, s3compatb3, azureblobstorage, box, figshare, onedrivebusiness, swift
+            return storage_branch_name = 'folder_name'
+        """
         self.user.add_addon('s3')
         self.user_settings = self.user.get_addon('s3')
         self.external_account = S3AccountFactory(provider_name='Amazon S3')
@@ -70,7 +73,11 @@ class TestUtils(AdminTestCase):
             list_name.append(v[0])
         nt.assert_in('/Amazon S3', list_name)
 
-    def test_get_list_extend_storage_github(self):
+    def test_get_list_extend_storage_with_branch_name_is_repo(self):
+        """
+        this case check get_list_extend_storage() include  bitbucket, github, gitlab
+            return storage_branch_name = 'repo'
+        """
         self.user.add_addon('github')
         self.user_settings = self.user.get_addon('github')
         self.external_account = GitHubAccountFactory(provider_name='Github name')
@@ -85,7 +92,11 @@ class TestUtils(AdminTestCase):
             list_name.append(v[0])
         nt.assert_in('/Github name', list_name)
 
-    def test_get_list_extend_storage_googledrive(self):
+    def test_get_list_extend_storage_with_branch_name_is_folder_path(self):
+        """
+        this case check get_list_extend_storage() include  googledrive, onedrive, iqbrims
+            return storage_branch_name = 'folder_path'
+        """
         self.user.add_addon('googledrive')
         self.user_settings = self.user.get_addon('googledrive')
         self.external_account = GoogleDriveAccountFactory(provider_name='googledrive name')
@@ -101,7 +112,8 @@ class TestUtils(AdminTestCase):
 
         nt.assert_in('/googledrive name', list_name[0])
 
-    def test_get_list_extend_storage_weko(self):
+    def test_get_list_extend_storage_with_branch_name_is_index_title(self):
+
         self.user.add_addon('weko')
         self.user_settings = self.user.get_addon('weko')
         self.external_account = WEKOAccountFactory(provider_name='weko name')
@@ -117,7 +129,11 @@ class TestUtils(AdminTestCase):
 
         nt.assert_in('/weko name', list_name[0])
 
-    def test_get_list_extend_storage_mendeley(self):
+    def test_get_list_extend_storage_with_branch_name_is_list_id(self):
+        """
+        this case check get_list_extend_storage() include mendeley, zotero
+            return storage_branch_name = 'list_id'
+        """
         self.user.add_addon('mendeley')
         self.user_settings = self.user.get_addon('mendeley')
         self.external_account = MendeleyAccountFactory(provider_name='mendeley name')
@@ -133,7 +149,7 @@ class TestUtils(AdminTestCase):
 
         nt.assert_in('/mendeley name', list_name[0])
 
-    def test_get_list_extend_storage_owncloud(self):
+    def test_get_list_extend_storage_with_branch_name_is_folder_id(self):
         self.user.add_addon('owncloud')
         self.user_settings = self.user.get_addon('owncloud')
         self.external_account = OwnCloudAccountFactory(provider_name='owncloud name')
@@ -149,7 +165,7 @@ class TestUtils(AdminTestCase):
 
         nt.assert_in('/owncloud name', list_name[0])
 
-    def test_get_list_extend_storage_dataverse(self):
+    def test_get_list_extend_storage_with_branch_name_is_dataverse(self):
         self.user.add_addon('dataverse')
         self.user_settings = self.user.get_addon('dataverse')
         self.external_account = DataverseAccountFactory(provider_name='dataverse name')
