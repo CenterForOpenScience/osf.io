@@ -3,7 +3,7 @@ import logging
 
 from django.utils import timezone
 
-from osf.metrics.reports import AddonUsageReportV0
+from osf.metrics.reports import AddonUsageReport
 from osf.models import OSFUser, AbstractNode
 from framework.database import paginated
 from website import settings
@@ -99,7 +99,7 @@ class AddonUsageReporter(DailyReporter):
             usage_counts = get_enabled_authorized_linked(addon.models.get('usersettings'), has_external_account, addon.short_name)
 
             reports.append(
-                AddonUsageReportV0(
+                AddonUsageReport(
                     report_date=date,
                     addon_shortname=short_name,
                     users_enabled_count=usage_counts['enabled'],

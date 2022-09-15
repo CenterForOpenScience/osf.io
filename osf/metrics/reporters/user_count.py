@@ -1,13 +1,13 @@
 from osf.models import OSFUser
 
-from osf.metrics import UserSummaryReportV0
+from osf.metrics import UserSummaryReport
 from ._base import DailyReporter
 
 
 class UserCountReporter(DailyReporter):
 
     def report(self, report_date):
-        report = UserSummaryReportV0(
+        report = UserSummaryReport(
             report_date=report_date,
             active=OSFUser.objects.filter(is_active=True, date_confirmed__date__lte=report_date).count(),
             deactivated=OSFUser.objects.filter(date_disabled__isnull=False, date_disabled__date__lte=report_date).count(),

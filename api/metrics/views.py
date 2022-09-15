@@ -25,7 +25,7 @@ from api.base.views import JSONAPIBaseView
 from api.base.waffle_decorators import require_switch
 from api.nodes.permissions import MustBePublic
 from osf.features import ENABLE_RAW_METRICS
-from osf.metrics import PreprintDownload, PreprintView, RegistriesModerationMetrics, CountedUsageV6
+from osf.metrics import PreprintDownload, PreprintView, RegistriesModerationMetrics, CountedUsage
 from osf.metrics import reports
 from osf.metrics.utils import stable_key
 from osf.models import AbstractNode
@@ -233,13 +233,13 @@ class RegistriesModerationMetricsView(GenericAPIView):
 
 
 VIEWABLE_REPORTS = {
-    # 'addon_usage': reports.AddonUsageReportV0,
-    'download_count': reports.DownloadCountReportV0,
-    'institution_summary': reports.InstitutionSummaryReportV0,
-    'node_summary': reports.NodeSummaryReportV0,
-    'osfstorage_file_count': reports.OsfstorageFileCountReportV0,
-    'preprint_summary': reports.PreprintSummaryReportV0,
-    'user_summary': reports.UserSummaryReportV0,
+    # 'addon_usage': reports.AddonUsageReport,
+    'download_count': reports.DownloadCountReport,
+    'institution_summary': reports.InstitutionSummaryReport,
+    'node_summary': reports.NodeSummaryReport,
+    'osfstorage_file_count': reports.OsfstorageFileCountReport,
+    'preprint_summary': reports.PreprintSummaryReport,
+    'user_summary': reports.UserSummaryReport,
 }
 
 
@@ -313,7 +313,7 @@ class RecentReportList(JSONAPIBaseView):
         return JsonResponse({'data': serializer.data})
 
 
-class CountedUsage(JSONAPIBaseView):
+class CountedUsageView(JSONAPIBaseView):
     view_category = 'metrics'
     view_name = 'counted-usage'
 
@@ -332,9 +332,9 @@ class CountedUsage(JSONAPIBaseView):
     def _get_session_id(self, request, client_session_id=None):
         # get a session id as described in the COUNTER code of practice:
         # https://cop5.projectcounter.org/en/5.0.2/07-processing/03-counting-unique-items.html
-        # (this is different from the "login session" tracked by `osf.models.Session` (which
-        # lasts about a month) but more similar to the "user session" tracked by the
-        # 'keenSessionId' cookie (which lasts ~25min))
+        # -- different from the "login session" tracked by `osf.models.Session` (which
+        # lasts about a month), this session lasts at most a day and may time out after
+        # minutes or hours of inactivity
         now = timezone.now()
         current_date_str = now.date().isoformat()
 
@@ -397,7 +397,7 @@ class NodeAnalyticsQuery(JSONAPIBaseView):
 
     def _run_query(self, node_guid, timespan):
         query_dict = self._build_query_payload(node_guid, NodeAnalyticsQuery.Timespan(timespan))
-        analytics_search = CountedUsageV6.search().update_from_dict(query_dict)
+        analytics_search = CountedUsage.search().update_from_dict(query_dict)
         return analytics_search.execute()
 
     def _build_query_payload(self, node_guid, timespan):
@@ -405,15 +405,12 @@ class NodeAnalyticsQuery(JSONAPIBaseView):
             'size': 0,  # don't return hits, just the aggregations
             'query': {
                 'bool': {
+                    'minimum_should_match': 1,
+                    'should': [
+                        {'term': {'item_guid': node_guid}},
+                        {'term': {'surrounding_guids': node_guid}},
+                    ],
                     'filter': [
-                        {
-                            'bool': {
-                                'should': [
-                                    {'term': {'item_guid': node_guid}},
-                                    {'term': {'surrounding_guids': node_guid}},
-                                ],
-                            },
-                        },
                         {'term': {'item_public': True}},
                         {'term': {'action_labels': 'view'}},
                         {'term': {'action_labels': 'web'}},

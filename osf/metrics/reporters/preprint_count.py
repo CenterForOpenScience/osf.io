@@ -1,7 +1,7 @@
 import logging
 import requests
 
-from osf.metrics import PreprintSummaryReportV0
+from osf.metrics import PreprintSummaryReport
 from website import settings
 from ._base import DailyReporter
 
@@ -48,7 +48,7 @@ class PreprintCountReporter(DailyReporter):
             elastic_query['query']['bool']['must'][1]['match']['sources'] = preprint_provider.share_source
             resp = requests.post(f'{settings.SHARE_URL}api/v2/search/creativeworks/_search', json=elastic_query).json()
             reports.append(
-                PreprintSummaryReportV0(
+                PreprintSummaryReport(
                     report_date=date,
                     provider_key=preprint_provider._id,
                     preprint_count=resp['hits']['total'],

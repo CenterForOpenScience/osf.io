@@ -3,7 +3,7 @@ import logging
 from django.db.models import Q
 
 from osf.metrics.reports import (
-    InstitutionSummaryReportV0,
+    InstitutionSummaryReport,
     RunningTotal,
     NodeRunningTotals,
     RegistrationRunningTotals,
@@ -31,16 +31,16 @@ class InstitutionSummaryReporter(DailyReporter):
 
         for institution in institutions:
             node_qs = institution.nodes.filter(
-                is_deleted=False,
+                deleted__isnull=True,
                 created__date__lte=date,
             ).exclude(type='osf.registration')
             registration_qs = institution.nodes.filter(
-                is_deleted=False,
+                deleted__isnull=True,
                 created__date__lte=date,
                 type='osf.registration',
             )
 
-            report = InstitutionSummaryReportV0(
+            report = InstitutionSummaryReport(
                 report_date=date,
                 institution_id=institution._id,
                 institution_name=institution.name,

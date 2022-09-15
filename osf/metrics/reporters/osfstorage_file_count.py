@@ -2,7 +2,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 import logging
 
-from osf.metrics.reports import OsfstorageFileCountReportV0, FileRunningTotals
+from osf.metrics.reports import OsfstorageFileCountReport, FileRunningTotals
 from osf.models import AbstractNode, Preprint
 from ._base import DailyReporter
 
@@ -32,7 +32,7 @@ class OsfstorageFileCountReporter(DailyReporter):
 
         daily_query = Q(created__date=date)
 
-        report = OsfstorageFileCountReportV0(
+        report = OsfstorageFileCountReport(
             report_date=date,
             files=FileRunningTotals(
                 total=file_qs.count(),

@@ -3,7 +3,7 @@ import logging
 from django.db.models import Q
 
 from osf.metrics.reports import (
-    NodeSummaryReportV0,
+    NodeSummaryReport,
     NodeRunningTotals,
     RegistrationRunningTotals,
 )
@@ -20,8 +20,8 @@ class NodeCountReporter(DailyReporter):
         from osf.models import Node, Registration
         from osf.models.spam import SpamStatus
 
-        node_qs = Node.objects.filter(is_deleted=False, created__date__lte=date)
-        registration_qs = Registration.objects.filter(is_deleted=False, created__date__lte=date)
+        node_qs = Node.objects.filter(deleted__isnull=True, created__date__lte=date)
+        registration_qs = Registration.objects.filter(deleted__isnull=True, created__date__lte=date)
 
         public_query = Q(is_public=True)
         private_query = Q(is_public=False)
@@ -36,7 +36,7 @@ class NodeCountReporter(DailyReporter):
 
         exclude_spam = ~Q(spam_status__in=[SpamStatus.SPAM, SpamStatus.FLAGGED])
 
-        report = NodeSummaryReportV0(
+        report = NodeSummaryReport(
             report_date=date,
             # Nodes - the number of projects and components
             nodes=NodeRunningTotals(

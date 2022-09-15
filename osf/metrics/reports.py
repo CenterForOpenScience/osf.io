@@ -93,7 +93,7 @@ class RegistrationRunningTotals(InnerDoc):
 #     past_year = metrics.Integer()
 
 
-class AddonUsageReportV0(DailyReport):
+class AddonUsageReport(DailyReport):
     DAILY_UNIQUE_FIELD = 'addon_shortname'
 
     addon_shortname = metrics.Keyword()
@@ -106,11 +106,11 @@ class AddonUsageReportV0(DailyReport):
     nodes_disconnected_count = metrics.Integer()
 
 
-class DownloadCountReportV0(DailyReport):
+class DownloadCountReport(DailyReport):
     daily_file_downloads = metrics.Integer()
 
 
-class InstitutionSummaryReportV0(DailyReport):
+class InstitutionSummaryReport(DailyReport):
     DAILY_UNIQUE_FIELD = 'institution_id'
 
     institution_id = metrics.Keyword()
@@ -129,25 +129,25 @@ class NewUserDomainReportV1(DailyReport):
     new_user_count = metrics.Integer()
 
 
-class NodeSummaryReportV0(DailyReport):
+class NodeSummaryReport(DailyReport):
     nodes = metrics.Object(NodeRunningTotals)
     projects = metrics.Object(NodeRunningTotals)
     registered_nodes = metrics.Object(RegistrationRunningTotals)
     registered_projects = metrics.Object(RegistrationRunningTotals)
 
 
-class OsfstorageFileCountReportV0(DailyReport):
+class OsfstorageFileCountReport(DailyReport):
     files = metrics.Object(FileRunningTotals)
 
 
-class PreprintSummaryReportV0(DailyReport):
+class PreprintSummaryReport(DailyReport):
     DAILY_UNIQUE_FIELD = 'provider_key'
 
     provider_key = metrics.Keyword()
     preprint_count = metrics.Integer()
 
 
-class UserSummaryReportV0(DailyReport):
+class UserSummaryReport(DailyReport):
     active = metrics.Integer()
     deactivated = metrics.Integer()
     merged = metrics.Integer()
