@@ -113,7 +113,6 @@ class TestUserIdentificationInformationListSorted(AdminTestCase):
         self.user_settings.owner.external_accounts.add(self.external_account2)
         self.user_settings.owner.save()
         self.S3Node_settings2 = S3NodeSettingsFactory(user_settings=self.user_settings)
-        print('users trong setup:', self.users)
 
     def add_user(self):
         user = AuthUserFactory()
