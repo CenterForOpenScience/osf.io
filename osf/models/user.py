@@ -38,7 +38,7 @@ from framework.sessions.utils import remove_sessions_for_user
 from osf.utils.requests import get_current_request
 from osf.exceptions import reraise_django_validation_errors, UserStateError
 from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
-from osf.models.notable_email_domain import NotableEmailDomain
+from osf.models.notable_domain import NotableDomain
 from osf.models.contributor import Contributor, RecentlyAddedContributor
 from osf.models.institution import Institution
 from osf.models.mixins import AddonModelMixin
@@ -1433,8 +1433,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             address.rpartition('@')[2].lower()
             for address in user_email_addresses
         ]
-        user_has_trusted_email = NotableEmailDomain.objects.filter(
-            note=NotableEmailDomain.Note.ASSUME_HAM_UNTIL_REPORTED,
+        user_has_trusted_email = NotableDomain.objects.filter(
+            note=NotableDomain.Note.ASSUME_HAM_UNTIL_REPORTED,
             domain__in=user_email_domains,
         ).exists()
 

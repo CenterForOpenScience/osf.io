@@ -12,7 +12,7 @@ from framework.auth import Auth
 
 from tests.base import DbTestCase
 from osf_tests.factories import UserFactory, CommentFactory, ProjectFactory, PreprintFactory, RegistrationFactory, AuthUserFactory
-from osf.models import NotableEmailDomain, SpamStatus
+from osf.models import NotableDomain, SpamStatus
 from website import settings, mails
 
 
@@ -239,9 +239,9 @@ class TestSpamCheckEmailDomain:
         # but what if we trust the user's email domain?
         user_email_address = user.emails.values_list('address', flat=True).first()
         user_email_domain = user_email_address.rpartition('@')[2].lower()
-        NotableEmailDomain.objects.create(
+        NotableDomain.objects.create(
             domain=user_email_domain,
-            note=NotableEmailDomain.Note.ASSUME_HAM_UNTIL_REPORTED,
+            note=NotableDomain.Note.ASSUME_HAM_UNTIL_REPORTED,
         )
 
         # should not call do_check_spam this time

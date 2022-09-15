@@ -6,10 +6,12 @@ from osf.models.base import BaseModel
 from osf.utils.fields import LowercaseCharField
 
 
-class NotableEmailDomain(BaseModel):
+class NotableDomain(BaseModel):
     class Note(IntEnum):
-        EXCLUDE_FROM_ACCOUNT_CREATION = 0
+        EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT = 0
         ASSUME_HAM_UNTIL_REPORTED = 1
+        UNKOWN = 2
+        NOT_ACTIONABLE = 3
 
         @classmethod
         def choices(cls):
@@ -22,8 +24,13 @@ class NotableEmailDomain(BaseModel):
 
     note = models.IntegerField(
         choices=Note.choices(),
-        default=Note.EXCLUDE_FROM_ACCOUNT_CREATION,
+        default=Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT,
     )
+
+    def save(self, *args, **kwargs):
+        # Override this method to mark related content
+        # as spam or ham when reclassifying domain name
+        return super().save(*args, **kwargs)
 
     def __repr__(self):
         return f'<{self.__class__.__name__}: {self.domain} ({self.Note(self.note).name})>'

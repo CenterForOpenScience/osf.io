@@ -52,7 +52,7 @@ def print_cas_log(msg, level):
 
 
 def validate_email(email):
-    NotableEmailDomain = apps.get_model('osf.NotableEmailDomain')
+    NotableDomain = apps.get_model('osf.NotableDomain')
     if len(email) > 254:
         raise ValidationError('Invalid Email')
 
@@ -60,9 +60,9 @@ def validate_email(email):
         raise ValidationError('Invalid Email')
 
     domain = email.split('@')[1].lower()
-    if NotableEmailDomain.objects.filter(
+    if NotableDomain.objects.filter(
         domain=domain,
-        note=NotableEmailDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION,
+        note=NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION,
     ).exists():
         raise ValidationError('Invalid Email')
 
