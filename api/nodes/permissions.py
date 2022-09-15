@@ -54,6 +54,18 @@ class IsPublic(permissions.BasePermission):
         return obj.is_public or obj.can_view(auth)
 
 
+class MustBePublic(permissions.BasePermission):
+    """
+    Only public nodes (even for contributors)
+    """
+
+    acceptable_models = (AbstractNode,)
+
+    def has_object_permission(self, request, view, obj):
+        assert_resource_type(obj, self.acceptable_models)
+        return obj.is_public
+
+
 class IsAdminContributor(permissions.BasePermission):
     """
     Use on API views where the requesting user needs to be an

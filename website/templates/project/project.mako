@@ -668,6 +668,7 @@ ${parent.javascript_bottom()}
         storageFlagIsActive: ${ storage_flag_is_active | sjson, n },
         nodeCategories: ${ node_categories | sjson, n },
         analyticsMeta: {
+            itemGuid: ${node['id'] | sjson, n},
             pageMeta: {
                 title: 'Home',
                 public: true,

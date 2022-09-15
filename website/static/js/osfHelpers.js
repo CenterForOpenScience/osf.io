@@ -8,7 +8,6 @@ var URI = require('URIjs');
 var Cookie  = require('js-cookie');
 var bootbox = require('bootbox');
 var lodashGet = require('lodash.get');
-var KeenTracker = require('js/keen');
 var linkify = require('linkifyjs/html');
 
 // TODO: For some reason, this require is necessary for custom ko validators to work

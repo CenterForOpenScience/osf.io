@@ -87,7 +87,7 @@ INSTALLED_APPS = (
     'password_reset',
     'guardian',
     'waffle',
-    'elasticsearch_metrics',
+    'elasticsearch_metrics.apps.ElasticsearchMetricsConfig',
 
     # OSF
     'osf',

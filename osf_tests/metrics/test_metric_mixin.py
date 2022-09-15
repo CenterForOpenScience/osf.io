@@ -2,7 +2,7 @@ import mock
 import pytest
 from elasticsearch_metrics import metrics
 
-from osf.metrics import MetricMixin
+from osf.metrics.metric_mixin import MetricMixin
 from osf.models import OSFUser
 from osf_tests.factories import UserFactory
 
