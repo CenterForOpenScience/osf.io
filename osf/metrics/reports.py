@@ -122,7 +122,7 @@ class InstitutionSummaryReport(DailyReport):
     registered_projects = metrics.Object(RegistrationRunningTotals)
 
 
-class NewUserDomainReportV1(DailyReport):
+class NewUserDomainReport(DailyReport):
     DAILY_UNIQUE_FIELD = 'domain_name'
 
     domain_name = metrics.Keyword()

@@ -2,7 +2,7 @@ import logging
 from collections import Counter
 
 from osf.models import OSFUser
-from osf.metrics.reports import NewUserDomainReportV1
+from osf.metrics.reports import NewUserDomainReport
 from ._base import DailyReporter
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ class NewUserDomainReporter(DailyReporter):
             for email in new_user_emails
         )
         return [
-            NewUserDomainReportV1(
+            NewUserDomainReport(
                 report_date=date,
                 domain_name=domain_name,
                 new_user_count=count,
