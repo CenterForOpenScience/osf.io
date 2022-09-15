@@ -1789,9 +1789,11 @@ function _lazyLoadPreprocess(obj) {
             var id = obj.data[0].id;
             // look for parent folder based on id attribute
             var path = attributes.kind === 'folder' ? id.slice(0, -1).replace(attributes.name, '') : id.replace(attributes.name, '');
-            var parent = this.flatData.filter(item => item.row.kind === 'folder' &&
-                (item.row.provider === 's3' || item.row.provider === 's3compat') &&
-                item.row.id === path);
+            var parent = this.flatData.filter(function (item) {
+                return item.row.kind === 'folder' &&
+                    (item.row.provider === 's3' || item.row.provider === 's3compat') &&
+                    item.row.id === path;
+            });
             if (parent[0]) {
                 parent = this.find(parent[0].id);
                 parent.next_token = next_token;
@@ -2945,8 +2947,10 @@ function fetchData(tree) {
         // set isFetching flag to prevent calling api multiple times
         tree.isFetching = true;
 
-        var item = self.flatData.filter(item => item.id === tree.id)[0],
-            child,
+        var item = self.flatData.filter(function (item) {
+                return item.id === tree.id;
+            })[0];
+        var child,
             i,
             lazyLoad;
 
@@ -2989,7 +2993,7 @@ function fetchData(tree) {
                                 tree.load = true;
                                 tree.is_sorted = false;
                             }
-                        }, function (info) {
+                        }, function () {
                             self.options.lazyLoadError.call(self, tree);
                         })
                         .then(function _getUrlFlatten() {
@@ -3015,7 +3019,9 @@ function handleScroll() {
     var rs, range, item, index;
     rs = this.select('#tb-tbody > .tb-tbody-inner > div');
     // Get the list of id of the elements displayed when scrolling down
-    range = Array.from(rs[0].children).map(item => parseInt(item.getAttribute('data-id')));
+    range = Array.from(rs[0].children).map(function (item) {
+        return parseInt(item.getAttribute('data-id'));
+    });
     for (var i = 0; i < range.length; i++) {
         index = range[i];
         item = this.find(index);
@@ -3033,7 +3039,6 @@ function handleScroll() {
                 fetchData.call(this, parent);
             }
         }
-
     }
 }
 
@@ -3131,15 +3136,14 @@ tbOptions = {
         $osf.onScroll(tb.select('#tb-tbody'), handleScroll.bind(tb));
 
         // Add loading modal when loading page
-        tb.select('#tb-tbody').prepend(`<div style="width: 100%; height: 100%; padding: 50px 100px; position: sticky; top: 0; left: 0;background-color: white;" class="tb-modal-shade">
-                                    <div class="spinner-loading-wrapper" style="background-color: transparent;">
-                                        <div class="ball-scale ball-scale-blue">
-                                            <div>
-                                            </div>
-                                        </div>
-                                        <p class="m-t-sm fg-load-message">Loading files...</p>
-                                    </div>
-                                </div>`);
+        tb.select('#tb-tbody').prepend(
+            '<div style="width: 100%; height: 100%; padding: 50px 100px; position: sticky; top: 0; left: 0; background-color: white;"' +
+            ' class="tb-modal-shade">' +
+            '<div class="spinner-loading-wrapper" style="background-color: transparent;">' +
+            '<div class="ball-scale ball-scale-blue"><div></div></div>' +
+            '<p class="m-t-sm fg-load-message">Loading files...</p>' +
+            '</div></div>'
+        );
     },
     movecheck : function (to, from) { //This method gives the users an option to do checks and define their return
         return true;
