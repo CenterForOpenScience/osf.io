@@ -252,11 +252,9 @@ $(function() {
         }
     }
 
-    if (window.contextVars.keen){
-        //Don't track PhantomJS visits with KeenIO
-        if (!(/PhantomJS/.test(navigator.userAgent))){
-            KeenTracker.getInstance().trackPageView();
-        }
+    //Don't track PhantomJS visits with KeenIO
+    if (!(/PhantomJS/.test(navigator.userAgent))){
+        KeenTracker.getInstance().trackPageView();
     }
 
     confirmEmails(window.contextVars.currentUser.emailsToAdd);

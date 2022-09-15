@@ -11,8 +11,6 @@ from django.db import transaction
 from django.db.models import Q
 from website.app import init_app
 
-django.setup()
-
 from osf.models import Node, NodeLog
 from framework.auth.core import Auth
 from scripts import utils as script_utils
@@ -130,4 +128,5 @@ def run_main(dry_run=True):
 
 if __name__ == '__main__':
     dry_run = '--dry' in sys.argv
+    django.setup()
     run_main(dry_run=dry_run)

@@ -154,6 +154,9 @@
           jobsUrls: jobsUrls,
           schoolsUrls: schoolsUrls,
           user: ${ user | sjson, n },
+          analyticsMeta: {
+              itemGuid: ${ user['_id'] | sjson, n },
+          },
       });
   })();
 </script>
