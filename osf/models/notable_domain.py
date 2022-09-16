@@ -11,7 +11,7 @@ class NotableDomain(BaseModel):
         EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT = 0
         ASSUME_HAM_UNTIL_REPORTED = 1
         UNKOWN = 2
-        NOT_ACTIONABLE = 3
+        IGNORED = 3
 
         @classmethod
         def choices(cls):
