@@ -157,15 +157,34 @@ def _get_provider_id(guid_referent):
     if isinstance(provider, str):
         return provider         # quacks like BaseFileNode
     elif provider:
-        return provider._id     # quacks like Registration, Preprint
-    return 'osf'                # quacks like Node
+        return provider._id     # quacks like Registration, Preprint, Collection
+    return 'osf'                # quacks like Node, Comment, WikiPage
 
+
+def _get_immediate_wrapper(guid_referent):
+    if hasattr(guid_referent, 'verified_publishable'):
+        return None                                     # quacks like Preprint
+    return (
+        getattr(guid_referent, 'parent_node', None)     # quacks like AbstractNode
+        or getattr(guid_referent, 'node', None)         # quacks like WikiPage, Comment
+        or getattr(guid_referent, 'target', None)       # quacks like BaseFileNode
+    )
 
 def _get_surrounding_guids(guid_referent):
-    immediate_wrapper = (
-        getattr(guid_referent, 'target', None)          # quacks like BaseFileNode
-        or getattr(guid_referent, 'parent_node', None)  # quacks like AbstractNode
-    )
-    if immediate_wrapper:
-        return [immediate_wrapper._id, *_get_surrounding_guids(immediate_wrapper)]
-    return []
+    """get all the parent/owner/surrounding guids for the given guid_referent
+
+    @param guid_referent: instance of a model that has GuidMixin
+    @returns list of str
+
+    For AbstractNode, goes up the node hierarchy up to the root.
+    For WikiPage or BaseFileNode, grab the node it belongs to and
+    follow the node hierarchy from there.
+    """
+    surrounding_guids = []
+    current_referent = guid_referent
+    while current_referent:
+        next_referent = _get_immediate_wrapper(current_referent)
+        if next_referent:
+            surrounding_guids.append(next_referent._id)
+        current_referent = next_referent
+    return surrounding_guids
