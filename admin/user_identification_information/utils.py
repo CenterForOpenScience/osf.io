@@ -21,22 +21,21 @@ def get_list_extend_storage():
     for index in range(len(provider_list)):
         provider = provider_list[index]
         provider_name = provider_name_list[index]
-        if any(s in provider.lower() for s in
-               ('s3', 's3compat', 's3compatb3', 'azureblobstorage', 'box', 'figshare', 'onedrivebusiness', 'swift',)):
+        if provider.lower() in ('s3', 's3compat', 's3compatb3', 'azureblobstorage', 'box', 'figshare', 'onedrivebusiness', 'swift',):
             storage_branch_name = 'folder_name'
-        elif any(s in provider.lower() for s in ('bitbucket', 'github', 'gitlab',)):
+        elif provider.lower() in ('bitbucket', 'github', 'gitlab',):
             storage_branch_name = 'repo'
-        elif any(s in provider.lower() for s in ('googledrive', 'onedrive', 'iqbrims',)):
+        elif provider.lower() in ('googledrive', 'onedrive', 'iqbrims',):
             storage_branch_name = 'folder_path'
-        elif any(s in provider.lower() for s in ('dropbox',)):
+        elif provider.lower() in ('dropbox',):
             storage_branch_name = 'folder'
-        elif any(s in provider.lower() for s in ('weko',)):
+        elif provider.lower() in ('weko',):
             storage_branch_name = 'index_title'
-        elif any(s in provider.lower() for s in ('mendeley', 'zotero',)):
+        elif provider.lower() in ('mendeley', 'zotero',):
             storage_branch_name = 'list_id'
-        elif any(s in provider.lower() for s in ('owncloud',)):
+        elif provider.lower() in ('owncloud',):
             storage_branch_name = 'folder_id'
-        elif any(s in provider.lower() for s in ('dataverse',)):
+        elif provider.lower() in ('dataverse',):
             storage_branch_name = 'dataverse'
 
         query_string = """

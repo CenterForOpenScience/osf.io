@@ -4,6 +4,7 @@ from nose import tools as nt
 from addons.dataverse.tests.factories import DataverseNodeSettingsFactory, DataverseAccountFactory
 from addons.github.tests.factories import GitHubNodeSettingsFactory, GitHubAccountFactory
 from addons.googledrive.tests.factories import GoogleDriveNodeSettingsFactory, GoogleDriveAccountFactory
+from addons.dropbox.tests.factories import DropboxNodeSettingsFactory, DropboxAccountFactory
 from addons.mendeley.tests.factories import MendeleyNodeSettingsFactory, MendeleyAccountFactory
 from addons.owncloud.tests.factories import OwnCloudNodeSettingsFactory, OwnCloudAccountFactory
 from addons.s3.tests.factories import (S3NodeSettingsFactory, S3AccountFactory, )
@@ -111,6 +112,26 @@ class TestUtils(AdminTestCase):
             list_name.append(v[0])
 
         nt.assert_in('/googledrive name', list_name[0])
+
+    def test_get_list_extend_storage_with_branch_name_is_folder(self):
+        """
+        this case check get_list_extend_storage() dropbox
+            return storage_branch_name = 'folder'
+        """
+        self.user.add_addon('dropbox')
+        self.user_settings = self.user.get_addon('dropbox')
+        self.external_account = DropboxAccountFactory(provider_name='dropbox name')
+        self.user_settings.owner.external_accounts.add(self.external_account)
+        self.user_settings.owner.save()
+        self.DropboxNode_settings = DropboxNodeSettingsFactory(user_settings=self.user_settings, external_account=self.external_account)
+
+        list_name = []
+        results = utils.get_list_extend_storage()
+
+        for k, v in results.items():
+            list_name.append(v[0])
+
+        nt.assert_in('/dropbox name', list_name[0])
 
     def test_get_list_extend_storage_with_branch_name_is_index_title(self):
 
