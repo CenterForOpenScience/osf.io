@@ -10,7 +10,7 @@ class NotableDomain(BaseModel):
     class Note(IntEnum):
         EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT = 0
         ASSUME_HAM_UNTIL_REPORTED = 1
-        UNKOWN = 2
+        UNKNOWN = 2
         IGNORED = 3
 
         @classmethod
