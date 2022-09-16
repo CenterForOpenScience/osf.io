@@ -32,5 +32,5 @@ def error_handler(task_id, task_name):
     excep = result.get(propagate=False)
     # log detailed error mesage in error log
     logger.error('#####FAILURE LOG BEGIN#####\n'
-                r'Task {0} raised exception: {0}\n\{0}\n'
+                'Task {0} raised exception: {1}\n{2}\n'
                 '#####FAILURE LOG STOP#####'.format(task_name, excep, result.traceback))

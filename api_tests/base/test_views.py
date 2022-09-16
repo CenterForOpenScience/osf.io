@@ -15,6 +15,7 @@ from framework.auth.oauth_scopes import CoreScopes
 from api.base.settings.defaults import API_BASE
 from api.search.permissions import IsAuthenticatedOrReadOnlyForSearch
 from api.crossref.views import ParseCrossRefConfirmation
+from api.metrics.views import RawMetricsView, RegistriesModerationMetricsView, CountedUsageView
 from api.users.views import ClaimUser
 from api.wb.views import MoveFileMetadataView, CopyFileMetadataView
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
@@ -38,8 +39,6 @@ VIEW_CLASSES = []
 for mod in URLS_MODULES:
     urlpatterns = mod.urlpatterns
     for patt in urlpatterns:
-        if hasattr(patt, 'name') and patt.name == 'raw-metrics-view':
-            continue
         if hasattr(patt, 'url_patterns'):
             # Namespaced list of patterns
             for subpatt in patt.url_patterns:
@@ -51,7 +50,15 @@ for mod in URLS_MODULES:
 class TestApiBaseViews(ApiTestCase):
     def setUp(self):
         super(TestApiBaseViews, self).setUp()
-        self.EXCLUDED_VIEWS = [ClaimUser, MoveFileMetadataView, CopyFileMetadataView, ParseCrossRefConfirmation]
+        self.EXCLUDED_VIEWS = [
+            ClaimUser,
+            CopyFileMetadataView,
+            CountedUsageView,
+            MoveFileMetadataView,
+            ParseCrossRefConfirmation,
+            RawMetricsView,
+            RegistriesModerationMetricsView,
+        ]
 
     def test_root_returns_200(self):
         res = self.app.get('/{}'.format(API_BASE))
@@ -71,7 +78,7 @@ class TestApiBaseViews(ApiTestCase):
             url = '/{}{}/'.format(API_BASE, 'notapage')
             res = self.app.get(url, expect_errors=True)
             errors = res.json['errors']
-            assert(isinstance(errors, list))
+            assert isinstance(errors, list)
             assert_equal(errors[0], {'detail': 'Not found.'})
 
     def test_view_classes_have_minimal_set_of_permissions_classes(self):

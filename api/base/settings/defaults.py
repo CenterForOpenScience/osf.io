@@ -92,7 +92,7 @@ INSTALLED_APPS = (
     'guardian',
     'storages',
     'waffle',
-    'elasticsearch_metrics',
+    'elasticsearch_metrics.apps.ElasticsearchMetricsConfig',
 
     # OSF
     'osf',
