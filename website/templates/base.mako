@@ -243,7 +243,11 @@
                     anon: ${ anon | sjson, n },
                 },
                 maintenance: ${ maintenance | sjson, n},
-                analyticsMeta: {},
+                analyticsMeta: {
+                    pageMeta: {
+                        routeName: ${page_route_name | sjson, n},
+                    },
+                },
                 osfSupportEmail: ${osf_support_email | sjson, n },
                 csrfCookieName: ${ csrf_cookie_name | sjson, n },
             });

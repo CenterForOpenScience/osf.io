@@ -92,7 +92,7 @@ datacite==1.1.2
 
 
 # Metrics
-git+https://github.com/Johnetordoff/django-elasticsearch-metrics.git@update-django-3#egg=django-elasticsearch-metrics
+git+https://github.com/CenterForOpenScience/django-elasticsearch-metrics@2022.0.6
 
 # Impact Metrics CSV Export
 djangorestframework-csv==2.1.0

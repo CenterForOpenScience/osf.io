@@ -269,8 +269,9 @@ def proxy_url(url):
 
     """
     # Get URL map, passing current request method; else method defaults to GET
-    match = app.url_map.bind('').match(url, method=request.method)
-    response = app.view_functions[match[0]](**match[1])
+    (rule, rule_args) = app.url_map.bind('').match(url, method=request.method, return_rule=True)
+    request.url_rule = rule
+    response = app.view_functions[rule.endpoint](**rule_args)
     return make_response(response)
 
 

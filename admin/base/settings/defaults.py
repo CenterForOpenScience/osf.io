@@ -86,7 +86,7 @@ INSTALLED_APPS = (
     'webpack_loader',
     'guardian',
     'waffle',
-    'elasticsearch_metrics',
+    'elasticsearch_metrics.apps.ElasticsearchMetricsConfig',
 
     # OSF
     'osf',
