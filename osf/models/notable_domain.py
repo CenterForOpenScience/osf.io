@@ -1,6 +1,8 @@
 from enum import IntEnum
 
 from django.db import models
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
 
 from osf.models.base import BaseModel
 from osf.utils.fields import LowercaseCharField
@@ -37,3 +39,10 @@ class NotableDomain(BaseModel):
 
     def __str__(self):
         return repr(self)
+
+class DomainReference(BaseModel):
+    referent_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    referent_object_id = models.PositiveIntegerField()
+    referent = GenericForeignKey('referent_content_type', 'referent_object_id')
+    domain = models.ForeignKey(NotableDomain, on_delete=models.CASCADE)
+    is_triaged = models.BooleanField(default=False)
