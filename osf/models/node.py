@@ -54,7 +54,7 @@ from osf.models.user import OSFUser
 from osf.models.validators import validate_title, validate_doi
 from framework.auth.core import Auth
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.utils.fields import NonNaiveDateTimeField
+from osf.utils.fields import NonNaiveDateTimeField, ensure_str
 from osf.utils.requests import get_request_and_user_id, string_type_request_headers
 from osf.utils import sanitize
 from website import language, settings
@@ -1278,7 +1278,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return True
 
     def generate_keenio_read_key(self):
-        return scoped_keys.encrypt(settings.KEEN['public']['master_key'], options={
+        encrypted_read_key = scoped_keys.encrypt(settings.KEEN['public']['master_key'], options={
             'filters': [{
                 'property_name': 'node.id',
                 'operator': 'eq',
@@ -1286,6 +1286,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             }],
             'allowed_operations': [READ]
         })
+        return ensure_str(encrypted_read_key)
 
     @property
     def private_links_active(self):
