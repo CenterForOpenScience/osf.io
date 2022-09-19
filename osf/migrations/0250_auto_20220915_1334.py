@@ -14,6 +14,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='notabledomain',
             name='note',
-            field=models.IntegerField(choices=[(0, 'EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT'), (1, 'ASSUME_HAM_UNTIL_REPORTED'), (2, 'UNKOWN'), (3, 'NOT_ACTIONABLE')], default=2),
+            field=models.IntegerField(choices=[(0, 'EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT'), (1, 'ASSUME_HAM_UNTIL_REPORTED'), (2, 'UNKNOWN'), (3, 'IGNORED')], default=2),
         ),
     ]
