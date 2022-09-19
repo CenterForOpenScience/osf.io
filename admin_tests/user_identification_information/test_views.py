@@ -295,9 +295,9 @@ class TestUserIdentificationDetailView(AdminTestCase):
         nt.assert_is_instance(results, dict)
 
 
-class TestExportFileTSV(AdminTestCase):
+class TestExportFileCSVView(AdminTestCase):
     def setUp(self):
-        super(TestExportFileTSV, self).setUp()
+        super(TestExportFileCSVView, self).setUp()
         self.user = AuthUserFactory(fullname='Kenny Michel', username='Kenny@gmail.com')
         self.user2 = AuthUserFactory(fullname='alex queen')
         self.user2.is_superuser = True
