@@ -338,10 +338,10 @@ def get_auth(auth, **kwargs):
 
         if location_id and not auth.user.is_allowed_storage_location_id(location_id):
             logger.debug(f'Authenticated user do not have permission on storage location id {location_id}')
-            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+            raise HTTPError(http_status.HTTP_403_FORBIDDEN)
         if region_id and not auth.user.is_allowed_storage_id(region_id):
             logger.debug(f'Authenticated user do not have permission on institution storage id {region_id}')
-            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+            raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
     path = data.get('path')
     credentials = None
@@ -365,7 +365,7 @@ def get_auth(auth, **kwargs):
                 if auth.user:
                     # mark fileversion as seen
                     FileVersionUserMetadata.objects.get_or_create(user=auth.user, file_version=fileversion)
-                if is_node_process and not node.is_contributor_or_group_member(auth.user):
+                if not node.is_contributor_or_group_member(auth.user):
                     from_mfr = download_is_from_mfr(request, payload=data)
                     # version index is 0 based
                     version_index = version - 1

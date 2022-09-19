@@ -138,7 +138,9 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
             return None
         # transfer content data file to location
         response = export_data.transfer_export_data_file_to_location(cookies, file_name, file_data, **kwargs)
-        if not task.is_aborted() and response.status_code != 201:
+        # 409: file is existing (able diff in path)
+        # 201: created
+        if not task.is_aborted() and response.status_code != 201 and response.status_code not in (409,):
             return export_data_rollback_process(cookies, export_data_id, **kwargs)
     logger.debug(f'uploaded file versions')
 
