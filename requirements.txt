@@ -57,9 +57,9 @@ djangorestframework==3.13.1
 django-cors-headers==3.10.1
 djangorestframework-bulk==0.2.1
 hashids==1.2.0
-pyjwt==2.4.0
-django-celery-beat==4.2.3  # BSD 3 Clause
-django-celery-results==2.4.0
+pyjwt==1.5.3
+django-celery-beat==1.1.1  # BSD 3 Clause
+django-celery-results==1.0.1
 pyjwe==1.0.0
 # Required by pyjwe and ndg-httpsclient
 # Building wheel for cryptography >= 3.4.0 requires a Rust version incompatible with Docker base image.
