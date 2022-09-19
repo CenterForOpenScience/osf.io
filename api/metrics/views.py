@@ -233,12 +233,12 @@ class RegistriesModerationMetricsView(GenericAPIView):
 
 
 VIEWABLE_REPORTS = {
-    # 'addon_usage': reports.AddonUsageReport,
     'download_count': reports.DownloadCountReport,
     'institution_summary': reports.InstitutionSummaryReport,
     'node_summary': reports.NodeSummaryReport,
     'osfstorage_file_count': reports.OsfstorageFileCountReport,
     'preprint_summary': reports.PreprintSummaryReport,
+    'storage_addon_usage': reports.StorageAddonUsage,
     'user_summary': reports.UserSummaryReport,
 }
 

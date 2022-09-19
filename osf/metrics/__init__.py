@@ -13,24 +13,24 @@ from .institution_metrics import (
 from .registry_metrics import RegistriesModerationMetrics
 
 from .reports import (
-    AddonUsageReport,
     DownloadCountReport,
     InstitutionSummaryReport,
     NewUserDomainReport,
     NodeSummaryReport,
     OsfstorageFileCountReport,
     PreprintSummaryReport,
+    StorageAddonUsage,
     UserSummaryReport,
 )
 
 DAILY_REPORTS = (
-    AddonUsageReport,
     DownloadCountReport,
     InstitutionSummaryReport,
     NewUserDomainReport,
     NodeSummaryReport,
     OsfstorageFileCountReport,
     PreprintSummaryReport,
+    StorageAddonUsage,
     UserSummaryReport,
 )
 
