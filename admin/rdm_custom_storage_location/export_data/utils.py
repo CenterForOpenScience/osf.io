@@ -395,8 +395,7 @@ def count_files_ng_ok(exported_file_versions, storage_file_versions, exclude_key
 
         file_b = next((
             file for file in storage_file_versions
-            if file.get('materialized_path') == materialized_path_a
-               and file.get('identifier') == version_identifier_a
+            if file.get('materialized_path') == materialized_path_a and file.get('identifier') == version_identifier_a
         ), None)
         if file_b:
             is_diff, message, file_version = check_diff_between_version([file_a], [file_b], exclude_keys=exclude_keys)
