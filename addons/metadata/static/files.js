@@ -1093,8 +1093,15 @@ function MetadataButtons() {
   self.createButtonsBase = function(filepath, item, createButton) {
     const context = self.findContextByNodeId(item ? item.data.nodeId : contextVars.node.id);
     if (!context) {
-      console.warn('Metadata not loaded for project:', item.data.nodeId);
-      return [];
+      console.warn('Metadata not loaded for project:', item ? item.data.nodeId : null);
+      const viewButton = createButton({
+        onclick: function(event) {
+        },
+        icon: 'fa fa-spinner fa-pulse',
+        className : 'text-default disabled'
+      }, _('Loading Metadata'));
+      viewButton.disabled = true;
+      return [viewButton];
     }
     if (!context.addonAttached) {
       return [];
@@ -1363,21 +1370,19 @@ function MetadataButtons() {
   };
 
   self.initFileView = function() {
-    self.initBase(function(path) {
-      if (!path) {
-        return;
+    var path = null;
+    function refreshIfToolbarExists() {
+      const toolbar = $('#toggleBar .btn-toolbar');
+      if (toolbar.length > 0) {
+        self.refreshFileViewButtons(path);
       }
-      var handler = null;
-      handler = function() {
-        // Wait until btn-toolbar is created
-        const toolbar = $('#toggleBar .btn-toolbar');
-        if (toolbar.length > 0) {
-          self.refreshFileViewButtons(path);
-          return;
-        }
-        setTimeout(handler, 100);
-      };
-      setTimeout(handler, 100);
+    }
+    const observer = new MutationObserver(refreshIfToolbarExists);
+    const toggleBar = $('#toggleBar').get(0);
+    observer.observe(toggleBar, {attributes: false, childList: true, subtree: false});
+    self.initBase(function(p) {
+      path = p;
+      refreshIfToolbarExists();
     });
   }
 
@@ -1398,9 +1403,6 @@ function MetadataButtons() {
         return new Proxy(obj, {
           get: function(target, propname) {
             if (propname == 'itemButtons') {
-              if (!self.contexts) {
-                return target[propname];
-              }
               return function(item) {
                 var base = Fangorn.Components.defaultItemButtons;
                 if (target[propname] !== undefined) {
