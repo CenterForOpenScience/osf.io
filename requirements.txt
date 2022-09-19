@@ -10,7 +10,7 @@ invoke==0.15.0
 Werkzeug==1.0.0
 Flask==1.0
 gevent==1.2.2
-Mako==1.0.7
+Mako==1.1.6
 Markdown==3.3.7
 WTForms==1.0.4
 # Fork of celery 4.1.1 with https://github.com/celery/celery/pull/4278 backported,
@@ -20,7 +20,7 @@ WTForms==1.0.4
 git+https://github.com/cos-forks/celery@v4.1.1+cos0
 kombu==4.2.0
 itsdangerous==1.1.0
-lxml==4.6.5
+lxml==4.9.1
 mailchimp==2.0.9
 nameparser==0.5.3
 bcrypt==3.1.4
@@ -57,9 +57,9 @@ djangorestframework==3.13.1
 django-cors-headers==3.10.1
 djangorestframework-bulk==0.2.1
 hashids==1.2.0
-pyjwt==1.5.3
-django-celery-beat==1.1.1  # BSD 3 Clause
-django-celery-results==1.0.1
+pyjwt==2.4.0
+django-celery-beat==4.2.3  # BSD 3 Clause
+django-celery-results==2.4.0
 pyjwe==1.0.0
 # Required by pyjwe and ndg-httpsclient
 # Building wheel for cryptography >= 3.4.0 requires a Rust version incompatible with Docker base image.
@@ -92,7 +92,8 @@ datacite==1.1.2
 
 
 # Metrics
-git+https://github.com/Johnetordoff/django-elasticsearch-metrics.git@update-django-3#egg=django-elasticsearch-metrics
+#django-elasticsearch-metrics==5.0.0
+git+https://github.com/CenterForOpenScience/django-elasticsearch-metrics@2022.0.6
 
 # Impact Metrics CSV Export
 djangorestframework-csv==2.1.0
