@@ -87,6 +87,7 @@ function MetadataButtons() {
     const loadedCallback = function() {
       self.loading = false;
       const path = self.processHash();
+      m.redraw();
       if (!callback) {
         return;
       }
