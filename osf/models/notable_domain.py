@@ -24,7 +24,7 @@ class NotableDomain(BaseModel):
 
     note = models.IntegerField(
         choices=Note.choices(),
-        default=Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT,
+        default=Note.UNKNOWN,
     )
 
     def save(self, *args, **kwargs):
