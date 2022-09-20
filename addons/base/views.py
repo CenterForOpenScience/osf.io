@@ -336,10 +336,10 @@ def get_auth(auth, **kwargs):
             logger.debug(f'Missing location_id and region_id')
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
-        if location_id and not auth.user.is_allowed_storage_location_id(location_id):
+        if location_id and auth.user and not auth.user.is_allowed_storage_location_id(location_id):
             logger.debug(f'Authenticated user do not have permission on storage location id {location_id}')
             raise HTTPError(http_status.HTTP_403_FORBIDDEN)
-        if region_id and not auth.user.is_allowed_storage_id(region_id):
+        if region_id and auth.user and not auth.user.is_allowed_storage_id(region_id):
             logger.debug(f'Authenticated user do not have permission on institution storage id {region_id}')
             raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 

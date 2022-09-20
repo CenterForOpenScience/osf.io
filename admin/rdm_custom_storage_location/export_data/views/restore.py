@@ -11,6 +11,7 @@ from celery.contrib.abortable import AbortableAsyncResult, ABORTED
 from django.db import transaction
 from django.utils import timezone
 from django.utils.decorators import method_decorator
+from rest_framework import authentication as drf_authentication
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -36,10 +37,15 @@ class ProcessError(Exception):
 @method_decorator(transaction.non_atomic_requests, name='dispatch')
 class RestoreDataActionView(RdmPermissionMixin, APIView):
     raise_exception = True
+    authentication_classes = (
+        drf_authentication.SessionAuthentication,
+    )
 
     def post(self, request, **kwargs):
         destination_id = request.POST.get('destination_id')
         export_id = self.kwargs.get('export_id')
+        cookie = request.user.get_or_create_cookie().decode()
+        kwargs.setdefault('cookie', cookie)
         cookies = request.COOKIES
         is_from_confirm_dialog = request.POST.get('is_from_confirm_dialog', default=False)
         if destination_id is None or export_id is None:
@@ -51,7 +57,7 @@ class RestoreDataActionView(RdmPermissionMixin, APIView):
             if any_process_running:
                 return Response({'message': f'Cannot restore in this time.'}, status=status.HTTP_400_BAD_REQUEST)
 
-            result = check_before_restore_export_data(cookies, export_id, destination_id)
+            result = check_before_restore_export_data(cookies, export_id, destination_id, cookie=cookie)
             if result.get('open_dialog'):
                 # If open_dialog is True, return HTTP 200 with empty response
                 return Response({}, status=status.HTTP_200_OK)
@@ -60,14 +66,14 @@ class RestoreDataActionView(RdmPermissionMixin, APIView):
                 return Response({'message': result.get('message')}, status=status.HTTP_400_BAD_REQUEST)
 
         # Start restore data task and return task id
-        return prepare_for_restore_export_data_process(cookies, export_id, destination_id)
+        return prepare_for_restore_export_data_process(cookies, export_id, destination_id, cookie=cookie)
 
 
-def check_before_restore_export_data(cookies, export_id, destination_id):
+def check_before_restore_export_data(cookies, export_id, destination_id, **kwargs):
     export_data = ExportData.objects.filter(id=export_id, is_deleted=False)[0]
     # Check export file data: /export_{process_start}/export_data_{institution_guid}_{process_start}.json
     try:
-        is_export_file_valid = read_file_info_and_check_schema(export_data, cookies)
+        is_export_file_valid = read_file_info_and_check_schema(export_data, cookies, **kwargs)
         if not is_export_file_valid:
             return {'open_dialog': False, 'message': f'The export data files are corrupted'}
     except Exception as e:
@@ -75,7 +81,7 @@ def check_before_restore_export_data(cookies, export_id, destination_id):
         return {'open_dialog': False, 'message': f'Cannot connect to the export data storage location'}
 
     # Get file info file: /export_{process_start}/file_info_{institution_guid}_{process_start}.json
-    export_data_files = read_file_info_and_check_schema(export_data=export_data, cookies=cookies)
+    export_data_files = read_file_info_and_check_schema(export_data=export_data, cookies=cookies, **kwargs)
 
     if not len(export_data_files):
         return {'open_dialog': False, 'message': f'The export data files are corrupted'}
@@ -90,7 +96,7 @@ def check_before_restore_export_data(cookies, export_id, destination_id):
     destination_provider = INSTITUTIONAL_STORAGE_PROVIDER_NAME
     try:
         response = utils.get_file_data(destination_first_project_id, destination_provider, '/', cookies,
-                                       destination_base_url, get_file_info=True)
+                                       destination_base_url, get_file_info=True, **kwargs)
         if response.status_code != 200:
             # Error
             logger.error(f'Return error with response: {response.content}')
@@ -109,7 +115,7 @@ def check_before_restore_export_data(cookies, export_id, destination_id):
     return {'open_dialog': False}
 
 
-def prepare_for_restore_export_data_process(cookies, export_id, destination_id):
+def prepare_for_restore_export_data_process(cookies, export_id, destination_id, **kwargs):
     # Check the destination is available (not in restore process or checking restore data process)
     any_process_running = utils.check_for_any_running_restore_process(destination_id)
     if any_process_running:
@@ -120,11 +126,11 @@ def prepare_for_restore_export_data_process(cookies, export_id, destination_id):
                                             status=ExportData.STATUS_RUNNING)
     export_data_restore.save()
     # If user clicked 'Restore' button in confirm dialog, start restore data task and return task id
-    process = tasks.run_restore_export_data_process.delay(cookies, export_id, export_data_restore.pk)
+    process = tasks.run_restore_export_data_process.delay(cookies, export_id, export_data_restore.pk, **kwargs)
     return Response({'task_id': process.task_id}, status=status.HTTP_200_OK)
 
 
-def restore_export_data_process(task, cookies, export_id, export_data_restore_id):
+def restore_export_data_process(task, cookies, export_id, export_data_restore_id, **kwargs):
     current_process_step = 0
     task.update_state(state=PENDING, meta={'current_restore_step': current_process_step})
     try:
@@ -135,7 +141,7 @@ def restore_export_data_process(task, cookies, export_id, export_data_restore_id
 
         # Get file which have same information between export data and database
         # File info file: /export_{process_start}/file_info_{institution_guid}_{process_start}.json
-        export_data_files = read_file_info_and_check_schema(export_data=export_data, cookies=cookies)
+        export_data_files = read_file_info_and_check_schema(export_data=export_data, cookies=cookies, **kwargs)
 
         if len(export_data_files) == 0:
             export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
@@ -148,15 +154,16 @@ def restore_export_data_process(task, cookies, export_id, export_data_restore_id
         task.update_state(state=PENDING, meta={'current_restore_step': current_process_step})
 
         # Move all existing files/folders in destination to backup_{process_start} folder
-        move_all_files_to_backup_folder(task, current_process_step, destination_first_project_id, export_data_restore, cookies)
+        move_all_files_to_backup_folder(task, current_process_step, destination_first_project_id, export_data_restore, cookies, **kwargs)
 
         current_process_step = 2
         task.update_state(state=PENDING, meta={'current_restore_step': current_process_step})
 
         # Download files from export data, then upload files to destination. Returns list of created file node in DB
-        list_created_file_nodes = copy_files_from_export_data_to_destination(task, current_process_step,
-                                                                             export_data_files, export_data_restore,
-                                                                             cookies)
+        list_created_file_nodes = copy_files_from_export_data_to_destination(
+            task, current_process_step,
+            export_data_files, export_data_restore,
+            cookies, **kwargs)
 
         check_if_restore_process_stopped(task, current_process_step)
         current_process_step = 3
@@ -179,7 +186,7 @@ def restore_export_data_process(task, cookies, export_id, export_data_restore_id
             task.update_state(state=ABORTED,
                               meta={'current_restore_step': current_process_step})
         else:
-            restore_export_data_rollback_process(task, cookies, export_id, export_data_restore_id, process_step=current_process_step)
+            restore_export_data_rollback_process(task, cookies, export_id, export_data_restore_id, process_step=current_process_step, **kwargs)
         raise e
 
 
@@ -194,11 +201,16 @@ def check_if_restore_process_stopped(task, current_process_step):
 @method_decorator(transaction.non_atomic_requests, name='dispatch')
 class StopRestoreDataActionView(RdmPermissionMixin, APIView):
     raise_exception = True
+    authentication_classes = (
+        drf_authentication.SessionAuthentication,
+    )
 
     def post(self, request, *args, **kwargs):
         task_id = request.POST.get('task_id')
         destination_id = request.POST.get('destination_id')
         export_id = self.kwargs.get('export_id')
+        cookie = request.user.get_or_create_cookie().decode()
+        kwargs.setdefault('cookie', cookie)
         cookies = request.COOKIES
 
         if not destination_id or not export_id or not task_id:
@@ -245,11 +257,11 @@ class StopRestoreDataActionView(RdmPermissionMixin, APIView):
             cookies,
             export_id,
             export_data_restore.pk,
-            current_progress_step)
+            current_progress_step, cookie=cookie)
         return Response({'task_id': process.task_id}, status=status.HTTP_200_OK)
 
 
-def restore_export_data_rollback_process(task, cookies, export_id, export_data_restore_id, process_step):
+def restore_export_data_rollback_process(task, cookies, export_id, export_data_restore_id, process_step, **kwargs):
     export_data_restore = ExportDataRestore.objects.get(pk=export_data_restore_id)
     export_data_restore.update(task_id=task.request.id)
 
@@ -263,7 +275,7 @@ def restore_export_data_rollback_process(task, cookies, export_id, export_data_r
         with transaction.atomic():
             export_data = ExportData.objects.filter(id=export_id, is_deleted=False)[0]
             # File info file: /export_{process_start}/file_info_{institution_guid}_{process_start}.json
-            file_info_files = read_file_info_and_check_schema(export_data, cookies)
+            file_info_files = read_file_info_and_check_schema(export_data, cookies, **kwargs)
             if file_info_files is None:
                 raise ProcessError(f'Cannot get file information list')
 
@@ -276,12 +288,13 @@ def restore_export_data_rollback_process(task, cookies, export_id, export_data_r
             location_id = export_data.location.id
             # Delete files, except the backup folder.
             if process_step == 2 or process_step == 3:
-                delete_all_files_except_backup_folder(export_data_restore, location_id, destination_first_project_id,
-                                                      cookies)
+                delete_all_files_except_backup_folder(
+                    export_data_restore, location_id, destination_first_project_id,
+                    cookies, **kwargs)
 
             # Move all files from the backup folder out and delete backup folder
             if 0 < process_step < 4:
-                move_all_files_from_backup_folder_to_root(export_data_restore, destination_first_project_id, cookies)
+                move_all_files_from_backup_folder_to_root(export_data_restore, destination_first_project_id, cookies, **kwargs)
 
         export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
                                    status=ExportData.STATUS_STOPPED)
@@ -293,6 +306,11 @@ def restore_export_data_rollback_process(task, cookies, export_id, export_data_r
 
 
 class CheckTaskStatusRestoreDataActionView(RdmPermissionMixin, APIView):
+    raise_exception = True
+    authentication_classes = (
+        drf_authentication.SessionAuthentication,
+    )
+
     def get(self, request, **kwargs):
         task_id = request.GET.get('task_id')
         task_type = request.GET.get('task_type')
@@ -343,10 +361,10 @@ def add_timestamp_to_file_node(file_node, project_id, timestamp):
     verify_data.save()
 
 
-def read_export_data_and_check_schema(export_data, cookies):
+def read_export_data_and_check_schema(export_data, cookies, **kwargs):
     # Get export file (/export_{process_start}/export_data_{institution_guid}_{process_start}.json)
     try:
-        response = export_data.read_export_data_from_location(cookies)
+        response = export_data.read_export_data_from_location(cookies, **kwargs)
         if response.status_code != 200:
             # Error
             return {'open_dialog': False, 'message': f'Cannot connect to the export data storage location'}
@@ -362,10 +380,10 @@ def read_export_data_and_check_schema(export_data, cookies):
         return {'open_dialog': False, 'message': f'The export data files are corrupted'}
 
 
-def read_file_info_and_check_schema(export_data, cookies):
+def read_file_info_and_check_schema(export_data, cookies, **kwargs):
     # Get file info file: /export_{process_start}/file_info_{institution_guid}_{process_start}.json
     try:
-        response = export_data.read_file_info_from_location(cookies)
+        response = export_data.read_file_info_from_location(cookies, **kwargs)
         if response.status_code != 200:
             raise ProcessError(f'Cannot get file information list')
         response_body = response.content
@@ -401,7 +419,7 @@ def generate_new_file_path(file_materialized_path, version_id, is_file_not_lates
     return new_file_materialized_path
 
 
-def move_all_files_to_backup_folder(task, current_process_step, destination_first_project_id, export_data_restore, cookies):
+def move_all_files_to_backup_folder(task, current_process_step, destination_first_project_id, export_data_restore, cookies, **kwargs):
     try:
         destination_region = export_data_restore.destination
         is_destination_addon_storage = destination_region.is_add_on_storage
@@ -426,7 +444,7 @@ def move_all_files_to_backup_folder(task, current_process_step, destination_firs
                 cookies=cookies,
                 callback_log=False,
                 base_url=destination_base_url,
-                check_abort_task=check_task_aborted_function)
+                check_abort_task=check_task_aborted_function, **kwargs)
             check_if_restore_process_stopped(task, current_process_step)
             if response and 'error' in response:
                 # Error
@@ -438,7 +456,7 @@ def move_all_files_to_backup_folder(task, current_process_step, destination_firs
         raise ProcessError(f'Failed to move files to backup folder.')
 
 
-def copy_files_from_export_data_to_destination(task, current_process_step, export_data_files, export_data_restore, cookies):
+def copy_files_from_export_data_to_destination(task, current_process_step, export_data_files, export_data_restore, cookies, **kwargs):
     export_data = export_data_restore.export
     export_base_url = export_data.location.waterbutler_url
 
@@ -488,7 +506,7 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
 
                 # Download file by version
                 response = export_data.read_data_file_from_location(cookies, file_hash_path,
-                                                                    base_url=export_base_url)
+                                                                    base_url=export_base_url, **kwargs)
                 if response.status_code != 200:
                     logger.error(f'Download error: {response.content}')
                     continue
@@ -496,7 +514,7 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
 
                 # Upload downloaded file to new storage
                 response_body = utils.upload_file_path(file_project_id, destination_provider, new_file_path,
-                                                       download_data, cookies, base_url=destination_base_url)
+                                                       download_data, cookies, base_url=destination_base_url, **kwargs)
                 if response_body is None:
                     continue
 
@@ -542,7 +560,7 @@ def add_tag_and_timestamp_to_database(task, current_process_step, list_created_f
         check_if_restore_process_stopped(task, current_process_step)
 
 
-def delete_all_files_except_backup_folder(export_data_restore, location_id, destination_first_project_id, cookies):
+def delete_all_files_except_backup_folder(export_data_restore, location_id, destination_first_project_id, cookies, **kwargs):
     destination_region = export_data_restore.destination
     destination_base_url = destination_region.waterbutler_url
     destination_provider = INSTITUTIONAL_STORAGE_PROVIDER_NAME
@@ -550,13 +568,13 @@ def delete_all_files_except_backup_folder(export_data_restore, location_id, dest
     try:
         utils.delete_all_files_except_backup(
             destination_first_project_id, destination_provider,
-            cookies, location_id, destination_base_url)
+            cookies, location_id, destination_base_url, **kwargs)
     except Exception as e:
         logger.error(f'Delete all files exception: {e}')
         raise ProcessError(f'Cannot delete files except backup folders')
 
 
-def move_all_files_from_backup_folder_to_root(export_data_restore, destination_first_project_id, cookies):
+def move_all_files_from_backup_folder_to_root(export_data_restore, destination_first_project_id, cookies, **kwargs):
     destination_region = export_data_restore.destination
     destination_base_url = destination_region.waterbutler_url
     destination_provider = INSTITUTIONAL_STORAGE_PROVIDER_NAME
@@ -573,7 +591,7 @@ def move_all_files_from_backup_folder_to_root(export_data_restore, destination_f
             process_start=export_data_restore.process_start_timestamp,
             cookies=cookies,
             callback_log=False,
-            base_url=destination_base_url)
+            base_url=destination_base_url, **kwargs)
         if 'error' in response:
             # Error
             error_msg = response.get('error')
