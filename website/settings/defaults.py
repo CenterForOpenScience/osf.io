@@ -2125,3 +2125,4 @@ PRODUCT_OWNER_EMAIL_ADDRESS = {}
 CAS_LOG_LEVEL = 3  # ERROR
 
 PREPRINT_METRICS_START_DATE = datetime.datetime(2019, 1, 1)
+DOMAIN_REGEX = '(http://[^ \'}\[\]\~\(\)\/]+|https://[^ \'}\[\]\~\(\)\/]+)'

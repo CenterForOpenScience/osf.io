@@ -123,6 +123,8 @@ class WikiVersion(ObjectIDMixin, BaseModel):
     content = models.TextField(default='', blank=True)
     identifier = models.IntegerField(default=1)
 
+    SPAM_CHECK_FIELDS = {'content'}
+
     @property
     def is_current(self):
         return not self.wiki_page.deleted and self.id == self.wiki_page.versions.order_by('-created').first().id

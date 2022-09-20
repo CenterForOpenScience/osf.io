@@ -4,7 +4,10 @@ import logging
 from django.db import models
 from django.utils import timezone
 from framework import sentry
+from framework.celery_tasks.handlers import enqueue_task
+
 from osf.exceptions import ValidationValueError, ValidationTypeError
+from osf.external.spam.tasks import check_resource_for_domains
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils import akismet, oopspam
@@ -220,6 +223,8 @@ class SpamMixin(models.Model):
             return False
         if self.is_spammy:
             return True
+
+        enqueue_task(check_resource_for_domains.s(guid=self.guids.first()._id))
 
         akismet_client = _get_akismet_client()
         oopspam_client = _get_oopspam_client()
