@@ -41,8 +41,8 @@ class NotableDomain(BaseModel):
         return repr(self)
 
 class DomainReference(BaseModel):
-    referent_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    referent_object_id = models.PositiveIntegerField()
-    referent = GenericForeignKey('referent_content_type', 'referent_object_id')
+    referrer_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    referrer_object_id = models.PositiveIntegerField()
+    referrer = GenericForeignKey('referrer_content_type', 'referrer_object_id')
     domain = models.ForeignKey(NotableDomain, on_delete=models.CASCADE)
     is_triaged = models.BooleanField(default=False)
