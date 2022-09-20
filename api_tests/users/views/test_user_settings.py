@@ -8,7 +8,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     UserFactory,
 )
-from osf.models import Email, NotableEmailDomain
+from osf.models import Email, NotableDomain
 from framework.auth.views import auth_email_logout
 
 @pytest.fixture()
@@ -266,9 +266,9 @@ class TestUserEmailsList:
         assert res.json['errors'][0]['detail'] == 'Enter a valid email address.'
 
     def test_create_blocked_email(self, app, url, payload, user_one):
-        NotableEmailDomain.objects.get_or_create(
+        NotableDomain.objects.get_or_create(
             domain='mailinator.com',
-            note=NotableEmailDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION,
+            note=NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT,
         )
         new_email = 'freddie@mailinator.com'
         payload['data']['attributes']['email_address'] = new_email
