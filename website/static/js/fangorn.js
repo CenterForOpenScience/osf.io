@@ -109,6 +109,19 @@ function findByTempID(parent, tmpID) {
     return item;
 }
 
+// Show the proper units (KB, MB, GB, etc.)
+function formatProperUnit(bytes, decimals = 2) {
+    if (!+bytes) return '0 Bytes';
+
+    var k = 1000;
+    var dm = decimals < 0 ? 0 : decimals;
+    var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+
+    var i = Math.floor(Math.log(bytes) / Math.log(k));
+
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+}
+
 // Replace is the "default" conflict, when a user resolves a conflict by explicitly replacing it simply
 // executes a normal move and adds the conflicted file to the ready queue, because of this
 var replace = function(tb, cb, item) {
@@ -1151,7 +1164,7 @@ function _uploadFolderEvent(event, item, mode, col) {
 
         // check folder is empty
         if (files.length === 0) {
-            mode(toolbarModes.UPLOADFOLDEREMPTY);
+            $osf.growl('Error', gettext('The folder that wants to upload is empty.'), 'danger', 5000);
             return;
         }
 
@@ -1159,6 +1172,8 @@ function _uploadFolderEvent(event, item, mode, col) {
         for (var i = 0; i < files.length; i++) {
             total_files_size += files[i].size;
         }
+        total_files_size = formatProperUnit(total_files_size);
+        $osf.growl('Total size of the folder', gettext(`${total_files_size}`), 'info', 10000);
 
         node_parent.open = true;
         total_files_size = parseFloat(total_files_size).toFixed(2);
@@ -1183,7 +1198,7 @@ function _uploadFolderEvent(event, item, mode, col) {
 
         // check upload quota for upload folder
         if (parseFloat(quota.used) + parseFloat(total_files_size) > quota.max) {
-            mode(toolbarModes.UPLOADFOLDERCANCEL);
+            $osf.growl('Error', gettext('Not enough quota to upload.'), 'danger', 5000);
             return;
         }
 
@@ -2160,8 +2175,6 @@ var toolbarModes = {
     'DEFAULT' : 'bar',
     'FILTER' : 'filter',
     'ADDFOLDER' : 'addFolder',
-    'UPLOADFOLDERCANCEL' : 'uploadFolderCancel',
-    'UPLOADFOLDEREMPTY' : 'uploadFolderEmpty',
     'RENAME' : 'rename',
     'ADDPROJECT' : 'addProject'
 };
@@ -2490,40 +2503,6 @@ var FGToolbar = {
                                 className: 'text-success'
                             }),
                             dismissIcon
-                        ]
-                    )
-                )
-            ];
-            // Display message and End button when not enough quota
-            templates[toolbarModes.UPLOADFOLDERCANCEL] = [
-                m('.col-xs-12',
-                    m('.fangorn-toolbar.pull-right',
-                        [
-                            m.component(FGSpan, {
-                                value: gettext('Not enough quota to upload.'),
-                                className: 'text-danger'
-                            }),
-                            m.component(FGButton, {
-                                onclick: ctrl.dismissToolbar,
-                                className: 'btn btn-danger'
-                            }, gettext('End')),
-                        ]
-                    )
-                )
-            ];
-            // Display message and End button when forlder is empty
-            templates[toolbarModes.UPLOADFOLDEREMPTY] = [
-                m('.col-xs-12',
-                    m('.fangorn-toolbar.pull-right',
-                        [
-                            m.component(FGSpan, {
-                                value: gettext('The folder that wants to upload is empty.'),
-                                className: 'text-danger'
-                            }),
-                            m.component(FGButton, {
-                                onclick: ctrl.dismissToolbar,
-                                className: 'btn btn-danger'
-                            }, gettext('End')),
                         ]
                     )
                 )
