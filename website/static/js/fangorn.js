@@ -111,7 +111,7 @@ function findByTempID(parent, tmpID) {
 
 // Show the proper units (KB, MB, GB, etc.)
 function formatProperUnit(bytes, decimals = 2) {
-    if (!+bytes) return '0 Bytes';
+    if (bytes <= 0) return '0 Bytes';
 
     var k = 1000;
     var dm = decimals < 0 ? 0 : decimals;
@@ -119,7 +119,7 @@ function formatProperUnit(bytes, decimals = 2) {
 
     var i = Math.floor(Math.log(bytes) / Math.log(k));
 
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
 // Replace is the "default" conflict, when a user resolves a conflict by explicitly replacing it simply
