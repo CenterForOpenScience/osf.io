@@ -94,8 +94,42 @@
   - The docker-compose-override file should be used to override an docker related commands
 
   ### Apple Chipset (M1, M2, etc.)
+  * _NOTE: If you don't take these actions on an Apple Chipset ... NOTHING WILL WORK! You have been warned._
+
   - You will need to use the override file to change your platform, image and tty to of all containers you need to run. Below are the list of possible containers that need the `linux/arm64` override.
-    - These are the possible containers:
+    - web
+    - requirements 
+    - assets
+    - admin-assets
+    - worker
+    - admin
+    - api
+    
+  - This is how you override the platform, image, tty and disable any dependencies on `elastic` for each container. As of 09/22/2022 elastic search is not working.
+  ```bash
+    api: 
+      # image: quay.io/centerforopenscience/osf:develop
+      image: osf:develop-arm64
+      platform: linux/arm64
+      # Need to allocate tty to be able to call invoke for requirements task
+      tty: true
+      depends_on:
+      - postgres
+      - rabbitmq
+      # - elasticsearch
+  ```
+
+  - In the webite > settings > local.py, you need to disable the `SEARCH_ENGINE` options
+  ```bash
+    # SEARCH_ENGINE = 'elastic'
+    SEARCH_ENGINE = 'none'
+  ```
+
+  - As of 09/22/2022 uncompatible containers are
+    - elasticsearch
+    - elasticsearch6
+    - sharejs
+    - mfr_requirements 
 
 2. OPTIONAL (uncomment the below lines if you will use remote debugging) Environment variables (incl. remote debugging)
   - e.g. .docker-compose.env
@@ -191,7 +225,7 @@
 
   #### Lists all the commands
   ```bash
-  alias dcc="echo 'dcsa (start all), dchs (hard stop), dcl (logs), dcm (migrations), dcr (restart a process), dcosfs (OSF Shell), dcreq(requirements)'"
+  alias dchelp="echo 'dcsa (start all), dchs (hard stop), dcl (logs), dcm (migrations), dcr (restart a process), dcosfs (OSF Shell), dcreq(requirements)'"
   ```
 
   # Starts the OSF shell (Interactive python shell that allows working directly with the osf on a code level instead of a web level.)
