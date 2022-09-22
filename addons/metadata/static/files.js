@@ -707,17 +707,9 @@ function MetadataButtons() {
     self.resolveConsistencyDialog.dialog.modal('show');
   }
 
-  self.resolveConsistency = function() {
-    const matchedFiles = self.targetFiles.filter(function(file, fileIndex) {
-      return $('#metadata-target-' + fileIndex).is(':checked');
-    });
-    console.log('matchedFiles', matchedFiles, self.currentMetadata);
-    if (matchedFiles.length === 0) {
-      self.deleteMetadata(self.currentContext, self.currentMetadata.path);
-      return;
-    }
+  self.resolveConsistency = function(path) {
     const newMetadata = Object.assign({}, self.currentMetadata, {
-      path: matchedFiles[0].path
+      path: path
     });
     const url = self.currentContext.baseUrl + 'files/' + newMetadata.path;
     return new Promise(function(resolve, reject) {
@@ -1665,8 +1657,17 @@ function MetadataButtons() {
     close.on('click', self.closeModal);
     const select = $('<a href="#" class="btn btn-success"></a>').text(_('Select'));
     select.on('click', function() {
+      const matchedFiles = self.targetFiles.filter(function(file, fileIndex) {
+        return $('#metadata-target-' + fileIndex).is(':checked');
+      });
+      console.log('matchedFiles', matchedFiles, self.currentMetadata);
+      if (matchedFiles.length === 0) {
+        $(dialog).modal('hide');
+        self.deleteMetadata(self.currentContext, self.currentMetadata.path);
+        return;
+      }
       osfBlock.block();
-      self.resolveConsistency()
+      self.resolveConsistency(matchedFiles[0].path)
         .finally(function() {
           osfBlock.unblock();
           $(dialog).modal('hide');
