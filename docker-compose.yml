@@ -49,6 +49,7 @@ services:
   ###################
 
   elasticsearch:
+    platform: linux/amd64
     image: elasticsearch:2
     ports:
       - 9200:9200
@@ -414,6 +415,10 @@ services:
     image: quay.io/centerforopenscience/osf:develop
     command: invoke celery_worker
     restart: unless-stopped
+    depends_on:
+      - postgres
+      - rabbitmq
+      - elasticsearch
     environment:
       C_FORCE_ROOT: 1
       DJANGO_SETTINGS_MODULE: api.base.settings
@@ -438,6 +443,10 @@ services:
       DJANGO_SETTINGS_MODULE: admin.base.settings
     ports:
       - 8001:8001
+    depends_on:
+      - postgres
+      - rabbitmq
+      - elasticsearch
     env_file:
       - .docker-compose.env
     stdin_open: true
@@ -455,6 +464,10 @@ services:
     restart: unless-stopped
     ports:
       - 8000:8000
+    depends_on:
+      - postgres
+      - rabbitmq
+      - elasticsearch
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
     env_file:
@@ -472,6 +485,10 @@ services:
     restart: unless-stopped
     ports:
       - 5000:5000
+    depends_on:
+      - postgres
+      - rabbitmq
+      - elasticsearch
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
     env_file:
