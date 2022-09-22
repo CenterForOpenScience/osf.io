@@ -23,6 +23,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
     OVERVIEW = 'node'
     FILES = 'files'
     WIKI = 'wiki'
+    SPAM_CHECK_FIELDS = {'content'}
 
     user = models.ForeignKey('OSFUser', null=True, on_delete=models.CASCADE)
     # the node that the comment belongs to

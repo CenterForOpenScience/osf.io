@@ -5,6 +5,7 @@ These settings can be overridden in local.py.
 """
 
 import datetime
+import re
 import os
 import json
 import hashlib
@@ -2125,3 +2126,5 @@ PRODUCT_OWNER_EMAIL_ADDRESS = {}
 CAS_LOG_LEVEL = 3  # ERROR
 
 PREPRINT_METRICS_START_DATE = datetime.datetime(2019, 1, 1)
+DOMAIN_REGEX = re.compile('(?P<protocol>\w+://)?(?P<www>www\.)?(?P<domain>[\w-]+\.\w+)(?P<path>/\w*)?')
+DOMAIN_SEARCH_REGEX = r'(http://[^ \'}\[\]\~\(\)\/]+|https://[^ \'}\[\]\~\(\)\/]+)'

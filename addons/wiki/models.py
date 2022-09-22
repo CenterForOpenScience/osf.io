@@ -117,6 +117,7 @@ class WikiVersionNodeManager(models.Manager):
 
 class WikiVersion(ObjectIDMixin, BaseModel):
     objects = WikiVersionNodeManager()
+    SPAM_CHECK_FIELDS = {'content'}
 
     user = models.ForeignKey('osf.OSFUser', null=True, blank=True, on_delete=models.CASCADE)
     wiki_page = models.ForeignKey('WikiPage', null=True, blank=True, on_delete=models.CASCADE, related_name='versions')
