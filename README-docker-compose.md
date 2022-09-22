@@ -90,8 +90,12 @@
     `$ cp ./docker-compose-dist.override.yml ./docker-compose.override.yml`
 
     `$ cp ./tasks/local-dist.py ./tasks/local.py` (For local tasks, (dev only))
-    
+
   - The docker-compose-override file should be used to override an docker related commands
+
+  ### Apple Chipset (M1, M2, etc.)
+  - You will need to use the override file to change your platform, image and tty to of all containers you need to run. Below are the list of possible containers that need the `linux/arm64` override.
+    - These are the possible containers:
 
 2. OPTIONAL (uncomment the below lines if you will use remote debugging) Environment variables (incl. remote debugging)
   - e.g. .docker-compose.env
@@ -106,8 +110,6 @@
 
 ## Application Runtime
 
-  ### Apple Chipset (M1, M2, etc.)
-    You will need to 
 
 * _NOTE: Running docker containers detached (`-d`) will execute them in the background, if you would like to view/follow their console log output use the following command._
 
