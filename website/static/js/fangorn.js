@@ -1172,8 +1172,6 @@ function _uploadFolderEvent(event, item, mode, col) {
         for (var i = 0; i < files.length; i++) {
             total_files_size += files[i].size;
         }
-        total_files_size = formatProperUnit(total_files_size);
-        $osf.growl('Total size of the folder', gettext(`${total_files_size}`), 'info', 10000);
 
         node_parent.open = true;
         total_files_size = parseFloat(total_files_size).toFixed(2);
@@ -1198,7 +1196,8 @@ function _uploadFolderEvent(event, item, mode, col) {
 
         // check upload quota for upload folder
         if (parseFloat(quota.used) + parseFloat(total_files_size) > quota.max) {
-            $osf.growl('Error', gettext('Not enough quota to upload.'), 'danger', 5000);
+            var text_message = 'Not enough quota to upload. The total size of the folder ' + formatProperUnit(total_files_size) + '.';
+            $osf.growl('Error', text_message, 'danger', 5000);
             return;
         }
 
