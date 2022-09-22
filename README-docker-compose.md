@@ -23,14 +23,7 @@
       && sudo chown root:wheel $libdir/$file \
       && sudo launchctl load $libdir/$file
     ```
-    - Apple Chipset (M1, M2, etc.)
-      - If you are running an Apple Chip you will need to do the following steps.
-      ```bash
-      $ cd <path-to-osf.io>
-      $ git checkout <master|develop|etc> 
-      $ docker buildx build --platform linux/arm64 -t osf:<branchd>-arm64 ./Dockerfile
-      ```
-      
+
   - Ubuntu
     - Add loopback alias
       `sudo ifconfig lo:0 192.168.168.167 netmask 255.255.255.255 up`
@@ -89,47 +82,8 @@
 
     `$ cp ./docker-compose-dist.override.yml ./docker-compose.override.yml`
 
-    `$ cp ./tasks/local-dist.py ./tasks/local.py` (For local tasks, (dev only))
-
-  - The docker-compose.override file should be used to override an docker related commands
-
-  ### Apple Chipset (M1, M2, etc.)
-  * _NOTE: If you don't take these actions on an Apple Chipset ... NOTHING WILL WORK! You have been warned._
-
-  - You will need to use the override file to change your platform, image and tty to of all containers you need to run. Below are the list of possible containers that need the `linux/arm64` override.
-    - web
-    - requirements 
-    - assets
-    - admin-assets
-    - worker
-    - admin
-    - api
-    
-  - This is how you override the platform, image, tty and disable any dependencies on `elastic` for each container. As of 09/22/2022 elastic search is not working.
-  ```bash
-    api: 
-      # image: quay.io/centerforopenscience/osf:develop
-      image: osf:develop-arm64
-      platform: linux/arm64
-      # Need to allocate tty to be able to call invoke for requirements task
-      tty: true
-      depends_on:
-      - postgres
-      - rabbitmq
-      # - elasticsearch
-  ```
-
-  - In the webite > settings > local.py, you need to disable the `SEARCH_ENGINE` options
-  ```bash
-    # SEARCH_ENGINE = 'elastic'
-    SEARCH_ENGINE = 'none'
-  ```
-
-  - As of 09/22/2022 uncompatible containers are
-    - elasticsearch
-    - elasticsearch6
-    - sharejs
-    - mfr_requirements 
+    For local tasks, (dev only)
+    `$ cp ./tasks/local-dist.py ./tasks/local.py`
 
 2. OPTIONAL (uncomment the below lines if you will use remote debugging) Environment variables (incl. remote debugging)
   - e.g. .docker-compose.env
@@ -142,8 +96,37 @@
 
       _NOTE: Similar docker-compose.\<name\>.env environment configuration files exist for services._
 
-## Application Runtime
+  #### Special Instructions for Apple Chipset (M1, M2, etc.) and other ARM64 architecture
 
+  * _NOTE: The `elasticsearch`, `elasticsearch6`, and `sharejs` containers are incompatible with ARM64._
+
+  - Running containers with docker-compose
+
+    - Copy an ARM64-compatible configuration to `docker-compose.override.yml`:
+
+    `$ cp ./docker-compose-dist-arm64.override.yml ./docker-compose.override.yml`
+
+    - In `webite/settings/local.py`, disable `SEARCH_ENGINE`
+    ```python
+      # SEARCH_ENGINE = 'elastic'
+      SEARCH_ENGINE = None
+    ```
+
+  - Building the Docker image
+
+    - If you wish to use an OSF image other than the latest `develop-arm64`:
+      - Build the image
+      ```bash
+      $ cd <path-to-osf.io>
+      $ git checkout <master|develop|etc>
+      $ docker buildx build --platform linux/arm64 -t osf:<branch>-arm64 .
+      ```
+      - In `docker-compose.override.yml`, replace any `quay.io/centerforopenscience/osf:develop-arm64` with the locally-tagged image above:
+      ```yml
+      image: osf:<branch>-arm64
+      ```
+
+## Application Runtime
 
 * _NOTE: Running docker containers detached (`-d`) will execute them in the background, if you would like to view/follow their console log output use the following command._
 
@@ -191,48 +174,47 @@
 
 ### Helpful aliases
 
-  #### Starts all containers
+- Start all containers
   ```bash
-  alias dcsa="docker-compose up -d assets admin_assets mfr wb fakecas sharejs worker elasticsearch6 web api admin preprints"
+  alias dcsa="docker-compose up -d assets admin_assets mfr wb fakecas sharejs worker elasticsearch elasticsearch6 web api admin preprints"
   ```
 
-  #### Shuts down all containers
+- Shut down all containers
   ```bash
   alias dchs="docker-compose down"
   ```
 
-  #### Logging
-  #### dcl <container>. Ie. `dcl web` will log only the web container
+- Attach to container logs
+  - dcl <container>. Ie. `dcl web` will log only the web container
   ```bash
   alias dcl="docker-compose logs -f --tail 100 "
   ```
-  
-  #### Runs migrations (Starting a fresh database or changes to migrations)
+
+- Run migrations (Starting a fresh database or changes to migrations)
   ```bash
   alias dcm="docker-compose run --rm web python3 manage.py migrate"
   ```
 
-  #### Downloads requirements (Whenever the requirements change or first-time set-up)
+- Download requirements (Whenever the requirements change or first-time set-up)
   ```bash
   alias dcreq="docker-compose up requirements mfr_requirements wb_requirements"
   ```
 
-  #### Restarts the containers
-  #### $ dcr <container>. Ie. `dcg web` will restart the web container
+- Restart the containers
+  - `$ dcr <container>`. Ie. `dcr web` will restart the web container
   ```bash
   alias dcr="docker-compose restart -t 0 "
   ```
 
-  #### Lists all the commands
-  ```bash
-  alias dchelp="echo 'dcsa (start all), dchs (hard stop), dcl (logs), dcm (migrations), dcr (restart a process), dcosfs (OSF Shell), dcreq(requirements)'"
-  ```
-
-  # Starts the OSF shell (Interactive python shell that allows working directly with the osf on a code level instead of a web level.)
+- Start the OSF shell (Interactive python shell that allows working directly with the osf on a code level instead of a web level.)
   ```bash
   alias dcosfs="docker-compose run --rm web python3 manage.py osf_shell"
   ```
 
+- List all these commands
+  ```bash
+  alias dchelp="echo 'dcsa (start all), dchs (hard stop), dcl (logs), dcm (migrations), dcr (restart a process), dcosfs (OSF Shell), dcreq(requirements)'"
+  ```
 
 ## Running arbitrary commands
 
