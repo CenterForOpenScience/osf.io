@@ -91,7 +91,7 @@
 
     `$ cp ./tasks/local-dist.py ./tasks/local.py` (For local tasks, (dev only))
 
-  - The docker-compose-override file should be used to override an docker related commands
+  - The docker-compose.override file should be used to override an docker related commands
 
   ### Apple Chipset (M1, M2, etc.)
   * _NOTE: If you don't take these actions on an Apple Chipset ... NOTHING WILL WORK! You have been warned._
