@@ -310,7 +310,10 @@ def get_auth(auth, **kwargs):
         parsed_url = urlparse(uri)
         callback_log = parse_qs(parsed_url.query)['callback_log'][0]
     except KeyError:
-        callback_log = data.get('callback_log', True)
+        callback_log = data.get('callback_log', 'True') == 'True'
+
+    # as default callback_log is True
+    callback_log = False if isinstance(callback_log, str) and callback_log.lower() == 'false' else True
 
     is_node_process = True
     if node_id == ExportData.EXPORT_DATA_FAKE_NODE_ID:
