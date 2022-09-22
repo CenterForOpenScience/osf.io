@@ -23,6 +23,14 @@
       && sudo chown root:wheel $libdir/$file \
       && sudo launchctl load $libdir/$file
     ```
+    - Apple Chipset (M1, M2, etc.)
+      - If you are running an Apple Chip you will need to do the following steps.
+      ```bash
+      $ cd <path-to-osf.io>
+      $ git checkout <master|develop|etc> 
+      $ docker buildx build --platform linux/arm64 -t osf:<branchd>-arm64 ./Dockerfile
+      ```
+      
   - Ubuntu
     - Add loopback alias
       `sudo ifconfig lo:0 192.168.168.167 netmask 255.255.255.255 up`
@@ -73,7 +81,7 @@
   - `$ docker-compose up --force-recreate --no-deps preprints`
 
 1. Application Settings
- - e.g. OSF & OSF API local.py
+  - e.g. OSF & OSF API local.py
 
     `$ cp ./website/settings/local-dist.py ./website/settings/local.py`
 
@@ -81,8 +89,9 @@
 
     `$ cp ./docker-compose-dist.override.yml ./docker-compose.override.yml`
 
-    For local tasks, (dev only)
-    `$ cp ./tasks/local-dist.py ./tasks/local.py`
+    `$ cp ./tasks/local-dist.py ./tasks/local.py` (For local tasks, (dev only))
+    
+  - The docker-compose-override file should be used to override an docker related commands
 
 2. OPTIONAL (uncomment the below lines if you will use remote debugging) Environment variables (incl. remote debugging)
   - e.g. .docker-compose.env
@@ -96,6 +105,9 @@
       _NOTE: Similar docker-compose.\<name\>.env environment configuration files exist for services._
 
 ## Application Runtime
+
+  ### Apple Chipset (M1, M2, etc.)
+    You will need to 
 
 * _NOTE: Running docker containers detached (`-d`) will execute them in the background, if you would like to view/follow their console log output use the following command._
 
@@ -140,6 +152,51 @@
   ```bash
   $ docker-compose logs -f --tail 100 web
   ```
+
+### Helpful aliases
+
+  #### Starts all containers
+  ```bash
+  alias dcsa="docker-compose up -d assets admin_assets mfr wb fakecas sharejs worker elasticsearch6 web api admin preprints"
+  ```
+
+  #### Shuts down all containers
+  ```bash
+  alias dchs="docker-compose down"
+  ```
+
+  #### Logging
+  #### dcl <container>. Ie. `dcl web` will log only the web container
+  ```bash
+  alias dcl="docker-compose logs -f --tail 100 "
+  ```
+  
+  #### Runs migrations (Starting a fresh database or changes to migrations)
+  ```bash
+  alias dcm="docker-compose run --rm web python3 manage.py migrate"
+  ```
+
+  #### Downloads requirements (Whenever the requirements change or first-time set-up)
+  ```bash
+  alias dcreq="docker-compose up requirements mfr_requirements wb_requirements"
+  ```
+
+  #### Restarts the containers
+  #### $ dcr <container>. Ie. `dcg web` will restart the web container
+  ```bash
+  alias dcr="docker-compose restart -t 0 "
+  ```
+
+  #### Lists all the commands
+  ```bash
+  alias dcc="echo 'dcsa (start all), dchs (hard stop), dcl (logs), dcm (migrations), dcr (restart a process), dcosfs (OSF Shell), dcreq(requirements)'"
+  ```
+
+  # Starts the OSF shell (Interactive python shell that allows working directly with the osf on a code level instead of a web level.)
+  ```bash
+  alias dcosfs="docker-compose run --rm web python3 manage.py osf_shell"
+  ```
+
 
 ## Running arbitrary commands
 
