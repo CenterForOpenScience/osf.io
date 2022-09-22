@@ -37,6 +37,8 @@ def get_list_extend_storage():
             storage_branch_name = 'folder_id'
         elif provider.lower() in ('dataverse',):
             storage_branch_name = 'dataverse'
+        else:
+            continue
 
         query_string = """
             select addons_{provider}_nodesettings.{storage_branch_name}, addons_{provider}_usersettings.owner_id as user_id
@@ -48,6 +50,8 @@ def get_list_extend_storage():
             """.format(provider=provider, storage_branch_name=storage_branch_name)
         cursor.execute(query_string)
         result = np.asarray(cursor.fetchall())
+        if result.shape == (0,):
+            continue
         list_users_provider = result[:, 0]
         list_users_id = list(map(int, result[:, 1]))
 
