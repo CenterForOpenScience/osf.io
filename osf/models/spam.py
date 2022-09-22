@@ -1,5 +1,4 @@
 import abc
-import re
 import logging
 
 from urllib.parse import urlparse
@@ -231,7 +230,7 @@ class SpamMixin(models.Model):
         enqueue_task(
             check_resource_for_domains.s(
                 guid=self.guids.first()._id,
-                content=content
+                content=content,
             )
         )
 
@@ -281,32 +280,15 @@ class SpamMixin(models.Model):
                 self.spam_data['oopspam_data'] = oopspam_details
         return akismet_is_spam or oopspam_is_spam
 
-    def moderate_domains(self, content, confirm_spam=False):
-        domains = re.findall(
-            settings.DOMAIN_REGEX,
-            content
-        )
-        if not domains:
-            return False
-
-        from osf.models import NotableDomain
-        if confirm_spam and NotableDomain.has_spam_domain(content):
-            self.confirm_spam(save=True)
-        else:
-            self.add_domains_to_moderation_queue(domains)
-
-        return True
-
-    def add_domains_to_moderation_queue(self, domains):
+    def add_new_domain_to_moderation_queue(self, domain):
         from osf.models import NotableDomain, DomainReference
-        for domain in domains:
-            domain = urlparse(domain)
-            notable_domain, created = NotableDomain.objects.get_or_create(
-                domain=f'{domain.scheme}://{domain.netloc}',  # remove path and query params
-                defaults={'note': NotableDomain.Note.UNKNOWN}
-            )
-            DomainReference.objects.get_or_create(
-                domain=notable_domain,
-                referrer_object_id=self.id,
-                referrer_content_type=ContentType.objects.get_for_model(self)
-            )
+        domain = urlparse(domain)
+        notable_domain, created = NotableDomain.objects.get_or_create(
+            domain=domain.netloc,  # remove path and query params
+            defaults={'note': NotableDomain.Note.UNKNOWN}
+        )
+        DomainReference.objects.get_or_create(
+            domain=notable_domain,
+            referrer_object_id=self.id,
+            referrer_content_type=ContentType.objects.get_for_model(self)
+        )

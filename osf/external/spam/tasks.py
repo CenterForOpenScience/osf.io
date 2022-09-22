@@ -1,12 +1,25 @@
-from django.apps import apps
+import re
 from framework.celery_tasks import app as celery_app
+from website.settings import DOMAIN_REGEX
+from django.contrib.contenttypes.models import ContentType
 
 
 @celery_app.task()
 def check_resource_for_domains(guid, content):
-    Guid = apps.get_model('osf.Guid')
+    from osf.models import Guid, NotableDomain, DomainReference
     resource = Guid.load(guid).referent
-    resource.moderate_domains(
-        content,
-        confirm_spam=True,
-    )
+    domains = {match.group('domain') for match in re.finditer(DOMAIN_REGEX, content)}
+    referrer_content_type = ContentType.objects.get_for_model(resource)
+    mark_spam = False
+    for domain in domains:
+        domain, _ = NotableDomain.objects.get_or_create(domain=domain)
+        if domain.note == NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT:
+            mark_spam = True
+        DomainReference.objects.get_or_create(
+            domain=domain,
+            referrer_object_id=resource.id,
+            referrer_content_type=referrer_content_type,
+            defaults={'is_triaged': domain.note != NotableDomain.Note.UNKNOWN}
+        )
+    if mark_spam:
+        resource.confirm_spam(save=True)

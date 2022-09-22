@@ -1,13 +1,11 @@
-import re
 from enum import IntEnum
+
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 
 from osf.models.base import BaseModel
 from osf.utils.fields import LowercaseCharField
-
-from website import settings
 
 
 class NotableDomain(BaseModel):
@@ -41,18 +39,6 @@ class NotableDomain(BaseModel):
 
     def __str__(self):
         return repr(self)
-
-    @staticmethod
-    def has_spam_domain(content):
-        domains = re.findall(
-            settings.DOMAIN_REGEX,
-            content
-        )
-        return NotableDomain.objects.filter(
-            domain__in=domains,
-            note=NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT
-        ).exists()
-
 
 class DomainReference(BaseModel):
     referrer_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
