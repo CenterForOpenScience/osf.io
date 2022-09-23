@@ -12,10 +12,10 @@ from osf.models import NotableDomain, DomainReference
 from django.contrib.contenttypes.models import ContentType
 from framework.celery_tasks.handlers import enqueue_task
 
-from website import settings
-
 logger = logging.getLogger(__name__)
 
+DOMAIN_MATCH_REGEX = re.compile(r'(?P<protocol>\w+://)?(?P<www>www\.)?(?P<domain>[\w-]+\.\w+)(?P<path>/\w*)?')
+DOMAIN_SEARCH_REGEX = r'(http://[^ \'}\[\]\~\(\)\/]+|https://[^ \'}\[\]\~\(\)\/]+)'
 
 @celery_app.task()
 def create_notable_domain_with_reference(domain, resource_id, resource_content_type_pk):
@@ -44,13 +44,13 @@ def backfill_domain_references(dry_run=False):
     for model in model_list:
         query = reduce(
             operator.or_,
-            (Q(**{f'{field}__regex': settings.DOMAIN_SEARCH_REGEX}) for field in list(model.SPAM_CHECK_FIELDS))
+            (Q(**{f'{field}__regex': DOMAIN_SEARCH_REGEX}) for field in list(model.SPAM_CHECK_FIELDS))
         )
         queries.append(model.objects.filter(query))
 
     for queryset in queries:
         for resource_data in queryset.values(*list(queryset.query.model.SPAM_CHECK_FIELDS), 'pk'):
-            domains = list({match.group('domain') for match in re.finditer(settings.DOMAIN_REGEX, str(resource_data))})
+            domains = list({match.group('domain') for match in re.finditer(DOMAIN_MATCH_REGEX, str(resource_data))})
             for domain in domains:
                 if not dry_run:
                     enqueue_task(

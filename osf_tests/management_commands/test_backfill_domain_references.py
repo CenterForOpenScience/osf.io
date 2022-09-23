@@ -57,8 +57,6 @@ class TestBackfillDomainReferences:
                                         wiki_with_domain,
                                         spam_domain):
         backfill_domain_references()
-        print(spam_domain.netloc)
-        print(NotableDomain.objects.filter(domain__contains='domain'))
         domain = NotableDomain.objects.get(domain=spam_domain.netloc.lower())
         # Node
         assert DomainReference.objects.get(
