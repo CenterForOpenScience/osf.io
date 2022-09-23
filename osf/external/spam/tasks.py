@@ -1,7 +1,8 @@
 import re
 from framework.celery_tasks import app as celery_app
-from website.settings import DOMAIN_REGEX
 from django.contrib.contenttypes.models import ContentType
+
+DOMAIN_REGEX = re.compile(r'(?P<protocol>\w+://)?(?P<www>www\.)?(?P<domain>[\w-]+\.\w+)(?P<path>/\w*)?')
 
 
 @celery_app.task()
