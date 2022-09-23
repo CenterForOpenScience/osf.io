@@ -1,9 +1,6 @@
 import abc
 import logging
 
-from urllib.parse import urlparse
-
-from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils import timezone
 from framework import sentry
@@ -279,16 +276,3 @@ class SpamMixin(models.Model):
                 self.spam_data['who_flagged'] = 'oopspam'
                 self.spam_data['oopspam_data'] = oopspam_details
         return akismet_is_spam or oopspam_is_spam
-
-    def add_new_domain_to_moderation_queue(self, domain):
-        from osf.models import NotableDomain, DomainReference
-        domain = urlparse(domain)
-        notable_domain, created = NotableDomain.objects.get_or_create(
-            domain=domain.netloc,  # remove path and query params
-            defaults={'note': NotableDomain.Note.UNKNOWN}
-        )
-        DomainReference.objects.get_or_create(
-            domain=notable_domain,
-            referrer_object_id=self.id,
-            referrer_content_type=ContentType.objects.get_for_model(self)
-        )

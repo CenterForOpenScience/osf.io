@@ -9,7 +9,6 @@ from osf_tests.factories import (
 )
 from osf.models import (
     NotableDomain,
-    DomainReference,
     SpamStatus
 )
 from osf.external.spam.tasks import check_resource_for_domains
@@ -38,13 +37,14 @@ class TestNotableDomain:
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
     def test_add_domains_to_moderation_queue(self, factory, spam_domain):
         obj = factory()
-        obj.add_new_domain_to_moderation_queue(spam_domain.geturl())
-        domain = NotableDomain.objects.get(
+        enqueue_task(check_resource_for_domains.s(guid=obj.guids.first()._id, content=spam_domain.geturl()))
+        obj.reload()
+        NotableDomain.objects.get(
+            domain=spam_domain.netloc,
             note=NotableDomain.Note.UNKNOWN
         )
-        assert domain.domain == spam_domain.netloc
-        assert DomainReference.objects.get().domain == domain
-        assert DomainReference.objects.get().referrer == obj
+        obj.reload()
+        assert obj.spam_status == SpamStatus.UNKNOWN
 
     @pytest.mark.enable_enqueue_task
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])

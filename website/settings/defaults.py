@@ -5,7 +5,6 @@ These settings can be overridden in local.py.
 """
 
 import datetime
-import re
 import os
 import json
 import hashlib
