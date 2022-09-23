@@ -3,10 +3,11 @@ from enum import IntEnum
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
+from framework.celery_tasks.handlers import enqueue_task
 
 from osf.models.base import BaseModel
 from osf.utils.fields import LowercaseCharField
-
+from osf.external.spam.tasks import reclassify_domain_references
 
 class NotableDomain(BaseModel):
     class Note(IntEnum):
@@ -30,8 +31,7 @@ class NotableDomain(BaseModel):
     )
 
     def save(self, *args, **kwargs):
-        # Override this method to mark related content
-        # as spam or ham when reclassifying domain name
+        enqueue_task(reclassify_domain_references(self._id))
         return super().save(*args, **kwargs)
 
     def __repr__(self):
