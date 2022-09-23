@@ -1,8 +1,8 @@
-from django.conf.urls import url
+from django.conf.urls import re_path
 from api.ia import views
 
 app_name = 'osf'
 
 urlpatterns = [
-    url(r'^(?P<target_id>\w+)/done/', views.IACallbackView.as_view(), name=views.IACallbackView.view_name),
+    re_path(r'^(?P<target_id>\w+)/done/', views.IACallbackView.as_view(), name=views.IACallbackView.view_name),
 ]
