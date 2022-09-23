@@ -31,7 +31,7 @@ class NotableDomain(BaseModel):
     )
 
     def save(self, *args, **kwargs):
-        enqueue_task(reclassify_domain_references(self._id))
+        enqueue_task(reclassify_domain_references.s(self.pk))
         return super().save(*args, **kwargs)
 
     def __repr__(self):
@@ -41,6 +41,9 @@ class NotableDomain(BaseModel):
         return repr(self)
 
 class DomainReference(BaseModel):
+    class Meta:
+        unique_together = ('referrer_object_id', 'domain')
+
     referrer_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     referrer_object_id = models.PositiveIntegerField()
     referrer = GenericForeignKey('referrer_content_type', 'referrer_object_id')
