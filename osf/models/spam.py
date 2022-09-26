@@ -224,8 +224,8 @@ class SpamMixin(models.Model):
         if self.is_spammy:
             return True
 
-        enqueue_task(
-            check_resource_for_domains.s(
+        check_resource_for_domains.apply_async(
+            kwargs=dict(
                 guid=self.guids.first()._id,
                 content=content,
             )
@@ -233,7 +233,7 @@ class SpamMixin(models.Model):
 
         akismet_client = _get_akismet_client()
         oopspam_client = _get_oopspam_client()
-        remote_addr = request_headers['Remote-Addr']
+        remote_addr = request_headers.get('Remote-Addr') or request_headers['Host']  # for local testing
         user_agent = request_headers.get('User-Agent')
         referer = request_headers.get('Referer')
         akismet_is_spam, pro_tip = akismet_client.check_comment(
