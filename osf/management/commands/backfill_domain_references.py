@@ -10,12 +10,12 @@ from django.core.management.base import BaseCommand
 from framework.celery_tasks import app as celery_app
 from osf.models import NotableDomain, DomainReference
 from django.contrib.contenttypes.models import ContentType
-from framework.celery_tasks.handlers import enqueue_task
 
 logger = logging.getLogger(__name__)
 
 DOMAIN_MATCH_REGEX = re.compile(r'(?P<protocol>\w+://)?(?P<www>www\.)?(?P<domain>[\w-]+\.\w+)(?P<path>/\w*)?')
 DOMAIN_SEARCH_REGEX = r'(http://[^ \'}\[\]\~\(\)\/]+|https://[^ \'}\[\]\~\(\)\/]+)'
+
 
 @celery_app.task()
 def create_notable_domain_with_reference(domain, resource_id, resource_content_type_pk):
@@ -53,12 +53,12 @@ def backfill_domain_references(dry_run=False):
             domains = list({match.group('domain') for match in re.finditer(DOMAIN_MATCH_REGEX, str(resource_data))})
             for domain in domains:
                 if not dry_run:
-                    enqueue_task(
-                        create_notable_domain_with_reference.s(
-                            domain=domain,  # remove path and query params
-                            resource_id=resource_data['pk'],
-                            resource_content_type_pk=ContentType.objects.get_for_model(queryset.query.model).id
-                        )
+                    create_notable_domain_with_reference.apply_async(
+                        kwargs={
+                            'domain': domain,
+                            'resource_id': resource_data['pk'],
+                            'resource_content_type_pk': ContentType.objects.get_for_model(queryset.query.model).id,
+                        }
                     )
 
 
@@ -67,12 +67,6 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--model_names',
-            type=str,
-            nargs='+',
-            help='Models to be queried for domains, if None search all models with `SPAM_CHECK_FIELDS`.',
-        )
-        parser.add_argument(
             '--dry_run',
             type=bool,
             default=False,
@@ -80,7 +74,5 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        models = options.get('model_names', None)
         dry_run = options.get('dry_run', None)
-
-        backfill_domain_references(models, dry_run)
+        backfill_domain_references(dry_run)
