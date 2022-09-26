@@ -3288,3 +3288,6 @@ msgstr "拡張ストレージ"
 
 msgid "User Details"
 msgstr "ユーザ詳細"
+
+msgid "Export All Users Statistics (CSV)"
+msgstr "すべてのユーザー統計をエクスポート (CSV)"

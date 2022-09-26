@@ -3224,3 +3224,6 @@ msgstr ""
 
 msgid "User Details"
 msgstr ""
+
+msgid "Export All Users Statistics (CSV)"
+msgstr ""

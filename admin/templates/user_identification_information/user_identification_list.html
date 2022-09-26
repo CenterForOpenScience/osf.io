@@ -184,7 +184,7 @@
 </form>
 
 <div style="display: flex; justify-content: space-between; align-items: center">
-    {% include "util/pagination.html" with items=page status=status %}
+    {% include "util/pagination.html" with items=page status=direction order=order_by %}
     {% if user.is_superuser %}
         <a
                 class="btn btn-primary"
@@ -211,12 +211,12 @@
             <th class="col nowrap">
                 {% trans "EPPN" %}
                 <a
-                        href="?order_by=eppn&amp;status=desc&amp;page={{ page.number }}"
+                        href="?order_by=eppn&amp;status=desc&amp;page={{ page.number }}&amp;guid={{ request.GET.guid }}&amp;username={{ request.GET.username }}&amp;fullname={{ request.GET.fullname }}"
                         class="caret caret-sort tb-sort-inactive"
                 ></a>
                 <span class="dropup"
                 ><a
-                        href="?order_by=eppn&amp;status=asc&amp;page={{ page.number }}"
+                        href="?order_by=eppn&amp;status=asc&amp;page={{ page.number }}&amp;guid={{ request.GET.guid }}&amp;username={{ request.GET.username }}&amp;fullname={{ request.GET.fullname }}"
                         class="caret caret-sort tb-sort-inactive"
                 ></a
                 ></span>
@@ -224,12 +224,12 @@
             <th class="col nowrap">
                 {% trans "Fullname" %}
                 <a
-                        href="?order_by=fullname&amp;status=desc&amp;page={{ page.number }}"
+                        href="?order_by=fullname&amp;status=desc&amp;page={{ page.number }}&amp;guid={{ request.GET.guid }}&amp;username={{ request.GET.username }}&amp;fullname={{ request.GET.fullname }}"
                         class="caret caret-sort tb-sort-inactive"
                 ></a>
                 <span class="dropup"
                 ><a
-                        href="?order_by=fullname&amp;status=asc&amp;page={{ page.number }}"
+                        href="?order_by=fullname&amp;status=asc&amp;page={{ page.number }}&amp;guid={{ request.GET.guid }}&amp;username={{ request.GET.username }}&amp;fullname={{ request.GET.fullname }}"
                         class="caret caret-sort tb-sort-inactive"
                 ></a
                 ></span>
@@ -237,12 +237,12 @@
             <th class="col">
                 {% trans "Email" %}
                 <a
-                        href="?order_by=email&amp;status=desc&amp;page={{ page.number }}"
+                        href="?order_by=email&amp;status=desc&amp;page={{ page.number }}&amp;guid={{ request.GET.guid }}&amp;username={{ request.GET.username }}&amp;fullname={{ request.GET.fullname }}"
                         class="caret caret-sort tb-sort-inactive"
                 ></a>
                 <span class="dropup"
                 ><a
-                        href="?order_by=email&amp;status=asc&amp;page={{ page.number }}"
+                        href="?order_by=email&amp;status=asc&amp;page={{ page.number }}&amp;guid={{ request.GET.guid }}&amp;username={{ request.GET.username }}&amp;fullname={{ request.GET.fullname }}"
                         class="caret caret-sort tb-sort-inactive"
                 ></a
                 ></span>
@@ -250,12 +250,12 @@
             <th class="col">
                 {% trans "Affiliation" %}
                 <a
-                        href="?order_by=affiliation&amp;status=desc&amp;page={{ page.number }}"
+                        href="?order_by=affiliation&amp;status=desc&amp;page={{ page.number }}&amp;guid={{ request.GET.guid }}&amp;username={{ request.GET.username }}&amp;fullname={{ request.GET.fullname }}"
                         class="caret caret-sort tb-sort-inactive"
                 ></a>
                 <span class="dropup"
                 ><a
-                        href="?order_by=affiliation&amp;status=asc&amp;page={{ page.number }}"
+                        href="?order_by=affiliation&amp;status=asc&amp;page={{ page.number }}&amp;guid={{ request.GET.guid }}&amp;username={{ request.GET.username }}&amp;fullname={{ request.GET.fullname }}"
                         class="caret caret-sort tb-sort-inactive"
                 ></a
                 ></span>
@@ -263,12 +263,12 @@
             <th class="col nowrap">
                 {% trans "Last login" %}
                 <a
-                        href="?order_by=last_login&amp;status=desc&amp;page={{ page.number }}"
+                        href="?order_by=last_login&amp;status=desc&amp;page={{ page.number }}&amp;guid={{ request.GET.guid }}&amp;username={{ request.GET.username }}&amp;fullname={{ request.GET.fullname }}"
                         class="caret caret-sort tb-sort-inactive"
                 ></a>
                 <span class="dropup"
                 ><a
-                        href="?order_by=last_login&amp;status=asc&amp;page={{ page.number }}"
+                        href="?order_by=last_login&amp;status=asc&amp;page={{ page.number }}&amp;guid={{ request.GET.guid }}&amp;username={{ request.GET.username }}&amp;fullname={{ request.GET.fullname }}"
                         class="caret caret-sort tb-sort-inactive"
                 ></a
                 ></span>
@@ -276,12 +276,12 @@
             <th class="col nowrap">
                 {% trans "Usage" %}
                 <a
-                        href="?order_by=usage&amp;status=desc&amp;page={{ page.number }}"
+                        href="?order_by=usage&amp;status=desc&amp;page={{ page.number }}&amp;guid={{ request.GET.guid }}&amp;username={{ request.GET.username }}&amp;fullname={{ request.GET.fullname }}"
                         class="caret caret-sort tb-sort-inactive"
                 ></a>
                 <span class="dropup"
                 ><a
-                        href="?order_by=usage&amp;status=asc&amp;page={{ page.number }}"
+                        href="?order_by=usage&amp;status=asc&amp;page={{ page.number }}&amp;guid={{ request.GET.guid }}&amp;username={{ request.GET.username }}&amp;fullname={{ request.GET.fullname }}"
                         class="caret caret-sort tb-sort-inactive"
                 ></a
                 ></span>
@@ -289,12 +289,12 @@
             <th class="col nowrap">
                 {% trans "Extended Storage" %}
                 <a
-                        href="?order_by=extended_storage&amp;status=desc&amp;page={{ page.number }}"
+                        href="?order_by=extended_storage&amp;status=desc&amp;page={{ page.number }}&amp;guid={{ request.GET.guid }}&amp;username={{ request.GET.username }}&amp;fullname={{ request.GET.fullname }}"
                         class="caret caret-sort tb-sort-inactive"
                 ></a>
                 <span class="dropup"
                 ><a
-                        href="?order_by=extended_storage&amp;status=asc&amp;page={{ page.number }}"
+                        href="?order_by=extended_storage&amp;status=asc&amp;page={{ page.number }}&amp;guid={{ request.GET.guid }}&amp;username={{ request.GET.username }}&amp;fullname={{ request.GET.fullname }}"
                         class="caret caret-sort tb-sort-inactive"
                 ></a
                 ></span>
@@ -319,7 +319,7 @@
                 <td class="col">{{ user_data.fullname }}</td>
                 <td class="col">{{ user_data.email }}</td>
                 <td class="col">{{ user_data.affiliation.name }}</td>
-                <td class="col">{{ user_data.last_login }}</td>
+                <td class="col">{% if user_data.last_login != datetime_min %}{{user_data.last_login}}{% endif %}</td>
                 <td class="col">{{ user_data.usage_value }} {{ user_data.usage_abbr }}</td>
                 <td class="col">{{ user_data.extended_storage|linebreaks }}</td>
             </tr>

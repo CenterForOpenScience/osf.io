@@ -1,6 +1,7 @@
 import csv
 from operator import itemgetter
 
+import pytz
 from django.db.models import Q
 from django.http import Http404
 from django.http import HttpResponse
@@ -31,7 +32,7 @@ class UserIdentificationInformationListView(ListView):
             'affiliation': user.affiliated_institutions.first() if user.affiliated_institutions.first() else '',
             'email': user.emails.values_list('address', flat=True)[0] if len(
                 user.emails.values_list('address', flat=True)) > 0 else '',
-            'last_login': user.last_login or '',
+            'last_login': user.last_login or pytz.utc.localize(datetime.min),
             'usage': used_quota,
             'usage_value': used_quota_abbr[0],
             'usage_abbr': used_quota_abbr[1],
@@ -69,6 +70,7 @@ class UserIdentificationInformationListView(ListView):
         kwargs['page'] = self.page
         kwargs['order_by'] = self.get_order_by()
         kwargs['direction'] = self.get_direction()
+        kwargs['datetime_min'] = pytz.utc.localize(datetime.min)
         return super(UserIdentificationInformationListView, self).get_context_data(**kwargs)
 
     def get_list_data(self, queryset, dict_users_list={}):
