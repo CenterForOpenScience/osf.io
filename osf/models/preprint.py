@@ -646,7 +646,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             if user:
                 self.check_spam(user, saved_fields, request_headers)
 
-
         if first_save:
             self._set_default_region()
             self.update_group_permissions()
