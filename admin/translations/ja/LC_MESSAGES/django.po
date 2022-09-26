@@ -3279,3 +3279,12 @@ msgstr "ユーザ検索結果"
 
 msgid "Recalculate quota"
 msgstr "クォータ再計算"
+
+msgid "User Identification Information"
+msgstr "ユーザー識別情報"
+
+msgid "Extended storage"
+msgstr "拡張ストレージ"
+
+msgid "User Details"
+msgstr "ユーザ詳細"
