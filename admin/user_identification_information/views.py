@@ -129,7 +129,7 @@ class UserIdentificationListView(RdmPermissionMixin, UserIdentificationInformati
             return []
 
     def get_user_list(self):
-        if self.is_admin:
+        if self.is_admin or not self.is_authenticated:
             raise Http404('Page not found')
         return self.user_list()
 
@@ -179,7 +179,7 @@ class UserIdentificationDetailView(RdmPermissionMixin, GuidView):
         }
 
     def get_object(self):
-        if self.is_admin:
+        if self.is_admin or not self.is_authenticated:
             raise Http404('Page not found')
         return self.user_details()
 

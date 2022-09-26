@@ -3215,3 +3215,12 @@ msgstr ""
 
 msgid "Recalculate quota"
 msgstr ""
+
+msgid "User Identification Information"
+msgstr ""
+
+msgid "Extended Storage"
+msgstr ""
+
+msgid "User Details"
+msgstr ""
