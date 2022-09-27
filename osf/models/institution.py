@@ -161,19 +161,13 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
 
     def get_default_storage_location(self):
         from osf.models import ExportDataLocation
-        try:
-            query_set = ExportDataLocation.objects.filter(institution_guid=self.INSTITUTION_DEFAULT)
-            return query_set
-        except Exception:
-            return ExportDataLocation.objects.none()
+        query_set = ExportDataLocation.objects.filter(institution_guid=self.INSTITUTION_DEFAULT)
+        return query_set
 
     def get_institutional_storage_location(self):
         from osf.models import ExportDataLocation
-        try:
-            query_set = ExportDataLocation.objects.filter(institution_guid=self.guid)
-            return query_set
-        except Exception:
-            return ExportDataLocation.objects.none()
+        query_set = ExportDataLocation.objects.filter(institution_guid=self.guid)
+        return query_set
 
     def get_allowed_storage_location(self):
         return self.get_default_storage_location().union(self.get_institutional_storage_location())

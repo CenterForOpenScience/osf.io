@@ -295,9 +295,8 @@ def get_auth(auth, **kwargs):
         action = data['action']
         node_id = data['nid']
         provider_name = data['provider']
-        # only has location_id or region_id
+        # only has location_id
         location_id = data.get('location_id')
-        region_id = data.get('region_id') if location_id is None else None
     except KeyError:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
@@ -334,16 +333,13 @@ def get_auth(auth, **kwargs):
                 raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
     else:
         # check permission
-        # only location_id or region_id has value
-        if not location_id and not region_id:
-            logger.debug(f'Missing location_id and region_id')
+        # only location_id value
+        if not location_id:
+            logger.debug(f'Missing location_id')
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
         if location_id and auth.user and not auth.user.is_allowed_storage_location_id(location_id):
             logger.debug(f'Authenticated user do not have permission on storage location id {location_id}')
-            raise HTTPError(http_status.HTTP_403_FORBIDDEN)
-        if region_id and auth.user and not auth.user.is_allowed_storage_id(region_id):
-            logger.debug(f'Authenticated user do not have permission on institution storage id {region_id}')
             raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
     path = data.get('path')
@@ -409,11 +405,8 @@ def get_auth(auth, **kwargs):
         waterbutler_settings = node.serialize_waterbutler_settings(provider_name)
 
     if not is_node_process:
-        # only location_id or region_id has value
-        if location_id:
-            storage = ExportDataLocation.objects.get(pk=location_id)
-        else:
-            storage = Region.objects.get(pk=region_id)
+        # for only location_id value
+        storage = ExportDataLocation.objects.get(pk=location_id)
         credentials = storage.serialize_waterbutler_credentials(provider_name)
         waterbutler_settings = storage.serialize_waterbutler_settings(provider_name)
 

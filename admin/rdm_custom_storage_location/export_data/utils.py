@@ -576,8 +576,6 @@ def move_addon_folder_to_backup(
         return {}
 
     # Move file
-    moved_paths = []
-    created_folder_paths = set()
     has_error = False
     error_message = ''
     for path in path_list:
@@ -594,9 +592,6 @@ def move_addon_folder_to_backup(
                 has_error = True
                 error_message = f'{response.status_code} - {response.content}'
                 break
-            moved_paths.append((path, new_path))
-            if len(paths) > 2:
-                created_folder_paths.add(f'/{paths[1]}/')
         except Exception as e:
             if callable(check_abort_task):
                 check_abort_task()
@@ -621,8 +616,6 @@ def move_addon_folder_from_backup(node_id, provider, process_start, cookies, cal
         return {}
 
     # Move files and folders from backup to root
-    moved_paths = []
-    created_folder_paths = set()
     has_error = False
     error_message = ''
     for path in path_list:
@@ -640,9 +633,6 @@ def move_addon_folder_from_backup(node_id, provider, process_start, cookies, cal
                 has_error = True
                 error_message = f'{response.status_code} - {response.content}'
                 break
-            moved_paths.append((path, new_path))
-            if len(paths) > 2:
-                created_folder_paths.add(f'/{paths[1]}/')
         except Exception as e:
             logger.error(f'Exception: {e}')
             has_error = True
@@ -663,7 +653,7 @@ def get_all_file_paths_in_addon_storage(node_id, provider, file_path, cookies, b
     try:
         response = get_file_data(node_id, provider, file_path, cookies, base_url=base_url, get_file_info=True, **kwargs)
         if response.status_code != 200:
-            return []
+            return [], []
         response_body = response.json()
         data = response_body.get('data')
         if len(data) != 0:
@@ -713,7 +703,6 @@ def move_bulk_mount_folder_to_backup(
         return {}
 
     # Move file
-    moved_paths = []
     has_error = False
     error_message = ''
     new_materialized_path = f'/backup_{process_start}/'
@@ -744,7 +733,6 @@ def move_bulk_mount_folder_to_backup(
                 has_error = True
                 error_message = f'{response.status_code} - {response.content}'
                 break
-            moved_paths.append(('/', path))
         except Exception as e:
             logger.error(f'Exception: {e}')
             has_error = True
@@ -764,7 +752,6 @@ def move_bulk_mount_folder_from_backup(node_id, provider, process_start, cookies
         return {}
 
     # Move files and folders from backup to root
-    moved_paths = []
     has_error = False
     error_message = ''
     root_path = '/'
@@ -777,7 +764,6 @@ def move_bulk_mount_folder_from_backup(node_id, provider, process_start, cookies
                 has_error = True
                 error_message = f'{response.status_code} - {response.content}'
                 break
-            moved_paths.append((backup_path, path))
         except Exception as e:
             logger.error(f'Exception: {e}')
             has_error = True
@@ -795,10 +781,11 @@ def move_bulk_mount_folder_from_backup(node_id, provider, process_start, cookies
 def get_all_child_paths_in_bulk_mount_storage(
         node_id, provider, file_materialized_path, cookies,
         base_url=WATERBUTLER_URL, exclude_path_regex='', get_path_from='', **kwargs):
+    list_file_path = []
     path_from_args = None
     try:
-        if not file_materialized_path.startswith('/') and not file_materialized_path.endswith('/'):
-            return [], path_from_args
+        if not file_materialized_path.startswith('/') or not file_materialized_path.endswith('/'):
+            return list_file_path, path_from_args
         paths = file_materialized_path.split('/')[1:]
         if len(paths) > 0:
             current_path = '/'
@@ -806,54 +793,35 @@ def get_all_child_paths_in_bulk_mount_storage(
             for index, path in enumerate(paths):
                 response = get_file_data(node_id, provider, current_path, cookies, base_url=base_url, get_file_info=True, **kwargs)
                 if response.status_code != 200:
-                    return []
+                    return [], None
                 response_body = response.json()
                 data = response_body.get('data', [])
                 if index == len(paths) - 1:
-                    if len(data) != 0:
-                        list_file_path = []
-                        for item in data:
-                            path = item.get('attributes', {}).get('path')
-                            materialized_path = item.get('attributes', {}).get('materialized')
-                            try:
-                                if isinstance(exclude_path_regex, str) and len(exclude_path_regex) != 0:
-                                    pattern = re.compile(exclude_path_regex)
-                                    if pattern.match(materialized_path):
-                                        continue
-                            except Exception as e:
-                                logger.error(f'Exception: {e}')
-                                continue
-                            list_file_path.append((path, materialized_path))
-                        return list_file_path, path_from_args
-                    else:
-                        return [], path_from_args
+                    for item in data:
+                        path = item.get('attributes', {}).get('path')
+                        materialized_path = item.get('attributes', {}).get('materialized')
+                        try:
+                            if isinstance(exclude_path_regex, str) and len(exclude_path_regex) != 0:
+                                pattern = re.compile(exclude_path_regex)
+                                if pattern.match(materialized_path):
+                                    continue
+                        except Exception as e:
+                            logger.error(f'Exception: {e}')
+                            continue
+                        list_file_path.append((path, materialized_path))
                 else:
                     current_materialized_path = f'{current_materialized_path}{path}/'
                     current_path_info = next((item for item in data if item.get('attributes', {}).get('materialized') ==
                                               current_materialized_path), None)
                     if current_path_info is None:
-                        return [], path_from_args
+                        break
 
                     current_path = current_path_info['attributes']['path']
                     if current_path_info['attributes']['materialized'] == get_path_from:
                         path_from_args = current_path
-        return [], path_from_args
+        return list_file_path, path_from_args
     except Exception:
-        return [], path_from_args
-
-
-def rollback_folder_movement(
-        node_id, provider, moved_paths, created_folder_paths,
-        cookies, callback_log=False, base_url=WATERBUTLER_URL, is_addon_storage=True, **kwargs):
-    # Move files and folder back
-    for path, new_path in moved_paths:
-        try:
-            move_file(node_id, provider, new_path, path, cookies, callback_log, base_url, is_addon_storage, **kwargs)
-        except Exception as e:
-            logger.error(f'Exception: {e}')
-
-    # Delete folders created by moving files and folders
-    delete_paths(node_id, provider, created_folder_paths, cookies, callback_log, base_url, **kwargs)
+        return list_file_path, path_from_args
 
 
 def delete_paths(node_id, provider, paths,
@@ -882,7 +850,7 @@ def delete_all_files_except_backup(node_id, provider, cookies, callback_log=Fals
     try:
         response = get_file_data(node_id, provider, '/', cookies, base_url=base_url, get_file_info=True, **kwargs)
         if response.status_code != 200:
-            return []
+            raise Exception(f'Cannot get file info list.')
         response_body = response.json()
         data = response_body.get('data')
         if len(data) != 0:
@@ -897,7 +865,6 @@ def delete_all_files_except_backup(node_id, provider, cookies, callback_log=Fals
                         continue
                 except Exception as e:
                     logger.error(f'Exception: {e}')
-                    continue
 
                 if kind == 'file' or kind == 'folder':
                     list_not_backup_paths.append(path)

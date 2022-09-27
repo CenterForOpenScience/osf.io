@@ -555,7 +555,6 @@ class Region(models.Model):
             'nextcloud',
             'osfstorage',
             'swift',
-            'nextcloud',
             'onedrive'
         ]
 

@@ -73,8 +73,8 @@ def check_before_restore_export_data(cookies, export_id, destination_id, **kwarg
     export_data = ExportData.objects.filter(id=export_id, is_deleted=False)[0]
     # Check export file data: /export_{process_start}/export_data_{institution_guid}_{process_start}.json
     try:
-        is_export_file_valid = read_file_info_and_check_schema(export_data, cookies, **kwargs)
-        if not is_export_file_valid:
+        is_export_data_file_valid = read_export_data_and_check_schema(export_data, cookies, **kwargs)
+        if not is_export_data_file_valid:
             return {'open_dialog': False, 'message': f'The export data files are corrupted'}
     except Exception as e:
         logger.error(f'Exception: {e}')
@@ -97,7 +97,7 @@ def check_before_restore_export_data(cookies, export_id, destination_id, **kwarg
     try:
         response = utils.get_file_data(destination_first_project_id, destination_provider, '/', cookies,
                                        destination_base_url, get_file_info=True, **kwargs)
-        if response.status_code != 200:
+        if response.status_code != status.HTTP_200_OK:
             # Error
             logger.error(f'Return error with response: {response.content}')
             return {'open_dialog': False, 'message': f'Cannot connect to destination storage'}
@@ -365,26 +365,24 @@ def read_export_data_and_check_schema(export_data, cookies, **kwargs):
     # Get export file (/export_{process_start}/export_data_{institution_guid}_{process_start}.json)
     try:
         response = export_data.read_export_data_from_location(cookies, **kwargs)
-        if response.status_code != 200:
+        if response.status_code != status.HTTP_200_OK:
             # Error
-            return {'open_dialog': False, 'message': f'Cannot connect to the export data storage location'}
+            raise ProcessError(f'Cannot connect to the export data storage location')
         response_body = response.content
         response_file_content = response_body.decode('utf-8')
         response_file_json = json.loads(response_file_content)
     except Exception:
-        return {'open_dialog': False, 'message': f'Cannot connect to the export data storage location'}
+        raise ProcessError(f'Cannot connect to the export data storage location')
 
     # Validate export file schema
-    is_file_valid = utils.validate_file_json(response_file_json, 'export-data-schema.json')
-    if not is_file_valid:
-        return {'open_dialog': False, 'message': f'The export data files are corrupted'}
+    return utils.validate_file_json(response_file_json, 'export-data-schema.json')
 
 
 def read_file_info_and_check_schema(export_data, cookies, **kwargs):
     # Get file info file: /export_{process_start}/file_info_{institution_guid}_{process_start}.json
     try:
         response = export_data.read_file_info_from_location(cookies, **kwargs)
-        if response.status_code != 200:
+        if response.status_code != status.HTTP_200_OK:
             raise ProcessError(f'Cannot get file information list')
         response_body = response.content
         response_file_content = response_body.decode('utf-8')
@@ -507,7 +505,7 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
                 # Download file by version
                 response = export_data.read_data_file_from_location(cookies, file_hash_path,
                                                                     base_url=export_base_url, **kwargs)
-                if response.status_code != 200:
+                if response.status_code != status.HTTP_200_OK:
                     logger.error(f'Download error: {response.content}')
                     continue
                 download_data = response.content
