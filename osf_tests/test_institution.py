@@ -1,8 +1,17 @@
 from past.builtins import basestring
 from osf.models import Institution
 
-from .factories import InstitutionFactory, AuthUserFactory
+from .factories import (
+    InstitutionFactory,
+    AuthUserFactory,
+    ExportDataLocationFactory,
+    RegionFactory,
+    ExportDataFactory,
+)
 import pytest
+import mock
+from nose import tools as nt
+from tests.base import AdminTestCase
 
 
 @pytest.mark.django_db
@@ -82,3 +91,172 @@ class TestInstitutionPermissions:
     @pytest.mark.django_db
     def test_non_group_member_doesnt_have_perms(self, institution, user):
         assert user.has_perm('view_institutional_metrics', institution) is False
+
+
+@pytest.mark.feature_202210
+@pytest.mark.django_db
+class TestInstitution(AdminTestCase):
+
+    def test_institution_guid(self):
+        institution = InstitutionFactory()
+        nt.assert_equal(institution.guid, institution._id)
+
+    def test_get_default_storage_location(self):
+        institution = InstitutionFactory()
+        res = institution.get_default_storage_location()
+        nt.assert_equal(len(list(res)), 0)
+
+        # default location
+        ExportDataLocationFactory(institution_guid=Institution.INSTITUTION_DEFAULT)
+        res = institution.get_default_storage_location()
+        nt.assert_equal(len(list(res)), 1)
+
+    def test_get_institutional_storage_location(self):
+        institution = InstitutionFactory()
+        res = institution.get_institutional_storage_location()
+        nt.assert_equal(len(list(res)), 0)
+
+        # institutional location
+        ExportDataLocationFactory(institution_guid=institution.guid)
+        res = institution.get_institutional_storage_location()
+        nt.assert_equal(len(list(res)), 1)
+
+    def test_get_allowed_storage_location(self):
+        institution = InstitutionFactory()
+        res = institution.get_allowed_storage_location()
+        nt.assert_equal(len(list(res)), 0)
+
+        # default location
+        ExportDataLocationFactory(institution_guid=Institution.INSTITUTION_DEFAULT)
+        res = institution.get_default_storage_location()
+        nt.assert_equal(len(list(res)), 1)
+        res = institution.get_allowed_storage_location()
+        nt.assert_equal(len(list(res)), 1)
+
+        # institutional location
+        ExportDataLocationFactory(institution_guid=institution.guid)
+        res = institution.get_institutional_storage_location()
+        nt.assert_equal(len(list(res)), 1)
+        res = institution.get_allowed_storage_location()
+        nt.assert_equal(len(list(res)), 2)
+
+    def test_have_institutional_storage_location_id(self):
+        institution = InstitutionFactory()
+        res = institution.have_institutional_storage_location_id(0)
+        nt.assert_false(res)
+
+        # default location
+        location = ExportDataLocationFactory(institution_guid=Institution.INSTITUTION_DEFAULT)
+        res = institution.have_institutional_storage_location_id(location.id)
+        nt.assert_false(res)
+
+        # institutional location
+        location = ExportDataLocationFactory(institution_guid=institution.guid)
+        res = institution.have_institutional_storage_location_id(location.id)
+        nt.assert_true(res)
+
+    def test_have_allowed_storage_location_id(self):
+        institution = InstitutionFactory()
+        res = institution.have_allowed_storage_location_id(0)
+        nt.assert_false(res)
+
+        # default location
+        location = ExportDataLocationFactory(institution_guid=Institution.INSTITUTION_DEFAULT)
+        res = institution.have_allowed_storage_location_id(location.id)
+        nt.assert_true(res)
+
+        # institutional location
+        location = ExportDataLocationFactory(institution_guid=institution.guid)
+        res = institution.have_allowed_storage_location_id(location.id)
+        nt.assert_true(res)
+
+    def test_get_institutional_storage(self):
+        institution = InstitutionFactory()
+        res = institution.get_institutional_storage()
+        nt.assert_equals(len(list(res)), 0)
+
+        RegionFactory(_id=institution.guid)
+        res = institution.get_institutional_storage()
+        nt.assert_equals(len(list(res)), 1)
+
+        RegionFactory(_id=institution.guid)
+        res = institution.get_institutional_storage()
+        nt.assert_equals(len(list(res)), 2)
+
+    def test_get_allowed_institutional_storage(self):
+        institution = InstitutionFactory()
+        res = institution.get_allowed_institutional_storage()
+        nt.assert_equals(len(list(res)), 0)
+
+        RegionFactory(_id=institution.guid)
+        res = institution.get_allowed_institutional_storage()
+        nt.assert_equals(len(list(res)), 1)
+
+        RegionFactory(_id=institution.guid)
+        res = institution.get_allowed_institutional_storage()
+        nt.assert_equals(len(list(res)), 2)
+
+    def test_get_default_region(self):
+        institution = InstitutionFactory()
+        res = institution.get_default_region()
+        nt.assert_equals(res, None)
+
+        source = RegionFactory(_id=institution.guid)
+        res = institution.get_default_region()
+        nt.assert_equals(res, source)
+
+        RegionFactory(_id=institution.guid)
+        res = institution.get_default_region()
+        nt.assert_equals(res, source)
+
+    def test_get_default_institutional_storage(self):
+        institution = InstitutionFactory()
+        res = institution.get_default_institutional_storage()
+        nt.assert_equals(res, None)
+
+        source = RegionFactory(_id=institution.guid)
+        res = institution.get_default_institutional_storage()
+        nt.assert_equals(res, source)
+
+        RegionFactory(_id=institution.guid)
+        res = institution.get_default_institutional_storage()
+        nt.assert_equals(res, source)
+
+    def test_is_allowed_institutional_storage_id(self):
+        institution = InstitutionFactory()
+        res = institution.is_allowed_institutional_storage_id(0)
+        nt.assert_false(res)
+
+        # default source storage
+        source = RegionFactory(_id=Institution.INSTITUTION_DEFAULT)
+        res = institution.is_allowed_institutional_storage_id(source.id)
+        nt.assert_false(res)
+
+        # institutional source storage
+        source = RegionFactory(_id=institution.guid)
+        res = institution.is_allowed_institutional_storage_id(source.id)
+        nt.assert_true(res)
+
+
+@pytest.mark.feature_202210
+@pytest.mark.django_db
+class TestInstitutionExportData(AdminTestCase):
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.institution = InstitutionFactory.create(_id='vcu')
+        cls.export_data = ExportDataFactory()
+
+    def test_get_allowed_storage_location(self):
+        res = self.institution.get_allowed_storage_location()
+        nt.assert_greater_equal(len(list(res)), 0)
+
+    @mock.patch('osf.models.export_data_location.ExportDataLocation.objects.filter')
+    def test_get_allowed_storage_location_exception(self, mock_exception):
+        mock_exception.side_effect = Exception()
+        res = self.institution.get_allowed_storage_location()
+        nt.assert_greater_equal(len(list(res)), 0)
+
+    def test_get_institutional_storage(self):
+        res = self.institution.get_institutional_storage()
+        nt.assert_greater_equal(len(list(res)), 0)
