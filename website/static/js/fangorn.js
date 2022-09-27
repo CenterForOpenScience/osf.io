@@ -1196,8 +1196,9 @@ function _uploadFolderEvent(event, item, mode, col) {
 
         // check upload quota for upload folder
         if (parseFloat(quota.used) + parseFloat(total_files_size) > quota.max) {
-            var text_message = 'Not enough quota to upload. The total size of the folder ' + formatProperUnit(total_files_size) + '.';
-            $osf.growl('Error', text_message, 'danger', 5000);
+            $osf.growl('Error', sprintf(gettext('Not enough quota to upload. The total size of the folder %1$s.'),
+            formatProperUnit(total_files_size)),
+            'danger', 5000);
             return;
         }
 
