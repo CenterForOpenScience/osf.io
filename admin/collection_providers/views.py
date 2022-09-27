@@ -169,10 +169,11 @@ class CollectionProviderDisplay(PermissionRequiredMixin, DetailView):
         fields['volume_choices'] = json.dumps(primary_collection.volume_choices)
         fields['issue_choices'] = json.dumps(primary_collection.issue_choices)
         fields['program_area_choices'] = json.dumps(primary_collection.program_area_choices)
-        fields['school_type_choices'] = json.dumps(primary_collection.school_type_choices)
-        fields['study_design_choices'] = json.dumps(primary_collection.study_design_choices)
 
         fields = model_to_dict(collection_provider)
+
+        fields['school_type_choices'] = json.dumps(primary_collection.school_type_choices)
+        fields['study_design_choices'] = json.dumps(primary_collection.study_design_choices)
 
         # compile html list of collected_type_choices
         if collection_provider.primary_collection:
