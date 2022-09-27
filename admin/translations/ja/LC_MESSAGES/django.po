@@ -3283,7 +3283,7 @@ msgstr "クォータ再計算"
 msgid "User Identification Information"
 msgstr "ユーザー識別情報"
 
-msgid "Extended storage"
+msgid "Extended Storage"
 msgstr "拡張ストレージ"
 
 msgid "User Details"
