@@ -29,7 +29,7 @@ class UserIdentificationInformationListView(ListView):
             'id': user.guids.first()._id,
             'fullname': user.fullname,
             'eppn': user.eppn or '',
-            'affiliation': user.affiliated_institutions.first() if user.affiliated_institutions.first() else '',
+            'affiliation': user.affiliated_institutions.first().name if user.affiliated_institutions.first() else '',
             'email': user.emails.values_list('address', flat=True)[0] if len(
                 user.emails.values_list('address', flat=True)) > 0 else '',
             'last_login': user.last_login or pytz.utc.localize(datetime.min),

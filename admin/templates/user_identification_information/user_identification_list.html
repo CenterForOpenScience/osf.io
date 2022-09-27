@@ -318,7 +318,7 @@
                 <td class="col">{{ user_data.eppn }}</td>
                 <td class="col">{{ user_data.fullname }}</td>
                 <td class="col">{{ user_data.email }}</td>
-                <td class="col">{{ user_data.affiliation.name }}</td>
+                <td class="col">{{ user_data.affiliation }}</td>
                 <td class="col">{% if user_data.last_login != datetime_min %}{{user_data.last_login}}{% endif %}</td>
                 <td class="col">{{ user_data.usage_value }} {{ user_data.usage_abbr }}</td>
                 <td class="col">{{ user_data.extended_storage|linebreaks }}</td>
