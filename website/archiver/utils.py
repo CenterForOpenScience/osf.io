@@ -111,8 +111,9 @@ def handle_archive_fail(reason, src, dst, user, result):
         pass
     else:  # reason == ARCHIVER_UNCAUGHT_ERROR
         send_archiver_uncaught_error_mails(src, user, result, url)
-    dst.root.sanction.forcibly_reject()
-    dst.root.sanction.save()
+    if dst.root.sanction:
+        dst.root.sanction.forcibly_reject()
+        dst.root.sanction.save()
     dst.root.delete_registration_tree(save=True)
 
 def archive_provider_for(node, user):
