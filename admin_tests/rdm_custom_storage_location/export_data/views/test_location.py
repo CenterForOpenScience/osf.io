@@ -8,9 +8,9 @@ from rest_framework import status as http_status
 from admin.rdm_custom_storage_location.export_data.views import location
 from admin_tests.utilities import setup_view
 from osf.models import ExportDataLocation
-from osf_tests.factories import AuthUserFactory
 from osf_tests.factories import (
-    InstitutionFactory
+    AuthUserFactory,
+    InstitutionFactory,
 )
 from tests.base import AdminTestCase
 

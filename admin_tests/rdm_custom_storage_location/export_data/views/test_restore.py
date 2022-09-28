@@ -17,13 +17,13 @@ from admin.rdm_custom_storage_location.export_data.views.restore import ProcessE
 from framework.celery_tasks import app as celery_app
 from osf.models import RdmFileTimestamptokenVerifyResult, ExportData, ExportDataRestore
 from osf_tests.factories import (
+    AuthUserFactory,
     ExportDataFactory,
     RegionFactory,
-    ExportDataRestoreFactory,
     OsfStorageFileFactory,
+    ExportDataRestoreFactory,
     addon_waterbutler_settings,
     bulkmount_waterbutler_settings,
-    AuthUserFactory,
 )
 from tests.base import AdminTestCase
 

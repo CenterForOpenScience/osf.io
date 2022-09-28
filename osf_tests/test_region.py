@@ -3,9 +3,12 @@ import pytest
 from nose import tools as nt
 
 from framework.auth import Auth
-
 from addons.osfstorage.apps import OSFStorageAddonAppConfig
-from osf.models import RegistrationSchema, Registration, ExportData
+from osf.models import (
+    RegistrationSchema,
+    Registration,
+    ExportData,
+)
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,

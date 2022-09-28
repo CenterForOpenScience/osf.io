@@ -6,7 +6,7 @@ import mock
 import os
 import pytest
 import time
-import unittest
+import unittest  # noqa
 from django.utils import timezone
 
 from flask import Flask

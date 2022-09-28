@@ -22,7 +22,7 @@ from elasticsearch import exceptions as es_exceptions
 from api.base.settings.defaults import SLOAN_ID_COOKIE_NAME
 
 from addons.base.models import BaseStorageAddon
-from addons.osfstorage.models import OsfStorageFile, Region
+from addons.osfstorage.models import OsfStorageFile
 from addons.osfstorage.models import OsfStorageFileNode
 from addons.osfstorage.utils import update_analytics
 
@@ -40,11 +40,21 @@ from website import settings
 from addons.base import signals as file_signals
 from addons.base.utils import format_last_known_metadata, get_mfr_url
 from osf import features
-from osf.models import (BaseFileNode, TrashedFileNode, BaseFileVersionsThrough,
-                        OSFUser, AbstractNode, Preprint,
-                        NodeLog, DraftRegistration,
-                        Guid, FileVersionUserMetadata, FileVersion,
-                        ExportDataLocation, ExportData)
+from osf.models import (
+    BaseFileNode,
+    TrashedFileNode,
+    BaseFileVersionsThrough,
+    OSFUser,
+    AbstractNode,
+    Preprint,
+    NodeLog,
+    DraftRegistration,
+    Guid,
+    FileVersionUserMetadata,
+    FileVersion,
+    ExportDataLocation,
+    ExportData,
+)
 from osf.metrics import PreprintView, PreprintDownload
 from osf.utils import permissions
 from website.profile.utils import get_profile_image_url

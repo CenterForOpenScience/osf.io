@@ -11,13 +11,13 @@ from rest_framework import status
 from addons.osfstorage.tests.factories import FileVersionFactory
 from osf.models import AbstractNode, ExportData
 from osf_tests.factories import (
-    ExportDataRestoreFactory,
+    TagFactory,
+    ProjectFactory,
     InstitutionFactory,
     OsfStorageFileFactory,
-    ProjectFactory,
+    ExportDataRestoreFactory,
     BaseFileVersionsThroughFactory,
-    TagFactory,
-    RdmFileTimestamptokenVerifyResultFactory
+    RdmFileTimestamptokenVerifyResultFactory,
 )
 
 

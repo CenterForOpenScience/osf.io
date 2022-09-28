@@ -589,7 +589,8 @@ def move_all_files_from_backup_folder_to_root(export_data_restore, destination_f
             process_start=export_data_restore.process_start_timestamp,
             cookies=cookies,
             callback_log=False,
-            base_url=destination_base_url, **kwargs)
+            base_url=destination_base_url,
+            **kwargs)
         if 'error' in response:
             # Error
             error_msg = response.get('error')

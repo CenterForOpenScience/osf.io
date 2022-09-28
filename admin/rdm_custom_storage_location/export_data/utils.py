@@ -28,7 +28,7 @@ from osf.models import (
     ExportData,
     ExportDataRestore,
     ExportDataLocation,
-    ExternalAccount
+    ExternalAccount,
 )
 from website.settings import WATERBUTLER_URL
 from website.util import inspect_info  # noqa

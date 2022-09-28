@@ -9,11 +9,12 @@ from nose import tools as nt
 from admin.rdm_custom_storage_location.export_data.views import management
 from admin_tests.utilities import setup_view
 from osf.models import ExportData, ExportDataRestore
-from osf_tests.factories import AuthUserFactory, ExportDataRestoreFactory
 from osf_tests.factories import (
+    AuthUserFactory,
     InstitutionFactory,
     ExportDataFactory,
     RegionFactory,
+    ExportDataRestoreFactory,
 )
 from tests.base import AdminTestCase
 
@@ -703,7 +704,7 @@ class TestCheckRestoreData(AdminTestCase):
         request.COOKIES = '213919sdasdn823193929'
         request.GET = {'destination_id': 100}
         export_data = self.export_data
-        export_data.status = 'Checking'
+        export_data.status = ExportData.STATUS_CHECKING
 
         def side_effect(destination_id=100):
             return export_data
@@ -723,7 +724,7 @@ class TestCheckRestoreData(AdminTestCase):
         request.user = self.user
         request.COOKIES = '213919sdasdn823193929'
         export_data = self.export_data
-        export_data.status = 'Checking'
+        export_data.status = ExportData.STATUS_CHECKING
 
         def side_effect(destination_id=100):
             return export_data

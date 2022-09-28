@@ -5,9 +5,10 @@ from nose import tools as nt
 
 from admin.rdm_custom_storage_location.export_data.views import institutional_storage
 from admin_tests.utilities import setup_view
-from osf_tests.factories import AuthUserFactory
 from osf_tests.factories import (
-    InstitutionFactory, RegionFactory
+    AuthUserFactory,
+    InstitutionFactory,
+    RegionFactory,
 )
 from tests.base import AdminTestCase
 

@@ -1,17 +1,14 @@
+from nose import tools as nt
 from past.builtins import basestring
 from osf.models import Institution
-
+from tests.base import AdminTestCase
 from .factories import (
     InstitutionFactory,
     AuthUserFactory,
     ExportDataLocationFactory,
     RegionFactory,
-    ExportDataFactory,
 )
 import pytest
-import mock
-from nose import tools as nt
-from tests.base import AdminTestCase
 
 
 @pytest.mark.django_db

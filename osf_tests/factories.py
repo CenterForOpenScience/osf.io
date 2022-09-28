@@ -1171,7 +1171,7 @@ class ExportDataRestoreFactory(DjangoModelFactory):
     export = factory.SubFactory(ExportDataFactory)
     destination = factory.SubFactory(RegionFactory)
     process_start = datetime.datetime.now()
-    status = 'Completed'
+    status = models.ExportData.STATUS_COMPLETED
 
 
 class ContentTypeFactory(DjangoModelFactory):
