@@ -184,7 +184,7 @@
 </form>
 
 <div style="display: flex; justify-content: space-between; align-items: center">
-    {% include "util/pagination.html" with items=page status=direction order=order_by %}
+    {% include "user_identification_information/pagination.html" with items=page status=direction order=order_by guid=guid fullname=fullname username=username %}
     {% if user.is_superuser %}
         <a
                 class="btn btn-primary"

@@ -71,6 +71,9 @@ class UserIdentificationInformationListView(ListView):
         kwargs['order_by'] = self.get_order_by()
         kwargs['direction'] = self.get_direction()
         kwargs['datetime_min'] = pytz.utc.localize(datetime.min)
+        kwargs['guid'] = self.request.GET.get('guid')
+        kwargs['fullname'] = self.request.GET.get('fullname')
+        kwargs['username'] = self.request.GET.get('username')
         return super(UserIdentificationInformationListView, self).get_context_data(**kwargs)
 
     def get_list_data(self, queryset, dict_users_list={}):
