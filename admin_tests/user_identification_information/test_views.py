@@ -320,9 +320,6 @@ class TestExportFileCSVView(AdminTestCase):
         request.user = self.user
         view = setup_view(self.view, request)
         res = view.get(request)
-
-        result = res.content.decode('utf-8')
-
         nt.assert_equal(res.status_code, 200)
         nt.assert_equal(res['content-type'], 'text/csv')
 
@@ -331,8 +328,5 @@ class TestExportFileCSVView(AdminTestCase):
         request.user = self.user2
         view = setup_view(self.view, request)
         res = view.get(request)
-
-        result = res.content.decode('utf-8')
-
         nt.assert_equal(res.status_code, 200)
         nt.assert_equal(res['content-type'], 'text/csv')
