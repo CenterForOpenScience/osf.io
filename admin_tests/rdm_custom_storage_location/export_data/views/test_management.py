@@ -652,6 +652,7 @@ class TestCheckExportData(AdminTestCase):
         mock_export_data = mock.MagicMock()
         mock_request = mock.MagicMock()
         mock_request.get.return_value = FakeRes(200)
+        self.export_data.status = ExportData.STATUS_RUNNING
         mock_export_data.filter.return_value.first.return_value = self.export_data
         view = management.CheckExportData()
         view = setup_view(view, request, data_id=self.export_data.id)
@@ -675,7 +676,7 @@ class TestCheckExportData(AdminTestCase):
         mock_validate = mock.MagicMock()
         mock_validate.return_value = True
         mock_request.get.return_value = FakeRes(200)
-        self.export_data.source.guid = 'vcu'
+        self.export_data.source._id = 'vcu'
         mock_export_data.filter.return_value.first.return_value = self.export_data
         view = management.CheckExportData()
         view = setup_view(view, request, data_id=self.export_data.id)
@@ -767,6 +768,7 @@ class TestCheckRestoreData(AdminTestCase):
         request.user = self.user
         request.COOKIES = '213919sdasdn823193929'
         request.GET = {'destination_id': 100}
+        self.export_data_restore.status = ExportData.STATUS_RUNNING
 
         def side_effect(destination_id=100):
             return self.export_data_restore
@@ -804,7 +806,7 @@ class TestCheckRestoreData(AdminTestCase):
         mock_validate = mock.MagicMock()
         mock_validate.return_value = True
         mock_request.get.return_value = FakeRes(200)
-        self.export_data.source.guid = 'vcu'
+        self.export_data.source._id = 'vcu'
         mock_export_data.filter.return_value.first.return_value = self.export_data
         view = management.CheckRestoreData()
         view = setup_view(view, request, data_id=self.export_data.id)
