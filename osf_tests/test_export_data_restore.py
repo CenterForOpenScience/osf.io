@@ -31,23 +31,23 @@ class TestExportDataRestore(TestCase):
         cls.institution = InstitutionFactory.create(_id=cls.data_restore.destination.guid)
         cls.institution.nodes.set([project])
         cls.institution_json = {
-            "id": cls.institution.id,
-            "guid": cls.institution.guid,
-            "name": cls.institution.name
+            'id': cls.institution.id,
+            'guid': cls.institution.guid,
+            'name': cls.institution.name
         }
         cls.export_data_json = {
-            "institution": cls.institution_json,
-            "process_start": cls.data_restore.process_start.strftime('%Y-%m-%d %H:%M:%S'),
-            "process_end": cls.data_restore.process_end.strftime(
+            'institution': cls.institution_json,
+            'process_start': cls.data_restore.process_start.strftime('%Y-%m-%d %H:%M:%S'),
+            'process_end': cls.data_restore.process_end.strftime(
                 '%Y-%m-%d %H:%M:%S') if cls.data_restore.process_end else None,
-            "storage": {
-                "name": cls.data_restore.destination.name,
-                "type": cls.data_restore.destination.provider_full_name
+            'storage': {
+                'name': cls.data_restore.destination.name,
+                'type': cls.data_restore.destination.provider_full_name
             },
-            "projects_numb": 1,
-            "files_numb": 1,
-            "size": -1,
-            "file_path": None
+            'projects_numb': 1,
+            'files_numb': 1,
+            'size': -1,
+            'file_path': None
         }
 
         projects = cls.institution.nodes.filter(category='project')
