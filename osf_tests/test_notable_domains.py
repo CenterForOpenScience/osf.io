@@ -24,10 +24,6 @@ from website import settings
 class TestNotableDomain:
 
     @pytest.fixture()
-    def node(self):
-        return NodeFactory()
-
-    @pytest.fixture()
     def spam_domain(self):
         return urlparse('http://i-am-a-domain.io/with-a-path/?and=&query=parms')
 
@@ -36,13 +32,6 @@ class TestNotableDomain:
         return NotableDomain.objects.create(
             domain='i-am-a-domain.io',
             note=NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT,
-        )
-
-    @pytest.fixture()
-    def marked_as_ham_domain(self):
-        return NotableDomain.objects.create(
-            domain='i-am-a-ham.io',
-            note=NotableDomain.Note.ASSUME_HAM_UNTIL_REPORTED,
         )
 
     @pytest.mark.enable_enqueue_task
@@ -84,7 +73,7 @@ class TestNotableDomain:
     @pytest.mark.enable_enqueue_task
     @pytest.mark.parametrize('factory', [NodeFactory, RegistrationFactory, PreprintFactory])
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
-    def test_spam_check(self, app, factory, spam_domain, marked_as_spam_domain, marked_as_ham_domain, request_context):
+    def test_spam_check(self, app, factory, spam_domain, marked_as_spam_domain, request_context):
         obj = factory()
         obj.is_public = True
         obj.is_published = True
