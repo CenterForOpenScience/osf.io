@@ -9,6 +9,7 @@ from osf_tests.factories import (
 )
 from osf.models import (
     NotableDomain,
+    DomainReference,
     SpamStatus
 )
 
@@ -16,6 +17,7 @@ from osf.external.spam.tasks import check_resource_for_domains
 from osf_tests.factories import SessionFactory, NodeFactory
 from framework.sessions import set_session
 from osf.utils.workflows import DefaultStates
+from django.contrib.contenttypes.models import ContentType
 
 from website import settings
 
@@ -45,10 +47,10 @@ class TestNotableDomain:
             )
         )
         obj.reload()
-        assert NotableDomain.objects.get(
+        assert NotableDomain.objects.filter(
             domain=spam_domain.netloc,
             note=NotableDomain.Note.UNKNOWN
-        )
+        ).count() == 1
         obj.reload()
         assert obj.spam_status == SpamStatus.UNKNOWN
 
@@ -63,12 +65,17 @@ class TestNotableDomain:
             )
         )
         obj.reload()
-        assert NotableDomain.objects.get(
+        assert NotableDomain.objects.filter(
             domain=spam_domain.netloc,
             note=NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT
-        )
+        ).count() == 1
         obj.reload()
         assert obj.spam_status == SpamStatus.SPAM
+        assert DomainReference.objects.filter(
+            referrer_object_id=obj.id,
+            referrer_content_type=ContentType.objects.get_for_model(obj),
+            domain__domain=spam_domain.netloc
+        ).count() == 1
 
     @pytest.mark.enable_enqueue_task
     @pytest.mark.parametrize('factory', [NodeFactory, RegistrationFactory, PreprintFactory])
@@ -84,21 +91,27 @@ class TestNotableDomain:
         s = SessionFactory(user=creator)
         set_session(s)
         obj.save()
-        assert NotableDomain.objects.get(
+        assert NotableDomain.objects.filter(
             domain=spam_domain.netloc,
             note=NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT
-        )
-        assert NotableDomain.objects.get(
+        ).count() == 1
+        assert NotableDomain.objects.filter(
             domain='iamNOTspam.org',
             note=NotableDomain.Note.UNKNOWN
-        )
-        assert NotableDomain.objects.get(
+        ).count() == 1
+        assert DomainReference.objects.filter(
+            referrer_object_id=obj.id,
+            referrer_content_type=ContentType.objects.get_for_model(obj),
+            domain__domain='iamNOTspam.org'
+        ).count() == 1
+        assert NotableDomain.objects.filter(
             domain='stillNotspam.io',
             note=NotableDomain.Note.UNKNOWN
-        )
-        assert NotableDomain.objects.get(
-            domain='i-am-a-ham.io',
-            note=NotableDomain.Note.ASSUME_HAM_UNTIL_REPORTED
-        )
+        ).count() == 1
+        assert DomainReference.objects.filter(
+            referrer_object_id=obj.id,
+            referrer_content_type=ContentType.objects.get_for_model(obj),
+            domain__domain='stillNotspam.io'
+        ).count() == 1
         obj.reload()
         assert obj.spam_status == SpamStatus.SPAM
