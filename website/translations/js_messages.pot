@@ -3498,6 +3498,10 @@ msgstr ""
 msgid "How to Use the File Browser"
 msgstr ""
 
+#: website/static/js/fangorn.js:2289
+msgid "Upload Folder"
+msgstr ""
+
 #: website/static/js/fangorn.js:2351
 msgid "Please wait for current action to complete"
 msgstr ""
