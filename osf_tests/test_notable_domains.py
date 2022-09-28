@@ -56,7 +56,7 @@ class TestNotableDomain:
             )
         )
         obj.reload()
-        NotableDomain.objects.get(
+        assert NotableDomain.objects.get(
             domain=spam_domain.netloc,
             note=NotableDomain.Note.UNKNOWN
         )
@@ -74,7 +74,7 @@ class TestNotableDomain:
             )
         )
         obj.reload()
-        NotableDomain.objects.get(
+        assert NotableDomain.objects.get(
             domain=spam_domain.netloc,
             note=NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT
         )
@@ -95,19 +95,19 @@ class TestNotableDomain:
         s = SessionFactory(user=creator)
         set_session(s)
         obj.save()
-        NotableDomain.objects.get(
+        assert NotableDomain.objects.get(
             domain=spam_domain.netloc,
             note=NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT
         )
-        NotableDomain.objects.get(
+        assert NotableDomain.objects.get(
             domain='iamNOTspam.org',
             note=NotableDomain.Note.UNKNOWN
         )
-        NotableDomain.objects.get(
+        assert NotableDomain.objects.get(
             domain='stillNotspam.io',
             note=NotableDomain.Note.UNKNOWN
         )
-        NotableDomain.objects.get(
+        assert NotableDomain.objects.get(
             domain='i-am-a-ham.io',
             note=NotableDomain.Note.ASSUME_HAM_UNTIL_REPORTED
         )
