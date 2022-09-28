@@ -325,9 +325,6 @@ class TestExportFileCSVView(AdminTestCase):
 
         nt.assert_equal(res.status_code, 200)
         nt.assert_equal(res['content-type'], 'text/csv')
-        nt.assert_in('kenny', result)
-        nt.assert_in('alex queen', result)
-        nt.assert_in('kenny@gmail.com', result)
 
     def test_get_is_super_admin(self):
         request = RequestFactory().get('/fake_path')
@@ -339,6 +336,3 @@ class TestExportFileCSVView(AdminTestCase):
 
         nt.assert_equal(res.status_code, 200)
         nt.assert_equal(res['content-type'], 'text/csv')
-        nt.assert_in('kenny', result)
-        nt.assert_in('alex queen', result)
-        nt.assert_in('kenny@gmail.com', result)
