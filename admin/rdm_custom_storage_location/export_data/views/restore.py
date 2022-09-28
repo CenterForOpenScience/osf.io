@@ -420,9 +420,9 @@ def generate_new_file_path(file_materialized_path, version_id, is_file_not_lates
 def move_all_files_to_backup_folder(task, current_process_step, destination_first_project_id, export_data_restore, cookies, **kwargs):
     try:
         destination_region = export_data_restore.destination
-        is_destination_addon_storage = destination_region.is_add_on_storage
-        destination_base_url = destination_region.waterbutler_url
         destination_provider = INSTITUTIONAL_STORAGE_PROVIDER_NAME
+        destination_base_url = destination_region.waterbutler_url
+        is_destination_addon_storage = utils.is_add_on_storage(destination_provider)
         with transaction.atomic():
             # Preload params to function
             check_task_aborted_function = partial(
@@ -459,9 +459,9 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
     export_base_url = export_data.location.waterbutler_url
 
     destination_region = export_data_restore.destination
-    is_destination_addon_storage = destination_region.is_add_on_storage
-    destination_base_url = destination_region.waterbutler_url
     destination_provider = INSTITUTIONAL_STORAGE_PROVIDER_NAME
+    destination_base_url = destination_region.waterbutler_url
+    is_destination_addon_storage = utils.is_add_on_storage(destination_provider)
 
     list_created_file_nodes = []
     for file in export_data_files:
@@ -574,9 +574,9 @@ def delete_all_files_except_backup_folder(export_data_restore, location_id, dest
 
 def move_all_files_from_backup_folder_to_root(export_data_restore, destination_first_project_id, cookies, **kwargs):
     destination_region = export_data_restore.destination
-    destination_base_url = destination_region.waterbutler_url
     destination_provider = INSTITUTIONAL_STORAGE_PROVIDER_NAME
-    is_destination_addon_storage = destination_region.is_add_on_storage
+    destination_base_url = destination_region.waterbutler_url
+    is_destination_addon_storage = utils.is_add_on_storage(destination_provider)
 
     try:
         if is_destination_addon_storage:

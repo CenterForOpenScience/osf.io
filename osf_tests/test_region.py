@@ -133,43 +133,6 @@ class TestRegion:
         })
         nt.assert_equal(region.provider_full_name, OSFStorageAddonAppConfig.full_name)
 
-    def test_is_add_on_storage(self):
-        # missing provider
-        region = RegionFactory(waterbutler_settings={'storage': {'container': 'osf_storage'}})
-        nt.assert_is_none(region.is_add_on_storage)
-
-        # both addon method and bulk-mount method
-        region = RegionFactory(waterbutler_settings={'storage': {'container': 'owncloud'}})
-        nt.assert_is_none(region.is_add_on_storage)
-
-        # only addon method providers
-        region = RegionFactory(waterbutler_settings={'storage': {'provider': 'nextcloudinstitutions'}})
-        nt.assert_true(region.is_add_on_storage)
-        region = RegionFactory(waterbutler_settings={'storage': {'provider': 's3compatinstitutions'}})
-        nt.assert_true(region.is_add_on_storage)
-        region = RegionFactory(waterbutler_settings={'storage': {'provider': 'ociinstitutions'}})
-        nt.assert_true(region.is_add_on_storage)
-        region = RegionFactory(waterbutler_settings={'storage': {'provider': 'dropboxbusiness'}})
-        nt.assert_true(region.is_add_on_storage)
-        region = RegionFactory(waterbutler_settings={'storage': {'provider': 's3compat'}})
-        nt.assert_true(region.is_add_on_storage)
-        region = RegionFactory(waterbutler_settings={'storage': {'provider': 's3'}})
-        nt.assert_true(region.is_add_on_storage)
-
-        # only bulk-mount method providers
-        region = RegionFactory(waterbutler_settings={'storage': {'provider': 'onedrivebusiness'}})
-        nt.assert_false(region.is_add_on_storage)
-        region = RegionFactory(waterbutler_settings={'storage': {'provider': 'swift'}})
-        nt.assert_false(region.is_add_on_storage)
-        region = RegionFactory(waterbutler_settings={'storage': {'provider': 'box'}})
-        nt.assert_false(region.is_add_on_storage)
-        region = RegionFactory(waterbutler_settings={'storage': {'provider': 'nextcloud'}})
-        nt.assert_false(region.is_add_on_storage)
-        region = RegionFactory(waterbutler_settings={'storage': {'provider': 'osfstorage'}})
-        nt.assert_false(region.is_add_on_storage)
-        region = RegionFactory(waterbutler_settings={'storage': {'provider': 'onedrive'}})
-        nt.assert_false(region.is_add_on_storage)
-
     def test_has_export_data(self):
         region = RegionFactory(waterbutler_settings={'storage': {'provider': 'osfstorage'}})
         nt.assert_false(region.has_export_data)

@@ -700,62 +700,78 @@ class TestRestoreDataFunction(AdminTestCase):
         task.request_stack = LocalStack()
         task.request.id = FAKE_TASK_ID
 
+        mock_is_add_on = mock.MagicMock()
+        mock_is_add_on.return_value = True
         mock_move_files = mock.MagicMock()
         mock_move_files.return_value = None
         mock_check_progress = mock.MagicMock()
         mock_check_progress.return_value = None
-        with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.move_addon_folder_to_backup', mock_move_files):
-            with mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped', mock_check_progress):
-                self.view.move_all_files_to_backup_folder(task, 1, self.project_id, self.addon_data_restore, None)
-                mock_move_files.assert_called()
-                mock_check_progress.assert_called()
+        with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
+            with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.move_addon_folder_to_backup', mock_move_files):
+                with mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped', mock_check_progress):
+                    self.view.move_all_files_to_backup_folder(task, 1, self.project_id, self.addon_data_restore, None)
+                    mock_is_add_on.assert_called()
+                    mock_move_files.assert_called()
+                    mock_check_progress.assert_called()
 
     def test_move_all_files_to_backup_folder_bulk_mount_storage(self):
         task = AbortableTask()
         task.request_stack = LocalStack()
         task.request.id = FAKE_TASK_ID
 
+        mock_is_add_on = mock.MagicMock()
+        mock_is_add_on.return_value = False
         mock_move_files = mock.MagicMock()
         mock_move_files.return_value = None
         mock_check_progress = mock.MagicMock()
         mock_check_progress.return_value = None
-        with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.move_bulk_mount_folder_to_backup', mock_move_files):
-            with mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped', mock_check_progress):
-                self.view.move_all_files_to_backup_folder(task, 1, self.project_id, self.bulk_mount_data_restore, None)
-                mock_move_files.assert_called()
-                mock_check_progress.assert_called()
+        with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
+            with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.move_bulk_mount_folder_to_backup', mock_move_files):
+                with mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped', mock_check_progress):
+                    self.view.move_all_files_to_backup_folder(task, 1, self.project_id, self.bulk_mount_data_restore, None)
+                    mock_is_add_on.assert_called()
+                    mock_move_files.assert_called()
+                    mock_check_progress.assert_called()
 
     def test_move_all_files_to_backup_folder_error_response(self):
         task = AbortableTask()
         task.request_stack = LocalStack()
         task.request.id = FAKE_TASK_ID
 
+        mock_is_add_on = mock.MagicMock()
+        mock_is_add_on.return_value = False
         mock_move_files = mock.MagicMock()
         mock_move_files.return_value = {'error': 'Mock test error while moving files to backup folder'}
         mock_check_progress = mock.MagicMock()
         mock_check_progress.return_value = None
-        with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.move_bulk_mount_folder_to_backup', mock_move_files):
-            with mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped', mock_check_progress):
-                with nt.assert_raises(ProcessError):
-                    self.view.move_all_files_to_backup_folder(task, 1, self.project_id, self.export_data_restore, None)
-                    mock_move_files.assert_called()
-                    mock_check_progress.assert_called()
+        with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
+            with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.move_bulk_mount_folder_to_backup', mock_move_files):
+                with mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped', mock_check_progress):
+                    with nt.assert_raises(ProcessError):
+                        self.view.move_all_files_to_backup_folder(task, 1, self.project_id, self.export_data_restore, None)
+                        mock_is_add_on.assert_called()
+                        mock_move_files.assert_called()
+                        mock_check_progress.assert_called()
 
     def test_move_all_files_to_backup_folder_exception(self):
         task = AbortableTask()
         task.request_stack = LocalStack()
         task.request.id = FAKE_TASK_ID
 
+        mock_is_add_on = mock.MagicMock()
+        mock_is_add_on.return_value = False
         mock_move_files = mock.MagicMock()
         mock_move_files.return_value = None
         mock_check_progress = mock.MagicMock()
         mock_check_progress.side_effect = ProcessError('Mock test exception in move all files.')
-        with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.move_bulk_mount_folder_to_backup', mock_move_files):
-            with mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped', mock_check_progress):
-                with nt.assert_raises(ProcessError):
-                    self.view.move_all_files_to_backup_folder(task, 1, self.project_id, self.export_data_restore, None)
-                    mock_move_files.assert_called()
-                    mock_check_progress.assert_called()
+        with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
+            with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.move_bulk_mount_folder_to_backup', mock_move_files):
+                with mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped', mock_check_progress):
+                    with nt.assert_raises(ProcessError):
+                        self.view.move_all_files_to_backup_folder(task, 1, self.project_id, self.export_data_restore, None)
+                        mock_is_add_on.assert_called()
+                        mock_move_files.assert_called()
+                        mock_check_progress.assert_called()
 
     # copy_files_from_export_data_to_destination
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.upload_file_path')
@@ -776,6 +792,8 @@ class TestRestoreDataFunction(AdminTestCase):
         task.request_stack = LocalStack()
         task.request.id = FAKE_TASK_ID
 
+        mock_is_add_on = mock.MagicMock()
+        mock_is_add_on.return_value = True
         mock_check_progress.return_value = None
         mock_generate_new_file_path.return_value = '/@ember-decorators/utils/collapse-proto.d.ts'
         mock_download.return_value = test_response
@@ -785,13 +803,15 @@ class TestRestoreDataFunction(AdminTestCase):
             }
         }
 
-        result = self.view.copy_files_from_export_data_to_destination(task, 1, addon_export_file,
-                                                                      self.addon_data_restore, None)
-        mock_check_progress.assert_called()
-        mock_generate_new_file_path.assert_called()
-        mock_download.assert_called()
-        mock_upload.assert_called()
-        nt.assert_equal(result, [])
+        with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
+            result = self.view.copy_files_from_export_data_to_destination(task, 1, addon_export_file,
+                                                                          self.addon_data_restore, None)
+            mock_is_add_on.assert_called()
+            mock_check_progress.assert_called()
+            mock_generate_new_file_path.assert_called()
+            mock_download.assert_called()
+            mock_upload.assert_called()
+            nt.assert_equal(result, [])
 
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.upload_file_path')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.ExportData.read_data_file_from_location')
@@ -816,22 +836,26 @@ class TestRestoreDataFunction(AdminTestCase):
         task.request_stack = LocalStack()
         task.request.id = FAKE_TASK_ID
 
+        mock_is_add_on = mock.MagicMock()
+        mock_is_add_on.return_value = False
         mock_check_progress.return_value = None
         mock_generate_new_file_path.return_value = '/@ember-decorators/utils/collapse-proto.d.ts'
         mock_download.return_value = test_response
         mock_upload.side_effect = create_node
 
-        result = self.view.copy_files_from_export_data_to_destination(task, 1, bulkmount_export_files,
-                                                                      self.bulk_mount_data_restore,
-                                                                      None)
-        mock_check_progress.assert_called()
-        mock_generate_new_file_path.assert_not_called()
-        mock_download.assert_called()
-        mock_upload.assert_called()
-        nt.assert_equal(len(result), 1)
-        nt.assert_equal(result[0].get('file_tags'), ['hello', 'world'])
-        nt.assert_equal(result[0].get('file_timestamp'), {})
-        nt.assert_equal(result[0].get('project_id'), 'pmockt')
+        with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
+            result = self.view.copy_files_from_export_data_to_destination(task, 1, bulkmount_export_files,
+                                                                          self.bulk_mount_data_restore,
+                                                                          None)
+            mock_is_add_on.assert_called()
+            mock_check_progress.assert_called()
+            mock_generate_new_file_path.assert_not_called()
+            mock_download.assert_called()
+            mock_upload.assert_called()
+            nt.assert_equal(len(result), 1)
+            nt.assert_equal(result[0].get('file_tags'), ['hello', 'world'])
+            nt.assert_equal(result[0].get('file_timestamp'), {})
+            nt.assert_equal(result[0].get('project_id'), 'pmockt')
 
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.upload_file_path')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.ExportData.read_data_file_from_location')
@@ -856,6 +880,8 @@ class TestRestoreDataFunction(AdminTestCase):
         task.request_stack = LocalStack()
         task.request.id = FAKE_TASK_ID
 
+        mock_is_add_on = mock.MagicMock()
+        mock_is_add_on.return_value = False
         mock_check_progress.return_value = None
         mock_generate_new_file_path.return_value = '/@ember-decorators/utils/collapse-proto.d.ts'
         mock_download.return_value = test_response
@@ -865,14 +891,16 @@ class TestRestoreDataFunction(AdminTestCase):
             }
         }
 
-        result = self.view.copy_files_from_export_data_to_destination(task, 1, bulkmount_export_files,
-                                                                      other_bulk_mount_data_restore,
-                                                                      None)
-        mock_check_progress.assert_called()
-        mock_generate_new_file_path.assert_not_called()
-        mock_download.assert_called()
-        mock_upload.assert_called()
-        nt.assert_equal(result, [])
+        with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
+            result = self.view.copy_files_from_export_data_to_destination(task, 1, bulkmount_export_files,
+                                                                          other_bulk_mount_data_restore,
+                                                                          None)
+            mock_is_add_on.assert_called()
+            mock_check_progress.assert_called()
+            mock_generate_new_file_path.assert_not_called()
+            mock_download.assert_called()
+            mock_upload.assert_called()
+            nt.assert_equal(result, [])
 
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.upload_file_path')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.ExportData.read_data_file_from_location')
@@ -888,6 +916,8 @@ class TestRestoreDataFunction(AdminTestCase):
         task.request_stack = LocalStack()
         task.request.id = FAKE_TASK_ID
 
+        mock_is_add_on = mock.MagicMock()
+        mock_is_add_on.return_value = False
         mock_check_progress.return_value = None
         mock_generate_new_file_path.return_value = '/@ember-decorators/utils/collapse-proto.d.ts'
         mock_download.return_value = test_response
@@ -897,13 +927,15 @@ class TestRestoreDataFunction(AdminTestCase):
             }
         }
 
-        result = self.view.copy_files_from_export_data_to_destination(task, 1, [],
-                                                                      self.export_data_restore, None)
-        mock_check_progress.assert_not_called()
-        mock_generate_new_file_path.assert_not_called()
-        mock_download.assert_not_called()
-        mock_upload.assert_not_called()
-        nt.assert_equal(result, [])
+        with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
+            result = self.view.copy_files_from_export_data_to_destination(task, 1, [],
+                                                                          self.export_data_restore, None)
+            mock_is_add_on.assert_called()
+            mock_check_progress.assert_not_called()
+            mock_generate_new_file_path.assert_not_called()
+            mock_download.assert_not_called()
+            mock_upload.assert_not_called()
+            nt.assert_equal(result, [])
 
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.upload_file_path')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.ExportData.read_data_file_from_location')
@@ -922,6 +954,8 @@ class TestRestoreDataFunction(AdminTestCase):
         task.request_stack = LocalStack()
         task.request.id = FAKE_TASK_ID
 
+        mock_is_add_on = mock.MagicMock()
+        mock_is_add_on.return_value = False
         mock_check_progress.return_value = None
         mock_generate_new_file_path.return_value = '/@ember-decorators/utils/collapse-proto.d.ts'
         mock_download.return_value = test_response
@@ -931,13 +965,15 @@ class TestRestoreDataFunction(AdminTestCase):
             }
         }
 
-        result = self.view.copy_files_from_export_data_to_destination(task, 1, bulkmount_export_files,
-                                                                      self.export_data_restore, None)
-        mock_check_progress.assert_called()
-        mock_generate_new_file_path.assert_not_called()
-        mock_download.assert_not_called()
-        mock_upload.assert_not_called()
-        nt.assert_equal(result, [])
+        with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
+            result = self.view.copy_files_from_export_data_to_destination(task, 1, bulkmount_export_files,
+                                                                          self.export_data_restore, None)
+            mock_is_add_on.assert_called()
+            mock_check_progress.assert_called()
+            mock_generate_new_file_path.assert_not_called()
+            mock_download.assert_not_called()
+            mock_upload.assert_not_called()
+            nt.assert_equal(result, [])
 
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.upload_file_path')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.ExportData.read_data_file_from_location')
@@ -962,6 +998,8 @@ class TestRestoreDataFunction(AdminTestCase):
         task.request_stack = LocalStack()
         task.request.id = FAKE_TASK_ID
 
+        mock_is_add_on = mock.MagicMock()
+        mock_is_add_on.return_value = False
         mock_check_progress.return_value = None
         mock_generate_new_file_path.return_value = '/@ember-decorators/utils/collapse-proto.d.ts'
         mock_download.return_value = test_response
@@ -971,13 +1009,15 @@ class TestRestoreDataFunction(AdminTestCase):
             }
         }
 
-        result = self.view.copy_files_from_export_data_to_destination(task, 1, bulkmount_export_files,
-                                                                      self.export_data_restore, None)
-        mock_check_progress.assert_called()
-        mock_generate_new_file_path.assert_not_called()
-        mock_download.assert_not_called()
-        mock_upload.assert_not_called()
-        nt.assert_equal(result, [])
+        with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
+            result = self.view.copy_files_from_export_data_to_destination(task, 1, bulkmount_export_files,
+                                                                          self.export_data_restore, None)
+            mock_is_add_on.assert_called()
+            mock_check_progress.assert_called()
+            mock_generate_new_file_path.assert_not_called()
+            mock_download.assert_not_called()
+            mock_upload.assert_not_called()
+            nt.assert_equal(result, [])
 
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.ExportData.read_data_file_from_location')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.generate_new_file_path')
@@ -993,16 +1033,20 @@ class TestRestoreDataFunction(AdminTestCase):
         task.request_stack = LocalStack()
         task.request.id = FAKE_TASK_ID
 
+        mock_is_add_on = mock.MagicMock()
+        mock_is_add_on.return_value = False
         mock_check_progress.return_value = None
         mock_generate_new_file_path.return_value = '/@ember-decorators/utils/collapse-proto.d.ts'
         mock_download.return_value = test_response
 
-        result = self.view.copy_files_from_export_data_to_destination(task, 1, bulkmount_export_files,
-                                                                      self.addon_data_restore, None)
-        mock_check_progress.assert_called()
-        mock_generate_new_file_path.assert_called()
-        mock_download.assert_called()
-        nt.assert_equal(result, [])
+        with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
+            result = self.view.copy_files_from_export_data_to_destination(task, 1, bulkmount_export_files,
+                                                                          self.addon_data_restore, None)
+            mock_is_add_on.assert_called()
+            mock_check_progress.assert_called()
+            mock_generate_new_file_path.assert_not_called()
+            mock_download.assert_called()
+            nt.assert_equal(result, [])
 
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.upload_file_path')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.ExportData.read_data_file_from_location')
@@ -1020,18 +1064,22 @@ class TestRestoreDataFunction(AdminTestCase):
         task.request_stack = LocalStack()
         task.request.id = FAKE_TASK_ID
 
+        mock_is_add_on = mock.MagicMock()
+        mock_is_add_on.return_value = False
         mock_check_progress.return_value = None
         mock_generate_new_file_path.return_value = '/@ember-decorators/utils/collapse-proto.d.ts'
         mock_download.return_value = test_response
         mock_upload.return_value = None
 
-        result = self.view.copy_files_from_export_data_to_destination(task, 1, bulkmount_export_files,
-                                                                      self.addon_data_restore, None)
-        mock_check_progress.assert_called()
-        mock_generate_new_file_path.assert_called()
-        mock_download.assert_called()
-        mock_upload.assert_called()
-        nt.assert_equal(result, [])
+        with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
+            result = self.view.copy_files_from_export_data_to_destination(task, 1, bulkmount_export_files,
+                                                                          self.addon_data_restore, None)
+            mock_is_add_on.assert_called()
+            mock_check_progress.assert_called()
+            mock_generate_new_file_path.assert_not_called()
+            mock_download.assert_called()
+            mock_upload.assert_called()
+            nt.assert_equal(result, [])
 
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.ExportData.read_data_file_from_location')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.generate_new_file_path')
@@ -1047,16 +1095,20 @@ class TestRestoreDataFunction(AdminTestCase):
         task.request_stack = LocalStack()
         task.request.id = FAKE_TASK_ID
 
+        mock_is_add_on = mock.MagicMock()
+        mock_is_add_on.return_value = False
         mock_check_progress.return_value = None
         mock_generate_new_file_path.return_value = '/@ember-decorators/utils/collapse-proto.d.ts'
         mock_download.side_effect = Exception('Mock test exception while downloading file from export data')
 
-        result = self.view.copy_files_from_export_data_to_destination(task, 1, bulkmount_export_files,
-                                                                      self.addon_data_restore, None)
-        mock_check_progress.assert_called()
-        mock_generate_new_file_path.assert_called()
-        mock_download.assert_called()
-        nt.assert_equal(result, [])
+        with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
+            result = self.view.copy_files_from_export_data_to_destination(task, 1, bulkmount_export_files,
+                                                                          self.addon_data_restore, None)
+            mock_is_add_on.assert_called()
+            mock_check_progress.assert_called()
+            mock_generate_new_file_path.assert_not_called()
+            mock_download.assert_called()
+            nt.assert_equal(result, [])
 
     def test_copy_files_from_export_data_to_destination_aborted(self):
         bulkmount_export_files = self.test_export_data_files
@@ -1321,27 +1373,38 @@ class TestRestoreDataFunction(AdminTestCase):
 
     # move_all_files_from_backup_folder_to_root
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.move_addon_folder_from_backup')
-    def test_move_all_files_from_backup_folder_to_root_addon_storage(self, mock_move_folder):
+    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage')
+    def test_move_all_files_from_backup_folder_to_root_addon_storage(self, mock_is_add_on, mock_move_folder):
+        mock_is_add_on.return_value = True
         self.view.move_all_files_from_backup_folder_to_root(self.addon_data_restore, self.project_id, None)
         mock_move_folder.assert_called()
 
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.move_bulk_mount_folder_from_backup')
-    def test_move_all_files_from_backup_folder_to_root_bulk_mount_storage(self, mock_move_folder):
+    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage')
+    def test_move_all_files_from_backup_folder_to_root_bulk_mount_storage(self, mock_is_add_on, mock_move_folder):
+        mock_is_add_on.return_value = False
         self.view.move_all_files_from_backup_folder_to_root(self.bulk_mount_data_restore, self.project_id, None)
+        mock_is_add_on.assert_called()
         mock_move_folder.assert_called()
 
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.move_addon_folder_from_backup')
-    def test_move_all_files_from_backup_folder_to_root_error(self, mock_move_folder):
+    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage')
+    def test_move_all_files_from_backup_folder_to_root_error(self, mock_is_add_on, mock_move_folder):
+        mock_is_add_on.return_value = True
         mock_move_folder.return_value = {'error': 'Mock test response error while moving folder from back up'}
         with nt.assert_raises(ProcessError):
             self.view.move_all_files_from_backup_folder_to_root(self.addon_data_restore, self.project_id, None)
+            mock_is_add_on.assert_called()
             mock_move_folder.assert_called()
 
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.move_addon_folder_from_backup')
-    def test_move_all_files_from_backup_folder_to_root_exception(self, mock_move_folder):
+    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage')
+    def test_move_all_files_from_backup_folder_to_root_exception(self, mock_is_add_on, mock_move_folder):
+        mock_is_add_on.return_value = True
         mock_move_folder.side_effect = Exception(f'Mock test exception while moving folder from back up')
         with nt.assert_raises(ProcessError):
             self.view.move_all_files_from_backup_folder_to_root(self.addon_data_restore, self.project_id, None)
+            mock_is_add_on.assert_called()
             mock_move_folder.assert_called()
 
 

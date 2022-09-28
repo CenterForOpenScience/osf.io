@@ -2843,3 +2843,29 @@ class TestUtilsForRestoreData(AdminTestCase):
         utils.delete_all_files_except_backup(TEST_PROJECT_ID, TEST_PROVIDER, None)
         mock_get_file_data.assert_called_once()
         nt.assert_equal(mock_delete_file.call_count, 2)
+
+    # is_add_on_storage
+    def test_is_add_on_storage(self):
+        # missing provider
+        nt.assert_is_none(utils.is_add_on_storage(None))
+        nt.assert_is_none(utils.is_add_on_storage('osf_storage'))
+
+        # both addon method and bulk-mount method
+        nt.assert_true(utils.is_add_on_storage('owncloud'))
+        nt.assert_true(utils.is_add_on_storage('s3compat'))
+        nt.assert_true(utils.is_add_on_storage('s3'))
+
+        # only addon method providers
+        nt.assert_true(utils.is_add_on_storage('nextcloudinstitutions'))
+        nt.assert_true(utils.is_add_on_storage('s3compatinstitutions'))
+        nt.assert_true(utils.is_add_on_storage('ociinstitutions'))
+        nt.assert_true(utils.is_add_on_storage('dropboxbusiness'))
+
+        # only bulk-mount method providers
+        nt.assert_false(utils.is_add_on_storage('onedrivebusiness'))
+        nt.assert_false(utils.is_add_on_storage('swift'))
+        nt.assert_false(utils.is_add_on_storage('box'))
+        nt.assert_false(utils.is_add_on_storage('nextcloud'))
+        nt.assert_false(utils.is_add_on_storage('osfstorage'))
+        nt.assert_false(utils.is_add_on_storage('onedrive'))
+        nt.assert_false(utils.is_add_on_storage('googledrive'))

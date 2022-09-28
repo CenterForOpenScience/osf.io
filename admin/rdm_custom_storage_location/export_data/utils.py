@@ -30,7 +30,7 @@ from osf.models import (
     ExportDataLocation,
     ExternalAccount,
 )
-from website.settings import WATERBUTLER_URL
+from website.settings import WATERBUTLER_URL, INSTITUTIONAL_STORAGE_ADD_ON_METHOD, INSTITUTIONAL_STORAGE_BULK_MOUNT_METHOD
 from website.util import inspect_info  # noqa
 
 logger = logging.getLogger(__name__)
@@ -879,3 +879,19 @@ def delete_all_files_except_backup(node_id, provider, cookies, callback_log=Fals
         except (requests.ConnectionError, requests.Timeout) as e:
             logger.error(f'Connection error: {e}')
             raise e
+
+
+def is_add_on_storage(provider):
+    if not provider:
+        return None
+
+    # If provider is institutional addon storages then return True
+    if provider in INSTITUTIONAL_STORAGE_ADD_ON_METHOD:
+        return True
+
+    # If provider is institutional bulk-mount storages then return False
+    if provider in INSTITUTIONAL_STORAGE_BULK_MOUNT_METHOD:
+        return False
+
+    # Default value for unknown provider
+    return None
