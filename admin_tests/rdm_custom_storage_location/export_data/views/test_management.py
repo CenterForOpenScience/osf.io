@@ -620,7 +620,7 @@ class TestCheckExportData(AdminTestCase):
         request.user = self.user
         request.COOKIES = '213919sdasdn823193929'
         export_data = self.export_data
-        export_data.status = 'Checking'
+        export_data.status = ExportData.STATUS_CHECKING
         mock_export_data = mock.MagicMock()
         mock_export_data.filter.return_value.first.return_value = export_data
         view = management.CheckExportData()

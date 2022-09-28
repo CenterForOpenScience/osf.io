@@ -286,7 +286,7 @@ class TestDeleteCredentialsView(AdminTestCase):
         view = setup_view(self.view, self.request, export_location.id)
         result = view.delete(self.request, export_location.id)
 
-        nt.assert_equals(result.status_code, 403)
+        nt.assert_equals(result.status_code, 400)
 
     def test_delete(self):
         export_location = ExportDataLocation.objects.create(institution_guid=self.institution.guid)

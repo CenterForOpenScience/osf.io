@@ -1229,19 +1229,44 @@ class TestCheckExportData(AdminTestCase):
         nt.assert_greater(rs['ng'], 0)
 
     def test_validate_exported_data(self):
-        request = RequestFactory().get('/fake_path')
-        request.user = self.user
-        request.COOKIES = '213919sdasdn823193929'
-        mock_export_data = mock.MagicMock()
-        mock_request = mock.MagicMock()
-        mock_request.get.return_value = FakeRes(200)
-        mock_export_data.filter.return_value.first.return_value = self.export_data
-        view = management.CheckExportData()
-        view = setup_view(view, request, data_id=self.export_data.id)
-        with mock.patch('admin.rdm_custom_storage_location.export_data.views.management.ExportData.objects', mock_export_data):
-            with mock.patch('osf.models.export_data.requests', mock_request):
-                res = view.get(request, data_id=self.export_data.id)
-        nt.assert_equals(res.status_code, 400)
+        mock_from_json = MagicMock()
+        mock_from_json.return_value = {}
+        mock_validate = MagicMock()
+        mock_validate.return_value = None
+
+        with patch(f'{EXPORT_DATA_UTIL_PATH}.from_json', mock_from_json):
+            with patch(f'jsonschema.validate', mock_validate):
+                result = utils.validate_exported_data({}, 'file-info-schema.json')
+                mock_from_json.assert_called()
+                mock_validate.assert_called()
+                nt.assert_true(result)
+
+    def test_validate_exported_data_validation_error(self):
+        mock_from_json = MagicMock()
+        mock_from_json.return_value = {}
+        mock_validate = MagicMock()
+        mock_validate.side_effect = ValidationError(f'Mock test jsonschema.ValidationError')
+
+        with patch(f'{EXPORT_DATA_UTIL_PATH}.from_json', mock_from_json):
+            with patch(f'jsonschema.validate', mock_validate):
+                result = utils.validate_exported_data({}, 'file-info-schema.json')
+                mock_from_json.assert_called()
+                mock_validate.assert_called()
+                nt.assert_false(result)
+
+    def test_validate_exported_data_other_error(self):
+        mock_from_json = MagicMock()
+        mock_from_json.return_value = {}
+        mock_validate = MagicMock()
+        mock_validate.side_effect = FileNotFoundError(f'Mock test jsonschema.SchemaError')
+
+        with patch(f'{EXPORT_DATA_UTIL_PATH}.from_json', mock_from_json):
+            with patch(f'jsonschema.validate', mock_validate):
+                with nt.assert_raises(FileNotFoundError):
+                    result = utils.validate_exported_data({}, 'fake-schema.json')
+                    mock_from_json.assert_called()
+                    mock_validate.assert_called()
+                    nt.assert_is_none(result)
 
     def test_check_diff(self):
         a_standard = {

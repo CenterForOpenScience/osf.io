@@ -236,27 +236,3 @@ class TestInstitution(AdminTestCase):
         source = RegionFactory(_id=institution.guid)
         res = institution.is_allowed_institutional_storage_id(source.id)
         nt.assert_true(res)
-
-
-@pytest.mark.feature_202210
-@pytest.mark.django_db
-class TestInstitutionExportData(AdminTestCase):
-
-    @classmethod
-    def setUpTestData(cls):
-        cls.institution = InstitutionFactory.create(_id='vcu')
-        cls.export_data = ExportDataFactory()
-
-    def test_get_allowed_storage_location(self):
-        res = self.institution.get_allowed_storage_location()
-        nt.assert_greater_equal(len(list(res)), 0)
-
-    @mock.patch('osf.models.export_data_location.ExportDataLocation.objects.filter')
-    def test_get_allowed_storage_location_exception(self, mock_exception):
-        mock_exception.side_effect = Exception()
-        res = self.institution.get_allowed_storage_location()
-        nt.assert_greater_equal(len(list(res)), 0)
-
-    def test_get_institutional_storage(self):
-        res = self.institution.get_institutional_storage()
-        nt.assert_greater_equal(len(list(res)), 0)

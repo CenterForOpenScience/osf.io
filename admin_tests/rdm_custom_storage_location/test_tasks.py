@@ -14,7 +14,7 @@ from admin.rdm_custom_storage_location.tasks import (
 
 @pytest.mark.feature_202210
 @pytest.mark.django_db
-@patch('admin.rdm_custom_storage_location.tasks.export_data_process')
+@patch('admin.rdm_custom_storage_location.tasks.export.export_data_process')
 def test_run_export_data_process(mock_export_data_process):
     mock_export_data_process.return_value = None
     process = run_export_data_process.delay(None, 1)
@@ -25,8 +25,8 @@ def test_run_export_data_process(mock_export_data_process):
 @pytest.mark.feature_202210
 @pytest.mark.django_db
 @patch('admin.rdm_custom_storage_location.tasks.export.export_data_rollback_process')
-def test_run_export_data_process(mock_restore_export_data_process):
-    mock_restore_export_data_process.return_value = None
+def test_run_export_data_rollback_process(mock_export_data_rollback_process):
+    mock_export_data_rollback_process.return_value = None
     process = run_export_data_rollback_process.delay(None, 1)
     nt.assert_is_not_none(process.task_id)
     nt.assert_equal(process.state, SUCCESS)
