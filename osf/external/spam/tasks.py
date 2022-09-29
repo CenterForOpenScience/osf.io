@@ -11,10 +11,4 @@ def reclassify_domain_references(notable_domain_id):
             if domain.note == NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT:
                 item.referrer.confirm_spam(save=True)
                 item.is_triaged = True
-            if domain.note == NotableDomain.Note.UNKNOWN:
-                item.referrer.remove_flag(save=True)
-                item.is_triaged = False
-            else:
-                item.is_triaged = True
-                item.referrer.remove_flag(save=True)
             item.save()

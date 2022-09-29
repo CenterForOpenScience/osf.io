@@ -31,7 +31,7 @@ class NotableDomain(BaseModel):
     )
 
     def save(self, *args, **kwargs):
-        enqueue_task(reclassify_domain_references.s(self.pk))
+        reclassify_domain_references.apply_sync(kwargsargs={'notable_domain_id': self.pk})
         return super().save(*args, **kwargs)
 
     def __repr__(self):
