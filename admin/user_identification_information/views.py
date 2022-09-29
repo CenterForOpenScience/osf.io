@@ -222,12 +222,12 @@ class ExportFileCSVView(RdmPermissionMixin, UserIdentificationInformationListVie
             max_quota, used_quota = quota.get_quota_info(user, UserQuota.NII_STORAGE)
             if user.id in dict_users_list:
                 extend_storage = '\n'.join(dict_users_list.get(user.id))
-                writer.writerow([user.guids.first()._id,
-                                 user.eppn,
-                                 user.fullname,
-                                 user.emails.values_list('address', flat=True)[0],
-                                 user.affiliated_institutions.first().name if user.affiliated_institutions.first() else '',
-                                 user.last_login,
-                                 used_quota,
-                                 extend_storage])
+            writer.writerow([user.guids.first()._id,
+                             user.eppn,
+                             user.fullname,
+                             user.emails.values_list('address', flat=True)[0] if len(user.emails.values_list('address', flat=True)) > 0 else '',
+                             user.affiliated_institutions.first().name if user.affiliated_institutions.first() else '',
+                             user.last_login,
+                             used_quota,
+                             extend_storage])
         return response
