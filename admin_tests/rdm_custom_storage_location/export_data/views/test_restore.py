@@ -536,7 +536,7 @@ class TestRestoreDataFunction(AdminTestCase):
     def test_check_if_restore_process_stopped_is_false(self):
         task = AbortableTask()
         task.request_stack = LocalStack()
-        task.request.id = FAKE_TASK_ID
+        task.request.id = FAKE_TASK_ID + '1'
         nt.assert_is_none(self.view.check_if_restore_process_stopped(task, 1))
 
     # add_tags_to_file_node
