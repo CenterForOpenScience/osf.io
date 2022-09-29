@@ -534,7 +534,9 @@ class TestRestoreDataFunction(AdminTestCase):
             self.view.check_if_restore_process_stopped(task, 1)
 
     def test_check_if_restore_process_stopped_is_false(self):
-        task = AbortableAsyncResult(FAKE_TASK_ID)
+        task = AbortableTask()
+        task.request_stack = LocalStack()
+        task.request.id = FAKE_TASK_ID
         nt.assert_is_none(self.view.check_if_restore_process_stopped(task, 1))
 
     # add_tags_to_file_node
@@ -1525,6 +1527,7 @@ class TestStopRestoreDataActionView(AdminTestCase):
     @mock.patch.object(AbortableAsyncResult, 'abort')
     @mock.patch(f'{EXPORT_DATA_TASK_PATH}.run_restore_export_data_rollback_process.delay')
     def test_post_task_cannot_abort(self, mock_rollback_process, mock_task_abort):
+        self.task.update_state(state=states.PENDING, meta={'current_restore_step': 1})
         request = APIRequestFactory().post('stop_restore_export_data', {
             'task_id': FAKE_TASK_ID,
             'destination_id': self.export_data_restore.destination.id,
