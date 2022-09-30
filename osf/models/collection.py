@@ -304,7 +304,7 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
         else:
             # assume that we were passed the collected resource
             try:
-                obj = self.collectionsubmission_set.get(guid=objs.guids.first())
+                obj = self.collectionsubmission_set.get(guid=obj.guids.first())
             except CollectionSubmission.DoesNotExist:
                 raise ValueError(f'Resource [{obj.guid._id}] is not part of collection {self._id}')
 

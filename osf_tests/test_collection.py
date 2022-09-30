@@ -69,7 +69,7 @@ class TestBookmarkCollection:
 
 @pytest.mark.enable_bookmark_creation
 class TestImplicitRemoval:
-    
+
     @pytest.fixture
     def bookmark_collection(self, user):
         return find_bookmark_collection(user)
@@ -93,18 +93,18 @@ class TestImplicitRemoval:
         standard_collection.collect_object(node)
 
     def test_node_removed_from_collection_on_privacy_change(self, collected_node, bookmark_collection):
-        associated_collections = node.guids.first().collectionsubmission_set
-        assert associated_collections_qs.count() == 3
+        associated_collections = collected_node.guids.first().collectionsubmission_set
+        assert associated_collections.count() == 3
 
-        node.set_privacy('private')
+        collected_node.set_privacy('private')
 
-        assert associated_collections_qs.count() == 1
+        assert associated_collections.count() == 1
         assert associated_collections.filter(collection=bookmark_collection).exists()
 
-     def test_node_removed_from_collection_on_privacy_change(self, collected_node, bookmark_collection):
-        associated_collections = node.guids.first().collectionsubmission_set
-        assert associated_collections_qs.count() == 3
+    def test_node_removed_from_collection_on_delete(self, collected_node, bookmark_collection):
+        associated_collections = collected_node.guids.first().collectionsubmission_set
+        assert associated_collections.count() == 3
 
-        node.remove_node()
+        collected_node.remove_node()
 
-        assert associated_collections_qs.count() == 0
+        assert associated_collections.count() == 0

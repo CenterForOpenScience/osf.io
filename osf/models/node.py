@@ -2404,8 +2404,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def _remove_from_associated_collections(self):
         for submission in self.guids.first().collectionsubmission_set.all():
-            if submission.collection.is_bookmark_collection():
-                if self.contributors.filter(user=collection.creator).exists():
+            associated_collection = submission.collection
+            if associated_collection.is_bookmark_collection:
+                if self.contributors.filter(user=associated_collection.creator).exists():
                     continue
             submission.delete()
 
