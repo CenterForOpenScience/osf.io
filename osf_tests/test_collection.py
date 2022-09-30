@@ -88,7 +88,7 @@ class TestImplicitRemoval:
 
     @pytest.fixture
     def collected_node(self, bookmark_collection, alternate_bookmark_collection, standard_collection):
-        node = ProjectFactory(creator=bookmark_collection.creator, public=True)
+        node = ProjectFactory(creator=bookmark_collection.creator, is_public=True)
         bookmark_collection.collect_object(node)
         alternate_bookmark_collection.collect_object(node)
         standard_collection.collect_object(node)
