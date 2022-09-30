@@ -65,3 +65,46 @@ class TestBookmarkCollection:
         assert outer_folder.deleted
         inner_folder.refresh_from_db()
         assert not inner_folder.deleted
+
+
+@pytest.mark.enable_bookmark_creation
+class TestImplicitRemoval:
+    
+    @pytest.fixture
+    def bookmark_collection(self, user):
+        return find_bookmark_collection(user)
+
+    @pytest.fixture
+    def user2(self):
+        return UserFactory()
+
+    @pytest.fixture
+    def alternate_bookmark_collection(self, user2):
+        return find_bookmark_collection(user2)
+
+    @pytest.fixture
+    def standard_collection(self):
+        return CollectionFactory()
+
+    def collected_node(self, bookmark_collection, alternate_bookmark_collection, standard_collection):
+        node = ProjectFactory(creator=bookmark_collection.creator, public=True)
+        bookmark_collection.collect_object(node)
+        alternate_bookmark_collection.collect_object(node)
+        standard_collection.collect_object(node)
+
+    def test_node_removed_from_collection_on_privacy_change(self, collected_node, bookmark_collection):
+        associated_collections = node.guids.first().collectionsubmission_set
+        assert associated_collections_qs.count() == 3
+
+        node.set_privacy('private')
+
+        assert associated_collections_qs.count() == 1
+        assert associated_collections.filter(collection=bookmark_collection).exists()
+
+     def test_node_removed_from_collection_on_privacy_change(self, collected_node, bookmark_collection):
+        associated_collections = node.guids.first().collectionsubmission_set
+        assert associated_collections_qs.count() == 3
+
+        node.remove_node()
+
+        assert associated_collections_qs.count() == 0

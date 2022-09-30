@@ -87,6 +87,10 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         self.update_index()
         return ret
 
+    def delete(self, *args, **kwargs):
+        self.remove_from_index()
+        super().delete()
+
 class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
     objects = IncludeManager()
 
@@ -295,17 +299,16 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
         :param obj: object to remove from collection, if it exists. Acceptable types- CollectionSubmission, GuidMixin
         """
         if isinstance(obj, CollectionSubmission):
-            if obj.collection == self:
-                obj.remove_from_index()
-                self.collectionsubmission_set.filter(id=obj.id).delete()
-                return
+            if obj.colection != self:
+                raise ValueError(f'Resource [{obj.guid._id}] is not part of collection {self._id}')
         else:
-            cgm = self.collectionsubmission_set.get(guid=obj.guids.first())
-            if cgm:
-                cgm.remove_from_index()
-                cgm.delete()
-                return
-        raise ValueError('Node link does not belong to the requested node.')
+            # assume that we were passed the collected resource
+            try:
+                obj = self.collectionsubmission_set.get(guid=objs.guids.first())
+            except CollectionSubmission.DoesNotExist:
+                raise ValueError(f'Resource [{obj.guid._id}] is not part of collection {self._id}')
+
+        obj.delete()
 
     def delete(self):
         """ Mark collection as deleted
