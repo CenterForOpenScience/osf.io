@@ -3244,6 +3244,10 @@ msgstr ""
 msgid "Delete failed."
 msgstr ""
 
+# website/static/js/fangorn.js:1199
+msgid "Not enough quota to upload. The total size of the folder %1$s."
+msgstr ""
+
 #: website/static/js/fangorn.js:1202
 msgid ""
 "This folder and all of its contents will be deleted. This folder is "

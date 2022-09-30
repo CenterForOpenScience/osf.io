@@ -4505,6 +4505,10 @@ msgstr "<i> 削除中...</i>"
 msgid "Delete failed."
 msgstr "削除に失敗しました。"
 
+# website/static/js/fangorn.js:1199
+msgid "Not enough quota to upload. The total size of the folder %1$s."
+msgstr "アップロードするための空き容量が足りません。フォルダのサイズは%1$sです。"
+
 #: website/static/js/fangorn.js:1202
 msgid ""
 "This folder and all of its contents will be deleted. This folder is "
