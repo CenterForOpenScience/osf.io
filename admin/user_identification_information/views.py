@@ -108,7 +108,7 @@ class UserIdentificationDetailView(RdmPermissionMixin, GuidView):
             'name': user_details.fullname,
             'id': user_details._id,
             'emails': user_details.emails.values_list('address', flat=True),
-            'last_login': user_details.date_last_login,
+            'last_login': user_details.last_login,
             'confirmed': user_details.date_confirmed,
             'registered': user_details.date_registered,
             'disabled': user_details.date_disabled if user_details.is_disabled else False,
