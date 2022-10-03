@@ -16,8 +16,6 @@ from api.base.serializers import (
     HideIfWikiDisabled, ShowIfAdminScopeOrAnonymous,
     ValuesListField, TargetField,
 )
-from api.base.exceptions import Gone
-
 from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
 from api.base.utils import (
     absolute_reverse, get_object_or_error,
@@ -1598,18 +1596,6 @@ class DraftRegistrationLegacySerializer(JSONAPISerializer):
         schema = validated_data.pop('registration_schema')
         provider = validated_data.pop('provider', None)
         affiliate_user_institutions = validated_data.pop('affiliate_user_institutions', True)
-
-        branched_from_guid = self.context['request'].data.get('branched_from')
-        if not node and branched_from_guid:
-            node = get_object_or_error(Node, branched_from_guid, self.context['request'])
-            if not node.has_permission(initiator, osf_permissions.WRITE):
-                raise exceptions.NotFound()
-
-        if node and node.is_deleted:
-            raise Gone(detail='The requested node is no longer available.')
-
-        if node and not node.has_permission(initiator, osf_permissions.WRITE):
-            raise exceptions.PermissionDenied()
 
         self.enforce_metadata_or_registration_responses(metadata, registration_responses)
 
