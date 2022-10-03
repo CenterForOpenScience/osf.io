@@ -92,6 +92,7 @@ class TestImplicitRemoval:
         bookmark_collection.collect_object(node, bookmark_collection.creator)
         alternate_bookmark_collection.collect_object(node, alternate_bookmark_collection.creator)
         standard_collection.collect_object(node, standard_collection.creator)
+        return node
 
     def test_node_removed_from_collection_on_privacy_change(self, collected_node, bookmark_collection):
         associated_collections = collected_node.guids.first().collectionsubmission_set
