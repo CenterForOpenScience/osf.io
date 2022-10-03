@@ -578,7 +578,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         return self.nodes.annotate(
             self_is_visible=Exists(Contributor.objects.filter(node_id=OuterRef('id'), user_id=self.id, visible=True))
-        ).filter(self_is_visible=True, type__in=['osf.node', 'osf.registration'])
+        ).filter(is_deleted=False, self_is_visible=True, type__in=['osf.node', 'osf.registration'])
 
     @property
     def all_nodes(self):
