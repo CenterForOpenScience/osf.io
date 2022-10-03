@@ -20,14 +20,14 @@ from api.nodes.serializers import (
 )
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from osf.exceptions import DraftRegistrationStateError
-from osf.models import Node
 from website import settings
 
 
 class NodeRelationshipField(RelationshipField):
 
     def to_internal_value(self, node_id):
-        return {'branched_from': Node.load(node_id)}
+        node = self.context['view'].get_node(node_id=node_id) if node_id else None
+        return {'branched_from': node}
 
 
 class DraftRegistrationSerializer(DraftRegistrationLegacySerializer, TaxonomizableSerializerMixin):
