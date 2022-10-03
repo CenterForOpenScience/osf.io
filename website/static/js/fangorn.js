@@ -1439,8 +1439,10 @@ function orderFolder(tree) {
         this.redraw();
         return;
     }
-    tree.sortChildren(this, sortDirection, 'text', sortColumn, 1);
-    this.redraw();
+    else {
+        tree.sortChildren(this, sortDirection, 'text', sortColumn, 1);
+        this.redraw();
+    }
     // hide loading after redrawing new data
     this.select('#tb-tbody > .tb-modal-shade').hide();
     this.select('#tb-tbody').css('overflow', '');
@@ -2939,6 +2941,7 @@ function _resizeHeight () {
  */
 function fetchData(tree) {
     var self = this;
+    var event;
     if (tree === undefined || tree === null) {
         self.redraw();
         return;
