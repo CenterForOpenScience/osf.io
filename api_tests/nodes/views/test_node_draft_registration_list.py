@@ -230,8 +230,11 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
 class TestDraftRegistrationCreate(DraftRegistrationTestCase):
 
     @pytest.fixture()
-    def provider(self):
-        return RegistrationProvider.get_default()
+    def provider(self, metaschema_open_ended):
+        default_provider = RegistrationProvider.get_default()
+        default_provider.schemas.add(metaschema_open_ended)
+        default_provider.save()
+        return default_provider
 
     @pytest.fixture()
     def non_default_provider(self, metaschema_open_ended):
