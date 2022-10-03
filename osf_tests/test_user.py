@@ -2125,7 +2125,6 @@ class TestUserValidation(OsfTestCase):
         self.user.save()
         assert self.user.social['profileWebsites'] == []
 
-    @pytest.mark.skip('URLValidator contains the validation regex for domains now, this is a change detection test.')
     def test_validate_social_profile_website_many_different(self):
         basepath = os.path.dirname(__file__)
         url_data_path = os.path.join(basepath, '../website/static/urlValidatorTest.json')
