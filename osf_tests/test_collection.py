@@ -103,10 +103,10 @@ class TestImplicitRemoval:
         assert associated_collections.count() == 1
         assert associated_collections.filter(collection=bookmark_collection).exists()
 
-    def test_node_removed_from_collection_on_delete(self, collected_node, bookmark_collection):
+    def test_node_removed_from_collection_on_delete(self, collected_node, bookmark_collection, auth):
         associated_collections = collected_node.guids.first().collectionsubmission_set
         assert associated_collections.count() == 3
 
-        collected_node.remove_node()
+        collected_node.remove_node(auth)
 
         assert associated_collections.count() == 0
