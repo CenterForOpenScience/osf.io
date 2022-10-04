@@ -1437,7 +1437,6 @@ function orderFolder(tree) {
     }
     if (tree.is_sorted === false && sortDirection === 'desc') {
         this.redraw();
-        return;
     }
     else {
         tree.sortChildren(this, sortDirection, 'text', sortColumn, 1);
@@ -2941,7 +2940,6 @@ function _resizeHeight () {
  */
 function fetchData(tree) {
     var self = this;
-    var event;
     if (tree === undefined || tree === null) {
         self.redraw();
         return;
@@ -3001,7 +2999,7 @@ function fetchData(tree) {
                         })
                         .then(function _getUrlFlatten() {
                             if (self.options.lazyLoadOnLoad) {
-                                self.options.lazyLoadOnLoad.call(self, tree, event);
+                                self.options.lazyLoadOnLoad.call(self, tree, null);
                             }
                             tree.isFetching = false;
                             tree.is_sorted = true;
