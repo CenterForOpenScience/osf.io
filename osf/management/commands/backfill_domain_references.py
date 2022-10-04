@@ -10,6 +10,8 @@ from django.core.management.base import BaseCommand
 from framework.celery_tasks import app as celery_app
 from osf.models import NotableDomain, DomainReference
 from django.contrib.contenttypes.models import ContentType
+from osf.models import Preprint, OSFUser, Node, Comment, Registration
+from addons.wiki.models import WikiVersion
 
 logger = logging.getLogger(__name__)
 
@@ -34,11 +36,7 @@ def create_notable_domain_with_reference(domain, resource_id, resource_content_t
 
 
 def backfill_domain_references(dry_run=False):
-    from osf.models import DraftNode, AbstractNode
-    model_list = {
-        model: model for model in apps.get_models() if
-        hasattr(model, 'SPAM_CHECK_FIELDS') and model not in (DraftNode, AbstractNode)
-    }
+    model_list = [Preprint, OSFUser, Node, Comment, Registration, WikiVersion]
 
     queries = []
     for model in model_list:
