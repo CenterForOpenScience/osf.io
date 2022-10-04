@@ -20,13 +20,18 @@ from api.nodes.serializers import (
 )
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from osf.exceptions import DraftRegistrationStateError
+from osf.models import Node
 from website import settings
 
 
 class NodeRelationshipField(RelationshipField):
 
     def to_internal_value(self, node_id):
-        node = self.context['view'].get_node(node_id=node_id) if node_id else None
+        context_view = self.context['view']
+        if hasattr(context_view, 'get_node'):
+            node = self.context['view'].get_node(node_id=node_id) if node_id else None
+        else:
+            node = Node.load(node_id)
         return {'branched_from': node}
 
 
