@@ -4102,3 +4102,6 @@ msgstr "プロジェクトへの招待を再度受け取りたい場合、以下
 
 msgid "\"Full name\", \"Family name\", \"Given name\", \"Family name (EN)\", \"Given name (EN)\" on the Name tab, and \"Affiliation\" and \"Affiliation (English)\" on the Employment tab is required."
 msgstr "名前タブの「氏名」「姓」「名前」「姓(英語)」「名前(英語)」、ならびに職歴タブの「所属」「所属(英語)」は必須入力(*)です。"
+
+msgid "If you do not have an email address registered, please enter or add your email address in the \"Registered email address\" entry field first."
+msgstr "メールアドレスが未登録のユーザは、先に『登録メールアドレス』記入欄に、メールアドレスを入力・追加してください。"
