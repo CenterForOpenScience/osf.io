@@ -36,4 +36,8 @@ class Migration(migrations.Migration):
             },
             bases=(models.Model, osf.models.base.QuerySetExplainMixin),
         ),
+        migrations.AlterUniqueTogether(
+            name='domainreference',
+            unique_together=set([('referrer_object_id', 'domain')]),
+        ),
     ]
