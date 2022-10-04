@@ -4,7 +4,9 @@ import logging
 from django.db import models
 from django.utils import timezone
 from framework import sentry
+
 from osf.exceptions import ValidationValueError, ValidationTypeError
+from osf.external.spam.tasks import check_resource_for_domains
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils import akismet, oopspam
@@ -221,9 +223,16 @@ class SpamMixin(models.Model):
         if self.is_spammy:
             return True
 
+        check_resource_for_domains.apply_async(
+            kwargs=dict(
+                guid=self.guids.first()._id,
+                content=content,
+            )
+        )
+
         akismet_client = _get_akismet_client()
         oopspam_client = _get_oopspam_client()
-        remote_addr = request_headers['Remote-Addr']
+        remote_addr = request_headers.get('Remote-Addr') or request_headers['Host']  # for local testing
         user_agent = request_headers.get('User-Agent')
         referer = request_headers.get('Referer')
         akismet_is_spam, pro_tip = akismet_client.check_comment(
