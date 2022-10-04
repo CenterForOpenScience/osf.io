@@ -1,15 +1,15 @@
-# Japanese translations for .
-# Copyright (C) 2020 ORGANIZATION
-# This file is distributed under the same license as the  project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2022 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2022.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2020-12-11 15:00+0000\n"
+"POT-Creation-Date: 2022-04-14 14:39+0900\n"
 "PO-Revision-Date: 2020-12-11 15:00+0000\n"
-"Last-Translator: Takuya Ishibashi\n"
+"Last-Translator: Shunta Nishikawa\n"
 "Language: ja\n"
 "Language-Team: RCOS <rocs-office@nii.ac.jp>\n"
 "Plural-Forms: nplurals=1; plural=0\n"
@@ -17,6 +17,31 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.7.0\n"
+
+#: addons/base/models.py:466
+#, python-brace-format
+msgid ""
+"Because you have not configured the {addon} add-on, your authentication "
+"will not be transferred to the forked {category}. You may authorize and "
+"configure the {addon} add-on in the new fork on the settings page."
+msgstr ""
+
+#: addons/base/models.py:474
+#, python-brace-format
+msgid ""
+"Because you have authorized the {addon} add-on for this {category}, "
+"forking it will also transfer your authentication to the forked "
+"{category}."
+msgstr ""
+
+#: addons/base/models.py:481
+#, python-brace-format
+msgid ""
+"Because the {addon} add-on has been authorized by a different user, "
+"forking it will not transfer authentication to the forked {category}. You"
+" may authorize and configure the {addon} add-on in the new fork on the "
+"settings page."
+msgstr ""
 
 #: admin/banners/forms.py:18 admin/banners/forms.py:19
 #: admin/templates/messages.html:31
@@ -36,7 +61,8 @@ msgstr "モバイル写真の代替テキスト"
 #: admin/templates/banners/list.html:20
 #: admin/templates/collection_providers/list.html:15
 #: admin/templates/desk/customer.html:16
-#: admin/templates/institutions/institution_list.html:21
+#: admin/templates/institutional_storage_quota_control/list_institution_storage.html:23
+#: admin/templates/institutions/institution_list.html:32
 #: admin/templates/institutions/list.html:21
 #: admin/templates/meetings/list.html:21 admin/templates/messages.html:16
 #: admin/templates/nodes/node.html:200
@@ -46,8 +72,11 @@ msgstr "モバイル写真の代替テキスト"
 #: admin/templates/rdm_statistics/institution_list.html:29
 #: admin/templates/rdm_timestampadd/list.html:21
 #: admin/templates/rdm_timestampsettings/list.html:21
-#: admin/templates/users/user.html:171 admin/templates/users/user.html:291
+#: admin/templates/user_emails/search.html:45
+#: admin/templates/user_emails/user_emails.html:75
+#: admin/templates/users/user.html:171
 #: admin/templates/users/user_details.html:35
+#: admin/templates/util/node_preprint_paginated_list.html:52
 msgid "Name"
 msgstr "名前"
 
@@ -84,7 +113,7 @@ msgstr "モバイル写真"
 msgid "File"
 msgstr "ファイル"
 
-#: admin/base/utils.py:23
+#: admin/base/utils.py:22
 msgid "Enter a valid 'slug' consisting only of lowercase letters."
 msgstr ""
 
@@ -94,7 +123,7 @@ msgstr "最終ログイン"
 
 #: admin/institutions/forms.py:13
 #: admin/templates/collection_providers/list.html:16
-#: admin/templates/institutions/institution_list.html:22
+#: admin/templates/institutions/institution_list.html:33
 #: admin/templates/institutions/list.html:22 admin/templates/messages.html:17
 #: admin/templates/rdm_keymanagement/institutions.html:22
 #: admin/templates/rdm_timestampadd/list.html:22
@@ -144,7 +173,10 @@ msgstr "本文"
 
 #: admin/rdm_announcement/forms.py:16 admin/templates/desk/customer.html:35
 #: admin/templates/desk/customer.html:41 admin/templates/messages.html:8
-#: admin/templates/spam/detail.html:24 admin/templates/users/user.html:193
+#: admin/templates/spam/detail.html:24
+#: admin/templates/user_emails/search.html:53
+#: admin/templates/user_emails/user_emails.html:125
+#: admin/templates/users/user.html:193
 msgid "Email"
 msgstr "メール"
 
@@ -175,12 +207,12 @@ msgstr ""
 #: admin/templates/maintenance/delete_maintenance.html:12
 #: admin/templates/nodes/confirm_ham.html:9
 #: admin/templates/nodes/confirm_spam.html:9
-#: admin/templates/nodes/node.html:395 admin/templates/nodes/node_list.html:108
+#: admin/templates/nodes/node.html:395
 #: admin/templates/nodes/reindex_node_elastic.html:9
 #: admin/templates/nodes/reindex_node_share.html:9
 #: admin/templates/nodes/remove_contributor.html:15
 #: admin/templates/nodes/remove_node.html:12
-#: admin/templates/rdm_timestampadd/node_list.html:122
+#: admin/templates/rdm_timestampadd/node_list.html:123
 #: admin/templates/users/GDPR_delete_user.html:12
 #: admin/templates/users/add_system_tag.html:12
 #: admin/templates/users/reindex_user_elastic.html:9
@@ -188,7 +220,6 @@ msgstr ""
 #: admin/templates/users/remove_spam_user.html:12
 #: admin/templates/users/remove_user.html:12
 #: admin/templates/users/restore_ham_user.html:12
-#: admin/templates/users/user_list.html:71
 msgid "Confirm"
 msgstr "確認"
 
@@ -201,6 +232,7 @@ msgid "Schedule a banner"
 msgstr "バナーをスケジュールする"
 
 #: admin/templates/banners/create.html:29
+#: admin/templates/entitlements/list.html:91
 #: admin/templates/institutions/create.html:24
 #: admin/templates/rdm_addons/addons/dataverse_credentials_modal.html:57
 #: admin/templates/rdm_addons/addons/iqbrims_institution_settings.html:24
@@ -208,17 +240,18 @@ msgstr "バナーをスケジュールする"
 #: admin/templates/rdm_addons/addons/owncloud_credentials_modal.html:64
 #: admin/templates/rdm_addons/addons/s3_credentials_modal.html:31
 #: admin/templates/rdm_announcement/settings.html:94
-#: admin/templates/rdm_custom_storage_location/institutional_storage.html:63
+#: admin/templates/rdm_custom_storage_location/institutional_storage.html:64
 #: admin/templates/rdm_custom_storage_location/providers/box_modal.html:59
 #: admin/templates/rdm_custom_storage_location/providers/dropboxbusiness_modal.html:85
 #: admin/templates/rdm_custom_storage_location/providers/googledrive_modal.html:55
 #: admin/templates/rdm_custom_storage_location/providers/nextcloud_modal.html:59
 #: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:115
+#: admin/templates/rdm_custom_storage_location/providers/ociinstitutions_modal.html:42
 #: admin/templates/rdm_custom_storage_location/providers/onedrivebusiness_modal.html:55
 #: admin/templates/rdm_custom_storage_location/providers/osfstorage_modal.html:22
 #: admin/templates/rdm_custom_storage_location/providers/owncloud_modal.html:55
 #: admin/templates/rdm_custom_storage_location/providers/s3_modal.html:38
-#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:42
+#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:49
 #: admin/templates/rdm_custom_storage_location/providers/s3compatinstitutions_modal.html:42
 #: admin/templates/rdm_custom_storage_location/providers/swift_modal.html:59
 msgid "Save"
@@ -248,10 +281,13 @@ msgstr "テキスト"
 msgid "Delete banner"
 msgstr "バナーを削除"
 
-#: admin/templates/base.html:10 admin/templates/base.html:157
-#: admin/templates/base.html:233 admin/templates/base.html:236
-#: admin/templates/base.html:239 admin/templates/base.html:242
-#: admin/templates/base.html:246 admin/templates/base.html:279
+#: admin/templates/base.html:10 admin/templates/base.html:162
+#: admin/templates/base.html:170 admin/templates/base.html:260
+#: admin/templates/base.html:263 admin/templates/base.html:266
+#: admin/templates/base.html:273 admin/templates/base.html:306
+#: admin/templates/user_emails/search.html:19
+#: admin/templates/user_emails/user_emails.html:6
+#: admin/templates/user_emails/user_list.html:6
 msgid "RDM"
 msgstr "RDM"
 
@@ -284,124 +320,135 @@ msgstr "ログアウト"
 msgid "Menu"
 msgstr "メニュー"
 
-#: admin/templates/base.html:108 admin/templates/base.html:113
+# text of menuitem on left-side menu
+#: admin/templates/base.html:110
+msgid "Login Availability Control"
+msgstr "ログイン可否設定"
+
+#: admin/templates/base.html:116 admin/templates/base.html:121
 msgid "RDM Nodes"
 msgstr "ノード管理"
 
-#: admin/templates/base.html:114 admin/templates/base.html:131
-#: admin/templates/base.html:146
+#: admin/templates/base.html:122 admin/templates/base.html:139
+#: admin/templates/base.html:154
 msgid "Flagged Spam"
 msgstr "フラグ付きスパム"
 
-#: admin/templates/base.html:115 admin/templates/base.html:132
-#: admin/templates/base.html:147
+#: admin/templates/base.html:123 admin/templates/base.html:140
+#: admin/templates/base.html:155
 msgid "Known Spam"
 msgstr "既知のスパム"
 
-#: admin/templates/base.html:116 admin/templates/base.html:133
-#: admin/templates/base.html:148
+#: admin/templates/base.html:124 admin/templates/base.html:141
+#: admin/templates/base.html:156
 msgid "Known Ham"
 msgstr "既知のハム"
 
-#: admin/templates/base.html:124 admin/templates/base.html:130
+#: admin/templates/base.html:132 admin/templates/base.html:138
 #: admin/templates/metrics/osf_metrics.html:36
 msgid "Preprints"
 msgstr "プレプリント"
 
-#: admin/templates/base.html:134
+#: admin/templates/base.html:142
 msgid "Withdrawal Requests"
 msgstr "削除のリクエスト"
 
-#: admin/templates/base.html:141 admin/templates/base.html:145
+#: admin/templates/base.html:149 admin/templates/base.html:153
 msgid "RDM Users"
 msgstr "ユーザ管理"
 
-#: admin/templates/base.html:153
+#: admin/templates/base.html:162
+#: admin/templates/user_emails/user_emails.html:112
+msgid "User Emails"
+msgstr "ユーザメール"
+
+#: admin/templates/base.html:166
 msgid "RDM Spam"
 msgstr "スパム管理"
 
-#: admin/templates/base.html:157
+#: admin/templates/base.html:170
 msgid "Registrations"
 msgstr "登録"
 
-#: admin/templates/base.html:161
+#: admin/templates/base.html:174
 msgid "All Registrations"
 msgstr "全ての登録"
 
-#: admin/templates/base.html:162
+#: admin/templates/base.html:175
 msgid "Stuck Registrations"
 msgstr "スタックされた登録"
 
-#: admin/templates/base.html:168
+#: admin/templates/base.html:176
+msgid "e-Rad Records"
+msgstr ""
+
+#: admin/templates/base.html:182
 msgid "RDM Institutions"
 msgstr "機関設定"
 
-#: admin/templates/base.html:172 admin/templates/base.html:185
-#: admin/templates/base.html:199 admin/templates/base.html:212
-#: admin/templates/base.html:225 admin/templates/base.html:251
-#: admin/templates/base.html:261
+#: admin/templates/base.html:186 admin/templates/base.html:212
+#: admin/templates/base.html:226 admin/templates/base.html:239
+#: admin/templates/base.html:252 admin/templates/base.html:278
+#: admin/templates/base.html:288
 msgid "List"
 msgstr "リスト"
 
-#: admin/templates/base.html:174 admin/templates/base.html:188
-#: admin/templates/base.html:201 admin/templates/base.html:214
-#: admin/templates/base.html:227 admin/templates/base.html:263
+#: admin/templates/base.html:188 admin/templates/base.html:215
+#: admin/templates/base.html:228 admin/templates/base.html:241
+#: admin/templates/base.html:254 admin/templates/base.html:290
 msgid "Create"
 msgstr "作成"
 
-#: admin/templates/base.html:181
+#: admin/templates/base.html:208
 msgid "Preprint Providers"
 msgstr "プレプリントプロバイダー"
 
-#: admin/templates/base.html:186
+#: admin/templates/base.html:213
 msgid "Whitelist"
 msgstr "ホワイトリスト"
 
-#: admin/templates/base.html:195
+#: admin/templates/base.html:222
 msgid "Provider Assets"
 msgstr "プロバイダーアセット"
 
-#: admin/templates/base.html:208
+#: admin/templates/base.html:235
 msgid "Collection Providers"
 msgstr "コレクションプロバイダー"
 
-#: admin/templates/base.html:221
+#: admin/templates/base.html:248
 msgid "Registration Providers"
 msgstr "登録プロバイダー"
 
-#: admin/templates/base.html:233
+#: admin/templates/base.html:260
 msgid "Meetings"
 msgstr "ミーティング"
 
-#: admin/templates/base.html:236
-msgid "Prereg"
-msgstr "プレレグ"
-
-#: admin/templates/base.html:239
+#: admin/templates/base.html:263
 msgid "Metrics"
 msgstr "メトリックス"
 
-#: admin/templates/base.html:242
+#: admin/templates/base.html:266
 msgid "Subjects"
 msgstr "サブジェクト"
 
-#: admin/templates/base.html:246
+#: admin/templates/base.html:273
 msgid "Groups"
 msgstr "グループ"
 
-#: admin/templates/base.html:250
+#: admin/templates/base.html:277
+#: admin/templates/institutions/user_list_by_institute.html:159
 msgid "Search"
 msgstr "検索"
 
-#: admin/templates/base.html:257
+#: admin/templates/base.html:284
 msgid "Banners"
 msgstr "バナー"
 
-#: admin/templates/base.html:270
+#: admin/templates/base.html:297
 msgid "Maintenance Alerts"
 msgstr "メンテナスアラート"
 
-#: admin/templates/base.html:273 admin/templates/rdm_addons/addon_list.html:6
+#: admin/templates/base.html:300 admin/templates/rdm_addons/addon_list.html:6
 #: admin/templates/rdm_addons/addon_list.html:17
 #: admin/templates/rdm_addons/addon_list.html:19
 #: admin/templates/rdm_addons/institution_list.html:13
@@ -409,7 +456,7 @@ msgstr "メンテナスアラート"
 msgid "RDM Addons"
 msgstr "アドオン利用制御"
 
-#: admin/templates/base.html:274 admin/templates/rdm_statistics/crawl.html:6
+#: admin/templates/base.html:301 admin/templates/rdm_statistics/crawl.html:6
 #: admin/templates/rdm_statistics/crawl.html:9
 #: admin/templates/rdm_statistics/index.html:6
 #: admin/templates/rdm_statistics/index.html:9
@@ -422,7 +469,7 @@ msgstr "アドオン利用制御"
 msgid "RDM Statistics"
 msgstr "利用統計"
 
-#: admin/templates/base.html:275 admin/templates/rdm_announcement/index.html:6
+#: admin/templates/base.html:302 admin/templates/rdm_announcement/index.html:6
 #: admin/templates/rdm_announcement/index.html:11
 #: admin/templates/rdm_announcement/index.html:13
 #: admin/templates/rdm_announcement/send.html:7
@@ -434,37 +481,41 @@ msgstr "利用統計"
 msgid "RDM Announcement"
 msgstr "アナウンス"
 
-#: admin/templates/base.html:276
+#: admin/templates/base.html:303
 msgid "Timestamp Control"
 msgstr "証跡管理"
 
-#: admin/templates/base.html:278
+#: admin/templates/base.html:305
 msgid "User Keys Management"
 msgstr "ユーザーキー管理"
 
-#: admin/templates/base.html:279
+#: admin/templates/base.html:306
 msgid "Timestamp Environment"
 msgstr "タイムスタンプ環境"
 
-#: admin/templates/base.html:284
+#: admin/templates/base.html:311
 msgid "Quota for NII Storage"
 msgstr "クォータ管理"
 
-#: admin/templates/base.html:287
+#: admin/templates/base.html:314
 #: admin/templates/rdm_custom_storage_location/institutional_storage.html:16
 #: admin/templates/users/user_details.html:17
 msgid "Institutional Storage"
 msgstr "機関ストレージ"
 
-#: admin/templates/base.html:288
+#: admin/templates/base.html:315
 msgid "Quota for Institutional Storage"
 msgstr "クォータ管理"
 
-#: admin/templates/base.html:303 admin/templates/home.html:10
+#: admin/templates/base.html:318
+msgid "Inst. Storage Quota Control"
+msgstr "機関ストレージのクォータ"
+
+#: admin/templates/base.html:333 admin/templates/home.html:10
 msgid "Welcome to the GakuNin RDM Admin Home Page"
 msgstr "GakuNin RDM機関管理者ページへようこそ"
 
-#: admin/templates/base.html:313
+#: admin/templates/base.html:343
 msgid "National Institute of Informatics"
 msgstr "国立情報学研究所"
 
@@ -498,7 +549,7 @@ msgstr "\"%(objectName)s\"を削除してもよろしいですか？"
 msgid "Create Collection Provider"
 msgstr "コレクションプロバイダを作成"
 
-#: admin/templates/collection_providers/create.html:12
+#: admin/templates/collection_providers/create.html:19
 msgid "Create A Collection Provider"
 msgstr "コレクションプロバイダを作成"
 
@@ -541,7 +592,7 @@ msgstr "プログラムエリアの選択"
 
 #: admin/templates/collection_providers/update_collection_provider_form.html:96
 #: admin/templates/institutions/create.html:29
-#: admin/templates/institutions/detail.html:80
+#: admin/templates/institutions/detail.html:83
 msgid "Import from JSON"
 msgstr "JSONからインポート"
 
@@ -678,6 +729,65 @@ msgstr "ありがとうございます。"
 msgid "-GakuNin RDM Admin"
 msgstr "-GakuNin RDM 管理者"
 
+# page title
+#: admin/templates/entitlements/list.html:40
+msgid "List of Entitlements"
+msgstr "eduPersonEntitlement の一覧"
+
+# label for eduPersonEntitlement input box
+#: admin/templates/entitlements/list.html:44
+#: admin/templates/entitlements/list.html:71
+msgid "Entitlements"
+msgstr "eduPersonEntitlement"
+
+#: admin/templates/entitlements/list.html:60
+msgid "Institutions"
+msgstr "機関"
+
+# hint text of eduPersonEntitlement input box
+#: admin/templates/entitlements/list.html:75
+#: admin/templates/entitlements/list.html:145
+msgid "Enter new entitlement"
+msgstr "新しい eduPersonEntitlement"
+
+# label for checkboxes
+#: admin/templates/entitlements/list.html:82
+#: admin/templates/entitlements/list.html:149
+msgid "login availability"
+msgstr "ログイン可否"
+
+# text for button to add another eduPersonEntitlement input box
+#: admin/templates/entitlements/list.html:90
+msgid "New entitlement"
+msgstr "入力欄を追加"
+
+#: admin/templates/entitlements/list.html:115
+msgid "Delete"
+msgstr "削除"
+
+#: admin/templates/entitlements/list.html:165
+msgid "Entitlement must be not empty"
+msgstr "eduPersonEntitlement を入力してください。"
+
+#: admin/templates/entitlements/list.html:169
+#: admin/templates/entitlements/list.html:173
+msgid "Entitlement '"
+msgstr "eduPersonEntitlement '"
+
+#: admin/templates/entitlements/list.html:169
+msgid "' already exists"
+msgstr "'は既に存在します。"
+
+#: admin/templates/entitlements/list.html:173
+msgid "' have been inputted"
+msgstr "'は重複しています。"
+
+#: admin/templates/entitlements/pagination.html:25
+#: admin/templates/util/pagination.html:25
+#, python-format
+msgid "Page %(itemsNumber)s of %(paginatorNumPage)s"
+msgstr "ページ%(itemsNumber)s / %(paginatorNumPage)s"
+
 #: admin/templates/home.html:5
 #, python-format
 msgid "Hello %(userfullname)s, "
@@ -690,6 +800,113 @@ msgstr "GakuNin RDM総合管理者(NII)ページへようこそ"
 #: admin/templates/home.html:12
 msgid " Use the menu on the left to access admin pages. "
 msgstr " 左側のメニューから、それぞれの管理ページにアクセスします。 "
+
+#: admin/templates/institutional_storage_quota_control/list_institute.html:10
+#: admin/templates/institutional_storage_quota_control/user_list_by_institute.html:2
+#: admin/templates/institutional_storage_quota_control/user_list_by_institute.html:6
+msgid "Institutional Storage Quota Control"
+msgstr "機関ストレージのクォータ制御"
+
+#: admin/templates/institutional_storage_quota_control/list_institute.html:16
+#: admin/templates/institutions/list_institute.html:16
+#: admin/templates/institutions/statistical_status_default_storage.html:16
+#: admin/templates/rdm_keymanagement/delete_user_list.html:10
+#: admin/templates/user_emails/user_list.html:49
+#: admin/templates/users/list.html:11
+msgid "No results found"
+msgstr "結果が見つかりません"
+
+#: admin/templates/institutional_storage_quota_control/list_institution_storage.html:12
+#: admin/templates/institutional_storage_quota_control/list_institution_storage.html:16
+msgid "Institutional Storage for Institutions"
+msgstr "機関ストレージ"
+
+#: admin/templates/institutional_storage_quota_control/list_institution_storage.html:22
+#: admin/templates/institutions/institution_list.html:31
+#: admin/templates/institutions/list.html:20
+#: admin/templates/rdm_addons/institution_list.html:29
+#: admin/templates/rdm_keymanagement/institutions.html:20
+#: admin/templates/rdm_statistics/institution_list.html:29
+#: admin/templates/rdm_timestampadd/list.html:20
+#: admin/templates/rdm_timestampsettings/list.html:20
+#: admin/templates/rdm_timestampsettings/list.html:50
+msgid "Logo"
+msgstr "ロゴ"
+
+#: admin/templates/institutional_storage_quota_control/list_institution_storage.html:24
+msgid "Storage name"
+msgstr "ストレージ名"
+
+# msgid "Configure Institutional Storage Quota"
+# msgstr "機関ストレージのクォータ設定"
+#: admin/templates/institutional_storage_quota_control/user_list_by_institute.html:123
+msgid "Each user Quota for Institutional Storage (GB)"
+msgstr "クォータ一律設定 (GB)"
+
+#: admin/templates/institutional_storage_quota_control/user_list_by_institute.html:129
+#: admin/templates/institutions/user_list_by_institute.html:181
+msgid "Value must be an integer number greater than or equal 1"
+msgstr "値は1以上の整数である必要があります"
+
+#: admin/templates/institutional_storage_quota_control/user_list_by_institute.html:134
+#: admin/templates/institutions/user_list_by_institute.html:186
+#: admin/templates/rdm_timestampadd/timestampadd.html:47
+#: admin/templates/users/user.html:305
+msgid "Apply"
+msgstr "適用"
+
+#: admin/templates/institutional_storage_quota_control/user_list_by_institute.html:147
+#: admin/templates/institutions/statistical_status_default_storage_user.html:22
+msgid "eduPersonPrincipleName"
+msgstr "利用者ID"
+
+#: admin/templates/institutional_storage_quota_control/user_list_by_institute.html:153
+#: admin/templates/institutions/statistical_status_default_storage_user.html:27
+#: admin/templates/institutions/user_list_by_institute.html:204
+#: admin/templates/rdm_addons/addons/owncloud_credentials_modal.html:42
+#: admin/templates/rdm_custom_storage_location/providers/nextcloud_modal.html:35
+#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:38
+#: admin/templates/rdm_custom_storage_location/providers/owncloud_modal.html:32
+#: admin/templates/rdm_custom_storage_location/providers/swift_modal.html:34
+#: admin/templates/rdm_keymanagement/user_list.html:11
+#: admin/templates/user_emails/user_emails.html:79
+#: admin/templates/user_emails/user_list.html:17
+#: admin/templates/users/user.html:181 admin/templates/users/user_list.html:23
+msgid "Username"
+msgstr "ユーザ名"
+
+#: admin/templates/institutional_storage_quota_control/user_list_by_institute.html:158
+#: admin/templates/institutions/statistical_status_default_storage_user.html:32
+#: admin/templates/institutions/user_list_by_institute.html:209
+#: admin/templates/rdm_keymanagement/user_list.html:12
+#: admin/templates/user_emails/user_list.html:18
+#: admin/templates/users/user_list.html:24
+msgid "Fullname"
+msgstr "氏名"
+
+#: admin/templates/institutional_storage_quota_control/user_list_by_institute.html:163
+#: admin/templates/institutions/statistical_status_default_storage_user.html:37
+#: admin/templates/institutions/user_list_by_institute.html:214
+msgid "Ratio"
+msgstr "使用率"
+
+#: admin/templates/institutional_storage_quota_control/user_list_by_institute.html:168
+#: admin/templates/institutions/statistical_status_default_storage_user.html:42
+#: admin/templates/institutions/user_list_by_institute.html:219
+msgid "Usage"
+msgstr "使用容量"
+
+#: admin/templates/institutional_storage_quota_control/user_list_by_institute.html:173
+#: admin/templates/institutions/statistical_status_default_storage_user.html:47
+#: admin/templates/institutions/user_list_by_institute.html:224
+msgid "Remaining"
+msgstr "残容量"
+
+#: admin/templates/institutional_storage_quota_control/user_list_by_institute.html:178
+#: admin/templates/institutions/statistical_status_default_storage_user.html:52
+#: admin/templates/institutions/user_list_by_institute.html:229
+msgid "Quota"
+msgstr "割当容量"
 
 #: admin/templates/institutions/cannot_delete.html:7
 #: admin/templates/institutions/confirm_delete.html:11
@@ -729,7 +946,7 @@ msgid "Create An Institution"
 msgstr "機関を作成する"
 
 #: admin/templates/institutions/create.html:30
-#: admin/templates/institutions/detail.html:81
+#: admin/templates/institutions/detail.html:84
 msgid ""
 "Choose a JSON file that has been previously exported from another "
 "Institution detail page. This will pre-populate the Institution change "
@@ -762,11 +979,11 @@ msgid "Banner:"
 msgstr "バナー："
 
 #: admin/templates/institutions/detail.html:52
-#: admin/templates/institutions/detail.html:103
+#: admin/templates/institutions/detail.html:106
 msgid "Modify Institution"
 msgstr "機関を変更"
 
-#: admin/templates/institutions/detail.html:103
+#: admin/templates/institutions/detail.html:106
 msgid "Hide Form"
 msgstr "フォームを隠す"
 
@@ -783,28 +1000,15 @@ msgstr "フォームを隠す"
 msgid "List of Institutions"
 msgstr "機関のリスト"
 
-#: admin/templates/institutions/institution_list.html:20
-#: admin/templates/institutions/list.html:20
-#: admin/templates/rdm_addons/institution_list.html:29
-#: admin/templates/rdm_keymanagement/institutions.html:20
-#: admin/templates/rdm_statistics/institution_list.html:29
-#: admin/templates/rdm_timestampadd/list.html:20
-#: admin/templates/rdm_timestampsettings/list.html:20
-#: admin/templates/rdm_timestampsettings/list.html:50
-msgid "Logo"
-msgstr "ロゴ"
+#: admin/templates/institutions/institution_list.html:23
+#: admin/templates/institutions/statistical_status_default_storage_user.html:12
+msgid "Recalculate quota"
+msgstr "クォータ再計算"
 
 #: admin/templates/institutions/list_institute.html:10
 #, python-format
 msgid "%(institution_name)s User List - Statistical Status of NII Storage"
 msgstr "%(institution_name)sユーザリスト - NIIストレージの統計ステータス"
-
-#: admin/templates/institutions/list_institute.html:16
-#: admin/templates/institutions/statistical_status_default_storage.html:16
-#: admin/templates/rdm_keymanagement/delete_user_list.html:10
-#: admin/templates/users/list.html:11
-msgid "No results found"
-msgstr "結果が見つかりません"
 
 #: admin/templates/institutions/node_list.html:11
 #: admin/templates/metrics/osf_metrics.html:227
@@ -839,49 +1043,6 @@ msgstr "ストレージクォータ設定"
 msgid "Institutional Storage > %(institution_name)s"
 msgstr "機関ストレージ > %(institution_name)s"
 
-#: admin/templates/institutions/statistical_status_default_storage_user.html:11
-msgid "eduPersonPrincipleName"
-msgstr "利用者ID"
-
-#: admin/templates/institutions/statistical_status_default_storage_user.html:16
-#: admin/templates/institutions/user_list_by_institute.html:11
-#: admin/templates/rdm_addons/addons/owncloud_credentials_modal.html:42
-#: admin/templates/rdm_custom_storage_location/providers/nextcloud_modal.html:35
-#: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:38
-#: admin/templates/rdm_custom_storage_location/providers/owncloud_modal.html:32
-#: admin/templates/rdm_custom_storage_location/providers/swift_modal.html:34
-#: admin/templates/rdm_keymanagement/user_list.html:10
-#: admin/templates/users/user.html:181 admin/templates/users/user_list.html:23
-msgid "Username"
-msgstr "ユーザ名"
-
-#: admin/templates/institutions/statistical_status_default_storage_user.html:21
-#: admin/templates/institutions/user_list_by_institute.html:16
-#: admin/templates/rdm_keymanagement/user_list.html:11
-#: admin/templates/users/user_list.html:24
-msgid "Fullname"
-msgstr "氏名"
-
-#: admin/templates/institutions/statistical_status_default_storage_user.html:26
-#: admin/templates/institutions/user_list_by_institute.html:21
-msgid "Ratio"
-msgstr "使用率"
-
-#: admin/templates/institutions/statistical_status_default_storage_user.html:31
-#: admin/templates/institutions/user_list_by_institute.html:26
-msgid "Usage"
-msgstr "使用容量"
-
-#: admin/templates/institutions/statistical_status_default_storage_user.html:36
-#: admin/templates/institutions/user_list_by_institute.html:31
-msgid "Remaining"
-msgstr "残容量"
-
-#: admin/templates/institutions/statistical_status_default_storage_user.html:41
-#: admin/templates/institutions/user_list_by_institute.html:36
-msgid "Quota"
-msgstr "割当容量"
-
 #: admin/templates/institutions/user_list_by_institute.html:2
 msgid "Statistical Status of NII Storage"
 msgstr "NIIストレージの統計ステータス"
@@ -890,6 +1051,52 @@ msgstr "NIIストレージの統計ステータス"
 #, python-format
 msgid "NII Storage > %(institution_name)s"
 msgstr "NIIストレージ > %(institution_name)s"
+
+#: admin/templates/institutions/user_list_by_institute.html:129
+#: admin/templates/nodes/node.html:145
+#: admin/templates/rdm_keymanagement/user_list.html:10
+#: admin/templates/rdm_timestampadd/node_list.html:40
+#: admin/templates/rdm_timestampsettings/node_list.html:35
+#: admin/templates/user_emails/search.html:35
+#: admin/templates/user_emails/user_list.html:15
+#: admin/templates/users/user_details.html:34
+#: admin/templates/users/user_list.html:22
+#: admin/templates/util/node_preprint_paginated_list.html:51
+msgid "GUID"
+msgstr "GUID"
+
+#: admin/templates/institutions/user_list_by_institute.html:135
+#: admin/templates/user_emails/search.html:40
+msgid "Please enter only contain alphanumeric in lowercase"
+msgstr "英数字のみを小文字で入力してください"
+
+#: admin/templates/institutions/user_list_by_institute.html:139
+msgid "EmailLabel"
+msgstr "ユーザ名"
+
+#: admin/templates/institutions/user_list_by_institute.html:143
+msgid "Please enter an valid email"
+msgstr "有効な電子メールアドレスではありません。"
+
+#: admin/templates/institutions/user_list_by_institute.html:147
+#: admin/templates/user_emails/search.html:58
+#: admin/templates/user_emails/user_emails.html:124
+msgid "Please enter an email address"
+msgstr "有効な電子メールアドレスではありません。"
+
+#: admin/templates/institutions/user_list_by_institute.html:151
+msgid "InfoLabel"
+msgstr "氏名"
+
+# msgid "Configure NII Storage Quota"
+# msgstr "NIIストレージのクォータ設定"
+#: admin/templates/institutions/user_list_by_institute.html:175
+msgid "Each user Quota for NII Storage (GB)"
+msgstr "クォータ一律設定 (GB)"
+
+#: admin/templates/institutions/user_list_by_institute.html:193
+msgid "Export All Users Statistics (TSV)"
+msgstr "全ユーザの統計出力 (TSV)"
 
 #: admin/templates/login.html:6
 msgid "GakuNin RDM Admin | Log in"
@@ -1043,27 +1250,29 @@ msgstr "API URL"
 msgid "None"
 msgstr "無し"
 
-#: admin/templates/messages.html:13 admin/users/forms.py:21
+#: admin/templates/messages.html:13 admin/user_emails/forms.py:14
+#: admin/users/forms.py:21
 msgid "name"
 msgstr "氏名"
 
-#: admin/templates/messages.html:14 admin/users/forms.py:22
+#: admin/templates/messages.html:14 admin/user_emails/forms.py:15
+#: admin/users/forms.py:22
 msgid "email"
 msgstr "eメール"
 
-#: admin/templates/messages.html:26 osf/models/institution.py:38
+#: admin/templates/messages.html:26 osf/models/institution.py:47
 msgid "CAS by pac4j"
 msgstr "pac4jによるCAS"
 
-#: admin/templates/messages.html:27 osf/models/institution.py:39
+#: admin/templates/messages.html:27 osf/models/institution.py:48
 msgid "OAuth by pac4j"
 msgstr "pac4jによるOAuth"
 
-#: admin/templates/messages.html:28 osf/models/institution.py:40
+#: admin/templates/messages.html:28 osf/models/institution.py:49
 msgid "SAML by Shibboleth"
 msgstr "ShibbolethによるSAML"
 
-#: admin/templates/messages.html:29 osf/models/institution.py:41
+#: admin/templates/messages.html:29 osf/models/institution.py:50
 msgid "No Delegation Protocol"
 msgstr "委任プロトコルなし"
 
@@ -1728,7 +1937,8 @@ msgstr "ありませんか？：%(guid)s"
 
 #: admin/templates/nodes/confirm_ham.html:11
 #: admin/templates/nodes/confirm_spam.html:11
-#: admin/templates/nodes/node.html:397 admin/templates/nodes/node_list.html:110
+#: admin/templates/nodes/ham_spam_modal.html:15
+#: admin/templates/nodes/node.html:397
 #: admin/templates/nodes/reindex_node_elastic.html:11
 #: admin/templates/nodes/reindex_node_share.html:11
 #: admin/templates/nodes/remove_contributor.html:18
@@ -1738,24 +1948,26 @@ msgstr "ありませんか？：%(guid)s"
 #: admin/templates/rdm_addons/addons/s3_credentials_modal.html:29
 #: admin/templates/rdm_announcement/send.html:35
 #: admin/templates/rdm_announcement/settings.html:95
-#: admin/templates/rdm_custom_storage_location/institutional_storage.html:62
+#: admin/templates/rdm_custom_storage_location/institutional_storage.html:63
 #: admin/templates/rdm_custom_storage_location/providers/box_modal.html:57
 #: admin/templates/rdm_custom_storage_location/providers/dropboxbusiness_modal.html:83
 #: admin/templates/rdm_custom_storage_location/providers/googledrive_modal.html:53
 #: admin/templates/rdm_custom_storage_location/providers/nextcloud_modal.html:57
 #: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:113
+#: admin/templates/rdm_custom_storage_location/providers/ociinstitutions_modal.html:40
 #: admin/templates/rdm_custom_storage_location/providers/onedrivebusiness_modal.html:53
 #: admin/templates/rdm_custom_storage_location/providers/osfstorage_modal.html:21
 #: admin/templates/rdm_custom_storage_location/providers/owncloud_modal.html:53
 #: admin/templates/rdm_custom_storage_location/providers/s3_modal.html:36
-#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:40
+#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:47
 #: admin/templates/rdm_custom_storage_location/providers/s3compatinstitutions_modal.html:40
 #: admin/templates/rdm_custom_storage_location/providers/swift_modal.html:57
-#: admin/templates/rdm_timestampadd/node_list.html:124
-#: admin/templates/rdm_timestampadd/timestampadd.html:57
+#: admin/templates/rdm_timestampadd/node_list.html:125
+#: admin/templates/rdm_timestampadd/timestampadd.html:58
 #: admin/templates/users/GDPR_delete_user.html:15
 #: admin/templates/users/add_system_tag.html:15
 #: admin/templates/users/get_link.html:21
+#: admin/templates/users/ham_spam_modal.html:15
 #: admin/templates/users/merge_accounts_modal.html:14
 #: admin/templates/users/notes.html:18
 #: admin/templates/users/reindex_user_elastic.html:11
@@ -1764,7 +1976,6 @@ msgstr "ありませんか？：%(guid)s"
 #: admin/templates/users/remove_user.html:15
 #: admin/templates/users/reset.html:16
 #: admin/templates/users/restore_ham_user.html:15
-#: admin/templates/users/user_list.html:73
 msgid "Cancel"
 msgstr "キャンセル"
 
@@ -1777,12 +1988,22 @@ msgstr "この%(resource_type)sはスパムですか？"
 msgid "Flagged Spam Nodes"
 msgstr "フラグ付きスパムノード"
 
+#: admin/templates/nodes/ham_spam_modal.html:3
+#: admin/templates/users/ham_spam_modal.html:3
+msgid "Confirm {{ target_type|capfirst }}"
+msgstr ""
+
+#: admin/templates/nodes/ham_spam_modal.html:10
+msgid "Are you sure the selected node(s) are {{ target_type }}?"
+msgstr ""
+
 #: admin/templates/nodes/known_spam_list.html:5
 msgid "Known Spam Nodes"
 msgstr "既知のスパムノード"
 
 #: admin/templates/nodes/node.html:11 admin/templates/nodes/node.html:299
-#: admin/templates/nodes/node.html:305 admin/templates/users/user.html:293
+#: admin/templates/nodes/node.html:305
+#: admin/templates/util/node_preprint_paginated_list.html:59
 msgid "Registration"
 msgstr "登録"
 
@@ -1794,12 +2015,11 @@ msgstr "ノード"
 msgid "View Logs"
 msgstr "ログを表示"
 
-#: admin/templates/nodes/node.html:34 admin/templates/users/user.html:327
+#: admin/templates/nodes/node.html:34
 msgid "Delete Node"
 msgstr "ノードを削除"
 
 #: admin/templates/nodes/node.html:47 admin/templates/nodes/node.html:273
-#: admin/templates/users/user.html:321
 msgid "Restore Node"
 msgstr "ノードを復元"
 
@@ -1811,9 +2031,8 @@ msgstr "登録を再開"
 msgid "Remove Registration"
 msgstr "登録を削除"
 
-#: admin/templates/nodes/node.html:70 admin/templates/nodes/node_list.html:98
-#: admin/templates/rdm_timestampadd/node_list.html:112
-#: admin/templates/users/user_list.html:61
+#: admin/templates/nodes/node.html:70
+#: admin/templates/rdm_timestampadd/node_list.html:113
 msgid "Confirm Spam"
 msgstr "スパムを確認"
 
@@ -1837,32 +2056,23 @@ msgstr "登録の詳細"
 msgid "Node Details"
 msgstr "ノードの詳細"
 
-#: admin/templates/nodes/node.html:145
-#: admin/templates/rdm_keymanagement/user_list.html:9
-#: admin/templates/rdm_timestampadd/node_list.html:39
-#: admin/templates/rdm_timestampsettings/node_list.html:35
-#: admin/templates/users/user.html:290
-#: admin/templates/users/user_details.html:34
-#: admin/templates/users/user_list.html:22
-msgid "GUID"
-msgstr "GUID"
-
 #: admin/templates/nodes/node.html:149 admin/templates/nodes/node.html:247
 #: admin/templates/nodes/node_list.html:26
-#: admin/templates/rdm_timestampadd/node_list.html:41
+#: admin/templates/rdm_timestampadd/node_list.html:42
 #: admin/templates/rdm_timestampsettings/node_list.html:38
 msgid "Title"
 msgstr "タイトル"
 
 #: admin/templates/nodes/node.html:153 admin/templates/nodes/node.html:248
 #: admin/templates/nodes/node_list.html:32
-#: admin/templates/rdm_timestampadd/node_list.html:46
-#: admin/templates/users/user.html:292
+#: admin/templates/rdm_timestampadd/node_list.html:47
+#: admin/templates/util/node_preprint_paginated_list.html:54
+#: admin/templates/util/node_preprint_paginated_list.html:56
 msgid "Public"
 msgstr "公開"
 
 #: admin/templates/nodes/node.html:157 admin/templates/nodes/node_list.html:29
-#: admin/templates/rdm_timestampadd/node_list.html:43
+#: admin/templates/rdm_timestampadd/node_list.html:44
 #: admin/templates/rdm_timestampsettings/node_list.html:41
 msgid "Parent"
 msgstr "親"
@@ -1876,7 +2086,7 @@ msgid "OSF Groups"
 msgstr "OSFグループ"
 
 #: admin/templates/nodes/node.html:194 admin/templates/nodes/node_list.html:35
-#: admin/templates/rdm_timestampadd/node_list.html:49
+#: admin/templates/rdm_timestampadd/node_list.html:50
 msgid "Contributors"
 msgstr "メンバー"
 
@@ -1889,7 +2099,7 @@ msgid "Permissions"
 msgstr "権限"
 
 #: admin/templates/nodes/node.html:202 admin/templates/nodes/node.html:250
-#: admin/templates/users/user.html:296
+#: admin/templates/util/node_preprint_paginated_list.html:63
 msgid "Actions"
 msgstr "アクション"
 
@@ -1917,13 +2127,13 @@ msgstr "保留"
 
 #: admin/templates/nodes/node.html:308 admin/templates/nodes/node.html:346
 #: admin/templates/nodes/node_list.html:33
-#: admin/templates/rdm_timestampadd/node_list.html:47
+#: admin/templates/rdm_timestampadd/node_list.html:48
 msgid "Withdrawn"
 msgstr "削除"
 
 #: admin/templates/nodes/node.html:309 admin/templates/nodes/node.html:350
 #: admin/templates/nodes/node_list.html:34
-#: admin/templates/rdm_timestampadd/node_list.html:48
+#: admin/templates/rdm_timestampadd/node_list.html:49
 msgid "Embargo"
 msgstr "禁止"
 
@@ -1948,7 +2158,7 @@ msgid "SPAM Pro Tip"
 msgstr "スパムプロによるヒント"
 
 #: admin/templates/nodes/node.html:411 admin/templates/users/user.html:277
-#: admin/templates/users/user.html:295
+#: admin/templates/util/node_preprint_paginated_list.html:62
 msgid "SPAM Status"
 msgstr "スパムステータス"
 
@@ -1957,20 +2167,15 @@ msgid "SPAM Data"
 msgstr "スパムデータ"
 
 #: admin/templates/nodes/node_list.html:30
-#: admin/templates/rdm_timestampadd/node_list.html:44
+#: admin/templates/rdm_timestampadd/node_list.html:45
 #: admin/templates/rdm_timestampsettings/node_list.html:42
 msgid "Root"
 msgstr "ルート"
 
 #: admin/templates/nodes/node_list.html:31
-#: admin/templates/rdm_timestampadd/node_list.html:45
+#: admin/templates/rdm_timestampadd/node_list.html:46
 msgid "Date created"
 msgstr "作成日"
-
-#: admin/templates/nodes/node_list.html:105
-#: admin/templates/rdm_timestampadd/node_list.html:119
-msgid "Are you sure the selected node(s) are spam?"
-msgstr "選択したノードはスパムですか？"
 
 #: admin/templates/nodes/node_logs.html:6
 msgid "Node Logs"
@@ -1981,7 +2186,7 @@ msgid "Action"
 msgstr "アクション"
 
 #: admin/templates/nodes/node_logs.html:19
-#: admin/templates/rdm_timestampadd/timestampadd.html:39
+#: admin/templates/rdm_timestampadd/timestampadd.html:40
 #: admin/templates/users/user.html:11
 msgid "User"
 msgstr "ユーザ"
@@ -2031,12 +2236,14 @@ msgstr "ノード検索"
 msgid "Node GUID:"
 msgstr "ノード GUID："
 
-#: admin/templates/nodes/search.html:20 admin/templates/users/search.html:21
+#: admin/templates/nodes/search.html:20
+#: admin/templates/user_emails/search.html:65
+#: admin/templates/users/search.html:21
 msgid "Submit@search"
 msgstr "検索"
 
 #: admin/templates/nodes/spam_status.html:3
-#: admin/templates/rdm_timestampadd/timestampadd.html:206
+#: admin/templates/rdm_timestampadd/timestampadd.html:207
 #: admin/templates/spam/detail.html:86
 msgid "Unknown"
 msgstr "不明"
@@ -2118,7 +2325,7 @@ msgstr "分野："
 
 #: admin/templates/osf/subject_form.html:9
 #: admin/templates/osf/subject_list.html:17
-#: admin/templates/rdm_timestampadd/timestampadd.html:128
+#: admin/templates/rdm_timestampadd/timestampadd.html:129
 msgid "Provider"
 msgstr "プロバイダ"
 
@@ -2297,6 +2504,7 @@ msgid "Connect an Amazon S3 Account"
 msgstr "Amazon S3アカウントに接続"
 
 #: admin/templates/rdm_addons/addons/s3_credentials_modal.html:14
+#: admin/templates/rdm_custom_storage_location/providers/ociinstitutions_modal.html:21
 #: admin/templates/rdm_custom_storage_location/providers/s3_modal.html:17
 #: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:21
 #: admin/templates/rdm_custom_storage_location/providers/s3compatinstitutions_modal.html:21
@@ -2304,6 +2512,7 @@ msgid "Access Key"
 msgstr "アクセスキー"
 
 #: admin/templates/rdm_addons/addons/s3_credentials_modal.html:18
+#: admin/templates/rdm_custom_storage_location/providers/ociinstitutions_modal.html:25
 #: admin/templates/rdm_custom_storage_location/providers/s3_modal.html:21
 #: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:25
 #: admin/templates/rdm_custom_storage_location/providers/s3compatinstitutions_modal.html:25
@@ -2353,11 +2562,11 @@ msgstr "送信"
 msgid "Institutional Storage "
 msgstr "機関ストレージ"
 
-#: admin/templates/rdm_custom_storage_location/institutional_storage.html:27
+#: admin/templates/rdm_custom_storage_location/institutional_storage.html:28
 msgid "Name:"
 msgstr "名前："
 
-#: admin/templates/rdm_custom_storage_location/institutional_storage.html:35
+#: admin/templates/rdm_custom_storage_location/institutional_storage.html:36
 msgid "Configure Institutional Storage Accounts"
 msgstr "組織の機関ストレージを設定する"
 
@@ -2413,10 +2622,11 @@ msgstr "フォルダID(例：ルートの場合は0)"
 #: admin/templates/rdm_custom_storage_location/providers/googledrive_modal.html:54
 #: admin/templates/rdm_custom_storage_location/providers/nextcloud_modal.html:58
 #: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:114
+#: admin/templates/rdm_custom_storage_location/providers/ociinstitutions_modal.html:41
 #: admin/templates/rdm_custom_storage_location/providers/onedrivebusiness_modal.html:54
 #: admin/templates/rdm_custom_storage_location/providers/owncloud_modal.html:54
 #: admin/templates/rdm_custom_storage_location/providers/s3_modal.html:37
-#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:41
+#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:48
 #: admin/templates/rdm_custom_storage_location/providers/s3compatinstitutions_modal.html:41
 #: admin/templates/rdm_custom_storage_location/providers/swift_modal.html:58
 msgid "Connect"
@@ -2537,7 +2747,7 @@ msgid "Download User Mapping file"
 msgstr "ユーザ対応表ファイルをダウンロード"
 
 #: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:80
-#: admin/templates/rdm_timestampadd/timestampadd.html:228
+#: admin/templates/rdm_timestampadd/timestampadd.html:229
 msgid "Download"
 msgstr "ダウンロード"
 
@@ -2560,6 +2770,25 @@ msgstr "ファイルを選択"
 #: admin/templates/rdm_custom_storage_location/providers/nextcloudinstitutions_modal.html:94
 msgid "Example of User Mapping file"
 msgstr "ユーザ対応表ファイルの例"
+
+#: admin/templates/rdm_custom_storage_location/providers/ociinstitutions_modal.html:9
+#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:9
+#: admin/templates/rdm_custom_storage_location/providers/s3compatinstitutions_modal.html:9
+msgid "Connect a S3 Compatible Storage Account"
+msgstr "S3互換ストレージアカウントに接続"
+
+#: admin/templates/rdm_custom_storage_location/providers/ociinstitutions_modal.html:17
+#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:17
+#: admin/templates/rdm_custom_storage_location/providers/s3compatinstitutions_modal.html:17
+msgid "Endpoint URL"
+msgstr "エンドポイントURL"
+
+#: admin/templates/rdm_custom_storage_location/providers/ociinstitutions_modal.html:29
+#: admin/templates/rdm_custom_storage_location/providers/s3_modal.html:25
+#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:29
+#: admin/templates/rdm_custom_storage_location/providers/s3compatinstitutions_modal.html:29
+msgid "Bucket"
+msgstr "バケット"
 
 #: admin/templates/rdm_custom_storage_location/providers/onedrivebusiness_modal.html:8
 msgid "Connect a OneDrive Account"
@@ -2608,21 +2837,13 @@ msgstr ""
 "これらの認証情報は暗号化されます。ただし、<a "
 "%(openWithNewWindow)s>デバイス(またはアプリ)パスワード</a>の使用を<strong>強くお勧めします</strong>。"
 
-#: admin/templates/rdm_custom_storage_location/providers/s3_modal.html:25
-#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:29
-#: admin/templates/rdm_custom_storage_location/providers/s3compatinstitutions_modal.html:29
-msgid "Bucket"
-msgstr "バケット"
+#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:33
+msgid "Server Side Encryption"
+msgstr "サーバー側の暗号化"
 
-#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:9
-#: admin/templates/rdm_custom_storage_location/providers/s3compatinstitutions_modal.html:9
-msgid "Connect a S3 Compatible Storage Account"
-msgstr "S3互換ストレージアカウントに接続"
-
-#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:17
-#: admin/templates/rdm_custom_storage_location/providers/s3compatinstitutions_modal.html:17
-msgid "Endpoint URL"
-msgstr "エンドポイントURL"
+#: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:36
+msgid "Yes@institutional_storage"
+msgstr "暗号化する"
 
 #: admin/templates/rdm_custom_storage_location/providers/swift_modal.html:8
 msgid "Connect an OpenStack Swift Account"
@@ -2657,15 +2878,30 @@ msgstr "コンテナ"
 msgid "User Search Results"
 msgstr "ユーザ検索結果"
 
-#: admin/templates/rdm_keymanagement/user_list.html:12
+#: admin/templates/rdm_keymanagement/user_list.html:13
 #: admin/templates/users/user_list.html:25
 msgid "Date confirmed"
 msgstr "確認日"
 
-#: admin/templates/rdm_keymanagement/user_list.html:13
+#: admin/templates/rdm_keymanagement/user_list.html:14
 #: admin/templates/users/user_list.html:26
 msgid "Date disabled"
 msgstr "無効な日付"
+
+#: admin/templates/rdm_metadata/erad.html:11
+#: admin/templates/rdm_metadata/erad.html:14
+msgid "e-Rad records"
+msgstr ""
+
+#: admin/templates/rdm_metadata/erad.html:17
+msgid ""
+"Upload the TSV file containing the e-Rad record and press the Update "
+"button."
+msgstr ""
+
+#: admin/templates/rdm_metadata/erad.html:23
+msgid "Update"
+msgstr ""
 
 #: admin/templates/rdm_statistics/crawl.html:14
 #: admin/templates/rdm_statistics/index.html:14
@@ -2710,6 +2946,10 @@ msgstr "PDFダウンロード"
 msgid "download CSV"
 msgstr "CSVダウンロード"
 
+#: admin/templates/rdm_timestampadd/node_list.html:120
+msgid "Are you sure the selected node(s) are spam?"
+msgstr "選択したノードはスパムですか？"
+
 #: admin/templates/rdm_timestampadd/timestampadd.html:15
 msgid "TimeStampAddList"
 msgstr "タイムスタンプ追加リスト"
@@ -2719,52 +2959,47 @@ msgstr "タイムスタンプ追加リスト"
 msgid "TimeStamp Add (%(project_title)s)"
 msgstr "証跡管理(%(project_title)s)"
 
-#: admin/templates/rdm_timestampadd/timestampadd.html:27
+#: admin/templates/rdm_timestampadd/timestampadd.html:28
 msgid "Start Date"
 msgstr "開始日"
 
-#: admin/templates/rdm_timestampadd/timestampadd.html:33
+#: admin/templates/rdm_timestampadd/timestampadd.html:34
 msgid "End Date"
 msgstr "終了日"
 
-#: admin/templates/rdm_timestampadd/timestampadd.html:46
-#: admin/templates/users/user.html:353
-msgid "Apply"
-msgstr "適用"
-
-#: admin/templates/rdm_timestampadd/timestampadd.html:55
+#: admin/templates/rdm_timestampadd/timestampadd.html:56
 msgid "Verify"
 msgstr "タイムスタンプを確認する"
 
-#: admin/templates/rdm_timestampadd/timestampadd.html:56
+#: admin/templates/rdm_timestampadd/timestampadd.html:57
 msgid "Request Trusted Timestamp"
 msgstr "タイムスタンプを打つ"
 
-#: admin/templates/rdm_timestampadd/timestampadd.html:67
+#: admin/templates/rdm_timestampadd/timestampadd.html:68
 msgid "Processing, please wait..."
 msgstr "処理しています。お待ちください..."
 
-#: admin/templates/rdm_timestampadd/timestampadd.html:92
+#: admin/templates/rdm_timestampadd/timestampadd.html:93
 msgid "per page:"
 msgstr "1ページあたり："
 
-#: admin/templates/rdm_timestampadd/timestampadd.html:108
+#: admin/templates/rdm_timestampadd/timestampadd.html:109
 msgid "Page of "
 msgstr "ページあたり"
 
-#: admin/templates/rdm_timestampadd/timestampadd.html:137
+#: admin/templates/rdm_timestampadd/timestampadd.html:138
 msgid "File Path"
 msgstr "ファイルパス"
 
-#: admin/templates/rdm_timestampadd/timestampadd.html:146
+#: admin/templates/rdm_timestampadd/timestampadd.html:147
 msgid "Timestamp by"
 msgstr "タイムスタンプ押印者"
 
-#: admin/templates/rdm_timestampadd/timestampadd.html:155
+#: admin/templates/rdm_timestampadd/timestampadd.html:156
 msgid "Updated at"
 msgstr "更新日時"
 
-#: admin/templates/rdm_timestampadd/timestampadd.html:164
+#: admin/templates/rdm_timestampadd/timestampadd.html:165
 msgid "Timestamp Verification"
 msgstr "タイムスタンプの検証"
 
@@ -2904,9 +3139,58 @@ msgstr "ユーザースパム"
 msgid "User's List of Spam"
 msgstr "スパムのユーザーのリスト"
 
-#: admin/templates/spam/user.html:15 admin/templates/users/user.html:157
+#: admin/templates/spam/user.html:15
+#: admin/templates/user_emails/user_emails.html:69
+#: admin/templates/users/user.html:157
 msgid "User details"
 msgstr "ユーザ詳細"
+
+#: admin/templates/user_emails/search.html:19
+#: admin/templates/user_emails/user_emails.html:6
+#: admin/templates/user_emails/user_list.html:6
+msgid "User-Emails"
+msgstr "ユーザメール"
+
+#: admin/templates/user_emails/search.html:19
+#: admin/templates/user_emails/search.html:26
+#: admin/templates/users/search.html:9 admin/templates/users/search.html:14
+#: admin/templates/users/workshop.html:6
+msgid "User Search"
+msgstr "ユーザ検索"
+
+#: admin/templates/user_emails/user_emails.html:6
+msgid "User Emails Setting"
+msgstr "ユーザメール設定"
+
+#: admin/templates/user_emails/user_emails.html:83
+#: admin/templates/user_emails/user_list.html:16
+msgid "EPPN"
+msgstr "利用者ID"
+
+#: admin/templates/user_emails/user_emails.html:94
+#: admin/templates/user_emails/user_list.html:19
+msgid "Affiliation"
+msgstr "所属"
+
+#: admin/templates/user_emails/user_emails.html:120
+msgid "Email address"
+msgstr "プライマリメールアドレス"
+
+#: admin/templates/user_emails/user_emails.html:129
+msgid "Add email as Primary"
+msgstr "追加"
+
+#: admin/templates/user_emails/user_emails.html:144
+msgid "Primary"
+msgstr "プライマリ"
+
+#: admin/templates/user_emails/user_emails.html:149
+msgid "Set Primary"
+msgstr "プライマリにする"
+
+#: admin/templates/user_emails/user_list.html:6
+msgid "Search Results"
+msgstr "ユーザ検索結果"
 
 #: admin/templates/users/GDPR_delete_user.html:5
 #, python-format
@@ -2929,6 +3213,10 @@ msgstr "フラグ設定されたスパムユーザー"
 #, python-format
 msgid "%(title)s for user %(username)s"
 msgstr "ユーザー%(username)sの%(title)s"
+
+#: admin/templates/users/ham_spam_modal.html:10
+msgid "Are you sure the selected user(s) are {{ target_type }}?"
+msgstr ""
 
 #: admin/templates/users/known_spam_list.html:5
 msgid "Known Spam Users"
@@ -3004,11 +3292,6 @@ msgstr "ユーザ：%(guid)s"
 #, python-format
 msgid "Are you sure you want to re-enable this user? %(guid)s"
 msgstr "このユーザーを再度有効にしますか？%(guid)s"
-
-#: admin/templates/users/search.html:9 admin/templates/users/search.html:14
-#: admin/templates/users/workshop.html:6
-msgid "User Search"
-msgstr "ユーザ検索"
 
 #: admin/templates/users/search.html:27
 msgid "User Workshop Follow-up"
@@ -3130,7 +3413,7 @@ msgstr "ユーザーはスパムです"
 msgid "Profile content checked for spam"
 msgstr "スパムをチェックしたプロファイルコンテンツ"
 
-#: admin/templates/users/user.html:346
+#: admin/templates/users/user.html:298
 msgid "Quota for NII Storage (GB)"
 msgstr "NIIストレージの割当て(GB)"
 
@@ -3138,144 +3421,106 @@ msgstr "NIIストレージの割当て(GB)"
 msgid "Quota for Institutional Storage (GB)"
 msgstr "機関ストレージの割当て(GB)"
 
-#: admin/templates/users/user_list.html:68
-msgid "Are you sure the selected user(s) are spam?"
-msgstr "選択したユーザーはスパムですか？"
-
 #: admin/templates/users/workshop.html:15
 msgid "Upload"
 msgstr "アップロード"
 
-#: admin/templates/util/pagination.html:25
-#, python-format
-msgid "Page %(itemsNumber)s of %(paginatorNumPage)s"
-msgstr "ページ%(itemsNumber)s / %(paginatorNumPage)s"
+#: admin/templates/util/node_preprint_paginated_list.html:94
+msgid "Delete {{ resource_type|capfirst }}"
+msgstr ""
+
+#: api/base/authentication/drf.py:188
+msgid "Invalid username/password."
+msgstr ""
+
+#: api/base/authentication/drf.py:215
+msgid "Invalid two-factor authentication OTP code."
+msgstr ""
+
+#: api/base/authentication/drf.py:246
+msgid "User provided an invalid OAuth2 access token"
+msgstr ""
+
+#: api/base/authentication/drf.py:249
+msgid "CAS server failed to authenticate this token"
+msgstr ""
+
+#: api/base/authentication/drf.py:253
+msgid "Could not find the user associated with this token"
+msgstr ""
+
+#: api/base/exceptions.py:128
+msgid "This endpoint is not yet implemented."
+msgstr ""
+
+#: api/base/exceptions.py:133
+msgid "Service is unavailable at this time."
+msgstr ""
+
+#: api/base/exceptions.py:226
+msgid "Query string contains a malformed filter."
+msgstr ""
+
+#: api/base/exceptions.py:235
+msgid "Comparison operators are only supported for dates and numbers."
+msgstr ""
+
+#: api/base/exceptions.py:241
+msgid "Match operators are only supported for strings and lists."
+msgstr ""
+
+#: api/base/exceptions.py:247
+msgid "Query contained one or more filters for invalid fields."
+msgstr ""
+
+#: api/base/exceptions.py:258
+msgid "Please confirm your account before using the API."
+msgstr ""
+
+#: api/base/exceptions.py:263
+msgid "Please claim your account before using the API."
+msgstr ""
+
+#: api/base/exceptions.py:268
+msgid ""
+"Making API requests with credentials associated with a deactivated "
+"account is not allowed."
+msgstr ""
+
+#: api/base/exceptions.py:273
+msgid ""
+"Making API requests with credentials associated with a merged account is "
+"not allowed."
+msgstr ""
+
+#: api/base/exceptions.py:278
+msgid ""
+"Making API requests with credentials associated with an invalid account "
+"is not allowed."
+msgstr ""
+
+#: api/base/exceptions.py:282
+msgid "Must specify two-factor authentication OTP code."
+msgstr ""
+
+#: api/base/exceptions.py:288
+msgid "Invalid value in POST/PUT/PATCH request."
+msgstr ""
+
+#: api/base/exceptions.py:303
+#, python-brace-format
+msgid ""
+"The node {0} cannot be affiliated with this View Only Link because the "
+"node you're trying to affiliate is not descended from the node that the "
+"View Only Link is attached to."
+msgstr ""
 
 #~ msgid "Submit"
 #~ msgstr "検索"
 
-# text of menuitem on left-side menu
-msgid "Login Availability Control"
-msgstr "ログイン可否設定"
-
-# page title
-msgid "List of Entitlements"
-msgstr "eduPersonEntitlement の一覧"
-
-# label for eduPersonEntitlement input box
-msgid "Entitlements"
-msgstr "eduPersonEntitlement"
-
-msgid "Institutions"
-msgstr "機関"
-
-# hint text of eduPersonEntitlement input box
-msgid "Enter new entitlement"
-msgstr "新しい eduPersonEntitlement"
-
-# label for checkboxes
-msgid "login availability"
-msgstr "ログイン可否"
-
-# text for button to add another eduPersonEntitlement input box
-msgid "New entitlement"
-msgstr "入力欄を追加"
-
-msgid "Delete"
-msgstr "削除"
-
-msgid "Entitlement must be not empty"
-msgstr "eduPersonEntitlement を入力してください。"
-
-msgid "Entitlement '"
-msgstr "eduPersonEntitlement '"
-
-msgid "' already exists"
-msgstr "'は既に存在します。"
-
-msgid "' have been inputted"
-msgstr "'は重複しています。"
-
 #~ msgid "Institutions"
 #~ msgstr "機関"
 
-# msgid "Configure NII Storage Quota"
-# msgstr "NIIストレージのクォータ設定"
+#~ msgid "keyword"
+#~ msgstr "キーワード"
 
-msgid "Each user Quota for NII Storage (GB)"
-msgstr "クォータ一律設定 (GB)"
-
-msgid "Inst. Storage Quota Control"
-msgstr "機関ストレージのクォータ"
-
-msgid "Institutional Storage Quota Control"
-msgstr "機関ストレージのクォータ制御"
-
-msgid "Institutional Storage for Institutions"
-msgstr "機関ストレージ"
-
-msgid "Storage name"
-msgstr "ストレージ名"
-
-# msgid "Configure Institutional Storage Quota"
-# msgstr "機関ストレージのクォータ設定"
-
-msgid "Each user Quota for Institutional Storage (GB)"
-msgstr "クォータ一律設定 (GB)"
-
-msgid "Value must be an integer number greater than or equal 1"
-msgstr "値は1以上の整数である必要があります"
-
-msgid "Export All Users Statistics (TSV)"
-msgstr "全ユーザの統計出力 (TSV)"
-
-msgid "EmailLabel"
-msgstr "ユーザ名"
-
-msgid "InfoLabel"
-msgstr "氏名"
-
-msgid "keyword"
-msgstr "キーワード"
-
-msgid "Please enter an valid email"
-msgstr "有効な電子メールアドレスではありません。"
-
-msgid "User-Emails"
-msgstr "ユーザメール"
-
-msgid "Please enter only contain alphanumeric in lowercase"
-msgstr "英数字のみを小文字で入力してください"
-
-msgid "Please enter an email address"
-msgstr "有効な電子メールアドレスではありません。"
-
-msgid "User Emails Setting"
-msgstr "ユーザメール設定"
-
-msgid "EPPN"
-msgstr "利用者ID"
-
-msgid "Affiliation"
-msgstr "所属"
-
-msgid "User Emails"
-msgstr "ユーザメール"
-
-msgid "Email address"
-msgstr "プライマリメールアドレス"
-
-msgid "Add email as Primary"
-msgstr "追加"
-
-msgid "Primary"
-msgstr "プライマリ"
-
-msgid "Set Primary"
-msgstr "プライマリにする"
-
-msgid "Search Results"
-msgstr "ユーザ検索結果"
-
-msgid "Recalculate quota"
-msgstr "クォータ再計算"

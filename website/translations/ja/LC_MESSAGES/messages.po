@@ -2278,7 +2278,7 @@ msgstr "アカウント設定"
 #: website/templates/profile/account.mako:15
 #: website/templates/profile/add_email.mako:21
 msgid "Connected Emails"
-msgstr "メールアドレスに接続しました"
+msgstr "登録メールアドレス"
 
 #: website/templates/profile/account.mako:20
 #: website/templates/profile/add_email.mako:27

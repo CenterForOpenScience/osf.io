@@ -4,6 +4,7 @@ const $ = require('jquery');
 const m = require('mithril');
 const Fangorn = require('js/fangorn').Fangorn;
 const Raven = require('raven-js');
+const $osf = require('js/osfHelpers');
 
 const logPrefix = '[metadata] ';
 const rdmGettext = require('js/rdmGettext');
@@ -15,6 +16,20 @@ const registrations = require('./registration.js');
 const RegistrationSchemas = registrations.RegistrationSchemas;
 const DraftRegistrations = registrations.DraftRegistrations;
 
+
+const osfBlock = {
+  originBaseZ: $.blockUI.defaults.baseZ,
+  // modal z-index is 1050
+  baseZ: 1100,
+  block: function() {
+    $.blockUI.defaults.baseZ = this.baseZ;
+    $osf.block();
+  },
+  unblock: function() {
+    $osf.unblock();
+    $.blockUI.defaults.baseZ = this.originBaseZ;
+  }
+};
 
 const METADATA_CACHE_EXPIRATION_MSEC = 1000 * 60 * 5;
 
@@ -72,6 +87,7 @@ function MetadataButtons() {
     const loadedCallback = function() {
       self.loading = false;
       const path = self.processHash();
+      m.redraw();
       if (!callback) {
         return;
       }
@@ -691,49 +707,46 @@ function MetadataButtons() {
     self.resolveConsistencyDialog.dialog.modal('show');
   }
 
-  self.resolveConsistency = function() {
-    const matchedFiles = self.targetFiles.filter(function(file, fileIndex) {
-      return $('#metadata-target-' + fileIndex).is(':checked');
-    });
-    console.log('matchedFiles', matchedFiles, self.currentMetadata);
-    if (matchedFiles.length === 0) {
-      self.deleteMetadata(self.currentContext, self.currentMetadata.path);
-      return;
-    }
+  self.resolveConsistency = function(path) {
     const newMetadata = Object.assign({}, self.currentMetadata, {
-      path: matchedFiles[0].path
+      path: path
     });
     const url = self.currentContext.baseUrl + 'files/' + newMetadata.path;
-    $.ajax({
-      method: 'PATCH',
-      url: url,
-      contentType: 'application/json',
-      data: JSON.stringify(newMetadata)
-    }).done(function (data) {
-      console.log(logPrefix, 'saved: ', data);
-      return $.ajax({
-        url: self.currentContext.baseUrl + 'files/' + self.currentMetadata.path,
-        type: 'DELETE',
-        dataType: 'json'
+    return new Promise(function(resolve, reject) {
+      $.ajax({
+        method: 'PATCH',
+        url: url,
+        contentType: 'application/json',
+        data: JSON.stringify(newMetadata)
       }).done(function (data) {
-        console.log(logPrefix, 'deleted: ', data);
-        window.location.reload();
-      }).fail(function(xhr, status, error) {
-        Raven.captureMessage('Error while retrieving addon info', {
+        console.log(logPrefix, 'saved: ', data);
+        return $.ajax({
+          url: self.currentContext.baseUrl + 'files/' + self.currentMetadata.path,
+          type: 'DELETE',
+          dataType: 'json'
+        }).done(function (data) {
+          resolve();
+          console.log(logPrefix, 'deleted: ', data);
+          window.location.reload();
+        }).fail(function(xhr, status, error) {
+          reject(error)
+          Raven.captureMessage('Error while retrieving addon info', {
             extra: {
-                url: url,
-                status: status,
-                error: error
-            }
-        });
-      });
-    }).fail(function(xhr, status, error) {
-      Raven.captureMessage('Error while retrieving addon info', {
-          extra: {
               url: url,
               status: status,
               error: error
+            }
+          });
+        });
+      }).fail(function(xhr, status, error) {
+        reject(error);
+        Raven.captureMessage('Error while retrieving addon info', {
+          extra: {
+            url: url,
+            status: status,
+            error: error
           }
+        });
       });
     });
 }
@@ -744,26 +757,30 @@ function MetadataButtons() {
     self.deleteConfirmingFilepath = null;
     self.deleteConfirmingContext = null;
     console.log(logPrefix, 'delete metadata: ', filepath, context.nodeId);
-    var url = context.baseUrl + 'files/' + filepath;
-    return $.ajax({
+    const url = context.baseUrl + 'files/' + filepath;
+    return new Promise(function(resolve, reject) {
+      $.ajax({
         url: url,
         type: 'DELETE',
         dataType: 'json'
-    }).done(function (data) {
-      console.log(logPrefix, 'deleted: ', data, context.nodeId);
-      self.loadMetadata(context.nodeId, context.baseUrl, function() {
-        if (!self.fileViewPath) {
-          return;
-        }
-        self.refreshFileViewButtons(self.fileViewPath);
-      });
-    }).fail(function(xhr, status, error) {
-      Raven.captureMessage('Error while retrieving addon info', {
-          extra: {
-              url: url,
-              status: status,
-              error: error
+      }).done(function (data) {
+        console.log(logPrefix, 'deleted: ', data, context.nodeId);
+        self.loadMetadata(context.nodeId, context.baseUrl, function() {
+          resolve();
+          if (!self.fileViewPath) {
+            return;
           }
+          self.refreshFileViewButtons(self.fileViewPath);
+        });
+      }).fail(function(xhr, status, error) {
+        reject(error);
+        Raven.captureMessage('Error while retrieving addon info', {
+          extra: {
+            url: url,
+            status: status,
+            error: error
+          }
+        });
       });
     });
   };
@@ -998,17 +1015,20 @@ function MetadataButtons() {
       console.log(logPrefix, 'register metadata: ', filepath, draftId);
       var url = self.baseUrl + 'draft_registrations/' + draftId + '/files/' + context.nodeId + '/' + filepath;
       link.text(checked ? _('Registering...') : _('Deleting...'));
+      osfBlock.block();
       return $.ajax({
           url: url,
           type: checked ? 'PUT' : 'DELETE',
           dataType: 'json'
       }).done(function (data) {
+        osfBlock.unblock();
         link.empty();
         link.append($('<a></a>')
           .text(_('Open'))
           .attr('href', self.getFileMetadataPageURL(draftId)));
         resolve(data);
       }).fail(function(xhr, status, error) {
+        osfBlock.unblock();
         perror(url, xhr, status, error);
       });
     });
@@ -1065,8 +1085,15 @@ function MetadataButtons() {
   self.createButtonsBase = function(filepath, item, createButton) {
     const context = self.findContextByNodeId(item ? item.data.nodeId : contextVars.node.id);
     if (!context) {
-      console.warn('Metadata not loaded for project:', item.data.nodeId);
-      return [];
+      console.warn('Metadata not loaded for project:', item ? item.data.nodeId : null);
+      const viewButton = createButton({
+        onclick: function(event) {
+        },
+        icon: 'fa fa-spinner fa-pulse',
+        className : 'text-default disabled'
+      }, _('Loading Metadata'));
+      viewButton.disabled = true;
+      return [viewButton];
     }
     if (!context.addonAttached) {
       return [];
@@ -1335,21 +1362,19 @@ function MetadataButtons() {
   };
 
   self.initFileView = function() {
-    self.initBase(function(path) {
-      if (!path) {
-        return;
+    var path = null;
+    function refreshIfToolbarExists() {
+      const toolbar = $('#toggleBar .btn-toolbar');
+      if (toolbar.length > 0) {
+        self.refreshFileViewButtons(path);
       }
-      var handler = null;
-      handler = function() {
-        // Wait until btn-toolbar is created
-        const toolbar = $('#toggleBar .btn-toolbar');
-        if (toolbar.length > 0) {
-          self.refreshFileViewButtons(path);
-          return;
-        }
-        setTimeout(handler, 100);
-      };
-      setTimeout(handler, 100);
+    }
+    const observer = new MutationObserver(refreshIfToolbarExists);
+    const toggleBar = $('#toggleBar').get(0);
+    observer.observe(toggleBar, {attributes: false, childList: true, subtree: false});
+    self.initBase(function(p) {
+      path = p;
+      refreshIfToolbarExists();
     });
   }
 
@@ -1370,9 +1395,6 @@ function MetadataButtons() {
         return new Proxy(obj, {
           get: function(target, propname) {
             if (propname == 'itemButtons') {
-              if (!self.contexts) {
-                return target[propname];
-              }
               return function(item) {
                 var base = Fangorn.Components.defaultItemButtons;
                 if (target[propname] !== undefined) {
@@ -1456,39 +1478,44 @@ function MetadataButtons() {
       });
       metadata.items.unshift(metacontent);
     }
-    context.wbcache.computeHash(self.currentItem)
-      .then(function(hash) {
-        const url = context.baseUrl + 'files/' + metadata.path;
-        $.ajax({
-          method: 'PATCH',
-          url: url,
-          contentType: 'application/json',
-          data: JSON.stringify(Object.assign({}, metadata, {
-            hash: hash,
-          })),
-        }).done(function (data) {
-          console.log(logPrefix, 'saved: ', hash, data);
-          self.currentItem = null;
-          self.editingContext = null;
-          self.loadMetadata(context.nodeId, context.baseUrl, function() {
-            if (!self.fileViewPath) {
-              return;
-            }
-            self.refreshFileViewButtons(self.fileViewPath);
-          });
-        }).fail(function(xhr, status, error) {
-          Raven.captureMessage('Error while retrieving addon info', {
-              extra: {
-                  url: url,
-                  status: status,
-                  error: error
+    return new Promise(function(resolve, reject) {
+      context.wbcache.computeHash(self.currentItem)
+        .then(function(hash) {
+          const url = context.baseUrl + 'files/' + metadata.path;
+          $.ajax({
+            method: 'PATCH',
+            url: url,
+            contentType: 'application/json',
+            data: JSON.stringify(Object.assign({}, metadata, {
+              hash: hash,
+            })),
+          }).done(function (data) {
+            console.log(logPrefix, 'saved: ', hash, data);
+            self.currentItem = null;
+            self.editingContext = null;
+            self.loadMetadata(context.nodeId, context.baseUrl, function() {
+              resolve();
+              if (!self.fileViewPath) {
+                return;
               }
+              self.refreshFileViewButtons(self.fileViewPath);
+            });
+          }).fail(function(xhr, status, error) {
+            reject(error);
+            Raven.captureMessage('Error while retrieving addon info', {
+              extra: {
+                url: url,
+                status: status,
+                error: error
+              }
+            });
           });
+        })
+        .catch(function(error) {
+          reject(error);
+          self.currentItem = null;
         });
-      })
-      .catch(function(error) {
-        self.currentItem = null;
-      });
+    });
   };
 
   self.closeModal = function() {
@@ -1502,12 +1529,20 @@ function MetadataButtons() {
    * Create the Edit Metadata dialog.
    */
   self.initEditMetadataDialog = function(editable) {
+    const dialog = $('<div class="modal fade" data-backdrop="static"></div>');
     const close = $('<a href="#" class="btn btn-default" data-dismiss="modal"></a>').text(_('Close'));
     close.click(self.closeModal);
     var save = $('<span></span>');
     if (editable) {
-      save = $('<a href="#" class="btn btn-success" data-dismiss="modal"></a>').text(_('Save'));
-      save.click(self.saveEditMetadataModal);
+      save = $('<a href="#" class="btn btn-success"></a>').text(_('Save'));
+      save.click(function() {
+        osfBlock.block();
+        self.saveEditMetadataModal()
+          .finally(function() {
+            osfBlock.unblock();
+            $(dialog).modal('hide');
+          })
+      });
     }
     const copyToClipboard = $('<button class="btn btn-default"></button>')
       .append($('<i></i>').addClass('fa fa-copy'))
@@ -1526,7 +1561,7 @@ function MetadataButtons() {
         .css('color', 'red')
         .text(_('Renaming, moving the file/directory, or changing the directory hierarchy can break the association of the metadata you have added.'));
     }
-    const dialog = $('<div class="modal fade" data-backdrop="static"></div>')
+    dialog
       .append($('<div class="modal-dialog modal-lg"></div>')
         .append($('<div class="modal-content"></div>')
           .append($('<div class="modal-header"></div>')
@@ -1563,11 +1598,19 @@ function MetadataButtons() {
   };
 
   self.initConfirmDeleteDialog = function() {
-    var close = $('<a href="#" class="btn btn-default" data-dismiss="modal"></a>').text(_('Close'));
+    const dialog = $('<div class="modal fade"></div>');
+    const close = $('<a href="#" class="btn btn-default" data-dismiss="modal"></a>').text(_('Close'));
     close.click(self.closeModal);
-    var del = $('<a href="#" class="btn btn-success" data-dismiss="modal"></a>').text(_('Delete'));
-    del.click(self.deleteConfirmedModal);
-    var dialog = $('<div class="modal fade"></div>')
+    const del = $('<a href="#" class="btn btn-success"></a>').text(_('Delete'));
+    del.click(function() {
+      osfBlock.block()
+      self.deleteConfirmedModal()
+        .finally(function() {
+          osfBlock.unblock()
+          $(dialog).modal('hide');
+        });
+    });
+    dialog
       .append($('<div class="modal-dialog modal-lg"></div>')
         .append($('<div class="modal-content"></div>')
           .append($('<div class="modal-header"></div>')
@@ -1609,10 +1652,27 @@ function MetadataButtons() {
    * Create the Resolve Metadata dialog.
    */
   self.createResolveConsistencyDialog = function() {
+    const dialog = $('<div class="modal fade"></div>')
     const close = $('<a href="#" class="btn btn-default" data-dismiss="modal"></a>').text(_('Close'));
     close.on('click', self.closeModal);
-    const select = $('<a href="#" class="btn btn-success" data-dismiss="modal"></a>').text(_('Select'));
-    select.on('click', self.resolveConsistency);
+    const select = $('<a href="#" class="btn btn-success"></a>').text(_('Select'));
+    select.on('click', function() {
+      const matchedFiles = self.targetFiles.filter(function(file, fileIndex) {
+        return $('#metadata-target-' + fileIndex).is(':checked');
+      });
+      console.log('matchedFiles', matchedFiles, self.currentMetadata);
+      if (matchedFiles.length === 0) {
+        $(dialog).modal('hide');
+        self.deleteMetadata(self.currentContext, self.currentMetadata.path);
+        return;
+      }
+      osfBlock.block();
+      self.resolveConsistency(matchedFiles[0].path)
+        .finally(function() {
+          osfBlock.unblock();
+          $(dialog).modal('hide');
+        });
+    });
     const copyToClipboard = $('<button class="btn btn-default"></button>')
       .append($('<i></i>').addClass('fa fa-copy'))
       .append(_('Copy to clipboard'));
@@ -1621,7 +1681,7 @@ function MetadataButtons() {
       self.copyToClipboard(event, copyStatus);
     });
     const container = $('<ul></ul>');
-    const dialog = $('<div class="modal fade"></div>')
+    dialog
       .append($('<div class="modal-dialog modal-lg"></div>')
         .append($('<div class="modal-content"></div>')
           .append($('<div class="modal-header"></div>')
