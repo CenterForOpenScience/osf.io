@@ -6,7 +6,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 
 from osf.models.base import BaseModel
 from osf.utils.fields import LowercaseCharField
-
+from osf.external.spam.tasks import reclassify_domain_references
 
 class NotableDomain(BaseModel):
     class Note(IntEnum):
@@ -30,8 +30,7 @@ class NotableDomain(BaseModel):
     )
 
     def save(self, *args, **kwargs):
-        # Override this method to mark related content
-        # as spam or ham when reclassifying domain name
+        reclassify_domain_references.apply_async(kwargs={'notable_domain_id': self.pk})
         return super().save(*args, **kwargs)
 
     def __repr__(self):
@@ -41,6 +40,9 @@ class NotableDomain(BaseModel):
         return repr(self)
 
 class DomainReference(BaseModel):
+    class Meta:
+        unique_together = ('referrer_object_id', 'domain')
+
     referrer_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     referrer_object_id = models.PositiveIntegerField()
     referrer = GenericForeignKey('referrer_content_type', 'referrer_object_id')
