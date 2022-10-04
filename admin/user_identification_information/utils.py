@@ -13,8 +13,10 @@ def custom_size_abbreviation(size, abbr):
 
 def get_list_extend_storage():
     values = ExternalAccount.objects.values_list('provider', 'provider_name')
-    provider_list, provider_name_list = map(list, zip(*values))
     dict_users_list = {}
+    if len(values) == 0:
+        return dict_users_list
+    provider_list, provider_name_list = map(list, zip(*values))
     storage_branch_name = None
     cursor = connection.cursor()
 
