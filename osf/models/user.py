@@ -167,6 +167,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         'schools': ['degree', 'institution', 'department'],
         'jobs': ['title', 'institution', 'department']
     }
+    SPAM_CHECK_FIELDS = set(SPAM_USER_PROFILE_FIELDS.keys())
 
     # The primary email address for the account.
     # This value is unique, but multiple "None" records exist for:
@@ -1415,6 +1416,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             node.confirm_spam(train_akismet=False)
         for preprint in self.preprints.filter(is_public=True, deleted__isnull=True):
             preprint.confirm_spam(train_akismet=False)
+        for comment in self.comments.filter(is_public=True, deleted__isnull=True):
+            comment.confirm_spam(train_akismet=False)
 
     def confirm_ham(self, save=False):
         self.reactivate_account()

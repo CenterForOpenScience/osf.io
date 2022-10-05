@@ -4,12 +4,9 @@ import logging
 import operator
 from functools import reduce
 
-from django.apps import apps
 from django.db.models import Q
 from django.core.management.base import BaseCommand
-from framework.celery_tasks import app as celery_app
-from osf.models import NotableDomain, DomainReference
-from django.contrib.contenttypes.models import ContentType
+from osf.external.spam.tasks import check_resource_for_domains
 from osf.models import Preprint, OSFUser, Node, Comment, Registration
 from addons.wiki.models import WikiVersion
 
@@ -17,22 +14,6 @@ logger = logging.getLogger(__name__)
 
 DOMAIN_MATCH_REGEX = re.compile(r'(?P<protocol>\w+://)?(?P<www>www\.)?(?P<domain>[\w-]+\.\w+)(?P<path>/\w*)?')
 DOMAIN_SEARCH_REGEX = r'(http://[^ \'}\[\]\~\(\)\/]+|https://[^ \'}\[\]\~\(\)\/]+)'
-
-
-@celery_app.task()
-def create_notable_domain_with_reference(domain, resource_id, resource_content_type_pk):
-    domain, created = NotableDomain.objects.get_or_create(
-        domain=domain,
-        defaults={'note': NotableDomain.Note.UNKNOWN}
-    )
-    DomainReference.objects.get_or_create(
-        domain=domain,
-        referrer_object_id=resource_id,
-        referrer_content_type_id=resource_content_type_pk
-    )
-
-    if created:
-        logger.info(f'Creating NotableDomain {domain}')
 
 
 def backfill_domain_references(dry_run=False):
@@ -47,17 +28,20 @@ def backfill_domain_references(dry_run=False):
         queries.append(model.objects.filter(query))
 
     for queryset in queries:
-        for resource_data in queryset.values(*list(queryset.query.model.SPAM_CHECK_FIELDS), 'pk'):
-            domains = list({match.group('domain') for match in re.finditer(DOMAIN_MATCH_REGEX, str(resource_data))})
-            for domain in domains:
-                if not dry_run:
-                    create_notable_domain_with_reference.apply_async(
-                        kwargs={
-                            'domain': domain,
-                            'resource_id': resource_data['pk'],
-                            'resource_content_type_pk': ContentType.objects.get_for_model(queryset.query.model).id,
-                        }
+        for item in queryset:
+            if isinstance(item, WikiVersion):  # Wiki version has no `spam_status` this will work via the user status
+                guid = item.user._id
+            else:
+                guid = item._id
+
+            spam_content = item._get_spam_content(saved_fields=list(item.SPAM_CHECK_FIELDS))
+            if not dry_run:
+                check_resource_for_domains.apply_async(
+                    kwargs=dict(
+                        guid=guid,
+                        content=spam_content,
                     )
+                )
 
 
 class Command(BaseCommand):

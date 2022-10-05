@@ -75,11 +75,10 @@ class TestBackfillDomainReferences:
         ).domain == domain
         # Comment
         assert DomainReference.objects.get(
-            referrer_object_id=comment_with_domain.id,
             referrer_content_type=ContentType.objects.get_for_model(comment_with_domain),
         ).domain == domain
-        # Wiki
+        # WikiVersion (these have no spam status so point to the user)
         assert DomainReference.objects.get(
-            referrer_object_id=wiki_with_domain.id,
-            referrer_content_type=ContentType.objects.get_for_model(wiki_with_domain),
+            referrer_object_id=wiki_with_domain.user.id,
+            referrer_content_type=ContentType.objects.get_for_model(wiki_with_domain.user),
         ).domain == domain
