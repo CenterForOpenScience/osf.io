@@ -29,6 +29,9 @@
                                class="form-control"
                                oninvalid="this.setCustomValidity('This field is required.')"
                                oninput="setCustomValidity('')"
+                               pattern="^[^\s]+(\s+[^\s]+)*$"
+                               maxlength="255"
+                               minlength="1"
                                value="">
                     </div>
                 </div>
@@ -83,9 +86,9 @@
     <table class="table table-striped table-hover table-responsive">
         <thead>
         <tr>
-            <th style="width: 5em;">{% trans "ID" %}ID</th>
-            <th style="width: 25em;">{% trans "Name" %}Name</th>
-            <th style="width: 25em;">{% trans "Provider" %}Provider</th>
+            <th style="width: 5em;">{% trans "ID" %}</th>
+            <th style="width: 25em;">{% trans "Name" %}</th>
+            <th style="width: 25em;">{% trans "Provider" %}</th>
             <th style="width: 10em;"></th>
         </tr>
         </thead>
@@ -107,7 +110,6 @@
     {% if not locations|length %}
         <h3>{% trans "No results found" %}</h3>
     {% endif %}
-
     <input type="hidden" id="osf_domain" value="{{ osf_domain }}">
 
     <br class="clear">
