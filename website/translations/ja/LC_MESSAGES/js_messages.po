@@ -8580,43 +8580,43 @@ msgid "Export Data"
 msgstr "エクスポートデータ"
 
 msgid "Cannot export data."
-msgstr ""
+msgstr "データをエクスポートできません"
 
 msgid "Export data in background."
-msgstr ""
+msgstr "バックグラウンドでデータをエクスポートする"
 
 msgid "Export data failed."
-msgstr ""
+msgstr "エクスポートデータに失敗した"
 
 msgid "Export data successfully."
-msgstr ""
+msgstr "エクスポートデータに成功した"
 
 msgid "Error occurred while exporting data."
-msgstr ""
+msgstr "エクスポートデータにエラーが発生された"
 
 msgid "Stop Export Data"
-msgstr "エクスポート処理停止"
+msgstr "エクスポートデータ処理を停止する"
 
 msgid "Cannot stop exporting data."
-msgstr ""
+msgstr "エクスポートデータ処理を停止できません"
 
 msgid "Stop exporting in background."
-msgstr ""
+msgstr "バックグラウンドでエクスポートデータ処理を停止する"
 
 msgid "Stop exporting successfully."
-msgstr ""
+msgstr "エクスポートデータ処理の停止に成功した"
 
 msgid "Error occurred while stopping export data."
-msgstr ""
+msgstr "エクスポートデータ処理の停止にエラーが発生された"
 
 msgid "Restore Export Data"
-msgstr "エクスポートデータからのリストア"
+msgstr "エクスポートデータを復元する"
 
 msgid "Restore completed."
-msgstr ""
+msgstr "復元に成功した"
 
 msgid "Stop Restore Export Data"
-msgstr ""
+msgstr "エクスポートデータの復元を停止する"
 
 msgid "Stopped restoring data process."
-msgstr ""
+msgstr "エクスポートデータの復元が停止されました"

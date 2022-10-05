@@ -3292,14 +3292,14 @@ msgstr "エクスポートデータ管理"
 
 # export_data_storage_location.html
 msgid "Configure Accounts for Export Data Storage Location"
-msgstr ""
+msgstr "エクスポートデータ保存場所のアカウントをコンフィグレーションする"
 
 msgid "ID"
 msgstr ""
 
 # export_data_institutional_storages.html
 msgid "List of the Institutional Storages"
-msgstr ""
+msgstr "機関ストレージ一覧"
 
 msgid "Export Data"
 msgstr "エクスポートデータ"
@@ -3311,26 +3311,26 @@ msgid "Stop exporting"
 msgstr "エクスポート処理停止"
 
 msgid "View export data list"
-msgstr ""
+msgstr "エクスポートデータ一覧閲覧"
 
 # export_data_list.html
 msgid "Export Data List"
-msgstr ""
+msgstr "データ一覧をエクスポートする"
 
 msgid "Export source storage"
 msgstr "エクスポート元ストレージ"
 
 msgid "Filter"
-msgstr ""
+msgstr "フィルター"
 
 msgid "Revert Export Data"
 msgstr "エクスポートデータ復帰"
 
 msgid "Process start"
-msgstr ""
+msgstr "プロセスを開始する"
 
 msgid "Process end"
-msgstr ""
+msgstr "プロセスを終了する"
 
 msgid "Number of projects"
 msgstr "プロジェクト数"
@@ -3349,7 +3349,7 @@ msgstr "恒久的に削除（復帰ボタンで戻せません）"
 
 # export_data_deleted_list.html
 msgid "Deleted Export Data List"
-msgstr ""
+msgstr "エクスポートデータ一覧を削除する"
 
 msgid "Revert"
 msgstr "復帰"
@@ -3359,16 +3359,16 @@ msgstr "本当にエクスポートデータを復帰しますか?"
 
 # export_data_information.html
 msgid "Export Data Information"
-msgstr "エクスポートデータか情報"
+msgstr "エクスポートデータの情報"
 
 msgid "Export Data Information of %(storage_name)s<br/><small>(for %(institution_nam)s)</small>"
-msgstr ""
+msgstr "「%(storage_name)s<br/><small>(for %(institution_nam)s)</small>」のエクスポートデータ情報"
 
 msgid "Institutional information"
 msgstr "機関情報"
 
 msgid "Source institution storage type"
-msgstr ""
+msgstr "元機関ストレージのタイプ"
 
 msgid "Contributor"
 msgstr "メンバー"
@@ -3389,13 +3389,13 @@ msgid "Check export data"
 msgstr "エクスポートデータチェック"
 
 msgid "The result of checking export data"
-msgstr ""
+msgstr "エクスポートデータのチェック結果"
 
 msgid "NG Reason"
-msgstr ""
+msgstr "NG理由"
 
 msgid "Export to CSV"
-msgstr "CSV出力"
+msgstr "CSVにエクスポート"
 
 msgid "Are you sure you want to delete this export data?"
 msgstr "本当にエクスポートデータを削除しますか?"
@@ -3407,7 +3407,7 @@ msgid "Restore destination storage"
 msgstr "リストア先ストレージ"
 
 msgid "Restore"
-msgstr "リストア"
+msgstr "復元する"
 
 msgid "The restore destination storage is not empty."
 msgstr "リストア先のストレージが空ではありません。"
@@ -3419,10 +3419,10 @@ msgid "Do you want to run it as it is?"
 msgstr "そのまま実行しますか？"
 
 msgid "Stop restoring"
-msgstr "リストア処理の停止"
+msgstr "復元処理を停止する"
 
 msgid "Check restore data"
-msgstr "リストアデータチェック"
+msgstr "復元データをチェックする"
 
 msgid "The result of checking restore data"
-msgstr ""
+msgstr "復元データのチェック結果"
