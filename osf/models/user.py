@@ -1416,7 +1416,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             node.confirm_spam(train_akismet=False)
         for preprint in self.preprints.filter(is_public=True, deleted__isnull=True):
             preprint.confirm_spam(train_akismet=False)
-        for comment in self.comments.filter(is_public=True, deleted__isnull=True):
+
+        from osf.models.comment import Comment
+        for comment in Comment.objects.filter(user=self):
             comment.confirm_spam(train_akismet=False)
 
     def confirm_ham(self, save=False):
