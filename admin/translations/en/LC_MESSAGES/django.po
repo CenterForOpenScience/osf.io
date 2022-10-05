@@ -3336,9 +3336,6 @@ msgstr ""
 msgid "Are you sure you want to delete this export data?"
 msgstr ""
 
-msgid "Permanently delete (Cannot be restored with the Revert button)"
-msgstr ""
-
 msgid "Are you sure you want to revert this export data?"
 msgstr ""
 
