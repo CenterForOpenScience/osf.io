@@ -76,7 +76,7 @@
         </form>
     {% endif %}
 
-    <h2>{% trans 'Export Data Information of' %} {{ exported_info.storage.name }}<br/><small>(for {{ institution.name }})</small></h2>
+    <h2>{% blocktrans with storage_name=exported_info.storage.name institution_name=institution.name %}Export Data Information of {{ storage_name }}<br/><small>(for {{ institution_name }})</small>{% endblocktrans %}</h2>
 
     <table class="table table-striped" id="{{ export_data.id }}">
         <tbody>
@@ -206,10 +206,10 @@
                         <table class="table table-striped table-hover table-bordered table-responsive">
                             <thead>
                             <tr>
-                                <th>File path</th>
-                                <th>Size</th>
-                                <th>Version ID</th>
-                                <th>NG Reason</th>
+                                <th>{% trans "File path" %}</th>
+                                <th>{% trans "Size" %}</th>
+                                <th>{% trans "Version ID" %}</th>
+                                <th>{% trans "NG Reason" %}</th>
                             </tr>
                             </thead>
                             <tbody class="list table-ng">
@@ -292,10 +292,10 @@
                         <table class="table table-striped table-hover table-bordered table-responsive">
                             <thead>
                             <tr>
-                                <th>File path</th>
-                                <th>Size</th>
-                                <th>Version ID</th>
-                                <th>NG Reason</th>
+                                <th>{% trans "File path" %}</th>
+                                <th>{% trans "Size" %}</th>
+                                <th>{% trans "Version ID" %}</th>
+                                <th>{% trans "NG Reason" %}</th>
                             </tr>
                             </thead>
                             <tbody class="list table-ng-restore">

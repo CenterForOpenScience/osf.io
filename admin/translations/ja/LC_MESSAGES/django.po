@@ -3279,3 +3279,150 @@ msgstr "ユーザ検索結果"
 
 msgid "Recalculate quota"
 msgstr "クォータ再計算"
+
+# admin/templates/base.html
+msgid "Export data storage location"
+msgstr "エクスポートデータ保存場所"
+
+msgid "Institutional Storages Control"
+msgstr "機関ストレージ制御"
+
+msgid "Export Data Management"
+msgstr "エクスポートデータ管理"
+
+# export_data_storage_location.html
+msgid "Configure Accounts for Export Data Storage Location"
+msgstr ""
+
+msgid "ID"
+msgstr ""
+
+# export_data_institutional_storages.html
+msgid "List of the Institutional Storages"
+msgstr ""
+
+msgid "Export Data"
+msgstr "エクスポートデータ"
+
+msgid "Export"
+msgstr "エクスポート"
+
+msgid "Stop exporting"
+msgstr "エクスポート処理停止"
+
+msgid "View export data list"
+msgstr ""
+
+# export_data_list.html
+msgid "Export Data List"
+msgstr ""
+
+msgid "Export source storage"
+msgstr "エクスポート元ストレージ"
+
+msgid "Filter"
+msgstr ""
+
+msgid "Revert Export Data"
+msgstr "エクスポートデータ復帰"
+
+msgid "Process start"
+msgstr ""
+
+msgid "Process end"
+msgstr ""
+
+msgid "Number of projects"
+msgstr "プロジェクト数"
+
+msgid "Number of files"
+msgstr "ファイル数"
+
+msgid "Total file size"
+msgstr "ファイルサイズ合計"
+
+msgid "Are you sure you want to delete these export data?"
+msgstr "本当にエクスポートデータを削除しますか?"
+
+msgid "Permanently delete (Cannot be restored with the Revert button)"
+msgstr "恒久的に削除（復帰ボタンで戻せません）"
+
+# export_data_deleted_list.html
+msgid "Deleted Export Data List"
+msgstr ""
+
+msgid "Revert"
+msgstr "復帰"
+
+msgid "Are you sure you want to revert these export data?"
+msgstr "本当にエクスポートデータを復帰しますか?"
+
+# export_data_information.html
+msgid "Export Data Information"
+msgstr "エクスポートデータか情報"
+
+msgid "Export Data Information of %(storage_name)s<br/><small>(for %(institution_nam)s)</small>"
+msgstr ""
+
+msgid "Institutional information"
+msgstr "機関情報"
+
+msgid "Source institution storage type"
+msgstr ""
+
+msgid "Contributor"
+msgstr "メンバー"
+
+msgid "Tags"
+msgstr "タグ"
+
+msgid "Size"
+msgstr "サイズ"
+
+msgid "Version ID"
+msgstr "バージョンID"
+
+msgid "Created at"
+msgstr "ファイル作成日時"
+
+msgid "Check export data"
+msgstr "エクスポートデータチェック"
+
+msgid "The result of checking export data"
+msgstr ""
+
+msgid "NG Reason"
+msgstr ""
+
+msgid "Export to CSV"
+msgstr "CSV出力"
+
+msgid "Are you sure you want to delete this export data?"
+msgstr "本当にエクスポートデータを削除しますか?"
+
+msgid "Are you sure you want to revert this export data?"
+msgstr "本当にエクスポートデータを復帰しますか?"
+
+msgid "Restore destination storage"
+msgstr "リストア先ストレージ"
+
+msgid "Restore"
+msgstr "リストア"
+
+msgid "The restore destination storage is not empty."
+msgstr "リストア先のストレージが空ではありません。"
+
+msgid "This function assumes operation to empty storage."
+msgstr "本機能は空のストレージへの操作を想定しています。"
+
+msgid "Do you want to run it as it is?"
+msgstr "そのまま実行しますか？"
+
+msgid "Stop restoring"
+msgstr "リストア処理の停止"
+
+msgid "Check restore data"
+msgstr "リストアデータチェック"
+
+msgid "The result of checking restore data"
+msgstr ""

@@ -7276,3 +7276,52 @@ msgstr ""
 
 msgid "Invitation failed"
 msgstr ""
+
+# rdm-institutional-storage-page.js
+msgid "Unable to delete location %1$s"
+msgstr ""
+
+msgid "Export Data"
+msgstr ""
+
+msgid "Cannot export data."
+msgstr ""
+
+msgid "Export data in background."
+msgstr ""
+
+msgid "Export data failed."
+msgstr ""
+
+msgid "Export data successfully."
+msgstr ""
+
+msgid "Error occurred while exporting data."
+msgstr ""
+
+msgid "Stop Export Data"
+msgstr ""
+
+msgid "Cannot stop exporting data."
+msgstr ""
+
+msgid "Stop exporting in background."
+msgstr ""
+
+msgid "Stop exporting successfully."
+msgstr ""
+
+msgid "Error occurred while stopping export data."
+msgstr ""
+
+msgid "Restore Export Data"
+msgstr ""
+
+msgid "Restore completed."
+msgstr ""
+
+msgid "Stop Restore Export Data"
+msgstr ""
+
+msgid "Stopped restoring data process."
+msgstr ""

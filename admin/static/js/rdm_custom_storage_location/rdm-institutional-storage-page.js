@@ -735,7 +735,8 @@ afterRequest.delete = {
         $('#location_' + id).remove();
     },
     'fail': function (id) {
-        $osf.growl('Error', 'Unable to delete location ' + id, 'success', 2000);
+        var message = sprintf(_('Unable to delete location %1$s'), id)
+        $osf.growl('Error', message, 'success', 2000);
     }
 }
 
@@ -892,7 +893,7 @@ function exportData(institution_id, source_id, location_id, element) {
             if (data.task_state === 'SUCCESS') {
                 // task_state in (SUCCESS, )
                 exportState(this.custom.element);
-                message = 'Export data successfully';
+                message =  _('Export data successfully.');
 
                 let $parent = $(this.custom.element).parents('.row-storage');
                 if ($parent.length) {
@@ -902,19 +903,19 @@ function exportData(institution_id, source_id, location_id, element) {
             } else if (data.task_state === 'FAILURE') {
                 // task_state in (FAILURE, )
                 exportState(this.custom.element);
-                message = 'Error occurred while exporting data.';
+                message = _('Error occurred while exporting data.');
                 messageType = 'danger';
             } else {
                 // task_state in (PENDING, STARTED, )
                 stopExportState(this.custom.element);
-                message = 'Export data in background';
+                message = _('Export data in background.');
                 window.contextVars[this.custom.key].exportInBackground = true;
 
                 let $exportButton = $(this.custom.element);
                 let $stopExportButton = $exportButton.parent().find('.stop-export-button');
                 $stopExportButton.data('task_id', task_id);
             }
-            $osf.growl('Export Data', _(message), messageType, 2000);
+            $osf.growl(_('Export Data'), message, messageType, 2000);
 
             if (window.contextVars[this.custom.key].exportInBackground) {
                 // var x = 0;
@@ -926,11 +927,11 @@ function exportData(institution_id, source_id, location_id, element) {
         },
         error: function (jqXHR) {
             exportState(this.custom.element);
-            let message = 'Cannot export data';
+            let message = _('Cannot export data.');
             if (jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)) {
                 message = jqXHR.responseJSON.message;
             }
-            $osf.growl('Export Data', _(message), 'danger', 2000);
+            $osf.growl(_('Export Data'), message, 'danger', 2000);
         }
     });
 }
@@ -976,18 +977,18 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
                 // task_state in (SUCCESS, )
                 // old task_state in (ABORTED, )
                 exportState(this.custom.element);
-                message = 'Stop exporting successfully';
+                message = _('Stop exporting successfully.');
             } else if (data.task_state === 'FAILURE') {
                 // task_state in (FAILURE, )
                 stopExportState(this.custom.element);
-                message = 'Error occurred while stopping export data.';
+                message = _('Error occurred while stopping export data.');
                 messageType = 'danger';
             } else {
                 // task_state in (PENDING, STARTED, )
-                message = 'Stop exporting in background';
+                message = _('Stop exporting in background.');
                 window.contextVars[this.custom.key].stopExportInBackground = true;
             }
-            $osf.growl('Stop Export Data', _(message), messageType, 2000);
+            $osf.growl(_('Stop Export Data'), message, messageType, 2000);
 
             if (window.contextVars[this.custom.key].stopExportInBackground) {
                 // var x = 0;
@@ -999,7 +1000,7 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
         },
         error: function (jqXHR) {
             stopExportState(this.custom.element);
-            let message = 'Cannot stop exporting data';
+            let message = _('Cannot stop exporting data.');
             if (jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)) {
                 let data = jqXHR.responseJSON;
                 message = data.message;
@@ -1015,13 +1016,13 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
                             let $viewExportDataButton = $parent.find('button.view-export-data');
                             showViewExportDataButton($viewExportDataButton, location_id)
                         }
-                        $osf.growl('Export Data', _('Export data successfully'), 'success', 2000);
+                        $osf.growl(_('Export Data'), _('Export data successfully.'), 'success', 2000);
                     } else if (data.status === 'Error') {
-                        $osf.growl('Export Data', _('Export data failed'), 'danger', 2000);
+                        $osf.growl(_('Export Data'), _('Export data failed.'), 'danger', 2000);
                     }
                 }
             }
-            $osf.growl('Stop Export Data', _(message), 'danger', 2000);
+            $osf.growl(_('Stop Export Data'), message, 'danger', 2000);
         }
     });
 }
@@ -1044,7 +1045,7 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
         custom: {'element': element, 'key': key},
         timeout: 120000,
         success: function (data) {
-            let title = window.contextVars[this.custom.key].stopExportInBackground ? 'Stop Export Data' : 'Export Data';
+            let title = window.contextVars[this.custom.key].stopExportInBackground ? _('Stop Export Data') : _('Export Data');
             let message;
             let messageType = 'success';
 
@@ -1054,9 +1055,9 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
                 window.contextVars[this.custom.key].intervalID = undefined;
 
                 exportState(this.custom.element);
-                message = 'Export data successfully';
+                message = _('Export data successfully.');
                 if (window.contextVars[this.custom.key].stopExportInBackground) {
-                    message = 'Stop exporting successfully';
+                    message = _('Stop exporting successfully.');
                 }
 
                 if (data.status === 'Completed') {
@@ -1065,10 +1066,10 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
                         let $viewExportDataButton = $parent.find('button.view-export-data');
                         showViewExportDataButton($viewExportDataButton, location_id)
                     }
-                    $osf.growl('Export Data', _('Export data successfully'), 'success', 2000);
+                    $osf.growl('Export Data', _('Export data successfully.'), 'success', 2000);
                 } else {
                     messageType = 'danger';
-                    message = 'Export data failed';
+                    message = _('Export data failed');
                 }
             } else if (data.task_state === 'FAILURE') {
                 // task_state in (FAILURE, )
@@ -1078,13 +1079,13 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
                 messageType = 'danger';
                 if (window.contextVars[this.custom.key].stopExportInBackground) {
                     stopExportState(this.custom.element);
-                    message = 'Error occurred while stopping export data.';
+                    message = _('Error occurred while stopping export data.');
                 } else {
                     exportState(this.custom.element);
-                    message = 'Error occurred while exporting data.';
+                    message = _('Error occurred while exporting data.');
                 }
             }
-            !window.contextVars[this.custom.key].intervalID && $osf.growl(title, _(message), messageType, 2000);
+            !window.contextVars[this.custom.key].intervalID && $osf.growl(title, message, messageType, 2000);
         },
         error: function (jqXHR) {
             // keep for debug
@@ -1141,7 +1142,7 @@ $('#checkExportData').on('click', () => {
     }).fail(function (jqXHR) {
         $('#checkExportData').prop('disabled', false);
         let message = jqXHR.responseJSON.message;
-        $osf.growl('Error', _(message), 'error', 2000);
+        $osf.growl('Error', message, 'error', 2000);
     });
 });
 
@@ -1216,7 +1217,7 @@ $('#restore_button').on('click', () => {
         if (response['message']) {
             enableRestoreFunction();
             // Show error message
-            $osf.growl('Restore Export Data', _(result['message']), 'danger', 2000);
+            $osf.growl(_('Restore Export Data'), result['message'], 'danger', 2000);
         } else if (response['task_id']) {
             enableStopRestoreFunction();
             restore_task_id = response['task_id'];
@@ -1230,7 +1231,7 @@ $('#restore_button').on('click', () => {
         enableRestoreFunction();
         let data = jqXHR.responseJSON;
         if (data && data['message']) {
-            $osf.growl('Restore Export Data', _(data['message']), 'danger', 2000);
+            $osf.growl(_('Restore Export Data'), data['message'], 'danger', 2000);
         }
     });
 });
@@ -1256,7 +1257,7 @@ $('#stop_restore_button').on('click', () => {
         enableStopRestoreFunction();
         let data = jqXHR.responseJSON;
         if (data && data['message']) {
-            $osf.growl('Stop Export Data', _(data['message']), 'danger', 2000);
+            $osf.growl(_('Stop Export Data'), data['message'], 'danger', 2000);
         }
     });
 });
@@ -1276,11 +1277,11 @@ function checkTaskStatus(task_id, task_type) {
             if (result_task_type === 'Restore') {
                 // Done restoring export data
                 enableCheckRestoreFunction();
-                $osf.growl('Restore Export Data', _('Restore completed'), 'success', 2000);
+                $osf.growl(_('Restore Export Data'), _('Restore completed.'), 'success', 2000);
             } else if (result_task_type === 'Stop Restore') {
                 // Done stopping restore export data
                 enableRestoreFunction();
-                $osf.growl('Stop Restore Export Data', _('Stopped restoring data process.'), 'success', 2000);
+                $osf.growl(_('Stop Restore Export Data'), _('Stopped restoring data process.'), 'success', 2000);
             }
         } else if (state === 'PENDING' || state === 'STARTED') {
             // Redo check task status after 2 seconds
@@ -1294,11 +1295,11 @@ function checkTaskStatus(task_id, task_type) {
             if (result && result['message']) {
                 var title = '';
                 if (result_task_type === 'Restore'){
-                    title = 'Restore Export Data';
+                    title = _('Restore Export Data');
                 } else if (result_task_type === 'Stop Restore') {
-                    title = 'Stop Restore Export Data';
+                    title = _('Stop Restore Export Data');
                 }
-                $osf.growl(title, _(result['message']), 'danger', 2000);
+                $osf.growl(title, result['message'], 'danger', 2000);
             }
         }
     }).fail(function (jqXHR) {
@@ -1307,11 +1308,11 @@ function checkTaskStatus(task_id, task_type) {
         if (data && data['result']) {
             var title = '';
             if (task_type === 'Restore'){
-                title = 'Restore Export Data';
+                title = _('Restore Export Data');
             } else if (task_type === 'Stop Restore') {
-                title = 'Stop Restore Export Data';
+                title = _('Stop Restore Export Data');
             }
-            $osf.growl(title, _(data['result']), 'danger', 2000);
+            $osf.growl(title, data['result'], 'danger', 2000);
         }
     });
 }
@@ -1341,7 +1342,7 @@ $('#start_restore_modal_button').on('click', () => {
         enableRestoreFunction();
         let data = jqXHR.responseJSON;
         if (data && data['message']) {
-            $osf.growl('Restore Export Data', _(data['message']), 'danger', 2000);
+            $osf.growl(_('Restore Export Data'), data['message'], 'danger', 2000);
         }
     });
 });

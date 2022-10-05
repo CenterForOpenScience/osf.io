@@ -8572,3 +8572,51 @@ msgstr "招待に失敗しました"
 #~ msgid "Not selected"
 #~ msgstr "未選択"
 
+# rdm-institutional-storage-page.js
+msgid "Unable to delete location %1$s"
+msgstr "場所%1$sを削除できません"
+
+msgid "Export Data"
+msgstr "エクスポートデータ"
+
+msgid "Cannot export data."
+msgstr ""
+
+msgid "Export data in background."
+msgstr ""
+
+msgid "Export data failed."
+msgstr ""
+
+msgid "Export data successfully."
+msgstr ""
+
+msgid "Error occurred while exporting data."
+msgstr ""
+
+msgid "Stop Export Data"
+msgstr "エクスポート処理停止"
+
+msgid "Cannot stop exporting data."
+msgstr ""
+
+msgid "Stop exporting in background."
+msgstr ""
+
+msgid "Stop exporting successfully."
+msgstr ""
+
+msgid "Error occurred while stopping export data."
+msgstr ""
+
+msgid "Restore Export Data"
+msgstr "エクスポートデータからのリストア"
+
+msgid "Restore completed."
+msgstr ""
+
+msgid "Stop Restore Export Data"
+msgstr ""
+
+msgid "Stopped restoring data process."
+msgstr ""
