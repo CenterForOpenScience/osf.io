@@ -496,8 +496,7 @@ class TestNodeDetail:
         res = app.get(url)
         assert 'count' in res.json['data']['relationships']['linked_by_nodes']['links']['related']['meta']
         assert 'count' in res.json['data']['relationships']['linked_by_registrations']['links']['related']['meta']
-        # Skipped for now due to an unknown bug after django upgrade
-        # assert res.json['data']['relationships']['linked_by_nodes']['links']['related']['meta']['count'] == 0
+        assert res.json['data']['relationships']['linked_by_nodes']['links']['related']['meta']['count'] == 0
         assert res.json['data']['relationships']['linked_by_registrations']['links']['related']['meta']['count'] == 0
 
     def test_node_shows_correct_forks_count_including_private_forks(self, app, user, project_private, url_private, user_two):
