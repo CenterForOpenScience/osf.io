@@ -102,9 +102,6 @@
         </tr>
         </thead>
         <tbody>
-        {% if not list_export_data|length %}
-            <h3>{% trans "No results found" %}</h3>
-        {% endif %}
         {% for item in list_export_data %}
             <tr class="">
                 <td width="20px">
@@ -127,6 +124,9 @@
         {% endfor %}
         </tbody>
     </table>
+    {% if not list_export_data|length %}
+        <h3>{% trans "No results found" %}</h3>
+    {% endif %}
     <button type="button" id="delete_button"
             class="btn btn-danger"
             {% if list_export_data|length < 1 %} disabled {% endif %}

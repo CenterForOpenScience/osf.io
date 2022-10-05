@@ -90,9 +90,6 @@
         </tr>
         </thead>
         <tbody>
-        {% if not locations|length %}
-            <h3>{% trans "No results found" %}</h3>
-        {% endif %}
         {% for location in locations %}
             <tr id="location_{{ location.id }}">
                 <td>{{ location.id }}</td>
@@ -107,6 +104,9 @@
         {% endfor %}
         </tbody>
     </table>
+    {% if not locations|length %}
+        <h3>{% trans "No results found" %}</h3>
+    {% endif %}
 
     <input type="hidden" id="osf_domain" value="{{ osf_domain }}">
 

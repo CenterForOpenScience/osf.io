@@ -28,9 +28,6 @@
         </tr>
         </thead>
         <tbody>
-        {% if not storages|length %}
-            <h3>{% trans "No results found" %}</h3>
-        {% endif %}
         {% for storage in storages %}
             <tr id="row-storage-{{ storage.id }}" class="row-storage">
                 <td>{{ storage.id }}</td>
@@ -88,6 +85,9 @@
         {% endfor %}
         </tbody>
     </table>
+    {% if not storages|length %}
+        <h3>{% trans "No results found" %}</h3>
+    {% endif %}
     {% csrf_token %}
 {% endblock content %}
 

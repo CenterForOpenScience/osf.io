@@ -130,9 +130,6 @@
         </tr>
         </thead>
         <tbody>
-        {% if not file_versions|length %}
-            <h3>{% trans "No results found" %}</h3>
-        {% endif %}
         {% for file_info in file_versions %}
             <tr class="">
                 <td class="">{{ file_info.materialized_path }}</td>
@@ -147,6 +144,9 @@
         {% endfor %}
         </tbody>
     </table>
+    {% if not file_versions|length %}
+        <h3>{% trans "No results found" %}</h3>
+    {% endif %}
 
     <style type="text/css">
         .modal.middle {

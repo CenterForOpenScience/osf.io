@@ -25,9 +25,6 @@
         </tr>
         </thead>
         <tbody>
-        {% if not institutions|length %}
-            <h3>{% trans "No results found" %}</h3>
-        {% endif %}
         {% for institution in institutions %}
             <tr>
                 <td>
@@ -45,5 +42,7 @@
         {% endfor %}
         </tbody>
     </table>
-
+    {% if not institutions|length %}
+        <h3>{% trans "No results found" %}</h3>
+    {% endif %}
 {% endblock content %}
