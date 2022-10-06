@@ -9,11 +9,11 @@
 {% endblock %}
 
 {% block title %}
-    <title>{% trans "List of the Institutional Storages" %}</title>
+    <title>{% trans "List of Institutional Storages" %}</title>
 {% endblock title %}
 
 {% block content %}
-    <h2>{% trans "List of the Institutional Storages" %}<br/><small>(for {{ institution.name }})</small></h2>
+    <h2>{% trans "List of Institutional Storages" %}<br/><small>(for {{ institution.name }})</small></h2>
 
     {% include "util/pagination.html" with items=page status=status %}
     <table class="table table-striped table-hover table-responsive">

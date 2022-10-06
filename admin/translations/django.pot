@@ -3252,7 +3252,7 @@ msgid "ID"
 msgstr ""
 
 # export_data_institutional_storages.html
-msgid "List of the Institutional Storages"
+msgid "List of Institutional Storages"
 msgstr ""
 
 msgid "Export Data"
