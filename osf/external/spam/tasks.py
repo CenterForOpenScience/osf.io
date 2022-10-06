@@ -35,4 +35,4 @@ def check_resource_for_domains(guid, content):
             defaults={'is_triaged': domain.note != NotableDomain.Note.UNKNOWN}
         )
     if mark_spam:
-        resource.confirm_spam(save=True)
+        resource.confirm_spam(save=True, domains=list(domains))
