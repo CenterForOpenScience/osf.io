@@ -888,12 +888,14 @@ function exportData(institution_id, source_id, location_id, element) {
         success: function (data) {
             let message;
             let messageType = 'success';
+            let need_reload = 0;
             task_id = data.task_id;
 
             if (data.task_state === 'SUCCESS') {
                 // task_state in (SUCCESS, )
                 exportState(this.custom.element);
                 message =  _('Export data successfully.');
+                need_reload = 1;
 
                 let $parent = $(this.custom.element).parents('.row-storage');
                 if ($parent.length) {
@@ -916,6 +918,7 @@ function exportData(institution_id, source_id, location_id, element) {
                 $stopExportButton.data('task_id', task_id);
             }
             $osf.growl(_('Export Data'), message, messageType, 2000);
+            !!need_reload && window.location.reload();
 
             if (window.contextVars[this.custom.key].exportInBackground) {
                 // var x = 0;
@@ -1000,7 +1003,10 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
         },
         error: function (jqXHR) {
             stopExportState(this.custom.element);
+            let title = _('Stop Export Data');
             let message = _('Cannot stop exporting data.');
+            let messageType = 'danger';
+            let need_reload = 0;
             if (jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)) {
                 let data = jqXHR.responseJSON;
                 message = data.message;
@@ -1016,13 +1022,18 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
                             let $viewExportDataButton = $parent.find('button.view-export-data');
                             showViewExportDataButton($viewExportDataButton, location_id)
                         }
-                        $osf.growl(_('Export Data'), _('Export data successfully.'), 'success', 2000);
+                        title = _('Export Data');
+                        message = _('Export data successfully.');
+                        messageType = 'success';
+                        need_reload = 1;
                     } else if (data.status === 'Error') {
-                        $osf.growl(_('Export Data'), _('Export data failed.'), 'danger', 2000);
+                        title = _('Export Data');
+                        message = _('Export data failed.');
                     }
                 }
             }
-            $osf.growl(_('Stop Export Data'), message, 'danger', 2000);
+            $osf.growl(title, message, messageType, 2000);
+            !!need_reload && window.location.reload();
         }
     });
 }
@@ -1048,6 +1059,7 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
             let title = window.contextVars[this.custom.key].stopExportInBackground ? _('Stop Export Data') : _('Export Data');
             let message;
             let messageType = 'success';
+            let need_reload = 0;
 
             if (data.task_state === 'SUCCESS') {
                 // task_state in (SUCCESS, )
@@ -1066,7 +1078,7 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
                         let $viewExportDataButton = $parent.find('button.view-export-data');
                         showViewExportDataButton($viewExportDataButton, location_id)
                     }
-                    $osf.growl('Export Data', _('Export data successfully.'), 'success', 2000);
+                    need_reload = 1;
                 } else {
                     messageType = 'danger';
                     message = _('Export data failed');
@@ -1086,6 +1098,7 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
                 }
             }
             !window.contextVars[this.custom.key].intervalID && $osf.growl(title, message, messageType, 2000);
+            !!need_reload && window.location.reload();
         },
         error: function (jqXHR) {
             // keep for debug
