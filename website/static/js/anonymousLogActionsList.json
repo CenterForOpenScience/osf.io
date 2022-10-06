@@ -27,6 +27,7 @@
     "custom_citation_removed" : "A user removed a custom citation from a project",
     "contributor_added" : "A user added contributor(s) to a project",
     "contributor_removed" : "A user removed contributor(s) from a project",
+    "contributor_rejected":  "Contributor(s) cancelled invitation from a project",
     "contributors_reordered" : "A user reordered contributors for a project",
     "permissions_updated" : "A user changed permissions for a project",
     "made_contributor_visible" : "A user made contributor(s) visible on a project",
