@@ -86,11 +86,11 @@
         </tr>
         <tr>
             <td>{% trans "Process start" %}</td>
-            <td>{{ export_data.process_start }}</td>
+            <td>{{ export_data.process_start|date:'d-m-Y H:i:s' }}</td>
         </tr>
         <tr>
             <td>{% trans "Process end" %}</td>
-            <td>{{ export_data.process_end }}</td>
+            <td>{{ export_data.process_end|date:'d-m-Y H:i:s' }}</td>
         </tr>
         <tr>
             <td>{% trans "Source institution storage type" %}</td>

@@ -101,8 +101,8 @@
                 </td>
                 <td class="">{{ item.source_name }}</td>
                 <td class="">{{ item.location_name }}</td>
-                <td class="">{{ item.export_data.process_start }}</td>
-                <td class="">{{ item.export_data.process_end }}</td>
+                <td class="">{{ item.export_data.process_start|date:'d-m-Y H:i:s' }}</td>
+                <td class="">{{ item.export_data.process_end|date:'d-m-Y H:i:s' }}</td>
                 <td class="">{{ item.export_data.project_number }}</td>
                 <td class="">{{ item.export_data.file_number }}</td>
                 <td class="">{{ item.export_data.total_size }} KB</td>
