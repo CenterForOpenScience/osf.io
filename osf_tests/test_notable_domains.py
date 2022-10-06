@@ -71,6 +71,7 @@ class TestNotableDomain:
         ).count() == 1
         obj.reload()
         assert obj.spam_status == SpamStatus.SPAM
+        assert obj.spam_data['domains'] == [spam_domain.netloc]
         assert DomainReference.objects.filter(
             referrer_object_id=obj.id,
             referrer_content_type=ContentType.objects.get_for_model(obj),

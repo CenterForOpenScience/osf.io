@@ -1988,13 +1988,13 @@ class SpamOverrideMixin(SpamMixin):
     def get_spam_fields(self):
         return NotImplementedError()
 
-    def confirm_spam(self, save=True, train_akismet=True):
+    def confirm_spam(self, domains=[], save=True, train_akismet=True):
         """
         This should add behavior specific nodes/preprints confirmed to be spam.
         :param save:
         :return:
         """
-        super().confirm_spam(save=save, train_akismet=train_akismet)
+        super().confirm_spam(save=save, domains=domains, train_akismet=train_akismet)
         self.deleted = timezone.now()
         was_public = self.is_public
         self.set_privacy('private', auth=None, log=False, save=False, force=True)
