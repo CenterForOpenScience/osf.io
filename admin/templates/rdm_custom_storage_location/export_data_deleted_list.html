@@ -99,8 +99,8 @@
                 <td class="">
                     <a href={% url 'custom_storage_location:export_data:export_data_information' item.export_data.id %}>{{ item.export_data.id }}</a>
                 </td>
-                <td class="">{{ item.source_name }}</td>
-                <td class="">{{ item.location_name }}</td>
+                <td class="text-overwrap">{{ item.source_name }}</td>
+                <td class="text-overwrap">{{ item.location_name }}</td>
                 <td class="">{{ item.export_data.process_start|date:'d-m-Y H:i:s' }}</td>
                 <td class="">{{ item.export_data.process_end|date:'d-m-Y H:i:s' }}</td>
                 <td class="">{{ item.export_data.project_number }}</td>
@@ -115,7 +115,7 @@
     {% endif %}
     <button type="button" id="revert_button"
             class="btn btn-primary"
-            {% if list_export_data|length < 1 %} disabled {% endif %}
+            disabled
             data-target="#revert"
             data-toggle="modal">{% trans "Revert" %}</button>
 
@@ -137,6 +137,10 @@
             display: inline-block;
             text-align: left;
             vertical-align: middle;
+        }
+
+        .text-overwrap {
+            word-break: break-word;
         }
     </style>
 
@@ -186,6 +190,15 @@
                     $('#submitRevertButton').removeAttr('disabled');
                 }
                 $('#bodyrevertmodal').append(`<input type='text' value=${list_export_id} id='input_export_data' class='buckinput' name='list_id_export_data' style='display: none;' />`);
+            });
+             $('input[type=checkbox]').on('change', () => {
+                let count_checked = $('input[type=checkbox][name=check_revert_export]:checked').length;
+                if (count_checked > 0) {
+                    $('#revert_button').prop('disabled', false);
+                }
+		        else {
+                    $('#revert_button').prop('disabled', true);
+                }
             });
             $('input[type=checkbox][name=check_revert_export]').on('change', () => {
                 let list_export_data = $('input[type=checkbox][name=check_revert_export]');

@@ -96,7 +96,7 @@
         {% for location in locations %}
             <tr id="location_{{ location.id }}">
                 <td>{{ location.id }}</td>
-                <td>{{ location.name }}</td>
+                <td style="word-break: break-word;">{{ location.name }}</td>
                 <td>{{ location.provider_full_name }}</td>
                 <td>
                     <button type="button" class="btn btn-primary delete-location"

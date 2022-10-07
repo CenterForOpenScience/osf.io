@@ -32,7 +32,7 @@
             <tr id="row-storage-{{ storage.id }}" class="row-storage">
                 <td>{{ storage.id }}</td>
                 <td>{{ storage.provider_full_name }}</td>
-                <td>{{ storage.name }}</td>
+                <td style="word-break: break-word;">{{ storage.name }}</td>
                 <td>
                     <select id="location-select-{{ storage.id }}"
                             data-storage="{{ storage.id }}"

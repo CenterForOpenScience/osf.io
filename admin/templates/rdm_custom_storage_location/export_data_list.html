@@ -113,8 +113,8 @@
                 <td class="">
                     <a href={% url 'custom_storage_location:export_data:export_data_information' item.export_data.id %}>{{ item.export_data.id }}</a>
                 </td>
-                <td class="">{{ item.source_name }}</td>
-                <td class="">{{ item.location_name }}</td>
+                <td class="text-overwrap">{{ item.source_name }}</td>
+                <td class="text-overwrap">{{ item.location_name }}</td>
                 <td class="">{{ item.export_data.process_start|date:'d-m-Y H:i:s' }}</td>
                 <td class="">{{ item.export_data.process_end|date:'d-m-Y H:i:s' }}</td>
                 <td class="">{{ item.export_data.project_number }}</td>
@@ -151,6 +151,10 @@
             display: inline-block;
             text-align: left;
             vertical-align: middle;
+        }
+
+        .text-overwrap {
+            word-break: break-word;
         }
     </style>
 
