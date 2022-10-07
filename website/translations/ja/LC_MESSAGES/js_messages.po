@@ -5562,6 +5562,9 @@ msgstr "${user}が${contributors}をコントリビューターとして${node}�
 msgid "${user} removed ${contributors} as contributor(s) from ${node}"
 msgstr "${user}が${node}からコントリビューターとして${contributors}を削除しました"
 
+msgid "${contributors} cancelled invitation as contributor(s) from ${node}"
+msgstr "${contributors}は${node}からのコントリビューターとしての招待をキャンセルしました"
+
 #: website/static/js/logActionsList_extract.js:29
 msgid "${user} reordered contributors for ${node}"
 msgstr "${user}が${node}の投稿者を並べ替えました"

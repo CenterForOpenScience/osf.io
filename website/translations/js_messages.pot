@@ -4295,6 +4295,9 @@ msgstr ""
 msgid "${user} removed ${contributors} as contributor(s) from ${node}"
 msgstr ""
 
+msgid "${contributors} cancelled invitation as contributor(s) from ${node}"
+msgstr ""
+
 #: website/static/js/logActionsList_extract.js:29
 msgid "${user} reordered contributors for ${node}"
 msgstr ""
