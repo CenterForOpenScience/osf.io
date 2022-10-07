@@ -9,6 +9,7 @@ require('js/osfToggleHeight');
 var m = require('mithril');
 var Fangorn = require('js/fangorn').Fangorn;
 var Raven = require('raven-js');
+var handleScroll = require('js/fangorn').handleScroll;
 require('truncate');
 
 var $osf = require('js/osfHelpers');
@@ -592,6 +593,20 @@ $(document).ready(function () {
 
                     var configOption = Fangorn.Utils.resolveconfigOption.call(this, item, 'resolveRows', [item]);
                     return configOption || defaultColumns;
+                },
+                onload : function () {
+                    var tb = this;
+                    // register a scroll event to element which has 'tb-tbody' id
+                    $osf.onScroll(tb.select('#tb-tbody'), handleScroll.bind(tb));
+                    // Add loading modal when loading page
+                    tb.select('#tb-tbody').prepend(
+                        '<div style="width: 100%; height: 100%; padding: 50px 100px; position: sticky; top: 0; left: 0; background-color: white;"' +
+                        ' class="tb-modal-shade">' +
+                        '<div class="spinner-loading-wrapper" style="background-color: transparent;">' +
+                        '<div class="ball-scale ball-scale-blue"><div></div></div>' +
+                        '<p class="m-t-sm fg-load-message">Loading files...</p>' +
+                        '</div></div>'
+                    );
                 }
             };
             var filebrowser = new Fangorn(fangornOpts);

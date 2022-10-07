@@ -3340,5 +3340,6 @@ module.exports = {
     getCopyMode : getCopyMode,
     showDeleteMultiple : showDeleteMultiple,
     checkConflicts : checkConflicts,
-    getPersistentLinkFor: getPersistentLinkFor
+    getPersistentLinkFor: getPersistentLinkFor,
+    handleScroll: handleScroll
 };
