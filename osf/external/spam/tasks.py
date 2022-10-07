@@ -8,14 +8,22 @@ DOMAIN_REGEX = re.compile(r'(?P<protocol>\w+://)?(?P<www>www\.)?(?P<domain>[\w-]
 @celery_app.task()
 def reclassify_domain_references(notable_domain_id):
     from osf.models.notable_domain import DomainReference, NotableDomain
+    from osf.models.spam import SpamStatus
+    spammy_domains_set = set(NotableDomain.objects.filter(note=NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT).values_list('domain'))
     domain = NotableDomain.load(notable_domain_id)
     references = DomainReference.objects.filter(domain=domain)
     with transaction.atomic():
         for item in references:
+            item.is_triaged = domain.note != NotableDomain.Note.UNKNOWN
             if domain.note == NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT:
-                item.referrer.confirm_spam(save=True)
-                item.is_triaged = True
+                item.referrer.confirm_spam(save=False)
+            elif domain.note == NotableDomain.Note.UNKNOWN or domain.note == NotableDomain.Note.IGNORED:
+                if item.referrer.spam_status == SpamStatus.SPAM:
+                    item.referrer.spam_data['domains'].remove(domain.domain)
+                    if set(item.referrer.spam_data['domains']).isdisjoint(spammy_domains_set):
+                        item.referrer.unspam(save=False)
             item.save()
+            item.referrer.save()
 
 @celery_app.task()
 def check_resource_for_domains(guid, content):

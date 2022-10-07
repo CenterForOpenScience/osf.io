@@ -1984,6 +1984,24 @@ class SpamOverrideMixin(SpamMixin):
     def get_spam_fields(self):
         return NotImplementedError()
 
+    def undelete(self, save=False):
+        if self.logs.filter(action__in=[self.log_class.FLAG_SPAM, self.log_class.CONFIRM_SPAM]):
+            spam_log = self.logs.filter(action__in=[self.log_class.FLAG_SPAM, self.log_class.CONFIRM_SPAM]).latest()
+            # set objects to prior public state if known, unless it's a registration pending approval.
+            if spam_log.params.get('was_public', False) and not getattr(self, 'is_pending_registration', False):
+                self.set_privacy('public', log=False)
+
+            self.is_deleted = False
+            self.deleted = None
+            self.update_search()
+
+        if save:
+            self.save()
+
+    def unspam(self, save=False):
+        self.undelete(save=save)
+        super().unspam(save=save)
+
     def confirm_spam(self, domains=[], save=True, train_akismet=True):
         """
         This should add behavior specific nodes/preprints confirmed to be spam.
@@ -2013,16 +2031,7 @@ class SpamOverrideMixin(SpamMixin):
         :return:
         """
         super().confirm_ham(save=save, train_akismet=train_akismet)
-
-        if self.logs.filter(action__in=[self.log_class.FLAG_SPAM, self.log_class.CONFIRM_SPAM]):
-            spam_log = self.logs.filter(action__in=[self.log_class.FLAG_SPAM, self.log_class.CONFIRM_SPAM]).latest()
-            # set objects to prior public state if known, unless it's a registration pending approval.
-            if spam_log.params.get('was_public', False) and not getattr(self, 'is_pending_registration', False):
-                self.set_privacy('public', log=False)
-
-            self.is_deleted = False
-            self.deleted = None
-            self.update_search()
+        self.undelete(save=save)
 
         log = self.add_log(
             action=self.log_class.CONFIRM_HAM,

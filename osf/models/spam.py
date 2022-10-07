@@ -170,6 +170,11 @@ class SpamMixin(models.Model):
         if save:
             self.save()
 
+    def unspam(self, save=False):
+        self.spam_status = SpamStatus.UNKNOWN
+        if save:
+            self.save()
+
     def confirm_ham(self, save=False, train_akismet=True):
         # not all mixins will implement check spam pre-req, only submit ham when it was incorrectly flagged
         if (
