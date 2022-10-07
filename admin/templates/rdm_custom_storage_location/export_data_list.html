@@ -129,7 +129,7 @@
     {% endif %}
     <button type="button" id="delete_button"
             class="btn btn-danger"
-            {% if list_export_data|length < 1 %} disabled {% endif %}
+            disabled
             data-target="#deleteExport"
             data-toggle="modal">{% trans "Delete" %}</button>
 
@@ -211,6 +211,15 @@
                 }
                 $('#bodydeleteExport').append(`<input type='text' value=${list_export_id} id='input_export_data' class='buckinput' name='list_id_export_data' style='display: none;' />`);
                 $('#bodydeleteExport').append(`<input type='text' value={{source_id}} id='source_id' class='buckinput' name='source_id' style='display: none;' />`);
+            });
+            $('input[type=checkbox]').on('change', () => {
+                let count_checked = $('input[type=checkbox][name=check_delete_export]:checked').length;
+                if (count_checked > 0) {
+                    $('#delete_button').prop('disabled', false);
+                }
+                else {
+                    $('#delete_button').prop('disabled', true);
+                }
             });
             $('input[type=checkbox][name=check_delete_export]').on('change', () => {
                 let list_export_data = $('input[type=checkbox][name=check_delete_export]');

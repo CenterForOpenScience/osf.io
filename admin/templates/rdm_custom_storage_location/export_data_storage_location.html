@@ -50,6 +50,7 @@
                                                 <div class="radio">
                                                     <label class="center-block">
                                                         <input type="radio" name="options" id="{{ provider_item.short_name }}"
+                                                               {% if forloop.first %}checked{% endif %}
                                                                value="{{ provider_item.short_name }}">
                                                         <h4 class="addon-title">
                                                             <img src="{{ provider_item.icon_url_admin }}" class="addon-icon"
