@@ -2003,8 +2003,8 @@ class SpamOverrideMixin(SpamMixin):
             self.save()
 
     def unspam(self, save=False):
-        self.undelete(save=save)
         super().unspam(save=save)
+        self.undelete(save=save)
 
     def confirm_spam(self, domains=[], save=True, train_akismet=True):
         """

@@ -198,7 +198,10 @@ class SpamMixin(models.Model):
 
     def confirm_spam(self, domains=[], save=False, train_akismet=True):
         if domains:
-            self.spam_data['domains'] = domains
+            if 'domains' in self.spam_data:
+                self.spam_data['domains'].extend(domains)
+            else:
+                self.spam_data['domains'] = domains
         # not all mixins will implement check spam pre-req, only submit spam when it was incorrectly flagged
         if (
             settings.SPAM_CHECK_ENABLED and
