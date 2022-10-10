@@ -211,6 +211,8 @@
                 }
                 $('#bodydeleteExport').append(`<input type='text' value=${list_export_id} id='input_export_data' class='buckinput' name='list_id_export_data' style='display: none;' />`);
                 $('#bodydeleteExport').append(`<input type='text' value={{source_id}} id='source_id' class='buckinput' name='source_id' style='display: none;' />`);
+                $('#bodydeleteExport').append(`<input type='text' value={{selected_source_id}} id='selected_source_id' class='buckinput' name='selected_source_id' style='display: none;' />`);
+                $('#bodydeleteExport').append(`<input type='text' value={{selected_location_id}} id='selected_location_id' class='buckinput' name='selected_location_id' style='display: none;' />`);
             });
             $('input[type=checkbox]').on('change', () => {
                 let count_checked = $('input[type=checkbox][name=check_delete_export]:checked').length;

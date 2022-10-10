@@ -8,6 +8,7 @@ from django.core.exceptions import SuspiciousOperation
 from django.http import HttpResponse, Http404, JsonResponse
 from django.shortcuts import render, redirect
 from django.views import View
+from django.urls import reverse
 from django.views.generic import ListView
 
 from admin.rdm.utils import RdmPermissionMixin
@@ -249,7 +250,13 @@ class DeleteExportDataView(ExportStorageLocationViewBaseView, View):
                     raise SuspiciousOperation('Cannot connect to the export data storage location.')
         else:
             ExportData.objects.filter(id__in=list_export_data_delete).update(is_deleted=True)
-        return redirect('custom_storage_location:export_data:export_data_list')
+        selected_source_id = request.POST.get('selected_source_id')
+        selected_location_id = request.POST.get('selected_location_id')
+        if len(selected_source_id) > 0 and len(selected_location_id) > 0:
+            return redirect(reverse(
+                'custom_storage_location:export_data:export_data_list') + f'?storage_id={selected_source_id}&location_id={selected_location_id}')
+        else:
+            return redirect('custom_storage_location:export_data:export_data_list')
 
 
 class RevertExportDataView(ExportStorageLocationViewBaseView, View):
@@ -260,7 +267,13 @@ class RevertExportDataView(ExportStorageLocationViewBaseView, View):
         list_export_data = list(filter(None, list_export_data))
         if list_export_data:
             ExportData.objects.filter(id__in=list_export_data).update(is_deleted=False)
-        return redirect('custom_storage_location:export_data:export_data_deleted_list')
+        selected_source_id = request.POST.get('selected_source_id')
+        selected_location_id = request.POST.get('selected_location_id')
+        if len(selected_source_id) > 0 and len(selected_location_id) > 0:
+            return redirect(reverse(
+                'custom_storage_location:export_data:export_data_deleted_list') + f'?storage_id={selected_source_id}&location_id={selected_location_id}')
+        else:
+            return redirect('custom_storage_location:export_data:export_data_deleted_list')
 
 
 class ExportDataFileCSVView(RdmPermissionMixin, View):
