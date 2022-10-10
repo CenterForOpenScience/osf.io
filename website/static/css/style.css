@@ -871,6 +871,7 @@ table.add-links {
 .fa.bk-toggle-icon {
     border: 2px solid #FFFFFF;
     color: #000000;
+    background: none;
 }
 
 .subject-preview {

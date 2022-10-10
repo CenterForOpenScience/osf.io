@@ -328,7 +328,7 @@
                 % if permissions.ADMIN in user['permissions']:
                   <a href="${collection['url']}${node['id']}/edit"><i class="fa fa-edit" aria-label="Edit in Collection"></i></a>
                 % endif
-            &nbsp;<span id="metadata${i}-toggle" class="fa bk-toggle-icon fa-angle-down" data-toggle="collapse" data-target="#metadata${i}"></span>
+            &nbsp;<button id="metadata${i}-toggle" class="fa bk-toggle-icon fa-angle-down" data-toggle="collapse" data-target="#metadata${i}" aria-label="Toggle submission details"></button>
             </div>
             <div id="metadata${i}" class="collection-details collapse">
                 <ul style="margin-left: 30px; padding: 0; margin-bottom: 0;" class="list-unstyled">
@@ -390,7 +390,7 @@
            Has supplemental materials for <a href="${preprint['url']}" target="_blank">${preprint['title']}</a>
            on ${preprint['provider']['name']}
          % if user['is_admin_parent_contributor_or_group_member'] or user['is_contributor_or_group_member']:
-            &nbsp;<span id="metadatapreprint${i}-toggle" class="fa bk-toggle-icon fa-angle-down" data-toggle="collapse" data-target="#metadatapreprint${i}"></span>
+            &nbsp;<button id="metadatapreprint${i}-toggle" class="fa bk-toggle-icon fa-angle-down" data-toggle="collapse" data-target="#metadatapreprint${i}" aria-label="Toggle preprint details"></button>
         % endif
        </div>
        % if user['is_admin_parent_contributor_or_group_member'] or user['is_contributor_or_group_member']:
