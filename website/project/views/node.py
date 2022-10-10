@@ -891,6 +891,8 @@ def serialize_collections(cgms, auth):
         'issue': cgm.issue,
         'volume': cgm.volume,
         'program_area': cgm.program_area,
+        'school_type': cgm.school_type,
+        'study_design': cgm.study_design,
         'subjects': list(cgm.subjects.values_list('text', flat=True)),
         'is_public': cgm.collection.is_public,
         'logo': cgm.collection.provider.get_asset_url('favicon')

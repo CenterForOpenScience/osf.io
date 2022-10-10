@@ -353,6 +353,14 @@
                       <li>Program Area:&nbsp;&nbsp;<b>${collection['program_area']}</b></li>
                     % endif
 
+                    % if collection['school_type']:
+                      <li>School Type:&nbsp;&nbsp;<b>${collection['school_type']}</b></li>
+                    % endif
+
+                    % if collection['study_design']:
+                      <li>Study Design:&nbsp;&nbsp;<b>${collection['study_design']}</b></li>
+                    % endif
+
                     % if collection['subjects']:
                       <li>
                         <dl class="dl-horizontal dl-subjects">
