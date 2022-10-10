@@ -69,7 +69,7 @@
         </div>
     </form>
 
-    {% include "util/pagination.html" with items=page status=status %}
+    {% include "rdm_custom_storage_location/pagination_export_data_list.html" with items=page status=status location_id=selected_location_id storage_id=selected_source_id %}
 
     <table class="table table-striped table-hover table-bordered table-responsive">
         <thead>
