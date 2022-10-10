@@ -366,8 +366,10 @@ var afterRequest = {
             $('.modal').modal('hide');
             $('#' + id + '_message').addClass('text-success');
             $('#' + id + '_message').removeClass('text-danger');
-            $osf.growl('Success', _('Institutional Storage set successfully'), 'success');
-            location.reload(true);
+            $osf.growl('Success', _('Institutional Storage set successfully'), 'success', 2000);
+            setTimeout(function() {
+                location.reload(true);
+            }, 2000);
         },
         'fail': function (id, message) {
             $('#' + id + '_message').html(message);
@@ -936,7 +938,11 @@ function exportData(institution_id, source_id, location_id, element) {
                 $stopExportButton.data('task_id', task_id);
             }
             $osf.growl(_('Export Data'), message, messageType, 2000);
-            !!need_reload && window.location.reload();
+            if (!!need_reload) {
+                setTimeout(function() {
+                     window.location.reload();
+                }, 2000);
+            }
 
             if (window.contextVars[this.custom.key].exportInBackground) {
                 // var x = 0;
@@ -1051,7 +1057,11 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
                 }
             }
             $osf.growl(title, message, messageType, 2000);
-            !!need_reload && window.location.reload();
+            if (!!need_reload) {
+                setTimeout(function() {
+                     window.location.reload();
+                }, 2000);
+            }
         }
     });
 }
@@ -1116,7 +1126,11 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
                 }
             }
             !window.contextVars[this.custom.key].intervalID && $osf.growl(title, message, messageType, 2000);
-            !!need_reload && window.location.reload();
+            if (!!need_reload) {
+                setTimeout(function() {
+                     window.location.reload();
+                }, 2000);
+            }
         },
         error: function (jqXHR) {
             // keep for debug
