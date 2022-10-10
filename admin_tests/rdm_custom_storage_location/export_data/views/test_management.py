@@ -852,7 +852,7 @@ class TestDeleteExportDataView(AdminTestCase):
         request = RequestFactory().post('/fake_path')
         request.user = self.user
         request.COOKIES = '213919sdasdn823193929'
-        request.POST = {'list_id_export_data': '3#', 'delete_permanently': 'on'}
+        request.POST = {'list_id_export_data': '3#', 'delete_permanently': 'on', 'selected_source_id': ['100'], 'selected_location_id': ['100']}
         view = setup_view(self.view, request)
         res = view.post(request)
         nt.assert_equal(res.status_code, 302)
@@ -865,7 +865,7 @@ class TestDeleteExportDataView(AdminTestCase):
         request = RequestFactory().post('/fake_path')
         request.user = self.user
         request.COOKIES = '213919sdasdn823193929'
-        request.POST = {'list_id_export_data': '3#', 'delete_permanently': 'on'}
+        request.POST = {'list_id_export_data': '3#', 'delete_permanently': 'on', 'selected_source_id': ['100'], 'selected_location_id': ['100']}
         view = setup_view(self.view, request)
         with self.assertRaises(SuspiciousOperation):
             view.post(request)
@@ -874,7 +874,7 @@ class TestDeleteExportDataView(AdminTestCase):
         request = RequestFactory().post('/fake_path')
         request.user = self.user
         request.COOKIES = '213919sdasdn823193929'
-        request.POST = {'list_id_export_data': '4#', 'delete_permanently': 'off'}
+        request.POST = {'list_id_export_data': '4#', 'delete_permanently': 'off', 'selected_source_id': ['100'], 'selected_location_id': ['100']}
         view = setup_view(self.view, request)
         res = view.post(request)
         nt.assert_equal(res.status_code, 302)
@@ -890,7 +890,7 @@ class TestRevertExportData(AdminTestCase):
     def test_post(self):
         request = RequestFactory().post('/fake_path')
         request.user = self.user
-        request.POST = {'list_id_export_data': '1000#'}
+        request.POST = {'list_id_export_data': '1000#', 'selected_source_id': ['100'], 'selected_location_id': ['100']}
         view = setup_view(self.view, request)
         res = view.post(request)
         nt.assert_equal(res.status_code, 302)
