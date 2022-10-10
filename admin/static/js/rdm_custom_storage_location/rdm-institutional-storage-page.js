@@ -759,7 +759,25 @@ function deleteLocation(id) {
         timeout: 120000,
         success: function (data) {
             afterRequest[route].success(this.custom, data);
-            window.location.reload();
+            var new_url = document.location.href;
+            var window_page = window.page;
+            var value = window_page.pageCount % window_page.perPage;
+            if(value - 1 === 0){
+              if(window_page.pageNumber <= 1){
+                window.history.pushState({}, '', new_url.split('?')[0]);
+              }
+              else if(window_page.pageNumber < window_page.pageNumPages){
+                window.location.reload();
+              }
+              else{
+                new_url= new URL(document.location.href);
+                new_url.searchParams.set('page', window_page.pageNumber - 1);
+                window.location.href = new_url.toString();
+              }
+            }
+            else{
+                window.location.reload();
+            }
         },
         error: function (jqXHR) {
             if (jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)) {

@@ -123,5 +123,11 @@
         window.contextVars = $.extend(true, {}, window.contextVars, {
             'institution_id': {{ institution.id }},
         });
+        window.page = {
+            perPage: {{ page.paginator.per_page }},
+            pageCount: {{ page.paginator.count }},
+            pageNumber: {{ page.number }},
+            pageNumPages: {{ page.paginator.num_pages }},
+        };
     </script>
 {% endblock %}

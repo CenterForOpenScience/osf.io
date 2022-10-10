@@ -43,7 +43,8 @@ class ExportStorageLocationViewBaseView(RdmPermissionMixin, UserPassesTestMixin)
         """ Check user permissions """
         user = self.request.user
         if user.is_institutional_admin:
-            self.PROVIDERS_AVAILABLE += ['dropboxbusiness', 'nextcloudinstitutions']
+            self.PROVIDERS_AVAILABLE = ['s3', 's3compat',
+                                        'dropboxbusiness', 'nextcloudinstitutions']
 
         return user.is_super_admin or user.is_institutional_admin
 
