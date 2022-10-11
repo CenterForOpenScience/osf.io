@@ -1724,7 +1724,11 @@ function MetadataButtons() {
             .append($('<div class="modal-body"></div>')
               .append($('<div class="row"></div>')
                 .append($('<div class="col-sm-12"></div>')
-                  .append(_('Press Ctrl-V (Command-V) again to paste.')))))
+                  .append(_('Press Ctrl-V (Command-V) to paste.'))
+                  .append($('<br/>'))
+                  .append(_('[Why is this needed?] In this browser, retrieving clipboard values with ' +
+                    'button operations is prohibited. Therefore, you must explicitly indicate clipboard operations ' +
+                    'by using the shortcut key or by pasting in the browser menu.')))))
             .append($('<div class="modal-footer"></div>')
               .append(close)))));
     dialog.appendTo($('#treeGrid'));
