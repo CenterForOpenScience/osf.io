@@ -52,11 +52,7 @@
                     <td>{% trans "Emails" %}</td>
                     <td>
                         {% for email in user_details.emails %}
-                            {% if email == user_details.username %}
-                                {{ email }}
-                            {% else %}
-                                {{ email }}
-                            {% endif %}
+                            <p>{{email}}</p>
                         {% endfor %}
                     </td>
                 </tr>
