@@ -3233,3 +3233,6 @@ msgstr ""
 
 msgid "Recalculate quota"
 msgstr ""
+
+msgid "Return"
+msgstr ""

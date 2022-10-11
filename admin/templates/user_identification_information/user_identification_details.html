@@ -11,8 +11,17 @@
 {% endblock title %}
 {% block content %}
     <div class="row">
-        <div class="col-md-12">
+        <div class="col-md-12" style="display:flex; align-items: baseline; justify-content: space-between;">
             <h3>{% trans "User details" %}</h3>
+            {% if user.is_superuser %}
+                <a href="{% url 'user_identification_information:user_identification_list' %}" class="btn btn-primary">
+                    {% trans "Return" %}
+                </a>
+            {% else %}
+                <a href="{% url 'user_identification_information_admin:user_identification_list' %}" class="btn btn-primary">
+                    {% trans "Return" %}
+                </a>
+            {% endif %}
         </div>
     </div>
     <div class="row">
