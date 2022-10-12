@@ -3033,7 +3033,6 @@ function handleScroll() {
             // Check if this element is the last element or not
             if (
                 length > 0 &&
-                (provider === 's3' || provider === 's3compat') &&
                 !parent.isFetching &&
                 parent.children[length - 1].id === item.id
             ) {
