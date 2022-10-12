@@ -250,8 +250,8 @@ class TestNotableDomainReclassification:
         obj_two.reload()
         assert obj_one.spam_status == SpamStatus.UNKNOWN
         assert obj_two.spam_status == SpamStatus.UNKNOWN
-        assert not 'domains' in obj_one.spam_data
-        assert not 'domains' in obj_two.spam_data
+        assert 'domains' not in obj_one.spam_data
+        assert 'domains' not in obj_two.spam_data
         unknown_notable_domain.note = NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT
         unknown_notable_domain.save()
         obj_one.reload()
@@ -283,8 +283,8 @@ class TestNotableDomainReclassification:
         obj_two.reload()
         assert obj_one.spam_status == SpamStatus.UNKNOWN
         assert obj_two.spam_status == SpamStatus.UNKNOWN
-        assert not 'domains' in obj_one.spam_data
-        assert not 'domains' in obj_two.spam_data
+        assert 'domains' not in obj_one.spam_data
+        assert 'domains' not in obj_two.spam_data
         ignored_notable_domain.note = NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT
         ignored_notable_domain.save()
         obj_one.reload()

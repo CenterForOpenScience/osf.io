@@ -31,10 +31,9 @@ class NotableDomain(BaseModel):
 
     def save(self, *args, **kwargs):
         db_instance = NotableDomain.load(self.pk)
-        if not self._state.adding and self.note != db_instance.note:
-            super().save(*args, **kwargs)
+        super().save(*args, **kwargs)
+        if db_instance and self.note != db_instance.note:
             reclassify_domain_references.apply_async(kwargs={'notable_domain_id': self.pk})
-        return super().save(*args, **kwargs)
 
     def __repr__(self):
         return f'<{self.__class__.__name__}: {self.domain} ({self.Note(self.note).name})>'
