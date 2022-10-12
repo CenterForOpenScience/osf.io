@@ -977,9 +977,6 @@ $('.stop-export-button').click(function (event) {
 
 function stopExportData(institution_id, source_id, location_id, task_id, element) {
     let key = source_id + '_' + location_id;
-    window.contextVars[key].exportInBackground && window.clearInterval(window.contextVars[key].intervalID);
-    window.contextVars[key].intervalID = undefined;
-    window.contextVars[key].exportInBackground = false;
     let params = {
         'institution_id': institution_id,
         'source_id': source_id,
@@ -996,6 +993,9 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
         custom: {'element': element, 'key': key},
         timeout: 120000,
         success: function (data) {
+            window.contextVars[this.custom.key].exportInBackground && window.clearInterval(window.contextVars[this.custom.key].intervalID);
+            window.contextVars[this.custom.key].intervalID = undefined;
+            window.contextVars[this.custom.key].exportInBackground = false;
             let message;
             let messageType = 'success';
             task_id = data.task_id;
