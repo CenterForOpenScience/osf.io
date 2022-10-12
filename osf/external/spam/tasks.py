@@ -31,7 +31,6 @@ def check_resource_for_domains(guid, content):
     domains = {match.group('domain') for match in re.finditer(DOMAIN_REGEX, content)}
     spammy_domains = []
     referrer_content_type = ContentType.objects.get_for_model(resource)
-    mark_spam = False
     for domain in domains:
         domain, _ = NotableDomain.objects.get_or_create(domain=domain)
         if domain.note == NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT:
