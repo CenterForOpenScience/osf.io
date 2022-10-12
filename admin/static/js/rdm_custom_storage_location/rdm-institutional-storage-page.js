@@ -1107,7 +1107,7 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
                         showViewExportDataButton($viewExportDataButton, location_id)
                     }
                     need_reload = 1;
-                } else {
+                } else if (!window.contextVars[this.custom.key].stopExportInBackground) {
                     messageType = 'danger';
                     message = _('Export data failed');
                 }
@@ -1125,7 +1125,12 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
                     message = _('Error occurred while exporting data.');
                 }
             }
-            !window.contextVars[this.custom.key].intervalID && $osf.growl(title, message, messageType, 2000);
+            if (!window.contextVars[this.custom.key].intervalID) {
+                $osf.growl(title, message, messageType, 2000);
+                window.contextVars[this.custom.key].intervalID = undefined;
+                window.contextVars[this.custom.key].exportInBackground = false;
+                window.contextVars[this.custom.key].stopExportInBackground = false;
+            }
             if (!!need_reload) {
                 setTimeout(function() {
                      window.location.reload();
