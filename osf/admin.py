@@ -8,6 +8,7 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 
 from osf.models import OSFUser, Node, NotableDomain, NodeLicense
+from osf.models.notable_domain import DomainReference
 
 
 def list_displayable_fields(cls):
@@ -96,6 +97,10 @@ class NotableDomainAdmin(admin.ModelAdmin):
                     },
                 )
         return num_added
+
+    def change_view(self, request, object_id, form_url="", extra_context=None):
+        num_of_references = DomainReference.objects.filter(referrer_object_id=object_id).count()
+        return self.changeform_view(request, object_id, form_url, { 'num_of_references': num_of_references })
 
 
 admin.site.register(OSFUser, OSFUserAdmin)

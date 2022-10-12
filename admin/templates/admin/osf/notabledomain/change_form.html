@@ -1,0 +1,13 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls %}
+{% block field_sets %}
+{% for fieldset in adminform %}
+  {% include "admin/includes/fieldset.html" %}
+{% endfor %}
+<div>
+    <label>
+        Number of references
+    </label>
+    <div>{{ num_of_references }}</div>
+</div>
+{% endblock %}
