@@ -3327,6 +3327,9 @@ msgstr ""
 msgid "Contributor"
 msgstr ""
 
+msgid "Project"
+msgstr ""
+
 msgid "Tags"
 msgstr ""
 
@@ -3379,4 +3382,40 @@ msgid "Check restore data"
 msgstr ""
 
 msgid "The result of checking restore data"
+msgstr ""
+
+msgid "The equivalent process is running"
+msgstr ""
+
+msgid "The export data files are corrupted"
+msgstr ""
+
+msgid "Permission denied for this institution"
+msgstr ""
+
+msgid "Permission denied for this storage"
+msgstr ""
+
+msgid "Permission denied for this export storage location"
+msgstr ""
+
+msgid "Permission denied for this export process"
+msgstr ""
+
+msgid "Cannot connect to the export data storage location"
+msgstr ""
+
+msgid "Cannot connect to source storage"
+msgstr ""
+
+msgid "Cannot connect to destination storage"
+msgstr ""
+
+msgid "Cannot check in this time. The process is {status}."
+msgstr ""
+
+msgid "Cannot stop this export process"
+msgstr ""
+
+msgid "Cannot abort this export process"
 msgstr ""
