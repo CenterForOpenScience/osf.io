@@ -81,7 +81,11 @@ def check_before_restore_export_data(cookies, export_id, destination_id, **kwarg
         return {'open_dialog': False, 'message': f'Cannot connect to the export data storage location'}
 
     # Get file info file: /export_{process_start}/file_info_{institution_guid}_{process_start}.json
-    export_data_files = read_file_info_and_check_schema(export_data=export_data, cookies=cookies, **kwargs)
+    try:
+        export_data_files = read_file_info_and_check_schema(export_data=export_data, cookies=cookies, **kwargs)
+    except Exception as e:
+        logger.error(f'Exception: {e}')
+        return {'open_dialog': False, 'message': str(e)}
 
     if not len(export_data_files):
         return {'open_dialog': False, 'message': f'The export data files are corrupted'}
