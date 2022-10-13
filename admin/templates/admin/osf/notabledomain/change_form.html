@@ -6,8 +6,18 @@
 {% endfor %}
 <div>
     <label>
-        Number of references
+        References
     </label>
-    <div>{{ num_of_references }}</div>
+    {% for ref in references %}
+      <div>
+        <a href={{ref.referrer.absolute_url}}>
+          {% if ref.referrer.title %}
+            {{ref.referrer.title}}
+          {% else %}
+            {{ref}}
+          {% endif %}
+        </a>
+      </div>
+    {% endfor %}
 </div>
 {% endblock %}

@@ -3,7 +3,7 @@ from django.conf.urls import url
 from django.template.response import TemplateResponse
 from django_extensions.admin import ForeignKeyAutocompleteAdmin
 from django.contrib.auth.models import Group
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 
@@ -47,9 +47,12 @@ class LicenseAdmin(admin.ModelAdmin):
 class NotableDomainAdmin(admin.ModelAdmin):
     fields = list_displayable_fields(NotableDomain)
     ordering = ('-id',)
-    list_display = ('domain', 'note')
+    list_display = ('domain', 'note', 'number_of_references')
     list_filter = ('note',)
     search_fields = ('domain',)
+
+    def number_of_references(self, obj):
+        return obj.number_of_references
 
     def get_urls(self):
         urls = super().get_urls()
@@ -99,9 +102,12 @@ class NotableDomainAdmin(admin.ModelAdmin):
         return num_added
 
     def change_view(self, request, object_id, form_url="", extra_context=None):
-        num_of_references = DomainReference.objects.filter(referrer_object_id=object_id).count()
-        return self.changeform_view(request, object_id, form_url, { 'num_of_references': num_of_references })
+        references = DomainReference.objects.filter(domain_id=object_id)
+        return self.changeform_view(request, object_id, form_url, { 'references': references })
 
+    def get_queryset(self, request):
+        qs = super().get_queryset(request).annotate(number_of_references=Count('domainreference'))
+        return qs
 
 admin.site.register(OSFUser, OSFUserAdmin)
 admin.site.register(Node, NodeAdmin)
