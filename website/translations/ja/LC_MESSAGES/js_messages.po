@@ -8620,3 +8620,40 @@ msgstr "エクスポートデータの復元を停止する"
 
 msgid "Stopped restoring data process."
 msgstr "エクスポートデータの復元が停止されました"
+
+# message from export/restore process
+msgid "The equivalent process is running"
+msgstr "同じプロセスが実行されています。"
+
+msgid "The export data files are corrupted"
+msgstr "エクスポートしたデータが破損しています。"
+
+msgid "Permission denied for this institution"
+msgstr "この機関に対する許可が拒否されました。"
+
+msgid "Permission denied for this storage"
+msgstr "このストレージに対する許可が拒否されました。"
+
+msgid "Permission denied for this export storage location"
+msgstr "このエクスポートストレージ場所に対する許可が拒否されました。"
+
+msgid "Permission denied for this export process"
+msgstr "このエクスポートプロセスに対する許可が拒否されました。"
+
+msgid "Cannot connect to the export data storage location"
+msgstr "エクスポート先のストレージに接続できません。"
+
+msgid "Cannot connect to source storage"
+msgstr "エクスポート元のストレージに接続できません。"
+
+msgid "Cannot connect to destination storage"
+msgstr "エクスポート先のストレージに接続できません。"
+
+msgid "Cannot check in this time. The process is {status}."
+msgstr "エクスポート処理は現在「{status}」のためデータをチェックできません。"
+
+msgid "Cannot stop this export process"
+msgstr "このエクスポート プロセスを停止できません。"
+
+msgid "Cannot abort this export process"
+msgstr "このエクスポート プロセスをアボートできません。"

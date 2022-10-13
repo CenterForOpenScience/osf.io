@@ -16,6 +16,9 @@ var preload_accounts_type1 = ['dropboxbusiness'];
 var preload_accounts_type2 = ['nextcloudinstitutions',
                 'ociinstitutions',
                 's3compatinstitutions']
+// delay time to show growl box; in millisecond
+var growlBoxDelay = 5000;
+var intervalCheckStatus = 5000;
 
 function preload(provider, callback) {
     if (preload_accounts_type1.indexOf(provider) >= 0) {
@@ -366,10 +369,10 @@ var afterRequest = {
             $('.modal').modal('hide');
             $('#' + id + '_message').addClass('text-success');
             $('#' + id + '_message').removeClass('text-danger');
-            $osf.growl('Success', _('Institutional Storage set successfully'), 'success', 2000);
+            $osf.growl('Success', _('Institutional Storage set successfully'), 'success', growlBoxDelay);
             setTimeout(function() {
                 location.reload(true);
-            }, 2000);
+            }, growlBoxDelay);
         },
         'fail': function (id, message) {
             $('#' + id + '_message').html(message);
@@ -738,7 +741,7 @@ afterRequest.delete = {
     },
     'fail': function (id) {
         var message = sprintf(_('Unable to delete location %1$s'), id)
-        $osf.growl('Error', message, 'success', 2000);
+        $osf.growl('Error', message, 'success', growlBoxDelay);
     }
 }
 
@@ -937,11 +940,11 @@ function exportData(institution_id, source_id, location_id, element) {
                 var $stopExportButton = $exportButton.parent().find('.stop-export-button');
                 $stopExportButton.data('task_id', task_id);
             }
-            $osf.growl(_('Export Data'), message, messageType, 2000);
+            $osf.growl(_('Export Data'), message, messageType, growlBoxDelay);
             if (!!need_reload) {
                 setTimeout(function() {
                      window.location.reload();
-                }, 2000);
+                }, growlBoxDelay);
             }
 
             if (window.contextVars[this.custom.key].exportInBackground) {
@@ -949,16 +952,16 @@ function exportData(institution_id, source_id, location_id, element) {
                 window.contextVars[this.custom.key].intervalID = window.setInterval(function () {
                     checkStatusExportData(institution_id, source_id, location_id, task_id, element);
                     // ++x === 5 && window.clearInterval(window.contextVars[this.custom.key].intervalID);
-                }, 5000);
+                }, intervalCheckStatus);
             }
         },
         error: function (jqXHR) {
             exportState(this.custom.element);
             var message = _('Cannot export data.');
             if (jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)) {
-                message = jqXHR.responseJSON.message;
+                message = _(jqXHR.responseJSON.message);
             }
-            $osf.growl(_('Export Data'), message, 'danger', 2000);
+            $osf.growl(_('Export Data'), message, 'danger', growlBoxDelay);
         }
     });
 }
@@ -1015,14 +1018,14 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
                 message = _('Stop exporting in background.');
                 window.contextVars[this.custom.key].stopExportInBackground = true;
             }
-            $osf.growl(_('Stop Export Data'), message, messageType, 2000);
+            $osf.growl(_('Stop Export Data'), message, messageType, growlBoxDelay);
 
             if (window.contextVars[this.custom.key].stopExportInBackground) {
                 // var x = 0;
                 window.contextVars[this.custom.key].intervalID = window.setInterval(function () {
                     checkStatusExportData(institution_id, source_id, location_id, task_id, element);
                     // ++x === 5 && window.clearInterval(window.contextVars[this.custom.key].intervalID);
-                }, 5000);
+                }, intervalCheckStatus);
             }
         },
         error: function (jqXHR) {
@@ -1033,7 +1036,7 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
             var need_reload = 0;
             if (jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)) {
                 var data = jqXHR.responseJSON;
-                message = data.message;
+                message = _(data.message);
                 if ('task_state' in data && 'status' in data) {
                     if (data.task_state === 'SUCCESS') {
                         // task_state in (SUCCESS)
@@ -1056,11 +1059,11 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
                     }
                 }
             }
-            $osf.growl(title, message, messageType, 2000);
+            $osf.growl(title, message, messageType, growlBoxDelay);
             if (!!need_reload) {
                 setTimeout(function() {
                      window.location.reload();
-                }, 2000);
+                }, growlBoxDelay);
             }
         }
     });
@@ -1126,7 +1129,7 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
                 }
             }
             if (!window.contextVars[this.custom.key].intervalID) {
-                $osf.growl(title, message, messageType, 2000);
+                $osf.growl(title, message, messageType, growlBoxDelay);
                 window.contextVars[this.custom.key].intervalID = undefined;
                 window.contextVars[this.custom.key].exportInBackground = false;
                 window.contextVars[this.custom.key].stopExportInBackground = false;
@@ -1134,7 +1137,7 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
             if (!!need_reload) {
                 setTimeout(function() {
                      window.location.reload();
-                }, 2000);
+                }, growlBoxDelay);
             }
         },
         error: function (jqXHR) {
@@ -1191,8 +1194,8 @@ $('#checkExportData').on('click', function () {
         $('.table-ng').html(text_current);
     }).fail(function (jqXHR) {
         $('#checkExportData').prop('disabled', false);
-        var message = jqXHR.responseJSON.message;
-        $osf.growl('Error', message, 'error', 2000);
+        var message = _(jqXHR.responseJSON.message);
+        $osf.growl('Error', message, 'error', growlBoxDelay);
     });
 });
 
@@ -1267,13 +1270,13 @@ $('#restore_button').on('click', function () {
         if (response['message']) {
             enableRestoreFunction();
             // Show error message
-            $osf.growl(_('Restore Export Data'), result['message'], 'danger', 2000);
+            $osf.growl(_('Restore Export Data'), result['message'], 'danger', growlBoxDelay);
         } else if (response['task_id']) {
             enableStopRestoreFunction();
             restore_task_id = response['task_id'];
             setTimeout(function () {
                 checkTaskStatus(restore_task_id, 'Restore');
-            }, 5000);
+            }, intervalCheckStatus);
         } else {
             $('#restore').modal('show');
         }
@@ -1281,7 +1284,7 @@ $('#restore_button').on('click', function () {
         enableRestoreFunction();
         var data = jqXHR.responseJSON;
         if (data && data['message']) {
-            $osf.growl(_('Restore Export Data'), data['message'], 'danger', 2000);
+            $osf.growl(_('Restore Export Data'), _(data['message']), 'danger', growlBoxDelay);
         }
     });
 });
@@ -1302,12 +1305,12 @@ $('#stop_restore_button').on('click', function () {
         stop_restore_task_id = response['task_id'];
         setTimeout(function () {
             checkTaskStatus(stop_restore_task_id, 'Stop Restore');
-        }, 5000);
+        }, intervalCheckStatus);
     }).fail(function (jqXHR) {
         enableStopRestoreFunction();
         var data = jqXHR.responseJSON;
         if (data && data['message']) {
-            $osf.growl(_('Stop Export Data'), data['message'], 'danger', 2000);
+            $osf.growl(_('Stop Export Data'), _(data['message']), 'danger', growlBoxDelay);
         }
     });
 });
@@ -1327,17 +1330,17 @@ function checkTaskStatus(task_id, task_type) {
             if (result_task_type === 'Restore') {
                 // Done restoring export data
                 enableCheckRestoreFunction();
-                $osf.growl(_('Restore Export Data'), _('Restore completed.'), 'success', 2000);
+                $osf.growl(_('Restore Export Data'), _('Restore completed.'), 'success', growlBoxDelay);
             } else if (result_task_type === 'Stop Restore') {
                 // Done stopping restore export data
                 enableRestoreFunction();
-                $osf.growl(_('Stop Restore Export Data'), _('Stopped restoring data process.'), 'success', 2000);
+                $osf.growl(_('Stop Restore Export Data'), _('Stopped restoring data process.'), 'success', growlBoxDelay);
             }
         } else if (state === 'PENDING' || state === 'STARTED') {
             // Redo check task status after 2 seconds
             setTimeout(function () {
                 checkTaskStatus(task_id, task_type);
-            }, 5000);
+            }, intervalCheckStatus);
         } else {
             if (state !== 'ABORTED') {
                 enableRestoreFunction();
@@ -1349,7 +1352,7 @@ function checkTaskStatus(task_id, task_type) {
                 } else if (result_task_type === 'Stop Restore') {
                     title = _('Stop Restore Export Data');
                 }
-                $osf.growl(title, result['message'], 'danger', 2000);
+                $osf.growl(title, _(result['message']), 'danger', growlBoxDelay);
             }
         }
     }).fail(function (jqXHR) {
@@ -1362,7 +1365,7 @@ function checkTaskStatus(task_id, task_type) {
             } else if (task_type === 'Stop Restore') {
                 title = _('Stop Restore Export Data');
             }
-            $osf.growl(title, data['result'], 'danger', 2000);
+            $osf.growl(title, _(data['result']), 'danger', growlBoxDelay);
         }
     });
 }
@@ -1386,13 +1389,13 @@ $('#start_restore_modal_button').on('click', function () {
         enableStopRestoreFunction();
         setTimeout(function () {
             checkTaskStatus(restore_task_id, 'Restore');
-        }, 5000);
+        }, intervalCheckStatus);
     }).fail(function (jqXHR) {
         // Call enableRestoreFunction() when fail
         enableRestoreFunction();
         var data = jqXHR.responseJSON;
         if (data && data['message']) {
-            $osf.growl(_('Restore Export Data'), data['message'], 'danger', 2000);
+            $osf.growl(_('Restore Export Data'), _(data['message']), 'danger', growlBoxDelay);
         }
     });
 });
@@ -1423,7 +1426,7 @@ $('#check_restore_button').on('click', function () {
     }).fail(function (jqXHR) {
         $('#check_restore_button').prop('disabled', false);
         var message = jqXHR.responseJSON.message;
-        $osf.growl('Error', _(message), 'error', 2000);
+        $osf.growl('Error', _(message), 'error', growlBoxDelay);
     });
 });
 
