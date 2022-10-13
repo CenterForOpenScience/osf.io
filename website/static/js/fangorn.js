@@ -110,8 +110,11 @@ function findByTempID(parent, tmpID) {
 }
 
 // Show the proper units (KB, MB, GB, etc.)
-function formatProperUnit(bytes, decimals = 2) {
+function formatProperUnit(bytes, decimals) {
     if (bytes <= 0) return '0 Bytes';
+    if (decimals === undefined) {
+        decimals = 2;
+    }
 
     var k = 1000;
     var dm = decimals < 0 ? 0 : decimals;
