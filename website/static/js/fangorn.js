@@ -3027,7 +3027,7 @@ function handleScroll() {
         index = range[i];
         item = this.find(index);
         if (item) {
-            const parent = this.find(item.parentID);
+            var parent = this.find(item.parentID);
             var provider = parent.data.provider;
             var length = parent.children.length;
             // Check if this element is the last element or not
