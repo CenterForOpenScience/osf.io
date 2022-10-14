@@ -1112,7 +1112,7 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
                     need_reload = 1;
                 } else if (!window.contextVars[this.custom.key].stopExportInBackground) {
                     messageType = 'danger';
-                    message = _('Export data failed');
+                    message = _('Export data failed.');
                 }
             } else if (data.task_state === 'FAILURE') {
                 // task_state in (FAILURE, )
