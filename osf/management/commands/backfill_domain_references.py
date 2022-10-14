@@ -6,9 +6,11 @@ from functools import reduce
 
 from django.db.models import Q
 from django.core.management.base import BaseCommand
-from osf.external.spam.tasks import check_resource_for_domains
+from osf.external.spam.tasks import migrate_check_resource_for_domains
 from osf.models import Preprint, OSFUser, Node, Comment, Registration
 from addons.wiki.models import WikiVersion
+from django_celery_results.models import TaskResult
+
 
 logger = logging.getLogger(__name__)
 
@@ -16,8 +18,15 @@ DOMAIN_MATCH_REGEX = re.compile(r'(?P<protocol>\w+://)?(?P<www>www\.)?(?P<domain
 DOMAIN_SEARCH_REGEX = r'(http://[^ \'}\[\]\~\(\)\/]+|https://[^ \'}\[\]\~\(\)\/]+)'
 
 
-def backfill_domain_references(dry_run=False):
+def backfill_domain_references(dry_run=False, batch_size=None):
     model_list = [Preprint, OSFUser, Node, Comment, Registration, WikiVersion]
+
+    completed_tasks = TaskResult.objects.filter(
+        result__regex=r'check_resource_for_domains:[a-zA-Z0-9_.-]{5,}'
+    )
+
+    completed_tasks_guids = [task.result.split(':')[1].rstrip('"') for task in completed_tasks]
+    logger.info(f'found {len(completed_tasks_guids)} completed tasks')
 
     queries = []
     for model in model_list:
