@@ -21,23 +21,6 @@ def reclassify_domain_references(notable_domain_id):
 
 @celery_app.task(ignore_result=False)
 def check_resource_for_domains(guid, content):
-    return _check_resource_for_domains(guid, content)
-
-
-@celery_app.task(ignore_result=False, result_expires=None)
-def migrate_check_resource_for_domains(guid, content):
-    """
-    When migrating/backfilling domains delete the TaskResult manually after migration/backfilling in complete. These
-    results do not expire so they can be used to excluded already migrated data.
-
-    Also note, passing this result like this is only for this early version of Celery, later versions do this more
-    intelligently.
-    """
-    _check_resource_for_domains(guid, content)
-    return f'check_resource_for_domains:{guid}'
-
-
-def _check_resource_for_domains(guid, content):
     from osf.models import Guid, NotableDomain, DomainReference
     resource = Guid.load(guid).referent
     domains = {match.group('domain') for match in re.finditer(DOMAIN_REGEX, content)}

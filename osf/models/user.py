@@ -1430,7 +1430,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             preprint.confirm_ham(save=save, train_akismet=False)
 
         for comment in self.comment_set.all():
-            comment.confirm_ham()
+            comment.confirm_ham(save=save, train_akismet=False)
 
     @property
     def is_assumed_ham(self):
