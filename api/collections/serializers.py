@@ -116,7 +116,7 @@ class CollectionSerializer(JSONAPISerializer):
     )
 
     collected_metadata = RelationshipField(
-        related_view='collections:collected-metadata-list',
+        related_view='collections:collection-submission-list',
         related_view_kwargs={'collection_id': '<_id>'},
     )
 
@@ -212,12 +212,12 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
     @property
     def subjects_related_view(self):
         # Overrides TaxonomizableSerializerMixin
-        return 'collections:collected-metadata-subjects'
+        return 'collections:collection-submissions-subjects-list'
 
     @property
     def subjects_self_view(self):
         # Overrides TaxonomizableSerializerMixin
-        return 'collections:collected-metadata-relationships-subjects'
+        return 'collections:collection-submission-subjects-relationship-list'
 
     @property
     def subjects_view_kwargs(self):

@@ -4207,7 +4207,7 @@ class TestCollectionLinkedNodes:
 
 
 @pytest.mark.django_db
-class TestCollectedMetaList:
+class TestCollectionSubmissionList:
     @pytest.fixture()
     def user_two(self):
         return AuthUserFactory()
@@ -4252,7 +4252,7 @@ class TestCollectedMetaList:
 
     @pytest.fixture()
     def url(self):
-        return '/{}collections/{{}}/collected_metadata/'.format(API_BASE)
+        return '/{}collections/{{}}/collection_submissions/'.format(API_BASE)
 
     @pytest.fixture()
     def payload(self):
@@ -4402,7 +4402,7 @@ class TestCollectedMetaSubjectFiltering(SubjectsFilterMixin):
 
     @pytest.fixture()
     def url(self, collection):
-        return '/{}collections/{}/collected_metadata/'.format(API_BASE, collection._id)
+        return '/{}collections/{}/collection_submissions/'.format(API_BASE, collection._id)
 
     def test_subject_filter_using_id_v_2_2(
             self, app, user, subject_one, subject_two, resource, resource_two,
@@ -4469,7 +4469,7 @@ class TestCollectedMetaSubjectFiltering(SubjectsFilterMixin):
         assert expected == actual
 
 
-class TestCollectedMetaSubjectsList(SubjectsListMixin):
+class TestCollectionSubmissionSubjectsList(SubjectsListMixin):
 
     @pytest.fixture()
     def project_one(self, user_admin_contrib, user_write_contrib, user_read_contrib):
@@ -4480,7 +4480,7 @@ class TestCollectedMetaSubjectsList(SubjectsListMixin):
 
     @pytest.fixture()
     def url(self, collection, resource):
-        return '/{}collections/{}/collected_metadata/{}/subjects/'.format(API_BASE, collection._id, resource.guid._id)
+        return '/{}collections/{}/collection_submissions/{}/subjects/'.format(API_BASE, collection._id, resource.guid._id)
 
     @pytest.fixture()
     def collection(self, user_admin_contrib):
@@ -4535,7 +4535,7 @@ class TestUpdateCollectedMetaSubjects(UpdateSubjectsMixin):
 
     @pytest.fixture()
     def url(self, collection, resource):
-        return '/{}collections/{}/collected_metadata/{}/'.format(API_BASE, collection._id, resource.guid._id)
+        return '/{}collections/{}/collection_submissions/{}/'.format(API_BASE, collection._id, resource.guid._id)
 
 
 @pytest.mark.django_db
@@ -4559,11 +4559,11 @@ class TestCollectedMetaSubjectsRelationship(SubjectsRelationshipMixin):
 
     @pytest.fixture()
     def url(self, collection, resource):
-        return '/{}collections/{}/collected_metadata/{}/relationships/subjects/'.format(API_BASE, collection._id, resource.guid._id)
+        return '/{}collections/{}/collection_submissions/{}/relationships/subjects/'.format(API_BASE, collection._id, resource.guid._id)
 
 
 @pytest.mark.django_db
-class TestCollectedMetaDetail:
+class TestCollectionSubmissionDetail:
     @pytest.fixture()
     def user_two(self):
         return AuthUserFactory()
@@ -4594,7 +4594,7 @@ class TestCollectedMetaDetail:
 
     @pytest.fixture()
     def url(self, collection, cgm):
-        return '/{}collections/{}/collected_metadata/{}/'.format(API_BASE, collection._id, cgm.guid._id)
+        return '/{}collections/{}/collection_submissions/{}/'.format(API_BASE, collection._id, cgm.guid._id)
 
     @pytest.fixture()
     def payload(self):
@@ -4704,8 +4704,8 @@ class TestCollectedMetaDetail:
         res = app.get(url, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 200
 
-        invalid_collection_url = '/{}collections/{}/collected_metadata/{}/'.format(API_BASE, 'abcde', project_one._id)
-        invalid_project_url = '/{}collections/{}/collected_metadata/{}/'.format(API_BASE, collection._id, 'abcde')
+        invalid_collection_url = '/{}collections/{}/collection_submissions/{}/'.format(API_BASE, 'abcde', project_one._id)
+        invalid_project_url = '/{}collections/{}/collection_submissions/{}/'.format(API_BASE, collection._id, 'abcde')
 
         res = app.get(invalid_collection_url, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 404
