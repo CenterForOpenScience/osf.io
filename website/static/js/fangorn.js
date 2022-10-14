@@ -2237,20 +2237,6 @@ var FGInput = {
     }
 };
 
-// display message under tools bar
-var FGSpan = {
-    view : function(ctrl, args) {
-        var extraCSS = args.className || '';
-        // message
-        var value = args.value || '';
-        return m('span',{
-            'innerHTML': value,
-            style: 'margin: 8px;',
-            className: extraCSS,
-        });
-    }
-};
-
 var FGDropdown = {
     view : function(ctrl, args, children) {
         var extraCSS = args.className || '';
