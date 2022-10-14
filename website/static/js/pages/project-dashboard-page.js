@@ -607,6 +607,9 @@ $(document).ready(function () {
                         '<p class="m-t-sm fg-load-message">Loading files...</p>' +
                         '</div></div>'
                     );
+                    // Hide loading
+                    tb.select('#tb-tbody > .tb-modal-shade').hide();
+                    tb.select('#tb-tbody').css('overflow', '');
                 }
             };
             var filebrowser = new Fangorn(fangornOpts);
