@@ -212,7 +212,7 @@ class WikiVersion(ObjectIDMixin, BaseModel):
             node._check_spam_user(user)
         return is_spam
 
-    def _get_spam_content(self, saved_fields=None):
+    def _get_spam_content(self, *unused_args, **unused_kwargs):
         content = []
         content.append(self.raw_text())
         if not content:

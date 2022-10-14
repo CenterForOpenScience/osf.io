@@ -28,20 +28,28 @@ def backfill_domain_references(dry_run=False):
         queries.append(model.objects.filter(query))
 
     for queryset in queries:
+        if queryset.query.model == WikiVersion:  # Wiki version has no `spam_status` this will work via the user status
+            queryset = queryset.exclude(user__guids___id__in=completed_tasks_guids)
+        else:
+            queryset = queryset.exclude(guids___id__in=completed_tasks_guids)
+
+        logger.info(f'{queryset.count()} of class: {queryset.query.model} to check')
+
         for item in queryset:
             if isinstance(item, WikiVersion):  # Wiki version has no `spam_status` this will work via the user status
                 guid = item.user._id
             else:
                 guid = item._id
 
-            spam_content = item._get_spam_content(saved_fields=list(item.SPAM_CHECK_FIELDS))
+            spam_content = item._get_spam_content()
             if not dry_run:
-                check_resource_for_domains.apply_async(
+                migrate_check_resource_for_domains.apply_async(
                     kwargs=dict(
                         guid=guid,
                         content=spam_content,
                     )
                 )
+                logger.info(f'{item}, queued')
 
 
 class Command(BaseCommand):

@@ -255,7 +255,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
             )
             self.node.save()
 
-    def _get_spam_content(self, saved_fields=None):
+    def _get_spam_content(self, *unused_args, **unused_kwargs):
         content = [getattr(self, field, []) for field in self.SPAM_CHECK_FIELDS]
         if not content:
             return None

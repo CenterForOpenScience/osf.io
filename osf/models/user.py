@@ -1429,6 +1429,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         for preprint in self.preprints.filter():
             preprint.confirm_ham(save=save, train_akismet=False)
 
+        for comment in self.comment_set.all():
+            comment.confirm_ham()
+
     @property
     def is_assumed_ham(self):
         user_email_addresses = self.emails.values_list('address', flat=True)

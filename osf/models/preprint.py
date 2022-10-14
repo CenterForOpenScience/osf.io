@@ -822,7 +822,10 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
         return super(Preprint, self).set_description(description, auth, save)
 
-    def get_spam_fields(self, saved_fields):
+    def get_spam_fields(self, saved_fields=None):
+        if not saved_fields:
+            return self.SPAM_CHECK_FIELDS
+
         return self.SPAM_CHECK_FIELDS if self.is_published and 'is_published' in saved_fields else self.SPAM_CHECK_FIELDS.intersection(
             saved_fields)
 

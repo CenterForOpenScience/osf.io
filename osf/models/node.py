@@ -1157,9 +1157,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             contributor__visible=True
         ).order_by('contributor___order')
 
-    def get_spam_fields(self, saved_fields):
+    def get_spam_fields(self, saved_fields=None):
         # Override for SpamOverrideMixin
         check_fields = self.SPAM_CHECK_FIELDS.copy()
+        if not saved_fields:
+            return self.SPAM_CHECK_FIELDS
+
         if not self.has_addon('forward'):
             check_fields.remove('addons_forward_node_settings__url')
         return check_fields if self.is_public and 'is_public' in saved_fields else check_fields.intersection(
