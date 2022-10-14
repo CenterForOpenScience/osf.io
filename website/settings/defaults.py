@@ -432,7 +432,8 @@ class CeleryConfig:
         'osf.management.commands.sync_datacite_doi_metadata',
         'osf.management.commands.update_institution_project_counts',
         'osf.management.commands.populate_branched_from',
-        'osf.management.commands.cumulative_plos_metrics'
+        'osf.management.commands.cumulative_plos_metrics',
+        'osf.external.spam.tasks'
     }
 
     med_pri_modules = {
@@ -531,7 +532,8 @@ class CeleryConfig:
         'osf.management.commands.fix_quickfiles_waterbutler_logs',
         'osf.management.commands.sync_doi_metadata',
         'osf.management.commands.cumulative_plos_metrics',
-        'api.providers.tasks'
+        'api.providers.tasks',
+        'osf.external.spam.tasks',
     )
 
     # Modules that need metrics and release requirements
