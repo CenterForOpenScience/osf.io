@@ -1,7 +1,12 @@
+from multiprocessing.sharedctypes import Value
 import re
+import logging
 from framework.celery_tasks import app as celery_app
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 DOMAIN_REGEX = re.compile(r'(?P<protocol>\w+://)?(?P<www>www\.)?(?P<domain>[\w-]+\.\w+)(?P<path>/\w*)?')
 
@@ -18,7 +23,10 @@ def reclassify_domain_references(notable_domain_id):
                 item.referrer.confirm_spam(save=False, domains=[domain.domain])
             elif domain.note == NotableDomain.Note.UNKNOWN or domain.note == NotableDomain.Note.IGNORED:
                 if item.referrer.spam_status == SpamStatus.SPAM:
-                    item.referrer.spam_data['domains'].remove(domain.domain)
+                    try:
+                        item.referrer.spam_data['domains'].remove(domain.domain)
+                    except (KeyError, AttributeError, ValueError) as error:
+                        logger.info(error)
                     if len(item.referrer.spam_data['domains']) == 0:
                         item.referrer.unspam(save=False)
             item.save()
