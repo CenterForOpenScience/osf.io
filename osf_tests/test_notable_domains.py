@@ -117,6 +117,8 @@ class TestNotableDomain:
         obj.reload()
         assert obj.spam_status == SpamStatus.SPAM
 
+@pytest.mark.django_db
+@pytest.mark.enable_enqueue_task
 class TestNotableDomainReclassification:
     @pytest.fixture()
     def spam_domain_one(self):
@@ -162,8 +164,6 @@ class TestNotableDomainReclassification:
             note=NotableDomain.Note.IGNORED,
         )
 
-    @pytest.mark.django_db
-    @pytest.mark.enable_enqueue_task
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
     def test_from_spam_to_unknown(self, factory, spam_domain_one, spam_domain_two, unknown_domain, ignored_domain, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
         obj_one = factory()
@@ -195,8 +195,6 @@ class TestNotableDomainReclassification:
         assert len(obj_one.spam_data['domains']) == 0
         assert set(obj_two.spam_data['domains']) == set([spam_domain_two.netloc])
 
-    @pytest.mark.django_db
-    @pytest.mark.enable_enqueue_task
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
     def test_from_spam_to_ignored(self, factory, spam_domain_one, spam_domain_two, unknown_domain, ignored_domain, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
         obj_one = factory()
@@ -228,8 +226,6 @@ class TestNotableDomainReclassification:
         assert len(obj_one.spam_data['domains']) == 0
         assert set(obj_two.spam_data['domains']) == set([spam_domain_two.netloc])
 
-    @pytest.mark.django_db
-    @pytest.mark.enable_enqueue_task
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
     def test_from_unknown_to_spam(self, factory, unknown_domain, ignored_domain, unknown_notable_domain, ignored_notable_domain):
         obj_one = factory()
@@ -261,8 +257,6 @@ class TestNotableDomainReclassification:
         assert set(obj_one.spam_data['domains']) == set([unknown_domain.netloc])
         assert set(obj_two.spam_data['domains']) == set([unknown_domain.netloc])
 
-    @pytest.mark.django_db
-    @pytest.mark.enable_enqueue_task
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
     def test_from_ignored_to_spam(self, factory, unknown_domain, ignored_domain, unknown_notable_domain, ignored_notable_domain):
         obj_one = factory()
