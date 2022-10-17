@@ -350,7 +350,9 @@ class SchemaResponseActionSerializer(BaseActionSerializer):
         old_state = target.reviews_state
         try:
             if trigger == SchemaResponseTriggers.SUBMIT.db_name:
-                required_approvers = [user.id for user, node in target.parent.get_admin_contributors_recursive(unique_users=True)]
+                required_approvers = [
+                    user.id for user, node in target.parent.get_admin_contributors_recursive(unique_users=True)
+                ]
                 target.submit(user=user, comment=comment, required_approvers=required_approvers)
             elif trigger == SchemaResponseTriggers.APPROVE.db_name:
                 target.approve(user=user, comment=comment)

@@ -7,7 +7,7 @@ from api.nodes.serializers import NodeSerializer
 from api.registrations.serializers import RegistrationSerializer
 from api.users.serializers import UserSerializer
 from api.institutions.serializers import InstitutionSerializer
-from api.collections.serializers import CollectionSubmissionSerializer
+from api.collection_submissions.serializers import CollectionSubmissionSerializer
 
 from osf.models import (
     AbstractNode,

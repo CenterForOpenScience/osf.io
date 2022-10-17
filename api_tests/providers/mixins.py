@@ -680,6 +680,7 @@ class ProviderListViewTestBaseMixin(ProviderMixinBase):
         else:
             assert len(res.json['data']) == 1
 
+
 class ProviderDetailViewTestBaseMixin(ProviderExistsMixin):
 
     def test_provider_exists(self, app, provider_url, fake_url, provider_list_url, provider_list_url_fake):
@@ -711,10 +712,12 @@ class ProviderDetailViewTestBaseMixin(ProviderExistsMixin):
             expect_errors=True)
         assert taxonomies_res.status_code == 404
 
+
 class ProviderSubmissionMixinBase(object):
     @property
     def submission_class(self):
         raise NotImplementedError
+
 
 @pytest.mark.django_db
 class ProviderSubmissionListViewTestBaseMixin(ProviderMixinBase, ProviderSubmissionMixinBase):
@@ -776,7 +779,7 @@ class ProviderSubmissionListViewTestBaseMixin(ProviderMixinBase, ProviderSubmiss
         def make_collection_payload(**attributes):
             return {
                 'data': {
-                    'type': 'collected-metadata',
+                    'type': 'collection-submission',
                     'attributes': attributes,
                 }
             }

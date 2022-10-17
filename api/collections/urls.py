@@ -1,16 +1,22 @@
 from django.conf.urls import url
 
 from api.collections import views
+from api.collection_submissions.views import (
+    CollectionSubmissionList,
+    LegacyCollectionSubmissionDetail,
+    CollectionSubmissionSubjectsList,
+    CollectionSubmissionSubjectsRelationshipList,
+)
 
 app_name = 'osf'
 
 urlpatterns = [
     url(r'^$', views.CollectionList.as_view(), name=views.CollectionList.view_name),
     url(r'^(?P<collection_id>\w+)/$', views.CollectionDetail.as_view(), name=views.CollectionDetail.view_name),
-    url(r'^(?P<collection_id>\w+)/collection_submissions/$', views.CollectionSubmissionList.as_view(), name=views.CollectionSubmissionList.view_name),
-    url(r'^(?P<collection_id>\w+)/collection_submissions/(?P<cgm_id>\w+)/$', views.CollectionSubmissionDetail.as_view(), name=views.CollectionSubmissionDetail.view_name),
-    url(r'^(?P<collection_id>\w+)/collection_submissions/(?P<cgm_id>\w+)/subjects/$', views.CollectionSubmissionSubjectsList.as_view(), name=views.CollectionSubmissionSubjectsList.view_name),
-    url(r'^(?P<collection_id>\w+)/collection_submissions/(?P<cgm_id>\w+)/relationships/subjects/$', views.CollectionSubmissionSubjectsRelationshipList.as_view(), name=views.CollectionSubmissionSubjectsRelationshipList.view_name),
+    url(r'^(?P<collection_id>\w+)/collection_submissions/$', CollectionSubmissionList.as_view(), name=CollectionSubmissionList.view_name),
+    url(r'^(?P<collection_id>\w+)/collection_submissions/(?P<cgm_id>\w+)/$', LegacyCollectionSubmissionDetail.as_view(), name=LegacyCollectionSubmissionDetail.view_name),
+    url(r'^(?P<collection_id>\w+)/collection_submissions/(?P<cgm_id>\w+)/subjects/$', CollectionSubmissionSubjectsList.as_view(), name=CollectionSubmissionSubjectsList.view_name),
+    url(r'^(?P<collection_id>\w+)/collection_submissions/(?P<cgm_id>\w+)/relationships/subjects/$', CollectionSubmissionSubjectsRelationshipList.as_view(), name=CollectionSubmissionSubjectsRelationshipList.view_name),
     url(r'^(?P<collection_id>\w+)/linked_nodes/$', views.LinkedNodesList.as_view(), name=views.LinkedNodesList.view_name),
     url(r'^(?P<collection_id>\w+)/linked_preprints/$', views.LinkedPreprintsList.as_view(), name=views.LinkedPreprintsList.view_name),
     url(r'^(?P<collection_id>\w+)/linked_registrations/$', views.LinkedRegistrationsList.as_view(), name=views.LinkedRegistrationsList.view_name),

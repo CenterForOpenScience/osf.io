@@ -172,9 +172,6 @@ class CoreScopes(object):
     ORGANIZER_COLLECTIONS_BASE_READ = 'collections.base_read'
     ORGANIZER_COLLECTIONS_BASE_WRITE = 'collections.base_write'
 
-    COLLECTED_META_READ = 'collected_meta_read'
-    COLLECTED_META_WRITE = 'collected_meta_write'
-
     GUIDS_READ = 'guids.base_read'
 
     WIKI_BASE_READ = 'wikis.base_read'
@@ -191,6 +188,13 @@ class CoreScopes(object):
 
     READ_REGISTRATION_RESOURCES = 'read_registration_resources'
     WRITE_REGISTRATION_RESOURCES = 'write_registration_resources'
+
+    READ_COLLECTION_SUBMISSION_ACTION = 'read_collection_submission_action'
+    WRITE_COLLECTION_SUBMISSION_ACTION = 'write_collection_submission_action'
+
+    READ_COLLECTION_SUBMISSION = 'read_collection_submission'
+    WRITE_COLLECTION_SUBMISSION = 'write_collection_submission'
+
 
 class ComposedScopes(object):
     """
@@ -257,8 +261,8 @@ class ComposedScopes(object):
 
     # Organizer Collections collection
     # Using Organizer Collections and the node links they collect. Reads Node Metadata.
-    ORGANIZER_READ = (CoreScopes.ORGANIZER_COLLECTIONS_BASE_READ, CoreScopes.COLLECTED_META_READ,) + NODE_METADATA_READ
-    ORGANIZER_WRITE = ORGANIZER_READ + (CoreScopes.ORGANIZER_COLLECTIONS_BASE_WRITE, CoreScopes.NODE_LINKS_WRITE, CoreScopes.COLLECTED_META_WRITE)
+    ORGANIZER_READ = (CoreScopes.ORGANIZER_COLLECTIONS_BASE_READ, CoreScopes.READ_COLLECTION_SUBMISSION,) + NODE_METADATA_READ
+    ORGANIZER_WRITE = ORGANIZER_READ + (CoreScopes.ORGANIZER_COLLECTIONS_BASE_WRITE, CoreScopes.NODE_LINKS_WRITE, CoreScopes.WRITE_COLLECTION_SUBMISSION)
 
     # Privileges relating to editing content uploaded under that node
     NODE_DATA_READ = (CoreScopes.NODE_FILE_READ, CoreScopes.WIKI_BASE_READ)

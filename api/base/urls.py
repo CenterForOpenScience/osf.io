@@ -41,6 +41,8 @@ urlpatterns = [
                 url(r'^brands/', include('api.brands.urls', namespace='brands')),
                 url(r'^citations/', include('api.citations.urls', namespace='citations')),
                 url(r'^collections/', include('api.collections.urls', namespace='collections')),
+                url(r'^collection_submissions/', include('api.collection_submissions.urls', namespace='collection_submissions')),
+                url(r'^collection_submissions_actions/', include('api.collection_submissions_actions.urls', namespace='collection_submissions_actions')),
                 url(r'^comments/', include('api.comments.urls', namespace='comments')),
                 url(r'^docs/', RedirectView.as_view(pattern_name=views.root), name='redirect-to-root', kwargs={'version': default_version}),
                 url(r'^draft_nodes/', include('api.draft_nodes.urls', namespace='draft_nodes')),

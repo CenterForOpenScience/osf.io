@@ -4259,7 +4259,7 @@ class TestCollectionSubmissionList:
         def make_collection_payload(**attributes):
             return {
                 'data': {
-                    'type': 'collected-metadata',
+                    'type': 'collection-submission',
                     'attributes': attributes,
                 }
             }
@@ -4408,7 +4408,7 @@ class TestCollectedMetaSubjectFiltering(SubjectsFilterMixin):
             self, app, user, subject_one, subject_two, resource, resource_two,
             has_subject, project_one, project_two):
 
-        expected = set([project_one._id])
+        expected = set([f'{project_one._id}-{resource.collection._id}'])
         res = app.get(
             '{}{}&version=2.2'.format(has_subject, subject_one._id),
             auth=user.auth
@@ -4416,7 +4416,7 @@ class TestCollectedMetaSubjectFiltering(SubjectsFilterMixin):
         actual = set([obj['id'] for obj in res.json['data']])
         assert expected == actual
 
-        expected = set([project_two._id])
+        expected = set([f'{project_two._id}-{resource.collection._id}'])
         res = app.get(
             '{}{}&version=2.2'.format(has_subject, subject_two._id),
             auth=user.auth
@@ -4428,7 +4428,7 @@ class TestCollectedMetaSubjectFiltering(SubjectsFilterMixin):
             self, app, user, subject_two, resource, resource_two,
             has_subject, project_one, project_two):
 
-        expected = set([project_two._id])
+        expected = set([f'{project_two._id}-{resource.collection._id}'])
         res = app.get(
             '{}{}&version=2.2'.format(has_subject, subject_two.text),
             auth=user.auth
@@ -4440,7 +4440,7 @@ class TestCollectedMetaSubjectFiltering(SubjectsFilterMixin):
             self, app, user, subject_one, subject_two, resource, resource_two,
             has_subject, project_one, project_two):
 
-        expected = set([project_one._id])
+        expected = set([f'{project_one._id}-{resource.collection._id}'])
         res = app.get(
             '{}{}&version={}'.format(has_subject, subject_one._id, subjects_as_relationships_version),
             auth=user.auth
@@ -4448,7 +4448,7 @@ class TestCollectedMetaSubjectFiltering(SubjectsFilterMixin):
         actual = set([obj['id'] for obj in res.json['data']])
         assert expected == actual
 
-        expected = set([project_two._id])
+        expected = set([f'{project_two._id}-{resource_two.collection._id}'])
         res = app.get(
             '{}{}&version={}'.format(has_subject, subject_two._id, subjects_as_relationships_version),
             auth=user.auth
@@ -4460,7 +4460,7 @@ class TestCollectedMetaSubjectFiltering(SubjectsFilterMixin):
             self, app, user, subject_two, resource, resource_two,
             has_subject, project_one, project_two):
         resource_two.subjects.add(subject_two)
-        expected = set([project_two._id])
+        expected = set([f'{project_two._id}-{resource_two.collection._id}'])
         res = app.get(
             '{}{}&version={}'.format(has_subject, subject_two.text, subjects_as_relationships_version),
             auth=user.auth
@@ -4531,7 +4531,7 @@ class TestUpdateCollectedMetaSubjects(UpdateSubjectsMixin):
 
     @pytest.fixture()
     def resource_type_plural(self, resource):
-        return 'collected-metadata'
+        return 'collection-submission'
 
     @pytest.fixture()
     def url(self, collection, resource):
@@ -4601,7 +4601,7 @@ class TestCollectionSubmissionDetail:
         def make_collection_payload(**attributes):
             return {
                 'data': {
-                    'type': 'collected-metadata',
+                    'type': 'collection-submission',
                     'attributes': attributes,
                 }
             }

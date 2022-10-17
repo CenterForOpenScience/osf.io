@@ -23,7 +23,7 @@ from api.base.pagination import MaxSizePagination, IncreasedPageSizePagination
 from api.base.utils import get_object_or_error, get_user_auth, is_truthy
 from api.licenses.views import LicenseList
 from api.collections.permissions import CanSubmitToCollectionOrPublic
-from api.collections.serializers import CollectionSubmissionSerializer, CollectionSubmissionCreateSerializer
+from api.collection_submissions.serializers import CollectionSubmissionSerializer, CollectionSubmissionCreateSerializer
 from api.preprints.permissions import PreprintPublishedOrAdmin
 from api.preprints.serializers import PreprintSerializer
 from api.providers.permissions import CanAddModerator, CanDeleteModerator, CanUpdateModerator, CanSetUpProvider, MustBeModerator
@@ -483,13 +483,13 @@ class CollectionProviderSubmissionList(JSONAPIBaseView, generics.ListCreateAPIVi
         CanSubmitToCollectionOrPublic,
         base_permissions.TokenHasScope,
     )
-    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
-    required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
+    required_read_scopes = [CoreScopes.READ_COLLECTION_SUBMISSION]
+    required_write_scopes = [CoreScopes.WRITE_COLLECTION_SUBMISSION]
 
     model_class = CollectionSubmission
     serializer_class = CollectionSubmissionSerializer
-    view_category = 'collected-metadata'
-    view_name = 'provider-collection-submission-list'
+    view_category = 'collection-submissions'
+    view_name = 'provider-collection-submissions-list'
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -521,13 +521,13 @@ class RegistrationProviderSubmissionList(JSONAPIBaseView, generics.ListCreateAPI
         CanSubmitToCollectionOrPublic,
         base_permissions.TokenHasScope,
     )
-    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
-    required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
+    required_read_scopes = [CoreScopes.READ_COLLECTION_SUBMISSION]
+    required_write_scopes = [CoreScopes.WRITE_COLLECTION_SUBMISSION]
 
     model_class = CollectionSubmission
     serializer_class = CollectionSubmissionSerializer
-    view_category = 'collected-metadata'
-    view_name = 'provider-collected-registration-metadata-list'
+    view_category = 'collection-submissions'
+    view_name = 'provider-collection-submissions-registration-list'
 
     def get_serializer_class(self):
         if self.request.method == 'POST':

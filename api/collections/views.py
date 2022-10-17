@@ -8,7 +8,6 @@ from framework.auth.oauth_scopes import CoreScopes
 from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
 from api.base.filters import ListFilterMixin
-from api.base.parsers import JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON
 
 from api.base.views import JSONAPIBaseView
 from api.base.views import BaseLinkedList
@@ -20,13 +19,9 @@ from api.collections.permissions import (
     CollectionWriteOrPublic,
     CollectionWriteOrPublicForPointers,
     CollectionWriteOrPublicForRelationshipPointers,
-    CanSubmitToCollectionOrPublic,
-    CanUpdateDeleteCGMOrPublic,
     ReadOnlyIfCollectedRegistration,
 )
 from api.collections.serializers import (
-    CollectionSubmissionSerializer,
-    CollectionSubmissionCreateSerializer,
     CollectionSerializer,
     CollectionDetailSerializer,
     CollectionNodeLinkSerializer,
@@ -36,7 +31,6 @@ from api.collections.serializers import (
 )
 from api.nodes.serializers import NodeSerializer
 from api.preprints.serializers import PreprintSerializer
-from api.subjects.views import SubjectRelationshipBaseView, BaseResourceSubjectsList
 from api.registrations.serializers import RegistrationSerializer
 from osf.models import (
     AbstractNode,
@@ -311,103 +305,6 @@ class CollectionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, C
     def perform_destroy(self, instance):
         collection = self.get_object()
         collection.delete()
-
-
-class CollectionSubmissionList(JSONAPIBaseView, generics.ListCreateAPIView, CollectionMixin, ListFilterMixin):
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        CanSubmitToCollectionOrPublic,
-        base_permissions.TokenHasScope,
-    )
-    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
-    required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
-
-    model_class = CollectionSubmission
-    serializer_class = CollectionSubmissionSerializer
-    view_category = 'collections'
-    view_name = 'collection-submission-list'
-
-    def get_serializer_class(self):
-        if self.request.method == 'POST':
-            return CollectionSubmissionCreateSerializer
-        else:
-            return CollectionSubmissionSerializer
-
-    def get_default_queryset(self):
-        return self.get_collection().collectionsubmission_set.all()
-
-    def get_queryset(self):
-        return self.get_queryset_from_request()
-
-    def perform_create(self, serializer):
-        user = self.request.user
-        collection = self.get_collection()
-        serializer.save(creator=user, collection=collection)
-
-
-class CollectionSubmissionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CollectionMixin):
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        CanUpdateDeleteCGMOrPublic,
-        base_permissions.TokenHasScope,
-    )
-    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
-    required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
-
-    serializer_class = CollectionSubmissionSerializer
-    view_category = 'collections'
-    view_name = 'collected-metadata-detail'
-
-    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
-
-    # overrides RetrieveAPIView
-    def get_object(self):
-        return self.get_collection_submission()
-
-    def perform_destroy(self, instance):
-        # Skip collection permission check -- perms class checks when getting CGM
-        collection = self.get_collection(check_object_permissions=False)
-        collection.remove_object(instance)
-
-    def perform_update(self, serializer):
-        serializer.save()
-
-
-class CollectionSubmissionSubjectsList(BaseResourceSubjectsList, CollectionMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/collected_meta_subjects).
-    """
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        CanUpdateDeleteCGMOrPublic,
-        base_permissions.TokenHasScope,
-    )
-
-    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
-
-    view_category = 'collections'
-    view_name = 'collection-submissions-subjects-list'
-
-    def get_resource(self):
-        return self.get_collection_submission()
-
-
-class CollectionSubmissionSubjectsRelationshipList(SubjectRelationshipBaseView, CollectionMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/collected_meta_subjects_relationship).
-    """
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        CanUpdateDeleteCGMOrPublic,
-        base_permissions.TokenHasScope,
-    )
-
-    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
-    required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
-
-    view_category = 'collections'
-    view_name = 'collection-submission-subjects-relationship-list'
-
-    def get_resource(self, check_object_permissions=True):
-        return self.get_collection_submission(check_object_permissions)
 
 
 class LinkedNodesList(BaseLinkedList, CollectionMixin, NodeOptimizationMixin):
