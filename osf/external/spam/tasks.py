@@ -1,4 +1,3 @@
-from multiprocessing.sharedctypes import Value
 import re
 import logging
 from framework.celery_tasks import app as celery_app
