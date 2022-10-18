@@ -3186,7 +3186,7 @@ msgid "New entitlement"
 msgstr "入力欄を追加"
 
 msgid "Delete"
-msgstr "削除"
+msgstr "ゴミ箱に移動"
 
 msgid "Entitlement must be not empty"
 msgstr "eduPersonEntitlement を入力してください。"
@@ -3293,7 +3293,7 @@ msgstr "エクスポートデータ管理"
 
 # export_data_storage_location.html
 msgid "Configure Accounts for Export Data Storage Location"
-msgstr "エクスポートデータ保存場所のアカウントをコンフィグレーションする"
+msgstr "エクスポートデータ保存場所のアカウント設定"
 
 msgid "ID"
 msgstr ""
@@ -3316,22 +3316,22 @@ msgstr "エクスポートデータ一覧閲覧"
 
 # export_data_list.html
 msgid "Export Data List"
-msgstr "データ一覧をエクスポートする"
+msgstr "エクスポートデータ一覧"
 
 msgid "Export source storage"
 msgstr "エクスポート元ストレージ"
 
 msgid "Filter"
-msgstr "フィルター"
+msgstr "一覧更新"
 
 msgid "Revert Export Data"
 msgstr "エクスポートデータ復帰"
 
 msgid "Process start"
-msgstr "プロセスを開始する"
+msgstr "プロセス開始時間"
 
 msgid "Process end"
-msgstr "プロセスを終了する"
+msgstr "プロセス終了時間"
 
 msgid "Number of projects"
 msgstr "プロジェクト数"

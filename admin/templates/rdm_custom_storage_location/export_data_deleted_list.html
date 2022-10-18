@@ -119,6 +119,12 @@
             data-target="#revert"
             data-toggle="modal">{% trans "Revert" %}</button>
 
+    <button type="button" id="delete_button"
+            class="btn btn-danger"
+            disabled
+            data-target="#deleteExport"
+            data-toggle="modal">{% trans "Delete Permanently" %}</button>
+
     <style type="text/css">
         .modal.middle {
             text-align: center;
@@ -142,6 +148,10 @@
         .text-overwrap {
             word-break: break-word;
         }
+
+        .checkbox {
+            display: none;
+        }
     </style>
 
     <div class="modal middle fade" id="revert" tabindex="-1" aria-labelledby="revertLabel" aria-hidden="true">
@@ -162,6 +172,32 @@
                         <button type="submit" id="submitRevertButton"
                                 disabled
                                 class="btn btn-primary">{% trans "Revert" %}</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="modal middle fade" id="deleteExport" tabindex="-1" aria-labelledby="deleteExportLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <form method="post" action={% url 'custom_storage_location:export_data:export_data_delete' %}>
+                {% csrf_token %}
+                <div class="modal-content">
+                    <div class="modal-body text-left" id="bodydeleteExport">
+                        <p>{% trans "Are you sure you want to delete these export data?" %}</p>
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox"
+                                       name="delete_permanently" checked> {% trans "Permanently delete (Cannot be restored with the Revert button)" %}
+                            </label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button"
+                                class="btn btn-secondary cancel_modal"
+                                data-dismiss="modal">{% trans "Cancel" %}</button>
+                        <button type="submit" id="submitDeleteButton"
+                                disabled
+                                class="btn btn-danger">{% trans "Delete" %}</button>
                     </div>
                 </div>
             </form>
@@ -193,13 +229,31 @@
                 $('#bodyrevertmodal').append(`<input type='hidden' value={{selected_source_id}} id='selected_source_id' class='buckinput' name='selected_source_id' />`);
                 $('#bodyrevertmodal').append(`<input type='hidden' value={{selected_location_id}} id='selected_location_id' class='buckinput' name='selected_location_id' />`);
             });
+            $('#delete_button').on('click', () => {
+                let list_export_data = $('input[type=checkbox][name=check_revert_export]');
+                let list_export_id = '';
+                for (let i = 0; i < list_export_data.length; i++) {
+                    if (list_export_data[i].checked) {
+                        list_export_id += list_export_data[i].id + '#';
+                    }
+                }
+                if (list_export_id.length > 0) {
+                    $('#submitDeleteButton').removeAttr('disabled');
+                }
+                $('#bodydeleteExport').append(`<input type='hidden' value=${list_export_id} id='input_export_data' class='buckinput' name='list_id_export_data' />`);
+                $('#bodydeleteExport').append(`<input type='hidden' value={{source_id}} id='source_id' class='buckinput' name='source_id' />`);
+                $('#bodydeleteExport').append(`<input type='hidden' value={{selected_source_id}} id='selected_source_id' class='buckinput' name='selected_source_id' />`);
+                $('#bodydeleteExport').append(`<input type='hidden' value={{selected_location_id}} id='selected_location_id' class='buckinput' name='selected_location_id' />`);
+            });
              $('input[type=checkbox]').on('change', () => {
                 let count_checked = $('input[type=checkbox][name=check_revert_export]:checked').length;
                 if (count_checked > 0) {
                     $('#revert_button').prop('disabled', false);
+                    $('#delete_button').prop('disabled', false);
                 }
                 else {
                     $('#revert_button').prop('disabled', true);
+                    $('#delete_button').prop('disabled', true);
                 }
             });
             $('input[type=checkbox][name=check_revert_export]').on('change', () => {

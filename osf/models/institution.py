@@ -172,6 +172,9 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
     def get_allowed_storage_location(self):
         return self.get_default_storage_location().union(self.get_institutional_storage_location())
 
+    def get_allowed_storage_location_order_by_instutional_storage_and_default_storage(self):
+        return list(self.get_institutional_storage_location()) + list(self.get_default_storage_location())
+
     def have_institutional_storage_location_id(self, storage_id):
         return self.get_institutional_storage_location().filter(pk=storage_id).exists()
 

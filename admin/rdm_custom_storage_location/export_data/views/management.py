@@ -47,7 +47,7 @@ def get_export_data(institution_guid, selected_location_id=None, selected_source
         list_export_data = list_export_data.filter(location_id=selected_location_id)
     if selected_source_id:
         list_export_data = list_export_data.filter(source_id=selected_source_id)
-    list_export_data = list_export_data.order_by('id')
+    list_export_data = list_export_data.order_by('-id')
 
     list_data = []
     for export_data in list_export_data:
@@ -242,7 +242,7 @@ class DeleteExportDataView(ExportStorageLocationViewBaseView, View):
         list_export_data_delete = request.POST.get('list_id_export_data').split('#')
         list_export_data_delete = list(filter(None, list_export_data_delete))
         if check_delete_permanently:
-            for item in ExportData.objects.filter(id__in=list_export_data_delete, is_deleted=False):
+            for item in ExportData.objects.filter(id__in=list_export_data_delete, is_deleted=True):
                 response = item.delete_export_data_folder(cookies, cookie=cookie)
                 if response.status_code == 204:
                     item.delete()
