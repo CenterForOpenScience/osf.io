@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 import logging
 from urllib.parse import urlencode
 
-from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import redirect
 from django.urls import reverse
@@ -19,7 +18,6 @@ logger = logging.getLogger(__name__)
 class InstitutionEntitlementList(RdmPermissionMixin, ListView):
     paginate_by = 25
     template_name = 'entitlements/list.html'
-    permission_required = 'osf.admin_institution_entitlement'
     raise_exception = True
     model = InstitutionEntitlement
 
@@ -54,8 +52,7 @@ class InstitutionEntitlementList(RdmPermissionMixin, ListView):
         return super(InstitutionEntitlementList, self).get_context_data(**kwargs)
 
 
-class BulkAddInstitutionEntitlement(PermissionRequiredMixin, View):
-    permission_required = 'osf.admin_institution_entitlement'
+class BulkAddInstitutionEntitlement(RdmPermissionMixin, View):
     raise_exception = True
 
     def post(self, request):
@@ -77,8 +74,7 @@ class BulkAddInstitutionEntitlement(PermissionRequiredMixin, View):
         return redirect('{}?{}'.format(base_url, query_string))
 
 
-class ToggleInstitutionEntitlement(PermissionRequiredMixin, View):
-    permission_required = 'osf.admin_institution_entitlement'
+class ToggleInstitutionEntitlement(RdmPermissionMixin, View):
     raise_exception = True
 
     def post(self, request, *args, **kwargs):
@@ -92,8 +88,7 @@ class ToggleInstitutionEntitlement(PermissionRequiredMixin, View):
         return redirect('{}?{}'.format(base_url, query_string))
 
 
-class DeleteInstitutionEntitlement(PermissionRequiredMixin, View):
-    permission_required = 'osf.admin_institution_entitlement'
+class DeleteInstitutionEntitlement(RdmPermissionMixin, View):
     raise_exception = True
 
     def post(self, request, *args, **kwargs):
