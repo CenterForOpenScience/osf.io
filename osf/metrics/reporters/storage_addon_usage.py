@@ -25,14 +25,20 @@ def storage_addon_node_counts(date, nodesettings_model):
         .exclude(owner__isnull=True)
         .exclude(owner__deleted__isnull=False)
         .exclude(owner__spam_status=SpamStatus.SPAM)
-        .exclude(owner__tags__in=Tag.all_tags.filter(system=True, name='old_node_collection'))
     )
-    addon_is_oauth = issubclass(nodesettings_model, BaseOAuthNodeSettings)
+    try:
+        old_node_collection_tag = Tag.all_tags.get(system=True, name='old_node_collection')
+    except Tag.DoesNotExist:
+        pass
+    else:
+        nodesettings_qs = nodesettings_qs.exclude(owner__tags=old_node_collection_tag)
 
     created_before = Q(created__date__lte=date)
     created_today = Q(created__date=date)
     deleted_before = Q(deleted__date__lte=date)
     deleted_today = Q(deleted__date=date)
+
+    addon_is_oauth = issubclass(nodesettings_model, BaseOAuthNodeSettings)
     if addon_is_oauth:
         is_connected = (~deleted_before & Q(external_account__isnull=False))
     else:
