@@ -101,9 +101,9 @@ class NotableDomainAdmin(admin.ModelAdmin):
                 )
         return num_added
 
-    def change_view(self, request, object_id, form_url="", extra_context=None):
+    def change_view(self, request, object_id, form_url='', extra_context=None):
         references = DomainReference.objects.filter(domain_id=object_id)
-        return self.changeform_view(request, object_id, form_url, { 'references': references })
+        return self.changeform_view(request, object_id, form_url, {'references': references})
 
     def get_queryset(self, request):
         qs = super().get_queryset(request).annotate(number_of_references=Count('domainreference'))
