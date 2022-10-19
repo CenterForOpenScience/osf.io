@@ -119,11 +119,9 @@
             data-target="#revert"
             data-toggle="modal">{% trans "Revert" %}</button>
 
-    <button type="button" id="delete_button"
+    <button type="button" id="delete_permanently_button"
             class="btn btn-danger"
-            disabled
-            data-target="#deleteExport"
-            data-toggle="modal">{% trans "Delete Permanently" %}</button>
+            disabled>{% trans "Delete Permanently" %}</button>
 
     <style type="text/css">
         .modal.middle {
@@ -190,6 +188,9 @@
                                        name="delete_permanently" checked> {% trans "Permanently delete (Cannot be restored with the Revert button)" %}
                             </label>
                         </div>
+                        <input type='hidden' value={{source_id}} id='source_id' class='buckinput' name='source_id' />
+                        <input type='hidden' value={{selected_source_id}} id='selected_source_id' class='buckinput' name='selected_source_id' />
+                        <input type='hidden' value={{selected_location_id}} id='selected_location_id' class='buckinput' name='selected_location_id' />
                     </div>
                     <div class="modal-footer">
                         <button type="button"
@@ -229,31 +230,15 @@
                 $('#bodyrevertmodal').append(`<input type='hidden' value={{selected_source_id}} id='selected_source_id' class='buckinput' name='selected_source_id' />`);
                 $('#bodyrevertmodal').append(`<input type='hidden' value={{selected_location_id}} id='selected_location_id' class='buckinput' name='selected_location_id' />`);
             });
-            $('#delete_button').on('click', () => {
-                let list_export_data = $('input[type=checkbox][name=check_revert_export]');
-                let list_export_id = '';
-                for (let i = 0; i < list_export_data.length; i++) {
-                    if (list_export_data[i].checked) {
-                        list_export_id += list_export_data[i].id + '#';
-                    }
-                }
-                if (list_export_id.length > 0) {
-                    $('#submitDeleteButton').removeAttr('disabled');
-                }
-                $('#bodydeleteExport').append(`<input type='hidden' value=${list_export_id} id='input_export_data' class='buckinput' name='list_id_export_data' />`);
-                $('#bodydeleteExport').append(`<input type='hidden' value={{source_id}} id='source_id' class='buckinput' name='source_id' />`);
-                $('#bodydeleteExport').append(`<input type='hidden' value={{selected_source_id}} id='selected_source_id' class='buckinput' name='selected_source_id' />`);
-                $('#bodydeleteExport').append(`<input type='hidden' value={{selected_location_id}} id='selected_location_id' class='buckinput' name='selected_location_id' />`);
-            });
-             $('input[type=checkbox]').on('change', () => {
+            $('input[type=checkbox]').on('change', () => {
                 let count_checked = $('input[type=checkbox][name=check_revert_export]:checked').length;
                 if (count_checked > 0) {
                     $('#revert_button').prop('disabled', false);
-                    $('#delete_button').prop('disabled', false);
+                    $('#delete_permanently_button').prop('disabled', false);
                 }
                 else {
                     $('#revert_button').prop('disabled', true);
-                    $('#delete_button').prop('disabled', true);
+                    $('#delete_permanently_button').prop('disabled', true);
                 }
             });
             $('input[type=checkbox][name=check_revert_export]').on('change', () => {

@@ -1156,6 +1156,29 @@ $('#checkDelete').on('click', function () {
         "' id='input_export_data' class='buckinput' name='list_id_export_data' style='display: none;' />");
 });
 
+$('#delete_permanently_button').on('click', () => {
+    let list_export_data = $('input[type=checkbox][name=check_revert_export]');
+    let list_export_id = '';
+    for (let i = 0; i < list_export_data.length; i++) {
+        if (list_export_data[i].checked) {
+            list_export_id += list_export_data[i].id + '#';
+        }
+    }
+    $('#bodydeleteExport').append(`<input type='hidden' value=${list_export_id} id='input_export_data' class='buckinput' name='list_id_export_data' />`);
+    $osf.confirmDangerousAction({
+        title: _('Are you sure you want to delete these export data?'),
+        message: _('<p>The export data will no longer be able to restored with Revert button.</p>'),
+        callback: function() {
+            $('#deleteExport form').submit();
+        },
+        buttons: {
+            success: {
+                label: _('Delete')
+            }
+        }
+    });
+});
+
 
 // Start - Revert Export data - Actions
 
