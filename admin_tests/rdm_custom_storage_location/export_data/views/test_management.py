@@ -1,6 +1,6 @@
 import mock
 import pytest
-from django.core.exceptions import SuspiciousOperation
+from django.core.exceptions import SuspiciousOperation, PermissionDenied
 from django.http import Http404, JsonResponse
 from django.test import RequestFactory
 from django.urls import reverse
@@ -15,6 +15,7 @@ from osf_tests.factories import (
     ExportDataFactory,
     RegionFactory,
     ExportDataRestoreFactory,
+    ExportDataLocationFactory,
 )
 from tests.base import AdminTestCase
 
@@ -605,6 +606,41 @@ class TestExportDataInformationView(AdminTestCase):
                           institution_id=self.institution.id, data_id=0)
         with self.assertRaises(Http404):
             view.get(request)
+
+    @mock.patch('admin.rdm_custom_storage_location.export_data.views.management.ExportDataInformationView.handle_no_permission')
+    def test_get_object_permission_error_non_existent_institution(self, mock_handle_no_permission):
+        test_user = AuthUserFactory()
+        test_location = ExportDataLocationFactory(institution_guid='')
+        test_export_data = ExportDataFactory(location=test_location)
+        request = RequestFactory().get('/fake_path')
+        request.user = test_user
+        request.COOKIES = '213919sdasdn823193929'
+
+        mock_handle_no_permission.side_effect = PermissionDenied()
+
+        view = management.ExportDataInformationView()
+        view = setup_view(view, request, institution_id=self.institution.id, data_id=test_export_data.id)
+        with self.assertRaises(PermissionDenied):
+            view.get_object()
+            mock_handle_no_permission.assert_called()
+
+    @mock.patch('admin.rdm_custom_storage_location.export_data.views.management.ExportDataInformationView.handle_no_permission')
+    def test_get_object_permission_error_not_related_institution(self, mock_handle_no_permission):
+        test_user = AuthUserFactory()
+        test_institution_id = 2 if self.institution.id != 2 else 1
+        test_institution = InstitutionFactory(id=test_institution_id)
+        test_related_institution = InstitutionFactory(_id=self.export_data.location.institution_guid)
+        request = RequestFactory().get('/fake_path')
+        request.user = test_user
+        request.COOKIES = '213919sdasdn823193929'
+
+        mock_handle_no_permission.side_effect = PermissionDenied()
+
+        view = management.ExportDataInformationView()
+        view = setup_view(view, request, institution_id=test_institution.id, data_id=self.export_data.id)
+        with self.assertRaises(PermissionDenied):
+            view.get_object()
+            mock_handle_no_permission.assert_called()
 
 
 @pytest.mark.feature_202210

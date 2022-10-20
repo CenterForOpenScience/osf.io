@@ -170,6 +170,16 @@ class ExportDataInformationView(ExportBaseView):
     def get_object(self, **kwargs):
         export_data = ExportData.objects.filter(id=self.kwargs.get('data_id')).first()
         if export_data:
+            if not self.is_super_admin:
+                target_institution_guid = export_data.location.institution_guid
+                target_institution_query = Institution.objects.filter(_id=target_institution_guid)
+                if not target_institution_query.exists():
+                    self.handle_no_permission()
+
+                target_institution_id = target_institution_query.first().id
+
+                if not self.is_affiliated_institution(target_institution_id):
+                    self.handle_no_permission()
             return export_data
         raise Http404(
             'Export data with id {} not found.'.format(
@@ -297,7 +307,7 @@ class ExportDataFileCSVView(RdmPermissionMixin, View):
                 file['name'],
                 file['identifier'],
                 str(file['size']) + ' KB',
-                file['timestamp']
+                file.get('timestamp', {}).get('verify_user')
             ])
         CURRENT_DATA_INFORMATION = []
         return response
