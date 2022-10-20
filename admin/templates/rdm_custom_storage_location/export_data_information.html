@@ -42,37 +42,40 @@
 
     {% if not export_data.is_deleted %}
         <form action="." method="post" class="form-horizontal" id="entitlements_form" style="margin: 10px 0">
-            <div class="form-group">
-                <label class="col-sm-2 control-label text-left" style="">{% trans "Restore destination storage" %}</label>
-                <div class="col-sm-9" style="display: flex; gap: 10px;">
-                    <select class="form-control" id="destination_storage" title="" style="max-width: 320px; flex: auto">
-                        {% for storage in destination_storages %}
-                            <option
-                                {% if export_data.has_restored and storage.id == export_data.get_latest_restored.destination.id %} selected="selected" {% endif %}
-                                    value={{ storage.id }}>{{ storage.name }}</option>
-                        {% endfor %}
-                    </select>
-                    <div class="btn-group" role="group" aria-label="...">
-                        <button type="button" id="restore_button"
-                                class="btn btn-primary"
-                                style="min-width: 90px; flex: initial;">{% trans "Restore" %}
-                        </button>
-                        <button type="button" id="stop_restore_button"
-                                class="btn btn-primary disabled"
-                                disabled
-                                style="min-width: 90px; flex: initial;">{% trans "Stop restoring" %}
-                        </button>
-                        <button type="button" id="check_restore_button"
-                                class="btn btn-primary {% if not export_data.has_restored %}disabled{% endif %}"
-                                {% if not export_data.has_restored %}disabled{% endif %}
-                                data-target="#checkRestoreData"
-                                data-toggle="modal"
-                                data-restore="{{ export_data.get_latest_restored.id }}"
-                                style="min-width: 90px; flex: initial;">{% trans "Check restore data" %}
-                        </button>
+            <fieldset>
+                <legend>{% trans "Restore" %}</legend>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label text-left" style="">{% trans "Restore destination storage" %}</label>
+                    <div class="col-sm-9" style="display: flex; gap: 10px;">
+                        <select class="form-control" id="destination_storage" title="" style="max-width: 320px; flex: auto">
+                            {% for storage in destination_storages %}
+                                <option
+                                    {% if export_data.has_restored and storage.id == export_data.get_latest_restored.destination.id %} selected="selected" {% endif %}
+                                        value={{ storage.id }}>{{ storage.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="btn-group" role="group" aria-label="...">
+                            <button type="button" id="restore_button"
+                                    class="btn btn-primary"
+                                    style="min-width: 90px; flex: initial;">{% trans "Restore" %}
+                            </button>
+                            <button type="button" id="stop_restore_button"
+                                    class="btn btn-primary disabled"
+                                    disabled
+                                    style="min-width: 90px; flex: initial;">{% trans "Stop restoring" %}
+                            </button>
+                            <button type="button" id="check_restore_button"
+                                    class="btn btn-primary {% if not export_data.has_restored %}disabled{% endif %}"
+                                    {% if not export_data.has_restored %}disabled{% endif %}
+                                    data-target="#checkRestoreData"
+                                    data-toggle="modal"
+                                    data-restore="{{ export_data.get_latest_restored.id }}"
+                                    style="min-width: 90px; flex: initial;">{% trans "Check restore data" %}
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </fieldset>
         </form>
     {% endif %}
 
@@ -166,6 +169,16 @@
             display: inline-block;
             text-align: left;
             vertical-align: middle;
+        }
+        form fieldset {
+            border:1px solid black;
+            width: 1200px;
+        }
+        form fieldset legend {
+            width: 100px;
+            margin: 0px 0px 0px 10px;
+            border-bottom: 0px;
+            padding-left: 10px;
         }
     </style>
 

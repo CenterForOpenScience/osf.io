@@ -285,7 +285,7 @@ class ExportDataFileCSVView(RdmPermissionMixin, View):
         response['Content-Disposition'] = 'attachment;filename=file_info_{}_{}.csv'.format(guid, current_datetime)
         writer = csv.writer(response)
         writer.writerow(
-            ['project_id', 'project_name', 'owner', 'file_id', 'file_path', 'filename', 'versions', 'size'])
+            ['project_id', 'project_name', 'owner', 'file_id', 'file_path', 'filename', 'versions', 'size', 'stamper'])
         global CURRENT_DATA_INFORMATION
         for file in CURRENT_DATA_INFORMATION:
             writer.writerow([
@@ -296,7 +296,8 @@ class ExportDataFileCSVView(RdmPermissionMixin, View):
                 file['materialized_path'],
                 file['name'],
                 file['identifier'],
-                file['size']
+                str(file['size']) + ' KB',
+                file['timestamp']
             ])
         CURRENT_DATA_INFORMATION = []
         return response
