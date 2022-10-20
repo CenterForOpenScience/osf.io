@@ -1,5 +1,4 @@
 import pytest
-import datetime
 from django.contrib.contenttypes.models import ContentType
 
 from addons.wiki.tests.factories import WikiVersionFactory
@@ -59,7 +58,7 @@ class TestBackfillDomainReferences:
                                         spam_domain):
 
         # Node
-        backfill_domain_references(model_name='osf.Node', date_modified=datetime.datetime.now())
+        backfill_domain_references(model_name='osf.Node')
         domain = NotableDomain.objects.get(domain=spam_domain.netloc.lower())
         assert DomainReference.objects.get(
             referrer_object_id=node_with_domain.id,
@@ -67,7 +66,7 @@ class TestBackfillDomainReferences:
         ).domain == domain
 
         # Registration
-        backfill_domain_references(model_name='osf.Registration', date_modified=datetime.datetime.now())
+        backfill_domain_references(model_name='osf.Registration')
         assert DomainReference.objects.get(
             referrer_object_id=registration_with_domain.id,
             referrer_content_type=ContentType.objects.get_for_model(registration_with_domain),
@@ -79,12 +78,12 @@ class TestBackfillDomainReferences:
         ).domain == domain
 
         # Comment
-        backfill_domain_references(model_name='osf.Comment', date_modified=datetime.datetime.now())
+        backfill_domain_references(model_name='osf.Comment')
         assert DomainReference.objects.get(
             referrer_content_type=ContentType.objects.get_for_model(comment_with_domain),
         ).domain == domain
 
-        backfill_domain_references(model_name='addons_wiki.WikiVersion', date_modified=datetime.datetime.now())
+        backfill_domain_references(model_name='addons_wiki.WikiVersion')
         # WikiVersion (these have no spam status so point to the user)
         assert DomainReference.objects.get(
             referrer_object_id=wiki_with_domain.wiki_page.node.id,
