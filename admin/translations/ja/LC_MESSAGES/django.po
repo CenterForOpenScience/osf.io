@@ -3355,6 +3355,9 @@ msgstr "エクスポートデータ一覧を削除する"
 msgid "Revert"
 msgstr "復帰"
 
+msgid "Delete Permanently"
+msgstr "恒久的に削除"
+
 msgid "Are you sure you want to revert these export data?"
 msgstr "本当にエクスポートデータを復帰しますか?"
 

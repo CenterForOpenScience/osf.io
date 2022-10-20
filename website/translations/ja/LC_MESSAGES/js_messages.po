@@ -8621,6 +8621,12 @@ msgstr "エクスポートデータの復元を停止する"
 msgid "Stopped restoring data process."
 msgstr "エクスポートデータの復元が停止されました"
 
+msgid "Delete Permanently"
+msgstr "削除"
+
+msgid "Are you sure you want to permanently delete these export data?"
+msgstr "エクスポートデータを恒久的に削除してよろしいですか？"
+
 # message from export/restore process
 msgid "The equivalent process is running"
 msgstr "同じプロセスが実行されています。"

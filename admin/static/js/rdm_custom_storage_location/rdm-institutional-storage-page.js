@@ -1149,31 +1149,30 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
 
 // Start - Delete Export data - Actions
 
-$('#checkDelete').on('click', function () {
+$('#checkDelete').on('click', function() {
     var list_export_delete_id = $("#checkDelete").val() + '#';
     $('#bodydeletemodal').append(
         "<input type='text' value='" + list_export_delete_id +
         "' id='input_export_data' class='buckinput' name='list_id_export_data' style='display: none;' />");
 });
 
-$('#delete_permanently_button').on('click', () => {
-    let list_export_data = $('input[type=checkbox][name=check_revert_export]');
-    let list_export_id = '';
-    for (let i = 0; i < list_export_data.length; i++) {
+$('#delete_permanently_button').on('click', function() {
+    var list_export_data = $('input[type=checkbox][name=check_revert_export]');
+    var list_export_id = '';
+    for (var i = 0; i < list_export_data.length; i++) {
         if (list_export_data[i].checked) {
             list_export_id += list_export_data[i].id + '#';
         }
     }
-    $('#bodydeleteExport').append(`<input type='hidden' value=${list_export_id} id='input_export_data' class='buckinput' name='list_id_export_data' />`);
+    $('#bodyDeleteExport').append("<input type='hidden' value='"+ list_export_id +"' id='input_export_data' class='buckinput' name='list_id_export_data' />");
     $osf.confirmDangerousAction({
-        title: _('Are you sure you want to delete these export data?'),
-        message: _('<p>The export data will no longer be able to restored with Revert button.</p>'),
+        title: _('Are you sure you want to permanently delete these export data?'),
         callback: function() {
-            $('#deleteExport form').submit();
+            $('#deleteExportForm').submit();
         },
         buttons: {
             success: {
-                label: _('Delete')
+                label: _('Delete Permanently')
             }
         }
     });

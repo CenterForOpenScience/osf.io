@@ -3290,6 +3290,9 @@ msgstr ""
 msgid "Revert"
 msgstr ""
 
+msgid "Delete Permanently"
+msgstr ""
+
 msgid "Are you sure you want to revert these export data?"
 msgstr ""
 

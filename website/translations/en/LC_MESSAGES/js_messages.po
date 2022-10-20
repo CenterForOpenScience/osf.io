@@ -7383,6 +7383,12 @@ msgstr ""
 msgid "Stopped restoring data process."
 msgstr ""
 
+msgid "Delete Permanently"
+msgstr "Delete"
+
+msgid "Are you sure you want to permanently delete these export data?"
+msgstr ""
+
 # message from export/restore process
 msgid "The equivalent process is running"
 msgstr ""
