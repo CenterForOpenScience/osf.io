@@ -102,7 +102,7 @@ class Registration(AbstractNode):
     )
     registered_date = NonNaiveDateTimeField(db_index=True, null=True, blank=True)
 
-    external_registration = models.BooleanField(null=True, default=False)
+    external_registration = models.BooleanField(null=True, blank=True, default=False)
     registered_user = models.ForeignKey(OSFUser,
                                         related_name='related_to',
                                         on_delete=models.SET_NULL,

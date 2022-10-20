@@ -329,7 +329,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     is_fork = models.BooleanField(default=False, db_index=True)
     is_public = models.BooleanField(default=False, db_index=True)
     is_deleted = models.BooleanField(default=False, db_index=True)
-    access_requests_enabled = models.BooleanField(null=True, default=True, db_index=True)
+    access_requests_enabled = models.BooleanField(null=True, blank=True, default=True, db_index=True)
 
     custom_citation = models.TextField(blank=True, null=True)
 
