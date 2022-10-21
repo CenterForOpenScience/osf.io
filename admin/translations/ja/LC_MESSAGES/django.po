@@ -3186,7 +3186,7 @@ msgid "New entitlement"
 msgstr "入力欄を追加"
 
 msgid "Delete"
-msgstr "ゴミ箱に移動"
+msgstr "削除"
 
 msgid "Entitlement must be not empty"
 msgstr "eduPersonEntitlement を入力してください。"
@@ -3324,8 +3324,11 @@ msgstr "エクスポート元ストレージ"
 msgid "Filter"
 msgstr "一覧更新"
 
-msgid "Revert Export Data"
+msgid "Recycle bin"
 msgstr "ゴミ箱"
+
+msgid "Move to recycle bin"
+msgstr "ゴミ箱に移動"
 
 msgid "Process start"
 msgstr "プロセス開始時間"

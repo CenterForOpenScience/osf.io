@@ -78,7 +78,7 @@
                 <button type="submit" class="btn btn-primary" id="revert_button_data"
                         {% if not source_storages|length or not locations|length %} disabled {% endif %}
                         style="min-width: 90px; margin-left:10px;">
-                    {% trans "Revert Export Data" %}</button>
+                    {% trans "Recycle bin" %}</button>
             </div>
         </div>
     </form>
@@ -131,7 +131,7 @@
             class="btn btn-danger"
             disabled
             data-target="#deleteExport"
-            data-toggle="modal">{% trans "Delete" %}</button>
+            data-toggle="modal">{% trans "Move to recycle bin" %}</button>
 
     <style type="text/css">
         .modal.middle {

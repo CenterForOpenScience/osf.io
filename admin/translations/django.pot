@@ -3277,7 +3277,10 @@ msgstr ""
 msgid "Filter"
 msgstr ""
 
-msgid "Revert Export Data"
+msgid "Recycle bin"
+msgstr ""
+
+msgid "Move to recycle bin"
 msgstr ""
 
 msgid "Process start"
