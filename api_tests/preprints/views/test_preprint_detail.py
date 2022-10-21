@@ -60,7 +60,7 @@ class TestPreprintDetail:
 
     @pytest.fixture()
     def preprint_pre_mod(self, user):
-        return PreprintFactory(provider__reviews_workflow='pre-moderation', is_published=False, creator=user)
+        return PreprintFactory(reviews_workflow='pre-moderation', is_published=False, creator=user)
 
     @pytest.fixture()
     def moderator(self, preprint_pre_mod):
@@ -1200,7 +1200,7 @@ class TestPreprintUpdateLicense:
     @pytest.fixture()
     def preprint_provider(self, cc0_license, no_license):
         preprint_provider = PreprintProviderFactory()
-        preprint_provider.licenses_acceptable = [cc0_license, no_license]
+        preprint_provider.licenses_acceptable.add(*[cc0_license, no_license])
         preprint_provider.save()
         return preprint_provider
 

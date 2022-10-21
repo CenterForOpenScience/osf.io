@@ -120,7 +120,6 @@ def serialize_contributors(contribs, node, **kwargs):
 
 
 def serialize_visible_contributors(node):
-    # This is optimized when node has .include('contributor__user__guids')
     return [
         serialize_user(c, node) for c in node.contributor_set.all() if c.visible
     ]
