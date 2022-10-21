@@ -262,11 +262,18 @@ class DeleteExportDataView(ExportStorageLocationViewBaseView, View):
             ExportData.objects.filter(id__in=list_export_data_delete).update(is_deleted=True)
         selected_source_id = request.POST.get('selected_source_id')
         selected_location_id = request.POST.get('selected_location_id')
-        if selected_source_id and selected_location_id:
-            return redirect(reverse(
-                'custom_storage_location:export_data:export_data_list') + f'?storage_id={selected_source_id}&location_id={selected_location_id}')
+        if check_delete_permanently:
+            if selected_source_id and selected_location_id:
+                return redirect(reverse(
+                    'custom_storage_location:export_data:export_data_deleted_list') + f'?storage_id={selected_source_id}&location_id={selected_location_id}')
+            else:
+                return redirect('custom_storage_location:export_data:export_data_deleted_list')
         else:
-            return redirect('custom_storage_location:export_data:export_data_list')
+            if selected_source_id and selected_location_id:
+                return redirect(reverse(
+                    'custom_storage_location:export_data:export_data_list') + f'?storage_id={selected_source_id}&location_id={selected_location_id}')
+            else:
+                return redirect('custom_storage_location:export_data:export_data_list')
 
 
 class RevertExportDataView(ExportStorageLocationViewBaseView, View):
