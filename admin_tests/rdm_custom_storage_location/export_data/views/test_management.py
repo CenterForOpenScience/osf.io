@@ -15,7 +15,6 @@ from osf_tests.factories import (
     ExportDataFactory,
     RegionFactory,
     ExportDataRestoreFactory,
-    ExportDataLocationFactory,
 )
 from tests.base import AdminTestCase
 
@@ -610,8 +609,8 @@ class TestExportDataInformationView(AdminTestCase):
     @mock.patch('admin.rdm_custom_storage_location.export_data.views.management.ExportDataInformationView.handle_no_permission')
     def test_get_object_permission_error_non_existent_institution(self, mock_handle_no_permission):
         test_user = AuthUserFactory()
-        test_location = ExportDataLocationFactory(institution_guid='')
-        test_export_data = ExportDataFactory(location=test_location)
+        test_region = RegionFactory(_id='')
+        test_export_data = ExportDataFactory(source=test_region)
         request = RequestFactory().get('/fake_path')
         request.user = test_user
         request.COOKIES = '213919sdasdn823193929'
@@ -629,7 +628,7 @@ class TestExportDataInformationView(AdminTestCase):
         test_user = AuthUserFactory()
         test_institution_id = 2 if self.institution.id != 2 else 1
         test_institution = InstitutionFactory(id=test_institution_id)
-        InstitutionFactory(_id=self.export_data.location.institution_guid)
+        InstitutionFactory(_id=self.export_data.source.guid)
         request = RequestFactory().get('/fake_path')
         request.user = test_user
         request.COOKIES = '213919sdasdn823193929'
