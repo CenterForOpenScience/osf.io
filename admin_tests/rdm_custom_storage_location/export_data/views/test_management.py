@@ -629,7 +629,7 @@ class TestExportDataInformationView(AdminTestCase):
         test_user = AuthUserFactory()
         test_institution_id = 2 if self.institution.id != 2 else 1
         test_institution = InstitutionFactory(id=test_institution_id)
-        test_related_institution = InstitutionFactory(_id=self.export_data.location.institution_guid)
+        InstitutionFactory(_id=self.export_data.location.institution_guid)
         request = RequestFactory().get('/fake_path')
         request.user = test_user
         request.COOKIES = '213919sdasdn823193929'
