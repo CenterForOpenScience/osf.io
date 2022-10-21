@@ -11,11 +11,15 @@ env:
   ELASTICSEARCH6_ARCHIVE: elasticsearch-6.3.1.tar.gz
   OSF_DB_PORT: 5432
   OSF_DB_PASSWORD: postgres
+  TESTMON: --testmon
 
 jobs:
   build-cache:
     runs-on: ubuntu-20.04
     steps:
+    - name: Activate Testmon
+      if: (github.ref == 'master' || github.ref == 'develop') && github.event_name == 'push'
+      run: echo "TESTMON=" >> $GITHUB_ENV
     - uses: actions/checkout@v2
     - id: cache-objects
       uses: actions/cache@v2
@@ -27,7 +31,7 @@ jobs:
         mkdir -p ~/.cache/downloads
         mkdir -p ~/.cache/pip
         mkdir -p ~/.cache/wheelhouse
-        mkdir -p ~/.cache/testmon
+        mkdir -p .testmon/
         rm -rf node_modules  ## TODO remove this later
 
   addons:
@@ -55,6 +59,12 @@ jobs:
         path: ~/.cache
         key: reqs_${{ hashFiles('**/requirements.txt') }}
         restore-keys: reqs_
+    - id: cache-testmon
+      uses: actions/cache@v3
+      with:
+        path: .testmondata
+        key: testmon_${{ hashFiles('**/requirements.txt') }}
+        restore-keys: testmon_
     - uses: ./.github/actions/build-es
       with:
         ELASTICSEARCH_ARCHIVE: ${{ env.ELASTICSEARCH_ARCHIVE }}
@@ -71,7 +81,8 @@ jobs:
         sudo apt-get install libxml2-dev libxslt-dev python-dev
     - uses: ./.github/actions/start-build
     - name: Run tests
-      run: invoke test_travis_addons -n 1
+      run: |
+        invoke test_travis_addons ${{ env.TESTMON }}
 
   website:
     runs-on: ubuntu-20.04
@@ -82,6 +93,7 @@ jobs:
 
         env:
           POSTGRES_PASSWORD: postgres
+          TESTMON_DATAFILE: .testmon/.testmondata
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -98,6 +110,12 @@ jobs:
         path: ~/.cache
         key: reqs_${{ hashFiles('**/requirements.txt') }}
         restore-keys: reqs_
+    - id: cache-testmon
+      uses: actions/cache@v3
+      with:
+        path: .testmon/.testmondata
+        key: testmon_${{ hashFiles('**/requirements.txt') }}
+        restore-keys: testmon_
     - uses: ./.github/actions/build-es
       with:
         ELASTICSEARCH_ARCHIVE: ${{ env.ELASTICSEARCH_ARCHIVE }}
@@ -114,7 +132,7 @@ jobs:
         sudo apt-get install libxml2-dev libxslt-dev python-dev
     - uses: ./.github/actions/start-build
     - name: Run tests
-      run: invoke test_travis_website -n 1
+      run: invoke test_travis_website ${{ env.TESTMON }}
 
   api1_and_js:
     runs-on: ubuntu-20.04
@@ -141,6 +159,12 @@ jobs:
           path: ~/.cache
           key: reqs_${{ hashFiles('**/requirements.txt') }}
           restore-keys: reqs_
+      - id: cache-testmon
+        uses: actions/cache@v3
+        with:
+          path: ~/.testmondata
+          key: testmon_${{ hashFiles('**/requirements.txt') }}
+          restore-keys: testmon_
       - uses: ./.github/actions/build-es
         with:
           ELASTICSEARCH_ARCHIVE: ${{ env.ELASTICSEARCH_ARCHIVE }}
@@ -187,6 +211,12 @@ jobs:
         path: ~/.cache
         key: reqs_${{ hashFiles('**/requirements.txt') }}
         restore-keys: reqs_
+    - id: cache-testmon
+      uses: actions/cache@v3
+      with:
+        path: ~/.testmondata
+        key: testmon_${{ hashFiles('**/requirements.txt') }}
+        restore-keys: testmon_
     - uses: ./.github/actions/build-es
       with:
         ELASTICSEARCH_ARCHIVE: ${{ env.ELASTICSEARCH_ARCHIVE }}
@@ -230,6 +260,12 @@ jobs:
         path: ~/.cache
         key: reqs_${{ hashFiles('**/requirements.txt') }}
         restore-keys: reqs_
+    - id: cache-testmon
+      uses: actions/cache@v3
+      with:
+        path: ~/.testmondata
+        key: testmon_${{ hashFiles('**/requirements.txt') }}
+        restore-keys: testmon_
     - uses: ./.github/actions/build-es
       with:
         ELASTICSEARCH_ARCHIVE: ${{ env.ELASTICSEARCH_ARCHIVE }}
