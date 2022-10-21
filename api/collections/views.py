@@ -21,7 +21,7 @@ from api.collections.permissions import (
     CollectionWriteOrPublicForPointers,
     CollectionWriteOrPublicForRelationshipPointers,
     CanSubmitToCollectionOrPublic,
-    CanUpdateDeleteCGMOrPublic,
+    CanUpdateDeleteCollectionSubmissionOrPublic,
     ReadOnlyIfCollectedRegistration,
 )
 from api.collections.serializers import (
@@ -78,7 +78,7 @@ class CollectionMixin(object):
     def get_collection_submission(self, check_object_permissions=True):
         collection_submission = get_object_or_error(
             CollectionSubmission,
-            Q(collection=Collection.load(self.kwargs['collection_id']), guid___id=self.kwargs['cgm_id']),
+            Q(collection=Collection.load(self.kwargs['collection_id']), guid___id=self.kwargs['collection_submission_id']),
             self.request,
             'submission',
         )
@@ -313,7 +313,7 @@ class CollectionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, C
         collection.delete()
 
 
-class CollectedMetaList(JSONAPIBaseView, generics.ListCreateAPIView, CollectionMixin, ListFilterMixin):
+class CollectionSubmissionList(JSONAPIBaseView, generics.ListCreateAPIView, CollectionMixin, ListFilterMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         CanSubmitToCollectionOrPublic,
@@ -325,7 +325,7 @@ class CollectedMetaList(JSONAPIBaseView, generics.ListCreateAPIView, CollectionM
     model_class = CollectionSubmission
     serializer_class = CollectionSubmissionSerializer
     view_category = 'collections'
-    view_name = 'collected-metadata-list'
+    view_name = 'collection-submission-list'
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
@@ -345,10 +345,10 @@ class CollectedMetaList(JSONAPIBaseView, generics.ListCreateAPIView, CollectionM
         serializer.save(creator=user, collection=collection)
 
 
-class CollectedMetaDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CollectionMixin):
+class CollectionSubmissionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CollectionMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        CanUpdateDeleteCGMOrPublic,
+        CanUpdateDeleteCollectionSubmissionOrPublic,
         base_permissions.TokenHasScope,
     )
     required_read_scopes = [CoreScopes.COLLECTED_META_READ]
@@ -365,7 +365,7 @@ class CollectedMetaDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
         return self.get_collection_submission()
 
     def perform_destroy(self, instance):
-        # Skip collection permission check -- perms class checks when getting CGM
+        # Skip collection permission check -- perms class checks when getting CollectionSubmission
         collection = self.get_collection(check_object_permissions=False)
         collection.remove_object(instance)
 
@@ -373,30 +373,30 @@ class CollectedMetaDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
         serializer.save()
 
 
-class CollectedMetaSubjectsList(BaseResourceSubjectsList, CollectionMixin):
+class CollectionSubmissionSubjectsList(BaseResourceSubjectsList, CollectionMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/collected_meta_subjects).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        CanUpdateDeleteCGMOrPublic,
+        CanUpdateDeleteCollectionSubmissionOrPublic,
         base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.COLLECTED_META_READ]
 
     view_category = 'collections'
-    view_name = 'collected-metadata-subjects'
+    view_name = 'collection-submissions-subjects-list'
 
     def get_resource(self):
         return self.get_collection_submission()
 
 
-class CollectedMetaSubjectsRelationship(SubjectRelationshipBaseView, CollectionMixin):
+class CollectionSubmissionSubjectsRelationshipList(SubjectRelationshipBaseView, CollectionMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/collected_meta_subjects_relationship).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        CanUpdateDeleteCGMOrPublic,
+        CanUpdateDeleteCollectionSubmissionOrPublic,
         base_permissions.TokenHasScope,
     )
 
@@ -404,7 +404,7 @@ class CollectedMetaSubjectsRelationship(SubjectRelationshipBaseView, CollectionM
     required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
 
     view_category = 'collections'
-    view_name = 'collected-metadata-relationships-subjects'
+    view_name = 'collection-submission-subjects-relationship-list'
 
     def get_resource(self, check_object_permissions=True):
         return self.get_collection_submission(check_object_permissions)

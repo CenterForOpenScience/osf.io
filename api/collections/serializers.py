@@ -116,7 +116,7 @@ class CollectionSerializer(JSONAPISerializer):
     )
 
     collected_metadata = RelationshipField(
-        related_view='collections:collected-metadata-list',
+        related_view='collections:collection-submission-list',
         related_view_kwargs={'collection_id': '<_id>'},
     )
 
@@ -212,17 +212,17 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
     @property
     def subjects_related_view(self):
         # Overrides TaxonomizableSerializerMixin
-        return 'collections:collected-metadata-subjects'
+        return 'collections:collection-submissions-subjects-list'
 
     @property
     def subjects_self_view(self):
         # Overrides TaxonomizableSerializerMixin
-        return 'collections:collected-metadata-relationships-subjects'
+        return 'collections:collection-submission-subjects-relationship-list'
 
     @property
     def subjects_view_kwargs(self):
         # Overrides TaxonomizableSerializerMixin
-        return {'collection_id': '<collection._id>', 'cgm_id': '<guid._id>'}
+        return {'collection_id': '<collection._id>', 'collection_submission_id': '<guid._id>'}
 
     collected_type = ser.CharField(required=False)
     status = ser.CharField(required=False)
@@ -237,7 +237,7 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
             'collected-metadata:collected-metadata-detail',
             kwargs={
                 'collection_id': obj.collection._id,
-                'cgm_id': obj.guid._id,
+                'collection_submission_id': obj.guid._id,
                 'version': self.context['request'].parser_context['kwargs']['version'],
             },
         )

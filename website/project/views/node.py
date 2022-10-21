@@ -881,21 +881,21 @@ def get_affiliated_institutions(obj):
         })
     return ret
 
-def serialize_collections(cgms, auth):
+def serialize_collections(collection_submissions, auth):
     return [{
-        'title': cgm.collection.title,
-        'name': cgm.collection.provider.name,
-        'url': '/collections/{}/'.format(cgm.collection.provider._id),
-        'status': cgm.status,
-        'type': cgm.collected_type,
-        'issue': cgm.issue,
-        'volume': cgm.volume,
-        'program_area': cgm.program_area,
-        'subjects': list(cgm.subjects.values_list('text', flat=True)),
-        'is_public': cgm.collection.is_public,
-        'logo': cgm.collection.provider.get_asset_url('favicon')
-    } for cgm in cgms if cgm.collection.provider and (cgm.collection.is_public or
-        (auth.user and auth.user.has_perm('read_collection', cgm.collection)))]
+        'title': collection_submission.collection.title,
+        'name': collection_submission.collection.provider.name,
+        'url': '/collections/{}/'.format(collection_submission.collection.provider._id),
+        'status': collection_submission.status,
+        'type': collection_submission.collected_type,
+        'issue': collection_submission.issue,
+        'volume': collection_submission.volume,
+        'program_area': collection_submission.program_area,
+        'subjects': list(collection_submission.subjects.values_list('text', flat=True)),
+        'is_public': collection_submission.collection.is_public,
+        'logo': collection_submission.collection.provider.get_asset_url('favicon')
+    } for collection_submission in collection_submissions if collection_submission.collection.provider and (collection_submission.collection.is_public or
+        (auth.user and auth.user.has_perm('read_collection', collection_submission.collection)))]
 
 def serialize_preprints(node, user):
     return [
