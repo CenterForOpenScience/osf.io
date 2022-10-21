@@ -163,17 +163,8 @@
             <form method="post" action={% url 'custom_storage_location:export_data:export_data_delete' %}>
                 {% csrf_token %}
                 <div class="modal-content">
-                    <!--<div class="modal-header">-->
-                    <!--    <h4 class="modal-title" id="deleteExportLabel">Confirm to delete</h4>-->
-                    <!--</div>-->
                     <div class="modal-body text-left" id="bodydeleteExport">
                         <p>{% trans "Are you sure you want to delete these export data?" %}</p>
-<!--                        <div class="checkbox">-->
-<!--                            <label>-->
-<!--                                <input type="checkbox"-->
-<!--                                       name="delete_permanently"> {% trans "Permanently delete (Cannot be restored with the Revert button)" %}-->
-<!--                            </label>-->
-<!--                        </div>-->
                     </div>
                     <div class="modal-footer">
                         <button type="button"
