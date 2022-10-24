@@ -1,4 +1,4 @@
-from django.core.urlresolvers import NoReverseMatch
+from django.urls import NoReverseMatch
 from rest_framework import exceptions as drf_exceptions
 from rest_framework import versioning as drf_versioning
 from rest_framework.compat import unicode_http_header

@@ -1,4 +1,4 @@
-from django.conf.urls import include, url
+from django.conf.urls import include, re_path
 from django.contrib import admin
 from admin.base.settings import ADMIN_BASE, DEBUG
 from admin.base import views
@@ -7,33 +7,32 @@ base_pattern = f'^{ADMIN_BASE}'
 
 urlpatterns = [
     ### ADMIN ###
-    url(
+    re_path(
         base_pattern,
         include([
-            url(r'^$', views.home, name='home'),
-            url(r'^admin/', admin.site.urls),
-            url(r'^asset_files/', include('admin.asset_files.urls', namespace='asset_files')),
-            url(r'^banners/', include('admin.banners.urls', namespace='banners')),
-            url(r'^brands/', include('admin.brands.urls', namespace='brands')),
-            url(r'^comments/', include('admin.comments.urls', namespace='comments')),
-            url(r'^institutions/', include('admin.institutions.urls', namespace='institutions')),
-            url(r'^preprint_providers/', include('admin.preprint_providers.urls', namespace='preprint_providers')),
-            url(r'^collection_providers/', include('admin.collection_providers.urls', namespace='collection_providers')),
-            url(r'^registration_providers/', include('admin.registration_providers.urls', namespace='registration_providers')),
-            url(r'^account/', include('admin.common_auth.urls', namespace='auth')),
-            url(r'^password/', include('password_reset.urls')),
-            url(r'^nodes/', include('admin.nodes.urls', namespace='nodes')),
-            url(r'^preprints/', include('admin.preprints.urls', namespace='preprints')),
-            url(r'^subjects/', include('admin.subjects.urls', namespace='subjects')),
-            url(r'^users/', include('admin.users.urls', namespace='users')),
-            url(r'^maintenance/', include('admin.maintenance.urls', namespace='maintenance')),
-            url(r'^meetings/', include('admin.meetings.urls', namespace='meetings')),
-            url(r'^metrics/', include('admin.metrics.urls', namespace='metrics')),
-            url(r'^osf_groups/', include('admin.osf_groups.urls', namespace='osf_groups')),
-            url(r'^management/', include('admin.management.urls', namespace='management')),
-            url(r'^internet_archive/', include('admin.internet_archive.urls', namespace='internet_archive')),
-            url(r'^schema_responses/', include('admin.schema_responses.urls', namespace='schema_responses')),
-            url(r'^registration_schemas/', include('admin.registration_schemas.urls', namespace='registration_schemas')),
+            re_path(r'^$', views.home, name='home'),
+            re_path(r'^admin/', admin.site.urls),
+            re_path(r'^asset_files/', include('admin.asset_files.urls', namespace='asset_files')),
+            re_path(r'^banners/', include('admin.banners.urls', namespace='banners')),
+            re_path(r'^brands/', include('admin.brands.urls', namespace='brands')),
+            re_path(r'^comments/', include('admin.comments.urls', namespace='comments')),
+            re_path(r'^institutions/', include('admin.institutions.urls', namespace='institutions')),
+            re_path(r'^preprint_providers/', include('admin.preprint_providers.urls', namespace='preprint_providers')),
+            re_path(r'^collection_providers/', include('admin.collection_providers.urls', namespace='collection_providers')),
+            re_path(r'^registration_providers/', include('admin.registration_providers.urls', namespace='registration_providers')),
+            re_path(r'^account/', include('admin.common_auth.urls', namespace='auth')),
+            re_path(r'^nodes/', include('admin.nodes.urls', namespace='nodes')),
+            re_path(r'^preprints/', include('admin.preprints.urls', namespace='preprints')),
+            re_path(r'^subjects/', include('admin.subjects.urls', namespace='subjects')),
+            re_path(r'^users/', include('admin.users.urls', namespace='users')),
+            re_path(r'^maintenance/', include('admin.maintenance.urls', namespace='maintenance')),
+            re_path(r'^meetings/', include('admin.meetings.urls', namespace='meetings')),
+            re_path(r'^metrics/', include('admin.metrics.urls', namespace='metrics')),
+            re_path(r'^osf_groups/', include('admin.osf_groups.urls', namespace='osf_groups')),
+            re_path(r'^management/', include('admin.management.urls', namespace='management')),
+            re_path(r'^internet_archive/', include('admin.internet_archive.urls', namespace='internet_archive')),
+            re_path(r'^schema_responses/', include('admin.schema_responses.urls', namespace='schema_responses')),
+            re_path(r'^registration_schemas/', include('admin.registration_schemas.urls', namespace='registration_schemas')),
         ]),
     ),
 ]
@@ -42,7 +41,7 @@ if DEBUG:
     import debug_toolbar
 
     urlpatterns += [
-        url(r'^__debug__/', include(debug_toolbar.urls)),
+        re_path(r'^__debug__/', include(debug_toolbar.urls)),
     ]
 
 admin.site.site_header = 'OSF-Admin administration'

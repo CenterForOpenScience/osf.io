@@ -236,7 +236,7 @@ class TestPreprintList(ApiTestCase):
         assert_not_in(self.project._id, ids)
 
     def test_withdrawn_preprints_list(self):
-        pp = PreprintFactory(provider__reviews_workflow='pre-moderation', is_published=False, creator=self.user)
+        pp = PreprintFactory(reviews_workflow='pre-moderation', is_published=False, creator=self.user)
         pp.machine_state = 'pending'
         mod = AuthUserFactory()
         pp.provider.get_group('moderator').user_set.add(mod)

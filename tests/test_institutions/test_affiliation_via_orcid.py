@@ -14,6 +14,10 @@ from website.settings import ORCID_RECORD_EDUCATION_PATH, ORCID_RECORD_EMPLOYMEN
 
 @pytest.mark.django_db
 class TestInstitutionAffiliationViaOrcidSso:
+    @pytest.fixture(autouse=True)
+    def disable_sentry(self):
+        with mock.patch('framework.sentry.enabled', False):
+            yield
 
     @pytest.fixture()
     def response_content_educations(self):

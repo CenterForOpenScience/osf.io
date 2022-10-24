@@ -1,4 +1,4 @@
-from django.conf.urls import include, url
+from django.conf.urls import include, re_path
 from django.views.generic.base import RedirectView
 
 
@@ -12,86 +12,86 @@ default_version = versioning.decimal_version_to_url_path(settings.REST_FRAMEWORK
 # Please keep URLs alphabetized for auto-generated documentation
 
 urlpatterns = [
-    url(
+    re_path(
         r'^_/',
         include(
             [
-                url(r'^', include('waffle.urls')),
-                url(r'^wb/', include('api.wb.urls', namespace='wb')),
-                url(r'^ia/', include('api.ia.urls', namespace='ia')),
-                url(r'^banners/', include('api.banners.urls', namespace='banners')),
-                url(r'^crossref/', include('api.crossref.urls', namespace='crossref')),
-                url(r'^chronos/', include('api.chronos.urls', namespace='chronos')),
-                url(r'^meetings/', include('api.meetings.urls', namespace='meetings')),
-                url(r'^metrics/', include('api.metrics.urls', namespace='metrics')),
-                url(r'^registries/(?P<provider_id>\w+)/bulk_create/(?P<filename>.*)/$', RegistrationBulkCreate.as_view(), name='bulk_create_csv'),
+                re_path(r'^', include('waffle.urls')),
+                re_path(r'^wb/', include('api.wb.urls', namespace='wb')),
+                re_path(r'^ia/', include('api.ia.urls', namespace='ia')),
+                re_path(r'^banners/', include('api.banners.urls', namespace='banners')),
+                re_path(r'^crossref/', include('api.crossref.urls', namespace='crossref')),
+                re_path(r'^chronos/', include('api.chronos.urls', namespace='chronos')),
+                re_path(r'^meetings/', include('api.meetings.urls', namespace='meetings')),
+                re_path(r'^metrics/', include('api.metrics.urls', namespace='metrics')),
+                re_path(r'^registries/(?P<provider_id>\w+)/bulk_create/(?P<filename>.*)/$', RegistrationBulkCreate.as_view(), name='bulk_create_csv'),
             ],
         ),
     ),
-    url(
+    re_path(
         '^(?P<version>(v2))/',
         include(
             [
-                url(r'^$', views.root, name='root'),
-                url(r'^status/', views.status_check, name='status_check'),
-                url(r'^actions/', include('api.actions.urls', namespace='actions')),
-                url(r'^addons/', include('api.addons.urls', namespace='addons')),
-                url(r'^alerts/', include(('api.alerts.urls', 'alerts'), namespace='alerts')),
-                url(r'^applications/', include('api.applications.urls', namespace='applications')),
-                url(r'^brands/', include('api.brands.urls', namespace='brands')),
-                url(r'^citations/', include('api.citations.urls', namespace='citations')),
-                url(r'^collections/', include('api.collections.urls', namespace='collections')),
-                url(r'^comments/', include('api.comments.urls', namespace='comments')),
-                url(r'^docs/', RedirectView.as_view(pattern_name=views.root), name='redirect-to-root', kwargs={'version': default_version}),
-                url(r'^draft_nodes/', include('api.draft_nodes.urls', namespace='draft_nodes')),
-                url(r'^draft_registrations/', include('api.draft_registrations.urls', namespace='draft_registrations')),
-                url(r'^files/', include('api.files.urls', namespace='files')),
-                url(r'^groups/', include('api.osf_groups.urls', namespace='groups')),
-                url(r'^guids/', include('api.guids.urls', namespace='guids')),
-                url(r'^identifiers/', include('api.identifiers.urls', namespace='identifiers')),
-                url(r'^institutions/', include('api.institutions.urls', namespace='institutions')),
-                url(r'^licenses/', include('api.licenses.urls', namespace='licenses')),
-                url(r'^logs/', include('api.logs.urls', namespace='logs')),
-                url(r'^metaschemas/', include('api.metaschemas.urls', namespace='metaschemas')),
-                url(r'^schemas/', include('api.schemas.urls', namespace='schemas')),
-                url(r'^nodes/', include('api.nodes.urls', namespace='nodes')),
-                url(r'^preprints/', include('api.preprints.urls', namespace='preprints')),
-                url(r'^preprint_providers/', include('api.preprint_providers.urls', namespace='preprint_providers')),
-                url(r'^providers/', include('api.providers.urls', namespace='providers')),
-                url(r'^regions/', include('api.regions.urls', namespace='regions')),
-                url(r'^registrations/', include('api.registrations.urls', namespace='registrations')),
-                url(r'^requests/', include(('api.requests.urls', 'requests'), namespace='requests')),
-                url(r'^resources/', include('api.resources.urls', namespace='resources')),
-                url(r'^scopes/', include('api.scopes.urls', namespace='scopes')),
-                url(r'^search/', include('api.search.urls', namespace='search')),
-                url(r'^sparse/', include('api.sparse.urls', namespace='sparse')),
-                url(r'^subjects/', include('api.subjects.urls', namespace='subjects')),
-                url(r'^subscriptions/', include('api.subscriptions.urls', namespace='subscriptions')),
-                url(r'^taxonomies/', include('api.taxonomies.urls', namespace='taxonomies')),
-                url(r'^test/', include('api.test.urls', namespace='test')),
-                url(r'^tokens/', include('api.tokens.urls', namespace='tokens')),
-                url(r'^users/', include('api.users.urls', namespace='users')),
-                url(r'^view_only_links/', include('api.view_only_links.urls', namespace='view-only-links')),
-                url(r'^wikis/', include('api.wikis.urls', namespace='wikis')),
-                url(r'^schema_responses/', include('api.schema_responses.urls', namespace='schema_responses')),
-                url(r'^_waffle/', include(('api.waffle.urls', 'waffle'), namespace='waffle')),
+                re_path(r'^$', views.root, name='root'),
+                re_path(r'^status/', views.status_check, name='status_check'),
+                re_path(r'^actions/', include('api.actions.urls', namespace='actions')),
+                re_path(r'^addons/', include('api.addons.urls', namespace='addons')),
+                re_path(r'^alerts/', include(('api.alerts.urls', 'alerts'), namespace='alerts')),
+                re_path(r'^applications/', include('api.applications.urls', namespace='applications')),
+                re_path(r'^brands/', include('api.brands.urls', namespace='brands')),
+                re_path(r'^citations/', include('api.citations.urls', namespace='citations')),
+                re_path(r'^collections/', include('api.collections.urls', namespace='collections')),
+                re_path(r'^comments/', include('api.comments.urls', namespace='comments')),
+                re_path(r'^docs/', RedirectView.as_view(pattern_name=views.root), name='redirect-to-root', kwargs={'version': default_version}),
+                re_path(r'^draft_nodes/', include('api.draft_nodes.urls', namespace='draft_nodes')),
+                re_path(r'^draft_registrations/', include('api.draft_registrations.urls', namespace='draft_registrations')),
+                re_path(r'^files/', include('api.files.urls', namespace='files')),
+                re_path(r'^groups/', include('api.osf_groups.urls', namespace='groups')),
+                re_path(r'^guids/', include('api.guids.urls', namespace='guids')),
+                re_path(r'^identifiers/', include('api.identifiers.urls', namespace='identifiers')),
+                re_path(r'^institutions/', include('api.institutions.urls', namespace='institutions')),
+                re_path(r'^licenses/', include('api.licenses.urls', namespace='licenses')),
+                re_path(r'^logs/', include('api.logs.urls', namespace='logs')),
+                re_path(r'^metaschemas/', include('api.metaschemas.urls', namespace='metaschemas')),
+                re_path(r'^schemas/', include('api.schemas.urls', namespace='schemas')),
+                re_path(r'^nodes/', include('api.nodes.urls', namespace='nodes')),
+                re_path(r'^preprints/', include('api.preprints.urls', namespace='preprints')),
+                re_path(r'^preprint_providers/', include('api.preprint_providers.urls', namespace='preprint_providers')),
+                re_path(r'^providers/', include('api.providers.urls', namespace='providers')),
+                re_path(r'^regions/', include('api.regions.urls', namespace='regions')),
+                re_path(r'^registrations/', include('api.registrations.urls', namespace='registrations')),
+                re_path(r'^requests/', include(('api.requests.urls', 'requests'), namespace='requests')),
+                re_path(r'^resources/', include('api.resources.urls', namespace='resources')),
+                re_path(r'^scopes/', include('api.scopes.urls', namespace='scopes')),
+                re_path(r'^search/', include('api.search.urls', namespace='search')),
+                re_path(r'^sparse/', include('api.sparse.urls', namespace='sparse')),
+                re_path(r'^subjects/', include('api.subjects.urls', namespace='subjects')),
+                re_path(r'^subscriptions/', include('api.subscriptions.urls', namespace='subscriptions')),
+                re_path(r'^taxonomies/', include('api.taxonomies.urls', namespace='taxonomies')),
+                re_path(r'^test/', include('api.test.urls', namespace='test')),
+                re_path(r'^tokens/', include('api.tokens.urls', namespace='tokens')),
+                re_path(r'^users/', include('api.users.urls', namespace='users')),
+                re_path(r'^view_only_links/', include('api.view_only_links.urls', namespace='view-only-links')),
+                re_path(r'^wikis/', include('api.wikis.urls', namespace='wikis')),
+                re_path(r'^schema_responses/', include('api.schema_responses.urls', namespace='schema_responses')),
+                re_path(r'^_waffle/', include(('api.waffle.urls', 'waffle'), namespace='waffle')),
             ],
         ),
     ),
-    url(r'^$', RedirectView.as_view(pattern_name=views.root), name='redirect-to-root', kwargs={'version': default_version}),
+    re_path(r'^$', RedirectView.as_view(pattern_name=views.root), name='redirect-to-root', kwargs={'version': default_version}),
 ]
 
 # Add django-silk URLs if it's in INSTALLED_APPS
 if 'silk' in settings.INSTALLED_APPS:
     urlpatterns += [
-        url(r'^silk/', include('silk.urls', namespace='silk')),
+        re_path(r'^silk/', include('silk.urls', namespace='silk')),
     ]
 
 if settings.DEBUG:
     import debug_toolbar
 
     urlpatterns += [
-        url(r'^__debug__/', include(debug_toolbar.urls)),
+        re_path(r'^__debug__/', include(debug_toolbar.urls)),
     ]
 
 

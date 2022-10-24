@@ -67,16 +67,12 @@ def build_html_output(content, node):
         content,
         extensions=[
             wikilinks.WikiLinkExtension(
-                configs=[
-                    ('base_url', ''),
-                    ('end_url', ''),
-                    ('build_url', functools.partial(build_wiki_url, node))
-                ]
+                base_url='',
+                end_url='',
+                build_url=functools.partial(build_wiki_url, node)
             ),
             fenced_code.FencedCodeExtension(),
-            codehilite.CodeHiliteExtension(
-                [('css_class', 'highlight')]
-            )
+            codehilite.CodeHiliteExtension(css_class='highlight')
         ]
     )
 
