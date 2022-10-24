@@ -69,8 +69,16 @@ class RegistrationAction(BaseAction):
     to_state = models.CharField(
         max_length=31, choices=RegistrationModerationStates.char_field_choices())
 
+
 class SchemaResponseAction(BaseAction):
     target = models.ForeignKey('SchemaResponse', related_name='actions', on_delete=models.CASCADE)
+    trigger = models.CharField(max_length=31, choices=SchemaResponseTriggers.char_field_choices())
+    from_state = models.CharField(max_length=31, choices=ApprovalStates.char_field_choices())
+    to_state = models.CharField(max_length=31, choices=ApprovalStates.char_field_choices())
+
+
+class CollectionSubmissionAction(BaseAction):
+    target = models.ForeignKey('CollectionSubmission', related_name='actions', on_delete=models.CASCADE)
     trigger = models.CharField(max_length=31, choices=SchemaResponseTriggers.char_field_choices())
     from_state = models.CharField(max_length=31, choices=ApprovalStates.char_field_choices())
     to_state = models.CharField(max_length=31, choices=ApprovalStates.char_field_choices())
