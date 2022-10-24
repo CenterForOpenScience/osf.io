@@ -1164,8 +1164,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         if not self.has_addon('forward'):
             check_fields.remove('addons_forward_node_settings__url')
-        return check_fields if self.is_public and 'is_public' in saved_fields else check_fields.intersection(
-            saved_fields)
+        return check_fields if self.is_public and 'is_public' in saved_fields else saved_fields
 
     def callback(self, callback, recursive=False, *args, **kwargs):
         """Invoke callbacks of attached add-ons and collect messages.

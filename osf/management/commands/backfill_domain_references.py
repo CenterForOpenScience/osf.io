@@ -17,15 +17,22 @@ logger = logging.getLogger(__name__)
 DOMAIN_MATCH_REGEX = re.compile(r'(?P<protocol>\w+://)?(?P<www>www\.)?(?P<domain>[\w-]+\.\w+)(?P<path>/\w*)?')
 DOMAIN_SEARCH_REGEX = r'(http://[^ \'}\[\]\~\(\)\/]+|https://[^ \'}\[\]\~\(\)\/]+)'
 from django.contrib.contenttypes.models import ContentType
+from osf.models import Node
 
 
-def spawn_tasks_for_domain_references_backfill(model, query, get_guid, exclusion_subquery=None, batch_size=None, dry_run=False):
+def spawn_tasks_for_domain_references_backfill(model, query, get_guid, spam_fields=None, batch_size=None, dry_run=False):
     items = model.objects.filter(query).annotate(
-        exclude=exclusion_subquery
+        exclude=~Exists(
+            DomainReference.objects.filter(
+                referrer_content_type=ContentType.objects.get_for_model(model),
+                referrer_object_id=OuterRef('id')
+            )
+        )
     ).filter(exclude=True)[:batch_size]
 
     for item in items:
-        spam_content = item._get_spam_content()
+        spam_content = item._get_spam_content(spam_fields)
+
         if not dry_run:
             check_resource_for_domains.apply_async(
                 kwargs=dict(
@@ -38,35 +45,20 @@ def spawn_tasks_for_domain_references_backfill(model, query, get_guid, exclusion
 
 def backfill_domain_references(model_name, dry_run=False, batch_size=None):
     model = apps.get_model(model_name)
-    query = reduce(
-        operator.or_,
-        (Q(**{f'{field}__regex': DOMAIN_SEARCH_REGEX}) for field in list(model.SPAM_CHECK_FIELDS))
-    )
-
-    if model == WikiVersion:
-        get_guid = lambda item: item.wiki_page.node._id
-        node_ids = model.objects.filter(query).values_list('wiki_page__node__id', flat=True)
-        exclusion_subquery = ~Exists(
-            DomainReference.objects.filter(
-                referrer_content_type=ContentType.objects.get_for_model(AbstractNode),
-                referrer_object_id__in=list(node_ids)
-            )
-        )
-
+    if model == Node:
+        spam_fields = Node.SPAM_CHECK_FIELDS.union('wikis__versions__content')
+        search_fields = list(model.SPAM_CHECK_FIELDS) + ['wikis__versions__content']
     else:
-        get_guid = lambda item: item._id
-        exclusion_subquery = ~Exists(
-            DomainReference.objects.filter(
-                referrer_content_type=ContentType.objects.get_for_model(model),
-                referrer_object_id=OuterRef('id')
-            )
-        )
+        spam_fields = None
+        search_fields = list(model.SPAM_CHECK_FIELDS)
+
+    spam_queries = (Q(**{f'{field}__regex': DOMAIN_SEARCH_REGEX}) for field in search_fields)
+    query = reduce(operator.or_, spam_queries)
 
     spawn_tasks_for_domain_references_backfill(
         model,
         query,
-        get_guid=get_guid,
-        exclusion_subquery=exclusion_subquery,
+        spam_fields=spam_fields,
         batch_size=batch_size,
         dry_run=dry_run
     )
