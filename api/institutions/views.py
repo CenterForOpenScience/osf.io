@@ -134,7 +134,7 @@ class InstitutionNodeList(JSONAPIBaseView, generics.ListAPIView, InstitutionMixi
         return (
             institution.nodes.filter(is_public=True, is_deleted=False, type='osf.node')
             .select_related('node_license')
-            .include('contributor__user__guids', 'root__guids', 'tags', limit_includes=10)
+            .prefetch_related('contributor_set__user__guids', 'root__guids', 'tags')
             .annotate(region=F('addons_osfstorage_node_settings__region___id'))
         )
 

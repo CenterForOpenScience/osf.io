@@ -414,7 +414,7 @@ class TestUserSearchView(AdminTestCase):
         nt.assert_true(form.is_valid())
         response = self.view.form_valid(form)
         nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(response._headers['location'][1], '/users/{}/'.format(self.user_1.guids.first()._id))
+        nt.assert_equal(response.headers['location'], '/users/{}/'.format(self.user_1.guids.first()._id))
 
     def test_search_user_by_name(self):
         form_data = {
@@ -424,7 +424,7 @@ class TestUserSearchView(AdminTestCase):
         nt.assert_true(form.is_valid())
         response = self.view.form_valid(form)
         nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(response._headers['location'][1], '/users/search/Hardy/')
+        nt.assert_equal(response.headers['location'], '/users/search/Hardy/')
 
     def test_search_user_by_name_with_punctuation(self):
         form_data = {
@@ -434,7 +434,7 @@ class TestUserSearchView(AdminTestCase):
         nt.assert_true(form.is_valid())
         response = self.view.form_valid(form)
         nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(response._headers['location'][1], '/users/search/Dr.%20Sportello-Fay,%20PI%20@,%20%23,%20$,%20%25,%20%5E,%20&,%20*,%20(,%20),%20~/')
+        nt.assert_equal(response.headers['location'], '/users/search/Dr.%20Sportello-Fay,%20PI%20@,%20%23,%20$,%20%25,%20%5E,%20&,%20*,%20(,%20),%20~/')
 
     def test_search_user_by_username(self):
         form_data = {
@@ -444,7 +444,7 @@ class TestUserSearchView(AdminTestCase):
         nt.assert_true(form.is_valid())
         response = self.view.form_valid(form)
         nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(response._headers['location'][1], '/users/{}/'.format(self.user_1.guids.first()._id))
+        nt.assert_equal(response.headers['location'], '/users/{}/'.format(self.user_1.guids.first()._id))
 
     def test_search_user_by_alternate_email(self):
         form_data = {
@@ -454,7 +454,7 @@ class TestUserSearchView(AdminTestCase):
         nt.assert_true(form.is_valid())
         response = self.view.form_valid(form)
         nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(response._headers['location'][1], '/users/{}/'.format(self.user_2.guids.first()._id))
+        nt.assert_equal(response.headers['location'], '/users/{}/'.format(self.user_2.guids.first()._id))
 
     def test_search_user_list(self):
         view = views.UserSearchList()

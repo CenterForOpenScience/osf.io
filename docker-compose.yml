@@ -49,6 +49,7 @@ services:
   ###################
 
   elasticsearch:
+    platform: linux/amd64
     image: elasticsearch:2
     ports:
       - 9200:9200
