@@ -168,6 +168,7 @@ class TestNotableDomainReclassification:
     def test_from_spam_to_unknown(self, factory, spam_domain_one, spam_domain_two, unknown_domain, ignored_domain, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
         obj_one = factory()
         obj_two = factory()
+        obj_three = factory()
         check_resource_for_domains.apply_async(
             kwargs=dict(
                 guid=obj_one.guids.first()._id,
@@ -180,25 +181,40 @@ class TestNotableDomainReclassification:
                 content=f'{spam_domain_one.geturl()} {spam_domain_two.geturl()} {unknown_domain.geturl()} {ignored_domain.geturl()}',
             )
         )
+        obj_three.spam_data['who_flagged'] = 'some external spam checker'
+        obj_three.save()
+        check_resource_for_domains.apply_async(
+            kwargs=dict(
+                guid=obj_three.guids.first()._id,
+                content=f'{spam_domain_one.geturl()} {unknown_domain.geturl()} {ignored_domain.geturl()}',
+            )
+        )
         obj_one.reload()
         obj_two.reload()
+        obj_three.reload()
         assert obj_one.spam_status == SpamStatus.SPAM
         assert obj_two.spam_status == SpamStatus.SPAM
+        assert obj_three.spam_status == SpamStatus.SPAM
         assert set(obj_one.spam_data['domains']) == set([spam_domain_one.netloc])
         assert set(obj_two.spam_data['domains']) == set([spam_domain_one.netloc, spam_domain_two.netloc])
+        assert set(obj_three.spam_data['domains']) == set([spam_domain_one.netloc])
         spam_notable_domain_one.note = NotableDomain.Note.UNKNOWN
         spam_notable_domain_one.save()
         obj_one.reload()
         obj_two.reload()
+        obj_three.reload()
         assert obj_one.spam_status == SpamStatus.UNKNOWN
         assert obj_two.spam_status == SpamStatus.SPAM
+        assert obj_three.spam_status == SpamStatus.SPAM
         assert len(obj_one.spam_data['domains']) == 0
         assert set(obj_two.spam_data['domains']) == set([spam_domain_two.netloc])
+        assert len(obj_three.spam_data['domains']) == 0
 
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
     def test_from_spam_to_ignored(self, factory, spam_domain_one, spam_domain_two, unknown_domain, ignored_domain, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
         obj_one = factory()
         obj_two = factory()
+        obj_three = factory()
         check_resource_for_domains.apply_async(
             kwargs=dict(
                 guid=obj_one.guids.first()._id,
@@ -211,20 +227,34 @@ class TestNotableDomainReclassification:
                 content=f'{spam_domain_one.geturl()} {spam_domain_two.geturl()} {unknown_domain.geturl()} {ignored_domain.geturl()}',
             )
         )
+        obj_three.spam_data['who_flagged'] = 'some external spam checker'
+        obj_three.save()
+        check_resource_for_domains.apply_async(
+            kwargs=dict(
+                guid=obj_three.guids.first()._id,
+                content=f'{spam_domain_one.geturl()} {unknown_domain.geturl()} {ignored_domain.geturl()}',
+            )
+        )
         obj_one.reload()
         obj_two.reload()
+        obj_three.reload()
         assert obj_one.spam_status == SpamStatus.SPAM
         assert obj_two.spam_status == SpamStatus.SPAM
+        assert obj_three.spam_status == SpamStatus.SPAM
         assert set(obj_one.spam_data['domains']) == set([spam_domain_one.netloc])
         assert set(obj_two.spam_data['domains']) == set([spam_domain_one.netloc, spam_domain_two.netloc])
+        assert set(obj_three.spam_data['domains']) == set([spam_domain_one.netloc])
         spam_notable_domain_one.note = NotableDomain.Note.IGNORED
         spam_notable_domain_one.save()
         obj_one.reload()
         obj_two.reload()
+        obj_three.reload()
         assert obj_one.spam_status == SpamStatus.UNKNOWN
         assert obj_two.spam_status == SpamStatus.SPAM
+        assert obj_three.spam_status == SpamStatus.SPAM
         assert len(obj_one.spam_data['domains']) == 0
         assert set(obj_two.spam_data['domains']) == set([spam_domain_two.netloc])
+        assert len(obj_three.spam_data['domains']) == 0
 
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
     def test_from_unknown_to_spam(self, factory, unknown_domain, ignored_domain, unknown_notable_domain, ignored_notable_domain):
