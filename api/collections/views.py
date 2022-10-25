@@ -149,6 +149,11 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
     #This Request/Response
 
     """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        CollectionWriteOrPublic,
+    )
 
     required_read_scopes = [CoreScopes.ORGANIZER_COLLECTIONS_BASE_READ]
     required_write_scopes = [CoreScopes.ORGANIZER_COLLECTIONS_BASE_WRITE]

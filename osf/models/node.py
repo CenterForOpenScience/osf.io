@@ -1157,6 +1157,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         ).order_by('contributor___order')
 
     def get_spam_fields(self, saved_fields=None):
+        """
+        :param list saved_fields: the spam fields to check for, if None defaults to all `SPAM_CHECK_FIELDS` otherwise
+        checks the inputed fields. This applies to joined fields such as `addons_forward_node_settings__url` for
+        redirect links and `wikis__versions__content` for wikis.
+        :rtype list:
+        :return: A list of fields to be checked for spam.
+        """
         # Override for SpamOverrideMixin
         check_fields = self.SPAM_CHECK_FIELDS.copy()
         if not saved_fields:

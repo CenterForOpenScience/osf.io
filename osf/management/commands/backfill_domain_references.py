@@ -19,7 +19,7 @@ from django.contrib.contenttypes.models import ContentType
 from osf.models import Node
 
 
-def spawn_tasks_for_domain_references_backfill(model, query, spam_fields=None, batch_size=None, dry_run=False):
+def spawn_tasks_for_domain_references_backfill(model, query, additional_spam_fields=None, batch_size=None, dry_run=False):
     items = model.objects.filter(query).annotate(
         exclude=~Exists(
             DomainReference.objects.filter(
@@ -30,7 +30,7 @@ def spawn_tasks_for_domain_references_backfill(model, query, spam_fields=None, b
     ).filter(exclude=True)[:batch_size]
 
     for item in items:
-        spam_content = item._get_spam_content(spam_fields)
+        spam_content = item._get_spam_content(additional_spam_fields)
 
         if not dry_run:
             check_resource_for_domains.apply_async(
@@ -44,11 +44,12 @@ def spawn_tasks_for_domain_references_backfill(model, query, spam_fields=None, b
 
 def backfill_domain_references(model_name, dry_run=False, batch_size=None):
     model = apps.get_model(model_name)
+    spam_fields = None
+
     if model == Node:
         spam_fields = list(Node.SPAM_CHECK_FIELDS) + ['wikis__versions__content']
         search_fields = list(model.SPAM_CHECK_FIELDS) + ['wikis__versions__content']
     else:
-        spam_fields = None
         search_fields = list(model.SPAM_CHECK_FIELDS)
 
     spam_queries = (Q(**{f'{field}__regex': DOMAIN_SEARCH_REGEX}) for field in search_fields)
@@ -57,7 +58,7 @@ def backfill_domain_references(model_name, dry_run=False, batch_size=None):
     spawn_tasks_for_domain_references_backfill(
         model,
         query,
-        spam_fields=spam_fields,
+        additional_spam_fields=spam_fields,
         batch_size=batch_size,
         dry_run=dry_run
     )
