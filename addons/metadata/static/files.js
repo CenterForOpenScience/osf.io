@@ -491,6 +491,7 @@ function MetadataButtons() {
         .css('margin-left', 'auto')
         .append($('<i></i>').addClass('fa fa-paste'))
         .append(_('Paste from Clipboard'))
+        .attr('type', 'button')
         .on('click', self.pasteFromClipboard);
       dialog.toolbar.append($('<div></div>')
         .css('display', 'flex')
@@ -1550,7 +1551,8 @@ function MetadataButtons() {
     }
     const copyToClipboard = $('<button class="btn btn-default"></button>')
       .append($('<i></i>').addClass('fa fa-copy'))
-      .append(_('Copy to clipboard'));
+      .append(_('Copy to clipboard'))
+      .attr('type', 'button');
     const copyStatus = $('<div></div>');
     copyToClipboard.on('click', function(event) {
       self.copyToClipboard(event, copyStatus);
