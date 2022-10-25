@@ -313,7 +313,7 @@ class ExportDataFileCSVView(RdmPermissionMixin, View):
                 file['materialized_path'],
                 file['name'],
                 file['identifier'],
-                str(file['size']) + ' B',
+                str(file['size']) + ' Bytes',
                 file.get('timestamp', {}).get('verify_user')
             ])
         CURRENT_DATA_INFORMATION = []

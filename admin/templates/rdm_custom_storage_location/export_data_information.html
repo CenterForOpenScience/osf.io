@@ -113,7 +113,7 @@
         </tr>
         <tr>
             <td>{% trans "Total file size" %}</td>
-            <td>{{ export_data.total_size }} B</td>
+            <td>{{ export_data.total_size }} Bytes</td>
         </tr>
         </tbody>
     </table>
@@ -138,7 +138,7 @@
                 <td class="">{{ file_info.project.name }}</td>
                 <td class="">{{ file_info.contributor }}</td>
                 <td class="">{{ file_info.tags|join:", " }}</td>
-                <td class="">{{ file_info.size }} B</td>
+                <td class="">{{ file_info.size }} Bytes</td>
                 <td class="">{{ file_info.identifier }}</td>
                 <td class="">{{ file_info.created_at }}</td>
             </tr>
