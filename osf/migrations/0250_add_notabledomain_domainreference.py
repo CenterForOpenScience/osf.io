@@ -9,7 +9,7 @@ import osf.models.base
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0249_schema_response_justification_to_text_field'),
+        ('osf', '0004_django3_upgrade'),
         ('contenttypes', '0002_remove_content_type_name'),
     ]
 
