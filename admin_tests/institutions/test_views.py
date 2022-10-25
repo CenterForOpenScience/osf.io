@@ -3,8 +3,8 @@ import json
 from nose import tools as nt
 from django.test import RequestFactory
 from django.contrib.auth.models import Permission
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied
-
 
 from tests.base import AdminTestCase
 from osf_tests.factories import (
@@ -12,7 +12,7 @@ from osf_tests.factories import (
     InstitutionFactory,
     ProjectFactory
 )
-from osf.models import Institution, Node
+from osf.models import Institution, Node, AbstractNode
 
 from admin_tests.utilities import setup_form_view, setup_user_view
 
@@ -208,7 +208,10 @@ class TestAffiliatedNodeList(AdminTestCase):
         self.institution = InstitutionFactory()
 
         self.user = AuthUserFactory()
-        self.view_node = Permission.objects.get(codename='view_node')
+        self.view_node = Permission.objects.filter(
+            codename='view_node',
+            content_type_id=ContentType.objects.get_for_model(AbstractNode).id
+        ).first()
         self.user.user_permissions.add(self.view_node)
         self.user.affiliated_institutions.add(self.institution)
         self.user.save()
