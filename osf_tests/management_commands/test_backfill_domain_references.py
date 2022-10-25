@@ -83,8 +83,8 @@ class TestBackfillDomainReferences:
             referrer_content_type=ContentType.objects.get_for_model(comment_with_domain),
         ).domain == domain
 
-        backfill_domain_references(model_name='addons_wiki.WikiVersion')
-        # WikiVersion (these have no spam status so point to the user)
+        # Exclude old nodes properly
+        backfill_domain_references(model_name='osf.Node')
         assert DomainReference.objects.get(
             referrer_object_id=wiki_with_domain.wiki_page.node.id,
             referrer_content_type=ContentType.objects.get_for_model(wiki_with_domain.wiki_page.node),

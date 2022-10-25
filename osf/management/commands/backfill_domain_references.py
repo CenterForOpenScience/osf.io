@@ -8,8 +8,7 @@ from django.db.models import Q, OuterRef, Exists
 from django.apps import apps
 from django.core.management.base import BaseCommand
 from osf.external.spam.tasks import check_resource_for_domains
-from osf.models import DomainReference, AbstractNode
-from addons.wiki.models import WikiVersion
+from osf.models import DomainReference
 
 
 logger = logging.getLogger(__name__)
@@ -20,7 +19,7 @@ from django.contrib.contenttypes.models import ContentType
 from osf.models import Node
 
 
-def spawn_tasks_for_domain_references_backfill(model, query, get_guid, spam_fields=None, batch_size=None, dry_run=False):
+def spawn_tasks_for_domain_references_backfill(model, query, spam_fields=None, batch_size=None, dry_run=False):
     items = model.objects.filter(query).annotate(
         exclude=~Exists(
             DomainReference.objects.filter(
@@ -36,7 +35,7 @@ def spawn_tasks_for_domain_references_backfill(model, query, get_guid, spam_fiel
         if not dry_run:
             check_resource_for_domains.apply_async(
                 kwargs=dict(
-                    guid=get_guid(item),
+                    guid=item._id,
                     content=spam_content,
                 )
             )
@@ -46,7 +45,7 @@ def spawn_tasks_for_domain_references_backfill(model, query, get_guid, spam_fiel
 def backfill_domain_references(model_name, dry_run=False, batch_size=None):
     model = apps.get_model(model_name)
     if model == Node:
-        spam_fields = Node.SPAM_CHECK_FIELDS.union('wikis__versions__content')
+        spam_fields = list(Node.SPAM_CHECK_FIELDS) + ['wikis__versions__content']
         search_fields = list(model.SPAM_CHECK_FIELDS) + ['wikis__versions__content']
     else:
         spam_fields = None

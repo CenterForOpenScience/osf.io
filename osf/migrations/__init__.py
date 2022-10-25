@@ -205,11 +205,11 @@ def add_registration_schemas(sender, verbosity=0, **kwargs):
 def update_blocked_email_domains(sender, verbosity=0, **kwargs):
     if getattr(sender, 'label', None) == 'osf':
         from django.apps import apps
-        NotableEmailDomain = apps.get_model('osf', 'NotableEmailDomain')
+        NotableDomain = apps.get_model('osf', 'NotableDomain')
         for domain in osf_settings.BLACKLISTED_DOMAINS:
-            NotableEmailDomain.objects.update_or_create(
+            NotableDomain.objects.update_or_create(
                 domain=domain,
-                defaults={'note': NotableEmailDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION},
+                defaults={'note': NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT},
             )
 
 
