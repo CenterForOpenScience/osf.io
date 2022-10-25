@@ -47,7 +47,6 @@ from osf.models import (
 )
 from osf.utils import permissions as osf_permissions
 
-
 from osf.exceptions import PreprintStateError
 
 

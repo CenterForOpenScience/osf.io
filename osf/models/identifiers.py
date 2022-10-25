@@ -54,6 +54,10 @@ class Identifier(ObjectIDMixin, BaseModel):
         # Let the caller decide what to do with any validation errors
         return validator.validate(self.value)
 
+    def as_irl(self):
+        validator = identifier_utils.PIDValidator.for_identifier_category(self.category)
+        return validator.to_irl(self.value)
+
 
 class IdentifierMixin(models.Model):
     """Model mixin that adds methods for getting and setting Identifier objects
@@ -97,6 +101,10 @@ class IdentifierMixin(models.Model):
     def get_identifier_value(self, category):
         identifier = self.get_identifier(category)
         return identifier.value if identifier else None
+
+    def get_identifier_irl(self, category):
+        identifier = self.get_identifier(category)
+        return identifier.as_irl() if identifier else None
 
     def set_identifier_value(self, category, value=None):
         defaults = {'value': value} if value is not None else {}

@@ -14,33 +14,21 @@ from osf.metadata.serializers import serializer_registry
 from website.util import api_v2_url
 
 
-class FileMetadataRecord(ObjectIDMixin, BaseModel):
+class GuidMetadataRecord(ObjectIDMixin, BaseModel):
 
-    metadata = DateTimeAwareJSONField(default=dict, blank=True)
+    guid = models.OneToOneField('Guid', related_name='metadata_record', on_delete=models.CASCADE)
 
-    file = models.ForeignKey(OsfStorageFile, related_name='records', on_delete=models.SET_NULL, null=True)
-    schema = models.ForeignKey(FileMetadataSchema, related_name='records', on_delete=models.SET_NULL, null=True)
+    # TODO: validator using osf-map and pyshacl
+    custom_metadata_jsonld = DateTimeAwareJSONField(default=dict, blank=True)
 
-    class Meta:
-        unique_together = ('file', 'schema')
+    def __repr__(self):
+        return f'{self.__class__.__name__}(guid={self.guid._id})'
 
-    def __unicode__(self):
-        return '(file={}, schema={}, _id={})'.format(self.file.name, self.schema, self._id)
-
-    @property
-    def absolute_api_v2_url(self):
-        path = '/files/{}/metadata_records/{}/'.format(self.file._id, self._id)
-        return api_v2_url(path)
-
-    @property
-    def serializer(self):
-        return serializer_registry[self.schema._id]
-
-    def serialize(self, format='json'):
-        return self.serializer.serialize(self, format)
-
-    def validate_metadata(self, proposed_metadata):
-        return jsonschema.validate(proposed_metadata, from_json(self.serializer.osf_schema))
+    def custom_metadata_graph(self):
+        return rdflib.Graph().parse(
+            format='json-ld',
+            data=self.custom_metadata_jsonld,
+        )
 
     def update(self, proposed_metadata, user=None):
         auth = Auth(user) if user else None

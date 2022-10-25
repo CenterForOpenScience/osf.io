@@ -357,3 +357,14 @@ class SearchParser(JSONAPIParser):
                     else:
                         res['query']['bool']['filter'].append({'term': {key: val}})
         return res
+
+
+class JSONLDParser(JSONParser):
+    """
+    Parses JSON-LD
+    """
+    media_type = 'application/ld+json'
+    renderer_class = JSONAPIRenderer
+
+    def parse(self, stream, media_type=None, parser_context=None):
+        raise NotImplementedError

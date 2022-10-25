@@ -51,6 +51,11 @@ oauthlib==2.0.6
 requests-oauthlib==0.8.0
 raven==6.4.0
 
+# metadata handling
+rdflib==5.0.0
+rdflib-jsonld==0.5.0
+# pyshacl
+
 # API requirements
 Django==3.2.15
 djangorestframework==3.13.1

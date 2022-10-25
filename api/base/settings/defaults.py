@@ -137,11 +137,13 @@ MAX_PAGE_SIZE = 100
 REST_FRAMEWORK = {
     'PAGE_SIZE': 10,
     'DEFAULT_RENDERER_CLASSES': (
+        # 'api.base.renderers.JSONLDRenderer',
         'api.base.renderers.JSONAPIRenderer',
         'api.base.renderers.JSONRendererWithESISupport',
         'api.base.renderers.BrowsableAPIRendererNoForms',
     ),
     'DEFAULT_PARSER_CLASSES': (
+        # 'api.base.parsers.JSONLDParser',
         'api.base.parsers.JSONAPIParser',
         'api.base.parsers.JSONAPIParserForRegularJSON',
         'rest_framework.parsers.FormParser',
