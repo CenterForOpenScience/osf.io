@@ -8,12 +8,21 @@ from nose.tools import assert_equal, assert_true
 from rest_framework.exceptions import NotFound
 
 from osf_tests.factories import SubjectFactory
-from osf.models import RegistrationSchema, RegistrationProvider
+from osf.models import RegistrationSchema, RegistrationProvider, NodeLicense
+from osf.registrations.utils import (
+    BulkRegistrationUpload,
+    CategoryField,
+    ContributorField,
+    DuplicateHeadersError,
+    FileUploadNotSupportedError,
+    InvalidHeadersError,
+    LicenseField,
+    MAX_EXCEL_COLUMN_NUMBER,
+    METADATA_FIELDS,
+    Store,
+    get_excel_column_name,
+)
 
-from osf.registrations.utils import (BulkRegistrationUpload, InvalidHeadersError,
-                                     FileUploadNotSupportedError, DuplicateHeadersError,
-                                     get_excel_column_name, Store, CategoryField, LicenseField, ContributorField,
-                                     MAX_EXCEL_COLUMN_NUMBER, METADATA_FIELDS)
 
 def write_csv(header_row, *rows):
     csv_buffer = io.StringIO()
@@ -23,6 +32,7 @@ def write_csv(header_row, *rows):
         csv_writer.writerow(row)
     csv_buffer.seek(0)
     return csv_buffer
+
 
 def make_row(field_values={}):
     return {**{
@@ -42,6 +52,7 @@ def make_row(field_values={}):
         'summary': 'Test study',
     }, **field_values}
 
+
 def assert_parsed(actual_parsed, expected_parsed):
     parsed = {**actual_parsed['metadata'], **actual_parsed['registration_responses']}
     for key, value in expected_parsed.items():
@@ -54,6 +65,7 @@ def assert_parsed(actual_parsed, expected_parsed):
                 continue
         assert_equal(actual, expected)
 
+
 def assert_errors(actual_errors, expected_errors):
     for error in actual_errors:
         assert_true('header' in error)
@@ -64,6 +76,7 @@ def assert_errors(actual_errors, expected_errors):
         assert_equal(error['type'], expected_errors[error['header']])
 
     assert_true(len(actual_errors), len(expected_errors.keys()))
+
 
 @pytest.mark.django_db
 class TestBulkUploadParserValidationErrors:
@@ -78,11 +91,15 @@ class TestBulkUploadParserValidationErrors:
 
     @pytest.fixture()
     def registration_provider(self, open_ended_schema, provider_subjects):
-        osf_provider = RegistrationProvider.load('osf')
-        osf_provider.schemas.add(open_ended_schema)
-        osf_provider.subjects.add(*provider_subjects)
-        osf_provider.save()
-        return osf_provider
+        provider = RegistrationProvider.get_default()
+        node_license = NodeLicense.objects.get(name='No license')
+        provider.default_license = node_license
+        provider.licenses_acceptable.add(node_license)
+        provider.schemas.add(open_ended_schema)
+        provider.subjects.add(*provider_subjects)
+        provider.licenses_acceptable.add(NodeLicense.objects.get(name='No license'))
+        provider.save()
+        return provider
 
     @pytest.fixture()
     def question_headers(self):

@@ -6,7 +6,7 @@ import pytz
 import datetime
 import responses
 
-from osf.models import AdminLogEntry, NodeLog
+from osf.models import AdminLogEntry, NodeLog, AbstractNode
 from admin.nodes.views import (
     NodeDeleteView,
     NodeRemoveContributorView,
@@ -29,6 +29,7 @@ from django.test import RequestFactory
 from django.urls import reverse
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import Permission
+from django.contrib.contenttypes.models import ContentType
 from framework.auth.core import Auth
 
 from tests.base import AdminTestCase
@@ -97,7 +98,10 @@ class TestNodeView(AdminTestCase):
         node = ProjectFactory()
         guid = node._id
 
-        change_permission = Permission.objects.get(codename='view_node')
+        change_permission = Permission.objects.filter(
+            codename='view_node',
+            content_type_id=ContentType.objects.get_for_model(AbstractNode).id
+        ).first()
         user.user_permissions.add(change_permission)
         user.save()
 
@@ -153,7 +157,10 @@ class TestNodeDeleteView(AdminTestCase):
         guid = self.node._id
 
         change_permission = Permission.objects.get(codename='delete_node')
-        view_permission = Permission.objects.get(codename='view_node')
+        view_permission = Permission.objects.filter(
+            codename='view_node',
+            content_type_id=ContentType.objects.get_for_model(AbstractNode).id
+        ).first()
         user.user_permissions.add(change_permission)
         user.user_permissions.add(view_permission)
         user.save()
@@ -226,7 +233,10 @@ class TestRemoveContributor(AdminTestCase):
 
     def test_correct_view_permissions(self):
         change_permission = Permission.objects.get(codename='change_node')
-        view_permission = Permission.objects.get(codename='view_node')
+        view_permission = Permission.objects.filter(
+            codename='view_node',
+            content_type_id=ContentType.objects.get_for_model(AbstractNode).id
+        ).first()
         self.user.user_permissions.add(change_permission)
         self.user.user_permissions.add(view_permission)
         self.user.save()

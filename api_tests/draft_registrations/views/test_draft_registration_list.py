@@ -8,6 +8,7 @@ from api_tests.nodes.views.test_node_draft_registration_list import (
 )
 from api.base.settings.defaults import API_BASE
 
+from osf.migrations import ensure_invisible_and_inactive_schema
 from osf.models import DraftRegistration, NodeLicense, RegistrationProvider, Institution
 from osf_tests.factories import (
     RegistrationFactory,
@@ -19,6 +20,12 @@ from osf_tests.factories import (
 from osf.utils.permissions import READ, WRITE, ADMIN
 
 from website import mails, settings
+
+
+@pytest.fixture(autouse=True)
+def invisible_and_inactive_schema():
+    return ensure_invisible_and_inactive_schema()
+
 
 @pytest.mark.django_db
 class TestDraftRegistrationListNewWorkflow(TestDraftRegistrationList):
@@ -65,10 +72,13 @@ class TestDraftRegistrationListNewWorkflow(TestDraftRegistrationList):
 
 
 class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
+
+    # Overrides `url_draft_registrations` in `TestDraftRegistrationCreate`
     @pytest.fixture()
     def url_draft_registrations(self, project_public):
         return '/{}draft_registrations/?'.format(API_BASE)
 
+    # Overrides `payload` in TestDraftRegistrationCreate`
     @pytest.fixture()
     def payload(self, metaschema_open_ended, provider, project_public):
         return {
@@ -98,15 +108,31 @@ class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
             }
         }
 
+    # Temporary alternative provider that supports `metaschema_open_ended` in `TestDraftRegistrationCreate`
+    # This provider is created to fix the first 3 tests in this test class due to test DB changes with the
+    # Django 3 Upgrade. A long-term solution is to create and/or use dedicated schemas for testing.
+    @pytest.fixture()
+    def provider_alt(self, metaschema_open_ended):
+        default_provider = RegistrationProvider.get_default()
+        default_provider.schemas.add(metaschema_open_ended)
+        default_provider.save()
+        return default_provider
+
+    # Similarly, this is a temporary alternative payload that uses the above `provider_alt`.
+    @pytest.fixture()
+    def payload_alt(self, payload, provider_alt):
+        new_payload = payload.copy()
+        new_payload['data']['relationships']['provider']['data']['id'] = provider_alt._id
+        return new_payload
+
     # Overrides TestDraftRegistrationList
-    def test_cannot_create_draft_errors(
-            self, app, user, project_public, payload, url_draft_registrations):
+    def test_cannot_create_draft_errors(self, app, user, payload_alt, project_public, url_draft_registrations):
         #   test_cannot_create_draft_from_a_registration
         registration = RegistrationFactory(
             project=project_public, creator=user)
-        payload['data']['relationships']['branched_from']['data']['id'] = registration._id
+        payload_alt['data']['relationships']['branched_from']['data']['id'] = registration._id
         res = app.post_json_api(
-            url_draft_registrations, payload, auth=user.auth,
+            url_draft_registrations, payload_alt, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 404
 
@@ -114,23 +140,23 @@ class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
         project = ProjectFactory(is_public=True, creator=user)
         project.is_deleted = True
         project.save()
-        payload['data']['relationships']['branched_from']['data']['id'] = project._id
+        payload_alt['data']['relationships']['branched_from']['data']['id'] = project._id
         res = app.post_json_api(
-            url_draft_registrations, payload,
+            url_draft_registrations, payload_alt,
             auth=user.auth, expect_errors=True)
         assert res.status_code == 410
         assert res.json['errors'][0]['detail'] == 'The requested node is no longer available.'
 
     #   test_cannot_create_draft_from_collection
         collection = CollectionFactory(creator=user)
-        payload['data']['relationships']['branched_from']['data']['id'] = collection._id
+        payload_alt['data']['relationships']['branched_from']['data']['id'] = collection._id
         res = app.post_json_api(
-            url_draft_registrations, payload, auth=user.auth,
+            url_draft_registrations, payload_alt, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 404
 
     def test_draft_registration_attributes_copied_from_node(self, app, project_public,
-            url_draft_registrations, user, payload):
+            url_draft_registrations, user, payload_alt):
 
         write_contrib = AuthUserFactory()
         read_contrib = AuthUserFactory()
@@ -149,12 +175,12 @@ class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
         project_public.add_contributor(write_contrib, WRITE)
         project_public.add_contributor(read_contrib, READ)
 
-        res = app.post_json_api(url_draft_registrations, payload, auth=write_contrib.auth, expect_errors=True)
+        res = app.post_json_api(url_draft_registrations, payload_alt, auth=write_contrib.auth, expect_errors=True)
         assert res.status_code == 201
-        res = app.post_json_api(url_draft_registrations, payload, auth=read_contrib.auth, expect_errors=True)
+        res = app.post_json_api(url_draft_registrations, payload_alt, auth=read_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
-        res = app.post_json_api(url_draft_registrations, payload, auth=user.auth)
+        res = app.post_json_api(url_draft_registrations, payload_alt, auth=user.auth)
         assert res.status_code == 201
         attributes = res.json['data']['attributes']
         assert attributes['title'] == project_public.title
@@ -173,14 +199,14 @@ class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
     def test_cannot_create_draft(
             self, app, user_write_contrib,
             user_read_contrib, user_non_contrib,
-            project_public, payload, group,
+            project_public, payload_alt, group,
             url_draft_registrations, group_mem):
 
         #   test_write_only_contributor_cannot_create_draft
         assert user_write_contrib in project_public.contributors.all()
         res = app.post_json_api(
             url_draft_registrations,
-            payload,
+            payload_alt,
             auth=user_write_contrib.auth,
             expect_errors=True)
         assert res.status_code == 201
@@ -189,7 +215,7 @@ class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
         assert user_read_contrib in project_public.contributors.all()
         res = app.post_json_api(
             url_draft_registrations,
-            payload,
+            payload_alt,
             auth=user_read_contrib.auth,
             expect_errors=True)
         assert res.status_code == 403
@@ -197,13 +223,13 @@ class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
     #   test_non_authenticated_user_cannot_create_draft
         res = app.post_json_api(
             url_draft_registrations,
-            payload, expect_errors=True)
+            payload_alt, expect_errors=True)
         assert res.status_code == 401
 
     #   test_logged_in_non_contributor_cannot_create_draft
         res = app.post_json_api(
             url_draft_registrations,
-            payload,
+            payload_alt,
             auth=user_non_contrib.auth,
             expect_errors=True)
         assert res.status_code == 403
@@ -211,7 +237,7 @@ class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
     #   test_group_admin_cannot_create_draft
         res = app.post_json_api(
             url_draft_registrations,
-            payload,
+            payload_alt,
             auth=group_mem.auth,
             expect_errors=True)
         assert res.status_code == 201
@@ -221,7 +247,7 @@ class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
         project_public.add_osf_group(group, WRITE)
         res = app.post_json_api(
             url_draft_registrations,
-            payload,
+            payload_alt,
             auth=group_mem.auth,
             expect_errors=True)
         assert res.status_code == 201

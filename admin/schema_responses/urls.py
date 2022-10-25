@@ -1,9 +1,9 @@
-from django.conf.urls import url
+from django.conf.urls import re_path
 from admin.schema_responses import views
 
 app_name = 'admin'
 
 urlpatterns = [
-    url(r'^(?P<schema_response_id>[a-z0-9]+)/$', views.SchemaResponseDetailView.as_view(), name='detail'),
-    url(r'^$', views.SchemaResponseListView.as_view(), name='list'),
+    re_path(r'^(?P<schema_response_id>[a-z0-9]+)/$', views.SchemaResponseDetailView.as_view(), name='detail'),
+    re_path(r'^$', views.SchemaResponseListView.as_view(), name='list'),
 ]

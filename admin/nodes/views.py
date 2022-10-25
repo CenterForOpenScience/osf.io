@@ -4,7 +4,7 @@ from framework import status
 
 from django.utils import timezone
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.core.urlresolvers import NoReverseMatch
+from django.urls import NoReverseMatch
 from django.db.models import F, Case, When, IntegerField
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin

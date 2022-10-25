@@ -25,7 +25,8 @@ class ScheduledBanner(models.Model):
     class Meta:
         # Custom permissions for use in the OSF Admin App
         permissions = (
-            ('view_scheduledbanner', 'Can view scheduled banner details'),
+            # Clashes with built-in permissions
+            # ('view_scheduledbanner', 'Can view scheduled banner details'),
         )
 
     name = models.CharField(unique=True, max_length=256)

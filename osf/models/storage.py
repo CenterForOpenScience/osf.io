@@ -18,7 +18,8 @@ PROVIDER_ASSET_NAME_CHOICES = [
 class ProviderAssetFile(BaseModel):
     class Meta:
         permissions = (
-            ('view_providerassetfile', 'Can view provider asset files'),
+            # Clashes with built-in permissions
+            # ('view_providerassetfile', 'Can view provider asset files'),
         )
 
     name = models.CharField(choices=PROVIDER_ASSET_NAME_CHOICES, max_length=63)
