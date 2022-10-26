@@ -430,6 +430,7 @@ class CeleryConfig:
         'osf.management.commands.populate_branched_from',
         'osf.management.commands.cumulative_plos_metrics',
         'osf.management.commands.daily_reporters_go',
+        'osf.metrics.tasks',
     }
 
     med_pri_modules = {
