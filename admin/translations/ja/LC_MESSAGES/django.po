@@ -3353,7 +3353,7 @@ msgstr "恒久的に削除（復帰ボタンで戻せません）"
 
 # export_data_deleted_list.html
 msgid "Deleted Export Data List"
-msgstr "エクスポートデータ一覧を削除する"
+msgstr "削除済みエクスポートデータ一覧"
 
 msgid "Revert"
 msgstr "復帰"
