@@ -33,7 +33,7 @@ class SparseNodeSerializer(NodeSerializer):
     children = RelationshipField(
         related_view='sparse:node-children',
         related_view_kwargs={'node_id': '<_id>'},
-        related_meta={'count': 'get_node_count'},
+        # related_meta={'count': 'get_node_count'},
     )
     parent = RelationshipField(
         related_view='sparse:node-detail',
@@ -119,7 +119,7 @@ class SparseRegistrationSerializer(RegistrationSerializer):
     children = RelationshipField(
         related_view='sparse:registration-children',
         related_view_kwargs={'node_id': '<_id>'},
-        related_meta={'count': 'get_node_count'},
+        # related_meta={'count': 'get_node_count'},
     )
     parent = RelationshipField(
         related_view='sparse:registration-detail',
