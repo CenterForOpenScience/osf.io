@@ -1,9 +1,10 @@
 import json
 import jsonschema
 import codecs
-
 import time
 import collections
+
+import rdflib
 from django.core.exceptions import ImproperlyConfigured
 from rest_framework.parsers import JSONParser
 from rest_framework.exceptions import ParseError, NotAuthenticated
@@ -357,14 +358,3 @@ class SearchParser(JSONAPIParser):
                     else:
                         res['query']['bool']['filter'].append({'term': {key: val}})
         return res
-
-
-class JSONLDParser(JSONParser):
-    """
-    Parses JSON-LD
-    """
-    media_type = 'application/ld+json'
-    renderer_class = JSONAPIRenderer
-
-    def parse(self, stream, media_type=None, parser_context=None):
-        raise NotImplementedError

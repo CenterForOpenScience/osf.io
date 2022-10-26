@@ -6,6 +6,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import Count, Min, Q
 
 from osf import models as osfdb
+from osf.metadata.utils import guid_irl, try_guid_from_irl, checksum_urn
 from osf.utils import workflows as osfworkflows
 
 from website import settings as website_settings
@@ -28,7 +29,9 @@ def gather_guid_graph(guid: str, max_guids: int = 1) -> rdflib.Graph:
     """
     guids_visited = set()
     guids_to_visit = set((guid,))
-    graph = _contextualized_graph()
+    graph = rdflib.Graph()
+    graph.bind('osf', OSF)
+    graph.bind('dct', DCT)
     while (guids_to_visit and len(guids_visited) < max_guids):
         guid = guids_to_visit.pop()
         if guid in guids_visited:
@@ -38,61 +41,19 @@ def gather_guid_graph(guid: str, max_guids: int = 1) -> rdflib.Graph:
         for triple in gatherer.gather_triples():
             graph.add(triple)
             (_, _, triple_object) = triple
-            obj_guid = _try_guid_from_irl(triple_object)
+            obj_guid = try_guid_from_irl(triple_object)
             if obj_guid:
                 guids_to_visit.add(obj_guid)
     return graph
-
-
-def _contextualized_graph():
-    g = rdflib.Graph()
-    g.bind('osf', OSF)
-    g.bind('dct', DCT)
-    return g
-
-
-def _guid_irl(guid):
-    """return a rdflib.URIRef or None
-
-    "URI": "uniform resource identifier"
-    "URL": "uniform resource locator" (a URI that is expected to resolve)
-    "IRI": "internationalized resource identifier"
-    "IRL": "internationalized resource locator" (an IRI that is expected to resolve)
-
-    @param guid: a string, Guid instance, or another model instance that has a Guid
-    @returns rdflib.URIRef or None
-    """
-    if hasattr(guid, 'guids'):  # quacks like a Guid referent
-        guid = guid.guids.first()
-    if hasattr(guid, '_id'):  # quacks like a Guid instance
-        guid = guid._id
-    if not guid:
-        return None  # politely skipple this triple
-    if not isinstance(guid, str):
-        raise ValueError('_guid_irl expects str, guid instance, or guid referent')
-    return rdflib.URIRef(guid, base=website_settings.DOMAIN)
-
-
-def _try_guid_from_irl(irl):
-    if isinstance(irl, rdflib.URIRef) and irl.startswith(website_settings.DOMAIN):
-        path = irl[len(website_settings.DOMAIN):].strip('/')
-        if '/' not in path:
-            return path
-    return None
-
-
-def _checksum_urn(checksum_algorithm, checksum_hex):
-    urn = f'urn:checksum/{checksum_algorithm}/{checksum_hex}'
-    return rdflib.URIRef(urn)
 
 
 class MetadataGatherer:
     """for gathering metadata about a specific guid-identified object
     """
     def __init__(self, guid_id):
-        # the "focus" is what's identified by the guid; what to gather metadata about.
-        self.focus = osfdb.Guid.load(guid_id).referent
-        self.focus_irl = _guid_irl(guid_id)
+        self._guid = osfdb.Guid.load(guid_id)
+        self.focus = self._guid.referent  # the "focus" is what to gather metadata about.
+        self.focus_irl = guid_irl(guid_id)
 
     def gather_triples(self):
         """
@@ -113,14 +74,14 @@ class MetadataGatherer:
             self._gather_parts(),
             self._gather_related_items(),
             self._gather_agents(),
-            # TODO: self._gather_custom_metadata(),
+            self._gather_custom_metadata(),
         )
         tidy_triples = map(self._tidy_triple, all_triples)
         yield from filter(None, tidy_triples)
 
     def _gather_identifiers(self):
         for guid in self.focus.guids.all().values_list('_id', flat=True):
-            yield (DCT.identifier, _guid_irl(guid))
+            yield (DCT.identifier, guid_irl(guid))
 
         if hasattr(self.focus, 'get_identifier_irl'):
             doi_irl = self.focus.get_identifier_irl('doi')
@@ -208,15 +169,15 @@ class MetadataGatherer:
                 checksums = getattr(self.focus, '_hashes', {})
                 for checksum_algorithm, checksum_value in checksums.items():
                     if ' ' not in checksum_algorithm:
-                        yield (OSF.has_content, _checksum_urn(checksum_algorithm, checksum_value))
+                        yield (OSF.has_content, checksum_urn(checksum_algorithm, checksum_value))
             else:  # quacks like OsfStorageFileNode
                 for version in versions:  # expecting version to quack like FileVersion
                     version_ref = rdflib.BNode()
                     yield (DCT.hasVersion, version_ref)
-                    yield (version_ref, DCT.creator, _guid_irl(version.creator))
+                    yield (version_ref, DCT.creator, guid_irl(version.creator))
                     yield (version_ref, DCT.created, version.created)
                     yield (version_ref, DCT.modified, version.created)
-                    yield (version_ref, DCT.requires, _checksum_urn('sha-256', version.metadata['sha256']))
+                    yield (version_ref, DCT.requires, checksum_urn('sha-256', version.metadata['sha256']))
                     yield (version_ref, DCT.format, version.content_type)
                     yield (version_ref, DCT.extent, version.size)  # TODO: string with unit?
                     yield (version_ref, OSF.version_number, version.identifier)
@@ -234,14 +195,14 @@ class MetadataGatherer:
             .filter(num_guids__gt=0)
         )
         for file in files_with_guids:
-            yield (DCT.hasPart, _guid_irl(file))
+            yield (DCT.hasPart, guid_irl(file))
 
         if hasattr(self.focus, 'children'):
             for child in self.focus.children.all():
-                yield (DCT.hasPart, _guid_irl(child))  # TODO: OSF.hasChild instead?
+                yield (DCT.hasPart, guid_irl(child))  # TODO: OSF.hasChild instead?
 
         parent = getattr(self.focus, 'parent_node', None)
-        yield (DCT.isPartOf, _guid_irl(parent))  # TODO: OSF.isChildOf instead?
+        yield (DCT.isPartOf, guid_irl(parent))  # TODO: OSF.isChildOf instead?
 
     def _gather_related_items(self):
         related_article_doi = getattr(self.focus, 'article_doi', None)
@@ -259,17 +220,22 @@ class MetadataGatherer:
                 yield (artifact_irl, DCT.description, outcome_artifact.description)
 
         primary_file = getattr(self.focus, 'primary_file', None)
-        yield (DCT.requires, _guid_irl(primary_file))
+        yield (DCT.requires, guid_irl(primary_file))
 
     def _gather_agents(self):
         for osf_user in getattr(self.focus, 'visible_contributors', ()):
-            yield (DCT.creator, _guid_irl(osf_user))
+            yield (DCT.creator, guid_irl(osf_user))
         if hasattr(self.focus, 'affiliated_institutions'):
             for osf_institution in self.focus.affiliated_institutions.all():
                 yield (OSF.affiliatedInstitution, osf_institution.name)  # TODO: irl
         # TODO:
         # dct:contributor (roles)
         # osf:funder
+
+    def _gather_custom_metadata(self):
+        metadata_record = self._guid.metadata_record
+        if metadata_record:
+            yield from metadata_record.custom_metadata_graph()
 
     def _tidy_triple(self, gathered_triple):
         """for more readable `MetadataGatherer._gather_*` methods
