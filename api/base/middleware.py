@@ -68,7 +68,7 @@ class CorsMiddleware(corsheaders.middleware.CorsMiddleware):
     _context = threading.local()
 
     def origin_found_in_white_lists(self, origin, url):
-        settings.CORS_ORIGIN_WHITELIST += api_settings.ORIGINS_WHITELIST
+        settings.CORS_ORIGIN_WHITELIST = list(set(settings.CORS_ORIGIN_WHITELIST) | set(api_settings.ORIGINS_WHITELIST))
         # Check if origin is in the dynamic custom domain whitelist
         found = super().origin_found_in_white_lists(origin, url)
         # Check if a cross-origin request using the Authorization header
