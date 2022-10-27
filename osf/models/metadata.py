@@ -6,7 +6,14 @@ from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils import permissions as osf_permissions
-from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+
+
+class GuidMetadataRecordManager(models.Manager):
+    def for_guid(self, guid):
+        try:
+            return guid.metadata_record
+        except GuidMetadataRecord.DoesNotExist:
+            return self.model(guid=guid)
 
 
 class GuidMetadataRecord(ObjectIDMixin, BaseModel):
@@ -14,22 +21,25 @@ class GuidMetadataRecord(ObjectIDMixin, BaseModel):
     guid = models.OneToOneField('Guid', related_name='metadata_record', on_delete=models.CASCADE)
 
     # TODO: validator using osf-map and pyshacl
-    custom_metadata_jsonld = DateTimeAwareJSONField(default=dict, blank=True)
+    custom_metadata_bytes = models.BinaryField(default=b'{}')  # serialized json
     # compiled_metadata_jsonld = DateTimeAwareJSONField(default=dict, blank=True)
+
+    objects = GuidMetadataRecordManager()
 
     def __repr__(self):
         return f'{self.__class__.__name__}(guid={self.guid._id})'
 
     @property
     def custom_metadata_graph(self):
+        # TODO: bind namespaces
         return rdflib.Graph().parse(
             format='json-ld',
-            data=self.custom_metadata_jsonld,
+            data=self.custom_metadata_bytes,
         )
 
     @custom_metadata_graph.setter
     def custom_metadata_graph(self, graph):
-        self.custom_metadata_jsonld = graph.serialize(format='json-ld')
+        self.custom_metadata_bytes = graph.serialize(format='json-ld')
 
     # TODO: either something like this, or delete this
     def update(self, proposed_metadata, user=None):

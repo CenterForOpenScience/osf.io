@@ -36,7 +36,6 @@ from osf.models.files import (  # noqa
     File, Folder,  # noqa
     FileVersion, TrashedFile, TrashedFileNode, TrashedFolder, FileVersionUserMetadata,  # noqa
 )  # noqa
-from osf.models.metadata import FileMetadataRecord  # noqa
 from osf.models.node_relation import NodeRelation  # noqa
 from osf.models.analytics import UserActivityCounter, PageCounter  # noqa
 from osf.models.admin_profile import AdminProfile  # noqa
@@ -57,3 +56,4 @@ from osf.models.registration_bulk_upload_job import RegistrationBulkUploadJob  #
 from osf.models.registration_bulk_upload_row import RegistrationBulkUploadRow  # noqa
 from osf.models.outcomes import Outcome  # noqa
 from osf.models.outcome_artifacts import OutcomeArtifact  # noqa
+from osf.models.metadata import GuidMetadataRecord  # noqa

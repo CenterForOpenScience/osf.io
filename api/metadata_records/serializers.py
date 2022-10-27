@@ -3,8 +3,10 @@ from rdflib_jsonld.serializer import from_rdf
 import rest_framework.serializers as ser
 
 from osf.metadata.gather import gather_guid_graph
-from osf.metadata.utils import guid_irl
+from osf.metadata import rdfutils
+from osf.models.metadata import GuidMetadataRecord
 from api.base.serializers import JSONAPISerializer
+from api.base.utils import absolute_reverse
 
 
 # MAX_TYPE_LENGTH = 2**6  # 64
@@ -14,9 +16,9 @@ from api.base.serializers import JSONAPISerializer
 
 
 class GatheredMetadataField(ser.Field):
-    def get_attribute(self, metadata_record):
-        gathered_graph = gather_guid_graph(metadata_record.guid._id)
-        return from_rdf(gathered_graph)
+    def get_attribute(self, guid):
+        gathered_graph = gather_guid_graph(guid._id)
+        return from_rdf(gathered_graph, auto_compact=True)
 
     def to_representation(self, jsonld):
         return jsonld
@@ -25,16 +27,22 @@ class GatheredMetadataField(ser.Field):
         raise NotImplementedError(f'{self.__class__.__name__} is read-only')
 
 
-class CustomMetadataSerializer(ser.Serializer):
+class CustomMetadataField(ser.Field):
+    def get_attribute(self, guid):
+        return GuidMetadataRecord.objects.for_guid(guid).custom_metadata_graph
+
+    def to_representation(self, custom_metadata_graph):
+        return custom_metadata_graph.serialize(format='json-ld')
+
     def to_internal_value(self, data):
         guid = self.context['guid']
-        guid_uri = guid_irl(guid)
+        guid_uri = rdfutils.guid_irl(guid)
         custom_metadata = rdflib.Graph()
         for property_name in self._writable_properties(guid.content_type.model):
             obj = data.get(property_name)
             if obj:
                 custom_metadata.set((guid_uri, property_name, obj))
-        return from_rdf(custom_metadata)
+        return from_rdf(custom_metadata, auto_compact=True)
 
     def _writable_properties(self, referent_type):
         if referent_type == 'File':
@@ -58,11 +66,53 @@ class CustomMetadataSerializer(ser.Serializer):
         raise NotImplementedError(f'unknown referent type "{referent_type}"')
 
 
-class MetadataRecordSerializer(JSONAPISerializer):
+class TwoFieldMetadataRecordSerializer(JSONAPISerializer):
     gathered_metadata = GatheredMetadataField(read_only=True)
-    custom_metadata = CustomMetadataSerializer()
+    custom_metadata = CustomMetadataField()
 
-    def update(self, instance, validated_data):
-        instance.custom_metadata_graph = validated_data['as_jsonld']
-        instance.save()
-        return instance
+    class Meta:
+        type_ = 'metadata-records'
+
+    def update(self, guid, validated_data):
+        metadata_record = GuidMetadataRecord.objects.for_guid(guid)
+        metadata_record.custom_metadata_graph = validated_data['as_jsonld']
+        metadata_record.save()
+        return guid
+
+
+class MetadataRecordJSONAPISerializer(ser.BaseSerializer):
+    def to_representation(self, guid):
+        gathered_graph = gather_guid_graph(guid._id)
+        return self._build_jsonapi_resource(guid, gathered_graph)
+
+    def to_internal_value(self, data):
+        pass
+
+    def update(self, guid, validated_data):
+        pass
+
+    def _build_jsonapi_resource(self, guid, graph):
+        focus = rdfutils.guid_irl(guid)
+        attributes = {}
+        relationships = {}
+        for (subj, pred, obj) in graph.triples((focus, None, None)):
+            # TODO: use osf-map owl to infer attribute vs relation, one vs many
+            if isinstance(obj, rdflib.Literal):
+                attributes.setdefault(pred, []).append(obj)
+            elif isinstance(obj, rdflib.URIRef):
+                relationships.setdefault(pred, []).append(obj)
+            elif isinstance(obj, rdflib.BNode):
+                pass  # TODO
+        return {
+            '@context': rdfutils.JSONAPI_CONTEXT,
+            'id': f'osfio:{guid._id}',
+            'type': 'metadata-records',
+            'attributes': attributes,
+            'relationships': relationships,
+            'links': {
+                'self': absolute_reverse(
+                    'metadata-records:metadata-record-detail',
+                    kwargs={'guid_id': guid._id},
+                ),
+            },
+        }
