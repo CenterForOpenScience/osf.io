@@ -243,8 +243,8 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
         )
 
     def update(self, obj, validated_data):
+        auth = get_user_auth(self.context['request'])
         if validated_data and 'subjects' in validated_data:
-            auth = get_user_auth(self.context['request'])
             subjects = validated_data.pop('subjects', None)
             self.update_subjects(obj, subjects, auth)
 
@@ -263,6 +263,7 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
         if 'study_design' in validated_data:
             obj.study_design = validated_data.pop('study_design')
 
+        obj.submit(user=auth.user, comment='Initial Creation')
         obj.save()
         return obj
 

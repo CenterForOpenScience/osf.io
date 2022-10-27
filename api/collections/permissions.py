@@ -1,12 +1,32 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+import io
 
-from rest_framework import permissions
-from rest_framework.exceptions import NotFound
+from rest_framework import permissions, exceptions
+from rest_framework.exceptions import NotFound, MethodNotAllowed
 
+from api.base.exceptions import Gone
 from api.base.utils import get_user_auth, assert_resource_type
 from osf.models import AbstractNode, Preprint, Collection, CollectionSubmission, CollectionProvider
-from osf.utils.permissions import WRITE, ADMIN
+from api.base.parsers import JSONSchemaParser
+from osf.utils.permissions import READ, WRITE, ADMIN
+
+
+class CollectionReadOrPublic(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.method == 'GET':
+            return self.has_object_permission(request, view, view.get_object())
+        else:
+            raise MethodNotAllowed(request.method)
+
+    def has_object_permission(self, request, view, obj):
+        auth = get_user_auth(request)
+        if obj.target.collection.is_public:
+            return True
+        elif obj.target.guid.referent.has_permission(auth.user, READ):
+            return True
+        return False
+
 
 class CollectionWriteOrPublic(permissions.BasePermission):
     # Adapted from ContributorOrPublic
@@ -44,7 +64,7 @@ class CanSubmitToCollectionOrPublic(permissions.BasePermission):
         accepting_submissions = obj.is_public and obj.provider and obj.provider.allow_submissions
         return auth.user and (accepting_submissions or auth.user.has_perm('write_collection', obj))
 
-class CanUpdateDeleteCGMOrPublic(permissions.BasePermission):
+class CanUpdateDeleteCollectionSubmissionOrPublic(permissions.BasePermission):
 
     acceptable_models = (CollectionSubmission, )
 
@@ -113,3 +133,63 @@ class CollectionWriteOrPublicForRelationshipPointers(permissions.BasePermission)
                 has_pointer_auth = False
                 break
         return has_pointer_auth
+
+
+class OnlyAdminCanCreateDestroyCollectionSubmissionAction(permissions.BasePermission):
+
+    acceptable_models = (CollectionSubmission, )
+
+    def has_object_permission(self, request, view, collection_submission):
+        assert_resource_type(collection_submission, self.acceptable_models)
+        auth = get_user_auth(request)
+        if request.method == 'POST':
+            moderators = collection_submission.collection.provider.get_group('moderator').user_set.all()
+            return collection_submission.guid.referent.has_permission(auth.user, ADMIN) or auth.user in moderators
+        else:
+            return False
+
+    def has_permission(self, request, view):
+        auth = get_user_auth(request)
+        request_json = JSONSchemaParser().parse(
+            io.BytesIO(request.body),
+            parser_context={
+                'request': request,
+                'json_schema': view.create_payload_schema,
+            },
+        )
+        node_guid, collection_guid = request_json['data']['relationships']['target']['data']['id'].split('-')
+        obj = CollectionSubmission.objects.get(
+            guid___id=node_guid,
+            collection__guids___id=collection_guid,
+        )
+        if request.method == 'POST':
+            # Validate json before using id to check for permissions
+            if obj.guid.referent.deleted:
+                raise Gone()
+            return self.has_object_permission(request, view, obj)
+        elif request.method == 'GET':
+            moderators = obj.collection.provider.get_group('moderator').user_set.all()
+            return obj.guid.referent.has_permission(auth.user, ADMIN) or auth.user in moderators
+        else:
+            raise exceptions.MethodNotAllowed(request.method)
+
+
+class OnlyAdminOrModeratorCanDestroy(permissions.BasePermission):
+
+    acceptable_models = (CollectionSubmission, )
+
+    def has_permission(self, request, view):
+        return self.has_object_permission(request, view, view.get_object())
+
+    def has_object_permission(self, request, view, obj):
+        assert_resource_type(obj, self.acceptable_models)
+        collection = obj.collection
+        auth = get_user_auth(request)
+        if request.method == 'GET':
+            return collection.is_public
+        elif request.method == 'DELETE':
+            # Restricted to collection and project admins.
+            moderators = obj.collection.provider.get_group('moderator').user_set.all()
+            return obj.guid.referent.has_permission(auth.user, ADMIN) or auth.user in moderators
+        else:
+            raise exceptions.MethodNotAllowed(request.method)

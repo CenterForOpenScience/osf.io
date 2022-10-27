@@ -21,7 +21,7 @@ from api.collections.permissions import (
     CollectionWriteOrPublicForPointers,
     CollectionWriteOrPublicForRelationshipPointers,
     CanSubmitToCollectionOrPublic,
-    CanUpdateDeleteCGMOrPublic,
+    CanUpdateDeleteCollectionSubmissionOrPublic,
     ReadOnlyIfCollectedRegistration,
 )
 from api.collections.serializers import (
@@ -319,8 +319,8 @@ class CollectedMetaList(JSONAPIBaseView, generics.ListCreateAPIView, CollectionM
         CanSubmitToCollectionOrPublic,
         base_permissions.TokenHasScope,
     )
-    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
-    required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
+    required_read_scopes = [CoreScopes.READ_COLLECTION_SUBMISSION]
+    required_write_scopes = [CoreScopes.WRITE_COLLECTION_SUBMISSION]
 
     model_class = CollectionSubmission
     serializer_class = CollectionSubmissionSerializer
@@ -348,11 +348,11 @@ class CollectedMetaList(JSONAPIBaseView, generics.ListCreateAPIView, CollectionM
 class CollectedMetaDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CollectionMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        CanUpdateDeleteCGMOrPublic,
+        CanUpdateDeleteCollectionSubmissionOrPublic,
         base_permissions.TokenHasScope,
     )
-    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
-    required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
+    required_read_scopes = [CoreScopes.READ_COLLECTION_SUBMISSION]
+    required_write_scopes = [CoreScopes.WRITE_COLLECTION_SUBMISSION]
 
     serializer_class = CollectionSubmissionSerializer
     view_category = 'collections'
@@ -378,11 +378,11 @@ class CollectedMetaSubjectsList(BaseResourceSubjectsList, CollectionMixin):
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        CanUpdateDeleteCGMOrPublic,
+        CanUpdateDeleteCollectionSubmissionOrPublic,
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
+    required_read_scopes = [CoreScopes.READ_COLLECTION_SUBMISSION]
 
     view_category = 'collections'
     view_name = 'collected-metadata-subjects'
@@ -396,12 +396,12 @@ class CollectedMetaSubjectsRelationship(SubjectRelationshipBaseView, CollectionM
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        CanUpdateDeleteCGMOrPublic,
+        CanUpdateDeleteCollectionSubmissionOrPublic,
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
-    required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
+    required_read_scopes = [CoreScopes.READ_COLLECTION_SUBMISSION]
+    required_write_scopes = [CoreScopes.WRITE_COLLECTION_SUBMISSION]
 
     view_category = 'collections'
     view_name = 'collected-metadata-relationships-subjects'

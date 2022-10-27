@@ -165,6 +165,26 @@ class SchemaResponseTriggers(ModerationEnum):
         return transition_to_trigger_mappings.get((from_state, to_state))
 
 
+class CollectionSubmissionsTriggers(ModerationEnum):
+    '''The acceptable 'triggers' to use with a CollectionSubmissionsAction'''
+    SUBMIT = 0
+    ACCEPT = 1
+    REJECT = 2
+    ADMIN_REMOVE = 3
+    MODERATOR_REMOVE = 4
+
+    @classmethod
+    def from_transition(cls, from_state, to_state):
+        transition_to_trigger_mappings = {
+            (ApprovalStates.IN_PROGRESS, ApprovalStates.UNAPPROVED): cls.SUBMIT,
+            (ApprovalStates.UNAPPROVED, ApprovalStates.APPROVED): cls.ACCEPT,
+            (ApprovalStates.UNAPPROVED, ApprovalStates.IN_PROGRESS): cls.REJECT,
+            (ApprovalStates.UNAPPROVED, ApprovalStates.IN_PROGRESS): cls.ADMIN_REMOVE,
+            (ApprovalStates.UNAPPROVED, ApprovalStates.IN_PROGRESS): cls.MODERATOR_REMOVE,
+        }
+        return transition_to_trigger_mappings.get((from_state, to_state))
+
+
 @unique
 class ChoiceEnum(Enum):
     @classmethod
@@ -352,6 +372,13 @@ APPROVAL_TRANSITIONS = [
         'trigger': 'reject',
         'source': [ApprovalStates.REJECTED, ApprovalStates.MODERATOR_REJECTED],
         'dest': None,
+    },
+    {
+        'trigger': 'moderator_remove',
+        'source': [ApprovalStates.APPROVED],
+        'dest': ApprovalStates.UNAPPROVED,
+        'before': ['_validate_trigger'],
+        'after': ['_on_reject'],
     },
 ]
 
