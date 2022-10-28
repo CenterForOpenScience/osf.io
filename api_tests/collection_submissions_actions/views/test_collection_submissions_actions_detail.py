@@ -102,6 +102,12 @@ class TestCollectionSubmissionsActionsDetailGETBehavior:
 class TestCollectionSubmissionsActionsDetailUnsupportedMethods:
 
     @pytest.mark.parametrize('user_role', UserRoles)
+    def test_cannot_PATCH(self, app, user_role, node, collection_submission_action):
+        auth = configure_test_auth(node, user_role)
+        resp = app.patch_json_api(GET_URL.format(collection_submission_action._id), auth=auth, expect_errors=True)
+        assert resp.status_code == 405
+
+    @pytest.mark.parametrize('user_role', UserRoles)
     def test_cannot_POST(self, app, user_role, node, collection_submission_action):
         auth = configure_test_auth(node, user_role)
         resp = app.post_json_api(GET_URL.format(collection_submission_action._id), auth=auth, expect_errors=True)
