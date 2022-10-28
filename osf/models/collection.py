@@ -19,6 +19,8 @@ from osf.utils.permissions import ADMIN
 from osf.exceptions import NodeStateError
 from website.util import api_v2_url
 from website.search.exceptions import SearchUnavailableError
+from osf.utils.workflows import ApprovalStates
+from osf.utils.machines import ApprovalsMachine
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +41,27 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
     program_area = models.CharField(blank=True, max_length=127)
     school_type = models.CharField(blank=True, max_length=127)
     study_design = models.CharField(blank=True, max_length=127)
+    machine_state = models.IntegerField(
+        choices=ApprovalStates.int_field_choices(),
+        default=ApprovalStates.IN_PROGRESS,
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.state_machine = ApprovalsMachine(
+            model=self,
+            active_state=self.state,
+            state_property_name='state'
+        )
+
+    @property
+    def state(self):
+        '''Property to translate between ApprovalState Enum and DB string.'''
+        return ApprovalStates(self.machine_state)
+
+    @state.setter
+    def state(self, new_state):
+        self.state_machine = new_state
 
     @cached_property
     def _id(self):

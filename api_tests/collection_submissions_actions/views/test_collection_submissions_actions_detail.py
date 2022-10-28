@@ -5,6 +5,7 @@ from osf_tests.factories import NodeFactory, CollectionFactory, CollectionProvid
 
 from osf.migrations import update_provider_auth_groups
 from osf.models import CollectionSubmission
+from osf.utils.workflows import ApprovalStates, CollectionSubmissionsTriggers
 
 GET_URL = '/v2/collection_submissions_actions/{}/'
 
@@ -46,9 +47,9 @@ def collection_submission(node, collection):
 @pytest.fixture()
 def collection_submission_action(collection_submission):
     action = collection_submission.actions.create(
-        from_state='in_progress',
-        to_state='unapproved',
-        trigger='submit',
+        from_state=ApprovalStates.IN_PROGRESS,
+        to_state=ApprovalStates.UNAPPROVED,
+        trigger=CollectionSubmissionsTriggers.SUBMIT,
         creator=collection_submission.creator,
         comment='test comment'
     )
