@@ -200,7 +200,7 @@ switches:
   - flag_name: ENFORCE_CSRF
     name: enforce_csrf
     note: enforces csrf for OSF session authentication
-    active: true
+    active: false
 
   - flag_name: ENABLE_RAW_METRICS
     name: enable_raw_metrics
