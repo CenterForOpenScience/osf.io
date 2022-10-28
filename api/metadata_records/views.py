@@ -7,7 +7,7 @@ from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 
 import osf.models as osfdb
-from osf.metadata.gather import gather_guid_graph
+from osf.metadata.gather import gather_deep_metadata
 from .parsers import JSONAPILDParser
 from .serializers import MetadataRecordJSONAPISerializer
 
@@ -39,7 +39,7 @@ class GuidMetadataDownload(JSONAPIBaseView):
     view_name = 'metadata-record-download'
 
     def get(self, request, guid_id, serializer_name, **kwargs):
-        graph = gather_guid_graph(guid_id, sparse=False)
+        graph = gather_deep_metadata(guid_id, max_guids=666)
         return HttpResponse(
             graph.serialize(format=serializer_name, auto_compact=True),
             headers={

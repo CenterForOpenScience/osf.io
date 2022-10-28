@@ -12,7 +12,7 @@ from osf.utils import workflows as osfworkflows
 from website import settings as website_settings
 
 
-__all__ = ('gather_guid_graph',)
+__all__ = ('gather_metadata', 'gather_deep_metadata',)
 
 
 OSF = rdfutils.OSF
@@ -20,7 +20,15 @@ DCT = rdflib.DCTERMS
 A = rdflib.RDF.type
 
 
-def gather_guid_graph(guid: str, max_guids: int = 1) -> rdflib.Graph:
+def gather_metadata(guid) -> rdflib.Graph:
+    rdf_graph = rdfutils.contextualized_graph()
+    gatherer = MetadataGatherer(guid)
+    for triple in gatherer.gather_triples():
+        rdf_graph.add(triple)
+    return rdf_graph
+
+
+def gather_deep_metadata(guid: str, max_guids: int = 1) -> rdflib.Graph:
     """gather metadata about the guid's referent and related guid-items
 
     @param guid: osf guid (the five-ish character string)
@@ -30,7 +38,7 @@ def gather_guid_graph(guid: str, max_guids: int = 1) -> rdflib.Graph:
     assert isinstance(guid, str)
     guids_visited = set()
     guids_to_visit = set((guid,))
-    graph = rdfutils.contextualized_graph()
+    rdf_graph = rdfutils.contextualized_graph()
     while (guids_to_visit and len(guids_visited) < max_guids):
         guid = guids_to_visit.pop()
         if guid in guids_visited:
@@ -38,21 +46,25 @@ def gather_guid_graph(guid: str, max_guids: int = 1) -> rdflib.Graph:
         guids_visited.add(guid)
         gatherer = MetadataGatherer(guid)
         for triple in gatherer.gather_triples():
-            graph.add(triple)
+            rdf_graph.add(triple)
             (_, _, triple_object) = triple
             obj_guid = rdfutils.try_guid_from_irl(triple_object)
             if obj_guid:
                 guids_to_visit.add(obj_guid)
-    return graph
+    return rdf_graph
 
 
 class MetadataGatherer:
     """for gathering metadata about a specific guid-identified object
     """
-    def __init__(self, guid_id):
-        self._guid = osfdb.Guid.load(guid_id)
+    def __init__(self, guid):
+        if isinstance(guid, osfdb.Guid):
+            self._guid = guid
+        elif isinstance(guid, str):
+            guid_id = rdfutils.try_guid_from_irl(guid) or guid
+            self._guid = osfdb.Guid.load(guid_id)
         self.focus = self._guid.referent  # the "focus" is what to gather metadata about.
-        self.focus_irl = rdfutils.guid_irl(guid_id)
+        self.focus_irl = rdfutils.guid_irl(self._guid)
 
     def gather_triples(self):
         """
@@ -88,11 +100,8 @@ class MetadataGatherer:
                 yield (DCT.identifier, rdflib.URIRef(doi_irl))
 
     def _gather_types(self):
-        # TODO: use rdf classes built from osf-map shapes
-        # TODO: map types explicitly, don't expose internal names
-        yield (A, OSF[self.focus.__class__.__name__])
-        if isinstance(self.focus, osfdb.AbstractNode):
-            yield (DCT.type, DCT.Collection)
+        yield (A, self._rdf_type(self.focus))
+        # TODO: map category explicitly
         category = getattr(self.focus, 'category', None)
         if category:
             yield (DCT.type, OSF[category])
@@ -173,7 +182,9 @@ class MetadataGatherer:
                 for version in versions:  # expecting version to quack like FileVersion
                     version_ref = rdflib.BNode()
                     yield (DCT.hasVersion, version_ref)
-                    yield (version_ref, DCT.creator, rdfutils.guid_irl(version.creator))
+                    yield from self._related_guid(
+                        (version_ref, DCT.creator, version.creator),
+                    )
                     yield (version_ref, DCT.created, version.created)
                     yield (version_ref, DCT.modified, version.created)
                     yield (version_ref, DCT.requires, rdfutils.checksum_urn('sha-256', version.metadata['sha256']))
@@ -194,14 +205,14 @@ class MetadataGatherer:
             .filter(num_guids__gt=0)
         )
         for file in files_with_guids:
-            yield (DCT.hasPart, rdfutils.guid_irl(file))
+            yield from self._related_guid((DCT.hasPart, file))
 
         if hasattr(self.focus, 'children'):
             for child in self.focus.children.all():
-                yield (DCT.hasPart, rdfutils.guid_irl(child))  # TODO: OSF.hasChild instead?
+                yield from self._related_guid((DCT.hasPart, child))  # TODO: OSF.hasChild instead?
 
         parent = getattr(self.focus, 'parent_node', None)
-        yield (DCT.isPartOf, rdfutils.guid_irl(parent))  # TODO: OSF.isChildOf instead?
+        yield from self._related_guid((DCT.isPartOf, parent))  # TODO: OSF.isChildOf instead?
 
     def _gather_related_items(self):
         related_article_doi = getattr(self.focus, 'article_doi', None)
@@ -219,11 +230,14 @@ class MetadataGatherer:
                 yield (artifact_irl, DCT.description, outcome_artifact.description)
 
         primary_file = getattr(self.focus, 'primary_file', None)
-        yield (DCT.requires, rdfutils.guid_irl(primary_file))
+        yield from self._related_guid((DCT.requires, primary_file))
+
+        container = getattr(self.focus, 'target', None)
+        yield from self._related_guid((DCT.isPartOf, container))
 
     def _gather_agents(self):
         for osf_user in getattr(self.focus, 'visible_contributors', ()):
-            yield (DCT.creator, rdfutils.guid_irl(osf_user))
+            yield from self._related_guid((DCT.creator, osf_user))
         if hasattr(self.focus, 'affiliated_institutions'):
             for osf_institution in self.focus.affiliated_institutions.all():
                 yield (OSF.affiliatedInstitution, osf_institution.name)  # TODO: irl
@@ -238,6 +252,20 @@ class MetadataGatherer:
             pass
         else:
             yield from metadata_record.custom_metadata_graph
+
+    def _rdf_type(self, guid_referent):
+        # TODO: use rdf classes built from osf-map shapes
+        return OSF[guid_referent.__class__.__name__]
+
+    def _related_guid(self, triple):
+        """convenience for related guid-items
+        """
+        triple_start = triple[:-1]  # accept either a threeple or a shorthand twople
+        related_object = triple[-1]  # object of the triple assumed to be a guid referent
+        related_ref = rdfutils.guid_irl(related_object)
+        if related_ref:
+            yield (*triple_start, related_ref)  # the given triple with object swapped for URIRef
+            yield (related_ref, A, self._rdf_type(related_object))  # type for the related thing
 
     def _tidy_triple(self, gathered_triple):
         """for more readable `MetadataGatherer._gather_*` methods

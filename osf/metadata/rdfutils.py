@@ -4,14 +4,14 @@ from website import settings as website_settings
 
 
 OSF = rdflib.Namespace('https://osf.io/vocab/2022/')
-OSFIO = rdflib.Namespace('https://osf.io/')
+OSFIO = rdflib.Namespace(website_settings.DOMAIN)
 
 
+# in addition to rdflib's 'core' (rdf, rdfs, owl...)
 OSF_CONTEXT = {
     'osf': OSF,
     'osfio': OSFIO,
     'dct': rdflib.DCTERMS,
-    'rdf': rdflib.RDF,
 }
 
 
@@ -30,15 +30,11 @@ OSFJSONAPI_CONTEXT = {
 }
 
 
-def osf_namespace_manager():
-    namespace_manager = rdflib.NamespaceManager(rdflib.Graph())
-    for prefix, namespace in OSF_CONTEXT:
-        namespace_manager.bind(prefix, namespace)
-    return namespace_manager
-
-
 def contextualized_graph():
-    return rdflib.Graph(namespace_manager=osf_namespace_manager())
+    graph = rdflib.Graph()
+    for prefix, namespace in OSF_CONTEXT.items():
+        graph.bind(prefix, namespace)
+    return graph
 
 
 def guid_irl(guid):
@@ -57,14 +53,14 @@ def guid_irl(guid):
     if hasattr(guid, '_id'):  # quacks like a Guid instance
         guid = guid._id
     if not guid:
-        return None  # politely skipple this triple
+        return None
     if not isinstance(guid, str):
         raise ValueError('_guid_irl expects str, guid instance, or guid referent')
-    return rdflib.URIRef(guid, base=website_settings.DOMAIN)
+    return OSFIO[guid]
 
 
 def try_guid_from_irl(irl):
-    if isinstance(irl, rdflib.URIRef) and irl.startswith(website_settings.DOMAIN):
+    if irl.startswith(website_settings.DOMAIN):
         path = irl[len(website_settings.DOMAIN):].strip('/')
         if '/' not in path:
             return path
