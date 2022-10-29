@@ -1796,7 +1796,8 @@ function _lazyLoadPreprocess(obj) {
                     item.row.id === path;
             });
             if (parent[0]) {
-                parent = this.find(parent[0].id);
+                var parentID = parent[0].id;
+                parent = this.find(parentID);
                 parent.next_token = next_token;
             }
         }
@@ -3017,25 +3018,27 @@ function fetchData(tree) {
  * Handler for scrolling to the bottom
  */
 function handleScroll() {
-    var rs, range, item, index;
+    var rs, range, item, itemID;
     rs = this.select('#tb-tbody > .tb-tbody-inner > div');
     // Get the list of id of the elements displayed when scrolling down
     range = Array.from(rs[0].children).map(function (item) {
         return parseInt(item.getAttribute('data-id'));
     });
     for (var i = 0; i < range.length; i++) {
-        index = range[i];
-        item = this.find(index);
+        itemID = range[i];
+        item = this.find(itemID);
         if (item) {
             var parent = this.find(item.parentID);
-            var provider = parent.data.provider;
             var length = parent.children.length;
+            var lastChildID = parent.children[length - 1].id;
             // Check if this element is the last element or not
             if (
                 length > 0 &&
+                !!parent.next_token &&
                 !parent.isFetching &&
-                parent.children[length - 1].id === item.id
+                lastChildID === item.id
             ) {
+                // get next list
                 fetchData.call(this, parent);
             }
         }
@@ -3132,9 +3135,6 @@ tbOptions = {
             }
         });
 
-        // register a scroll event to element which has 'tb-tbody' id
-        $osf.onScroll(tb.select('#tb-tbody'), handleScroll.bind(tb));
-
         // Add loading modal when loading page
         tb.select('#tb-tbody').prepend(
             '<div style="width: 100%; height: 100%; padding: 50px 100px; position: sticky; top: 0; left: 0; background-color: white;"' +
@@ -3199,6 +3199,7 @@ tbOptions = {
         return false;
     },
     onscrollcomplete : function(){
+        handleScroll.call(this);
         reapplyTooltips();
     },
     onmultiselect : _fangornMultiselect,
@@ -3339,6 +3340,5 @@ module.exports = {
     getCopyMode : getCopyMode,
     showDeleteMultiple : showDeleteMultiple,
     checkConflicts : checkConflicts,
-    getPersistentLinkFor: getPersistentLinkFor,
-    handleScroll: handleScroll
+    getPersistentLinkFor: getPersistentLinkFor
 };
