@@ -6,10 +6,11 @@ from rest_framework import permissions
 from rest_framework.exceptions import NotFound, MethodNotAllowed
 
 from api.base.exceptions import Gone
+from api.base.parsers import JSONSchemaParser
 from api.base.utils import get_user_auth, assert_resource_type
 from osf.models import AbstractNode, Preprint, Collection, CollectionSubmission, CollectionProvider
 from osf.utils.permissions import READ, WRITE, ADMIN
-
+from osf.utils.workflows import CollectionSubmissionsTriggers
 
 class CollectionReadOrPublic(permissions.BasePermission):
     def has_permission(self, request, view):
@@ -144,12 +145,14 @@ class OnlyAdminCanCreateDestroyCollectionSubmissionAction(permissions.BasePermis
         auth = get_user_auth(request)
         if request.method == 'POST':
             moderators = collection_submission.collection.provider.get_group('moderator').user_set.all()
+            print('Node', collection_submission.guid.referent.has_permission(auth.user, ADMIN))
             return collection_submission.guid.referent.has_permission(auth.user, ADMIN) or auth.user in moderators
         else:
             return False
 
     def has_permission(self, request, view):
         auth = get_user_auth(request)
+        # Validate json before using id to check for permissions
         request_json = JSONSchemaParser().parse(
             io.BytesIO(request.body),
             parser_context={
@@ -163,7 +166,19 @@ class OnlyAdminCanCreateDestroyCollectionSubmissionAction(permissions.BasePermis
             collection__guids___id=collection_guid,
         )
         if request.method == 'POST':
-            # Validate json before using id to check for permissions
+            moderators = obj.collection.provider.get_group('moderator').user_set.all()
+            trigger = request_json['data']['attributes']['trigger']
+            # Check for moderator only triggers
+            print('trigger', trigger)
+            print('moderators', auth.user not in moderators)
+            print('moderators', moderators)
+            if trigger in [
+                CollectionSubmissionsTriggers.REJECT.db_name,
+                CollectionSubmissionsTriggers.ACCEPT.db_name,
+                CollectionSubmissionsTriggers.MODERATOR_REMOVE.db_name
+            ] and auth.user not in moderators:
+                return False
+
             if obj.guid.referent.deleted:
                 raise Gone()
             return self.has_object_permission(request, view, obj)
@@ -171,7 +186,7 @@ class OnlyAdminCanCreateDestroyCollectionSubmissionAction(permissions.BasePermis
             moderators = obj.collection.provider.get_group('moderator').user_set.all()
             return obj.guid.referent.has_permission(auth.user, ADMIN) or auth.user in moderators
         else:
-            raise exceptions.MethodNotAllowed(request.method)
+            raise MethodNotAllowed(request.method)
 
 
 class OnlyAdminOrModeratorCanDestroy(permissions.BasePermission):

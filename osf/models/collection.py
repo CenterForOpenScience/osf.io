@@ -6,6 +6,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.utils.functional import cached_property
 from django.utils import timezone
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
@@ -20,8 +22,7 @@ from osf.utils.workflows import ApprovalStates
 from osf.exceptions import NodeStateError
 from website.util import api_v2_url
 from website.search.exceptions import SearchUnavailableError
-from osf.utils.workflows import ApprovalStates
-from osf.utils.machines import ApprovalsMachine
+from osf.utils.workflows import CollectionSubmissionsTriggers
 
 logger = logging.getLogger(__name__)
 from osf.utils.machines import ApprovalsMachine
@@ -64,7 +65,63 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
 
     @state.setter
     def state(self, new_state):
-        self.state_machine = new_state
+        self.machine_state = new_state.value
+
+    def _validate_trigger(self, event_data):
+        pass
+
+    def _on_submit(self, event_data):
+        self.submitted_timestamp = timezone.now()
+
+    @property
+    def revisable(self):
+        return False
+
+    def _on_approve(self, event_data):
+        moderators = self.collection.provider.get_group('moderator').user_set.all()
+        if event_data.kwargs.get('user', self.creator) in moderators:
+            self.state_machine.set_state(ApprovalStates.APPROVED)
+        else:
+            from framework.exceptions import PermissionsError
+            raise PermissionsError(
+                f'approval for CollectionSubmission with id [{self._id}] must be confirmed by a moderator.'
+            )
+        self.save()
+
+    def _on_reject(self, event_data):
+        moderators = self.collection.provider.get_group('moderator').user_set.all()
+        if event_data.kwargs.get('user', self.creator) in moderators:
+            self.state_machine.set_state(ApprovalStates.IN_PROGRESS)
+
+    def _on_complete(self, event_data):
+        pass
+
+    @property
+    def is_moderated(self):
+        return True
+
+    def _save_transition(self, event_data):
+        '''Save changes here and write the action.'''
+        self.save()
+        from_state = ApprovalStates[event_data.transition.source]
+        to_state = self.state
+        print(from_state, to_state)
+
+        trigger = CollectionSubmissionsTriggers.from_transition(from_state, to_state)
+        if trigger is None:
+            return
+
+        self.actions.create(
+            from_state=from_state,
+            to_state=to_state,
+            trigger=trigger,
+            creator=event_data.kwargs.get('user', self.creator),
+            comment=event_data.kwargs.get('comment', '')
+        )
+        # self._notify_users(
+        #     event=event_data.event.name,
+        #     event_initiator=event_data.kwargs.get('user')
+        # )
 
     @cached_property
     def _id(self):
@@ -357,3 +414,17 @@ class CollectionUserObjectPermission(UserObjectPermissionBase):
 
 class CollectionGroupObjectPermission(GroupObjectPermissionBase):
     content_object = models.ForeignKey(Collection, on_delete=models.CASCADE)
+
+
+@receiver(post_save, sender=CollectionSubmission)
+def create_submission_action(sender, instance, created, **kwargs):
+    if created:
+        instance.actions.create(
+            from_state=ApprovalStates.IN_PROGRESS,
+            to_state=ApprovalStates.PENDING_MODERATION,
+            trigger=CollectionSubmissionsTriggers.SUBMIT,
+            creator=instance.creator,
+            comment='Initial submission action'
+        )
+
+

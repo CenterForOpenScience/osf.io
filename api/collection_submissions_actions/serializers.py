@@ -1,13 +1,18 @@
 from api.base.utils import absolute_reverse
+from api.base.exceptions import JSONAPIAttributeException
 from api.base.serializers import JSONAPISerializer, EnumField
 from api.actions.serializers import TargetRelationshipField, LinksField
 from osf.models import CollectionSubmission
 from osf.utils.workflows import ApprovalStates, CollectionSubmissionsTriggers
 from rest_framework import serializers as ser
+from framework.exceptions import PermissionsError
+from api.base.exceptions import Conflict
 
 from api.base.serializers import (
     RelationshipField,
 )
+from django.core.exceptions import PermissionDenied, ValidationError
+from transitions import MachineError
 
 
 class CollectionSubmissionActionSerializer(JSONAPISerializer):
@@ -17,8 +22,8 @@ class CollectionSubmissionActionSerializer(JSONAPISerializer):
     id = ser.CharField(source='_id', read_only=True)
 
     trigger = EnumField(CollectionSubmissionsTriggers)
-    from_state = EnumField(ApprovalStates)
-    to_state = EnumField(ApprovalStates)
+    from_state = EnumField(ApprovalStates, required=False)
+    to_state = EnumField(ApprovalStates, required=False)
     comment = ser.CharField(max_length=65535, required=False, allow_blank=True, allow_null=True)
 
     collection = RelationshipField(
@@ -61,3 +66,43 @@ class CollectionSubmissionActionSerializer(JSONAPISerializer):
                 'version': self.context['request'].parser_context['kwargs']['version']
             }
         )
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        trigger = CollectionSubmissionsTriggers(validated_data.get('trigger'))
+        collection_submission = validated_data.pop('target')
+        comment = validated_data.pop('comment', '')
+        previous_action = collection_submission.actions.last()
+        old_state = collection_submission.state
+
+        try:
+            if trigger == CollectionSubmissionsTriggers.SUBMIT:
+                collection_submission.submit(user=user, comment=comment)
+            elif trigger == CollectionSubmissionsTriggers.ACCEPT:
+                collection_submission.accept(user=user, comment=comment)
+            elif trigger == CollectionSubmissionsTriggers.REJECT:
+                collection_submission.reject(user=user, comment=comment)
+            elif trigger == CollectionSubmissionsTriggers.MODERATOR_REMOVE:
+                collection_submission.reject(user=user, comment=comment)
+            elif trigger == CollectionSubmissionsTriggers.ADMIN_REMOVE:
+                collection_submission.reject(user=user, comment=comment)
+            else:
+                raise JSONAPIAttributeException(attribute='trigger', detail='Invalid trigger.')
+        except PermissionsError as exc:
+            raise PermissionDenied(exc)
+        except MachineError:
+            raise Conflict(
+                f'Trigger "{trigger.db_name}" is not supported for the target CollectionSubmission '
+                f'with id [{collection_submission._id}] in state "{collection_submission.state.db_name}"',
+            )
+        except ValueError as exc:
+            raise ValidationError(exc)
+
+        new_action = collection_submission.actions.last()
+        if new_action is None or new_action == previous_action or new_action.trigger != trigger:
+            raise Conflict(
+                f'Trigger "{trigger.db_name}" is not supported for the target CollectionSubmission '
+                f'with id [{collection_submission._id}] in state "{old_state.db_name}"',
+            )
+
+        return collection_submission.actions.last()

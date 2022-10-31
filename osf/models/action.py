@@ -80,6 +80,6 @@ class SchemaResponseAction(BaseAction):
 
 class CollectionSubmissionAction(BaseAction):
     target = models.ForeignKey('CollectionSubmission', related_name='actions', on_delete=models.CASCADE)
-    trigger = models.IntegerField(choices=CollectionSubmissionsTriggers.char_field_choices())
-    from_state = models.IntegerField(choices=ApprovalStates.char_field_choices())
-    to_state = models.IntegerField(choices=ApprovalStates.char_field_choices())
+    trigger = models.IntegerField(choices=CollectionSubmissionsTriggers.int_field_choices())
+    from_state = models.IntegerField(choices=ApprovalStates.int_field_choices())
+    to_state = models.IntegerField(choices=ApprovalStates.int_field_choices())

@@ -178,13 +178,14 @@ class CollectionSubmissionsTriggers(ModerationEnum):
     @classmethod
     def from_transition(cls, from_state, to_state):
         transition_to_trigger_mappings = {
+            (ApprovalStates.IN_PROGRESS, ApprovalStates.UNAPPROVED): cls.SUBMIT,
             (ApprovalStates.UNAPPROVED, ApprovalStates.PENDING_MODERATION): cls.SUBMIT,
             (ApprovalStates.UNAPPROVED, ApprovalStates.APPROVED): cls.ACCEPT,  # Unmoderated
-            (ApprovalStates.PENDING_MODERATION, ApprovalStates.MODERATOR_REJECTED): cls.REJECT,
             (ApprovalStates.PENDING_MODERATION, ApprovalStates.APPROVED): cls.ACCEPT,
+            (ApprovalStates.PENDING_MODERATION, ApprovalStates.IN_PROGRESS): cls.REJECT,
             (ApprovalStates.APPROVED, ApprovalStates.REMOVED): cls.MODERATOR_REMOVE,
             (ApprovalStates.APPROVED, ApprovalStates.REMOVED): cls.ADMIN_REMOVE,
-            (ApprovalStates.MODERATOR_REJECTED, ApprovalStates.PENDING_MODERATION): cls.RESUBMIT,
+            (ApprovalStates.REJECTED, ApprovalStates.PENDING_MODERATION): cls.RESUBMIT,
             (ApprovalStates.REMOVED, ApprovalStates.PENDING_MODERATION): cls.RESUBMIT,
             (ApprovalStates.REMOVED, ApprovalStates. APPROVED): cls.RESUBMIT,  # Unmoderated
         }
