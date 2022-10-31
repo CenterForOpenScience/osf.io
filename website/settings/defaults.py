@@ -527,6 +527,7 @@ class CeleryConfig:
         'osf.management.commands.cumulative_plos_metrics',
         'api.providers.tasks',
         'osf.management.commands.daily_reporters_go',
+        'osf.spam.tasks',
     )
 
     # Modules that need metrics and release requirements

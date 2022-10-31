@@ -13,7 +13,7 @@ from osf.models import (
     SpamStatus
 )
 
-from osf.external.spam.tasks import check_resource_for_domains
+from osf.spam.tasks import check_resource_for_domains
 from osf_tests.factories import SessionFactory, NodeFactory
 from framework.sessions import set_session
 from osf.utils.workflows import DefaultStates

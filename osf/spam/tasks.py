@@ -9,6 +9,7 @@ logging.basicConfig(level=logging.INFO)
 
 DOMAIN_REGEX = re.compile(r'(?P<protocol>\w+://)?(?P<www>www\.)?(?P<domain>[\w-]+\.\w+)(?P<path>/\w*)?')
 
+
 @celery_app.task()
 def reclassify_domain_references(notable_domain_id, previous_note):
     from osf.models.notable_domain import DomainReference, NotableDomain
@@ -28,6 +29,7 @@ def reclassify_domain_references(notable_domain_id, previous_note):
                         item.referrer.unspam(save=False)
             item.save()
             item.referrer.save()
+
 
 @celery_app.task()
 def check_resource_for_domains(guid, content):

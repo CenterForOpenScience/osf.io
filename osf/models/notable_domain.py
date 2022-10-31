@@ -6,7 +6,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 
 from osf.models.base import BaseModel
 from osf.utils.fields import LowercaseCharField
-from osf.external.spam.tasks import reclassify_domain_references
+from osf.spam.tasks import reclassify_domain_references
 
 class NotableDomain(BaseModel):
     class Note(IntEnum):

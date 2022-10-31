@@ -6,7 +6,7 @@ from django.utils import timezone
 from framework import sentry
 
 from osf.exceptions import ValidationValueError, ValidationTypeError
-from osf.external.spam.tasks import check_resource_for_domains
+from osf.spam.tasks import check_resource_for_domains
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils import akismet, oopspam
