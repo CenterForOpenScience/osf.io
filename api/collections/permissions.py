@@ -18,7 +18,8 @@ class CollectionReadOrPublic(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         auth = get_user_auth(request)
-        if obj.target.collection.is_public:
+        moderators = obj.target.collection.provider.get_group('moderator').user_set.all()
+        if auth.user in moderators or obj.target.collection.is_public and obj.target.guid.referent.can_view(auth):
             return True
         elif obj.target.guid.referent.has_permission(auth.user, READ):
             return True

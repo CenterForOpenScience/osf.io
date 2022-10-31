@@ -78,12 +78,20 @@ class TestCollectionSubmissionsActionsDetailGETPermissions:
         assert resp.status_code == 200
 
     @pytest.mark.parametrize('user_role', [UserRoles.UNAUTHENTICATED, UserRoles.NONCONTRIB])
-    def test_private_collection(self, app, node, collection, user_role, collection_submission_action):
+    def test_private_collection_noncontribs(self, app, node, collection, user_role, collection_submission_action):
         collection.is_public = False
         collection.save()
         test_auth = configure_test_auth(node, user_role)
         resp = app.get(GET_URL.format(collection_submission_action._id), auth=test_auth, expect_errors=True)
         assert resp.status_code in (401, 403)
+
+    @pytest.mark.parametrize('user_role', UserRoles.excluding(*[UserRoles.UNAUTHENTICATED, UserRoles.NONCONTRIB]))
+    def test_private_collection_contribs(self, app, node, collection, user_role, collection_submission_action):
+        collection.is_public = False
+        collection.save()
+        test_auth = configure_test_auth(node, user_role)
+        resp = app.get(GET_URL.format(collection_submission_action._id), auth=test_auth, expect_errors=True)
+        assert resp.status_code == 200
 
 
 @pytest.mark.django_db
