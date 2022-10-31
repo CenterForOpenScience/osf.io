@@ -50,6 +50,7 @@ class ApprovalStates(ModerationEnum):
     MODERATOR_REJECTED = 5
     COMPLETED = 6  # Embargo only
     IN_PROGRESS = 7  # Revisions only
+    REMOVED = 8  # CollectionSubmission only
 
 
 class RegistrationModerationStates(ModerationEnum):
@@ -168,19 +169,24 @@ class SchemaResponseTriggers(ModerationEnum):
 class CollectionSubmissionsTriggers(ModerationEnum):
     '''The acceptable 'triggers' to use with a CollectionSubmissionsAction'''
     SUBMIT = 0
-    APPROVE = 1
+    ACCEPT = 1
     REJECT = 2
     ADMIN_REMOVE = 3
     MODERATOR_REMOVE = 4
+    RESUBMIT = 5
 
     @classmethod
     def from_transition(cls, from_state, to_state):
         transition_to_trigger_mappings = {
-            (ApprovalStates.IN_PROGRESS, ApprovalStates.UNAPPROVED): cls.SUBMIT,
-            (ApprovalStates.UNAPPROVED, ApprovalStates.APPROVED): cls.APPROVE,
-            (ApprovalStates.UNAPPROVED, ApprovalStates.IN_PROGRESS): cls.REJECT,
-            (ApprovalStates.UNAPPROVED, ApprovalStates.IN_PROGRESS): cls.ADMIN_REMOVE,
-            (ApprovalStates.UNAPPROVED, ApprovalStates.IN_PROGRESS): cls.MODERATOR_REMOVE,
+            (ApprovalStates.UNAPPROVED, ApprovalStates.PENDING_MODERATION): cls.SUBMIT,
+            (ApprovalStates.UNAPPROVED, ApprovalStates.APPROVED): cls.ACCEPT,  # Unmoderated
+            (ApprovalStates.PENDING_MODERATION, ApprovalStates.MODERATOR_REJECTED): cls.REJECT,
+            (ApprovalStates.PENDING_MODERATION, ApprovalStates.APPROVED): cls.ACCEPT,
+            (ApprovalStates.APPROVED, ApprovalStates.REMOVED): cls.MODERATOR_REMOVE,
+            (ApprovalStates.APPROVED, ApprovalStates.REMOVED): cls.ADMIN_REMOVE,
+            (ApprovalStates.MODERATOR_REJECTED, ApprovalStates.PENDING_MODERATION): cls.RESUBMIT,
+            (ApprovalStates.REMOVED, ApprovalStates.PENDING_MODERATION): cls.RESUBMIT,
+            (ApprovalStates.REMOVED, ApprovalStates. APPROVED): cls.RESUBMIT,  # Unmoderated
         }
         return transition_to_trigger_mappings.get((from_state, to_state))
 
