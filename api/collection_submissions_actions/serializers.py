@@ -1,75 +1,63 @@
-from framework.exceptions import PermissionsError
-from api.actions.serializers import BaseActionSerializer
-from osf.utils import permissions
-from osf.utils.workflows import CollectionSubmissionsTriggers
-from rest_framework import serializers as ser
-from rest_framework.exceptions import PermissionDenied, ValidationError
-from transitions import MachineError
-from api.base.exceptions import Conflict
-from api.base.exceptions import JSONAPIAttributeException
-from api.actions.serializers import TargetRelationshipField
+from api.base.utils import absolute_reverse
+from api.base.serializers import JSONAPISerializer, EnumField
+from api.actions.serializers import TargetRelationshipField, LinksField
 from osf.models import CollectionSubmission
-from osf.utils.workflows import ApprovalStates
+from osf.utils.workflows import ApprovalStates, CollectionSubmissionsTriggers
+from rest_framework import serializers as ser
+
+from api.base.serializers import (
+    RelationshipField,
+)
 
 
-class CollectionSubmissionActionSerializer(BaseActionSerializer):
+class CollectionSubmissionActionSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'collection-submissions-actions'
 
-    permissions = ser.ChoiceField(choices=permissions.API_CONTRIBUTOR_PROVIDER_PERMISSIONS, required=False)
-    visible = ser.BooleanField(default=True, required=False)
-    trigger = ser.ChoiceField(choices=CollectionSubmissionsTriggers.char_field_choices())
-    from_state = ser.ChoiceField(choices=ApprovalStates.char_field_choices(), read_only=True)
-    to_state = ser.ChoiceField(choices=ApprovalStates.char_field_choices(), read_only=True)
+    id = ser.CharField(source='_id', read_only=True)
+
+    trigger = EnumField(CollectionSubmissionsTriggers)
+    from_state = EnumField(ApprovalStates)
+    to_state = EnumField(ApprovalStates)
+    comment = ser.CharField(max_length=65535, required=False, allow_blank=True, allow_null=True)
+
+    collection = RelationshipField(
+        related_view='collections:collection-detail',
+        related_view_kwargs={'collection_id': '<target.collection._id>'},
+    )
+
+    creator = RelationshipField(
+        read_only=True,
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<creator._id>'},
+    )
 
     target = TargetRelationshipField(
         target_class=CollectionSubmission,
         read_only=False,
         required=True,
-        related_view='collection_submissions:collection-submissions-detail',
+        related_view='collections:collected-metadata-detail',
         related_view_kwargs={
-            'collection_id': '<target.guid._id>',
-            'cgm_id': '<self._id>',
+            'collection_id': '<target.collection._id>',
+            'cgm_id': '<target.guid._id>',
         },
-        filter_key='target__guid___id',
+        filter_key='target__guids___id',
     )
 
-    def create(self, validated_data):
-        user = self.context['request'].user
-        trigger = validated_data.get('trigger')
-        collection_submission = validated_data.pop('target')
-        comment = validated_data.pop('comment', '')
-        previous_action = collection_submission.actions.last()
-        old_state = collection_submission.reviews_state
-        try:
-            if trigger == CollectionSubmissionsTriggers.SUBMIT.db_name:
-                collection_submission.submit(user=user, comment=comment)
-            elif trigger == CollectionSubmissionsTriggers.ACCEPT.db_name:
-                collection_submission.approve(user=user, comment=comment)
-            elif trigger == CollectionSubmissionsTriggers.REJECT.db_name:
-                collection_submission.reject(user=user, comment=comment)
-            elif trigger == CollectionSubmissionsTriggers.MODERATOR_REMOVE.db_name:
-                collection_submission.reject(user=user, comment=comment)
-            elif trigger == CollectionSubmissionsTriggers.MODERATOR_REMOVE.db_name:
-                collection_submission.reject(user=user, comment=comment)
-            else:
-                raise JSONAPIAttributeException(attribute='trigger', detail='Invalid trigger.')
-        except PermissionsError as exc:
-            raise PermissionDenied(exc)
-        except MachineError:
-            raise Conflict(
-                f'Trigger "{trigger}" is not supported for the target CollectionSubmission '
-                f'with id [{collection_submission._id}] in state "{collection_submission.reviews_state}"',
-            )
-        except ValueError as exc:
-            raise ValidationError(exc)
+    links = LinksField(
+        {
+            'self': 'get_action_url',
+        },
+    )
 
-        new_action = collection_submission.actions.last()
-        if new_action is None or new_action == previous_action or new_action.trigger != trigger:
-            print("DIDn't advance state")
-            raise Conflict(
-                f'Trigger "{trigger}" is not supported for the target CollectionSubmission '
-                f'with id [{collection_submission._id}] in state "{old_state}"',
-            )
+    def get_absolute_url(self, obj):
+        return self.get_action_url(obj)
 
-        return collection_submission.actions.last()
+    def get_action_url(self, obj):
+        return absolute_reverse(
+            'actions:action-detail',
+            kwargs={
+                'action_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version']
+            }
+        )

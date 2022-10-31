@@ -2,13 +2,12 @@
 from __future__ import unicode_literals
 import io
 
-from rest_framework import permissions, exceptions
+from rest_framework import permissions
 from rest_framework.exceptions import NotFound, MethodNotAllowed
 
 from api.base.exceptions import Gone
 from api.base.utils import get_user_auth, assert_resource_type
 from osf.models import AbstractNode, Preprint, Collection, CollectionSubmission, CollectionProvider
-from api.base.parsers import JSONSchemaParser
 from osf.utils.permissions import READ, WRITE, ADMIN
 
 
@@ -21,7 +20,8 @@ class CollectionReadOrPublic(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         auth = get_user_auth(request)
-        if obj.target.collection.is_public:
+        moderators = obj.target.collection.provider.get_group('moderator').user_set.all()
+        if auth.user in moderators or obj.target.collection.is_public and obj.target.guid.referent.can_view(auth):
             return True
         elif obj.target.guid.referent.has_permission(auth.user, READ):
             return True

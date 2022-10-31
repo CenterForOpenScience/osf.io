@@ -20,7 +20,8 @@ from osf.utils.workflows import ApprovalStates
 from osf.exceptions import NodeStateError
 from website.util import api_v2_url
 from website.search.exceptions import SearchUnavailableError
-from osf.utils.workflows import CollectionSubmissionsTriggers
+from osf.utils.workflows import ApprovalStates
+from osf.utils.machines import ApprovalsMachine
 
 logger = logging.getLogger(__name__)
 from osf.utils.machines import ApprovalsMachine
@@ -43,10 +44,9 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
     program_area = models.CharField(blank=True, max_length=127)
     school_type = models.CharField(blank=True, max_length=127)
     study_design = models.CharField(blank=True, max_length=127)
-    machine_state = models.CharField(
-        choices=ApprovalStates.char_field_choices(),
-        default=ApprovalStates.IN_PROGRESS.db_name,
-        max_length=255
+    machine_state = models.IntegerField(
+        choices=ApprovalStates.int_field_choices(),
+        default=ApprovalStates.IN_PROGRESS,
     )
 
     def __init__(self, *args, **kwargs):
@@ -60,78 +60,11 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
     @property
     def state(self):
         '''Property to translate between ApprovalState Enum and DB string.'''
-        return ApprovalStates.from_db_name(self.machine_state)
+        return ApprovalStates(self.machine_state)
 
     @state.setter
     def state(self, new_state):
-        self.reviews_state = new_state.db_name
-
-    def _validate_trigger(self, event_data):
-        '''Any additional validation to confirm that a trigger is being used correctly.
-
-        For SchemaResponses, use this to confirm that the provided user has permission to
-        execute the trigger, including enforcing correct usage of the internal "accept" shortcut.
-        '''
-        user = event_data.kwargs.get('user')
-        trigger = event_data.event.name
-
-        # The only valid case for not providing a user is the internal accept shortcut
-        # See _validate_accept_trigger docstring for more information
-        if user is None and not (trigger == 'accept' and self.state is ApprovalStates.UNAPPROVED):
-            from framework.exceptions import PermissionsError
-            raise PermissionsError(
-                f'Trigger {trigger} from state [{self.machine_state}] for '
-                f'CollectionSubmission with id [{self._id}] must be called with a user.'
-            )
-
-    def _on_submit(self, event_data):
-        self.submitted_timestamp = timezone.now()
-
-    @property
-    def revisable(self):
-        return False
-
-    def _on_approve(self, event_data):
-        moderators = self.collection.provider.get_group('moderator').user_set.all()
-        if event_data.kwargs.get('user', self.creator) in moderators:
-            self.state_machine.set_state(ApprovalStates.APPROVED)
-        else:
-            from framework.exceptions import PermissionsError
-            raise PermissionsError(
-                f'approval for CollectionSubmission with id [{self._id}] must be confirmed by a moderator.'
-            )
-        self.save()
-
-    def _on_reject(self, event_data):
-        moderators = self.collection.provider.get_group('moderator').user_set.all()
-        if event_data.kwargs.get('user', self.creator) in moderators:
-            self.state_machine.set_state(ApprovalStates.IN_PROGRESS)
-        self.save()
-
-    @property
-    def is_moderated(self):
-        return True
-
-    def _save_transition(self, event_data):
-        '''Save changes here and write the action.'''
-        self.save()
-        from_state = ApprovalStates[event_data.transition.source]
-        to_state = self.state
-        trigger = CollectionSubmissionsTriggers.from_transition(from_state, to_state)
-        if trigger is None:
-            return
-
-        self.actions.create(
-            from_state=from_state.db_name,
-            to_state=to_state.db_name,
-            trigger=trigger.db_name,
-            creator=event_data.kwargs.get('user', self.creator),
-            comment=event_data.kwargs.get('comment', '')
-        )
-        # self._notify_users(
-        #     event=event_data.event.name,
-        #     event_initiator=event_data.kwargs.get('user')
-        # )
+        self.state_machine = new_state
 
     @cached_property
     def _id(self):

@@ -12,7 +12,8 @@ from osf.utils.workflows import (
     ReviewTriggers,
     RegistrationModerationTriggers,
     RegistrationModerationStates,
-    SchemaResponseTriggers
+    SchemaResponseTriggers,
+    CollectionSubmissionsTriggers
 )
 from osf.utils import permissions
 
@@ -79,6 +80,6 @@ class SchemaResponseAction(BaseAction):
 
 class CollectionSubmissionAction(BaseAction):
     target = models.ForeignKey('CollectionSubmission', related_name='actions', on_delete=models.CASCADE)
-    trigger = models.CharField(max_length=31, choices=SchemaResponseTriggers.char_field_choices())
-    from_state = models.CharField(max_length=31, choices=ApprovalStates.char_field_choices())
-    to_state = models.CharField(max_length=31, choices=ApprovalStates.char_field_choices())
+    trigger = models.IntegerField(choices=CollectionSubmissionsTriggers.char_field_choices())
+    from_state = models.IntegerField(choices=ApprovalStates.char_field_choices())
+    to_state = models.IntegerField(choices=ApprovalStates.char_field_choices())
