@@ -209,7 +209,7 @@ def update_blocked_email_domains(sender, verbosity=0, **kwargs):
         for domain in osf_settings.BLACKLISTED_DOMAINS:
             NotableDomain.objects.update_or_create(
                 domain=domain,
-                defaults={'note': NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION},
+                defaults={'note': NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT},
             )
 
 
