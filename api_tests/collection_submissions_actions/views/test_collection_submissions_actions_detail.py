@@ -20,7 +20,6 @@ def collection_provider():
 @pytest.fixture()
 def node(collection_provider):
     node = NodeFactory(is_public=True)
-    node.provider = collection_provider
     node.save()
     return node
 
@@ -62,7 +61,8 @@ def configure_test_auth(node, user_role):
 
     user = AuthUserFactory()
     if user_role is UserRoles.MODERATOR:
-        node.provider.get_group('moderator').user_set.add(user)
+        collection_submission = CollectionSubmission.objects.get(guid=node.guids.first())
+        collection_submission.collection.provider.get_group('moderator').user_set.add(user)
     elif user_role in UserRoles.contributor_roles():
         node.add_contributor(user, user_role.get_permissions_string())
 
