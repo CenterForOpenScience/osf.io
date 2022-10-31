@@ -170,11 +170,16 @@ class SpamMixin(models.Model):
         if save:
             self.save()
 
+    def unspam(self, save=False):
+        self.spam_status = SpamStatus.UNKNOWN
+        if save:
+            self.save()
+
     def confirm_ham(self, save=False, train_akismet=True):
         # not all mixins will implement check spam pre-req, only submit ham when it was incorrectly flagged
         if (
             settings.SPAM_CHECK_ENABLED and
-            self.spam_data and self.spam_status in [SpamStatus.FLAGGED, SpamStatus.SPAM] and
+            'headers' in self.spam_data and self.spam_status in [SpamStatus.FLAGGED, SpamStatus.SPAM] and
             train_akismet
         ):
             client = _get_akismet_client()
@@ -191,11 +196,16 @@ class SpamMixin(models.Model):
         if save:
             self.save()
 
-    def confirm_spam(self, save=False, train_akismet=True):
+    def confirm_spam(self, domains=None, save=False, train_akismet=True):
+        if domains:
+            if 'domains' in self.spam_data:
+                self.spam_data['domains'].extend(domains)
+            else:
+                self.spam_data['domains'] = domains
         # not all mixins will implement check spam pre-req, only submit spam when it was incorrectly flagged
         if (
             settings.SPAM_CHECK_ENABLED and
-            self.spam_data and self.spam_status in [SpamStatus.UNKNOWN, SpamStatus.HAM] and
+            'headers' in self.spam_data and self.spam_status in [SpamStatus.UNKNOWN, SpamStatus.HAM] and
             train_akismet
         ):
             client = _get_akismet_client()
