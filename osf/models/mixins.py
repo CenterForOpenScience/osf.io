@@ -1306,17 +1306,19 @@ class ContributorMixin(models.Model):
         """
         return (each.user for each in self._get_admin_contributors_query(users))
 
-    def _get_admin_contributors_query(self, users):
+    def _get_admin_contributors_query(self, users, require_active=True):
         """
         Returns Contributor queryset whose objects have admin permissions to the node.
         Group permissions not included.
         """
-        return self.contributor_class.objects.select_related('user').filter(
+        qs = self.contributor_class.objects.select_related('user').filter(
             user__in=users,
-            user__is_active=True,
             user__groups=self.get_group(ADMIN).id,
             **{self.guardian_object_type: self}
         )
+        if require_active:
+            qs = qs.filter(user__is_active=True)
+        return qs
 
     def add_contributor(self, contributor, permissions=None, visible=True,
                         send_email=None, auth=None, log=True, save=False):
