@@ -132,7 +132,7 @@ class NodeRemoveContributorView(NodeMixin, View):
             messages.error(self.request, 'Must be at least one admin on this node.')
             return redirect(self.get_success_url())
 
-        if node.remove_contributor(user, None, log=False):
+        if node.remove_contributor(user, None, log=False, _force=True):
             update_admin_log(
                 user_id=self.request.user.id,
                 object_id=node.pk,
