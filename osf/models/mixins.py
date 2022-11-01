@@ -1603,7 +1603,7 @@ class ContributorMixin(models.Model):
         if save:
             self.save()
 
-    def remove_contributor(self, contributor, auth, log=True):
+    def remove_contributor(self, contributor, auth, log=True, _force=False):
         """Remove a contributor from this node.
 
         :param contributor: User object, the contributor to be removed
@@ -1617,14 +1617,15 @@ class ContributorMixin(models.Model):
             del contributor.unclaimed_records[self._id]
             contributor.save()
 
-        # If user is the only visible contributor, return False
-        if not self.contributor_set.exclude(user=contributor).filter(visible=True).exists():
-            return False
+        if not _force:
+            # If user is the only visible contributor, return False
+            if not self.contributor_set.exclude(user=contributor).filter(visible=True).exists():
+                return False
 
-        # Node must have at least one registered admin user
-        admin_query = self._get_admin_contributors_query(self._contributors.all()).exclude(user=contributor)
-        if not admin_query.exists():
-            return False
+            # Node must have at least one registered admin user
+            admin_query = self._get_admin_contributors_query(self._contributors.all()).exclude(user=contributor)
+            if not admin_query.exists():
+                return False
 
         contrib_obj = self.contributor_set.get(user=contributor)
         contrib_obj.delete()
