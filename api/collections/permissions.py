@@ -174,7 +174,7 @@ class OnlyAdminCanCreateDestroyCollectionSubmissionAction(permissions.BasePermis
             if trigger in [
                 CollectionSubmissionsTriggers.REJECT.db_name,
                 CollectionSubmissionsTriggers.ACCEPT.db_name,
-                CollectionSubmissionsTriggers.MODERATOR_REMOVE.db_name
+                CollectionSubmissionsTriggers.MODERATOR_REMOVE.db_name,
             ] and auth.user not in moderators:
                 return False
 

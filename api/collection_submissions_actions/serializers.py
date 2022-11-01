@@ -63,7 +63,7 @@ class CollectionSubmissionActionSerializer(JSONAPISerializer):
             'actions:action-detail',
             kwargs={
                 'action_id': obj._id,
-                'version': self.context['request'].parser_context['kwargs']['version']
+                'version': self.context['request'].parser_context['kwargs']['version'],
             }
         )
 

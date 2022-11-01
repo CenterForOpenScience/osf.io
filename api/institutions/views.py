@@ -474,7 +474,8 @@ class InstitutionDepartmentList(InstitutionImpactList):
     serializer_class = InstitutionDepartmentMetricsSerializer
     renderer_classes = tuple(api_settings.DEFAULT_RENDERER_CLASSES, ) + (InstitutionDepartmentMetricsCSVRenderer, )
 
-    ordering = ('-number_of_users', 'name',)
+    ordering_fields = ('-number_of_users', 'name', )
+    ordering = ('-number_of_users', 'name', )
 
     def _format_search(self, search, default_kwargs=None):
         results = search.execute()
@@ -498,7 +499,8 @@ class InstitutionUserMetricsList(InstitutionImpactList):
     serializer_class = InstitutionUserMetricsSerializer
     renderer_classes = tuple(api_settings.DEFAULT_RENDERER_CLASSES, ) + (InstitutionUserMetricsCSVRenderer, )
 
-    ordering = ('user_name',)
+    ordering_fields = ('user_name', 'department', )
+    ordering = ('user_name', )
 
     def _format_search(self, search, default_kwargs=None):
         results = search.execute()
