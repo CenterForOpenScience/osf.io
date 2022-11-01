@@ -7,9 +7,55 @@ from osf_tests.factories import NodeFactory, CollectionFactory, CollectionProvid
 
 from osf.migrations import update_provider_auth_groups
 from osf.models import CollectionSubmission
-from osf.utils.workflows import CollectionSubmissionsTriggers
+from osf.utils.workflows import CollectionSubmissionsTriggers, CollectionSubmissionStates
 
 POST_URL = '/v2/collection_submissions_actions/'
+
+
+@pytest.fixture()
+def collection_provider():
+    collection_provider = CollectionProviderFactory()
+    update_provider_auth_groups()
+    return collection_provider
+
+
+@pytest.fixture()
+def node(collection_provider):
+    node = NodeFactory(is_public=True)
+    node.provider = collection_provider
+    node.save()
+    return node
+
+
+@pytest.fixture()
+def collection(collection_provider):
+    collection = CollectionFactory()
+    collection.provider = collection_provider
+    collection.save()
+    return collection
+
+
+@pytest.fixture()
+def collection_submission(node, collection):
+    collection_submission = CollectionSubmission(
+        guid=node.guids.first(),
+        collection=collection,
+        creator=node.creator,
+    )
+    collection_submission.save()
+    return collection_submission
+
+
+@pytest.fixture()
+def collection_submission_action(collection_submission):
+    action = collection_submission.actions.create(
+        from_state=ApprovalStates.IN_PROGRESS,
+        to_state=ApprovalStates.UNAPPROVED,
+        trigger=CollectionSubmissionsTriggers.SUBMIT,
+        creator=collection_submission.creator,
+        comment='test comment'
+    )
+    return action
 
 
 def make_payload(collection_submission, trigger='submit'):
@@ -42,7 +88,6 @@ def configure_test_auth(node, user_role):
         provider = collection_submission.collection.provider
         provider.get_group('moderator').user_set.add(user)
         provider.save()
-        print(provider.get_group('moderator').user_set.all())
 
     elif user_role in UserRoles.contributor_roles():
         node.add_contributor(user, user_role.get_permissions_string())
@@ -52,36 +97,6 @@ def configure_test_auth(node, user_role):
 
 @pytest.mark.django_db
 class TestCollectionSubmissionsActionsListPOSTPermissions:
-
-    @pytest.fixture()
-    def collection_provider(self):
-        collection_provider = CollectionProviderFactory()
-        update_provider_auth_groups()
-        return collection_provider
-
-    @pytest.fixture()
-    def node(self, collection_provider):
-        node = NodeFactory(is_public=True)
-        node.provider = collection_provider
-        node.save()
-        return node
-
-    @pytest.fixture()
-    def collection(self, collection_provider):
-        collection = CollectionFactory()
-        collection.provider = collection_provider
-        collection.save()
-        return collection
-
-    @pytest.fixture()
-    def collection_submission(self, node, collection):
-        collection_submission = CollectionSubmission(
-            guid=node.guids.first(),
-            collection=collection,
-            creator=node.creator,
-        )
-        collection_submission.save()
-        return collection_submission
 
     def test_status_code__admin(self, app, node, collection_submission):
         test_auth = configure_test_auth(node, UserRoles.ADMIN_USER)
@@ -112,7 +127,7 @@ class TestCollectionSubmissionsActionsListPOSTPermissions:
 
     @pytest.mark.parametrize('moderator_trigger', [CollectionSubmissionsTriggers.ACCEPT, CollectionSubmissionsTriggers.REJECT])
     def test_status_code__collection_moderator_accept_reject_moderated(self, app, node, collection_submission, moderator_trigger):
-        collection_submission.to_PENDING_MODERATION()
+        collection_submission.to_PENDING()
         collection_submission.save()
         test_auth = configure_test_auth(node, UserRoles.MODERATOR)
         resp = app.post_json_api(POST_URL, make_payload(
@@ -124,7 +139,7 @@ class TestCollectionSubmissionsActionsListPOSTPermissions:
     @pytest.mark.parametrize('moderator_trigger', [CollectionSubmissionsTriggers.ACCEPT, CollectionSubmissionsTriggers.REJECT])
     @pytest.mark.parametrize('user_role', UserRoles.excluding(UserRoles.MODERATOR))
     def test_status_code__non_moderator_accept_reject_moderated(self, app, node, collection_submission, moderator_trigger, user_role):
-        collection_submission.to_PENDING_MODERATION()
+        collection_submission.to_PENDING()
         collection_submission.save()
         test_auth = configure_test_auth(node, user_role)
         resp = app.post_json_api(POST_URL, make_payload(
@@ -138,54 +153,21 @@ class TestCollectionSubmissionsActionsListPOSTPermissions:
 @pytest.mark.django_db
 class TestSubmissionsActionsListPOSTBehavior:
 
-    @pytest.fixture()
-    def collection_provider(self):
-        collection_provider = CollectionProviderFactory()
-        update_provider_auth_groups()
-        return collection_provider
-
-    @pytest.fixture()
-    def node(self, collection_provider):
-        node = NodeFactory(is_public=True)
-        node.provider = collection_provider
-        node.save()
-        return node
-
-    @pytest.fixture()
-    def collection(self, collection_provider):
-        collection = CollectionFactory()
-        collection.provider = collection_provider
-        collection.save()
-        return collection
-
-    @pytest.fixture()
-    def collection_submission(self, node, collection):
-        collection_submission = CollectionSubmission(
-            guid=node.guids.first(),
-            collection=collection,
-            creator=node.creator,
-        )
-        collection_submission.save()
-        return collection_submission
-
     def test_POST_accept__writes_action_and_advances_state(self, app, collection_submission, node):
-        collection_submission.to_PENDING_MODERATION()
+        collection_submission.to_PENDING()
         collection_submission.save()
-        print("????")
         test_auth = configure_test_auth(node, UserRoles.MODERATOR)
         payload = make_payload(collection_submission, trigger=CollectionSubmissionsTriggers.ACCEPT.db_name)
         app.post_json_api(POST_URL, payload, auth=test_auth)
         user = collection_submission.collection.provider.get_group('moderator').user_set.first()
         collection_submission.refresh_from_db()
         action = collection_submission.actions.last()
-        print(action)
-        print(collection_submission.actions.all())
 
         assert action.trigger == CollectionSubmissionsTriggers.ACCEPT
         assert action.creator == user
-        assert action.from_state == ApprovalStates.PENDING_MODERATION
-        assert action.to_state == ApprovalStates.APPROVED
-        assert collection_submission.state is ApprovalStates.APPROVED
+        assert action.from_state == CollectionSubmissionStates.PENDING
+        assert action.to_state == CollectionSubmissionStates.ACCEPTED
+        assert collection_submission.state is CollectionSubmissionStates.ACCEPTED
 
     @pytest.mark.parametrize('user_role', UserRoles)
     def test_status_code__deleted_collection_submission(self, app, node, collection_submission, user_role):
@@ -195,6 +177,26 @@ class TestSubmissionsActionsListPOSTBehavior:
         resp = app.post_json_api(POST_URL, make_payload(collection_submission), auth=test_auth, expect_errors=True)
         assert resp.status_code == 410
 
+
 @pytest.mark.django_db
-class TestSubmissionsActionsListUnsupportedMethods:
-    pass
+class TestCollectionSubmissionsActionsListUnsupportedMethods:
+
+    @pytest.mark.parametrize('user_role', UserRoles)
+    def test_cannot_PATCH(self, app, user_role, node, collection_submission, collection_submission_action):
+        auth = configure_test_auth(node, user_role)
+        resp = app.patch_json_api(POST_URL.format(collection_submission_action._id), auth=auth, expect_errors=True)
+        print(resp.json)
+        print(resp.json)
+        assert resp.status_code == 405
+
+    @pytest.mark.parametrize('user_role', UserRoles)
+    def test_cannot_PUT(self, app, user_role, node, collection_submission, collection_submission_action):
+        auth = configure_test_auth(node, user_role)
+        resp = app.put_json_api(POST_URL.format(collection_submission_action._id), auth=auth, expect_errors=True)
+        assert resp.status_code == 405
+
+    @pytest.mark.parametrize('user_role', UserRoles)
+    def test_cannot_DELETE(self, app, user_role, node, collection_submission, collection_submission_action):
+        auth = configure_test_auth(node, user_role)
+        resp = app.delete_json_api(POST_URL.format(collection_submission_action._id), auth=auth, expect_errors=True)
+        assert resp.status_code == 405

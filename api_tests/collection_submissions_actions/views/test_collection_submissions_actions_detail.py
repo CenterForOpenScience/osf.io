@@ -5,7 +5,7 @@ from osf_tests.factories import NodeFactory, CollectionFactory, CollectionProvid
 
 from osf.migrations import update_provider_auth_groups
 from osf.models import CollectionSubmission
-from osf.utils.workflows import ApprovalStates, CollectionSubmissionsTriggers
+from osf.utils.workflows import CollectionSubmissionStates, CollectionSubmissionsTriggers
 
 GET_URL = '/v2/collection_submissions_actions/{}/'
 
@@ -46,8 +46,8 @@ def collection_submission(node, collection):
 @pytest.fixture()
 def collection_submission_action(collection_submission):
     action = collection_submission.actions.create(
-        from_state=ApprovalStates.IN_PROGRESS,
-        to_state=ApprovalStates.UNAPPROVED,
+        from_state=CollectionSubmissionStates.IN_PROGRESS,
+        to_state=CollectionSubmissionStates.PENDING,
         trigger=CollectionSubmissionsTriggers.SUBMIT,
         creator=collection_submission.creator,
         comment='test comment'
@@ -100,7 +100,7 @@ class TestCollectionSubmissionsActionsDetailGETBehavior:
         resp = app.get(GET_URL.format(collection_submission_action._id), expect_errors=True)
         assert resp.json['data']['id'] == collection_submission_action._id
         assert resp.json['data']['attributes']['from_state'] == 'in_progress'
-        assert resp.json['data']['attributes']['to_state'] == 'unapproved'
+        assert resp.json['data']['attributes']['to_state'] == 'pending'
         assert resp.json['data']['attributes']['trigger'] == 'submit'
         assert resp.json['data']['attributes']['comment'] == 'test comment'
         assert resp.json['data']['relationships']['creator']['data']['id'] == collection_submission.creator._id

@@ -145,12 +145,14 @@ class OnlyAdminCanCreateDestroyCollectionSubmissionAction(permissions.BasePermis
         auth = get_user_auth(request)
         if request.method == 'POST':
             moderators = collection_submission.collection.provider.get_group('moderator').user_set.all()
-            print('Node', collection_submission.guid.referent.has_permission(auth.user, ADMIN))
             return collection_submission.guid.referent.has_permission(auth.user, ADMIN) or auth.user in moderators
         else:
             return False
 
     def has_permission(self, request, view):
+        if request.method not in ('POST', 'GET'):
+            raise MethodNotAllowed(request.method)
+
         auth = get_user_auth(request)
         # Validate json before using id to check for permissions
         request_json = JSONSchemaParser().parse(
@@ -169,9 +171,6 @@ class OnlyAdminCanCreateDestroyCollectionSubmissionAction(permissions.BasePermis
             moderators = obj.collection.provider.get_group('moderator').user_set.all()
             trigger = request_json['data']['attributes']['trigger']
             # Check for moderator only triggers
-            print('trigger', trigger)
-            print('moderators', auth.user not in moderators)
-            print('moderators', moderators)
             if trigger in [
                 CollectionSubmissionsTriggers.REJECT.db_name,
                 CollectionSubmissionsTriggers.ACCEPT.db_name,
@@ -185,8 +184,6 @@ class OnlyAdminCanCreateDestroyCollectionSubmissionAction(permissions.BasePermis
         elif request.method == 'GET':
             moderators = obj.collection.provider.get_group('moderator').user_set.all()
             return obj.guid.referent.has_permission(auth.user, ADMIN) or auth.user in moderators
-        else:
-            raise MethodNotAllowed(request.method)
 
 
 class OnlyAdminOrModeratorCanDestroy(permissions.BasePermission):

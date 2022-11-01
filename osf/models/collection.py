@@ -22,10 +22,10 @@ from osf.utils.workflows import ApprovalStates
 from osf.exceptions import NodeStateError
 from website.util import api_v2_url
 from website.search.exceptions import SearchUnavailableError
-from osf.utils.workflows import CollectionSubmissionsTriggers
+from osf.utils.workflows import CollectionSubmissionsTriggers, CollectionSubmissionStates
 
 logger = logging.getLogger(__name__)
-from osf.utils.machines import ApprovalsMachine
+from osf.utils.machines import CollectionSubmissionMachine
 
 
 class CollectionSubmission(TaxonomizableMixin, BaseModel):
@@ -46,13 +46,13 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
     school_type = models.CharField(blank=True, max_length=127)
     study_design = models.CharField(blank=True, max_length=127)
     machine_state = models.IntegerField(
-        choices=ApprovalStates.int_field_choices(),
-        default=ApprovalStates.IN_PROGRESS,
+        choices=CollectionSubmissionStates.int_field_choices(),
+        default=CollectionSubmissionStates.IN_PROGRESS,
     )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.state_machine = ApprovalsMachine(
+        self.state_machine = CollectionSubmissionMachine(
             model=self,
             active_state=self.state,
             state_property_name='state'
@@ -61,7 +61,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
     @property
     def state(self):
         '''Property to translate between ApprovalState Enum and DB string.'''
-        return ApprovalStates(self.machine_state)
+        return CollectionSubmissionStates(self.machine_state)
 
     @state.setter
     def state(self, new_state):
@@ -73,27 +73,10 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
     def _on_submit(self, event_data):
         self.submitted_timestamp = timezone.now()
 
-    @property
-    def revisable(self):
-        return False
-
-    def _on_approve(self, event_data):
-        moderators = self.collection.provider.get_group('moderator').user_set.all()
-        if event_data.kwargs.get('user', self.creator) in moderators:
-            self.state_machine.set_state(ApprovalStates.APPROVED)
-        else:
-            from framework.exceptions import PermissionsError
-            raise PermissionsError(
-                f'approval for CollectionSubmission with id [{self._id}] must be confirmed by a moderator.'
-            )
-        self.save()
+    def _on_accept(self, event_data):
+        pass
 
     def _on_reject(self, event_data):
-        moderators = self.collection.provider.get_group('moderator').user_set.all()
-        if event_data.kwargs.get('user', self.creator) in moderators:
-            self.state_machine.set_state(ApprovalStates.IN_PROGRESS)
-
-    def _on_complete(self, event_data):
         pass
 
     @property
@@ -103,9 +86,8 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
     def _save_transition(self, event_data):
         '''Save changes here and write the action.'''
         self.save()
-        from_state = ApprovalStates[event_data.transition.source]
+        from_state = CollectionSubmissionStates[event_data.transition.source]
         to_state = self.state
-        print(from_state, to_state)
 
         trigger = CollectionSubmissionsTriggers.from_transition(from_state, to_state)
         if trigger is None:

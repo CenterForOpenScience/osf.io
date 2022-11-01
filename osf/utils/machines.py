@@ -16,7 +16,9 @@ from osf.utils.workflows import (
     ApprovalStates,
     DEFAULT_TRANSITIONS,
     REVIEWABLE_TRANSITIONS,
-    APPROVAL_TRANSITIONS
+    APPROVAL_TRANSITIONS,
+    CollectionSubmissionStates,
+    COLLECTION_SUBMISSION_TRANSITIONS,
 )
 from website.mails import mails
 from website.reviews import signals as reviews_signals
@@ -381,3 +383,26 @@ class ApprovalsMachine(Machine):
                 raise e
 
             raise MachineError(error_message)
+
+
+class CollectionSubmissionMachine(Machine):
+    '''
+    '''
+
+    def __init__(self, model, active_state, state_property_name):
+
+        super().__init__(
+            model=model,
+            states=CollectionSubmissionStates,
+            transitions=COLLECTION_SUBMISSION_TRANSITIONS,
+            initial=active_state,
+            model_attribute=state_property_name,
+            after_state_change='_save_transition',
+            send_event=True,
+            queued=True,
+        )
+
+    def get_current_state(self):
+        # ApprovalsMachine should never have more than one model
+        model = self.models[0]
+        return self.get_model_state(model)

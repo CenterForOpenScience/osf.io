@@ -3,7 +3,7 @@ from api.base.exceptions import JSONAPIAttributeException
 from api.base.serializers import JSONAPISerializer, EnumField
 from api.actions.serializers import TargetRelationshipField, LinksField
 from osf.models import CollectionSubmission
-from osf.utils.workflows import ApprovalStates, CollectionSubmissionsTriggers
+from osf.utils.workflows import CollectionSubmissionStates, CollectionSubmissionsTriggers
 from rest_framework import serializers as ser
 from framework.exceptions import PermissionsError
 from api.base.exceptions import Conflict
@@ -22,8 +22,8 @@ class CollectionSubmissionActionSerializer(JSONAPISerializer):
     id = ser.CharField(source='_id', read_only=True)
 
     trigger = EnumField(CollectionSubmissionsTriggers)
-    from_state = EnumField(ApprovalStates, required=False)
-    to_state = EnumField(ApprovalStates, required=False)
+    from_state = EnumField(CollectionSubmissionStates, required=False)
+    to_state = EnumField(CollectionSubmissionStates, required=False)
     comment = ser.CharField(max_length=65535, required=False, allow_blank=True, allow_null=True)
 
     collection = RelationshipField(
@@ -72,9 +72,6 @@ class CollectionSubmissionActionSerializer(JSONAPISerializer):
         trigger = CollectionSubmissionsTriggers(validated_data.get('trigger'))
         collection_submission = validated_data.pop('target')
         comment = validated_data.pop('comment', '')
-        previous_action = collection_submission.actions.last()
-        old_state = collection_submission.state
-
         try:
             if trigger == CollectionSubmissionsTriggers.SUBMIT:
                 collection_submission.submit(user=user, comment=comment)
@@ -97,12 +94,4 @@ class CollectionSubmissionActionSerializer(JSONAPISerializer):
             )
         except ValueError as exc:
             raise ValidationError(exc)
-
-        new_action = collection_submission.actions.last()
-        if new_action is None or new_action == previous_action or new_action.trigger != trigger:
-            raise Conflict(
-                f'Trigger "{trigger.db_name}" is not supported for the target CollectionSubmission '
-                f'with id [{collection_submission._id}] in state "{old_state.db_name}"',
-            )
-
         return collection_submission.actions.last()

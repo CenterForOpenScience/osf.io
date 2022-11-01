@@ -53,6 +53,16 @@ class ApprovalStates(ModerationEnum):
     REMOVED = 8  # CollectionSubmission only
 
 
+class CollectionSubmissionStates(ModerationEnum):
+    '''The states of a CollectionSubmission object.'''
+
+    IN_PROGRESS = 1
+    PENDING = 2
+    REJECTED = 3
+    ACCEPTED = 4
+    REMOVED = 5
+
+
 class RegistrationModerationStates(ModerationEnum):
     '''The publication state of a Registration object'''
     UNDEFINED = 0
@@ -178,16 +188,13 @@ class CollectionSubmissionsTriggers(ModerationEnum):
     @classmethod
     def from_transition(cls, from_state, to_state):
         transition_to_trigger_mappings = {
-            (ApprovalStates.IN_PROGRESS, ApprovalStates.UNAPPROVED): cls.SUBMIT,
-            (ApprovalStates.UNAPPROVED, ApprovalStates.PENDING_MODERATION): cls.SUBMIT,
-            (ApprovalStates.UNAPPROVED, ApprovalStates.APPROVED): cls.ACCEPT,  # Unmoderated
-            (ApprovalStates.PENDING_MODERATION, ApprovalStates.APPROVED): cls.ACCEPT,
-            (ApprovalStates.PENDING_MODERATION, ApprovalStates.IN_PROGRESS): cls.REJECT,
-            (ApprovalStates.APPROVED, ApprovalStates.REMOVED): cls.MODERATOR_REMOVE,
-            (ApprovalStates.APPROVED, ApprovalStates.REMOVED): cls.ADMIN_REMOVE,
-            (ApprovalStates.REJECTED, ApprovalStates.PENDING_MODERATION): cls.RESUBMIT,
-            (ApprovalStates.REMOVED, ApprovalStates.PENDING_MODERATION): cls.RESUBMIT,
-            (ApprovalStates.REMOVED, ApprovalStates. APPROVED): cls.RESUBMIT,  # Unmoderated
+            (CollectionSubmissionStates.IN_PROGRESS, CollectionSubmissionStates.PENDING): cls.SUBMIT,
+            (CollectionSubmissionStates.PENDING, CollectionSubmissionStates.ACCEPTED): cls.ACCEPT,
+            (CollectionSubmissionStates.PENDING, CollectionSubmissionStates.REJECTED): cls.REJECT,
+            (CollectionSubmissionStates.ACCEPTED, CollectionSubmissionStates.REMOVED): cls.ADMIN_REMOVE,
+            (CollectionSubmissionStates.ACCEPTED, CollectionSubmissionStates.REMOVED): cls.MODERATOR_REMOVE,
+            (CollectionSubmissionStates.REMOVED, CollectionSubmissionStates.PENDING): cls.RESUBMIT,
+            (CollectionSubmissionStates.REJECTED, CollectionSubmissionStates.PENDING): cls.RESUBMIT,
         }
         return transition_to_trigger_mappings.get((from_state, to_state))
 
@@ -386,6 +393,59 @@ APPROVAL_TRANSITIONS = [
         'dest': ApprovalStates.UNAPPROVED,
         'before': ['_validate_trigger'],
         'after': ['_on_reject'],
+    },
+]
+
+
+COLLECTION_SUBMISSION_TRANSITIONS = [
+    {
+        'trigger': 'submit',
+        'source': [CollectionSubmissionStates.IN_PROGRESS],
+        'dest': CollectionSubmissionStates.PENDING,
+        'before': [],
+        'after': ['_on_submit'],
+    },
+    {
+        'trigger': 'accept',
+        'source': [CollectionSubmissionStates.PENDING],
+        'dest': CollectionSubmissionStates.ACCEPTED,
+        'before': [],
+        'after': ['_on_accept'],
+    },
+    {
+        'trigger': 'reject',
+        'source': [CollectionSubmissionStates.PENDING],
+        'dest': CollectionSubmissionStates.REJECTED,
+        'before': [],
+        'after': ['_on_reject'],
+    },
+    {
+        'trigger': 'moderator_remove',
+        'source': [CollectionSubmissionStates.ACCEPTED],
+        'dest': CollectionSubmissionStates.REMOVED,
+        'before': [],
+        'after': ['_on_moderator_remove'],
+    },
+    {
+        'trigger': 'admin_remove',
+        'source': [CollectionSubmissionStates.ACCEPTED],
+        'dest': CollectionSubmissionStates.REMOVED,
+        'before': [],
+        'after': ['_on_admin_remove'],
+    },
+    {
+        'trigger': 'resubmit',
+        'source': [CollectionSubmissionStates.REJECTED],
+        'dest': CollectionSubmissionStates.PENDING,
+        'before': [],
+        'after': ['_on_resubmit'],
+    },
+    {
+        'trigger': 'resubmit',
+        'source': [CollectionSubmissionStates.REMOVED],
+        'dest': CollectionSubmissionStates.PENDING,
+        'before': [],
+        'after': ['_on_resubmit'],
     },
 ]
 
