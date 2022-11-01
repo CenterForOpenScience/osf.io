@@ -79,5 +79,3 @@ class CollectionSubmissionActionList(JSONAPIBaseView, generics.CreateAPIView, ge
             'CollectionSubmission',
         )
         return collection_submission.actions.all()
-
-

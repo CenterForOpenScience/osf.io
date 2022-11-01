@@ -109,10 +109,6 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
     def _id(self):
         return '{}-{}'.format(self.guid._id, self.collection._id)
 
-    @cached_property
-    def parent(self):
-        return self.guid.referent
-
     @classmethod
     def load(cls, data, select_for_update=False):
         try:
@@ -408,5 +404,3 @@ def create_submission_action(sender, instance, created, **kwargs):
             creator=instance.creator,
             comment='Initial submission action'
         )
-
-

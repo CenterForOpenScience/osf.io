@@ -50,7 +50,6 @@ class ApprovalStates(ModerationEnum):
     MODERATOR_REJECTED = 5
     COMPLETED = 6  # Embargo only
     IN_PROGRESS = 7  # Revisions only
-    REMOVED = 8  # CollectionSubmission only
 
 
 class CollectionSubmissionStates(ModerationEnum):
