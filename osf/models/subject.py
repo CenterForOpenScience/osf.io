@@ -1,17 +1,16 @@
 # -*- coding: utf-8 -*-
 from dirtyfields import DirtyFieldsMixin
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 from django.core.exceptions import ValidationError
 from django.utils.functional import cached_property
-from include import IncludeQuerySet
 
 from website.util import api_v2_url
 
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.validators import validate_subject_hierarchy_length, validate_subject_highlighted_count
 
-class SubjectQuerySet(IncludeQuerySet):
+class SubjectQuerySet(QuerySet):
     def include_children(self):
         # It would be more efficient to OR self with the latter two Q's,
         # but this breaks for certain querysets when relabeling aliases.
@@ -32,7 +31,8 @@ class Subject(ObjectIDMixin, BaseModel, DirtyFieldsMixin):
         base_manager_name = 'objects'
         unique_together = ('text', 'provider')
         permissions = (
-            ('view_subject', 'Can view subject details'),
+            # Clashes with built-in permissions
+            # ('view_subject', 'Can view subject details'),
         )
 
     def __unicode__(self):

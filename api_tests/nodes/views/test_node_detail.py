@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-import mock
-import pytest
+from django.utils import timezone
 from future.moves.urllib.parse import urlparse
+import mock
 from nose.tools import *  # noqa:
-
+import pytest
+from rest_framework import exceptions
 
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from api.base.settings.defaults import API_BASE
@@ -33,7 +34,6 @@ from osf_tests.factories import (
     WithdrawnRegistrationFactory,
     DraftNodeFactory,
 )
-from rest_framework import exceptions
 from tests.base import fake
 from tests.utils import assert_latest_log, assert_latest_log_not
 from website.views import find_bookmark_collection
@@ -480,8 +480,12 @@ class TestNodeDetail:
         assert res.json['data']['relationships']['linked_by_nodes']['links']['related']['meta']['count'] == 1
         assert res.json['data']['relationships']['linked_by_registrations']['links']['related']['meta']['count'] == 1
 
+        log_date = timezone.now()
+        project_private.deleted_date = log_date
+        project_private.deleted = log_date
         project_private.is_deleted = True
         project_private.save()
+        registration.reload()
         project_public.reload()
 
         res = app.get(url)

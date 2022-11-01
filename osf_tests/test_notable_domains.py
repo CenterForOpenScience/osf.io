@@ -120,170 +120,219 @@ class TestNotableDomain:
 @pytest.mark.django_db
 @pytest.mark.enable_enqueue_task
 class TestNotableDomainReclassification:
-    @pytest.fixture()
-    def spam_domain_one(self):
-        return urlparse('http://spammy-domain.io')
+    spam_domain_one = urlparse('http://spammy-domain.io')
+    spam_domain_two = urlparse('http://prosciutto-crudo.io')
+    unknown_domain = urlparse('https://unknown-domain.io')
+    ignored_domain = urlparse('https://cos.io')
 
     @pytest.fixture()
-    def spam_domain_two(self):
-        return urlparse('http://prosciutto-crudo.io')
-
-    @pytest.fixture()
-    def unknown_domain(self):
-        return urlparse('https://uknown-domain.io')
-
-    @pytest.fixture()
-    def ignored_domain(self):
-        return urlparse('https://cos.io')
-
-    @pytest.fixture()
-    def spam_notable_domain_one(self, spam_domain_one):
+    def spam_notable_domain_one(self):
         return NotableDomain.objects.create(
-            domain=spam_domain_one.netloc,
+            domain=self.spam_domain_one.netloc,
             note=NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT,
         )
 
     @pytest.fixture()
-    def spam_notable_domain_two(self, spam_domain_two):
+    def spam_notable_domain_two(self):
         return NotableDomain.objects.create(
-            domain=spam_domain_two.netloc,
+            domain=self.spam_domain_two.netloc,
             note=NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT,
         )
 
     @pytest.fixture()
-    def unknown_notable_domain(self, unknown_domain):
+    def unknown_notable_domain(self):
         return NotableDomain.objects.create(
-            domain=unknown_domain.netloc,
+            domain=self.unknown_domain.netloc,
             note=NotableDomain.Note.UNKNOWN,
         )
 
     @pytest.fixture()
-    def ignored_notable_domain(self, ignored_domain):
+    def ignored_notable_domain(self):
         return NotableDomain.objects.create(
-            domain=ignored_domain.netloc,
+            domain=self.ignored_domain.netloc,
             note=NotableDomain.Note.IGNORED,
         )
 
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
-    def test_from_spam_to_unknown(self, factory, spam_domain_one, spam_domain_two, unknown_domain, ignored_domain, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
+    def test_from_spam_to_unknown_one_spam_domain(self, factory, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
         obj_one = factory()
-        obj_two = factory()
         check_resource_for_domains.apply_async(
             kwargs=dict(
                 guid=obj_one.guids.first()._id,
-                content=f'{spam_domain_one.geturl()} {unknown_domain.geturl()} {ignored_domain.geturl()}',
-            )
-        )
-        check_resource_for_domains.apply_async(
-            kwargs=dict(
-                guid=obj_two.guids.first()._id,
-                content=f'{spam_domain_one.geturl()} {spam_domain_two.geturl()} {unknown_domain.geturl()} {ignored_domain.geturl()}',
+                content=f'{self.spam_domain_one.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
             )
         )
         obj_one.reload()
-        obj_two.reload()
         assert obj_one.spam_status == SpamStatus.SPAM
-        assert obj_two.spam_status == SpamStatus.SPAM
-        assert set(obj_one.spam_data['domains']) == set([spam_domain_one.netloc])
-        assert set(obj_two.spam_data['domains']) == set([spam_domain_one.netloc, spam_domain_two.netloc])
+        assert set(obj_one.spam_data['domains']) == set([self.spam_domain_one.netloc])
         spam_notable_domain_one.note = NotableDomain.Note.UNKNOWN
         spam_notable_domain_one.save()
         obj_one.reload()
-        obj_two.reload()
         assert obj_one.spam_status == SpamStatus.UNKNOWN
-        assert obj_two.spam_status == SpamStatus.SPAM
         assert len(obj_one.spam_data['domains']) == 0
-        assert set(obj_two.spam_data['domains']) == set([spam_domain_two.netloc])
 
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
-    def test_from_spam_to_ignored(self, factory, spam_domain_one, spam_domain_two, unknown_domain, ignored_domain, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
-        obj_one = factory()
+    def test_from_spam_to_unknown_two_spam_domains(self, factory, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
         obj_two = factory()
         check_resource_for_domains.apply_async(
             kwargs=dict(
-                guid=obj_one.guids.first()._id,
-                content=f'{spam_domain_one.geturl()} {unknown_domain.geturl()} {ignored_domain.geturl()}',
+                guid=obj_two.guids.first()._id,
+                content=f'{self.spam_domain_one.geturl()} {self.spam_domain_two.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
             )
         )
+        obj_two.reload()
+        assert obj_two.spam_status == SpamStatus.SPAM
+        assert set(obj_two.spam_data['domains']) == set([self.spam_domain_one.netloc, self.spam_domain_two.netloc])
+        spam_notable_domain_one.note = NotableDomain.Note.UNKNOWN
+        spam_notable_domain_one.save()
+        obj_two.reload()
+        assert obj_two.spam_status == SpamStatus.SPAM
+        assert set(obj_two.spam_data['domains']) == set([self.spam_domain_two.netloc])
+
+    @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
+    def test_from_spam_to_unknown_marked_by_external(self, factory, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
+        obj_three = factory()
+        obj_three.spam_data['who_flagged'] = 'some external spam checker'
+        obj_three.save()
         check_resource_for_domains.apply_async(
             kwargs=dict(
-                guid=obj_two.guids.first()._id,
-                content=f'{spam_domain_one.geturl()} {spam_domain_two.geturl()} {unknown_domain.geturl()} {ignored_domain.geturl()}',
+                guid=obj_three.guids.first()._id,
+                content=f'{self.spam_domain_one.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
+            )
+        )
+        obj_three.reload()
+        assert obj_three.spam_status == SpamStatus.SPAM
+        assert set(obj_three.spam_data['domains']) == set([self.spam_domain_one.netloc])
+        spam_notable_domain_one.note = NotableDomain.Note.UNKNOWN
+        spam_notable_domain_one.save()
+        obj_three.reload()
+        assert obj_three.spam_status == SpamStatus.SPAM
+        assert len(obj_three.spam_data['domains']) == 0
+
+    @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
+    def test_from_spam_to_ignored_one_spam_domain(self, factory, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
+        obj_one = factory()
+        check_resource_for_domains.apply_async(
+            kwargs=dict(
+                guid=obj_one.guids.first()._id,
+                content=f'{self.spam_domain_one.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
             )
         )
         obj_one.reload()
-        obj_two.reload()
         assert obj_one.spam_status == SpamStatus.SPAM
-        assert obj_two.spam_status == SpamStatus.SPAM
-        assert set(obj_one.spam_data['domains']) == set([spam_domain_one.netloc])
-        assert set(obj_two.spam_data['domains']) == set([spam_domain_one.netloc, spam_domain_two.netloc])
+        assert set(obj_one.spam_data['domains']) == set([self.spam_domain_one.netloc])
         spam_notable_domain_one.note = NotableDomain.Note.IGNORED
         spam_notable_domain_one.save()
         obj_one.reload()
-        obj_two.reload()
         assert obj_one.spam_status == SpamStatus.UNKNOWN
-        assert obj_two.spam_status == SpamStatus.SPAM
         assert len(obj_one.spam_data['domains']) == 0
-        assert set(obj_two.spam_data['domains']) == set([spam_domain_two.netloc])
 
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
-    def test_from_unknown_to_spam(self, factory, unknown_domain, ignored_domain, unknown_notable_domain, ignored_notable_domain):
-        obj_one = factory()
+    def test_from_spam_to_ignored_two_spam_domains(self, factory, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
         obj_two = factory()
         check_resource_for_domains.apply_async(
             kwargs=dict(
-                guid=obj_one.guids.first()._id,
-                content=f'{unknown_domain.geturl()} {ignored_domain.geturl()}',
+                guid=obj_two.guids.first()._id,
+                content=f'{self.spam_domain_one.geturl()} {self.spam_domain_two.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
             )
         )
+        obj_two.reload()
+        assert obj_two.spam_status == SpamStatus.SPAM
+        assert set(obj_two.spam_data['domains']) == set([self.spam_domain_one.netloc, self.spam_domain_two.netloc])
+        spam_notable_domain_one.note = NotableDomain.Note.IGNORED
+        spam_notable_domain_one.save()
+        obj_two.reload()
+        assert obj_two.spam_status == SpamStatus.SPAM
+        assert set(obj_two.spam_data['domains']) == set([self.spam_domain_two.netloc])
+
+    @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
+    def test_from_spam_to_ignored_makred_by_external(self, factory, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
+        obj_three = factory()
+        obj_three.spam_data['who_flagged'] = 'some external spam checker'
+        obj_three.save()
         check_resource_for_domains.apply_async(
             kwargs=dict(
-                guid=obj_two.guids.first()._id,
-                content=f'{unknown_domain.geturl()}',
+                guid=obj_three.guids.first()._id,
+                content=f'{self.spam_domain_one.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
+            )
+        )
+        obj_three.reload()
+        assert obj_three.spam_status == SpamStatus.SPAM
+        assert set(obj_three.spam_data['domains']) == set([self.spam_domain_one.netloc])
+        spam_notable_domain_one.note = NotableDomain.Note.IGNORED
+        spam_notable_domain_one.save()
+        obj_three.reload()
+        assert obj_three.spam_status == SpamStatus.SPAM
+        assert len(obj_three.spam_data['domains']) == 0
+
+    @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
+    def test_from_unknown_to_spam_unknown_plus_ignored(self, factory, unknown_notable_domain, ignored_notable_domain):
+        obj_one = factory()
+        check_resource_for_domains.apply_async(
+            kwargs=dict(
+                guid=obj_one.guids.first()._id,
+                content=f'{self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
             )
         )
         obj_one.reload()
-        obj_two.reload()
         assert obj_one.spam_status == SpamStatus.UNKNOWN
-        assert obj_two.spam_status == SpamStatus.UNKNOWN
         assert 'domains' not in obj_one.spam_data
-        assert 'domains' not in obj_two.spam_data
         unknown_notable_domain.note = NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT
         unknown_notable_domain.save()
         obj_one.reload()
-        obj_two.reload()
         assert obj_one.spam_status == SpamStatus.SPAM
-        assert obj_two.spam_status == SpamStatus.SPAM
-        assert set(obj_one.spam_data['domains']) == set([unknown_domain.netloc])
-        assert set(obj_two.spam_data['domains']) == set([unknown_domain.netloc])
+        assert set(obj_one.spam_data['domains']) == set([self.unknown_domain.netloc])
 
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
-    def test_from_ignored_to_spam(self, factory, unknown_domain, ignored_domain, unknown_notable_domain, ignored_notable_domain):
-        obj_one = factory()
+    def test_from_unknown_to_spam_unknown_only(self, factory, unknown_notable_domain, ignored_notable_domain):
         obj_two = factory()
         check_resource_for_domains.apply_async(
             kwargs=dict(
-                guid=obj_one.guids.first()._id,
-                content=f'{unknown_domain.geturl()} {ignored_domain.geturl()}',
+                guid=obj_two.guids.first()._id,
+                content=f'{self.unknown_domain.geturl()}',
             )
         )
+        obj_two.reload()
+        assert obj_two.spam_status == SpamStatus.UNKNOWN
+        assert 'domains' not in obj_two.spam_data
+        unknown_notable_domain.note = NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT
+        unknown_notable_domain.save()
+        obj_two.reload()
+        assert obj_two.spam_status == SpamStatus.SPAM
+        assert set(obj_two.spam_data['domains']) == set([self.unknown_domain.netloc])
+
+    @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
+    def test_from_ignored_to_spam_unknown_plus_ignored(self, factory, unknown_notable_domain, ignored_notable_domain):
+        obj_one = factory()
         check_resource_for_domains.apply_async(
             kwargs=dict(
-                guid=obj_two.guids.first()._id,
-                content=f'{ignored_domain.geturl()}',
+                guid=obj_one.guids.first()._id,
+                content=f'{self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
             )
         )
         obj_one.reload()
-        obj_two.reload()
         assert obj_one.spam_status == SpamStatus.UNKNOWN
-        assert obj_two.spam_status == SpamStatus.UNKNOWN
         assert 'domains' not in obj_one.spam_data
-        assert 'domains' not in obj_two.spam_data
         ignored_notable_domain.note = NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT
         ignored_notable_domain.save()
         obj_one.reload()
-        obj_two.reload()
         assert obj_one.spam_status == SpamStatus.SPAM
+        assert set(obj_one.spam_data['domains']) == set([self.ignored_domain.netloc])
+
+    @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
+    def test_from_ignored_to_spam_ignored_only(self, factory, unknown_notable_domain, ignored_notable_domain):
+        obj_two = factory()
+        check_resource_for_domains.apply_async(
+            kwargs=dict(
+                guid=obj_two.guids.first()._id,
+                content=f'{self.ignored_domain.geturl()}',
+            )
+        )
+        obj_two.reload()
+        assert obj_two.spam_status == SpamStatus.UNKNOWN
+        assert 'domains' not in obj_two.spam_data
+        ignored_notable_domain.note = NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT
+        ignored_notable_domain.save()
+        obj_two.reload()
         assert obj_two.spam_status == SpamStatus.SPAM
-        assert set(obj_one.spam_data['domains']) == set([ignored_domain.netloc])
-        assert set(obj_two.spam_data['domains']) == set([ignored_domain.netloc])
+        assert set(obj_two.spam_data['domains']) == set([self.ignored_domain.netloc])

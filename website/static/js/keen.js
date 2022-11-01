@@ -7,6 +7,7 @@ var Raven = require('raven-js');
 var Cookie = require('js-cookie');
 var lodashGet = require('lodash.get');
 var keenTracking = require('keen-tracking');
+var $osf = require('js/osfHelpers');
 
 var KeenTracker = (function() {
 
@@ -24,6 +25,7 @@ var KeenTracker = (function() {
         expDate.setTime(expDate.getTime() + (expiresInMinutes * 60 * 1000));
         var currentSessionId = Cookie.get('keenSessionId') || keenTracking.helpers.getUniqueId();
         Cookie.set('keenSessionId', currentSessionId, {expires: expDate, path: '/'});
+        return currentSessionId;
     }
 
     function _getOrCreateKeenId() {
@@ -116,32 +118,48 @@ var KeenTracker = (function() {
         });
     }
 
-    function _trackCustomEvents(client, events) {
-        if (client === null) {
-            return;
-        }
-        client.recordEvents(events, function (err, res) {
-            if (err) {
-                // If google analytics is inaccessible keen will throw errors
-                var adBlockError = document.getElementsByTagName('iframe').item(0) === null;
-                var uselessError = 'An error occurred!' === err;
-                if(!adBlockError || !uselessError) {
-                    Raven.captureMessage('Error sending Keen data for multiple events: <' + err + '>', {
-                        extra: {payload: events}
-                    });
-                }
-            } else {
-                for (var collection in res) {
-                    var results = res[collection];
-                    for (var idx in results) {
-                        if (!results[idx].success) {
-                            Raven.captureMessage('Error sending Keen data to ' + collection + '.', {
-                                extra: {payload: events[collection][idx]}
-                            });
-                        }
-                    }
-                }
-            }
+    function _pageIsPublic() {
+        return Boolean(
+            lodashGet(window, 'contextVars.node.isPublic', false) &&
+            lodashGet(window, 'contextVars.analyticsMeta.pageMeta.public', false)
+        );
+    }
+
+    function _getActionLabels() {
+        const actionLabelMap = {
+            'web': true,
+            'view': Boolean(lodashGet(window, 'contextVars.analyticsMeta.itemGuid')),
+            'search': Boolean(lodashGet(window, 'contextVars.analyticsMeta.searchProviderId')),
+        };
+        return (
+            Object.keys(actionLabelMap)
+            .filter(label => Boolean(actionLabelMap[label]))
+        );
+    }
+
+    function _logPageview() {
+        const url = new URL('/_/metrics/events/counted_usage/', window.contextVars.apiV2Domain);
+        const sessionId = _createOrUpdateKeenSession();
+        const data = {
+            type: 'counted-usage',
+            attributes: {
+                client_session_id: sessionId ? md5(sessionId) : null,
+                provider_id: lodashGet(window, 'contextVars.analyticsMeta.searchProviderId'),
+                item_guid: lodashGet(window, 'contextVars.analyticsMeta.itemGuid'),
+                item_public: _pageIsPublic(),
+                action_labels: _getActionLabels(),
+                pageview_info: {
+                    referer_url: document.referrer,
+                    page_url: document.URL,
+                    page_title: document.title,
+                    route_name: lodashGet(window, 'contextVars.analyticsMeta.pageMeta.routeName'),
+                },
+            },
+        };
+
+        $osf.ajaxJSON('POST', url.toString(), {
+            isCors: true,
+            data: {data},
         });
     }
 
@@ -218,11 +236,11 @@ var KeenTracker = (function() {
             };
 
             self.trackPageView = function () {
+                _logPageview();
+
                 var self = this;
                 var guid;
-                if (lodashGet(window, 'contextVars.node.isPublic', false) &&
-                    lodashGet(window, 'contextVars.analyticsMeta.pageMeta.public', false)) {
-
+                if (_pageIsPublic()) {
                     guid = lodashGet(window, 'contextVars.node.id', null);
                     if (guid) {
                         var partitioned_collection = 'pageviews-' + guid.charAt(0);
@@ -235,15 +253,9 @@ var KeenTracker = (function() {
             self.trackPrivateEvent = function(collection, event) {
                 return _trackCustomEvent(self._privateClient, collection, event);
             };
-            self.trackPrivateEvents = function(events) {
-                return _trackCustomEvents(self._privateClient, events);
-            };
 
             self.trackPublicEvent = function(collection, event) {
                 return _trackCustomEvent(self._publicClient, collection, event);
-            };
-            self.trackPublicEvents = function(events) {
-                return _trackCustomEvents(self._publicClient, events);
             };
         }
     }
