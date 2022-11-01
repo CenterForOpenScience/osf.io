@@ -127,7 +127,7 @@ class TestCollectionSubmissionsActionsListPOSTPermissions:
 
     @pytest.mark.parametrize('moderator_trigger', [CollectionSubmissionsTriggers.ACCEPT, CollectionSubmissionsTriggers.REJECT])
     def test_status_code__collection_moderator_accept_reject_moderated(self, app, node, collection_submission, moderator_trigger):
-        collection_submission.to_PENDING()
+        collection_submission.state_machine.set_state(CollectionSubmissionStates.PENDING)
         collection_submission.save()
         test_auth = configure_test_auth(node, UserRoles.MODERATOR)
         resp = app.post_json_api(POST_URL, make_payload(
@@ -139,7 +139,7 @@ class TestCollectionSubmissionsActionsListPOSTPermissions:
     @pytest.mark.parametrize('moderator_trigger', [CollectionSubmissionsTriggers.ACCEPT, CollectionSubmissionsTriggers.REJECT])
     @pytest.mark.parametrize('user_role', UserRoles.excluding(UserRoles.MODERATOR))
     def test_status_code__non_moderator_accept_reject_moderated(self, app, node, collection_submission, moderator_trigger, user_role):
-        collection_submission.to_PENDING()
+        collection_submission.state_machine.set_state(CollectionSubmissionStates.PENDING)
         collection_submission.save()
         test_auth = configure_test_auth(node, user_role)
         resp = app.post_json_api(POST_URL, make_payload(
@@ -149,12 +149,44 @@ class TestCollectionSubmissionsActionsListPOSTPermissions:
         expected_code = 403 if user_role is not UserRoles.UNAUTHENTICATED else 401
         assert resp.status_code == expected_code
 
+    @pytest.mark.parametrize('user_role', UserRoles.excluding(*[UserRoles.MODERATOR, UserRoles.ADMIN_USER]))
+    def test_status_code__non_moderator_admin_remove(self, app, node, collection_submission, user_role):
+        collection_submission.state_machine.set_state(CollectionSubmissionStates.ACCEPTED)
+        collection_submission.save()
+        test_auth = configure_test_auth(node, user_role)
+        resp = app.post_json_api(POST_URL, make_payload(
+            collection_submission=collection_submission,
+            trigger=CollectionSubmissionsTriggers.REMOVE.db_name
+        ), auth=test_auth, expect_errors=True)
+        expected_code = 403 if user_role is not UserRoles.UNAUTHENTICATED else 401
+        assert resp.status_code == expected_code
+
+    @pytest.mark.parametrize('user_role', [UserRoles.MODERATOR, UserRoles.ADMIN_USER])
+    def test_status_code__remove(self, app, node, collection_submission, user_role):
+        collection_submission.state_machine.set_state(CollectionSubmissionStates.ACCEPTED)
+        collection_submission.save()
+        test_auth = configure_test_auth(node, user_role)
+        resp = app.post_json_api(POST_URL, make_payload(
+            collection_submission=collection_submission,
+            trigger=CollectionSubmissionsTriggers.REMOVE.db_name
+        ), auth=test_auth, expect_errors=True)
+        assert resp.status_code == 201
+
 
 @pytest.mark.django_db
 class TestSubmissionsActionsListPOSTBehavior:
 
+    @pytest.mark.parametrize('state', CollectionSubmissionStates.excluding(CollectionSubmissionStates.IN_PROGRESS))
+    def test_POST_submit__fails(self, state, app, node, collection_submission):
+        collection_submission.state_machine.set_state(state)
+        collection_submission.save()
+        test_auth = configure_test_auth(node, UserRoles.MODERATOR)
+        payload = make_payload(collection_submission, trigger=CollectionSubmissionsTriggers.SUBMIT.db_name)
+        resp = app.post_json_api(POST_URL, payload, auth=test_auth, expect_errors=True)
+        assert resp.status_code == 409
+
     def test_POST_accept__writes_action_and_advances_state(self, app, collection_submission, node):
-        collection_submission.to_PENDING()
+        collection_submission.state_machine.set_state(CollectionSubmissionStates.PENDING)
         collection_submission.save()
         test_auth = configure_test_auth(node, UserRoles.MODERATOR)
         payload = make_payload(collection_submission, trigger=CollectionSubmissionsTriggers.ACCEPT.db_name)
@@ -169,6 +201,53 @@ class TestSubmissionsActionsListPOSTBehavior:
         assert action.to_state == CollectionSubmissionStates.ACCEPTED
         assert collection_submission.state is CollectionSubmissionStates.ACCEPTED
 
+    def test_POST_reject__writes_action_and_advances_state(self, app, collection_submission, node):
+        collection_submission.state_machine.set_state(CollectionSubmissionStates.PENDING)
+        collection_submission.save()
+        test_auth = configure_test_auth(node, UserRoles.MODERATOR)
+        payload = make_payload(collection_submission, trigger=CollectionSubmissionsTriggers.REJECT.db_name)
+        app.post_json_api(POST_URL, payload, auth=test_auth)
+        user = collection_submission.collection.provider.get_group('moderator').user_set.first()
+        collection_submission.refresh_from_db()
+        action = collection_submission.actions.last()
+
+        assert action.trigger == CollectionSubmissionsTriggers.REJECT
+        assert action.creator == user
+        assert action.from_state == CollectionSubmissionStates.PENDING
+        assert action.to_state == CollectionSubmissionStates.REJECTED
+        assert collection_submission.state is CollectionSubmissionStates.REJECTED
+
+    def test_POST_remove__writes_action_and_advances_state(self, app, collection_submission, node):
+        collection_submission.state_machine.set_state(CollectionSubmissionStates.ACCEPTED)
+        collection_submission.save()
+        test_auth = configure_test_auth(node, UserRoles.MODERATOR)
+        payload = make_payload(collection_submission, trigger=CollectionSubmissionsTriggers.REMOVE.db_name)
+        app.post_json_api(POST_URL, payload, auth=test_auth)
+        user = collection_submission.collection.provider.get_group('moderator').user_set.first()
+        collection_submission.refresh_from_db()
+        action = collection_submission.actions.last()
+
+        assert action.trigger == CollectionSubmissionsTriggers.REMOVE
+        assert action.creator == user
+        assert action.from_state == CollectionSubmissionStates.ACCEPTED
+        assert action.to_state == CollectionSubmissionStates.REMOVED
+        assert collection_submission.state is CollectionSubmissionStates.REMOVED
+
+    def test_POST_resubmit__writes_action_and_advances_state(self, app, collection_submission, node):
+        collection_submission.state_machine.set_state(CollectionSubmissionStates.REMOVED)
+        collection_submission.save()
+        test_auth = configure_test_auth(node, UserRoles.ADMIN_USER)
+        payload = make_payload(collection_submission, trigger=CollectionSubmissionsTriggers.RESUBMIT.db_name)
+        app.post_json_api(POST_URL, payload, auth=test_auth, expect_errors=True)
+        collection_submission.refresh_from_db()
+        action = collection_submission.actions.last()
+
+        assert action.trigger == CollectionSubmissionsTriggers.RESUBMIT
+        assert action.creator.username == test_auth[0]
+        assert action.from_state == CollectionSubmissionStates.REMOVED
+        assert action.to_state == CollectionSubmissionStates.PENDING
+        assert collection_submission.state is CollectionSubmissionStates.PENDING
+
     @pytest.mark.parametrize('user_role', UserRoles)
     def test_status_code__deleted_collection_submission(self, app, node, collection_submission, user_role):
         node.deleted = timezone.now()
@@ -176,6 +255,22 @@ class TestSubmissionsActionsListPOSTBehavior:
         test_auth = configure_test_auth(node, user_role)
         resp = app.post_json_api(POST_URL, make_payload(collection_submission), auth=test_auth, expect_errors=True)
         assert resp.status_code == 410
+
+    @pytest.mark.parametrize('user_role', UserRoles.MODERATOR)
+    def test_status_code__private_collection(self, app, node, collection, collection_submission, user_role):
+        collection.is_public = False
+        collection.save()
+        test_auth = configure_test_auth(node, user_role)
+        resp = app.post_json_api(
+            POST_URL,
+            make_payload(
+                collection_submission,
+                trigger=CollectionSubmissionsTriggers.ACCEPT.db_name
+            ),
+            auth=test_auth,
+            expect_errors=True
+        )
+        assert resp.status_code == 201
 
 
 @pytest.mark.django_db
@@ -185,8 +280,6 @@ class TestCollectionSubmissionsActionsListUnsupportedMethods:
     def test_cannot_PATCH(self, app, user_role, node, collection_submission, collection_submission_action):
         auth = configure_test_auth(node, user_role)
         resp = app.patch_json_api(POST_URL.format(collection_submission_action._id), auth=auth, expect_errors=True)
-        print(resp.json)
-        print(resp.json)
         assert resp.status_code == 405
 
     @pytest.mark.parametrize('user_role', UserRoles)

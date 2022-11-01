@@ -10,7 +10,7 @@ from api.base.parsers import JSONSchemaParser
 from api.base.utils import get_user_auth, assert_resource_type
 from osf.models import AbstractNode, Preprint, Collection, CollectionSubmission, CollectionProvider
 from osf.utils.permissions import READ, WRITE, ADMIN
-from osf.utils.workflows import CollectionSubmissionsTriggers
+
 
 class CollectionReadOrPublic(permissions.BasePermission):
     def has_permission(self, request, view):
@@ -144,8 +144,7 @@ class OnlyAdminCanCreateDestroyCollectionSubmissionAction(permissions.BasePermis
         assert_resource_type(collection_submission, self.acceptable_models)
         auth = get_user_auth(request)
         if request.method == 'POST':
-            moderators = collection_submission.collection.provider.get_group('moderator').user_set.all()
-            return collection_submission.guid.referent.has_permission(auth.user, ADMIN) or auth.user in moderators
+            return collection_submission.guid.referent.has_permission(auth.user, ADMIN) or auth.user in collection_submission.moderators
         else:
             return False
 
@@ -167,20 +166,10 @@ class OnlyAdminCanCreateDestroyCollectionSubmissionAction(permissions.BasePermis
             guid___id=node_guid,
             collection__guids___id=collection_guid,
         )
-        if request.method == 'POST':
-            moderators = obj.collection.provider.get_group('moderator').user_set.all()
-            trigger = request_json['data']['attributes']['trigger']
-            # Check for moderator only triggers
-            if trigger in [
-                CollectionSubmissionsTriggers.REJECT.db_name,
-                CollectionSubmissionsTriggers.ACCEPT.db_name,
-                CollectionSubmissionsTriggers.MODERATOR_REMOVE.db_name,
-            ] and auth.user not in moderators:
-                return False
+        if obj.guid.referent.deleted:
+            raise Gone()
 
-            if obj.guid.referent.deleted:
-                raise Gone()
+        if request.method == 'POST':
             return self.has_object_permission(request, view, obj)
         elif request.method == 'GET':
-            moderators = obj.collection.provider.get_group('moderator').user_set.all()
-            return obj.guid.referent.has_permission(auth.user, ADMIN) or auth.user in moderators
+            return obj.guid.referent.has_permission(auth.user, ADMIN) or auth.user in obj.moderators

@@ -401,8 +401,3 @@ class CollectionSubmissionMachine(Machine):
             send_event=True,
             queued=True,
         )
-
-    def get_current_state(self):
-        # ApprovalsMachine should never have more than one model
-        model = self.models[0]
-        return self.get_model_state(model)

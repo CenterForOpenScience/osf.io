@@ -64,7 +64,7 @@ class CollectionSubmissionActionSerializer(JSONAPISerializer):
             kwargs={
                 'action_id': obj._id,
                 'version': self.context['request'].parser_context['kwargs']['version'],
-            }
+            },
         )
 
     def create(self, validated_data):
@@ -79,10 +79,10 @@ class CollectionSubmissionActionSerializer(JSONAPISerializer):
                 collection_submission.accept(user=user, comment=comment)
             elif trigger == CollectionSubmissionsTriggers.REJECT:
                 collection_submission.reject(user=user, comment=comment)
-            elif trigger == CollectionSubmissionsTriggers.MODERATOR_REMOVE:
-                collection_submission.reject(user=user, comment=comment)
-            elif trigger == CollectionSubmissionsTriggers.ADMIN_REMOVE:
-                collection_submission.reject(user=user, comment=comment)
+            elif trigger == CollectionSubmissionsTriggers.REMOVE:
+                collection_submission.remove(user=user, comment=comment)
+            elif trigger == CollectionSubmissionsTriggers.RESUBMIT:
+                collection_submission.resubmit(user=user, comment=comment)
             else:
                 raise JSONAPIAttributeException(attribute='trigger', detail='Invalid trigger.')
         except PermissionsError as exc:

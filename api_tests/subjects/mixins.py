@@ -60,7 +60,7 @@ class SubjectsFilterMixin(object):
         actual = set([obj['id'] for obj in res.json['data']])
         assert expected == actual
 
-        expected = set([f'{resource_two._id}-{resource_two.collection._id}'])
+        expected = set([resource_two._id])
         res = app.get(
             '{}{}&version=2.2'.format(has_subject, subject_two._id),
             auth=user.auth

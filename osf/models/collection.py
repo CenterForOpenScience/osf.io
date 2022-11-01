@@ -12,13 +12,13 @@ from django.utils.functional import cached_property
 from django.utils import timezone
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 from framework.celery_tasks.handlers import enqueue_task
+from framework.exceptions import PermissionsError
 
 from osf.models.base import BaseModel, GuidMixin
 from osf.models.mixins import GuardianMixin, TaxonomizableMixin
 from osf.models.validators import validate_title
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.permissions import ADMIN
-from osf.utils.workflows import ApprovalStates
 from osf.exceptions import NodeStateError
 from website.util import api_v2_url
 from website.search.exceptions import SearchUnavailableError
@@ -63,25 +63,44 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         '''Property to translate between ApprovalState Enum and DB string.'''
         return CollectionSubmissionStates(self.machine_state)
 
+    @property
+    def provider(self):
+        return self.collection.provider
+
+    @property
+    def moderators(self):
+        return self.provider.get_group('moderator').user_set.all()
+
     @state.setter
     def state(self, new_state):
         self.machine_state = new_state.value
-
-    def _validate_trigger(self, event_data):
-        pass
 
     def _on_submit(self, event_data):
         self.submitted_timestamp = timezone.now()
 
     def _on_accept(self, event_data):
-        pass
+        user = event_data.kwargs['user']
+        if user not in self.moderators:
+            raise PermissionsError(f'{user} must have moderator permissions.')
 
+    # trigger = request_json['data']['attributes']['trigger']
+    # # Check for moderator only triggers
+    # if trigger in [
+    #     CollectionSubmissionsTriggers.REJECT.db_name,
+    #     CollectionSubmissionsTriggers.ACCEPT.db_name,
+    #     CollectionSubmissionsTriggers.MODERATOR_REMOVE.db_name,
+    # ] and auth.user not in moderators:
+    #     return False
     def _on_reject(self, event_data):
+        user = event_data.kwargs['user']
+        if user not in self.moderators:
+            raise PermissionsError(f'{user} must have moderator permissions.')
+
+    def _on_remove(self, event_data):
         pass
 
-    @property
-    def is_moderated(self):
-        return True
+    def _on_resubmit(self, event_data):
+        pass
 
     def _save_transition(self, event_data):
         '''Save changes here and write the action.'''
@@ -89,7 +108,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         from_state = CollectionSubmissionStates[event_data.transition.source]
         to_state = self.state
 
-        trigger = CollectionSubmissionsTriggers.from_transition(from_state, to_state)
+        trigger = CollectionSubmissionsTriggers.from_db_name(event_data.event.name)
         if trigger is None:
             return
 
@@ -400,8 +419,8 @@ class CollectionGroupObjectPermission(GroupObjectPermissionBase):
 def create_submission_action(sender, instance, created, **kwargs):
     if created:
         instance.actions.create(
-            from_state=ApprovalStates.IN_PROGRESS,
-            to_state=ApprovalStates.PENDING_MODERATION,
+            from_state=CollectionSubmissionStates.IN_PROGRESS,
+            to_state=CollectionSubmissionStates.PENDING,
             trigger=CollectionSubmissionsTriggers.SUBMIT,
             creator=instance.creator,
             comment='Initial submission action'

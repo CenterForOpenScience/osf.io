@@ -27,6 +27,10 @@ class ModerationEnum(IntEnum):
     def db_name(self):
         return self.name.lower()
 
+    @classmethod
+    def excluding(cls, *excluded_roles):
+        return [role for role in cls if role not in excluded_roles]
+
 
 class SanctionTypes(ModerationEnum):
     '''A simple descriptor for the type of a sanction class'''
@@ -180,22 +184,8 @@ class CollectionSubmissionsTriggers(ModerationEnum):
     SUBMIT = 0
     ACCEPT = 1
     REJECT = 2
-    ADMIN_REMOVE = 3
-    MODERATOR_REMOVE = 4
+    REMOVE = 3
     RESUBMIT = 5
-
-    @classmethod
-    def from_transition(cls, from_state, to_state):
-        transition_to_trigger_mappings = {
-            (CollectionSubmissionStates.IN_PROGRESS, CollectionSubmissionStates.PENDING): cls.SUBMIT,
-            (CollectionSubmissionStates.PENDING, CollectionSubmissionStates.ACCEPTED): cls.ACCEPT,
-            (CollectionSubmissionStates.PENDING, CollectionSubmissionStates.REJECTED): cls.REJECT,
-            (CollectionSubmissionStates.ACCEPTED, CollectionSubmissionStates.REMOVED): cls.ADMIN_REMOVE,
-            (CollectionSubmissionStates.ACCEPTED, CollectionSubmissionStates.REMOVED): cls.MODERATOR_REMOVE,
-            (CollectionSubmissionStates.REMOVED, CollectionSubmissionStates.PENDING): cls.RESUBMIT,
-            (CollectionSubmissionStates.REJECTED, CollectionSubmissionStates.PENDING): cls.RESUBMIT,
-        }
-        return transition_to_trigger_mappings.get((from_state, to_state))
 
 
 @unique
@@ -386,13 +376,6 @@ APPROVAL_TRANSITIONS = [
         'source': [ApprovalStates.REJECTED, ApprovalStates.MODERATOR_REJECTED],
         'dest': None,
     },
-    {
-        'trigger': 'moderator_remove',
-        'source': [ApprovalStates.APPROVED],
-        'dest': ApprovalStates.UNAPPROVED,
-        'before': ['_validate_trigger'],
-        'after': ['_on_reject'],
-    },
 ]
 
 
@@ -419,29 +402,15 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'after': ['_on_reject'],
     },
     {
-        'trigger': 'moderator_remove',
+        'trigger': 'remove',
         'source': [CollectionSubmissionStates.ACCEPTED],
         'dest': CollectionSubmissionStates.REMOVED,
         'before': [],
-        'after': ['_on_moderator_remove'],
-    },
-    {
-        'trigger': 'admin_remove',
-        'source': [CollectionSubmissionStates.ACCEPTED],
-        'dest': CollectionSubmissionStates.REMOVED,
-        'before': [],
-        'after': ['_on_admin_remove'],
+        'after': ['_on_remove'],
     },
     {
         'trigger': 'resubmit',
-        'source': [CollectionSubmissionStates.REJECTED],
-        'dest': CollectionSubmissionStates.PENDING,
-        'before': [],
-        'after': ['_on_resubmit'],
-    },
-    {
-        'trigger': 'resubmit',
-        'source': [CollectionSubmissionStates.REMOVED],
+        'source': [CollectionSubmissionStates.REJECTED, CollectionSubmissionStates.REMOVED],
         'dest': CollectionSubmissionStates.PENDING,
         'before': [],
         'after': ['_on_resubmit'],

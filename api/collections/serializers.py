@@ -263,7 +263,6 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
         if 'study_design' in validated_data:
             obj.study_design = validated_data.pop('study_design')
 
-        obj.submit(user=auth.user, comment='Initial Creation')
         obj.save()
         return obj
 
