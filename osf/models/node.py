@@ -1980,7 +1980,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         self.update_or_enqueue_on_node_updated(user_id, first_save, saved_fields)
 
         user = User.load(user_id)
-        if user and self.check_spam(user, saved_fields, request_headers):
+        if user and saved_fields != {'spam_status': None} and self.check_spam(user, saved_fields, request_headers):
             # Specifically call the super class save method to avoid recursion into model save method.
             super(AbstractNode, self).save()
 
