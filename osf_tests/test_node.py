@@ -4599,7 +4599,7 @@ class TestCollectionProperties:
         assert node.is_collected
         assert len(node.collecting_metadata_list) == 3
 
-        ids_actual = {cgm.collection._id for cgm in node.collecting_metadata_list}
+        ids_actual = {collection_submission.collection._id for collection_submission in node.collecting_metadata_list}
         ids_expected = {collection_one._id, collection_two._id, collection_public._id}
         ids_not_expected = {bookmark_collection._id, public_non_provided_collection._id, private_non_provided_collection._id}
 
@@ -4616,8 +4616,8 @@ class TestCollectionProperties:
         public_non_provided_collection.collect_object(node, collector)
         private_non_provided_collection.collect_object(node, collector)
         bookmark_collection.collect_object(node, collector)
-        cgm = collection_public.collect_object(node, collector, status='Complete', collected_type='Dataset')
-        cgm.set_subjects(subjects, Auth(collector))
+        collection_submission = collection_public.collect_object(node, collector, status='Complete', collected_type='Dataset')
+        collection_submission.set_subjects(subjects, Auth(collector))
 
         ## test_not_logged_in_user_only_sees_public_collection_info
         collection_summary = serialize_collections(node.collecting_metadata_list, Auth())
