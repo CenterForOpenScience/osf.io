@@ -12,7 +12,7 @@ from osf.utils import workflows as osfworkflows
 from website import settings as website_settings
 
 
-__all__ = ('gather_metadata', 'gather_deep_metadata',)
+__all__ = ('gather_guid_metadata', 'gather_deep_metadata',)
 
 
 OSF = rdfutils.OSF
@@ -20,7 +20,7 @@ DCT = rdflib.DCTERMS
 A = rdflib.RDF.type
 
 
-def gather_metadata(guid) -> rdflib.Graph:
+def gather_guid_metadata(guid) -> rdflib.Graph:
     rdf_graph = rdfutils.contextualized_graph()
     gatherer = MetadataGatherer(guid)
     for triple in gatherer.gather_triples():
@@ -60,9 +60,13 @@ class MetadataGatherer:
     def __init__(self, guid):
         if isinstance(guid, osfdb.Guid):
             self._guid = guid
-        elif isinstance(guid, str):
-            guid_id = rdfutils.try_guid_from_irl(guid) or guid
+        else:
+            if '/' in guid:
+                guid_id = rdfutils.try_guid_from_irl(guid)
+            else:
+                guid_id = guid
             self._guid = osfdb.Guid.load(guid_id)
+
         self.focus = self._guid.referent  # the "focus" is what to gather metadata about.
         self.focus_irl = rdfutils.guid_irl(self._guid)
 
@@ -120,7 +124,7 @@ class MetadataGatherer:
                 osfworkflows.DefaultTriggers.SUBMIT.db_name,
                 osfworkflows.RegistrationModerationTriggers.SUBMIT.db_name,
             ]
-            approval_triggers = [
+            accept_triggers = [
                 osfworkflows.DefaultTriggers.ACCEPT.db_name,
                 osfworkflows.RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name,
             ]
@@ -128,10 +132,10 @@ class MetadataGatherer:
                 # TODO: is `Min` what we want for multiple submit/accept actions?
                 #       could do `Max` instead, or include all their dates
                 date_submitted=Min('created', filter=Q(trigger__in=submit_triggers)),
-                date_approved=Min('created', filter=Q(trigger__in=approval_triggers)),
+                date_accepted=Min('created', filter=Q(trigger__in=accept_triggers)),
             )
             yield (DCT.dateSubmitted, action_dates.get('date_submitted'))
-            yield (DCT.dateAccepted, action_dates.get('date_approved'))
+            yield (DCT.dateAccepted, action_dates.get('date_accepted'))
             # TODO: withdrawn?
 
     def _gather_license(self):

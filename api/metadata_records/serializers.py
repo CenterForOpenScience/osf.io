@@ -1,7 +1,7 @@
 import rdflib
 import rest_framework.serializers as ser
 
-from osf.metadata.gather import gather_metadata
+from osf.metadata.gather import gather_guid_metadata
 from osf.metadata import rdfutils
 from api.base.utils import absolute_reverse
 
@@ -53,7 +53,7 @@ from api.base.utils import absolute_reverse
 
 class MetadataRecordJSONAPISerializer(ser.BaseSerializer):
     def to_representation(self, guid):
-        gathered_graph = gather_metadata(guid._id)
+        gathered_graph = gather_guid_metadata(guid)
         resource_builder = RdfToJsonapiResource(
             rdf_graph=gathered_graph,
             focus_iri=rdfutils.guid_irl(guid),
@@ -81,7 +81,7 @@ class MetadataRecordJSONAPISerializer(ser.BaseSerializer):
 
     def _get_included(self, to_include):
         for resource_iri in to_include:
-            included_graph = gather_metadata(resource_iri)
+            included_graph = gather_guid_metadata(resource_iri)
             builder = RdfToJsonapiResource(
                 rdf_graph=included_graph,
                 focus_iri=resource_iri,
