@@ -39,7 +39,7 @@ class CollectionSubmissionActionSerializer(JSONAPISerializer):
         related_view='collections:collected-metadata-detail',
         related_view_kwargs={
             'collection_id': '<target.collection._id>',
-            'cgm_id': '<target.guid._id>',
+            'collection_submission_id': '<target.guid._id>',
         },
         filter_key='target__guids___id',
     )
