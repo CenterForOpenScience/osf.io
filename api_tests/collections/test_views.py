@@ -2893,9 +2893,6 @@ class TestBulkDeleteCollectionNodeLinks:
             auth=user_one.auth, expect_errors=True, bulk=True
         )
         assert res.status_code == 400
-        errors = res.json['errors']
-        assert len(errors) == 1
-        assert errors[0]['detail'] == 'Node link does not belong to the requested node.'
 
 
 @pytest.mark.django_db
