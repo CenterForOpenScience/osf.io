@@ -44,6 +44,7 @@ from osf.models.admin_log_entry import (
     REINDEX_SHARE,
     REINDEX_ELASTIC,
 )
+from osf.utils.permissions import ADMIN
 
 from website import settings, search
 
@@ -127,11 +128,11 @@ class NodeRemoveContributorView(NodeMixin, View):
     def post(self, request, *args, **kwargs):
         node = self.get_object()
         user = OSFUser.objects.get(id=self.kwargs.get('user_id'))
-        if not node._get_admin_contributors_query(node._contributors.all()).exclude(user=user).exists():
+        if node.has_permission(user, ADMIN) and not node._get_admin_contributors_query(node._contributors.all(), require_active=False).exclude(user=user).exists():
             messages.error(self.request, 'Must be at least one admin on this node.')
             return redirect(self.get_success_url())
 
-        if node.remove_contributor(user, None, log=False):
+        if node.remove_contributor(user, None, log=False, _force=True):
             update_admin_log(
                 user_id=self.request.user.id,
                 object_id=node.pk,

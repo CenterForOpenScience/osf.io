@@ -489,7 +489,7 @@ class CollectionProviderSubmissionList(JSONAPIBaseView, generics.ListCreateAPIVi
     model_class = CollectionSubmission
     serializer_class = CollectionSubmissionSerializer
     view_category = 'collected-metadata'
-    view_name = 'provider-collected-metadata-list'
+    view_name = 'provider-collection-submission-list'
 
     def get_serializer_class(self):
         if self.request.method == 'POST':

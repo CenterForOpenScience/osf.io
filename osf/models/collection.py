@@ -131,15 +131,15 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
     @classmethod
     def load(cls, data, select_for_update=False):
         try:
-            cgm_id, collection_id = data.split('-')
+            collection_submission_id, collection_id = data.split('-')
         except ValueError:
             raise ValueError('Invalid CollectionSubmission object <_id {}>'.format(data))
         else:
-            if cgm_id and collection_id:
+            if collection_submission_id and collection_id:
                 try:
                     if isinstance(data, basestring):
-                        return (cls.objects.get(guid___id=cgm_id, collection__guids___id=collection_id) if not select_for_update
-                                else cls.objects.filter(guid___id=cgm_id, collection__guids___id=collection_id).select_for_update().get())
+                        return (cls.objects.get(guid___id=collection_submission_id, collection__guids___id=collection_id) if not select_for_update
+                                else cls.objects.filter(guid___id=collection_submission_id, collection__guids___id=collection_id).select_for_update().get())
                 except cls.DoesNotExist:
                     return None
             return None
@@ -250,10 +250,10 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
         return '{}linked_registrations/'.format(self.absolute_api_v2_url)
 
     @classmethod
-    def bulk_update_search(cls, cgms, op='update', index=None):
+    def bulk_update_search(cls, collection_submissions, op='update', index=None):
         from website import search
         try:
-            search.search.bulk_update_collected_metadata(cgms, op=op, index=index)
+            search.search.bulk_update_collected_metadata(collection_submissions, op=op, index=index)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
 
@@ -362,17 +362,17 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
         if self.collectionsubmission_set.filter(guid=obj.guids.first()).exists():
             raise ValidationError('Object already exists in collection.')
 
-        cgm = self.collectionsubmission_set.create(guid=obj.guids.first(), creator=collector)
-        cgm.collected_type = collected_type
-        cgm.status = status
-        cgm.volume = volume
-        cgm.issue = issue
-        cgm.program_area = program_area
-        cgm.school_type = school_type
-        cgm.study_design = study_design
-        cgm.save()
+        collection_submission = self.collectionsubmission_set.create(guid=obj.guids.first(), creator=collector)
+        collection_submission.collected_type = collected_type
+        collection_submission.status = status
+        collection_submission.volume = volume
+        collection_submission.issue = issue
+        collection_submission.program_area = program_area
+        collection_submission.school_type = school_type
+        collection_submission.study_design = study_design
+        collection_submission.save()
 
-        return cgm
+        return collection_submission
 
     def remove_object(self, obj):
         """ Removes object from collection
