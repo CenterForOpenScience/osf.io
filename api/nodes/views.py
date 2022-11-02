@@ -1563,8 +1563,10 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMi
         return self.get_node().get_logs_queryset(auth)
 
     def get_queryset(self):
-        return self.get_queryset_from_request().include(
-            'node__guids', 'user__guids', 'original_node__guids', limit_includes=10,
+        return self.get_queryset_from_request().prefetch_related(
+            'node__guids',
+            'user__guids',
+            'original_node__guids',
         )
 
 

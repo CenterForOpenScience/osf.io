@@ -1,37 +1,40 @@
 # -*- coding: utf-8 -*-
 import pytest
+from unittest.mock import patch, mock_open
 
 from waffle.models import Flag, Switch
-from osf.features import flags, switches
 from osf.management.commands.manage_switch_flags import manage_waffle
 
-@pytest.fixture()
-def test_switch(monkeypatch):
-    test_switches = switches.copy()
-    test_switches['TEST_SWITCH'] = 'new_test_switch'
-    monkeypatch.setattr('osf.management.commands.manage_switch_flags.switches', test_switches)
-    return test_switches
-
-@pytest.fixture()
-def test_flag(monkeypatch):
-    test_flags = flags.copy()
-    test_flags['TEST_FLAG'] = 'new_test_flag'
-    monkeypatch.setattr('osf.management.commands.manage_switch_flags.flags', test_flags)
-    return test_flags
-
 @pytest.mark.django_db
-def test_manage_flags(test_switch, test_flag, monkeypatch):
-    manage_waffle()
-    assert Flag.objects.filter(name='new_test_flag')
-    assert Switch.objects.filter(name='new_test_switch')
+class TestWaffleFlags():
 
-    monkeypatch.setattr('osf.management.commands.manage_switch_flags.flags', flags)
-    monkeypatch.setattr('osf.management.commands.manage_switch_flags.switches', switches)
+    @pytest.fixture()
+    def yaml_data(self):
+        return '''
+            flags:
+              - flag_name: TEST_FLAG
+                name: test_flag_page
+                note: This is for tests only
+                everyone: true
+            switches:
+              - flag_name: TEST_SWITCH
+                name: test_switch_page
+                note: This is for tests only
+                active: false
+        '''
 
-    manage_waffle()
-    assert Flag.objects.filter(name='new_test_flag')
-    assert Switch.objects.filter(name='new_test_switch')
+    def test_manage_flags(self, yaml_data):
+        with patch('builtins.open', mock_open(read_data=yaml_data)):
+            manage_waffle()
+        assert Flag.objects.all().count() == 1
+        assert Switch.objects.all().count() == 1
 
-    manage_waffle(True)
-    assert not Flag.objects.filter(name='new_test_flag')
-    assert not Switch.objects.filter(name='new_test_switch')
+    def test_manage_flags_delete(self, yaml_data):
+        Flag.objects.create(name='new_test_flag')
+        Switch.objects.create(name='new_test_flag')
+
+        with patch('builtins.open', mock_open(read_data=yaml_data)):
+            manage_waffle()
+        manage_waffle(delete_waffle=True)
+        assert not Flag.objects.filter(name='new_test_flag')
+        assert not Switch.objects.filter(name='new_test_switch')

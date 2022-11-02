@@ -25,7 +25,6 @@ from django.utils.functional import cached_property
 from keen import scoped_keys
 from psycopg2._psycopg import AsIs
 from typedmodels.models import TypedModel, TypedModelManager
-from include import IncludeManager
 from guardian.models import (
     GroupObjectPermissionBase,
     UserObjectPermissionBase,
@@ -55,7 +54,7 @@ from osf.models.user import OSFUser
 from osf.models.validators import validate_title, validate_doi
 from framework.auth.core import Auth
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.utils.fields import NonNaiveDateTimeField
+from osf.utils.fields import NonNaiveDateTimeField, ensure_str
 from osf.utils.requests import get_request_and_user_id, string_type_request_headers
 from osf.utils import sanitize
 from website import language, settings
@@ -178,7 +177,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
         return qs.filter(is_deleted=False)
 
 
-class AbstractNodeManager(TypedModelManager, IncludeManager):
+class AbstractNodeManager(TypedModelManager):
 
     def get_queryset(self):
         qs = AbstractNodeQuerySet(self.model, using=self._db)
@@ -330,7 +329,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     is_fork = models.BooleanField(default=False, db_index=True)
     is_public = models.BooleanField(default=False, db_index=True)
     is_deleted = models.BooleanField(default=False, db_index=True)
-    access_requests_enabled = models.NullBooleanField(default=True, db_index=True)
+    access_requests_enabled = models.BooleanField(null=True, blank=True, default=True, db_index=True)
 
     custom_citation = models.TextField(blank=True, null=True)
 
@@ -830,8 +829,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return NodeLog.objects.filter(
             node_id=self.id,
             should_hide=False
-        ).order_by('-date').include(
-            'node__guids', 'user__guids', 'original_node__guids', limit_includes=10
+        ).order_by('-date').prefetch_related(
+            'node__guids', 'user__guids', 'original_node__guids',
         )
 
     def get_absolute_url(self):
@@ -981,7 +980,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def osfstorage_region(self):
         from addons.osfstorage.models import Region
         osfs_settings = self._settings_model('osfstorage')
-        region_subquery = osfs_settings.objects.filter(owner=self.id).values('region_id')
+        region_subquery = osfs_settings.objects.filter(owner=self.id).values_list('region_id', flat=True)[0]
         return Region.objects.get(id=region_subquery)
 
     @property
@@ -1244,6 +1243,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
             self.is_public = False
             self.keenio_read_key = ''
+            self._remove_from_associated_collections()
         else:
             return False
 
@@ -1279,7 +1279,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return True
 
     def generate_keenio_read_key(self):
-        return scoped_keys.encrypt(settings.KEEN['public']['master_key'], options={
+        encrypted_read_key = scoped_keys.encrypt(settings.KEEN['public']['master_key'], options={
             'filters': [{
                 'property_name': 'node.id',
                 'operator': 'eq',
@@ -1287,6 +1287,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             }],
             'allowed_operations': [READ]
         })
+        return ensure_str(encrypted_read_key)
 
     @property
     def private_links_active(self):
@@ -2226,6 +2227,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             node.deleted = log_date
             node.add_remove_node_log(auth=auth, date=log_date)
             project_signals.node_deleted.send(node)
+            node._remove_from_associated_collections()
 
         bulk_update(hierarchy, update_fields=['is_deleted', 'deleted_date', 'deleted'])
 
@@ -2399,6 +2401,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             ]
         ).first() or osf_provider_tag
         contributor.add_system_tag(source_tag)
+
+    def _remove_from_associated_collections(self):
+        for submission in self.guids.first().collectionsubmission_set.all():
+            associated_collection = submission.collection
+            if associated_collection.is_bookmark_collection and not self.deleted:
+                if self.contributors.filter(pk=associated_collection.creator.id).exists():
+                    continue
+            submission.delete()
 
 
 class NodeUserObjectPermission(UserObjectPermissionBase):

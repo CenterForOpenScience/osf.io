@@ -508,7 +508,12 @@ class TestFileObj(FilesTestCase):
             file.get_version('3', required=True)
 
     def test_update_version_metadata(self):
-        v1 = models.FileVersion(identifier='1')
+        location = {
+            'service': 'cloud',
+            'folder': 'osf',
+            'object': 'file',
+        }
+        v1 = models.FileVersion(identifier='1', location=location)
         v1.save()
 
         file = TestFile(
@@ -520,14 +525,8 @@ class TestFileObj(FilesTestCase):
         )
 
         file.save()
-
         file.add_version(v1)
-        file.update_version_metadata(None, {'size': 1337})
-
-        with assert_raises(exceptions.VersionNotFoundError):
-            file.update_version_metadata('3', {})
-        v1.refresh_from_db()
-        assert_equal(v1.size, 1337)
+        assert v1 == file.versions.get()
 
     @mock.patch('osf.models.files.requests.get')
     def test_touch(self, mock_requests):

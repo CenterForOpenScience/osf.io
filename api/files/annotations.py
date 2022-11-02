@@ -1,6 +1,7 @@
 from django.db.models import BooleanField, Case, Exists, F, IntegerField, Max, OuterRef, Q, Subquery, Value, When
-from django.db.models.functions.base import Cast
-from django.contrib.postgres.fields.jsonb import KeyTextTransform
+from django.db.models.fields.json import KeyTextTransform
+from django.db.models.functions import Cast
+
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.models import FileVersion
@@ -29,6 +30,7 @@ DATE_MODIFIED = Case(
         ), output_field=NonNaiveDateTimeField(),
     ),
 )
+
 
 def make_show_as_unviewed_annotations(user):
     '''Returns the annotations required to set the current_user_has_viewed attribute.
@@ -69,6 +71,7 @@ def make_show_as_unviewed_annotations(user):
         'has_previously_seen': has_previously_seen,
         'show_as_unviewed': show_as_unviewed,
     }
+
 
 def check_show_as_unviewed(user, osf_file):
     '''A separate function for assigning the show_as_unviewed value to a single instance.

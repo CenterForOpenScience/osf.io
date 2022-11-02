@@ -246,7 +246,8 @@ class CollectionProvider(AbstractProvider):
     class Meta:
         permissions = (
             # custom permissions for use in the OSF Admin App
-            ('view_collectionprovider', 'Can view collection provider details'),
+            # Clashes with built-in permissions
+            # ('view_collectionprovider', 'Can view collection provider details'),
         )
 
     @property
@@ -284,11 +285,11 @@ class RegistrationProvider(AbstractProvider):
     #
     # Ex:
     # [{'field_name': 'foo'}, {'field_name': 'bar'}]
-    additional_metadata_fields = DateTimeAwareJSONField(blank=True)
+    additional_metadata_fields = DateTimeAwareJSONField(blank=True, null=True)
     default_schema = models.ForeignKey('osf.registrationschema', related_name='default_schema', null=True, blank=True, on_delete=models.SET_NULL)
-    bulk_upload_auto_approval = models.NullBooleanField(default=False)
-    allow_updates = models.NullBooleanField(default=False)
-    allow_bulk_uploads = models.NullBooleanField(default=False)
+    bulk_upload_auto_approval = models.BooleanField(null=True, blank=True, default=False)
+    allow_updates = models.BooleanField(null=True, blank=True, default=False)
+    allow_bulk_uploads = models.BooleanField(null=True, blank=True, default=False)
 
     def __init__(self, *args, **kwargs):
         self._meta.get_field('share_publish_type').default = 'Registration'
@@ -297,7 +298,8 @@ class RegistrationProvider(AbstractProvider):
     class Meta:
         permissions = (
             # custom permissions for use in the OSF Admin App
-            ('view_registrationprovider', 'Can view registration provider details'),
+            # Clashes with built-in permissions
+            # ('view_registrationprovider', 'Can view registration provider details'),
         )
 
     @classmethod
@@ -311,8 +313,9 @@ class RegistrationProvider(AbstractProvider):
                 """,
                 [cls.default__id]
             )
-            default_id = cursor.fetchone()[0]
-        return default_id
+            default_id = cursor.fetchone()
+            if default_id:
+                return default_id[0]
 
     @property
     def readable_type(self):
@@ -356,7 +359,8 @@ class PreprintProvider(AbstractProvider):
     class Meta:
         permissions = (
             # custom permissions for use in the OSF Admin App
-            ('view_preprintprovider', 'Can view preprint provider details'),
+            # Clashes with built-in permissions
+            # ('view_preprintprovider', 'Can view preprint provider details'),
         )
 
     @property

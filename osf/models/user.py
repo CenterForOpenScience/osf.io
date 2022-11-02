@@ -22,7 +22,7 @@ from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import PermissionsMixin
 from django.dispatch import receiver
 from django.db import models
-from django.db.models import Count
+from django.db.models import Count, Exists, OuterRef
 from django.db.models.signals import post_save
 from django.utils import timezone
 from guardian.shortcuts import get_objects_for_user
@@ -47,7 +47,7 @@ from osf.models.session import Session
 from osf.models.tag import Tag
 from osf.models.validators import validate_email, validate_social, validate_history_item
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
+from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField, ensure_str
 from osf.utils.names import impute_names
 from osf.utils.requests import check_select_for_update
 from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, MANAGER, MEMBER, MANAGE, ADMIN
@@ -576,7 +576,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         Nodes where user is a bibliographic contributor (group membership not factored in)
         """
-        return self.nodes.filter(is_deleted=False, contributor__visible=True, type__in=['osf.node', 'osf.registration'])
+        return self.nodes.annotate(
+            self_is_visible=Exists(Contributor.objects.filter(node_id=OuterRef('id'), user_id=self.id, visible=True))
+        ).filter(deleted__isnull=True, self_is_visible=True, type__in=['osf.node', 'osf.registration'])
 
     @property
     def all_nodes(self):
@@ -1746,12 +1748,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         secret = secret or settings.SECRET_KEY
 
         try:
-            token = itsdangerous.Signer(secret).unsign(cookie)
+            session_id = ensure_str(itsdangerous.Signer(secret).unsign(cookie))
         except itsdangerous.BadSignature:
             return None
 
-        user_session = Session.load(token)
-
+        user_session = Session.load(session_id)
         if user_session is None:
             return None
 
@@ -1908,7 +1909,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     class Meta:
         # custom permissions for use in the OSF Admin App
         permissions = (
-            ('view_osfuser', 'Can view user details'),
+            # Clashes with built-in permissions
+            # ('view_osfuser', 'Can view user details'),
         )
 
 @receiver(post_save, sender=OSFUser)

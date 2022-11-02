@@ -134,7 +134,7 @@ class InstitutionNodeList(JSONAPIBaseView, generics.ListAPIView, InstitutionMixi
         return (
             institution.nodes.filter(is_public=True, is_deleted=False, type='osf.node')
             .select_related('node_license')
-            .include('contributor__user__guids', 'root__guids', 'tags', limit_includes=10)
+            .prefetch_related('contributor_set__user__guids', 'root__guids', 'tags')
             .annotate(region=F('addons_osfstorage_node_settings__region___id'))
         )
 
@@ -474,7 +474,8 @@ class InstitutionDepartmentList(InstitutionImpactList):
     serializer_class = InstitutionDepartmentMetricsSerializer
     renderer_classes = tuple(api_settings.DEFAULT_RENDERER_CLASSES, ) + (InstitutionDepartmentMetricsCSVRenderer, )
 
-    ordering = ('-number_of_users', 'name',)
+    ordering_fields = ('-number_of_users', 'name', )
+    ordering = ('-number_of_users', 'name', )
 
     def _format_search(self, search, default_kwargs=None):
         results = search.execute()
@@ -498,7 +499,8 @@ class InstitutionUserMetricsList(InstitutionImpactList):
     serializer_class = InstitutionUserMetricsSerializer
     renderer_classes = tuple(api_settings.DEFAULT_RENDERER_CLASSES, ) + (InstitutionUserMetricsCSVRenderer, )
 
-    ordering = ('user_name',)
+    ordering_fields = ('user_name', 'department', )
+    ordering = ('user_name', )
 
     def _format_search(self, search, default_kwargs=None):
         results = search.execute()

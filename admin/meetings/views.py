@@ -65,7 +65,7 @@ class MeetingFormView(PermissionRequiredMixin, FormView):
         custom_fields, data = get_custom_fields(form.cleaned_data)
         if 'admins' in form.changed_data:
             admin_users = get_admin_users(data.get('admins'))
-            self.conf.admins = admin_users
+            self.conf.admins.set(admin_users)
         self.conf.name = data.get('name')
         self.conf.info_url = data.get('info_url')
         self.conf.logo_url = data.get('logo_url')

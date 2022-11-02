@@ -10,8 +10,6 @@ from django.utils import timezone
 from django.utils.functional import cached_property
 from guardian.shortcuts import assign_perm, get_perms, remove_perm, get_group_perms
 
-from include import IncludeQuerySet
-
 from api.providers.workflows import Workflows, PUBLIC_STATES
 from framework import status
 from framework.auth import Auth
@@ -968,8 +966,8 @@ class ReviewProviderMixin(GuardianMixin):
         abstract = True
 
     reviews_workflow = models.CharField(null=True, blank=True, max_length=15, choices=Workflows.choices())
-    reviews_comments_private = models.NullBooleanField()
-    reviews_comments_anonymous = models.NullBooleanField()
+    reviews_comments_private = models.BooleanField(null=True, blank=True)
+    reviews_comments_anonymous = models.BooleanField(null=True, blank=True)
 
     DEFAULT_SUBSCRIPTIONS = ['new_pending_submissions']
 
@@ -980,8 +978,6 @@ class ReviewProviderMixin(GuardianMixin):
     def get_reviewable_state_counts(self):
         assert self.REVIEWABLE_RELATION_NAME, 'REVIEWABLE_RELATION_NAME must be set to compute state counts'
         qs = getattr(self, self.REVIEWABLE_RELATION_NAME)
-        if isinstance(qs, IncludeQuerySet):
-            qs = qs.include(None)
         qs = qs.filter(
             deleted__isnull=True
         ).exclude(
@@ -1310,17 +1306,19 @@ class ContributorMixin(models.Model):
         """
         return (each.user for each in self._get_admin_contributors_query(users))
 
-    def _get_admin_contributors_query(self, users):
+    def _get_admin_contributors_query(self, users, require_active=True):
         """
         Returns Contributor queryset whose objects have admin permissions to the node.
         Group permissions not included.
         """
-        return self.contributor_class.objects.select_related('user').filter(
+        qs = self.contributor_class.objects.select_related('user').filter(
             user__in=users,
-            user__is_active=True,
             user__groups=self.get_group(ADMIN).id,
             **{self.guardian_object_type: self}
         )
+        if require_active:
+            qs = qs.filter(user__is_active=True)
+        return qs
 
     def add_contributor(self, contributor, permissions=None, visible=True,
                         send_email=None, auth=None, log=True, save=False):
@@ -1605,7 +1603,7 @@ class ContributorMixin(models.Model):
         if save:
             self.save()
 
-    def remove_contributor(self, contributor, auth, log=True):
+    def remove_contributor(self, contributor, auth, log=True, _force=False):
         """Remove a contributor from this node.
 
         :param contributor: User object, the contributor to be removed
@@ -1619,14 +1617,15 @@ class ContributorMixin(models.Model):
             del contributor.unclaimed_records[self._id]
             contributor.save()
 
-        # If user is the only visible contributor, return False
-        if not self.contributor_set.exclude(user=contributor).filter(visible=True).exists():
-            return False
+        if not _force:
+            # If user is the only visible contributor, return False
+            if not self.contributor_set.exclude(user=contributor).filter(visible=True).exists():
+                return False
 
-        # Node must have at least one registered admin user
-        admin_query = self._get_admin_contributors_query(self._contributors.all()).exclude(user=contributor)
-        if not admin_query.exists():
-            return False
+            # Node must have at least one registered admin user
+            admin_query = self._get_admin_contributors_query(self._contributors.all()).exclude(user=contributor)
+            if not admin_query.exists():
+                return False
 
         contrib_obj = self.contributor_set.get(user=contributor)
         contrib_obj.delete()
@@ -2169,7 +2168,7 @@ class RegistrationResponseMixin(models.Model):
     Mixin to be shared between DraftRegistrations and Registrations.
     """
     registration_responses = DateTimeAwareJSONField(default=dict, blank=True)
-    registration_responses_migrated = models.NullBooleanField(default=True, db_index=True)
+    registration_responses_migrated = models.BooleanField(null=True, blank=True, default=True, db_index=True)
 
     def get_registration_metadata(self, schema):
         raise NotImplementedError()
