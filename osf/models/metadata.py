@@ -1,50 +1,68 @@
 # -*- coding: utf-8 -*-
+import rdflib
+from django.contrib.contenttypes import ContentType
 from django.db import models
+from django.utils.functional import cached_property
 
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 from osf.metadata import rdfutils
-from osf.models.base import BaseModel, ObjectIDMixin, Guid
+from osf.models.base import BaseModel, ObjectIDMixin, Guid, InvalidGuid
 from osf.utils import permissions as osf_permissions
 
 
 class GuidMetadataRecordManager(models.Manager):
-    def for_guid(self, guid):
+    def for_guid(self, guid, allowed_referent_models=None):
+        guid_qs = Guid.objects.all().select_related('metadata_record')
         if isinstance(guid, str):
-            guid = Guid.load(guid)
-        if not guid:
-            return None  # TODO: would it be better to raise?
+            guid_qs = guid_qs.filter(_id=guid)
+        else:
+            guid_qs = guid_qs.filter(_id=guid._id)
+
+        if allowed_referent_models is not None:
+            allowed_content_types = set(
+                ContentType.objects
+                .get_for_models(allowed_referent_models)
+                .values()
+            )
+            guid_qs = guid_qs.filter(content_type__in=allowed_content_types)
+
         try:
-            return guid.metadata_record
+            found_guid = guid_qs.get()
+        except Guid.DoesNotExist:
+            raise InvalidGuid(
+                f'{self.__class__.__name__}.for_guid expects valid guid (instance or str)',
+            )
+        try:
+            return found_guid.metadata_record
         except GuidMetadataRecord.DoesNotExist:
             # new, unsaved GuidMetadataRecord
-            return GuidMetadataRecord(guid=guid)
+            return GuidMetadataRecord(guid=found_guid)
 
 
 class GuidMetadataRecord(ObjectIDMixin, BaseModel):
-
     guid = models.OneToOneField('Guid', related_name='metadata_record', on_delete=models.CASCADE)
 
-    # TODO: validator using osf-map and pyshacl
-    custom_metadata_bytes = models.BinaryField(default=b'{}')  # serialized json
-    # compiled_metadata_jsonld = DateTimeAwareJSONField(default=dict, blank=True)
+    # TODO: validator using osf-map and pyshacl?
+    custom_metadata_bytes = models.BinaryField(default=b'{}')  # serialized rdflib.Graph
+    _RDF_FORMAT = 'turtle'
 
     objects = GuidMetadataRecordManager()
 
     def __repr__(self):
         return f'{self.__class__.__name__}(guid={self.guid._id})'
 
-    @property
-    def custom_metadata_graph(self):
-        # TODO: bind namespaces
+    @cached_property
+    def custom_metadata(self) -> rdflib.Graph:
         return rdfutils.contextualized_graph().parse(
-            format='json-ld',
+            format=self._RDF_FORMAT,
             data=self.custom_metadata_bytes,
         )
 
-    @custom_metadata_graph.setter
-    def custom_metadata_graph(self, graph):
-        self.custom_metadata_bytes = graph.serialize(format='json-ld')
+    def save(self, *args, **kwargs):
+        # the cached custom_metadata graph may have been updated
+        self.custom_metadata_bytes = self.custom_metadata.serialize(format=self._RDF_FORMAT)
+        super().save(*args, **kwargs)
 
     # TODO: safety, logging
     def add_custom_metadatum(self, property_iri, value):

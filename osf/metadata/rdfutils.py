@@ -70,3 +70,25 @@ def try_guid_from_irl(irl):
 def checksum_urn(checksum_algorithm, checksum_hex):
     urn = f'urn:checksum/{checksum_algorithm}/{checksum_hex}'
     return rdflib.URIRef(urn)
+
+
+class FocusedGraphWrapper:
+    def __init__(self, rdf_graph, focus_uri):
+        self._rdf_graph = rdf_graph
+        self._focus = focus_uri
+
+    def __getattr__(self, attr_uri):
+        values = list(self._rdf_graph.objects(
+            subject=self._focus,
+            predicate=attr_uri,
+        ))
+        # TODO: use osf-map/owl to decide one v many
+        if not values:
+            return None
+        elif len(values) == 1:
+            return values[0]
+        else:
+            return values
+
+    def __setattr__(self, attr_uri, value):
+        pass
