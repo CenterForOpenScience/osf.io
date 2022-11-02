@@ -1,4 +1,4 @@
-from django.conf.urls import url
+from django.conf.urls import re_path
 
 from api.addons import views
 
@@ -6,7 +6,7 @@ app_name = 'osf'
 
 urlpatterns = [
     # Examples:
-    # url(r'^$', 'api.views.home', name='home'),
-    # url(r'^blog/', include('blog.urls')),
-    url(r'^$', views.AddonList.as_view(), name=views.AddonList.view_name),
+    # re_path(r'^$', 'api.views.home', name='home'),
+    # re_path(r'^blog/', include('blog.urls')),
+    re_path(r'^$', views.AddonList.as_view(), name=views.AddonList.view_name),
 ]

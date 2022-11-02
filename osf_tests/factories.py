@@ -59,8 +59,7 @@ class UserFactory(DjangoModelFactory):
     fullname = factory.Sequence(lambda n: 'Freddie Mercury{0}'.format(n))
 
     username = factory.LazyFunction(fake_email)
-    password = factory.PostGenerationMethodCall('set_password',
-                                                'queenfan86')
+    password = factory.PostGenerationMethodCall('set_password', 'queenfan86', notify=False)
     is_registered = True
     date_confirmed = factory.Faker('date_time_this_decade', tzinfo=pytz.utc)
     merged_by = None
@@ -467,6 +466,7 @@ class RegistrationFactory(BaseNodeFactory):
         reg.files_count = reg.registered_from.files.filter(deleted_on__isnull=True).count()
         draft_registration.registered_node = reg
         draft_registration.save()
+        reg.creator = user  # keep auth if passed
         reg.save()
 
         if has_doi:
@@ -699,12 +699,18 @@ class PreprintFactory(DjangoModelFactory):
     creator = factory.SubFactory(AuthUserFactory)
 
     doi = factory.Sequence(lambda n: '10.123/{}'.format(n))
-    provider = factory.SubFactory(PreprintProviderFactory)
 
     @classmethod
     def _build(cls, target_class, *args, **kwargs):
         creator = kwargs.pop('creator', None) or UserFactory()
         provider = kwargs.pop('provider', None) or PreprintProviderFactory()
+
+        # pre Django 3 behavior
+        reviews_workflow = kwargs.pop('reviews_workflow', None)
+        if reviews_workflow:
+            provider.reviews_workflow = reviews_workflow
+            provider.save()
+
         project = kwargs.pop('project', None) or None
         title = kwargs.pop('title', None) or 'Untitled'
         description = kwargs.pop('description', None) or 'None'

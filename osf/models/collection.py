@@ -9,7 +9,6 @@ from django.db import IntegrityError, models
 from django.utils.functional import cached_property
 from django.utils import timezone
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
-from include import IncludeManager
 from framework.celery_tasks.handlers import enqueue_task
 
 from osf.models.base import BaseModel, GuidMixin
@@ -87,9 +86,11 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         self.update_index()
         return ret
 
-class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
-    objects = IncludeManager()
+    def delete(self, *args, **kwargs):
+        self.remove_from_index()
+        super().delete()
 
+class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
     groups = {
         'read': ('read_collection', ),
         'write': ('read_collection', 'write_collection', ),
@@ -295,17 +296,16 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
         :param obj: object to remove from collection, if it exists. Acceptable types- CollectionSubmission, GuidMixin
         """
         if isinstance(obj, CollectionSubmission):
-            if obj.collection == self:
-                obj.remove_from_index()
-                self.collectionsubmission_set.filter(id=obj.id).delete()
-                return
+            if obj.collection != self:
+                raise ValueError(f'Resource [{obj.guid._id}] is not part of collection {self._id}')
         else:
-            collection_submission = self.collectionsubmission_set.get(guid=obj.guids.first())
-            if collection_submission:
-                collection_submission.remove_from_index()
-                collection_submission.delete()
-                return
-        raise ValueError('Node link does not belong to the requested node.')
+            # assume that we were passed the collected resource
+            try:
+                obj = self.collectionsubmission_set.get(guid=obj.guids.first())
+            except CollectionSubmission.DoesNotExist:
+                raise ValueError(f'Resource [{obj.guid._id}] is not part of collection {self._id}')
+
+        obj.delete()
 
     def delete(self):
         """ Mark collection as deleted

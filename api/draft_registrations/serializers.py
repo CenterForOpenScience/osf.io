@@ -16,16 +16,22 @@ from api.nodes.serializers import (
     NodeContributorsSerializer,
     NodeContributorsCreateSerializer,
     NodeContributorDetailSerializer,
+    RegistrationSchemaRelationshipField,
 )
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from osf.exceptions import DraftRegistrationStateError
+from osf.models import Node
 from website import settings
 
 
 class NodeRelationshipField(RelationshipField):
 
     def to_internal_value(self, node_id):
-        node = self.context['view'].get_node(node_id=node_id) if node_id else None
+        context_view = self.context['view']
+        if hasattr(context_view, 'get_node'):
+            node = self.context['view'].get_node(node_id=node_id) if node_id else None
+        else:
+            node = Node.load(node_id)
         return {'branched_from': node}
 
 
@@ -142,6 +148,14 @@ class DraftRegistrationDetailSerializer(DraftRegistrationSerializer, DraftRegist
     Overrides DraftRegistrationLegacySerializer to make id required.
     registration_supplement, node, cannot be changed after draft has been created.
     """
+    id = IDField(source='_id', required=True)
+
+    registration_schema = RegistrationSchemaRelationshipField(
+        related_view='schemas:registration-schema-detail',
+        related_view_kwargs={'schema_id': '<registration_schema._id>'},
+        required=False,
+        read_only=False,
+    )
 
     links = LinksField({
         'self': 'get_self_url',

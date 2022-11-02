@@ -108,7 +108,7 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
     user = auth.user
     if node.can_view(auth):
         # Re-query node with contributor guids included to prevent N contributor queries
-        node = AbstractNode.objects.filter(pk=node.pk).include('contributor__user__guids').get()
+        node = AbstractNode.objects.filter(pk=node.pk).prefetch_related('contributor_set__user__guids').get()
         contributor_data = serialize_contributors_for_summary(node)
         summary.update({
             'can_view': True,
