@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import rdflib
-from django.contrib.contenttypes import ContentType
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.functional import cached_property
 
@@ -16,13 +16,15 @@ class GuidMetadataRecordManager(models.Manager):
         guid_qs = Guid.objects.all().select_related('metadata_record')
         if isinstance(guid, str):
             guid_qs = guid_qs.filter(_id=guid)
-        else:
+        elif isinstance(guid, Guid):
             guid_qs = guid_qs.filter(_id=guid._id)
+        else:
+            raise InvalidGuid(f'expected str or Guid, got {guid} (of type {type(guid)})')
 
         if allowed_referent_models is not None:
             allowed_content_types = set(
                 ContentType.objects
-                .get_for_models(allowed_referent_models)
+                .get_for_models(*allowed_referent_models)
                 .values()
             )
             guid_qs = guid_qs.filter(content_type__in=allowed_content_types)
@@ -31,7 +33,7 @@ class GuidMetadataRecordManager(models.Manager):
             found_guid = guid_qs.get()
         except Guid.DoesNotExist:
             raise InvalidGuid(
-                f'{self.__class__.__name__}.for_guid expects valid guid (instance or str)',
+                f'guid does not exist: {guid}',
             )
         try:
             return found_guid.metadata_record
@@ -45,7 +47,7 @@ class GuidMetadataRecord(ObjectIDMixin, BaseModel):
 
     # TODO: validator using osf-map and pyshacl?
     custom_metadata_bytes = models.BinaryField(default=b'{}')  # serialized rdflib.Graph
-    _RDF_FORMAT = 'turtle'
+    _RDF_FORMAT = 'json-ld'
 
     objects = GuidMetadataRecordManager()
 

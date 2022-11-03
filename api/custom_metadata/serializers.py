@@ -1,18 +1,44 @@
 import rest_framework.serializers as ser
 
 from osf.metadata import rdfutils
-from api.base.serializers import JSONAPISerializer, RelationshipField
+from api.base.serializers import JSONAPISerializer, RelationshipField, IDField
 
 
 # TODO: max_lengths, uri validation
 
 
-class BaseCustomMetadataSerializer(JSONAPISerializer):
-    def to_representation(self, guid_metadata_record):
-        pass  # TODO: from rdf graph to dict
+class MetadataPredicateField(ser.Field):
+    def __init__(self, *args, predicate_uri, **kwargs):
+        self.predicate_uri = predicate_uri
+        return super().__init__(*args, **kwargs)
 
-    def to_internal_value(self, data):
-        pass  # TODO: from dict to rdf graph
+    def to_representation(self, value):
+        # TODO: use osf-map/owl to decide one v many
+        values = list(value)
+        if not values:
+            return None
+        elif len(values) == 1:
+            return values[0]
+        else:
+            return values
+
+    def get_attribute(self, metadata_record):
+        guid_uri = rdfutils.OSFIO[metadata_record.guid._id]
+        return metadata_record.custom_metadata.objects(
+            subject=guid_uri,
+            predicate=self.predicate_uri,
+        )
+
+
+class BaseCustomMetadataSerializer(JSONAPISerializer):
+    id = IDField(read_only=True, source='guid._id')
+    guid = RelationshipField(
+        related_view='guids:guid-detail',
+        related_view_kwargs={'guids': '<guid._id>'}
+    )
+
+    def update(self, guid_metadata_record, validated_data):
+        pass  # TODO
 
 
 class FunderSerializer(ser.Serializer):
@@ -24,30 +50,20 @@ class FunderSerializer(ser.Serializer):
     award_title = ser.CharField()
 
 
-class CustomItemMetadataSerializer(JSONAPISerializer):
-    language = ser.CharField()  # TODO: choices
-    resource_type_general = ser.CharField()  # TODO: choices
-    funder = ser.ListField(child=FunderSerializer())
-
-    guid = RelationshipField(
-        related_view='guids:guid-detail',
-        related_view_kwargs={'guids': '<guid._id>'}
-    )
+class CustomItemMetadataSerializer(BaseCustomMetadataSerializer):
+    language = MetadataPredicateField(predicate_uri=rdfutils.DCT.language)  # TODO: choices
+    resource_type_general = MetadataPredicateField(predicate_uri=rdfutils.DCT.type)  # TODO: choices
+    # funder = ser.ListField(child=FunderSerializer())
 
     class Meta:
         type_ = 'custom-item-metadata-record'
 
 
-class CustomFileMetadataSerializer(JSONAPISerializer):
-    title = ser.CharField()
-    description = ser.CharField()
-    language = ser.CharField()  # TODO: choices
-    resource_type_general = ser.CharField()  # TODO: choices
-
-    guid = RelationshipField(
-        related_view='guids:guid-detail',
-        related_view_kwargs={'guids': '<guid._id>'}
-    )
+class CustomFileMetadataSerializer(BaseCustomMetadataSerializer):
+    title = MetadataPredicateField(predicate_uri=rdfutils.DCT.title)
+    description = MetadataPredicateField(predicate_uri=rdfutils.DCT.description)
+    language = MetadataPredicateField(predicate_uri=rdfutils.DCT.language)  # TODO: choices
+    resource_type_general = MetadataPredicateField(predicate_uri=rdfutils.DCT.type)  # TODO: choices
 
     class Meta:
         type_ = 'custom-file-metadata-record'
