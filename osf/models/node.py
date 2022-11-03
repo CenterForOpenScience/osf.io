@@ -269,7 +269,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     SPAM_CHECK_FIELDS = {
         'title',
         'description',
-        'addons_forward_node_settings__url'  # the often spammed redirect URL
+        'addons_forward_node_settings__url',  # the often spammed redirect URL
+        'wikis__versions__content'
     }
 
     # Fields that are writable by Node.update
@@ -1171,7 +1172,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         if not self.has_addon('forward'):
             check_fields.remove('addons_forward_node_settings__url')
-        return check_fields if self.is_public and 'is_public' in saved_fields else saved_fields
+        if not self.has_addon('wik'):
+            check_fields.remove('wikis__versions__content')
+
+        checkable_fields = set(saved_fields).intersection(self.SPAM_CHECK_FIELDS)
+        return check_fields if self.is_public and 'is_public' in saved_fields else checkable_fields
 
     def callback(self, callback, recursive=False, *args, **kwargs):
         """Invoke callbacks of attached add-ons and collect messages.
@@ -1980,7 +1985,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         self.update_or_enqueue_on_node_updated(user_id, first_save, saved_fields)
 
         user = User.load(user_id)
-        if user and saved_fields != {'spam_status': None} and self.check_spam(user, saved_fields, request_headers):
+        if user and self.check_spam(user, saved_fields, request_headers):
             # Specifically call the super class save method to avoid recursion into model save method.
             super(AbstractNode, self).save()
 
