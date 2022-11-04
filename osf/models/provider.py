@@ -230,10 +230,14 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
                 'Content-Type': 'application/vnd.api+json'
             }
         )
-        resp.raise_for_status()
+        # if 409 Conflict, share already had a source by that name,
+        # but it includes that data in the response, so there's no problem.
+        if resp.status_code != 409:
+            resp.raise_for_status()
         resp_json = resp.json()
 
         self.share_source = resp_json['data']['attributes']['longTitle']
+        self.share_title = self.share_source
         for data in resp_json['included']:
             if data['type'] == 'ShareUser':
                 self.access_token = data['attributes']['token']
