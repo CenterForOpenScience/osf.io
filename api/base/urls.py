@@ -23,8 +23,6 @@ urlpatterns = [
                 re_path(r'^crossref/', include('api.crossref.urls', namespace='crossref')),
                 re_path(r'^chronos/', include('api.chronos.urls', namespace='chronos')),
                 re_path(r'^meetings/', include('api.meetings.urls', namespace='meetings')),
-                re_path(r'^metadata_records/', include('api.metadata_records.urls', namespace='metadata-records')),
-                re_path(r'^metadata_profiles/', include('api.metadata_profiles.urls', namespace='metadata_profiles')),
                 re_path(r'^metrics/', include('api.metrics.urls', namespace='metrics')),
                 re_path(r'^registries/(?P<provider_id>\w+)/bulk_create/(?P<filename>.*)/$', RegistrationBulkCreate.as_view(), name='bulk_create_csv'),
             ],
