@@ -1,16 +1,24 @@
+import rdflib
 import rest_framework.serializers as ser
 
-from osf.metadata import rdfutils
+from osf.metadata.rdfutils import DCT, OSFIO
 from api.base.serializers import JSONAPISerializer, RelationshipField, IDField
 
 
 # TODO: max_lengths, uri validation
 
 
-class MetadataPredicateField(ser.Field):
+class CustomMetadataPropertyField(ser.Field):
     def __init__(self, *args, predicate_uri, **kwargs):
         self.predicate_uri = predicate_uri
         return super().__init__(*args, **kwargs)
+
+    def get_attribute(self, metadata_record):
+        guid_uri = OSFIO[metadata_record.guid._id]
+        return metadata_record.custom_metadata.objects(
+            subject=guid_uri,
+            predicate=self.predicate_uri,
+        )
 
     def to_representation(self, value):
         # TODO: use osf-map/owl to decide one v many
@@ -22,12 +30,10 @@ class MetadataPredicateField(ser.Field):
         else:
             return values
 
-    def get_attribute(self, metadata_record):
-        guid_uri = rdfutils.OSFIO[metadata_record.guid._id]
-        return metadata_record.custom_metadata.objects(
-            subject=guid_uri,
-            predicate=self.predicate_uri,
-        )
+    def to_internal_value(self, data):
+        # TODO: handle nested field (FunderSerializer)
+        # TODO: if controlled vocab, rdflib.URIRef
+        return (self.predicate_uri, rdflib.Literal(data))
 
 
 class BaseCustomMetadataSerializer(JSONAPISerializer):
@@ -38,7 +44,14 @@ class BaseCustomMetadataSerializer(JSONAPISerializer):
     )
 
     def update(self, guid_metadata_record, validated_data):
-        pass  # TODO
+        for predicate_uri, value in validated_data.values():
+            guid_metadata_record.set_custom_property(predicate_uri, value)
+        guid_metadata_record.save()
+        return guid_metadata_record
+
+    def is_valid(self, **kwargs):
+        # prevent osf hax from mangling rdflib terms into plain strings
+        return super().is_valid(clean_html=False, **kwargs)
 
 
 class FunderSerializer(ser.Serializer):
@@ -51,8 +64,8 @@ class FunderSerializer(ser.Serializer):
 
 
 class CustomItemMetadataSerializer(BaseCustomMetadataSerializer):
-    language = MetadataPredicateField(predicate_uri=rdfutils.DCT.language)  # TODO: choices
-    resource_type_general = MetadataPredicateField(predicate_uri=rdfutils.DCT.type)  # TODO: choices
+    language = CustomMetadataPropertyField(predicate_uri=DCT.language)  # TODO: choices
+    resource_type_general = CustomMetadataPropertyField(predicate_uri=DCT.type)  # TODO: choices
     # funder = ser.ListField(child=FunderSerializer())
 
     class Meta:
@@ -60,10 +73,10 @@ class CustomItemMetadataSerializer(BaseCustomMetadataSerializer):
 
 
 class CustomFileMetadataSerializer(BaseCustomMetadataSerializer):
-    title = MetadataPredicateField(predicate_uri=rdfutils.DCT.title)
-    description = MetadataPredicateField(predicate_uri=rdfutils.DCT.description)
-    language = MetadataPredicateField(predicate_uri=rdfutils.DCT.language)  # TODO: choices
-    resource_type_general = MetadataPredicateField(predicate_uri=rdfutils.DCT.type)  # TODO: choices
+    title = CustomMetadataPropertyField(predicate_uri=DCT.title)
+    description = CustomMetadataPropertyField(predicate_uri=DCT.description)
+    language = CustomMetadataPropertyField(predicate_uri=DCT.language)  # TODO: choices
+    resource_type_general = CustomMetadataPropertyField(predicate_uri=DCT.type)  # TODO: choices
 
     class Meta:
         type_ = 'custom-file-metadata-record'

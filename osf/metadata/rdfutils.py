@@ -1,4 +1,5 @@
 import rdflib
+import rdflib.compare
 
 from website import settings as website_settings
 
@@ -71,3 +72,13 @@ def try_guid_from_irl(irl):
 def checksum_urn(checksum_algorithm, checksum_hex):
     urn = f'urn:checksum/{checksum_algorithm}/{checksum_hex}'
     return rdflib.URIRef(urn)
+
+
+def graph_equals(actual_rdf_graph, expected_triples):
+    expected_rdf_graph = rdflib.Graph()
+    for triple in expected_triples:
+        expected_rdf_graph.add(triple)
+    return rdflib.compare.isomorphic(
+        actual_rdf_graph,
+        expected_rdf_graph,
+    )

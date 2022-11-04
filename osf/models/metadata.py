@@ -54,6 +54,10 @@ class GuidMetadataRecord(ObjectIDMixin, BaseModel):
     def __repr__(self):
         return f'{self.__class__.__name__}(guid={self.guid._id})'
 
+    @property
+    def guid_uri(self):
+        return rdfutils.guid_irl(self.guid)
+
     @cached_property
     def custom_metadata(self) -> rdflib.Graph:
         return rdfutils.contextualized_graph().parse(
@@ -67,11 +71,10 @@ class GuidMetadataRecord(ObjectIDMixin, BaseModel):
         super().save(*args, **kwargs)
 
     # TODO: safety, logging
-    def add_custom_metadatum(self, property_iri, value):
-        rdf_graph = self.custom_metadata_graph
-        rdf_graph.set((rdfutils.guid_irl(self.guid), property_iri, value))
-        self.custom_metadata_graph = rdf_graph
-        self.save()
+    def set_custom_property(self, property_iri, value):
+        self.custom_metadata.set(
+            (self.guid_uri, property_iri, value)
+        )
 
     # TODO: either something like this, or delete this
     def update(self, proposed_metadata, user=None):
