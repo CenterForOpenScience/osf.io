@@ -27,6 +27,10 @@ class ModerationEnum(IntEnum):
     def db_name(self):
         return self.name.lower()
 
+    @classmethod
+    def excluding(cls, *excluded_roles):
+        return [role for role in cls if role not in excluded_roles]
+
 
 class SanctionTypes(ModerationEnum):
     '''A simple descriptor for the type of a sanction class'''
@@ -50,7 +54,16 @@ class ApprovalStates(ModerationEnum):
     MODERATOR_REJECTED = 5
     COMPLETED = 6  # Embargo only
     IN_PROGRESS = 7  # Revisions only
-    REMOVED = 8  # CollectionSubmission only
+
+
+class CollectionSubmissionStates(ModerationEnum):
+    '''The states of a CollectionSubmission object.'''
+
+    IN_PROGRESS = 1
+    PENDING = 2
+    REJECTED = 3
+    ACCEPTED = 4
+    REMOVED = 5
 
 
 class RegistrationModerationStates(ModerationEnum):
@@ -171,24 +184,8 @@ class CollectionSubmissionsTriggers(ModerationEnum):
     SUBMIT = 0
     ACCEPT = 1
     REJECT = 2
-    ADMIN_REMOVE = 3
-    MODERATOR_REMOVE = 4
-    RESUBMIT = 5
-
-    @classmethod
-    def from_transition(cls, from_state, to_state):
-        transition_to_trigger_mappings = {
-            (ApprovalStates.UNAPPROVED, ApprovalStates.PENDING_MODERATION): cls.SUBMIT,
-            (ApprovalStates.UNAPPROVED, ApprovalStates.APPROVED): cls.ACCEPT,  # Unmoderated
-            (ApprovalStates.PENDING_MODERATION, ApprovalStates.MODERATOR_REJECTED): cls.REJECT,
-            (ApprovalStates.PENDING_MODERATION, ApprovalStates.APPROVED): cls.ACCEPT,
-            (ApprovalStates.APPROVED, ApprovalStates.REMOVED): cls.MODERATOR_REMOVE,
-            (ApprovalStates.APPROVED, ApprovalStates.REMOVED): cls.ADMIN_REMOVE,
-            (ApprovalStates.MODERATOR_REJECTED, ApprovalStates.PENDING_MODERATION): cls.RESUBMIT,
-            (ApprovalStates.REMOVED, ApprovalStates.PENDING_MODERATION): cls.RESUBMIT,
-            (ApprovalStates.REMOVED, ApprovalStates. APPROVED): cls.RESUBMIT,  # Unmoderated
-        }
-        return transition_to_trigger_mappings.get((from_state, to_state))
+    REMOVE = 3
+    RESUBMIT = 4
 
 
 @unique
@@ -378,6 +375,45 @@ APPROVAL_TRANSITIONS = [
         'trigger': 'reject',
         'source': [ApprovalStates.REJECTED, ApprovalStates.MODERATOR_REJECTED],
         'dest': None,
+    },
+]
+
+
+COLLECTION_SUBMISSION_TRANSITIONS = [
+    {
+        'trigger': 'submit',
+        'source': [CollectionSubmissionStates.IN_PROGRESS],
+        'dest': CollectionSubmissionStates.PENDING,
+        'before': [],
+        'after': ['_on_submit'],
+    },
+    {
+        'trigger': 'accept',
+        'source': [CollectionSubmissionStates.PENDING],
+        'dest': CollectionSubmissionStates.ACCEPTED,
+        'before': [],
+        'after': ['_on_accept'],
+    },
+    {
+        'trigger': 'reject',
+        'source': [CollectionSubmissionStates.PENDING],
+        'dest': CollectionSubmissionStates.REJECTED,
+        'before': [],
+        'after': ['_on_reject'],
+    },
+    {
+        'trigger': 'remove',
+        'source': [CollectionSubmissionStates.ACCEPTED],
+        'dest': CollectionSubmissionStates.REMOVED,
+        'before': [],
+        'after': ['_on_remove'],
+    },
+    {
+        'trigger': 'resubmit',
+        'source': [CollectionSubmissionStates.REJECTED, CollectionSubmissionStates.REMOVED],
+        'dest': CollectionSubmissionStates.PENDING,
+        'before': [],
+        'after': ['_on_resubmit'],
     },
 ]
 
