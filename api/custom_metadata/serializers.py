@@ -50,7 +50,7 @@ class BaseCustomMetadataSerializer(JSONAPISerializer):
         return guid_metadata_record
 
     def is_valid(self, **kwargs):
-        # prevent osf hax from mangling rdflib terms into plain strings
+        # prevent osf hax in JSONAPISerializer from mangling rdflib terms into plain strings
         return super().is_valid(clean_html=False, **kwargs)
 
 

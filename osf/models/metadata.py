@@ -46,8 +46,8 @@ class GuidMetadataRecord(ObjectIDMixin, BaseModel):
     guid = models.OneToOneField('Guid', related_name='metadata_record', on_delete=models.CASCADE)
 
     # TODO: validator using osf-map and pyshacl?
-    custom_metadata_bytes = models.BinaryField(default=b'{}')  # serialized rdflib.Graph
-    _RDF_FORMAT = 'json-ld'
+    custom_metadata_bytes = models.BinaryField(default=b'')  # serialized rdflib.Graph
+    _RDF_FORMAT = 'turtle'
 
     objects = GuidMetadataRecordManager()
 
@@ -66,12 +66,14 @@ class GuidMetadataRecord(ObjectIDMixin, BaseModel):
         )
 
     def save(self, *args, **kwargs):
-        # the cached custom_metadata graph may have been updated
+        # persist changes to the cached custom_metadata rdf-graph
         self.custom_metadata_bytes = self.custom_metadata.serialize(format=self._RDF_FORMAT)
         super().save(*args, **kwargs)
 
     # TODO: safety, logging
     def set_custom_property(self, property_iri, value):
+        if not isinstance(value, rdflib.term.Node):
+            value = rdflib.Literal(value)
         self.custom_metadata.set(
             (self.guid_uri, property_iri, value)
         )
