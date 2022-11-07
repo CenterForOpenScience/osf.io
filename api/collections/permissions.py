@@ -8,6 +8,7 @@ from api.base.utils import get_user_auth, assert_resource_type
 from osf.models import AbstractNode, Preprint, Collection, CollectionSubmission, CollectionProvider
 from osf.utils.permissions import WRITE, ADMIN
 
+
 class CollectionWriteOrPublic(permissions.BasePermission):
     # Adapted from ContributorOrPublic
     def has_object_permission(self, request, view, obj):
@@ -56,7 +57,7 @@ class CanUpdateDeleteCollectionSubmissionOrPublic(permissions.BasePermission):
         collection = obj.collection
         auth = get_user_auth(request)
         if request.method in permissions.SAFE_METHODS:
-            return collection.is_public or auth.user and auth.user.has_perm('read_collection', collection)
+            return collection.is_public or auth.user and auth.user.has_perm('read_collection', collection) or auth.user in collection.moderators
         elif request.method in ['PUT', 'PATCH']:
             return obj.guid.referent.has_permission(auth.user, WRITE) or auth.user.has_perm('write_collection', collection)
         elif request.method == 'DELETE':

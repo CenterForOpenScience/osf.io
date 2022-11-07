@@ -41,6 +41,7 @@ urlpatterns = [
                 re_path(r'^brands/', include('api.brands.urls', namespace='brands')),
                 re_path(r'^citations/', include('api.citations.urls', namespace='citations')),
                 re_path(r'^collections/', include('api.collections.urls', namespace='collections')),
+                re_path(r'^collection_submissions/', include('api.collection_submissions.urls', namespace='collection_submissions')),
                 re_path(r'^comments/', include('api.comments.urls', namespace='comments')),
                 re_path(r'^docs/', RedirectView.as_view(pattern_name=views.root), name='redirect-to-root', kwargs={'version': default_version}),
                 re_path(r'^draft_nodes/', include('api.draft_nodes.urls', namespace='draft_nodes')),

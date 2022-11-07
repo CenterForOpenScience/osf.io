@@ -19,6 +19,7 @@ from osf_tests.factories import (
 from osf.models import Collection
 from osf.utils.sanitize import strip_html
 from osf.utils.permissions import ADMIN, WRITE, READ
+from osf_tests.factories import CollectionProviderFactory
 from website.project.signals import contributor_removed
 from api_tests.utils import disconnected_from_listeners
 from website.views import find_bookmark_collection
@@ -4480,8 +4481,19 @@ class TestCollectionSubmissionSubjectsList(SubjectsListMixin):
         return '/{}collections/{}/collected_metadata/{}/subjects/'.format(API_BASE, collection._id, resource.guid._id)
 
     @pytest.fixture()
-    def collection(self, user_admin_contrib):
-        return CollectionFactory(creator=user_admin_contrib, collected_type_choices=['asdf'], status_choices=['one', 'asdf', 'fdsa'])
+    def collection_provider(self):
+        collection_provider = CollectionProviderFactory()
+        from osf.migrations import update_provider_auth_groups
+        update_provider_auth_groups()
+
+        return collection_provider
+
+    @pytest.fixture()
+    def collection(self, collection_provider, user_admin_contrib):
+        collection = CollectionFactory(creator=user_admin_contrib, collected_type_choices=['asdf'], status_choices=['one', 'asdf', 'fdsa'])
+        collection.provider = collection_provider
+        collection.save()
+        return collection
 
     @pytest.fixture()
     def resource(self, user_admin_contrib, user_write_contrib, user_read_contrib, collection, project_one):
@@ -4574,8 +4586,20 @@ class TestCollectionSubmissionDetail:
         return SubjectFactory()
 
     @pytest.fixture()
-    def collection(self, user_one):
-        return CollectionFactory(creator=user_one, collected_type_choices=['asdf'], status_choices=['one', 'asdf', 'fdsa'])
+    def collection_provider(self):
+        collection_provider = CollectionProviderFactory()
+        from osf.migrations import update_provider_auth_groups
+        update_provider_auth_groups()
+
+        return collection_provider
+
+    @pytest.fixture()
+    def collection(self, collection_provider, user_one):
+        collection = CollectionFactory(creator=user_one, collected_type_choices=['asdf'],
+                                       status_choices=['one', 'asdf', 'fdsa'])
+        collection.provider = collection_provider
+        collection.save()
+        return collection
 
     @pytest.fixture()
     def collection_submission(self, user_one, collection, project_one, subject_one):
