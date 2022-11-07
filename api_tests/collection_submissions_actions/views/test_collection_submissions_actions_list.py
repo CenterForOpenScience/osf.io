@@ -256,11 +256,12 @@ class TestSubmissionsActionsListPOSTBehavior:
         resp = app.post_json_api(POST_URL, make_payload(collection_submission), auth=test_auth, expect_errors=True)
         assert resp.status_code == 410
 
-    @pytest.mark.parametrize('user_role', UserRoles.MODERATOR)
-    def test_status_code__private_collection(self, app, node, collection, collection_submission, user_role):
+    def test_status_code__private_collection_moderator(self, app, node, collection, collection_submission):
+        collection_submission.state_machine.set_state(CollectionSubmissionStates.PENDING)
+        collection_submission.save()
         collection.is_public = False
         collection.save()
-        test_auth = configure_test_auth(node, user_role)
+        test_auth = configure_test_auth(node, UserRoles.MODERATOR)
         resp = app.post_json_api(
             POST_URL,
             make_payload(

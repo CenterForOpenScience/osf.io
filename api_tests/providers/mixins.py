@@ -779,7 +779,7 @@ class ProviderSubmissionListViewTestBaseMixin(ProviderMixinBase, ProviderSubmiss
         def make_collection_payload(**attributes):
             return {
                 'data': {
-                    'type': 'collection-submission',
+                    'type': 'collected-metadata',
                     'attributes': attributes,
                 }
             }

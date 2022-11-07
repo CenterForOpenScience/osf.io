@@ -103,7 +103,7 @@ class TestCollectionSubmissionsActionsDetailGETBehavior:
         assert resp.json['data']['attributes']['to_state'] == 'pending'
         assert resp.json['data']['attributes']['trigger'] == 'submit'
         assert resp.json['data']['attributes']['comment'] == 'test comment'
-        assert resp.json['data']['relationships']['creator']['data']['id'] == collection_submission.creator._id
+        assert resp.json['data']['relationships']['creator']['data']['id'] == collection_submission_action.creator._id
         assert resp.json['data']['relationships']['collection']['data']['id'] == collection_submission.collection._id
         assert resp.json['data']['relationships']['target']['data']['id'] \
                == f'{collection_submission.guid._id}-{collection_submission.collection._id}'

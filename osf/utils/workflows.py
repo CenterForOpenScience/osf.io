@@ -185,7 +185,7 @@ class CollectionSubmissionsTriggers(ModerationEnum):
     ACCEPT = 1
     REJECT = 2
     REMOVE = 3
-    RESUBMIT = 5
+    RESUBMIT = 4
 
 
 @unique

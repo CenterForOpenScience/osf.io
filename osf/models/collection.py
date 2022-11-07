@@ -83,14 +83,6 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         if user not in self.moderators:
             raise PermissionsError(f'{user} must have moderator permissions.')
 
-    # trigger = request_json['data']['attributes']['trigger']
-    # # Check for moderator only triggers
-    # if trigger in [
-    #     CollectionSubmissionsTriggers.REJECT.db_name,
-    #     CollectionSubmissionsTriggers.ACCEPT.db_name,
-    #     CollectionSubmissionsTriggers.MODERATOR_REMOVE.db_name,
-    # ] and auth.user not in moderators:
-    #     return False
     def _on_reject(self, event_data):
         user = event_data.kwargs['user']
         if user not in self.moderators:
@@ -119,10 +111,6 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
             creator=event_data.kwargs.get('user', self.creator),
             comment=event_data.kwargs.get('comment', '')
         )
-        # self._notify_users(
-        #     event=event_data.event.name,
-        #     event_initiator=event_data.kwargs.get('user')
-        # )
 
     @cached_property
     def _id(self):

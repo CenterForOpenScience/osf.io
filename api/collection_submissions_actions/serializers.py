@@ -1,18 +1,20 @@
 from api.base.utils import absolute_reverse
-from api.base.exceptions import JSONAPIAttributeException
+
 from api.base.serializers import JSONAPISerializer, EnumField
 from api.actions.serializers import TargetRelationshipField, LinksField
 from osf.models import CollectionSubmission
 from osf.utils.workflows import CollectionSubmissionStates, CollectionSubmissionsTriggers
 from rest_framework import serializers as ser
-from framework.exceptions import PermissionsError
-from api.base.exceptions import Conflict
 
 from api.base.serializers import (
     RelationshipField,
 )
-from django.core.exceptions import PermissionDenied, ValidationError
+from api.base.exceptions import JSONAPIAttributeException
+from django.core.exceptions import PermissionDenied
 from transitions import MachineError
+from framework.exceptions import PermissionsError
+from api.base.exceptions import Conflict
+from django.core.exceptions import ValidationError
 
 
 class CollectionSubmissionActionSerializer(JSONAPISerializer):
@@ -44,7 +46,7 @@ class CollectionSubmissionActionSerializer(JSONAPISerializer):
         related_view='collections:collected-metadata-detail',
         related_view_kwargs={
             'collection_id': '<target.collection._id>',
-            'cgm_id': '<target.guid._id>',
+            'collection_submission_id': '<target.guid._id>',
         },
         filter_key='target__guids___id',
     )

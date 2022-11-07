@@ -4249,7 +4249,7 @@ class TestCollectionSubmissionList:
 
     @pytest.fixture()
     def url(self):
-        return '/{}collections/{{}}/collection_submissions/'.format(API_BASE)
+        return '/{}collections/{{}}/collected_metadata/'.format(API_BASE)
 
     @pytest.fixture()
     def payload(self):
