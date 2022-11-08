@@ -40,6 +40,11 @@
                                 Files
                             </a>
                         </li>
+                        <li id="projectNavMetadata">
+                            <a href="${node['url']}metadata/" class="subnav-header">
+                                Metadata
+                            </a>
+                        </li>
                         <!-- Add-on tabs -->
                         % for addon in addons_enabled:
 
