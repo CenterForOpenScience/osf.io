@@ -491,6 +491,7 @@ function MetadataButtons() {
         .css('margin-left', 'auto')
         .append($('<i></i>').addClass('fa fa-paste'))
         .append(_('Paste from Clipboard'))
+        .attr('type', 'button')
         .on('click', self.pasteFromClipboard);
       dialog.toolbar.append($('<div></div>')
         .css('display', 'flex')
@@ -543,26 +544,15 @@ function MetadataButtons() {
   self.pasteFromClipboard = function(event) {
     event.preventDefault();
     console.log(logPrefix, 'paste from clipboard');
-    if (!navigator.clipboard) {
-      Raven.captureMessage(_('Could not paste text'), {
-        extra: {
-          error: 'navigator.clipboard API is not supported.',
-        },
-      });
+    if (!navigator.clipboard || !navigator.clipboard.readText) {
+      if (!self.pasteMetadataDialog) {
+        self.pasteMetadataDialog = self.initPasteMetadataDialog();
+      }
+      self.pasteMetadataDialog.modal('show');
+      return;
     }
     navigator.clipboard.readText().then(function(text) {
-      try {
-        const jsonObject = JSON.parse(text);
-        (self.lastFields || []).forEach(function(fieldSet) {
-          fieldSet.field.setValue(fieldSet.input, jsonObject[fieldSet.question.qid] || '');
-        });
-      } catch(e) {
-        Raven.captureMessage(_('Could not paste text'), {
-          extra: {
-            error: e.toString(),
-          },
-        });
-        }
+      self.setMetadataFromJson(text);
     }, function(err) {
       Raven.captureMessage(_('Could not paste text'), {
         extra: {
@@ -571,6 +561,21 @@ function MetadataButtons() {
       });
     });
   };
+
+  self.setMetadataFromJson = function(jsonText) {
+    try {
+      const jsonObject = JSON.parse(jsonText);
+      (self.lastFields || []).forEach(function(fieldSet) {
+        fieldSet.field.setValue(fieldSet.input, jsonObject[fieldSet.question.qid] || '');
+      });
+    } catch(err) {
+      Raven.captureMessage(_('Could not paste text'), {
+        extra: {
+          error: err.toString(),
+        },
+      });
+    }
+  }
 
   self.registerMetadata = function(context, filepath, item) {
     self.registeringFilepath = filepath;
@@ -1546,7 +1551,8 @@ function MetadataButtons() {
     }
     const copyToClipboard = $('<button class="btn btn-default"></button>')
       .append($('<i></i>').addClass('fa fa-copy'))
-      .append(_('Copy to clipboard'));
+      .append(_('Copy to clipboard'))
+      .attr('type', 'button');
     const copyStatus = $('<div></div>');
     copyToClipboard.on('click', function(event) {
       self.copyToClipboard(event, copyStatus);
@@ -1705,6 +1711,43 @@ function MetadataButtons() {
       select: select,
       copyStatus: copyStatus,
     };
+  };
+
+  self.initPasteMetadataDialog = function() {
+    const dialog = $('<div class="modal fade"></div>');
+    const close = $('<a href="#" class="btn btn-default" data-dismiss="modal"></a>').text(_('Close'));
+    close.click(self.closeModal);
+    dialog
+      .append($('<div class="modal-dialog modal-lg"></div>')
+        .append($('<div class="modal-content"></div>')
+          .append($('<div class="modal-header"></div>')
+            .append($('<h3></h3>').text(_('Paste Metadata'))))
+          .append($('<form></form>')
+            .append($('<div class="modal-body"></div>')
+              .append($('<div class="row"></div>')
+                .append($('<div class="col-sm-12"></div>')
+                  .append(_('Press Ctrl-V (Command-V) to paste.'))
+                  .append($('<br/>'))
+                  .append(_('[Why is this needed?] In this browser, retrieving clipboard values with ' +
+                    'button operations is prohibited. Therefore, you must explicitly indicate clipboard operations ' +
+                    'by using the shortcut key or by pasting in the browser menu.')))))
+            .append($('<div class="modal-footer"></div>')
+              .append(close)))));
+    dialog.appendTo($('#treeGrid'));
+    if (!self.pasteMetadataEvent) {
+      self.pasteMetadataEvent = function pasteEvent(event) {
+        event.preventDefault();
+        if (!dialog.hasClass('in')) {
+          return;
+        }
+        const text = (event.clipboardData || window.clipboardData).getData('text');
+        self.setMetadataFromJson(text);
+        dialog.modal('hide');
+        self.closeModal();
+      }
+      document.addEventListener('paste', self.pasteMetadataEvent);
+    }
+    return dialog;
   };
 }
 
