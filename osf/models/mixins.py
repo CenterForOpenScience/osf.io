@@ -1306,17 +1306,19 @@ class ContributorMixin(models.Model):
         """
         return (each.user for each in self._get_admin_contributors_query(users))
 
-    def _get_admin_contributors_query(self, users):
+    def _get_admin_contributors_query(self, users, require_active=True):
         """
         Returns Contributor queryset whose objects have admin permissions to the node.
         Group permissions not included.
         """
-        return self.contributor_class.objects.select_related('user').filter(
+        qs = self.contributor_class.objects.select_related('user').filter(
             user__in=users,
-            user__is_active=True,
             user__groups=self.get_group(ADMIN).id,
             **{self.guardian_object_type: self}
         )
+        if require_active:
+            qs = qs.filter(user__is_active=True)
+        return qs
 
     def add_contributor(self, contributor, permissions=None, visible=True,
                         send_email=None, auth=None, log=True, save=False):
@@ -1601,7 +1603,7 @@ class ContributorMixin(models.Model):
         if save:
             self.save()
 
-    def remove_contributor(self, contributor, auth, log=True):
+    def remove_contributor(self, contributor, auth, log=True, _force=False):
         """Remove a contributor from this node.
 
         :param contributor: User object, the contributor to be removed
@@ -1615,14 +1617,15 @@ class ContributorMixin(models.Model):
             del contributor.unclaimed_records[self._id]
             contributor.save()
 
-        # If user is the only visible contributor, return False
-        if not self.contributor_set.exclude(user=contributor).filter(visible=True).exists():
-            return False
+        if not _force:
+            # If user is the only visible contributor, return False
+            if not self.contributor_set.exclude(user=contributor).filter(visible=True).exists():
+                return False
 
-        # Node must have at least one registered admin user
-        admin_query = self._get_admin_contributors_query(self._contributors.all()).exclude(user=contributor)
-        if not admin_query.exists():
-            return False
+            # Node must have at least one registered admin user
+            admin_query = self._get_admin_contributors_query(self._contributors.all()).exclude(user=contributor)
+            if not admin_query.exists():
+                return False
 
         contrib_obj = self.contributor_set.get(user=contributor)
         contrib_obj.delete()
