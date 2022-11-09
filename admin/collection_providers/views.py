@@ -18,6 +18,7 @@ from osf.models import (
 )
 from admin.preprint_providers.views import ImportProviderView
 from django.contrib import messages
+from admin.registration_providers.views import AddAdminOrModerator, RemoveAdminsAndModerators
 
 
 class CreateCollectionProvider(PermissionRequiredMixin, CreateView):
@@ -404,3 +405,19 @@ class ImportCollectionProvider(ImportProviderView):
         if default_license:
             provider.default_license = NodeLicense.objects.get(license_id=default_license)
         return provider
+
+
+class CollectionAddAdminOrModerator(AddAdminOrModerator):
+    permission_required = 'osf.change_collectionprovider'
+    template_name = 'collection_providers/edit_moderators.html'
+    provider_class = CollectionProvider
+    url_namespace = 'collection_providers'
+    raise_exception = True
+
+
+class CollectionRemoveAdminsAndModerators(RemoveAdminsAndModerators):
+    permission_required = 'osf.change_collectionprovider'
+    template_name = 'collection_providers/edit_moderators.html'
+    provider_class = CollectionProvider
+    url_namespace = 'collection_providers'
+    raise_exception = True
