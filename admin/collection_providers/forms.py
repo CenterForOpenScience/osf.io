@@ -25,7 +25,7 @@ class CollectionProviderForm(forms.ModelForm):
         model = CollectionProvider
         exclude = ['primary_identifier_name', 'primary_collection', 'type', 'allow_commenting', 'advisory_board',
                    'example', 'domain', 'domain_redirect_enabled', 'reviews_comments_anonymous',
-                   'reviews_comments_private', 'reviews_workflow']
+                   'reviews_comments_private']
 
         widgets = {
             'licenses_acceptable': forms.CheckboxSelectMultiple(),
