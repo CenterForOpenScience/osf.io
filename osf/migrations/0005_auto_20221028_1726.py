@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='collectionsubmission',
             name='machine_state',
-            field=models.IntegerField(choices=[(0, 'Undefined'), (1, 'Unapproved'), (2, 'PendingModeration'), (3, 'Approved'), (4, 'Rejected'), (5, 'ModeratorRejected'), (6, 'Completed'), (7, 'InProgress')], default=osf.utils.workflows.ApprovalStates['IN_PROGRESS']),
+            field=models.IntegerField(choices=[(0, 'Undefined'), (1, 'Unapproved'), (2, 'PendingModeration'), (3, 'Approved'), (4, 'Rejected'), (5, 'ModeratorRejected'), (6, 'Completed'), (7, 'InProgress')], default=osf.utils.workflows.CollectionSubmissionStates['IN_PROGRESS']),
         ),
         migrations.CreateModel(
             name='CollectionSubmissionAction',

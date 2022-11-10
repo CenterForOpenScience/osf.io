@@ -383,9 +383,17 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
     {
         'trigger': 'submit',
         'source': [CollectionSubmissionStates.IN_PROGRESS],
+        'dest': CollectionSubmissionStates.ACCEPTED,
+        'before': [],
+        'after': ['_on_submit'],
+    },
+    {
+        'trigger': 'submit',
+        'source': [CollectionSubmissionStates.IN_PROGRESS],
         'dest': CollectionSubmissionStates.PENDING,
         'before': [],
         'after': ['_on_submit'],
+        'conditions': ['is_moderated'],
     },
     {
         'trigger': 'accept',
@@ -393,6 +401,7 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'dest': CollectionSubmissionStates.ACCEPTED,
         'before': [],
         'after': ['_on_accept'],
+        'conditions': ['is_moderated'],
     },
     {
         'trigger': 'reject',
@@ -400,6 +409,7 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'dest': CollectionSubmissionStates.REJECTED,
         'before': [],
         'after': ['_on_reject'],
+        'conditions': ['is_moderated'],
     },
     {
         'trigger': 'remove',
@@ -407,6 +417,7 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'dest': CollectionSubmissionStates.REMOVED,
         'before': [],
         'after': ['_on_remove'],
+        'conditions': ['is_moderated'],
     },
     {
         'trigger': 'resubmit',
@@ -414,6 +425,7 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'dest': CollectionSubmissionStates.PENDING,
         'before': [],
         'after': ['_on_resubmit'],
+        'conditions': ['is_moderated'],
     },
 ]
 

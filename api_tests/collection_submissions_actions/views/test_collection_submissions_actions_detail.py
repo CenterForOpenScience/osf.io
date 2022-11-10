@@ -80,6 +80,8 @@ class TestCollectionSubmissionsActionsDetailGETPermissions:
     @pytest.mark.parametrize('user_role', [UserRoles.UNAUTHENTICATED, UserRoles.NONCONTRIB])
     def test_private_collection_noncontribs(self, app, node, collection, user_role, collection_submission_action):
         collection.is_public = False
+        node.is_public = False
+        node.save()
         collection.save()
         test_auth = configure_test_auth(node, user_role)
         resp = app.get(GET_URL.format(collection_submission_action._id), auth=test_auth, expect_errors=True)
@@ -88,6 +90,8 @@ class TestCollectionSubmissionsActionsDetailGETPermissions:
     @pytest.mark.parametrize('user_role', UserRoles.excluding(*[UserRoles.UNAUTHENTICATED, UserRoles.NONCONTRIB]))
     def test_private_collection_contribs(self, app, node, collection, user_role, collection_submission_action):
         collection.is_public = False
+        node.is_public = False
+        node.save()
         collection.save()
         test_auth = configure_test_auth(node, user_role)
         resp = app.get(GET_URL.format(collection_submission_action._id), auth=test_auth, expect_errors=True)
