@@ -6,7 +6,7 @@ from rest_framework.exceptions import NotFound, MethodNotAllowed
 
 from api.base.utils import get_user_auth, assert_resource_type
 from osf.models import AbstractNode, Preprint, Collection, CollectionSubmission, CollectionProvider
-from osf.utils.permissions import READ, WRITE, ADMIN
+from osf.utils.permissions import WRITE, ADMIN
 
 
 class CollectionReadOrPublic(permissions.BasePermission):
@@ -18,12 +18,14 @@ class CollectionReadOrPublic(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         auth = get_user_auth(request)
-        moderators = obj.target.collection.provider.get_group('moderator').user_set.all()
-        if auth.user in moderators or obj.target.collection.is_public and obj.target.guid.referent.can_view(auth):
+        if obj.target.collection.is_public:
             return True
-        elif obj.target.guid.referent.has_permission(auth.user, READ):
+        elif auth.user and auth.user.has_perm('view_submissions', obj.target.collection.provider):
             return True
-        return False
+        elif obj.target.guid.referent.can_view(auth):
+            return True
+        else:
+            return False
 
 
 class CollectionWriteOrPublic(permissions.BasePermission):
