@@ -406,10 +406,4 @@ class CollectionGroupObjectPermission(GroupObjectPermissionBase):
 @receiver(post_save, sender=CollectionSubmission)
 def create_submission_action(sender, instance, created, **kwargs):
     if created:
-        instance.actions.create(
-            from_state=CollectionSubmissionStates.IN_PROGRESS,
-            to_state=CollectionSubmissionStates.PENDING,
-            trigger=CollectionSubmissionsTriggers.SUBMIT,
-            creator=instance.creator,
-            comment='Initial submission action'
-        )
+        instance.submit(user=instance.creator, comment='Initial submission action')
