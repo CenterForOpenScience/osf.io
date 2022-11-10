@@ -25,7 +25,7 @@ class CollectionProviderForm(forms.ModelForm):
         model = CollectionProvider
         exclude = ['primary_identifier_name', 'primary_collection', 'type', 'allow_commenting', 'advisory_board',
                    'example', 'domain', 'domain_redirect_enabled', 'reviews_comments_anonymous',
-                   'reviews_comments_private']
+                   'reviews_comments_private', 'reviews_workflow']
 
         widgets = {
             'licenses_acceptable': forms.CheckboxSelectMultiple(),
@@ -61,9 +61,6 @@ class CollectionProviderForm(forms.ModelForm):
         )
 
     def clean_collected_type_choices(self):
-        if not self.data.get('collected_type_choices'):
-            return {'added': [], 'removed': []}
-
         collection_provider = self.instance
         # if this is to modify an existing CollectionProvider
         if collection_provider.primary_collection:
@@ -91,9 +88,6 @@ class CollectionProviderForm(forms.ModelForm):
         }
 
     def clean_status_choices(self):
-        if not self.data.get('status_choices'):
-            return {'added': [], 'removed': []}
-
         collection_provider = self.instance
         # if this is to modify an existing CollectionProvider
         if collection_provider.primary_collection:
@@ -121,9 +115,6 @@ class CollectionProviderForm(forms.ModelForm):
         }
 
     def clean_volume_choices(self):
-        if not self.data.get('volume_choices'):
-            return {'added': [], 'removed': []}
-
         collection_provider = self.instance
         # if this is to modify an existing CollectionProvider
         if collection_provider.primary_collection:
@@ -151,9 +142,6 @@ class CollectionProviderForm(forms.ModelForm):
         }
 
     def clean_issue_choices(self):
-        if not self.data.get('issue_choices'):
-            return {'added': [], 'removed': []}
-
         collection_provider = self.instance
         # if this is to modify an existing CollectionProvider
         if collection_provider.primary_collection:
@@ -181,9 +169,6 @@ class CollectionProviderForm(forms.ModelForm):
         }
 
     def clean_program_area_choices(self):
-        if not self.data.get('program_area_choices'):
-            return {'added': [], 'removed': []}
-
         collection_provider = self.instance
         # if this is to modify an existing CollectionProvider
         if collection_provider.primary_collection:
@@ -211,9 +196,6 @@ class CollectionProviderForm(forms.ModelForm):
         }
 
     def clean_school_type_choices(self):
-        if not self.data.get('school_type_choices'):
-            return {'added': [], 'removed': []}
-
         collection_provider = self.instance
         primary_collection = collection_provider.primary_collection
         if primary_collection:  # Modifying an existing CollectionProvider
@@ -240,9 +222,6 @@ class CollectionProviderForm(forms.ModelForm):
         return {'added': added_choices, 'removed': removed_choices}
 
     def clean_study_design_choices(self):
-        if not self.data.get('study_design_choices'):
-            return {'added': [], 'removed': []}
-
         collection_provider = self.instance
         primary_collection = collection_provider.primary_collection
         if primary_collection:  # Modifying an existing CollectionProvider

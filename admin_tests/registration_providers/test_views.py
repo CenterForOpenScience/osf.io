@@ -270,14 +270,14 @@ class TestEditModerators:
     def remove_moderator_view(self, req, provider):
         view = views.RemoveAdminsAndModerators()
         view = setup_view(view, req)
-        view.kwargs = {'provider_id': provider.id}
+        view.kwargs = {'registration_provider_id': provider.id}
         return view
 
     @pytest.fixture()
     def add_moderator_view(self, req, provider):
         view = views.AddAdminOrModerator()
         view = setup_view(view, req)
-        view.kwargs = {'provider_id': provider.id}
+        view.kwargs = {'registration_provider_id': provider.id}
         return view
 
     def test_get(self, add_moderator_view, remove_moderator_view, req):
