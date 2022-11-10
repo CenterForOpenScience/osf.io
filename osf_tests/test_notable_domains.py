@@ -117,6 +117,32 @@ class TestNotableDomain:
         obj.reload()
         assert obj.spam_status == SpamStatus.SPAM
 
+    @pytest.mark.enable_enqueue_task
+    @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
+    def test_check_resource_for_duplicate_spam_domains(self, factory, spam_domain, marked_as_spam_domain):
+        obj = factory()
+        obj.spam_data['domains'] = [spam_domain.netloc]
+        obj.save()
+        check_resource_for_domains.apply_async(
+            kwargs=dict(
+                guid=obj.guids.first()._id,
+                content=f'{spam_domain.geturl()}',
+            )
+        )
+        obj.reload()
+        assert NotableDomain.objects.filter(
+            domain=spam_domain.netloc,
+            note=NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT
+        ).count() == 1
+        obj.reload()
+        assert obj.spam_status == SpamStatus.SPAM
+        assert obj.spam_data['domains'] == [spam_domain.netloc]
+        assert DomainReference.objects.filter(
+            referrer_object_id=obj.id,
+            referrer_content_type=ContentType.objects.get_for_model(obj),
+            domain__domain=spam_domain.netloc
+        ).count() == 1
+
 @pytest.mark.django_db
 @pytest.mark.enable_enqueue_task
 class TestNotableDomainReclassification:
