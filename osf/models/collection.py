@@ -64,12 +64,8 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         return CollectionSubmissionStates(self.machine_state)
 
     @property
-    def provider(self):
-        return self.collection.provider
-
-    @property
-    def moderators(self):
-        return self.provider.get_group('moderator').user_set.all()
+    def is_moderated(self):
+        return self.provider and self.provider.reviews_workflow == 'post-moderation'
 
     @state.setter
     def state(self, new_state):
@@ -80,12 +76,12 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
 
     def _on_accept(self, event_data):
         user = event_data.kwargs['user']
-        if user not in self.moderators:
+        if user.has_perm('accept_submissions', self.provider):
             raise PermissionsError(f'{user} must have moderator permissions.')
 
     def _on_reject(self, event_data):
         user = event_data.kwargs['user']
-        if user not in self.moderators:
+        if user.has_perm('reject_submissions', self.provider):
             raise PermissionsError(f'{user} must have moderator permissions.')
 
     def _on_remove(self, event_data):
@@ -406,10 +402,4 @@ class CollectionGroupObjectPermission(GroupObjectPermissionBase):
 @receiver(post_save, sender=CollectionSubmission)
 def create_submission_action(sender, instance, created, **kwargs):
     if created:
-        instance.actions.create(
-            from_state=CollectionSubmissionStates.IN_PROGRESS,
-            to_state=CollectionSubmissionStates.PENDING,
-            trigger=CollectionSubmissionsTriggers.SUBMIT,
-            creator=instance.creator,
-            comment='Initial submission action'
-        )
+        instance.submit(user=instance.creator, comment='Initial submission action')
