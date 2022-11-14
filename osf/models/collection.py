@@ -6,10 +6,13 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.utils.functional import cached_property
 from django.utils import timezone
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 from framework.celery_tasks.handlers import enqueue_task
+from framework.exceptions import PermissionsError
 
 from osf.models.base import BaseModel, GuidMixin
 from osf.models.mixins import GuardianMixin, TaxonomizableMixin
@@ -19,8 +22,11 @@ from osf.utils.permissions import ADMIN
 from osf.exceptions import NodeStateError
 from website.util import api_v2_url
 from website.search.exceptions import SearchUnavailableError
+from osf.utils.workflows import CollectionSubmissionsTriggers, CollectionSubmissionStates
 
 logger = logging.getLogger(__name__)
+from osf.utils.machines import CollectionSubmissionMachine
+
 
 class CollectionSubmission(TaxonomizableMixin, BaseModel):
     primary_identifier_name = 'guid___id'
@@ -39,6 +45,68 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
     program_area = models.CharField(blank=True, max_length=127)
     school_type = models.CharField(blank=True, max_length=127)
     study_design = models.CharField(blank=True, max_length=127)
+    machine_state = models.IntegerField(
+        choices=CollectionSubmissionStates.int_field_choices(),
+        default=CollectionSubmissionStates.IN_PROGRESS,
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.state_machine = CollectionSubmissionMachine(
+            model=self,
+            active_state=self.state,
+            state_property_name='state'
+        )
+
+    @property
+    def state(self):
+        '''Property to translate between ApprovalState Enum and DB string.'''
+        return CollectionSubmissionStates(self.machine_state)
+
+    @property
+    def is_moderated(self):
+        return self.provider and self.provider.reviews_workflow == 'post-moderation'
+
+    @state.setter
+    def state(self, new_state):
+        self.machine_state = new_state.value
+
+    def _on_submit(self, event_data):
+        self.submitted_timestamp = timezone.now()
+
+    def _on_accept(self, event_data):
+        user = event_data.kwargs['user']
+        if user.has_perm('accept_submissions', self.provider):
+            raise PermissionsError(f'{user} must have moderator permissions.')
+
+    def _on_reject(self, event_data):
+        user = event_data.kwargs['user']
+        if user.has_perm('reject_submissions', self.provider):
+            raise PermissionsError(f'{user} must have moderator permissions.')
+
+    def _on_remove(self, event_data):
+        pass
+
+    def _on_resubmit(self, event_data):
+        pass
+
+    def _save_transition(self, event_data):
+        '''Save changes here and write the action.'''
+        self.save()
+        from_state = CollectionSubmissionStates[event_data.transition.source]
+        to_state = self.state
+
+        trigger = CollectionSubmissionsTriggers.from_db_name(event_data.event.name)
+        if trigger is None:
+            return
+
+        self.actions.create(
+            from_state=from_state,
+            to_state=to_state,
+            trigger=trigger,
+            creator=event_data.kwargs.get('user', self.creator),
+            comment=event_data.kwargs.get('comment', '')
+        )
 
     @cached_property
     def _id(self):
@@ -329,3 +397,9 @@ class CollectionUserObjectPermission(UserObjectPermissionBase):
 
 class CollectionGroupObjectPermission(GroupObjectPermissionBase):
     content_object = models.ForeignKey(Collection, on_delete=models.CASCADE)
+
+
+@receiver(post_save, sender=CollectionSubmission)
+def create_submission_action(sender, instance, created, **kwargs):
+    if created:
+        instance.submit(user=instance.creator, comment='Initial submission action')

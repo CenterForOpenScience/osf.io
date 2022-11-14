@@ -2,11 +2,31 @@
 from __future__ import unicode_literals
 
 from rest_framework import permissions
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, MethodNotAllowed
 
 from api.base.utils import get_user_auth, assert_resource_type
 from osf.models import AbstractNode, Preprint, Collection, CollectionSubmission, CollectionProvider
 from osf.utils.permissions import WRITE, ADMIN
+
+
+class CollectionReadOrPublic(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.method == 'GET':
+            return self.has_object_permission(request, view, view.get_object())
+        else:
+            raise MethodNotAllowed(request.method)
+
+    def has_object_permission(self, request, view, obj):
+        auth = get_user_auth(request)
+        if obj.target.collection.is_public:
+            return True
+        elif auth.user and auth.user.has_perm('view_submissions', obj.target.collection.provider):
+            return True
+        elif obj.target.guid.referent.can_view(auth):
+            return True
+        else:
+            return False
+
 
 class CollectionWriteOrPublic(permissions.BasePermission):
     # Adapted from ContributorOrPublic
