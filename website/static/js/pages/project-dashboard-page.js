@@ -110,6 +110,19 @@ $(document).ready(function () {
         return !(target.hasClass('keep-open') || target.parents('.keep-open').length);
     });
 
+    $('#collections-header').on('click', function (evt) {
+        if ($("#collections-header>.pull-left").css('display') === 'block') {
+            $("#collections-header>.pull-left").css('display', 'none');
+            $("#collections-header").css('height', '0px');
+            $("#collections-header").css('margin', '0px');
+        } else {
+            $("#collections-header>.pull-left").css('display', 'block');
+            $("#collections-header").css('height', 'inherit');
+            $("#collections-header").css('margin', '10px');
+            $("#collections-header>.pull-left").slideIn();
+        }
+    });
+
     var AddComponentButton = m.component(AddProject, {
         buttonTemplate: m('.btn.btn-sm.btn-default[data-toggle="modal"][data-target="#addSubComponent"]', {onclick: function() {
             $osf.trackClick('project-dashboard', 'add-component', 'open-add-project-modal');
