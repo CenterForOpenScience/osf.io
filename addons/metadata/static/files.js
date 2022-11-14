@@ -1716,7 +1716,6 @@ function MetadataButtons() {
   self.initPasteMetadataDialog = function() {
     const dialog = $('<div class="modal fade"></div>');
     const close = $('<a href="#" class="btn btn-default" data-dismiss="modal"></a>').text(_('Close'));
-    close.click(self.closeModal);
     dialog
       .append($('<div class="modal-dialog modal-lg"></div>')
         .append($('<div class="modal-content"></div>')
@@ -1743,7 +1742,6 @@ function MetadataButtons() {
         const text = (event.clipboardData || window.clipboardData).getData('text');
         self.setMetadataFromJson(text);
         dialog.modal('hide');
-        self.closeModal();
       }
       document.addEventListener('paste', self.pasteMetadataEvent);
     }
