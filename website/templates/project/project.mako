@@ -326,7 +326,7 @@
                     <img src="${node['collections'][0]['logo']}" style="display: inline; height: 25px; width: 25px; margin-left: 5px;"/>
                     <div style="display: inline; margin: 10px; margin-left: 0px;" >
                         % if len(node['collections']) - 1:
-                            Included in <a>${node['collections'][0]['title']}</a> and <a>${len(node['collections']) - 1}</a> more
+                            Included in <a>${node['collections'][0]['title']}</a> and <a>${len(node['removed_submissions']) + len(node['rejected_submissions']) + len(node['collections']) - 1}</a> more
                         % else:
                             Included in <a>${node['collections'][0]['title']}</a>
                         % endif:
@@ -342,7 +342,7 @@
                         <a class="fa fa-pencil pull-right" href="${domain}collections/${collection['_id']}/edit"></a>
                         <img src="${collection['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
                         <div style="display: inline;">
-                            Included in <a>${collection['title']}</a>
+                            Included in <a href="${domain}collections/${collection['_id']}/" >${collection['title']}</a>
                         </div>
                         % if collection['study_design'] and collection['type']:
                             <div  style="padding-left: 30px;">
@@ -364,7 +364,7 @@
                                             <i class="fa fa-close pull-right" ></i>
                         <img src="${rejected_submission['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
                         <div style="display: inline;">
-                            Rejected from <a>${rejected_submission['title']}</a>
+                            Rejected from <a href="${domain}collections/${collection['_id']}/">${rejected_submission['title']}</a>
                         </div>
                         <div style="padding-left: 30px;">
                             <i>${rejected_submission['comment']}</i>
@@ -375,7 +375,7 @@
                         <i class="fa fa-close pull-right" ></i>
                         <img src="${removed_submission['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
                         <div style="display: inline;">
-                            Removed from <a>${removed_submission['title']}</a>
+                            Removed from <a href="${domain}collections/${collection['_id']}/">${removed_submission['title']}</a>
                         </div>
                         <div style="padding-left: 30px;">
                             <i>${removed_submission['comment']}</i>
