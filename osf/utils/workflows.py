@@ -386,6 +386,7 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'dest': CollectionSubmissionStates.ACCEPTED,
         'before': [],
         'after': ['_on_submit'],
+        'unless': ['is_moderated'],
     },
     {
         'trigger': 'submit',

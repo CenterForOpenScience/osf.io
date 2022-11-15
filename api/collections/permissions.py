@@ -146,7 +146,8 @@ class OnlyAdminCanCreateDestroyCollectionSubmissionAction(permissions.BasePermis
         assert_resource_type(collection_submission, self.acceptable_models)
         auth = get_user_auth(request)
         if request.method == 'POST':
-            is_moderator = auth.user.has_perm('accept_submissions', collection_submission.collection.provider)
+            provider = collection_submission.collection.provider
+            is_moderator = auth.user and auth.user.has_perm('accept_submissions', provider)
             return collection_submission.guid.referent.has_permission(auth.user, ADMIN) or is_moderator
         else:
             return False
@@ -175,4 +176,5 @@ class OnlyAdminCanCreateDestroyCollectionSubmissionAction(permissions.BasePermis
         if request.method == 'POST':
             return self.has_object_permission(request, view, obj)
         elif request.method == 'GET':
-            return obj.guid.referent.has_permission(auth.user, ADMIN) or auth.user in obj.moderators
+            is_moderator = auth.user and auth.user.has_perm('view_submissions', obj.collection.provider)
+            return obj.guid.referent.has_permission(auth.user, ADMIN) or is_moderator

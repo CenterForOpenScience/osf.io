@@ -65,23 +65,23 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
 
     @property
     def is_moderated(self):
-        return self.provider and self.provider.reviews_workflow == 'post-moderation'
+        return self.collection.provider and self.collection.provider.reviews_workflow == 'post-moderation'
 
     @state.setter
     def state(self, new_state):
         self.machine_state = new_state.value
 
     def _on_submit(self, event_data):
-        self.submitted_timestamp = timezone.now()
+        pass
 
     def _on_accept(self, event_data):
         user = event_data.kwargs['user']
-        if user.has_perm('accept_submissions', self.provider):
+        if not user.has_perm('accept_submissions', self.collection.provider):
             raise PermissionsError(f'{user} must have moderator permissions.')
 
     def _on_reject(self, event_data):
         user = event_data.kwargs['user']
-        if user.has_perm('reject_submissions', self.provider):
+        if not user.has_perm('reject_submissions', self.collection.provider):
             raise PermissionsError(f'{user} must have moderator permissions.')
 
     def _on_remove(self, event_data):

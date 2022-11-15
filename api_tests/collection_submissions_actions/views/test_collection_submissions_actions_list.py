@@ -5,7 +5,6 @@ from osf_tests.factories import AuthUserFactory
 from django.utils import timezone
 from osf_tests.factories import NodeFactory, CollectionFactory, CollectionProviderFactory
 
-from osf.migrations import update_provider_auth_groups
 from osf.models import CollectionSubmission
 from osf.utils.workflows import CollectionSubmissionsTriggers, CollectionSubmissionStates
 
@@ -15,7 +14,9 @@ POST_URL = '/v2/collection_submissions_actions/'
 @pytest.fixture()
 def collection_provider():
     collection_provider = CollectionProviderFactory()
-    update_provider_auth_groups()
+    collection_provider.reviews_workflow = 'post-moderation'
+    collection_provider.update_group_permissions()
+    collection_provider.save()
     return collection_provider
 
 
@@ -97,18 +98,6 @@ def configure_test_auth(node, user_role):
 
 @pytest.mark.django_db
 class TestCollectionSubmissionsActionsListPOSTPermissions:
-
-    def test_status_code__admin(self, app, node, collection_submission):
-        test_auth = configure_test_auth(node, UserRoles.ADMIN_USER)
-        resp = app.post_json_api(
-            POST_URL,
-            make_payload(
-                collection_submission=collection_submission,
-                trigger=CollectionSubmissionsTriggers.SUBMIT.db_name
-            ),
-            auth=test_auth,
-        )
-        assert resp.status_code == 201
 
     @pytest.mark.parametrize('user_role', UserRoles.excluding(*[UserRoles.ADMIN_USER, UserRoles.MODERATOR]))
     def test_status_code__non_admin_moderator(self, app, node, collection_submission, user_role):
