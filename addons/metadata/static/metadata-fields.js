@@ -244,6 +244,7 @@ function SingleElementField(formField, question, defaultValue, options, callback
   self.formField = formField;
   self.label = question.qid;
   self.title = question.title;
+  self.help = question.help;
   self.defaultValue = defaultValue;
 
   self.createFormGroup = function(input, errorContainer) {
@@ -255,7 +256,32 @@ function SingleElementField(formField, question, defaultValue, options, callback
         .text('*'));
     }
     const group = $('<div></div>').addClass('form-group')
-      .append(label)
+      .append(label);
+    if (self.help) {
+      let isDisplayedHelp = false;
+      const helpLink = $('<a></a>')
+          .addClass('help-toggle-button')
+          .text(_('Show example'));
+      const helpLinkBlock = $('<p></p>').append(helpLink);
+      const help = $('<p></p>')
+        .addClass('help-block')
+        .text(self.getHelpText())
+        .hide();
+      helpLink.on('click', function(e) {
+        e.preventDefault();
+        if (isDisplayedHelp) {
+          helpLink.text(_('Show example'));
+          help.hide();
+          isDisplayedHelp = false;
+        } else {
+          helpLink.text(_('Hide example'));
+          help.show();
+          isDisplayedHelp = true;
+        }
+      });
+      group.append(helpLinkBlock).append(help);
+    }
+    group
       .append(input)
       .append(errorContainer);
     return group;
@@ -266,6 +292,10 @@ function SingleElementField(formField, question, defaultValue, options, callback
       return self.label;
     }
     return getLocalizedText(self.title);
+  }
+
+  self.getHelpText = function() {
+    return getLocalizedText(self.help);
   }
 
   self.getValue = function(input) {
