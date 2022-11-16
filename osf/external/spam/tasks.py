@@ -12,14 +12,14 @@ logging.basicConfig(level=logging.INFO)
 DOMAIN_REGEX = re.compile(r'\W*(?P<protocol>\w+://)?(?P<www>www\.)?(?P<domain>([\w-]+\.)+\w+)(?P<path>/\w*)?\W*')
 
 @celery_app.task()
-def reclassify_domain_references(notable_domain_id, previous_note):
+def reclassify_domain_references(notable_domain_id, current_note, previous_note):
     from osf.models.notable_domain import DomainReference, NotableDomain
     domain = NotableDomain.load(notable_domain_id)
     references = DomainReference.objects.filter(domain=domain)
     with transaction.atomic():
         for item in references:
-            item.is_triaged = domain.note != NotableDomain.Note.UNKNOWN
-            if domain.note == NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT:
+            item.is_triaged = current_note != NotableDomain.Note.UNKNOWN
+            if current_note == NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT:
                 item.referrer.confirm_spam(save=False, domains=[domain.domain])
             elif previous_note == NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT:
                 try:
