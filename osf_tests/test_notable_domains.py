@@ -60,7 +60,7 @@ class TestDomainExtraction:
         assert domains == {'osf.io', 'cos.io'}
 
     def test_extract_domains__no_domains(self):
-        sample_text = 'This has no domains!'
+        sample_text = 'http://fakeout!'
         with mock.patch.object(spam_tasks.requests, 'head') as mock_head:
             domains = set(spam_tasks._extract_domains(sample_text))
         assert not domains
@@ -83,6 +83,11 @@ class TestDomainExtraction:
             domains = list(spam_tasks._extract_domains(sample_text))
         assert domains == ['redirected.com']
 
+    def test_extract_domains__deduplicates(self):
+        sample_text = 'osf.io osf.io osf.io and, oh, yeah, osf.io'
+        with mock.patch.object(spam_tasks.requests, 'head'):
+            domains = list(spam_tasks._extract_domains(sample_text))
+        assert domains == ['osf.io']
 
 @pytest.mark.django_db
 class TestNotableDomain:
@@ -191,12 +196,14 @@ class TestNotableDomain:
         obj = factory()
         obj.spam_data['domains'] = [spam_domain.netloc]
         obj.save()
-        check_resource_for_domains.apply_async(
-            kwargs=dict(
-                guid=obj.guids.first()._id,
-                content=f'{spam_domain.geturl()}',
+        with mock.patch.object(spam_tasks.requests, 'head'):
+            spam_tasks.check_resource_for_domains.apply_async(
+                kwargs=dict(
+                    guid=obj.guids.first()._id,
+                    content=f'{spam_domain.geturl()}',
+                )
             )
-        )
+
         obj.reload()
         assert NotableDomain.objects.filter(
             domain=spam_domain.netloc,

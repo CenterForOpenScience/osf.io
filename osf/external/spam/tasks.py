@@ -51,9 +51,10 @@ def check_resource_for_domains(guid, content):
         resource.confirm_spam(save=True, domains=list(spammy_domains))
 
 def _extract_domains(content):
+    extracted_domains = set()
     for match in DOMAIN_REGEX.finditer(content):
         domain = match.group('domain')
-        if not domain:
+        if not domain or domain in extracted_domains:
             continue
 
         protocol = match.group('protocol') or 'https://'
@@ -69,4 +70,7 @@ def _extract_domains(content):
         if response.status_code == 302:
             domain = DOMAIN_REGEX.match(response.headers['location']).group('domain')
 
-        yield domain
+        # Avoid returning a duplicate domain discovered via redirect
+        if domain not in extracted_domains:
+            extracted_domains.add(domain)
+            yield domain
