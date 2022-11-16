@@ -106,7 +106,7 @@ class TestCustomItemMetadataRecordDetail:
 
 
 @pytest.mark.django_db
-class TestCustomFileMetadataRecordUpdate:
+class TestCustomItemMetadataRecordUpdate:
 
     @pytest.fixture()
     def user_write(self):
