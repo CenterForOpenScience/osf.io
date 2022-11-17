@@ -23,9 +23,11 @@ from osf.exceptions import NodeStateError
 from website.util import api_v2_url
 from website.search.exceptions import SearchUnavailableError
 from osf.utils.workflows import CollectionSubmissionsTriggers, CollectionSubmissionStates
+from website import mails, settings
+from osf.utils.machines import CollectionSubmissionMachine
+
 
 logger = logging.getLogger(__name__)
-from osf.utils.machines import CollectionSubmissionMachine
 
 
 class CollectionSubmission(TaxonomizableMixin, BaseModel):
@@ -72,20 +74,103 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         self.machine_state = new_state.value
 
     def _on_submit(self, event_data):
+        user = event_data.kwargs['user']
+
+        if not self.is_moderated:
+            self.collection.collect_object(self.guid.referent, user)
+
+    def _notify_unmoderated_accepted(self, event_data):
         pass
+
+    def _notify_moderated_pending(self, event_data):
+        for contributor in self.guid.referent.contributors:
+            mails.send_mail(
+                to_addr=contributor.username,
+                mail=mails.COLLECTION_SUBMISSION_SUBMITTED,
+                user=contributor,
+                submitter=self.creator,
+                is_initator=self.creator == contributor,
+                is_admin=self.guid.referent.has_permission(contributor, ADMIN),
+                is_registered_contrib=contributor.is_registered,
+                collection=self.collection,
+                claim_url=contributor.unclaimed_records.get(self.guid.referent._id, None),
+                node=self.guid.referent,
+                domain=settings.DOMAIN,
+                osf_contact_email=settings.OSF_CONTACT_EMAIL,
+            )
 
     def _on_accept(self, event_data):
         user = event_data.kwargs['user']
         if not user.has_perm('accept_submissions', self.collection.provider):
             raise PermissionsError(f'{user} must have moderator permissions.')
 
+    def _notify_moderated_accepted(self, event_data):
+        for contributor in self.guid.referent.contributors:
+            mails.send_mail(
+                to_addr=contributor.username,
+                mail=mails.COLLECTION_SUBMISSION_ACCEPTED,
+                user=contributor,
+                submitter=event_data.kwargs['user'],
+                is_admin=self.guid.referent.has_permission(contributor, ADMIN),
+                collection=self.collection,
+                node=self.guid.referent,
+                domain=settings.DOMAIN,
+                osf_contact_email=settings.OSF_CONTACT_EMAIL,
+            )
+
     def _on_reject(self, event_data):
         user = event_data.kwargs['user']
         if not user.has_perm('reject_submissions', self.collection.provider):
             raise PermissionsError(f'{user} must have moderator permissions.')
 
+    def _notify_moderated_rejected(self, event_data):
+        for contributor in self.guid.referent.contributors:
+            mails.send_mail(
+                to_addr=contributor.username,
+                mail=mails.COLLECTION_SUBMISSION_REJECTED,
+                user=contributor,
+                is_admin=self.guid.referent.has_permission(contributor, ADMIN),
+                collection=self.collection,
+                node=self.guid.referent,
+                rejection_justification=event_data.kwargs['comment'],
+                osf_contact_email=settings.OSF_CONTACT_EMAIL,
+            )
+
     def _on_remove(self, event_data):
         pass
+
+    def _notify_removed(self, event_data):
+        user = event_data.kwargs['user']
+        is_moderator = user.has_perm('withdraw_submissions', self.collection.provider)
+        is_admin = self.guid.referent.has_permission(user, ADMIN)
+
+        if is_moderator:
+            for contributor in self.guid.referent.contributors:
+                mails.send_mail(
+                    to_addr=contributor.username,
+                    mail=mails.COLLECTION_SUBMISSION_REMOVED_MODERATOR,
+                    user=contributor,
+                    remover=event_data.kwargs['user'],
+                    is_admin=self.guid.referent.has_permission(contributor, ADMIN),
+                    collection=self.collection,
+                    node=self.guid.referent,
+                    osf_contact_email=settings.OSF_CONTACT_EMAIL,
+                )
+        elif is_admin:
+            for contributor in self.guid.referent.contributors:
+                mails.send_mail(
+                    to_addr=contributor.username,
+                    mail=mails.COLLECTION_SUBMISSION_REMOVED_ADMIN,
+                    user=contributor,
+                    remover=event_data.kwargs['user'],
+                    is_admin=self.guid.referent.has_permission(contributor, ADMIN),
+                    collection=self.collection,
+                    node=self.guid.referent,
+                    osf_contact_email=settings.OSF_CONTACT_EMAIL,
+                )
+
+        else:
+            raise NotImplementedError()
 
     def _on_resubmit(self, event_data):
         pass

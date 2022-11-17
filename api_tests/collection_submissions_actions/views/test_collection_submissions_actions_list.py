@@ -174,7 +174,7 @@ class TestSubmissionsActionsListPOSTBehavior:
         resp = app.post_json_api(POST_URL, payload, auth=test_auth, expect_errors=True)
         assert resp.status_code == 409
 
-    def test_POST_accept__writes_action_and_advances_state(self, app, collection_submission, node):
+    def test_POST_accept__writes_action_and_advances_state(self, app, collection_submission, collection, node):
         collection_submission.state_machine.set_state(CollectionSubmissionStates.PENDING)
         collection_submission.save()
         test_auth = configure_test_auth(node, UserRoles.MODERATOR)
@@ -189,8 +189,9 @@ class TestSubmissionsActionsListPOSTBehavior:
         assert action.from_state == CollectionSubmissionStates.PENDING
         assert action.to_state == CollectionSubmissionStates.ACCEPTED
         assert collection_submission.state is CollectionSubmissionStates.ACCEPTED
+        assert collection_submission in collection.collectionsubmission_set.all()
 
-    def test_POST_reject__writes_action_and_advances_state(self, app, collection_submission, node):
+    def test_POST_reject__writes_action_and_advances_state(self, app, collection_submission, collection, node):
         collection_submission.state_machine.set_state(CollectionSubmissionStates.PENDING)
         collection_submission.save()
         test_auth = configure_test_auth(node, UserRoles.MODERATOR)
@@ -205,8 +206,10 @@ class TestSubmissionsActionsListPOSTBehavior:
         assert action.from_state == CollectionSubmissionStates.PENDING
         assert action.to_state == CollectionSubmissionStates.REJECTED
         assert collection_submission.state is CollectionSubmissionStates.REJECTED
+        # Rejected submissions still technically there
+        assert collection_submission in collection.collectionsubmission_set.all()
 
-    def test_POST_remove__writes_action_and_advances_state(self, app, collection_submission, node):
+    def test_POST_remove__writes_action_and_advances_state(self, app, collection_submission, collection, node):
         collection_submission.state_machine.set_state(CollectionSubmissionStates.ACCEPTED)
         collection_submission.save()
         test_auth = configure_test_auth(node, UserRoles.MODERATOR)
@@ -221,8 +224,10 @@ class TestSubmissionsActionsListPOSTBehavior:
         assert action.from_state == CollectionSubmissionStates.ACCEPTED
         assert action.to_state == CollectionSubmissionStates.REMOVED
         assert collection_submission.state is CollectionSubmissionStates.REMOVED
+        # Rejected submissions still technically there
+        assert collection_submission in collection.collectionsubmission_set.all()
 
-    def test_POST_resubmit__writes_action_and_advances_state(self, app, collection_submission, node):
+    def test_POST_resubmit__writes_action_and_advances_state(self, app, collection_submission, collection, node):
         collection_submission.state_machine.set_state(CollectionSubmissionStates.REMOVED)
         collection_submission.save()
         test_auth = configure_test_auth(node, UserRoles.ADMIN_USER)
@@ -236,6 +241,7 @@ class TestSubmissionsActionsListPOSTBehavior:
         assert action.from_state == CollectionSubmissionStates.REMOVED
         assert action.to_state == CollectionSubmissionStates.PENDING
         assert collection_submission.state is CollectionSubmissionStates.PENDING
+        assert collection_submission in collection.collectionsubmission_set.all()
 
     @pytest.mark.parametrize('user_role', UserRoles)
     def test_status_code__deleted_collection_submission(self, app, node, collection_submission, user_role):
