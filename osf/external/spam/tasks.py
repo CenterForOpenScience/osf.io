@@ -10,6 +10,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 DOMAIN_REGEX = re.compile(r'\W*(?P<protocol>\w+://)?(?P<www>www\.)?(?P<domain>([\w-]+\.)+\w+)(?P<path>/\w*)?\W*')
+REDIRECT_CODES = {301, 302, 303, 307, 308}
 
 @celery_app.task()
 def reclassify_domain_references(notable_domain_id, current_note, previous_note):
@@ -63,12 +64,14 @@ def _extract_domains(content):
 
         try:
             response = requests.head(constructed_url)
-        except requests.exceptions.ConnectionError:
+        except (requests.exceptions.ConnectionError, requests.exceptions.InvalidURL):
             continue
-
-        # Follow 302 in case of link shorteners
-        if response.status_code == 302:
-            domain = DOMAIN_REGEX.match(response.headers['location']).group('domain')
+        except requests.exceptions.RequestException:
+            pass
+        else:
+            # Store the redirect location (to help catch link shorteners)
+            if response.status_code in REDIRECT_CODES and 'location' in response.headers:
+                domain = DOMAIN_REGEX.match(response.headers['location']).group('domain')
 
         # Avoid returning a duplicate domain discovered via redirect
         if domain not in extracted_domains:

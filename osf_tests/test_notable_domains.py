@@ -66,7 +66,7 @@ class TestDomainExtraction:
         assert not domains
         mock_head.assert_not_called()
 
-    def test_extract_domains__false_positive(self):
+    def test_extract_domains__ignored_if_does_not_resolve(self):
         sample_text = 'This.will.not.connect'
         with mock.patch.object(spam_tasks.requests, 'head') as mock_head:
             mock_head.side_effect = spam_tasks.requests.exceptions.ConnectionError
@@ -74,14 +74,31 @@ class TestDomainExtraction:
         assert not domains
         mock_head.assert_called()
 
-    def test_extract_domains__follows_redirect(self):
+    def test_actract_domains__returned_on_error(self):
+        sample_text = 'This.will.timeout'
+        with mock.patch.object(spam_tasks.requests, 'head') as mock_head:
+            mock_head.side_effect = spam_tasks.requests.exceptions.Timeout
+            domains = set(spam_tasks._extract_domains(sample_text))
+        assert domains == {sample_text}
+
+    @pytest.mark.parametrize('status_code', [301, 302, 303, 307, 308])
+    def test_extract_domains__follows_redirect(self, status_code):
         mock_response = SimpleNamespace()
-        mock_response.status_code = 302
+        mock_response.status_code = status_code
         mock_response.headers = {'location': 'redirected.com'}
         sample_text = 'redirect.me'
         with mock.patch.object(spam_tasks.requests, 'head', return_value=mock_response):
             domains = list(spam_tasks._extract_domains(sample_text))
         assert domains == ['redirected.com']
+
+    def test_extract_domains__redirect_code_no_location(self):
+        mock_response = SimpleNamespace()
+        mock_response.status_code = 301
+        mock_response.headers = {}
+        sample_text = 'redirect.me'
+        with mock.patch.object(spam_tasks.requests, 'head', return_value=mock_response):
+            domains = list(spam_tasks._extract_domains(sample_text))
+        assert domains == ['redirect.me']
 
     def test_extract_domains__deduplicates(self):
         sample_text = 'osf.io osf.io osf.io and, oh, yeah, osf.io'
