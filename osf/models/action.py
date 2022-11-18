@@ -13,9 +13,11 @@ from osf.utils.workflows import (
     RegistrationModerationTriggers,
     RegistrationModerationStates,
     SchemaResponseTriggers,
-    CollectionSubmissionsTriggers
+    CollectionSubmissionStates,
+    CollectionSubmissionsTriggers,
 )
 from osf.utils import permissions
+from osf.utils.fields import NonNaiveDateTimeField
 
 
 class BaseAction(ObjectIDMixin, BaseModel):
@@ -78,8 +80,12 @@ class SchemaResponseAction(BaseAction):
     to_state = models.CharField(max_length=31, choices=ApprovalStates.char_field_choices())
 
 
-class CollectionSubmissionAction(BaseAction):
+class CollectionSubmissionAction(ObjectIDMixin, BaseModel):
+    creator = models.ForeignKey('OSFUser', related_name='+', on_delete=models.CASCADE)
     target = models.ForeignKey('CollectionSubmission', related_name='actions', on_delete=models.CASCADE)
-    trigger = models.IntegerField(choices=CollectionSubmissionsTriggers.int_field_choices())
-    from_state = models.IntegerField(choices=ApprovalStates.int_field_choices())
-    to_state = models.IntegerField(choices=ApprovalStates.int_field_choices())
+    trigger = models.IntegerField(choices=CollectionSubmissionsTriggers.char_field_choices())
+    from_state = models.IntegerField(choices=CollectionSubmissionStates.char_field_choices())
+    to_state = models.IntegerField(choices=CollectionSubmissionStates.char_field_choices())
+    comment = models.TextField(blank=True)
+
+    deleted = NonNaiveDateTimeField(null=True, blank=True)
