@@ -13,8 +13,6 @@ from osf.utils.workflows import CollectionSubmissionStates
 from framework.exceptions import PermissionsError
 from api_tests.utils import UserRoles
 
-POST_URL = '/v2/collection_submissions_actions/'
-
 
 @pytest.fixture
 def user():

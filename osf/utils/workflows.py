@@ -398,27 +398,11 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
     },
     {
         'trigger': 'accept',
-        'source': [],
-        'dest': None,
-        'before': [],
-        'after': [],
-        'unless': ['is_moderated'],
-    },
-    {
-        'trigger': 'accept',
         'source': [CollectionSubmissionStates.PENDING],
         'dest': CollectionSubmissionStates.ACCEPTED,
         'before': ['_validate_accept'],
         'after': ['_notify_moderated_accepted'],
         'conditions': ['is_moderated'],
-    },
-    {
-        'trigger': 'reject',
-        'source': [],
-        'dest': None,
-        'before': [],
-        'after': [],
-        'unless': ['is_moderated'],
     },
     {
         'trigger': 'reject',
