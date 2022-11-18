@@ -6,10 +6,13 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.utils.functional import cached_property
 from django.utils import timezone
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 from framework.celery_tasks.handlers import enqueue_task
+from framework.exceptions import PermissionsError
 
 from osf.models.base import BaseModel, GuidMixin
 from osf.models.mixins import GuardianMixin, TaxonomizableMixin
@@ -19,8 +22,13 @@ from osf.utils.permissions import ADMIN
 from osf.exceptions import NodeStateError
 from website.util import api_v2_url
 from website.search.exceptions import SearchUnavailableError
+from osf.utils.workflows import CollectionSubmissionsTriggers, CollectionSubmissionStates
+from website import mails, settings
+from osf.utils.machines import CollectionSubmissionMachine
+
 
 logger = logging.getLogger(__name__)
+
 
 class CollectionSubmission(TaxonomizableMixin, BaseModel):
     primary_identifier_name = 'guid___id'
@@ -39,6 +47,151 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
     program_area = models.CharField(blank=True, max_length=127)
     school_type = models.CharField(blank=True, max_length=127)
     study_design = models.CharField(blank=True, max_length=127)
+    machine_state = models.IntegerField(
+        choices=CollectionSubmissionStates.int_field_choices(),
+        default=CollectionSubmissionStates.IN_PROGRESS,
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.state_machine = CollectionSubmissionMachine(
+            model=self,
+            active_state=self.state,
+            state_property_name='state'
+        )
+
+    @property
+    def state(self):
+        '''Property to translate between ApprovalState Enum and DB string.'''
+        return CollectionSubmissionStates(self.machine_state)
+
+    @property
+    def is_moderated(self):
+        return self.collection.provider and self.collection.provider.reviews_workflow == 'post-moderation'
+
+    @state.setter
+    def state(self, new_state):
+        self.machine_state = new_state.value
+
+    def _on_submit(self, event_data):
+        user = event_data.kwargs['user']
+
+        if not self.is_moderated:
+            self.collection.collect_object(self.guid.referent, user)
+
+    def _notify_unmoderated_accepted(self, event_data):
+        pass
+
+    def _notify_moderated_pending(self, event_data):
+        for contributor in self.guid.referent.contributors:
+            mails.send_mail(
+                to_addr=contributor.username,
+                mail=mails.COLLECTION_SUBMISSION_SUBMITTED,
+                user=contributor,
+                submitter=self.creator,
+                is_initator=self.creator == contributor,
+                is_admin=self.guid.referent.has_permission(contributor, ADMIN),
+                is_registered_contrib=contributor.is_registered,
+                collection=self.collection,
+                claim_url=contributor.unclaimed_records.get(self.guid.referent._id, None),
+                node=self.guid.referent,
+                domain=settings.DOMAIN,
+                osf_contact_email=settings.OSF_CONTACT_EMAIL,
+            )
+
+    def _on_accept(self, event_data):
+        user = event_data.kwargs['user']
+        if not user.has_perm('accept_submissions', self.collection.provider):
+            raise PermissionsError(f'{user} must have moderator permissions.')
+
+    def _notify_moderated_accepted(self, event_data):
+        for contributor in self.guid.referent.contributors:
+            mails.send_mail(
+                to_addr=contributor.username,
+                mail=mails.COLLECTION_SUBMISSION_ACCEPTED,
+                user=contributor,
+                submitter=event_data.kwargs['user'],
+                is_admin=self.guid.referent.has_permission(contributor, ADMIN),
+                collection=self.collection,
+                node=self.guid.referent,
+                domain=settings.DOMAIN,
+                osf_contact_email=settings.OSF_CONTACT_EMAIL,
+            )
+
+    def _on_reject(self, event_data):
+        user = event_data.kwargs['user']
+        if not user.has_perm('reject_submissions', self.collection.provider):
+            raise PermissionsError(f'{user} must have moderator permissions.')
+
+    def _notify_moderated_rejected(self, event_data):
+        for contributor in self.guid.referent.contributors:
+            mails.send_mail(
+                to_addr=contributor.username,
+                mail=mails.COLLECTION_SUBMISSION_REJECTED,
+                user=contributor,
+                is_admin=self.guid.referent.has_permission(contributor, ADMIN),
+                collection=self.collection,
+                node=self.guid.referent,
+                rejection_justification=event_data.kwargs['comment'],
+                osf_contact_email=settings.OSF_CONTACT_EMAIL,
+            )
+
+    def _on_remove(self, event_data):
+        pass
+
+    def _notify_removed(self, event_data):
+        user = event_data.kwargs['user']
+        is_moderator = user.has_perm('withdraw_submissions', self.collection.provider)
+        is_admin = self.guid.referent.has_permission(user, ADMIN)
+
+        if is_moderator:
+            for contributor in self.guid.referent.contributors:
+                mails.send_mail(
+                    to_addr=contributor.username,
+                    mail=mails.COLLECTION_SUBMISSION_REMOVED_MODERATOR,
+                    user=contributor,
+                    remover=event_data.kwargs['user'],
+                    is_admin=self.guid.referent.has_permission(contributor, ADMIN),
+                    collection=self.collection,
+                    node=self.guid.referent,
+                    osf_contact_email=settings.OSF_CONTACT_EMAIL,
+                )
+        elif is_admin:
+            for contributor in self.guid.referent.contributors:
+                mails.send_mail(
+                    to_addr=contributor.username,
+                    mail=mails.COLLECTION_SUBMISSION_REMOVED_ADMIN,
+                    user=contributor,
+                    remover=event_data.kwargs['user'],
+                    is_admin=self.guid.referent.has_permission(contributor, ADMIN),
+                    collection=self.collection,
+                    node=self.guid.referent,
+                    osf_contact_email=settings.OSF_CONTACT_EMAIL,
+                )
+
+        else:
+            raise NotImplementedError()
+
+    def _on_resubmit(self, event_data):
+        pass
+
+    def _save_transition(self, event_data):
+        '''Save changes here and write the action.'''
+        self.save()
+        from_state = CollectionSubmissionStates[event_data.transition.source]
+        to_state = self.state
+
+        trigger = CollectionSubmissionsTriggers.from_db_name(event_data.event.name)
+        if trigger is None:
+            return
+
+        self.actions.create(
+            from_state=from_state,
+            to_state=to_state,
+            trigger=trigger,
+            creator=event_data.kwargs.get('user', self.creator),
+            comment=event_data.kwargs.get('comment', '')
+        )
 
     @cached_property
     def _id(self):
@@ -329,3 +482,9 @@ class CollectionUserObjectPermission(UserObjectPermissionBase):
 
 class CollectionGroupObjectPermission(GroupObjectPermissionBase):
     content_object = models.ForeignKey(Collection, on_delete=models.CASCADE)
+
+
+@receiver(post_save, sender=CollectionSubmission)
+def create_submission_action(sender, instance, created, **kwargs):
+    if created:
+        instance.submit(user=instance.creator, comment='Initial submission action')
