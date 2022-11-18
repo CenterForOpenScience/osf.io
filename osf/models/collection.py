@@ -295,17 +295,6 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
 
         :param obj: object to remove from collection, if it exists. Acceptable types- CollectionSubmission, GuidMixin
         """
-        if isinstance(obj, CollectionSubmission):
-            if obj.collection != self:
-                raise ValueError(f'Resource [{obj.guid._id}] is not part of collection {self._id}')
-        else:
-            # assume that we were passed the collected resource
-            try:
-                obj = self.collectionsubmission_set.get(guid=obj.guids.first())
-            except CollectionSubmission.DoesNotExist:
-                raise ValueError(f'Resource [{obj.guid._id}] is not part of collection {self._id}')
-
-        obj.delete()
 
     def delete(self):
         """ Mark collection as deleted
