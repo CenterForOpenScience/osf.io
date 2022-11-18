@@ -1,6 +1,8 @@
 from copy import deepcopy
 from distutils.version import StrictVersion
 
+from django.db.models import F, Q, Exists, OuterRef
+
 from api.base.exceptions import InvalidFilterOperator, InvalidFilterValue
 from api.base.filters import ListFilterMixin
 from api.base import utils
@@ -44,9 +46,10 @@ class NodesFilterMixin(ListFilterMixin):
             elif operation['op'] == 'ne':
                 if not operation['value']:
                     # filter[parent][ne]=null
+                    return ~Q(root_id=F('id'))
                 # TODO: support this case in the future:
                 # else filter[parent][ne]=<nid>
-                    raise InvalidFilterValue(detail='Only "null" is accepted as valid input to "filter[parent][ne]"')
+                raise InvalidFilterValue(detail='Only "null" is accepted as valid input to "filter[parent][ne]"')
             else:
                 # filter[parent][gte]=''
                 raise InvalidFilterOperator(value=operation['op'], valid_operators=['eq', 'ne'])
