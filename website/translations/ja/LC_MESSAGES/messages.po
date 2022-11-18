@@ -1571,7 +1571,7 @@ msgstr "サインイン"
 
 #: website/templates/nav.mako:140
 msgid "Notice:"
-msgstr "注意:"
+msgstr "お知らせ:"
 
 #: website/templates/nav.mako:144
 msgid ""
