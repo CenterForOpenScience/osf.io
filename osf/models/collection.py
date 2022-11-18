@@ -79,9 +79,6 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         if not self.is_moderated:
             self.collection.collect_object(self.guid.referent, user)
 
-    def _notify_unmoderated_accepted(self, event_data):
-        pass
-
     def _notify_moderated_pending(self, event_data):
         for contributor in self.guid.referent.contributors:
             mails.send_mail(
@@ -136,9 +133,6 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                 osf_contact_email=settings.OSF_CONTACT_EMAIL,
             )
 
-    def _on_remove(self, event_data):
-        pass
-
     def _notify_removed(self, event_data):
         user = event_data.kwargs['user']
         is_moderator = user.has_perm('withdraw_submissions', self.collection.provider)
@@ -171,9 +165,6 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
 
         else:
             raise NotImplementedError()
-
-    def _on_resubmit(self, event_data):
-        pass
 
     def _save_transition(self, event_data):
         '''Save changes here and write the action.'''

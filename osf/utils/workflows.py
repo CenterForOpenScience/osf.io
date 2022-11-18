@@ -385,7 +385,7 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'source': [CollectionSubmissionStates.IN_PROGRESS],
         'dest': CollectionSubmissionStates.ACCEPTED,
         'before': [],
-        'after': ['_on_submit', '_notify_unmoderated_accepted'],
+        'after': ['_on_submit'],
         'unless': ['is_moderated'],
     },
     {
@@ -417,14 +417,14 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'source': [CollectionSubmissionStates.ACCEPTED],
         'dest': CollectionSubmissionStates.REMOVED,
         'before': [],
-        'after': ['_on_remove', '_notify_removed'],
+        'after': ['_notify_removed'],
     },
     {
         'trigger': 'resubmit',
         'source': [CollectionSubmissionStates.REJECTED, CollectionSubmissionStates.REMOVED],
         'dest': CollectionSubmissionStates.PENDING,
         'before': [],
-        'after': ['_on_resubmit'],
+        'after': [],
         'conditions': ['is_moderated'],
     },
 ]
