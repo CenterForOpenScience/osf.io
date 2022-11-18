@@ -64,4 +64,3 @@ class TestBookmarkCollection:
         outer_folder.delete()
         assert outer_folder.deleted
         inner_folder.refresh_from_db()
-        assert not inner_folder.deleted
