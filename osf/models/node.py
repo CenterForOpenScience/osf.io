@@ -21,6 +21,7 @@ from django.db import models, connection
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
+from django.utils.functional import cached_property
 from keen import scoped_keys
 from psycopg2._psycopg import AsIs
 from typedmodels.models import TypedModel, TypedModelManager
@@ -1242,6 +1243,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
             self.is_public = False
             self.keenio_read_key = ''
+            self._remove_from_associated_collections()
         else:
             return False
 
@@ -2225,6 +2227,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             node.deleted = log_date
             node.add_remove_node_log(auth=auth, date=log_date)
             project_signals.node_deleted.send(node)
+            node._remove_from_associated_collections()
 
         bulk_update(hierarchy, update_fields=['is_deleted', 'deleted_date', 'deleted'])
 
@@ -2398,6 +2401,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             ]
         ).first() or osf_provider_tag
         contributor.add_system_tag(source_tag)
+
+    def _remove_from_associated_collections(self):
+        for submission in self.guids.first().collectionsubmission_set.all():
+            associated_collection = submission.collection
+            if associated_collection.is_bookmark_collection and not self.deleted:
+                if self.contributors.filter(pk=associated_collection.creator.id).exists():
+                    continue
+            submission.delete()
 
 
 class NodeUserObjectPermission(UserObjectPermissionBase):
