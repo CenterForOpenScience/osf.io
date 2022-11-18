@@ -225,9 +225,5 @@ def assert_notification_correctness(send_mail_mock, expected_template, expected_
         recipients.add(call_kwargs['to_addr'])
         templates.add(call_kwargs['mail'])
 
-    print(recipients)
-    print(expected_recipients)
-    print(templates)
-    print(expected_template)
     assert recipients == expected_recipients
     assert templates == {expected_template}

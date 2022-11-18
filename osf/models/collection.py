@@ -15,6 +15,7 @@ from osf.models.mixins import GuardianMixin
 from osf.models.validators import validate_title
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.permissions import ADMIN
+from osf.utils.workflows import CollectionSubmissionStates
 from osf.exceptions import NodeStateError
 from website.util import api_v2_url
 
@@ -65,6 +66,21 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
     @property
     def url(self):
         return '/{}/'.format(self._id)
+
+    @property
+    def active_collection_submissions(self):
+        return CollectionSubmission.objects.filter(
+            collection=self
+        ).exclude(
+            machine_state__in=[
+                CollectionSubmissionStates.REMOVED,
+                CollectionSubmissionStates.REJECTED
+            ],
+        )
+
+    @property
+    def active_guids(self):
+        return self.active_collection_submissions.values('guid')
 
     def get_absolute_url(self):
         return self.absolute_api_v2_url
@@ -222,7 +238,7 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
 
         return collection_submission
 
-    def remove_object(self, obj):
+    def remove_object(self, obj, auth):
         """ Removes object from collection
 
         :param obj: object to remove from collection, if it exists. Acceptable types- CollectionSubmission, GuidMixin
@@ -237,7 +253,7 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
             except CollectionSubmission.DoesNotExist:
                 raise ValueError(f'Resource [{obj.guid._id}] is not part of collection {self._id}')
 
-        obj.delete()
+        obj.remove(user=auth.user, comment='Implict removal via remove_object', implict_removal=True)
 
     def delete(self):
         """ Mark collection as deleted

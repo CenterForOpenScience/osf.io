@@ -2409,12 +2409,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 if self.contributors.filter(pk=associated_collection.creator.id).exists():
                     continue
 
-            submission.delete()
             submission.remove_from_index()
             if auth:
                 submission.remove(
                     user=auth.user,
-                    comment='Removed from collection due to being made private',
+                    comment='Removed from collection due to implict removal',
                     implict_removal=True
                 )
 

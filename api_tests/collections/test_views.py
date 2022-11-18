@@ -1374,22 +1374,19 @@ class TestCollectionNodeLinkDetail:
     def test_delete_node_link_no_permissions_for_target_node(
             self, app, user_one, user_two, collection):
         pointed_project = ProjectFactory(creator=user_two)
-        pointer = collection.collect_object(
-            pointed_project, user_one)
-        assert collection.guid_links.filter(_id=pointed_project._id).exists()
-        url = '/{}collections/{}/node_links/{}/'.format(
-            API_BASE, collection._id, pointer.guid._id)
+        pointer = collection.collect_object(pointed_project, user_one)
+        assert collection.active_guids.filter(guid___id=pointed_project._id).exists()
+        url = '/{}collections/{}/node_links/{}/'.format(API_BASE, collection._id, pointer.guid._id)
         res = app.delete_json_api(url, auth=user_one.auth)
         assert res.status_code == 204
         assert not collection.deleted
-        assert not collection.guid_links.filter(_id=pointed_project._id).exists()
+        assert not collection.active_guids.filter(guid___id=pointed_project._id).exists()
 
-    def test_delete_public_node_pointer_authorized(
-            self, app, user_one, url_node_link_public, collection):
+    def test_delete_public_node_pointer_authorized(self, app, user_one, url_node_link_public, collection):
         node_count_before = collection.guid_links.count()
         res = app.delete(url_node_link_public, auth=user_one.auth)
         assert res.status_code == 204
-        assert node_count_before - 1 == collection.guid_links.count()
+        assert node_count_before - 1 == collection.active_collection_submissions.count()
 
     def test_delete_public_registration_pointer_authorized(
             self, app, user_one, collection, url_registration_link_public):
@@ -1397,21 +1394,21 @@ class TestCollectionNodeLinkDetail:
         res = app.delete(url_registration_link_public, auth=user_one.auth)
         collection.reload()
         assert res.status_code == 204
-        assert node_count_before - 1 == collection.guid_links.count()
+        assert node_count_before - 1 == collection.active_collection_submissions.count()
 
     def test_delete_private_node_link_authorized(
             self, app, url_node_link_private, user_one, collection):
         node_count_before = collection.guid_links.count()
         res = app.delete(url_node_link_private, auth=user_one.auth)
         assert res.status_code == 204
-        assert node_count_before - 1 == collection.guid_links.count()
+        assert node_count_before - 1 == collection.active_collection_submissions.count()
 
     def test_delete_private_registration_link_authorized(
             self, app, user_one, url_registration_link_private, collection):
         node_count_before = collection.guid_links.count()
         res = app.delete(url_registration_link_private, auth=user_one.auth)
         assert res.status_code == 204
-        assert node_count_before - 1 == collection.guid_links.count()
+        assert node_count_before - 1 == collection.active_collection_submissions.count()
 
     def test_can_not_return_deleted_collection_public_node_pointer(
             self, app, user_one, url_node_link_public, collection):
@@ -2743,7 +2740,7 @@ class TestBulkDeleteCollectionNodeLinks:
     def test_bulk_deletes_collection_node_pointers_succeeds_as_owner(
             self, app, collection_two, url_collection_two, payload_collection_two, user_one):
 
-        node_count_before = collection_two.guid_links.count()
+        node_count_before = collection_two.active_collection_submissions.count()
         res = app.delete_json_api(
             url_collection_two,
             payload_collection_two,
@@ -2751,7 +2748,7 @@ class TestBulkDeleteCollectionNodeLinks:
         )
         collection_two.reload()
         assert res.status_code == 204
-        assert node_count_before - 2 == collection_two.guid_links.count()
+        assert node_count_before - 2 == collection_two.active_collection_submissions.count()
         collection_two.reload()
 
     def test_return_bulk_deleted_collection_node_pointer(
@@ -3224,7 +3221,7 @@ class TestCollectionRelationshipNodeLinks:
         )
         assert res.status_code == 204
         collection_private.reload()
-        assert not collection_private.guid_links.filter(_id=registration_private._id).exists()
+        assert not collection_private.active_collection_submissions.filter(guid___id=registration_private._id).exists()
 
     def test_delete_linked_registration_213(
             self, app, make_payload, url_private_linked_regs, user_two,
@@ -3249,7 +3246,7 @@ class TestCollectionRelationshipNodeLinks:
         )
         assert res.status_code == 204
         collection_private.reload()
-        assert not collection_private.guid_links.filter(_id=registration_private._id).exists()
+        assert not collection_private.active_collection_submissions.filter(guid___id=registration_private._id).exists()
 
     def test_node_links_and_relationship_represent_same_nodes(
             self, app, user_one, url_private_linked_nodes, auth_user_one,

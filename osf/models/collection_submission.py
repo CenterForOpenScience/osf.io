@@ -56,7 +56,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
 
     @property
     def is_moderated(self):
-        return self.collection.provider and self.collection.provider.reviews_workflow == 'post-moderation'
+        return bool(self.collection.provider) and self.collection.provider.reviews_workflow == 'post-moderation'
 
     @state.setter
     def state(self, new_state):
@@ -143,8 +143,20 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         implict_removal = event_data.kwargs.get('implict_removal')
         is_moderator = user.has_perm('withdraw_submissions', self.collection.provider)
         is_admin = self.guid.referent.has_permission(user, ADMIN)
-
-        if is_moderator:
+        if implict_removal:
+            for contributor in self.guid.referent.contributors.all():
+                mails.send_mail(
+                    to_addr=contributor.username,
+                    mail=mails.COLLECTION_SUBMISSION_REMOVED_PRIVATE,
+                    user=contributor,
+                    remover=user,
+                    is_admin=self.guid.referent.has_permission(contributor, ADMIN),
+                    collection=self.collection,
+                    node=self.guid.referent,
+                    domain=settings.DOMAIN,
+                    osf_contact_email=settings.OSF_CONTACT_EMAIL,
+                )
+        elif is_moderator:
             for contributor in self.guid.referent.contributors:
                 mails.send_mail(
                     to_addr=contributor.username,
@@ -166,19 +178,6 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                     is_admin=self.guid.referent.has_permission(contributor, ADMIN),
                     collection=self.collection,
                     node=self.guid.referent,
-                    osf_contact_email=settings.OSF_CONTACT_EMAIL,
-                )
-        elif implict_removal:
-            for contributor in self.contributors.all():
-                mails.send_mail(
-                    to_addr=contributor.username,
-                    mail=mails.COLLECTION_SUBMISSION_REMOVED_PRIVATE,
-                    user=contributor,
-                    remover=user,
-                    is_admin=self.has_permission(contributor, ADMIN),
-                    collection=self.collection,
-                    node=self,
-                    domain=settings.DOMAIN,
                     osf_contact_email=settings.OSF_CONTACT_EMAIL,
                 )
         else:

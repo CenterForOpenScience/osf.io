@@ -354,9 +354,12 @@ class CollectedAbstractNodeRelationshipSerializer(object):
         # Convenience method to format instance based on view's get_object
         return {
             'data':
-            list(self._abstract_node_subclass.objects.filter(
-                guids__in=obj.guid_links.all(), is_deleted=False,
-            )),
+            list(
+                self._abstract_node_subclass.objects.filter(
+                    guids__in=obj.active_guids,
+                    is_deleted=False,
+                ),
+            ),
             'self': obj,
         }
 
@@ -367,7 +370,7 @@ class CollectedAbstractNodeRelationshipSerializer(object):
         add, remove = self.get_pointers_to_add_remove(pointers=instance['data'], new_pointers=validated_data['data'])
 
         for pointer in remove:
-            collection.remove_object(pointer)
+            collection.remove_object(pointer, auth=auth)
         for node in add:
             collection.collect_object(node, auth.user)
 

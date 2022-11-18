@@ -418,6 +418,15 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'dest': CollectionSubmissionStates.REMOVED,
         'before': ['_validate_remove'],
         'after': ['_notify_removed'],
+        'conditions': ['is_moderated'],
+    },
+    {
+        'trigger': 'remove',
+        'source': [CollectionSubmissionStates.ACCEPTED],
+        'dest': CollectionSubmissionStates.REMOVED,
+        'before': [],
+        'after': ['_notify_removed'],
+        'unless': ['is_moderated'],
     },
     {
         'trigger': 'resubmit',
