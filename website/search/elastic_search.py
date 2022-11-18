@@ -401,11 +401,11 @@ def serialize_node(node, category):
         'id': node._id,
         'contributors': [
             {
-                'fullname': x['user__fullname'],
-                'url': '/{}/'.format(x['user__guids___id']) if x['user__is_active'] else None
+                'fullname': x['fullname'],
+                'url': '/{}/'.format(x['guids___id']) if x['is_active'] else None
             }
-            for x in node.contributor_set.filter(visible=True).order_by('_order')
-            .values('user__fullname', 'user__guids___id', 'user__is_active')
+            for x in node._contributors.filter(contributor__visible=True).order_by('contributor___order')
+            .values('fullname', 'guids___id', 'is_active')
         ],
         'groups': [
             {
@@ -453,11 +453,11 @@ def serialize_preprint(preprint, category):
         'id': preprint._id,
         'contributors': [
             {
-                'fullname': x['user__fullname'],
-                'url': '/{}/'.format(x['user__guids___id']) if x['user__is_active'] else None
+                'fullname': x['fullname'],
+                'url': '/{}/'.format(x['guids___id']) if x['is_active'] else None
             }
-            for x in preprint.contributor_set.filter(visible=True).order_by('_order')
-            .values('user__fullname', 'user__guids___id', 'user__is_active')
+            for x in preprint._contributors.filter(preprintcontributor__visible=True).order_by('preprintcontributor___order')
+            .values('fullname', 'guids___id', 'is_active')
         ],
         'title': preprint.title,
         'normalized_title': normalized_title,
@@ -585,15 +585,15 @@ def bulk_update_nodes(serialize, nodes, index=None, category=None):
 
 def serialize_cgm_contributor(contrib):
     return {
-        'fullname': contrib['user__fullname'],
-        'url': '/{}/'.format(contrib['user__guids___id']) if contrib['user__is_active'] else None
+        'fullname': contrib['fullname'],
+        'url': '/{}/'.format(contrib['guids___id']) if contrib['is_active'] else None
     }
 
 def serialize_cgm(cgm):
     obj = cgm.guid.referent
     contributors = []
-    if hasattr(obj, 'contributor_set'):
-        contributors = obj.contributor_set.filter(visible=True).order_by('_order').values('user__fullname', 'user__guids___id', 'user__is_active')
+    if hasattr(obj, '_contributors'):
+        contributors = obj._contributors.filter(contributor__visible=True).order_by('contributor___order').values('fullname', 'guids___id', 'is_active')
 
     tags = []
     if hasattr(obj, 'tags'):
