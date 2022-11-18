@@ -203,6 +203,31 @@ CONFIRM_EMAIL_MODERATION = lambda provider: Mail(
 
 # Merge account, add or remove email confirmation emails.
 CONFIRM_MERGE = Mail('confirm_merge', subject='Confirm account merge')
+COLLECTION_SUBMISSION_REJECTED = Mail(
+    'collection_submission_rejected',
+    subject='Your submission was rejected'
+)
+COLLECTION_SUBMISSION_SUBMITTED = Mail(
+    'collection_submission_submitted',
+    subject='Your submission was submitted'
+)
+COLLECTION_SUBMISSION_ACCEPTED = Mail(
+    'collection_submission_accepted',
+    subject='Your submission was accepted'
+)
+COLLECTION_SUBMISSION_REMOVED_MODERATOR = Mail(
+    'collection_submission_removed_moderator',
+    subject='Your submission was removed'
+)
+COLLECTION_SUBMISSION_REMOVED_ADMIN = Mail(
+    'collection_submission_removed_admin',
+    subject='Your submission was removed'
+)
+COLLECTION_SUBMISSION_REMOVED_PRIVATE = Mail(
+    'collection_submission_removed_private',
+    subject='Your submission was removed'
+)
+
 PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='Primary email changed')
 
 

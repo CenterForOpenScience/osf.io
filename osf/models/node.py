@@ -39,7 +39,7 @@ from framework.sentry import log_exception
 from osf.exceptions import (InvalidTagError, NodeStateError,
                             TagNotFoundError)
 from osf.models.contributor import Contributor
-from osf.models.collection import CollectionSubmission
+from osf.models.collection_submission import CollectionSubmission
 
 from osf.models.identifiers import Identifier, IdentifierMixin
 from osf.models.licenses import NodeLicenseRecord

@@ -4,7 +4,8 @@ from osf.models.user import OSFUser, Email  # noqa
 from osf.models.contributor import Contributor, RecentlyAddedContributor, PreprintContributor, DraftRegistrationContributor  # noqa
 from osf.models.session import Session  # noqa
 from osf.models.institution import Institution  # noqa
-from osf.models.collection import CollectionSubmission, Collection  # noqa
+from osf.models.collection import Collection  # noqa
+from osf.models.collection_submission import CollectionSubmission  # noqa
 from osf.models.draft_node import DraftNode  # noqa
 from osf.models.node import AbstractNode, Node  # noqa
 from osf.models.sanctions import Sanction, Embargo, Retraction, RegistrationApproval, EmbargoTerminationApproval  # noqa
