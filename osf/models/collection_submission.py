@@ -140,6 +140,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
 
     def _notify_removed(self, event_data):
         user = event_data.kwargs['user']
+        implict_removal = event_data.kwargs.get('implict_removal')
         is_moderator = user.has_perm('withdraw_submissions', self.collection.provider)
         is_admin = self.guid.referent.has_permission(user, ADMIN)
 
@@ -167,7 +168,19 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                     node=self.guid.referent,
                     osf_contact_email=settings.OSF_CONTACT_EMAIL,
                 )
-
+        elif implict_removal:
+            for contributor in self.contributors.all():
+                mails.send_mail(
+                    to_addr=contributor.username,
+                    mail=mails.COLLECTION_SUBMISSION_REMOVED_PRIVATE,
+                    user=contributor,
+                    remover=user,
+                    is_admin=self.has_permission(contributor, ADMIN),
+                    collection=self.collection,
+                    node=self,
+                    domain=settings.DOMAIN,
+                    osf_contact_email=settings.OSF_CONTACT_EMAIL,
+                )
         else:
             raise NotImplementedError()
 
@@ -243,10 +256,6 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         ret = super(CollectionSubmission, self).save(*args, **kwargs)
         self.update_index()
         return ret
-
-    def delete(self, *args, **kwargs):
-        self.remove_from_index()
-        super().delete()
 
 
 @receiver(post_save, sender=CollectionSubmission)

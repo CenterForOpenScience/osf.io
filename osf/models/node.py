@@ -57,7 +57,7 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, ensure_str
 from osf.utils.requests import get_request_and_user_id, string_type_request_headers
 from osf.utils import sanitize
-from website import language, mails, settings
+from website import language, settings
 from website.citations.utils import datetime_to_csl
 from website.project import signals as project_signals
 from website.project import tasks as node_tasks
@@ -2410,20 +2410,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     continue
 
             submission.delete()
-
+            submission.remove_from_index()
             if auth:
-                for contributor in self.contributors.all():
-                    mails.send_mail(
-                        to_addr=contributor.username,
-                        mail=mails.COLLECTION_SUBMISSION_REMOVED_PRIVATE,
-                        user=contributor,
-                        remover=auth.user,
-                        is_admin=self.has_permission(contributor, ADMIN),
-                        collection=associated_collection,
-                        node=self,
-                        domain=settings.DOMAIN,
-                        osf_contact_email=settings.OSF_CONTACT_EMAIL,
-                    )
+                submission.remove(
+                    user=auth.user,
+                    comment='Removed from collection due to being made private',
+                    implict_removal=True
+                )
 
 
 class NodeUserObjectPermission(UserObjectPermissionBase):
