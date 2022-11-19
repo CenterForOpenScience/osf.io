@@ -253,7 +253,7 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
             except CollectionSubmission.DoesNotExist:
                 raise ValueError(f'Resource [{obj.guid._id}] is not part of collection {self._id}')
 
-        obj.remove(user=auth.user, comment='Implict removal via remove_object', implict_removal=True)
+        obj.remove(user=auth.user, comment='Implict removal via remove_object', force=True)
 
     def delete(self):
         """ Mark collection as deleted

@@ -126,6 +126,10 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
 
     def _validate_remove(self, event_data):
         user = event_data.kwargs['user']
+        force = event_data.kwargs.get('force')
+        if force:
+            return
+
         if user is None:
             raise PermissionsError(f'{user} must have moderator or admin permissions.')
 
@@ -140,10 +144,10 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
 
     def _notify_removed(self, event_data):
         user = event_data.kwargs['user']
-        implict_removal = event_data.kwargs.get('implict_removal')
+        force = event_data.kwargs.get('force')
         is_moderator = user.has_perm('withdraw_submissions', self.collection.provider)
         is_admin = self.guid.referent.has_permission(user, ADMIN)
-        if implict_removal:
+        if force:
             for contributor in self.guid.referent.contributors.all():
                 mails.send_mail(
                     to_addr=contributor.username,
