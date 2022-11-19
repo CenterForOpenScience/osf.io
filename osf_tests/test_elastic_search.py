@@ -234,8 +234,8 @@ class TestCollectionsSearch(OsfTestCase):
         docs = query_collections('Salif Keita')['results']
         assert_equal(len(docs), 2)
 
-        self.collection_public.remove_object(self.node_one)
-        self.reg_collection.remove_object(self.reg_public)
+        self.collection_public.remove_object(self.node_one, self.user)
+        self.reg_collection.remove_object(self.reg_public, self.user)
         assert_false(self.node_one.is_collected)
         assert_false(self.reg_public.is_collected)
 
