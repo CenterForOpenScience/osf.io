@@ -322,8 +322,8 @@ class CollectionSubmissionList(JSONAPIBaseView, generics.ListCreateAPIView, Coll
         CanSubmitToCollectionOrPublic,
         base_permissions.TokenHasScope,
     )
-    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
-    required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
+    required_read_scopes = [CoreScopes.READ_COLLECTION_SUBMISSION]
+    required_write_scopes = [CoreScopes.WRITE_COLLECTION_SUBMISSION]
 
     model_class = CollectionSubmission
     serializer_class = CollectionSubmissionSerializer
@@ -354,12 +354,12 @@ class CollectionSubmissionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroy
         CanUpdateDeleteCollectionSubmissionOrPublic,
         base_permissions.TokenHasScope,
     )
-    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
-    required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
+    required_read_scopes = [CoreScopes.READ_COLLECTION_SUBMISSION]
+    required_write_scopes = [CoreScopes.WRITE_COLLECTION_SUBMISSION]
 
     serializer_class = CollectionSubmissionSerializer
     view_category = 'collections'
-    view_name = 'collected-metadata-detail'
+    view_name = 'collection-submission-detail'
 
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
 
@@ -385,7 +385,7 @@ class CollectionSubmissionSubjectsList(BaseResourceSubjectsList, CollectionMixin
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
+    required_read_scopes = [CoreScopes.READ_COLLECTION_SUBMISSION]
 
     view_category = 'collections'
     view_name = 'collection-submissions-subjects-list'
@@ -403,8 +403,8 @@ class CollectionSubmissionSubjectsRelationshipList(SubjectRelationshipBaseView, 
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
-    required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
+    required_read_scopes = [CoreScopes.READ_COLLECTION_SUBMISSION]
+    required_write_scopes = [CoreScopes.WRITE_COLLECTION_SUBMISSION]
 
     view_category = 'collections'
     view_name = 'collection-submission-subjects-relationship-list'

@@ -483,8 +483,8 @@ class CollectionProviderSubmissionList(JSONAPIBaseView, generics.ListCreateAPIVi
         CanSubmitToCollectionOrPublic,
         base_permissions.TokenHasScope,
     )
-    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
-    required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
+    required_read_scopes = [CoreScopes.READ_COLLECTION_SUBMISSION]
+    required_write_scopes = [CoreScopes.WRITE_COLLECTION_SUBMISSION]
 
     model_class = CollectionSubmission
     serializer_class = CollectionSubmissionSerializer
@@ -521,8 +521,8 @@ class RegistrationProviderSubmissionList(JSONAPIBaseView, generics.ListCreateAPI
         CanSubmitToCollectionOrPublic,
         base_permissions.TokenHasScope,
     )
-    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
-    required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
+    required_read_scopes = [CoreScopes.READ_COLLECTION_SUBMISSION]
+    required_write_scopes = [CoreScopes.WRITE_COLLECTION_SUBMISSION]
 
     model_class = CollectionSubmission
     serializer_class = CollectionSubmissionSerializer
