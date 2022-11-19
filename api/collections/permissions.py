@@ -21,9 +21,7 @@ class CollectionReadOrPublic(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         auth = get_user_auth(request)
-        if obj.target.collection.is_public:
-            return True
-        elif auth.user and auth.user.has_perm('view_submissions', obj.target.collection.provider):
+        if auth.user and auth.user.has_perm('view_submissions', obj.target.collection.provider):
             return True
         elif obj.target.guid.referent.can_view(auth):
             return True
