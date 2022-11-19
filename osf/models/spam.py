@@ -200,6 +200,7 @@ class SpamMixin(models.Model):
         if domains:
             if 'domains' in self.spam_data:
                 self.spam_data['domains'].extend(domains)
+                self.spam_data['domains'] = list(set(self.spam_data['domains']))
             else:
                 self.spam_data['domains'] = domains
         # not all mixins will implement check spam pre-req, only submit spam when it was incorrectly flagged
