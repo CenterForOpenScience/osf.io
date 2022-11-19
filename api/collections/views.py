@@ -474,7 +474,7 @@ class LinkedNodesList(BaseLinkedList, CollectionMixin, NodeOptimizationMixin):
 
     def get_queryset(self):
         auth = get_user_auth(self.request)
-        node_ids = self.get_collection().guid_links.filter(content_type_id=ContentType.objects.get_for_model(Node).id).values_list('object_id', flat=True)
+        node_ids = self.get_collection().active_guids.filter(content_type_id=ContentType.objects.get_for_model(Node).id).values_list('object_id', flat=True)
         nodes = Node.objects.filter(id__in=node_ids, is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).order_by('-modified')
         return self.optimize_node_queryset(nodes)
 
@@ -566,7 +566,7 @@ class LinkedRegistrationsList(BaseLinkedList, CollectionMixin):
 
     def get_queryset(self):
         auth = get_user_auth(self.request)
-        return Registration.objects.filter(guids__in=self.get_collection().guid_links.all(), is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).order_by('-modified')
+        return Registration.objects.filter(guids__in=self.get_collection().active_guids.all(), is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).order_by('-modified')
 
     # overrides APIView
     def get_parser_context(self, http_request):
@@ -986,7 +986,7 @@ class CollectionLinkedRegistrationsRelationship(CollectionLinkedNodesRelationshi
             'data': [
                 pointer for pointer in
                 Registration.objects.filter(
-                    guids__in=collection.guid_links.all(), is_deleted=False,
+                    guids__in=collection.active_guids.all(), is_deleted=False,
                 ).can_view(
                     user=auth.user, private_link=auth.private_link,
                 ).order_by('-modified')

@@ -1375,12 +1375,12 @@ class TestCollectionNodeLinkDetail:
             self, app, user_one, user_two, collection):
         pointed_project = ProjectFactory(creator=user_two)
         pointer = collection.collect_object(pointed_project, user_one)
-        assert collection.active_guids.filter(guid___id=pointed_project._id).exists()
+        assert collection.active_guids.filter(_id=pointed_project._id).exists()
         url = '/{}collections/{}/node_links/{}/'.format(API_BASE, collection._id, pointer.guid._id)
         res = app.delete_json_api(url, auth=user_one.auth)
         assert res.status_code == 204
         assert not collection.deleted
-        assert not collection.active_guids.filter(guid___id=pointed_project._id).exists()
+        assert not collection.active_guids.filter(_id=pointed_project._id).exists()
 
     def test_delete_public_node_pointer_authorized(self, app, user_one, url_node_link_public, collection):
         node_count_before = collection.guid_links.count()

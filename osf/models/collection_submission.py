@@ -196,6 +196,10 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         if not is_admin:
             raise PermissionsError(f'{user} must have admin permissions.')
 
+    def _remove_from_search(self, event_data):
+        if self.collection.is_public:
+            self.collection.bulk_update_search([self], op='delete')
+
     def _save_transition(self, event_data):
         '''Save changes here and write the action.'''
         self.save()
