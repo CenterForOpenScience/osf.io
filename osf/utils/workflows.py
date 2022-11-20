@@ -417,7 +417,7 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'source': [CollectionSubmissionStates.ACCEPTED],
         'dest': CollectionSubmissionStates.REMOVED,
         'before': ['_validate_remove'],
-        'after': ['_notify_removed'],
+        'after': ['_remove_from_search', '_notify_removed'],
     },
     {
         'trigger': 'resubmit',

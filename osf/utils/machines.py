@@ -387,10 +387,11 @@ class ApprovalsMachine(Machine):
 
 class CollectionSubmissionMachine(Machine):
     '''
+    This is a simple state machine for Collection Submissions, removed/rejected submissions should not appear in a
+    collection but should still exist in collectionsubmission_set so they can be easily resubmitted.
     '''
 
     def __init__(self, model, active_state, state_property_name):
-
         super().__init__(
             model=model,
             states=CollectionSubmissionStates,

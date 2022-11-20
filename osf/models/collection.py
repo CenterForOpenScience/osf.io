@@ -9,6 +9,7 @@ from django.utils import timezone
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 from framework.celery_tasks.handlers import enqueue_task
 
+from osf.models import Guid
 from osf.models.base import BaseModel, GuidMixin
 from osf.models.collection_submission import CollectionSubmission
 from osf.models.mixins import GuardianMixin
@@ -18,7 +19,7 @@ from osf.utils.permissions import ADMIN
 from osf.utils.workflows import CollectionSubmissionStates
 from osf.exceptions import NodeStateError
 from website.util import api_v2_url
-
+from transitions.core import MachineError
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +81,7 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
 
     @property
     def active_guids(self):
-        return self.active_collection_submissions.values('guid')
+        return Guid.objects.filter(id__in=self.active_collection_submissions.values_list('guid_id'))
 
     def get_absolute_url(self):
         return self.absolute_api_v2_url
@@ -223,20 +224,26 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
             raise ValidationError('"{}" is not an acceptable "ContentType" for this collection'.format(ContentType.objects.get_for_model(obj).model))
 
         # Unique together -- self and guid
-        if self.collectionsubmission_set.filter(guid=obj.guids.first()).exists():
-            raise ValidationError('Object already exists in collection.')
+        collection_submission = self.collectionsubmission_set.filter(guid=obj.guids.first())
+        if collection_submission:
+            collection_submission = collection_submission.get()
+            try:
+                collection_submission.resubmit(user=collector, comment='Resubmitted via collect_object')
+            except MachineError:
+                raise ValidationError('Object already exists in collection.')
+            return collection_submission
+        else:
+            collection_submission = self.collectionsubmission_set.create(guid=obj.guids.first(), creator=collector)
+            collection_submission.collected_type = collected_type
+            collection_submission.status = status
+            collection_submission.volume = volume
+            collection_submission.issue = issue
+            collection_submission.program_area = program_area
+            collection_submission.school_type = school_type
+            collection_submission.study_design = study_design
+            collection_submission.save()
 
-        collection_submission = self.collectionsubmission_set.create(guid=obj.guids.first(), creator=collector)
-        collection_submission.collected_type = collected_type
-        collection_submission.status = status
-        collection_submission.volume = volume
-        collection_submission.issue = issue
-        collection_submission.program_area = program_area
-        collection_submission.school_type = school_type
-        collection_submission.study_design = study_design
-        collection_submission.save()
-
-        return collection_submission
+            return collection_submission
 
     def remove_object(self, obj, auth):
         """ Removes object from collection

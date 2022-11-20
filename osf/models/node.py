@@ -56,6 +56,7 @@ from framework.auth.core import Auth
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, ensure_str
 from osf.utils.requests import get_request_and_user_id, string_type_request_headers
+from osf.utils.workflows import CollectionSubmissionStates
 from osf.utils import sanitize
 from website import language, settings
 from website.citations.utils import datetime_to_csl
@@ -498,7 +499,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             guid=self.guids.first(),
             collection__provider__isnull=False,
             collection__deleted__isnull=True,
-            collection__is_bookmark_collection=False)
+            collection__is_bookmark_collection=False
+        ).exclude(
+            machine_state__in=[
+                CollectionSubmissionStates.REMOVED,
+                CollectionSubmissionStates.REJECTED
+            ]
+        )
 
     @property
     def collecting_metadata_list(self):
@@ -2409,13 +2416,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 if self.contributors.filter(pk=associated_collection.creator.id).exists():
                     continue
 
-            submission.remove_from_index()
-            if auth:
-                submission.remove(
-                    user=auth.user,
-                    comment='Removed from collection due to implict removal',
-                    force=True
-                )
+            submission.remove(
+                user=getattr(auth, 'user'),
+                comment='Removed from collection due to implict removal',
+                force=True
+            )
 
 
 class NodeUserObjectPermission(UserObjectPermissionBase):
