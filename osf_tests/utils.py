@@ -213,3 +213,17 @@ def get_default_test_schema():
         create_schema_blocks_for_atomic_schema(test_schema)
 
     return test_schema
+
+
+def assert_notification_correctness(send_mail_mock, expected_template, expected_recipients):
+    '''Confirms that a mocked send_mail function contains the appropriate calls.'''
+    assert send_mail_mock.call_count == len(expected_recipients)
+
+    recipients = set()
+    templates = set()
+    for _, call_kwargs in send_mail_mock.call_args_list:
+        recipients.add(call_kwargs['to_addr'])
+        templates.add(call_kwargs['mail'])
+
+    assert recipients == expected_recipients
+    assert templates == {expected_template}

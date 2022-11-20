@@ -1,4 +1,3 @@
-from past.builtins import basestring
 import logging
 
 from dirtyfields import DirtyFieldsMixin
@@ -6,157 +5,24 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, models
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from django.utils.functional import cached_property
 from django.utils import timezone
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 from framework.celery_tasks.handlers import enqueue_task
-from framework.exceptions import PermissionsError
 
+from osf.models import Guid
 from osf.models.base import BaseModel, GuidMixin
-from osf.models.mixins import GuardianMixin, TaxonomizableMixin
+from osf.models.collection_submission import CollectionSubmission
+from osf.models.mixins import GuardianMixin
 from osf.models.validators import validate_title
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.permissions import ADMIN
+from osf.utils.workflows import CollectionSubmissionStates
 from osf.exceptions import NodeStateError
 from website.util import api_v2_url
-from website.search.exceptions import SearchUnavailableError
-from osf.utils.workflows import CollectionSubmissionsTriggers, CollectionSubmissionStates
+from transitions.core import MachineError
 
 logger = logging.getLogger(__name__)
-from osf.utils.machines import CollectionSubmissionMachine
 
-
-class CollectionSubmission(TaxonomizableMixin, BaseModel):
-    primary_identifier_name = 'guid___id'
-
-    class Meta:
-        order_with_respect_to = 'collection'
-        unique_together = ('collection', 'guid')
-
-    collection = models.ForeignKey('Collection', on_delete=models.CASCADE)
-    guid = models.ForeignKey('Guid', on_delete=models.CASCADE)
-    creator = models.ForeignKey('OSFUser', on_delete=models.CASCADE)
-    collected_type = models.CharField(blank=True, max_length=127)
-    status = models.CharField(blank=True, max_length=127)
-    volume = models.CharField(blank=True, max_length=127)
-    issue = models.CharField(blank=True, max_length=127)
-    program_area = models.CharField(blank=True, max_length=127)
-    school_type = models.CharField(blank=True, max_length=127)
-    study_design = models.CharField(blank=True, max_length=127)
-    machine_state = models.IntegerField(
-        choices=CollectionSubmissionStates.int_field_choices(),
-        default=CollectionSubmissionStates.IN_PROGRESS,
-    )
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.state_machine = CollectionSubmissionMachine(
-            model=self,
-            active_state=self.state,
-            state_property_name='state'
-        )
-
-    @property
-    def state(self):
-        '''Property to translate between ApprovalState Enum and DB string.'''
-        return CollectionSubmissionStates(self.machine_state)
-
-    @property
-    def is_moderated(self):
-        return self.provider and self.provider.reviews_workflow == 'post-moderation'
-
-    @state.setter
-    def state(self, new_state):
-        self.machine_state = new_state.value
-
-    def _on_submit(self, event_data):
-        self.submitted_timestamp = timezone.now()
-
-    def _on_accept(self, event_data):
-        user = event_data.kwargs['user']
-        if user.has_perm('accept_submissions', self.provider):
-            raise PermissionsError(f'{user} must have moderator permissions.')
-
-    def _on_reject(self, event_data):
-        user = event_data.kwargs['user']
-        if user.has_perm('reject_submissions', self.provider):
-            raise PermissionsError(f'{user} must have moderator permissions.')
-
-    def _on_remove(self, event_data):
-        pass
-
-    def _on_resubmit(self, event_data):
-        pass
-
-    def _save_transition(self, event_data):
-        '''Save changes here and write the action.'''
-        self.save()
-        from_state = CollectionSubmissionStates[event_data.transition.source]
-        to_state = self.state
-
-        trigger = CollectionSubmissionsTriggers.from_db_name(event_data.event.name)
-        if trigger is None:
-            return
-
-        self.actions.create(
-            from_state=from_state,
-            to_state=to_state,
-            trigger=trigger,
-            creator=event_data.kwargs.get('user', self.creator),
-            comment=event_data.kwargs.get('comment', '')
-        )
-
-    @cached_property
-    def _id(self):
-        return '{}-{}'.format(self.guid._id, self.collection._id)
-
-    @classmethod
-    def load(cls, data, select_for_update=False):
-        try:
-            collection_submission_id, collection_id = data.split('-')
-        except ValueError:
-            raise ValueError('Invalid CollectionSubmission object <_id {}>'.format(data))
-        else:
-            if collection_submission_id and collection_id:
-                try:
-                    if isinstance(data, basestring):
-                        return (cls.objects.get(guid___id=collection_submission_id, collection__guids___id=collection_id) if not select_for_update
-                                else cls.objects.filter(guid___id=collection_submission_id, collection__guids___id=collection_id).select_for_update().get())
-                except cls.DoesNotExist:
-                    return None
-            return None
-
-    @property
-    def absolute_api_v2_url(self):
-        path = '/collections/{}/collection_submissions/{}/'.format(self.collection._id, self.guid._id)
-        return api_v2_url(path)
-
-    def update_index(self):
-        if self.collection.is_public:
-            from website.search.search import update_collected_metadata
-            try:
-                update_collected_metadata(self.guid._id, collection_id=self.collection.id)
-            except SearchUnavailableError as e:
-                logger.exception(e)
-
-    def remove_from_index(self):
-        from website.search.search import update_collected_metadata
-        try:
-            update_collected_metadata(self.guid._id, collection_id=self.collection.id, op='delete')
-        except SearchUnavailableError as e:
-            logger.exception(e)
-
-    def save(self, *args, **kwargs):
-        kwargs.pop('old_subjects', None)  # Not indexing this, trash it
-        ret = super(CollectionSubmission, self).save(*args, **kwargs)
-        self.update_index()
-        return ret
-
-    def delete(self, *args, **kwargs):
-        self.remove_from_index()
-        super().delete()
 
 class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
     groups = {
@@ -201,6 +67,21 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
     @property
     def url(self):
         return '/{}/'.format(self._id)
+
+    @property
+    def active_collection_submissions(self):
+        return CollectionSubmission.objects.filter(
+            collection=self
+        ).exclude(
+            machine_state__in=[
+                CollectionSubmissionStates.REMOVED,
+                CollectionSubmissionStates.REJECTED
+            ],
+        )
+
+    @property
+    def active_guids(self):
+        return Guid.objects.filter(id__in=self.active_collection_submissions.values_list('guid_id'))
 
     def get_absolute_url(self):
         return self.absolute_api_v2_url
@@ -343,22 +224,28 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
             raise ValidationError('"{}" is not an acceptable "ContentType" for this collection'.format(ContentType.objects.get_for_model(obj).model))
 
         # Unique together -- self and guid
-        if self.collectionsubmission_set.filter(guid=obj.guids.first()).exists():
-            raise ValidationError('Object already exists in collection.')
+        collection_submission = self.collectionsubmission_set.filter(guid=obj.guids.first())
+        if collection_submission:
+            collection_submission = collection_submission.get()
+            try:
+                collection_submission.resubmit(user=collector, comment='Resubmitted via collect_object')
+            except MachineError:
+                raise ValidationError('Object already exists in collection.')
+            return collection_submission
+        else:
+            collection_submission = self.collectionsubmission_set.create(guid=obj.guids.first(), creator=collector)
+            collection_submission.collected_type = collected_type
+            collection_submission.status = status
+            collection_submission.volume = volume
+            collection_submission.issue = issue
+            collection_submission.program_area = program_area
+            collection_submission.school_type = school_type
+            collection_submission.study_design = study_design
+            collection_submission.save()
 
-        collection_submission = self.collectionsubmission_set.create(guid=obj.guids.first(), creator=collector)
-        collection_submission.collected_type = collected_type
-        collection_submission.status = status
-        collection_submission.volume = volume
-        collection_submission.issue = issue
-        collection_submission.program_area = program_area
-        collection_submission.school_type = school_type
-        collection_submission.study_design = study_design
-        collection_submission.save()
+            return collection_submission
 
-        return collection_submission
-
-    def remove_object(self, obj):
+    def remove_object(self, obj, auth):
         """ Removes object from collection
 
         :param obj: object to remove from collection, if it exists. Acceptable types- CollectionSubmission, GuidMixin
@@ -373,7 +260,7 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
             except CollectionSubmission.DoesNotExist:
                 raise ValueError(f'Resource [{obj.guid._id}] is not part of collection {self._id}')
 
-        obj.delete()
+        obj.remove(user=auth.user, comment='Implict removal via remove_object', force=True)
 
     def delete(self):
         """ Mark collection as deleted
@@ -397,9 +284,3 @@ class CollectionUserObjectPermission(UserObjectPermissionBase):
 
 class CollectionGroupObjectPermission(GroupObjectPermissionBase):
     content_object = models.ForeignKey(Collection, on_delete=models.CASCADE)
-
-
-@receiver(post_save, sender=CollectionSubmission)
-def create_submission_action(sender, instance, created, **kwargs):
-    if created:
-        instance.submit(user=instance.creator, comment='Initial submission action')

@@ -46,6 +46,7 @@ from osf.models import (
     Registration,
     Preprint,
 )
+from osf.utils.workflows import CollectionSubmissionStates
 
 
 class CollectionMixin(object):
@@ -71,8 +72,10 @@ class CollectionMixin(object):
     def collection_preprints(self, collection, user):
         return Preprint.objects.can_view(
             Preprint.objects.filter(
-                guids__in=collection.guid_links.all(), deleted__isnull=True,
-            ), user=user,
+                guids__in=collection.active_guids,
+                deleted__isnull=True,
+            ),
+            user=user,
         )
 
     def get_collection_submission(self, check_object_permissions=True):
@@ -367,7 +370,7 @@ class CollectionSubmissionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroy
     def perform_destroy(self, instance):
         # Skip collection permission check -- perms class checks when getting CollectionSubmission
         collection = self.get_collection(check_object_permissions=False)
-        collection.remove_object(instance)
+        collection.remove_object(instance, get_user_auth(request=self.request))
 
     def perform_update(self, serializer):
         serializer.save()
@@ -471,7 +474,7 @@ class LinkedNodesList(BaseLinkedList, CollectionMixin, NodeOptimizationMixin):
 
     def get_queryset(self):
         auth = get_user_auth(self.request)
-        node_ids = self.get_collection().guid_links.filter(content_type_id=ContentType.objects.get_for_model(Node).id).values_list('object_id', flat=True)
+        node_ids = self.get_collection().active_guids.filter(content_type_id=ContentType.objects.get_for_model(Node).id).values_list('object_id', flat=True)
         nodes = Node.objects.filter(id__in=node_ids, is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).order_by('-modified')
         return self.optimize_node_queryset(nodes)
 
@@ -563,7 +566,7 @@ class LinkedRegistrationsList(BaseLinkedList, CollectionMixin):
 
     def get_queryset(self):
         auth = get_user_auth(self.request)
-        return Registration.objects.filter(guids__in=self.get_collection().guid_links.all(), is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).order_by('-modified')
+        return Registration.objects.filter(guids__in=self.get_collection().active_guids.all(), is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).order_by('-modified')
 
     # overrides APIView
     def get_parser_context(self, http_request):
@@ -672,13 +675,21 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
     ordering = ('-modified',)
 
     def get_queryset(self):
-        return self.get_collection().collectionsubmission_set.filter(guid___id__in=AbstractNode.objects.filter(guids__in=self.get_collection().guid_links.all(), is_deleted=False).values_list('guids___id', flat=True))
+        return self.get_collection().collectionsubmission_set.filter(
+            guid___id__in=AbstractNode.objects.filter(
+                guids__in=self.get_collection().active_guids,
+                is_deleted=False,
+            ).values_list(
+                'guids___id',
+                flat=True,
+            ),
+        )
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
         collection = self.get_collection()
         try:
-            collection.remove_object(instance)
+            collection.remove_object(instance, get_user_auth(request=self.request))
         except ValueError as err:  # pointer doesn't belong to node
             raise ValidationError(str(err))
 
@@ -742,10 +753,14 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
 
     # overrides RetrieveAPIView
     def get_object(self):
-        node_link_lookup_url_kwarg = 'node_link_id'
+        guid = self.kwargs['node_link_id']
         node_link = get_object_or_error(
             CollectionSubmission,
-            self.kwargs[node_link_lookup_url_kwarg],
+            Q(
+                Q(guid___id=guid) &
+                ~Q(machine_state=CollectionSubmissionStates.REJECTED) &
+                ~Q(machine_state=CollectionSubmissionStates.REMOVED),
+            ),
             self.request,
             'node link',
         )
@@ -759,7 +774,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
         collection = self.get_collection()
         pointer = self.get_object()
         try:
-            collection.remove_object(pointer.guid.referent)
+            collection.remove_object(pointer.guid.referent, get_user_auth(request=self.request))
         except ValueError as err:  # pointer doesn't belong to node
             raise ValidationError(str(err))
         collection.save()
@@ -846,9 +861,11 @@ class CollectionLinkedNodesRelationship(LinkedNodesRelationship, CollectionMixin
             'data': [
                 pointer for pointer in
                 Node.objects.filter(
-                    guids__in=collection.guid_links.all(), is_deleted=False,
+                    guids__in=collection.active_guids,
+                    is_deleted=False,
                 ).can_view(
-                    user=auth.user, private_link=auth.private_link,
+                    user=auth.user,
+                    private_link=auth.private_link,
                 ).order_by('-modified')
             ], 'self': collection,
         }
@@ -861,7 +878,7 @@ class CollectionLinkedNodesRelationship(LinkedNodesRelationship, CollectionMixin
         collection = instance['self']
         for val in data:
             if val['id'] in current_pointers:
-                collection.remove_object(current_pointers[val['id']])
+                collection.remove_object(current_pointers[val['id']], get_user_auth(self.request))
 
 
 class CollectionLinkedPreprintsRelationship(CollectionLinkedNodesRelationship):
@@ -969,7 +986,7 @@ class CollectionLinkedRegistrationsRelationship(CollectionLinkedNodesRelationshi
             'data': [
                 pointer for pointer in
                 Registration.objects.filter(
-                    guids__in=collection.guid_links.all(), is_deleted=False,
+                    guids__in=collection.active_guids.all(), is_deleted=False,
                 ).can_view(
                     user=auth.user, private_link=auth.private_link,
                 ).order_by('-modified')
