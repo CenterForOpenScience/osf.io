@@ -272,7 +272,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     }
 
     SPAM_ADDONS = {
-        'addons': 'addons_forwrad_node_settings__url',
+        'forward': 'addons_forward_node_settings__url',
         'wiki': 'wikis__versions__content'
     }
 
