@@ -51,6 +51,7 @@ class NotableDomainAdmin(admin.ModelAdmin):
     list_filter = ('note',)
     search_fields = ('domain',)
 
+    @admin.display(ordering='number_of_references')
     def number_of_references(self, obj):
         return obj.number_of_references
 
