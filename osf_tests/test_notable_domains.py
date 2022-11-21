@@ -1,25 +1,26 @@
 import mock
 import pytest
+from django.contrib.contenttypes.models import ContentType
 from types import SimpleNamespace
-
 from urllib.parse import urlparse
 
-from osf_tests.factories import (
-    CommentFactory,
-    PreprintFactory,
-    RegistrationFactory,
-)
+from addons.wiki.tests.factories import WikiVersionFactory
+from framework.sessions import set_session
+from osf.external.spam import tasks as spam_tasks
 from osf.models import (
     NotableDomain,
     DomainReference,
     SpamStatus
 )
-
-from osf.external.spam import tasks as spam_tasks
-from osf_tests.factories import SessionFactory, NodeFactory
-from framework.sessions import set_session
 from osf.utils.workflows import DefaultStates
-from django.contrib.contenttypes.models import ContentType
+from osf_tests.factories import (
+    CommentFactory,
+    NodeFactory,
+    PreprintFactory,
+    RegistrationFactory,
+    SessionFactory,
+)
+
 
 from website import settings
 
@@ -72,7 +73,6 @@ class TestDomainExtraction:
             mock_head.side_effect = spam_tasks.requests.exceptions.ConnectionError
             domains = set(spam_tasks._extract_domains(sample_text))
         assert not domains
-        mock_head.assert_called()
 
     def test_actract_domains__returned_on_error(self):
         sample_text = 'This.will.timeout'
@@ -234,6 +234,42 @@ class TestNotableDomain:
             referrer_content_type=ContentType.objects.get_for_model(obj),
             domain__domain=spam_domain.netloc
         ).count() == 1
+
+    @pytest.mark.enable_enqueue_task
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    def test_extract_domains_from_wiki__public_project_extracts_domains_on_wiki_save(self, request_context):
+        assert DomainReference.objects.count() == 0
+
+        wiki_version = WikiVersionFactory()
+        project = wiki_version.wiki_page.node
+        project.is_public = True
+        project.save()
+        wiki_version.content = 'This has a domain: https://cos.io'
+
+        set_session(SessionFactory(user=project.creator))
+        with mock.patch.object(spam_tasks.requests, 'head'):
+            wiki_version.save()
+
+        references = DomainReference.objects.filter(domain__domain='cos.io')
+        assert references.count() == 1
+        assert references.first().referrer == project
+
+    @pytest.mark.enable_enqueue_task
+    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    def test_extract_domains_from_wiki__project_checks_wiki_content_on_make_public(self, request_context):
+        wiki_version = WikiVersionFactory()
+        project = wiki_version.wiki_page.node
+        wiki_version.content = 'This has a domain: https://cos.io'
+        wiki_version.save()
+
+        set_session(SessionFactory(user=project.creator))
+        assert DomainReference.objects.count() == 0
+        with mock.patch.object(spam_tasks.requests, 'head'):
+            project.set_privacy(permissions='public')
+
+        references = DomainReference.objects.filter(domain__domain='cos.io')
+        assert references.count() == 1
+        assert references.first().referrer == project
 
 @pytest.mark.django_db
 @pytest.mark.enable_enqueue_task
