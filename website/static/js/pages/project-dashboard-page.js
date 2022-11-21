@@ -102,6 +102,8 @@ var institutionLogos = {
 
 
 $(document).ready(function () {
+    // activate bootstrap popovers
+    $('[data-toggle="popover"]').popover()
     // Allows dropdown elements to persist after being clicked
     // Used for the "Share" button in the more actions menu
     $('.dropdown').on('click', 'li', function (evt) {

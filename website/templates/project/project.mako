@@ -367,18 +367,31 @@
                             Rejected from <a href="${domain}collections/${collection['_id']}/">${rejected_submission['title']}</a>
                         </div>
                         <div style="padding-left: 30px;">
-                            <i>${rejected_submission['comment']}</i>
+                            <a class="comment-popover"
+                               data-toggle="popover"
+                               data-placement="bottom"
+                               data-content="${removed_submission['comment']}"
+                            >
+                                See justification
+                                <i class="fa fa-angle-down" /></i>
+                            </a>
                         </div>
                         <hr>
                     % endfor
                     % for removed_submission in node['removed_submissions']:
-                        <i class="fa fa-close pull-right" ></i>
                         <img src="${removed_submission['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
                         <div style="display: inline;">
                             Removed from <a href="${domain}collections/${collection['_id']}/">${removed_submission['title']}</a>
                         </div>
                         <div style="padding-left: 30px;">
-                            <i>${removed_submission['comment']}</i>
+                            <a class="comment-popover"
+                               data-toggle="popover"
+                               data-placement="bottom"
+                               data-content="${removed_submission['comment']}"
+                            >
+                                See justification
+                                <i class="fa fa-angle-down" /></i>
+                            </a>
                         </div>
                         <hr>
                     % endfor
