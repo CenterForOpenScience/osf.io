@@ -73,7 +73,7 @@ from osf.models import (
     SpamStatus,
     NodeRelation,
     QuickFilesNode,
-    NotableEmailDomain
+    NotableDomain
 )
 
 from tests.base import (
@@ -3342,9 +3342,9 @@ class TestAuthViews(OsfTestCase):
         assert_equal(users.count(), 1)
 
     def test_register_blocked_email_domain(self):
-        NotableEmailDomain.objects.get_or_create(
+        NotableDomain.objects.get_or_create(
             domain='mailinator.com',
-            note=NotableEmailDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION,
+            note=NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT,
         )
         url = api_url_for('register_user')
         name, email, password = fake.name(), 'bad@mailinator.com', 'agreatpasswordobviously'
