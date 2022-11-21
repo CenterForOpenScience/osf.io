@@ -14,7 +14,6 @@ import osf.models.admin_log_entry
 import osf.models.base
 import osf.models.conference
 import osf.models.mixins
-import osf.models.notable_email_domain
 import osf.models.oauth
 import osf.models.registration_bulk_upload_job
 import osf.models.registrations
