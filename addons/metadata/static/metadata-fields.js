@@ -34,11 +34,11 @@ function createField(erad, question, valueEntry, options, callback) {
   throw new Error('Unsupported type: ' + question.type);
 }
 
-function validateField(erad, question, value, fieldSetAndValues) {
+function validateField(erad, question, value, fieldSetAndValues, options) {
   if (question.qid == 'grdm-file:available-date') {
     return validateAvailableDateField(erad, question, value, fieldSetAndValues);
   }
-  if (!value) {
+  if (!value && !((options || {}).multiple)) {
     if (question.required) {
       throw new Error(_("This field can't be blank."))
     }
@@ -59,6 +59,7 @@ function createStringField(erad, question, value, options, callback) {
       createFormElement(function() {
         return $('<input></input>');
       }, options),
+      (options && options.multiple) ? createClearFormElement(question) : null,
       question,
       value,
       options,
@@ -69,6 +70,7 @@ function createStringField(erad, question, value, options, callback) {
       createFormElement(function() {
         return $('<textarea></textarea>');
       }, options),
+      (options && options.multiple) ? createClearFormElement(question) : null,
       question,
       value,
       options,
@@ -81,6 +83,7 @@ function createStringField(erad, question, value, options, callback) {
         datepicker.mount(elem, null);
         return elem;
       }, options),
+      (options && options.multiple) ? createClearFormElement(question) : null,
       question,
       value,
       options,
@@ -89,6 +92,7 @@ function createStringField(erad, question, value, options, callback) {
   } else if (question.format == 'file-creators') {
     return new SingleElementField(
       createFileCreatorsFieldElement(erad, options),
+      (options && options.multiple) ? createClearFormElement(question) : null,
       question,
       value,
       options,
@@ -97,6 +101,7 @@ function createStringField(erad, question, value, options, callback) {
   } else if (question.format == 'e-rad-researcher-number') {
     return new SingleElementField(
       createERadResearcherNumberFieldElement(erad, options),
+      (options && options.multiple) ? createClearFormElement(question) : null,
       question,
       value,
       options,
@@ -112,6 +117,7 @@ function createStringField(erad, question, value, options, callback) {
       createFormElement(function() {
         return $('<input></input>').addClass(question.format);
       }, options),
+      (options && options.multiple) ? createClearFormElement(question) : null,
       question,
       value,
       options,
@@ -122,6 +128,7 @@ function createStringField(erad, question, value, options, callback) {
       createFileCapacityFieldElement(function() {
         return $('<input></input>');
       }, options),
+      (options && options.multiple) ? createClearFormElement(question) : null,
       question,
       value,
       options,
@@ -132,6 +139,7 @@ function createStringField(erad, question, value, options, callback) {
       createFileURLFieldElement(function() {
         return $('<input></input>');
       }, options),
+      (options && options.multiple) ? createClearFormElement(question) : null,
       question,
       value,
       options,
@@ -142,6 +150,7 @@ function createStringField(erad, question, value, options, callback) {
     createFormElement(function() {
       return $('<input></input>');
     }, options),
+    (options && options.multiple) ? createClearFormElement(question) : null,
     question,
     value,
     options,
@@ -153,8 +162,9 @@ function createChooseField(erad, question, value, options, callback) {
   if (question.format == 'singleselect') {
     return new SingleElementField(
       createFormElement(function() {
-        return createChooser(question.options);
+        return createChooser(question, options);
       }, options),
+      null,
       question,
       value,
       options,
@@ -165,6 +175,7 @@ function createChooseField(erad, question, value, options, callback) {
     createFormElement(function() {
       return $('<input></input>');
     }, options),
+    null,
     question,
     value,
     options,
@@ -189,17 +200,24 @@ function validateAvailableDateField(erad, question, value, fieldSetAndValues) {
   }
 }
 
-function createChooser(options) {
+function createChooser(question, options) {
   const select = $('<select></select>');
-  select.append($('<option></option>').attr('value', '').text(_('Choose...')));
-  (options || []).forEach(function(opt) {
+  const defaultOption = $('<option></option>').attr('value', '');
+  if (options.multiple) {
+    defaultOption.text(_('(Not Modified)'));
+    defaultOption.attr('selected', true)
+  } else {
+    defaultOption.text(_('Choose...'));
+  }
+  select.append(defaultOption);
+  (question.options || []).forEach(function(opt) {
     if (opt.text === undefined) {
       const optElem = $('<option></option>').attr('value', opt).text(opt);
       select.append(optElem);
       return;
     }
     const optElem = $('<option></option>').attr('value', opt.text).text(getLocalizedText(opt.tooltip));
-    if (opt.default) {
+    if (!options.multiple && opt.default) {
       optElem.attr('selected', true);
     }
     select.append(optElem);
@@ -215,7 +233,9 @@ function createFormElement(createHandler, options) {
         elem.attr('readonly', true);
       }
       if (callback) {
-        elem.change(callback);
+        elem.change(function(event) {
+          callback(event, options);
+        });
       }
       elem.addClass('form-control');
       addToContainer(elem);
@@ -234,8 +254,35 @@ function createFormElement(createHandler, options) {
   };
 }
 
+function createClearFormElement(question) {
+  return {
+    create: function() {
+      const clearId = 'clear-' + question.qid.replace(':', '-');
+      const clearField = $('<input></input>')
+        .addClass('form-check-input')
+        .addClass('metadata-form-clear-checkbox')
+        .attr('type', 'checkbox')
+        .attr('id', clearId);
+      const clearLabel = $('<label></label>')
+        .addClass('form-check-label')
+        .attr('for', clearId)
+        .text(_('Clear'));
+      const clearForm = $('<div></div>')
+        .addClass('form-check')
+        .append(clearField)
+        .append(clearLabel);
+      return {
+        element: clearForm,
+        checked: function() {
+          return clearField.prop('checked');
+        }
+      };
+    }
+  };
+}
 
-function SingleElementField(formField, question, defaultValue, options, callback) {
+
+function SingleElementField(formField, clearField, question, defaultValue, options, callback) {
   if (!question.qid) {
     throw new Error('No labels');
   }
@@ -246,6 +293,7 @@ function SingleElementField(formField, question, defaultValue, options, callback
   self.title = question.title;
   self.help = question.help;
   self.defaultValue = defaultValue;
+  self.clearField = null;
 
   self.createFormGroup = function(input, errorContainer) {
     const label = $('<label></label>').text(self.getDisplayText());
@@ -306,10 +354,19 @@ function SingleElementField(formField, question, defaultValue, options, callback
     formField.setValue(input, value);
   };
 
+  self.checkedClear = function() {
+    return self.clearField && self.clearField.checked();
+  };
+
   self.addElementTo = function(parent, errorContainer) {
     const input = formField.create(
       function(child) {
-        parent.append(self.createFormGroup(child, errorContainer));
+        const group = self.createFormGroup(child, errorContainer);
+        if (clearField) {
+          self.clearField = clearField.create();
+          group.append(self.clearField.element);
+        }
+        parent.append(group);
       },
       callback
     );
@@ -389,11 +446,13 @@ function createFileCapacityFieldElement(createHandler, options) {
         input.attr('readonly', true);
       }
       if (callback) {
-        input.change(callback);
+        input.change(function(event) {
+          callback(event, options);
+        });
       }
       input.addClass('form-control');
       const container = $('<div>').css('display', 'flex').append(input);
-      if (!options || !options.readonly) {
+      if (!options || (!options.readonly && !options.multiple)) {
         const calcIndicator = $('<i class="fa fa-spinner fa-pulse">')
           .hide();
         const calcButton = $('<a class="btn btn-default btn-sm">')
@@ -442,11 +501,13 @@ function createFileURLFieldElement(createHandler, options) {
         input.attr('readonly', true);
       }
       if (callback) {
-        input.change(callback);
+        input.change(function(event) {
+          callback(event, options);
+        });
       }
       input.addClass('form-control');
       const container = $('<div>').css('display', 'flex').append(input);
-      if (!options || !options.readonly) {
+      if (!options || (!options.readonly && !options.multiple)) {
         const fillButton = $('<a class="btn btn-default btn-sm">')
           .append($('<i class="fa fa-refresh"></i>'))
           .append($('<span></span>').text(_('Fill')));
@@ -572,13 +633,13 @@ function createFileCreatorsFieldElement(erad, options) {
             emptyLine.show();
           }
           if (callback) {
-            callback();
+            callback(e, options);
           }
         });
       }
       tbody.on('change', '.input', function (e) {
         if (callback) {
-          callback();
+          callback(e, options);
         }
       });
       addToContainer(container);
@@ -660,7 +721,9 @@ function createERadResearcherNumberFieldElement(erad, options) {
       });
       container.find('.twitter-typeahead').css('width', '100%');
       if (callback) {
-        input.change(callback);
+        input.change(function(event) {
+          callback(event, options);
+        });
       }
       return container;
     },
