@@ -56,7 +56,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
 
     @property
     def is_moderated(self):
-        return bool(self.collection.provider) and self.collection.provider.reviews_workflow == 'post-moderation'
+        return bool(self.collection.provider) and self.collection.provider.reviews_workflow == 'pre-moderation'
 
     @state.setter
     def state(self, new_state):
