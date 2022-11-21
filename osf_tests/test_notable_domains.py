@@ -260,13 +260,12 @@ class TestNotableDomain:
         wiki_version = WikiVersionFactory()
         project = wiki_version.wiki_page.node
         wiki_version.content = 'This has a domain: https://cos.io'
+        wiki_version.save()
 
         set_session(SessionFactory(user=project.creator))
         assert DomainReference.objects.count() == 0
-        with mock.patch.object(spam_tasks.requests, 'head') as mock_headers:
+        with mock.patch.object(spam_tasks.requests, 'head'):
             project.set_privacy(permissions='public')
-
-        mock_headers.assert_caled()
 
         references = DomainReference.objects.filter(domain__domain='cos.io')
         assert references.count() == 1
