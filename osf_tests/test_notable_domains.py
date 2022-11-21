@@ -73,7 +73,6 @@ class TestDomainExtraction:
             mock_head.side_effect = spam_tasks.requests.exceptions.ConnectionError
             domains = set(spam_tasks._extract_domains(sample_text))
         assert not domains
-        mock_head.assert_called()
 
     def test_actract_domains__returned_on_error(self):
         sample_text = 'This.will.timeout'
