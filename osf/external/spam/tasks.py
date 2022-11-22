@@ -71,7 +71,9 @@ def _extract_domains(content):
         else:
             # Store the redirect location (to help catch link shorteners)
             if response.status_code in REDIRECT_CODES and 'location' in response.headers:
-                domain = DOMAIN_REGEX.match(response.headers['location']).group('domain')
+                redirect_match = DOMAIN_REGEX.match(response.headers['location'])
+                if redirect_match:
+                    domain = redirect_match.group('domain') or domain
 
         # Avoid returning a duplicate domain discovered via redirect
         if domain not in extracted_domains:
