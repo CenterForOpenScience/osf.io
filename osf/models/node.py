@@ -499,12 +499,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             guid=self.guids.first(),
             collection__provider__isnull=False,
             collection__deleted__isnull=True,
-            collection__is_bookmark_collection=False
-        ).exclude(
-            machine_state__in=[
-                CollectionSubmissionStates.REMOVED,
-                CollectionSubmissionStates.REJECTED
-            ]
+            collection__is_bookmark_collection=False,
+            machine_state=CollectionSubmissionStates.ACCEPTED
         )
 
     @property

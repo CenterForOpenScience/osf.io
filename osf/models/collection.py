@@ -71,17 +71,15 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
     @property
     def active_collection_submissions(self):
         return CollectionSubmission.objects.filter(
-            collection=self
-        ).exclude(
-            machine_state__in=[
-                CollectionSubmissionStates.REMOVED,
-                CollectionSubmissionStates.REJECTED
-            ],
+            collection=self,
+            machine_state=CollectionSubmissionStates.ACCEPTED
         )
 
     @property
     def active_guids(self):
-        return Guid.objects.filter(id__in=self.active_collection_submissions.values_list('guid_id'))
+        return self.guid_links.filter(
+            collectionsubmission__machine_state=CollectionSubmissionStates.ACCEPTED
+        )
 
     def get_absolute_url(self):
         return self.absolute_api_v2_url
