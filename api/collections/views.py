@@ -368,9 +368,11 @@ class CollectionSubmissionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroy
         return self.get_collection_submission()
 
     def perform_destroy(self, instance):
-        # Skip collection permission check -- perms class checks when getting CollectionSubmission
-        collection = self.get_collection(check_object_permissions=False)
-        collection.remove_object(instance, get_user_auth(request=self.request))
+        instance.remove(
+            user=self.request.user,
+            comment='Implicit removal via CollectionSubmissionDetail',
+            force=True,
+        )
 
     def perform_update(self, serializer):
         serializer.save()
@@ -688,10 +690,14 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
         collection = self.get_collection()
-        try:
-            collection.remove_object(instance, get_user_auth(request=self.request))
-        except ValueError as err:  # pointer doesn't belong to node
-            raise ValidationError(str(err))
+        if instance.collection != collection:
+            raise ValidationError(f'Resource [{instance.guid._id}] is not part of collection {collection._id}')
+
+        instance.remove(
+            user=self.request.user,
+            comment='Implicit removal via NodeLinksList',
+            force=True,
+        )
 
     # overrides ListCreateAPIView
     def get_parser_context(self, http_request):
