@@ -54,6 +54,7 @@ def get_admin_read_permissions():
         'view_providerassetfile',
         'view_registrationprovider',
         'view_management',
+        'view_notabledomain',
     ])
 
 
@@ -90,6 +91,9 @@ def get_admin_write_permissions():
         'delete_preprintrequest',
         'change_registrationprovider',
         'delete_registrationprovider',
+        'add_notabledomain',
+        'change_notabledomain',
+        'delete_notabledomain',
     ])
 
 
