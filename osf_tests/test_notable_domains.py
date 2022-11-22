@@ -100,6 +100,15 @@ class TestDomainExtraction:
             domains = list(spam_tasks._extract_domains(sample_text))
         assert domains == ['redirect.me']
 
+    def test_extract_domains__redirect_code_bad_location(self):
+        mock_response = SimpleNamespace()
+        mock_response.status_code = 301
+        mock_response.headers = {'location': 'haha'}
+        sample_text = 'redirect.me'
+        with mock.patch.object(spam_tasks.requests, 'head', return_value=mock_response):
+            domains = list(spam_tasks._extract_domains(sample_text))
+        assert domains == ['redirect.me']
+
     def test_extract_domains__deduplicates(self):
         sample_text = 'osf.io osf.io osf.io and, oh, yeah, osf.io'
         with mock.patch.object(spam_tasks.requests, 'head'):
