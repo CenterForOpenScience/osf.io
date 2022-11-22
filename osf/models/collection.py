@@ -9,7 +9,6 @@ from django.utils import timezone
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 from framework.celery_tasks.handlers import enqueue_task
 
-from osf.models import Guid
 from osf.models.base import BaseModel, GuidMixin
 from osf.models.collection_submission import CollectionSubmission
 from osf.models.mixins import GuardianMixin
