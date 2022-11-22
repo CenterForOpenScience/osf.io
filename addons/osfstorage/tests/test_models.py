@@ -198,10 +198,6 @@ class TestOsfstorageFileNode(StorageTestCase):
     def test_create_version(self):
         pass
 
-    @unittest.skip
-    def test_update_version_metadata(self):
-        pass
-
     def test_delete_folder(self):
         parent = self.node_settings.get_root().append_folder('Test')
         kids = []

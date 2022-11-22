@@ -583,14 +583,14 @@ def bulk_update_nodes(serialize, nodes, index=None, category=None):
     if actions:
         return helpers.bulk(client(), actions)
 
-def serialize_cgm_contributor(contrib):
+def serialize_collection_submission_contributor(contrib):
     return {
         'fullname': contrib['fullname'],
         'url': '/{}/'.format(contrib['guids___id']) if contrib['is_active'] else None
     }
 
-def serialize_cgm(cgm):
-    obj = cgm.guid.referent
+def serialize_collection_submission(collection_submission):
+    obj = collection_submission.guid.referent
     contributors = []
     if hasattr(obj, '_contributors'):
         contributors = obj._contributors.filter(contributor__visible=True).order_by('contributor___order').values('fullname', 'guids___id', 'is_active')
@@ -600,19 +600,19 @@ def serialize_cgm(cgm):
         tags = list(obj.tags.filter(system=False).values_list('name', flat=True))
 
     return {
-        'id': cgm._id,
+        'id': collection_submission._id,
         'abstract': getattr(obj, 'description', ''),
-        'contributors': [serialize_cgm_contributor(contrib) for contrib in contributors],
-        'provider': getattr(cgm.collection.provider, '_id', None),
-        'modified': max(cgm.modified, obj.modified),
-        'collectedType': cgm.collected_type,
-        'status': cgm.status,
-        'volume': cgm.volume,
-        'issue': cgm.issue,
-        'programArea': cgm.program_area,
-        'schoolType': cgm.school_type,
-        'studyDesign': cgm.study_design,
-        'subjects': list(cgm.subjects.values_list('text', flat=True)),
+        'contributors': [serialize_collection_submission_contributor(contrib) for contrib in contributors],
+        'provider': getattr(collection_submission.collection.provider, '_id', None),
+        'modified': max(collection_submission.modified, obj.modified),
+        'collectedType': collection_submission.collected_type,
+        'status': collection_submission.status,
+        'volume': collection_submission.volume,
+        'issue': collection_submission.issue,
+        'programArea': collection_submission.program_area,
+        'schoolType': collection_submission.school_type,
+        'studyDesign': collection_submission.study_design,
+        'subjects': list(collection_submission.subjects.values_list('text', flat=True)),
         'title': getattr(obj, 'title', ''),
         'url': getattr(obj, 'url', ''),
         'tags': tags,
@@ -620,17 +620,17 @@ def serialize_cgm(cgm):
     }
 
 @requires_search
-def bulk_update_cgm(cgms, actions=None, op='update', index=None):
+def bulk_update_collection_submission(collection_submissions, actions=None, op='update', index=None):
     index = index or INDEX
-    if not actions and cgms:
+    if not actions and collection_submissions:
         actions = ({
             '_op_type': op,
             '_index': index,
-            '_id': cgm._id,
+            '_id': collection_submission._id,
             '_type': 'collectionSubmission',
-            'doc': serialize_cgm(cgm),
+            'doc': serialize_collection_submission(collection_submission),
             'doc_as_upsert': True,
-        } for cgm in cgms)
+        } for collection_submission in collection_submissions)
 
     try:
         helpers.bulk(client(), actions or [], refresh=True, raise_on_error=False)
@@ -815,36 +815,36 @@ def update_institution(institution, index=None):
 
 
 @celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
-def update_cgm_async(self, cgm_id, collection_id=None, op='update', index=None):
+def update_collection_submission_async(self, collection_submission_id, collection_id=None, op='update', index=None):
     CollectionSubmission = apps.get_model('osf.CollectionSubmission')
     qs = CollectionSubmission.objects.filter(
-        guid___id=cgm_id,
+        guid___id=collection_submission_id,
         collection__provider__isnull=False,
         collection__deleted__isnull=True,
         collection__is_bookmark_collection=False)
     if collection_id:
         qs = qs.filter(collection_id=collection_id)
 
-    for cgm in qs:
+    for collection_submission in qs:
         if op != 'delete' and \
-            ((hasattr(cgm.guid.referent, 'is_public') and not cgm.guid.referent.is_public) or
-                (hasattr(cgm.guid.referent, 'is_deleted') and cgm.guid.referent.is_deleted)):
+            ((hasattr(collection_submission.guid.referent, 'is_public') and not collection_submission.guid.referent.is_public) or
+                (hasattr(collection_submission.guid.referent, 'is_deleted') and collection_submission.guid.referent.is_deleted)):
             logger.exception('May only delete search index of private or deleted object')
             return
 
         try:
-            update_cgm(cgm, op=op, index=index)
+            update_collection_submission(collection_submission, op=op, index=index)
         except Exception as exc:
             self.retry(exc=exc)
 
 @requires_search
-def update_cgm(cgm, op='update', index=None):
+def update_collection_submission(collection_submission, op='update', index=None):
     index = index or INDEX
     if op == 'delete':
-        client().delete(index=index, doc_type='collectionSubmission', id=cgm._id, refresh=True, ignore=[404])
+        client().delete(index=index, doc_type='collectionSubmission', id=collection_submission._id, refresh=True, ignore=[404])
         return
-    collection_submission_doc = serialize_cgm(cgm)
-    client().index(index=index, doc_type='collectionSubmission', body=collection_submission_doc, id=cgm._id, refresh=True)
+    collection_submission_doc = serialize_collection_submission(collection_submission)
+    client().index(index=index, doc_type='collectionSubmission', body=collection_submission_doc, id=collection_submission._id, refresh=True)
 
 @requires_search
 def delete_all():

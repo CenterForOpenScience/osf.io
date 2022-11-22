@@ -9,7 +9,6 @@ from django.db import IntegrityError, models
 from django.utils.functional import cached_property
 from django.utils import timezone
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
-from include import IncludeManager
 from framework.celery_tasks.handlers import enqueue_task
 
 from osf.models.base import BaseModel, GuidMixin
@@ -48,22 +47,22 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
     @classmethod
     def load(cls, data, select_for_update=False):
         try:
-            cgm_id, collection_id = data.split('-')
+            collection_submission_id, collection_id = data.split('-')
         except ValueError:
             raise ValueError('Invalid CollectionSubmission object <_id {}>'.format(data))
         else:
-            if cgm_id and collection_id:
+            if collection_submission_id and collection_id:
                 try:
                     if isinstance(data, basestring):
-                        return (cls.objects.get(guid___id=cgm_id, collection__guids___id=collection_id) if not select_for_update
-                                else cls.objects.filter(guid___id=cgm_id, collection__guids___id=collection_id).select_for_update().get())
+                        return (cls.objects.get(guid___id=collection_submission_id, collection__guids___id=collection_id) if not select_for_update
+                                else cls.objects.filter(guid___id=collection_submission_id, collection__guids___id=collection_id).select_for_update().get())
                 except cls.DoesNotExist:
                     return None
             return None
 
     @property
     def absolute_api_v2_url(self):
-        path = '/collections/{}/collected_metadata/{}/'.format(self.collection._id, self.guid._id)
+        path = '/collections/{}/collection_submissions/{}/'.format(self.collection._id, self.guid._id)
         return api_v2_url(path)
 
     def update_index(self):
@@ -87,9 +86,11 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         self.update_index()
         return ret
 
-class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
-    objects = IncludeManager()
+    def delete(self, *args, **kwargs):
+        self.remove_from_index()
+        super().delete()
 
+class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
     groups = {
         'read': ('read_collection', ),
         'write': ('read_collection', 'write_collection', ),
@@ -165,10 +166,10 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
         return '{}linked_registrations/'.format(self.absolute_api_v2_url)
 
     @classmethod
-    def bulk_update_search(cls, cgms, op='update', index=None):
+    def bulk_update_search(cls, collection_submissions, op='update', index=None):
         from website import search
         try:
-            search.search.bulk_update_collected_metadata(cgms, op=op, index=index)
+            search.search.bulk_update_collected_metadata(collection_submissions, op=op, index=index)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
 
@@ -277,17 +278,17 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
         if self.collectionsubmission_set.filter(guid=obj.guids.first()).exists():
             raise ValidationError('Object already exists in collection.')
 
-        cgm = self.collectionsubmission_set.create(guid=obj.guids.first(), creator=collector)
-        cgm.collected_type = collected_type
-        cgm.status = status
-        cgm.volume = volume
-        cgm.issue = issue
-        cgm.program_area = program_area
-        cgm.school_type = school_type
-        cgm.study_design = study_design
-        cgm.save()
+        collection_submission = self.collectionsubmission_set.create(guid=obj.guids.first(), creator=collector)
+        collection_submission.collected_type = collected_type
+        collection_submission.status = status
+        collection_submission.volume = volume
+        collection_submission.issue = issue
+        collection_submission.program_area = program_area
+        collection_submission.school_type = school_type
+        collection_submission.study_design = study_design
+        collection_submission.save()
 
-        return cgm
+        return collection_submission
 
     def remove_object(self, obj):
         """ Removes object from collection
@@ -295,17 +296,16 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
         :param obj: object to remove from collection, if it exists. Acceptable types- CollectionSubmission, GuidMixin
         """
         if isinstance(obj, CollectionSubmission):
-            if obj.collection == self:
-                obj.remove_from_index()
-                self.collectionsubmission_set.filter(id=obj.id).delete()
-                return
+            if obj.collection != self:
+                raise ValueError(f'Resource [{obj.guid._id}] is not part of collection {self._id}')
         else:
-            cgm = self.collectionsubmission_set.get(guid=obj.guids.first())
-            if cgm:
-                cgm.remove_from_index()
-                cgm.delete()
-                return
-        raise ValueError('Node link does not belong to the requested node.')
+            # assume that we were passed the collected resource
+            try:
+                obj = self.collectionsubmission_set.get(guid=obj.guids.first())
+            except CollectionSubmission.DoesNotExist:
+                raise ValueError(f'Resource [{obj.guid._id}] is not part of collection {self._id}')
+
+        obj.delete()
 
     def delete(self):
         """ Mark collection as deleted

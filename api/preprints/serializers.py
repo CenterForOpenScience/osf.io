@@ -201,7 +201,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         },
     )
 
-    has_coi = ser.NullBooleanField(required=False)
+    has_coi = ser.BooleanField(required=False, allow_null=True)
     conflict_of_interest_statement = ser.CharField(required=False, allow_blank=True, allow_null=True)
     has_data_links = ser.ChoiceField(Preprint.HAS_LINKS_CHOICES, required=False)
     why_no_data = ser.CharField(required=False, allow_blank=True, allow_null=True)

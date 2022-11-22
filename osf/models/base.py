@@ -13,7 +13,6 @@ from django.db.models.query import QuerySet
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django_extensions.db.models import TimeStampedModel
-from include import IncludeQuerySet
 from past.builtins import basestring
 
 from osf.utils.caching import cached_property
@@ -109,10 +108,20 @@ class BaseModel(TimeStampedModel, QuerySetExplainMixin):
 
     def refresh_from_db(self, **kwargs):
         super(BaseModel, self).refresh_from_db(**kwargs)
-        # Django's refresh_from_db does not uncache GFKs
-        for field in self._meta.private_fields:
-            if hasattr(field, 'cache_attr') and field.cache_attr in self.__dict__:
-                del self.__dict__[field.cache_attr]
+        # Since Django 2.2, any cached relations are cleared from the reloaded instance.
+        # See https://docs.djangoproject.com/en/2.2/ref/models/instances/#django.db.models.Model.refresh_from_db
+        # However, the default `refresh_from_db()` doesn't refresh related fields. Neither can we refresh related
+        # field(s) since it will inevitably cause infinite loop; and Many/One-to-Many relations add to the complexity.
+        # The recommended behavior is to explicitly refresh the fields when necessary. In order to preserve pre-upgrade
+        # behavior, our customization only reloads GFKs.
+        for f in self._meta._get_fields(reverse=False):
+            # Note: the following `if` condition is how django internally identifies GFK
+            if f.is_relation and f.many_to_one and not (hasattr(f.remote_field, 'model') and f.remote_field.model):
+                if hasattr(self, f.name):
+                    try:
+                        getattr(self, f.name).refresh_from_db()
+                    except AttributeError:
+                        continue
 
     def clone(self):
         """Create a new, unsaved copy of this object."""
@@ -281,18 +290,19 @@ class OptionalGuidMixin(BaseIDMixin):
         abstract = True
 
 
-class GuidMixinQuerySet(IncludeQuerySet):
+class GuidMixinQuerySet(QuerySet):
 
     def _filter_or_exclude(self, negate, *args, **kwargs):
-        return super(GuidMixinQuerySet, self)._filter_or_exclude(negate, *args, **kwargs).include('guids')
+        return super()._filter_or_exclude(
+            negate,
+            *args,
+            **kwargs
+        ).prefetch_related('guids')
 
     def all(self):
         if self._fields:
-            return super(GuidMixinQuerySet, self).all()
-        return super(GuidMixinQuerySet, self).all().include('guids')
-
-    def count(self):
-        return super(GuidMixinQuerySet, self.include(None)).count()
+            return super().all()
+        return super().all().prefetch_related('guids')
 
 
 class GuidMixin(BaseIDMixin):

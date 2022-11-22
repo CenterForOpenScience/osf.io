@@ -84,7 +84,6 @@ INSTALLED_APPS = (
     'django_celery_results',
     'raven.contrib.django.raven_compat',
     'webpack_loader',
-    'password_reset',
     'guardian',
     'waffle',
     'elasticsearch_metrics.apps.ElasticsearchMetricsConfig',
@@ -138,9 +137,9 @@ RAVEN_CONFIG = {
 # Settings related to CORS Headers addon: allow API to receive authenticated requests from OSF
 # CORS plugin only matches based on "netloc" part of URL, so as workaround we add that to the list
 CORS_ORIGIN_ALLOW_ALL = False
-CORS_ORIGIN_WHITELIST = (urlparse(osf_settings.DOMAIN).netloc,
-                         osf_settings.DOMAIN,
-                         )
+CORS_ORIGIN_WHITELIST = (
+    osf_settings.DOMAIN.rstrip('/'),
+)
 CORS_ALLOW_CREDENTIALS = True
 
 MIDDLEWARE = (
@@ -152,11 +151,10 @@ MIDDLEWARE = (
     'api.base.middleware.CeleryTaskMiddleware',
     'api.base.middleware.PostcommitTaskMiddleware',
 
-    'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',

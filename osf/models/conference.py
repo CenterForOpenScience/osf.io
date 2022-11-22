@@ -91,7 +91,8 @@ class Conference(ObjectIDMixin, BaseModel):
     class Meta:
         # custom permissions for use in the OSF Admin App
         permissions = (
-            ('view_conference', 'Can view conference details in the admin app.'),
+            # Clashes with built-in permissions
+            # ('view_conference', 'Can view conference details in the admin app.'),
         )
 
 

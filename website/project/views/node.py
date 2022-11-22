@@ -690,7 +690,7 @@ def _view_project(node, auth, primary=False,
     """Build a JSON object containing everything needed to render
     project.view.mako.
     """
-    node = AbstractNode.objects.filter(pk=node.pk).include('contributor__user__guids').get()
+    node = AbstractNode.objects.filter(pk=node.pk).prefetch_related('contributor_set__user__guids').get()
     user = auth.user
 
     parent = node.find_readable_antecedent(auth)
@@ -881,23 +881,23 @@ def get_affiliated_institutions(obj):
         })
     return ret
 
-def serialize_collections(cgms, auth):
+def serialize_collections(collection_submissions, auth):
     return [{
-        'title': cgm.collection.title,
-        'name': cgm.collection.provider.name,
-        'url': '/collections/{}/'.format(cgm.collection.provider._id),
-        'status': cgm.status,
-        'type': cgm.collected_type,
-        'issue': cgm.issue,
-        'volume': cgm.volume,
-        'program_area': cgm.program_area,
-        'school_type': cgm.school_type,
-        'study_design': cgm.study_design,
-        'subjects': list(cgm.subjects.values_list('text', flat=True)),
-        'is_public': cgm.collection.is_public,
-        'logo': cgm.collection.provider.get_asset_url('favicon')
-    } for cgm in cgms if cgm.collection.provider and (cgm.collection.is_public or
-        (auth.user and auth.user.has_perm('read_collection', cgm.collection)))]
+        'title': collection_submission.collection.title,
+        'name': collection_submission.collection.provider.name,
+        'url': '/collections/{}/'.format(collection_submission.collection.provider._id),
+        'status': collection_submission.status,
+        'type': collection_submission.collected_type,
+        'issue': collection_submission.issue,
+        'volume': collection_submission.volume,
+        'program_area': collection_submission.program_area,
+        'school_type': collection_submission.school_type,
+        'study_design': collection_submission.study_design,
+        'subjects': list(collection_submission.subjects.values_list('text', flat=True)),
+        'is_public': collection_submission.collection.is_public,
+        'logo': collection_submission.collection.provider.get_asset_url('favicon')
+    } for collection_submission in collection_submissions if collection_submission.collection.provider and (collection_submission.collection.is_public or
+        (auth.user and auth.user.has_perm('read_collection', collection_submission.collection)))]
 
 def serialize_preprints(node, user):
     return [
@@ -1062,7 +1062,7 @@ def node_child_tree(user, node):
     children = (Node.objects.get_children(node)
                 .filter(is_deleted=False)
                 .annotate(parentnode_id=Subquery(parent_node_sqs[:1]))
-                .include('contributor__user__guids')
+                .prefetch_related('contributor_set__user__guids')
                 )
 
     nested = defaultdict(list)
@@ -1074,7 +1074,7 @@ def node_child_tree(user, node):
         'is_admin': node.is_admin_contributor(contributor.user),
         'is_confirmed': contributor.user.is_confirmed,
         'visible': contributor.visible
-    } for contributor in node.contributor_set.all().include('user__guids')]
+    } for contributor in node.contributor_set.all().prefetch_related('user__guids')]
 
     can_read = node.has_permission(user, READ)
     is_admin = node.has_permission(user, ADMIN)

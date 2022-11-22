@@ -22,11 +22,8 @@ flake8==3.6.0
 flake8-mutable==1.2.0
 pre-commit==1.10.5
 
-# Django SSL for local https development
-django-sslserver==0.19
-
 # Django Debug Toolbar for local development
-django-debug-toolbar==1.6
+django-debug-toolbar==3.2.4
 
 # Ipdb
 ipdb==0.10.1
@@ -38,4 +35,4 @@ pydevd==0.0.6
 nplusone==0.8.2
 
 # Profiling
-django-silk==2.0.0  # pyup: <3.0 # Remove this when we're using MIDDLEWARE
+django-silk==4.2.0  # pyup: <3.0 # Remove this when we're using MIDDLEWARE

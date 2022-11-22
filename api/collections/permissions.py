@@ -44,7 +44,7 @@ class CanSubmitToCollectionOrPublic(permissions.BasePermission):
         accepting_submissions = obj.is_public and obj.provider and obj.provider.allow_submissions
         return auth.user and (accepting_submissions or auth.user.has_perm('write_collection', obj))
 
-class CanUpdateDeleteCGMOrPublic(permissions.BasePermission):
+class CanUpdateDeleteCollectionSubmissionOrPublic(permissions.BasePermission):
 
     acceptable_models = (CollectionSubmission, )
 
