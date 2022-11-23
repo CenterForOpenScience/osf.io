@@ -1,3 +1,4 @@
+import mock
 import pytest
 
 from django.db import IntegrityError
@@ -13,6 +14,9 @@ from .factories import (
     BookmarkCollectionFactory,
     CollectionFactory,
 )
+from osf.utils.workflows import CollectionSubmissionStates
+from website.mails import mails
+from osf.models.collection_submission import mails as collection_submission_mail
 
 pytestmark = pytest.mark.django_db
 
@@ -94,19 +98,38 @@ class TestImplicitRemoval:
         standard_collection.collect_object(node, standard_collection.creator)
         return node
 
-    def test_node_removed_from_collection_on_privacy_change(self, collected_node, bookmark_collection):
+    @mock.patch('osf.models.node.Node.check_privacy_change_viability', mock.Mock())  # mocks the storage usage limits
+    def test_node_removed_from_collection_on_privacy_change(self, auth, collected_node, bookmark_collection):
         associated_collections = collected_node.guids.first().collectionsubmission_set
         assert associated_collections.count() == 3
 
-        collected_node.set_privacy('private')
+        collected_node.set_privacy('private', auth=auth)
 
-        assert associated_collections.count() == 1
+        assert associated_collections.filter(machine_state=CollectionSubmissionStates.REMOVED).count() == 2
+        assert associated_collections.exclude(machine_state=CollectionSubmissionStates.REMOVED).count() == 1
         assert associated_collections.filter(collection=bookmark_collection).exists()
+
+    @mock.patch('osf.models.node.Node.check_privacy_change_viability', mock.Mock())  # mocks the storage usage limits
+    def test_node_removed_from_collection_on_privacy_change_notify(self, auth, collected_node, bookmark_collection):
+        associated_collections = collected_node.guids.first().collectionsubmission_set
+        assert associated_collections.count() == 3
+
+        send_mail = mails.send_mail
+        with mock.patch.object(collection_submission_mail, 'send_mail') as mock_send:
+            mock_send.side_effect = send_mail  # implicitly test rendering
+            collected_node.set_privacy('private', auth=auth)
+            assert mock_send.called
+            assert len(mock_send.call_args_list) == 2
+            email1, email2 = mock_send.call_args_list
+            email1_args, email1_kwargs = email1
+            email2_args, email2_kwargs = email2
+            assert {email1_kwargs['node'].id, email2_kwargs['node'].id} == {collected_node.id}
+            assert {email1_kwargs['mail'], email2_kwargs['mail']} == {mails.COLLECTION_SUBMISSION_REMOVED_PRIVATE}
 
     def test_node_removed_from_collection_on_delete(self, collected_node, bookmark_collection, auth):
         associated_collections = collected_node.guids.first().collectionsubmission_set
-        assert associated_collections.count() == 3
+        assert associated_collections.filter(machine_state=CollectionSubmissionStates.ACCEPTED).count() == 3
 
         collected_node.remove_node(auth)
 
-        assert associated_collections.count() == 0
+        assert associated_collections.filter(machine_state=CollectionSubmissionStates.REMOVED).count() == 3

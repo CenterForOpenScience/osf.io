@@ -133,12 +133,12 @@ class CollectionSerializer(JSONAPISerializer):
 
     def get_node_links_count(self, obj):
         auth = get_user_auth(self.context['request'])
-        node_ids = obj.guid_links.all().values_list('_id', flat=True)
+        node_ids = obj.active_guids.all().values_list('_id', flat=True)
         return Node.objects.filter(guids___id__in=node_ids, is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).count()
 
     def get_registration_links_count(self, obj):
         auth = get_user_auth(self.context['request'])
-        registration_ids = obj.guid_links.all().values_list('_id', flat=True)
+        registration_ids = obj.active_guids.all().values_list('_id', flat=True)
         return Registration.objects.filter(guids___id__in=registration_ids, is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).count()
 
     def get_preprint_links_count(self, obj):
@@ -354,9 +354,12 @@ class CollectedAbstractNodeRelationshipSerializer(object):
         # Convenience method to format instance based on view's get_object
         return {
             'data':
-            list(self._abstract_node_subclass.objects.filter(
-                guids__in=obj.guid_links.all(), is_deleted=False,
-            )),
+            list(
+                self._abstract_node_subclass.objects.filter(
+                    guids__in=obj.active_guids,
+                    is_deleted=False,
+                ),
+            ),
             'self': obj,
         }
 
@@ -367,7 +370,7 @@ class CollectedAbstractNodeRelationshipSerializer(object):
         add, remove = self.get_pointers_to_add_remove(pointers=instance['data'], new_pointers=validated_data['data'])
 
         for pointer in remove:
-            collection.remove_object(pointer)
+            collection.remove_object(pointer, auth=auth)
         for node in add:
             collection.collect_object(node, auth.user)
 

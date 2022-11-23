@@ -31,6 +31,7 @@ from osf.models import SpamStatus
 from addons.wiki.models import WikiPage
 from osf.models import CollectionSubmission
 from osf.utils.sanitize import unescape_entities
+from osf.utils.workflows import CollectionSubmissionStates
 from website import settings
 from website.filters import profile_image_url
 from osf.models.licenses import serialize_node_license_record
@@ -821,7 +822,9 @@ def update_collection_submission_async(self, collection_submission_id, collectio
         guid___id=collection_submission_id,
         collection__provider__isnull=False,
         collection__deleted__isnull=True,
-        collection__is_bookmark_collection=False)
+        collection__is_bookmark_collection=False,
+        machine_state=CollectionSubmissionStates.ACCEPTED
+    )
     if collection_id:
         qs = qs.filter(collection_id=collection_id)
 

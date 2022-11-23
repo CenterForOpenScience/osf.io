@@ -39,7 +39,7 @@ from framework.sentry import log_exception
 from osf.exceptions import (InvalidTagError, NodeStateError,
                             TagNotFoundError)
 from osf.models.contributor import Contributor
-from osf.models.collection import CollectionSubmission
+from osf.models.collection_submission import CollectionSubmission
 
 from osf.models.identifiers import Identifier, IdentifierMixin
 from osf.models.licenses import NodeLicenseRecord
@@ -56,6 +56,7 @@ from framework.auth.core import Auth
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, ensure_str
 from osf.utils.requests import get_request_and_user_id, string_type_request_headers
+from osf.utils.workflows import CollectionSubmissionStates
 from osf.utils import sanitize
 from website import language, settings
 from website.citations.utils import datetime_to_csl
@@ -498,7 +499,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             guid=self.guids.first(),
             collection__provider__isnull=False,
             collection__deleted__isnull=True,
-            collection__is_bookmark_collection=False)
+            collection__is_bookmark_collection=False,
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        )
 
     @property
     def collecting_metadata_list(self):
@@ -1243,7 +1246,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
             self.is_public = False
             self.keenio_read_key = ''
-            self._remove_from_associated_collections()
+            self._remove_from_associated_collections(auth)
         else:
             return False
 
@@ -2227,7 +2230,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             node.deleted = log_date
             node.add_remove_node_log(auth=auth, date=log_date)
             project_signals.node_deleted.send(node)
-            node._remove_from_associated_collections()
+            node._remove_from_associated_collections(auth)
 
         bulk_update(hierarchy, update_fields=['is_deleted', 'deleted_date', 'deleted'])
 
@@ -2402,13 +2405,18 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         ).first() or osf_provider_tag
         contributor.add_system_tag(source_tag)
 
-    def _remove_from_associated_collections(self):
+    def _remove_from_associated_collections(self, auth=None):
         for submission in self.guids.first().collectionsubmission_set.all():
             associated_collection = submission.collection
             if associated_collection.is_bookmark_collection and not self.deleted:
                 if self.contributors.filter(pk=associated_collection.creator.id).exists():
                     continue
-            submission.delete()
+
+            submission.remove(
+                user=getattr(auth, 'user'),
+                comment='Removed from collection due to implicit removal',
+                force=True
+            )
 
 
 class NodeUserObjectPermission(UserObjectPermissionBase):
