@@ -359,7 +359,7 @@ class CollectionSubmissionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroy
 
     serializer_class = CollectionSubmissionSerializer
     view_category = 'collections'
-    view_name = 'collected-metadata-detail'
+    view_name = 'collection-submission-detail'
 
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
 

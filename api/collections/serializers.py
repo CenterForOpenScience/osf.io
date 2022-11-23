@@ -234,7 +234,7 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
-            'collected-metadata:collected-metadata-detail',
+            'collections:collected-metadata-detail',
             kwargs={
                 'collection_id': obj.collection._id,
                 'collection_submission_id': obj.guid._id,

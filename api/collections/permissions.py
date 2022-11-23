@@ -1,12 +1,33 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+import io
 
 from rest_framework import permissions
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, MethodNotAllowed
 
+from api.base.exceptions import Gone
+from api.base.parsers import JSONSchemaParser
 from api.base.utils import get_user_auth, assert_resource_type
 from osf.models import AbstractNode, Preprint, Collection, CollectionSubmission, CollectionProvider
 from osf.utils.permissions import WRITE, ADMIN
+
+
+class CollectionReadOrPublic(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.method == 'GET':
+            return self.has_object_permission(request, view, view.get_object())
+        else:
+            raise MethodNotAllowed(request.method)
+
+    def has_object_permission(self, request, view, obj):
+        auth = get_user_auth(request)
+        if auth.user and auth.user.has_perm('view_submissions', obj.target.collection.provider):
+            return True
+        elif obj.target.guid.referent.can_view(auth):
+            return True
+        else:
+            return False
+
 
 class CollectionWriteOrPublic(permissions.BasePermission):
     # Adapted from ContributorOrPublic
@@ -113,3 +134,45 @@ class CollectionWriteOrPublicForRelationshipPointers(permissions.BasePermission)
                 has_pointer_auth = False
                 break
         return has_pointer_auth
+
+
+class OnlyAdminCanCreateDestroyCollectionSubmissionAction(permissions.BasePermission):
+
+    acceptable_models = (CollectionSubmission, )
+
+    def has_object_permission(self, request, view, collection_submission):
+        assert_resource_type(collection_submission, self.acceptable_models)
+        auth = get_user_auth(request)
+        if request.method == 'POST':
+            provider = collection_submission.collection.provider
+            is_moderator = auth.user and auth.user.has_perm('accept_submissions', provider)
+            return collection_submission.guid.referent.has_permission(auth.user, ADMIN) or is_moderator
+        else:
+            return False
+
+    def has_permission(self, request, view):
+        if request.method not in ('POST', 'GET'):
+            raise MethodNotAllowed(request.method)
+
+        auth = get_user_auth(request)
+        # Validate json before using id to check for permissions
+        request_json = JSONSchemaParser().parse(
+            io.BytesIO(request.body),
+            parser_context={
+                'request': request,
+                'json_schema': view.create_payload_schema,
+            },
+        )
+        node_guid, collection_guid = request_json['data']['relationships']['target']['data']['id'].split('-')
+        obj = CollectionSubmission.objects.get(
+            guid___id=node_guid,
+            collection__guids___id=collection_guid,
+        )
+        if obj.guid.referent.deleted:
+            raise Gone()
+
+        if request.method == 'POST':
+            return self.has_object_permission(request, view, obj)
+        elif request.method == 'GET':
+            is_moderator = auth.user and auth.user.has_perm('view_submissions', obj.collection.provider)
+            return obj.guid.referent.has_permission(auth.user, ADMIN) or is_moderator
