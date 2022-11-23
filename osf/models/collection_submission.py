@@ -7,7 +7,7 @@ from framework.exceptions import PermissionsError
 
 from osf.models.base import BaseModel
 from osf.models.mixins import TaxonomizableMixin
-from osf.utils.permissions import ADMIN
+from osf.utils.permissions import ADMIN, READ
 from website.util import api_v2_url
 from website.search.exceptions import SearchUnavailableError
 from osf.utils.workflows import CollectionSubmissionsTriggers, CollectionSubmissionStates
@@ -143,11 +143,15 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                 raise PermissionsError(f'{user} must have moderator or admin permissions.')
 
     def _notify_removed(self, event_data):
-        user = event_data.kwargs['user']
         force = event_data.kwargs.get('force')
+        if force:
+            return
+
+        user = event_data.kwargs['user']
+        removed_due_to_privacy = event_data.kwargs.get('removed_due_to_privacy')
         is_moderator = user.has_perm('withdraw_submissions', self.collection.provider)
         is_admin = self.guid.referent.has_permission(user, ADMIN)
-        if force:
+        if removed_due_to_privacy:
             for contributor in self.guid.referent.contributors.all():
                 mails.send_mail(
                     to_addr=contributor.username,
@@ -195,6 +199,15 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         is_admin = self.guid.referent.has_permission(user, ADMIN)
         if not is_admin:
             raise PermissionsError(f'{user} must have admin permissions.')
+
+    def _validate_unmoderated_resubmit(self, event_data):
+        user = event_data.kwargs['user']
+        if user is None:
+            raise PermissionsError(f'{user} must have contributor permissions.')
+
+        is_contributor = self.guid.referent.has_permission(user, READ)
+        if not is_contributor:
+            raise PermissionsError(f'{user} must have contributor permissions.')
 
     def _remove_from_search(self, event_data):
         self.remove_from_index()

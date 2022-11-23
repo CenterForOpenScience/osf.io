@@ -423,7 +423,7 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'trigger': 'resubmit',
         'source': [CollectionSubmissionStates.REJECTED, CollectionSubmissionStates.REMOVED],
         'dest': CollectionSubmissionStates.ACCEPTED,
-        'before': ['_validate_resubmit'],
+        'before': ['_validate_unmoderated_resubmit'],
         'after': [],
         'unless': ['is_moderated'],
     },

@@ -2414,8 +2414,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
             submission.remove(
                 user=getattr(auth, 'user'),
-                comment='Removed from collection due to implicit removal',
-                force=True
+                comment='Removed from collection due to implicit removal due to privacy',
+                removed_due_to_privacy=True
             )
 
 
