@@ -143,11 +143,15 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                 raise PermissionsError(f'{user} must have moderator or admin permissions.')
 
     def _notify_removed(self, event_data):
-        user = event_data.kwargs['user']
         force = event_data.kwargs.get('force')
+        if force:
+            return
+
+        user = event_data.kwargs['user']
+        removed_due_to_privacy = event_data.kwargs.get('removed_due_to_privacy')
         is_moderator = user.has_perm('withdraw_submissions', self.collection.provider)
         is_admin = self.guid.referent.has_permission(user, ADMIN)
-        if force:
+        if removed_due_to_privacy:
             for contributor in self.guid.referent.contributors.all():
                 mails.send_mail(
                     to_addr=contributor.username,
