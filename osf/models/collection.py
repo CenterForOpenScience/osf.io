@@ -9,7 +9,6 @@ from django.utils import timezone
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 from framework.celery_tasks.handlers import enqueue_task
 
-from osf.models import Guid
 from osf.models.base import BaseModel, GuidMixin
 from osf.models.collection_submission import CollectionSubmission
 from osf.models.mixins import GuardianMixin
@@ -71,17 +70,15 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
     @property
     def active_collection_submissions(self):
         return CollectionSubmission.objects.filter(
-            collection=self
-        ).exclude(
-            machine_state__in=[
-                CollectionSubmissionStates.REMOVED,
-                CollectionSubmissionStates.REJECTED
-            ],
+            collection=self,
+            machine_state=CollectionSubmissionStates.ACCEPTED
         )
 
     @property
     def active_guids(self):
-        return Guid.objects.filter(id__in=self.active_collection_submissions.values_list('guid_id'))
+        return self.guid_links.filter(
+            collectionsubmission__machine_state=CollectionSubmissionStates.ACCEPTED
+        )
 
     def get_absolute_url(self):
         return self.absolute_api_v2_url
@@ -260,7 +257,7 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
             except CollectionSubmission.DoesNotExist:
                 raise ValueError(f'Resource [{obj.guid._id}] is not part of collection {self._id}')
 
-        obj.remove(user=auth.user, comment='Implict removal via remove_object', force=True)
+        obj.remove(user=auth.user, comment='Implicit removal via remove_object', force=True)
 
     def delete(self):
         """ Mark collection as deleted

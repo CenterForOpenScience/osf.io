@@ -98,8 +98,19 @@ class TestImplicitRemoval:
         standard_collection.collect_object(node, standard_collection.creator)
         return node
 
-    @mock.patch('osf.models.node.Node.check_privacy_change_viability', mock.Mock())
+    @mock.patch('osf.models.node.Node.check_privacy_change_viability', mock.Mock())  # mocks the storage usage limits
     def test_node_removed_from_collection_on_privacy_change(self, auth, collected_node, bookmark_collection):
+        associated_collections = collected_node.guids.first().collectionsubmission_set
+        assert associated_collections.count() == 3
+
+        collected_node.set_privacy('private', auth=auth)
+
+        assert associated_collections.filter(machine_state=CollectionSubmissionStates.REMOVED).count() == 2
+        assert associated_collections.exclude(machine_state=CollectionSubmissionStates.REMOVED).count() == 1
+        assert associated_collections.filter(collection=bookmark_collection).exists()
+
+    @mock.patch('osf.models.node.Node.check_privacy_change_viability', mock.Mock())  # mocks the storage usage limits
+    def test_node_removed_from_collection_on_privacy_change_notify(self, auth, collected_node, bookmark_collection):
         associated_collections = collected_node.guids.first().collectionsubmission_set
         assert associated_collections.count() == 3
 
@@ -114,10 +125,6 @@ class TestImplicitRemoval:
             email2_args, email2_kwargs = email2
             assert {email1_kwargs['node'].id, email2_kwargs['node'].id} == {collected_node.id}
             assert {email1_kwargs['mail'], email2_kwargs['mail']} == {mails.COLLECTION_SUBMISSION_REMOVED_PRIVATE}
-
-        assert associated_collections.filter(machine_state=CollectionSubmissionStates.REMOVED).count() == 2
-        assert associated_collections.exclude(machine_state=CollectionSubmissionStates.REMOVED).count() == 1
-        assert associated_collections.filter(collection=bookmark_collection).exists()
 
     def test_node_removed_from_collection_on_delete(self, collected_node, bookmark_collection, auth):
         associated_collections = collected_node.guids.first().collectionsubmission_set

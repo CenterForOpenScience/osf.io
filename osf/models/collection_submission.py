@@ -56,7 +56,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
 
     @property
     def is_moderated(self):
-        return bool(self.collection.provider) and self.collection.provider.reviews_workflow == 'post-moderation'
+        return bool(self.collection.provider) and self.collection.provider.reviews_workflow == 'pre-moderation'
 
     @state.setter
     def state(self, new_state):
@@ -197,8 +197,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
             raise PermissionsError(f'{user} must have admin permissions.')
 
     def _remove_from_search(self, event_data):
-        if self.collection.is_public:
-            self.collection.bulk_update_search([self], op='delete')
+        self.remove_from_index()
 
     def _save_transition(self, event_data):
         '''Save changes here and write the action.'''
