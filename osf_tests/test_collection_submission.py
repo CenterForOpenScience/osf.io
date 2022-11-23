@@ -291,7 +291,17 @@ class TestUnmoderatedCollectionSubmission:
             {user.username for user in node.contributors.all()}
         )
 
-    @pytest.mark.parametrize('user_role', UserRoles.excluding(UserRoles.ADMIN_USER))
+    @pytest.mark.parametrize('user_role', UserRoles.excluding(
+        *[UserRoles.MODERATOR, UserRoles.UNAUTHENTICATED, UserRoles.NONCONTRIB]
+    ))
+    def test_resubmit_success(self, node, user_role, unmoderated_collection_submission):
+        user = configure_test_auth(node, user_role)
+        unmoderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.REMOVED)
+        unmoderated_collection_submission.save()
+        unmoderated_collection_submission.resubmit(user=user, comment='Test Comment')
+        assert unmoderated_collection_submission.state == CollectionSubmissionStates.ACCEPTED
+
+    @pytest.mark.parametrize('user_role', [UserRoles.MODERATOR, UserRoles.UNAUTHENTICATED, UserRoles.NONCONTRIB])
     def test_resubmit_fails(self, node, user_role, unmoderated_collection_submission):
         user = configure_test_auth(node, user_role)
         unmoderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.REMOVED)
@@ -299,10 +309,3 @@ class TestUnmoderatedCollectionSubmission:
         with pytest.raises(PermissionsError):
             unmoderated_collection_submission.resubmit(user=user, comment='Test Comment')
         assert unmoderated_collection_submission.state == CollectionSubmissionStates.REMOVED
-
-    def test_resubmit_success(self, node, unmoderated_collection_submission):
-        user = configure_test_auth(node, UserRoles.ADMIN_USER)
-        unmoderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.REMOVED)
-        unmoderated_collection_submission.save()
-        unmoderated_collection_submission.resubmit(user=user, comment='Test Comment')
-        assert unmoderated_collection_submission.state == CollectionSubmissionStates.ACCEPTED
