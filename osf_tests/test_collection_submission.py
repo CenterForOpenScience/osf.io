@@ -26,7 +26,7 @@ def user():
 @pytest.fixture()
 def moderated_collection_provider():
     collection_provider = CollectionProviderFactory()
-    collection_provider.reviews_workflow = 'post-moderation'
+    collection_provider.reviews_workflow = 'pre-moderation'
     collection_provider.update_group_permissions()
     collection_provider.save()
     return collection_provider
@@ -35,7 +35,7 @@ def moderated_collection_provider():
 @pytest.fixture()
 def unmoderated_collection_provider():
     collection_provider = CollectionProviderFactory()
-    collection_provider.reviews_workflow = 'pre-moderation'
+    collection_provider.reviews_workflow = 'post-moderation'
     collection_provider.update_group_permissions()
     collection_provider.save()
     return collection_provider
