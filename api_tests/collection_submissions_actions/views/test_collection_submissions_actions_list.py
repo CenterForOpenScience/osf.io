@@ -14,7 +14,7 @@ POST_URL = '/v2/collection_submissions_actions/'
 @pytest.fixture()
 def collection_provider():
     collection_provider = CollectionProviderFactory()
-    collection_provider.reviews_workflow = 'post-moderation'
+    collection_provider.reviews_workflow = 'pre-moderation'
     collection_provider.update_group_permissions()
     collection_provider.save()
     return collection_provider
