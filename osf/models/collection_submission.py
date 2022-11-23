@@ -7,7 +7,7 @@ from framework.exceptions import PermissionsError
 
 from osf.models.base import BaseModel
 from osf.models.mixins import TaxonomizableMixin
-from osf.utils.permissions import ADMIN
+from osf.utils.permissions import ADMIN, READ
 from website.util import api_v2_url
 from website.search.exceptions import SearchUnavailableError
 from osf.utils.workflows import CollectionSubmissionsTriggers, CollectionSubmissionStates
@@ -199,6 +199,15 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         is_admin = self.guid.referent.has_permission(user, ADMIN)
         if not is_admin:
             raise PermissionsError(f'{user} must have admin permissions.')
+
+    def _validate_unmoderated_resubmit(self, event_data):
+        user = event_data.kwargs['user']
+        if user is None:
+            raise PermissionsError(f'{user} must have contributor permissions.')
+
+        is_contributor = self.guid.referent.has_permission(user, READ)
+        if not is_contributor:
+            raise PermissionsError(f'{user} must have contributor permissions.')
 
     def _remove_from_search(self, event_data):
         self.remove_from_index()
