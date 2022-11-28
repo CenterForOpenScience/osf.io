@@ -4529,7 +4529,7 @@ class TestUpdateCollectedMetaSubjects(UpdateSubjectsMixin):
 
     @pytest.fixture()
     def url(self, collection, resource):
-        return '/{}collections/{}/collection_submissions/{}/'.format(API_BASE, collection._id, resource.guid._id)
+        return '/{}collections/{}/collected_metadata/{}/'.format(API_BASE, collection._id, resource.guid._id)
 
 
 @pytest.mark.django_db
