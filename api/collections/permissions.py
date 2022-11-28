@@ -2,12 +2,14 @@
 from __future__ import unicode_literals
 import io
 
+from django.db.models import Q
+
 from rest_framework import permissions
 from rest_framework.exceptions import NotFound, MethodNotAllowed
 
 from api.base.exceptions import Gone
 from api.base.parsers import JSONSchemaParser
-from api.base.utils import get_user_auth, assert_resource_type
+from api.base.utils import get_user_auth, assert_resource_type, get_object_or_error
 from osf.models import AbstractNode, Preprint, Collection, CollectionSubmission, CollectionProvider
 from osf.utils.permissions import WRITE, ADMIN
 
@@ -145,7 +147,7 @@ class OnlyAdminCanCreateDestroyCollectionSubmissionAction(permissions.BasePermis
         auth = get_user_auth(request)
         if request.method == 'POST':
             provider = collection_submission.collection.provider
-            is_moderator = auth.user and auth.user.has_perm('accept_submissions', provider)
+            is_moderator = bool(auth.user and auth.user.has_perm('accept_submissions', provider))
             return collection_submission.guid.referent.has_permission(auth.user, ADMIN) or is_moderator
         else:
             return False
@@ -163,10 +165,16 @@ class OnlyAdminCanCreateDestroyCollectionSubmissionAction(permissions.BasePermis
                 'json_schema': view.create_payload_schema,
             },
         )
-        node_guid, collection_guid = request_json['data']['relationships']['target']['data']['id'].split('-')
-        obj = CollectionSubmission.objects.get(
-            guid___id=node_guid,
-            collection__guids___id=collection_guid,
+        try:
+            hyphen_id = request_json['data']['relationships']['target']['data']['id']
+            node_guid, collection_guid = hyphen_id.split('-')
+        except ValueError:
+            raise NotFound(f'Your id [`{hyphen_id}`] was not valid.')
+
+        obj = get_object_or_error(
+            CollectionSubmission,
+            Q(guid___id=node_guid, collection__guids___id=collection_guid),
+            request
         )
         if obj.guid.referent.deleted:
             raise Gone()
