@@ -5,9 +5,9 @@ from osf_tests.factories import NodeFactory, CollectionFactory, CollectionProvid
 
 from osf.migrations import update_provider_auth_groups
 from osf.models import CollectionSubmission
-from osf.utils.workflows import CollectionSubmissionStates, CollectionSubmissionsTriggers
+from osf.utils.workflows import CollectionSubmissionsTriggers, CollectionSubmissionStates
 
-GET_URL = '/v2/collection_submissions_actions/{}/'
+GET_URL = '/v2/collection_submissions/{}/actions/'
 
 
 @pytest.fixture()
@@ -43,18 +43,6 @@ def collection_submission(node, collection):
     return collection_submission
 
 
-@pytest.fixture()
-def collection_submission_action(collection_submission):
-    action = collection_submission.actions.create(
-        from_state=CollectionSubmissionStates.IN_PROGRESS,
-        to_state=CollectionSubmissionStates.PENDING,
-        trigger=CollectionSubmissionsTriggers.SUBMIT,
-        creator=collection_submission.creator,
-        comment='test comment'
-    )
-    return action
-
-
 def configure_test_auth(node, user_role):
     if user_role is UserRoles.UNAUTHENTICATED:
         return None
@@ -72,44 +60,42 @@ def configure_test_auth(node, user_role):
 @pytest.mark.django_db
 class TestCollectionSubmissionsActionsDetailGETPermissions:
     @pytest.mark.parametrize('user_role', UserRoles)
-    def test_status_code__200(self, app, node, user_role, collection_submission_action):
+    def test_status_code__200(self, app, node, user_role, collection_submission):
         test_auth = configure_test_auth(node, user_role)
-        resp = app.get(GET_URL.format(collection_submission_action._id), auth=test_auth, expect_errors=True)
+        resp = app.get(GET_URL.format(collection_submission._id), auth=test_auth, expect_errors=True)
         assert resp.status_code == 200
 
     @pytest.mark.parametrize('user_role', [UserRoles.UNAUTHENTICATED, UserRoles.NONCONTRIB])
-    def test_private_collection_noncontribs(self, app, node, collection, user_role, collection_submission_action):
+    def test_private_collection_noncontribs(self, app, node, collection, user_role, collection_submission):
         collection.is_public = False
-        node.is_public = False
-        node.save()
         collection.save()
         test_auth = configure_test_auth(node, user_role)
-        resp = app.get(GET_URL.format(collection_submission_action._id), auth=test_auth, expect_errors=True)
+        resp = app.get(GET_URL.format(collection_submission._id), auth=test_auth, expect_errors=True)
         assert resp.status_code in (401, 403)
 
     @pytest.mark.parametrize('user_role', UserRoles.excluding(*[UserRoles.UNAUTHENTICATED, UserRoles.NONCONTRIB]))
-    def test_private_collection_contribs(self, app, node, collection, user_role, collection_submission_action):
+    def test_private_collection_contribs(self, app, node, collection, user_role, collection_submission):
         collection.is_public = False
-        node.is_public = False
-        node.save()
         collection.save()
         test_auth = configure_test_auth(node, user_role)
-        resp = app.get(GET_URL.format(collection_submission_action._id), auth=test_auth, expect_errors=True)
+        resp = app.get(GET_URL.format(collection_submission._id), auth=test_auth, expect_errors=True)
         assert resp.status_code == 200
 
 
 @pytest.mark.django_db
 class TestCollectionSubmissionsActionsDetailGETBehavior:
-    def test_return_action(self, app, node, collection_submission, collection_submission_action):
-        resp = app.get(GET_URL.format(collection_submission_action._id), expect_errors=True)
-        assert resp.json['data']['id'] == collection_submission_action._id
-        assert resp.json['data']['attributes']['from_state'] == 'in_progress'
-        assert resp.json['data']['attributes']['to_state'] == 'pending'
-        assert resp.json['data']['attributes']['trigger'] == 'submit'
-        assert resp.json['data']['attributes']['comment'] == 'test comment'
-        assert resp.json['data']['relationships']['creator']['data']['id'] == collection_submission_action.creator._id
-        assert resp.json['data']['relationships']['collection']['data']['id'] == collection_submission.collection._id
-        assert resp.json['data']['relationships']['target']['data']['id'] \
+    def test_return_action(self, app, node, collection_submission):
+        collection_submission_action = collection_submission.actions.last()
+        resp = app.get(GET_URL.format(collection_submission._id), expect_errors=True)
+        data = resp.json['data'][0]
+        assert data['id'] == collection_submission_action._id
+        assert data['attributes']['from_state'] == CollectionSubmissionStates.IN_PROGRESS.db_name
+        assert data['attributes']['to_state'] == CollectionSubmissionStates.ACCEPTED.db_name
+        assert data['attributes']['trigger'] == CollectionSubmissionsTriggers.SUBMIT.db_name
+        assert data['attributes']['comment'] == 'Initial submission action'
+        assert data['relationships']['creator']['data']['id'] == collection_submission.creator._id
+        assert data['relationships']['collection']['data']['id'] == collection_submission.collection._id
+        assert data['relationships']['target']['data']['id'] \
                == f'{collection_submission.guid._id}-{collection_submission.collection._id}'
         assert resp.status_code == 200
 
@@ -118,25 +104,25 @@ class TestCollectionSubmissionsActionsDetailGETBehavior:
 class TestCollectionSubmissionsActionsDetailUnsupportedMethods:
 
     @pytest.mark.parametrize('user_role', UserRoles)
-    def test_cannot_PATCH(self, app, user_role, node, collection_submission_action):
+    def test_cannot_PATCH(self, app, user_role, node, collection_submission):
         auth = configure_test_auth(node, user_role)
-        resp = app.patch_json_api(GET_URL.format(collection_submission_action._id), auth=auth, expect_errors=True)
+        resp = app.patch_json_api(GET_URL.format(collection_submission._id), auth=auth, expect_errors=True)
         assert resp.status_code == 405
 
     @pytest.mark.parametrize('user_role', UserRoles)
-    def test_cannot_POST(self, app, user_role, node, collection_submission_action):
+    def test_cannot_POST(self, app, user_role, node, collection_submission):
         auth = configure_test_auth(node, user_role)
-        resp = app.post_json_api(GET_URL.format(collection_submission_action._id), auth=auth, expect_errors=True)
+        resp = app.post_json_api(GET_URL.format(collection_submission._id), auth=auth, expect_errors=True)
         assert resp.status_code == 405
 
     @pytest.mark.parametrize('user_role', UserRoles)
-    def test_cannot_PUT(self, app, user_role, node, collection_submission_action):
+    def test_cannot_PUT(self, app, user_role, node, collection_submission):
         auth = configure_test_auth(node, user_role)
-        resp = app.put_json_api(GET_URL.format(collection_submission_action._id), auth=auth, expect_errors=True)
+        resp = app.put_json_api(GET_URL.format(collection_submission._id), auth=auth, expect_errors=True)
         assert resp.status_code == 405
 
     @pytest.mark.parametrize('user_role', UserRoles)
-    def test_cannot_DELETE(self, app, user_role, node, collection_submission_action):
+    def test_cannot_DELETE(self, app, user_role, node, collection_submission):
         auth = configure_test_auth(node, user_role)
-        resp = app.delete_json_api(GET_URL.format(collection_submission_action._id), auth=auth, expect_errors=True)
+        resp = app.delete_json_api(GET_URL.format(collection_submission._id), auth=auth, expect_errors=True)
         assert resp.status_code == 405

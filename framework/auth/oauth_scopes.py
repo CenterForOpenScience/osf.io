@@ -195,6 +195,10 @@ class CoreScopes(object):
     READ_COLLECTION_SUBMISSION_ACTION = 'read_collection_submission_action'
     WRITE_COLLECTION_SUBMISSION_ACTION = 'write_collection_submission_action'
 
+    READ_COLLECTION_SUBMISSION = 'read_collection_submission'
+    WRITE_COLLECTION_SUBMISSION = 'write_collection_submission'
+
+
 class ComposedScopes(object):
     """
     Composed scopes, listed in increasing order of access (most restrictive first). Each named constant is a tuple.

@@ -695,7 +695,7 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
 
         instance.remove(
             user=self.request.user,
-            comment='Implicit removal via NodeLinksList',
+            comment='User requested removal via NodeLinksList',
             force=True,
         )
 
