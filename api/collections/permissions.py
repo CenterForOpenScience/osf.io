@@ -174,7 +174,7 @@ class OnlyAdminCanCreateDestroyCollectionSubmissionAction(permissions.BasePermis
         obj = get_object_or_error(
             CollectionSubmission,
             Q(guid___id=node_guid, collection__guids___id=collection_guid),
-            request
+            request,
         )
         if obj.guid.referent.deleted:
             raise Gone()
