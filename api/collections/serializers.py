@@ -220,7 +220,7 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
         'status',
     ])
     id = IDField(source='guid._id', read_only=True)
-    reviews_state = EnumField(CollectionSubmissionStates, source='state')
+    reviews_state = EnumField(CollectionSubmissionStates, source='state', required=False)
     type = TypeField()
 
     creator = RelationshipField(
