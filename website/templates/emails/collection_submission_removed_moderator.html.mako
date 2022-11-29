@@ -1,5 +1,7 @@
 <%inherit file="notify_base.mako" />
-
+<%!
+    from website import settings
+%>
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
@@ -10,7 +12,7 @@
             <a href="${node.absolute_url}">${node.title}</a> was removed by <a href="${remover.absolute_url}">${remover.fullname}</a>.
 
         % else:
-            <a href="${node.absolute_url}">${node.title}</a> was rejected by <a href="${collection.url}">${collection.title}</a>.
+            <a href="${node.absolute_url}">${node.title}</a> was rejected by <a href="${settings.DOMAIN.rstrip('/') + collection.url}">${collection.title}</a>.
         % endif
     </p>
     <p>

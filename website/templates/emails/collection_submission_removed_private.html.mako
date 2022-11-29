@@ -1,5 +1,7 @@
 <%inherit file="notify_base.mako" />
-
+<%!
+    from website import settings
+%>
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
@@ -7,14 +9,13 @@
     <br>
     <p>
         % if is_admin:
-            You have changed the privacy of addition <a href="${node.absolute_url}">${node.title}</a>
-             and it has therefore been removed from the <a href="${collection.url}">${collection.title}</a>.
-             If you wish to be associated with the collection, you will need to request addition to the collection
-              again.
+            You have changed the privacy of <a href="${node.absolute_url}">${node.title}</a> and it has therefore been
+            removed from the <a href="${settings.DOMAIN.rstrip('/') + collection.url}">${collection.title}</a>. If you wish to be associated with the
+            collection, you will need to request addition to the collection again.
         % else:
             <a href="${remover.absolute_url}">${remover.fullname}</a> has changed the privacy settings for
             <a href="${node.absolute_url}">${node.title}</a> it has therefore been removed from the
-            <a href="${collection.url}">${collection.title}</a>.
+            <a href="${settings.DOMAIN.rstrip('/') + collection.url}">${collection.title}</a>.
             If you wish to be associated with the collection an admin will need to reapply to the collection again.
         % endif
     </p>
