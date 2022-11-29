@@ -216,12 +216,12 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
         'collected_type',
         'date_created',
         'date_modified',
-        'reviews_state'
+        'reviews_state',
         'subjects',
         'status',
     ])
     id = IDField(source='guid._id', read_only=True)
-    reviews_state = EnumField(CollectionSubmissionStates, source='state', required=False)
+    reviews_state = EnumField(CollectionSubmissionStates, source='machine_state', required=False)
     type = TypeField()
 
     creator = RelationshipField(
