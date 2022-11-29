@@ -166,7 +166,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         if not self.folder_id:
             raise exceptions.AddonError('Cannot serialize settings for {} addon'.format(FULL_NAME))
         return {
-            'drive': self.drive_id,
+            'drive_id': self.drive_id,
             'folder': self.folder_id
         }
 

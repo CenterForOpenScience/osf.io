@@ -64,7 +64,7 @@ class ERadRecord(BaseModel):
                                   db_index=True, null=True, blank=True,
                                   on_delete=models.CASCADE)
 
-    kenkyusha_no = models.TextField(blank=True, null=True)
+    kenkyusha_no = models.TextField(blank=True, null=True, db_index=True)
     kenkyusha_shimei = EncryptedTextField(blank=True, null=True)
 
     kenkyukikan_cd = models.TextField(blank=True, null=True)
@@ -86,6 +86,11 @@ class ERadRecord(BaseModel):
 
     bunya_cd = models.TextField(blank=True, null=True)
     bunya_mei = models.TextField(blank=True, null=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['kenkyusha_no', 'kadai_id', 'nendo'])
+        ]
 
 
 class RegistrationReportFormat(BaseModel):
@@ -348,7 +353,10 @@ class FileMetadata(BaseModel):
         if provider == 'osfstorage':
             # materialized path -> object path
             content_type = ContentType.objects.get_for_model(node)
-            filenode = [fn for fn in OsfStorageFileNode.objects.filter(target_content_type=content_type) if fn.materialized_path == path]
+            filenode = [fn for fn in OsfStorageFileNode.objects.filter(
+                target_content_type=content_type,
+                target_object_id=node.id
+            ) if fn.materialized_path == path]
             if len(filenode) == 0:
                 logger.warn('No files: ' + self.path)
                 return None

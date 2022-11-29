@@ -993,6 +993,7 @@ class TestContributorMethods:
         node.save()
         assert len(node.contributors) == 2
 
+    @pytest.mark.bug33430
     def test_remove_unregistered_conributor_removes_unclaimed_record(self, node, auth):
         new_user = node.add_unregistered_contributor(fullname='David Davidson',
                                                      email='david@davidson.com', auth=auth)
@@ -1292,26 +1293,35 @@ class TestContributorMethods:
             )
 
     def test_cancel_invite(self, node, auth):
+        # A user is added as a contributor
         user = UserFactory()
         node.add_contributor(contributor=user, auth=auth, save=True)
         assert user in node.contributors
-        node.cancel_invite(contributor=user)
+        # The user cancel invitation
+        with disconnected_from_listeners(contributor_removed):
+            node.cancel_invite(contributor=user)
         node.reload()
 
         assert user not in node.contributors
+        assert node.get_permissions(user) == []
+        assert node.logs.latest().action == 'contributor_rejected'
         assert node.logs.latest().params['contributors'] == [user._id]
 
     def test_cancel_invite_isinstance(self, node, auth):
+        # A user is added as a contributor
         user = AuthUserFactory()
         contributor = Contributor()
         setattr(contributor, 'user', user)
         node.add_contributor(contributor=user, auth=auth, save=True)
         assert user in node.contributors
-
-        node.cancel_invite(contributor=contributor)
+        # The user cancel invitation
+        with disconnected_from_listeners(contributor_removed):
+            node.cancel_invite(contributor=contributor)
         node.reload()
 
         assert user not in node.contributors
+        assert node.get_permissions(user) == []
+        assert node.logs.latest().action == 'contributor_rejected'
         assert node.logs.latest().params['contributors'] == [user._id]
 
     def test_cancel_invite_unclaimed_records(self, node, auth):
@@ -1335,6 +1345,7 @@ class TestContributorMethods:
         )
 
     def test_cancel_invite_get_identifier_value(self, node, auth):
+        # A user is added as a contributor
         user = AuthUserFactory()
         node.add_contributor(contributor=user, auth=auth, save=True)
 
@@ -1344,10 +1355,14 @@ class TestContributorMethods:
         setattr(node, 'get_identifier_value', my_function)
         assert user in node.contributors
 
-        node.cancel_invite(contributor=user)
+        # The user cancel invitation
+        with disconnected_from_listeners(contributor_removed):
+            node.cancel_invite(contributor=user)
         node.reload()
 
         assert user not in node.contributors
+        assert node.get_permissions(user) == []
+        assert node.logs.latest().action == 'contributor_rejected'
         assert node.logs.latest().params['contributors'] == [user._id]
 
 

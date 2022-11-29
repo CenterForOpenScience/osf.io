@@ -159,6 +159,7 @@ class TestSaveCredentials(AdminTestCase):
             's3compat_access_key': 'Non-empty-access-key',
             's3compat_secret_key': 'Non-empty-secret-key',
             's3compat_bucket': 'Cute bucket',
+            's3compat_server_side_encryption': 'False',
         })
 
         nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
@@ -171,6 +172,7 @@ class TestSaveCredentials(AdminTestCase):
             's3compat_access_key': 'Non-empty-access-key',
             's3compat_secret_key': 'Non-empty-secret-key',
             's3compat_bucket': 'Cute bucket',
+            's3compat_server_side_encryption': 'False',
             'provider_short_name': 'invalidprovider',
         })
 
@@ -186,6 +188,7 @@ class TestSaveCredentials(AdminTestCase):
             's3compat_access_key': 'Non-empty-access-key',
             's3compat_secret_key': 'Non-empty-secret-key',
             's3compat_bucket': 'Cute bucket',
+            's3compat_server_side_encryption': 'False',
             'provider_short_name': 's3compat',
         })
 
@@ -214,6 +217,7 @@ class TestSaveCredentials(AdminTestCase):
             's3compat_access_key': 'Wrong-access-key',
             's3compat_secret_key': 'Wrong-secret-key',
             's3compat_bucket': 'Cute bucket',
+            's3compat_server_side_encryption': 'False',
             'provider_short_name': 's3compat',
         })
 

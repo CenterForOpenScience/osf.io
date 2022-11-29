@@ -26,6 +26,7 @@ var custom_citation_edited = _('${user} edited a custom citation for ${node}');
 var custom_citation_removed = _('${user} removed a custom citation for ${node}');
 var contributor_added = _('${user} added ${contributors} as contributor(s) to ${node}');
 var contributor_removed = _('${user} removed ${contributors} as contributor(s) from ${node}');
+var contributor_rejected = _('${contributors} cancelled invitation as contributor(s) from ${node}');
 var contributors_reordered = _('${user} reordered contributors for ${node}');
 var permissions_updated = _('${user} changed permissions for ${node}');
 var made_contributor_visible = _('${user} made non-bibliographic contributor ${contributors} a bibliographic contributor on ${node}');

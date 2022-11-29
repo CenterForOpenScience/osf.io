@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  0.6.0\n"
 "Report-Msgid-Bugs-To: rocs-office@nii.ac.jp\n"
-"POT-Creation-Date: 2022-07-15 01:31+0000\n"
+"POT-Creation-Date: 2022-10-25 03:07+0000\n"
 "PO-Revision-Date: 2020-11-23 09:30+0900\n"
 "Last-Translator: Hidetoshi Yoshimoto\n"
 "Language: ja\n"
@@ -22,94 +22,93 @@ msgstr ""
 msgid "Launch"
 msgstr "起動"
 
-#: addons/metadata/static/files.js:319
+#: addons/metadata/static/files.js:335
 msgid "Metadata Schema:"
 msgstr "メタデータ様式:"
 
-#: addons/metadata/static/files.js:477
+#: addons/metadata/static/files.js:493
 msgid "Paste from Clipboard"
 msgstr "クリップボードから貼り付け"
 
-#: addons/metadata/static/files.js:502 addons/metadata/static/files.js:516
+#: addons/metadata/static/files.js:518 addons/metadata/static/files.js:532
 #: website/static/js/fangorn.js:1516
 msgid "Could not copy text"
 msgstr "テキストをコピーできませんでした"
 
-#: addons/metadata/static/files.js:514 website/static/js/clipboard.js:27
+#: addons/metadata/static/files.js:530 website/static/js/clipboard.js:27
 #: website/static/js/fangorn.js:1510 website/static/js/fangorn.js:1514
 msgid "Copied!"
 msgstr "コピーされました！"
 
-#: addons/metadata/static/files.js:531 addons/metadata/static/files.js:544
-#: addons/metadata/static/files.js:551
+#: addons/metadata/static/files.js:556 addons/metadata/static/files.js:571
 msgid "Could not paste text"
 msgstr "テキストを貼り付けできませんでした"
 
-#: addons/metadata/static/files.js:601 addons/metadata/static/files.js:615
-#: addons/metadata/static/files.js:964
+#: addons/metadata/static/files.js:621 addons/metadata/static/files.js:635
+#: addons/metadata/static/files.js:985
 msgid "Loading..."
 msgstr "読み込み中..."
 
-#: addons/metadata/static/files.js:613
+#: addons/metadata/static/files.js:633
 msgid "Select the destination of the file metadata."
 msgstr "ファイルメタデータの移動先を選択してください。"
 
-#: addons/metadata/static/files.js:618
+#: addons/metadata/static/files.js:638
 msgid "Current Metadata:"
 msgstr "現在のメタデータ:"
 
-#: addons/metadata/static/files.js:674
+#: addons/metadata/static/files.js:694
 msgid "Delete metadata"
 msgstr "メタデータを削除"
 
-#: addons/metadata/static/files.js:677
+#: addons/metadata/static/files.js:697
 msgid "Could not list hashes"
 msgstr "ハッシュ情報の一覧を取得できませんでした"
 
-#: addons/metadata/static/files.js:685
+#: addons/metadata/static/files.js:705
 #: addons/metadata/static/metadata-fields.js:343
 #: addons/metadata/static/metadata-fields.js:348
 msgid "Could not list files"
 msgstr "ファイルの一覧を取得できませんでした"
 
-#: addons/metadata/static/files.js:773 addons/metadata/static/files.js:780
+#: addons/metadata/static/files.js:794 addons/metadata/static/files.js:801
 msgid "No name"
 msgstr "名称未設定"
 
-#: addons/metadata/static/files.js:840
+#: addons/metadata/static/files.js:861
 msgid ""
 "There is no draft project metadata compliant with the schema. Create new "
 "draft project metadata from the Metadata tab:"
 msgstr "スキーマに対応するプロジェクトメタデータの下書きがありません。メタデータ タブから新規プロジェクトメタデータを作成してください:"
 
-#: addons/metadata/static/files.js:842 addons/metadata/static/files.js:1008
+#: addons/metadata/static/files.js:863 addons/metadata/static/files.js:1031
 msgid "Open"
 msgstr "開く"
 
-#: addons/metadata/static/files.js:941
+#: addons/metadata/static/files.js:962
 msgid "There are errors in some fields."
 msgstr "いくつかのフィールドにエラーがあります。"
 
-#: addons/metadata/static/files.js:975 addons/metadata/static/files.js:1584
-#: addons/metadata/static/files.js:1609 website/static/js/folderpicker.js:105
+#: addons/metadata/static/files.js:996 addons/metadata/static/files.js:1636
+#: addons/metadata/static/files.js:1662 website/static/js/folderpicker.js:105
 msgid "Select"
 msgstr "選択"
 
-#: addons/metadata/static/files.js:979
+#: addons/metadata/static/files.js:1000
 msgid "Select the destination for the file metadata."
 msgstr "ファイルメタデータの登録先を選択してください。"
 
-#: addons/metadata/static/files.js:1000
+#: addons/metadata/static/files.js:1021
 msgid "Registering..."
 msgstr "登録中..."
 
-#: addons/metadata/static/files.js:1000
+#: addons/metadata/static/files.js:1021
 msgid "Deleting..."
 msgstr "削除中..."
 
-#: addons/metadata/static/files.js:1040 addons/metadata/static/files.js:1505
-#: addons/metadata/static/files.js:1561 addons/metadata/static/files.js:1582
-#: addons/metadata/static/files.js:1607
+#: addons/metadata/static/files.js:1064 addons/metadata/static/files.js:1537
+#: addons/metadata/static/files.js:1606 addons/metadata/static/files.js:1634
+#: addons/metadata/static/files.js:1660 addons/metadata/static/files.js:1716
 #: website/static/js/accountSettings.js:267 website/static/js/fangorn.js:2326
 #: website/static/js/folderPickerNodeConfig.js:591
 #: website/static/js/pages/profile-settings-addons-page.js:72
@@ -117,79 +116,105 @@ msgstr "削除中..."
 msgid "Close"
 msgstr "閉じる"
 
-#: addons/metadata/static/files.js:1092
+#: addons/metadata/static/files.js:1098
+msgid "Loading Metadata"
+msgstr "メタデータ読み込み中"
+
+#: addons/metadata/static/files.js:1123
 msgid "View Metadata"
 msgstr "メタデータ確認"
 
-#: addons/metadata/static/files.js:1102
+#: addons/metadata/static/files.js:1133
 msgid "Edit Metadata"
 msgstr "メタデータ編集"
 
-#: addons/metadata/static/files.js:1111
+#: addons/metadata/static/files.js:1142
 msgid "Register Metadata"
 msgstr "メタデータ登録"
 
-#: addons/metadata/static/files.js:1119
+#: addons/metadata/static/files.js:1150
 msgid "Delete Metadata"
 msgstr "メタデータ削除"
 
-#: addons/metadata/static/files.js:1256
+#: addons/metadata/static/files.js:1287
 msgid "Metadata is defined"
 msgstr "メタデータが定義されています"
 
-#: addons/metadata/static/files.js:1265
+#: addons/metadata/static/files.js:1296
 msgid "Some of the children have metadata."
 msgstr "いくつかの子ファイルにメタデータが定義されています。"
 
-#: addons/metadata/static/files.js:1275
+#: addons/metadata/static/files.js:1306
 msgid "File not found: "
 msgstr "ファイルが見つかりません:"
 
-#: addons/metadata/static/files.js:1509 website/static/js/contribManager.js:440
+#: addons/metadata/static/files.js:1541 website/static/js/contribManager.js:440
 #: website/static/js/filepage/editor.js:180
 msgid "Save"
 msgstr "保存"
 
-#: addons/metadata/static/files.js:1514 addons/metadata/static/files.js:1613
+#: addons/metadata/static/files.js:1553 addons/metadata/static/files.js:1682
 msgid "Copy to clipboard"
 msgstr "クリップボードにコピー"
 
-#: addons/metadata/static/files.js:1527
+#: addons/metadata/static/files.js:1566
 msgid ""
 "Renaming, moving the file/directory, or changing the directory hierarchy "
 "can break the association of the metadata you have added."
 msgstr "ファイルのリネーム、ファイルやディレクトリの移動、ディレクトリ階層の変更を行うと、入力したメタデータの関連付けが解除される場合があります。"
 
-#: addons/metadata/static/files.js:1533
+#: addons/metadata/static/files.js:1572
 msgid "Edit File Metadata"
 msgstr "ファイルメタデータの編集"
 
-#: addons/metadata/static/files.js:1533
+#: addons/metadata/static/files.js:1572
 msgid "View File Metadata"
 msgstr "ファイルメタデータの参照"
 
-#: addons/metadata/static/files.js:1563 website/static/js/fangorn.js:1226
+#: addons/metadata/static/files.js:1592 website/static/js/saveManager.js:24
+msgid "You have unsaved changes."
+msgstr "未保存の変更があります。"
+
+#: addons/metadata/static/files.js:1608 website/static/js/fangorn.js:1226
 #: website/static/js/fangorn.js:1249 website/static/js/fangorn.js:2056
 #: website/static/js/fangorn.js:2092 website/static/js/filepage/index.js:204
 #: website/static/js/filepage/index.js:517 website/static/js/myProjects.js:1637
 msgid "Delete"
 msgstr "削除"
 
-#: addons/metadata/static/files.js:1569
+#: addons/metadata/static/files.js:1621
 msgid "Delete File Metadata"
 msgstr "ファイルメタデータの削除"
 
-#: addons/metadata/static/files.js:1574
+#: addons/metadata/static/files.js:1626
 msgid "Do you want to delete metadata? This operation cannot be undone."
 msgstr "メタデータを削除してよろしいですか？この操作は元に戻せません。"
 
-#: addons/metadata/static/files.js:1591
+#: addons/metadata/static/files.js:1643
 msgid "Select a destination for file metadata registration"
 msgstr "ファイルメタデータ登録先の選択"
 
-#: addons/metadata/static/files.js:1623
+#: addons/metadata/static/files.js:1692
 msgid "Fix file metadata"
 msgstr "ファイルメタデータの修正"
+
+#: addons/metadata/static/files.js:1722
+msgid "Paste Metadata"
+msgstr "メタデータ貼り付け"
+
+#: addons/metadata/static/files.js:1727
+msgid "Press Ctrl-V (Command-V) to paste."
+msgstr "クリップボードから貼り付けるために Ctrl-V (Command-V) を押してください。"
+
+#: addons/metadata/static/files.js:1729
+msgid ""
+"[Why is this needed?] In this browser, retrieving clipboard values with "
+"button operations is prohibited. Therefore, you must explicitly indicate "
+"clipboard operations by using the shortcut key or by pasting in the "
+"browser menu."
+msgstr ""
+"[この操作が必要な理由] "
+"このブラウザでは、ボタン操作でのクリップボードの値取得が禁止されています。そのため、ショートカットキーまたはブラウザメニューの貼り付けにより明示的にクリップボード操作を指示する必要があります。"
 
 #: addons/metadata/static/metadata-fields.js:43
 #: addons/metadata/static/metadata-fields.js:188
@@ -3169,29 +3194,30 @@ msgid ""
 "            </tr>\n"
 "            <tr class=\"danger\">\n"
 "                <td>View / download file versions</td>\n"
-"                <td>The GakuNin Federated Computing Services (Jupyter) add-on does not provide Storage "
-"Features.</td>\n"
+"                <td>The GakuNin Federated Computing Services (Jupyter) "
+"add-on does not provide Storage Features.</td>\n"
 "            </tr>\n"
 "            <tr class=\"danger\">\n"
 "                <td>Add / update files</td>\n"
-"                <td>The GakuNin Federated Computing Services (Jupyter) add-on does not provide Storage "
-"Features.</td>\n"
+"                <td>The GakuNin Federated Computing Services (Jupyter) "
+"add-on does not provide Storage Features.</td>\n"
 "            </tr>\n"
 "            <tr class=\"danger\">\n"
 "                <td>Delete files</td>\n"
-"                <td>The GakuNin Federated Computing Services (Jupyter) add-on does not provide Storage "
-"Features.</td>\n"
+"                <td>The GakuNin Federated Computing Services (Jupyter) "
+"add-on does not provide Storage Features.</td>\n"
 "            </tr>\n"
 "            <tr class=\"danger\">\n"
 "                <td>Logs</td>\n"
-"                <td>The GakuNin Federated Computing Services (Jupyter) add-on does not provide Storage "
-"Features.</td>\n"
+"                <td>The GakuNin Federated Computing Services (Jupyter) "
+"add-on does not provide Storage Features.</td>\n"
 "            </tr>\n"
 "            <tr class=\"warning\">\n"
 "                <td>Forking</td>\n"
 "                <td>Forking a project or component copies information "
-"about linked GakuNin Federated Computing Services (Jupyter) but the GakuNin RDM does not affect authentication"
-" of GakuNin Federated Computing Services (Jupyter).</td>\n"
+"about linked GakuNin Federated Computing Services (Jupyter) but the "
+"GakuNin RDM does not affect authentication of GakuNin Federated Computing"
+" Services (Jupyter).</td>\n"
 "            </tr>\n"
 "    </tbody>\n"
 "\n"
@@ -5553,6 +5579,9 @@ msgstr "${user}が${contributors}をコントリビューターとして${node}�
 #: website/static/js/logActionsList_extract.js:28
 msgid "${user} removed ${contributors} as contributor(s) from ${node}"
 msgstr "${user}が${node}からコントリビューターとして${contributors}を削除しました"
+
+msgid "${contributors} cancelled invitation as contributor(s) from ${node}"
+msgstr "${contributors}は${node}からのコントリビューターとしての招待をキャンセルしました"
 
 #: website/static/js/logActionsList_extract.js:29
 msgid "${user} reordered contributors for ${node}"
