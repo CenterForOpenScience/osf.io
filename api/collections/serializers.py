@@ -198,7 +198,7 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
                 # this is yucky, but we don't want multiple inhierence for serializers and it must support legacy
                 # without a new API version.
                 if 'collection_submissions' in request_url:
-                    return 'collection-submissions'
+                    return 'collection_submissions'
                 elif 'collected_metadata' in request_url:
                     return 'collected-metadata'
             elif isinstance(view, CollectionProviderSubmissionList):
