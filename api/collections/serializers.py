@@ -116,6 +116,11 @@ class CollectionSerializer(JSONAPISerializer):
     )
 
     collected_metadata = RelationshipField(
+        related_view='collections:collected-metadata-list',
+        related_view_kwargs={'collection_id': '<_id>'},
+    )
+
+    collection_submissions = RelationshipField(
         related_view='collections:collection-submission-list',
         related_view_kwargs={'collection_id': '<_id>'},
     )
@@ -182,7 +187,28 @@ class CollectionDetailSerializer(CollectionSerializer):
 class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     class Meta:
-        type_ = 'collected-metadata'
+        @staticmethod
+        def get_type(request):
+            # Preserve compatibility with old endpoints.
+            from api.collections.views import CollectionSubmissionList, CollectionSubmissionDetail
+            from api.providers.views import CollectionProviderSubmissionList
+            view = request.parser_context.get('view')
+            if isinstance(view, (CollectionSubmissionList, CollectionSubmissionDetail)):
+                request_url = request._request.get_raw_uri()
+                # this is yucky, but we don't want multiple inhierence for serializers and it must support legacy
+                # without a new API version.
+                if 'collection_submissions' in request_url:
+                    return 'collection_submissions'
+                elif 'collected_metadata' in request_url:
+                    return 'collected-metadata'
+            elif isinstance(view, CollectionProviderSubmissionList):
+                return 'collected-metadata'
+            # In tests some serializers have no views, so just revert to the default type, but if a new view is being
+            # used with this, the `NotImplementedError` below will ensure we catch it if it's not typed correctly.
+            elif view:
+                raise NotImplementedError()
+            else:
+                return 'collected-metadata'
 
     filterable_fields = frozenset([
         'id',
@@ -234,7 +260,7 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
-            'collections:collection-submission-detail',
+            'collections:collected-metadata-detail',
             kwargs={
                 'collection_id': obj.collection._id,
                 'collection_submission_id': obj.guid._id,

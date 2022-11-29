@@ -25,7 +25,6 @@ class CollectionSubmissionActionDetail(JSONAPIBaseView, generics.RetrieveAPIView
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
-
     required_read_scopes = [CoreScopes.READ_COLLECTION_SUBMISSION_ACTION]
     required_write_scopes = [CoreScopes.WRITE_COLLECTION_SUBMISSION_ACTION]
 

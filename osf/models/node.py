@@ -2412,11 +2412,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 if self.contributors.filter(pk=associated_collection.creator.id).exists():
                     continue
 
-            submission.remove(
-                user=getattr(auth, 'user'),
-                comment='Removed from collection due to implicit removal due to privacy',
-                removed_due_to_privacy=True
-            )
+            if submission.state != CollectionSubmissionStates.REMOVED:
+                submission.remove(
+                    user=getattr(auth, 'user'),
+                    comment='Removed from collection due to implicit removal due to privacy',
+                    removed_due_to_privacy=True
+                )
 
 
 class NodeUserObjectPermission(UserObjectPermissionBase):
