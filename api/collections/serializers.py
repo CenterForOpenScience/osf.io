@@ -120,7 +120,7 @@ class CollectionSerializer(JSONAPISerializer):
         related_view_kwargs={'collection_id': '<_id>'},
     )
 
-    colletion_submissions = RelationshipField(
+    collection_submissions = RelationshipField(
         related_view='collections:collection-submission-list',
         related_view_kwargs={'collection_id': '<_id>'},
     )
