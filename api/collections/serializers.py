@@ -5,13 +5,14 @@ from rest_framework import serializers as ser
 from osf.models import AbstractNode, Node, Collection, Guid, Registration, CollectionProvider
 from osf.exceptions import ValidationError, NodeStateError
 from api.base.serializers import LinksField, RelationshipField, LinkedNodesRelationshipSerializer, LinkedRegistrationsRelationshipSerializer, LinkedPreprintsRelationshipSerializer
-from api.base.serializers import JSONAPISerializer, IDField, TypeField, VersionedDateTimeField
+from api.base.serializers import JSONAPISerializer, IDField, TypeField, VersionedDateTimeField, EnumField
 from api.base.exceptions import InvalidModelValueError, RelationshipPostMakesNoChanges
 from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import NodeLinksSerializer
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from framework.exceptions import PermissionsError
 from osf.utils.permissions import WRITE
+from osf.utils.workflows import CollectionSubmissionStates
 
 
 class CollectionProviderRelationshipField(RelationshipField):
@@ -198,7 +199,7 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
                 # this is yucky, but we don't want multiple inhierence for serializers and it must support legacy
                 # without a new API version.
                 if 'collection_submissions' in request_url:
-                    return 'collection_submissions'
+                    return 'collection-submissions'
                 elif 'collected_metadata' in request_url:
                     return 'collected-metadata'
             elif isinstance(view, CollectionProviderSubmissionList):
@@ -215,10 +216,12 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
         'collected_type',
         'date_created',
         'date_modified',
+        'reviews_state',
         'subjects',
         'status',
     ])
     id = IDField(source='guid._id', read_only=True)
+    reviews_state = EnumField(CollectionSubmissionStates, source='machine_state', required=False)
     type = TypeField()
 
     creator = RelationshipField(
@@ -233,6 +236,10 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
         related_view='guids:guid-detail',
         related_view_kwargs={'guids': '<guid._id>'},
         always_embed=True,
+    )
+    collection_submission_actions = RelationshipField(
+        related_view='collection_submissions:collection-submission-action-list',
+        related_view_kwargs={'collection_submission_id': '<_id>'},
     )
 
     @property

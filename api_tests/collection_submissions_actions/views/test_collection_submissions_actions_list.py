@@ -62,7 +62,7 @@ def collection_submission_action(collection_submission):
 def make_payload(collection_submission, trigger='submit'):
     return {
         'data': {
-            'type': 'collection-submissions-actions',
+            'type': 'collection-submission-actions',
             'attributes': {
                 'comment': 'some comment',
                 'trigger': trigger
