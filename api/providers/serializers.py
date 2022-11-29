@@ -109,6 +109,11 @@ class CollectionProviderSerializer(ProviderSerializer):
         related_view_kwargs={'collection_id': '<primary_collection._id>'},
     )
 
+    moderators = RelationshipField(
+        related_view='providers:collection-providers:provider-moderator-list',
+        related_view_kwargs={'provider_id': '<_id>'},
+    )
+
     filterable_fields = frozenset([
         'allow_submissions',
         'allow_commenting',
@@ -377,6 +382,24 @@ class RegistrationModeratorSerializer(ModeratorSerializer):
     def get_absolute_url(self, obj):
         return absolute_reverse(
             'providers:registration-providers:provider-moderator-detail', kwargs={
+                'provider_id': self.get_provider(obj),
+                'moderator_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
+
+
+class CollectionsModeratorSerializer(ModeratorSerializer):
+
+    provider = RegistrationProviderRelationshipField(
+        related_view='providers:collection-providers:collection-provider-detail',
+        related_view_kwargs={'provider_id': 'get_provider'},
+        read_only=True,
+    )
+
+    def get_absolute_url(self, obj):
+        return absolute_reverse(
+            'providers:collection-providers:provider-moderator-detail', kwargs={
                 'provider_id': self.get_provider(obj),
                 'moderator_id': obj._id,
                 'version': self.context['request'].parser_context['kwargs']['version'],

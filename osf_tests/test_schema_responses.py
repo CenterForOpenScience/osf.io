@@ -8,10 +8,9 @@ from framework.exceptions import PermissionsError
 from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError, SchemaResponseUpdateError
 from osf.models import RegistrationSchema, RegistrationSchemaBlock, SchemaResponseBlock
 from osf.models import schema_response  # import module for mocking purposes
-from osf.models.notifications import NotificationSubscription
 from osf.utils.workflows import ApprovalStates, SchemaResponseTriggers
 from osf_tests.factories import AuthUserFactory, ProjectFactory, RegistrationFactory, RegistrationProviderFactory
-from osf_tests.utils import get_default_test_schema, assert_notification_correctness
+from osf_tests.utils import get_default_test_schema, assert_notification_correctness, _ensure_subscriptions
 
 from website.mails import mails
 from website.notifications import emails
@@ -31,21 +30,6 @@ INITIAL_SCHEMA_RESPONSES = {
 DEFAULT_SCHEMA_RESPONSE_VALUES = {
     'q1': '', 'q2': '', 'q3': '', 'q4': [], 'q5': '', 'q6': []
 }
-
-def _ensure_subscriptions(provider):
-    '''Make sure a provider's subscriptions exist.
-
-    Provider subscriptions are populated by an on_save signal when the provider is created.
-    This has led to observed race conditions and probabalistic test failures.
-    Avoid that.
-    '''
-    for subscription in provider.DEFAULT_SUBSCRIPTIONS:
-        NotificationSubscription.objects.get_or_create(
-            _id=f'{provider._id}_{subscription}',
-            event_name=subscription,
-            provider=provider
-        )
-
 
 @pytest.fixture
 def admin_user():
