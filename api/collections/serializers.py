@@ -216,6 +216,7 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
         'collected_type',
         'date_created',
         'date_modified',
+        'reviews_state'
         'subjects',
         'status',
     ])
