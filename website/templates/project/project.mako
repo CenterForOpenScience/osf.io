@@ -323,14 +323,21 @@
         <div class="collections-box" style="font-size: 15px;">
             <div class="clearfix" id="collections-header" data-toggle="collapse" href="#collectionList" role="button" style="margin: 10px;">
                 <div class="pull-left" style="margin-top: 5px">
-                    <img src="${node['collections'][0]['logo']}" style="display: inline; height: 25px; width: 25px; margin-left: 5px;"/>
-                    <div style="display: inline; margin: 10px; margin-left: 0px;" >
-                        % if len(node['collections']) - 1:
-                            Included in <a>${node['collections'][0]['title']}</a> and <a>${len(node['removed_submissions']) + len(node['rejected_submissions']) + len(node['collections']) - 1}</a> more
-                        % else:
-                            Included in <a>${node['collections'][0]['title']}</a>
-                        % endif:
-                    </div>
+                    % if node['collections']:
+                        <img src="${node['collections'][0]['logo']}" style="display: inline; height: 25px; width: 25px; margin-left: 5px;"/>
+                        <div style="display: inline; margin: 10px; margin-left: 0px;" >
+                            % if len(node['collections']) - 1:
+                                Included in <a>${node['collections'][0]['title']}</a> and <a>${len(node['removed_submissions']) + len(node['rejected_submissions']) + len(node['collections']) - 1}</a> more
+                            % else:
+                                Included in <a>${node['collections'][0]['title']}</a>
+                            % endif:
+                        </div>
+                    % else:
+                        <div style="display: inline; margin: 10px; margin-left: 0px;" >
+                            <i>See collection history</i>
+                        </div>
+                    % endif:
+
                 </div>
                 <div class="pull-right">
                     <button class="btn btn-link" aria-label="Toggle Collections" ><i class="fa fa-angle-down"></i></button>
@@ -339,10 +346,12 @@
             <div id="collectionList" class="collapse">
                  <div class="panel-body" style="text-align: left;">
                     % for collection in node['collections']:
-                        <a class="fa fa-pencil pull-right" href="${collection['url']}${node['id']}/edit"></a>
+                        % if user['is_admin']:
+                            <a class="fa fa-pencil pull-right" href="${collection['url']}${node['id']}/edit"></a>
+                        % endif
                         <img src="${collection['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
                         <div style="display: inline;">
-                            Included in <a href="${domain}collections/${collection['_id']}/" >${collection['title']}</a>
+                            Included in <a href="${collection['url']}" >${collection['title']}</a>
                         </div>
                         % if collection['study_design'] and collection['type']:
                             <div  style="padding-left: 30px;">
@@ -364,7 +373,7 @@
                                             <i class="fa fa-close pull-right" ></i>
                         <img src="${rejected_submission['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
                         <div style="display: inline;">
-                            Rejected from <a href="${domain}collections/${collection['_id']}/">${rejected_submission['title']}</a>
+                            Rejected from <a href="${domain}collections/${rejected_submission['collection']._id}/">${rejected_submission['title']}</a>
                         </div>
                         <div style="padding-left: 30px;">
                             <a class="comment-popover"
@@ -381,7 +390,7 @@
                     % for removed_submission in node['removed_submissions']:
                         <img src="${removed_submission['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
                         <div style="display: inline;">
-                            Removed from <a href="${domain}collections/${collection['_id']}/">${removed_submission['title']}</a>
+                            Removed from <a href="${domain}collections/${removed_submission['collection']._id}/">${removed_submission['title']}</a>
                         </div>
                         <div style="padding-left: 30px;">
                             <a class="comment-popover"
