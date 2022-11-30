@@ -8,7 +8,7 @@ from osf_tests.factories import NodeFactory, CollectionFactory, CollectionProvid
 from osf.models import CollectionSubmission
 from osf.utils.workflows import CollectionSubmissionsTriggers, CollectionSubmissionStates
 
-POST_URL = '/v2/collection_submissions_actions/'
+POST_URL = '/v2/collection_submission_actions/'
 
 
 @pytest.fixture()

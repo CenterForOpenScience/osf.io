@@ -11,7 +11,7 @@ from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error
 
 from api.collection_submissions.permissions import CollectionContributorOrPublicOrModerator
-from api.collection_submissions_actions.serializers import CollectionSubmissionActionSerializer
+from api.collection_submission_actions.serializers import CollectionSubmissionActionSerializer
 
 from osf.models import CollectionSubmission
 

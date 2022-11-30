@@ -9,12 +9,12 @@ from api.base.parsers import (
     JSONAPIMultipleRelationshipsParser,
     JSONAPIMultipleRelationshipsParserForRegularJSON,
 )
-from api.collection_submissions_actions.serializers import CollectionSubmissionActionSerializer
+from api.collection_submission_actions.serializers import CollectionSubmissionActionSerializer
 from api.collections.permissions import (
     CollectionReadOrPublic,
     OnlyAdminCanCreateDestroyCollectionSubmissionAction,
 )
-from api.collection_submissions_actions.schemas import create_collection_action_payload
+from api.collection_submission_actions.schemas import create_collection_action_payload
 
 from osf.models import CollectionSubmissionAction, CollectionSubmission
 
@@ -29,7 +29,7 @@ class CollectionSubmissionActionDetail(JSONAPIBaseView, generics.RetrieveAPIView
     required_write_scopes = [CoreScopes.WRITE_COLLECTION_SUBMISSION_ACTION]
 
     serializer_class = CollectionSubmissionActionSerializer
-    view_category = 'collection_submissions_actions'
+    view_category = 'collection_submission_actions'
     view_name = 'collection-submission-action-detail'
 
     def get_object(self):
@@ -57,7 +57,7 @@ class CollectionSubmissionActionList(JSONAPIBaseView, generics.CreateAPIView, ge
     )
 
     serializer_class = CollectionSubmissionActionSerializer
-    view_category = 'collection_submissions_actions'
+    view_category = 'collection_submission_actions'
     view_name = 'collection-submission-action-list'
 
     create_payload_schema = create_collection_action_payload
