@@ -12,7 +12,7 @@
             <a href="${node.absolute_url}">${node.title}</a> was removed by <a href="${remover.absolute_url}">${remover.fullname}</a>.
 
         % else:
-            <a href="${node.absolute_url}">${node.title}</a> was rejected by <a href="${settings.DOMAIN.rstrip('/') + collection.url}">${collection.title}</a>.
+            <a href="${node.absolute_url}">${node.title}</a> was rejected by <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.title}</a>.
         % endif
     </p>
     <p>
