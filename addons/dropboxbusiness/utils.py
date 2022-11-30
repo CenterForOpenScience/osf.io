@@ -291,11 +291,20 @@ def get_two_addon_options(institution_id, allowed_check=True):
 
 
 def addon_option_to_token(addon_option):
+    # avoid "ImportError: cannot import name"
+    from addons.dropboxbusiness.models import \
+        (DropboxBusinessFileaccessProvider,
+         DropboxBusinessManagementProvider)
     if not addon_option:
         return None
     if not addon_option.external_accounts.exists():
         return None
-    return addon_option.external_accounts.first().oauth_key
+    if addon_option.provider == 'dropboxbusiness':
+        return DropboxBusinessFileaccessProvider(addon_option.external_accounts.first()).fetch_access_token()
+    elif addon_option.provider == 'dropboxbusiness_manage':
+        return DropboxBusinessManagementProvider(addon_option.external_accounts.first()).fetch_access_token()
+    else:
+        return None
 
 
 # group_id to group_name
@@ -382,8 +391,8 @@ def update_admin_dbmid(team_id):
     if f_account is None or m_account is None:
         return
 
-    f_token = f_account.oauth_key
-    m_token = m_account.oauth_key
+    f_token = DropboxBusinessFileaccessProvider(f_account).fetch_access_token()
+    m_token = DropboxBusinessManagementProvider(m_account).fetch_access_token()
     if f_token is None or m_token is None:
         return
 
