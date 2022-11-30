@@ -339,7 +339,7 @@
             <div id="collectionList" class="collapse">
                  <div class="panel-body" style="text-align: left;">
                     % for collection in node['collections']:
-                        <a class="fa fa-pencil pull-right" href="${domain}collections/${collection['_id']}/edit"></a>
+                        <a class="fa fa-pencil pull-right" href="${collection['url']}${node['id']}/edit"></a>
                         <img src="${collection['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
                         <div style="display: inline;">
                             Included in <a href="${domain}collections/${collection['_id']}/" >${collection['title']}</a>
