@@ -102,12 +102,27 @@ var institutionLogos = {
 
 
 $(document).ready(function () {
+    // activate bootstrap popovers
+    $('[data-toggle="popover"]').popover();
     // Allows dropdown elements to persist after being clicked
     // Used for the "Share" button in the more actions menu
     $('.dropdown').on('click', 'li', function (evt) {
         var target = $(evt.target);
         // If the clicked element has .keep-open, don't allow the event to propagate
         return !(target.hasClass('keep-open') || target.parents('.keep-open').length);
+    });
+
+    $('#collections-header').on('click', function (evt) {
+        if ($('#collections-header>.pull-left').css('display') === 'block') {
+            $('#collections-header>.pull-left').css('display', 'none');
+            $('#collections-header').css('height', '0px');
+            $('#collections-header').css('margin', '0px');
+        } else {
+            $('#collections-header>.pull-left').css('display', 'block');
+            $('#collections-header').css('height', 'inherit');
+            $('#collections-header').css('margin', '10px');
+            $('#collections-header>.pull-left').slideIn();
+        }
     });
 
     var AddComponentButton = m.component(AddProject, {

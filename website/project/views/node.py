@@ -19,9 +19,11 @@ from website.ember_osf_web.decorators import ember_flag_is_active
 from api.waffle.utils import flag_is_active, storage_i18n_flag_active, storage_usage_flag_active
 from framework.exceptions import HTTPError
 from osf.models.nodelog import NodeLog
+from osf.models.collection import CollectionSubmission
 from osf.utils.functional import rapply
 from osf.utils.registrations import strip_registered_meta_comments
 from osf.utils import sanitize
+from osf.utils.workflows import CollectionSubmissionStates
 from osf import features
 
 from website import language
@@ -724,6 +726,23 @@ def _view_project(node, auth, primary=False,
     NodeRelation = apps.get_model('osf.NodeRelation')
 
     is_registration = node.is_registration
+
+    rejected_submissions = CollectionSubmission.objects.filter(
+        guid=node.guids.first(),
+        collection__provider__isnull=False,
+        collection__deleted__isnull=True,
+        collection__is_bookmark_collection=False,
+        machine_state=CollectionSubmissionStates.REJECTED,
+    )
+
+    removed_submissions = CollectionSubmission.objects.filter(
+        guid=node.guids.first(),
+        collection__provider__isnull=False,
+        collection__deleted__isnull=True,
+        collection__is_bookmark_collection=False,
+        machine_state=CollectionSubmissionStates.REMOVED,
+    )
+
     data = {
         'node': {
             'disapproval_link': disapproval_link,
@@ -767,6 +786,8 @@ def _view_project(node, auth, primary=False,
             'is_fork': node.is_fork,
             'is_collected': node.is_collected,
             'collections': serialize_collections(node.collecting_metadata_list, auth),
+            'rejected_submissions': serialize_collections(rejected_submissions, auth),
+            'removed_submissions': serialize_collections(removed_submissions, auth),
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
             'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
             'forked_date': iso8601format(node.forked_date) if node.is_fork else '',
@@ -888,12 +909,15 @@ def serialize_collections(collection_submissions, auth):
         'url': '/collections/{}/'.format(collection_submission.collection.provider._id),
         'status': collection_submission.status,
         'type': collection_submission.collected_type,
+        '_id': collection_submission._id,
         'issue': collection_submission.issue,
         'volume': collection_submission.volume,
+        'study_design': collection_submission.study_design,
         'program_area': collection_submission.program_area,
         'subjects': list(collection_submission.subjects.values_list('text', flat=True)),
         'is_public': collection_submission.collection.is_public,
-        'logo': collection_submission.collection.provider.get_asset_url('favicon')
+        'logo': collection_submission.collection.provider.get_asset_url('favicon'),
+        'comment': getattr(collection_submission, 'comment', 'test comment'),
     } for collection_submission in collection_submissions if collection_submission.collection.provider and (collection_submission.collection.is_public or
         (auth.user and auth.user.has_perm('read_collection', collection_submission.collection)))]
 
