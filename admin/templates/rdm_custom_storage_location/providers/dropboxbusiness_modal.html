@@ -25,7 +25,7 @@
                             </h4>
                         </div>
                         <div class="col-sm-3 form-group text-center">
-                            <a href="{% url 'oauth:connect' 'dropboxbusiness' institution.id 'true' %}"
+                            <a href="{% url 'oauth:connect' 'dropboxbusiness' institution.id %}"
                                 class="btn btn-primary auth-permission-button" role="button"
                                 data-institution-id="{{ institution.id }}"
                                 id="dropboxbusiness_auth_hyperlink" target="_blank">{% trans "Get OAuth permission" %}</a>
@@ -54,7 +54,7 @@
                             </h4>
                         </div>
                         <div class="col-sm-3 form-group text-center">
-                            <a href="{% url 'oauth:connect' 'dropboxbusiness_manage' institution.id 'true' %}"
+                            <a href="{% url 'oauth:connect' 'dropboxbusiness_manage' institution.id %}"
                                 class="btn btn-primary auth-permission-button" role="button"
                                 data-institution-id="{{ institution.id }}"
                                 id="dropboxbusiness_manage_auth_hyperlink" target="_blank">{% trans "Get OAuth permission" %}</a>
