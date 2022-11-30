@@ -13,7 +13,7 @@ from rest_framework.parsers import FileUploadParser
 from rest_framework.response import Response
 
 from api.actions.serializers import RegistrationActionSerializer
-from api.collection_submissions_actions.serializers import CollectionSubmissionActionSerializer
+from api.collection_submission_actions.serializers import CollectionSubmissionActionSerializer
 from api.base import permissions as base_permissions
 from osf.models.action import RegistrationAction, CollectionSubmissionAction
 from api.base.exceptions import InvalidFilterValue, InvalidFilterOperator, Conflict
