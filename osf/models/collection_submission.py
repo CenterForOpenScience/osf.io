@@ -58,6 +58,19 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
     def is_moderated(self):
         return bool(self.collection.provider) and self.collection.provider.reviews_workflow == 'pre-moderation'
 
+    @property
+    def is_semi_moderated(self):
+        return bool(self.collection.provider) and self.collection.provider.reviews_workflow == 'semi-moderation'
+
+    @property
+    def is_collection_moderator_admin_owned(self):
+        for contributor in self.guid.referent.contributors.all():
+            if contributor.has_perm('view_submissions', self.collection.provider):
+                return True
+            if contributor.has_perm('add_moderator', self.collection.provider):
+                return True
+        return False
+
     @state.setter
     def state(self, new_state):
         self.machine_state = new_state.value
@@ -135,7 +148,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
 
         is_admin = self.guid.referent.has_permission(user, ADMIN)
         is_moderator = user.has_perm('withdraw_submissions', self.collection.provider)
-        if self.is_moderated:
+        if self.is_moderated or self.is_semi_moderated:
             if not is_moderator and not is_admin:
                 raise PermissionsError(f'{user} must have moderator or admin permissions.')
         else:

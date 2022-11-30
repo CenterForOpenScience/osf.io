@@ -386,7 +386,7 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'dest': CollectionSubmissionStates.ACCEPTED,
         'before': [],
         'after': [],
-        'unless': ['is_moderated'],
+        'unless': ['is_moderated', 'is_semi_moderated'],
     },
     {
         'trigger': 'submit',
@@ -397,6 +397,23 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'conditions': ['is_moderated'],
     },
     {
+        'trigger': 'submit',
+        'source': [CollectionSubmissionStates.IN_PROGRESS],
+        'dest': CollectionSubmissionStates.ACCEPTED,
+        'before': [],
+        'after': [],
+        'conditions': ['is_semi_moderated', 'is_collection_moderator_admin_owned'],
+    },
+    {
+        'trigger': 'submit',
+        'source': [CollectionSubmissionStates.IN_PROGRESS],
+        'dest': CollectionSubmissionStates.PENDING,
+        'before': [],
+        'after': [],
+        'conditions': ['is_semi_moderated'],
+        'unless': ['is_collection_moderator_admin_owned'],
+    },
+    {
         'trigger': 'accept',
         'source': [CollectionSubmissionStates.PENDING],
         'dest': CollectionSubmissionStates.ACCEPTED,
@@ -405,12 +422,28 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'conditions': ['is_moderated'],
     },
     {
+        'trigger': 'accept',
+        'source': [CollectionSubmissionStates.PENDING],
+        'dest': CollectionSubmissionStates.ACCEPTED,
+        'before': ['_validate_accept'],
+        'after': ['_notify_moderated_accepted'],
+        'conditions': ['is_semi_moderated'],
+    },
+    {
         'trigger': 'reject',
         'source': [CollectionSubmissionStates.PENDING],
         'dest': CollectionSubmissionStates.REJECTED,
         'before': ['_validate_reject'],
         'after': ['_notify_moderated_rejected'],
         'conditions': ['is_moderated'],
+    },
+    {
+        'trigger': 'reject',
+        'source': [CollectionSubmissionStates.PENDING],
+        'dest': CollectionSubmissionStates.REJECTED,
+        'before': ['_validate_reject'],
+        'after': ['_notify_moderated_rejected'],
+        'conditions': ['is_semi_moderated'],
     },
     {
         'trigger': 'remove',
@@ -425,7 +458,7 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'dest': CollectionSubmissionStates.ACCEPTED,
         'before': ['_validate_unmoderated_resubmit'],
         'after': [],
-        'unless': ['is_moderated'],
+        'unless': ['is_moderated', 'is_semi_moderated'],
     },
     {
         'trigger': 'resubmit',
@@ -434,6 +467,14 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'before': ['_validate_resubmit'],
         'after': [],
         'conditions': ['is_moderated'],
+    },
+    {
+        'trigger': 'resubmit',
+        'source': [CollectionSubmissionStates.REJECTED, CollectionSubmissionStates.REMOVED],
+        'dest': CollectionSubmissionStates.PENDING,
+        'before': ['_validate_resubmit'],
+        'after': [],
+        'conditions': ['is_semi_moderated'],
     },
 ]
 
