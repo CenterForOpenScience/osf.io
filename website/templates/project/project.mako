@@ -317,7 +317,7 @@
     <%include file="include/comment_pane_template.mako"/>
 % endif
 
-% if node['is_collected'] or node['rejected_submissions'] or node['removed_submissions']:
+% if node['is_collected'] or  node['rejected_submissions'] or node['removed_submissions']:
 <div class="row">
     <div class="collections-container col-12">
         <div class="collections-box" style="font-size: 15px;">
