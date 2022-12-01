@@ -43,7 +43,7 @@ class CollectionSubmissionActionSerializer(JSONAPISerializer):
         target_class=CollectionSubmission,
         read_only=False,
         required=True,
-        related_view='collections:collected-metadata-detail',
+        related_view='collections:collection-submission-detail',
         related_view_kwargs={
             'collection_id': '<target.collection._id>',
             'collection_submission_id': '<target.guid._id>',
