@@ -317,7 +317,7 @@
     <%include file="include/comment_pane_template.mako"/>
 % endif
 
-% if node['is_collected']:
+% if node['is_collected'] or node['rejected_submissions'] or node['removed_submissions']:
 <div class="row">
     <div class="collections-container col-12">
         <div class="collections-box" style="font-size: 15px;">
@@ -334,7 +334,27 @@
                         </div>
                     % else:
                         <div style="display: inline; margin: 10px; margin-left: 0px;" >
-                            <i>See collection history</i>
+                            <i>See Collection History</i>
+                        </div>
+                    % endif:
+                    % if node['rejected_submissions'] and not node['collections']:
+                        <img src="${ node['rejected_submissions'][0]['logo']}" style="display: inline; height: 25px; width: 25px; margin-left: 5px;"/>
+                        <div style="display: inline; margin: 10px; margin-left: 0px;" >
+                            % if len(node['rejected_submissions']) - 1:
+                                Included in <a>${node['rejected_submissions'][0]['title']}</a> and <a>${len(node['removed_submissions']) + len(node['rejected_submissions']) + len(node['collections']) - 1}</a> more
+                            % else:
+                                Included in <a>${node['rejected_submissions'][0]['title']}</a>
+                            % endif:
+                        </div>
+                    % endif:
+                    % if node['removed_submissions'] and not node['collections'] and not node['removed_submissions']:
+                        <img src="${ node['removed_submissions'][0]['logo']}" style="display: inline; height: 25px; width: 25px; margin-left: 5px;"/>
+                        <div style="display: inline; margin: 10px; margin-left: 0px;" >
+                            % if len(node['removed_submissions']) - 1:
+                                Included in <a>${node['removed_submissions'][0]['title']}</a> and <a>${len(node['removed_submissions']) + len(node['removed_submissions']) + len(node['collections']) - 1}</a> more
+                            % else:
+                                Included in <a>${node['removed_submissions'][0]['title']}</a>
+                            % endif:
                         </div>
                     % endif:
 
@@ -369,46 +389,51 @@
 
                         <hr>
                     % endfor
-                    % for rejected_submission in node['rejected_submissions']:
-                                            <i class="fa fa-close pull-right" ></i>
-                        <img src="${rejected_submission['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
-                        <div style="display: inline;">
-                            Rejected from <a href="${domain}collections/${rejected_submission['collection']._id}/">${rejected_submission['title']}</a>
-                        </div>
-                        % if user['is_admin']:
-                            <div style="padding-left: 30px;">
-                                <a class="comment-popover"
-                                   data-toggle="popover"
-                                   data-placement="bottom"
-                                   data-content="${removed_submission['comment']}"
-                                >
-                                    See justification
-                                    <i class="fa fa-angle-down" /></i>
-                                </a>
+                    % if node['rejected_submissions']:
+                        % for rejected_submission in node['rejected_submissions']:
+                                                <i class="fa fa-close pull-right" ></i>
+                            <img src="${rejected_submission['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
+                            <div style="display: inline;">
+                                Rejected from <a href="${domain}collections/${rejected_submission['collection']._id}/">${rejected_submission['title']}</a>
                             </div>
-                        % endif
-                        <hr>
-                    % endfor
-                    % for removed_submission in node['removed_submissions']:
-                        <img src="${removed_submission['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
-                        <div style="display: inline;">
-                            Removed from <a href="${domain}collections/${removed_submission['collection']._id}/">${removed_submission['title']}</a>
-                        </div>
-                        % if user['is_admin']:
-                            <div style="padding-left: 30px;">
-                                <a class="comment-popover"
-                                   data-toggle="popover"
-                                   data-placement="bottom"
-                                   data-content="${removed_submission['comment']}"
-                                >
-                                    See justification
-                                    <i class="fa fa-angle-down" /></i>
-                                </a>
+                            % if user['is_admin']:
+                                <div style="padding-left: 30px;">
+                                    <a class="comment-popover"
+                                       data-toggle="popover"
+                                       data-placement="bottom"
+                                       data-content="${rejected_submission['comment']}"
+                                    >
+                                        See justification
+                                        <i class="fa fa-angle-down" /></i>
+                                    </a>
+                                </div>
+                            % endif
+                            <hr>
+                        % endfor
+                    % endif
+                    % if node['removed_submissions']:
+                        % for removed_submission in node['removed_submissions']:
+                            <img src="${removed_submission['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
+                            <div style="display: inline;">
+                                Removed from <a href="${domain}collections/${removed_submission['collection']._id}/">${removed_submission['title']}</a>
                             </div>
-                        % endif
+                            % if user['is_admin']:
+                                <div style="padding-left: 30px;">
+                                    <a class="comment-popover"
+                                       data-toggle="popover"
+                                       data-placement="bottom"
+                                       data-content="${removed_submission['comment']}"
+                                    >
+                                        See justification
+                                        <i class="fa fa-angle-down" /></i>
+                                    </a>
+                                </div>
+                            % endif
 
-                        <hr>
-                    % endfor
+                            <hr>
+                        % endfor
+                    % endif
+
                  </div>
         </div>
     </div>
