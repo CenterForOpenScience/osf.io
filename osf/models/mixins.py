@@ -1984,7 +1984,7 @@ class SpamOverrideMixin(SpamMixin):
     def log_params(self):
         return NotImplementedError()
 
-    def get_spam_fields(self):
+    def get_spam_fields(self, saved_fields=None):
         return NotImplementedError()
 
     def undelete(self, save=False):
