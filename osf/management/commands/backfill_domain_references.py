@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import re
 import logging
 import operator
 from functools import reduce
@@ -13,55 +12,37 @@ from osf.models import DomainReference
 
 logger = logging.getLogger(__name__)
 
-DOMAIN_MATCH_REGEX = re.compile(r'(?P<protocol>\w+://)?(?P<www>www\.)?(?P<domain>[\w-]+\.\w+)(?P<path>/\w*)?')
 DOMAIN_SEARCH_REGEX = r'(\w+\.\w+\w+\.\w+)|\w+\.\w+\w+'
 from django.contrib.contenttypes.models import ContentType
 from osf.models import Node
 
 
-def spawn_tasks_for_domain_references_backfill(model, query, additional_spam_fields=None, batch_size=None, dry_run=False):
-    items = model.objects.filter(query).annotate(
-        exclude=~Exists(
+def backfill_domain_references(model_name, dry_run=False, batch_size=None):
+    model = apps.get_model(model_name)
+
+    search_fields = list(model.SPAM_CHECK_FIELDS)
+    if model == Node:
+        search_fields += ['wikis__versions__content']
+
+    spam_queries = (Q(**{f'{field}__regex': DOMAIN_SEARCH_REGEX}) for field in search_fields)
+    spam_content_query = reduce(operator.or_, spam_queries)
+
+    spam_check_items = model.objects.annotate(
+        exclude=Exists(
             DomainReference.objects.filter(
                 referrer_content_type=ContentType.objects.get_for_model(model),
                 referrer_object_id=OuterRef('id')
             )
         )
-    ).filter(exclude=True)[:batch_size]
+    ).filter(exclude=False).filter(spam_content_query)[:batch_size]
 
-    for item in items:
-        spam_content = item._get_spam_content(additional_spam_fields)
-
+    for item in spam_check_items:
+        logger.info(f'{item}, queued')
+        spam_content = item._get_spam_content()
         if not dry_run:
             check_resource_for_domains.apply_async(
-                kwargs=dict(
-                    guid=item._id,
-                    content=spam_content,
-                )
+                kwargs={'guid': item._id, 'content': spam_content}
             )
-            logger.info(f'{item}, queued')
-
-
-def backfill_domain_references(model_name, dry_run=False, batch_size=None):
-    model = apps.get_model(model_name)
-    spam_fields = None
-
-    if model == Node:
-        spam_fields = list(Node.SPAM_CHECK_FIELDS) + ['wikis__versions__content']
-        search_fields = list(model.SPAM_CHECK_FIELDS) + ['wikis__versions__content']
-    else:
-        search_fields = list(model.SPAM_CHECK_FIELDS)
-
-    spam_queries = (Q(**{f'{field}__regex': DOMAIN_SEARCH_REGEX}) for field in search_fields)
-    query = reduce(operator.or_, spam_queries)
-
-    spawn_tasks_for_domain_references_backfill(
-        model,
-        query,
-        additional_spam_fields=spam_fields,
-        batch_size=batch_size,
-        dry_run=dry_run
-    )
 
 
 class Command(BaseCommand):
