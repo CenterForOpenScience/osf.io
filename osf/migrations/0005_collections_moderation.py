@@ -12,7 +12,7 @@ import osf.utils.workflows
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0004_django3_upgrade'),
+        ('osf', '0005_add_notabledomain_domainreference'),
     ]
 
     operations = [
