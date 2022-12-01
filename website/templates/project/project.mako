@@ -351,7 +351,7 @@
                         % endif
                         <img src="${collection['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
                         <div style="display: inline;">
-                            Included in <a href="${domain}collections/${collection['_id']}/" >${collection['title']}</a>
+                            Included in <a href="${collection['url']}" >${collection['title']}</a>
                         </div>
                         % if collection['study_design'] and collection['type']:
                             <div  style="padding-left: 30px;">
