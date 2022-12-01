@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0005_collections_moderation'),
+        ('osf', '0006_collections_moderation'),
     ]
 
     operations = [

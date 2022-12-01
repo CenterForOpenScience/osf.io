@@ -1,6 +1,6 @@
 from django.conf.urls import url
 
-from api.collection_submissions_actions import views
+from api.collection_submission_actions import views
 
 app_name = 'osf'
 

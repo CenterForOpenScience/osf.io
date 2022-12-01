@@ -50,7 +50,7 @@ from osf.models.action import ReviewAction  # noqa
 from osf.models.action import NodeRequestAction, PreprintRequestAction, ReviewAction, RegistrationAction, SchemaResponseAction, BaseAction, CollectionSubmissionAction  # noqa
 from osf.models.storage import ProviderAssetFile  # noqa
 from osf.models.chronos import ChronosJournal, ChronosSubmission  # noqa
-from osf.models.notable_email_domain import NotableEmailDomain  # noqa
+from osf.models.notable_domain import NotableDomain, DomainReference  # noqa
 from osf.models.brand import Brand  # noqa
 from osf.models.schema_response import SchemaResponse  # noqa
 from osf.models.schema_response_block import SchemaResponseBlock  # noqa

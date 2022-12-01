@@ -1987,13 +1987,31 @@ class SpamOverrideMixin(SpamMixin):
     def get_spam_fields(self):
         return NotImplementedError()
 
-    def confirm_spam(self, save=True, train_akismet=True):
+    def undelete(self, save=False):
+        if self.logs.filter(action__in=[self.log_class.FLAG_SPAM, self.log_class.CONFIRM_SPAM]):
+            spam_log = self.logs.filter(action__in=[self.log_class.FLAG_SPAM, self.log_class.CONFIRM_SPAM]).latest()
+            # set objects to prior public state if known, unless it's a registration pending approval.
+            if spam_log.params.get('was_public', False) and not getattr(self, 'is_pending_registration', False):
+                self.set_privacy('public', log=False)
+
+            self.is_deleted = False
+            self.deleted = None
+            self.update_search()
+
+        if save:
+            self.save()
+
+    def unspam(self, save=False):
+        super().unspam(save=save)
+        self.undelete(save=save)
+
+    def confirm_spam(self, domains=None, save=True, train_akismet=True):
         """
         This should add behavior specific nodes/preprints confirmed to be spam.
         :param save:
         :return:
         """
-        super().confirm_spam(save=save, train_akismet=train_akismet)
+        super().confirm_spam(save=save, domains=domains or [], train_akismet=train_akismet)
         self.deleted = timezone.now()
         was_public = self.is_public
         self.set_privacy('private', auth=None, log=False, save=False, force=True)
@@ -2016,16 +2034,7 @@ class SpamOverrideMixin(SpamMixin):
         :return:
         """
         super().confirm_ham(save=save, train_akismet=train_akismet)
-
-        if self.logs.filter(action__in=[self.log_class.FLAG_SPAM, self.log_class.CONFIRM_SPAM]):
-            spam_log = self.logs.filter(action__in=[self.log_class.FLAG_SPAM, self.log_class.CONFIRM_SPAM]).latest()
-            # set objects to prior public state if known, unless it's a registration pending approval.
-            if spam_log.params.get('was_public', False) and not getattr(self, 'is_pending_registration', False):
-                self.set_privacy('public', log=False)
-
-            self.is_deleted = False
-            self.deleted = None
-            self.update_search()
+        self.undelete(save=save)
 
         log = self.add_log(
             action=self.log_class.CONFIRM_HAM,
