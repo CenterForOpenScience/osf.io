@@ -317,7 +317,7 @@
     <%include file="include/comment_pane_template.mako"/>
 % endif
 
-% if node['is_collected']:
+% if node['is_collected'] or node['rejected_submissions'] or node['removed_submissions']:
 <div class="row">
     <div class="collections-container col-12">
         <div class="collections-box" style="font-size: 15px;">
@@ -334,7 +334,27 @@
                         </div>
                     % else:
                         <div style="display: inline; margin: 10px; margin-left: 0px;" >
-                            <i>See collection history</i>
+                            <i>See Collection History</i>
+                        </div>
+                    % endif:
+                    % if node['rejected_submissions'] and not node['collections']:
+                        <img src="${ node['rejected_submissions'][0]['logo']}" style="display: inline; height: 25px; width: 25px; margin-left: 5px;"/>
+                        <div style="display: inline; margin: 10px; margin-left: 0px;" >
+                            % if len(node['rejected_submissions']) - 1:
+                                Included in <a>${node['rejected_submissions'][0]['title']}</a> and <a>${len(node['removed_submissions']) + len(node['rejected_submissions']) + len(node['collections']) - 1}</a> more
+                            % else:
+                                Included in <a>${node['rejected_submissions'][0]['title']}</a>
+                            % endif:
+                        </div>
+                    % endif:
+                    % if node['removed_submissions'] and not node['collections'] and not node['removed_submissions']:
+                        <img src="${ node['removed_submissions'][0]['logo']}" style="display: inline; height: 25px; width: 25px; margin-left: 5px;"/>
+                        <div style="display: inline; margin: 10px; margin-left: 0px;" >
+                            % if len(node['removed_submissions']) - 1:
+                                Included in <a>${node['removed_submissions'][0]['title']}</a> and <a>${len(node['removed_submissions']) + len(node['removed_submissions']) + len(node['collections']) - 1}</a> more
+                            % else:
+                                Included in <a>${node['removed_submissions'][0]['title']}</a>
+                            % endif:
                         </div>
                     % endif:
 
