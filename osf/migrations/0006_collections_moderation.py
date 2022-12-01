@@ -7,12 +7,15 @@ import django_extensions.db.fields
 import osf.models.base
 import osf.utils.fields
 import osf.utils.workflows
-
+from osf.management.commands.collection_submission_machine_state_backfill import (
+    collection_submission_machine_state_backfill,
+    reverse_collection_submission_machine_state_backfill
+)
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0004_django3_upgrade'),
+        ('osf', '0005_add_notabledomain_domainreference'),
     ]
 
     operations = [
@@ -41,4 +44,5 @@ class Migration(migrations.Migration):
             },
             bases=(models.Model, osf.models.base.QuerySetExplainMixin),
         ),
+        migrations.RunPython(collection_submission_machine_state_backfill, reverse_collection_submission_machine_state_backfill)
     ]
