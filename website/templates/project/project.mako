@@ -324,6 +324,7 @@
             <div class="clearfix" id="collections-header" data-toggle="collapse" href="#collectionList" role="button" style="margin: 10px;">
                 <div class="pull-left" style="margin-top: 5px">
                     % if node['collections']:
+                        <img src="${ node['collections'][0]['logo']}" style="display: inline; height: 25px; width: 25px; margin-left: 5px;"/>
                         <div style="display: inline; margin: 10px; margin-left: 0px;" >
                             % if len(node['collections']) - 1:
                                 Included in <a>${node['collections'][0]['title']}</a> and <a>${len(node['removed_submissions']) + len(node['rejected_submissions']) + len(node['collections']) - 1}</a> more
@@ -336,7 +337,6 @@
                             <i>See Collection History</i>
                         </div>
                     % endif:
-
                 </div>
                 <div class="pull-right">
                     <button class="btn btn-link" aria-label="Toggle Collections" ><i class="fa fa-angle-down"></i></button>
