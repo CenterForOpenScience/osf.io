@@ -19,7 +19,7 @@ from django.core.exceptions import ValidationError
 
 class CollectionSubmissionActionSerializer(JSONAPISerializer):
     class Meta:
-        type_ = 'collection-submissions-actions'
+        type_ = 'collection-submission-actions'
 
     id = ser.CharField(source='_id', read_only=True)
 

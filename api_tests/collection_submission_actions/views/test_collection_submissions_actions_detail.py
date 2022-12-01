@@ -7,7 +7,7 @@ from osf.migrations import update_provider_auth_groups
 from osf.models import CollectionSubmission
 from osf.utils.workflows import CollectionSubmissionStates, CollectionSubmissionsTriggers
 
-GET_URL = '/v2/collection_submissions_actions/{}/'
+GET_URL = '/v2/collection_submission_actions/{}/'
 
 
 @pytest.fixture()

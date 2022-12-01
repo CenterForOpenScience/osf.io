@@ -5,13 +5,14 @@ from rest_framework import serializers as ser
 from osf.models import AbstractNode, Node, Collection, Guid, Registration, CollectionProvider
 from osf.exceptions import ValidationError, NodeStateError
 from api.base.serializers import LinksField, RelationshipField, LinkedNodesRelationshipSerializer, LinkedRegistrationsRelationshipSerializer, LinkedPreprintsRelationshipSerializer
-from api.base.serializers import JSONAPISerializer, IDField, TypeField, VersionedDateTimeField
+from api.base.serializers import JSONAPISerializer, IDField, TypeField, VersionedDateTimeField, EnumField
 from api.base.exceptions import InvalidModelValueError, RelationshipPostMakesNoChanges
 from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import NodeLinksSerializer
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from framework.exceptions import PermissionsError
 from osf.utils.permissions import WRITE
+from osf.utils.workflows import CollectionSubmissionStates
 
 
 class CollectionProviderRelationshipField(RelationshipField):
@@ -116,6 +117,11 @@ class CollectionSerializer(JSONAPISerializer):
     )
 
     collected_metadata = RelationshipField(
+        related_view='collections:collected-metadata-list',
+        related_view_kwargs={'collection_id': '<_id>'},
+    )
+
+    collection_submissions = RelationshipField(
         related_view='collections:collection-submission-list',
         related_view_kwargs={'collection_id': '<_id>'},
     )
@@ -182,17 +188,40 @@ class CollectionDetailSerializer(CollectionSerializer):
 class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     class Meta:
-        type_ = 'collected-metadata'
+        @staticmethod
+        def get_type(request):
+            # Preserve compatibility with old endpoints.
+            from api.collections.views import CollectionSubmissionList, CollectionSubmissionDetail
+            from api.providers.views import CollectionProviderSubmissionList
+            view = request.parser_context.get('view')
+            if isinstance(view, (CollectionSubmissionList, CollectionSubmissionDetail)):
+                request_url = request._request.get_raw_uri()
+                # this is yucky, but we don't want multiple inhierence for serializers and it must support legacy
+                # without a new API version.
+                if 'collection_submissions' in request_url:
+                    return 'collection-submissions'
+                elif 'collected_metadata' in request_url:
+                    return 'collected-metadata'
+            elif isinstance(view, CollectionProviderSubmissionList):
+                return 'collected-metadata'
+            # In tests some serializers have no views, so just revert to the default type, but if a new view is being
+            # used with this, the `NotImplementedError` below will ensure we catch it if it's not typed correctly.
+            elif view:
+                raise NotImplementedError()
+            else:
+                return 'collected-metadata'
 
     filterable_fields = frozenset([
         'id',
         'collected_type',
         'date_created',
         'date_modified',
+        'reviews_state',
         'subjects',
         'status',
     ])
     id = IDField(source='guid._id', read_only=True)
+    reviews_state = EnumField(CollectionSubmissionStates, source='machine_state', required=False)
     type = TypeField()
 
     creator = RelationshipField(
@@ -208,6 +237,12 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
         related_view_kwargs={'guids': '<guid._id>'},
         always_embed=True,
     )
+    collection_submission_actions = RelationshipField(
+        related_view='collection_submissions:collection-submission-action-list',
+        related_view_kwargs={'collection_submission_id': '<_id>'},
+    )
+    date_created = VersionedDateTimeField(source='created', read_only=True)
+    date_modified = VersionedDateTimeField(source='modified', read_only=True)
 
     @property
     def subjects_related_view(self):

@@ -1,5 +1,7 @@
 <%inherit file="notify_base.mako" />
-
+<%!
+    from website import settings
+%>
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
@@ -8,7 +10,7 @@
     <p>
         % if is_admin:
             Your request to add  <a href="${node.absolute_url}">${node.title}</a> to
-            <a href="${collection.url}">${collection.title}</a> was not accepted.
+            <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.title}</a> was not accepted.
             <p>
                 Rejection Justification:
             </p>
@@ -16,7 +18,7 @@
                 ${rejection_justification}
             </p>
         % else:
-            <a href="${node.absolute_url}">${node.title}</a> was rejected by <a href="${collection.url}">${collection.title}</a>.
+            <a href="${node.absolute_url}">${node.title}</a> was rejected by <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.title}</a>.
         % endif
     </p>
     <p>
