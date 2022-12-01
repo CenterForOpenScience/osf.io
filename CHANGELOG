@@ -2,6 +2,11 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+22.11.0 (2022-11-21)
+====================
+- Enable monitoring and moderation of OSF resoruces based on links to external
+domains
+
 22.10.0 (2022-10-25)
 ====================
 - Upgrade Django from 1.11 to 3.2

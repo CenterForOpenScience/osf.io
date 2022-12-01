@@ -97,14 +97,14 @@ def validate_social(value):
             raise ValidationError('{} is not a valid key for social.'.format(soc_key))
 
 def validate_email(value):
-    from osf.models import NotableEmailDomain
+    from osf.models import NotableDomain
     with reraise_django_validation_errors():
         django_validate_email(value)
     domain = value.split('@')[1].lower()
 
-    is_email_domain_blocked = NotableEmailDomain.objects.filter(
+    is_email_domain_blocked = NotableDomain.objects.filter(
         domain=domain,
-        note=NotableEmailDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION,
+        note=NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT,
     ).exists()
 
     if is_email_domain_blocked:

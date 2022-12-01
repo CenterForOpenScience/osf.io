@@ -15,7 +15,7 @@ from osf.management.commands.collection_submission_machine_state_backfill import
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0004_django3_upgrade'),
+        ('osf', '0005_add_notabledomain_domainreference'),
     ]
 
     operations = [
