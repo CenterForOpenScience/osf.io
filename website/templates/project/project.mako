@@ -324,7 +324,7 @@
             <div class="clearfix" id="collections-header" data-toggle="collapse" href="#collectionList" role="button" style="margin: 10px;">
                 <div class="pull-left" style="margin-top: 5px">
                     % if node['collections']:
-                        <img src="${node['collections'][0]['logo']}" style="display: inline; height: 25px; width: 25px; margin-left: 5px;"/>
+                        <img src="${ node['collections'][0]['logo']}" style="display: inline; height: 25px; width: 25px; margin-left: 5px;"/>
                         <div style="display: inline; margin: 10px; margin-left: 0px;" >
                             % if len(node['collections']) - 1:
                                 Included in <a>${node['collections'][0]['title']}</a> and <a>${len(node['removed_submissions']) + len(node['rejected_submissions']) + len(node['collections']) - 1}</a> more
@@ -337,27 +337,6 @@
                             <i>See Collection History</i>
                         </div>
                     % endif:
-                    % if node['rejected_submissions'] and not node['collections']:
-                        <img src="${ node['rejected_submissions'][0]['logo']}" style="display: inline; height: 25px; width: 25px; margin-left: 5px;"/>
-                        <div style="display: inline; margin: 10px; margin-left: 0px;" >
-                            % if len(node['rejected_submissions']) - 1:
-                                Included in <a>${node['rejected_submissions'][0]['title']}</a> and <a>${len(node['removed_submissions']) + len(node['rejected_submissions']) + len(node['collections']) - 1}</a> more
-                            % else:
-                                Included in <a>${node['rejected_submissions'][0]['title']}</a>
-                            % endif:
-                        </div>
-                    % endif:
-                    % if node['removed_submissions'] and not node['collections'] and not node['removed_submissions']:
-                        <img src="${ node['removed_submissions'][0]['logo']}" style="display: inline; height: 25px; width: 25px; margin-left: 5px;"/>
-                        <div style="display: inline; margin: 10px; margin-left: 0px;" >
-                            % if len(node['removed_submissions']) - 1:
-                                Included in <a>${node['removed_submissions'][0]['title']}</a> and <a>${len(node['removed_submissions']) + len(node['removed_submissions']) + len(node['collections']) - 1}</a> more
-                            % else:
-                                Included in <a>${node['removed_submissions'][0]['title']}</a>
-                            % endif:
-                        </div>
-                    % endif:
-
                 </div>
                 <div class="pull-right">
                     <button class="btn btn-link" aria-label="Toggle Collections" ><i class="fa fa-angle-down"></i></button>
@@ -391,7 +370,6 @@
                     % endfor
                     % if node['rejected_submissions']:
                         % for rejected_submission in node['rejected_submissions']:
-                                                <i class="fa fa-close pull-right" ></i>
                             <img src="${rejected_submission['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
                             <div style="display: inline;">
                                 Rejected from <a href="${domain}collections/${rejected_submission['collection']._id}/">${rejected_submission['title']}</a>
