@@ -8,24 +8,38 @@ from osf.models import CollectionSubmission
 logger = logging.getLogger(__name__)
 
 
-def collection_submission_machine_state_backfill(*args, dry_run=False, **kwargs):
+def collection_submission_machine_state_backfill(*args, backfill_date=None, dry_run=False, **kwargs):
     submissions = CollectionSubmission.objects.all()
 
     logger.info(f'{submissions.count()} submissions to backfill')
     if not dry_run:
-        submissions.update(
-            machine_state=CollectionSubmissionStates.ACCEPTED
-        )
+        if backfill_date:
+            submissions.filter(
+                date_created__lte=backfill_date
+            ).update(
+                machine_state=CollectionSubmissionStates.ACCEPTED
+            )
+        else:
+            submissions.update(
+                machine_state=CollectionSubmissionStates.ACCEPTED
+            )
 
 
-def reverse_collection_submission_machine_state_backfill(*args, dry_run=False, **kwargs):
+def reverse_collection_submission_machine_state_backfill(*args, backfill_date=None, dry_run=False, **kwargs):
     submissions = CollectionSubmission.objects.all()
 
     logger.info(f'{submissions.count()} submissions to reverse backfill')
     if not dry_run:
-        submissions.update(
-            machine_state=CollectionSubmissionStates.IN_PROGRESS
-        )
+        if backfill_date:
+            submissions.filter(
+                date_created__lte=backfill_date
+            ).update(
+                machine_state=CollectionSubmissionStates.IN_PROGRESS
+            )
+        else:
+            submissions.update(
+                machine_state=CollectionSubmissionStates.IN_PROGRESS
+            )
 
 
 class Command(BaseCommand):
