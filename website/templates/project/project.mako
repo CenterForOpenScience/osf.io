@@ -369,46 +369,51 @@
 
                         <hr>
                     % endfor
-                    % for rejected_submission in node['rejected_submissions']:
-                                            <i class="fa fa-close pull-right" ></i>
-                        <img src="${rejected_submission['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
-                        <div style="display: inline;">
-                            Rejected from <a href="${domain}collections/${rejected_submission['collection']._id}/">${rejected_submission['title']}</a>
-                        </div>
-                        % if user['is_admin']:
-                            <div style="padding-left: 30px;">
-                                <a class="comment-popover"
-                                   data-toggle="popover"
-                                   data-placement="bottom"
-                                   data-content="${removed_submission['comment']}"
-                                >
-                                    See justification
-                                    <i class="fa fa-angle-down" /></i>
-                                </a>
+                    % if node['rejected_submissions']:
+                        % for rejected_submission in node['rejected_submissions']:
+                                                <i class="fa fa-close pull-right" ></i>
+                            <img src="${rejected_submission['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
+                            <div style="display: inline;">
+                                Rejected from <a href="${domain}collections/${rejected_submission['collection']._id}/">${rejected_submission['title']}</a>
                             </div>
-                        % endif
-                        <hr>
-                    % endfor
-                    % for removed_submission in node['removed_submissions']:
-                        <img src="${removed_submission['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
-                        <div style="display: inline;">
-                            Removed from <a href="${domain}collections/${removed_submission['collection']._id}/">${removed_submission['title']}</a>
-                        </div>
-                        % if user['is_admin']:
-                            <div style="padding-left: 30px;">
-                                <a class="comment-popover"
-                                   data-toggle="popover"
-                                   data-placement="bottom"
-                                   data-content="${removed_submission['comment']}"
-                                >
-                                    See justification
-                                    <i class="fa fa-angle-down" /></i>
-                                </a>
+                            % if user['is_admin']:
+                                <div style="padding-left: 30px;">
+                                    <a class="comment-popover"
+                                       data-toggle="popover"
+                                       data-placement="bottom"
+                                       data-content="${rejected_submission['comment']}"
+                                    >
+                                        See justification
+                                        <i class="fa fa-angle-down" /></i>
+                                    </a>
+                                </div>
+                            % endif
+                            <hr>
+                        % endfor
+                    % endif
+                    % if node['removed_submissions']:
+                        % for removed_submission in node['removed_submissions']:
+                            <img src="${removed_submission['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
+                            <div style="display: inline;">
+                                Removed from <a href="${domain}collections/${removed_submission['collection']._id}/">${removed_submission['title']}</a>
                             </div>
-                        % endif
+                            % if user['is_admin']:
+                                <div style="padding-left: 30px;">
+                                    <a class="comment-popover"
+                                       data-toggle="popover"
+                                       data-placement="bottom"
+                                       data-content="${removed_submission['comment']}"
+                                    >
+                                        See justification
+                                        <i class="fa fa-angle-down" /></i>
+                                    </a>
+                                </div>
+                            % endif
 
-                        <hr>
-                    % endfor
+                            <hr>
+                        % endfor
+                    % endif
+
                  </div>
         </div>
     </div>
