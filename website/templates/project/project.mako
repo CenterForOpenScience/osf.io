@@ -395,19 +395,16 @@
                             <div style="display: inline;">
                                 Removed from <a href="{removed_submission['url']}" >${removed_submission['collection'].title}</a>
                             </div>
-                            % if user['is_admin']:
-                                <div style="padding-left: 30px;">
-                                    <a class="comment-popover"
-                                       data-toggle="popover"
-                                       data-placement="bottom"
-                                       data-content="${removed_submission['comment']}"
-                                    >
-                                        See justification
-                                        <i class="fa fa-angle-down" /></i>
-                                    </a>
-                                </div>
-                            % endif
-
+                            <div style="padding-left: 30px;">
+                                <a class="comment-popover"
+                                   data-toggle="popover"
+                                   data-placement="bottom"
+                                   data-content="${removed_submission['comment']}"
+                                >
+                                    See justification
+                                    <i class="fa fa-angle-down" /></i>
+                                </a>
+                            </div>
                             <hr>
                         % endfor
                     % endif
