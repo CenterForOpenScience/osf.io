@@ -242,6 +242,7 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
 
 
 class CollectionProvider(AbstractProvider):
+    DEFAULT_SUBSCRIPTIONS = ['new_pending_submissions']
 
     class Meta:
         permissions = (
