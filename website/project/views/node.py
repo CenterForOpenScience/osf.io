@@ -918,7 +918,7 @@ def serialize_collections(collection_submissions, auth):
         'subjects': list(collection_submission.subjects.values_list('text', flat=True)),
         'is_public': collection_submission.collection.is_public,
         'logo': collection_submission.collection.provider.get_asset_url('favicon'),
-        'comment': getattr(collection_submission, 'comment', 'test comment'),
+        'comment': getattr(collection_submission.actions.last(), 'comment', 'No Comment'),
     } for collection_submission in collection_submissions if collection_submission.collection.provider and (collection_submission.collection.is_public or
         (auth.user and auth.user.has_perm('read_collection', collection_submission.collection)))]
 
