@@ -7,6 +7,7 @@ from framework.exceptions import PermissionsError
 
 from osf.models.base import BaseModel
 from osf.models.mixins import TaxonomizableMixin
+from osf.utils.notifications import notify_submit
 from osf.utils.permissions import ADMIN, READ
 from website.util import api_v2_url
 from website.search.exceptions import SearchUnavailableError
@@ -75,7 +76,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         for contributor in self.guid.referent.contributors:
             mails.send_mail(
                 to_addr=contributor.username,
-                mail=mails.COLLECTION_SUBMISSION_SUBMITTED,
+                mail=mails.COLLECTION_SUBMISSION_SUBMITTED(self.creator, self.guid.referent),
                 user=contributor,
                 submitter=self.creator,
                 is_initator=self.creator == contributor,
@@ -101,7 +102,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         for contributor in self.guid.referent.contributors:
             mails.send_mail(
                 to_addr=contributor.username,
-                mail=mails.COLLECTION_SUBMISSION_ACCEPTED,
+                mail=mails.COLLECTION_SUBMISSION_ACCEPTED(self.collection, self.guid.referent),
                 user=contributor,
                 submitter=event_data.kwargs['user'],
                 is_admin=self.guid.referent.has_permission(contributor, ADMIN),
@@ -124,7 +125,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         for contributor in self.guid.referent.contributors:
             mails.send_mail(
                 to_addr=contributor.username,
-                mail=mails.COLLECTION_SUBMISSION_REJECTED,
+                mail=mails.COLLECTION_SUBMISSION_REJECTED(self.collection, self.guid.referent),
                 user=contributor,
                 is_admin=self.guid.referent.has_permission(contributor, ADMIN),
                 collection=self.collection,
@@ -161,10 +162,23 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         is_moderator = user.has_perm('withdraw_submissions', self.collection.provider)
         is_admin = self.guid.referent.has_permission(user, ADMIN)
         if removed_due_to_privacy:
+            if self.is_moderated:
+                for moderator in self.collection.moderators:
+                    mails.send_mail(
+                        to_addr=moderator.username,
+                        mail=mails.COLLECTION_SUBMISSION_REMOVED_PRIVATE(self.collection, self.guid.referent),
+                        user=moderator,
+                        remover=user,
+                        is_admin=self.guid.referent.has_permission(moderator, ADMIN),
+                        collection=self.collection,
+                        node=self.guid.referent,
+                        domain=settings.DOMAIN,
+                        osf_contact_email=settings.OSF_CONTACT_EMAIL,
+                    )
             for contributor in self.guid.referent.contributors.all():
                 mails.send_mail(
                     to_addr=contributor.username,
-                    mail=mails.COLLECTION_SUBMISSION_REMOVED_PRIVATE,
+                    mail=mails.COLLECTION_SUBMISSION_REMOVED_PRIVATE(self.collection, self.guid.referent),
                     user=contributor,
                     remover=user,
                     is_admin=self.guid.referent.has_permission(contributor, ADMIN),
@@ -177,7 +191,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
             for contributor in self.guid.referent.contributors:
                 mails.send_mail(
                     to_addr=contributor.username,
-                    mail=mails.COLLECTION_SUBMISSION_REMOVED_MODERATOR,
+                    mail=mails.COLLECTION_SUBMISSION_REMOVED_MODERATOR(self.collection, self.guid.referent),
                     user=contributor,
                     remover=event_data.kwargs['user'],
                     is_admin=self.guid.referent.has_permission(contributor, ADMIN),
@@ -186,10 +200,22 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                     osf_contact_email=settings.OSF_CONTACT_EMAIL,
                 )
         elif is_admin:
+            if self.is_moderated:
+                for moderator in self.collection.moderators:
+                    mails.send_mail(
+                        to_addr=moderator.username,
+                        mail=mails.COLLECTION_SUBMISSION_REMOVED_ADMIN(self.collection, self.guid.referent),
+                        user=moderator,
+                        remover=event_data.kwargs['user'],
+                        is_admin=self.guid.referent.has_permission(moderator, ADMIN),
+                        collection=self.collection,
+                        node=self.guid.referent,
+                        osf_contact_email=settings.OSF_CONTACT_EMAIL,
+                    )
             for contributor in self.guid.referent.contributors:
                 mails.send_mail(
                     to_addr=contributor.username,
-                    mail=mails.COLLECTION_SUBMISSION_REMOVED_ADMIN,
+                    mail=mails.COLLECTION_SUBMISSION_REMOVED_ADMIN(self.collection, self.guid.referent),
                     user=contributor,
                     remover=event_data.kwargs['user'],
                     is_admin=self.guid.referent.has_permission(contributor, ADMIN),

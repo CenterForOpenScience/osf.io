@@ -15,7 +15,7 @@ def get_email_template_context(resource, provider=None):
 
     is_preprint = provider.type == 'osf.preprintprovider'
     url_segment = 'preprints' if is_preprint else 'registries'
-    document_type = resource.provider.preprint_word if is_preprint else 'registration'
+    from osf.models import Registration
 
     base_context = {
         'domain': DOMAIN,
@@ -27,9 +27,9 @@ def get_email_template_context(resource, provider=None):
         'document_type': provider.preprint_word if is_preprint else 'registration'
     }
 
-    if document_type == 'registration':
+    if isinstance(resource, Registration):
         base_context['draft_registration'] = resource.draft_registration.get()
-    if document_type == 'registration' and resource.provider.brand:
+    if isinstance(resource, Registration) and resource.provider.brand:
         brand = resource.provider.brand
         base_context['logo_url'] = brand.hero_logo_image
         base_context['top_bar_color'] = brand.primary_color
