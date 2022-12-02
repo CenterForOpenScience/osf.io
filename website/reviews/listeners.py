@@ -76,6 +76,8 @@ def reviews_submit_notification_moderators(self, timestamp, context):
         )
     elif provider.type == 'osf.registrationprovider':
         context['reviews_submission_url'] = f'{DOMAIN}{resource._id}?mode=moderator'
+    elif provider.type == 'osf.collectionprovider':
+        context['reviews_submission_url'] = f'{DOMAIN}{resource._id}?mode=moderator'
     else:
         raise NotImplementedError(f'unsupported provider type {provider.type}')
 

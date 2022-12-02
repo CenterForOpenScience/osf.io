@@ -169,10 +169,9 @@ class TestModeratedCollectionSubmission:
             moderated_collection_submission.accept(user=moderator, comment='Test Comment')
             assert mock_send.called
         assert moderated_collection_submission.state == CollectionSubmissionStates.ACCEPTED
-
         assert_notification_correctness(
             mock_send,
-            mails.COLLECTION_SUBMISSION_ACCEPTED,
+            mails.COLLECTION_SUBMISSION_ACCEPTED(moderated_collection_submission.collection, node),
             {user.username for user in node.contributors.all()}
         )
 
@@ -199,7 +198,7 @@ class TestModeratedCollectionSubmission:
 
         assert_notification_correctness(
             mock_send,
-            mails.COLLECTION_SUBMISSION_REJECTED,
+            mails.COLLECTION_SUBMISSION_REJECTED(moderated_collection_submission.collection, node),
             {user.username for user in node.contributors.all()}
         )
 
@@ -232,7 +231,7 @@ class TestModeratedCollectionSubmission:
 
         assert_notification_correctness(
             mock_send,
-            mails.COLLECTION_SUBMISSION_REMOVED_MODERATOR,
+            mails.COLLECTION_SUBMISSION_REMOVED_MODERATOR(moderated_collection_submission.collection, node),
             {user.username for user in node.contributors.all()}
         )
 
@@ -248,7 +247,7 @@ class TestModeratedCollectionSubmission:
 
         assert_notification_correctness(
             mock_send,
-            mails.COLLECTION_SUBMISSION_REMOVED_ADMIN,
+            mails.COLLECTION_SUBMISSION_REMOVED_ADMIN(moderated_collection_submission.collection, node),
             {user.username for user in node.contributors.all()}
         )
 
@@ -318,7 +317,7 @@ class TestUnmoderatedCollectionSubmission:
 
         assert_notification_correctness(
             mock_send,
-            mails.COLLECTION_SUBMISSION_REMOVED_ADMIN,
+            mails.COLLECTION_SUBMISSION_REMOVED_ADMIN(unmoderated_collection_submission.collection, node),
             {user.username for user in node.contributors.all()}
         )
 

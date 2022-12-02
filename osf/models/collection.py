@@ -64,6 +64,12 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
         return '{self.title!r}, with guid {self._id!r}'.format(self=self)
 
     @property
+    def moderators(self):
+        if not self.provider:
+            return None
+        return self.provider.get_group('moderator').user_set.all()
+
+    @property
     def url(self):
         return '/{}/'.format(self._id)
 

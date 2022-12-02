@@ -7,7 +7,7 @@ from osf.utils.workflows import RegistrationModerationTriggers
 def get_email_template_context(resource):
     is_preprint = resource.provider.type == 'osf.preprintprovider'
     url_segment = 'preprints' if is_preprint else 'registries'
-    document_type = resource.provider.preprint_word if is_preprint else 'registration'
+    from osf.models import Registration
 
     base_context = {
         'domain': DOMAIN,
@@ -16,12 +16,12 @@ def get_email_template_context(resource):
         'provider_url': resource.provider.domain or f'{DOMAIN}{url_segment}/{resource.provider._id}',
         'provider_contact_email': resource.provider.email_contact or OSF_CONTACT_EMAIL,
         'provider_support_email': resource.provider.email_support or OSF_SUPPORT_EMAIL,
-        'document_type': document_type
+        'document_type': resource.provider.preprint_word if is_preprint else 'registration'
     }
 
-    if document_type == 'registration':
+    if isinstance(resource, Registration):
         base_context['draft_registration'] = resource.draft_registration.get()
-    if document_type == 'registration' and resource.provider.brand:
+    if isinstance(resource, Registration) and resource.provider.brand:
         brand = resource.provider.brand
         base_context['logo_url'] = brand.hero_logo_image
         base_context['top_bar_color'] = brand.primary_color
