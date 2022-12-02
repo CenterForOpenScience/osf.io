@@ -18,7 +18,7 @@
                 ${rejection_justification}
             </p>
         % else:
-            <a href="${node.absolute_url}">${node.title}</a> was rejected by <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.title}</a>.
+            <a href="${node.absolute_url}">${node.title}</a> was not accepted  by <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.title}</a>.
         % endif
     </p>
     <p>

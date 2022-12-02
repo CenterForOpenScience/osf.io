@@ -124,7 +124,8 @@ class TestImplicitRemoval:
             email1_args, email1_kwargs = email1
             email2_args, email2_kwargs = email2
             assert {email1_kwargs['node'].id, email2_kwargs['node'].id} == {collected_node.id}
-            assert {email1_kwargs['mail'], email2_kwargs['mail']} == {mails.COLLECTION_SUBMISSION_REMOVED_PRIVATE}
+            expected_mail = mails.COLLECTION_SUBMISSION_REMOVED_PRIVATE(associated_collections.last().collection, collected_node)
+            assert {email1_kwargs['mail'].tpl_prefix, email2_kwargs['mail'].tpl_prefix} == {expected_mail.tpl_prefix}
 
     def test_node_removed_from_collection_on_delete(self, collected_node, bookmark_collection, auth):
         associated_collections = collected_node.guids.first().collectionsubmission_set

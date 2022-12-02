@@ -246,4 +246,9 @@ def assert_notification_correctness(send_mail_mock, expected_template, expected_
         templates.add(call_kwargs['mail'])
 
     assert recipients == expected_recipients
-    assert templates == {expected_template}
+
+    try:
+        assert templates == {expected_template}
+    except AssertionError:  # the non-static subject attributes mean we need a different comparison
+        assert set([template.tpl_prefix for template in list(templates)]) == {expected_template.tpl_prefix}
+        assert set([template._subject for template in list(templates)]) == {expected_template._subject}

@@ -15,7 +15,7 @@
         % else:
             <a href="${remover.absolute_url}">${remover.fullname}</a> removed
             <a href="${node.absolute_url}">${node.title}</a> from <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.title}</a>.
-             If you wish to be associated with the collection, the admin will need to reapply to the collection again.
+             If you wish to be associated with the collection, an admin will need to reapply to the collection again.
         % endif
     </p>
     <p>
