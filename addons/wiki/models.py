@@ -113,7 +113,6 @@ class WikiVersionNodeManager(models.Manager):
 
 class WikiVersion(ObjectIDMixin, BaseModel):
     objects = WikiVersionNodeManager()
-    SPAM_CHECK_FIELDS = {'content'}
 
     user = models.ForeignKey('osf.OSFUser', null=True, blank=True, on_delete=models.CASCADE)
     wiki_page = models.ForeignKey('WikiPage', null=True, blank=True, on_delete=models.CASCADE, related_name='versions')
@@ -139,7 +138,7 @@ class WikiVersion(ObjectIDMixin, BaseModel):
             logger.warning('Returning unlinkified content.')
             return render_content(self.content, node=node)
 
-    def raw_text(self):
+    def raw_text(self, node):
         """ The raw text of the page, suitable for using in a test search"""
 
         return sanitize(self.content, tags=[], strip=True)
@@ -191,7 +190,7 @@ class WikiVersion(ObjectIDMixin, BaseModel):
         if user.is_hammy:
             return False
 
-        content = self._get_spam_content()
+        content = self._get_spam_content(node)
         if not content:
             return
         is_spam = node.do_check_spam(
@@ -208,9 +207,9 @@ class WikiVersion(ObjectIDMixin, BaseModel):
             node._check_spam_user(user)
         return is_spam
 
-    def _get_spam_content(self, *unused_args, **unused_kwargs):
+    def _get_spam_content(self, node):
         content = []
-        content.append(self.raw_text())
+        content.append(self.raw_text(node))
         if not content:
             return None
         return ' '.join(content)
