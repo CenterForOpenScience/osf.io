@@ -393,7 +393,7 @@
                         % for removed_submission in node['removed_submissions']:
                             <img src="${removed_submission['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
                             <div style="display: inline;">
-                                Removed from <a href="{removed_submission['url']}" >${removed_submission['collection'].title}</a>
+                                Removed from <a href="${removed_submission['url']}" >${removed_submission['collection'].title}</a>
                             </div>
                             <div style="padding-left: 30px;">
                                 <a class="comment-popover"
