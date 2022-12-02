@@ -4,19 +4,27 @@ from website.reviews import signals as reviews_signals
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL, OSF_CONTACT_EMAIL
 from osf.utils.workflows import RegistrationModerationTriggers
 
-def get_email_template_context(resource):
-    is_preprint = resource.provider.type == 'osf.preprintprovider'
+
+def get_email_template_context(resource, provider=None):
+    if resource.provider is None and provider is None:
+        raise NotImplementedError('Provider not specified')
+    elif provider is None and resource.provider:
+        provider = resource.provider
+    else:
+        raise NotImplementedError('Provider not specified')
+
+    is_preprint = provider.type == 'osf.preprintprovider'
     url_segment = 'preprints' if is_preprint else 'registries'
     document_type = resource.provider.preprint_word if is_preprint else 'registration'
 
     base_context = {
         'domain': DOMAIN,
         'reviewable': resource,
-        'workflow': resource.provider.reviews_workflow,
-        'provider_url': resource.provider.domain or f'{DOMAIN}{url_segment}/{resource.provider._id}',
-        'provider_contact_email': resource.provider.email_contact or OSF_CONTACT_EMAIL,
-        'provider_support_email': resource.provider.email_support or OSF_SUPPORT_EMAIL,
-        'document_type': document_type
+        'workflow': provider.reviews_workflow,
+        'provider_url': provider.domain or f'{DOMAIN}{url_segment}/{provider._id}',
+        'provider_contact_email': provider.email_contact or OSF_CONTACT_EMAIL,
+        'provider_support_email': provider.email_support or OSF_SUPPORT_EMAIL,
+        'document_type': provider.preprint_word if is_preprint else 'registration'
     }
 
     if document_type == 'registration':
@@ -29,8 +37,9 @@ def get_email_template_context(resource):
 
     return base_context
 
-def notify_submit(resource, user, *args, **kwargs):
-    context = get_email_template_context(resource)
+
+def notify_submit(resource, user, provider=None, *args, **kwargs):
+    context = get_email_template_context(resource, provider=provider)
     context['referrer'] = user
     recipients = list(resource.contributors)
     reviews_signals.reviews_email_submit.send(

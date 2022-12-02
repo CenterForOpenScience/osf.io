@@ -11,6 +11,7 @@ from osf.utils.permissions import ADMIN, READ
 from website.util import api_v2_url
 from website.search.exceptions import SearchUnavailableError
 from osf.utils.workflows import CollectionSubmissionsTriggers, CollectionSubmissionStates
+from osf.utils.notifications import notify_submit
 from website import mails, settings
 from osf.utils.machines import CollectionSubmissionMachine
 from django.db.models.signals import post_save
@@ -63,6 +64,14 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         self.machine_state = new_state.value
 
     def _notify_moderated_pending(self, event_data):
+        user = event_data.kwargs['user']
+
+        try:
+            notify_submit(self.guid.referent, user, provider=self.collection.provider)  # notifies moderators
+        except NotImplementedError as e:
+            # Skipping providerless collections
+            assert str(e) == 'Provider not specified'
+
         for contributor in self.guid.referent.contributors:
             mails.send_mail(
                 to_addr=contributor.username,
