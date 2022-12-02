@@ -150,9 +150,6 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         is_moderator = user.has_perm('withdraw_submissions', self.collection.provider)
         if not is_moderator and not is_admin:
             raise PermissionsError(f'{user} must have moderator or admin permissions.')
-        else:
-            if not is_admin:
-                raise PermissionsError(f'{user} must have moderator or admin permissions.')
 
     def _validate_unmoderated_remove(self, event_data):
         user = event_data.kwargs['user']
@@ -216,7 +213,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         else:
             raise NotImplementedError()
 
-    def _validate_resubmit(self, event_data):
+    def _validate_unmoderated_resubmit(self, event_data):
         user = event_data.kwargs['user']
         if user is None:
             raise PermissionsError(f'{user} must have admin permissions.')
@@ -225,7 +222,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         if not is_admin:
             raise PermissionsError(f'{user} must have admin permissions.')
 
-    def _validate_unmoderated_resubmit(self, event_data):
+    def _validate_moderated_resubmit(self, event_data):
         user = event_data.kwargs['user']
         if user is None:
             raise PermissionsError(f'{user} must have contributor permissions.')
