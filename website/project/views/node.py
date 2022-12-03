@@ -912,7 +912,7 @@ def serialize_collections(collection_submissions, auth):
         '_id': collection_submission._id,
         'issue': collection_submission.issue,
         'volume': collection_submission.volume,
-        'collection': collection_submission.collection,
+        'collection_title': collection_submission.collection.title,
         'study_design': collection_submission.study_design,
         'program_area': collection_submission.program_area,
         'subjects': list(collection_submission.subjects.values_list('text', flat=True)),
