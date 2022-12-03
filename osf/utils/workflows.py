@@ -386,7 +386,7 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'dest': CollectionSubmissionStates.ACCEPTED,
         'before': [],
         'after': [],
-        'unless': ['is_moderated', 'is_semi_moderated'],
+        'unless': ['is_moderated', 'is_hybrid_moderated'],
     },
     {
         'trigger': 'submit',
@@ -402,7 +402,7 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'dest': CollectionSubmissionStates.ACCEPTED,
         'before': [],
         'after': [],
-        'conditions': ['is_semi_moderated', 'is_collection_moderator_admin_owned'],
+        'conditions': ['is_hybrid_moderated', 'is_collection_moderator_admin_owned'],
     },
     {
         'trigger': 'submit',
@@ -410,7 +410,7 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'dest': CollectionSubmissionStates.PENDING,
         'before': [],
         'after': [],
-        'conditions': ['is_semi_moderated'],
+        'conditions': ['is_hybrid_moderated'],
         'unless': ['is_collection_moderator_admin_owned'],
     },
     {
@@ -427,7 +427,7 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'dest': CollectionSubmissionStates.ACCEPTED,
         'before': ['_validate_accept'],
         'after': ['_notify_moderated_accepted'],
-        'conditions': ['is_semi_moderated'],
+        'conditions': ['is_hybrid_moderated'],
     },
     {
         'trigger': 'reject',
@@ -443,7 +443,7 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'dest': CollectionSubmissionStates.REJECTED,
         'before': ['_validate_reject'],
         'after': ['_notify_moderated_rejected'],
-        'conditions': ['is_semi_moderated'],
+        'conditions': ['is_hybrid_moderated'],
     },
     {
         'trigger': 'remove',
@@ -451,7 +451,7 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'dest': CollectionSubmissionStates.REMOVED,
         'before': ['_validate_unmoderated_remove'],
         'after': ['_remove_from_search', '_notify_removed'],
-        'unless': ['is_semi_moderated', 'is_moderated'],
+        'unless': ['is_hybrid_moderated', 'is_moderated'],
     },
     {
         'trigger': 'remove',
@@ -459,7 +459,7 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'dest': CollectionSubmissionStates.REMOVED,
         'before': ['_validate_moderated_remove'],
         'after': ['_remove_from_search', '_notify_removed'],
-        'conditions': ['is_semi_moderated'],
+        'conditions': ['is_hybrid_moderated'],
     },
     {
         'trigger': 'remove',
@@ -473,25 +473,34 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'trigger': 'resubmit',
         'source': [CollectionSubmissionStates.REJECTED, CollectionSubmissionStates.REMOVED],
         'dest': CollectionSubmissionStates.ACCEPTED,
-        'before': ['_validate_unmoderated_resubmit'],
+        'before': ['_validate_resubmit'],
         'after': [],
-        'unless': ['is_moderated', 'is_semi_moderated'],
+        'unless': ['is_moderated', 'is_hybrid_moderated'],
     },
     {
         'trigger': 'resubmit',
         'source': [CollectionSubmissionStates.REJECTED, CollectionSubmissionStates.REMOVED],
         'dest': CollectionSubmissionStates.PENDING,
-        'before': ['_validate_moderated_resubmit'],
+        'before': ['_validate_resubmit'],
         'after': [],
         'conditions': ['is_moderated'],
     },
     {
         'trigger': 'resubmit',
         'source': [CollectionSubmissionStates.REJECTED, CollectionSubmissionStates.REMOVED],
-        'dest': CollectionSubmissionStates.PENDING,
-        'before': ['_validate_moderated_resubmit'],
+        'dest': CollectionSubmissionStates.ACCEPTED,
+        'before': [],
         'after': [],
-        'conditions': ['is_semi_moderated'],
+        'conditions': ['is_hybrid_moderated', 'is_collection_moderator_admin_owned'],
+    },
+    {
+        'trigger': 'resubmit',
+        'source': [CollectionSubmissionStates.REJECTED, CollectionSubmissionStates.REMOVED],
+        'dest': CollectionSubmissionStates.PENDING,
+        'before': ['_validate_resubmit'],
+        'after': [],
+        'conditions': ['is_hybrid_moderated'],
+        'unless': ['is_collection_moderator_admin_owned']
     },
 ]
 

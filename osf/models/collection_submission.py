@@ -7,8 +7,7 @@ from framework.exceptions import PermissionsError
 
 from osf.models.base import BaseModel
 from osf.models.mixins import TaxonomizableMixin
-from osf.utils.notifications import notify_submit
-from osf.utils.permissions import ADMIN, READ
+from osf.utils.permissions import ADMIN
 from website.util import api_v2_url
 from website.search.exceptions import SearchUnavailableError
 from osf.utils.workflows import CollectionSubmissionsTriggers, CollectionSubmissionStates
@@ -61,16 +60,17 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         return bool(self.collection.provider) and self.collection.provider.reviews_workflow == 'pre-moderation'
 
     @property
-    def is_semi_moderated(self):
-        return bool(self.collection.provider) and self.collection.provider.reviews_workflow == 'semi-moderation'
+    def is_hybrid_moderated(self):
+        return bool(self.collection.provider) and self.collection.provider.reviews_workflow == 'hybrid-moderation'
 
     @property
     def is_collection_moderator_admin_owned(self):
-        for contributor in self.guid.referent.contributors.all():
-            if contributor.has_perm('view_submissions', self.collection.provider):
-                return True
-            if contributor.has_perm('add_moderator', self.collection.provider):
-                return True
+        if self.guid.referent:
+            for contributor in self.guid.referent.contributors.all():
+                if contributor.has_perm('view_submissions', self.collection.provider):
+                    return True
+                if contributor.has_perm('add_moderator', self.collection.provider):
+                    return True
         return False
 
     @state.setter
@@ -248,7 +248,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         else:
             raise NotImplementedError()
 
-    def _validate_unmoderated_resubmit(self, event_data):
+    def _validate_resubmit(self, event_data):
         user = event_data.kwargs['user']
         if user is None:
             raise PermissionsError(f'{user} must have admin permissions.')
@@ -256,15 +256,6 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         is_admin = self.guid.referent.has_permission(user, ADMIN)
         if not is_admin:
             raise PermissionsError(f'{user} must have admin permissions.')
-
-    def _validate_moderated_resubmit(self, event_data):
-        user = event_data.kwargs['user']
-        if user is None:
-            raise PermissionsError(f'{user} must have contributor permissions.')
-
-        is_contributor = self.guid.referent.has_permission(user, READ)
-        if not is_contributor:
-            raise PermissionsError(f'{user} must have contributor permissions.')
 
     def _remove_from_search(self, event_data):
         self.remove_from_index()

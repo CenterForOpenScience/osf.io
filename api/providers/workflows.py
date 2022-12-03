@@ -10,7 +10,7 @@ class Workflows(ChoiceEnum):
     NONE = None
     PRE_MODERATION = 'pre-moderation'  # moderation before approval
     POST_MODERATION = 'post-moderation'  # moderation after approval
-    SEMI_MODERATION = 'semi-moderation'  # moderation after approval moderator/admin, moderation before for everyone else
+    HYBRID_MODERATION = 'hybrid-moderation'  # moderation after approval moderator/admin, moderation before for everyone else
 
 PUBLIC_STATES = {
     Workflows.NONE.value: (
