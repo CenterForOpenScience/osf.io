@@ -11,7 +11,6 @@
         % if is_admin:
             <a href="${node.absolute_url}">${node.title}</a> was removed from <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">
             .) If you wish to be associated with the collection, you will need to reapply to the collection again.
-            was removed by
         % else:
             <a href="${node.absolute_url}">${node.title}</a> was removed
             <a href="${remover.absolute_url}">${remover.fullname}</a> If you wish to be associated with the collection,
