@@ -92,6 +92,7 @@ def _send_reviews_moderator_emails(send_type):
                     'logo_url': provider.brand.hero_logo_image,
                     'top_bar_color': provider.brand.primary_color
                 }
+            withdrawals_url = ''
         else:
             provider_type = 'preprint'
             submissions_url = f'{settings.DOMAIN}reviews/preprints/{provider._id}',

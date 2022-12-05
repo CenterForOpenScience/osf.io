@@ -2420,11 +2420,19 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     continue
 
             if submission.state != CollectionSubmissionStates.REMOVED:
-                submission.remove(
-                    user=getattr(auth, 'user'),
-                    comment='Removed from collection due to implicit removal due to privacy',
-                    removed_due_to_privacy=True
-                )
+                user = getattr(auth, 'user', None)
+                if user:
+                    submission.remove(
+                        user=getattr(auth, 'user', None),
+                        comment='Removed from collection due to implicit removal due to privacy',
+                        removed_due_to_privacy=True
+                    )
+                else:
+                    submission.remove(
+                        user=None,
+                        comment='Removed from collection via system command.',
+                        force=True
+                    )
 
 
 class NodeUserObjectPermission(UserObjectPermissionBase):
