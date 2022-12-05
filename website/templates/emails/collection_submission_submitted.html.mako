@@ -10,12 +10,12 @@
         <p>
             % if is_initator:
                 You just started to a request to add <a href="${node.absolute_url}">${node.title}</a>
-                to <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.title}</a>. Each Admin  contributor will be notified via
+                to <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.title}</a>. Each admin and contributor will be notified via
                 email.
             % elif is_registered_contrib:
                  <a href="${submitter.absolute_url}">${submitter.fullname}</a> just included you in <a href="${node.absolute_url}">${node.title}</a> to a request to add
                   <a href="${node.absolute_url}">${node.title}</a> to
-                  <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.title}</a>. Each Admin  contributor will be notified via
+                  <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.title}</a>. Each admin and contributor will be notified via
                   email.
             % else:
                 <a href="${submitter.absolute_url}">${submitter.fullname}</a> included you in a request to add

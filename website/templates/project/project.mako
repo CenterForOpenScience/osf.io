@@ -327,7 +327,7 @@
                         <img src="${ node['collections'][0]['logo']}" style="display: inline; height: 25px; width: 25px; margin-left: 5px;"/>
                         <div style="display: inline; margin: 10px; margin-left: 0px;" >
                             % if len(node['collections']) - 1:
-                                Included in <a>${node['collections'][0]['title']}</a> and <a>${len(node['removed_submissions']) + len(node['rejected_submissions']) + len(node['collections']) - 1}</a> more
+                                Included in <a>${node['collections'][0]['title']}</a> and <a>${len(node['collections']) - 1}</a> more
                             % else:
                                 Included in <a>${node['collections'][0]['title']}</a>
                             % endif:
@@ -395,16 +395,18 @@
                             <div style="display: inline;">
                                 Removed from <a href="${removed_submission['url']}" >${removed_submission['collection_title']}</a>
                             </div>
-                            <div style="padding-left: 30px;">
-                                <a class="comment-popover"
-                                   data-toggle="popover"
-                                   data-placement="bottom"
-                                   data-content="${removed_submission['comment']}"
-                                >
-                                    See justification
-                                    <i class="fa fa-angle-down" /></i>
-                                </a>
-                            </div>
+                            % if user['is_admin']:
+                                <div style="padding-left: 30px;">
+                                    <a class="comment-popover"
+                                       data-toggle="popover"
+                                       data-placement="bottom"
+                                       data-content="${removed_submission['comment']}"
+                                    >
+                                        See justification
+                                        <i class="fa fa-angle-down" /></i>
+                                    </a>
+                                </div>
+                            % endif
                             <hr>
                         % endfor
                     % endif
