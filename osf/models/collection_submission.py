@@ -8,13 +8,10 @@ from framework.exceptions import PermissionsError
 from osf.models.base import BaseModel
 from osf.models.mixins import TaxonomizableMixin
 from osf.utils.permissions import ADMIN
-from website import settings
 from website.util import api_v2_url
 from website.search.exceptions import SearchUnavailableError
 from osf.utils.workflows import CollectionSubmissionsTriggers, CollectionSubmissionStates
 from website.filters import profile_image_url
-
-
 
 from website import mails, settings
 from osf.utils.machines import CollectionSubmissionMachine
@@ -99,8 +96,6 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
             )
 
     def _notify_moderators_pending(self, event_data):
-        user = event_data.kwargs['user']
-
         context = {
             'reviewable': self.guid.referent,
             'abstract_provider': self.collection.provider,
@@ -114,6 +109,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
             'message': f'submitted "{self.guid.referent.title}".',
             'allow_submissions': True,
         }
+
         from osf.models import NotificationSubscription
         provider_subscription, created = NotificationSubscription.objects.get_or_create(
             _id=f'{self.collection.provider._id}_new_pending_submissions',

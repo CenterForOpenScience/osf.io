@@ -7,10 +7,7 @@ import django_extensions.db.fields
 import osf.models.base
 import osf.utils.fields
 import osf.utils.workflows
-from osf.management.commands.collection_submission_machine_state_backfill import (
-    collection_submission_machine_state_backfill,
-    reverse_collection_submission_machine_state_backfill
-)
+
 
 class Migration(migrations.Migration):
 
