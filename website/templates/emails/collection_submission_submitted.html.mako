@@ -20,7 +20,7 @@
             % else:
                 <a href="${submitter.absolute_url}">${submitter.fullname}</a> included you in a request to add
                 <a href="${node.absolute_url}">${node.title}</a> to <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.title}</a>
-                <a href="${claim_url}">$Click here to claim account link</a>. After you set a password, you will be able to make
+                <a href="${claim_url}">Click here to claim account link</a>. After you set a password, you will be able to make
                 contributions to the project. You will also be able to easily access this and any other project or
                 component by going to your "My Projects" page. If you decide to not make an account, then it's <b>important
                 </b> that you save or bookmark this email.
