@@ -23,7 +23,9 @@
                             <p>
                             <a href="${reviews_submissions_url}">View all submissions</a>
                             <br>
-                            <a href="${reviews_withdrawal_url}"> View all withdrawal requests</a>
+                            % if reviews_withdrawal_url:
+                                <a href="${reviews_withdrawal_url}"> View all withdrawal requests</a>
+                            % endif
                         </h3>
                     </th>
                 </tr>
