@@ -1253,7 +1253,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
             self.is_public = False
             self.keenio_read_key = ''
-            self._remove_from_associated_collections(auth)
+            self._remove_from_associated_collections(auth, force=force)
         else:
             return False
 
@@ -2412,24 +2412,26 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         ).first() or osf_provider_tag
         contributor.add_system_tag(source_tag)
 
-    def _remove_from_associated_collections(self, auth=None):
+    def _remove_from_associated_collections(self, auth=None, force=False):
         for submission in self.guids.first().collectionsubmission_set.all():
             associated_collection = submission.collection
             if associated_collection.is_bookmark_collection and not self.deleted:
                 if self.contributors.filter(pk=associated_collection.creator.id).exists():
                     continue
 
-            if submission.state != CollectionSubmissionStates.REMOVED:
+            if submission.state not in [CollectionSubmissionStates.REMOVED, CollectionSubmissionStates.REJECTED]:
                 user = getattr(auth, 'user', None)
-                if user:
+
+                if not force:
                     submission.remove(
-                        user=getattr(auth, 'user', None),
+                        user=user,
                         comment='Removed from collection due to implicit removal due to privacy',
                         removed_due_to_privacy=True
                     )
                 else:
+                    request, user_id = get_request_and_user_id()
                     submission.remove(
-                        user=None,
+                        user=request.user,
                         comment='Removed from collection via system command.',
                         force=True
                     )
