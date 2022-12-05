@@ -89,7 +89,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                 is_admin=self.guid.referent.has_permission(contributor, ADMIN),
                 is_registered_contrib=contributor.is_registered,
                 collection=self.collection,
-                claim_url=contributor.unclaimed_records.get(self.guid.referent._id, None),
+                claim_url=contributor.get_claim_url(self.guid.referent._id),
                 node=self.guid.referent,
                 domain=settings.DOMAIN,
                 osf_contact_email=settings.OSF_CONTACT_EMAIL,

@@ -30,6 +30,7 @@ from website.util import api_v2_url
 from functools import reduce
 from osf.models.notifications import NotificationSubscription
 
+
 class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, DirtyFieldsMixin, BaseModel):
     class Meta:
         unique_together = ('_id', 'type')
