@@ -22,13 +22,14 @@ from osf.models.storage import ProviderAssetFile
 from osf.models.subject import Subject
 from osf.models.brand import Brand
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.utils.workflows import RegistrationModerationStates
+from osf.utils.workflows import RegistrationModerationStates, CollectionSubmissionStates
 from osf.utils.fields import EncryptedTextField
 from osf.utils.permissions import REVIEW_PERMISSIONS
 from website import settings
 from website.util import api_v2_url
 from functools import reduce
 from osf.models.notifications import NotificationSubscription
+
 
 class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, DirtyFieldsMixin, BaseModel):
     class Meta:
@@ -269,7 +270,10 @@ class CollectionProvider(AbstractProvider):
         if '_id' in saved_fields:
             from osf.models.collection import Collection
             if self.primary_collection:
-                Collection.bulk_update_search(self.primary_collection.collectionsubmission_set.all())
+                Collection.bulk_update_search(
+                    self.primary_collection.collectionsubmission_set.filter(machine_state=CollectionSubmissionStates.ACCEPTED),
+                    op='update',
+                )
         return ret
 
 
