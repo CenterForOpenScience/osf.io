@@ -31,7 +31,6 @@ from osf.models import SpamStatus
 from addons.wiki.models import WikiPage
 from osf.models import CollectionSubmission
 from osf.utils.sanitize import unescape_entities
-from osf.utils.workflows import CollectionSubmissionStates
 from website import settings
 from website.filters import profile_image_url
 from osf.models.licenses import serialize_node_license_record
@@ -584,11 +583,13 @@ def bulk_update_nodes(serialize, nodes, index=None, category=None):
     if actions:
         return helpers.bulk(client(), actions)
 
+
 def serialize_collection_submission_contributor(contrib):
     return {
         'fullname': contrib['user__fullname'],
         'url': '/{}/'.format(contrib['user__guids___id']) if contrib['user__is_active'] else None
     }
+
 
 def serialize_collection_submission(collection_submission):
     obj = collection_submission.guid.referent
