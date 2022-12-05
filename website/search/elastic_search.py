@@ -31,6 +31,7 @@ from osf.models import SpamStatus
 from addons.wiki.models import WikiPage
 from osf.models import CollectionSubmission
 from osf.utils.sanitize import unescape_entities
+from osf.utils.workflows import CollectionSubmissionStates
 from website import settings
 from website.filters import profile_image_url
 from osf.models.licenses import serialize_node_license_record
@@ -829,12 +830,21 @@ def update_collection_submission_async(self, collection_submission_id, collectio
         qs = qs.filter(collection_id=collection_id)
 
     for collection_submission in qs:
-        if op != 'delete' and \
-            ((hasattr(collection_submission.guid.referent, 'is_public') and not collection_submission.guid.referent.is_public) or
-                (hasattr(collection_submission.guid.referent, 'is_deleted') and collection_submission.guid.referent.is_deleted)):
-            logger.exception('May only delete search index of private or deleted object')
-            return
-
+        if op == 'update':
+            if not collection_submission.guid.referent.is_public:
+                continue
+            if collection_submission.guid.referent.deleted:
+                continue
+            if collection_submission.state in [
+                CollectionSubmissionStates.REMOVED,
+                CollectionSubmissionStates.REJECTED
+            ]:
+                continue
+        elif op == 'delete':
+            if collection_submission.state != CollectionSubmissionStates.ACCEPTED:
+                continue
+        else:
+            raise NotImplementedError()
         try:
             update_collection_submission(collection_submission, op=op, index=index)
         except Exception as exc:
