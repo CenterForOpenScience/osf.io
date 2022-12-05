@@ -498,6 +498,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return self.collecting_metadata_qs.exists()
 
     @property
+    def collection_submissions(self):
+        return CollectionSubmission.objects.filter(
+            guid=self.guids.first(),
+            collection__provider__isnull=False,
+            collection__deleted__isnull=True,
+            collection__is_bookmark_collection=False,
+        )
+
+    @property
     def collecting_metadata_qs(self):
         return CollectionSubmission.objects.filter(
             guid=self.guids.first(),
@@ -732,7 +741,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         try:
             search.search.update_node(self, bulk=False, async_update=True)
-            if self.is_collected and self.is_public:
+            if self.collection_submissions.exists() and self.is_public:
                 search.search.update_collected_metadata(self._id)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
@@ -2428,11 +2437,18 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                         comment='Removed from collection due to implicit removal due to privacy',
                         removed_due_to_privacy=True
                     )
-                else:
+                elif submission.state == CollectionSubmissionStates.PENDING:
+                    request, user_id = get_request_and_user_id()
+                    submission.reject(
+                        user=request.user,
+                        comment='Rejected from collection via system command.',
+                        force=True
+                    )
+                elif submission.state == CollectionSubmissionStates.ACCEPTED:
                     request, user_id = get_request_and_user_id()
                     submission.remove(
                         user=request.user,
-                        comment='Removed from collection via system command.',
+                        comment='Rejected from collection via system command.',
                         force=True
                     )
 

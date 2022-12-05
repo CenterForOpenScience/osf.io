@@ -168,6 +168,10 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
             )
 
     def _validate_reject(self, event_data):
+        force = event_data.kwargs.get('force')  # spam only please
+        if force:
+            return
+
         user = event_data.kwargs['user']
         if user is None:
             raise PermissionsError(f'{user} must have moderator permissions.')
