@@ -823,10 +823,6 @@ def update_collection_submission_async(self, collection_submission_id, collectio
         collection__provider__isnull=False,
         collection__deleted__isnull=True,
         collection__is_bookmark_collection=False,
-    ).exclude(
-        machine_state=CollectionSubmissionStates.REMOVED
-    ).exclude(
-        machine_state=CollectionSubmissionStates.REJECTED
     )
     if collection_id:
         qs = qs.filter(collection_id=collection_id)

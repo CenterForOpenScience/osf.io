@@ -44,5 +44,4 @@ class Migration(migrations.Migration):
             },
             bases=(models.Model, osf.models.base.QuerySetExplainMixin),
         ),
-        migrations.RunPython(collection_submission_machine_state_backfill, reverse_collection_submission_machine_state_backfill)
     ]
