@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-DOMAIN_REGEX = re.compile(r'\W*(?P<protocol>\w+://)?(?P<www>www\.)?(?P<domain>([\w-]+\.)+\w+)(?P<path>/\w*)?\W*')
+DOMAIN_REGEX = re.compile(r'\W*(?P<protocol>\w+://)?(?P<www>www\.)?(?P<domain>([\w-]+\.)+\w+)(?P<path>[/\-\.\w]*)?\W*')
 REDIRECT_CODES = {301, 302, 303, 307, 308}
 
 @celery_app.task()
@@ -58,12 +58,8 @@ def _extract_domains(content):
         if not domain or domain in extracted_domains:
             continue
 
-        protocol = match.group('protocol') or 'https://'
-        www = match.group('www') or ''
-        constructed_url = f'{protocol}{www}{domain}'
-
         try:
-            response = requests.head(constructed_url)
+            response = requests.head(match.group())
         except (requests.exceptions.ConnectionError, requests.exceptions.InvalidURL):
             continue
         except requests.exceptions.RequestException:

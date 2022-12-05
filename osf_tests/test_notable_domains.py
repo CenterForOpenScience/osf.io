@@ -109,6 +109,17 @@ class TestDomainExtraction:
             domains = list(spam_tasks._extract_domains(sample_text))
         assert domains == ['redirect.me']
 
+    def test_extract_domains__redirect_with_full_url(self):
+        mock_response = SimpleNamespace()
+        mock_response.status_code = 301
+        mock_response.headers = {'location': 'osf.io'}
+        target_url = 'redirect.me/this-is-a-path/another-level-path/index.php'
+        sample_text = target_url
+        with mock.patch.object(spam_tasks.requests, 'head', return_value=mock_response) as mock_object:
+            domains = list(spam_tasks._extract_domains(sample_text))
+            mock_object.assert_called_once_with(target_url)
+        assert domains == ['osf.io']
+
     def test_extract_domains__deduplicates(self):
         sample_text = 'osf.io osf.io osf.io and, oh, yeah, osf.io'
         with mock.patch.object(spam_tasks.requests, 'head'):
