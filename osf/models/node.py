@@ -2437,11 +2437,18 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                         comment='Removed from collection due to implicit removal due to privacy',
                         removed_due_to_privacy=True
                     )
-                else:
+                elif submission.state == CollectionSubmissionStates.PENDING:
+                    request, user_id = get_request_and_user_id()
+                    submission.reject(
+                        user=request.user,
+                        comment='Rejected from collection via system command.',
+                        force=True
+                    )
+                elif submission.state == CollectionSubmissionStates.ACCEPTED:
                     request, user_id = get_request_and_user_id()
                     submission.remove(
                         user=request.user,
-                        comment='Removed from collection via system command.',
+                        comment='Rejected from collection via system command.',
                         force=True
                     )
 
