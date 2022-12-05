@@ -80,6 +80,12 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
 
     def _notify_contributors_pending(self, event_data):
         for contributor in self.guid.referent.contributors:
+            try:
+                claim_url = contributor.get_claim_url(self.guid.referent._id)
+            except ValueError as e:
+                assert str(e) == f'No unclaimed record for user {contributor._id} on node {self.guid.referent._id}'
+                claim_url = None
+
             mails.send_mail(
                 to_addr=contributor.username,
                 mail=mails.COLLECTION_SUBMISSION_SUBMITTED(self.creator, self.guid.referent),
@@ -89,7 +95,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                 is_admin=self.guid.referent.has_permission(contributor, ADMIN),
                 is_registered_contrib=contributor.is_registered,
                 collection=self.collection,
-                claim_url=contributor.get_claim_url(self.guid.referent._id),
+                claim_url=claim_url,
                 node=self.guid.referent,
                 domain=settings.DOMAIN,
                 osf_contact_email=settings.OSF_CONTACT_EMAIL,
