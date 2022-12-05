@@ -5,7 +5,7 @@ from rest_framework.exceptions import ValidationError
 from api.actions.serializers import ReviewableCountsRelationshipField
 from api.base.utils import absolute_reverse, get_user_auth
 from api.base.serializers import JSONAPISerializer, IDField, LinksField, RelationshipField, ShowIfVersion, TypeField, TypedRelationshipField
-from api.nodes.serializers import RegistrationProviderRelationshipField
+from api.nodes.serializers import RegistrationProviderRelationshipField, CollectionProviderRelationshipField
 from api.preprints.serializers import PreprintProviderRelationshipField
 from api.providers.workflows import Workflows
 from api.base.metrics import MetricsSerializerMixin
@@ -391,7 +391,7 @@ class RegistrationModeratorSerializer(ModeratorSerializer):
 
 class CollectionsModeratorSerializer(ModeratorSerializer):
 
-    provider = RegistrationProviderRelationshipField(
+    provider = CollectionProviderRelationshipField(
         related_view='providers:collection-providers:collection-provider-detail',
         related_view_kwargs={'provider_id': 'get_provider'},
         read_only=True,

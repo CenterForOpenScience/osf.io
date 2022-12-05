@@ -38,7 +38,7 @@ from osf.models import (
     Comment, DraftRegistration, ExternalAccount, Institution,
     RegistrationSchema, AbstractNode, PrivateLink, Preprint,
     RegistrationProvider, OSFGroup, NodeLicense, DraftNode,
-    Registration, Node,
+    Registration, Node, CollectionProvider
 )
 from website.project import new_private_link
 from website.project.model import NodeUpdateError
@@ -52,6 +52,16 @@ class RegistrationProviderRelationshipField(RelationshipField):
     def to_internal_value(self, data):
         provider = self.get_object(data)
         return {'provider': provider}
+
+
+class CollectionProviderRelationshipField(RelationshipField):
+    def get_object(self, _id):
+        return CollectionProvider.load(_id)
+
+    def to_internal_value(self, data):
+        provider = self.get_object(data)
+        return {'provider': provider}
+
 
 def get_institutions_to_add_remove(institutions, new_institutions):
     diff = relationship_diff(
