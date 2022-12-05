@@ -68,7 +68,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
     def is_collection_moderator_admin_owned(self):
         if self.guid.referent:
             for contributor in self.guid.referent.contributors.all():
-                if contributor.has_perm('view_submissions', self.collection.provider):
+                if contributor in self.collection.moderators:
                     return True
                 if contributor.has_perm('add_moderator', self.collection.provider):
                     return True
@@ -149,7 +149,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         if user is None:
             raise PermissionsError(f'{user} must have moderator permissions.')
 
-        is_moderator = user.has_perm('accept_submissions', self.collection.provider)
+        is_moderator = user in self.collection.moderators
         if not is_moderator:
             raise PermissionsError(f'{user} must have moderator permissions.')
 
@@ -176,7 +176,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         if user is None:
             raise PermissionsError(f'{user} must have moderator permissions.')
 
-        is_moderator = user.has_perm('reject_submissions', self.collection.provider)
+        is_moderator = user in self.collection.moderators
         if not is_moderator:
             raise PermissionsError(f'{user} must have moderator permissions.')
 
@@ -203,8 +203,9 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
             raise PermissionsError(f'{user} must have moderator or admin permissions.')
 
         is_admin = self.guid.referent.has_permission(user, ADMIN)
-        is_moderator = user.has_perm('withdraw_submissions', self.collection.provider)
-        if not is_moderator and not is_admin:
+        is_moderator = user in self.collection.moderators
+        is_collections_admin = user in self.collection.admins
+        if not is_moderator and not is_admin and not is_collections_admin:
             raise PermissionsError(f'{user} must have moderator or admin permissions.')
 
     def _validate_unmoderated_remove(self, event_data):
@@ -227,8 +228,9 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
 
         user = event_data.kwargs['user']
         removed_due_to_privacy = event_data.kwargs.get('removed_due_to_privacy')
-        is_moderator = user.has_perm('withdraw_submissions', self.collection.provider)
+        is_moderator = user in self.collection.moderators
         is_admin = self.guid.referent.has_permission(user, ADMIN)
+        is_collections_admin = user in self.collection.admins
         if removed_due_to_privacy:
             if self.is_moderated:
                 for moderator in self.collection.moderators:
@@ -255,7 +257,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                     domain=settings.DOMAIN,
                     osf_contact_email=settings.OSF_CONTACT_EMAIL,
                 )
-        elif is_moderator:
+        elif is_moderator or is_collections_admin:
             for contributor in self.guid.referent.contributors:
                 mails.send_mail(
                     to_addr=contributor.username,
