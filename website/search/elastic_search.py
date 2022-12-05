@@ -837,14 +837,10 @@ def update_collection_submission_async(self, collection_submission_id, collectio
                 continue
             if collection_submission.state in [
                 CollectionSubmissionStates.REMOVED,
-                CollectionSubmissionStates.REJECTED
+                CollectionSubmissionStates.REJECTED,
+                CollectionSubmissionStates.PENDING
             ]:
                 continue
-        elif op == 'delete':
-            if collection_submission.state != CollectionSubmissionStates.ACCEPTED:
-                continue
-        else:
-            raise NotImplementedError()
         try:
             update_collection_submission(collection_submission, op=op, index=index)
         except Exception as exc:
