@@ -16,7 +16,8 @@ from api_tests.utils import UserRoles
 from website.mails import mails
 from osf_tests.utils import assert_notification_correctness
 from osf.models.collection_submission import mails as collection_submission_mail
-
+from osf.management.commands.populate_collection_provider_notification_subscriptions import populate_collection_provider_notification_subscriptions
+from django.utils import timezone
 
 @pytest.fixture
 def user():
@@ -27,6 +28,8 @@ def user():
 def moderated_collection_provider():
     collection_provider = CollectionProviderFactory()
     collection_provider.reviews_workflow = 'pre-moderation'
+    moderator = AuthUserFactory()
+    collection_provider.get_group('moderator').user_set.add(moderator)
     collection_provider.update_group_permissions()
     collection_provider.save()
     return collection_provider
@@ -45,6 +48,8 @@ def unmoderated_collection_provider():
 def hybrid_moderated_collection_provider():
     collection_provider = CollectionProviderFactory()
     collection_provider.reviews_workflow = 'hybrid-moderation'
+    moderator = AuthUserFactory()
+    collection_provider.get_group('moderator').user_set.add(moderator)
     collection_provider.update_group_permissions()
     collection_provider.save()
     return collection_provider
@@ -53,7 +58,6 @@ def hybrid_moderated_collection_provider():
 @pytest.fixture()
 def node(moderated_collection_provider):
     node = NodeFactory(is_public=True)
-    node.provider = moderated_collection_provider
     node.save()
     return node
 
@@ -145,9 +149,60 @@ def configure_test_auth(node, user_role, provider=None):
 @pytest.mark.django_db
 class TestModeratedCollectionSubmission:
 
+    MOCK_NOW = timezone.now()
+
+    @pytest.yield_fixture(autouse=True)
+    def setup(self):
+        populate_collection_provider_notification_subscriptions()
+        with mock.patch('osf.utils.machines.timezone.now', return_value=self.MOCK_NOW):
+            yield
+
     def test_submit(self, moderated_collection_submission):
         # .submit on post_save
         assert moderated_collection_submission.state == CollectionSubmissionStates.PENDING
+
+    def test_notify_contributors_pending(self, node, moderated_collection):
+        send_mail = mails.send_mail
+        with mock.patch.object(collection_submission_mail, 'send_mail') as mock_send:
+            mock_send.side_effect = send_mail  # implicitly test rendering
+            collection_submission = CollectionSubmission(
+                guid=node.guids.first(),
+                collection=moderated_collection,
+                creator=node.creator,
+            )
+            collection_submission.save()
+            assert mock_send.called
+        assert collection_submission.state == CollectionSubmissionStates.PENDING
+        assert_notification_correctness(
+            mock_send,
+            mails.COLLECTION_SUBMISSION_SUBMITTED(collection_submission.creator, node),
+            {user.username for user in node.contributors.all()}
+        )
+
+    def test_notify_moderators_pending(self, node, moderated_collection):
+        from website.notifications import emails
+        store_emails = emails.store_emails
+        with mock.patch('website.notifications.emails.store_emails') as mock_store_emails:
+            mock_store_emails.side_effect = store_emails  # implicitly test rendering
+            collection_submission = CollectionSubmission(
+                guid=node.guids.first(),
+                collection=moderated_collection,
+                creator=node.creator,
+            )
+            populate_collection_provider_notification_subscriptions()
+            collection_submission.save()
+            assert mock_store_emails.called
+        assert collection_submission.state == CollectionSubmissionStates.PENDING
+        email_call = mock_store_emails.call_args_list[0][0]
+        moderator = moderated_collection.moderators.get()
+        assert email_call == (
+            [moderator._id],
+            'email_transactional',
+            'new_pending_submissions',
+            collection_submission.creator,
+            node,
+            self.MOCK_NOW,
+        )
 
     @pytest.mark.parametrize('user_role', [UserRoles.UNAUTHENTICATED, UserRoles.NONCONTRIB])
     def test_accept_fails(self, user_role, moderated_collection_submission):

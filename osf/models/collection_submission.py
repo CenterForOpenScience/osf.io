@@ -8,15 +8,19 @@ from framework.exceptions import PermissionsError
 from osf.models.base import BaseModel
 from osf.models.mixins import TaxonomizableMixin
 from osf.utils.permissions import ADMIN
+from website import settings
 from website.util import api_v2_url
 from website.search.exceptions import SearchUnavailableError
 from osf.utils.workflows import CollectionSubmissionsTriggers, CollectionSubmissionStates
-from osf.utils.notifications import notify_submit
+from website.filters import profile_image_url
+
+
+
 from website import mails, settings
 from osf.utils.machines import CollectionSubmissionMachine
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -77,15 +81,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
     def state(self, new_state):
         self.machine_state = new_state.value
 
-    def _notify_moderated_pending(self, event_data):
-        user = event_data.kwargs['user']
-
-        try:
-            notify_submit(self.guid.referent, user, provider=self.collection.provider)  # notifies moderators
-        except NotImplementedError as e:
-            # Skipping providerless collections
-            assert str(e) == 'Provider not specified'
-
+    def _notify_contributors_pending(self, event_data):
         for contributor in self.guid.referent.contributors:
             mails.send_mail(
                 to_addr=contributor.username,
@@ -100,6 +96,50 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                 node=self.guid.referent,
                 domain=settings.DOMAIN,
                 osf_contact_email=settings.OSF_CONTACT_EMAIL,
+            )
+
+    def _notify_moderators_pending(self, event_data):
+        user = event_data.kwargs['user']
+
+        context = {
+            'reviewable': self.guid.referent,
+            'abstract_provider': self.collection.provider,
+            'reviews_submission_url': f'{settings.DOMAIN}{self.guid.referent._id}?mode=moderator',
+            'profile_image_url': profile_image_url(
+                settings.PROFILE_IMAGE_PROVIDER,
+                self.creator,
+                use_ssl=True,
+                size=settings.PROFILE_IMAGE_MEDIUM
+            ),
+            'message': f'submitted "{self.guid.referent.title}".',
+            'allow_submissions': True,
+        }
+        from osf.models import NotificationSubscription
+        provider_subscription, created = NotificationSubscription.objects.get_or_create(
+            _id=f'{self.collection.provider._id}_new_pending_submissions',
+            provider=self.collection.provider
+        )
+        recipients_per_subscription_type = {
+            'email_transactional': list(
+                provider_subscription.email_transactional.all().values_list('guids___id', flat=True)
+            ),
+            'email_digest': list(
+                provider_subscription.email_digest.all().values_list('guids___id', flat=True)
+            )
+        }
+        for subscription_type, recipient_ids in recipients_per_subscription_type.items():
+            if not recipient_ids:
+                continue
+            from website.notifications.emails import store_emails
+
+            store_emails(
+                recipient_ids,
+                subscription_type,
+                'new_pending_submissions',
+                self.creator,
+                self.guid.referent,
+                timezone.now(),
+                **context
             )
 
     def _validate_accept(self, event_data):
@@ -222,18 +262,6 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                     osf_contact_email=settings.OSF_CONTACT_EMAIL,
                 )
         elif is_admin:
-            if self.is_moderated:
-                for moderator in self.collection.moderators:
-                    mails.send_mail(
-                        to_addr=moderator.username,
-                        mail=mails.COLLECTION_SUBMISSION_REMOVED_ADMIN(self.collection, self.guid.referent),
-                        user=moderator,
-                        remover=event_data.kwargs['user'],
-                        is_admin=self.guid.referent.has_permission(moderator, ADMIN),
-                        collection=self.collection,
-                        node=self.guid.referent,
-                        osf_contact_email=settings.OSF_CONTACT_EMAIL,
-                    )
             for contributor in self.guid.referent.contributors:
                 mails.send_mail(
                     to_addr=contributor.username,
