@@ -81,7 +81,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
     def _notify_contributors_pending(self, event_data):
         for contributor in self.guid.referent.contributors:
             try:
-                claim_url = contributor.get_claim_url(self.guid.referent._id)
+                claim_url = f'{settings.DOMAIN}/{contributor.get_claim_url(self.guid.referent._id)}'
             except ValueError as e:
                 assert str(e) == f'No unclaimed record for user {contributor._id} on node {self.guid.referent._id}'
                 claim_url = None
