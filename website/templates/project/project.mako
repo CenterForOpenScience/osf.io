@@ -340,6 +340,10 @@
                                     Pending entry into <a>${node['collections'][0]['collection_title']}</a>
                                 % endif:
                                 </div>
+                            % else:
+                                <div style="display: inline; margin: 10px; margin-left: 0px;" >
+                                    <i>See Collection History</i>
+                                </div>
                             % endif:
                         % endif:
                     </div>
@@ -376,7 +380,6 @@
                                     Type: <i>${collection['type']}</i>
                                 </div>
                             % endif
-
                             <hr>
                         % endfor
                         % if user['is_contributor_or_group_member']:
