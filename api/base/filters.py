@@ -54,15 +54,16 @@ class OSFOrderingFilter(OrderingFilter):
         sorted_list = queryset.copy()
         sort = request.query_params.get('sort')
         reverse = False
-        if sort.startswith('-'):
-            sort = sort.lstrip('-')
-            reverse = True
+        if sort:
+            if sort.startswith('-'):
+                sort = sort.lstrip('-')
+                reverse = True
 
-        try:
-            source = view.get_serializer_class()._declared_fields[sort].source
-            sorted_list['results'] = sorted(queryset['results'], key=lambda item: item['_source'][source], reverse=reverse)
-        except KeyError:
-            pass
+            try:
+                source = view.get_serializer_class()._declared_fields[sort].source
+                sorted_list['results'] = sorted(queryset['results'], key=lambda item: item['_source'][source], reverse=reverse)
+            except KeyError:
+                pass
 
         return sorted_list
 
