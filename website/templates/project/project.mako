@@ -317,7 +317,7 @@
     <%include file="include/comment_pane_template.mako"/>
 % endif
 
-% if node['collections'] or ((node['rejected_submissions'] or node['removed_submissions']) and user['is_contributor_or_group_member']):
+% if [collection for collection in node['collections'] if collection['state'] == 'accepted'] or (([collection for collection in node['collections'] if collection['state'] == 'pending'] or node['rejected_submissions'] or node['removed_submissions']) and user['is_contributor_or_group_member']):
     <div class="row">
         <div class="collections-container col-12">
             <div class="collections-box" style="font-size: 15px;">
@@ -332,7 +332,7 @@
                                     % else:
                                         Included in <a>${node['collections'][0]['collection_title']}</a>
                                     % endif:
-                                % else if node['collections'][0]['state'] == 'pending':
+                                % elif node['collections'][0]['state'] == 'pending' and user['is_contributor_or_group_member']:
                                     % if len(node['collections']) - 1:
                                         Pending in <a>${node['collections'][0]['collection_title']}</a> and <a>${len(node['collections']) - 1}</a> more
                                     % else:
@@ -361,7 +361,7 @@
                                 <div style="display: inline;">
                                     Included in <a href="${collection['url']}" >${collection['title']}</a>
                                 </div>
-                            % elif collection['state'] == 'pending'
+                            % elif collection['state'] == 'pending' and user['is_contributor_or_group_member']:
                                 <div style="display: inline;">
                                     Pending in <a href="${collection['url']}" >${collection['title']}</a>
                                 </div>
