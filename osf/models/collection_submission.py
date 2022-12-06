@@ -228,9 +228,9 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
 
         user = event_data.kwargs['user']
         removed_due_to_privacy = event_data.kwargs.get('removed_due_to_privacy')
-        is_moderator = user in self.collection.moderators
+        is_moderator = user in [] or self.collection.moderators
         is_admin = self.guid.referent.has_permission(user, ADMIN)
-        is_collections_admin = user in self.collection.admins
+        is_collections_admin = user in [] or self.collection.admins
         if removed_due_to_privacy:
             if self.is_moderated:
                 for moderator in self.collection.moderators:

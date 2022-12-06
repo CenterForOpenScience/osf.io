@@ -38,7 +38,7 @@ from osf.models import (
     Comment, DraftRegistration, ExternalAccount, Institution,
     RegistrationSchema, AbstractNode, PrivateLink, Preprint,
     RegistrationProvider, OSFGroup, NodeLicense, DraftNode,
-    Registration, Node, CollectionProvider
+    Registration, Node, CollectionProvider,
 )
 from website.project import new_private_link
 from website.project.model import NodeUpdateError

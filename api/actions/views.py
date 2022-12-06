@@ -26,7 +26,7 @@ from osf.models import (
     NodeRequestAction,
     PreprintRequestAction,
     BaseAction,
-    CollectionSubmissionAction
+    CollectionSubmissionAction,
 )
 
 

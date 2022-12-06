@@ -152,7 +152,7 @@ class OnlyAdminCanCreateDestroyCollectionSubmissionAction(permissions.BasePermis
             if collection_submission.guid.referent.has_permission(auth.user, ADMIN) or is_moderator or is_collections_admin:
                 return True
             else:
-                raise PermissionsError("User must be a project admin or collection moderator.")
+                raise PermissionsError('User must be a project admin or collection moderator.')
         else:
             raise MethodNotAllowed(request.method)
 
