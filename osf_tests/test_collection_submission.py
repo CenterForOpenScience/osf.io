@@ -344,7 +344,7 @@ class TestUnmoderatedCollectionSubmission:
             unmoderated_collection_submission.reject(user=user, comment='Test Comment')
         assert unmoderated_collection_submission.state == CollectionSubmissionStates.ACCEPTED
 
-    @pytest.mark.parametrize('user_role', UserRoles.excluding(UserRoles.ADMIN_USER))
+    @pytest.mark.parametrize('user_role', UserRoles.excluding(*[UserRoles.ADMIN_USER, UserRoles.MODERATOR]))
     def test_remove_fails(self, node, user_role, unmoderated_collection_submission):
         user = configure_test_auth(node, user_role)
         unmoderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.ACCEPTED)
@@ -353,8 +353,9 @@ class TestUnmoderatedCollectionSubmission:
             unmoderated_collection_submission.remove(user=user, comment='Test Comment')
         assert unmoderated_collection_submission.state == CollectionSubmissionStates.ACCEPTED
 
-    def test_remove_success(self, node, unmoderated_collection_submission):
-        user = configure_test_auth(node, UserRoles.ADMIN_USER)
+    @pytest.mark.parametrize('user_role', [UserRoles.ADMIN_USER, UserRoles.MODERATOR])
+    def test_remove_success(self, user_role, node, unmoderated_collection_submission):
+        user = configure_test_auth(node, user_role)
         unmoderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.ACCEPTED)
         unmoderated_collection_submission.save()
         unmoderated_collection_submission.remove(user=user, comment='Test Comment')

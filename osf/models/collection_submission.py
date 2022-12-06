@@ -218,7 +218,9 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
             raise PermissionsError(f'{user} must have moderator or admin permissions.')
 
         is_admin = self.guid.referent.has_permission(user, ADMIN)
-        if not is_admin:
+        is_moderator = user in self.collection.moderators
+        is_collections_admin = user in self.collection.admins
+        if not is_moderator and not is_admin and not is_collections_admin:
             raise PermissionsError(f'{user} must have moderator or admin permissions.')
 
     def _notify_removed(self, event_data):
