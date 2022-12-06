@@ -296,6 +296,7 @@ function SingleElementField(formField, clearField, question, defaultValue, optio
   self.clearField = null;
 
   self.createFormGroup = function(input, errorContainer) {
+    const header = $('<div></div>');
     const label = $('<label></label>').text(self.getDisplayText());
     if (question.required) {
       label.append($('<span></span>')
@@ -303,8 +304,14 @@ function SingleElementField(formField, clearField, question, defaultValue, optio
         .css('font-weight', 'bold')
         .text('*'));
     }
+    header.append(label);
+    if (clearField) {
+      self.clearField = clearField.create();
+      self.clearField.element.css('float', 'right');
+      header.append(self.clearField.element);
+    }
     const group = $('<div></div>').addClass('form-group')
-      .append(label);
+      .append(header);
     if (self.help) {
       let isDisplayedHelp = false;
       const helpLink = $('<a></a>')
@@ -361,12 +368,7 @@ function SingleElementField(formField, clearField, question, defaultValue, optio
   self.addElementTo = function(parent, errorContainer) {
     const input = formField.create(
       function(child) {
-        const group = self.createFormGroup(child, errorContainer);
-        if (clearField) {
-          self.clearField = clearField.create();
-          group.append(self.clearField.element);
-        }
-        parent.append(group);
+        parent.append(self.createFormGroup(child, errorContainer));
       },
       callback
     );
