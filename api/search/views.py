@@ -664,6 +664,8 @@ class SearchCollections(BaseSearchView):
             'collectedType',
             'contributors.fullname',
             'status',
+            'created',
+            'modified',
             'subjects',
             'provider',
             'title',
