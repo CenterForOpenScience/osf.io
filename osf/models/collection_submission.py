@@ -193,7 +193,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                 osf_contact_email=settings.OSF_CONTACT_EMAIL,
             )
 
-    def _validate_moderated_remove(self, event_data):
+    def _validate_remove(self, event_data):
         user = event_data.kwargs['user']
         force = event_data.kwargs.get('force')
         if force:
@@ -205,19 +205,6 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         is_admin = self.guid.referent.has_permission(user, ADMIN)
         is_moderator = user.has_perm('withdraw_submissions', self.collection.provider)
         if not is_moderator and not is_admin:
-            raise PermissionsError(f'{user} must have moderator or admin permissions.')
-
-    def _validate_unmoderated_remove(self, event_data):
-        user = event_data.kwargs['user']
-        force = event_data.kwargs.get('force')
-        if force:
-            return
-
-        if user is None:
-            raise PermissionsError(f'{user} must have moderator or admin permissions.')
-
-        is_admin = self.guid.referent.has_permission(user, ADMIN)
-        if not is_admin:
             raise PermissionsError(f'{user} must have moderator or admin permissions.')
 
     def _notify_removed(self, event_data):
