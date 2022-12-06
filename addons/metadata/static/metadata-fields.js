@@ -251,6 +251,12 @@ function createFormElement(createHandler, options) {
         input.val(value);
       }
     },
+    reset: function(input) {
+      input.val(null);
+    },
+    disable: function(input, disabled) {
+      input.attr('disabled', disabled);
+    },
   };
 }
 
@@ -308,6 +314,14 @@ function SingleElementField(formField, clearField, question, defaultValue, optio
     if (clearField) {
       self.clearField = clearField.create();
       self.clearField.element.css('float', 'right');
+      self.clearField.element.on('change', function() {
+        if (self.clearField.checked()) {
+          self.formField.reset(input);
+          self.formField.disable(input, true);
+        } else {
+          self.formField.disable(input, false);
+        }
+      });
       header.append(self.clearField.element);
     }
     const group = $('<div></div>').addClass('form-group')
@@ -492,6 +506,12 @@ function createFileCapacityFieldElement(createHandler, options) {
     setValue: function(container, value) {
       container.find('input').val(value);
     },
+    reset: function(container) {
+      container.find('input').val(null);
+    },
+    disable: function(container, disabled) {
+      container.find('input').attr('disabled', disabled);
+    },
   };
 }
 
@@ -530,6 +550,12 @@ function createFileURLFieldElement(createHandler, options) {
     },
     setValue: function(container, value) {
       container.find('input').val(value);
+    },
+    reset: function(container) {
+      container.find('input').val(null);
+    },
+    disable: function(container, disabled) {
+      container.find('input').attr('disabled', disabled);
     },
   };
 }
@@ -667,7 +693,18 @@ function createFileCreatorsFieldElement(erad, options) {
       researchers.forEach(function (researcher) {
         addResearcher(container, researcher);
       });
-    }
+    },
+    reset: function(container) {
+      container.find('tbody').empty();
+    },
+    disable: function(container, disabled) {
+      const btn = container.find('.btn');
+      if (disabled) {
+        btn.addClass('disabled');
+      } else {
+        btn.removeClass('disabled');
+      }
+    },
   };
 }
 
@@ -734,6 +771,12 @@ function createERadResearcherNumberFieldElement(erad, options) {
     },
     setValue: function(container, value) {
       container.find('input').val(value);
+    },
+    reset: function(container) {
+      container.find('input').val(null);
+    },
+    disable: function(container, disabled) {
+      container.find('input').attr('disabled', disabled);
     },
   };
 }
