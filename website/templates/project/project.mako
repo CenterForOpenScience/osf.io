@@ -326,18 +326,10 @@
                         % if node['collections']:
                             <img src="${ node['collections'][0]['logo']}" style="display: inline; height: 25px; width: 25px; margin-left: 5px;"/>
                             <div style="display: inline; margin: 10px; margin-left: 0px;" >
-                                % if node['collections'][0]['state'] == 'accepted':
-                                    % if len(node['collections']) - 1:
-                                        Included in <a>${node['collections'][0]['collection_title']}</a> and <a>${len(node['collections']) - 1}</a> more
-                                    % else:
-                                        Included in <a>${node['collections'][0]['collection_title']}</a>
-                                    % endif:
-                                % elif node['collections'][0]['state'] == 'pending' and user['is_contributor_or_group_member']:
-                                    % if len(node['collections']) - 1:
-                                        Pending in <a>${node['collections'][0]['collection_title']}</a> and <a>${len(node['collections']) - 1}</a> more
-                                    % else:
-                                        Pending in <a>${node['collections'][0]['collection_title']}</a>
-                                    % endif:
+                                % if len(node['collections']) - 1:
+                                    Included in <a>${node['collections'][0]['collection_title']}</a> and <a>${len(node['collections']) - 1}</a> more
+                                % else:
+                                    Included in <a>${node['collections'][0]['collection_title']}</a>
                                 % endif:
                             </div>
                         % else:
@@ -357,15 +349,9 @@
                                 <a class="fa fa-pencil pull-right" href="${collection['url']}${node['id']}/edit"></a>
                             % endif
                             <img src="${collection['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
-                            % if collection['state'] == 'accepted':
-                                <div style="display: inline;">
-                                    Included in <a href="${collection['url']}" >${collection['title']}</a>
-                                </div>
-                            % elif collection['state'] == 'pending' and user['is_contributor_or_group_member']:
-                                <div style="display: inline;">
-                                    Pending in <a href="${collection['url']}" >${collection['title']}</a>
-                                </div>
-                            % endif
+                            <div style="display: inline;">
+                                Included in <a href="${collection['url']}" >${collection['title']}</a>
+                            </div>
                             % if collection['study_design'] and collection['type']:
                                 <div  style="padding-left: 30px;">
                                     Study Design: <i>${collection['study_design']}</i> |&nbsp; Type: <i>${collection['type']}</i>
