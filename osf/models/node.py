@@ -495,7 +495,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     @property
     def is_collected(self):
         """is included in a collection"""
-        return self.collecting_metadata_qs.exists()
+        return self.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists()
 
     @property
     def collection_submissions(self):
@@ -505,20 +507,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             collection__deleted__isnull=True,
             collection__is_bookmark_collection=False,
         )
-
-    @property
-    def collecting_metadata_qs(self):
-        return CollectionSubmission.objects.filter(
-            guid=self.guids.first(),
-            collection__provider__isnull=False,
-            collection__deleted__isnull=True,
-            collection__is_bookmark_collection=False,
-            machine_state=CollectionSubmissionStates.ACCEPTED
-        )
-
-    @property
-    def collecting_metadata_list(self):
-        return list(self.collecting_metadata_qs)
 
     @property
     def has_linked_published_preprints(self):
@@ -2431,7 +2419,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if submission.state not in [CollectionSubmissionStates.REMOVED, CollectionSubmissionStates.REJECTED]:
                 user = getattr(auth, 'user', None)
 
-                if CollectionSubmissionStates.ACCEPTED:
+                if submission.state == CollectionSubmissionStates.ACCEPTED:
                     submission.remove(
                         user=user,
                         comment='Removed from collection due to implicit removal due to privacy changes.',

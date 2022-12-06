@@ -317,104 +317,121 @@
     <%include file="include/comment_pane_template.mako"/>
 % endif
 
-% if node['is_collected'] or  node['rejected_submissions'] or node['removed_submissions']:
-<div class="row">
-    <div class="collections-container col-12">
-        <div class="collections-box" style="font-size: 15px;">
-            <div class="clearfix" id="collections-header" data-toggle="collapse" href="#collectionList" role="button" style="margin: 10px;">
-                <div class="pull-left" style="margin-top: 5px">
-                    % if node['collections']:
-                        <img src="${ node['collections'][0]['logo']}" style="display: inline; height: 25px; width: 25px; margin-left: 5px;"/>
-                        <div style="display: inline; margin: 10px; margin-left: 0px;" >
-                            % if len(node['collections']) - 1:
-                                Included in <a>${node['collections'][0]['title']}</a> and <a>${len(node['collections']) - 1}</a> more
-                            % else:
-                                Included in <a>${node['collections'][0]['title']}</a>
-                            % endif:
-                        </div>
-                    % else:
-                        <div style="display: inline; margin: 10px; margin-left: 0px;" >
-                            <i>See Collection History</i>
-                        </div>
-                    % endif:
+% if node['collections'] or ((node['rejected_submissions'] or node['removed_submissions']) and user['is_contributor_or_group_member']):
+    <div class="row">
+        <div class="collections-container col-12">
+            <div class="collections-box" style="font-size: 15px;">
+                <div class="clearfix" id="collections-header" data-toggle="collapse" href="#collectionList" role="button" style="margin: 10px;">
+                    <div class="pull-left" style="margin-top: 5px">
+                        % if node['collections']:
+                            <img src="${ node['collections'][0]['logo']}" style="display: inline; height: 25px; width: 25px; margin-left: 5px;"/>
+                            <div style="display: inline; margin: 10px; margin-left: 0px;" >
+                                % if node['collections'][0]['state'] == 'accepted':
+                                    % if len(node['collections']) - 1:
+                                        Included in <a>${node['collections'][0]['collection_title']}</a> and <a>${len(node['collections']) - 1}</a> more
+                                    % else:
+                                        Included in <a>${node['collections'][0]['collection_title']}</a>
+                                    % endif:
+                                % else if node['collections'][0]['state'] == 'pending':
+                                    % if len(node['collections']) - 1:
+                                        Pending in <a>${node['collections'][0]['collection_title']}</a> and <a>${len(node['collections']) - 1}</a> more
+                                    % else:
+                                        Pending in <a>${node['collections'][0]['collection_title']}</a>
+                                    % endif:
+                                % endif:
+                            </div>
+                        % else:
+                            <div style="display: inline; margin: 10px; margin-left: 0px;" >
+                                <i>See Collection History</i>
+                            </div>
+                        % endif:
+                    </div>
+                    <div class="pull-right">
+                        <button class="btn btn-link" aria-label="Toggle Collections" ><i class="fa fa-angle-down"></i></button>
+                    </div>
                 </div>
-                <div class="pull-right">
-                    <button class="btn btn-link" aria-label="Toggle Collections" ><i class="fa fa-angle-down"></i></button>
-                </div>
+                <div id="collectionList" class="collapse">
+                     <div class="panel-body" style="text-align: left;">
+                        % for collection in node['collections']:
+                            % if user['is_admin']:
+                                <a class="fa fa-pencil pull-right" href="${collection['url']}${node['id']}/edit"></a>
+                            % endif
+                            <img src="${collection['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
+                            % if collection['state'] == 'accepted':
+                                <div style="display: inline;">
+                                    Included in <a href="${collection['url']}" >${collection['title']}</a>
+                                </div>
+                            % elif collection['state'] == 'pending'
+                                <div style="display: inline;">
+                                    Pending in <a href="${collection['url']}" >${collection['title']}</a>
+                                </div>
+                            % endif
+                            % if collection['study_design'] and collection['type']:
+                                <div  style="padding-left: 30px;">
+                                    Study Design: <i>${collection['study_design']}</i> |&nbsp; Type: <i>${collection['type']}</i>
+                                </div>
+                            % elif collection['study_design']:
+                                <div  style="padding-left: 30px;">
+                                    Study Design: <i>${collection['study_design']}</i>
+                                </div>
+                            % elif collection['type']:
+                                <div  style="padding-left: 30px;">
+                                    Type: <i>${collection['type']}</i>
+                                </div>
+                            % endif
+
+                            <hr>
+                        % endfor
+                        % if user['is_contributor_or_group_member']:
+                            % if node['rejected_submissions']:
+                                % for rejected_submission in node['rejected_submissions']:
+                                    <img src="${rejected_submission['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
+                                    <div style="display: inline;">
+                                        Rejected from <a href="${rejected_submission['url']}" >${rejected_submission['collection_title']}</a>
+                                    </div>
+                                    % if user['is_admin']:
+                                        <div style="padding-left: 30px;">
+                                            <a class="comment-popover"
+                                               data-toggle="popover"
+                                               data-placement="bottom"
+                                               data-content="${rejected_submission['comment']}"
+                                            >
+                                                See justification
+                                                <i class="fa fa-angle-down" /></i>
+                                            </a>
+                                        </div>
+                                    % endif
+                                    <hr>
+                                % endfor
+                            % endif
+                        % endif
+                        % if user['is_contributor_or_group_member']:
+                            % if node['removed_submissions']:
+                                % for removed_submission in node['removed_submissions']:
+                                    <img src="${removed_submission['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
+                                    <div style="display: inline;">
+                                        Removed from <a href="${removed_submission['url']}" >${removed_submission['collection_title']}</a>
+                                    </div>
+                                    % if user['is_admin']:
+                                        <div style="padding-left: 30px;">
+                                            <a class="comment-popover"
+                                               data-toggle="popover"
+                                               data-placement="bottom"
+                                               data-content="${removed_submission['comment']}"
+                                            >
+                                                See justification
+                                                <i class="fa fa-angle-down" /></i>
+                                            </a>
+                                        </div>
+                                    % endif
+                                    <hr>
+                                % endfor
+                            % endif
+                        % endif
+                     </div>
             </div>
-            <div id="collectionList" class="collapse">
-                 <div class="panel-body" style="text-align: left;">
-                    % for collection in node['collections']:
-                        % if user['is_admin']:
-                            <a class="fa fa-pencil pull-right" href="${collection['url']}${node['id']}/edit"></a>
-                        % endif
-                        <img src="${collection['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
-                        <div style="display: inline;">
-                            Included in <a href="${collection['url']}" >${collection['title']}</a>
-                        </div>
-                        % if collection['study_design'] and collection['type']:
-                            <div  style="padding-left: 30px;">
-                                Study Design: <i>${collection['study_design']}</i> |&nbsp; Type: <i>${collection['type']}</i>
-                            </div>
-                        % elif collection['study_design']:
-                            <div  style="padding-left: 30px;">
-                                Study Design: <i>${collection['study_design']}</i>
-                            </div>
-                        % elif collection['type']:
-                            <div  style="padding-left: 30px;">
-                                Type: <i>${collection['type']}</i>
-                            </div>
-                        % endif
-
-                        <hr>
-                    % endfor
-                    % if node['rejected_submissions']:
-                        % for rejected_submission in node['rejected_submissions']:
-                            <img src="${rejected_submission['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
-                            <div style="display: inline;">
-                                Rejected from <a href="${rejected_submission['url']}" >${rejected_submission['collection_title']}</a>
-                            </div>
-                            % if user['is_admin']:
-                                <div style="padding-left: 30px;">
-                                    <a class="comment-popover"
-                                       data-toggle="popover"
-                                       data-placement="bottom"
-                                       data-content="${rejected_submission['comment']}"
-                                    >
-                                        See justification
-                                        <i class="fa fa-angle-down" /></i>
-                                    </a>
-                                </div>
-                            % endif
-                            <hr>
-                        % endfor
-                    % endif
-                    % if node['removed_submissions']:
-                        % for removed_submission in node['removed_submissions']:
-                            <img src="${removed_submission['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
-                            <div style="display: inline;">
-                                Removed from <a href="${removed_submission['url']}" >${removed_submission['collection_title']}</a>
-                            </div>
-                            % if user['is_admin']:
-                                <div style="padding-left: 30px;">
-                                    <a class="comment-popover"
-                                       data-toggle="popover"
-                                       data-placement="bottom"
-                                       data-content="${removed_submission['comment']}"
-                                    >
-                                        See justification
-                                        <i class="fa fa-angle-down" /></i>
-                                    </a>
-                                </div>
-                            % endif
-                            <hr>
-                        % endfor
-                    % endif
-
-                 </div>
         </div>
     </div>
-</div>
 % endif
 
 % for i, preprint in enumerate(node['visible_preprints']):
