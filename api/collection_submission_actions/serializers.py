@@ -5,7 +5,8 @@ from api.actions.serializers import TargetRelationshipField
 from osf.models import CollectionSubmission
 from osf.utils.workflows import CollectionSubmissionStates, CollectionSubmissionsTriggers
 from rest_framework import serializers as ser
-from api.base.serializers import JSONAPISerializer, LinksField,VersionedDateTimeField
+
+from api.base.serializers import JSONAPISerializer, LinksField, VersionedDateTimeField
 
 from api.base.serializers import (
     RelationshipField,
