@@ -340,12 +340,12 @@
                                     Pending entry into <a>${node['collections'][0]['collection_title']}</a>
                                 % endif:
                                 </div>
-                            % else:
-                                <div style="display: inline; margin: 10px; margin-left: 0px;" >
-                                    <i>See Collection History</i>
-                                </div>
                             % endif:
-                        % endif:
+                        % else:
+                            <div style="display: inline; margin: 10px; margin-left: 0px;" >
+                                <i>See Collection History</i>
+                            </div>
+                        % endif
                     </div>
                     <div class="pull-right">
                         <button class="btn btn-link" aria-label="Toggle Collections" ><i class="fa fa-angle-down"></i></button>
