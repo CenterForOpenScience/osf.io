@@ -608,6 +608,7 @@ def serialize_collection_submission(collection_submission):
         'contributors': [serialize_collection_submission_contributor(contrib) for contrib in contributors],
         'provider': getattr(collection_submission.collection.provider, '_id', None),
         'modified': max(collection_submission.modified, obj.modified),
+        'created': max(collection_submission.created, obj.created),
         'collectedType': collection_submission.collected_type,
         'status': collection_submission.status,
         'volume': collection_submission.volume,
