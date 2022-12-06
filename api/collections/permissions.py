@@ -4,6 +4,7 @@ import io
 
 from django.db.models import Q
 
+from framework.exceptions import PermissionsError
 from rest_framework import permissions
 from rest_framework.exceptions import NotFound, MethodNotAllowed
 
@@ -147,14 +148,15 @@ class OnlyAdminCanCreateDestroyCollectionSubmissionAction(permissions.BasePermis
         auth = get_user_auth(request)
         if request.method == 'POST':
             is_moderator = auth.user and auth.user in collection_submission.collection.moderators
-            return collection_submission.guid.referent.has_permission(auth.user, ADMIN) or is_moderator
+            is_collections_admin = auth.user and auth.user in self.collection.admins
+            if collection_submission.guid.referent.has_permission(auth.user, ADMIN) or is_moderator or is_collections_admin:
+                return True
+            else:
+                raise PermissionsError("User must be a project admin or collection moderator.")
         else:
-            return False
-
-    def has_permission(self, request, view):
-        if request.method not in ('POST', 'GET'):
             raise MethodNotAllowed(request.method)
 
+    def has_permission(self, request, view):
         auth = get_user_auth(request)
         # Validate json before using id to check for permissions
         request_json = JSONSchemaParser().parse(
@@ -183,3 +185,5 @@ class OnlyAdminCanCreateDestroyCollectionSubmissionAction(permissions.BasePermis
         elif request.method == 'GET':
             is_moderator = auth.user and auth.user in obj.collection.moderators
             return obj.guid.referent.has_permission(auth.user, ADMIN) or is_moderator
+        else:
+            raise MethodNotAllowed(request.method)
