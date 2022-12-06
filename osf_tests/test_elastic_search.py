@@ -256,7 +256,7 @@ class TestCollectionsSearch(OsfTestCase):
         assert_equal(docs[0]['_source']['contributors'][0]['fullname'], self.user.fullname)
         assert_equal(docs[0]['_source']['url'], self.node_one.url)
         assert_equal(docs[0]['_source']['id'], '{}-{}'.format(self.node_one._id,
-            self.node_one.collecting_metadata_list[0].collection._id))
+            self.node_one.collection_submissions[0].collection._id))
         assert_equal(docs[0]['_source']['category'], 'collectionSubmission')
 
     def test_search_updated_after_id_change(self):
