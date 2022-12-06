@@ -1,10 +1,11 @@
 from api.base.utils import absolute_reverse
 
-from api.base.serializers import JSONAPISerializer, EnumField
-from api.actions.serializers import TargetRelationshipField, LinksField
+from api.base.serializers import EnumField
+from api.actions.serializers import TargetRelationshipField
 from osf.models import CollectionSubmission
 from osf.utils.workflows import CollectionSubmissionStates, CollectionSubmissionsTriggers
 from rest_framework import serializers as ser
+from api.base.serializers import JSONAPISerializer, LinksField, VersionedDateTimeField
 
 from api.base.serializers import (
     RelationshipField,
@@ -27,6 +28,8 @@ class CollectionSubmissionActionSerializer(JSONAPISerializer):
     from_state = EnumField(CollectionSubmissionStates, required=False)
     to_state = EnumField(CollectionSubmissionStates, required=False)
     comment = ser.CharField(max_length=65535, required=False, allow_blank=True, allow_null=True)
+    date_created = VersionedDateTimeField(source='created', read_only=True)
+    date_modified = VersionedDateTimeField(source='modified', read_only=True)
 
     collection = RelationshipField(
         related_view='collections:collection-detail',
