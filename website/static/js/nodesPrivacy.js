@@ -19,6 +19,7 @@ var MESSAGES = {
     makeProjectPrivateWarning:
     '<ul><li>Public forks and registrations of this project will remain public.</li>' +
     '<li>Search engines (including Google\'s cache) or others may have accessed files, wiki pages, or analytics while this project was public.</li></ul>',
+    '<li>The project will automatically be removed from any collections, and will need to be resubmitted to the collection in the future.</li></ul>',
     makeSupplementalProjectPrivateWarning:
     '<ul><li>Preprints will remain public.</li><li>Public forks and registrations of this project will remain public.</li>' +
     '<li>Search engines (including Google\'s cache) or others may have accessed files, wiki pages, or analytics while this project was public.</li></ul>',
