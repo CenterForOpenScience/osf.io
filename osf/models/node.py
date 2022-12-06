@@ -2431,26 +2431,34 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if submission.state not in [CollectionSubmissionStates.REMOVED, CollectionSubmissionStates.REJECTED]:
                 user = getattr(auth, 'user', None)
 
-                if not force:
+                if CollectionSubmissionStates.ACCEPTED:
                     submission.remove(
                         user=user,
-                        comment='Removed from collection due to implicit removal due to privacy',
+                        comment='Removed from collection due to implicit removal due to privacy changes.',
                         removed_due_to_privacy=True
                     )
-                elif submission.state == CollectionSubmissionStates.PENDING:
-                    request, user_id = get_request_and_user_id()
+                elif submission.state == CollectionSubmissionStates.PENDING and user:
                     submission.reject(
-                        user=request.user,
-                        comment='Rejected from collection via system command.',
+                        user=user,
+                        comment='Rejected from collection due to implicit removal due to privacy changes.',
                         force=True
                     )
-                elif submission.state == CollectionSubmissionStates.ACCEPTED:
+                elif force and submission.state == CollectionSubmissionStates.ACCEPTED:
                     request, user_id = get_request_and_user_id()
                     submission.remove(
                         user=request.user,
-                        comment='Rejected from collection via system command.',
+                        comment='Removed from collection via system command.',  # typically spam
                         force=True
                     )
+                elif force and submission.state == CollectionSubmissionStates.PENDING:
+                    request, user_id = get_request_and_user_id()
+                    submission.rejected(
+                        user=request.user,
+                        comment='Rejected from collection via system command.',  # typically spam
+                        force=True
+                    )
+                else:
+                    raise NotImplementedError()
 
 
 class NodeUserObjectPermission(UserObjectPermissionBase):
