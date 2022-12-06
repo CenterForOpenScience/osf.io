@@ -126,6 +126,12 @@ class TestDomainExtraction:
             domains = list(spam_tasks._extract_domains(sample_text))
         assert domains == ['osf.io']
 
+    def test_extract_domains__ignores_floats(self):
+        sample_text = 'this is a number 3.1415 not a domain'
+        with mock.patch.object(spam_tasks.requests, 'head'):
+            domains = list(spam_tasks._extract_domains(sample_text))
+        assert not domains
+
 @pytest.mark.django_db
 class TestNotableDomain:
 
