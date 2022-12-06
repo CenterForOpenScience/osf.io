@@ -4,9 +4,8 @@ import io
 
 from django.db.models import Q
 
-from framework.exceptions import PermissionsError
 from rest_framework import permissions
-from rest_framework.exceptions import NotFound, MethodNotAllowed, PermissionsError
+from rest_framework.exceptions import NotFound, MethodNotAllowed
 
 from api.base.exceptions import Gone
 from api.base.parsers import JSONSchemaParser
@@ -147,16 +146,16 @@ class OnlyAdminCanCreateDestroyCollectionSubmissionAction(permissions.BasePermis
         assert_resource_type(collection_submission, self.acceptable_models)
         auth = get_user_auth(request)
         if request.method == 'POST':
-            is_moderator = auth.user and auth.user in collection_submission.collection.moderators
-            is_collections_admin = auth.user and auth.user in self.collection.admins
-            if collection_submission.guid.referent.has_permission(auth.user, ADMIN) or is_moderator or is_collections_admin:
-                return True
-            else:
-                raise PermissionsError('User must be a project admin or collection moderator.')
+            provider = collection_submission.collection.provider
+            is_moderator = bool(auth.user and auth.user.has_perm('accept_submissions', provider))
+            return collection_submission.guid.referent.has_permission(auth.user, ADMIN) or is_moderator
         else:
-            raise MethodNotAllowed(request.method)
+            return False
 
     def has_permission(self, request, view):
+        if request.method not in ('POST', 'GET'):
+            raise MethodNotAllowed(request.method)
+
         auth = get_user_auth(request)
         # Validate json before using id to check for permissions
         request_json = JSONSchemaParser().parse(
@@ -183,7 +182,5 @@ class OnlyAdminCanCreateDestroyCollectionSubmissionAction(permissions.BasePermis
         if request.method == 'POST':
             return self.has_object_permission(request, view, obj)
         elif request.method == 'GET':
-            is_moderator = auth.user and auth.user in obj.collection.moderators
+            is_moderator = auth.user and auth.user.has_perm('view_submissions', obj.collection.provider)
             return obj.guid.referent.has_permission(auth.user, ADMIN) or is_moderator
-        else:
-            raise MethodNotAllowed(request.method)
