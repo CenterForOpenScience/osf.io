@@ -4,6 +4,7 @@ import io
 
 from django.db.models import Q
 
+from framework.exceptions import PermissionsError
 from rest_framework import permissions
 from rest_framework.exceptions import NotFound, MethodNotAllowed, PermissionsError
 
