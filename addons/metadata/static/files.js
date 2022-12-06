@@ -1802,7 +1802,7 @@ function MetadataButtons() {
       self.copyToClipboard(event, copyStatus);
     });
     const toolbar = $('<div></div>');
-    const container = $('<ul></ul>');
+    const container = $('<ul></ul>').css('padding', '0 20px');
     var notice = $('<span></span>');
     if (editable) {
       notice = $('<div></div>')
@@ -1865,7 +1865,7 @@ function MetadataButtons() {
       });
     });
     const toolbar = $('<div></div>');
-    const container = $('<ul></ul>');
+    const container = $('<ul></ul>').css('padding', '0 20px');
     dialog
       .append($('<div class="modal-dialog modal-lg"></div>')
         .append($('<div class="modal-content"></div>')
@@ -1932,7 +1932,7 @@ function MetadataButtons() {
     close.click(self.closeModal);
     var select = $('<a href="#" class="btn btn-success"></a>').text(_('Select'));
     select.click(self.selectDraftModal);
-    var container = $('<ul></ul>');
+    var container = $('<ul></ul>').css('padding', '0 20px');
     var dialog = $('<div class="modal fade"></div>')
       .append($('<div class="modal-dialog modal-lg"></div>')
         .append($('<div class="modal-content"></div>')
@@ -1981,7 +1981,7 @@ function MetadataButtons() {
     copyToClipboard.on('click', function(event) {
       self.copyToClipboard(event, copyStatus);
     });
-    const container = $('<ul></ul>');
+    const container = $('<ul></ul>').css('padding', '0 20px');
     dialog
       .append($('<div class="modal-dialog modal-lg"></div>')
         .append($('<div class="modal-content"></div>')
