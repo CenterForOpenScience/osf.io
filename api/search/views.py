@@ -16,7 +16,7 @@ from api.search.permissions import IsAuthenticatedOrReadOnlyForSearch
 from api.search.serializers import SearchSerializer
 from api.users.serializers import UserSerializer
 from api.institutions.serializers import InstitutionSerializer
-from api.collections.serializers import CollectionSubmissionSearchSerializer
+from api.collections.serializers import CollectionSubmissionSerializer
 
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import Institution, BaseFileNode, AbstractNode, OSFUser, CollectionSubmission
@@ -653,7 +653,7 @@ class SearchCollections(BaseSearchView):
     """
 
     model_class = CollectionSubmission
-    serializer_class = CollectionSubmissionSearchSerializer
+    serializer_class = CollectionSubmissionSerializer
 
     doc_type = 'collectionSubmission'
     view_category = 'search'

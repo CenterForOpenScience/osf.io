@@ -377,12 +377,6 @@ class LegacyCollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPI
         return obj
 
 
-class CollectionSubmissionSearchSerializer(CollectionSubmissionSerializer):
-
-    class Meta:
-        type_ = 'collection-submissions'
-
-
 class CollectionSubmissionCreateSerializer(CollectionSubmissionSerializer):
     # Makes guid writeable only on create
     guid = GuidRelationshipField(
