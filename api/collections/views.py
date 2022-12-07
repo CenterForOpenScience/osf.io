@@ -402,11 +402,20 @@ class CollectionSubmissionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroy
         return self.get_collection_submission()
 
     def perform_destroy(self, instance):
-        instance.remove(
-            user=self.request.user,
-            comment='Implicit removal via CollectionSubmissionDetail',
-            force=True,
-        )
+        if instance.state == CollectionSubmissionStates.ACCEPTED:
+            instance.remove(
+                user=self.request.user,
+                comment='Implicit removal via deletion',
+                force=True,
+            )
+        elif instance.state == CollectionSubmissionStates.PENDING:
+            instance.reject(
+                user=self.request.user,
+                comment='Implicit rejection via deletion',
+                force=True,
+            )
+        elif instance.state in [CollectionSubmissionStates.REMOVED, CollectionSubmissionStates.REJECTED]:
+            raise ValidationError(f'Resource {instance} is already removed')
 
     def perform_update(self, serializer):
         serializer.save()
@@ -432,11 +441,20 @@ class LegacyCollectionSubmissionDetail(JSONAPIBaseView, generics.RetrieveUpdateD
         return self.get_collection_submission()
 
     def perform_destroy(self, instance):
-        instance.remove(
-            user=self.request.user,
-            comment='Implicit removal via CollectionSubmissionDetail',
-            force=True,
-        )
+        if instance.state == CollectionSubmissionStates.ACCEPTED:
+            instance.remove(
+                user=self.request.user,
+                comment='Implicit removal via deletion',
+                force=True,
+            )
+        elif instance.state == CollectionSubmissionStates.PENDING:
+            instance.reject(
+                user=self.request.user,
+                comment='Implicit rejection via deletion',
+                force=True,
+            )
+        elif instance.state in [CollectionSubmissionStates.REMOVED, CollectionSubmissionStates.REJECTED]:
+            raise ValidationError(f'Resource {instance} is already removed')
 
     def perform_update(self, serializer):
         serializer.save()

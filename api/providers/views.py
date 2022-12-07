@@ -24,7 +24,12 @@ from api.base.pagination import MaxSizePagination, IncreasedPageSizePagination
 from api.base.utils import get_object_or_error, get_user_auth, is_truthy
 from api.licenses.views import LicenseList
 from api.collections.permissions import CanSubmitToCollectionOrPublic
-from api.collections.serializers import CollectionSubmissionSerializer, CollectionSubmissionCreateSerializer
+from api.collections.serializers import (
+    CollectionSubmissionSerializer,
+    CollectionSubmissionCreateSerializer,
+    LegacyCollectionSubmissionSerializer,
+    LegacyCollectionSubmissionCreateSerializer,
+)
 from api.preprints.permissions import PreprintPublishedOrAdmin
 from api.preprints.serializers import PreprintSerializer
 from api.providers.permissions import CanAddModerator, CanDeleteModerator, CanUpdateModerator, CanSetUpProvider, MustBeModerator
@@ -478,6 +483,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
                 }
         return context
 
+
 class CollectionProviderSubmissionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, ProviderMixin):
     provider_class = CollectionProvider
     permission_classes = (
@@ -489,15 +495,15 @@ class CollectionProviderSubmissionList(JSONAPIBaseView, generics.ListCreateAPIVi
     required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
 
     model_class = CollectionSubmission
-    serializer_class = CollectionSubmissionSerializer
+    serializer_class = LegacyCollectionSubmissionSerializer
     view_category = 'collected-metadata'
     view_name = 'provider-collection-submission-list'
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
-            return CollectionSubmissionCreateSerializer
+            return LegacyCollectionSubmissionCreateSerializer
         else:
-            return CollectionSubmissionSerializer
+            return LegacyCollectionSubmissionSerializer
 
     def get_default_queryset(self):
         provider = self.get_provider()
