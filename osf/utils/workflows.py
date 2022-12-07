@@ -402,7 +402,7 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'dest': CollectionSubmissionStates.ACCEPTED,
         'before': [],
         'after': [],
-        'conditions': ['is_hybrid_moderated', 'is_collection_moderator_admin_owned'],
+        'conditions': ['is_hybrid_moderated', 'is_submitted_by_moderator_contributor'],
     },
     {
         'trigger': 'submit',
@@ -411,7 +411,7 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'before': [],
         'conditions': ['is_hybrid_moderated'],
         'after': ['_notify_contributors_pending', '_notify_moderators_pending'],
-        'unless': ['is_collection_moderator_admin_owned'],
+        'unless': ['is_submitted_by_moderator_contributor'],
     },
     {
         'trigger': 'accept',
@@ -491,7 +491,7 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'dest': CollectionSubmissionStates.ACCEPTED,
         'before': [],
         'after': [],
-        'conditions': ['is_hybrid_moderated', 'is_collection_moderator_admin_owned'],
+        'conditions': ['is_hybrid_moderated', 'is_submitted_by_moderator_contributor'],
     },
     {
         'trigger': 'resubmit',
@@ -500,7 +500,7 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'before': ['_validate_resubmit'],
         'after': [],
         'conditions': ['is_hybrid_moderated'],
-        'unless': ['is_collection_moderator_admin_owned']
+        'unless': ['is_submitted_by_moderator_contributor']
     },
 ]
 

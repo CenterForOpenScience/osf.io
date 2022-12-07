@@ -64,15 +64,19 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
     def is_hybrid_moderated(self):
         return bool(self.collection.provider) and self.collection.provider.reviews_workflow == 'hybrid-moderation'
 
-    @property
-    def is_collection_moderator_admin_owned(self):
-        if self.guid.referent:
-            for contributor in self.guid.referent.contributors.all():
-                if contributor.has_perm('view_submissions', self.collection.provider):
-                    return True
-                if contributor.has_perm('add_moderator', self.collection.provider):
-                    return True
-        return False
+    def is_submitted_by_moderator_contributor(self, event_data):
+        user = event_data.kwargs['user']
+        if user is None:
+            return False
+        if not self.guid.referent.is_contributor(user):
+            return False
+
+        if user.has_perm('view_submissions', self.collection.provider):
+            return True
+        if user.has_perm('add_moderator', self.collection.provider):
+            return True
+        else:
+            return False
 
     @state.setter
     def state(self, new_state):
