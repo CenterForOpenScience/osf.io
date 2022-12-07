@@ -114,7 +114,7 @@ class OSFOrderingFilter(OrderingFilter):
 
 
 class ElasticOSFOrderingFilter(OSFOrderingFilter):
-    """Adaptation of rest_framework.filters.OrderingFilter to work with modular-odm."""
+    """ This is too enable sorting for ES endpoints that use ES results instead of a typical queryset"""
     def filter_queryset(self, request, queryset, view):
         sorted_list = queryset.copy()
         sort = request.query_params.get('sort')

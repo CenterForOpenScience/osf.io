@@ -64,15 +64,19 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
     def is_hybrid_moderated(self):
         return bool(self.collection.provider) and self.collection.provider.reviews_workflow == 'hybrid-moderation'
 
-    @property
-    def is_collection_moderator_admin_owned(self):
-        if self.guid.referent:
-            for contributor in self.guid.referent.contributors.all():
-                if contributor.has_perm('view_submissions', self.collection.provider):
-                    return True
-                if contributor.has_perm('add_moderator', self.collection.provider):
-                    return True
-        return False
+    def is_submitted_by_moderator_contributor(self, event_data):
+        user = event_data.kwargs['user']
+        if user is None:
+            return False
+        if not self.guid.referent.is_contributor(user):
+            return False
+
+        if user.has_perm('view_submissions', self.collection.provider):
+            return True
+        if user.has_perm('add_moderator', self.collection.provider):
+            return True
+        else:
+            return False
 
     @state.setter
     def state(self, new_state):
@@ -117,32 +121,42 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         }
 
         from osf.models import NotificationSubscription
+        from website.notifications.emails import store_emails
+
         provider_subscription, created = NotificationSubscription.objects.get_or_create(
             _id=f'{self.collection.provider._id}_new_pending_submissions',
             provider=self.collection.provider
         )
-        recipients_per_subscription_type = {
-            'email_transactional': list(
-                provider_subscription.email_transactional.all().values_list('guids___id', flat=True)
-            ),
-            'email_digest': list(
-                provider_subscription.email_digest.all().values_list('guids___id', flat=True)
+        email_transactors_ids = list(
+            provider_subscription.email_transactional.all().values_list(
+                'guids___id',
+                flat=True
             )
-        }
-        for subscription_type, recipient_ids in recipients_per_subscription_type.items():
-            if not recipient_ids:
-                continue
-            from website.notifications.emails import store_emails
-
-            store_emails(
-                recipient_ids,
-                subscription_type,
-                'new_pending_submissions',
-                self.creator,
-                self.guid.referent,
-                timezone.now(),
-                **context
+        )
+        store_emails(
+            email_transactors_ids,
+            'email_transactional',
+            'new_pending_submissions',
+            self.creator,
+            self.guid.referent,
+            timezone.now(),
+            **context
+        )
+        email_digester_ids = list(
+            provider_subscription.email_digest.all().values_list(
+                'guids___id',
+                flat=True
             )
+        )
+        store_emails(
+            email_digester_ids,
+            'email_digest',
+            'new_pending_submissions',
+            self.creator,
+            self.guid.referent,
+            timezone.now(),
+            **context
+        )
 
     def _validate_accept(self, event_data):
         user = event_data.kwargs['user']

@@ -408,35 +408,34 @@ class TestHybridModeratedCollectionSubmission:
 
         collection_submission.save()
         assert collection_submission.is_hybrid_moderated
-        assert not collection_submission.is_collection_moderator_admin_owned
         # .submit on post_save
         assert collection_submission.state == CollectionSubmissionStates.PENDING
 
     @pytest.mark.parametrize('user_role', [UserRoles.MODERATOR])
-    def test_hybrid_submit_moderator_unowned(self, user_role, node, hybrid_moderated_collection):
+    def test_hybrid_submit_moderator_not_submitted(self, user_role, node, hybrid_moderated_collection):
         configure_test_auth(node, user_role, provider=hybrid_moderated_collection.provider)
+        not_admin_moderator = AuthUserFactory()
+        node.add_contributor(not_admin_moderator)
         collection_submission = CollectionSubmission(
             guid=node.guids.first(),
             collection=hybrid_moderated_collection,
-            creator=node.creator,
+            creator=not_admin_moderator,
         )
         collection_submission.save()
         assert collection_submission.is_hybrid_moderated
-        assert not collection_submission.is_collection_moderator_admin_owned
         assert collection_submission.state == CollectionSubmissionStates.PENDING
 
     @pytest.mark.parametrize('user_role', [UserRoles.MODERATOR])
-    def test_hybrid_submit_moderator_owned(self, user_role, node, hybrid_moderated_collection):
+    def test_hybrid_submit_moderator_submitted(self, user_role, node, hybrid_moderated_collection):
         user = configure_test_auth(node, user_role, provider=hybrid_moderated_collection.provider)
         node.add_contributor(user)
         collection_submission = CollectionSubmission(
             guid=node.guids.first(),
             collection=hybrid_moderated_collection,
-            creator=node.creator,
+            creator=user,
         )
         collection_submission.save()
         assert collection_submission.is_hybrid_moderated
-        assert collection_submission.is_collection_moderator_admin_owned
         assert collection_submission.state == CollectionSubmissionStates.ACCEPTED
 
     @pytest.mark.parametrize('user_role', [UserRoles.UNAUTHENTICATED, UserRoles.NONCONTRIB])
@@ -558,18 +557,20 @@ class TestHybridModeratedCollectionSubmission:
             hybrid_moderated_collection_submission.resubmit(user=user, comment='Test Comment')
         assert hybrid_moderated_collection_submission.state == CollectionSubmissionStates.REMOVED
 
-    def test_hybrid_resubmit_moderator_unowned(self, node, hybrid_moderated_collection_submission):
+    def test_hybrid_resubmit_moderator_not_submitted(self, node, hybrid_moderated_collection_submission):
         """
         Moderators can't force people to resubmit, even if it just goes back into a pending state.
         """
         user = configure_test_auth(node, UserRoles.MODERATOR)
+        not_admin_moderator = AuthUserFactory()
+        node.add_contributor(not_admin_moderator)
         hybrid_moderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.REMOVED)
         hybrid_moderated_collection_submission.save()
         with pytest.raises(PermissionsError):
-            hybrid_moderated_collection_submission.resubmit(user=user, comment='Test Comment')
+            hybrid_moderated_collection_submission.resubmit(user=not_admin_moderator, comment='Test Comment')
         assert hybrid_moderated_collection_submission.state == CollectionSubmissionStates.REMOVED
 
-    def test_hybrid_resubmit_moderator_owned(self, node, hybrid_moderated_collection_submission):
+    def test_hybrid_resubmit_moderator_submitted(self, node, hybrid_moderated_collection_submission):
         user = configure_test_auth(node, UserRoles.MODERATOR)
         node.add_contributor(user)
         hybrid_moderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.REMOVED)
