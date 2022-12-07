@@ -325,16 +325,16 @@
                         <img src="${ node['collections'][0]['logo']}" style="display: inline; height: 25px; width: 25px; margin-left: 5px;"/>
                         % if node['collections'][0]['state'] == 'accepted':
                             <div style="display: inline; margin: 10px; margin-left: 0px;" >
-                            % if len(node['collections']) - 1:
-                                Included in <a>${node['collections'][0]['collection_title']}</a> and <a>${len(node['collections']) - 1}</a> more
+                            % if len([x for x in node['collections'] if x['state'] == 'accepted']) - 1:
+                                Included in <a>${node['collections'][0]['collection_title']}</a> and <a>${len([x for x in node['collections'] if x['state'] == 'accepted']) - 1}</a> more
                             % else:
                                 Included in <a>${node['collections'][0]['collection_title']}</a>
                             % endif
                             </div>
                         % elif node['collections'][0]['state'] == 'pending':
                             <div style="display: inline; margin: 10px; margin-left: 0px;" >
-                            % if len(node['collections']) - 1:
-                                Pending entry into <a>${node['collections'][0]['collection_title']}</a> and <a>${len(node['collections']) - 1}</a> more
+                            % if len([x for x in node['collections'] if x['state'] == 'pending']) - 1:
+                                Pending entry into <a>${node['collections'][0]['collection_title']}</a> and <a>${len([x for x in node['collections'] if x['state'] == 'accepted']) - 1}</a> more
                             % else:
                                 Pending entry into <a>${node['collections'][0]['collection_title']}</a>
                             % endif:
