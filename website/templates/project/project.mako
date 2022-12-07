@@ -352,12 +352,11 @@
                 <div id="collectionList" class="collapse">
                      <div class="panel-body" style="text-align: left;">
                         % for collection in node['collections']:
-                            % if user['is_admin']:
-                                <a class="fa fa-pencil pull-right" href="${collection['url']}${node['id']}/edit"></a>
-                            % endif
-                            <img src="${collection['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
-
                             % if collection['state'] == 'accepted':
+                                % if user['is_admin']:
+                                    <a class="fa fa-pencil pull-right" href="${collection['url']}${node['id']}/edit"></a>
+                                % endif
+                                <img src="${collection['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
                                 <div style="display: inline;">
                                     Included in <a href="${collection['url']}" >${collection['collection_title']}</a>
                                 </div>
@@ -375,6 +374,7 @@
                                     </div>
                                 % endif
                             % elif collection['state'] == 'pending' and user['is_contributor_or_group_member']:
+                                <img src="${collection['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
                                 <div style="display: inline;">
                                     Pending entry into <a href="${collection['url']}" >${collection['collection_title']}</a>
                                 </div>
@@ -392,6 +392,7 @@
                                     </div>
                                 % endif
                             % elif collection['state'] == 'rejected' and user['is_contributor_or_group_member']:
+                                <img src="${collection['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
                                 <div style="display: inline;">
                                     Rejected from <a href="${collection['url']}" >${collection['collection_title']}</a>
                                 </div>
@@ -408,6 +409,7 @@
                                     </div>
                                 % endif
                             % elif collection['state'] == 'removed' and user['is_contributor_or_group_member']:
+                                <img src="${collection['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
                                 <div style="display: inline;">
                                     Removed from <a href="${collection['url']}" >${collection['collection_title']}</a>
                                 </div>
@@ -424,8 +426,6 @@
                                     </div>
                                 % endif
                             % endif
-
-                            <hr>
                         % endfor
                      </div>
             </div>
