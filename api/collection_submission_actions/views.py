@@ -41,7 +41,7 @@ class CollectionSubmissionActionDetail(JSONAPIBaseView, generics.RetrieveAPIView
         )
 
 
-class CollectionSubmissionActionList(JSONAPIBaseView, generics.CreateAPIView, generics.ListAPIView):
+class CollectionSubmissionActionList(JSONAPIBaseView, generics.CreateAPIView):
     permission_classes = (
         OnlyAdminCanCreateDestroyCollectionSubmissionAction,
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -70,12 +70,3 @@ class CollectionSubmissionActionList(JSONAPIBaseView, generics.CreateAPIView, ge
         res['json_schema'] = self.create_payload_schema
         return res
 
-    def get_queryset(self):
-        collected_resource_guid, collection_id = self.kwargs['collection_submission_id'].split('-')
-        collection_submission = get_object_or_error(
-            CollectionSubmission,
-            Q(collection__guids___id=collection_id, guid___id=collected_resource_guid),
-            self.request,
-            'CollectionSubmission',
-        )
-        return collection_submission.actions.all()
