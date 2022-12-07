@@ -57,3 +57,4 @@ from osf.models.registration_bulk_upload_job import RegistrationBulkUploadJob  #
 from osf.models.registration_bulk_upload_row import RegistrationBulkUploadRow  # noqa
 from osf.models.outcomes import Outcome  # noqa
 from osf.models.outcome_artifacts import OutcomeArtifact  # noqa
+from osf.models.institution_affiliation import InstitutionAffiliation  # noqa
