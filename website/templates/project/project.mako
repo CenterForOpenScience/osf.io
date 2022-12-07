@@ -316,7 +316,7 @@
 % if (user['can_comment'] or node['has_comments']) and not node['anonymous']:
     <%include file="include/comment_pane_template.mako"/>
 % endif
-% if ([x for x in node['collections'] if x['state'] in ('removed', 'rejected')] and user['is_contributor_or_group_member']) or [x for x in node['collections'] if x['state'] == 'accepted']:
+% if ([x for x in node['collections'] if x['state'] in ('removed', 'rejected', 'pending')] and user['is_contributor_or_group_member']) or [x for x in node['collections'] if x['state'] == 'accepted']:
     <div class="row">
         <div class="collections-container col-12">
             <div class="collections-box" style="font-size: 15px;">
@@ -374,7 +374,7 @@
                                         Type: <i>${collection['type']}</i>
                                     </div>
                                 % endif
-                            % elif collection['state'] == 'pending':
+                            % elif collection['state'] == 'pending' and user['is_contributor_or_group_member']:
                                 <div style="display: inline;">
                                     Pending entry into <a href="${collection['url']}" >${collection['collection_title']}</a>
                                 </div>
