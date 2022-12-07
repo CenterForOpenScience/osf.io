@@ -352,7 +352,6 @@
                 <div id="collectionList" class="collapse">
                      <div class="panel-body" style="text-align: left;">
                         % for collection in node['collections']:
-
                             % if collection['state'] == 'accepted':
                                 % if user['is_admin']:
                                     <a class="fa fa-pencil pull-right" href="${collection['url']}${node['id']}/edit"></a>
