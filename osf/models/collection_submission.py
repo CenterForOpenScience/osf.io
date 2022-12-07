@@ -248,6 +248,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                     to_addr=contributor.username,
                     mail=mails.COLLECTION_SUBMISSION_REMOVED_MODERATOR(self.collection, self.guid.referent),
                     user=contributor,
+                    rejection_justification=event_data.kwargs['comment'],
                     remover=event_data.kwargs['user'],
                     is_admin=self.guid.referent.has_permission(contributor, ADMIN),
                     collection=self.collection,

@@ -150,13 +150,12 @@ class OnlyAdminCanCreateDestroyCollectionSubmissionAction(permissions.BasePermis
             is_moderator = bool(auth.user and auth.user.has_perm('accept_submissions', provider))
             return collection_submission.guid.referent.has_permission(auth.user, ADMIN) or is_moderator
         else:
-            return False
-
-    def has_permission(self, request, view):
-        if request.method not in ('POST', 'GET'):
             raise MethodNotAllowed(request.method)
 
-        auth = get_user_auth(request)
+    def has_permission(self, request, view):
+        if request.method != 'POST':
+            raise MethodNotAllowed(request.method)
+
         # Validate json before using id to check for permissions
         request_json = JSONSchemaParser().parse(
             io.BytesIO(request.body),
@@ -179,8 +178,4 @@ class OnlyAdminCanCreateDestroyCollectionSubmissionAction(permissions.BasePermis
         if obj.guid.referent.deleted:
             raise Gone()
 
-        if request.method == 'POST':
-            return self.has_object_permission(request, view, obj)
-        elif request.method == 'GET':
-            is_moderator = auth.user and auth.user.has_perm('view_submissions', obj.collection.provider)
-            return obj.guid.referent.has_permission(auth.user, ADMIN) or is_moderator
+        return self.has_object_permission(request, view, obj)

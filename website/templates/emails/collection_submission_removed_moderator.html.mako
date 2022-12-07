@@ -9,12 +9,15 @@
     <br>
     <p>
         % if is_admin:
-            <a href="${node.absolute_url}">${node.title}</a> was removed from <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.title}</a>
+            <a href="${node.absolute_url}">${node.title}</a> was  removed by <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.title}</a>:
+            <br>
+            ${rejection_justification}
+            <br>
+            This can also be viewed in the collection status section on the project or component page.
             If you wish to be associated with the collection, you will need to reapply to the collection again.
         % else:
-            <a href="${node.absolute_url}">${node.title}</a> was removed
-            <a href="${remover.absolute_url}">${remover.fullname}</a> If you wish to be associated with the collection,
-             an admin will need to reapply to the collection again.
+            <a href="${node.absolute_url}">${node.title}</a> was removed by
+            <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.title}</a>
         % endif
     </p>
     <p>

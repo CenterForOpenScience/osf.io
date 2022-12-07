@@ -1,6 +1,5 @@
 from rest_framework import generics, permissions as drf_permissions
 from framework.auth.oauth_scopes import CoreScopes
-from django.db.models import Q
 
 from api.base import permissions as base_permissions
 from api.base.utils import get_object_or_error
@@ -16,7 +15,7 @@ from api.collections.permissions import (
 )
 from api.collection_submission_actions.schemas import create_collection_action_payload
 
-from osf.models import CollectionSubmissionAction, CollectionSubmission
+from osf.models import CollectionSubmissionAction
 
 
 class CollectionSubmissionActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
@@ -41,7 +40,7 @@ class CollectionSubmissionActionDetail(JSONAPIBaseView, generics.RetrieveAPIView
         )
 
 
-class CollectionSubmissionActionList(JSONAPIBaseView, generics.CreateAPIView, generics.ListAPIView):
+class CollectionSubmissionActionList(JSONAPIBaseView, generics.CreateAPIView):
     permission_classes = (
         OnlyAdminCanCreateDestroyCollectionSubmissionAction,
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -69,13 +68,3 @@ class CollectionSubmissionActionList(JSONAPIBaseView, generics.CreateAPIView, ge
         res = super().get_parser_context(http_request)
         res['json_schema'] = self.create_payload_schema
         return res
-
-    def get_queryset(self):
-        collected_resource_guid, collection_id = self.kwargs['collection_submission_id'].split('-')
-        collection_submission = get_object_or_error(
-            CollectionSubmission,
-            Q(collection__guids___id=collection_id, guid___id=collected_resource_guid),
-            self.request,
-            'CollectionSubmission',
-        )
-        return collection_submission.actions.all()

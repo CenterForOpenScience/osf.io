@@ -819,10 +819,10 @@ def update_institution(institution, index=None):
 
 
 @celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
-def update_collection_submission_async(self, collection_submission_id, collection_id=None, op='update', index=None):
+def update_collection_submission_async(self, node_id, collection_id=None, op='update', index=None):
     CollectionSubmission = apps.get_model('osf.CollectionSubmission')
     qs = CollectionSubmission.objects.filter(
-        guid___id=collection_submission_id,
+        guid___id=node_id,
         collection__provider__isnull=False,
         collection__deleted__isnull=True,
         collection__is_bookmark_collection=False,

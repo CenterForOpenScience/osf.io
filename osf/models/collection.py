@@ -121,7 +121,7 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
     def bulk_update_search(cls, collection_submissions, op='update', index=None):
         from website import search
         try:
-            search.search.bulk_update_collected_metadata(collection_submissions, op=op, index=index)
+            search.search.bulk_update_collection_submissions(collection_submissions, op=op, index=index)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
 

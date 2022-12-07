@@ -50,27 +50,7 @@ def sort_multiple(fields):
 class OSFOrderingFilter(OrderingFilter):
     """Adaptation of rest_framework.filters.OrderingFilter to work with modular-odm."""
     # override
-    def filter_elastic_queryset(self, request, queryset, view):
-        sorted_list = queryset.copy()
-        sort = request.query_params.get('sort')
-        reverse = False
-        if sort:
-            if sort.startswith('-'):
-                sort = sort.lstrip('-')
-                reverse = True
-
-            try:
-                source = view.get_serializer_class()._declared_fields[sort].source
-                sorted_list['results'] = sorted(queryset['results'], key=lambda item: item['_source'][source], reverse=reverse)
-            except KeyError:
-                pass
-
-        return sorted_list
-
     def filter_queryset(self, request, queryset, view):
-        if isinstance(queryset, dict):  # assumes this is from ES view.
-            return self.filter_elastic_queryset(request, queryset, view)
-
         ordering = self.get_ordering(request, queryset, view)
         if isinstance(queryset, DjangoQuerySet):
             if queryset.ordered:
@@ -131,6 +111,26 @@ class OSFOrderingFilter(OrderingFilter):
                 if source_field:
                     valid_fields.append(ordering_sign + source_field)
         return valid_fields
+
+
+class ElasticOSFOrderingFilter(OSFOrderingFilter):
+    """Adaptation of rest_framework.filters.OrderingFilter to work with modular-odm."""
+    def filter_queryset(self, request, queryset, view):
+        sorted_list = queryset.copy()
+        sort = request.query_params.get('sort')
+        reverse = False
+        if sort:
+            if sort.startswith('-'):
+                sort = sort.lstrip('-')
+                reverse = True
+
+            try:
+                source = view.get_serializer_class()._declared_fields[sort].source
+                sorted_list['results'] = sorted(queryset['results'], key=lambda item: item['_source'][source], reverse=reverse)
+            except KeyError:
+                pass
+
+        return sorted_list
 
 
 class FilterMixin(object):
