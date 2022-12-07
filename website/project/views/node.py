@@ -19,11 +19,9 @@ from website.ember_osf_web.decorators import ember_flag_is_active
 from api.waffle.utils import flag_is_active, storage_i18n_flag_active, storage_usage_flag_active
 from framework.exceptions import HTTPError
 from osf.models.nodelog import NodeLog
-from osf.models.collection import CollectionSubmission
 from osf.utils.functional import rapply
 from osf.utils.registrations import strip_registered_meta_comments
 from osf.utils import sanitize
-from osf.utils.workflows import CollectionSubmissionStates
 from osf import features
 
 from website import language
@@ -726,22 +724,6 @@ def _view_project(node, auth, primary=False,
     NodeRelation = apps.get_model('osf.NodeRelation')
 
     is_registration = node.is_registration
-
-    rejected_submissions = CollectionSubmission.objects.filter(
-        guid=node.guids.first(),
-        collection__provider__isnull=False,
-        collection__deleted__isnull=True,
-        collection__is_bookmark_collection=False,
-        machine_state=CollectionSubmissionStates.REJECTED,
-    )
-
-    removed_submissions = CollectionSubmission.objects.filter(
-        guid=node.guids.first(),
-        collection__provider__isnull=False,
-        collection__deleted__isnull=True,
-        collection__is_bookmark_collection=False,
-        machine_state=CollectionSubmissionStates.REMOVED,
-    )
 
     data = {
         'node': {
