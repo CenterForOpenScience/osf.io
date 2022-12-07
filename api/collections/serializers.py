@@ -188,28 +188,103 @@ class CollectionDetailSerializer(CollectionSerializer):
 class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     class Meta:
-        @staticmethod
-        def get_type(request):
-            # Preserve compatibility with old endpoints.
-            from api.collections.views import CollectionSubmissionList, CollectionSubmissionDetail
-            from api.providers.views import CollectionProviderSubmissionList
-            view = request.parser_context.get('view')
-            if isinstance(view, (CollectionSubmissionList, CollectionSubmissionDetail)):
-                request_url = request._request.get_raw_uri()
-                # this is yucky, but we don't want multiple inhierence for serializers and it must support legacy
-                # without a new API version.
-                if 'collection_submissions' in request_url:
-                    return 'collection-submissions'
-                elif 'collected_metadata' in request_url:
-                    return 'collected-metadata'
-            elif isinstance(view, CollectionProviderSubmissionList):
-                return 'collected-metadata'
-            # In tests some serializers have no views, so just revert to the default type, but if a new view is being
-            # used with this, the `NotImplementedError` below will ensure we catch it if it's not typed correctly.
-            elif view:
-                raise NotImplementedError()
-            else:
-                return 'collected-metadata'
+        type_ = 'collection-submissions'
+
+    filterable_fields = frozenset([
+        'id',
+        'collected_type',
+        'date_created',
+        'date_modified',
+        'reviews_state',
+        'subjects',
+        'status',
+    ])
+    id = IDField(source='guid._id', read_only=True)
+    reviews_state = EnumField(CollectionSubmissionStates, source='machine_state', required=False)
+    type = TypeField()
+
+    creator = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<creator._id>'},
+    )
+    collection = RelationshipField(
+        related_view='collections:collection-detail',
+        related_view_kwargs={'collection_id': '<collection._id>'},
+    )
+    guid = RelationshipField(
+        related_view='guids:guid-detail',
+        related_view_kwargs={'guids': '<guid._id>'},
+        always_embed=True,
+    )
+    collection_submission_actions = RelationshipField(
+        related_view='collection_submissions:collection-submission-action-list',
+        related_view_kwargs={'collection_submission_id': '<_id>'},
+    )
+    date_created = VersionedDateTimeField(source='created', read_only=True)
+    date_modified = VersionedDateTimeField(source='modified', read_only=True)
+
+    @property
+    def subjects_related_view(self):
+        # Overrides TaxonomizableSerializerMixin
+        return 'collections:collection-submissions-subjects-list'
+
+    @property
+    def subjects_self_view(self):
+        # Overrides TaxonomizableSerializerMixin
+        return 'collections:collection-submission-subjects-relationship-list'
+
+    @property
+    def subjects_view_kwargs(self):
+        # Overrides TaxonomizableSerializerMixin
+        return {'collection_id': '<collection._id>', 'collection_submission_id': '<guid._id>'}
+
+    collected_type = ser.CharField(required=False)
+    status = ser.CharField(required=False)
+    volume = ser.CharField(required=False)
+    issue = ser.CharField(required=False)
+    program_area = ser.CharField(required=False)
+    school_type = ser.CharField(required=False)
+    study_design = ser.CharField(required=False)
+
+    def get_absolute_url(self, obj):
+        return absolute_reverse(
+            'collections:collected-metadata-detail',
+            kwargs={
+                'collection_id': obj.collection._id,
+                'collection_submission_id': obj.guid._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
+
+    def update(self, obj, validated_data):
+        if validated_data and 'subjects' in validated_data:
+            auth = get_user_auth(self.context['request'])
+            subjects = validated_data.pop('subjects', None)
+            self.update_subjects(obj, subjects, auth)
+
+        if 'status' in validated_data:
+            obj.status = validated_data.pop('status')
+        if 'collected_type' in validated_data:
+            obj.collected_type = validated_data.pop('collected_type')
+        if 'volume' in validated_data:
+            obj.volume = validated_data.pop('volume')
+        if 'issue' in validated_data:
+            obj.issue = validated_data.pop('issue')
+        if 'program_area' in validated_data:
+            obj.program_area = validated_data.pop('program_area')
+        if 'school_type' in validated_data:
+            obj.school_Type = validated_data.pop('school_type')
+        if 'study_design' in validated_data:
+            obj.study_design = validated_data.pop('study_design')
+
+        obj.save()
+        return obj
+
+
+class LegacyCollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
+
+    class Meta:
+        type_ = 'collected-metadata'
 
     filterable_fields = frozenset([
         'id',
@@ -309,6 +384,42 @@ class CollectionSubmissionSearchSerializer(CollectionSubmissionSerializer):
 
 
 class CollectionSubmissionCreateSerializer(CollectionSubmissionSerializer):
+    # Makes guid writeable only on create
+    guid = GuidRelationshipField(
+        related_view='guids:guid-detail',
+        related_view_kwargs={'guids': '<guid._id>'},
+        always_embed=True,
+        read_only=False,
+        required=True,
+    )
+
+    def create(self, validated_data):
+        subjects = validated_data.pop('subjects', None)
+        collection = validated_data.pop('collection', None)
+        creator = validated_data.pop('creator', None)
+        guid = validated_data.pop('guid')
+        if not collection:
+            raise exceptions.ValidationError('"collection" must be specified.')
+        if not creator:
+            raise exceptions.ValidationError('"creator" must be specified.')
+        if not (creator.has_perm('write_collection', collection) or (hasattr(guid.referent, 'has_permission') and guid.referent.has_permission(creator, WRITE))):
+            raise exceptions.PermissionDenied('Must have write permission on either collection or collected object to collect.')
+        try:
+            obj = collection.collect_object(guid.referent, creator, **validated_data)
+        except ValidationError as e:
+            raise InvalidModelValueError(e.message)
+        if subjects:
+            auth = get_user_auth(self.context['request'])
+            try:
+                obj.set_subjects(subjects, auth)
+            except PermissionsError as e:
+                raise exceptions.PermissionDenied(detail=str(e))
+            except (ValueError, NodeStateError) as e:
+                raise exceptions.ValidationError(detail=str(e))
+        return obj
+
+
+class LegacyCollectionSubmissionCreateSerializer(LegacyCollectionSubmissionSerializer):
     # Makes guid writeable only on create
     guid = GuidRelationshipField(
         related_view='guids:guid-detail',

@@ -25,6 +25,8 @@ from api.collections.permissions import (
     ReadOnlyIfCollectedRegistration,
 )
 from api.collections.serializers import (
+    LegacyCollectionSubmissionSerializer,
+    LegacyCollectionSubmissionCreateSerializer,
     CollectionSubmissionSerializer,
     CollectionSubmissionCreateSerializer,
     CollectionSerializer,
@@ -348,6 +350,38 @@ class CollectionSubmissionList(JSONAPIBaseView, generics.ListCreateAPIView, Coll
         serializer.save(creator=user, collection=collection)
 
 
+class LegacyCollectionSubmissionList(JSONAPIBaseView, generics.ListCreateAPIView, CollectionMixin, ListFilterMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        CanSubmitToCollectionOrPublic,
+        base_permissions.TokenHasScope,
+    )
+    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
+    required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
+
+    model_class = CollectionSubmission
+    serializer_class = LegacyCollectionSubmissionSerializer
+    view_category = 'collections'
+    view_name = 'collected-metadata-list'
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return LegacyCollectionSubmissionCreateSerializer
+        else:
+            return LegacyCollectionSubmissionSerializer
+
+    def get_default_queryset(self):
+        return self.get_collection().collectionsubmission_set.all()
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        collection = self.get_collection()
+        serializer.save(creator=user, collection=collection)
+
+
 class CollectionSubmissionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CollectionMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -358,6 +392,36 @@ class CollectionSubmissionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroy
     required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
 
     serializer_class = CollectionSubmissionSerializer
+    view_category = 'collections'
+    view_name = 'collection-submission-detail'
+
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+
+    # overrides RetrieveAPIView
+    def get_object(self):
+        return self.get_collection_submission()
+
+    def perform_destroy(self, instance):
+        instance.remove(
+            user=self.request.user,
+            comment='Implicit removal via CollectionSubmissionDetail',
+            force=True,
+        )
+
+    def perform_update(self, serializer):
+        serializer.save()
+
+
+class LegacyCollectionSubmissionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CollectionMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        CanUpdateDeleteCollectionSubmissionOrPublic,
+        base_permissions.TokenHasScope,
+    )
+    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
+    required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
+
+    serializer_class = LegacyCollectionSubmissionSerializer
     view_category = 'collections'
     view_name = 'collection-submission-detail'
 

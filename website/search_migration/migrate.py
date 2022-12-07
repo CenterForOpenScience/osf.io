@@ -22,7 +22,7 @@ from website import settings
 from website.app import init_app
 from website.search.elastic_search import client as es_client
 from website.search.elastic_search import bulk_update_collection_submission
-from website.search.search import update_institution, bulk_update_collected_metadata
+from website.search.search import update_institution, bulk_update_collection_submissions
 
 
 logger = logging.getLogger(__name__)
@@ -183,7 +183,7 @@ def migrate_collected_metadata(index, delete):
 
     bulk_update_collection_submission(None, actions=actions, op='delete', index=index)
 
-    bulk_update_collected_metadata(collection_submissions, index=index)
+    bulk_update_collection_submissions(collection_submissions, index=index)
     logger.info('{} collection submissions migrated'.format(collection_submissions.count()))
 
 def migrate_institutions(index):
