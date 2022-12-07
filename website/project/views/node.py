@@ -727,22 +727,6 @@ def _view_project(node, auth, primary=False,
 
     is_registration = node.is_registration
 
-    rejected_submissions = CollectionSubmission.objects.filter(
-        guid=node.guids.first(),
-        collection__provider__isnull=False,
-        collection__deleted__isnull=True,
-        collection__is_bookmark_collection=False,
-        machine_state=CollectionSubmissionStates.REJECTED,
-    )
-
-    removed_submissions = CollectionSubmission.objects.filter(
-        guid=node.guids.first(),
-        collection__provider__isnull=False,
-        collection__deleted__isnull=True,
-        collection__is_bookmark_collection=False,
-        machine_state=CollectionSubmissionStates.REMOVED,
-    )
-
     data = {
         'node': {
             'disapproval_link': disapproval_link,
