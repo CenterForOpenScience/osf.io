@@ -38,7 +38,7 @@ class BaseSearchView(JSONAPIBaseView, generics.ListCreateAPIView):
     )
 
     pagination_class = SearchPagination
-    filter_backends = [ElasticOSFOrderingFilter,]
+    filter_backends = [ElasticOSFOrderingFilter, ]
 
     @property
     def search_fields(self):

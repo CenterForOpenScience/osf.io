@@ -156,7 +156,6 @@ class OnlyAdminCanCreateDestroyCollectionSubmissionAction(permissions.BasePermis
         if request.method != 'POST':
             raise MethodNotAllowed(request.method)
 
-        auth = get_user_auth(request)
         # Validate json before using id to check for permissions
         request_json = JSONSchemaParser().parse(
             io.BytesIO(request.body),

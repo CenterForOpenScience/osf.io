@@ -15,12 +15,15 @@ def collection_submission_machine_state_backfill(*args, backfill_date=None, dry_
     if not dry_run:
         if backfill_date:
             submissions.filter(
-                date_created__lte=backfill_date
+                date_created__lte=backfill_date,
+                collection__deleted__isnull=True,
             ).update(
                 machine_state=CollectionSubmissionStates.ACCEPTED
             )
         else:
-            submissions.update(
+            submissions.filter(
+                collection__deleted__isnull=True,
+            ).update(
                 machine_state=CollectionSubmissionStates.ACCEPTED
             )
 
@@ -32,7 +35,8 @@ def reverse_collection_submission_machine_state_backfill(*args, backfill_date=No
     if not dry_run:
         if backfill_date:
             submissions.filter(
-                date_created__lte=backfill_date
+                date_created__lte=backfill_date,
+                collection__deleted__isnull=True,
             ).update(
                 machine_state=CollectionSubmissionStates.IN_PROGRESS
             )
@@ -44,7 +48,8 @@ def reverse_collection_submission_machine_state_backfill(*args, backfill_date=No
 
 class Command(BaseCommand):
     """
-    Backfill machine states for collection submissions
+    Backfill machine states for collection submissions this will put all collection submissions in the system into an
+    `Accepted` state, putting them "into" the collections they are currently associated with.
     """
     def add_arguments(self, parser):
         super(Command, self).add_arguments(parser)
