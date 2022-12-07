@@ -561,7 +561,7 @@ class TestHybridModeratedCollectionSubmission:
         """
         Moderators can't force people to resubmit, even if it just goes back into a pending state.
         """
-        user = configure_test_auth(node, UserRoles.MODERATOR)
+        configure_test_auth(node, UserRoles.MODERATOR)
         not_admin_moderator = AuthUserFactory()
         node.add_contributor(not_admin_moderator)
         hybrid_moderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.REMOVED)
