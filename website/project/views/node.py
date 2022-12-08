@@ -49,6 +49,7 @@ from osf.models import AbstractNode, Collection, Contributor, Guid, PrivateLink,
 from osf.models.licenses import serialize_node_license_record
 from osf.utils.sanitize import strip_html
 from osf.utils.permissions import ADMIN, READ, WRITE, CREATOR_PERMISSIONS, ADMIN_NODE
+from osf.utils.workflows import CollectionSubmissionStates
 from website import settings
 from website.views import find_bookmark_collection, validate_page_num
 from website.views import serialize_node_summary, get_storage_region_list
@@ -767,7 +768,11 @@ def _view_project(node, auth, primary=False,
             'registered_schemas': serialize_meta_schemas(list(node.registered_schema.all())) if is_registration else False,
             'is_fork': node.is_fork,
             'is_collected': node.is_collected,
-            'collections': serialize_collections(node.collection_submissions, auth),
+            'collections': sorted(
+                serialize_collections(node.collection_submissions, auth),
+                key=lambda x: x['state'] == CollectionSubmissionStates.ACCEPTED.db_name,
+                reverse=True
+            ),
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
             'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
             'forked_date': iso8601format(node.forked_date) if node.is_fork else '',

@@ -323,7 +323,7 @@
                 <div class="clearfix" id="collections-header" data-toggle="collapse" href="#collectionList" role="button" style="margin: 10px;">
                     <div class="pull-left" style="margin-top: 5px">
                         <img src="${ node['collections'][0]['logo']}" style="display: inline; height: 25px; width: 25px; margin-left: 5px;"/>
-                        % if node['collections'][0]['state'] == 'accepted':
+                        % if 'accepted' in [x['state'] for x in node['collections']]:
                             <div style="display: inline; margin: 10px; margin-left: 0px;" >
                             % if len([x for x in node['collections'] if x['state'] == 'accepted']) - 1:
                                 Included in <a>${node['collections'][0]['collection_title']}</a> and <a>${len([x for x in node['collections'] if x['state'] == 'accepted']) - 1}</a> more
@@ -331,7 +331,7 @@
                                 Included in <a>${node['collections'][0]['collection_title']}</a>
                             % endif
                             </div>
-                        % elif node['collections'][0]['state'] == 'pending':
+                        % elif node['collections'][0]['state'] == 'pending'  and user['is_contributor_or_group_member']:
                             <div style="display: inline; margin: 10px; margin-left: 0px;" >
                             % if len([x for x in node['collections'] if x['state'] == 'pending']) - 1:
                                 Pending entry into <a>${node['collections'][0]['collection_title']}</a> and <a>${len([x for x in node['collections'] if x['state'] == 'pending']) - 1}</a> more
