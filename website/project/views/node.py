@@ -770,7 +770,7 @@ def _view_project(node, auth, primary=False,
             'is_collected': node.is_collected,
             'collections': sorted(
                 serialize_collections(node.collection_submissions, auth),
-                key=lambda x: x.state == CollectionSubmissionStates.ACCEPTED,
+                key=lambda x: x['state'] == CollectionSubmissionStates.ACCEPTED.db_name,
                 reverse=True
             ),
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
