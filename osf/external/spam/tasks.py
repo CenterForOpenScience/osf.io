@@ -58,8 +58,13 @@ def _extract_domains(content):
         if not domain or domain in extracted_domains:
             continue
 
+        protocol = match.group('protocol') or 'https://'
+        www = match.group('www') or ''
+        path = match.group('path') or ''
+        constructed_url = f'{protocol}{www}{domain}{path}'
+
         try:
-            response = requests.head(match.group())
+            response = requests.head(constructed_url)
         except (requests.exceptions.ConnectionError, requests.exceptions.InvalidURL):
             continue
         except requests.exceptions.RequestException:
