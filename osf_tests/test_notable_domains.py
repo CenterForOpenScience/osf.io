@@ -119,7 +119,7 @@ class TestDomainExtraction:
             domains = list(spam_tasks._extract_domains(sample_text))
             mock_object.assert_called_once_with(f'https://{target_url}')
         assert domains == ['osf.io']
-    
+
     def test_extract_domains__redirect_with_full_url_and_protocol(self):
         mock_response = SimpleNamespace()
         mock_response.status_code = 301
