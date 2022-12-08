@@ -1,5 +1,6 @@
 from django.conf.urls import re_path
 from . import views
+from admin.providers.views import AddAdminOrModerator, RemoveAdminsAndModerators
 
 app_name = 'admin'
 
@@ -15,6 +16,6 @@ urlpatterns = [
     re_path(r'^(?P<registration_provider_id>[a-z0-9]+)/schemas/$', views.ChangeSchema.as_view(), name='schemas'),
     re_path(r'^(?P<registration_provider_id>[a-z0-9]+)/cannot_delete/$', views.CannotDeleteProvider.as_view(), name='cannot_delete'),
     re_path(r'^(?P<registration_provider_id>[a-z0-9]+)/share_source/$', views.ShareSourceRegistrationProvider.as_view(), name='share_source'),
-    re_path(r'^(?P<provider_id>[a-z0-9]+)/remove_admins_and_moderators/$', views.RemoveAdminsAndModerators.as_view(), name='remove_admins_and_moderators'),
-    re_path(r'^(?P<provider_id>[a-z0-9]+)/add_admin_or_moderator/$', views.AddAdminOrModerator.as_view(), name='add_admin_or_moderator'),
+    re_path(r'^(?P<provider_id>[a-z0-9]+)/remove_admins_and_moderators/$', RemoveAdminsAndModerators.as_view(), name='remove_admins_and_moderators'),
+    re_path(r'^(?P<provider_id>[a-z0-9]+)/add_admin_or_moderator/$', AddAdminOrModerator.as_view(), name='add_admin_or_moderator'),
 ]

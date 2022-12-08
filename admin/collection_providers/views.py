@@ -18,7 +18,7 @@ from osf.models import (
 )
 from admin.preprint_providers.views import ImportProviderView
 from django.contrib import messages
-from admin.registration_providers.views import AddAdminOrModerator, RemoveAdminsAndModerators
+from admin.providers.views import AddAdminOrModerator, RemoveAdminsAndModerators
 
 
 class CreateCollectionProvider(PermissionRequiredMixin, CreateView):
