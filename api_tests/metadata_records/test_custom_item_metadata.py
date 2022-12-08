@@ -1,10 +1,7 @@
 import pytest
-import rdflib
 
 from api.base.settings.defaults import API_BASE
-from api_tests import utils
-from osf.metadata.rdfutils import graph_equals, DCT
-from osf.models import PreprintLog, NodeLog, GuidMetadataRecord
+from osf.models import GuidMetadataRecord
 from osf.utils.permissions import READ
 from osf_tests.factories import (
     AuthUserFactory,
@@ -146,9 +143,7 @@ class TestCustomItemMetadataRecordUpdate:
         assert res.status_code == 200
         assert res.json['data']['attributes']['language'] == 'nga-CD'
         metadata_record = public_node_guid.metadata_record
-        assert graph_equals(metadata_record.custom_metadata, [
-            (metadata_record.guid_uri, DCT.language, rdflib.Literal('nga-CD')),
-        ])
+        assert metadata_record.language == 'nga-CD'
         # assert node.logs.first().action == NodeLog.FILE_METADATA_UPDATED
 
     def test_write_can_update(self, app, user_write, public_node_guid):
@@ -164,13 +159,12 @@ class TestCustomItemMetadataRecordUpdate:
         assert res.json['data']['attributes'] == {
             'language': 'en-NZ',
             'resource_type_general': 'Text',
+            'funders': [],
+            'custom_properties': [],
         }
         metadata_record = public_node_guid.metadata_record
-        guid_uri = metadata_record.guid_uri
-        assert graph_equals(metadata_record.custom_metadata, [
-            (guid_uri, DCT.language, rdflib.Literal('en-NZ')),
-            (guid_uri, DCT.type, rdflib.Literal('Text')),
-        ])
+        assert metadata_record.language == 'en-NZ'
+        assert metadata_record.resource_type_general == 'Text'
         # assert node.logs.first().action == NodeLog.FILE_METADATA_UPDATED
 
     def test_read_cannot_update(self, app, user_read, public_node_guid):

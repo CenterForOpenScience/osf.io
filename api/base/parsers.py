@@ -4,7 +4,6 @@ import codecs
 import time
 import collections
 
-import rdflib
 from django.core.exceptions import ImproperlyConfigured
 from rest_framework.parsers import JSONParser
 from rest_framework.exceptions import ParseError, NotAuthenticated

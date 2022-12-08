@@ -3,6 +3,7 @@ import re
 import waffle
 import jsonschema
 
+from django.conf import settings
 from django.core.validators import URLValidator, validate_email as django_validate_email
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils.deconstruct import deconstructible
@@ -437,3 +438,28 @@ class SwitchValidator(object):
             raise exceptions.ValidationError(detail=self.message)
 
         return value
+
+
+@deconstructible
+class JsonschemaValidator:
+    def __init__(self, required_jsonschema):
+        if settings.DEBUG:
+            # if the jsonschema's bad, fail fast
+            validator_cls = jsonschema.validators.validator_for(required_jsonschema)
+            validator_cls.check_schema(required_jsonschema)
+        self._required_jsonschema = required_jsonschema
+
+    def __call__(self, value):
+        """
+        :returns True (if valid according to the given jsonschema)
+        :raises ValidationError (if invalid)
+        """
+        try:
+            jsonschema.validate(value, self._required_jsonschema)
+        except jsonschema.ValidationError as e:
+            # TODO: more helpful message?
+            raise DjangoValidationError(e.message)
+        return True
+
+    def __eq__(self, other):
+        return self._required_jsonschema == other._required_jsonschema

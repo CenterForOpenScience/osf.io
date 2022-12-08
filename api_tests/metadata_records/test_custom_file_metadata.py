@@ -1,10 +1,9 @@
 import pytest
-import rdflib
+from rdflib import DCTERMS
 
 from api.base.settings.defaults import API_BASE
 from api_tests import utils
-from osf.metadata.rdfutils import graph_equals, DCT
-from osf.models import PreprintLog, NodeLog, GuidMetadataRecord
+from osf.models import GuidMetadataRecord
 from osf.utils.permissions import READ
 from osf_tests.factories import (
     AuthUserFactory,
@@ -164,9 +163,7 @@ class TestCustomFileMetadataRecordUpdate:
         assert res.status_code == 200
         assert res.json['data']['attributes']['language'] == 'nga-CD'
         metadata_record = public_file_guid.metadata_record
-        assert graph_equals(metadata_record.custom_metadata, [
-            (metadata_record.guid_uri, DCT.language, rdflib.Literal('nga-CD')),
-        ])
+        assert metadata_record.language == 'nga-CD'
         # assert node.logs.first().action == NodeLog.FILE_METADATA_UPDATED
 
     def test_write_can_update(self, app, user_write, public_file_guid):
@@ -184,15 +181,18 @@ class TestCustomFileMetadataRecordUpdate:
             'description': 'this is my file',
             'language': 'en-NZ',
             'resource_type_general': 'Text',
+            'funders': [],
+            'custom_properties': [],
         }
         metadata_record = public_file_guid.metadata_record
-        guid_uri = metadata_record.guid_uri
-        assert graph_equals(metadata_record.custom_metadata, [
-            (guid_uri, DCT.language, rdflib.Literal('en-NZ')),
-            (guid_uri, DCT.title, rdflib.Literal('my file')),
-            (guid_uri, DCT.description, rdflib.Literal('this is my file')),
-            (guid_uri, DCT.type, rdflib.Literal('Text')),
-        ])
+        assert metadata_record.language == 'en-NZ'
+        assert metadata_record.resource_type_general == 'Text'
+        custom_property_qs = metadata_record.custom_property_set.all()
+        assert custom_property_qs.count() == 2
+        actual_title = custom_property_qs.filter(property_uri=DCTERMS.title).first().value_as_text
+        assert actual_title == 'my file'
+        actual_description = custom_property_qs.filter(property_uri=DCTERMS.description).first().value_as_text
+        assert actual_description == 'this is my file'
         # assert node.logs.first().action == NodeLog.FILE_METADATA_UPDATED
 
     def test_read_cannot_update(self, app, user_read, public_file_guid):

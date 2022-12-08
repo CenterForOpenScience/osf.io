@@ -12,7 +12,6 @@ from osf.exceptions import (
     NoSuchPIDValidatorError
 )
 from website.settings import (
-    DOI_URL_PREFIX,
     PID_VALIDATION_ENABLED,
     PID_VALIDATION_ENDPOINTS,
 )

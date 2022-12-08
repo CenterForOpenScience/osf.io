@@ -1,19 +1,25 @@
 # -*- coding: utf-8 -*-
-import rdflib
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.utils.functional import cached_property
 
-from framework.auth.core import Auth
-from framework.exceptions import PermissionsError
-from osf.metadata import rdfutils
 from osf.models.base import BaseModel, ObjectIDMixin, Guid, InvalidGuid
-from osf.utils import permissions as osf_permissions
+from osf.models.validators import JsonschemaValidator
 
 
 class GuidMetadataRecordManager(models.Manager):
     def for_guid(self, guid, allowed_referent_models=None):
-        guid_qs = Guid.objects.all().select_related('metadata_record')
+        """get a GuidMetadataRecord instance for the given osf:Guid.
+
+        @param guid: `str` or `osf.models.Guid` instance
+        @param allowed_referent_models: (optional) iterable of model classes
+        @returns `GuidMetadataRecord` instance (unsaved unless it already existed)
+        @raises `InvalidGuid` if the given guid does not exist (or refers to
+                a type not in the given `allowed_referent_models`)
+        """
+        guid_qs = (
+            Guid.objects.all()
+            .select_related('metadata_record')
+        )
         if isinstance(guid, str):
             guid_qs = guid_qs.filter(_id=guid)
         elif isinstance(guid, Guid):
@@ -45,54 +51,64 @@ class GuidMetadataRecordManager(models.Manager):
 class GuidMetadataRecord(ObjectIDMixin, BaseModel):
     guid = models.OneToOneField('Guid', related_name='metadata_record', on_delete=models.CASCADE)
 
-    # TODO: validator using osf-map and pyshacl?
-    custom_metadata_bytes = models.BinaryField(default=b'')  # serialized rdflib.Graph
-    _RDF_FORMAT = 'turtle'
+    language = models.TextField(blank=True)  # TODO: choices?
+    resource_type_general = models.TextField(blank=True)  # TODO: choices?
+
+    FUNDER_INFO_JSONSCHEMA = {
+        'type': 'array',
+        'items': {
+            'type': 'object',
+            'required': [],
+            'additionalProperties': False,
+            'properties': {
+                'funder_name': {'type': 'string'},
+                'funder_identifier': {'type': 'string'},
+                'funder_identifier_type': {'type': 'string'},
+                'award_number': {'type': 'string'},
+                'award_uri': {'type': 'string'},
+                'award_title': {'type': 'string'},
+            },
+        },
+    }
+    funding_info = models.JSONField(
+        default=list,
+        validators=[JsonschemaValidator(FUNDER_INFO_JSONSCHEMA)],
+    )
+
+    ## implicitly defined on other models:
+    # custom_property_set = OneToMany(CustomMetadataProperty)
 
     objects = GuidMetadataRecordManager()
 
     def __repr__(self):
         return f'{self.__class__.__name__}(guid={self.guid._id})'
 
-    @property
-    def guid_uri(self):
-        return rdfutils.guid_irl(self.guid)
+    # TODO: something like this
+    # def update(self, proposed_metadata, user=None):
+    #     auth = Auth(user) if user else None
+    #     if auth and self.file.target.has_permission(user, osf_permissions.WRITE):
+    #         self.validate_metadata(proposed_metadata)
+    #         self.metadata = proposed_metadata
+    #         self.save()
 
-    @cached_property
-    def custom_metadata(self) -> rdflib.Graph:
-        return rdfutils.contextualized_graph().parse(
-            format=self._RDF_FORMAT,
-            data=self.custom_metadata_bytes,
-        )
+    #         target = self.file.target
+    #         target.add_log(
+    #             action=target.log_class.FILE_METADATA_UPDATED,
+    #             params={
+    #                 'path': self.file.materialized_path,
+    #             },
+    #             auth=auth,
+    #         )
+    #     else:
+    #         raise PermissionsError('You must have write access for this file to update its metadata.')
 
-    def save(self, *args, **kwargs):
-        # persist changes to the cached custom_metadata rdf-graph
-        self.custom_metadata_bytes = self.custom_metadata.serialize(format=self._RDF_FORMAT)
-        super().save(*args, **kwargs)
 
-    # TODO: safety, logging
-    def set_custom_property(self, property_iri, value):
-        if not isinstance(value, rdflib.term.Node):
-            value = rdflib.Literal(value)
-        self.custom_metadata.set(
-            (self.guid_uri, property_iri, value)
-        )
+class CustomMetadataProperty(ObjectIDMixin, BaseModel):
+    metadata_record = models.ForeignKey(
+        GuidMetadataRecord,
+        related_name='custom_property_set',
+        on_delete=models.CASCADE,
+    )
 
-    # TODO: either something like this, or delete this
-    def update(self, proposed_metadata, user=None):
-        auth = Auth(user) if user else None
-        if auth and self.file.target.has_permission(user, osf_permissions.WRITE):
-            self.validate_metadata(proposed_metadata)
-            self.metadata = proposed_metadata
-            self.save()
-
-            target = self.file.target
-            target.add_log(
-                action=target.log_class.FILE_METADATA_UPDATED,
-                params={
-                    'path': self.file.materialized_path,
-                },
-                auth=auth,
-            )
-        else:
-            raise PermissionsError('You must have write access for this file to update its metadata.')
+    property_uri = models.URLField()
+    value_as_text = models.TextField()
