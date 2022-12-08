@@ -18,10 +18,6 @@ from urllib.parse import urlparse
 class TestBackfillDomainReferences:
 
     @pytest.fixture()
-    def registration(self):
-        return RegistrationFactory()
-
-    @pytest.fixture()
     def spam_domain(self):
         return urlparse('http://I-am-a-domain.io/with-a-path/?and=&query=parms')
 
