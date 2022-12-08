@@ -355,7 +355,7 @@
 
                             % if collection['state'] == 'accepted':
                                 % if user['is_admin']:
-                                    <a class="fa fa-pencil pull-right" href="${collection['url']}${node['id']}/edit"></a>
+                                    <a class="fa fa-pencil pull-right collection-pencil" href="${collection['url']}${node['id']}/edit"></a>
                                 % endif
                                 <img src="${collection['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
                                 <div style="display: inline;">
