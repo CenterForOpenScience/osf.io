@@ -167,19 +167,20 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         if not is_moderator:
             raise PermissionsError(f'{user} must have moderator permissions.')
 
-    def _notify_moderated_accepted(self, event_data):
-        for contributor in self.guid.referent.contributors:
-            mails.send_mail(
-                to_addr=contributor.username,
-                mail=mails.COLLECTION_SUBMISSION_ACCEPTED(self.collection, self.guid.referent),
-                user=contributor,
-                submitter=event_data.kwargs['user'],
-                is_admin=self.guid.referent.has_permission(contributor, ADMIN),
-                collection=self.collection,
-                node=self.guid.referent,
-                domain=settings.DOMAIN,
-                osf_contact_email=settings.OSF_CONTACT_EMAIL,
-            )
+    def _notify_accepted(self, event_data):
+        if self.collection.provider:
+            for contributor in self.guid.referent.contributors:
+                mails.send_mail(
+                    to_addr=contributor.username,
+                    mail=mails.COLLECTION_SUBMISSION_ACCEPTED(self.collection, self.guid.referent),
+                    user=contributor,
+                    submitter=event_data.kwargs['user'],
+                    is_admin=self.guid.referent.has_permission(contributor, ADMIN),
+                    collection=self.collection,
+                    node=self.guid.referent,
+                    domain=settings.DOMAIN,
+                    osf_contact_email=settings.OSF_CONTACT_EMAIL,
+                )
 
     def _validate_reject(self, event_data):
         force = event_data.kwargs.get('force')  # spam only please
