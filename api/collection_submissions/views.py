@@ -37,7 +37,7 @@ class CollectionSubmissionActionsList(JSONAPIBaseView, generics.ListAPIView, Lis
                 guid___id=node_id,
                 collection__guids___id=collection_id,
             ),
-            self.request,
+            request=self.request,
             display_name='collection submission',
         ).actions.all()
 

@@ -19,7 +19,7 @@ class CollectionSubmissionActionsListPermission(permissions.BasePermission):
                 guid___id=node_id,
                 collection__guids___id=collection_id,
             ),
-            request,
+            request=request,
             display_name='collection submission',
         )
         return self.has_object_permission(request, view, obj)

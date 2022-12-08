@@ -173,7 +173,7 @@ class CollectionSubmissionActionListPermission(permissions.BasePermission):
                 guid___id=node_guid,
                 collection__guids___id=collection_guid,
             ),
-            request,
+            request=request,
             display_name='collection submission',
         )
         if obj.guid.referent.deleted:

@@ -851,7 +851,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
             ).exclude(
                 machine_state=CollectionSubmissionStates.REMOVED,
             ),
-            self.request,
+            request=self.request,
             display_name='node link',
         )
         # May raise a permission denied

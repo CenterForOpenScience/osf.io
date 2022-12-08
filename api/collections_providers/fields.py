@@ -9,5 +9,3 @@ class CollectionProviderRelationshipField(RelationshipField):
     def to_internal_value(self, data):
         provider = self.get_object(data)
         return {'provider': provider}
-
-
