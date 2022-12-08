@@ -117,11 +117,13 @@ $(document).ready(function () {
             $('#collections-header>.pull-left').css('display', 'none');
             $('#collections-header').css('height', '0px');
             $('#collections-header').css('margin', '0px');
+            $('#collections-caret-down').css('padding', '20px');
         } else {
             $('#collections-header>.pull-left').css('display', 'block');
             $('#collections-header').css('height', 'inherit');
             $('#collections-header').css('margin', '10px');
-            $('#collections-header>.pull-left').slideIn();
+            $('#collections-caret-down').css('padding', '10px');
+
         }
     });
 

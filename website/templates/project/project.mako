@@ -346,7 +346,7 @@
                         % endif
                     </div>
                     <div class="pull-right">
-                        <button class="btn btn-link" aria-label="Toggle Collections" ><i class="fa fa-angle-down"></i></button>
+                        <button id='collections-caret-down' class="btn btn-link" aria-label="Toggle Collections" ><i class="fa fa-angle-down"></i></button>
                     </div>
                 </div>
                 <div id="collectionList" class="collapse">
