@@ -11,8 +11,9 @@
         % if is_admin:
             <a href="${node.absolute_url}">${node.title}</a> was  removed by <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.title}</a>:
             <br>
-            ${rejection_justification}
-            <br>
+            <p>
+                ${rejection_justification}
+            </p>
             This can also be viewed in the collection status section on the project or component page.
             If you wish to be associated with the collection, you will need to reapply to the collection again.
         % else:
