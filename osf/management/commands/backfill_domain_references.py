@@ -6,7 +6,7 @@ from functools import reduce
 from django.db.models import Q, OuterRef, Exists
 from django.apps import apps
 from django.core.management.base import BaseCommand
-from osf.external.spam.tasks import check_resource_for_domains
+from osf.external.spam import tasks as spam_tasks
 from osf.models import DomainReference
 
 
@@ -40,7 +40,7 @@ def backfill_domain_references(model_name, dry_run=False, batch_size=None):
         logger.info(f'{item}, queued')
         spam_content = item._get_spam_content()
         if not dry_run:
-            check_resource_for_domains.apply_async(
+            spam_tasks.check_resource_for_domains.apply_async(
                 kwargs={'guid': item._id, 'content': spam_content}
             )
 

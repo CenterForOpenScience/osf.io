@@ -1,8 +1,9 @@
+import mock
 import pytest
 from django.contrib.contenttypes.models import ContentType
 
 from addons.wiki.tests.factories import WikiVersionFactory
-from osf.management.commands.backfill_domain_references import backfill_domain_references
+from osf.management.commands import backfill_domain_references as backfill_task
 from osf_tests.factories import (
     NodeFactory,
     RegistrationFactory,
@@ -17,10 +18,6 @@ from urllib.parse import urlparse
 class TestBackfillDomainReferences:
 
     @pytest.fixture()
-    def node(self):
-        return NodeFactory()
-
-    @pytest.fixture()
     def registration(self):
         return RegistrationFactory()
 
@@ -29,63 +26,87 @@ class TestBackfillDomainReferences:
         return urlparse('http://I-am-a-domain.io/with-a-path/?and=&query=parms')
 
     @pytest.fixture()
-    def node_with_domain(self, spam_domain):
+    def test_node(self, spam_domain):
         return NodeFactory(description=f'I am spam: {spam_domain.geturl()}', is_public=True)
 
     @pytest.fixture()
-    def registration_with_domain(self, spam_domain):
+    def test_registration(self, spam_domain):
         return RegistrationFactory(description=f'I am spam: {spam_domain.geturl()}', is_public=True)
 
     @pytest.fixture()
-    def comment_with_domain(self, spam_domain):
+    def test_comment(self, spam_domain):
         return CommentFactory(content=f'I am spam: {spam_domain.geturl()}')
 
     @pytest.fixture()
-    def preprint_with_domain(self, spam_domain):
+    def test_preprint(self, spam_domain):
         return PreprintFactory(description=f'I am spam: {spam_domain.geturl()}')
 
     @pytest.fixture()
-    def wiki_with_domain(self, spam_domain):
+    def test_wiki(self, spam_domain):
         return WikiVersionFactory(content=f'I am spam: {spam_domain.geturl()}')
 
     @pytest.mark.enable_enqueue_task
-    def test_backfill_domain_references(self,
-                                        node_with_domain,
-                                        registration_with_domain,
-                                        comment_with_domain,
-                                        preprint_with_domain,
-                                        wiki_with_domain,
-                                        spam_domain):
+    def test_backfill_project_domain_references(self, test_node, spam_domain):
+        assert DomainReference.objects.count() == 0
+        with mock.patch.object(backfill_task.spam_tasks.requests, 'head'):
+            backfill_task.backfill_domain_references(model_name='osf.Node')
 
-        # Node
-        backfill_domain_references(model_name='osf.Node')
-        domain = NotableDomain.objects.get(domain=spam_domain.netloc.lower())
-        assert DomainReference.objects.get(
-            referrer_object_id=node_with_domain.id,
-            referrer_content_type=ContentType.objects.get_for_model(node_with_domain),
-        ).domain == domain
+        domain = NotableDomain.objects.get(domain=spam_domain.netloc)
+        created_reference = DomainReference.objects.get(
+            referrer_object_id=test_node.id,
+            referrer_content_type=ContentType.objects.get_for_model(test_node),
+        )
+        assert created_reference.domain == domain
 
-        # Registration
-        backfill_domain_references(model_name='osf.Registration')
-        assert DomainReference.objects.get(
-            referrer_object_id=registration_with_domain.id,
-            referrer_content_type=ContentType.objects.get_for_model(registration_with_domain),
-        ).domain == domain
-        # Registration's registered_from node
-        assert DomainReference.objects.get(
-            referrer_object_id=registration_with_domain.registered_from.id,
-            referrer_content_type=ContentType.objects.get_for_model(registration_with_domain.registered_from),
-        ).domain == domain
+    @pytest.mark.enable_enqueue_task
+    def test_backfill_project_domain_references__wiki(self, test_wiki, spam_domain):
+        assert DomainReference.objects.count() == 0
+        with mock.patch.object(backfill_task.spam_tasks.requests, 'head'):
+            backfill_task.backfill_domain_references(model_name='osf.Node')
 
-        # Comment
-        backfill_domain_references(model_name='osf.Comment')
-        assert DomainReference.objects.get(
-            referrer_content_type=ContentType.objects.get_for_model(comment_with_domain),
-        ).domain == domain
+        test_node = test_wiki.wiki_page.node
+        domain = NotableDomain.objects.get(domain=spam_domain.netloc)
+        created_reference = DomainReference.objects.get(
+            referrer_object_id=test_node.id,
+            referrer_content_type=ContentType.objects.get_for_model(test_node),
+        )
+        assert created_reference.domain == domain
 
-        # Exclude old nodes properly
-        backfill_domain_references(model_name='osf.Node')
-        assert DomainReference.objects.get(
-            referrer_object_id=wiki_with_domain.wiki_page.node.id,
-            referrer_content_type=ContentType.objects.get_for_model(wiki_with_domain.wiki_page.node),
-        ).domain == domain
+    @pytest.mark.enable_enqueue_task
+    def test_backfill_preprint_domain_references(self, test_preprint, spam_domain):
+        assert DomainReference.objects.count() == 0
+        with mock.patch.object(backfill_task.spam_tasks.requests, 'head'):
+            backfill_task.backfill_domain_references(model_name='osf.Preprint')
+
+        domain = NotableDomain.objects.get(domain=spam_domain.netloc)
+        created_reference = DomainReference.objects.get(
+            referrer_object_id=test_preprint.id,
+            referrer_content_type=ContentType.objects.get_for_model(test_preprint)
+        )
+        assert created_reference.domain == domain
+
+    @pytest.mark.enable_enqueue_task
+    def test_backfill_registration_domain_references(self, test_registration, spam_domain):
+        assert DomainReference.objects.count() == 0
+        with mock.patch.object(backfill_task.spam_tasks.requests, 'head'):
+            backfill_task.backfill_domain_references(model_name='osf.Registration')
+
+        domain = NotableDomain.objects.get(domain=spam_domain.netloc)
+        created_reference = DomainReference.objects.get(
+            referrer_object_id=test_registration.id,
+            referrer_content_type=ContentType.objects.get_for_model(test_registration)
+        )
+        assert created_reference.domain == domain
+
+    @pytest.mark.enable_enqueue_task
+    def test_backfill_comment_domain_references(self, test_comment, spam_domain):
+        assert DomainReference.objects.count() == 0
+        with mock.patch.object(backfill_task.spam_tasks.requests, 'head'):
+            backfill_task.backfill_domain_references(model_name='osf.Comment')
+
+        domain = NotableDomain.objects.get(domain=spam_domain.netloc)
+        created_reference = DomainReference.objects.get(
+            referrer_object_id=test_comment.id,
+            referrer_content_type=ContentType.objects.get_for_model(test_comment)
+        )
+        assert created_reference.domain == domain
