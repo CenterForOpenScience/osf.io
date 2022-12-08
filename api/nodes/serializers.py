@@ -38,7 +38,7 @@ from osf.models import (
     Comment, DraftRegistration, ExternalAccount, Institution,
     RegistrationSchema, AbstractNode, PrivateLink, Preprint,
     RegistrationProvider, OSFGroup, NodeLicense, DraftNode,
-    Registration, Node, CollectionProvider,
+    Registration, Node,
 )
 from website.project import new_private_link
 from website.project.model import NodeUpdateError
@@ -48,15 +48,6 @@ from osf.utils import permissions as osf_permissions
 class RegistrationProviderRelationshipField(RelationshipField):
     def get_object(self, _id):
         return RegistrationProvider.load(_id)
-
-    def to_internal_value(self, data):
-        provider = self.get_object(data)
-        return {'provider': provider}
-
-
-class CollectionProviderRelationshipField(RelationshipField):
-    def get_object(self, _id):
-        return CollectionProvider.load(_id)
 
     def to_internal_value(self, data):
         provider = self.get_object(data)

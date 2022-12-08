@@ -2,7 +2,7 @@ from django.db import IntegrityError
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 
-from osf.models import AbstractNode, Node, Collection, Guid, Registration, CollectionProvider
+from osf.models import AbstractNode, Node, Collection, Guid, Registration
 from osf.exceptions import ValidationError, NodeStateError
 from api.base.serializers import LinksField, RelationshipField, LinkedNodesRelationshipSerializer, LinkedRegistrationsRelationshipSerializer, LinkedPreprintsRelationshipSerializer
 from api.base.serializers import JSONAPISerializer, IDField, TypeField, VersionedDateTimeField, EnumField
@@ -10,18 +10,11 @@ from api.base.exceptions import InvalidModelValueError, RelationshipPostMakesNoC
 from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import NodeLinksSerializer
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
+from api.collections_providers.fields import CollectionProviderRelationshipField
 from framework.exceptions import PermissionsError
 from osf.utils.permissions import WRITE
 from osf.utils.workflows import CollectionSubmissionStates
 
-
-class CollectionProviderRelationshipField(RelationshipField):
-    def get_object(self, provider_id):
-        return CollectionProvider.load(provider_id)
-
-    def to_internal_value(self, data):
-        provider = self.get_object(data)
-        return {'provider': provider}
 
 class GuidRelationshipField(RelationshipField):
     def get_object(self, _id):
