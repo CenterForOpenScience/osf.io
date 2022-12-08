@@ -1,7 +1,5 @@
 from rest_framework import generics, permissions as drf_permissions
 
-from django.db.models import Q
-
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.base import permissions as base_permissions
@@ -33,9 +31,12 @@ class CollectionSubmissionActionsList(JSONAPIBaseView, generics.ListAPIView, Lis
 
     def get_default_queryset(self):
         node_id, collection_id = self.kwargs['collection_submission_id'].split('-')
+
         return get_object_or_error(
-            CollectionSubmission,
-            Q(guid___id=node_id, collection__guids___id=collection_id),
+            CollectionSubmission.objects.filter(
+                guid___id=node_id,
+                collection__guids___id=collection_id,
+            ),
             self.request,
             display_name='collection submission',
         ).actions.all()

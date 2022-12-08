@@ -5,7 +5,6 @@ from api.base.utils import get_user_auth
 from osf.models import CollectionSubmission
 from osf.utils.permissions import READ
 from api.base.utils import get_object_or_error
-from django.db.models import Q
 from rest_framework import exceptions, permissions
 
 
@@ -18,7 +17,7 @@ class CollectionSubmissionActionsListPermission(permissions.BasePermission):
         obj = get_object_or_error(
             CollectionSubmission.objects.filter(
                 guid___id=node_id,
-                collection__guids___id=collection_id
+                collection__guids___id=collection_id,
             ),
             request,
             display_name='collection submission',

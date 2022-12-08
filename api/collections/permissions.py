@@ -2,8 +2,6 @@
 from __future__ import unicode_literals
 import io
 
-from django.db.models import Q
-
 from rest_framework import permissions
 from rest_framework.exceptions import NotFound, MethodNotAllowed
 
@@ -171,9 +169,12 @@ class CollectionSubmissionActionListPermission(permissions.BasePermission):
             raise NotFound(f'Your id [`{hyphen_id}`] was not valid.')
 
         obj = get_object_or_error(
-            CollectionSubmission,
-            Q(guid___id=node_guid, collection__guids___id=collection_guid),
+            CollectionSubmission.objects.filter(
+                guid___id=node_guid,
+                collection__guids___id=collection_guid,
+            ),
             request,
+            display_name='collection submission',
         )
         if obj.guid.referent.deleted:
             raise Gone()
