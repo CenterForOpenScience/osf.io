@@ -323,7 +323,7 @@
                 <div class="clearfix" id="collections-header" data-toggle="collapse" href="#collectionList" role="button" style="margin: 10px;">
                     <div class="pull-left" style="margin-top: 5px">
                         <img src="${ node['collections'][0]['logo']}" style="display: inline; height: 25px; width: 25px; margin-left: 5px;"/>
-                        % if 'accepted' in [x for x in node['collections'] if x['state'] == 'accepted']:
+                        % if 'accepted' in [x['state'] for x in node['collections']]:
                             <div style="display: inline; margin: 10px; margin-left: 0px;" >
                             % if len([x for x in node['collections'] if x['state'] == 'accepted']) - 1:
                                 Included in <a>${node['collections'][0]['collection_title']}</a> and <a>${len([x for x in node['collections'] if x['state'] == 'accepted']) - 1}</a> more
