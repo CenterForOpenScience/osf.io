@@ -374,6 +374,7 @@
                                         Type: <i>${collection['type']}</i>
                                     </div>
                                 % endif
+                                <hr>
                             % elif collection['state'] == 'pending' and user['is_contributor_or_group_member']:
                                 <img src="${collection['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
                                 <div style="display: inline;">
@@ -392,6 +393,7 @@
                                         Type: <i>${collection['type']}</i>
                                     </div>
                                 % endif
+                                <hr>
                             % elif collection['state'] == 'rejected' and user['is_contributor_or_group_member']:
                                 <img src="${collection['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
                                 <div style="display: inline;">
@@ -409,6 +411,7 @@
                                         </a>
                                     </div>
                                 % endif
+                                <hr>
                             % elif collection['state'] == 'removed' and user['is_contributor_or_group_member']:
                                 <img src="${collection['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
                                 <div style="display: inline;">
@@ -426,8 +429,8 @@
                                         </a>
                                     </div>
                                 % endif
+                                <hr>
                             % endif
-                            <hr>
                         % endfor
                      </div>
             </div>
