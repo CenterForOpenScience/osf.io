@@ -334,7 +334,7 @@
                         % elif node['collections'][0]['state'] == 'pending':
                             <div style="display: inline; margin: 10px; margin-left: 0px;" >
                             % if len([x for x in node['collections'] if x['state'] == 'pending']) - 1:
-                                Pending entry into <a>${node['collections'][0]['collection_title']}</a> and <a>${len([x for x in node['collections'] if x['state'] == 'accepted']) - 1}</a> more
+                                Pending entry into <a>${node['collections'][0]['collection_title']}</a> and <a>${len([x for x in node['collections'] if x['state'] == 'pending']) - 1}</a> more
                             % else:
                                 Pending entry into <a>${node['collections'][0]['collection_title']}</a>
                             % endif:
