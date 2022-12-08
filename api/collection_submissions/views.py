@@ -10,7 +10,7 @@ from api.base.filters import ListFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error
 
-from api.collection_submissions.permissions import CollectionContributorOrPublicOrModerator
+from api.collection_submissions.permissions import CollectionSubmissionActionsListPermission
 from api.collection_submission_actions.serializers import CollectionSubmissionActionSerializer
 
 from osf.models import CollectionSubmission
@@ -18,7 +18,7 @@ from osf.models import CollectionSubmission
 
 class CollectionSubmissionActionsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     permission_classes = (
-        CollectionContributorOrPublicOrModerator,
+        CollectionSubmissionActionsListPermission,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )

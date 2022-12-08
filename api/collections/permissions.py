@@ -138,19 +138,19 @@ class CollectionWriteOrPublicForRelationshipPointers(permissions.BasePermission)
         return has_pointer_auth
 
 
-class OnlyAdminCanCreateDestroyCollectionSubmissionAction(permissions.BasePermission):
+class CollectionSubmissionActionListPermission(permissions.BasePermission):
 
     acceptable_models = (CollectionSubmission, )
 
     def has_object_permission(self, request, view, collection_submission):
+        if request.method != 'POST':
+            raise MethodNotAllowed(request.method)
+
         assert_resource_type(collection_submission, self.acceptable_models)
         auth = get_user_auth(request)
-        if request.method == 'POST':
-            provider = collection_submission.collection.provider
-            is_moderator = bool(auth.user and auth.user.has_perm('accept_submissions', provider))
-            return collection_submission.guid.referent.has_permission(auth.user, ADMIN) or is_moderator
-        else:
-            raise MethodNotAllowed(request.method)
+        provider = collection_submission.collection.provider
+        is_moderator = bool(auth.user and auth.user.has_perm('accept_submissions', provider))
+        return collection_submission.guid.referent.has_permission(auth.user, ADMIN) or is_moderator
 
     def has_permission(self, request, view):
         if request.method != 'POST':
