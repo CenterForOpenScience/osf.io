@@ -114,11 +114,13 @@ $(document).ready(function () {
 
     $('#collections-header').on('click', function (evt) {
         if ($('#collections-header>.pull-left').css('display') === 'block') {
+            $('.collection-pencil').css('display', 'inherit');
             $('#collections-header>.pull-left').css('display', 'none');
             $('#collections-header').css('height', '0px');
             $('#collections-header').css('margin', '0px');
             $('#collections-caret-down').css('padding', '20px');
         } else {
+            $('.collection-pencil').css('display',  'none');
             $('#collections-header>.pull-left').css('display', 'block');
             $('#collections-header').css('height', 'inherit');
             $('#collections-header').css('margin', '10px');
