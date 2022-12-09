@@ -232,7 +232,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         removed_due_to_privacy = event_data.kwargs.get('removed_due_to_privacy')
         is_moderator = user.has_perm('withdraw_submissions', self.collection.provider)
         is_admin = self.guid.referent.has_permission(user, ADMIN)
-        if removed_due_to_privacy:
+        if removed_due_to_privacy and self.collection.provider:
             if self.is_moderated:
                 for moderator in self.collection.moderators:
                     mails.send_mail(
@@ -283,8 +283,6 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                     node=self.guid.referent,
                     osf_contact_email=settings.OSF_CONTACT_EMAIL,
                 )
-        else:
-            raise NotImplementedError()
 
     def _validate_resubmit(self, event_data):
         user = event_data.kwargs['user']
