@@ -10,25 +10,21 @@
         <p>
             % if is_initator:
                 You just started to a request to add <a href="${node.absolute_url}">${node.title}</a>
-                to <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.title}</a>. Each admin and contributor will be notified via
-                email.
+                to <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.provider.name}</a>.
+                All admins and contributors will be notified via email.
             % elif is_registered_contrib:
                  <a href="${submitter.absolute_url}">${submitter.fullname}</a> just included you in <a href="${node.absolute_url}">${node.title}</a> to a request to add
                   <a href="${node.absolute_url}">${node.title}</a> to
-                  <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.title}</a>. Each admin and contributor will be notified via
-                  email.
+                  <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.provider.name}</a>.
+                  All admins and contributors will be notified via email.
             % else:
                 <a href="${submitter.absolute_url}">${submitter.fullname}</a> included you in a request to add
-                <a href="${node.absolute_url}">${node.title}</a> to <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.title}</a>
+                <a href="${node.absolute_url}">${node.title}</a> to <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.provider.name}</a>
                 <a href="${claim_url}">Click here to claim account link</a>. After you set a password, you will be able to make
                 contributions to the project. You will also be able to easily access this and any other project or
                 component by going to your "My Projects" page. If you decide to not make an account, then it's <b>important
                 </b> that you save or bookmark this email.
             % endif
-        </p>
-        <p>
-            If you have been erroneously associated with this project or component, then you may visit its contributor
-            section to remove yourself then email ${osf_contact_email}.
         </p>
         Sincerely,<br>
         <br>

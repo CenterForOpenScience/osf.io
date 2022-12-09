@@ -83,6 +83,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         self.machine_state = new_state.value
 
     def _notify_contributors_pending(self, event_data):
+        user = event_data.kwargs['user']
         for contributor in self.guid.referent.contributors:
             try:
                 claim_url = f'{settings.DOMAIN}/{contributor.get_claim_url(self.guid.referent._id)}'
@@ -94,7 +95,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                 to_addr=contributor.username,
                 mail=mails.COLLECTION_SUBMISSION_SUBMITTED(self.creator, self.guid.referent),
                 user=contributor,
-                submitter=self.creator,
+                submitter=user,
                 is_initator=self.creator == contributor,
                 is_admin=self.guid.referent.has_permission(contributor, ADMIN),
                 is_registered_contrib=contributor.is_registered,
