@@ -113,12 +113,14 @@ class CollectionProviderSerializer(ProviderSerializer):
         related_view='providers:collection-providers:provider-moderator-list',
         related_view_kwargs={'provider_id': '<_id>'},
     )
+    reviews_workflow = ser.ChoiceField(choices=Workflows.choices(), read_only=True)
 
     filterable_fields = frozenset([
         'allow_submissions',
         'allow_commenting',
         'description',
         'domain',
+        'reviews_workflow',
         'domain_redirect_enabled',
         'id',
         'name',
