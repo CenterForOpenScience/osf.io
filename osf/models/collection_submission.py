@@ -258,7 +258,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                     domain=settings.DOMAIN,
                     osf_contact_email=settings.OSF_CONTACT_EMAIL,
                 )
-        elif is_moderator:
+        elif is_moderator and self.collection.provider:
             for contributor in self.guid.referent.contributors:
                 mails.send_mail(
                     to_addr=contributor.username,
@@ -271,7 +271,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                     node=self.guid.referent,
                     osf_contact_email=settings.OSF_CONTACT_EMAIL,
                 )
-        elif is_admin:
+        elif is_admin and self.collection.provider:
             for contributor in self.guid.referent.contributors:
                 mails.send_mail(
                     to_addr=contributor.username,
