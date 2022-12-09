@@ -119,12 +119,16 @@ $(document).ready(function () {
             $('#collections-header').css('height', '0px');
             $('#collections-header').css('margin', '0px');
             $('#collections-caret-down').css('padding', '20px');
+            $('#collections-caret-down>.fa').toggleClass('fa-angle-down');
+            $('#collections-caret-down>.fa').toggleClass(' fa-angle-up');
         } else {
             $('.collection-pencil').css('display',  'none');
             $('#collections-header>.pull-left').css('display', 'block');
             $('#collections-header').css('height', 'inherit');
             $('#collections-header').css('margin', '10px');
             $('#collections-caret-down').css('padding', '10px');
+            $('#collections-caret-down>.fa').toggleClass('fa-angle-down');
+            $('#collections-caret-down>.fa').toggleClass(' fa-angle-up');
 
         }
     });
