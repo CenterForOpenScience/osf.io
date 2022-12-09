@@ -846,10 +846,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
         node_link = get_object_or_error(
             CollectionSubmission.objects.filter(
                 guid___id=guid,
-            ).exclude(
-                machine_state=CollectionSubmissionStates.REJECTED,
-            ).exclude(
-                machine_state=CollectionSubmissionStates.REMOVED,
+                machine_state=CollectionSubmissionStates.ACCEPTED,
             ),
             request=self.request,
             display_name='node link',
