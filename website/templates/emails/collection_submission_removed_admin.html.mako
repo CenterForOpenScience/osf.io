@@ -10,11 +10,11 @@
     <p>
         % if is_admin:
             <a href="${node.absolute_url}">${node.title}</a> was removed from
-            <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.title}</a>. If you wish to be associated with the collection, you
+            <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.provider.title}</a>. If you wish to be associated with the collection, you
             will need to reapply to the collection again.
         % else:
             <a href="${remover.absolute_url}">${remover.fullname}</a> removed
-            <a href="${node.absolute_url}">${node.title}</a> from <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.title}</a>.
+            <a href="${node.absolute_url}">${node.title}</a> from <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.provider.title}</a>.
              If you wish to be associated with the collection, an admin will need to reapply to the collection again.
         % endif
     </p>
