@@ -9,9 +9,9 @@
     <p>
         % if is_admin:
             Your request to add <a href="${node.absolute_url}">${node.title}</a> to
-            <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.provider.title}</a> was approved.
+            <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.provider.name}</a> was approved.
         % else:
-            <a href="${node.absolute_url}">${node.title}</a> was added to <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.provider.title}</a>.
+            <a href="${node.absolute_url}">${node.title}</a> was added to <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.provider.name}</a>.
         % endif
     </p>
     <p>
