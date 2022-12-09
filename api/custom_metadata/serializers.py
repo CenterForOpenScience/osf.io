@@ -1,9 +1,14 @@
+import logging
+
 from rdflib import DCTERMS
 from django.core.validators import URLValidator
 import rest_framework.serializers as ser
 
 from api.base.serializers import JSONAPISerializer, RelationshipField, IDField
 from osf.models.metadata import CustomMetadataProperty
+
+
+logger = logging.getLogger(__name__)
 
 
 # TODO: max_lengths, uri validation
@@ -19,8 +24,8 @@ class FundingInfoSerializer(ser.Serializer):
 
 
 class CustomMetadataPropertySerializer(ser.Serializer):
-    property_uri = ser.CharField(validators=[URLValidator], required=True)
-    value_as_text = ser.CharField(required=True)
+    property_uri = ser.CharField(validators=[URLValidator])
+    value_as_text = ser.CharField()
 
 
 class GuidMetadataRecordSerializer(JSONAPISerializer):
@@ -30,12 +35,21 @@ class GuidMetadataRecordSerializer(JSONAPISerializer):
         related_view='guids:guid-detail',
         related_view_kwargs={'guids': '<guid._id>'}
     )
-    language = ser.CharField()  # TODO: choices
-    resource_type_general = ser.CharField()  # TODO: choices
-    funders = FundingInfoSerializer(many=True, source='funding_info')
-    custom_properties = CustomMetadataPropertySerializer(many=True, source='custom_property_set')
+    language = ser.CharField(required=False)  # TODO: choices
+    resource_type_general = ser.CharField(required=False)  # TODO: choices
+    funders = FundingInfoSerializer(
+        many=True,
+        source='funding_info',
+        required=False,
+    )
+    custom_properties = CustomMetadataPropertySerializer(
+        many=True,
+        source='custom_property_set',
+        required=False,
+    )
 
     def update(self, guid_metadata_record, validated_data):
+        logger.critical(f'valdat: {validated_data}')
         for field_name in ('language', 'resource_type_general', 'funders'):
             if field_name in validated_data:
                 setattr(guid_metadata_record, field_name, validated_data[field_name])

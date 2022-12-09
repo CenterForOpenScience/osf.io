@@ -42,7 +42,7 @@ SILENT_LOGGERS = [
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(scope='session', autouse=True)
 def override_settings():
     """Override settings for the test environment.
     """
@@ -127,12 +127,13 @@ def es6_client():
 
 
 @pytest.fixture(scope='function', autouse=True)
-def _es_marker(request, es6_client):
+def _es_marker(request):
     """Clear out all indices and index templates before and after
     tests marked with ``es``.
     """
     marker = request.node.get_closest_marker('es')
     if marker:
+        es6_client = request.getfixturevalue('es6_client')
 
         def teardown_es():
             es6_client.indices.delete(index='*')
