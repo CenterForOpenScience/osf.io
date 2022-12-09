@@ -2416,37 +2416,37 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 if self.contributors.filter(pk=associated_collection.creator.id).exists():
                     continue
 
-            if submission.state not in [CollectionSubmissionStates.REMOVED, CollectionSubmissionStates.REJECTED]:
-                user = getattr(auth, 'user', None)
+            if submission.state in [CollectionSubmissionStates.REMOVED, CollectionSubmissionStates.REJECTED]:
+                raise NotImplementedError()
 
-                if submission.state == CollectionSubmissionStates.ACCEPTED:
-                    submission.remove(
-                        user=user,
-                        comment='Removed from collection due to implicit removal due to privacy changes.',
-                        removed_due_to_privacy=True
-                    )
-                elif submission.state == CollectionSubmissionStates.PENDING and user:
-                    submission.reject(
-                        user=user,
-                        comment='Rejected from collection due to implicit removal due to privacy changes.',
-                        force=True
-                    )
-                elif force and submission.state == CollectionSubmissionStates.ACCEPTED:
-                    request, user_id = get_request_and_user_id()
-                    submission.remove(
-                        user=request.user,
-                        comment='Removed from collection via system command.',  # typically spam
-                        force=True
-                    )
-                elif force and submission.state == CollectionSubmissionStates.PENDING:
-                    request, user_id = get_request_and_user_id()
-                    submission.rejected(
-                        user=request.user,
-                        comment='Rejected from collection via system command.',  # typically spam
-                        force=True
-                    )
-                else:
-                    raise NotImplementedError()
+            user = getattr(auth, 'user', None)
+
+            if submission.state == CollectionSubmissionStates.ACCEPTED:
+                submission.remove(
+                    user=user,
+                    comment='Removed from collection due to implicit removal due to privacy changes.',
+                    removed_due_to_privacy=True
+                )
+            elif submission.state == CollectionSubmissionStates.PENDING and user:
+                submission.reject(
+                    user=user,
+                    comment='Rejected from collection due to implicit removal due to privacy changes.',
+                    force=True
+                )
+            elif force and submission.state == CollectionSubmissionStates.ACCEPTED:
+                request, user_id = get_request_and_user_id()
+                submission.remove(
+                    user=request.user,
+                    comment='Removed from collection via system command.',  # typically spam
+                    force=True
+                )
+            elif force and submission.state == CollectionSubmissionStates.PENDING:
+                request, user_id = get_request_and_user_id()
+                submission.reject(
+                    user=request.user,
+                    comment='Rejected from collection via system command.',  # typically spam
+                    force=True
+                )
 
 
 class NodeUserObjectPermission(UserObjectPermissionBase):
