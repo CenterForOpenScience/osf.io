@@ -135,7 +135,7 @@ class InstitutionProjectCounts(MetricMixin, metrics.Metric):
     def record_institution_project_counts(cls, institution, public_project_count, private_project_count, **kwargs):
         return cls.record(
             institution_id=institution._id,
-            user_count=institution.osfuser_set.count(),
+            user_count=institution.get_institution_users().count(),
             public_project_count=public_project_count,
             private_project_count=private_project_count,
             **kwargs

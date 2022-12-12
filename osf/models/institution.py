@@ -16,6 +16,7 @@ from framework import sentry
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.models import base
 from osf.models.contributor import InstitutionalContributor
+from osf.models.institution_affiliation import InstitutionAffiliation
 from osf.models.mixins import Loggable, GuardianMixin
 from website import mails
 from website import settings as website_settings
@@ -206,7 +207,7 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
         forgot_password = 'forgotpassword' if website_settings.DOMAIN.endswith('/') else '/forgotpassword'
         attempts = 0
         success = 0
-        for user in self.osfuser_set.all():
+        for user in self.get_institution_users():
             try:
                 attempts += 1
                 mails.send_mail(
@@ -249,6 +250,11 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
             message = f'Action rejected - reactivating an active institution [{self._id}].'
             logger.warning(message)
             sentry.log_message(message)
+
+    def get_institution_users(self):
+        from osf.models.user import OSFUser
+        qs = InstitutionAffiliation.objects.filter(institution__id=self.id).values_list('user', flat=True)
+        return OSFUser.objects.filter(pk__in=qs)
 
 
 @receiver(post_save, sender=Institution)
