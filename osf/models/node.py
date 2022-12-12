@@ -493,13 +493,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return not self.is_registration and not self.is_fork
 
     @property
-    def is_collected(self):
-        """is included in a collection"""
-        return self.collection_submissions.filter(
-            machine_state=CollectionSubmissionStates.ACCEPTED
-        ).exists()
-
-    @property
     def collection_submissions(self):
         return CollectionSubmission.objects.filter(
             guid=self.guids.first(),
@@ -2415,9 +2408,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if associated_collection.is_bookmark_collection and not self.deleted:
                 if self.contributors.filter(pk=associated_collection.creator.id).exists():
                     continue
-
-            if submission.state in [CollectionSubmissionStates.REMOVED, CollectionSubmissionStates.REJECTED]:
-                raise NotImplementedError()
 
             user = getattr(auth, 'user', None)
 
