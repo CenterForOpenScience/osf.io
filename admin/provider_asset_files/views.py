@@ -10,17 +10,17 @@ from osf.models.storage import ProviderAssetFile
 
 class ProviderAssetFileList(PermissionRequiredMixin, ListView):
     paginate_by = 25
-    template_name = 'osf/providerassetfile_list.html'
+    template_name = 'osf/assetfile_list.html'
     ordering = 'name'
     permission_required = 'osf.view_providerassetfile'
     raise_exception = True
     model = ProviderAssetFile
 
     def get_queryset(self):
-        filtered_provider_id = self.request.GET.get('provider_id', None)
+        filtered_target_id = self.request.GET.get('provider_id', None)
         qs = ProviderAssetFile.objects.all().order_by(self.ordering)
-        if filtered_provider_id and AbstractProvider.objects.filter(id=filtered_provider_id).exists():
-            qs = qs.filter(providers__id=filtered_provider_id)
+        if filtered_target_id and AbstractProvider.objects.filter(id=filtered_target_id).exists():
+            qs = qs.filter(providers__id=filtered_target_id)
         return qs
 
     def get_context_data(self, **kwargs):
@@ -29,9 +29,10 @@ class ProviderAssetFileList(PermissionRequiredMixin, ListView):
         paginator, page, query_set, is_paginated = self.paginate_queryset(
             query_set, page_size)
         rv = {
+            'on_provider_route': True,
             'asset_files': query_set,
             'page': page,
-            'filterable_provider_ids': dict({'': '---'}, **{str(id): ' '.join([type_, name]) for id, name, type_ in AbstractProvider.objects.annotate(
+            'filterable_target_ids': dict({'': '---'}, **{str(id): ' '.join([type_, name]) for id, name, type_ in AbstractProvider.objects.annotate(
                 type_=Case(
                     When(type='osf.preprintprovider', then=Value('[preprint]')),
                     When(type='osf.collectionprovider', then=Value('[collection]')),
@@ -48,7 +49,7 @@ class AssetFileMixin(object):
 
 class ProviderAssetFileDisplay(AssetFileMixin, PermissionRequiredMixin, DetailView):
     permission_required = 'osf.view_providerassetfile'
-    template_name = 'osf/providerassetfile_form.html'
+    template_name = 'osf/assetfile_form.html'
     form_class = ProviderAssetFileForm
     raise_exception = True
     model = ProviderAssetFile
@@ -58,6 +59,7 @@ class ProviderAssetFileDisplay(AssetFileMixin, PermissionRequiredMixin, DetailVi
         kwargs['form'] = self.form_class(model_to_dict(instance), instance=instance)
         # Assumption: only css files will not be images. This may be incorrect in the future, but currently is not.
         kwargs['embed_file'] = instance.file and not instance.file.url.endswith('.css')
+        kwargs['on_provider_route'] = True
         return kwargs
 
 class ProviderAssetFileChangeForm(AssetFileMixin, PermissionRequiredMixin, UpdateView):
@@ -72,7 +74,7 @@ class ProviderAssetFileChangeForm(AssetFileMixin, PermissionRequiredMixin, Updat
 class ProviderAssetFileDelete(AssetFileMixin, PermissionRequiredMixin, DeleteView):
     permission_required = 'osf.delete_providerassetfile'
     raise_exception = True
-    template_name = 'osf/providerassetfile_confirm_delete.html'
+    template_name = 'osf/assetfile_confirm_delete.html'
     success_url = reverse_lazy('provider_asset_files:list')
 
 
@@ -92,7 +94,7 @@ class ProviderAssetFileDetail(PermissionRequiredMixin, View):
 class ProviderAssetFileCreate(PermissionRequiredMixin, CreateView):
     permission_required = 'osf.change_providerassetfile'
     raise_exception = True
-    template_name = 'osf/providerassetfile_create.html'
+    template_name = 'osf/assetfile_create.html'
     success_url = reverse_lazy('provider_asset_files:list')
     model = ProviderAssetFile
     form_class = ProviderAssetFileForm

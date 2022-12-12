@@ -14,7 +14,7 @@
     <h2>List of Provider Asset Files</h2>
     <form method="GET">
         Filter: <select class="provider-filter-selector" name="provider_id" onchange="filterSubjects(this.value)">
-        {% for id, name in filterable_provider_ids.items %}
+        {% for id, name in filterable_target_ids.items %}
             <option value={{id}}>{{name}}</option>
         {% endfor %}
       </select>
@@ -26,19 +26,23 @@
         <tr>
             <th>Name</th>
             <th>File Link</th>
-            <th>Providers</th>
+            {% if on_provider_route %}
+                <th>Providers</th>
+            {%endif%}
         </tr>
     </thead>
     <tbody>
         {% for object in asset_files %}
         <tr>
-            <td><a href="{% url 'provider_asset_files:detail' asset_id=object.id %}">{{ object.name }}</a></td>
-            <td><a target="_blank" href={{ object.file.url }}>Preview</a></td>
-            <td>
-              {% for provider in object.providers.all %}
-                  {{provider.name}},
-              {% endfor %}
-            </td>
+            {% if on_provider_route %}
+                <td><a href="{% url 'provider_asset_files:detail' asset_id=object.id %}">{{ object.name }}</a></td>
+                <td><a target="_blank" href={{ object.file.url }}>Preview</a></td>
+                <td>
+                {% for provider in object.providers.all %}
+                    {{provider.name}},
+                {% endfor %}
+                </td>
+            {%endif%}
         </tr>
     {% endfor %}
     </tbody>
