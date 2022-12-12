@@ -28,10 +28,86 @@ def make_payload(guid, **attributes):
     return {
         'data': {
             'id': guid._id,
-            'type': 'custom-item-metadata-records',
+            'type': 'custom-item-metadata-record',
             'attributes': attributes,
         }
     }
+
+def never_commit_transaction():
+    class ExpectedRollback(Exception):
+        pass
+    try:
+        with transaction.atomic():
+            yield
+            raise ExpectedRollback('this is an expected rollback; all is well')
+    except ExpectedRollback:
+        pass
+    else:
+        raise ExpectedRollback('expected a rollback but did not get one; something is wrong')
+
+
+class ExpectedMetadataRecord:
+    def __init__(self):
+        self.guid = ''
+        self.language = ''
+        self.resource_type_general = ''
+        self.funding_info = []
+        self.custom_properties = []
+
+    def assert_for(self, db_record, api_record):
+        db_record.refresh_from_db()
+        self._assert_all_equal(
+            db_record.guid._id,
+            api_record['id'],
+            expected=self.guid,
+        )
+        self._assert_all_equal(
+            db_record.language,
+            api_record['attributes']['language'],
+            expected=self.language,
+        )
+        self._assert_all_equal(
+            db_record.resource_type_general,
+            api_record['attributes']['resource_type_general'],
+            expected=self.resource_type_general,
+        )
+        self._assert_all_equal(
+            db_record.funding_info,
+            api_record['attributes']['funders'],
+            expected=self.funding_info,
+        )
+        db_custom_properties = [
+            {'property_uri': cp.property_uri, 'value_as_text': cp.value_as_text}
+            for cp in db_record.custom_property_set.all()
+        ]
+        self._assert_all_equal(
+            db_custom_properties,
+            api_record['attributes']['custom_properties'],
+            expected=self.custom_properties,
+        )
+
+    def _assert_all_equal(self, *actuals, expected):
+        expected = self._freeze(expected)
+        for actual in actuals:
+            assert self._freeze(actual) == expected
+
+    def _freeze(self, unfrozen):
+        frozen = None
+        if isinstance(unfrozen, dict):
+            frozen = frozenset(
+                (k, self._freeze(v))
+                for k, v in unfrozen.items()
+            )
+        elif isinstance(unfrozen, list):
+            frozen = frozenset(
+                self._freeze(v)
+                for v in unfrozen
+            )
+
+        if frozen is None:
+            return unfrozen
+        assert len(frozen) == len(unfrozen), 'unexpected duplicates!'
+        return frozen
 
 
 class TestCustomItemMetadataRecordDetail:
@@ -42,33 +118,30 @@ class TestCustomItemMetadataRecordDetail:
         for use across several tests)
         """
         with django_db_blocker.unblock():
-            with transaction.atomic():
-                yield
+            yield from never_commit_transaction()
 
     @pytest.fixture(scope='function', autouse=True)
     def _per_test_transaction(self):
         """wrap each test in a transaction
-        (so expected errors don't interfere with the
-        class-scoped transaction in _class_db)
+        (so what happens in a test stays in that test)
         """
-        with transaction.atomic():
-            yield
+        yield from never_commit_transaction()
 
     @pytest.fixture(scope='class')
     def user_admin(self):
-        return AuthUserFactory()
+        return AuthUserFactory(username='some admin')
 
     @pytest.fixture(scope='class')
     def user_readwrite(self):
-        return AuthUserFactory()
+        return AuthUserFactory(username='some readwrite')
 
     @pytest.fixture(scope='class')
     def user_readonly(self):
-        return AuthUserFactory()
+        return AuthUserFactory(username='some readonly')
 
     @pytest.fixture(scope='class')
     def user_rando(self):
-        return AuthUserFactory()
+        return AuthUserFactory(username='some rando')
 
     @pytest.fixture(scope='class')
     def public_preprint(self, user_admin, user_readwrite, user_readonly):
@@ -313,54 +386,97 @@ class TestCustomItemMetadataRecordDetail:
 
     def test_with_write_permission(self, app, public_osfguid, private_osfguid, anybody_with_write_permission):
         for osfguid in (public_osfguid, private_osfguid):
+            expected = ExpectedMetadataRecord()
+            expected.guid = osfguid._id
+
             # can PUT
+            expected.language = 'nga'
+            expected.resource_type_general = 'Text'
             res = app.put_json_api(
                 make_url(osfguid),
-                make_payload(osfguid, language='foo'),
+                make_payload(
+                    osfguid,
+                    language=expected.language,
+                    resource_type_general=expected.resource_type_general,
+                ),
                 auth=anybody_with_write_permission,
             )
             assert res.status_code == 200
+            db_record = GuidMetadataRecord.objects.for_guid(osfguid)
+            expected.assert_for(db_record=db_record, api_record=res.json['data'])
 
             # can PATCH
+            expected.language = 'nga-CD'
             res = app.patch_json_api(
                 make_url(osfguid),
-                make_payload(osfguid, language='nga-CD'),
+                make_payload(osfguid, language=expected.language),
                 auth=anybody_with_write_permission,
             )
             assert res.status_code == 200
-            assert res.json['data']['attributes']['language'] == 'nga-CD'
-            dbrecord = GuidMetadataRecord.objects.for_guid(osfguid)
-            assert dbrecord.language == 'nga-CD'
-        # TODO: assert node.logs.first().action == NodeLog.FILE_METADATA_UPDATED
+            expected.assert_for(db_record=db_record, api_record=res.json['data'])
 
-    # def test_custom_properties(self, app, user_readwrite, public_node_guid):
-    #     payload = make_payload(
-    #         public_node_guid,
-    #         language='en-NZ',
-    #         resource_type_general='Text',
-    #         custom_properties=[
-    #             {
-    #                 'property_uri': 'https://my.example/vocab/wibbleforth',
-    #                 'value_as_text': 'wobblefirth',
-    #             },
-    #         ],
-    #     )
-    #     res = app.patch_json_api(make_url(public_node_guid), payload, auth=user_readwrite.auth)
-    #     assert res.status_code == 200
-    #     assert res.json['data']['attributes'] == {
-    #         'language': 'en-NZ',
-    #         'resource_type_general': 'Text',
-    #         'funders': [],
-    #         'custom_properties': [
-    #             {
-    #                 'property_uri': 'https://my.example/vocab/wibbleforth',
-    #                 'value_as_text': 'wobblefirth',
-    #             },
-    #         ],
-    #     }
-    #     metadata_record = public_node_guid.metadata_record
-    #     assert metadata_record.language == 'en-NZ'
-    #     assert metadata_record.resource_type_general == 'Text'
+            # can PATCH funders
+            expected.funding_info = [{
+                'funder_name': 'hell-o',
+                'funder_identifier': 'https://hello.example/money',
+                'funder_identifier_type': 'uri',
+                'award_number': '7',
+                'award_uri': 'http://award.example/7',
+                'award_title': 'award seven',
+            }]
+            res = app.patch_json_api(
+                make_url(osfguid),
+                make_payload(osfguid, funders=expected.funding_info),
+                auth=anybody_with_write_permission,
+            )
+            assert res.status_code == 200
+            expected.assert_for(db_record=db_record, api_record=res.json['data'])
+
+            # can PATCH custom properties
+            expected.custom_properties = [{
+                'property_uri': 'https://hello.example/fungus',
+                'value_as_text': 'amongus',
+            }, {
+                'property_uri': 'https://hello.example/blungus',
+                'value_as_text': 'grungus',
+            }]
+            res = app.patch_json_api(
+                make_url(osfguid),
+                make_payload(osfguid, custom_properties=expected.custom_properties),
+                auth=anybody_with_write_permission,
+            )
+            assert res.status_code == 200
+            expected.assert_for(db_record=db_record, api_record=res.json['data'])
+
+            # can re-PATCH custom properties
+            expected.custom_properties = [{
+                'property_uri': 'https://hello.example/fungus',
+                'value_as_text': 'boregus',
+            }, {
+                'property_uri': 'https://hello.example/boring',
+                'value_as_text': 'ha',
+            }, {
+                'property_uri': 'https://hello.example/bloring',
+                'value_as_text': 'who',
+            }]
+            res = app.patch_json_api(
+                make_url(osfguid),
+                make_payload(osfguid, custom_properties=expected.custom_properties),
+                auth=anybody_with_write_permission,
+            )
+            assert res.status_code == 200
+            expected.assert_for(db_record=db_record, api_record=res.json['data'])
+
+            # can dis-PATCH custom properties
+            expected.custom_properties = []
+            res = app.patch_json_api(
+                make_url(osfguid),
+                make_payload(osfguid, custom_properties=expected.custom_properties),
+                auth=anybody_with_write_permission,
+            )
+            assert res.status_code == 200
+            expected.assert_for(db_record=db_record, api_record=res.json['data'])
+        # TODO: assert node.logs.first().action == NodeLog.FILE_METADATA_UPDATED
 
     # def test_update_fails_with_extra_key(self, app, user_readwrite, public_file_guid):
     #     payload = make_payload(

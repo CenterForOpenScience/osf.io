@@ -50,23 +50,23 @@ class GuidMetadataRecordSerializer(JSONAPISerializer):
 
     def update(self, guid_metadata_record, validated_data):
         logger.critical(f'valdat: {validated_data}')
-        for field_name in ('language', 'resource_type_general', 'funders'):
+        for field_name in ('language', 'resource_type_general', 'funding_info'):
             if field_name in validated_data:
                 setattr(guid_metadata_record, field_name, validated_data[field_name])
         guid_metadata_record.full_clean()
         guid_metadata_record.save()
 
-        custom_properties = validated_data.get('custom_properties', None)
-        if custom_properties is not None:
+        validated_custom_property_set = validated_data.get('custom_property_set', None)
+        if validated_custom_property_set is not None:
             to_create = [
                 CustomMetadataProperty(
                     metadata_record=guid_metadata_record,
                     property_uri=validated_property['property_uri'],
                     value_as_text=validated_property['value_as_text'],
                 )
-                for validated_property in custom_properties
+                for validated_property in validated_custom_property_set
             ]
-            # wipe out and recreate -- it's the only way to be sure
+            # wipe out and recreate -- it's the only (...easiest) way to be sure
             guid_metadata_record.custom_property_set.all().delete()
             CustomMetadataProperty.objects.bulk_create(to_create)
 
