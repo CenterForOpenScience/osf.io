@@ -898,6 +898,8 @@ def serialize_collections(collection_submissions, auth):
         'issue': collection_submission.issue,
         'volume': collection_submission.volume,
         'collection_title': collection_submission.collection.title,
+        'collection_id': collection_submission.collection._id,
+        'node_id': collection_submission.guid._id,
         'study_design': collection_submission.study_design,
         'program_area': collection_submission.program_area,
         'state': collection_submission.state.db_name,
