@@ -767,7 +767,6 @@ def _view_project(node, auth, primary=False,
             'registered_meta': strip_registered_meta_comments(node.registered_meta),
             'registered_schemas': serialize_meta_schemas(list(node.registered_schema.all())) if is_registration else False,
             'is_fork': node.is_fork,
-            'is_collected': node.is_collected,
             'collections': sorted(
                 serialize_collections(node.collection_submissions, auth),
                 key=lambda x: x['state'] == CollectionSubmissionStates.ACCEPTED.db_name,
