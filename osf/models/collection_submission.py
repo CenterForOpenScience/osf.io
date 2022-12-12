@@ -293,6 +293,10 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         if not is_admin:
             raise PermissionsError(f'{user} must have admin permissions.')
 
+    def _make_public(self, event_data):
+        if not self.guid.referent.is_public:
+            self.guid.referent.set_privacy('public')
+
     def _remove_from_search(self, event_data):
         self.remove_from_index()
 
