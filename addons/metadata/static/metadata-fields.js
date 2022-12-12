@@ -210,17 +210,26 @@ function createChooser(question, options) {
     defaultOption.text(_('Choose...'));
   }
   select.append(defaultOption);
+  let groupElem = null;
   (question.options || []).forEach(function(opt) {
-    if (opt.text === undefined) {
-      const optElem = $('<option></option>').attr('value', opt).text(opt);
-      select.append(optElem);
-      return;
+    if (opt.text && opt.text === 'group:None') {
+      groupElem = null;
+    } else if (opt.text && opt.text.startsWith('group:')) {
+      groupElem = $('<optgroup></optgroup>').attr('label', getLocalizedText(opt.tooltip));
+      select.append(groupElem);
+    } else {
+      const optElem = $('<option></option>')
+        .attr('value', opt.text === undefined ? opt : opt.text)
+        .text(opt.text === undefined ? opt : getLocalizedText(opt.tooltip));
+      if (!options.multiple && opt.default) {
+        optElem.attr('selected', true);
+      }
+      if (groupElem) {
+        groupElem.append(optElem);
+      } else {
+        select.append(optElem);
+      }
     }
-    const optElem = $('<option></option>').attr('value', opt.text).text(getLocalizedText(opt.tooltip));
-    if (!options.multiple && opt.default) {
-      optElem.attr('selected', true);
-    }
-    select.append(optElem);
   });
   return select;
 }
