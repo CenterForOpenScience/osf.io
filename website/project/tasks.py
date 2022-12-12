@@ -38,7 +38,9 @@ def on_node_updated(node_id, user_id, first_save, saved_fields, request_headers=
 
 def update_collection_submissions(node, saved_fields):
     from website.search.search import update_collected_metadata
-    if node.is_collected:
+    if node.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists():
         if node.is_public:
             update_collected_metadata(node._id)
         else:

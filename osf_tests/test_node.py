@@ -4587,7 +4587,9 @@ class TestCollectionProperties:
             public_non_provided_collection, private_non_provided_collection, bookmark_collection, collector):
 
         # test_collection_properties
-        assert not node.is_collected
+        assert not node.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists()
 
         collection_one.collect_object(node, collector)
         collection_two.collect_object(node, collector)
@@ -4596,7 +4598,9 @@ class TestCollectionProperties:
         bookmark_collection.collect_object(node, collector)
         collection_public.collect_object(node, collector)
 
-        assert node.is_collected
+        assert node.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists()
         assert len(node.collection_submissions) == 3
 
         ids_actual = {collection_submission.collection._id for collection_submission in node.collection_submissions}

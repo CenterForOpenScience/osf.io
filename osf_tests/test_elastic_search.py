@@ -109,16 +109,26 @@ class TestCollectionsSearch(OsfTestCase):
         docs = query_collections('Salif Keita')['results']
         assert_equal(len(docs), 0)
 
-        assert_false(self.node_one.is_collected)
-        assert_false(self.node_public.is_collected)
+        assert_false(self.node_one.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists())
+        assert_false(self.node_public.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists())
 
         self.collection_one.collect_object(self.node_one, self.user)
         self.collection_public.collect_object(self.node_public, self.user)
         self.reg_collection.collect_object(self.reg_public, self.user)
 
-        assert_true(self.node_one.is_collected)
-        assert_true(self.node_public.is_collected)
-        assert_true(self.reg_public.is_collected)
+        assert_true(self.node_one.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists())
+        assert_true(self.node_public.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists())
+        assert_true(self.reg_public.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists())
 
         docs = query_collections('Salif Keita')['results']
         assert_equal(len(docs), 3)
@@ -188,10 +198,18 @@ class TestCollectionsSearch(OsfTestCase):
         self.collection_private.collect_object(self.node_public, self.user)
         self.reg_collection_private.collect_object(self.reg_public, self.user)
 
-        assert_true(self.node_one.is_collected)
-        assert_true(self.node_two.is_collected)
-        assert_true(self.node_public.is_collected)
-        assert_true(self.reg_public.is_collected)
+        assert_true(self.node_one.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists())
+        assert_true(self.node_two.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists())
+        assert_true(self.node_public.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists())
+        assert_true(self.reg_public.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists())
 
         docs = query_collections('Salif Keita')['results']
         assert_equal(len(docs), 0)
@@ -228,16 +246,24 @@ class TestCollectionsSearch(OsfTestCase):
     def test_removed_submission_are_removed_from_index(self):
         self.collection_public.collect_object(self.node_one, self.user)
         self.reg_collection.collect_object(self.reg_public, self.user)
-        assert_true(self.node_one.is_collected)
-        assert_true(self.reg_public.is_collected)
+        assert_true(self.node_one.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists())
+        assert_true(self.reg_public.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists())
 
         docs = query_collections('Salif Keita')['results']
         assert_equal(len(docs), 2)
 
         self.collection_public.remove_object(self.node_one, Auth(self.user))
         self.reg_collection.remove_object(self.reg_public, Auth(self.user))
-        assert_false(self.node_one.is_collected)
-        assert_false(self.reg_public.is_collected)
+        assert_false(self.node_one.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists())
+        assert_false(self.reg_public.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists())
 
         docs = query_collections('Salif Keita')['results']
         assert_equal(len(docs), 0)
@@ -1383,7 +1409,9 @@ class TestSearchMigration(OsfTestCase):
         node = factories.NodeFactory(creator=self.user, title='Ali Bomaye', is_public=True)
         collection_one.collect_object(node, self.user)
         collection_two.collect_object(node, self.user)
-        assert node.is_collected
+        assert node.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists()
 
         docs = query_collections('*')['results']
         assert len(docs) == 2
