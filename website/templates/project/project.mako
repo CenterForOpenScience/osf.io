@@ -334,7 +334,7 @@
                         % elif node['collections'][0]['state'] == 'pending'  and user['is_contributor_or_group_member']:
                             <div style="display: inline; margin: 10px; margin-left: 0px;" >
                             % if len([x for x in node['collections'] if x['state'] == 'pending']) - 1:
-                                Pending entry into <a>${node['collections'][0]['collection_title']}</a> and <a>${len([x for x in node['collections'] if x['state'] == 'pending']) - 1}</a> more
+                                Pending entry into <a>${node['collections'][0]['collection_title']}</a>
                             % else:
                                 Pending entry into <a>${node['collections'][0]['collection_title']}</a>
                             % endif:
@@ -395,6 +395,9 @@
                                 % endif
                                 <hr>
                             % elif collection['state'] == 'rejected' and user['is_contributor_or_group_member']:
+                                % if user['is_admin']:
+                                    <a class="fa fa-repeat collections-retry-icon pull-right" collection_id=${collection['collection_id']} node_id=${collection['node_id']} ></a>
+                                % endif
                                 <img src="${collection['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
                                 <div style="display: inline;">
                                     Rejected from <a href="${collection['url']}" >${collection['collection_title']}</a>
@@ -413,6 +416,9 @@
                                 % endif
                                 <hr>
                             % elif collection['state'] == 'removed' and user['is_contributor_or_group_member']:
+                                % if user['is_admin']:
+                                    <a class="fa fa-repeat collections-retry-icon pull-right" collection_id=${collection['collection_id']} node_id=${collection['node_id']} ></a>
+                                % endif
                                 <img src="${collection['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
                                 <div style="display: inline;">
                                     Removed from <a href="${collection['url']}" >${collection['collection_title']}</a>

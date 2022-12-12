@@ -111,6 +111,39 @@ $(document).ready(function () {
         // If the clicked element has .keep-open, don't allow the event to propagate
         return !(target.hasClass('keep-open') || target.parents('.keep-open').length);
     });
+    $('.collections-retry-icon').on('click', function (evt) {
+        var target = $(evt.target);
+        var payload = {
+            data: {
+                type: 'collection-submission-actions',
+                attributes: {
+                    comment: 'Resubmitted via project overview page',
+                    trigger: 'resubmit',
+                },
+                relationships: {
+                    target: {
+                        data: {
+                            id: evt.target.getAttribute('node_id') + '-' + evt.target.getAttribute('collection_id'),
+                            type: 'collection-submission',
+                        }
+                    }
+                }
+            }
+        };
+        var collectionsActionsURL = $osf.apiV2Url('collection_submission_actions/');
+
+        var request = $osf.ajaxJSON(
+            'POST',
+            collectionsActionsURL,
+            {
+                data: payload,
+                isCors: true
+            }
+        );
+        request.done(function(resp) {
+            location.reload();
+        });
+    });
 
     $('#collections-header').on('click', function (evt) {
         if ($('#collections-header>.pull-left').css('display') === 'block') {
@@ -119,12 +152,16 @@ $(document).ready(function () {
             $('#collections-header').css('height', '0px');
             $('#collections-header').css('margin', '0px');
             $('#collections-caret-down').css('padding', '20px');
+            $('#collections-caret-down>.fa').toggleClass('fa-angle-down');
+            $('#collections-caret-down>.fa').toggleClass(' fa-angle-up');
         } else {
             $('.collection-pencil').css('display',  'none');
             $('#collections-header>.pull-left').css('display', 'block');
             $('#collections-header').css('height', 'inherit');
             $('#collections-header').css('margin', '10px');
             $('#collections-caret-down').css('padding', '10px');
+            $('#collections-caret-down>.fa').toggleClass('fa-angle-down');
+            $('#collections-caret-down>.fa').toggleClass(' fa-angle-up');
 
         }
     });

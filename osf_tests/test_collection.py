@@ -13,6 +13,7 @@ from .factories import (
     ProjectFactory,
     BookmarkCollectionFactory,
     CollectionFactory,
+    CollectionProviderFactory
 )
 from osf.utils.workflows import CollectionSubmissionStates
 from website.mails import mails
@@ -98,6 +99,22 @@ class TestImplicitRemoval:
         standard_collection.collect_object(node, standard_collection.creator)
         return node
 
+    @pytest.fixture
+    def provider(self):
+        return CollectionProviderFactory()
+
+    @pytest.fixture
+    def provider_collection(self, provider):
+        return CollectionFactory(provider=provider)
+
+    @pytest.fixture
+    def provider_collected_node(self, bookmark_collection, alternate_bookmark_collection, provider_collection):
+        node = ProjectFactory(creator=bookmark_collection.creator, is_public=True)
+        bookmark_collection.collect_object(node, bookmark_collection.creator)
+        alternate_bookmark_collection.collect_object(node, alternate_bookmark_collection.creator)
+        provider_collection.collect_object(node, provider_collection.creator)
+        return node
+
     @mock.patch('osf.models.node.Node.check_privacy_change_viability', mock.Mock())  # mocks the storage usage limits
     def test_node_removed_from_collection_on_privacy_change(self, auth, collected_node, bookmark_collection):
         associated_collections = collected_node.guids.first().collectionsubmission_set
@@ -110,7 +127,24 @@ class TestImplicitRemoval:
         assert associated_collections.filter(collection=bookmark_collection).exists()
 
     @mock.patch('osf.models.node.Node.check_privacy_change_viability', mock.Mock())  # mocks the storage usage limits
-    def test_node_removed_from_collection_on_privacy_change_notify(self, auth, collected_node, bookmark_collection):
+    def test_node_removed_from_collection_on_privacy_change_notify(self, auth, provider_collected_node, bookmark_collection):
+        associated_collections = provider_collected_node.guids.first().collectionsubmission_set
+        assert associated_collections.count() == 3
+
+        send_mail = mails.send_mail
+        with mock.patch.object(collection_submission_mail, 'send_mail') as mock_send:
+            mock_send.side_effect = send_mail  # implicitly test rendering
+            provider_collected_node.set_privacy('private', auth=auth)
+            assert mock_send.called
+            assert len(mock_send.call_args_list) == 1
+            email1 = mock_send.call_args_list[0]
+            _, email1_kwargs = email1
+            assert {email1_kwargs['node'].id} == {provider_collected_node.id}
+            expected_mail = mails.COLLECTION_SUBMISSION_REMOVED_PRIVATE(associated_collections.last().collection, provider_collected_node)
+            assert {email1_kwargs['mail'].tpl_prefix} == {expected_mail.tpl_prefix}
+
+    @mock.patch('osf.models.node.Node.check_privacy_change_viability', mock.Mock())  # mocks the storage usage limits
+    def test_node_removed_from_collection_on_privacy_change_no_provider(self, auth, collected_node, bookmark_collection):
         associated_collections = collected_node.guids.first().collectionsubmission_set
         assert associated_collections.count() == 3
 
@@ -118,14 +152,7 @@ class TestImplicitRemoval:
         with mock.patch.object(collection_submission_mail, 'send_mail') as mock_send:
             mock_send.side_effect = send_mail  # implicitly test rendering
             collected_node.set_privacy('private', auth=auth)
-            assert mock_send.called
-            assert len(mock_send.call_args_list) == 2
-            email1, email2 = mock_send.call_args_list
-            email1_args, email1_kwargs = email1
-            email2_args, email2_kwargs = email2
-            assert {email1_kwargs['node'].id, email2_kwargs['node'].id} == {collected_node.id}
-            expected_mail = mails.COLLECTION_SUBMISSION_REMOVED_PRIVATE(associated_collections.last().collection, collected_node)
-            assert {email1_kwargs['mail'].tpl_prefix, email2_kwargs['mail'].tpl_prefix} == {expected_mail.tpl_prefix}
+            assert not mock_send.called
 
     def test_node_removed_from_collection_on_delete(self, collected_node, bookmark_collection, auth):
         associated_collections = collected_node.guids.first().collectionsubmission_set

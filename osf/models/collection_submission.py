@@ -83,6 +83,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         self.machine_state = new_state.value
 
     def _notify_contributors_pending(self, event_data):
+        user = event_data.kwargs['user']
         for contributor in self.guid.referent.contributors:
             try:
                 claim_url = f'{settings.DOMAIN}/{contributor.get_claim_url(self.guid.referent._id)}'
@@ -94,7 +95,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                 to_addr=contributor.username,
                 mail=mails.COLLECTION_SUBMISSION_SUBMITTED(self.creator, self.guid.referent),
                 user=contributor,
-                submitter=self.creator,
+                submitter=user,
                 is_initator=self.creator == contributor,
                 is_admin=self.guid.referent.has_permission(contributor, ADMIN),
                 is_registered_contrib=contributor.is_registered,
@@ -231,7 +232,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         removed_due_to_privacy = event_data.kwargs.get('removed_due_to_privacy')
         is_moderator = user.has_perm('withdraw_submissions', self.collection.provider)
         is_admin = self.guid.referent.has_permission(user, ADMIN)
-        if removed_due_to_privacy:
+        if removed_due_to_privacy and self.collection.provider:
             if self.is_moderated:
                 for moderator in self.collection.moderators:
                     mails.send_mail(
@@ -257,7 +258,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                     domain=settings.DOMAIN,
                     osf_contact_email=settings.OSF_CONTACT_EMAIL,
                 )
-        elif is_moderator:
+        elif is_moderator and self.collection.provider:
             for contributor in self.guid.referent.contributors:
                 mails.send_mail(
                     to_addr=contributor.username,
@@ -270,7 +271,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                     node=self.guid.referent,
                     osf_contact_email=settings.OSF_CONTACT_EMAIL,
                 )
-        elif is_admin:
+        elif is_admin and self.collection.provider:
             for contributor in self.guid.referent.contributors:
                 mails.send_mail(
                     to_addr=contributor.username,
@@ -282,8 +283,6 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                     node=self.guid.referent,
                     osf_contact_email=settings.OSF_CONTACT_EMAIL,
                 )
-        else:
-            raise NotImplementedError()
 
     def _validate_resubmit(self, event_data):
         user = event_data.kwargs['user']
