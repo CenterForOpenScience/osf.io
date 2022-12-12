@@ -5,23 +5,24 @@ from api.base.utils import get_user_auth
 from osf.models import CollectionSubmission
 from osf.utils.permissions import READ
 from api.base.utils import get_object_or_error
-from django.db.models import Q
 from rest_framework import exceptions, permissions
 
 
-class CollectionContributorOrPublicOrModerator(permissions.BasePermission):
+class CollectionSubmissionActionsListPermission(permissions.BasePermission):
     def has_permission(self, request, view):
-        node_id, collection_id = view.kwargs['collection_submission_id'].split('-')
-        if request.method == 'GET':
-            obj = get_object_or_error(
-                CollectionSubmission,
-                Q(guid___id=node_id, collection__guids___id=collection_id),
-                request,
-                display_name='collection submission',
-            )
-            return self.has_object_permission(request, view, obj)
-        else:
+        if request.method != 'GET':
             raise exceptions.MethodNotAllowed(request.method)
+
+        node_id, collection_id = view.kwargs['collection_submission_id'].split('-')
+        obj = get_object_or_error(
+            CollectionSubmission.objects.filter(
+                guid___id=node_id,
+                collection__guids___id=collection_id,
+            ),
+            request=request,
+            display_name='collection submission',
+        )
+        return self.has_object_permission(request, view, obj)
 
     def has_object_permission(self, request, view, obj):
         auth = get_user_auth(request)

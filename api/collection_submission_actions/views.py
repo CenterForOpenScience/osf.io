@@ -11,7 +11,7 @@ from api.base.parsers import (
 from api.collection_submission_actions.serializers import CollectionSubmissionActionSerializer
 from api.collections.permissions import (
     CollectionReadOrPublic,
-    OnlyAdminCanCreateDestroyCollectionSubmissionAction,
+    CollectionSubmissionActionListPermission,
 )
 from api.collection_submission_actions.schemas import create_collection_action_payload
 
@@ -42,7 +42,7 @@ class CollectionSubmissionActionDetail(JSONAPIBaseView, generics.RetrieveAPIView
 
 class CollectionSubmissionActionList(JSONAPIBaseView, generics.CreateAPIView):
     permission_classes = (
-        OnlyAdminCanCreateDestroyCollectionSubmissionAction,
+        CollectionSubmissionActionListPermission,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )

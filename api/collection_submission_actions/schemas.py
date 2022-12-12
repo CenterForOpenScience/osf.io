@@ -1,3 +1,5 @@
+from osf.utils.workflows import CollectionSubmissionStates
+regex_or = '^' + ('|^').join([state.db_name for state in CollectionSubmissionStates])
 
 """ Payload for creating a schema response """
 create_collection_action_payload = {
@@ -9,6 +11,7 @@ create_collection_action_payload = {
             'properties': {
                 'type': {
                     'type': 'string',
+                    'patterns': 'collection-submission-actions',
                 },
                 'relationships': {
                     'type': 'object',
@@ -24,6 +27,9 @@ create_collection_action_payload = {
                                         },
                                         'type': {
                                             'pattern': 'collection-submission',
+                                        },
+                                        'trigger': {
+                                            'pattern': regex_or,
                                         },
                                     },
                                     'required': [

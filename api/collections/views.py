@@ -842,15 +842,14 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
     # overrides RetrieveAPIView
     def get_object(self):
         guid = self.kwargs['node_link_id']
+
         node_link = get_object_or_error(
-            CollectionSubmission,
-            Q(
-                Q(guid___id=guid) &
-                ~Q(machine_state=CollectionSubmissionStates.REJECTED) &
-                ~Q(machine_state=CollectionSubmissionStates.REMOVED),
+            CollectionSubmission.objects.filter(
+                guid___id=guid,
+                machine_state=CollectionSubmissionStates.ACCEPTED,
             ),
-            self.request,
-            'node link',
+            request=self.request,
+            display_name='node link',
         )
         # May raise a permission denied
         self.kwargs['node_id'] = self.kwargs['collection_id']

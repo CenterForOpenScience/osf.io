@@ -5,7 +5,8 @@ from rest_framework.exceptions import ValidationError
 from api.actions.serializers import ReviewableCountsRelationshipField
 from api.base.utils import absolute_reverse, get_user_auth
 from api.base.serializers import JSONAPISerializer, IDField, LinksField, RelationshipField, ShowIfVersion, TypeField, TypedRelationshipField
-from api.nodes.serializers import RegistrationProviderRelationshipField, CollectionProviderRelationshipField
+from api.nodes.serializers import RegistrationProviderRelationshipField
+from api.collections_providers.fields import CollectionProviderRelationshipField
 from api.preprints.serializers import PreprintProviderRelationshipField
 from api.providers.workflows import Workflows
 from api.base.metrics import MetricsSerializerMixin

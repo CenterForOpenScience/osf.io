@@ -16,7 +16,13 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        # Grandfather all existing collections as accepted, then have them default to an IN_PROGRESS state.
         migrations.AddField(
+            model_name='collectionsubmission',
+            name='machine_state',
+            field=models.IntegerField(choices=[(1, 'InProgress'), (2, 'Pending'), (3, 'Rejected'), (4, 'Accepted'), (5, 'Removed')], default=osf.utils.workflows.CollectionSubmissionStates['ACCEPTED']),
+        ),
+        migrations.AlterField(
             model_name='collectionsubmission',
             name='machine_state',
             field=models.IntegerField(choices=[(1, 'InProgress'), (2, 'Pending'), (3, 'Rejected'), (4, 'Accepted'), (5, 'Removed')], default=osf.utils.workflows.CollectionSubmissionStates['IN_PROGRESS']),
@@ -40,5 +46,13 @@ class Migration(migrations.Migration):
                 'abstract': False,
             },
             bases=(models.Model, osf.models.base.QuerySetExplainMixin),
+        ),
+        migrations.AlterField(
+            model_name='abstractprovider',
+            name='reviews_workflow',
+            field=models.CharField(blank=True, choices=[(None, 'None'), ('pre-moderation', 'Pre-Moderation'),
+                                                            ('post-moderation', 'Post-Moderation'),
+                                                            ('hybrid-moderation', 'Hybrid-Moderation')], max_length=30,
+                                       null=True),
         ),
     ]

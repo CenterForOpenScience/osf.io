@@ -1,7 +1,5 @@
 from rest_framework import generics, permissions as drf_permissions
 
-from django.db.models import Q
-
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.base import permissions as base_permissions
@@ -10,7 +8,7 @@ from api.base.filters import ListFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error
 
-from api.collection_submissions.permissions import CollectionContributorOrPublicOrModerator
+from api.collection_submissions.permissions import CollectionSubmissionActionsListPermission
 from api.collection_submission_actions.serializers import CollectionSubmissionActionSerializer
 
 from osf.models import CollectionSubmission
@@ -18,7 +16,7 @@ from osf.models import CollectionSubmission
 
 class CollectionSubmissionActionsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     permission_classes = (
-        CollectionContributorOrPublicOrModerator,
+        CollectionSubmissionActionsListPermission,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
@@ -33,10 +31,13 @@ class CollectionSubmissionActionsList(JSONAPIBaseView, generics.ListAPIView, Lis
 
     def get_default_queryset(self):
         node_id, collection_id = self.kwargs['collection_submission_id'].split('-')
+
         return get_object_or_error(
-            CollectionSubmission,
-            Q(guid___id=node_id, collection__guids___id=collection_id),
-            self.request,
+            CollectionSubmission.objects.filter(
+                guid___id=node_id,
+                collection__guids___id=collection_id,
+            ),
+            request=self.request,
             display_name='collection submission',
         ).actions.all()
 
