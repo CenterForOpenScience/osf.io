@@ -474,7 +474,7 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'source': [CollectionSubmissionStates.REJECTED, CollectionSubmissionStates.REMOVED],
         'dest': CollectionSubmissionStates.ACCEPTED,
         'before': ['_validate_resubmit'],
-        'after': ['_notify_accepted'],
+        'after': ['_notify_accepted', '_make_public'],
         'unless': ['is_moderated', 'is_hybrid_moderated'],
     },
     {
