@@ -2409,9 +2409,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 if self.contributors.filter(pk=associated_collection.creator.id).exists():
                     continue
 
-            if submission.state in [CollectionSubmissionStates.REMOVED, CollectionSubmissionStates.REJECTED]:
-                raise NotImplementedError()
-
             user = getattr(auth, 'user', None)
 
             if submission.state == CollectionSubmissionStates.ACCEPTED:

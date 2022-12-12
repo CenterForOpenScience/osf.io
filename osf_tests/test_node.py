@@ -42,7 +42,7 @@ from osf.models import (
 from addons.wiki.models import WikiPage, WikiVersion
 from osf.models.node import AbstractNodeQuerySet
 from osf.exceptions import ValidationError, ValidationValueError, UserStateError
-from osf.utils.workflows import DefaultStates
+from osf.utils.workflows import DefaultStates, CollectionSubmissionStates
 from framework.auth.core import Auth
 
 from osf_tests.factories import (

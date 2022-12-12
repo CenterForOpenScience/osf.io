@@ -33,7 +33,7 @@ from osf_tests import factories
 from tests.base import OsfTestCase
 from tests.test_features import requires_search
 from tests.utils import run_celery_tasks
-
+from osf.utils.workflows import CollectionSubmissionStates
 
 TEST_INDEX = 'test'
 
