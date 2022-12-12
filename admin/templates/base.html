@@ -209,9 +209,9 @@
               </a></li>
               <div class="collapse" id="collapseAssetFiles">
                   <ul class="sidebar-menu sidebar-menu-inner">
-                      <li><a href="{% url 'asset_files:list' %}"><i class='fa fa-link'></i><span> List</span> </a></li>
+                      <li><a href="{% url 'provider_asset_files:list' %}"><i class='fa fa-link'></i><span> List</span> </a></li>
                       {% if perms.osf.change_providerassetfile %}
-                      <li><a href="{% url 'asset_files:create' %}"><i class='fa fa-link'></i><span> Create</span> </a></li>
+                      <li><a href="{% url 'provider_asset_files:create' %}"><i class='fa fa-link'></i><span> Create</span> </a></li>
                       {% endif %}
                   </ul>
               </div>

@@ -4,7 +4,7 @@ from django.db.models import Case, CharField, Value, When
 from django.forms.models import model_to_dict
 from django.views.generic import ListView, DetailView, View, CreateView, DeleteView, UpdateView
 
-from admin.asset_files.forms import ProviderAssetFileForm
+from admin.provider_asset_files.forms import ProviderAssetFileForm
 from osf.models.provider import AbstractProvider
 from osf.models.storage import ProviderAssetFile
 
@@ -67,13 +67,13 @@ class ProviderAssetFileChangeForm(AssetFileMixin, PermissionRequiredMixin, Updat
     form_class = ProviderAssetFileForm
 
     def get_success_url(self, *args, **kwargs):
-        return reverse_lazy('asset_files:detail', kwargs={'asset_id': self.kwargs.get('asset_id')})
+        return reverse_lazy('provider_asset_files:detail', kwargs={'asset_id': self.kwargs.get('asset_id')})
 
 class ProviderAssetFileDelete(AssetFileMixin, PermissionRequiredMixin, DeleteView):
     permission_required = 'osf.delete_providerassetfile'
     raise_exception = True
     template_name = 'osf/providerassetfile_confirm_delete.html'
-    success_url = reverse_lazy('asset_files:list')
+    success_url = reverse_lazy('provider_asset_files:list')
 
 
 class ProviderAssetFileDetail(PermissionRequiredMixin, View):
@@ -93,6 +93,6 @@ class ProviderAssetFileCreate(PermissionRequiredMixin, CreateView):
     permission_required = 'osf.change_providerassetfile'
     raise_exception = True
     template_name = 'osf/providerassetfile_create.html'
-    success_url = reverse_lazy('asset_files:list')
+    success_url = reverse_lazy('provider_asset_files:list')
     model = ProviderAssetFile
     form_class = ProviderAssetFileForm

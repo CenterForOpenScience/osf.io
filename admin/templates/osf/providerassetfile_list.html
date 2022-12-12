@@ -32,7 +32,7 @@
     <tbody>
         {% for object in asset_files %}
         <tr>
-            <td><a href="{% url 'asset_files:detail' asset_id=object.id %}">{{ object.name }}</a></td>
+            <td><a href="{% url 'provider_asset_files:detail' asset_id=object.id %}">{{ object.name }}</a></td>
             <td><a target="_blank" href={{ object.file.url }}>Preview</a></td>
             <td>
               {% for provider in object.providers.all %}
