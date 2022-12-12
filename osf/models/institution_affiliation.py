@@ -44,3 +44,9 @@ class InstitutionAffiliation(BaseModel):
         )
         affiliation.save()
         return affiliation
+
+    @classmethod
+    def add_multiple(cls, user, institutions):
+        for institution in institutions:
+            if not user.is_affiliated_with_institution(institution):
+                InstitutionAffiliation.create(user, institution)

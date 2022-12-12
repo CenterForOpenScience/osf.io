@@ -16,7 +16,7 @@ from framework import sentry
 from framework.auth import get_or_create_user
 
 from osf import features
-from osf.models import Institution
+from osf.models import Institution, InstitutionAffiliation
 from osf.models.institution import SharedSsoAffiliationFilterCriteriaAction
 
 from website.mails import send_mail, WELCOME_OSF4I
@@ -309,12 +309,10 @@ class InstitutionAuthentication(BaseAuthentication):
 
         # Affiliate the user to the primary institution if not previously affiliated
         if not user.is_affiliated_with_institution(institution):
-            user.affiliated_institutions.add(institution)
-            user.save()
+            InstitutionAffiliation.create(user, institution, sso_mail=username, sso_department=department)
 
         # Affiliate the user to the secondary institution if not previously affiliated
         if secondary_institution and not user.is_affiliated_with_institution(secondary_institution):
-            user.affiliated_institutions.add(secondary_institution)
-            user.save()
+            InstitutionAffiliation.create(user, institution, sso_mail=username, sso_department=department)
 
         return user, None

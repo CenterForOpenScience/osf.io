@@ -41,6 +41,7 @@ from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
 from osf.models.notable_domain import NotableDomain
 from osf.models.contributor import Contributor, RecentlyAddedContributor
 from osf.models.institution import Institution
+from osf.models.institution_affiliation import InstitutionAffiliation
 from osf.models.mixins import AddonModelMixin
 from osf.models.spam import SpamMixin
 from osf.models.session import Session
@@ -757,7 +758,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 self.email_verifications[k] = v
         user.email_verifications = {}
 
-        self.affiliated_institutions.add(*user.affiliated_institutions.values_list('pk', flat=True))
+        InstitutionAffiliation.add_multiple(self, user.get_affiliated_institutions())
 
         for service in user.external_identity:
             for service_id in user.external_identity[service].keys():
@@ -1685,7 +1686,17 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     def is_affiliated_with_institution(self, institution):
         """Return if this user is affiliated with ``institution``."""
-        return self.affiliated_institutions.filter(id=institution.id).exists()
+        return InstitutionAffiliation.objects.filter(user__id=self.id, institution__id=institution.id).exists()
+
+    def has_affiliated_institutions(self):
+        return InstitutionAffiliation.objects.filter(user__id=self.id).exists()
+
+    def get_affiliated_institutions(self):
+        qs = InstitutionAffiliation.objects.filter(user__id=self.id).values_list('institution', flat=True)
+        return Institution.objects.filter(pk__in=qs)
+
+    def get_affiliated_institution__ids(self):
+        return InstitutionAffiliation.objects.filter(user__id=self.id).values_list('institution___id', flat=True)
 
     def update_affiliated_institutions_by_email_domain(self):
         """
@@ -1694,19 +1705,19 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         try:
             email_domains = [email.split('@')[1].lower() for email in self.emails.values_list('address', flat=True)]
-            insts = Institution.objects.filter(email_domains__overlap=email_domains)
-            if insts.exists():
-                self.affiliated_institutions.add(*insts)
+            institutions = Institution.objects.filter(email_domains__overlap=email_domains)
+            if institutions.exists():
+                InstitutionAffiliation.add_multiple(self, institutions)
         except IndexError:
             pass
 
-    def remove_institution(self, inst_id):
+    def remove_institution(self, instn_id):
         try:
-            inst = self.affiliated_institutions.get(_id=inst_id)
-        except Institution.DoesNotExist:
+            instn_affiliation = InstitutionAffiliation.objects.get(user__id=self.id, institution__id=instn_id)
+        except InstitutionAffiliation.DoesNotExist:
             return False
         else:
-            self.affiliated_institutions.remove(inst)
+            instn_affiliation.delete()
             return True
 
     def get_activity_points(self):

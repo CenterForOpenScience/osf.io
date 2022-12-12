@@ -188,7 +188,7 @@ class UserSerializer(JSONAPISerializer):
         return Preprint.objects.can_view(user_preprints_query, auth_user, allow_contribs=False).count()
 
     def get_institutions_count(self, obj):
-        return obj.affiliated_institutions.count()
+        return obj.get_affiliated_institutions.count()
 
     def get_can_view_reviews(self, obj):
         group_qs = AbstractProviderGroupObjectPermission.objects.filter(group__user=obj, permission__codename='view_submissions')

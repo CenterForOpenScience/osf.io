@@ -46,7 +46,7 @@ def update_affiliation_for_orcid_sso_users(user_id, orcid_id):
     """This is an asynchronous task that runs during CONFIRMED ORCiD SSO logins and makes eligible
     institution affiliations.
     """
-    from osf.models import OSFUser
+    from osf.models import OSFUser, InstitutionAffiliation
     user = OSFUser.load(user_id)
     if not user or not verify_user_orcid_id(user, orcid_id):
         # This should not happen as long as this task is called at the right place at the right time.
@@ -59,7 +59,7 @@ def update_affiliation_for_orcid_sso_users(user_id, orcid_id):
         logger.info(f'Eligible institution affiliation has been found for ORCiD SSO user: '
                     f'institution=[{institution._id}], user=[{user_id}], orcid_id=[{orcid_id}]')
         if not user.is_affiliated_with_institution(institution):
-            user.affiliated_institutions.add(institution)
+            InstitutionAffiliation.create(user, institution)
 
 
 def verify_user_orcid_id(user, orcid_id):
