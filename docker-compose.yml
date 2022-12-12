@@ -67,7 +67,7 @@ services:
     stdin_open: true
 
   postgres:
-    image: postgres:9.6
+    image: postgres:15.1
     command:
       - /bin/bash
       - -c

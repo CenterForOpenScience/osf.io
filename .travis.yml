@@ -25,7 +25,7 @@ env:
   global:
     - WHEELHOUSE="$HOME/.cache/wheelhouse"
     - LIBXML2_DEB="libxml2-dbg_2.9.1+dfsg1-3ubuntu4.9_amd64.deb"
-    - POSTGRES_DEB="postgresql-9.6_9.6.3-1.pgdg12.4+1_amd64.deb"
+    - POSTGRES_DEB="postgresql-15_15~rc2-1.pgdg22.10+~20221013.1610.gf7eec7f_amd64.deb"
     - ELASTICSEARCH_ARCHIVE="elasticsearch-2.4.5.tar.gz"
     - ELASTICSEARCH6_ARCHIVE="elasticsearch-6.3.1.tar.gz"
     - LIBJEMALLOC_DEB="libjemalloc1_3.5.1-2_amd64.deb"
@@ -58,7 +58,7 @@ before_install:
       fi
 
       if [ ! -f "$POSTGRES_DEB" ]; then
-        curl -SLO http://apt.postgresql.org/pub/repos/apt/pool/main/p/postgresql-9.6/$POSTGRES_DEB
+        curl -SLO http://apt.postgresql.org/pub/repos/apt/pool/15/p/postgresql-15/$POSTGRES_DEB
       fi
 
       dpkg -x $LIBXML2_DEB /tmp/libxml2
