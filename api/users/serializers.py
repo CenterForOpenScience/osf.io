@@ -188,6 +188,7 @@ class UserSerializer(JSONAPISerializer):
         return Preprint.objects.can_view(user_preprints_query, auth_user, allow_contribs=False).count()
 
     def get_institutions_count(self, obj):
+        # TODO: Add a check to make sure that ``obj`` is an ``OSFUser``
         return obj.get_affiliated_institutions.count()
 
     def get_can_view_reviews(self, obj):

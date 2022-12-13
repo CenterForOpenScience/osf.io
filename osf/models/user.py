@@ -758,7 +758,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 self.email_verifications[k] = v
         user.email_verifications = {}
 
-        InstitutionAffiliation.add_multiple(self, user.get_affiliated_institutions())
+        self.copy_institution_affiliation_when_merging_user(user)
 
         for service in user.external_identity:
             for service_id in user.external_identity[service].keys():
@@ -1735,15 +1735,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             )
 
     def update_affiliated_institutions_by_email_domain(self):
-        """
-        Append affiliated_institutions by email domain.
-        :return:
-        """
+        """Append affiliated_institutions by email domain."""
         try:
             email_domains = [email.split('@')[1].lower() for email in self.emails.values_list('address', flat=True)]
             institutions = Institution.objects.filter(email_domains__overlap=email_domains)
             if institutions.exists():
-                InstitutionAffiliation.add_multiple(self, institutions)
+                self.add_multiple_institutions_non_sso(institutions)
         except IndexError:
             pass
 

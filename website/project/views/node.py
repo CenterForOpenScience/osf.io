@@ -872,6 +872,7 @@ def _view_project(node, auth, primary=False,
 
 def get_affiliated_institutions(obj):
     ret = []
+    # TODO: check if the ``obj`` can be an ``OSFUser`` or not
     for institution in obj.affiliated_institutions.all():
         ret.append({
             'name': institution.name,

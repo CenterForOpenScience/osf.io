@@ -58,8 +58,7 @@ def migrate_user_institution_affiliation(dry_run=True):
                 affiliation = user.add_one_affiliated_institution(
                     institution,
                     sso_identity=InstitutionAffiliation.DEFAULT_VALUE_FOR_SSO_IDENTITY_NOT_AVAILABLE,
-                    sso_mail=None,
-                    sso_department=user.department,
+                    sso_department=user.department
                 )
                 logger.info(f'\tAffiliation=<{affiliation}> migrated for user=<{user._id}> @ institution=<{institution._id}>')
             else:
