@@ -7,11 +7,21 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.4/js/select2.min.js"></script>
 {% endblock %}
 {% block title %}
-    <title>List of Provider Asset Files</title>
+    {% if on_provider_route %}
+        <title>List of Provider Asset Files</title>
+    {%endif%}
+    {% if on_institution_route %}
+        <title>List of Institution Asset Files</title>
+    {%endif%}
 {% endblock title %}
 {% block content %}
 
-    <h2>List of Provider Asset Files</h2>
+    {% if on_provider_route %}
+        <h2>List of Provider Asset Files</h2>
+    {%endif%}
+    {% if on_institution_route %}
+        <h2>List of Institution Asset Files</h2>
+    {%endif%}
     <form method="GET">
         Filter: <select class="provider-filter-selector" name="provider_id" onchange="filterSubjects(this.value)">
         {% for id, name in filterable_target_ids.items %}
@@ -29,6 +39,9 @@
             {% if on_provider_route %}
                 <th>Providers</th>
             {%endif%}
+            {% if on_institution_route %}
+                <th>Institutions</th>
+            {%endif%}
         </tr>
     </thead>
     <tbody>
@@ -40,6 +53,16 @@
                 <td>
                 {% for provider in object.providers.all %}
                     {{provider.name}},
+                {% endfor %}
+                </td>
+            {%endif%}
+
+            {% if on_institution_route %}
+                <td><a href="{% url 'institution_asset_files:detail' asset_id=object.id %}">{{ object.name }}</a></td>
+                <td><a target="_blank" href={{ object.file.url }}>Preview</a></td>
+                <td>
+                {% for institution in object.institutions.all %}
+                    {{institution.name}},
                 {% endfor %}
                 </td>
             {%endif%}

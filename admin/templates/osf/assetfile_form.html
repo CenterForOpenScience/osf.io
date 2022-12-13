@@ -10,6 +10,9 @@
         {% if perms.osf.delete_providerassetfile and on_provider_route %}
             <a class="btn btn-danger" href={% url 'provider_asset_files:delete' object.id %}>Delete asset</a>
         {% endif %}
+        {% if perms.osf.delete_institutionassetfile and on_institution_route %}
+            <a class="btn btn-danger" href={% url 'institution_asset_files:delete' object.id %}>Delete asset</a>
+        {% endif %}
     </div>
 </div>
 {% if object.file %}
