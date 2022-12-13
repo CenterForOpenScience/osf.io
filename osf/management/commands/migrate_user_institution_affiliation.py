@@ -55,7 +55,12 @@ def migrate_user_institution_affiliation(dry_run=True):
             logger.info(f'\tMigrating affiliation for <{user._id}::{institution.name}> '
                         f'[{user_count_per_institution}/{user_total_per_institution}]')
             if not dry_run:
-                affiliation = InstitutionAffiliation.create(user, institution, is_migration=True)
+                affiliation = user.add_one_affiliated_institution(
+                    institution,
+                    sso_identity=InstitutionAffiliation.DEFAULT_VALUE_FOR_SSO_IDENTITY_NOT_AVAILABLE,
+                    sso_mail=None,
+                    sso_department=user.department,
+                )
                 logger.info(f'\tAffiliation=<{affiliation}> migrated for user=<{user._id}> @ institution=<{institution._id}>')
             else:
                 logger.warning(f'\tDry Run: Affiliation not migrated for {user._id} @ {institution._id}!')

@@ -1685,18 +1685,54 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                     .format(**locals())
 
     def is_affiliated_with_institution(self, institution):
-        """Return if this user is affiliated with ``institution``."""
+        """Return if this user is affiliated with the given ``institution``."""
         return InstitutionAffiliation.objects.filter(user__id=self.id, institution__id=institution.id).exists()
 
     def has_affiliated_institutions(self):
+        """Return if this user is affiliated with any institutions."""
         return InstitutionAffiliation.objects.filter(user__id=self.id).exists()
 
     def get_affiliated_institutions(self):
+        """Return a queryset of all affiliated institutions for the current user."""
         qs = InstitutionAffiliation.objects.filter(user__id=self.id).values_list('institution', flat=True)
         return Institution.objects.filter(pk__in=qs)
 
-    def get_affiliated_institution__ids(self):
-        return InstitutionAffiliation.objects.filter(user__id=self.id).values_list('institution___id', flat=True)
+    def get_affiliated_institution__id_set(self):
+        """Return a set of ``_id`` of all affiliated institutions for the current user."""
+        return set(InstitutionAffiliation.objects.filter(user__id=self.id).values_list('institution___id', flat=True))
+
+    def add_one_affiliated_institution(self, institution, sso_identity=None, sso_mail=None, sso_department=None):
+        """Add one institution affiliation between the current user and the given ``institution`` with attributes."""
+        if self.is_affiliated_with_institution(institution):
+            return None
+        affiliation = InstitutionAffiliation.objects.create(
+            user=self,
+            institution=institution,
+            sso_identity=sso_identity,
+            sso_mail=sso_mail,
+            sso_department=sso_department,
+            sso_other_attributes={}
+        )
+        return affiliation
+
+    def copy_institution_affiliation_when_merging_user(self, user):
+        """Copy institution affiliations of the given ``user`` to the current user during merge."""
+        affiliations = InstitutionAffiliation.objects.filter(user__id=user.id)
+        for affiliation in affiliations:
+            self.add_one_affiliated_institution(
+                affiliation.institution,
+                sso_identity=affiliation.sso_identity,
+                sso_mail=affiliation.sso_mail,
+                sso_department=affiliation.sso_department
+            )
+
+    def add_multiple_institutions_non_sso(self, institutions):
+        """Add multiple affiliations for the user and a list of institutions, only used for email domain non-SSO."""
+        for institution in institutions:
+            self.add_one_affiliated_institution(
+                institution,
+                sso_identity=InstitutionAffiliation.DEFAULT_VALUE_FOR_SSO_IDENTITY_NOT_AVAILABLE
+            )
 
     def update_affiliated_institutions_by_email_domain(self):
         """
