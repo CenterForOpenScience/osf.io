@@ -474,7 +474,7 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'source': [CollectionSubmissionStates.REJECTED, CollectionSubmissionStates.REMOVED],
         'dest': CollectionSubmissionStates.ACCEPTED,
         'before': ['_validate_resubmit'],
-        'after': ['_notify_accepted', '_make_public'],
+        'after': ['_make_public', '_notify_accepted'],
         'unless': ['is_moderated', 'is_hybrid_moderated'],
     },
     {
@@ -482,7 +482,7 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'source': [CollectionSubmissionStates.REJECTED, CollectionSubmissionStates.REMOVED],
         'dest': CollectionSubmissionStates.PENDING,
         'before': ['_validate_resubmit'],
-        'after': ['_make_public'],
+        'after': ['_make_public', '_notify_contributors_pending', '_notify_moderators_pending'],
         'conditions': ['is_moderated'],
     },
     {
@@ -490,7 +490,7 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'source': [CollectionSubmissionStates.REJECTED, CollectionSubmissionStates.REMOVED],
         'dest': CollectionSubmissionStates.ACCEPTED,
         'before': [],
-        'after': ['_make_public'],
+        'after': ['_make_public', '_notify_accepted'],
         'conditions': ['is_hybrid_moderated', 'is_submitted_by_moderator_contributor'],
     },
     {
@@ -498,7 +498,7 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'source': [CollectionSubmissionStates.REJECTED, CollectionSubmissionStates.REMOVED],
         'dest': CollectionSubmissionStates.PENDING,
         'before': ['_validate_resubmit'],
-        'after': ['_make_public'],
+        'after': ['_make_public', '_notify_contributors_pending', '_notify_moderators_pending'],
         'conditions': ['is_hybrid_moderated'],
         'unless': ['is_submitted_by_moderator_contributor']
     },
