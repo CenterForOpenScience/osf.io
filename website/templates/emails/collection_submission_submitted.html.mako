@@ -9,7 +9,7 @@
         <br>
         <p>
             % if is_initator:
-                You just started to a request to add <a href="${node.absolute_url}">${node.title}</a>
+                You just started a request to add <a href="${node.absolute_url}">${node.title}</a>
                 to <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.provider.name}</a>.
                 All admins and contributors will be notified via email.
             % elif is_registered_contrib:
