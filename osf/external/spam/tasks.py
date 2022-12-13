@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-DOMAIN_REGEX = re.compile(r'\W*(?P<protocol>\w+://)?(?P<www>www\.)?(?P<domain>([\w-]+\.)+\w+)(?P<path>/\w*)?\W*')
+DOMAIN_REGEX = re.compile(r'\W*(?P<protocol>\w+://)?(?P<www>www\.)?(?P<domain>([\w-]+\.)+[a-zA-Z]+)(?P<path>[/\-\.\w]*)?\W*')
 REDIRECT_CODES = {301, 302, 303, 307, 308}
 
 @celery_app.task()
@@ -60,7 +60,8 @@ def _extract_domains(content):
 
         protocol = match.group('protocol') or 'https://'
         www = match.group('www') or ''
-        constructed_url = f'{protocol}{www}{domain}'
+        path = match.group('path') or ''
+        constructed_url = f'{protocol}{www}{domain}{path}'
 
         try:
             response = requests.head(constructed_url)
