@@ -21,6 +21,7 @@ def get_type(record):
         return get_type(record.referent)
     elif isinstance(record, Collection):
         return 'collections'
+    raise NotImplementedError(f'unrecognized guid referent: {record}')
 
 def get_related_view(record):
     kind = get_type(record)
@@ -56,6 +57,10 @@ class GuidSerializer(JSONAPISerializer):
             'type': 'get_type',
         },
     )
+    custom_metadata = RelationshipField(
+        related_view='get_custom_metadata_view',
+        related_view_kwargs={'guid_id': 'osfio:<_id>'},
+    )
     links = LinksField({
         'self': 'get_absolute_url',
         'html': 'get_absolute_html_url',
@@ -63,6 +68,12 @@ class GuidSerializer(JSONAPISerializer):
 
     def get_type(self, guid):
         return get_type(guid.referent)
+
+    def get_custom_metadata_view(self, guid):
+        if isinstance(guid.referent, BaseFileNode):
+            # files have a special custom metadata view (for now...)
+            return 'custom-metadata:custom-file-metadata-detail'
+        return 'custom-metadata:custom-item-metadata-detail'
 
     def get_absolute_url(self, obj):
         return absolute_reverse(

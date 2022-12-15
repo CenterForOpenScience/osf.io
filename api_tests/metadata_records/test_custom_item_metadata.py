@@ -1,7 +1,5 @@
 import pytest
 
-from django.db import transaction
-
 from api.base.settings.defaults import API_BASE
 from osf.models import GuidMetadataRecord
 from osf.utils import permissions
@@ -11,121 +9,31 @@ from osf_tests.factories import (
     RegistrationFactory,
     PreprintFactory,
 )
+from .utils import ExpectedMetadataRecord
 
 
-def make_url(guid):
-    base_url = f'/{API_BASE}custom_item_metadata_records/'
-    if guid is None:
-        return base_url
-    if hasattr(guid, 'guid'):
-        guid = guid.guid
-    return f'{base_url}osfio:{guid._id}/'
-
-
-def make_payload(guid, **attributes):
-    if hasattr(guid, 'guid'):
-        guid = guid.guid
-    return {
-        'data': {
-            'id': guid._id,
-            'type': 'custom-item-metadata-record',
-            'attributes': attributes,
-        }
-    }
-
-def never_commit_transaction():
-    class ExpectedRollback(Exception):
-        pass
-    try:
-        with transaction.atomic():
-            yield
-            raise ExpectedRollback('this is an expected rollback; all is well')
-    except ExpectedRollback:
-        pass
-    else:
-        raise ExpectedRollback('expected a rollback but did not get one; something is wrong')
-
-
-class ExpectedMetadataRecord:
-    def __init__(self):
-        self.guid = ''
-        self.language = ''
-        self.resource_type_general = ''
-        self.funding_info = []
-        self.custom_properties = []
-
-    def assert_for(self, db_record, api_record):
-        db_record.refresh_from_db()
-        self._assert_all_equal(
-            db_record.guid._id,
-            api_record['id'],
-            expected=self.guid,
-        )
-        self._assert_all_equal(
-            db_record.language,
-            api_record['attributes']['language'],
-            expected=self.language,
-        )
-        self._assert_all_equal(
-            db_record.resource_type_general,
-            api_record['attributes']['resource_type_general'],
-            expected=self.resource_type_general,
-        )
-        self._assert_all_equal(
-            db_record.funding_info,
-            api_record['attributes']['funders'],
-            expected=self.funding_info,
-        )
-        db_custom_properties = [
-            {'property_uri': cp.property_uri, 'value_as_text': cp.value_as_text}
-            for cp in db_record.custom_property_set.all()
-        ]
-        self._assert_all_equal(
-            db_custom_properties,
-            api_record['attributes']['custom_properties'],
-            expected=self.custom_properties,
-        )
-
-    def _assert_all_equal(self, *actuals, expected):
-        expected = self._freeze(expected)
-        for actual in actuals:
-            assert self._freeze(actual) == expected
-
-    def _freeze(self, unfrozen):
-        frozen = None
-        if isinstance(unfrozen, dict):
-            frozen = frozenset(
-                (k, self._freeze(v))
-                for k, v in unfrozen.items()
-            )
-        elif isinstance(unfrozen, list):
-            frozen = frozenset(
-                self._freeze(v)
-                for v in unfrozen
-            )
-
-        if frozen is None:
-            return unfrozen
-        assert len(frozen) == len(unfrozen), 'unexpected duplicates!'
-        return frozen
-
-
+@pytest.mark.usefixtures('with_class_scoped_db')
 class TestCustomItemMetadataRecordDetail:
-    @pytest.fixture(scope='class', autouse=True)
-    def _class_db(self, django_db_setup, django_db_blocker):
-        """a class-scoped version of the `django_db` mark
-        (so we can use class-scoped fixtures to set up data
-        for use across several tests)
-        """
-        with django_db_blocker.unblock():
-            yield from never_commit_transaction()
+    APIV2_PATH = 'custom_item_metadata_records/'
+    APIV2_RESOURCE_TYPE = 'custom-item-metadata-record'
 
-    @pytest.fixture(scope='function', autouse=True)
-    def _per_test_transaction(self):
-        """wrap each test in a transaction
-        (so what happens in a test stays in that test)
-        """
-        yield from never_commit_transaction()
+    def make_url(self, guid):
+        if guid is None:
+            return f'/{API_BASE}{self.APIV2_PATH}'
+        if hasattr(guid, 'guid'):
+            guid = guid.guid
+        return f'/{API_BASE}{self.APIV2_PATH}osfio:{guid._id}/'
+
+    def make_payload(self, guid, **attributes):
+        if hasattr(guid, 'guid'):
+            guid = guid.guid
+        return {
+            'data': {
+                'id': guid._id,
+                'type': self.APIV2_RESOURCE_TYPE,
+                'attributes': attributes,
+            }
+        }
 
     @pytest.fixture(scope='class')
     def user_admin(self):
@@ -267,13 +175,13 @@ class TestCustomItemMetadataRecordDetail:
 
     def test_anonymous(self, app, public_osfguid, private_osfguid):
         # can GET public
-        res = app.get(make_url(public_osfguid))
+        res = app.get(self.make_url(public_osfguid))
         assert res.status_code == 200
         assert res.json['data']['id'] == public_osfguid._id
 
         # cannot GET private
         res = app.get(
-            make_url(private_osfguid),
+            self.make_url(private_osfguid),
             expect_errors=True,
         )
         assert res.status_code == 401
@@ -281,23 +189,23 @@ class TestCustomItemMetadataRecordDetail:
         for osfguid in (public_osfguid, private_osfguid):
             # cannot PATCH
             res = app.patch_json_api(
-                make_url(osfguid),
-                make_payload(osfguid, language='hah'),
+                self.make_url(osfguid),
+                self.make_payload(osfguid, language='hah'),
                 expect_errors=True,
             )
             assert res.status_code == 401
 
             # cannot PUT
             res = app.put_json_api(
-                make_url(osfguid),
-                make_payload(osfguid, language='foo'),
+                self.make_url(osfguid),
+                self.make_payload(osfguid, language='foo'),
                 expect_errors=True,
             )
             assert res.status_code == 401
 
             # everybody cannot DELETE
             res = app.delete_json_api(
-                make_url(osfguid),
+                self.make_url(osfguid),
                 expect_errors=True,
             )
             assert res.status_code == 401
@@ -305,7 +213,7 @@ class TestCustomItemMetadataRecordDetail:
     def test_what_everybody_can_do(self, app, public_osfguid, private_osfguid, anybody):
         # can GET public
         res = app.get(
-            make_url(public_osfguid),
+            self.make_url(public_osfguid),
             auth=anybody,
         )
         assert res.status_code == 200
@@ -314,8 +222,8 @@ class TestCustomItemMetadataRecordDetail:
         for osfguid in (public_osfguid, private_osfguid):
             # cannot GET a list view
             res = app.get(
-                make_url(None),
-                make_payload(osfguid, language='foo'),
+                self.make_url(None),
+                self.make_payload(osfguid, language='foo'),
                 auth=anybody,
                 expect_errors=True,
             )
@@ -323,8 +231,8 @@ class TestCustomItemMetadataRecordDetail:
 
             # cannot POST to a list view
             res = app.post_json_api(
-                make_url(None),
-                make_payload(osfguid, language='foo'),
+                self.make_url(None),
+                self.make_payload(osfguid, language='foo'),
                 auth=anybody,
                 expect_errors=True,
             )
@@ -332,8 +240,8 @@ class TestCustomItemMetadataRecordDetail:
 
             # cannot POST to a detail view
             res = app.post_json_api(
-                make_url(osfguid),
-                make_payload(osfguid, language='foo'),
+                self.make_url(osfguid),
+                self.make_payload(osfguid, language='foo'),
                 auth=anybody,
                 expect_errors=True,
             )
@@ -341,7 +249,7 @@ class TestCustomItemMetadataRecordDetail:
 
             # cannot DELETE
             res = app.delete_json_api(
-                make_url(osfguid),
+                self.make_url(osfguid),
                 auth=anybody,
                 expect_errors=True,
             )
@@ -350,7 +258,7 @@ class TestCustomItemMetadataRecordDetail:
     def test_without_read_permission(self, app, private_osfguid, user_rando):
         # cannot GET private
         res = app.get(
-            make_url(private_osfguid),
+            self.make_url(private_osfguid),
             auth=user_rando.auth,
             expect_errors=True,
         )
@@ -360,16 +268,16 @@ class TestCustomItemMetadataRecordDetail:
         for osfguid in (public_osfguid, private_osfguid):
             # cannot PATCH
             res = app.patch_json_api(
-                make_url(osfguid),
-                make_payload(osfguid, language='hah'),
+                self.make_url(osfguid),
+                self.make_payload(osfguid, language='hah'),
                 auth=anybody_without_write_permission,
                 expect_errors=True,
             )
             assert res.status_code == 403
             # cannot PUT
             res = app.put_json_api(
-                make_url(osfguid),
-                make_payload(osfguid, language='foo'),
+                self.make_url(osfguid),
+                self.make_payload(osfguid, language='foo'),
                 auth=anybody_without_write_permission,
                 expect_errors=True,
             )
@@ -378,7 +286,7 @@ class TestCustomItemMetadataRecordDetail:
     def test_with_read_permission(self, app, private_osfguid, anybody_with_read_permission):
         # can GET private
         res = app.get(
-            make_url(private_osfguid),
+            self.make_url(private_osfguid),
             auth=anybody_with_read_permission,
         )
         assert res.status_code == 200
@@ -393,8 +301,8 @@ class TestCustomItemMetadataRecordDetail:
             expected.language = 'nga'
             expected.resource_type_general = 'Text'
             res = app.put_json_api(
-                make_url(osfguid),
-                make_payload(
+                self.make_url(osfguid),
+                self.make_payload(
                     osfguid,
                     language=expected.language,
                     resource_type_general=expected.resource_type_general,
@@ -408,8 +316,8 @@ class TestCustomItemMetadataRecordDetail:
             # can PATCH
             expected.language = 'nga-CD'
             res = app.patch_json_api(
-                make_url(osfguid),
-                make_payload(osfguid, language=expected.language),
+                self.make_url(osfguid),
+                self.make_payload(osfguid, language=expected.language),
                 auth=anybody_with_write_permission,
             )
             assert res.status_code == 200
@@ -425,8 +333,8 @@ class TestCustomItemMetadataRecordDetail:
                 'award_title': 'award seven',
             }]
             res = app.patch_json_api(
-                make_url(osfguid),
-                make_payload(osfguid, funders=expected.funding_info),
+                self.make_url(osfguid),
+                self.make_payload(osfguid, funders=expected.funding_info),
                 auth=anybody_with_write_permission,
             )
             assert res.status_code == 200
@@ -441,8 +349,8 @@ class TestCustomItemMetadataRecordDetail:
                 'value_as_text': 'grungus',
             }]
             res = app.patch_json_api(
-                make_url(osfguid),
-                make_payload(osfguid, custom_properties=expected.custom_properties),
+                self.make_url(osfguid),
+                self.make_payload(osfguid, custom_properties=expected.custom_properties),
                 auth=anybody_with_write_permission,
             )
             assert res.status_code == 200
@@ -460,8 +368,8 @@ class TestCustomItemMetadataRecordDetail:
                 'value_as_text': 'who',
             }]
             res = app.patch_json_api(
-                make_url(osfguid),
-                make_payload(osfguid, custom_properties=expected.custom_properties),
+                self.make_url(osfguid),
+                self.make_payload(osfguid, custom_properties=expected.custom_properties),
                 auth=anybody_with_write_permission,
             )
             assert res.status_code == 200
@@ -470,8 +378,8 @@ class TestCustomItemMetadataRecordDetail:
             # can dis-PATCH custom properties
             expected.custom_properties = []
             res = app.patch_json_api(
-                make_url(osfguid),
-                make_payload(osfguid, custom_properties=expected.custom_properties),
+                self.make_url(osfguid),
+                self.make_payload(osfguid, custom_properties=expected.custom_properties),
                 auth=anybody_with_write_permission,
             )
             assert res.status_code == 200

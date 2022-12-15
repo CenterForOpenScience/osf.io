@@ -104,8 +104,8 @@ class CustomMetadataPropertyProxyField(ser.Field):
 
 
 class CustomFileMetadataSerializer(GuidMetadataRecordSerializer):
-    title = CustomMetadataPropertyProxyField(DCTERMS.title)
-    description = CustomMetadataPropertyProxyField(DCTERMS.description)
+    title = CustomMetadataPropertyProxyField(DCTERMS.title, required=False)
+    description = CustomMetadataPropertyProxyField(DCTERMS.description, required=False)
 
     class Meta:
         type_ = 'custom-file-metadata-record'
