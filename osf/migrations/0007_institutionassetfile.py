@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
                 ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
                 ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
                 ('file', models.FileField(upload_to='assets')),
-                ('name', models.CharField(choices=[('banner', 'banner'), ('logo', 'logo'), ('logo_rounded_corner', 'logo_rounded_corner')], max_length=63)),
+                ('name', models.CharField(choices=[('banner', 'banner'), ('logo', 'logo'), ('logo_rounded_corners', 'logo_rounded_corners')], max_length=63)),
                 ('institutions', models.ManyToManyField(blank=True, related_name='asset_files', to='osf.Institution')),
             ],
             options={

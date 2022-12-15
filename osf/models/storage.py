@@ -18,7 +18,7 @@ PROVIDER_ASSET_NAME_CHOICES = [
 INSTITUTION_ASSET_NAME_CHOICES = [
     ('banner', 'banner'),
     ('logo', 'logo'),
-    ('logo_rounded_corner', 'logo_rounded_corner'),
+    ('logo_rounded_corners', 'logo_rounded_corners'),
 ]
 
 class AssetFile(BaseModel):
