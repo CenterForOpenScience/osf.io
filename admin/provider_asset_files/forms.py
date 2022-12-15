@@ -1,9 +1,7 @@
 from django import forms
 
-from osf.models.storage import ProviderAssetFile, InstitutionAssetFile
+from osf.models.storage import ProviderAssetFile
 from osf.models.provider import AbstractProvider
-from osf.models.institution import Institution
-
 
 class ProviderAssetFileForm(forms.ModelForm):
     class Meta:

@@ -8,7 +8,7 @@ import osf.models.base
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0005_add_notabledomain_domainreference'),
+        ('osf', '0006_institutionaffiliation'),
     ]
 
     operations = [
