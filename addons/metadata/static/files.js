@@ -246,7 +246,7 @@ function MetadataButtons() {
           fieldSet.question,
           value,
           fieldSetsAndValues,
-          options,
+          options
         );
       } catch(e) {
         error = e.message;
@@ -264,7 +264,7 @@ function MetadataButtons() {
   }
 
   self.prepareFields = function(context, container, schema, filepath, fileitem, options) {
-    let lastMetadataItem = {};
+    var lastMetadataItem = {};
     if (!options.multiple) {
       lastMetadataItem = (self.lastMetadata.items || []).filter(function(item) {
         const resolved = self.resolveActiveSchemaId(item.schema) || self.currentSchemaId;
@@ -485,7 +485,7 @@ function MetadataButtons() {
         self.findSchemaById(self.currentSchemaId),
         filepath,
         item,
-        {},
+        {}
       );
     });
     dialog.toolbar.append(selector.group);
@@ -508,7 +508,7 @@ function MetadataButtons() {
       self.findSchemaById(self.currentSchemaId),
       filepath,
       item,
-      {},
+      {}
     );
     dialog.container.append(fieldContainer);
     dialog.dialog.modal('show');
@@ -554,7 +554,7 @@ function MetadataButtons() {
         self.findSchemaById(self.currentSchemaId),
         filepaths,
         items,
-        {multiple: true},
+        {multiple: true}
       );
     });
     dialog.toolbar.empty();
@@ -569,7 +569,7 @@ function MetadataButtons() {
       self.findSchemaById(self.currentSchemaId),
       filepaths,
       items,
-      {multiple: true},
+      {multiple: true}
     );
     dialog.container.append(fieldContainer);
 
