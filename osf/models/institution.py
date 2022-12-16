@@ -125,6 +125,9 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
     def __unicode__(self):
         return u'{} : ({})'.format(self.name, self._id)
 
+    def __str__(self):
+        return u'{} : ({})'.format(self.name, self._id)
+
     @property
     def api_v2_url(self):
         return reverse('institutions:institution-detail', kwargs={'institution_id': self._id, 'version': 'v2'})

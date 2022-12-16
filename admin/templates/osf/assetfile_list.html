@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% load render_bundle from webpack_loader %}
+
+{% load static %}
+{% block top_includes %}
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.4/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.4/js/select2.min.js"></script>
+{% endblock %}
+{% block title %}
+    {% if on_provider_route %}
+        <title>List of Provider Asset Files</title>
+    {%endif%}
+    {% if on_institution_route %}
+        <title>List of Institution Asset Files</title>
+    {%endif%}
+{% endblock title %}
+{% block content %}
+
+    {% if on_provider_route %}
+        <h2>List of Provider Asset Files</h2>
+    {%endif%}
+    {% if on_institution_route %}
+        <h2>List of Institution Asset Files</h2>
+    {%endif%}
+    <form method="GET">
+        Filter: <select class="provider-filter-selector" name="provider_id" onchange="filterSubjects(this.value)">
+        {% for id, name in filterable_target_ids.items %}
+            <option value={{id}}>{{name}}</option>
+        {% endfor %}
+      </select>
+    </form>
+
+    {% include "util/pagination.html" with items=page status=status %}
+    <table class="table table-striped table-hover table-responsive">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>File Link</th>
+            {% if on_provider_route %}
+                <th>Providers</th>
+            {%endif%}
+            {% if on_institution_route %}
+                <th>Institutions</th>
+            {%endif%}
+        </tr>
+    </thead>
+    <tbody>
+        {% for object in asset_files %}
+        <tr>
+            {% if on_provider_route %}
+                <td><a href="{% url 'provider_asset_files:detail' asset_id=object.id %}">{{ object.name }}</a></td>
+                <td><a target="_blank" href={{ object.file.url }}>Preview</a></td>
+                <td>
+                {% for provider in object.providers.all %}
+                    {{provider.name}},
+                {% endfor %}
+                </td>
+            {%endif%}
+
+            {% if on_institution_route %}
+                <td><a href="{% url 'institution_asset_files:detail' asset_id=object.id %}">{{ object.name }}</a></td>
+                <td><a target="_blank" href={{ object.file.url }}>Preview</a></td>
+                <td>
+                {% for institution in object.institutions.all %}
+                    {{institution.name}},
+                {% endfor %}
+                </td>
+            {%endif%}
+        </tr>
+    {% endfor %}
+    </tbody>
+    </table>
+
+{% endblock content %}
+
+{% block bottom_js %}
+    <script>
+        function filterSubjects(provider_id) {
+            document.location.search = "?provider_id=" + provider_id;
+        }
+        $(document).ready(function() {
+            $('.provider-filter-selector').select2()
+        })
+    </script>
+{% endblock %}
