@@ -1,9 +1,30 @@
 # -*- coding: utf-8 -*-
 from django.contrib.contenttypes.models import ContentType
-from django.db import models
+from django.db import models, transaction
 
-from osf.models.base import BaseModel, ObjectIDMixin, Guid, InvalidGuid
+from osf.models.base import (
+    BaseModel,
+    Guid,
+    GuidMixin,
+    InvalidGuid,
+    ObjectIDMixin,
+    OptionalGuidMixin,
+)
 from osf.models.validators import JsonschemaValidator
+
+
+class MetadataRecordCopyConflict(Exception):
+    pass
+
+
+def coerce_guid(maybe_guid, create_if_needed=False):
+    if isinstance(maybe_guid, Guid):
+        return maybe_guid
+    if isinstance(maybe_guid, GuidMixin):
+        return maybe_guid.guids.first()
+    if isinstance(maybe_guid, OptionalGuidMixin):
+        return maybe_guid.get_guid(create=create_if_needed)
+    raise NotImplementedError(f'cannot coerce into Guid: {maybe_guid}')
 
 
 class GuidMetadataRecordManager(models.Manager):
@@ -46,6 +67,35 @@ class GuidMetadataRecordManager(models.Manager):
         except GuidMetadataRecord.DoesNotExist:
             # new, unsaved GuidMetadataRecord
             return GuidMetadataRecord(guid=found_guid)
+
+    @transaction.atomic
+    def copy(self, from_, to_):
+        from_guid = coerce_guid(from_)
+        if from_guid is None:
+            return  # nothing to copy; all good
+        try:
+            from_record = GuidMetadataRecord.objects.get(guid=from_guid)
+        except GuidMetadataRecord.DoesNotExist:
+            return  # nothing to copy; all good
+
+        to_guid = coerce_guid(to_, create_if_needed=True)
+        if GuidMetadataRecord.objects.filter(guid=to_guid).exists():
+            raise MetadataRecordCopyConflict(f'cannot copy GuidMetadataRecord to {to_guid}; it already has one!')
+        to_record = GuidMetadataRecord(
+            guid=to_guid,
+            language=from_record.language,
+            resource_type_general=from_record.resource_type_general,
+            funding_info=from_record.funding_info,
+        )
+        to_record.save()
+        CustomMetadataProperty.objects.bulk_create(
+            CustomMetadataProperty(
+                metadata_record=to_record,
+                property_uri=from_property.property_uri,
+                value_as_text=from_property.value_as_text,
+            )
+            for from_property in from_record.custom_property_set.all()
+        )
 
 
 class GuidMetadataRecord(ObjectIDMixin, BaseModel):

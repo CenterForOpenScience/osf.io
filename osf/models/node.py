@@ -43,6 +43,7 @@ from osf.models.collection import CollectionSubmission
 
 from osf.models.identifiers import Identifier, IdentifierMixin
 from osf.models.licenses import NodeLicenseRecord
+from osf.models.metadata import GuidMetadataRecord
 from osf.models.mixins import (AddonModelMixin, CommentableMixin, Loggable, GuardianMixin,
                                NodeLinkMixin, SpamOverrideMixin, RegistrationResponseMixin,
                                EditableFieldsMixin)
@@ -1435,6 +1436,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             node_relation = NodeRelation.objects.get(parent=parent.registered_from, child=original)
             NodeRelation.objects.get_or_create(_order=node_relation._order, parent=parent, child=registered)
 
+        GuidMetadataRecord.objects.copy(from_=original, to_=registered)
+
         # After register callback
         for addon in original.get_addons():
             _, message = addon.after_register(original, registered, auth.user)
@@ -1617,6 +1620,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         forked.tags.add(*self.all_tags.values_list('pk', flat=True))
         forked.subjects.add(*self.subjects.values_list('pk', flat=True))
+
+        GuidMetadataRecord.objects.copy(from_=original, to_=forked)
 
         if parent:
             node_relation = NodeRelation.objects.get(parent=parent.forked_from, child=original)
@@ -1805,6 +1810,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             save=False,
         )
         new.save()
+
+        GuidMetadataRecord.objects.copy(from_=self, to_=new)
 
         if parent:
             node_relation = NodeRelation.objects.get(parent=parent.template_node, child=self)
