@@ -1,47 +1,37 @@
 class ExpectedMetadataRecord:
     def __init__(self):
-        self.guid = ''
-        self.language = ''
-        self.resource_type_general = ''
-        self.funding_info = []
-        self.custom_properties = []
+        self._expected_values = {}
 
-    def assert_for(self, db_record, api_record):
+    def __setattr__(self, attrname, attrvalue):
+        if attrname.startswith('_'):
+            super().__setattr__(attrname, attrvalue)
+        else:
+            self._expected_values[attrname] = self._freeze(attrvalue)
+
+    def assert_expectations(self, db_record, api_record):
         db_record.refresh_from_db()
-        self._assert_all_equal(
-            db_record.guid._id,
-            api_record['id'],
-            expected=self.guid,
-        )
-        self._assert_all_equal(
-            db_record.language,
-            api_record['attributes']['language'],
-            expected=self.language,
-        )
-        self._assert_all_equal(
-            db_record.resource_type_general,
-            api_record['attributes']['resource_type_general'],
-            expected=self.resource_type_general,
-        )
-        self._assert_all_equal(
-            db_record.funding_info,
-            api_record['attributes']['funders'],
-            expected=self.funding_info,
-        )
-        db_custom_properties = [
-            {'property_uri': cp.property_uri, 'value_as_text': cp.value_as_text}
-            for cp in db_record.custom_property_set.all()
-        ]
-        self._assert_all_equal(
-            db_custom_properties,
-            api_record['attributes']['custom_properties'],
-            expected=self.custom_properties,
-        )
+        for attrname, expected_value in self._expected_values.items():
+            actual_db_value = self._getattr_dbrecord(attrname, db_record)
+            actual_api_value = self._getattr_apirecord(attrname, api_record)
+            assert actual_db_value == expected_value
+            assert actual_api_value == expected_value
 
-    def _assert_all_equal(self, *actuals, expected):
-        expected = self._freeze(expected)
-        for actual in actuals:
-            assert self._freeze(actual) == expected
+    def _getattr_dbrecord(self, attrname, dbrecord):
+        if attrname == 'id':
+            return dbrecord.guid._id
+        if attrname == 'custom_properties':
+            return self._freeze([
+                {'property_uri': cp.property_uri, 'value_as_text': cp.value_as_text}
+                for cp in dbrecord.custom_property_set.all()
+            ])
+        return self._freeze(getattr(dbrecord, attrname))
+
+    def _getattr_apirecord(self, attrname, apirecord):
+        if attrname == 'id':
+            return apirecord['id']
+        if attrname == 'funding_info':
+            attrname = 'funders'
+        return self._freeze(apirecord['attributes'][attrname])
 
     def _freeze(self, unfrozen):
         frozen = None

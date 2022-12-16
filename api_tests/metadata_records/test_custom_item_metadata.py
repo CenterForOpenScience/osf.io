@@ -295,7 +295,7 @@ class TestCustomItemMetadataRecordDetail:
     def test_with_write_permission(self, app, public_osfguid, private_osfguid, anybody_with_write_permission):
         for osfguid in (public_osfguid, private_osfguid):
             expected = ExpectedMetadataRecord()
-            expected.guid = osfguid._id
+            expected.id = osfguid._id
 
             # can PUT
             expected.language = 'nga'
@@ -304,27 +304,27 @@ class TestCustomItemMetadataRecordDetail:
                 self.make_url(osfguid),
                 self.make_payload(
                     osfguid,
-                    language=expected.language,
-                    resource_type_general=expected.resource_type_general,
+                    language='nga',
+                    resource_type_general='Text',
                 ),
                 auth=anybody_with_write_permission,
             )
             assert res.status_code == 200
             db_record = GuidMetadataRecord.objects.for_guid(osfguid)
-            expected.assert_for(db_record=db_record, api_record=res.json['data'])
+            expected.assert_expectations(db_record=db_record, api_record=res.json['data'])
 
             # can PATCH
             expected.language = 'nga-CD'
             res = app.patch_json_api(
                 self.make_url(osfguid),
-                self.make_payload(osfguid, language=expected.language),
+                self.make_payload(osfguid, language='nga-CD'),
                 auth=anybody_with_write_permission,
             )
             assert res.status_code == 200
-            expected.assert_for(db_record=db_record, api_record=res.json['data'])
+            expected.assert_expectations(db_record=db_record, api_record=res.json['data'])
 
             # can PATCH funders
-            expected.funding_info = [{
+            funding_info_1 = [{
                 'funder_name': 'hell-o',
                 'funder_identifier': 'https://hello.example/money',
                 'funder_identifier_type': 'uri',
@@ -332,32 +332,59 @@ class TestCustomItemMetadataRecordDetail:
                 'award_uri': 'http://award.example/7',
                 'award_title': 'award seven',
             }]
+            expected.funding_info = funding_info_1
             res = app.patch_json_api(
                 self.make_url(osfguid),
-                self.make_payload(osfguid, funders=expected.funding_info),
+                self.make_payload(osfguid, funders=funding_info_1),
                 auth=anybody_with_write_permission,
             )
             assert res.status_code == 200
-            expected.assert_for(db_record=db_record, api_record=res.json['data'])
+            expected.assert_expectations(db_record=db_record, api_record=res.json['data'])
+
+            # can PATCH funders again
+            funding_info_2 = [{
+                'funder_name': 'hell-o',
+                'funder_identifier': 'https://hello.example/money',
+                'funder_identifier_type': 'uri',
+                'award_number': '7',
+                'award_uri': 'http://award.example/7',
+                'award_title': 'award seven',
+            }, {
+                'funder_name': 'shell-o',
+                'funder_identifier': 'https://shello.example/smelly-money',
+                'funder_identifier_type': 'uri',
+                'award_number': 'splevin',
+                'award_uri': 'http://shello.example/award-number-splevin',
+                'award_title': 'award splevin',
+            }]
+            expected.funding_info = funding_info_2
+            res = app.patch_json_api(
+                self.make_url(osfguid),
+                self.make_payload(osfguid, funders=funding_info_2),
+                auth=anybody_with_write_permission,
+            )
+            assert res.status_code == 200
+            expected.assert_expectations(db_record=db_record, api_record=res.json['data'])
 
             # can PATCH custom properties
-            expected.custom_properties = [{
+            custom_properties_1 = [{
                 'property_uri': 'https://hello.example/fungus',
                 'value_as_text': 'amongus',
             }, {
                 'property_uri': 'https://hello.example/blungus',
                 'value_as_text': 'grungus',
             }]
+            expected.custom_properties = custom_properties_1
             res = app.patch_json_api(
                 self.make_url(osfguid),
-                self.make_payload(osfguid, custom_properties=expected.custom_properties),
+                self.make_payload(osfguid, custom_properties=custom_properties_1),
                 auth=anybody_with_write_permission,
             )
             assert res.status_code == 200
-            expected.assert_for(db_record=db_record, api_record=res.json['data'])
+            expected.assert_expectations(db_record=db_record, api_record=res.json['data'])
 
             # can re-PATCH custom properties
-            expected.custom_properties = [{
+            custom_properties_2 = [{
                 'property_uri': 'https://hello.example/fungus',
                 'value_as_text': 'boregus',
             }, {
@@ -367,23 +394,25 @@ class TestCustomItemMetadataRecordDetail:
                 'property_uri': 'https://hello.example/bloring',
                 'value_as_text': 'who',
             }]
+            expected.custom_properties = custom_properties_2
             res = app.patch_json_api(
                 self.make_url(osfguid),
-                self.make_payload(osfguid, custom_properties=expected.custom_properties),
+                self.make_payload(osfguid, custom_properties=custom_properties_2),
                 auth=anybody_with_write_permission,
             )
             assert res.status_code == 200
-            expected.assert_for(db_record=db_record, api_record=res.json['data'])
+            expected.assert_expectations(db_record=db_record, api_record=res.json['data'])
 
             # can dis-PATCH custom properties
-            expected.custom_properties = []
+            custom_properties_3 = []
+            expected.custom_properties = custom_properties_3
             res = app.patch_json_api(
                 self.make_url(osfguid),
-                self.make_payload(osfguid, custom_properties=expected.custom_properties),
+                self.make_payload(osfguid, custom_properties=custom_properties_3),
                 auth=anybody_with_write_permission,
             )
             assert res.status_code == 200
-            expected.assert_for(db_record=db_record, api_record=res.json['data'])
+            expected.assert_expectations(db_record=db_record, api_record=res.json['data'])
         # TODO: assert node.logs.first().action == NodeLog.FILE_METADATA_UPDATED
 
     # def test_update_fails_with_extra_key(self, app, user_readwrite, public_file_guid):

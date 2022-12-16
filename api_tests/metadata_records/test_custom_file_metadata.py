@@ -1,7 +1,9 @@
 import pytest
 
+from osf.models import GuidMetadataRecord
 from api_tests.utils import create_test_file
 from .test_custom_item_metadata import TestCustomItemMetadataRecordDetail as ParentTestClass
+from .utils import ExpectedMetadataRecord
 
 
 # the view at /v2/custom_file_metadata_records/ is almost identical to
@@ -50,7 +52,7 @@ class TestCustomFileMetadataRecordDetail(ParentTestClass):
             return public_registration_file_osfguid
         raise NotImplementedError
 
-    # override super().public_osfguid
+    # override super().private_osfguid
     @pytest.fixture
     def private_osfguid(self, item_type, private_preprint_file_osfguid, private_project_file_osfguid, private_registration_file_osfguid):
         if item_type == 'preprint':
@@ -60,3 +62,43 @@ class TestCustomFileMetadataRecordDetail(ParentTestClass):
         if item_type == 'registration':
             return private_registration_file_osfguid
         raise NotImplementedError
+
+    def test_special_file_fields(self, app, public_osfguid, private_osfguid, anybody_with_write_permission):
+        for osfguid in (public_osfguid, private_osfguid):
+            expected = ExpectedMetadataRecord()
+            expected.id = osfguid._id
+
+            expected.custom_properties = [{
+                'property_uri': 'http://purl.org/dc/terms/title',
+                'value_as_text': 'title!',
+            }]
+
+            res = app.patch_json_api(
+                self.make_url(osfguid),
+                self.make_payload(osfguid, title='title!'),
+                auth=anybody_with_write_permission,
+            )
+            assert res.status_code == 200
+            api_record = res.json['data']
+            assert api_record['attributes']['title'] == 'title!'
+            assert api_record['attributes']['description'] == ''
+            db_record = GuidMetadataRecord.objects.for_guid(osfguid)
+            expected.assert_expectations(db_record=db_record, api_record=api_record)
+
+            expected.custom_properties = [{
+                'property_uri': 'http://purl.org/dc/terms/title',
+                'value_as_text': 'title!',
+            }, {
+                'property_uri': 'http://purl.org/dc/terms/description',
+                'value_as_text': 'description!',
+            }]
+            res = app.patch_json_api(
+                self.make_url(osfguid),
+                self.make_payload(osfguid, description='description!'),
+                auth=anybody_with_write_permission,
+            )
+            assert res.status_code == 200
+            api_record = res.json['data']
+            assert api_record['attributes']['title'] == 'title!'
+            assert api_record['attributes']['description'] == 'description!'
+            expected.assert_expectations(db_record=db_record, api_record=api_record)

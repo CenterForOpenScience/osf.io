@@ -1,14 +1,14 @@
-import logging
-
 from rdflib import DCTERMS
 from django.core.validators import URLValidator
 import rest_framework.serializers as ser
 
-from api.base.serializers import JSONAPISerializer, RelationshipField, IDField
+from api.base.serializers import (
+    IDField,
+    JSONAPISerializer,
+    LinksField,
+    RelationshipField,
+)
 from osf.models.metadata import CustomMetadataProperty
-
-
-logger = logging.getLogger(__name__)
 
 
 # TODO: max_lengths, uri validation
@@ -47,28 +47,23 @@ class GuidMetadataRecordSerializer(JSONAPISerializer):
         source='custom_property_set',
         required=False,
     )
+    links = LinksField()
 
     def update(self, guid_metadata_record, validated_data):
-        logger.critical(f'valdat: {validated_data}')
         for field_name in ('language', 'resource_type_general', 'funding_info'):
             if field_name in validated_data:
                 setattr(guid_metadata_record, field_name, validated_data[field_name])
-        guid_metadata_record.full_clean()
         guid_metadata_record.save()
 
-        validated_custom_property_set = validated_data.get('custom_property_set', None)
-        if validated_custom_property_set is not None:
-            to_create = [
-                CustomMetadataProperty(
-                    metadata_record=guid_metadata_record,
-                    property_uri=validated_property['property_uri'],
-                    value_as_text=validated_property['value_as_text'],
-                )
-                for validated_property in validated_custom_property_set
-            ]
-            # wipe out and recreate -- it's the only (...easiest) way to be sure
-            guid_metadata_record.custom_property_set.all().delete()
-            CustomMetadataProperty.objects.bulk_create(to_create)
+        # wipe out and recreate -- it's the only (...easy) way to be sure
+        guid_metadata_record.custom_property_set.all().delete()
+        validated_custom_property_set = validated_data.get('custom_property_set', ())
+        for validated_property in validated_custom_property_set:
+            CustomMetadataProperty(
+                metadata_record=guid_metadata_record,
+                property_uri=validated_property['property_uri'],
+                value_as_text=validated_property['value_as_text'],
+            ).save()
 
         return guid_metadata_record
 
@@ -104,8 +99,8 @@ class CustomMetadataPropertyProxyField(ser.Field):
 
 
 class CustomFileMetadataSerializer(GuidMetadataRecordSerializer):
-    title = CustomMetadataPropertyProxyField(DCTERMS.title, required=False)
-    description = CustomMetadataPropertyProxyField(DCTERMS.description, required=False)
+    title = CustomMetadataPropertyProxyField(DCTERMS.title, required=False, default='')
+    description = CustomMetadataPropertyProxyField(DCTERMS.description, required=False, default='')
 
     class Meta:
         type_ = 'custom-file-metadata-record'
