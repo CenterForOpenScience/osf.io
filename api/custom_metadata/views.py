@@ -5,16 +5,15 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
-from api.nodes.permissions import ContributorOrPublic
 
 import osf.models as osfdb
-from api.base.permissions import PermissionWithGetter
+from .permissions import CustomMetadataPermission
 from .serializers import CustomFileMetadataSerializer, CustomItemMetadataSerializer
 
 
 class CustomFileMetadataDetail(JSONAPIBaseView, rest_framework.generics.RetrieveUpdateAPIView):
     permission_classes = (
-        PermissionWithGetter(ContributorOrPublic, 'guid.referent.target'),
+        CustomMetadataPermission,
         rest_framework.permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
@@ -40,7 +39,7 @@ class CustomFileMetadataDetail(JSONAPIBaseView, rest_framework.generics.Retrieve
 
 class CustomItemMetadataDetail(JSONAPIBaseView, rest_framework.generics.RetrieveUpdateAPIView):
     permission_classes = (
-        PermissionWithGetter(ContributorOrPublic, 'guid.referent'),
+        CustomMetadataPermission,
         rest_framework.permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
