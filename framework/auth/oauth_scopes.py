@@ -192,6 +192,13 @@ class CoreScopes(object):
     READ_REGISTRATION_RESOURCES = 'read_registration_resources'
     WRITE_REGISTRATION_RESOURCES = 'write_registration_resources'
 
+    READ_COLLECTION_SUBMISSION_ACTION = 'read_collection_submission_action'
+    WRITE_COLLECTION_SUBMISSION_ACTION = 'write_collection_submission_action'
+
+    READ_COLLECTION_SUBMISSION = 'read_collection_submission'
+    WRITE_COLLECTION_SUBMISSION = 'write_collection_submission'
+
+
 class ComposedScopes(object):
     """
     Composed scopes, listed in increasing order of access (most restrictive first). Each named constant is a tuple.
@@ -297,8 +304,38 @@ class ComposedScopes(object):
     REVIEWS_WRITE = (CoreScopes.ACTIONS_WRITE, CoreScopes.MODERATORS_WRITE, CoreScopes.PROVIDERS_WRITE)
 
     # Full permissions: all routes intended to be exposed to third party API users
-    FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ + GUIDS_READ + METASCHEMAS_READ + DRAFT_READ + REVIEWS_READ + PREPRINT_ALL_READ + GROUP_READ + (CoreScopes.MEETINGS_READ, CoreScopes.INSTITUTION_READ, CoreScopes.SEARCH, CoreScopes.SCOPES_READ)
-    FULL_WRITE = FULL_READ + NODE_ALL_WRITE + USERS_WRITE + ORGANIZER_WRITE + DRAFT_WRITE + REVIEWS_WRITE + PREPRINT_ALL_WRITE + GROUP_WRITE
+    FULL_READ = NODE_ALL_READ \
+                + USERS_READ\
+                + ORGANIZER_READ\
+                + GUIDS_READ\
+                + METASCHEMAS_READ\
+                + DRAFT_READ\
+                + REVIEWS_READ\
+                + PREPRINT_ALL_READ\
+                + GROUP_READ\
+                + (
+                    CoreScopes.MEETINGS_READ,
+                    CoreScopes.INSTITUTION_READ,
+                    CoreScopes.SEARCH,
+                    CoreScopes.SCOPES_READ
+                )\
+                + (
+                    CoreScopes.READ_COLLECTION_SUBMISSION,
+                    CoreScopes.READ_COLLECTION_SUBMISSION_ACTION,
+                )
+
+    FULL_WRITE = FULL_READ\
+                 + NODE_ALL_WRITE\
+                 + USERS_WRITE\
+                 + ORGANIZER_WRITE\
+                 + DRAFT_WRITE\
+                 + REVIEWS_WRITE\
+                 + PREPRINT_ALL_WRITE\
+                 + GROUP_WRITE\
+                 + (
+                     CoreScopes.WRITE_COLLECTION_SUBMISSION_ACTION,
+                     CoreScopes.WRITE_COLLECTION_SUBMISSION
+                 )
 
     # Admin permissions- includes functionality not intended for third-party use
     ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE + TOKENS_WRITE + COMMENT_REPORTS_WRITE + USERS_CREATE + REVIEWS_WRITE +\
