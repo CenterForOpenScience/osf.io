@@ -8,8 +8,9 @@ from osf.utils.workflows import ChoiceEnum, DefaultStates
 @unique
 class Workflows(ChoiceEnum):
     NONE = None
-    PRE_MODERATION = 'pre-moderation'
-    POST_MODERATION = 'post-moderation'
+    PRE_MODERATION = 'pre-moderation'  # moderation before approval
+    POST_MODERATION = 'post-moderation'  # moderation after approval
+    HYBRID_MODERATION = 'hybrid-moderation'  # moderation after approval moderator/admin, moderation before for everyone else
 
 PUBLIC_STATES = {
     Workflows.NONE.value: (

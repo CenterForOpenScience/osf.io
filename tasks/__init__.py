@@ -368,6 +368,8 @@ API_TESTS3 = [
     'api_tests/banners',
     'api_tests/base',
     'api_tests/collections',
+    'api_tests/collection_submissions',
+    'api_tests/collection_submission_actions',
     'api_tests/comments',
     'api_tests/crossref',
     'api_tests/files',

@@ -10,11 +10,11 @@ def on_collection_updated(collection_id):
     Collection = apps.get_model('osf.Collection')
     coll = Collection.load(collection_id)
 
-    cgms = coll.collectionsubmission_set.all()
+    collection_submissions = coll.collectionsubmission_set.all()
 
     if coll.is_public:
         # Add all collection submissions back to ES index
-        coll.bulk_update_search(cgms)
+        coll.bulk_update_search(collection_submissions)
     else:
         # Remove all collection submissions from ES index
-        coll.bulk_update_search(cgms, op='delete')
+        coll.bulk_update_search(collection_submissions, op='delete')
