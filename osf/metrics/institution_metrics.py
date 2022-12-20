@@ -80,10 +80,11 @@ class UserInstitutionProjectCounts(MetricMixin, metrics.Metric):
 
     @classmethod
     def record_user_institution_project_counts(cls, user, institution, public_project_count, private_project_count, **kwargs):
+        affiliation = user.get_institution_affiliation(institution)
         return cls.record(
             user_id=user._id,
             institution_id=institution._id,
-            department=getattr(user, 'department', DEFAULT_ES_NULL_VALUE),
+            department=getattr(affiliation, 'department', DEFAULT_ES_NULL_VALUE),
             public_project_count=public_project_count,
             private_project_count=private_project_count,
             **kwargs

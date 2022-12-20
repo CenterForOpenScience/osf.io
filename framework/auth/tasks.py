@@ -58,7 +58,7 @@ def update_affiliation_for_orcid_sso_users(user_id, orcid_id):
     if institution:
         logger.info(f'Eligible institution affiliation has been found for ORCiD SSO user: '
                     f'institution=[{institution._id}], user=[{user_id}], orcid_id=[{orcid_id}]')
-        user.add_one_affiliated_institution(institution=institution, sso_identity=orcid_id)
+        user.add_or_update_affiliated_institution(institution=institution, sso_identity=orcid_id)
 
 
 def verify_user_orcid_id(user, orcid_id):

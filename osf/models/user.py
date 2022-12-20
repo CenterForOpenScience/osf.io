@@ -1688,6 +1688,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """Return if this user is affiliated with the given ``institution``."""
         return InstitutionAffiliation.objects.filter(user__id=self.id, institution__id=institution.id).exists()
 
+    def get_institution_affiliation(self, institution):
+        """Return if this user is affiliated with the given ``institution``."""
+        return InstitutionAffiliation.objects.get(user__id=self.id, institution__id=institution.id)
+
     def has_affiliated_institutions(self):
         """Return if this user is affiliated with any institutions."""
         return InstitutionAffiliation.objects.filter(user__id=self.id).exists()
@@ -1701,10 +1705,18 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """Return a set of ``_id`` of all affiliated institutions for the current user."""
         return set(InstitutionAffiliation.objects.filter(user__id=self.id).values_list('institution___id', flat=True))
 
-    def add_one_affiliated_institution(self, institution, sso_identity=None, sso_mail=None, sso_department=None):
-        """Add one institution affiliation between the current user and the given ``institution`` with attributes."""
+    def add_or_update_affiliated_institution(self, institution, sso_identity=None, sso_mail=None, sso_department=None):
+        """Add one or update the existing institution affiliation between the current user and the given ``institution``
+        with attributes. ``sso_department`` is the only attribute that needs to be updated for now.
+        """
         if self.is_affiliated_with_institution(institution):
-            return None
+            if not sso_department:
+                return None
+            affiliation = InstitutionAffiliation.objects.get(user__id=self.id, institution__id=institution.id)
+            if affiliation.sso_department != sso_department:
+                affiliation.sso_department = sso_department
+                affiliation.save()
+                return affiliation
         affiliation = InstitutionAffiliation.objects.create(
             user=self,
             institution=institution,
@@ -1719,7 +1731,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """Copy institution affiliations of the given ``user`` to the current user during merge."""
         affiliations = InstitutionAffiliation.objects.filter(user__id=user.id)
         for affiliation in affiliations:
-            self.add_one_affiliated_institution(
+            self.add_or_update_affiliated_institution(
                 affiliation.institution,
                 sso_identity=affiliation.sso_identity,
                 sso_mail=affiliation.sso_mail,
@@ -1729,7 +1741,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def add_multiple_institutions_non_sso(self, institutions):
         """Add multiple affiliations for the user and a list of institutions, only used for email domain non-SSO."""
         for institution in institutions:
-            self.add_one_affiliated_institution(
+            self.add_or_update_affiliated_institution(
                 institution,
                 sso_identity=InstitutionAffiliation.DEFAULT_VALUE_FOR_SSO_IDENTITY_NOT_AVAILABLE
             )

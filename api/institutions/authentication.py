@@ -265,9 +265,6 @@ class InstitutionAuthentication(BaseAuthentication):
         # The `department` field is updated each login when it was changed.
         user_guid = user.guids.first()._id
         if department:
-            if user.department != department:
-                user.department = department
-                user.save()
             logger.info('Institution SSO: user w/ dept: user=[{}], email=[{}], inst=[{}], '
                         'dept=[{}]'.format(user_guid, username, institution._id, department))
         else:
@@ -308,10 +305,14 @@ class InstitutionAuthentication(BaseAuthentication):
             )
 
         # Affiliate the user to the primary institution if not previously affiliated
-        user.add_one_affiliated_institution(institution, sso_mail=username, sso_department=department)
+        user.add_or_update_affiliated_institution(institution, sso_mail=username, sso_department=department)
 
         # Affiliate the user to the secondary institution if not previously affiliated
         if secondary_institution:
-            user.add_one_affiliated_institution(secondary_institution, sso_mail=username, sso_department=department)
+            user.add_or_update_affiliated_institution(
+                secondary_institution,
+                sso_mail=username,
+                sso_department=department,
+            )
 
         return user, None
