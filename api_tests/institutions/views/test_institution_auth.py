@@ -181,7 +181,7 @@ class TestInstitutionAuth:
 
         user.reload()
         assert user.fullname == 'Foo Bar'
-        assert user.affiliated_institutions.count() == 1
+        assert user.get_affiliated_institutions().count() == 1
 
     def test_new_user_names_not_provided(self, app, institution, url_auth_institution):
 
@@ -488,7 +488,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
         username = 'user_not_affiliated@primary.edu'
         user = make_user(username, 'Foo Bar')
         user.save()
-        number_of_affiliations = user.affiliated_institutions.count()
+        number_of_affiliations = user.get_affiliated_institutions().count()
 
         with capture_signals() as mock_signals:
             res = app.post(
@@ -500,7 +500,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
 
         user.reload()
         assert user.fullname == 'Foo Bar'
-        assert user.affiliated_institutions.count() == number_of_affiliations + 1
+        assert user.get_affiliated_institutions().count() == number_of_affiliations + 1
         assert institution_primary_type_2 in user.get_affiliated_institutions()
         assert institution_secondary_type_2 not in user.get_affiliated_institutions()
 
@@ -510,7 +510,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
         user = make_user(username, 'Foo Bar')
         user.add_or_update_affiliated_institution(institution_primary_type_2)
         user.save()
-        number_of_affiliations = user.affiliated_institutions.count()
+        number_of_affiliations = user.get_affiliated_institutions().count()
 
         with capture_signals() as mock_signals:
             res = app.post(
@@ -522,7 +522,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
 
         user.reload()
         assert user.fullname == 'Foo Bar'
-        assert user.affiliated_institutions.count() == number_of_affiliations
+        assert user.get_affiliated_institutions().count() == number_of_affiliations
         assert institution_primary_type_2 in user.get_affiliated_institutions()
         assert institution_secondary_type_2 not in user.get_affiliated_institutions()
 
@@ -532,7 +532,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
         username = 'user_both_not_affiliated@primary.edu'
         user = make_user(username, 'Foo Bar')
         user.save()
-        number_of_affiliations = user.affiliated_institutions.count()
+        number_of_affiliations = user.get_affiliated_institutions().count()
 
         with capture_signals() as mock_signals:
             res = app.post(
@@ -544,7 +544,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
 
         user.reload()
         assert user.fullname == 'Foo Bar'
-        assert user.affiliated_institutions.count() == number_of_affiliations + 2
+        assert user.get_affiliated_institutions().count() == number_of_affiliations + 2
         assert institution_primary_type_2 in user.get_affiliated_institutions()
         assert institution_secondary_type_2 in user.get_affiliated_institutions()
 
@@ -556,7 +556,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
         user.add_or_update_affiliated_institution(institution_primary_type_2)
         user.add_or_update_affiliated_institution(institution_secondary_type_2)
         user.save()
-        number_of_affiliations = user.affiliated_institutions.count()
+        number_of_affiliations = user.get_affiliated_institutions().count()
 
         with capture_signals() as mock_signals:
             res = app.post(
@@ -568,7 +568,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
 
         user.reload()
         assert user.fullname == 'Foo Bar'
-        assert user.affiliated_institutions.count() == number_of_affiliations
+        assert user.get_affiliated_institutions().count() == number_of_affiliations
         assert institution_primary_type_2 in user.get_affiliated_institutions()
         assert institution_secondary_type_2 in user.get_affiliated_institutions()
 
@@ -579,7 +579,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
         user = make_user(username, 'Foo Bar')
         user.add_or_update_affiliated_institution(institution_primary_type_2)
         user.save()
-        number_of_affiliations = user.affiliated_institutions.count()
+        number_of_affiliations = user.get_affiliated_institutions().count()
 
         with capture_signals() as mock_signals:
             res = app.post(
@@ -591,7 +591,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
 
         user.reload()
         assert user.fullname == 'Foo Bar'
-        assert user.affiliated_institutions.count() == number_of_affiliations + 1
+        assert user.get_affiliated_institutions().count() == number_of_affiliations + 1
         assert institution_primary_type_2 in user.get_affiliated_institutions()
         assert institution_secondary_type_2 in user.get_affiliated_institutions()
 
@@ -611,7 +611,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
         user = make_user(username, 'Foo Bar')
         user.add_or_update_affiliated_institution(institution_primary_type_2)
         user.save()
-        number_of_affiliations = user.affiliated_institutions.count()
+        number_of_affiliations = user.get_affiliated_institutions().count()
 
         with capture_signals() as mock_signals:
             res = app.post(
@@ -623,7 +623,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
 
         user.reload()
         assert user.fullname == 'Foo Bar'
-        assert user.affiliated_institutions.count() == number_of_affiliations
+        assert user.get_affiliated_institutions().count() == number_of_affiliations
         assert institution_primary_type_2 in user.get_affiliated_institutions()
         assert institution_secondary_type_2 not in user.get_affiliated_institutions()
 
@@ -643,7 +643,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
         user = make_user(username, 'Foo Bar')
         user.add_or_update_affiliated_institution(institution_primary_type_2)
         user.save()
-        number_of_affiliations = user.affiliated_institutions.count()
+        number_of_affiliations = user.get_affiliated_institutions().count()
 
         with capture_signals() as mock_signals:
             res = app.post(
@@ -655,7 +655,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
 
         user.reload()
         assert user.fullname == 'Foo Bar'
-        assert user.affiliated_institutions.count() == number_of_affiliations
+        assert user.get_affiliated_institutions().count() == number_of_affiliations
         assert institution_primary_type_2 in user.get_affiliated_institutions()
         assert institution_secondary_type_2 not in user.get_affiliated_institutions()
 
@@ -675,7 +675,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
         user = make_user(username, 'Foo Bar')
         user.add_or_update_affiliated_institution(institution_primary_type_2)
         user.save()
-        number_of_affiliations = user.affiliated_institutions.count()
+        number_of_affiliations = user.get_affiliated_institutions().count()
 
         with capture_signals() as mock_signals:
             res = app.post(
@@ -687,7 +687,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
 
         user.reload()
         assert user.fullname == 'Foo Bar'
-        assert user.affiliated_institutions.count() == number_of_affiliations
+        assert user.get_affiliated_institutions().count() == number_of_affiliations
         assert institution_primary_type_2 in user.get_affiliated_institutions()
         assert institution_secondary_type_2 not in user.get_affiliated_institutions()
 
@@ -739,7 +739,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
         username = 'user_not_affiliated@primary.edu'
         user = make_user(username, 'Foo Bar')
         user.save()
-        number_of_affiliations = user.affiliated_institutions.count()
+        number_of_affiliations = user.get_affiliated_institutions().count()
 
         with capture_signals() as mock_signals:
             res = app.post(url_auth_institution, make_payload(institution_primary_type_1, username))
@@ -748,7 +748,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
 
         user.reload()
         assert user.fullname == 'Foo Bar'
-        assert user.affiliated_institutions.count() == number_of_affiliations + 1
+        assert user.get_affiliated_institutions().count() == number_of_affiliations + 1
         assert institution_primary_type_1 in user.get_affiliated_institutions()
         assert institution_secondary_type_1 not in user.get_affiliated_institutions()
 
@@ -758,7 +758,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
         user = make_user(username, 'Foo Bar')
         user.add_or_update_affiliated_institution(institution_primary_type_1)
         user.save()
-        number_of_affiliations = user.affiliated_institutions.count()
+        number_of_affiliations = user.get_affiliated_institutions().count()
 
         with capture_signals() as mock_signals:
             res = app.post(url_auth_institution, make_payload(institution_primary_type_1, username))
@@ -767,7 +767,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
 
         user.reload()
         assert user.fullname == 'Foo Bar'
-        assert user.affiliated_institutions.count() == number_of_affiliations
+        assert user.get_affiliated_institutions().count() == number_of_affiliations
         assert institution_primary_type_1 in user.get_affiliated_institutions()
         assert institution_secondary_type_1 not in user.get_affiliated_institutions()
 
@@ -777,7 +777,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
         username = 'user_both_not_affiliated@primary.edu'
         user = make_user(username, 'Foo Bar')
         user.save()
-        number_of_affiliations = user.affiliated_institutions.count()
+        number_of_affiliations = user.get_affiliated_institutions().count()
 
         with capture_signals() as mock_signals:
             res = app.post(
@@ -789,7 +789,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
 
         user.reload()
         assert user.fullname == 'Foo Bar'
-        assert user.affiliated_institutions.count() == number_of_affiliations + 2
+        assert user.get_affiliated_institutions().count() == number_of_affiliations + 2
         assert institution_primary_type_1 in user.get_affiliated_institutions()
         assert institution_secondary_type_1 in user.get_affiliated_institutions()
 
@@ -801,7 +801,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
         user.add_or_update_affiliated_institution(institution_primary_type_1)
         user.add_or_update_affiliated_institution(institution_secondary_type_1)
         user.save()
-        number_of_affiliations = user.affiliated_institutions.count()
+        number_of_affiliations = user.get_affiliated_institutions().count()
 
         with capture_signals() as mock_signals:
             res = app.post(
@@ -813,7 +813,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
 
         user.reload()
         assert user.fullname == 'Foo Bar'
-        assert user.affiliated_institutions.count() == number_of_affiliations
+        assert user.get_affiliated_institutions().count() == number_of_affiliations
         assert institution_primary_type_1 in user.get_affiliated_institutions()
         assert institution_secondary_type_1 in user.get_affiliated_institutions()
 
@@ -824,7 +824,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
         user = make_user(username, 'Foo Bar')
         user.add_or_update_affiliated_institution(institution_primary_type_1)
         user.save()
-        number_of_affiliations = user.affiliated_institutions.count()
+        number_of_affiliations = user.get_affiliated_institutions().count()
 
         with capture_signals() as mock_signals:
             res = app.post(
@@ -836,7 +836,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
 
         user.reload()
         assert user.fullname == 'Foo Bar'
-        assert user.affiliated_institutions.count() == number_of_affiliations + 1
+        assert user.get_affiliated_institutions().count() == number_of_affiliations + 1
         assert institution_primary_type_1 in user.get_affiliated_institutions()
         assert institution_secondary_type_1 in user.get_affiliated_institutions()
 
@@ -856,7 +856,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
         user = make_user(username, 'Foo Bar')
         user.add_or_update_affiliated_institution(institution_primary_type_1)
         user.save()
-        number_of_affiliations = user.affiliated_institutions.count()
+        number_of_affiliations = user.get_affiliated_institutions().count()
 
         with capture_signals() as mock_signals:
             res = app.post(
@@ -868,7 +868,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
 
         user.reload()
         assert user.fullname == 'Foo Bar'
-        assert user.affiliated_institutions.count() == number_of_affiliations
+        assert user.get_affiliated_institutions().count() == number_of_affiliations
         assert institution_primary_type_1 in user.get_affiliated_institutions()
         assert institution_secondary_type_1 not in user.get_affiliated_institutions()
 
@@ -888,7 +888,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
         user = make_user(username, 'Foo Bar')
         user.add_or_update_affiliated_institution(institution_primary_type_1)
         user.save()
-        number_of_affiliations = user.affiliated_institutions.count()
+        number_of_affiliations = user.get_affiliated_institutions().count()
 
         with capture_signals() as mock_signals:
             res = app.post(
@@ -900,7 +900,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
 
         user.reload()
         assert user.fullname == 'Foo Bar'
-        assert user.affiliated_institutions.count() == number_of_affiliations
+        assert user.get_affiliated_institutions().count() == number_of_affiliations
         assert institution_primary_type_1 in user.get_affiliated_institutions()
         assert institution_secondary_type_1 not in user.get_affiliated_institutions()
 
@@ -920,7 +920,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
         user = make_user(username, 'Foo Bar')
         user.add_or_update_affiliated_institution(institution_primary_type_1)
         user.save()
-        number_of_affiliations = user.affiliated_institutions.count()
+        number_of_affiliations = user.get_affiliated_institutions().count()
 
         with capture_signals() as mock_signals:
             res = app.post(
@@ -932,7 +932,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
 
         user.reload()
         assert user.fullname == 'Foo Bar'
-        assert user.affiliated_institutions.count() == number_of_affiliations
+        assert user.get_affiliated_institutions().count() == number_of_affiliations
         assert institution_primary_type_1 in user.get_affiliated_institutions()
         assert institution_secondary_type_1 not in user.get_affiliated_institutions()
 
@@ -987,7 +987,7 @@ class TestInstitutionAuthnSelectiveSSO:
         user = make_user(username, 'Foo Bar')
         user.add_or_update_affiliated_institution(institution_selective)
         user.save()
-        number_of_affiliations = user.affiliated_institutions.count()
+        number_of_affiliations = user.get_affiliated_institutions().count()
 
         payload = make_payload(
             institution_selective,
@@ -1002,7 +1002,7 @@ class TestInstitutionAuthnSelectiveSSO:
         user.reload()
         assert user.fullname == 'Foo Bar'
         assert institution_selective in user.get_affiliated_institutions()
-        assert number_of_affiliations == user.affiliated_institutions.count()
+        assert number_of_affiliations == user.get_affiliated_institutions().count()
 
     def test_selective_sso_denied_empty_filter(self, app, url_auth_institution, institution_selective):
 
