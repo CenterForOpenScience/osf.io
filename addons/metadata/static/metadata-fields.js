@@ -212,7 +212,7 @@ function createChooser(question, options) {
   select.append(defaultOption);
   var groupElem = null;
   (question.options || []).forEach(function(opt) {
-    if (opt.text && opt.text === 'group:None') {
+    if (opt.text && opt.text.startsWith('group:None:')) {
       groupElem = null;
     } else if (opt.text && opt.text.startsWith('group:')) {
       groupElem = $('<optgroup></optgroup>').attr('label', getLocalizedText(opt.tooltip));
