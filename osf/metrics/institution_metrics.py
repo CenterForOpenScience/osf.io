@@ -84,7 +84,7 @@ class UserInstitutionProjectCounts(MetricMixin, metrics.Metric):
         return cls.record(
             user_id=user._id,
             institution_id=institution._id,
-            department=getattr(affiliation, 'department', DEFAULT_ES_NULL_VALUE),
+            department=getattr(affiliation, 'sso_department', DEFAULT_ES_NULL_VALUE),
             public_project_count=public_project_count,
             private_project_count=private_project_count,
             **kwargs
