@@ -1,6 +1,11 @@
 from django.conf.urls import include, re_path
 
 from api.providers import views
+from api.subscriptions.views import (
+    PreprintProviderSubscriptionDetail,
+    RegistrationProviderSubscriptionDetail,
+    CollectionProviderSubscriptionDetail,
+)
 
 app_name = 'osf'
 
@@ -20,6 +25,11 @@ urlpatterns = [
                     re_path(r'^(?P<provider_id>\w+)/withdraw_requests/$', views.PreprintProviderWithdrawRequestList.as_view(), name=views.PreprintProviderWithdrawRequestList.view_name),
                     re_path(r'^(?P<provider_id>\w+)/moderators/$', views.PreprintProviderModeratorsList.as_view(), name=views.PreprintProviderModeratorsList.view_name),
                     re_path(r'^(?P<provider_id>\w+)/moderators/(?P<moderator_id>\w+)/$', views.PreprintProviderModeratorsDetail.as_view(), name=views.PreprintProviderModeratorsDetail.view_name),
+                    re_path(
+                        r'^(?P<provider_id>\w+)/subscriptions/(?P<subscription_id>\w+)/$',
+                        PreprintProviderSubscriptionDetail.as_view(),
+                        name=PreprintProviderSubscriptionDetail.view_name,
+                    ),
                 ], 'preprints',
             ),
             namespace='preprint-providers',
@@ -40,6 +50,11 @@ urlpatterns = [
                     re_path(r'^(?P<provider_id>\w+)/taxonomies/highlighted/$', views.CollectionProviderHighlightedTaxonomyList.as_view(), name=views.CollectionProviderHighlightedTaxonomyList.view_name),
                     re_path(r'^(?P<provider_id>\w+)/moderators/$', views.CollectionProviderModeratorsList.as_view(), name=views.CollectionProviderModeratorsList.view_name),
                     re_path(r'^(?P<provider_id>\w+)/moderators/(?P<moderator_id>\w+)/$', views.CollectionProviderModeratorsDetail.as_view(), name=views.CollectionProviderModeratorsDetail.view_name),
+                    re_path(
+                        r'^(?P<provider_id>\w+)/subscriptions/(?P<subscription_id>\w+)/$',
+                        CollectionProviderSubscriptionDetail.as_view(),
+                        name=CollectionProviderSubscriptionDetail.view_name,
+                    ),
                 ], 'collections',
             ),
             namespace='collection-providers',
@@ -64,6 +79,11 @@ urlpatterns = [
                     re_path(r'^(?P<provider_id>\w+)/actions/$', views.RegistrationProviderActionList.as_view(), name=views.RegistrationProviderActionList.view_name),
                     re_path(r'^(?P<provider_id>\w+)/moderators/$', views.RegistrationProviderModeratorsList.as_view(), name=views.RegistrationProviderModeratorsList.view_name),
                     re_path(r'^(?P<provider_id>\w+)/moderators/(?P<moderator_id>\w+)/$', views.RegistrationProviderModeratorsDetail.as_view(), name=views.RegistrationProviderModeratorsDetail.view_name),
+                    re_path(
+                        r'^(?P<provider_id>\w+)/subscriptions/(?P<subscription_id>\w+)/$',
+                        RegistrationProviderSubscriptionDetail.as_view(),
+                        name=RegistrationProviderSubscriptionDetail.view_name,
+                    ),
                 ], 'registrations',
             ),
             namespace='registration-providers',
