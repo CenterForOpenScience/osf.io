@@ -375,8 +375,8 @@ class TestProjectViews(OsfTestCase):
         # user is automatically affiliated with institutions
         # that matched email domains
         user.reload()
-        assert_in(inst1, user.affiliated_institutions.all())
-        assert_in(inst2, user.affiliated_institutions.all())
+        assert_in(inst1, user.get_affiliated_institutions())
+        assert_in(inst2, user.get_affiliated_institutions())
 
     def test_edit_title_empty(self):
         node = ProjectFactory(creator=self.user1)

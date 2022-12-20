@@ -103,9 +103,9 @@ class TestInstitutionAffiliationViaOrcidSso:
     ):
         mock_verify_user_orcid_id.return_value = True
         mock_check_institution_affiliation.return_value = eligible_institution
-        assert eligible_institution not in user_with_orcid_id_verified.affiliated_institutions.all()
+        assert eligible_institution not in user_with_orcid_id_verified.get_affiliated_institutions()
         tasks.update_affiliation_for_orcid_sso_users(user_with_orcid_id_verified._id, orcid_id_verified)
-        assert eligible_institution in user_with_orcid_id_verified.affiliated_institutions.all()
+        assert eligible_institution in user_with_orcid_id_verified.get_affiliated_institutions()
 
     @mock.patch('framework.auth.tasks.check_institution_affiliation')
     @mock.patch('framework.auth.tasks.verify_user_orcid_id')
@@ -119,9 +119,9 @@ class TestInstitutionAffiliationViaOrcidSso:
     ):
         mock_verify_user_orcid_id.return_value = True
         mock_check_institution_affiliation.return_value = eligible_institution
-        assert eligible_institution in user_verified_and_affiliated.affiliated_institutions.all()
+        assert eligible_institution in user_verified_and_affiliated.get_affiliated_institutions()
         tasks.update_affiliation_for_orcid_sso_users(user_verified_and_affiliated._id, orcid_id_verified)
-        assert eligible_institution in user_verified_and_affiliated.affiliated_institutions.all()
+        assert eligible_institution in user_verified_and_affiliated.get_affiliated_institutions()
 
     @mock.patch('framework.auth.tasks.check_institution_affiliation')
     @mock.patch('framework.auth.tasks.verify_user_orcid_id')
@@ -136,7 +136,7 @@ class TestInstitutionAffiliationViaOrcidSso:
         mock_verify_user_orcid_id.return_value = False
         tasks.update_affiliation_for_orcid_sso_users(user_with_orcid_id_link._id, orcid_id_link)
         mock_check_institution_affiliation.assert_not_called()
-        assert eligible_institution not in user_with_orcid_id_link.affiliated_institutions.all()
+        assert eligible_institution not in user_with_orcid_id_link.get_affiliated_institutions()
 
     @mock.patch('framework.auth.tasks.check_institution_affiliation')
     @mock.patch('framework.auth.tasks.verify_user_orcid_id')
@@ -150,9 +150,9 @@ class TestInstitutionAffiliationViaOrcidSso:
     ):
         mock_verify_user_orcid_id.return_value = True
         mock_check_institution_affiliation.return_value = None
-        assert eligible_institution not in user_with_orcid_id_verified.affiliated_institutions.all()
+        assert eligible_institution not in user_with_orcid_id_verified.get_affiliated_institutions()
         tasks.update_affiliation_for_orcid_sso_users(user_with_orcid_id_verified._id, orcid_id_verified)
-        assert eligible_institution not in user_with_orcid_id_verified.affiliated_institutions.all()
+        assert eligible_institution not in user_with_orcid_id_verified.get_affiliated_institutions()
 
     def test_verify_user_orcid_id_verified(self, user_with_orcid_id_verified, orcid_id_verified):
         assert tasks.verify_user_orcid_id(user_with_orcid_id_verified, orcid_id_verified)
