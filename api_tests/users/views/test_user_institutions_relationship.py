@@ -76,7 +76,7 @@ class TestUserInstititutionRelationship:
 
         user.reload()
 
-        ids = list(user.affiliated_institutions.values_list('_id', flat=True))
+        ids = list(user.get_affiliated_institution__ids())
         assert institution_one._id not in ids
         assert institution_two._id in ids
 
@@ -95,7 +95,7 @@ class TestUserInstititutionRelationship:
 
         user.reload()
 
-        ids = list(user.affiliated_institutions.values_list('_id', flat=True))
+        ids = list(user.get_affiliated_institution__ids())
         assert institution_one._id not in ids
         assert institution_two._id not in ids
 
@@ -113,7 +113,7 @@ class TestUserInstititutionRelationship:
 
         user.reload()
 
-        ids = list(user.affiliated_institutions.values_list('_id', flat=True))
+        ids = list(user.get_affiliated_institution__ids())
         assert institution_one._id in ids
         assert institution_two._id in ids
 

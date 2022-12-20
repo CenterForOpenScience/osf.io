@@ -1701,9 +1701,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         qs = InstitutionAffiliation.objects.filter(user__id=self.id).values_list('institution', flat=True)
         return Institution.objects.filter(pk__in=qs)
 
-    def get_affiliated_institution__id_set(self):
-        """Return a set of ``_id`` of all affiliated institutions for the current user."""
-        return set(InstitutionAffiliation.objects.filter(user__id=self.id).values_list('institution___id', flat=True))
+    def get_affiliated_institution__ids(self):
+        """Return a queryset of ``_id`` of all affiliated institutions for the current user."""
+        return InstitutionAffiliation.objects.filter(user__id=self.id).values_list('institution___id', flat=True)
 
     def add_or_update_affiliated_institution(self, institution, sso_identity=None, sso_mail=None, sso_department=None):
         """Add one or update the existing institution affiliation between the current user and the given ``institution``

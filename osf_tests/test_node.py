@@ -385,7 +385,7 @@ class TestParentNode:
 
     def test_fork_has_correct_affiliations(self, user, auth, project_with_affiliations):
         fork = project_with_affiliations.fork_node(auth=auth)
-        user_affiliations = user.affiliated_institutions.values_list('id', flat=True)
+        user_affiliations = user.get_affiliated_institution__ids()
         project_affiliations = project_with_affiliations.affiliated_institutions.values_list('id', flat=True)
         fork_affiliations = fork.affiliated_institutions.values_list('id', flat=True)
         assert set(project_affiliations) != set(user_affiliations)
@@ -419,7 +419,7 @@ class TestParentNode:
 
     def test_template_has_correct_affiliations(self, user, auth, project_with_affiliations):
         template = project_with_affiliations.use_as_template(auth=auth)
-        user_affiliations = user.affiliated_institutions.values_list('id', flat=True)
+        user_affiliations = user.get_affiliated_institution__ids()
         project_affiliations = project_with_affiliations.affiliated_institutions.values_list('id', flat=True)
         template_affiliations = template.affiliated_institutions.values_list('id', flat=True)
         assert set(project_affiliations) != set(user_affiliations)
