@@ -253,7 +253,8 @@ class TestInstitutionAuth:
         assert user.fullname == fullname
         assert user.family_name == 'Bar'
         assert user.given_name == 'Foo'
-        assert user.department == 'Fake Department'
+        affiliation = user.get_institution_affiliation(institution)
+        assert affiliation.department == 'Fake Department'
         # Existing active user keeps their password
         assert user.has_usable_password()
         assert user.check_password(password)
@@ -295,7 +296,8 @@ class TestInstitutionAuth:
         assert user.fullname == 'Fake User'
         assert user.family_name == 'User'
         assert user.given_name == 'Fake'
-        assert user.department == 'Fake Department'
+        affiliation = user.get_institution_affiliation(institution)
+        assert affiliation.department == 'Fake Department'
         # Unclaimed records must have been cleared
         assert not user.unclaimed_records
         # Previously unclaimed user must be assigned a usable password during institution auth
