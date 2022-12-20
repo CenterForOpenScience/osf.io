@@ -13,7 +13,7 @@ class TestUserInstitutions:
     def user(self, institutions):
         user = AuthUserFactory()
         for each in institutions:
-            user.affiliated_institutions.add(each)
+            user.add_or_update_affiliated_institution(each)
         return user
 
     @pytest.fixture()

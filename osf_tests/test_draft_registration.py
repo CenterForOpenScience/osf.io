@@ -205,7 +205,7 @@ class TestDraftRegistrations:
         write_contrib = factories.AuthUserFactory()
         subject = factories.SubjectFactory()
         institution = factories.InstitutionFactory()
-        user.affiliated_institutions.add(institution)
+        user.add_or_update_affiliated_institution(institution)
 
         title = 'A Study of Elephants'
         description = 'Loxodonta africana'
@@ -610,7 +610,7 @@ class TestDraftRegistrationAffiliatedInstitutions:
     def test_affiliated_institutions(self, draft_registration):
         inst1, inst2 = factories.InstitutionFactory(), factories.InstitutionFactory()
         user = draft_registration.initiator
-        user.affiliated_institutions.add(inst1, inst2)
+        user.add_or_update_affiliated_institution(inst1, inst2)
         draft_registration.add_affiliated_institution(inst1, user=user)
 
         assert inst1 in draft_registration.affiliated_institutions.all()

@@ -828,7 +828,7 @@ class TestOSFUser:
     def test_is_affiliated_with_institution(self, user):
         institution1, institution2 = InstitutionFactory(), InstitutionFactory()
 
-        user.affiliated_institutions.add(institution1)
+        user.add_or_update_affiliated_institution(institution1)
         user.save()
 
         assert user.is_affiliated_with_institution(institution1) is True

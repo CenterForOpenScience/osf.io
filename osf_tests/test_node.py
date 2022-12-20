@@ -128,7 +128,7 @@ class TestParentNode:
     def project_with_affiliations(self, user):
         institution = InstitutionFactory()
         another_institution = InstitutionFactory()
-        user.affiliated_institutions.add(institution)
+        user.add_or_update_affiliated_institution(institution)
         user.save()
         original = ProjectFactory(creator=user)
         original.affiliated_institutions.add(*[institution, another_institution])
@@ -2179,7 +2179,7 @@ def test_find_by_institutions():
     inst1, inst2 = InstitutionFactory(), InstitutionFactory()
     project = ProjectFactory(is_public=True)
     user = project.creator
-    user.affiliated_institutions.add(inst1, inst2)
+    user.add_or_update_affiliated_institution(inst1, inst2)
     project.add_affiliated_institution(inst1, user=user)
     project.save()
 

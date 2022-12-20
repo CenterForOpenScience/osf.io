@@ -22,8 +22,8 @@ class TestUserInstititutionRelationship:
     @pytest.fixture()
     def user(self, institution_one, institution_two):
         user = AuthUserFactory()
-        user.affiliated_institutions.add(institution_one)
-        user.affiliated_institutions.add(institution_two)
+        user.add_or_update_affiliated_institution(institution_one)
+        user.add_or_update_affiliated_institution(institution_two)
         user.save()
         return user
 

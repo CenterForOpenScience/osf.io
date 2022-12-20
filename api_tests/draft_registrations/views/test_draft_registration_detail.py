@@ -311,7 +311,7 @@ class TestDraftRegistrationUpdateWithNode(TestDraftRegistrationUpdate, TestUpdat
 
     def test_update_editable_fields(self, app, url_draft_registrations, draft_registration, license, copyright_holders,
             year, institution_one, user, title, description, category, subject, editable_fields_payload):
-        user.affiliated_institutions.add(institution_one)
+        user.add_or_update_affiliated_institution(institution_one)
 
         res = app.put_json_api(
             url_draft_registrations, editable_fields_payload,
@@ -376,7 +376,7 @@ class TestDraftRegistrationUpdateWithNode(TestDraftRegistrationUpdate, TestUpdat
     def test_editable_title(
             self, app, user, editable_fields_payload, url_draft_registrations, institution_one):
         # User must have permissions on the institution included in the editable_fields_payload
-        user.affiliated_institutions.add(institution_one)
+        user.add_or_update_affiliated_institution(institution_one)
 
         # test blank title - should be allowed
         editable_fields_payload['data']['attributes']['title'] = ''

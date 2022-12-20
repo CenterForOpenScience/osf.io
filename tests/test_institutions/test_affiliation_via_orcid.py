@@ -88,7 +88,7 @@ class TestInstitutionAffiliationViaOrcidSso:
     @pytest.fixture()
     def user_verified_and_affiliated(self, orcid_id_verified, eligible_institution):
         user = UserFactory(external_identity={'ORCID': {orcid_id_verified: 'VERIFIED'}})
-        user.affiliated_institutions.add(eligible_institution)
+        user.add_or_update_affiliated_institution(eligible_institution)
         return user
 
     @mock.patch('framework.auth.tasks.check_institution_affiliation')

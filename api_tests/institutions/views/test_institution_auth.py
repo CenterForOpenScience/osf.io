@@ -171,7 +171,7 @@ class TestInstitutionAuth:
 
         username = 'user_affiliated@osf.edu'
         user = make_user(username, 'Foo Bar')
-        user.affiliated_institutions.add(institution)
+        user.add_or_update_affiliated_institution(institution)
         user.save()
 
         with capture_signals() as mock_signals:
@@ -508,7 +508,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
                                                    institution_primary_type_2, institution_secondary_type_2):
         username = 'user_affiliated@primary.edu'
         user = make_user(username, 'Foo Bar')
-        user.affiliated_institutions.add(institution_primary_type_2)
+        user.add_or_update_affiliated_institution(institution_primary_type_2)
         user.save()
         number_of_affiliations = user.affiliated_institutions.count()
 
@@ -553,8 +553,8 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
 
         username = 'user_both_affiliated@primary.edu'
         user = make_user(username, 'Foo Bar')
-        user.affiliated_institutions.add(institution_primary_type_2)
-        user.affiliated_institutions.add(institution_secondary_type_2)
+        user.add_or_update_affiliated_institution(institution_primary_type_2)
+        user.add_or_update_affiliated_institution(institution_secondary_type_2)
         user.save()
         number_of_affiliations = user.affiliated_institutions.count()
 
@@ -577,7 +577,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
 
         username = 'user_secondary_not@primary.edu'
         user = make_user(username, 'Foo Bar')
-        user.affiliated_institutions.add(institution_primary_type_2)
+        user.add_or_update_affiliated_institution(institution_primary_type_2)
         user.save()
         number_of_affiliations = user.affiliated_institutions.count()
 
@@ -609,7 +609,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
 
         username = 'user_invalid_criteria_action@primary.edu'
         user = make_user(username, 'Foo Bar')
-        user.affiliated_institutions.add(institution_primary_type_2)
+        user.add_or_update_affiliated_institution(institution_primary_type_2)
         user.save()
         number_of_affiliations = user.affiliated_institutions.count()
 
@@ -641,7 +641,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
 
         username = 'user_invalid_institution_id@primary.edu'
         user = make_user(username, 'Foo Bar')
-        user.affiliated_institutions.add(institution_primary_type_2)
+        user.add_or_update_affiliated_institution(institution_primary_type_2)
         user.save()
         number_of_affiliations = user.affiliated_institutions.count()
 
@@ -673,7 +673,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
 
         username = 'user_invalid_criteria_value@primary.edu'
         user = make_user(username, 'Foo Bar')
-        user.affiliated_institutions.add(institution_primary_type_2)
+        user.add_or_update_affiliated_institution(institution_primary_type_2)
         user.save()
         number_of_affiliations = user.affiliated_institutions.count()
 
@@ -756,7 +756,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
                                                    institution_primary_type_1, institution_secondary_type_1):
         username = 'user_affiliated@primary.edu'
         user = make_user(username, 'Foo Bar')
-        user.affiliated_institutions.add(institution_primary_type_1)
+        user.add_or_update_affiliated_institution(institution_primary_type_1)
         user.save()
         number_of_affiliations = user.affiliated_institutions.count()
 
@@ -798,8 +798,8 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
 
         username = 'user_both_affiliated@primary.edu'
         user = make_user(username, 'Foo Bar')
-        user.affiliated_institutions.add(institution_primary_type_1)
-        user.affiliated_institutions.add(institution_secondary_type_1)
+        user.add_or_update_affiliated_institution(institution_primary_type_1)
+        user.add_or_update_affiliated_institution(institution_secondary_type_1)
         user.save()
         number_of_affiliations = user.affiliated_institutions.count()
 
@@ -822,7 +822,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
 
         username = 'user_secondary_not@primary.edu'
         user = make_user(username, 'Foo Bar')
-        user.affiliated_institutions.add(institution_primary_type_1)
+        user.add_or_update_affiliated_institution(institution_primary_type_1)
         user.save()
         number_of_affiliations = user.affiliated_institutions.count()
 
@@ -854,7 +854,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
 
         username = 'user_invalid_criteria_action@primary.edu'
         user = make_user(username, 'Foo Bar')
-        user.affiliated_institutions.add(institution_primary_type_1)
+        user.add_or_update_affiliated_institution(institution_primary_type_1)
         user.save()
         number_of_affiliations = user.affiliated_institutions.count()
 
@@ -886,7 +886,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
 
         username = 'user_invalid_institution_id@primary.edu'
         user = make_user(username, 'Foo Bar')
-        user.affiliated_institutions.add(institution_primary_type_1)
+        user.add_or_update_affiliated_institution(institution_primary_type_1)
         user.save()
         number_of_affiliations = user.affiliated_institutions.count()
 
@@ -918,7 +918,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
 
         username = 'user_invalid_criteria_value@primary.edu'
         user = make_user(username, 'Foo Bar')
-        user.affiliated_institutions.add(institution_primary_type_1)
+        user.add_or_update_affiliated_institution(institution_primary_type_1)
         user.save()
         number_of_affiliations = user.affiliated_institutions.count()
 
@@ -985,7 +985,7 @@ class TestInstitutionAuthnSelectiveSSO:
 
         username = 'user_affiliated@osf.edu'
         user = make_user(username, 'Foo Bar')
-        user.affiliated_institutions.add(institution_selective)
+        user.add_or_update_affiliated_institution(institution_selective)
         user.save()
         number_of_affiliations = user.affiliated_institutions.count()
 
