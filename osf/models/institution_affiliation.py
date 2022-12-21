@@ -8,7 +8,7 @@ from osf.utils.fields import LowercaseEmailField
 
 class InstitutionAffiliation(BaseModel):
 
-    DEFAULT_IDENTITY_VALUE_FROM_MIGRATION = 'NOT_AVAILABLE'
+    DEFAULT_VALUE_FOR_SSO_IDENTITY_NOT_AVAILABLE = 'SSO_IDENTITY_NOT_AVAILABLE'
 
     user = models.ForeignKey('OSFUser', on_delete=models.CASCADE)
     institution = models.ForeignKey('Institution', on_delete=models.CASCADE)
@@ -28,19 +28,3 @@ class InstitutionAffiliation(BaseModel):
 
     def __str__(self):
         return f'{self.user._id}::{self.institution._id}::{self.sso_identity}'
-
-    @classmethod
-    def create(cls, user, institution, sso_identity=None, sso_mail=None, sso_department=None, is_migration=False):
-        if is_migration:
-            sso_identity = cls.DEFAULT_IDENTITY_VALUE_FROM_MIGRATION
-            sso_mail = None
-        affiliation = cls(
-            user=user,
-            institution=institution,
-            sso_identity=sso_identity,
-            sso_mail=sso_mail,
-            sso_department=sso_department,
-            sso_other_attributes={},
-        )
-        affiliation.save()
-        return affiliation

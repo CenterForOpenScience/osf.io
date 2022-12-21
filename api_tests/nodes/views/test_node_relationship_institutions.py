@@ -42,22 +42,22 @@ class TestNodeRelationshipInstitutions:
     @pytest.fixture()
     def user(self, institution_one, institution_two):
         user = AuthUserFactory()
-        user.affiliated_institutions.add(institution_one)
-        user.affiliated_institutions.add(institution_two)
+        user.add_or_update_affiliated_institution(institution_one)
+        user.add_or_update_affiliated_institution(institution_two)
         user.save()
         return user
 
     @pytest.fixture()
     def write_contrib(self, write_contrib_institution):
         write_contrib = AuthUserFactory()
-        write_contrib.affiliated_institutions.add(write_contrib_institution)
+        write_contrib.add_or_update_affiliated_institution(write_contrib_institution)
         write_contrib.save()
         return write_contrib
 
     @pytest.fixture()
     def read_contrib(self, read_contrib_institution):
         read_contrib = AuthUserFactory()
-        read_contrib.affiliated_institutions.add(read_contrib_institution)
+        read_contrib.add_or_update_affiliated_institution(read_contrib_institution)
         read_contrib.save()
         return read_contrib
 
@@ -91,7 +91,7 @@ class TestNodeRelationshipInstitutions:
 
         #   test_node_with_no_permissions
         unauthorized_user = AuthUserFactory()
-        unauthorized_user.affiliated_institutions.add(institution_one)
+        unauthorized_user.add_or_update_affiliated_institution(institution_one)
         unauthorized_user.save()
         res = app.put_json_api(
             node_institutions_url,
@@ -237,7 +237,7 @@ class TestNodeRelationshipInstitutions:
             node, node_institutions_url,
             create_payload):
         user = AuthUserFactory()
-        user.affiliated_institutions.add(institution_one)
+        user.add_or_update_affiliated_institution(institution_one)
         user.save()
         node.add_contributor(user)
         node.save()
@@ -374,7 +374,7 @@ class TestNodeRelationshipInstitutions:
             self, app, institution_one, node,
             node_institutions_url, create_payload):
         user = AuthUserFactory()
-        user.affiliated_institutions.add(institution_one)
+        user.add_or_update_affiliated_institution(institution_one)
         user.save()
         node.add_contributor(user)
         node.affiliated_institutions.add(institution_one)
@@ -392,7 +392,7 @@ class TestNodeRelationshipInstitutions:
             self, app, institution_one, node,
             node_institutions_url, create_payload):
         user = AuthUserFactory()
-        user.affiliated_institutions.add(institution_one)
+        user.add_or_update_affiliated_institution(institution_one)
         user.save()
         node.add_contributor(user, permissions=permissions.READ)
         node.affiliated_institutions.add(institution_one)

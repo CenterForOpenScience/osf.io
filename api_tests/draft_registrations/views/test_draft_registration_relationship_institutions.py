@@ -61,22 +61,22 @@ class TestDraftRegistrationRelationshipInstitutions():
     @pytest.fixture()
     def user(self, institution_one, institution_two):
         user = AuthUserFactory()
-        user.affiliated_institutions.add(institution_one)
-        user.affiliated_institutions.add(institution_two)
+        user.add_or_update_affiliated_institution(institution_one)
+        user.add_or_update_affiliated_institution(institution_two)
         user.save()
         return user
 
     @pytest.fixture()
     def write_contrib(self, write_contrib_institution):
         write_contrib = AuthUserFactory()
-        write_contrib.affiliated_institutions.add(write_contrib_institution)
+        write_contrib.add_or_update_affiliated_institution(write_contrib_institution)
         write_contrib.save()
         return write_contrib
 
     @pytest.fixture()
     def read_contrib(self, read_contrib_institution):
         read_contrib = AuthUserFactory()
-        read_contrib.affiliated_institutions.add(read_contrib_institution)
+        read_contrib.add_or_update_affiliated_institution(read_contrib_institution)
         read_contrib.save()
         return read_contrib
 
@@ -100,9 +100,9 @@ class TestDraftRegistrationRelationshipInstitutions():
             node, node_institutions_url, user,
             create_payload):
         user2 = AuthUserFactory()
-        user2.affiliated_institutions.add(institution_three)
-        user2.affiliated_institutions.add(institution_one)
-        user.affiliated_institutions.add(institution_three)
+        user2.add_or_update_affiliated_institution(institution_three)
+        user2.add_or_update_affiliated_institution(institution_one)
+        user.add_or_update_affiliated_institution(institution_three)
         user.save()
         node.add_contributor(user)
         node.save()
@@ -123,7 +123,7 @@ class TestDraftRegistrationRelationshipInstitutions():
             self, app, institution_one, node,
             node_institutions_url, create_payload):
         user = AuthUserFactory()
-        user.affiliated_institutions.add(institution_one)
+        user.add_or_update_affiliated_institution(institution_one)
         user.save()
         node.add_contributor(user)
         node.save()
@@ -180,7 +180,7 @@ class TestDraftRegistrationRelationshipInstitutions():
 
         #   test_node_with_no_permissions
         unauthorized_user = AuthUserFactory()
-        unauthorized_user.affiliated_institutions.add(institution_one)
+        unauthorized_user.add_or_update_affiliated_institution(institution_one)
         unauthorized_user.save()
         res = app.put_json_api(
             node_institutions_url,
@@ -233,7 +233,7 @@ class TestDraftRegistrationRelationshipInstitutions():
 
     def test_user_with_institution_and_permissions(
             self, app, user, institution_three, node, node_institutions_url, create_payload):
-        user.affiliated_institutions.add(institution_three)
+        user.add_or_update_affiliated_institution(institution_three)
         assert institution_three not in node.affiliated_institutions.all()
 
         res = app.post_json_api(
@@ -254,7 +254,7 @@ class TestDraftRegistrationRelationshipInstitutions():
     def test_user_with_institution_and_permissions_through_patch(
             self, app, user, institution_three,
             node, node_institutions_url, create_payload):
-        user.affiliated_institutions.add(institution_three)
+        user.add_or_update_affiliated_institution(institution_three)
         assert institution_three not in node.affiliated_institutions.all()
 
         res = app.put_json_api(
@@ -307,7 +307,7 @@ class TestDraftRegistrationRelationshipInstitutions():
             self, app, user, institution_one, institution_three,
             node, node_institutions_url, create_payload):
         node.affiliated_institutions.add(institution_one)
-        user.affiliated_institutions.add(institution_three)
+        user.add_or_update_affiliated_institution(institution_three)
         assert institution_one in node.affiliated_institutions.all()
         assert institution_three not in node.affiliated_institutions.all()
 
@@ -327,7 +327,7 @@ class TestDraftRegistrationRelationshipInstitutions():
             node, node_institutions_url, create_payload):
         node.affiliated_institutions.add(institution_one)
         node.save()
-        user.affiliated_institutions.add(institution_three)
+        user.add_or_update_affiliated_institution(institution_three)
         assert institution_one in node.affiliated_institutions.all()
         assert institution_three not in node.affiliated_institutions.all()
 
@@ -346,7 +346,7 @@ class TestDraftRegistrationRelationshipInstitutions():
             self, app, user, institution_one, institution_three,
             node, node_institutions_url, create_payload):
         node.affiliated_institutions.add(institution_one)
-        user.affiliated_institutions.add(institution_three)
+        user.add_or_update_affiliated_institution(institution_three)
         assert institution_one in node.affiliated_institutions.all()
         assert institution_three not in node.affiliated_institutions.all()
 
@@ -391,7 +391,7 @@ class TestDraftRegistrationRelationshipInstitutions():
             self, app, user, institution_one, institution_three,
             node, node_institutions_url, create_payload):
         node.affiliated_institutions.add(institution_one)
-        user.affiliated_institutions.add(institution_three)
+        user.add_or_update_affiliated_institution(institution_three)
         assert institution_one in node.affiliated_institutions.all()
         assert institution_three not in node.affiliated_institutions.all()
 
@@ -426,7 +426,7 @@ class TestDraftRegistrationRelationshipInstitutions():
             self, app, institution_one, node,
             node_institutions_url, create_payload):
         user = AuthUserFactory()
-        user.affiliated_institutions.add(institution_one)
+        user.add_or_update_affiliated_institution(institution_one)
         user.save()
         node.add_contributor(user, permissions=permissions.READ)
         node.affiliated_institutions.add(institution_one)

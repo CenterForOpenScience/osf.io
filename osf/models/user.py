@@ -41,6 +41,7 @@ from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
 from osf.models.notable_domain import NotableDomain
 from osf.models.contributor import Contributor, RecentlyAddedContributor
 from osf.models.institution import Institution
+from osf.models.institution_affiliation import InstitutionAffiliation
 from osf.models.mixins import AddonModelMixin
 from osf.models.spam import SpamMixin
 from osf.models.session import Session
@@ -757,7 +758,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 self.email_verifications[k] = v
         user.email_verifications = {}
 
-        self.affiliated_institutions.add(*user.affiliated_institutions.values_list('pk', flat=True))
+        self.copy_institution_affiliation_when_merging_user(user)
 
         for service in user.external_identity:
             for service_id in user.external_identity[service].keys():
@@ -1684,30 +1685,87 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                     .format(**locals())
 
     def is_affiliated_with_institution(self, institution):
-        """Return if this user is affiliated with ``institution``."""
-        return self.affiliated_institutions.filter(id=institution.id).exists()
+        """Return if this user is affiliated with the given ``institution``."""
+        return InstitutionAffiliation.objects.filter(user__id=self.id, institution__id=institution.id).exists()
+
+    def get_institution_affiliation(self, institution_id):
+        """Return the affiliation between the current user and a given institution by ``institution_id``."""
+        try:
+            return InstitutionAffiliation.objects.get(user__id=self.id, institution___id=institution_id)
+        except InstitutionAffiliation.DoesNotExist:
+            return None
+
+    def has_affiliated_institutions(self):
+        """Return if the current user is affiliated with any institutions."""
+        return InstitutionAffiliation.objects.filter(user__id=self.id).exists()
+
+    def get_affiliated_institutions(self):
+        """Return a queryset of all affiliated institutions for the current user."""
+        qs = InstitutionAffiliation.objects.filter(user__id=self.id).values_list('institution', flat=True)
+        return Institution.objects.filter(pk__in=qs)
+
+    def get_institution_affiliations(self):
+        """Return a queryset of all institution affiliations for the current user."""
+        return InstitutionAffiliation.objects.filter(user__id=self.id)
+
+    def add_or_update_affiliated_institution(self, institution, sso_identity=None, sso_mail=None, sso_department=None):
+        """Add one or update the existing institution affiliation between the current user and the given ``institution``
+        with attributes. ``sso_department`` is the only attribute that needs to be updated for now.
+        """
+        if self.is_affiliated_with_institution(institution):
+            if not sso_department:
+                return None
+            affiliation = InstitutionAffiliation.objects.get(user__id=self.id, institution__id=institution.id)
+            if affiliation.sso_department != sso_department:
+                affiliation.sso_department = sso_department
+                affiliation.save()
+                return affiliation
+        affiliation = InstitutionAffiliation.objects.create(
+            user=self,
+            institution=institution,
+            sso_identity=sso_identity,
+            sso_mail=sso_mail,
+            sso_department=sso_department,
+            sso_other_attributes={}
+        )
+        return affiliation
+
+    def copy_institution_affiliation_when_merging_user(self, user):
+        """Copy institution affiliations of the given ``user`` to the current user during merge."""
+        affiliations = InstitutionAffiliation.objects.filter(user__id=user.id)
+        for affiliation in affiliations:
+            self.add_or_update_affiliated_institution(
+                affiliation.institution,
+                sso_identity=affiliation.sso_identity,
+                sso_mail=affiliation.sso_mail,
+                sso_department=affiliation.sso_department
+            )
+
+    def add_multiple_institutions_non_sso(self, institutions):
+        """Add multiple affiliations for the user and a list of institutions, only used for email domain non-SSO."""
+        for institution in institutions:
+            self.add_or_update_affiliated_institution(
+                institution,
+                sso_identity=InstitutionAffiliation.DEFAULT_VALUE_FOR_SSO_IDENTITY_NOT_AVAILABLE
+            )
 
     def update_affiliated_institutions_by_email_domain(self):
-        """
-        Append affiliated_institutions by email domain.
-        :return:
-        """
+        """Append affiliated_institutions by email domain."""
         try:
             email_domains = [email.split('@')[1].lower() for email in self.emails.values_list('address', flat=True)]
-            insts = Institution.objects.filter(email_domains__overlap=email_domains)
-            if insts.exists():
-                self.affiliated_institutions.add(*insts)
+            institutions = Institution.objects.filter(email_domains__overlap=email_domains)
+            if institutions.exists():
+                self.add_multiple_institutions_non_sso(institutions)
         except IndexError:
             pass
 
-    def remove_institution(self, inst_id):
-        try:
-            inst = self.affiliated_institutions.get(_id=inst_id)
-        except Institution.DoesNotExist:
+    def remove_affiliated_institution(self, institution_id):
+        """Remove the affiliation between the current user and a given institution by ``institution_id``."""
+        affiliation = self.get_institution_affiliation(institution_id)
+        if not affiliation:
             return False
-        else:
-            self.affiliated_institutions.remove(inst)
-            return True
+        affiliation.delete()
+        return True
 
     def get_activity_points(self):
         return analytics.get_total_activity_count(self._id)

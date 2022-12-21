@@ -14,11 +14,11 @@ class TestInstitutionUsersList:
         institution = InstitutionFactory()
 
         user_one = UserFactory()
-        user_one.affiliated_institutions.add(institution)
+        user_one.add_or_update_affiliated_institution(institution)
         user_one.save()
 
         user_two = UserFactory()
-        user_two.affiliated_institutions.add(institution)
+        user_two.add_or_update_affiliated_institution(institution)
         user_two.save()
 
         url = '/{0}institutions/{1}/users/'.format(API_BASE, institution._id)
