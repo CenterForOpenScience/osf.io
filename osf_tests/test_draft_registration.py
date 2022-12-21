@@ -610,7 +610,8 @@ class TestDraftRegistrationAffiliatedInstitutions:
     def test_affiliated_institutions(self, draft_registration):
         inst1, inst2 = factories.InstitutionFactory(), factories.InstitutionFactory()
         user = draft_registration.initiator
-        user.add_or_update_affiliated_institution(inst1, inst2)
+        user.add_or_update_affiliated_institution(inst1)
+        user.add_or_update_affiliated_institution(inst2)
         draft_registration.add_affiliated_institution(inst1, user=user)
 
         assert inst1 in draft_registration.affiliated_institutions.all()
@@ -621,7 +622,7 @@ class TestDraftRegistrationAffiliatedInstitutions:
         assert inst1 not in draft_registration.affiliated_institutions.all()
         assert inst2 not in draft_registration.affiliated_institutions.all()
 
-        user.affiliated_institutions.remove(inst1)
+        user.remove_affiliated_institution(inst1._id)
 
         with pytest.raises(UserNotAffiliatedError):
             draft_registration.add_affiliated_institution(inst1, user=user)

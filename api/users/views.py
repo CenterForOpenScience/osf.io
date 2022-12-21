@@ -530,7 +530,7 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
     def perform_destroy(self, instance):
         data = self.request.data['data']
         user = self.request.user
-        current_institutions = set(user.get_affiliated_institution__ids())
+        current_institutions = set(user.get_institution_affiliations().values_list('institution___id', flat=True))
 
         # DELETEs normally dont get type checked
         # not the best way to do it, should be enforced everywhere, maybe write a test for it
@@ -539,7 +539,7 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
                 raise Conflict()
         for val in data:
             if val['id'] in current_institutions:
-                user.remove_institution(val['id'])
+                user.remove_affiliated_institution(val['id'])
         user.save()
 
 

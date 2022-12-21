@@ -1688,12 +1688,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """Return if this user is affiliated with the given ``institution``."""
         return InstitutionAffiliation.objects.filter(user__id=self.id, institution__id=institution.id).exists()
 
-    def get_institution_affiliation(self, institution):
-        """Return if this user is affiliated with the given ``institution``."""
-        return InstitutionAffiliation.objects.get(user__id=self.id, institution__id=institution.id)
+    def get_institution_affiliation(self, institution_id):
+        """Return the affiliation between the current user and a given institution by ``institution_id``."""
+        try:
+            return InstitutionAffiliation.objects.get(user__id=self.id, institution___id=institution_id)
+        except InstitutionAffiliation.DoesNotExist:
+            return None
 
     def has_affiliated_institutions(self):
-        """Return if this user is affiliated with any institutions."""
+        """Return if the current user is affiliated with any institutions."""
         return InstitutionAffiliation.objects.filter(user__id=self.id).exists()
 
     def get_affiliated_institutions(self):
@@ -1701,9 +1704,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         qs = InstitutionAffiliation.objects.filter(user__id=self.id).values_list('institution', flat=True)
         return Institution.objects.filter(pk__in=qs)
 
-    def get_affiliated_institution__ids(self):
-        """Return a queryset of ``_id`` of all affiliated institutions for the current user."""
-        return InstitutionAffiliation.objects.filter(user__id=self.id).values_list('institution___id', flat=True)
+    def get_institution_affiliations(self):
+        """Return a queryset of all institution affiliations for the current user."""
+        return InstitutionAffiliation.objects.filter(user__id=self.id)
 
     def add_or_update_affiliated_institution(self, institution, sso_identity=None, sso_mail=None, sso_department=None):
         """Add one or update the existing institution affiliation between the current user and the given ``institution``
@@ -1756,14 +1759,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         except IndexError:
             pass
 
-    def remove_institution(self, instn_id):
-        try:
-            instn_affiliation = InstitutionAffiliation.objects.get(user__id=self.id, institution__id=instn_id)
-        except InstitutionAffiliation.DoesNotExist:
+    def remove_affiliated_institution(self, institution_id):
+        """Remove the affiliation between the current user and a given institution by ``institution_id``."""
+        affiliation = self.get_institution_affiliation(institution_id)
+        if not affiliation:
             return False
-        else:
-            instn_affiliation.delete()
-            return True
+        affiliation.delete()
+        return True
 
     def get_activity_points(self):
         return analytics.get_total_activity_count(self._id)

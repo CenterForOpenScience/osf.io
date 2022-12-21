@@ -9,7 +9,7 @@ from osf_tests.factories import (
 
 
 @pytest.mark.django_db
-class TestUserInstititutionRelationship:
+class TestUserInstitutionRelationship:
 
     @pytest.fixture()
     def institution_one(self):
@@ -76,7 +76,7 @@ class TestUserInstititutionRelationship:
 
         user.reload()
 
-        ids = list(user.get_affiliated_institution__ids())
+        ids = list(user.get_institution_affiliations().values_list('institution___id', flat=True))
         assert institution_one._id not in ids
         assert institution_two._id in ids
 
@@ -95,7 +95,7 @@ class TestUserInstititutionRelationship:
 
         user.reload()
 
-        ids = list(user.get_affiliated_institution__ids())
+        ids = list(user.get_institution_affiliations().values_list('institution___id', flat=True))
         assert institution_one._id not in ids
         assert institution_two._id not in ids
 
@@ -113,7 +113,7 @@ class TestUserInstititutionRelationship:
 
         user.reload()
 
-        ids = list(user.get_affiliated_institution__ids())
+        ids = list(user.get_institution_affiliations().values_list('institution___id', flat=True))
         assert institution_one._id in ids
         assert institution_two._id in ids
 
