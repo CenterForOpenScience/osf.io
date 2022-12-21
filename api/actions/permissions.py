@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 from rest_framework import permissions as drf_permissions
 
 from api.base.utils import get_user_auth
+from osf.models import CollectionSubmissionAction
 from osf.models.action import BaseAction
 from osf.models.mixins import ReviewableMixin, ReviewProviderMixin
 from osf.utils.workflows import ReviewTriggers
@@ -33,6 +34,8 @@ class ReviewActionPermission(drf_permissions.BasePermission):
             target = obj
             provider = target.provider
         elif isinstance(obj, ReviewProviderMixin):
+            provider = obj
+        elif isinstance(obj, CollectionSubmissionAction):
             provider = obj
         else:
             raise ValueError('Not a reviews-related model: {}'.format(obj))

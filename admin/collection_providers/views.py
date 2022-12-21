@@ -18,6 +18,7 @@ from osf.models import (
 )
 from admin.preprint_providers.views import ImportProviderView
 from django.contrib import messages
+from admin.providers.views import AddAdminOrModerator, RemoveAdminsAndModerators
 
 
 class CreateCollectionProvider(PermissionRequiredMixin, CreateView):
@@ -169,10 +170,11 @@ class CollectionProviderDisplay(PermissionRequiredMixin, DetailView):
         fields['volume_choices'] = json.dumps(primary_collection.volume_choices)
         fields['issue_choices'] = json.dumps(primary_collection.issue_choices)
         fields['program_area_choices'] = json.dumps(primary_collection.program_area_choices)
-        fields['school_type_choices'] = json.dumps(primary_collection.school_type_choices)
-        fields['study_design_choices'] = json.dumps(primary_collection.study_design_choices)
 
         fields = model_to_dict(collection_provider)
+
+        fields['school_type_choices'] = json.dumps(primary_collection.school_type_choices)
+        fields['study_design_choices'] = json.dumps(primary_collection.study_design_choices)
 
         # compile html list of collected_type_choices
         if collection_provider.primary_collection:
@@ -403,3 +405,19 @@ class ImportCollectionProvider(ImportProviderView):
         if default_license:
             provider.default_license = NodeLicense.objects.get(license_id=default_license)
         return provider
+
+
+class CollectionAddAdminOrModerator(AddAdminOrModerator):
+    permission_required = 'osf.change_collectionprovider'
+    template_name = 'collection_providers/edit_moderators.html'
+    provider_class = CollectionProvider
+    url_namespace = 'collection_providers'
+    raise_exception = True
+
+
+class CollectionRemoveAdminsAndModerators(RemoveAdminsAndModerators):
+    permission_required = 'osf.change_collectionprovider'
+    template_name = 'collection_providers/edit_moderators.html'
+    provider_class = CollectionProvider
+    url_namespace = 'collection_providers'
+    raise_exception = True

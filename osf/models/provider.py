@@ -30,6 +30,7 @@ from website.util import api_v2_url
 from functools import reduce
 from osf.models.notifications import NotificationSubscription
 
+
 class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, DirtyFieldsMixin, BaseModel):
     class Meta:
         unique_together = ('_id', 'type')
@@ -242,6 +243,7 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
 
 
 class CollectionProvider(AbstractProvider):
+    DEFAULT_SUBSCRIPTIONS = ['new_pending_submissions']
 
     class Meta:
         permissions = (
@@ -426,6 +428,7 @@ def rules_to_subjects(rules):
     return Subject.objects.filter(reduce(lambda x, y: x | y, q)) if len(q) > 1 else (Subject.objects.filter(q[0]) if len(q) else Subject.objects.filter(provider___id='osf', provider__type='osf.preprintprovider'))
 
 
+@receiver(post_save, sender=CollectionProvider)
 @receiver(post_save, sender=PreprintProvider)
 @receiver(post_save, sender=RegistrationProvider)
 def create_provider_auth_groups(sender, instance, created, **kwargs):
@@ -433,6 +436,7 @@ def create_provider_auth_groups(sender, instance, created, **kwargs):
         instance.update_group_permissions()
 
 
+@receiver(post_save, sender=CollectionProvider)
 @receiver(post_save, sender=PreprintProvider)
 @receiver(post_save, sender=RegistrationProvider)
 def create_provider_notification_subscriptions(sender, instance, created, **kwargs):

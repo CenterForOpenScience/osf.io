@@ -39,7 +39,7 @@ from framework.sentry import log_exception
 from osf.exceptions import (InvalidTagError, NodeStateError,
                             TagNotFoundError)
 from osf.models.contributor import Contributor
-from osf.models.collection import CollectionSubmission
+from osf.models.collection_submission import CollectionSubmission
 
 from osf.models.identifiers import Identifier, IdentifierMixin
 from osf.models.licenses import NodeLicenseRecord
@@ -56,6 +56,7 @@ from framework.auth.core import Auth
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, ensure_str
 from osf.utils.requests import get_request_and_user_id, string_type_request_headers
+from osf.utils.workflows import CollectionSubmissionStates
 from osf.utils import sanitize
 from website import language, settings
 from website.citations.utils import datetime_to_csl
@@ -492,21 +493,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return not self.is_registration and not self.is_fork
 
     @property
-    def is_collected(self):
-        """is included in a collection"""
-        return self.collecting_metadata_qs.exists()
-
-    @property
-    def collecting_metadata_qs(self):
+    def collection_submissions(self):
         return CollectionSubmission.objects.filter(
             guid=self.guids.first(),
             collection__provider__isnull=False,
             collection__deleted__isnull=True,
-            collection__is_bookmark_collection=False)
-
-    @property
-    def collecting_metadata_list(self):
-        return list(self.collecting_metadata_qs)
+            collection__is_bookmark_collection=False,
+        )
 
     @property
     def has_linked_published_preprints(self):
@@ -729,7 +722,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         try:
             search.search.update_node(self, bulk=False, async_update=True)
-            if self.is_collected and self.is_public:
+            if self.collection_submissions.exists() and self.is_public:
                 search.search.update_collected_metadata(self._id)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
@@ -1250,7 +1243,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
             self.is_public = False
             self.keenio_read_key = ''
-            self._remove_from_associated_collections()
+            self._remove_from_associated_collections(auth, force=force)
         else:
             return False
 
@@ -2234,7 +2227,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             node.deleted = log_date
             node.add_remove_node_log(auth=auth, date=log_date)
             project_signals.node_deleted.send(node)
-            node._remove_from_associated_collections()
+            node._remove_from_associated_collections(auth)
 
         bulk_update(hierarchy, update_fields=['is_deleted', 'deleted_date', 'deleted'])
 
@@ -2409,13 +2402,41 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         ).first() or osf_provider_tag
         contributor.add_system_tag(source_tag)
 
-    def _remove_from_associated_collections(self):
+    def _remove_from_associated_collections(self, auth=None, force=False):
         for submission in self.guids.first().collectionsubmission_set.all():
             associated_collection = submission.collection
             if associated_collection.is_bookmark_collection and not self.deleted:
                 if self.contributors.filter(pk=associated_collection.creator.id).exists():
                     continue
-            submission.delete()
+
+            user = getattr(auth, 'user', None)
+
+            if submission.state == CollectionSubmissionStates.ACCEPTED:
+                submission.remove(
+                    user=user,
+                    comment='Removed from collection due to implicit removal due to privacy changes.',
+                    removed_due_to_privacy=True
+                )
+            elif submission.state == CollectionSubmissionStates.PENDING and user:
+                submission.reject(
+                    user=user,
+                    comment='Rejected from collection due to implicit removal due to privacy changes.',
+                    force=True
+                )
+            elif force and submission.state == CollectionSubmissionStates.ACCEPTED:
+                request, user_id = get_request_and_user_id()
+                submission.remove(
+                    user=request.user,
+                    comment='Removed from collection via system command.',  # typically spam
+                    force=True
+                )
+            elif force and submission.state == CollectionSubmissionStates.PENDING:
+                request, user_id = get_request_and_user_id()
+                submission.reject(
+                    user=request.user,
+                    comment='Rejected from collection via system command.',  # typically spam
+                    force=True
+                )
 
 
 class NodeUserObjectPermission(UserObjectPermissionBase):
