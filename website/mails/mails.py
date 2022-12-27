@@ -203,6 +203,31 @@ CONFIRM_EMAIL_MODERATION = lambda provider: Mail(
 
 # Merge account, add or remove email confirmation emails.
 CONFIRM_MERGE = Mail('confirm_merge', subject='Confirm account merge')
+COLLECTION_SUBMISSION_REJECTED = lambda collection, node: Mail(
+    'collection_submission_rejected',
+    subject=f'{node.title} was not accepted into {collection.title}'
+)
+COLLECTION_SUBMISSION_SUBMITTED = lambda submitter, node: Mail(
+    'collection_submission_submitted',
+    subject=f'{submitter.fullname} has requested to add {node.title} to a collection'
+)
+COLLECTION_SUBMISSION_ACCEPTED = lambda collection, node: Mail(
+    'collection_submission_accepted',
+    subject=f'{node.title} was accepted into {collection.title}'
+)
+COLLECTION_SUBMISSION_REMOVED_MODERATOR = lambda collection, node: Mail(
+    'collection_submission_removed_moderator',
+    subject=f'{node.title} was removed from {collection.title}'
+)
+COLLECTION_SUBMISSION_REMOVED_ADMIN = lambda collection, node: Mail(
+    'collection_submission_removed_admin',
+    subject=f'{node.title} was removed from {collection.title}'
+)
+COLLECTION_SUBMISSION_REMOVED_PRIVATE = lambda collection, node: Mail(
+    'collection_submission_removed_private',
+    subject=f'{node.title} was removed from {collection.title}'
+)
+
 PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='Primary email changed')
 
 

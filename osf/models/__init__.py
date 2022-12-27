@@ -4,7 +4,8 @@ from osf.models.user import OSFUser, Email  # noqa
 from osf.models.contributor import Contributor, RecentlyAddedContributor, PreprintContributor, DraftRegistrationContributor  # noqa
 from osf.models.session import Session  # noqa
 from osf.models.institution import Institution  # noqa
-from osf.models.collection import CollectionSubmission, Collection  # noqa
+from osf.models.collection import Collection  # noqa
+from osf.models.collection_submission import CollectionSubmission  # noqa
 from osf.models.draft_node import DraftNode  # noqa
 from osf.models.node import AbstractNode, Node  # noqa
 from osf.models.sanctions import Sanction, Embargo, Retraction, RegistrationApproval, EmbargoTerminationApproval  # noqa
@@ -46,8 +47,8 @@ from osf.models.banner import ScheduledBanner  # noqa
 from osf.models.quickfiles import QuickFilesNode  # noqa
 from osf.models.dismissed_alerts import DismissedAlert  # noqa
 from osf.models.action import ReviewAction  # noqa
-from osf.models.action import NodeRequestAction, PreprintRequestAction, ReviewAction, RegistrationAction, SchemaResponseAction, BaseAction  # noqa
-from osf.models.storage import ProviderAssetFile, InstitutionAssetFile  # noqa
+from osf.models.action import NodeRequestAction, PreprintRequestAction, ReviewAction, RegistrationAction, SchemaResponseAction, BaseAction, CollectionSubmissionAction  # noqa
+from osf.models.storage import ProviderAssetFile, InstitutionAssetFile # noqa
 from osf.models.chronos import ChronosJournal, ChronosSubmission  # noqa
 from osf.models.notable_domain import NotableDomain, DomainReference  # noqa
 from osf.models.brand import Brand  # noqa

@@ -133,10 +133,10 @@ class TestInstitutionManager:
     def test_send_deactivation_email_call_count(self, mock_send_mail):
         institution = InstitutionFactory()
         user_1 = UserFactory()
-        user_1.affiliated_institutions.add(institution)
+        user_1.add_or_update_affiliated_institution(institution)
         user_1.save()
         user_2 = UserFactory()
-        user_2.affiliated_institutions.add(institution)
+        user_2.add_or_update_affiliated_institution(institution)
         user_2.save()
         institution._send_deactivation_email()
         assert mock_send_mail.call_count == 2
@@ -146,7 +146,7 @@ class TestInstitutionManager:
     def test_send_deactivation_email_call_args(self, mock_send_mail):
         institution = InstitutionFactory()
         user = UserFactory()
-        user.affiliated_institutions.add(institution)
+        user.add_or_update_affiliated_institution(institution)
         user.save()
         institution._send_deactivation_email()
         forgot_password = 'forgotpassword' if settings.DOMAIN.endswith('/') else '/forgotpassword'

@@ -74,7 +74,7 @@ class ApiSearchTestCase:
     @pytest.fixture()
     def user_two(self, institution):
         user_two = AuthUserFactory(fullname='Chance The Rapper')
-        user_two.affiliated_institutions.add(institution)
+        user_two.add_or_update_affiliated_institution(institution)
         user_two.save()
         return user_two
 

@@ -1,12 +1,33 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+import io
 
 from rest_framework import permissions
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, MethodNotAllowed
 
-from api.base.utils import get_user_auth, assert_resource_type
+from api.base.exceptions import Gone
+from api.base.parsers import JSONSchemaParser
+from api.base.utils import get_user_auth, assert_resource_type, get_object_or_error
 from osf.models import AbstractNode, Preprint, Collection, CollectionSubmission, CollectionProvider
 from osf.utils.permissions import WRITE, ADMIN
+
+
+class CollectionReadOrPublic(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.method == 'GET':
+            return self.has_object_permission(request, view, view.get_object())
+        else:
+            raise MethodNotAllowed(request.method)
+
+    def has_object_permission(self, request, view, obj):
+        auth = get_user_auth(request)
+        if auth.user and auth.user.has_perm('view_submissions', obj.target.collection.provider):
+            return True
+        elif obj.target.guid.referent.can_view(auth):
+            return True
+        else:
+            return False
+
 
 class CollectionWriteOrPublic(permissions.BasePermission):
     # Adapted from ContributorOrPublic
@@ -44,7 +65,7 @@ class CanSubmitToCollectionOrPublic(permissions.BasePermission):
         accepting_submissions = obj.is_public and obj.provider and obj.provider.allow_submissions
         return auth.user and (accepting_submissions or auth.user.has_perm('write_collection', obj))
 
-class CanUpdateDeleteCGMOrPublic(permissions.BasePermission):
+class CanUpdateDeleteCollectionSubmissionOrPublic(permissions.BasePermission):
 
     acceptable_models = (CollectionSubmission, )
 
@@ -113,3 +134,49 @@ class CollectionWriteOrPublicForRelationshipPointers(permissions.BasePermission)
                 has_pointer_auth = False
                 break
         return has_pointer_auth
+
+
+class CollectionSubmissionActionListPermission(permissions.BasePermission):
+
+    acceptable_models = (CollectionSubmission, )
+
+    def has_object_permission(self, request, view, collection_submission):
+        if request.method != 'POST':
+            raise MethodNotAllowed(request.method)
+
+        assert_resource_type(collection_submission, self.acceptable_models)
+        auth = get_user_auth(request)
+        provider = collection_submission.collection.provider
+        is_moderator = bool(auth.user and auth.user.has_perm('accept_submissions', provider))
+        return collection_submission.guid.referent.has_permission(auth.user, ADMIN) or is_moderator
+
+    def has_permission(self, request, view):
+        if request.method != 'POST':
+            raise MethodNotAllowed(request.method)
+
+        # Validate json before using id to check for permissions
+        request_json = JSONSchemaParser().parse(
+            io.BytesIO(request.body),
+            parser_context={
+                'request': request,
+                'json_schema': view.create_payload_schema,
+            },
+        )
+        try:
+            hyphen_id = request_json['data']['relationships']['target']['data']['id']
+            node_guid, collection_guid = hyphen_id.split('-')
+        except ValueError:
+            raise NotFound(f'Your id [`{hyphen_id}`] was not valid.')
+
+        obj = get_object_or_error(
+            CollectionSubmission.objects.filter(
+                guid___id=node_guid,
+                collection__guids___id=collection_guid,
+            ),
+            request=request,
+            display_name='collection submission',
+        )
+        if obj.guid.referent.deleted:
+            raise Gone()
+
+        return self.has_object_permission(request, view, obj)

@@ -1374,22 +1374,19 @@ class TestCollectionNodeLinkDetail:
     def test_delete_node_link_no_permissions_for_target_node(
             self, app, user_one, user_two, collection):
         pointed_project = ProjectFactory(creator=user_two)
-        pointer = collection.collect_object(
-            pointed_project, user_one)
-        assert collection.guid_links.filter(_id=pointed_project._id).exists()
-        url = '/{}collections/{}/node_links/{}/'.format(
-            API_BASE, collection._id, pointer.guid._id)
+        pointer = collection.collect_object(pointed_project, user_one)
+        assert collection.active_guids.filter(_id=pointed_project._id).exists()
+        url = '/{}collections/{}/node_links/{}/'.format(API_BASE, collection._id, pointer.guid._id)
         res = app.delete_json_api(url, auth=user_one.auth)
         assert res.status_code == 204
         assert not collection.deleted
-        assert not collection.guid_links.filter(_id=pointed_project._id).exists()
+        assert not collection.active_guids.filter(_id=pointed_project._id).exists()
 
-    def test_delete_public_node_pointer_authorized(
-            self, app, user_one, url_node_link_public, collection):
+    def test_delete_public_node_pointer_authorized(self, app, user_one, url_node_link_public, collection):
         node_count_before = collection.guid_links.count()
         res = app.delete(url_node_link_public, auth=user_one.auth)
         assert res.status_code == 204
-        assert node_count_before - 1 == collection.guid_links.count()
+        assert node_count_before - 1 == collection.active_collection_submissions.count()
 
     def test_delete_public_registration_pointer_authorized(
             self, app, user_one, collection, url_registration_link_public):
@@ -1397,21 +1394,21 @@ class TestCollectionNodeLinkDetail:
         res = app.delete(url_registration_link_public, auth=user_one.auth)
         collection.reload()
         assert res.status_code == 204
-        assert node_count_before - 1 == collection.guid_links.count()
+        assert node_count_before - 1 == collection.active_collection_submissions.count()
 
     def test_delete_private_node_link_authorized(
             self, app, url_node_link_private, user_one, collection):
         node_count_before = collection.guid_links.count()
         res = app.delete(url_node_link_private, auth=user_one.auth)
         assert res.status_code == 204
-        assert node_count_before - 1 == collection.guid_links.count()
+        assert node_count_before - 1 == collection.active_collection_submissions.count()
 
     def test_delete_private_registration_link_authorized(
             self, app, user_one, url_registration_link_private, collection):
         node_count_before = collection.guid_links.count()
         res = app.delete(url_registration_link_private, auth=user_one.auth)
         assert res.status_code == 204
-        assert node_count_before - 1 == collection.guid_links.count()
+        assert node_count_before - 1 == collection.active_collection_submissions.count()
 
     def test_can_not_return_deleted_collection_public_node_pointer(
             self, app, user_one, url_node_link_public, collection):
@@ -2743,7 +2740,7 @@ class TestBulkDeleteCollectionNodeLinks:
     def test_bulk_deletes_collection_node_pointers_succeeds_as_owner(
             self, app, collection_two, url_collection_two, payload_collection_two, user_one):
 
-        node_count_before = collection_two.guid_links.count()
+        node_count_before = collection_two.active_collection_submissions.count()
         res = app.delete_json_api(
             url_collection_two,
             payload_collection_two,
@@ -2751,7 +2748,7 @@ class TestBulkDeleteCollectionNodeLinks:
         )
         collection_two.reload()
         assert res.status_code == 204
-        assert node_count_before - 2 == collection_two.guid_links.count()
+        assert node_count_before - 2 == collection_two.active_collection_submissions.count()
         collection_two.reload()
 
     def test_return_bulk_deleted_collection_node_pointer(
@@ -3224,7 +3221,7 @@ class TestCollectionRelationshipNodeLinks:
         )
         assert res.status_code == 204
         collection_private.reload()
-        assert not collection_private.guid_links.filter(_id=registration_private._id).exists()
+        assert not collection_private.active_collection_submissions.filter(guid___id=registration_private._id).exists()
 
     def test_delete_linked_registration_213(
             self, app, make_payload, url_private_linked_regs, user_two,
@@ -3249,7 +3246,7 @@ class TestCollectionRelationshipNodeLinks:
         )
         assert res.status_code == 204
         collection_private.reload()
-        assert not collection_private.guid_links.filter(_id=registration_private._id).exists()
+        assert not collection_private.active_collection_submissions.filter(guid___id=registration_private._id).exists()
 
     def test_node_links_and_relationship_represent_same_nodes(
             self, app, user_one, url_private_linked_nodes, auth_user_one,
@@ -4204,7 +4201,7 @@ class TestCollectionLinkedNodes:
 
 
 @pytest.mark.django_db
-class TestCollectedMetaList:
+class TestCollectionSubmissionList:
     @pytest.fixture()
     def user_two(self):
         return AuthUserFactory()
@@ -4230,7 +4227,7 @@ class TestCollectedMetaList:
         return SubjectFactory()
 
     @pytest.fixture()
-    def collection_with_three_cgm(self, user_one, project_one, project_two, project_three):
+    def collection_with_three_collection_submission(self, user_one, project_one, project_two, project_three):
         c = CollectionFactory(creator=user_one, status_choices=['', 'two', 'asdf'], collected_type_choices=['', 'asdf'])
         c.collect_object(project_one, user_one)
         c.collect_object(project_two, user_one, status='two')
@@ -4238,13 +4235,13 @@ class TestCollectedMetaList:
         return c
 
     @pytest.fixture()
-    def collection_with_one_cgm(self, user_one, project_one):
+    def collection_with_one_collection_submission(self, user_one, project_one):
         c = CollectionFactory(creator=user_one)
         c.collect_object(project_one, user_one)
         return c
 
     @pytest.fixture()
-    def collection_with_zero_cgm(self, user_one):
+    def collection_with_zero_collection_submission(self, user_one):
         return CollectionFactory(creator=user_one)
 
     @pytest.fixture()
@@ -4262,46 +4259,46 @@ class TestCollectedMetaList:
             }
         return make_collection_payload
 
-    def test_no_permissions(self, app, collection_with_three_cgm, collection_with_one_cgm, user_two, project_four, url, payload):
+    def test_no_permissions(self, app, collection_with_three_collection_submission, collection_with_one_collection_submission, user_two, project_four, url, payload):
         # Private
-        res = app.get(url.format(collection_with_three_cgm._id), expect_errors=True)
+        res = app.get(url.format(collection_with_three_collection_submission._id), expect_errors=True)
         assert res.status_code == 401
 
-        res = app.get(url.format(collection_with_three_cgm._id), auth=user_two.auth, expect_errors=True)
+        res = app.get(url.format(collection_with_three_collection_submission._id), auth=user_two.auth, expect_errors=True)
         assert res.status_code == 403
 
         res = app.post_json_api(
-            url.format(collection_with_three_cgm._id),
+            url.format(collection_with_three_collection_submission._id),
             payload(creator=user_two._id, guid=project_four._id, status='asdf'),
             expect_errors=True)
         assert res.status_code == 401
 
         res = app.post_json_api(
-            url.format(collection_with_three_cgm._id),
+            url.format(collection_with_three_collection_submission._id),
             payload(creator=user_two._id, guid=project_four._id, status='asdf'),
             auth=user_two.auth,
             expect_errors=True)
         assert res.status_code == 403
 
         # Public
-        collection_with_three_cgm.is_public = True
-        collection_with_three_cgm.save()
-        res = app.get(url.format(collection_with_three_cgm._id), expect_errors=True)
+        collection_with_three_collection_submission.is_public = True
+        collection_with_three_collection_submission.save()
+        res = app.get(url.format(collection_with_three_collection_submission._id), expect_errors=True)
         assert len(res.json['data']) == 3
         assert res.status_code == 200
 
-        res = app.get(url.format(collection_with_three_cgm._id), auth=user_two.auth, expect_errors=True)
+        res = app.get(url.format(collection_with_three_collection_submission._id), auth=user_two.auth, expect_errors=True)
         assert len(res.json['data']) == 3
         assert res.status_code == 200
 
         res = app.post_json_api(
-            url.format(collection_with_three_cgm._id),
+            url.format(collection_with_three_collection_submission._id),
             payload(creator=user_two._id, guid=project_four._id, status='asdf'),
             expect_errors=True)
         assert res.status_code == 401
 
         res = app.post_json_api(
-            url.format(collection_with_three_cgm._id),
+            url.format(collection_with_three_collection_submission._id),
             payload(creator=user_two._id, guid=project_four._id, status='asdf'),
             auth=user_two.auth,
             expect_errors=True)
@@ -4310,62 +4307,62 @@ class TestCollectedMetaList:
         project_five = ProjectFactory(creator=user_two)  # has referent perm
 
         res = app.post_json_api(
-            url.format(collection_with_three_cgm._id),
+            url.format(collection_with_three_collection_submission._id),
             payload(creator=user_two._id, guid=project_five._id, status='asdf'),
             auth=user_two.auth,
             expect_errors=True)
         assert res.status_code == 403
 
-    def test_with_permissions(self, app, collection_with_three_cgm, collection_with_one_cgm, collection_with_zero_cgm, user_one, user_two, project_four, url, payload, subject_one):
-        res = app.get(url.format(collection_with_three_cgm._id), auth=user_one.auth)
+    def test_with_permissions(self, app, collection_with_three_collection_submission, collection_with_one_collection_submission, collection_with_zero_collection_submission, user_one, user_two, project_four, url, payload, subject_one):
+        res = app.get(url.format(collection_with_three_collection_submission._id), auth=user_one.auth)
         assert len(res.json['data']) == 3
         assert res.status_code == 200
 
         res = app.post_json_api(
-            url.format(collection_with_three_cgm._id),
+            url.format(collection_with_three_collection_submission._id),
             payload(guid=project_four._id, status='asdf', subjects=[[subject_one._id]]),
             auth=user_one.auth)
         assert res.status_code == 201
 
-        res = app.get(url.format(collection_with_three_cgm._id), auth=user_one.auth)
+        res = app.get(url.format(collection_with_three_collection_submission._id), auth=user_one.auth)
         assert len(res.json['data']) == 4
         assert res.status_code == 200
 
-        res = app.get(url.format(collection_with_one_cgm._id), auth=user_one.auth)
+        res = app.get(url.format(collection_with_one_collection_submission._id), auth=user_one.auth)
         assert len(res.json['data']) == 1
         assert res.status_code == 200
 
-        res = app.get(url.format(collection_with_zero_cgm._id), auth=user_one.auth)
+        res = app.get(url.format(collection_with_zero_collection_submission._id), auth=user_one.auth)
         assert len(res.json['data']) == 0
         assert res.status_code == 200
 
-    def test_filters(self, app, collection_with_one_cgm, collection_with_three_cgm, project_two, project_four, user_one, subject_one, url, payload):
-        res = app.get('{}?filter[id]={}'.format(url.format(collection_with_three_cgm._id), project_two._id), auth=user_one.auth)
+    def test_filters(self, app, collection_with_one_collection_submission, collection_with_three_collection_submission, project_two, project_four, user_one, subject_one, url, payload):
+        res = app.get('{}?filter[id]={}'.format(url.format(collection_with_three_collection_submission._id), project_two._id), auth=user_one.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 1
-        res = app.get('{}?filter[status]=two'.format(url.format(collection_with_three_cgm._id)), auth=user_one.auth)
+        res = app.get('{}?filter[status]=two'.format(url.format(collection_with_three_collection_submission._id)), auth=user_one.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 1
-        res = app.get('{}?filter[collected_type]=asdf'.format(url.format(collection_with_three_cgm._id)), auth=user_one.auth)
+        res = app.get('{}?filter[collected_type]=asdf'.format(url.format(collection_with_three_collection_submission._id)), auth=user_one.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 0
 
         # Sanity
-        res = app.get('{}?filter[subjects]={}'.format(url.format(collection_with_three_cgm._id), subject_one._id), auth=user_one.auth)
+        res = app.get('{}?filter[subjects]={}'.format(url.format(collection_with_three_collection_submission._id), subject_one._id), auth=user_one.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 0
 
         # Add one with a subject to filter for it
         res = app.post_json_api(
-            url.format(collection_with_three_cgm._id),
+            url.format(collection_with_three_collection_submission._id),
             payload(guid=project_four._id, collected_type='asdf', subjects=[[subject_one._id]]),
             auth=user_one.auth)
         assert res.status_code == 201
 
-        res = app.get('{}?filter[subjects]={}'.format(url.format(collection_with_three_cgm._id), subject_one._id), auth=user_one.auth)
+        res = app.get('{}?filter[subjects]={}'.format(url.format(collection_with_three_collection_submission._id), subject_one._id), auth=user_one.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 1
-        res = app.get('{}?filter[collected_type]=asdf'.format(url.format(collection_with_three_cgm._id)), auth=user_one.auth)
+        res = app.get('{}?filter[collected_type]=asdf'.format(url.format(collection_with_three_collection_submission._id)), auth=user_one.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 1
 
@@ -4387,19 +4384,19 @@ class TestCollectedMetaSubjectFiltering(SubjectsFilterMixin):
 
     @pytest.fixture()
     def resource(self, user, collection, project_one, subject_one):
-        cgm = collection.collect_object(project_one, user, status='one', collected_type='asdf')
-        cgm.subjects.add(subject_one)
-        return cgm
+        collection_submission = collection.collect_object(project_one, user, status='one', collected_type='asdf')
+        collection_submission.subjects.add(subject_one)
+        return collection_submission
 
     @pytest.fixture()
     def resource_two(self, user, collection, project_two, subject_two):
-        cgm = collection.collect_object(project_two, user, status='one', collected_type='asdf')
-        cgm.subjects.add(subject_two)
-        return cgm
+        collection_submission = collection.collect_object(project_two, user, status='one', collected_type='asdf')
+        collection_submission.subjects.add(subject_two)
+        return collection_submission
 
     @pytest.fixture()
     def url(self, collection):
-        return '/{}collections/{}/collected_metadata/'.format(API_BASE, collection._id)
+        return '/{}collections/{}/collection_submissions/'.format(API_BASE, collection._id)
 
     def test_subject_filter_using_id_v_2_2(
             self, app, user, subject_one, subject_two, resource, resource_two,
@@ -4466,7 +4463,7 @@ class TestCollectedMetaSubjectFiltering(SubjectsFilterMixin):
         assert expected == actual
 
 
-class TestCollectedMetaSubjectsList(SubjectsListMixin):
+class TestCollectionSubmissionSubjectsList(SubjectsListMixin):
 
     @pytest.fixture()
     def project_one(self, user_admin_contrib, user_write_contrib, user_read_contrib):
@@ -4485,8 +4482,8 @@ class TestCollectedMetaSubjectsList(SubjectsListMixin):
 
     @pytest.fixture()
     def resource(self, user_admin_contrib, user_write_contrib, user_read_contrib, collection, project_one):
-        cgm = collection.collect_object(project_one, user_admin_contrib, status='one', collected_type='asdf')
-        return cgm
+        collection_submission = collection.collect_object(project_one, user_admin_contrib, status='one', collected_type='asdf')
+        return collection_submission
 
     def test_get_resource_subjects_permissions(self, app, user_write_contrib,
             user_read_contrib, user_non_contrib, resource, url):
@@ -4523,8 +4520,8 @@ class TestUpdateCollectedMetaSubjects(UpdateSubjectsMixin):
 
     @pytest.fixture()
     def resource(self, user_admin_contrib, user_write_contrib, user_read_contrib, collection, project_one):
-        cgm = collection.collect_object(project_one, user_admin_contrib, status='one', collected_type='asdf')
-        return cgm
+        collection_submission = collection.collect_object(project_one, user_admin_contrib, status='one', collected_type='asdf')
+        return collection_submission
 
     @pytest.fixture()
     def resource_type_plural(self, resource):
@@ -4551,8 +4548,8 @@ class TestCollectedMetaSubjectsRelationship(SubjectsRelationshipMixin):
 
     @pytest.fixture()
     def resource(self, user_admin_contrib, user_write_contrib, user_read_contrib, collection, project_one):
-        cgm = collection.collect_object(project_one, user_admin_contrib, status='one', collected_type='asdf')
-        return cgm
+        collection_submission = collection.collect_object(project_one, user_admin_contrib, status='one', collected_type='asdf')
+        return collection_submission
 
     @pytest.fixture()
     def url(self, collection, resource):
@@ -4560,7 +4557,7 @@ class TestCollectedMetaSubjectsRelationship(SubjectsRelationshipMixin):
 
 
 @pytest.mark.django_db
-class TestCollectedMetaDetail:
+class TestCollectionSubmissionDetail:
     @pytest.fixture()
     def user_two(self):
         return AuthUserFactory()
@@ -4578,10 +4575,10 @@ class TestCollectedMetaDetail:
         return CollectionFactory(creator=user_one, collected_type_choices=['asdf'], status_choices=['one', 'asdf', 'fdsa'])
 
     @pytest.fixture()
-    def cgm(self, user_one, collection, project_one, subject_one):
-        cgm = collection.collect_object(project_one, user_one, status='one', collected_type='asdf')
-        cgm.set_subjects([[subject_one._id]], Auth(collection.creator))
-        return cgm
+    def collection_submission(self, user_one, collection, project_one, subject_one):
+        collection_submission = collection.collect_object(project_one, user_one, status='one', collected_type='asdf')
+        collection_submission.set_subjects([[subject_one._id]], Auth(collection.creator))
+        return collection_submission
 
     @pytest.fixture()
     def second_collection(self, user_one, project_one):
@@ -4590,8 +4587,8 @@ class TestCollectedMetaDetail:
         return c
 
     @pytest.fixture()
-    def url(self, collection, cgm):
-        return '/{}collections/{}/collected_metadata/{}/'.format(API_BASE, collection._id, cgm.guid._id)
+    def url(self, collection, collection_submission):
+        return '/{}collections/{}/collected_metadata/{}/'.format(API_BASE, collection._id, collection_submission.guid._id)
 
     @pytest.fixture()
     def payload(self):
@@ -4604,7 +4601,7 @@ class TestCollectedMetaDetail:
             }
         return make_collection_payload
 
-    def test_no_permissions(self, app, user_two, project_one, collection, cgm, url, payload):
+    def test_no_permissions(self, app, user_two, project_one, collection, collection_submission, url, payload):
         # Private
         res = app.get(url, expect_errors=True)
         assert res.status_code == 401
@@ -4617,8 +4614,8 @@ class TestCollectedMetaDetail:
             payload(status='asdf'),
             expect_errors=True)
         assert res.status_code == 401
-        cgm.reload()
-        assert cgm.status != 'asdf'
+        collection_submission.reload()
+        assert collection_submission.status != 'asdf'
 
         res = app.patch_json_api(
             url,
@@ -4626,21 +4623,21 @@ class TestCollectedMetaDetail:
             auth=user_two.auth,
             expect_errors=True)
         assert res.status_code == 403
-        cgm.reload()
-        assert cgm.status != 'asdf'
+        collection_submission.reload()
+        assert collection_submission.status != 'asdf'
 
         # Public
         collection.is_public = True
         collection.save()
         res = app.get(url)
         assert res.status_code == 200
-        assert res.json['data']['id'] == cgm.guid._id
+        assert res.json['data']['id'] == collection_submission.guid._id
 
         res = app.get(url, auth=user_two.auth)
         assert res.status_code == 200
-        assert res.json['data']['id'] == cgm.guid._id
+        assert res.json['data']['id'] == collection_submission.guid._id
 
-    #   test_cgm_has_subjects_links_for_later_versions
+    #   test_collection_submission_has_subjects_links_for_later_versions
         res = app.get(url + '?version={}'.format(subjects_as_relationships_version))
         related_url = res.json['data']['relationships']['subjects']['links']['related']['href']
         expected_url = '{}subjects/'.format(url)
@@ -4654,8 +4651,8 @@ class TestCollectedMetaDetail:
             payload(status='asdf'),
             expect_errors=True)
         assert res.status_code == 401
-        cgm.reload()
-        assert cgm.status != 'asdf'
+        collection_submission.reload()
+        assert collection_submission.status != 'asdf'
 
         res = app.patch_json_api(
             url,
@@ -4663,8 +4660,8 @@ class TestCollectedMetaDetail:
             auth=user_two.auth,
             expect_errors=True)
         assert res.status_code == 403
-        cgm.reload()
-        assert cgm.status != 'asdf'
+        collection_submission.reload()
+        assert collection_submission.status != 'asdf'
 
         res = app.delete_json_api(
             url,
@@ -4680,8 +4677,8 @@ class TestCollectedMetaDetail:
             payload(status='asdf'),
             auth=user_two.auth)
         assert res.status_code == 200
-        cgm.reload()
-        assert cgm.status == 'asdf'
+        collection_submission.reload()
+        assert collection_submission.status == 'asdf'
 
         res = app.delete_json_api(
             url,
@@ -4701,8 +4698,8 @@ class TestCollectedMetaDetail:
         res = app.get(url, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 200
 
-        invalid_collection_url = '/{}collections/{}/collected_metadata/{}/'.format(API_BASE, 'abcde', project_one._id)
-        invalid_project_url = '/{}collections/{}/collected_metadata/{}/'.format(API_BASE, collection._id, 'abcde')
+        invalid_collection_url = '/{}collections/{}/collection_submissions/{}/'.format(API_BASE, 'abcde', project_one._id)
+        invalid_project_url = '/{}collections/{}/collection_submissions/{}/'.format(API_BASE, collection._id, 'abcde')
 
         res = app.get(invalid_collection_url, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 404
@@ -4710,7 +4707,7 @@ class TestCollectedMetaDetail:
         res = app.get(invalid_project_url, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 404
 
-    def test_with_permissions(self, app, collection, cgm, user_one, user_two, url, payload):
+    def test_with_permissions(self, app, collection, collection_submission, user_one, user_two, url, payload):
         res = app.get(url, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 200
 
@@ -4719,8 +4716,8 @@ class TestCollectedMetaDetail:
             payload(status='asdf'),
             auth=user_one.auth)
         assert res.status_code == 200
-        cgm.reload()
-        assert cgm.status == 'asdf'
+        collection_submission.reload()
+        assert collection_submission.status == 'asdf'
 
         # Public
         collection.is_public = True
@@ -4728,15 +4725,15 @@ class TestCollectedMetaDetail:
 
         res = app.get(url, auth=user_one.auth)
         assert res.status_code == 200
-        assert res.json['data']['id'] == cgm.guid._id
+        assert res.json['data']['id'] == collection_submission.guid._id
 
         res = app.patch_json_api(
             url,
             payload(status='fdsa'),
             auth=user_one.auth)
         assert res.status_code == 200
-        cgm.reload()
-        assert cgm.status == 'fdsa'
+        collection_submission.reload()
+        assert collection_submission.status == 'fdsa'
 
         res = app.delete_json_api(
             url,
@@ -4744,7 +4741,7 @@ class TestCollectedMetaDetail:
         )
         assert res.status_code == 204
 
-    def test_cannot_update_restricted_fields(self, app, collection, cgm, user_one, user_two, url, payload, project_one):
+    def test_cannot_update_restricted_fields(self, app, collection, collection_submission, user_one, user_two, url, payload, project_one):
         collection_two = CollectionFactory(creator=user_one)
         guid_two = ProjectFactory(creator=user_one).guids.first()
 
@@ -4769,7 +4766,7 @@ class TestCollectedMetaDetail:
             expect_errors=True)
         assert res.status_code == 200
 
-        cgm.reload()
-        assert cgm.creator == user_one
-        assert cgm.collection == collection
-        assert cgm.guid == project_one.guids.first()
+        collection_submission.reload()
+        assert collection_submission.creator == user_one
+        assert collection_submission.collection == collection
+        assert collection_submission.guid == project_one.guids.first()
