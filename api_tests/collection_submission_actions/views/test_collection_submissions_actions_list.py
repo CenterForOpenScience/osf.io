@@ -206,6 +206,21 @@ class TestSubmissionsActionsListPOSTBehavior:
         assert action.to_state == CollectionSubmissionStates.REJECTED
         assert collection_submission.state is CollectionSubmissionStates.REJECTED
 
+    def test_POST_cancel__writes_action_and_advances_state(self, app, collection_submission, node):
+        collection_submission.state_machine.set_state(CollectionSubmissionStates.PENDING)
+        collection_submission.save()
+        test_auth = configure_test_auth(node, UserRoles.ADMIN_USER)
+        payload = make_payload(collection_submission, trigger=CollectionSubmissionsTriggers.CANCEL.db_name)
+        app.post_json_api(POST_URL, payload, auth=test_auth)
+        collection_submission.refresh_from_db()
+        action = collection_submission.actions.last()
+
+        assert action.trigger == CollectionSubmissionsTriggers.CANCEL
+        assert action.creator.username == test_auth[0]
+        assert action.from_state == CollectionSubmissionStates.PENDING
+        assert action.to_state == CollectionSubmissionStates.IN_PROGRESS
+        assert collection_submission.state is CollectionSubmissionStates.IN_PROGRESS
+
     def test_POST_remove__writes_action_and_advances_state(self, app, collection_submission, node):
         collection_submission.state_machine.set_state(CollectionSubmissionStates.ACCEPTED)
         collection_submission.save()
