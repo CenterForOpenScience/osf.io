@@ -293,6 +293,35 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         if not is_admin:
             raise PermissionsError(f'{user} must have admin permissions.')
 
+    def _validate_cancel(self, event_data):
+        user = event_data.kwargs['user']
+        force = event_data.kwargs.get('force')
+        if force:
+            return
+
+        if user is None:
+            raise PermissionsError(f'{user} must have admin permissions.')
+
+        if not self.guid.referent.has_permission(user, ADMIN):
+            raise PermissionsError(f'{user} must have admin permissions.')
+
+    def _notify_cancel(self, event_data):
+        force = event_data.kwargs.get('force')
+        if force:
+            return
+
+        for contributor in self.guid.referent.contributors:
+            mails.send_mail(
+                to_addr=contributor.username,
+                mail=mails.COLLECTION_SUBMISSION_CANCEL(self.collection, self.guid.referent),
+                user=contributor,
+                remover=event_data.kwargs['user'],
+                is_admin=self.guid.referent.has_permission(contributor, ADMIN),
+                collection=self.collection,
+                node=self.guid.referent,
+                osf_contact_email=settings.OSF_CONTACT_EMAIL,
+            )
+
     def _make_public(self, event_data):
         if not self.guid.referent.is_public:
             self.guid.referent.set_privacy('public')
