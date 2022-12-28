@@ -48,7 +48,7 @@ from osf.models.quickfiles import QuickFilesNode  # noqa
 from osf.models.dismissed_alerts import DismissedAlert  # noqa
 from osf.models.action import ReviewAction  # noqa
 from osf.models.action import NodeRequestAction, PreprintRequestAction, ReviewAction, RegistrationAction, SchemaResponseAction, BaseAction, CollectionSubmissionAction  # noqa
-from osf.models.storage import ProviderAssetFile  # noqa
+from osf.models.storage import ProviderAssetFile, InstitutionAssetFile # noqa
 from osf.models.chronos import ChronosJournal, ChronosSubmission  # noqa
 from osf.models.notable_domain import NotableDomain, DomainReference  # noqa
 from osf.models.brand import Brand  # noqa

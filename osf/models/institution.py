@@ -18,6 +18,7 @@ from osf.models import base
 from osf.models.contributor import InstitutionalContributor
 from osf.models.institution_affiliation import InstitutionAffiliation
 from osf.models.mixins import Loggable, GuardianMixin
+from osf.models.storage import InstitutionAssetFile
 from website import mails
 from website import settings as website_settings
 
@@ -160,24 +161,23 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
 
     @property
     def logo_path(self):
-        if self.logo_name:
-            return '/static/img/institutions/shields/{}'.format(self.logo_name)
-        else:
+        try:
+            return self.asset_files.get(name='logo').file.url
+        except InstitutionAssetFile.DoesNotExist:
             return None
 
     @property
     def logo_path_rounded_corners(self):
-        logo_base = '/static/img/institutions/shields-rounded-corners/{}-rounded-corners.png'
-        if self.logo_name:
-            return logo_base.format(self.logo_name.replace('.png', ''))
-        else:
+        try:
+            return self.asset_files.get(name='logo_rounded_corners').file.url
+        except InstitutionAssetFile.DoesNotExist:
             return None
 
     @property
     def banner_path(self):
-        if self.banner_name:
-            return '/static/img/institutions/banners/{}'.format(self.banner_name)
-        else:
+        try:
+            return self.asset_files.get(name='banner').file.url
+        except InstitutionAssetFile.DoesNotExist:
             return None
 
     def update_search(self):

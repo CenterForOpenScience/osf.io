@@ -5,7 +5,7 @@ from django.utils import timezone
 from past.builtins import basestring
 
 from osf.models import Institution
-from osf_tests.factories import InstitutionFactory, AuthUserFactory, UserFactory
+from osf_tests.factories import InstitutionFactory, AuthUserFactory, UserFactory, InstitutionAssetFileFactory
 from website import mails, settings
 
 
@@ -26,38 +26,41 @@ def test_querying_on_domains():
 
 @pytest.mark.django_db
 def test_institution_banner_path_none():
-    inst = InstitutionFactory(banner_name='kittens.png')
-    assert inst.banner_path is not None
-    inst.banner_name = None
+    inst = InstitutionFactory()
     assert inst.banner_path is None
+    InstitutionAssetFileFactory(institutions=[inst], name='banner')
+    assert inst.banner_path is not None
 
 
 @pytest.mark.django_db
 def test_institution_logo_path_none():
-    inst = InstitutionFactory(logo_name='kittens.png')
-    assert inst.logo_path is not None
-    inst.logo_name = None
+    inst = InstitutionFactory()
     assert inst.logo_path is None
+    InstitutionAssetFileFactory(institutions=[inst], name='logo')
+    assert inst.logo_path is not None
 
 
 @pytest.mark.django_db
 def test_institution_logo_path():
-    inst = InstitutionFactory(logo_name='osf-shield.png')
-    expected_logo_path = '/static/img/institutions/shields/osf-shield.png'
+    inst = InstitutionFactory()
+    logo = InstitutionAssetFileFactory(institutions=[inst], name='logo')
+    expected_logo_path = logo.file.url
     assert inst.logo_path == expected_logo_path
 
 
 @pytest.mark.django_db
 def test_institution_logo_path_rounded_corners():
-    inst = InstitutionFactory(logo_name='osf-shield.png')
-    expected_logo_path = '/static/img/institutions/shields-rounded-corners/osf-shield-rounded-corners.png'
+    inst = InstitutionFactory()
+    logo = InstitutionAssetFileFactory(institutions=[inst], name='logo_rounded_corners')
+    expected_logo_path = logo.file.url
     assert inst.logo_path_rounded_corners == expected_logo_path
 
 
 @pytest.mark.django_db
 def test_institution_banner_path():
     inst = InstitutionFactory(banner_name='osf-banner.png')
-    expected_banner_path = '/static/img/institutions/banners/osf-banner.png'
+    logo = InstitutionAssetFileFactory(institutions=[inst], name='banner')
+    expected_banner_path = logo.file.url
     assert inst.banner_path == expected_banner_path
 
 
