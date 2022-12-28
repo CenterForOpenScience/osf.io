@@ -1400,7 +1400,7 @@ msgid ""
 "<h4>We've updated our <a target=\"_blank\" "
 "href=\"https://support.rdm.nii.ac.jp/terms\">Terms"
 " of Use</a> and <a target=\"_blank\" "
-"href=\"https://support.rdm.nii.ac.jp/terms/privacy\">Privacy"
+"href=\"https://support.rdm.nii.ac.jp/terms/\">Privacy"
 " Policy</a>. Please read them carefully.</h4>"
 msgstr ""
 
