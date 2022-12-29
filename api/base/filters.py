@@ -53,9 +53,7 @@ class OSFOrderingFilter(OrderingFilter):
     def filter_queryset(self, request, queryset, view):
         ordering = self.get_ordering(request, queryset, view)
         if isinstance(queryset, DjangoQuerySet):
-            if queryset.ordered:
-                return queryset
-            elif ordering and getattr(queryset.query, 'distinct_fields', None):
+            if ordering and getattr(queryset.query, 'distinct_fields', None):
                 order_fields = tuple([field.lstrip('-') for field in ordering])
                 distinct_fields = queryset.query.distinct_fields
                 queryset.query.distinct_fields = tuple(set(distinct_fields + order_fields))

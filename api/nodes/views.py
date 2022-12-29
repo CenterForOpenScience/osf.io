@@ -426,7 +426,6 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
     serializer_class = NodeContributorsSerializer
     view_category = 'nodes'
     view_name = 'node-contributors'
-    ordering = ('_order',)  # default ordering
 
     def get_resource(self):
         return self.get_node()
@@ -551,7 +550,6 @@ class NodeImplicitContributorsList(JSONAPIBaseView, generics.ListAPIView, ListFi
     serializer_class = UserSerializer
     view_category = 'nodes'
     view_name = 'node-implicit-contributors'
-    ordering = ('_order',)  # default ordering
 
     def get_default_queryset(self):
         node = self.get_node()
@@ -605,14 +603,15 @@ class NodeBibliographicContributorsList(BaseContributorList, NodeMixin):
     serializer_class = NodeContributorsSerializer
     view_category = 'nodes'
     view_name = 'node-bibliographic-contributors'
-    ordering = ('_order',)  # default ordering
 
     def get_resource(self):
         return self.get_node()
 
     def get_default_queryset(self):
         contributors = super(NodeBibliographicContributorsList, self).get_default_queryset()
-        return contributors.filter(visible=True)
+        return contributors.filter(visible=True).annotate(
+            modified=F('node__modified'),
+        )
 
 
 class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
