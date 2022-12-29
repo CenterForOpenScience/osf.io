@@ -78,6 +78,10 @@ a {
     left:0;
 }
 
+.footBanners > a {
+    color: #595959;
+}
+
 .warningBannerText {
     margin-left: 10%;
     margin-right: 75px;
