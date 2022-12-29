@@ -139,7 +139,7 @@
      ## TODO: shouldn't always have the watermark class
     ${self.content_wrap()}
 
-<div class="footBanners">
+<div class="footBanners" role="contentinfo">
     <div id="IEDepreciationBanner"  class="alert warningBanner">
         <div class="warningBannerText">
             OSF does not support the use of Internet Explorer. For optimal performance, please switch to another browser.
@@ -384,7 +384,7 @@
 </%def>
 
 <%def name="content_wrap()">
-    <div class="watermarked">
+    <div class="watermarked" role="main">
         <div class="container ${self.container_class()}" role="main">
             % if status:
                 ${self.alert()}
