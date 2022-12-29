@@ -3,7 +3,7 @@
     <div class="container-fluid">
         <div class="row">
             <div class="col-sm-12 col-md-8 col-md-offset-2">
-                <p>
+                <p class="footer-links">
                     <span>
                         Copyright &copy; 2011-${datetime.utcnow().year}
                     </span>

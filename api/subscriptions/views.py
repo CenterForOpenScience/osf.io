@@ -84,7 +84,7 @@ class AbstractProviderSubscriptionDetail(SubscriptionDetail):
 
     def __init__(self, *args, **kwargs):
         assert issubclass(self.provider_class, AbstractProvider), 'Class must be subclass of AbstractProvider'
-        return super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def get_object(self):
         subscription_id = self.kwargs['subscription_id']
