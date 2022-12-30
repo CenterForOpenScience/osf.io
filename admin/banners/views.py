@@ -29,7 +29,7 @@ def get_blackout_dates(current_banner_id=None):
 class BannerList(PermissionRequiredMixin, ListView):
     paginate_by = 25
     template_name = 'banners/list.html'
-    ordering_fields = ('start_date', )
+    ordering = 'start_date'
     permission_required = 'osf.view_scheduledbanner'
     raise_exception = True
     model = ScheduledBanner

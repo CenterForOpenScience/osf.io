@@ -15,7 +15,6 @@ from api.actions.views import get_review_actions_queryset
 from api.base.pagination import PreprintContributorPagination
 from api.base.exceptions import Conflict
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
-from api.base.filters import ListFilterMixin, PreprintFilterMixin
 from api.base.parsers import (
     JSONAPIOnetoOneRelationshipParser,
     JSONAPIOnetoOneRelationshipParserForRegularJSON,
@@ -61,6 +60,7 @@ from api.requests.views import PreprintRequestMixin
 from api.subjects.views import BaseResourceSubjectsList
 from api.base.metrics import PreprintMetricsViewMixin
 from osf.metrics import PreprintDownload, PreprintView
+from api.base.filters import ListFilterMixin, PreprintFilterMixin, RawListOrderingFilter
 
 class PreprintMixin(NodeMixin):
     serializer_class = PreprintSerializer
@@ -101,8 +101,7 @@ class PreprintList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.ListCreat
 
     serializer_class = PreprintSerializer
 
-    ordering_fields = ('-created')
-    ordering_fields = ('created', 'date_last_transitioned')
+    ordering = ('-created', 'date_last_transitioned')
     view_category = 'preprints'
     view_name = 'preprint-list'
     metric_map = {
@@ -126,9 +125,11 @@ class PreprintList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.ListCreat
         # Use get_metrics_queryset to return an queryset with annotated metrics
         # iff ?metrics query param is present
         if self.metrics_requested:
+            self.filter_backends = [RawListOrderingFilter, ]
             return self.get_metrics_queryset(queryset)
         else:
-            return queryset
+            # Refresh qs by removing distinct
+            return Preprint.objects.filter(id__in=queryset.values_list('id', flat=True))
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -507,7 +508,7 @@ class PreprintActionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilter
     serializer_class = ReviewActionSerializer
     model_class = ReviewAction
 
-    ordering_fields = ('-created',)
+    ordering = ('-created',)
     view_category = 'preprints'
     view_name = 'preprint-review-action-list'
 

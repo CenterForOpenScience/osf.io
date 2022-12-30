@@ -24,7 +24,7 @@ from osf.models import Institution, BaseFileNode, AbstractNode, OSFUser, Collect
 from website.search import search
 from website.search.exceptions import MalformedQueryError
 from website.search.util import build_query
-from api.base.filters import ElasticOSFOrderingFilter
+from api.base.filters import RawListOrderingFilter
 
 
 class BaseSearchView(JSONAPIBaseView, generics.ListCreateAPIView):
@@ -38,7 +38,7 @@ class BaseSearchView(JSONAPIBaseView, generics.ListCreateAPIView):
     )
 
     pagination_class = SearchPagination
-    filter_backends = [ElasticOSFOrderingFilter, ]
+    filter_backends = [RawListOrderingFilter, ]
 
     @property
     def search_fields(self):

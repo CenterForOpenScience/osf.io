@@ -14,7 +14,7 @@ from osf.metrics import UserInstitutionProjectCounts
 from osf.utils import permissions as osf_permissions
 
 from api.base import permissions as base_permissions
-from api.base.filters import ListFilterMixin
+from api.base.filters import ListFilterMixin, RawListOrderingFilter
 from api.base.views import JSONAPIBaseView
 from api.base.serializers import JSONAPISerializer
 from api.base.utils import get_object_or_error, get_user_auth
@@ -79,7 +79,7 @@ class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     view_category = 'institutions'
     view_name = 'institution-list'
 
-    ordering_fields = ('name', )
+    ordering = ('name', )
 
     def get_default_queryset(self):
         return Institution.objects.filter(_id__isnull=False, is_deleted=False)
@@ -126,7 +126,7 @@ class InstitutionNodeList(JSONAPIBaseView, generics.ListAPIView, InstitutionMixi
     view_category = 'institutions'
     view_name = 'institution-nodes'
 
-    ordering_fields = ('-modified', )
+    ordering = ('-modified', )
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
@@ -161,7 +161,7 @@ class InstitutionUserList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView
     view_category = 'institutions'
     view_name = 'institution-users'
 
-    ordering_fields = ('-id',)
+    ordering = ('-id',)
 
     def get_default_queryset(self):
         institution = self.get_institution()
@@ -206,11 +206,16 @@ class InstitutionRegistrationList(InstitutionNodeList):
     serializer_class = RegistrationSerializer
     view_name = 'institution-registrations'
 
-    ordering_fields = ('-modified', )
+    ordering = ('-modified', )
 
     def get_default_queryset(self):
         institution = self.get_institution()
-        return institution.nodes.filter(is_deleted=False, is_public=True, type='osf.registration', retraction__isnull=True)
+        return institution.nodes.filter(
+            is_deleted=False,
+            is_public=True,
+            type='osf.registration',
+            retraction__isnull=True,
+        )
 
     def get_queryset(self):
         return self.get_queryset_from_request()
@@ -393,6 +398,7 @@ class InstitutionSummaryMetrics(JSONAPIBaseView, generics.RetrieveAPIView, Insti
 
     required_read_scopes = [CoreScopes.INSTITUTION_METRICS_READ]
     required_write_scopes = [CoreScopes.NULL]
+    filter_backends = [RawListOrderingFilter, ]
 
     view_category = 'institutions'
     view_name = 'institution-summary-metrics'
@@ -414,6 +420,7 @@ class InstitutionImpactList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIVi
 
     required_read_scopes = [CoreScopes.INSTITUTION_METRICS_READ]
     required_write_scopes = [CoreScopes.NULL]
+    filter_backends = [RawListOrderingFilter, ]
 
     view_category = 'institutions'
 
@@ -474,8 +481,8 @@ class InstitutionDepartmentList(InstitutionImpactList):
     serializer_class = InstitutionDepartmentMetricsSerializer
     renderer_classes = tuple(api_settings.DEFAULT_RENDERER_CLASSES, ) + (InstitutionDepartmentMetricsCSVRenderer, )
 
-    ordering_fields = ('-number_of_users', 'name', )
-    ordering_fields = ('-number_of_users', 'name', )
+    ordering_fields = ('number_of_users', 'name',)
+    ordering = ('-number_of_users', 'name', )
 
     def _format_search(self, search, default_kwargs=None):
         results = search.execute()
@@ -500,7 +507,7 @@ class InstitutionUserMetricsList(InstitutionImpactList):
     renderer_classes = tuple(api_settings.DEFAULT_RENDERER_CLASSES, ) + (InstitutionUserMetricsCSVRenderer, )
 
     ordering_fields = ('user_name', 'department', )
-    ordering_fields = ('user_name', )
+    ordering = ('user_name', )
 
     def _format_search(self, search, default_kwargs=None):
         results = search.execute()

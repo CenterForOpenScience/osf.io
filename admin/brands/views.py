@@ -19,7 +19,7 @@ from admin.brands.forms import BrandForm
 class BrandList(PermissionRequiredMixin, ListView):
     paginate_by = 20
     template_name = 'brands/list.html'
-    ordering_fields = ('id', )
+    ordering = 'id'
     permission_required = 'osf.view_brand'
     raise_exception = True
     model = Brand

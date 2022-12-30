@@ -469,7 +469,7 @@ class BaseChildrenList(JSONAPIBaseView, NodesFilterMixin):
         base_permissions.TokenHasScope,
         ExcludeWithdrawals,
     )
-    ordering_fields = ('-modified',)
+    ordering = ('-modified',)
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
@@ -505,12 +505,12 @@ class BaseContributorDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
 class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
-    ordering_fields = ('-modified',)
+    ordering = ('-modified',)
 
     def get_default_queryset(self):
         node = self.get_node()
 
-        return node.contributor_set.all().prefetch_related('user__guids')
+        return node.contributor_set.all().annotate(modified=F('user__modified')).prefetch_related('user__guids')
 
     def get_queryset(self):
         queryset = self.get_queryset_from_request()
@@ -560,7 +560,7 @@ class BaseNodeLinksDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
 class BaseNodeLinksList(JSONAPIBaseView, generics.ListAPIView):
 
-    ordering_fields = ('-modified',)
+    ordering = ('-modified',)
 
     def get_queryset(self):
         auth = get_user_auth(self.request)
@@ -593,7 +593,7 @@ class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
     view_category = None
     view_name = None
 
-    ordering_fields = ('-modified',)
+    ordering = ('-modified',)
 
     # TODO: This class no longer exists
     # model_class = Pointer

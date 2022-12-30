@@ -603,7 +603,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         Nodes that user has perms to through contributorship or group membership
         """
         from osf.models import Node
-        return Node.objects.get_nodes_for_user(self)
+        node_ids = Node.objects.get_nodes_for_user(self).values_list('id', flat=True)
+        return Node.objects.filter(id__in=node_ids)
 
     def set_unusable_username(self):
         """Sets username to an unusable value. Used for, e.g. for invited contributors

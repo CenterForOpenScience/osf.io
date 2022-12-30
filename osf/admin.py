@@ -46,7 +46,7 @@ class LicenseAdmin(admin.ModelAdmin):
 
 class NotableDomainAdmin(admin.ModelAdmin):
     fields = list_displayable_fields(NotableDomain)
-    ordering_fields = ('-id',)
+    ordering = '-id'
     list_display = ('domain', 'note', 'number_of_references')
     list_filter = ('note',)
     search_fields = ('domain',)

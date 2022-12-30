@@ -73,13 +73,16 @@ class CollectionMixin(object):
         return collection
 
     def collection_preprints(self, collection, user):
-        return Preprint.objects.can_view(
+        preprint_ids = Preprint.objects.can_view(
             Preprint.objects.filter(
                 guids__in=collection.active_guids,
                 deleted__isnull=True,
             ),
             user=user,
-        )
+        ).values_list('id', flat=True)
+
+        # Reload list to end sorting on distinct
+        return Preprint.objects.filter(id__in=preprint_ids)
 
     def get_collection_submission(self, check_object_permissions=True):
         collection_submission = get_object_or_error(
@@ -169,7 +172,7 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
     view_name = 'collection-list'
     model_class = Collection
 
-    ordering_fields = ('-modified', )  # default ordering
+    ordering = ('-modified', )  # default ordering
 
     def get_default_queryset(self):
         user = self.request.user
@@ -560,7 +563,7 @@ class LinkedNodesList(BaseLinkedList, CollectionMixin, NodeOptimizationMixin):
     view_category = 'collections'
     view_name = 'linked-nodes'
 
-    ordering_fields = ('-modified',)
+    ordering = ('-modified',)
 
     def get_queryset(self):
         auth = get_user_auth(self.request)
@@ -652,11 +655,20 @@ class LinkedRegistrationsList(BaseLinkedList, CollectionMixin):
     view_category = 'collections'
     view_name = 'linked-registrations'
 
-    ordering_fields = ('-modified',)
+    ordering = ('-modified',)
 
     def get_queryset(self):
         auth = get_user_auth(self.request)
-        return Registration.objects.filter(guids__in=self.get_collection().active_guids.all(), is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).order_by('-modified')
+        registration_ids = Registration.objects.filter(
+            guids__in=self.get_collection().active_guids.all(),
+            is_deleted=False,
+        ).can_view(
+            user=auth.user,
+            private_link=auth.private_link,
+        ).values_list('id', flat=True)
+
+        # allow refresh queryset to aloow ordering again after distinct
+        return Registration.objects.filter(id__in=registration_ids)
 
     # overrides APIView
     def get_parser_context(self, http_request):
@@ -680,7 +692,7 @@ class LinkedPreprintsList(BaseLinkedList, CollectionMixin):
     view_category = 'collections'
     view_name = 'linked-preprints'
 
-    ordering_fields = ('-modified',)
+    ordering = ('-modified',)
 
     def get_queryset(self):
         auth = get_user_auth(self.request)
@@ -762,7 +774,7 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
     view_name = 'node-pointers'
     model_class = CollectionSubmission
 
-    ordering_fields = ('-modified',)
+    ordering = ('modified',)
 
     def get_queryset(self):
         return self.get_collection().collectionsubmission_set.filter(

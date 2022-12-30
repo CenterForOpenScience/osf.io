@@ -9,6 +9,7 @@ from api.base.permissions import TokenHasScope
 from api.base.pagination import MaxSizePagination
 from api.waffle.serializers import WaffleSerializer
 from framework.auth.oauth_scopes import CoreScopes
+from api.base.filters import RawListOrderingFilter
 
 
 class WaffleList(JSONAPIBaseView, generics.ListAPIView):
@@ -61,6 +62,7 @@ class WaffleList(JSONAPIBaseView, generics.ListAPIView):
     view_category = 'waffle'
     view_name = 'waffle-list'
     pagination_class = MaxSizePagination
+    filter_backends = [RawListOrderingFilter, ]
 
     # overrides ListAPIView
     def get_queryset(self):

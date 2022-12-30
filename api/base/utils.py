@@ -152,7 +152,10 @@ def default_node_permission_queryset(user, model_cls):
     Implicit admin permissions not included here (NodeList, UserNodes, for example, don't factor this in.)
     """
     assert model_cls in {Node, Registration}
-    return model_cls.objects.get_nodes_for_user(user, include_public=True)
+
+    # refresh queryset to remove distinct ordering
+    instance_ids = model_cls.objects.get_nodes_for_user(user, include_public=True).values_list('id', flat=True)
+    return model_cls.objects.filter(id__in=instance_ids)
 
 def default_node_list_permission_queryset(user, model_cls, **annotations):
     # **DO NOT** change the order of the querysets below.

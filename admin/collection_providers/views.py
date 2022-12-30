@@ -59,7 +59,7 @@ class CreateCollectionProvider(PermissionRequiredMixin, CreateView):
 class CollectionProviderList(PermissionRequiredMixin, ListView):
     paginate_by = 25
     template_name = 'collection_providers/list.html'
-    ordering_fields = ('name', )
+    ordering = 'name'
     permission_required = 'osf.change_collectionprovider'
     raise_exception = True
     model = CollectionProvider

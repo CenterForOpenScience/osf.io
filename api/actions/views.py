@@ -165,7 +165,7 @@ class ReviewActionListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFi
     serializer_class = ReviewActionSerializer
     model_class = ReviewAction
 
-    ordering_fields = ('-created',)
+    ordering = ('-created',)
     view_category = 'actions'
     view_name = 'review-action-list'
 

@@ -28,7 +28,7 @@ FIELDS_TO_NOT_IMPORT_EXPORT = ['access_token', 'share_source', 'subjects_accepta
 class PreprintProviderList(PermissionRequiredMixin, ListView):
     paginate_by = 25
     template_name = 'preprint_providers/list.html'
-    ordering_fields = ('name', )
+    ordering = 'name'
     permission_required = 'osf.view_preprintprovider'
     raise_exception = True
     model = PreprintProvider

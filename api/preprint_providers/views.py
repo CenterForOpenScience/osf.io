@@ -2,7 +2,6 @@ from api.base.views import DeprecatedView
 from api.preprint_providers.serializers import DeprecatedPreprintProviderSerializer
 from api.providers import views
 
-
 class DeprecatedPreprintProviderList(DeprecatedView, views.PreprintProviderList):
     max_version = '2.7'
     view_category = 'preprint_providers'
@@ -22,10 +21,13 @@ class DeprecatedPreprintProviderPreprintList(DeprecatedView, views.PreprintProvi
 class DeprecatedPreprintProviderTaxonomies(DeprecatedView, views.PreprintProviderTaxonomies):
     view_category = 'preprint_providers'
     max_version = '2.7'
+    ordering = ('is_other', 'text')
 
 class DeprecatedPreprintProviderHighlightedSubjectList(DeprecatedView, views.PreprintProviderHighlightedSubjectList):
     view_category = 'preprint_providers'
     max_version = '2.7'
+    ordering = ('is_other', 'text')
+
 
 class DeprecatedPreprintProviderLicenseList(DeprecatedView, views.PreprintProviderLicenseList):
     view_category = 'preprint_providers'

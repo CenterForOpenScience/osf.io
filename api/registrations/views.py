@@ -9,7 +9,6 @@ from osf.utils.workflows import ApprovalStates
 from api.base import permissions as base_permissions
 from api.base import generic_bulk_views as bulk_views
 from api.base.exceptions import Gone
-from api.base.filters import ListFilterMixin
 from api.base.views import (
     JSONAPIBaseView,
     BaseChildrenList,
@@ -41,6 +40,7 @@ from api.identifiers.serializers import RegistrationIdentifierSerializer
 from api.nodes.views import NodeIdentifierList, NodeBibliographicContributorsList, NodeSubjectsList, NodeSubjectsRelationship
 from api.users.views import UserMixin
 from api.users.serializers import UserSerializer
+from api.base.filters import ListFilterMixin, RawListOrderingFilter
 
 from api.nodes.permissions import (
     ReadOnlyIfRegistration,
@@ -134,7 +134,6 @@ class RegistrationList(JSONAPIBaseView, generics.ListCreateAPIView, bulk_views.B
     view_category = 'registrations'
     view_name = 'registration-list'
 
-    ordering_fields = ('-modified',)
     model_class = Registration
 
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
@@ -179,7 +178,16 @@ class RegistrationList(JSONAPIBaseView, generics.ListCreateAPIView, bulk_views.B
             # If skip_uneditable=True in query_params, skip nodes for which the user
             # does not have EDIT permissions.
             if is_truthy(self.request.query_params.get('skip_uneditable', False)):
-                return Registration.objects.get_nodes_for_user(auth.user, WRITE_NODE, registrations)
+                registration_ids = Registration.objects.get_nodes_for_user(
+                    auth.user,
+                    WRITE_NODE,
+                    registrations,
+                ).distinct('id').values_list(
+                    'id',
+                    flat=True,
+                )
+
+                return Registration.objects.filter(id__in=registration_ids)
 
             for registration in registrations:
                 if not registration.can_edit(auth):
@@ -191,6 +199,15 @@ class RegistrationList(JSONAPIBaseView, generics.ListCreateAPIView, bulk_views.B
         # If attempting to filter on a blacklisted field, exclude withdrawals.
         if blacklisted:
             registrations = registrations.exclude(retraction__isnull=False)
+
+        # needs `.distinct('id')` for tag filtering to work, but can't use distinct on ORDER_BY sort
+        registration_ids = registrations.distinct('id').values_list('id', flat=True)
+        registrations = Registration.objects.filter(
+            id__in=registration_ids,
+        ).annotate(
+            revision_state=annotations.REVISION_STATE,
+            **resource_annotations.make_open_practice_badge_annotations(),
+        )
 
         return registrations.select_related(
             'root',
@@ -286,7 +303,8 @@ class RegistrationContributorsList(BaseContributorList, RegistrationMixin, UserM
 
     def get_default_queryset(self):
         node = self.get_node(check_object_permissions=False)
-        return node.contributor_set.all().prefetch_related('user__guids')
+        from django.db.models import F
+        return node.contributor_set.all().prefetch_related('user__guids').annotate(modified=F('user__modified'))
 
 
 class RegistrationContributorDetail(BaseContributorDetail, RegistrationMixin, UserMixin):
@@ -407,6 +425,7 @@ class RegistrationStorageProvidersList(NodeStorageProvidersList, RegistrationMix
 
     view_category = 'registrations'
     view_name = 'registration-storage-providers'
+    filter_backends = [RawListOrderingFilter, ]
 
 
 class RegistrationNodeLinksList(BaseNodeLinksList, RegistrationMixin):
@@ -477,6 +496,7 @@ class RegistrationNodeLinksList(BaseNodeLinksList, RegistrationMixin):
 
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NULL]
+    filter_backends = [RawListOrderingFilter, ]
 
     # TODO: This class doesn't exist
     # model_class = Pointer
@@ -567,7 +587,7 @@ class RegistrationFilesList(NodeFilesList, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-files'
 
-    ordering_fields = ('modified', 'name', 'date_modified', )
+    ordering = ('modified', 'name', 'date_modified', )
     serializer_class = RegistrationFileSerializer
 
 
@@ -577,6 +597,7 @@ class RegistrationFileDetail(NodeFileDetail, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-file-detail'
     serializer_class = RegistrationFileSerializer
+    filter_backends = [RawListOrderingFilter, ]
 
 
 class RegistrationInstitutionsList(NodeInstitutionsList, RegistrationMixin):
@@ -659,6 +680,7 @@ class RegistrationLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveAPIV
 
     serializer_class = LinkedNodesRelationshipSerializer
     parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+    filter_backends = [RawListOrderingFilter, ]
 
     def get_object(self):
         node = self.get_node(check_object_permissions=False)
@@ -826,7 +848,7 @@ class RegistrationActionList(JSONAPIBaseView, ListFilterMixin, generics.ListCrea
     view_name = 'registration-actions-list'
 
     serializer_class = RegistrationActionSerializer
-    ordering_fields = ('-created',)
+    ordering = ('-created',)
     node_lookup_url_kwarg = 'node_id'
 
     def get_registration(self):

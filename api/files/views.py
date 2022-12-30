@@ -130,7 +130,7 @@ class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
     view_category = 'files'
     view_name = 'file-versions'
 
-    ordering_fields = ('-modified',)
+    ordering = ('-modified',)
 
     def get_queryset(self):
         self.file = self.get_file()
@@ -194,7 +194,7 @@ class FileMetadataRecordsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
     view_category = 'files'
     view_name = 'metadata-records'
 
-    ordering_fields = ('-created',)
+    ordering = ('-created',)
 
     def get_queryset(self):
         return self.get_file().records.all()

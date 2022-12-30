@@ -41,7 +41,7 @@ class TokenList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin):
 
     renderer_classes = [JSONRendererWithESISupport, JSONAPIRenderer, ]  # Hide from web-browsable API tool
 
-    ordering_fields = ('-id',)
+    ordering = ('-id',)
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
 
     def get_default_queryset(self):

@@ -31,7 +31,7 @@ class RegistrationSchemaList(JSONAPIBaseView, generics.ListAPIView, ListFilterMi
     view_category = 'schemas'
     view_name = 'registration-schema-list'
 
-    ordering_fields = ('-id',)
+    ordering = ('-id',)
 
     def get_default_queryset(self):
         return RegistrationSchema.objects.get_latest_versions(self.request)
@@ -76,7 +76,7 @@ class FileMetadataSchemaList(JSONAPIBaseView, generics.ListAPIView):
     view_category = 'schemas'
     view_name = 'file-metadata-schemas'
 
-    ordering_fields = ('-id',)
+    ordering = ('-id',)
 
     # overrides ListCreateAPIView
     def get_queryset(self):
@@ -118,7 +118,7 @@ class RegistrationSchemaBlocks(JSONAPIBaseView, generics.ListAPIView):
     serializer_class = RegistrationSchemaBlockSerializer
     view_category = 'schemas'
     view_name = 'registration-schema-blocks'
-    ordering_fields = ('_order',)
+    ordering = ('_order',)
 
     def get_queryset(self):
         schema_id = self.kwargs.get('schema_id')

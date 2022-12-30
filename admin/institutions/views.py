@@ -22,7 +22,7 @@ from osf.models import Institution, Node, OSFUser
 class InstitutionList(PermissionRequiredMixin, ListView):
     paginate_by = 25
     template_name = 'institutions/list.html'
-    ordering_fields = ('name', )
+    ordering = 'name'
     permission_required = 'osf.view_institution'
     raise_exception = True
     model = Institution
@@ -146,7 +146,7 @@ class CreateInstitution(PermissionRequiredMixin, CreateView):
 class InstitutionNodeList(PermissionRequiredMixin, ListView):
     template_name = 'institutions/node_list.html'
     paginate_by = 25
-    ordering_fields = ('modified', )
+    ordering = 'modified'
     permission_required = 'osf.view_node'
     raise_exception = True
     model = Node

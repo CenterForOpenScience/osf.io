@@ -22,6 +22,7 @@ from framework.auth.oauth_scopes import CoreScopes
 from framework.exceptions import PermissionsError
 from osf.models import AbstractNode, Comment, BaseFileNode
 from addons.wiki.models import WikiPage
+from api.base.filters import RawListOrderingFilter
 
 
 class CommentMixin(object):
@@ -151,11 +152,12 @@ class CommentReportsList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMix
     required_write_scopes = [CoreScopes.COMMENT_REPORTS_WRITE]
 
     serializer_class = CommentReportSerializer
+    filter_backends = [RawListOrderingFilter, ]
 
     view_category = 'comments'
     view_name = 'comment-reports'
 
-    ordering_fields = ('-modified',)
+    ordering = ('-modified',)
 
     def get_queryset(self):
         user_id = self.request.user._id

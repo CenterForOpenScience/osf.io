@@ -14,13 +14,11 @@ from api.base.exceptions import (
 from api.base.serializers import RelationshipField, ShowIfVersion, TargetField
 from dateutil import parser as date_parser
 from django.core.exceptions import ValidationError
-from django.db.models import QuerySet as DjangoQuerySet
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 from rest_framework import serializers as ser
 from rest_framework.filters import OrderingFilter
 from osf.models import Subject, Preprint
 from osf.models.base import GuidMixin
-from functools import cmp_to_key
 
 def lowercase(lower):
     if hasattr(lower, '__call__'):
@@ -49,21 +47,12 @@ def sort_multiple(fields):
 
 class OSFOrderingFilter(OrderingFilter):
     """Adaptation of rest_framework.filters.OrderingFilter to work with modular-odm."""
-    # override
-    def filter_queryset(self, request, queryset, view):
-        ordering = self.get_ordering(request, queryset, view)
-        if isinstance(queryset, DjangoQuerySet):
-            if ordering and getattr(queryset.query, 'distinct_fields', None):
-                order_fields = tuple([field.lstrip('-') for field in ordering])
-                distinct_fields = queryset.query.distinct_fields
-                queryset.query.distinct_fields = tuple(set(distinct_fields + order_fields))
-            return super(OSFOrderingFilter, self).filter_queryset(request, queryset, view)
-        if ordering:
-            if isinstance(ordering, (list, tuple)):
-                sorted_list = sorted(queryset, key=cmp_to_key(sort_multiple(ordering)))
-                return sorted_list
-            return queryset.sort(*ordering)
-        return queryset
+
+    def get_ordering(self, request, queryset, view):
+        assert isinstance(queryset, QuerySet) or issubclass(queryset.__class__, QuerySet), \
+            f' please return a QuerySet or use different ordering filter for {view}'
+
+        return super().get_ordering(request, queryset, view)
 
     def get_serializer_source_field(self, view, request):
         """
@@ -99,6 +88,8 @@ class OSFOrderingFilter(OrderingFilter):
         :returns array of source fields for sorting.
         """
         valid_fields = super(OSFOrderingFilter, self).remove_invalid_fields(queryset, fields, view, request)
+        sort_param = request.query_params.get('sort')
+        valid_fields += [sort_param for item in queryset.query.annotations.keys() if item == sort_param.lstrip('-')]
         if not valid_fields:
             for invalid_field in fields:
                 ordering_sign = '-' if invalid_field[0] == '-' else ''
@@ -111,12 +102,14 @@ class OSFOrderingFilter(OrderingFilter):
         return valid_fields
 
 
-class ElasticOSFOrderingFilter(OSFOrderingFilter):
-    """ This is too enable sorting for ES endpoints that use ES results instead of a typical queryset"""
+class RawListOrderingFilter(OSFOrderingFilter):
+    """ This is to enable sorting for response data sorint that uses response data (from services like elasticsearch)
+     instead of a typical queryset"""
     def filter_queryset(self, request, queryset, view):
         sorted_list = queryset.copy()
-        sort = request.query_params.get('sort')
         reverse = False
+
+        sort = request.query_params.get('sort')
         if sort:
             if sort.startswith('-'):
                 sort = sort.lstrip('-')
@@ -127,6 +120,13 @@ class ElasticOSFOrderingFilter(OSFOrderingFilter):
                 sorted_list['results'] = sorted(queryset['results'], key=lambda item: item['_source'][source], reverse=reverse)
             except KeyError:
                 pass
+        default_sort = self.get_default_ordering(view)
+
+        if default_sort:
+            return sorted(
+                sorted_list,
+                key=functools.cmp_to_key(sort_multiple(default_sort)),
+            )
 
         return sorted_list
 
@@ -585,9 +585,12 @@ class PreprintFilterMixin(ListFilterMixin):
             self.postprocess_subject_query_param(operation)
 
     def preprints_queryset(self, base_queryset, auth_user, allow_contribs=True, public_only=False):
-        return Preprint.objects.can_view(
+        preprint_ids = Preprint.objects.can_view(
             base_queryset=base_queryset,
             user=auth_user,
             allow_contribs=allow_contribs,
             public_only=public_only,
-        )
+        ).values_list('id', flat=True)
+
+        # remove distinct ordering
+        return Preprint.objects.filter(id__in=preprint_ids)

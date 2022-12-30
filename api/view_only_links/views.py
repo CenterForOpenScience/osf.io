@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.base import permissions as base_permissions
+from api.base.filters import RawListOrderingFilter
 from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON
 from api.base.utils import get_user_auth
@@ -60,11 +61,12 @@ class ViewOnlyLinkNodes(JSONAPIBaseView, generics.ListAPIView):
     required_write_scopes = [CoreScopes.NODE_VIEW_ONLY_LINKS_WRITE]
 
     serializer_class = NodeSerializer
+    filter_backends = [RawListOrderingFilter, ]
 
     view_category = 'view-only-links'
     view_name = 'view-only-link-nodes'
 
-    ordering_fields = ('-modified',)
+    ordering = ('-modified',)
 
     def get_serializer_class(self):
         if 'link_id' in self.kwargs:
