@@ -218,7 +218,7 @@ class AdminNodeLogView(NodeMixin, ListView):
     template_name = 'nodes/node_logs.html'
     paginate_by = 10
     paginate_orphans = 1
-    ordering = 'date'
+    ordering_fields = ('date', )
     permission_required = 'osf.view_node'
     raise_exception = True
 
@@ -243,7 +243,7 @@ class AdminNodeSchemaResponseView(NodeMixin, ListView):
     template_name = 'schema_response/schema_response_list.html'
     paginate_by = 10
     paginate_orphans = 1
-    ordering = 'date'
+    ordering_fields = ('date', )
     permission_required = 'osf.view_schema_response'
     raise_exception = True
 
@@ -260,7 +260,7 @@ class RegistrationListView(PermissionRequiredMixin, ListView):
     template_name = 'nodes/registration_list.html'
     paginate_by = 10
     paginate_orphans = 1
-    ordering = 'created'
+    ordering_fields = ('created', )
     permission_required = 'osf.view_registration'
     raise_exception = True
 
@@ -342,7 +342,7 @@ class NodeSpamList(PermissionRequiredMixin, ListView):
 
     paginate_by = 25
     paginate_orphans = 1
-    ordering = 'created'
+    ordering_fields = ('created', )
     permission_required = 'osf.view_spam'
     raise_exception = True
 

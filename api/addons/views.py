@@ -74,7 +74,7 @@ class AddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     view_category = 'addons'
     view_name = 'addon-list'
 
-    ordering = ()
+    ordering_fields = ()
 
     def get_default_queryset(self):
         return [conf for conf in osf_settings.ADDONS_AVAILABLE_DICT.values() if 'accounts' in conf.configs]

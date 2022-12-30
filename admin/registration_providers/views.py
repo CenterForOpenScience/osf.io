@@ -44,7 +44,7 @@ class CreateRegistrationProvider(PermissionRequiredMixin, CreateView):
 class RegistrationProviderList(PermissionRequiredMixin, ListView):
     paginate_by = 25
     template_name = 'registration_providers/list.html'
-    ordering = 'name'
+    ordering_fields = ('name', )
     permission_required = 'osf.view_registrationprovider'
     raise_exception = True
     model = RegistrationProvider

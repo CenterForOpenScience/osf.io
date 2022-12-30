@@ -252,7 +252,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     view_category = 'nodes'
     view_name = 'node-list'
 
-    ordering = ('-modified', )  # default ordering
+    ordering_fields = ('-modified', )  # default ordering
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
@@ -635,7 +635,7 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
     view_category = 'nodes'
     view_name = 'node-draft-registrations'
 
-    ordering = ('-modified',)
+    ordering_fields = ('-modified',)
 
     def get_serializer_class(self):
         if StrictVersion(getattr(self.request, 'version', '2.0')) >= StrictVersion(DRAFT_REGISTRATION_SERIALIZERS_UPDATE_VERSION):
@@ -698,7 +698,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
     view_category = 'nodes'
     view_name = 'node-registrations'
 
-    ordering = ('-modified',)
+    ordering_fields = ('-modified',)
 
     def get_serializer_class(self):
         if self.request.method in ('PUT', 'POST'):
@@ -1015,7 +1015,7 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
     view_category = 'nodes'
     view_name = 'node-forks'
 
-    ordering = ('-forked_date',)
+    ordering_fields = ('-forked_date',)
 
     # overrides ListCreateAPIView
     def get_queryset(self):
@@ -1058,7 +1058,7 @@ class NodeLinkedByNodesList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
 
     view_category = 'nodes'
     view_name = 'node-linked-by-nodes'
-    ordering = ('-modified',)
+    ordering_fields = ('-modified',)
 
     serializer_class = NodeSerializer
 
@@ -1082,7 +1082,7 @@ class NodeLinkedByRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeM
 
     view_category = 'nodes'
     view_name = 'node-linked-by-registrations'
-    ordering = ('-modified',)
+    ordering_fields = ('-modified',)
 
     serializer_class = RegistrationSerializer
 
@@ -1105,7 +1105,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
         ExcludeWithdrawals,
     )
 
-    ordering = ('_materialized_path',)  # default ordering
+    ordering_fields = ('_materialized_path',)  # default ordering
 
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
@@ -1357,7 +1357,7 @@ class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, Node
     view_category = 'nodes'
     view_name = 'node-addons'
 
-    ordering = ('-id',)
+    ordering_fields = ('-id',)
 
     def get_default_queryset(self):
         qs = []
@@ -1500,7 +1500,7 @@ class NodeStorageProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin)
     view_category = 'nodes'
     view_name = 'node-storage-providers'
 
-    ordering = ('-id',)
+    ordering_fields = ('-id',)
 
     def get_provider_item(self, storage_addon):
         return NodeStorageProvider(self.get_node(), storage_addon.config.short_name, storage_addon)
@@ -1548,7 +1548,7 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMi
 
     log_lookup_url_kwarg = 'node_id'
 
-    ordering = ('-date', )
+    ordering_fields = ('-date', )
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -1587,7 +1587,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMi
     view_category = 'nodes'
     view_name = 'node-comments'
 
-    ordering = ('-created', )  # default ordering
+    ordering_fields = ('-created', )  # default ordering
 
     def get_default_queryset(self):
         return Comment.objects.filter(node=self.get_node(), root_target__isnull=False)
@@ -1640,7 +1640,7 @@ class NodeInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixi
     view_category = 'nodes'
     view_name = 'node-institutions'
 
-    ordering = ('-id',)
+    ordering_fields = ('-id',)
 
     def get_resource(self):
         return self.get_node()
@@ -1817,7 +1817,7 @@ class NodeSubjectsRelationship(SubjectRelationshipBaseView, NodeMixin):
     view_category = 'nodes'
     view_name = 'node-relationships-subjects'
 
-    ordering = ('-id',)
+    ordering_fields = ('-id',)
 
     def get_resource(self, check_object_permissions=True):
         return self.get_node(check_object_permissions=check_object_permissions)
@@ -1841,7 +1841,7 @@ class NodeWikiList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ListF
     view_category = 'nodes'
     view_name = 'node-wikis'
 
-    ordering = ('-modified', )  # default ordering
+    ordering_fields = ('-modified', )  # default ordering
 
     def get_default_queryset(self):
         node = self.get_node()
@@ -2111,7 +2111,7 @@ class NodeViewOnlyLinksList(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
     view_category = 'nodes'
     view_name = 'node-view-only-links'
 
-    ordering = ('-created',)
+    ordering_fields = ('-created',)
 
     def get_default_queryset(self):
         return self.get_node().private_links.filter(is_deleted=False)
@@ -2206,7 +2206,7 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Prepri
     view_category = 'nodes'
     view_name = 'node-preprints'
 
-    ordering = ('-modified',)
+    ordering_fields = ('-modified',)
 
     def get_default_queryset(self):
         auth = get_user_auth(self.request)

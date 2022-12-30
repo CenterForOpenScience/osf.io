@@ -25,7 +25,7 @@ class CitationStyleList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     view_category = 'citations'
     view_name = 'citation-list'
 
-    ordering = ('-modified',)
+    ordering_fields = ('-modified',)
 
     # overrides ListAPIView
     def get_default_queryset(self):

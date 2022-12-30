@@ -59,7 +59,7 @@ class BaseMeetingView(JSONAPIBaseView, MeetingMixin):
 class MeetingList(BaseMeetingView, generics.ListAPIView, ListFilterMixin):
 
     view_name = 'meeting-list'
-    ordering = ('-modified', )  # default ordering
+    ordering_fields = ('-modified', )  # default ordering
 
     ordering_fields = ('name', 'submissions_count', 'location', 'start_date',)
 
@@ -114,7 +114,7 @@ class BaseMeetingSubmission(JSONAPIBaseView, MeetingMixin):
 class MeetingSubmissionList(BaseMeetingSubmission, generics.ListAPIView, ListFilterMixin):
     view_name = 'meeting-submissions'
 
-    ordering = ('-created', )  # default ordering
+    ordering_fields = ('-created', )  # default ordering
     ordering_fields = ('title', 'meeting_category', 'author_name', 'created', 'download_count',)
 
     # overrides ListFilterMixin

@@ -114,7 +114,7 @@ class PreprintSpamList(PermissionRequiredMixin, ListView):
 
     paginate_by = 25
     paginate_orphans = 1
-    ordering = 'created'
+    ordering_fields = ('created', )
     permission_required = ('osf.view_spam', 'osf.view_preprint')
     raise_exception = True
 
@@ -238,7 +238,7 @@ class PreprintWithdrawalRequestList(PermissionRequiredMixin, ListView):
     paginate_by = 10
     paginate_orphans = 1
     template_name = 'preprints/withdrawal_requests.html'
-    ordering = '-created'
+    ordering_fields = ('-created', )
     permission_required = 'osf.change_preprintrequest'
     raise_exception = True
 

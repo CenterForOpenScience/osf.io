@@ -101,7 +101,7 @@ class PreprintList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.ListCreat
 
     serializer_class = PreprintSerializer
 
-    ordering = ('-created')
+    ordering_fields = ('-created')
     ordering_fields = ('created', 'date_last_transitioned')
     view_category = 'preprints'
     view_name = 'preprint-list'
@@ -507,7 +507,7 @@ class PreprintActionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilter
     serializer_class = ReviewActionSerializer
     model_class = ReviewAction
 
-    ordering = ('-created',)
+    ordering_fields = ('-created',)
     view_category = 'preprints'
     view_name = 'preprint-review-action-list'
 

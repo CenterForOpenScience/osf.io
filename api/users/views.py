@@ -157,7 +157,7 @@ class UserList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
     serializer_class = UserSerializer
 
-    ordering = ('-date_registered')
+    ordering_fields = ('-date_registered')
     view_category = 'users'
     view_name = 'user-list'
 
@@ -221,7 +221,7 @@ class UserAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, User
     view_category = 'users'
     view_name = 'user-addons'
 
-    ordering = ('-id',)
+    ordering_fields = ('-id',)
 
     def get_queryset(self):
         qs = [addon for addon in self.get_user().get_addons() if 'accounts' in addon.config.configs]
@@ -265,7 +265,7 @@ class UserAddonAccountList(JSONAPIBaseView, generics.ListAPIView, UserMixin, Add
     view_category = 'users'
     view_name = 'user-external_accounts'
 
-    ordering = ('-date_last_refreshed',)
+    ordering_fields = ('-date_last_refreshed',)
 
     def get_queryset(self):
         return self.get_addon_settings(check_object_permissions=False).external_accounts
@@ -313,7 +313,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, UserNodesFilte
     view_category = 'users'
     view_name = 'user-nodes'
 
-    ordering = ('-last_logged',)
+    ordering_fields = ('-last_logged',)
 
     # overrides NodesFilterMixin
 
@@ -347,7 +347,7 @@ class UserGroups(JSONAPIBaseView, generics.ListAPIView, UserMixin, ListFilterMix
     serializer_class = GroupSerializer
     view_category = 'users'
     view_name = 'user-groups'
-    ordering = ('-modified', )
+    ordering_fields = ('-modified', )
 
     @require_flag(OSF_GROUPS)
     def get_default_queryset(self):
@@ -387,7 +387,7 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFi
         base_permissions.TokenHasScope,
     )
 
-    ordering = ('-created')
+    ordering_fields = ('-created')
     model_class = AbstractNode
 
     required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.NODE_PREPRINTS_READ]
@@ -428,7 +428,7 @@ class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     view_category = 'users'
     view_name = 'user-institutions'
 
-    ordering = ('-pk', )
+    ordering_fields = ('-pk', )
 
     def get_default_odm_query(self):
         return None
@@ -455,7 +455,7 @@ class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesF
     view_category = 'users'
     view_name = 'user-registrations'
 
-    ordering = ('-modified',)
+    ordering_fields = ('-modified',)
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
@@ -493,7 +493,7 @@ class UserDraftRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     view_category = 'users'
     view_name = 'user-draft-registrations'
 
-    ordering = ('-modified',)
+    ordering_fields = ('-modified',)
 
     def get_queryset(self):
         user = self.get_user()

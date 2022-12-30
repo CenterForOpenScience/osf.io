@@ -169,7 +169,7 @@ class CollectionList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_vie
     view_name = 'collection-list'
     model_class = Collection
 
-    ordering = ('-modified', )  # default ordering
+    ordering_fields = ('-modified', )  # default ordering
 
     def get_default_queryset(self):
         user = self.request.user
@@ -560,7 +560,7 @@ class LinkedNodesList(BaseLinkedList, CollectionMixin, NodeOptimizationMixin):
     view_category = 'collections'
     view_name = 'linked-nodes'
 
-    ordering = ('-modified',)
+    ordering_fields = ('-modified',)
 
     def get_queryset(self):
         auth = get_user_auth(self.request)
@@ -652,7 +652,7 @@ class LinkedRegistrationsList(BaseLinkedList, CollectionMixin):
     view_category = 'collections'
     view_name = 'linked-registrations'
 
-    ordering = ('-modified',)
+    ordering_fields = ('-modified',)
 
     def get_queryset(self):
         auth = get_user_auth(self.request)
@@ -680,7 +680,7 @@ class LinkedPreprintsList(BaseLinkedList, CollectionMixin):
     view_category = 'collections'
     view_name = 'linked-preprints'
 
-    ordering = ('-modified',)
+    ordering_fields = ('-modified',)
 
     def get_queryset(self):
         auth = get_user_auth(self.request)

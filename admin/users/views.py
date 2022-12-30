@@ -269,7 +269,7 @@ class UserSpamList(PermissionRequiredMixin, ListView):
 
     paginate_by = 25
     paginate_orphans = 1
-    ordering = ('date_disabled')
+    ordering_fields = ('date_disabled')
     permission_required = ('osf.view_spam', 'osf.view_osfuser')
     raise_exception = True
 

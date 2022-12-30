@@ -115,7 +115,7 @@ class GenericProviderList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
     required_write_scopes = [CoreScopes.NULL]
 
     pagination_class = MaxSizePagination
-    ordering = ('name', )
+    ordering_fields = ('name', )
 
     def get_default_queryset(self):
         return self.model_class.objects.all()
@@ -391,7 +391,7 @@ class PreprintProviderHighlightedSubjectList(GenericProviderHighlightedSubjectLi
 class GenericProviderLicenseList(LicenseList):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_licenses_list)
     """
-    ordering = ()  # TODO: should be ordered once the frontend for selecting default licenses no longer relies on order
+    ordering_fields = ()  # TODO: should be ordered once the frontend for selecting default licenses no longer relies on order
 
     def get_default_queryset(self):
         """
@@ -445,7 +445,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
         PreprintPublishedOrAdmin,
     )
 
-    ordering = ('-created')
+    ordering_fields = ('-created')
 
     serializer_class = PreprintSerializer
     model_class = AbstractNode
@@ -748,7 +748,7 @@ class RegistrationProviderRegistrationList(JSONAPIBaseView, generics.ListAPIView
         MustBeModerator,
     )
 
-    ordering = ('-created')
+    ordering_fields = ('-created')
 
     serializer_class = RegistrationSerializer
 

@@ -134,7 +134,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListCreateAPIView, bulk_views.B
     view_category = 'registrations'
     view_name = 'registration-list'
 
-    ordering = ('-modified',)
+    ordering_fields = ('-modified',)
     model_class = Registration
 
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
@@ -567,7 +567,7 @@ class RegistrationFilesList(NodeFilesList, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-files'
 
-    ordering_fields = ['modified', 'name', 'date_modified']
+    ordering_fields = ('modified', 'name', 'date_modified', )
     serializer_class = RegistrationFileSerializer
 
 
@@ -826,7 +826,7 @@ class RegistrationActionList(JSONAPIBaseView, ListFilterMixin, generics.ListCrea
     view_name = 'registration-actions-list'
 
     serializer_class = RegistrationActionSerializer
-    ordering = ('-created',)
+    ordering_fields = ('-created',)
     node_lookup_url_kwarg = 'node_id'
 
     def get_registration(self):

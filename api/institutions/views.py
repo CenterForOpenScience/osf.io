@@ -79,7 +79,7 @@ class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     view_category = 'institutions'
     view_name = 'institution-list'
 
-    ordering = ('name', )
+    ordering_fields = ('name', )
 
     def get_default_queryset(self):
         return Institution.objects.filter(_id__isnull=False, is_deleted=False)
@@ -126,7 +126,7 @@ class InstitutionNodeList(JSONAPIBaseView, generics.ListAPIView, InstitutionMixi
     view_category = 'institutions'
     view_name = 'institution-nodes'
 
-    ordering = ('-modified', )
+    ordering_fields = ('-modified', )
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
@@ -161,7 +161,7 @@ class InstitutionUserList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView
     view_category = 'institutions'
     view_name = 'institution-users'
 
-    ordering = ('-id',)
+    ordering_fields = ('-id',)
 
     def get_default_queryset(self):
         institution = self.get_institution()
@@ -206,7 +206,7 @@ class InstitutionRegistrationList(InstitutionNodeList):
     serializer_class = RegistrationSerializer
     view_name = 'institution-registrations'
 
-    ordering = ('-modified', )
+    ordering_fields = ('-modified', )
 
     def get_default_queryset(self):
         institution = self.get_institution()
@@ -475,7 +475,7 @@ class InstitutionDepartmentList(InstitutionImpactList):
     renderer_classes = tuple(api_settings.DEFAULT_RENDERER_CLASSES, ) + (InstitutionDepartmentMetricsCSVRenderer, )
 
     ordering_fields = ('-number_of_users', 'name', )
-    ordering = ('-number_of_users', 'name', )
+    ordering_fields = ('-number_of_users', 'name', )
 
     def _format_search(self, search, default_kwargs=None):
         results = search.execute()
@@ -500,7 +500,7 @@ class InstitutionUserMetricsList(InstitutionImpactList):
     renderer_classes = tuple(api_settings.DEFAULT_RENDERER_CLASSES, ) + (InstitutionUserMetricsCSVRenderer, )
 
     ordering_fields = ('user_name', 'department', )
-    ordering = ('user_name', )
+    ordering_fields = ('user_name', )
 
     def _format_search(self, search, default_kwargs=None):
         results = search.execute()

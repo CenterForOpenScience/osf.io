@@ -149,7 +149,7 @@ class DraftSubjectsRelationship(SubjectRelationshipBaseView, DraftRegistrationMi
     view_category = 'draft_registrations'
     view_name = 'draft-registration-relationships-subjects'
 
-    ordering = ('-id',)
+    ordering_fields = ('-id',)
 
     def get_resource(self, check_object_permissions=True):
         # Overrides SubjectRelationshipBaseView

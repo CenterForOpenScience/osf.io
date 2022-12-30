@@ -26,7 +26,7 @@ class DismissedAlertDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     view_category = 'alerts'
     view_name = 'alerts-detail'
 
-    ordering = ('-created',)
+    ordering_fields = ('-created',)
 
     # overrides RetrieveAPIView
     def get_object(self):

@@ -11,7 +11,7 @@ from osf.models.storage import ProviderAssetFile
 class ProviderAssetFileList(PermissionRequiredMixin, ListView):
     paginate_by = 25
     template_name = 'osf/providerassetfile_list.html'
-    ordering = 'name'
+    ordering_fields = ('name',)
     permission_required = 'osf.view_providerassetfile'
     raise_exception = True
     model = ProviderAssetFile

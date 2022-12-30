@@ -37,7 +37,7 @@ class IdentifierList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixi
     view_category = 'identifiers'
     view_name = 'identifier-list'
 
-    ordering = ('-id',)
+    ordering_fields = ('-id',)
 
     def get_object(self, *args, **kwargs):
         raise NotImplementedError

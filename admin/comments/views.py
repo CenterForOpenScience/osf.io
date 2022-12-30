@@ -23,7 +23,7 @@ class CommentList(PermissionRequiredMixin, ListView):
     template_name = 'comments/spam_list.html'
     paginate_by = 10
     paginate_orphans = 1
-    ordering = '-date_last_reported'
+    ordering_fields = ('-date_last_reported', )
     permission_required = 'osf.view_spam'
     raise_exception = True
 
