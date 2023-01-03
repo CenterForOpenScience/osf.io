@@ -22,7 +22,7 @@ class CustomFileMetadataDetail(JSONAPIBaseView, rest_framework.generics.Retrieve
     required_write_scopes = [CoreScopes.NULL]  # TODO
 
     serializer_class = CustomFileMetadataSerializer
-    view_category = 'custom-metadata'
+    view_category = 'custom-file-metadata'
     view_name = 'custom-file-metadata-detail'
 
     def get_object(self):
@@ -48,7 +48,7 @@ class CustomItemMetadataDetail(JSONAPIBaseView, rest_framework.generics.Retrieve
     required_write_scopes = [CoreScopes.NULL]  # TODO
 
     serializer_class = CustomItemMetadataSerializer
-    view_category = 'custom-metadata'
+    view_category = 'custom-item-metadata'
     view_name = 'custom-item-metadata-detail'
 
     def get_object(self):

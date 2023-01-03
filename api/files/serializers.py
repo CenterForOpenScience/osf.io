@@ -246,10 +246,6 @@ class BaseFileSerializer(JSONAPISerializer):
         related_meta={'unread': 'get_unread_comments_count'},
         filter={'target': 'get_file_guid'},
     ))
-    metadata_records = FileRelationshipField(
-        related_view='files:metadata-records',
-        related_view_kwargs={'file_id': '<_id>'},
-    )
 
     links = LinksField({
         'info': Link('files:file-detail', kwargs={'file_id': '<_id>'}),

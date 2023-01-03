@@ -22,7 +22,7 @@ class TestCustomItemMetadataRecordDetail:
             return f'/{API_BASE}{self.APIV2_PATH}'
         if hasattr(guid, 'guid'):
             guid = guid.guid
-        return f'/{API_BASE}{self.APIV2_PATH}osfio:{guid._id}/'
+        return f'/{API_BASE}{self.APIV2_PATH}{guid._id}/'
 
     def make_payload(self, guid, **attributes):
         if hasattr(guid, 'guid'):

@@ -116,6 +116,7 @@ class GuidMetadataRecord(ObjectIDMixin, BaseModel):
     }
     funding_info = models.JSONField(
         default=list,
+        blank=True,
         validators=[JsonschemaValidator(FUNDER_INFO_JSONSCHEMA)],
     )
 

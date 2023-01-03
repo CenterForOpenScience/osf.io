@@ -658,14 +658,14 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         """
         lookup_url_kwarg = self.lookup_url_kwarg
         if callable(lookup_url_kwarg):
-            lookup_url_kwarg = lookup_url_kwarg(getattr(resource, field_name))
+            lookup_url_kwarg = lookup_url_kwarg(self.get_attribute(resource))
 
         kwargs = {attr_name: self.lookup_attribute(resource, attr) for (attr_name, attr) in lookup_url_kwarg.items()}
         kwargs.update({'version': request.parser_context['kwargs']['version']})
 
         view = self.view_name
-        if callable(self.view_name):
-            view = view(getattr(resource, field_name))
+        if callable(view):
+            view = self._handle_callable_view(resource, view)
         return resolve(
             reverse(
                 view,
@@ -777,7 +777,8 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         return kwargs_retrieval
 
     def _handle_callable_view(self, obj, view):
-        return view(getattr(obj, self.field_name))
+        attr = self.get_attribute(obj)
+        return view(attr)
 
     # Overrides HyperlinkedIdentityField
     def get_url(self, obj, view_name, request, format):
@@ -939,6 +940,12 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                     elif related_type == 'institutions' and related_class.view_name == 'institution-summary-metrics':
                         related_id = resolved_url.kwargs['institution_id']
                         related_type = 'institution-summary-metrics'
+                    elif related_type == 'custom-item-metadata':
+                        related_id = resolved_url.kwargs['guid_id']
+                        related_type = 'custom-item-metadata-records'
+                    elif related_type == 'custom-file-metadata':
+                        related_id = resolved_url.kwargs['guid_id']
+                        related_type = 'custom-file-metadata-records'
                     else:
                         related_id = resolved_url.kwargs[related_type[:-1] + '_id']
                 except KeyError:
