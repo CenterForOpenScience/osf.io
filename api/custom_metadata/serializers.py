@@ -47,7 +47,7 @@ class GuidMetadataRecordSerializer(JSONAPISerializer):
         source='custom_property_set',
         required=False,
     )
-    links = LinksField()
+    # links = LinksField()
 
     def update(self, guid_metadata_record, validated_data):
         for field_name in ('language', 'resource_type_general', 'funding_info'):
