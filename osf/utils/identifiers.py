@@ -44,10 +44,6 @@ class PIDValidator(abc.ABC):
     def validate(self, pid_value):
         pass
 
-    @abc.abstractmethod
-    def to_irl(self, pid_value):
-        pass
-
 
 class DOIValidator(PIDValidator):
 

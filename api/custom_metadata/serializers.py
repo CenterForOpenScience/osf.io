@@ -1,4 +1,3 @@
-from rdflib import DCTERMS
 from django.core.validators import URLValidator
 import rest_framework.serializers as ser
 
@@ -34,7 +33,7 @@ class GuidMetadataRecordSerializer(JSONAPISerializer):
     guid = RelationshipField(
         read_only=True,
         related_view='guids:guid-detail',
-        related_view_kwargs={'guids': '<guid._id>'}
+        related_view_kwargs={'guids': '<guid._id>'},
     )
     language = ser.CharField(required=False)  # TODO: choices
     resource_type_general = ser.CharField(required=False)  # TODO: choices

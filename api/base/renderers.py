@@ -32,14 +32,6 @@ class JSONAPIRenderer(JSONRendererWithESISupport):
         return super(JSONAPIRenderer, self).render(data, accepted_media_type, renderer_context)
 
 
-class JSONAPILDRenderer(JSONRenderer):
-    format = 'json-ld'
-    media_type = 'application/vnd.api+json'
-
-    # def render(self, data, accepted_media_type=None, renderer_context=None):
-    #     print(f'#### data\n{data}\n#### endata')
-
-
 class BrowsableAPIRendererNoForms(BrowsableAPIRenderer):
     """
     Renders browsable API but omits HTML forms
