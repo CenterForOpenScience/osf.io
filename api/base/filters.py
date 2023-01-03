@@ -46,6 +46,7 @@ def sort_multiple(fields):
         return 0
     return sort_fn
 
+
 class OSFOrderingFilter(OrderingFilter):
     """Adaptation of rest_framework.filters.OrderingFilter to work with modular-odm."""
     # override
@@ -110,6 +111,26 @@ class OSFOrderingFilter(OrderingFilter):
                 if source_field:
                     valid_fields.append(ordering_sign + source_field)
         return valid_fields
+
+
+class ElasticOSFOrderingFilter(OSFOrderingFilter):
+    """ This is too enable sorting for ES endpoints that use ES results instead of a typical queryset"""
+    def filter_queryset(self, request, queryset, view):
+        sorted_list = queryset.copy()
+        sort = request.query_params.get('sort')
+        reverse = False
+        if sort:
+            if sort.startswith('-'):
+                sort = sort.lstrip('-')
+                reverse = True
+
+            try:
+                source = view.get_serializer_class()._declared_fields[sort].source
+                sorted_list['results'] = sorted(queryset['results'], key=lambda item: item['_source'][source], reverse=reverse)
+            except KeyError:
+                pass
+
+        return sorted_list
 
 
 class FilterMixin(object):

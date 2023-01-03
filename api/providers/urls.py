@@ -38,6 +38,8 @@ urlpatterns = [
                     re_path(r'^(?P<provider_id>\w+)/subjects/highlighted/$', views.CollectionProviderHighlightedSubjectList.as_view(), name=views.CollectionProviderHighlightedSubjectList.view_name),
                     re_path(r'^(?P<provider_id>\w+)/taxonomies/$', views.CollectionProviderTaxonomies.as_view(), name=views.CollectionProviderTaxonomies.view_name),
                     re_path(r'^(?P<provider_id>\w+)/taxonomies/highlighted/$', views.CollectionProviderHighlightedTaxonomyList.as_view(), name=views.CollectionProviderHighlightedTaxonomyList.view_name),
+                    re_path(r'^(?P<provider_id>\w+)/moderators/$', views.CollectionProviderModeratorsList.as_view(), name=views.CollectionProviderModeratorsList.view_name),
+                    re_path(r'^(?P<provider_id>\w+)/moderators/(?P<moderator_id>\w+)/$', views.CollectionProviderModeratorsDetail.as_view(), name=views.CollectionProviderModeratorsDetail.view_name),
                 ], 'collections',
             ),
             namespace='collection-providers',

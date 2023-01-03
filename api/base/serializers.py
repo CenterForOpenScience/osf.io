@@ -940,6 +940,9 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                     elif related_type == 'institutions' and related_class.view_name == 'institution-summary-metrics':
                         related_id = resolved_url.kwargs['institution_id']
                         related_type = 'institution-summary-metrics'
+                    elif related_type == 'collections' and related_class.view_name == 'collection-submission-detail':
+                        related_id = f'{resolved_url.kwargs["collection_submission_id"]}-{resolved_url.kwargs["collection_id"]}'
+                        related_type = 'collection-submission'
                     elif related_type == 'custom-item-metadata':
                         related_id = resolved_url.kwargs['guid_id']
                         related_type = 'custom-item-metadata-records'

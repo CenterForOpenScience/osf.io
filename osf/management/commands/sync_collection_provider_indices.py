@@ -16,19 +16,20 @@ def sync_collection_provider_indices(cp_ids=None, only_remove=False):
         qs = CollectionProvider.objects.all()
     for prov in qs.all():
         collection = prov.primary_collection
-        coll_submissions = collection.collectionsubmission_set.all()
-        remove_ct = 0
-        add_ct = 0
-        for submission in coll_submissions:
-            target = submission.guid.referent
-            if not target.is_public or target.deleted:
-                submission.remove_from_index()
-                remove_ct += 1
-            elif not only_remove:
-                submission.update_index()
-                add_ct += 1
-        logger.info(f'{remove_ct} submissions removed from {prov._id}')
-        logger.info(f'{add_ct} submissions synced to {prov._id}')
+        if collection:
+            coll_submissions = collection.collectionsubmission_set.all()
+            remove_ct = 0
+            add_ct = 0
+            for submission in coll_submissions:
+                target = submission.guid.referent
+                if not target.is_public or target.deleted:
+                    submission.remove_from_index()
+                    remove_ct += 1
+                elif not only_remove:
+                    submission.update_index()
+                    add_ct += 1
+            logger.info(f'{remove_ct} submissions removed from {prov._id}')
+            logger.info(f'{add_ct} submissions synced to {prov._id}')
 
 
 class Command(BaseCommand):
