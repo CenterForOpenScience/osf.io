@@ -270,7 +270,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     SPAM_CHECK_FIELDS = {
         'title',
         'description',
-        'addons_forward_node_settings__url'  # the often spammed redirect URL
+    }
+
+    SPAM_ADDONS = {
+        'forward': 'addons_forward_node_settings__url',
+        'wiki': 'wikis__versions__content'
     }
 
     # Fields that are writable by Node.update
@@ -1160,10 +1164,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def get_spam_fields(self, saved_fields):
         # Override for SpamOverrideMixin
         check_fields = self.SPAM_CHECK_FIELDS.copy()
-        if not self.has_addon('forward'):
-            check_fields.remove('addons_forward_node_settings__url')
-        return check_fields if self.is_public and 'is_public' in saved_fields else check_fields.intersection(
-            saved_fields)
+        for addon, check_field in self.SPAM_ADDONS.items():
+            if self.has_addon(addon):
+                check_fields.add(check_field)
+
+        if not saved_fields or self.is_public and 'is_public' in saved_fields:
+            return check_fields
+        return check_fields.intersection(saved_fields)
 
     def callback(self, callback, recursive=False, *args, **kwargs):
         """Invoke callbacks of attached add-ons and collect messages.
@@ -1244,6 +1251,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
             self.is_public = False
             self.keenio_read_key = ''
+            self._remove_from_associated_collections()
         else:
             return False
 
@@ -2233,6 +2241,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             node.deleted = log_date
             node.add_remove_node_log(auth=auth, date=log_date)
             project_signals.node_deleted.send(node)
+            node._remove_from_associated_collections()
 
         bulk_update(hierarchy, update_fields=['is_deleted', 'deleted_date', 'deleted'])
 
@@ -2406,6 +2415,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             ]
         ).first() or osf_provider_tag
         contributor.add_system_tag(source_tag)
+
+    def _remove_from_associated_collections(self):
+        for submission in self.guids.first().collectionsubmission_set.all():
+            associated_collection = submission.collection
+            if associated_collection.is_bookmark_collection and not self.deleted:
+                if self.contributors.filter(pk=associated_collection.creator.id).exists():
+                    continue
+            submission.delete()
 
 
 class NodeUserObjectPermission(UserObjectPermissionBase):

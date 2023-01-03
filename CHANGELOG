@@ -2,6 +2,49 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+22.11.0 (2022-11-21)
+====================
+- Enable monitoring and moderation of OSF resoruces based on links to external
+domains
+
+22.10.0 (2022-10-25)
+====================
+- Upgrade Django from 1.11 to 3.2
+  - Squashed and fix all migrations up to (and including) 22.09.2
+  - Moved DB population, data backfill and validation "migrations" to post-migrate signals
+  - Updated DB indexes by adding customized indexes created via RunSQL
+  - Upgraded django to 3.2 and fixed incompatibility issues
+- Due to migration squash, follow the following steps to when updating to 22.10.0
+  1. Bring your server up-to-date (code and database) with 22.09.2
+  2. Optionally disable automigrations, optionally scale down replicasets of API and Web to halt database traffic
+  3. Update the following server settings before deployment
+    - Update `CORS_ORIGIN_WHITELIST`: add `https://` prefix to all active domains
+    - Set `SESSION_COOKIE_SAMESITE` to `'Lax'` for admin server only
+  4. Upgrade to 22.10.0 and deploy the code and run the following migrations in order, ignore warning until the last `migrate` command is done.
+    - `python3 manage.py migrate osf 0003 --fake`
+    - `python3 manage.py migrate osf 0004`
+    - ```
+          python3 manage.py migrate addons_bitbucket 0002 --fake
+          python3 manage.py migrate addons_box 0002 --fake
+          python3 manage.py migrate addons_dataverse 0002 --fake
+          python3 manage.py migrate addons_dropbox 0002 --fake
+          python3 manage.py migrate addons_figshare 0002 --fake
+          python3 manage.py migrate addons_forward 0002 --fake
+          python3 manage.py migrate addons_github 0002 --fake
+          python3 manage.py migrate addons_gitlab 0002 --fake
+          python3 manage.py migrate addons_googledrive 0002 --fake
+          python3 manage.py migrate addons_onedrive 0002 --fake
+          python3 manage.py migrate addons_osfstorage 0002 --fake
+          python3 manage.py migrate addons_s3 0002 --fake
+          python3 manage.py migrate addons_twofactor 0002 --fake
+          python3 manage.py migrate addons_mendeley 0002 --fake
+          python3 manage.py migrate addons_owncloud 0002 --fake
+          python3 manage.py migrate addons_wiki 0002 --fake
+          python3 manage.py migrate addons_zotero 0002 --fake
+      ```
+    - `python3 manage.py migrate`
+  5. Revert any optional config changes from step 2 and redeploy if necessary.
+
 22.09.0 (2022-09-15)
 ====================
 - Add metric classes for storing analytic data
