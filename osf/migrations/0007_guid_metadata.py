@@ -10,7 +10,7 @@ import osf.models.validators
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0005_add_notabledomain_domainreference'),
+        ('osf', '0006_collections_moderation'),
     ]
 
     operations = [
