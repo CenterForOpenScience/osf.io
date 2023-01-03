@@ -5,10 +5,9 @@ import rest_framework.serializers as ser
 from api.base.serializers import (
     IDField,
     JSONAPISerializer,
-    LinksField,
+    # LinksField,
     RelationshipField,
 )
-from osf.models.metadata import CustomMetadataProperty
 
 
 # TODO: max_lengths, uri validation
@@ -29,6 +28,8 @@ class CustomMetadataPropertySerializer(ser.Serializer):
 
 
 class GuidMetadataRecordSerializer(JSONAPISerializer):
+    EDITABLE_FIELDS = None  # override in subclasses
+
     id = IDField(read_only=True, source='guid._id')
     guid = RelationshipField(
         read_only=True,
@@ -42,74 +43,28 @@ class GuidMetadataRecordSerializer(JSONAPISerializer):
         source='funding_info',
         required=False,
     )
-    custom_properties = CustomMetadataPropertySerializer(
-        many=True,
-        source='custom_property_set',
-        required=False,
-    )
-    # links = LinksField()
+    # TODO: links = LinksField(...)
 
     def update(self, guid_metadata_record, validated_data):
-        for field_name in ('language', 'resource_type_general', 'funding_info'):
+        for field_name in self.EDITABLE_FIELDS:
             if field_name in validated_data:
                 setattr(guid_metadata_record, field_name, validated_data[field_name])
         guid_metadata_record.save()
-
-        # wipe out and recreate -- it's the only (...easy) way to be sure
-        guid_metadata_record.custom_property_set.all().delete()
-        validated_custom_property_set = validated_data.get('custom_property_set', ())
-        for validated_property in validated_custom_property_set:
-            CustomMetadataProperty(
-                metadata_record=guid_metadata_record,
-                property_uri=validated_property['property_uri'],
-                value_as_text=validated_property['value_as_text'],
-            ).save()
-
         return guid_metadata_record
 
 
 class CustomItemMetadataSerializer(GuidMetadataRecordSerializer):
+    EDITABLE_FIELDS = ('language', 'resource_type_general', 'funding_info')
+
     class Meta:
         type_ = 'custom-item-metadata-record'
 
 
-class CustomMetadataPropertyProxyField(ser.Field):
-    def __init__(self, property_uri, **kwargs):
-        self._property_uri = property_uri
-        super().__init__(**kwargs, source='*')
-
-    def to_representation(self, metadata_record):
-        return (
-            CustomMetadataProperty.objects
-            .filter(metadata_record=metadata_record)
-            .filter(property_uri=self._property_uri)
-            .values_list('value_as_text', flat=True)
-            .first()
-        )
-
-    def to_internal_value(self, data):
-        proxied_serializer = CustomMetadataPropertySerializer(
-            data={
-                'property_uri': self._property_uri,
-                'value_as_text': data,
-            },
-        )
-        proxied_serializer.is_valid()
-        return {self.field_name: proxied_serializer.validated_data}
-
-
 class CustomFileMetadataSerializer(GuidMetadataRecordSerializer):
-    title = CustomMetadataPropertyProxyField(DCTERMS.title, required=False, default='')
-    description = CustomMetadataPropertyProxyField(DCTERMS.description, required=False, default='')
+    EDITABLE_FIELDS = ('title', 'description', 'language', 'resource_type_general', 'funding_info')
+
+    title = ser.CharField(required=False)  # TODO: max-length
+    description = ser.CharField(required=False)  # TODO: max-length
 
     class Meta:
         type_ = 'custom-file-metadata-record'
-
-    def update(self, guid_metadata_record, validated_data):
-        additional_custom_properties = []
-        for field_name in ('title', 'description'):
-            validated_custom_property = validated_data.pop(field_name, None)
-            if validated_custom_property is not None:
-                additional_custom_properties.append(validated_custom_property)
-        validated_data.setdefault('custom_properties', []).extend(additional_custom_properties)
-        return super().update(guid_metadata_record, validated_data)

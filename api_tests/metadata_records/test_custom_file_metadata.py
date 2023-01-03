@@ -68,10 +68,7 @@ class TestCustomFileMetadataRecordDetail(ParentTestClass):
             expected = ExpectedMetadataRecord()
             expected.id = osfguid._id
 
-            expected.custom_properties = [{
-                'property_uri': 'http://purl.org/dc/terms/title',
-                'value_as_text': 'title!',
-            }]
+            expected.title = 'title!'
 
             res = app.patch_json_api(
                 self.make_url(osfguid),
@@ -85,13 +82,7 @@ class TestCustomFileMetadataRecordDetail(ParentTestClass):
             db_record = GuidMetadataRecord.objects.for_guid(osfguid)
             expected.assert_expectations(db_record=db_record, api_record=api_record)
 
-            expected.custom_properties = [{
-                'property_uri': 'http://purl.org/dc/terms/title',
-                'value_as_text': 'title!',
-            }, {
-                'property_uri': 'http://purl.org/dc/terms/description',
-                'value_as_text': 'description!',
-            }]
+            expected.description = 'description!'
             res = app.patch_json_api(
                 self.make_url(osfguid),
                 self.make_payload(osfguid, description='description!'),

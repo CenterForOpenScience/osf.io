@@ -88,19 +88,13 @@ class GuidMetadataRecordManager(models.Manager):
             funding_info=from_record.funding_info,
         )
         to_record.save()
-        CustomMetadataProperty.objects.bulk_create(
-            CustomMetadataProperty(
-                metadata_record=to_record,
-                property_uri=from_property.property_uri,
-                value_as_text=from_property.value_as_text,
-            )
-            for from_property in from_record.custom_property_set.all()
-        )
 
 
 class GuidMetadataRecord(ObjectIDMixin, BaseModel):
     guid = models.OneToOneField('Guid', related_name='metadata_record', on_delete=models.CASCADE)
 
+    title = models.TextField(blank=True)  # TODO: handle unnecessarily redundant duplication
+    description = models.TextField(blank=True)  # TODO: handle unnecessarily redundant duplication
     language = models.TextField(blank=True)  # TODO: choices?
     resource_type_general = models.TextField(blank=True)  # TODO: choices?
 
@@ -125,9 +119,6 @@ class GuidMetadataRecord(ObjectIDMixin, BaseModel):
         validators=[JsonschemaValidator(FUNDER_INFO_JSONSCHEMA)],
     )
 
-    ## implicitly defined on other models:
-    # custom_property_set = OneToMany(CustomMetadataProperty)
-
     objects = GuidMetadataRecordManager()
 
     def __repr__(self):
@@ -151,14 +142,3 @@ class GuidMetadataRecord(ObjectIDMixin, BaseModel):
     #         )
     #     else:
     #         raise PermissionsError('You must have write access for this file to update its metadata.')
-
-
-class CustomMetadataProperty(ObjectIDMixin, BaseModel):
-    metadata_record = models.ForeignKey(
-        GuidMetadataRecord,
-        related_name='custom_property_set',
-        on_delete=models.CASCADE,
-    )
-
-    property_uri = models.URLField()
-    value_as_text = models.TextField()

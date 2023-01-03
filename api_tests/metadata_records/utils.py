@@ -19,11 +19,6 @@ class ExpectedMetadataRecord:
     def _getattr_dbrecord(self, attrname, dbrecord):
         if attrname == 'id':
             return dbrecord.guid._id
-        if attrname == 'custom_properties':
-            return self._freeze([
-                {'property_uri': cp.property_uri, 'value_as_text': cp.value_as_text}
-                for cp in dbrecord.custom_property_set.all()
-            ])
         return self._freeze(getattr(dbrecord, attrname))
 
     def _getattr_apirecord(self, attrname, apirecord):

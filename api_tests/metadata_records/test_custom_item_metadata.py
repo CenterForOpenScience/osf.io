@@ -365,54 +365,6 @@ class TestCustomItemMetadataRecordDetail:
             )
             assert res.status_code == 200
             expected.assert_expectations(db_record=db_record, api_record=res.json['data'])
-
-            # can PATCH custom properties
-            custom_properties_1 = [{
-                'property_uri': 'https://hello.example/fungus',
-                'value_as_text': 'amongus',
-            }, {
-                'property_uri': 'https://hello.example/blungus',
-                'value_as_text': 'grungus',
-            }]
-            expected.custom_properties = custom_properties_1
-            res = app.patch_json_api(
-                self.make_url(osfguid),
-                self.make_payload(osfguid, custom_properties=custom_properties_1),
-                auth=anybody_with_write_permission,
-            )
-            assert res.status_code == 200
-            expected.assert_expectations(db_record=db_record, api_record=res.json['data'])
-
-            # can re-PATCH custom properties
-            custom_properties_2 = [{
-                'property_uri': 'https://hello.example/fungus',
-                'value_as_text': 'boregus',
-            }, {
-                'property_uri': 'https://hello.example/boring',
-                'value_as_text': 'ha',
-            }, {
-                'property_uri': 'https://hello.example/bloring',
-                'value_as_text': 'who',
-            }]
-            expected.custom_properties = custom_properties_2
-            res = app.patch_json_api(
-                self.make_url(osfguid),
-                self.make_payload(osfguid, custom_properties=custom_properties_2),
-                auth=anybody_with_write_permission,
-            )
-            assert res.status_code == 200
-            expected.assert_expectations(db_record=db_record, api_record=res.json['data'])
-
-            # can dis-PATCH custom properties
-            custom_properties_3 = []
-            expected.custom_properties = custom_properties_3
-            res = app.patch_json_api(
-                self.make_url(osfguid),
-                self.make_payload(osfguid, custom_properties=custom_properties_3),
-                auth=anybody_with_write_permission,
-            )
-            assert res.status_code == 200
-            expected.assert_expectations(db_record=db_record, api_record=res.json['data'])
         # TODO: assert node.logs.first().action == NodeLog.FILE_METADATA_UPDATED
 
     # def test_update_fails_with_extra_key(self, app, user_readwrite, public_file_guid):
