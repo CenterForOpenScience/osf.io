@@ -87,9 +87,13 @@ class OSFOrderingFilter(OrderingFilter):
         :param fields, array, input sort fields
         :returns array of source fields for sorting.
         """
-        valid_fields = super(OSFOrderingFilter, self).remove_invalid_fields(queryset, fields, view, request)
-        sort_param = request.query_params.get('sort')
+        valid_fields = super().remove_invalid_fields(queryset, fields, view, request)
+
+        # sort on annotations
+        sort_param = request.query_params.get(self.ordering_param)
         valid_fields += [sort_param for item in queryset.query.annotations.keys() if item == sort_param.lstrip('-')]
+
+        # sort on serializer fields
         if not valid_fields:
             for invalid_field in fields:
                 ordering_sign = '-' if invalid_field[0] == '-' else ''
@@ -103,31 +107,26 @@ class OSFOrderingFilter(OrderingFilter):
 
 
 class RawListOrderingFilter(OSFOrderingFilter):
-    """ This is to enable sorting for response data sorint that uses response data (from services like elasticsearch)
+    """ This is to enable sorting for views that uses response data (from services like elasticsearch) or raw list data
      instead of a typical queryset"""
     def filter_queryset(self, request, queryset, view):
         sorted_list = queryset.copy()
         reverse = False
-
-        sort = request.query_params.get('sort')
-        if sort:
-            if sort.startswith('-'):
-                sort = sort.lstrip('-')
+        ordering = self.get_ordering(request, queryset, view)
+        if ordering:
+            if ordering.startswith('-'):
+                sort = ordering.lstrip('-')
                 reverse = True
 
             try:
                 source = view.get_serializer_class()._declared_fields[sort].source
-                sorted_list['results'] = sorted(queryset['results'], key=lambda item: item['_source'][source], reverse=reverse)
+                return sorted(
+                    queryset,
+                    key=lambda item: item['_source'][source],
+                    reverse=reverse,
+                )
             except KeyError:
                 pass
-        default_sort = self.get_default_ordering(view)
-
-        if default_sort:
-            return sorted(
-                sorted_list,
-                key=functools.cmp_to_key(sort_multiple(default_sort)),
-            )
-
         return sorted_list
 
 
