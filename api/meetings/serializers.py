@@ -175,8 +175,8 @@ class MeetingSubmissionSerializer(NodeSerializer):
             },
         )
 
-    # Overrides SparseFieldsetMixin
-    def parse_sparse_fields(self, allow_unsafe=False, **kwargs):
+    # Overrides BaseAPISerializer
+    def parse_sparse_fields(self):
         """
         Since meeting submissions are actually nodes, we are subclassing the NodeSerializer,
         but we only want to return a subset of fields specific to meetings
@@ -190,13 +190,13 @@ class MeetingSubmissionSerializer(NodeSerializer):
             'download_count',
             'submission_file',
         ]
-        for field_name in self.fields.fields.copy().keys():
+        for field_name in list(self.fields.keys()):
             if field_name in ('id', 'links', 'type'):
                 # MUST return these fields
                 continue
             if field_name not in fieldset:
                 self.fields.pop(field_name)
-        return super(MeetingSubmissionSerializer, self).parse_sparse_fields(allow_unsafe, **kwargs)
+        return super().parse_sparse_fields()
 
     class Meta:
         type_ = 'meeting-submissions'
