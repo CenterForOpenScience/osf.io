@@ -32,19 +32,19 @@ UPDATE_METHODS = ['PUT', 'PATCH']
 
 hashids = Hashids(alphabet='abcdefghijklmnopqrstuvwxyz', salt=HASHIDS_SALT)
 
-def decompose_field(field):
-    from api.base.serializers import (
-        HideIfWithdrawal, HideIfRegistration,
-        HideIfDisabled, AllowMissing, NoneIfWithdrawal,
-    )
-    WRAPPER_FIELDS = (HideIfWithdrawal, HideIfRegistration, HideIfDisabled, AllowMissing, NoneIfWithdrawal)
 
-    while isinstance(field, WRAPPER_FIELDS):
-        try:
-            field = getattr(field, 'field')
-        except AttributeError:
-            break
-    return field
+def decompose_field(field):
+    """
+    Returns the lowest nested field. If no nesting, returns the original field.
+    :param field, highest field
+
+    Assumes nested structures like the following:
+    - field, field.field, field.child_relation, field.field.child_relation, etc.
+    """
+    while hasattr(field, 'field'):
+        field = field.field
+    return getattr(field, 'child_relation', field)
+
 
 def is_bulk_request(request):
     """

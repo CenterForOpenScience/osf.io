@@ -34,7 +34,7 @@ class RequestSerializer(JSONAPISerializer):
         read_only=True,
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<creator._id>'},
-        filter_key='creator___id',
+        source='creator___id',
     )
 
     links = LinksField({
@@ -63,7 +63,7 @@ class NodeRequestSerializer(RequestSerializer):
         read_only=True,
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<target._id>'},
-        filter_key='target__guids___id',
+        source='target__guids___id',
     )
 
     def get_target_url(self, obj):
@@ -78,7 +78,7 @@ class RegistrationRequestSerializer(RequestSerializer):
         read_only=True,
         related_view='registrations:registration-detail',
         related_view_kwargs={'node_id': '<target._id>'},
-        filter_key='target__guids___id',
+        source='target__guids___id',
     )
 
     def get_target_url(self, obj):
@@ -133,7 +133,7 @@ class PreprintRequestSerializer(RequestSerializer):
         read_only=True,
         related_view='preprints:preprint-detail',
         related_view_kwargs={'preprint_id': '<target._id>'},
-        filter_key='target__guids___id',
+        source='target__guids___id',
     )
 
     actions = RelationshipField(
