@@ -1812,8 +1812,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         )
         new.save()
 
-        GuidMetadataRecord.objects.copy(from_=self, to_=new)
-
         if parent:
             node_relation = NodeRelation.objects.get(parent=parent.template_node, child=self)
             NodeRelation.objects.get_or_create(_order=node_relation._order, parent=parent, child=new)
