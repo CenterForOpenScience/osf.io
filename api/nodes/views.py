@@ -431,7 +431,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
     serializer_class = NodeContributorsSerializer
     view_category = 'nodes'
     view_name = 'node-contributors'
-    ordering = ('_order',)
+    ordering = ('_order',)  # default ordering
 
     def get_resource(self):
         return self.get_node()

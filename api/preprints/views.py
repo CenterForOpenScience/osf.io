@@ -101,7 +101,8 @@ class PreprintList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.ListCreat
 
     serializer_class = PreprintSerializer
 
-    ordering = ('-created', 'date_last_transitioned')
+    ordering = ('-created')
+    ordering_fields = ('created', 'date_last_transitioned')
     view_category = 'preprints'
     view_name = 'preprint-list'
     metric_map = {

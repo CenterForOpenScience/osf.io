@@ -106,28 +106,17 @@ class OSFOrderingFilter(OrderingFilter):
         return valid_fields
 
 
-class RawListOrderingFilter(OSFOrderingFilter):
+class RawListOrderingFilter(OrderingFilter):
     """ This is to enable sorting for views that uses response data (from services like elasticsearch) or raw list data
      instead of a typical queryset"""
-    def filter_queryset(self, request, queryset, view):
-        sorted_list = queryset.copy()
-        reverse = False
-        ordering = self.get_ordering(request, queryset, view)
+    def filter_queryset(self, request, raw_list, view):
+        ordering = self.get_ordering(request, raw_list, view)
         if ordering:
-            if ordering.startswith('-'):
-                sort = ordering.lstrip('-')
-                reverse = True
-
-            try:
-                source = view.get_serializer_class()._declared_fields[sort].source
-                return sorted(
-                    queryset,
-                    key=lambda item: item['_source'][source],
-                    reverse=reverse,
-                )
-            except KeyError:
-                pass
-        return sorted_list
+            return sorted(
+                raw_list,
+                key=functools.cmp_to_key(sort_multiple(ordering)),
+            )
+        return raw_list
 
 
 class FilterMixin(object):
