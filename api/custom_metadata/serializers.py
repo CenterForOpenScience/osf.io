@@ -27,8 +27,8 @@ class CustomMetadataPropertySerializer(ser.Serializer):
     value_as_text = ser.CharField()
 
 
-class GuidMetadataRecordSerializer(JSONAPISerializer):
-    EDITABLE_FIELDS = None  # override in subclasses
+class CustomItemMetadataSerializer(JSONAPISerializer):
+    EDITABLE_FIELDS = ('language', 'resource_type_general', 'funding_info')
 
     id = IDField(read_only=True, source='guid._id')
     guid = RelationshipField(
@@ -44,11 +44,11 @@ class GuidMetadataRecordSerializer(JSONAPISerializer):
         required=False,
     )
     links = LinksField({
-        'self': 'get_self_link',
+        'self': 'get_absolute_url',
     })
 
-    def get_self_link(self, obj):
-        raise NotImplementedError
+    class Meta:
+        type_ = 'custom-item-metadata-records'
 
     def update(self, guid_metadata_record, validated_data):
         for field_name in self.EDITABLE_FIELDS:
@@ -57,14 +57,7 @@ class GuidMetadataRecordSerializer(JSONAPISerializer):
         guid_metadata_record.save()
         return guid_metadata_record
 
-
-class CustomItemMetadataSerializer(GuidMetadataRecordSerializer):
-    EDITABLE_FIELDS = ('language', 'resource_type_general', 'funding_info')
-
-    class Meta:
-        type_ = 'custom-item-metadata-records'
-
-    def get_self_link(self, obj):
+    def get_absolute_url(self, obj):
         return absolute_reverse(
             'custom-item-metadata:custom-item-metadata-detail', kwargs={
                 'guid_id': obj.guid._id,
@@ -73,7 +66,7 @@ class CustomItemMetadataSerializer(GuidMetadataRecordSerializer):
         )
 
 
-class CustomFileMetadataSerializer(GuidMetadataRecordSerializer):
+class CustomFileMetadataSerializer(CustomItemMetadataSerializer):
     EDITABLE_FIELDS = ('title', 'description', 'language', 'resource_type_general', 'funding_info')
 
     title = ser.CharField(required=False, allow_blank=True)  # TODO: max-length
@@ -82,7 +75,7 @@ class CustomFileMetadataSerializer(GuidMetadataRecordSerializer):
     class Meta:
         type_ = 'custom-file-metadata-records'
 
-    def get_self_link(self, obj):
+    def get_absolute_url(self, obj):
         return absolute_reverse(
             'custom-file-metadata:custom-file-metadata-detail', kwargs={
                 'guid_id': obj.guid._id,
