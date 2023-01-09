@@ -927,6 +927,12 @@ class RelationshipField(ser.Field):
                     elif related_type == 'collections' and related_class.view_name == 'collection-submission-detail':
                         related_id = f'{resolved_url.kwargs["collection_submission_id"]}-{resolved_url.kwargs["collection_id"]}'
                         related_type = 'collection-submission'
+                    elif related_type == 'custom-item-metadata':
+                        related_id = resolved_url.kwargs['guid_id']
+                        related_type = 'custom-item-metadata-records'
+                    elif related_type == 'custom-file-metadata':
+                        related_id = resolved_url.kwargs['guid_id']
+                        related_type = 'custom-file-metadata-records'
                     else:
                         related_id = resolved_url.kwargs[related_type[:-1] + '_id']
                 except KeyError:

@@ -1,3 +1,11 @@
+'''
+This module defines the OutcomeArtifact model and its custom manager.
+
+OutcomeArtifacts are a through-table, providing some additional metadata on the relationship
+between an Outcome and an external Identifier that stores materials or provides context
+for the research effort described by the Outcome.
+'''
+
 from django.db import models, IntegrityError, transaction
 from django.utils import timezone
 
@@ -13,15 +21,6 @@ from osf.models.identifiers import Identifier
 from osf.utils import outcomes as outcome_utils
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.identifiers import normalize_identifier
-
-
-'''
-This module defines the OutcomeArtifact model and its custom manager.
-
-OutcomeArtifacts are a through-table, providing some additional metadata on the relationship
-between an Outcome and an external Identifier that stores materials or provides context
-for the research effort described by the Outcome.
-'''
 
 
 ArtifactTypes = outcome_utils.ArtifactTypes

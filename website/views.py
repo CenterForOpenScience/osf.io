@@ -293,8 +293,14 @@ def resolve_guid(guid, suffix=None):
     for example the url `/<file-guid>/?action=download` a response for file data is served.
     '''
 
+    clean_suffix = (
+        suffix.rstrip('/').lower()
+        if suffix
+        else ''
+    )
+
     # Legacies views that serve bytes
-    if suffix and 'download' == suffix.rstrip('/'):
+    if 'download' == clean_suffix:
         return resolve_guid_download(guid)
     if 'download' == request.args.get('action'):
         return resolve_guid_download(guid)
@@ -314,15 +320,15 @@ def resolve_guid(guid, suffix=None):
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
     if isinstance(resource, AbstractNode):
-        response = check_contributor_auth(
+        login_redirect_response = check_contributor_auth(
             resource,
             auth=Auth.from_kwargs(request.args.to_dict(), {}),
             include_public=True,
             include_view_only_anon=True,
             include_groups=True
         )
-        if response:
-            return response
+        if login_redirect_response:
+            return login_redirect_response
 
     # Stream to ember app if resource has emberized view
     addon_paths = [f'files/{addon.short_name}' for addon in settings.ADDONS_AVAILABLE_DICT.values() if 'storage' in addon.categories] + ['files']
@@ -332,20 +338,23 @@ def resolve_guid(guid, suffix=None):
             return redirect(resource.absolute_url, http_status.HTTP_301_MOVED_PERMANENTLY)
         return stream_emberapp(EXTERNAL_EMBER_APPS['preprints']['server'], preprints_dir)
 
-    elif isinstance(resource, Registration) and (not suffix or suffix.rstrip('/').lower() in ('comments', 'links', 'components', 'resources',)) and waffle.flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
-        return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
+    elif isinstance(resource, Registration) and (clean_suffix in ('', 'comments', 'links', 'components', 'resources',)) and waffle.flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
+        return use_ember_app()
 
-    elif isinstance(resource, Registration) and suffix and suffix.rstrip('/').lower() in ('files', 'files/osfstorage') and waffle.flag_is_active(request, features.EMBER_REGISTRATION_FILES):
-        return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
+    elif isinstance(resource, Registration) and (clean_suffix in ('files', 'files/osfstorage')) and waffle.flag_is_active(request, features.EMBER_REGISTRATION_FILES):
+        return use_ember_app()
 
-    elif isinstance(resource, Node) and suffix and any(path.startswith(suffix.rstrip('/').lower()) for path in addon_paths) and waffle.flag_is_active(request, features.EMBER_PROJECT_FILES):
-        return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
+    elif isinstance(resource, Node) and clean_suffix and any(path.startswith(clean_suffix) for path in addon_paths) and waffle.flag_is_active(request, features.EMBER_PROJECT_FILES):
+        return use_ember_app()
 
     elif isinstance(resource, BaseFileNode) and resource.is_file and not isinstance(resource.target, Preprint):
         if isinstance(resource.target, Registration) and waffle.flag_is_active(request, features.EMBER_FILE_REGISTRATION_DETAIL):
-            return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
+            return use_ember_app()
         if isinstance(resource.target, Node) and waffle.flag_is_active(request, features.EMBER_FILE_PROJECT_DETAIL):
-            return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
+            return use_ember_app()
+
+    if clean_suffix == 'metadata':
+        return use_ember_app()
 
     # Redirect to legacy endpoint for Nodes, Wikis etc.
     url = _build_guid_url(unquote(resource.deep_url), suffix)

@@ -2,7 +2,7 @@ from future.moves.urllib.parse import urljoin
 
 from django.urls import resolve, reverse
 
-from api.base.serializers import JSONAPISerializer, IDField, TypeField, RelationshipField, LinksField
+from api.base.serializers import JSONAPISerializer, IDField, TypeField, RelatedLambdaRelationshipField, RelationshipField, LinksField
 from api.base.utils import absolute_reverse
 from osf.models import OSFUser, AbstractNode, Registration, Guid, BaseFileNode, Collection, Node, Preprint
 from website import settings as website_settings
@@ -23,14 +23,15 @@ def get_type(record):
         return get_type(record.referent)
     elif isinstance(record, Collection):
         return 'collections'
+    raise NotImplementedError(f'unrecognized guid referent: {record}')
 
-def get_related_view(record):
+def get_referent_view(record):
     kind = get_type(record)
     # slight hack, works for existing types
     singular = kind.rstrip('s')
     return '{}:{}-detail'.format(kind, singular)
 
-def get_related_view_kwargs(record):
+def get_referent_view_kwargs(record):
     kind = get_type(record)
     # slight hack, works for existing types
     singular = kind.rstrip('s')
@@ -40,6 +41,12 @@ def get_related_view_kwargs(record):
     return {
         '{}_id'.format(singular): '<_id>',
     }
+
+def get_custom_metadata_view(referent):
+    if isinstance(referent, BaseFileNode):
+        # files have a special custom metadata view (for now...)
+        return 'custom-file-metadata:custom-file-metadata-detail'
+    return 'custom-item-metadata:custom-item-metadata-detail'
 
 class GuidSerializer(JSONAPISerializer):
 
@@ -52,11 +59,16 @@ class GuidSerializer(JSONAPISerializer):
     type = TypeField()
 
     referent = RelationshipField(
-        related_view=get_related_view,
-        related_view_kwargs=get_related_view_kwargs,
+        related_view=get_referent_view,
+        related_view_kwargs=get_referent_view_kwargs,
         related_meta={
             'type': 'get_type',
         },
+    )
+    custom_metadata = RelatedLambdaRelationshipField(
+        view_lambda_argument='referent',
+        related_view=get_custom_metadata_view,
+        related_view_kwargs={'guid_id': '<_id>'},
     )
     links = LinksField({
         'self': 'get_absolute_url',
@@ -94,7 +106,7 @@ class GuidSerializer(JSONAPISerializer):
 
             ser = resolve(
                 reverse(
-                    get_related_view(obj),
+                    get_referent_view(obj),
                     kwargs={
                         'version': self.context['view'].kwargs.get('version', '2'),
                         **view_kwargs,

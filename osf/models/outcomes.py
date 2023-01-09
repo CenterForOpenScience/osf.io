@@ -1,3 +1,11 @@
+'''
+This module defines the Outcome model and its custom manager.
+
+Outcomes serve as a way to collect metadata about a research effort and to aggregate Identifiers
+used to share data or provide context for a that research effort, along with some additional metadata
+stored in the OutcomeArtifact through table.
+'''
+
 from django.db import models
 from django.utils.functional import cached_property
 
@@ -6,14 +14,6 @@ from osf.models.base import BaseModel, ObjectIDMixin
 from osf.models.mixins import EditableFieldsMixin
 from osf.models.nodelog import NodeLog
 from osf.utils.outcomes import ArtifactTypes, OutcomeActions
-
-'''
-This module defines the Outcome model and its custom manager.
-
-Outcomes serve as a way to collect metadata about a research effort and to aggregate Identifiers
-used to share data or provide context for a that research effort, along with some additional metadata
-stored in the OutcomeArtifact through table.
-'''
 
 NODE_LOGS_FOR_OUTCOME_ACTION = {
     OutcomeActions.ADD: NodeLog.RESOURCE_ADDED,

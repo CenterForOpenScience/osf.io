@@ -44,9 +44,9 @@ from osf.models import (
     Preprint,
     PreprintProvider,
     Node,
+    NodeLicense,
 )
 from osf.utils import permissions as osf_permissions
-
 
 from osf.exceptions import PreprintStateError
 
@@ -76,6 +76,14 @@ class PreprintProviderRelationshipField(RelationshipField):
 
     def to_internal_value(self, data):
         return self.get_object(data)
+
+
+class PreprintLicenseRelationshipField(RelationshipField):
+    def to_internal_value(self, license_id):
+        license = NodeLicense.load(license_id)
+        if license:
+            return license
+        raise exceptions.NotFound('Unable to find specified license.')
 
 
 class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, JSONAPISerializer):
