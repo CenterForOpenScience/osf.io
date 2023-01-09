@@ -268,9 +268,9 @@ class ComposedScopes(object):
     ORGANIZER_WRITE = ORGANIZER_READ + (CoreScopes.ORGANIZER_COLLECTIONS_BASE_WRITE, CoreScopes.NODE_LINKS_WRITE, CoreScopes.COLLECTED_META_WRITE)
 
     # Privileges relating to editing content uploaded under that node
-    NODE_DATA_READ = (CoreScopes.NODE_FILE_READ, CoreScopes.WIKI_BASE_READ)
+    NODE_DATA_READ = (CoreScopes.NODE_FILE_READ, CoreScopes.WIKI_BASE_READ, CoreScopes.NODE_ADDON_READ)
     NODE_DATA_WRITE = NODE_DATA_READ + \
-                        (CoreScopes.NODE_FILE_WRITE, CoreScopes.WIKI_BASE_WRITE)
+                        (CoreScopes.NODE_FILE_WRITE, CoreScopes.WIKI_BASE_WRITE, CoreScopes.NODE_ADDON_WRITE)
 
     # Privileges relating to editing content uploaded under that preprint
     PREPRINT_DATA_READ = (CoreScopes.PREPRINT_FILE_READ,)
@@ -339,7 +339,7 @@ class ComposedScopes(object):
 
     # Admin permissions- includes functionality not intended for third-party use
     ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE + TOKENS_WRITE + COMMENT_REPORTS_WRITE + USERS_CREATE + REVIEWS_WRITE +\
-                    (CoreScopes.USER_EMAIL_READ, CoreScopes.USER_ADDON_READ, CoreScopes.NODE_ADDON_READ, CoreScopes.NODE_ADDON_WRITE, CoreScopes.WAFFLE_READ, )
+                    (CoreScopes.USER_EMAIL_READ, CoreScopes.USER_ADDON_READ, CoreScopes.WAFFLE_READ, )
 
 # List of all publicly documented scopes, mapped to composed scopes defined above.
 #   Return as sets to enable fast comparisons of provided scopes vs those required by a given node
