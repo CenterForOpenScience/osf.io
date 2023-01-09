@@ -28,3 +28,20 @@ class InstitutionAffiliation(BaseModel):
 
     def __str__(self):
         return f'{self.user._id}::{self.institution._id}::{self.sso_identity}'
+
+
+def get_user_by_institution_identity(institution, sso_identity):
+    """Return the user with the given sso_identity for the given institution.
+    """
+    if not institution or not sso_identity:
+        return None
+    if sso_identity == InstitutionAffiliation.DEFAULT_VALUE_FOR_SSO_IDENTITY_NOT_AVAILABLE:
+        return None
+    try:
+        affiliation = InstitutionAffiliation.objects.get(institution___id=institution._id, sso_identity=sso_identity)
+    except InstitutionAffiliation.DoesNotExist:
+        return None
+    except InstitutionAffiliation.MultipleObjectsReturned:
+        # TODO: add exception handling
+        return None
+    return affiliation.user

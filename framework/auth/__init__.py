@@ -114,40 +114,43 @@ def register_unconfirmed(username, password, fullname, campaign=None, accepted_t
     return user
 
 
-def get_or_create_institutional_user(fullname, sso_email, eppn=None):
+def get_or_create_institutional_user(fullname, sso_email, sso_identity, primary_institution):
     """
-    Get or create an institutional user by fullname, email address and eppn (optional). Returns a tuple of three
-    objects ``(user, is_created, email_to_add)``: the user to authenticate, whether the user is newly created or
-    not, and an extra email to add to the user later (after the user passes status check).
-
+    Get or create an institutional user by fullname, email address and sso identity and institution.
+    Returns a tuple of four objects ``(user, is_created, duplicate_user, email_to_add)``:
+        1. the user to authenticate
+        2. whether the user is newly created or not
+        3. whether a potential duplicate user is found or not
+        4. the extra email to add to the user account
     :param str fullname: user's full name
     :param str sso_email: user's email, which comes from the email attribute during SSO
-    :param str eppn: user's eppn, which comes from the identity attribute during SSO
+    :param str sso_identity: user's institutional identity, which comes from the identity attribute during SSO
+    :param Institution primary_institution: the primary institution
     """
 
     from osf.models import OSFUser
-    email_user = get_user(email=sso_email)
-    # If eppn is provided by CAS, check if an account already exists using eppn as email.
-    if eppn:
-        eppn_user = get_user(email=eppn)
-        if eppn_user:
-            if not email_user:
-                # CASE 1/5: If the email doesn't belong to any user, return both the eppn_user and the sso_email.
-                return eppn_user, False, sso_email
-            if email_user == eppn_user:
-                # CASE 2/5: Return the user only since sso_email already belongs to the same user
-                return email_user, False, None
-            # CASE 3/5: When eppn and sso_email point to different users, the sso_email takes priority
-            return email_user, False, None
-    # If eppn is not provided, use email_user if found.
-    if email_user:
-        # CASE 4/5: user only found via email
-        return email_user, False, None
-    # CASE 5/5: If no user is found, create a confirmed user and return it.
+    from osf.models.institution_affiliation import get_user_by_institution_identity
+
+    user_by_email = get_user(email=sso_email)
+    user_by_identity = get_user_by_institution_identity(primary_institution, sso_identity)
+
+    if user_by_identity:
+        # CASE 1/?: the user is only found by identity but not by email
+        if not user_by_email:
+            return user_by_identity, False, None, sso_email,
+        # CASE 2/?: the same user is found by both email and identity
+        if user_by_email == user_by_identity:
+            return user_by_identity, False, None, None
+        # CASE 3/?: two different users are found, one by email and the other by identity
+        return user_by_identity, False, user_by_email, None
+    # CASE 4/?: the user is only found by email but not by identity
+    if user_by_email:
+        return user_by_email, False, None, None
+    # CASE 5/?: If no user is found, create a confirmed user and return it.
     # Institution users are created as confirmed with a strong and random password. Users don't need the password
     # since they sign in via institution SSO. They can reset their password to enable email/password login.
     user = OSFUser.create_confirmed(sso_email, str(uuid.uuid4()), fullname)
-    return user, True, None
+    return user, True, None, None
 
 
 def get_or_create_user(fullname, address, reset_password=True, is_spam=False):
