@@ -54,7 +54,7 @@ class TestMetricsReports:
         }
         resp = app.get(f'/_/metrics/reports/{report_name}/recent/')
 
-        assert resp.json == {'data': [
+        assert resp.json['data'] == [
             {
                 'id': 'hi-by',
                 'type': f'daily-report:{report_name}',
@@ -70,4 +70,4 @@ class TestMetricsReports:
                     'hello': 'upwa',
                 },
             }
-        ]}
+        ]

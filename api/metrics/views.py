@@ -8,6 +8,7 @@ from elasticsearch_dsl.connections import get_connection
 from rest_framework.exceptions import ValidationError
 from rest_framework import permissions as drf_permissions
 from rest_framework.generics import GenericAPIView
+from rest_framework.response import Response
 
 from framework.auth.oauth_scopes import CoreScopes
 from api.base.permissions import TokenHasScope
@@ -262,7 +263,7 @@ class ReportNameList(JSONAPIBaseView):
             VIEWABLE_REPORTS.keys(),
             many=True,
         )
-        return JsonResponse({'data': serializer.data})
+        return Response({'data': serializer.data})
 
 
 class RecentReportList(JSONAPIBaseView):
@@ -310,7 +311,7 @@ class RecentReportList(JSONAPIBaseView):
             many=True,
             context={'report_name': report_name},
         )
-        return JsonResponse({'data': serializer.data})
+        return Response({'data': serializer.data})
 
 
 class CountedUsageView(JSONAPIBaseView):
@@ -393,7 +394,7 @@ class NodeAnalyticsQuery(JSONAPIBaseView):
                 'timespan': timespan,
             },
         )
-        return JsonResponse({'data': serializer.data})
+        return Response({'data': serializer.data})
 
     def _run_query(self, node_guid, timespan):
         query_dict = self._build_query_payload(node_guid, NodeAnalyticsQuery.Timespan(timespan))
