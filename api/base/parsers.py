@@ -7,6 +7,7 @@ import collections
 from django.core.exceptions import ImproperlyConfigured
 from rest_framework.parsers import JSONParser
 from rest_framework.exceptions import ParseError, NotAuthenticated
+from rest_framework.settings import api_settings
 
 from framework.auth import signing
 from api.base.utils import is_bulk_request
@@ -326,7 +327,7 @@ class SearchParser(JSONAPIParser):
             },
         }
 
-        sort = parser_context['request'].query_params.get('sort')
+        sort = parser_context['request'].query_params.get(api_settings.ORDERING_PARAM)
         if sort:
             res['sort'] = [{
                 sort.lstrip('-'): {

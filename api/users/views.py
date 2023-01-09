@@ -9,7 +9,7 @@ from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
 from api.base.waffle_decorators import require_flag
 from api.base.exceptions import Conflict, UserGone, Gone
-from api.base.filters import ListFilterMixin, PreprintFilterMixin
+from api.base.filters import ListFilterMixin, PreprintFilterMixin, RawListOrderingFilter
 from api.base.parsers import (
     JSONAPIRelationshipParser,
     JSONAPIRelationshipParserForRegularJSON,
@@ -86,6 +86,7 @@ from osf.models import (
 )
 from website import mails, settings
 from website.project.views.contributor import send_claim_email, send_claim_registered_email
+
 
 class UserMixin(object):
     """Mixin with convenience methods for retrieving the current user based on the
@@ -220,12 +221,16 @@ class UserAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, User
     serializer_class = UserAddonSettingsSerializer
     view_category = 'users'
     view_name = 'user-addons'
+    filter_backends = (RawListOrderingFilter,)
 
     ordering = ('-id',)
 
     def get_queryset(self):
         qs = [addon for addon in self.get_user().get_addons() if 'accounts' in addon.config.configs]
-        sorted(qs, key=lambda addon: addon.id, reverse=True)
+
+        for addon in qs:
+            addon.id = addon.config.short_name
+
         return qs
 
 
@@ -323,7 +328,8 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, UserNodesFilte
         default_queryset = user.nodes_contributor_or_group_member_to
         if user != self.request.user:
             # Further restrict UserNodes to nodes the *requesting* user can view
-            return Node.objects.get_nodes_for_user(self.request.user, base_queryset=default_queryset, include_public=True)
+            node_ids = Node.objects.get_nodes_for_user(self.request.user, base_queryset=default_queryset, include_public=True).values_list('id', flat=True)
+            return Node.objects.filter(id__in=node_ids)
         return self.optimize_node_queryset(default_queryset)
 
     # overrides ListAPIView
@@ -557,6 +563,7 @@ class UserIdentitiesList(JSONAPIBaseView, generics.ListAPIView, UserMixin):
 
     required_read_scopes = [CoreScopes.USER_SETTINGS_READ]
     required_write_scopes = [CoreScopes.NULL]
+    filter_backends = (RawListOrderingFilter, )
 
     view_category = 'users'
     view_name = 'user-identities-list'
@@ -812,7 +819,7 @@ class UserEmailsList(JSONAPIBaseView, generics.ListAPIView, generics.CreateAPIVi
     required_write_scopes = [CoreScopes.USER_SETTINGS_WRITE]
 
     throttle_classes = [UserRateThrottle, NonCookieAuthThrottle, BurstRateThrottle, SendEmailThrottle]
-
+    filter_backends = (RawListOrderingFilter, )
     view_category = 'users'
     view_name = 'user-emails'
 

@@ -24,7 +24,7 @@ from api.base.exceptions import (
     InvalidQueryStringError,
     PermanentlyMovedError,
 )
-from api.base.filters import ListFilterMixin, PreprintFilterMixin
+from api.base.filters import ListFilterMixin, PreprintFilterMixin, RawListOrderingFilter
 from api.base.pagination import CommentPagination, NodeContributorPagination, MaxSizePagination
 from api.base.parsers import (
     JSONAPIRelationshipParser,
@@ -551,7 +551,7 @@ class NodeImplicitContributorsList(JSONAPIBaseView, generics.ListAPIView, ListFi
     serializer_class = UserSerializer
     view_category = 'nodes'
     view_name = 'node-implicit-contributors'
-    ordering = ('_order',)  # default ordering
+    ordering = ('contributor___order',)  # default ordering
 
     def get_default_queryset(self):
         node = self.get_node()
@@ -559,8 +559,7 @@ class NodeImplicitContributorsList(JSONAPIBaseView, generics.ListAPIView, ListFi
         return node.parent_admin_contributors
 
     def get_queryset(self):
-        queryset = self.get_queryset_from_request()
-        return queryset
+        return self.get_queryset_from_request()
 
 
 class NodeContributorsAndGroupMembersList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, NodeMixin):
@@ -612,7 +611,9 @@ class NodeBibliographicContributorsList(BaseContributorList, NodeMixin):
 
     def get_default_queryset(self):
         contributors = super(NodeBibliographicContributorsList, self).get_default_queryset()
-        return contributors.filter(visible=True)
+        return contributors.filter(visible=True).annotate(
+            modified=F('node__modified'),
+        )
 
 
 class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
@@ -698,6 +699,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
     serializer_class = RegistrationSerializer
     view_category = 'nodes'
     view_name = 'node-registrations'
+    filter_backends = [RawListOrderingFilter, ]
 
     ordering = ('-modified',)
 
@@ -1359,6 +1361,7 @@ class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, Node
     view_name = 'node-addons'
 
     ordering = ('-id',)
+    filter_backends = (RawListOrderingFilter,)
 
     def get_default_queryset(self):
         qs = []
@@ -1437,6 +1440,7 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
 
     required_read_scopes = [CoreScopes.NODE_ADDON_READ, CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NULL]
+    filter_backends = [RawListOrderingFilter, ]
 
     pagination_class = MaxSizePagination
     serializer_class = NodeAddonFolderSerializer
@@ -1502,6 +1506,7 @@ class NodeStorageProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin)
     view_name = 'node-storage-providers'
 
     ordering = ('-id',)
+    filter_backends = [RawListOrderingFilter, ]
 
     def get_provider_item(self, storage_addon):
         return NodeStorageProvider(self.get_node(), storage_addon.config.short_name, storage_addon)
@@ -1648,7 +1653,7 @@ class NodeInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixi
 
     def get_queryset(self):
         resource = self.get_resource()
-        return resource.affiliated_institutions.all() or []
+        return resource.affiliated_institutions.all()
 
 
 class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, NodeMixin):

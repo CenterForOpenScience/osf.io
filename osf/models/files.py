@@ -900,7 +900,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
         })
 
     class Meta:
-        ordering = ('-created',)
+        ordering = ['-created']
 
 
 class BaseFileVersionsThrough(models.Model):

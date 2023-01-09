@@ -185,6 +185,7 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
 
     filterable_fields = frozenset([
         'id',
+        'title',
         'collected_type',
         'date_created',
         'date_modified',
@@ -195,6 +196,8 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
     id = IDField(source='guid._id', read_only=True)
     reviews_state = EnumField(CollectionSubmissionStates, source='machine_state', required=False)
     type = TypeField()
+
+    title = ser.CharField(read_only=True)
 
     creator = RelationshipField(
         related_view='users:user-detail',

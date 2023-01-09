@@ -79,8 +79,10 @@ class TestRegistrationList(ApiTestCase):
 
         assert_equal(res.content_type, 'application/vnd.api+json')
 
-        assert [registered_from_one, registered_from_two] == ['/{}nodes/{}/'.format(API_BASE, self.public_project._id),
-             '/{}nodes/{}/'.format(API_BASE, self.project._id)]
+        assert {registered_from_one, registered_from_two} == {
+            f'/{API_BASE}nodes/{self.public_project._id}/',
+            f'/{API_BASE}nodes/{self.project._id}/',
+        }
 
     def test_return_registrations_logged_in_non_contributor(self):
         res = self.app.get(self.url, auth=self.user_two.auth)

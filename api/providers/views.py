@@ -52,6 +52,7 @@ from api.taxonomies.serializers import TaxonomySerializer
 from api.taxonomies.utils import optimize_subject_query
 from framework.auth.oauth_scopes import CoreScopes
 from api.base.settings import BULK_SETTINGS
+from api.base.filters import ElasticOSFOrderingFilter
 
 from osf.models import (
     AbstractNode,
@@ -154,6 +155,7 @@ class PreprintProviderList(PreprintMetricsViewMixin, GenericProviderList):
 
     # overrides PreprintMetricsViewMixin
     def get_annotated_queryset_with_metrics(self, queryset, metric_class, metric_name, after):
+        self.filter_backends = (ElasticOSFOrderingFilter, )
         return metric_class.get_top_by_count(
             qs=queryset,
             model_field='_id',
@@ -256,7 +258,7 @@ class GenericProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
         provider = get_object_or_error(self.provider_class, self.kwargs['provider_id'], self.request, display_name=self.provider_class.__name__)
         if parent:
             if parent == 'null':
-                return provider.top_level_subjects
+                return optimize_subject_query(provider.top_level_subjects)
             return optimize_subject_query(provider.all_subjects.filter(parent___id=parent))
         return optimize_subject_query(provider.all_subjects)
 
@@ -268,6 +270,8 @@ class CollectionProviderTaxonomies(DeprecatedView, GenericProviderTaxonomies):
     view_category = 'collection-providers'
     provider_class = CollectionProvider  # Not actually the model being serialized, privatize to avoid issues
 
+    ordering = ('is_other', 'text')
+
     max_version = '2.14'
 
 class RegistrationProviderTaxonomies(DeprecatedView, GenericProviderTaxonomies):
@@ -278,6 +282,7 @@ class RegistrationProviderTaxonomies(DeprecatedView, GenericProviderTaxonomies):
     provider_class = RegistrationProvider  # Not actually the model being serialized, privatize to avoid issues
 
     max_version = '2.14'
+    ordering = ('is_other', 'text')
 
 class PreprintProviderTaxonomies(GenericProviderTaxonomies):
     """
@@ -287,6 +292,7 @@ class PreprintProviderTaxonomies(GenericProviderTaxonomies):
     provider_class = PreprintProvider  # Not actually the model being serialized, privatize to avoid issues
 
     max_version = '2.14'
+    ordering = ('is_other', 'text')
 
 
 class BaseProviderSubjects(SubjectList):
@@ -298,7 +304,7 @@ class BaseProviderSubjects(SubjectList):
         provider = get_object_or_error(self.provider_class, self.kwargs['provider_id'], self.request, display_name=self.provider_class.__name__)
         if parent:
             if parent == 'null':
-                return provider.top_level_subjects
+                return optimize_subject_query(provider.top_level_subjects)
             return optimize_subject_query(provider.all_subjects.filter(parent___id=parent))
         return optimize_subject_query(provider.all_subjects)
 
@@ -306,11 +312,13 @@ class BaseProviderSubjects(SubjectList):
 class CollectionProviderSubjects(BaseProviderSubjects):
     view_category = 'collection-providers'
     provider_class = CollectionProvider  # Not actually the model being serialized, privatize to avoid issues
+    ordering = ('is_other', 'text')
 
 
 class RegistrationProviderSubjects(BaseProviderSubjects):
     view_category = 'registration-providers'
     provider_class = RegistrationProvider  # Not actually the model being serialized, privatize to avoid issues
+    ordering = ('is_other', 'text')
 
 
 class PreprintProviderSubjects(BaseProviderSubjects):
@@ -318,6 +326,7 @@ class PreprintProviderSubjects(BaseProviderSubjects):
     """
     view_category = 'preprint-providers'
     provider_class = PreprintProvider  # Not actually the model being serialized, privatize to avoid issues
+    ordering = ('is_other', 'text')
 
 
 class GenericProviderHighlightedTaxonomyList(JSONAPIBaseView, generics.ListAPIView):
@@ -335,7 +344,7 @@ class GenericProviderHighlightedTaxonomyList(JSONAPIBaseView, generics.ListAPIVi
 
     def get_queryset(self):
         provider = get_object_or_error(self.provider_class, self.kwargs['provider_id'], self.request, display_name=self.provider_class.__name__)
-        return optimize_subject_query(Subject.objects.filter(id__in=[s.id for s in provider.highlighted_subjects]).order_by('text'))
+        return optimize_subject_query(Subject.objects.filter(id__in=[s.id for s in provider.highlighted_subjects]))
 
 
 class CollectionProviderHighlightedTaxonomyList(DeprecatedView, GenericProviderHighlightedTaxonomyList):
@@ -366,11 +375,13 @@ class PreprintProviderHighlightedTaxonomyList(DeprecatedView, GenericProviderHig
     provider_class = PreprintProvider
 
     max_version = '2.14'
+    ordering = ('is_other', 'text')
 
 
 class GenericProviderHighlightedSubjectList(GenericProviderHighlightedTaxonomyList):
     view_name = 'highlighted-subject-list'
     serializer_class = SubjectSerializer
+    ordering = ('is_other', 'text')
 
 
 class CollectionProviderHighlightedSubjectList(GenericProviderHighlightedSubjectList):

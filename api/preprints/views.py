@@ -15,7 +15,6 @@ from api.actions.views import get_review_actions_queryset
 from api.base.pagination import PreprintContributorPagination
 from api.base.exceptions import Conflict
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
-from api.base.filters import ListFilterMixin, PreprintFilterMixin
 from api.base.parsers import (
     JSONAPIOnetoOneRelationshipParser,
     JSONAPIOnetoOneRelationshipParserForRegularJSON,
@@ -61,6 +60,7 @@ from api.requests.views import PreprintRequestMixin
 from api.subjects.views import BaseResourceSubjectsList
 from api.base.metrics import PreprintMetricsViewMixin
 from osf.metrics import PreprintDownload, PreprintView
+from api.base.filters import ListFilterMixin, PreprintFilterMixin, ElasticOSFOrderingFilter
 
 class PreprintMixin(NodeMixin):
     serializer_class = PreprintSerializer
@@ -126,6 +126,7 @@ class PreprintList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.ListCreat
         # Use get_metrics_queryset to return an queryset with annotated metrics
         # iff ?metrics query param is present
         if self.metrics_requested:
+            self.filter_backends = (ElasticOSFOrderingFilter, )
             return self.get_metrics_queryset(queryset)
         else:
             return queryset

@@ -3,6 +3,7 @@
 from rest_framework import generics
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
+from rest_framework.settings import api_settings
 
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
@@ -71,6 +72,32 @@ class BaseSearchView(JSONAPIBaseView, generics.ListCreateAPIView):
             raise ValidationError(e)
         return results
 
+    def get(self, request, *args, **kwargs):
+        """
+        Additional sorting required to allow sorting on serializer fields.
+        """
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            sort = request.query_params.get(api_settings.ORDERING_PARAM)
+            reverse = False
+            if sort and sort.startswith('-'):
+                sort = sort.lstrip('-')
+                reverse = True
+
+            if sort:
+                serializer.instance = sorted(
+                    serializer.instance,
+                    key=lambda item: getattr(item, sort, -1),
+                    reverse=reverse,
+                )
+
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 class Search(BaseSearchView):
     """

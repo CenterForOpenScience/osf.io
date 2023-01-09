@@ -7,7 +7,7 @@ from rest_framework import generics, permissions as drf_permissions
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.addons.serializers import AddonSerializer
-from api.base.filters import ListFilterMixin
+from api.base.filters import ListFilterMixin, RawListOrderingFilter
 from api.base.pagination import MaxSizePagination
 from api.base.permissions import TokenHasScope
 from api.base.settings import ADDONS_OAUTH
@@ -73,6 +73,7 @@ class AddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     serializer_class = AddonSerializer
     view_category = 'addons'
     view_name = 'addon-list'
+    filter_backends = [RawListOrderingFilter, ]
 
     ordering = ()
 

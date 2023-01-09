@@ -13,14 +13,12 @@ from api.base.exceptions import (
 )
 from api.base.serializers import RelationshipField, ShowIfVersion, TargetField
 from dateutil import parser as date_parser
-from django.core.exceptions import ValidationError
-from django.db.models import QuerySet as DjangoQuerySet
-from django.db.models import Q
+from django.core.exceptions import ValidationError, ImproperlyConfigured
+from django.db.models import Q, QuerySet
 from rest_framework import serializers as ser
 from rest_framework.filters import OrderingFilter
 from osf.models import Subject, Preprint
 from osf.models.base import GuidMixin
-from functools import cmp_to_key
 
 def lowercase(lower):
     if hasattr(lower, '__call__'):
@@ -49,22 +47,27 @@ def sort_multiple(fields):
 
 class OSFOrderingFilter(OrderingFilter):
     """Adaptation of rest_framework.filters.OrderingFilter to work with modular-odm."""
-    # override
+
+    def get_ordering(self, request, queryset, view):
+        assert isinstance(queryset, QuerySet) or issubclass(queryset.__class__, QuerySet), \
+            f' please return a QuerySet or use different ordering filter for {view}'
+
+        return super().get_ordering(request, queryset, view)
+
     def filter_queryset(self, request, queryset, view):
+        """
+        Lazy evaluation of `distinct` to prevent conflicting ordering when on query params
+        """
         ordering = self.get_ordering(request, queryset, view)
-        if isinstance(queryset, DjangoQuerySet):
-            if queryset.ordered:
-                return queryset
-            elif ordering and getattr(queryset.query, 'distinct_fields', None):
-                order_fields = tuple([field.lstrip('-') for field in ordering])
-                distinct_fields = queryset.query.distinct_fields
-                queryset.query.distinct_fields = tuple(set(distinct_fields + order_fields))
-            return super(OSFOrderingFilter, self).filter_queryset(request, queryset, view)
+
+        fields = queryset.query.distinct_fields
+        queryset.query.distinct_fields = ()
         if ordering:
-            if isinstance(ordering, (list, tuple)):
-                sorted_list = sorted(queryset, key=cmp_to_key(sort_multiple(ordering)))
-                return sorted_list
-            return queryset.sort(*ordering)
+            return queryset.order_by(*ordering)
+
+        if fields:
+            queryset = queryset.distinct(*fields)
+
         return queryset
 
     def get_serializer_source_field(self, view, request):
@@ -100,7 +103,13 @@ class OSFOrderingFilter(OrderingFilter):
         :param fields, array, input sort fields
         :returns array of source fields for sorting.
         """
-        valid_fields = super(OSFOrderingFilter, self).remove_invalid_fields(queryset, fields, view, request)
+        valid_fields = super().remove_invalid_fields(queryset, fields, view, request)
+
+        # sort on annotations
+        sort_param = request.query_params.get(self.ordering_param)
+        valid_fields += [sort_param for item in queryset.query.annotations.keys() if item == sort_param.lstrip('-')]
+
+        # sort on serializer fields
         if not valid_fields:
             for invalid_field in fields:
                 ordering_sign = '-' if invalid_field[0] == '-' else ''
@@ -126,11 +135,71 @@ class ElasticOSFOrderingFilter(OSFOrderingFilter):
 
             try:
                 source = view.get_serializer_class()._declared_fields[sort].source
+                if not source:
+                    source = sort
                 sorted_list['results'] = sorted(queryset['results'], key=lambda item: item['_source'][source], reverse=reverse)
             except KeyError:
                 pass
 
         return sorted_list
+
+
+class SortNotImplemented(OrderingFilter):
+    """
+    Some serializers aren't going to able to support sorting.
+    """
+    def filter_queryset(self, request, queryset, view):
+        return queryset
+
+
+class RawListOrderingFilter(OrderingFilter):
+    """ This is to enable sorting for views that uses response data (from services like elasticsearch) or raw list data
+     instead of a typical queryset"""
+    def filter_queryset(self, request, raw_list, view):
+        ordering = self.get_ordering(request, raw_list, view)
+        if ordering:
+            ordering = [
+                view.get_serializer_class()._declared_fields[item.lstrip('-')].source if
+                view.get_serializer_class()._declared_fields[item.lstrip('-')].source else item for item in ordering
+            ]
+            return sorted(
+                raw_list,
+                key=functools.cmp_to_key(sort_multiple(ordering)),
+            )
+        return raw_list
+
+    def get_default_valid_fields(self, queryset, view, context={}):
+        # If `ordering_fields` is not specified, then we determine a default
+        # based on the serializer class, if one exists on the view.
+        if hasattr(view, 'get_serializer_class'):
+            try:
+                serializer_class = view.get_serializer_class()
+            except AssertionError:
+                # Raised by the default implementation if
+                # no serializer_class was found
+                serializer_class = None
+        else:
+            serializer_class = getattr(view, 'serializer_class', None)
+
+        if serializer_class is None:
+            msg = (
+                'Cannot use %s on a view which does not have either a '
+                'serializer_class\', an overriding \'get_serializer_class\' '
+                'or \'ordering_fields\' attribute.'
+            )
+            raise ImproperlyConfigured(msg % self.__class__.__name__)
+
+        return [item for item in view.get_serializer_class()._declared_fields]
+
+    def remove_invalid_fields(self, queryset, fields, view, request):
+        valid_fields = self.get_valid_fields(queryset, view, {'request': request})
+
+        def term_valid(term):
+            if term.startswith('-'):
+                term = term[1:]
+            return term in valid_fields
+
+        return [term for term in fields if term_valid(term)]
 
 
 class FilterMixin(object):

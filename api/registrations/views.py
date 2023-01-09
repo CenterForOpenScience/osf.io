@@ -9,7 +9,6 @@ from osf.utils.workflows import ApprovalStates
 from api.base import permissions as base_permissions
 from api.base import generic_bulk_views as bulk_views
 from api.base.exceptions import Gone
-from api.base.filters import ListFilterMixin
 from api.base.views import (
     JSONAPIBaseView,
     BaseChildrenList,
@@ -41,6 +40,7 @@ from api.identifiers.serializers import RegistrationIdentifierSerializer
 from api.nodes.views import NodeIdentifierList, NodeBibliographicContributorsList, NodeSubjectsList, NodeSubjectsRelationship
 from api.users.views import UserMixin
 from api.users.serializers import UserSerializer
+from api.base.filters import ListFilterMixin, RawListOrderingFilter
 
 from api.nodes.permissions import (
     ReadOnlyIfRegistration,
@@ -134,7 +134,6 @@ class RegistrationList(JSONAPIBaseView, generics.ListCreateAPIView, bulk_views.B
     view_category = 'registrations'
     view_name = 'registration-list'
 
-    ordering = ('-modified',)
     model_class = Registration
 
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
@@ -331,7 +330,7 @@ class RegistrationImplicitContributorsList(JSONAPIBaseView, generics.ListAPIView
     serializer_class = UserSerializer
     view_category = 'registrations'
     view_name = 'registration-implicit-contributors'
-    ordering = ('_order',)  # default ordering
+    ordering = ('contributor___order',)  # default ordering
 
     def get_default_queryset(self):
         node = self.get_node()
@@ -408,6 +407,7 @@ class RegistrationStorageProvidersList(NodeStorageProvidersList, RegistrationMix
 
     view_category = 'registrations'
     view_name = 'registration-storage-providers'
+    filter_backends = [RawListOrderingFilter, ]
 
 
 class RegistrationNodeLinksList(BaseNodeLinksList, RegistrationMixin):
@@ -478,6 +478,7 @@ class RegistrationNodeLinksList(BaseNodeLinksList, RegistrationMixin):
 
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NULL]
+    filter_backends = [RawListOrderingFilter, ]
 
     # TODO: This class doesn't exist
     # model_class = Pointer
@@ -568,7 +569,7 @@ class RegistrationFilesList(NodeFilesList, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-files'
 
-    ordering_fields = ['modified', 'name', 'date_modified']
+    ordering = ('modified', 'name', 'date_modified', )
     serializer_class = RegistrationFileSerializer
 
 
@@ -578,6 +579,7 @@ class RegistrationFileDetail(NodeFileDetail, RegistrationMixin):
     view_category = 'registrations'
     view_name = 'registration-file-detail'
     serializer_class = RegistrationFileSerializer
+    filter_backends = [RawListOrderingFilter, ]
 
 
 class RegistrationInstitutionsList(NodeInstitutionsList, RegistrationMixin):
@@ -660,6 +662,7 @@ class RegistrationLinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveAPIV
 
     serializer_class = LinkedNodesRelationshipSerializer
     parser_classes = (JSONAPIRelationshipParser, JSONAPIRelationshipParserForRegularJSON, )
+    filter_backends = [RawListOrderingFilter, ]
 
     def get_object(self):
         node = self.get_node(check_object_permissions=False)
