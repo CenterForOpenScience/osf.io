@@ -161,7 +161,7 @@ class InstitutionUserList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView
     view_category = 'institutions'
     view_name = 'institution-users'
 
-    ordering = ('-id',)
+    ordering = ('-name',)
 
     def get_default_queryset(self):
         institution = self.get_institution()

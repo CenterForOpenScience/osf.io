@@ -221,6 +221,8 @@ class CommentReportSerializer(JSONAPISerializer):
         ], required=True,
     )
     message = ser.CharField(source='text', required=False, allow_blank=True)
+    date_created = VersionedDateTimeField(source='created', read_only=True)
+    date_modified = VersionedDateTimeField(source='modified', read_only=True)
     links = LinksField({'self': 'get_absolute_url'})
 
     class Meta:

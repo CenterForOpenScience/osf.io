@@ -144,6 +144,7 @@ class TaxonomySerializer(JSONAPISerializer):
     child_count = ser.SerializerMethodField()
     share_title = ser.CharField(source='provider.share_title', read_only=True)
     path = ser.CharField(read_only=True)
+    _order = ser.CharField(source='is_other', read_only=True)
 
     links = LinksField({
         'parents': 'get_parent_urls',

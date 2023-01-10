@@ -21,12 +21,12 @@ class DeprecatedPreprintProviderPreprintList(DeprecatedView, views.PreprintProvi
 class DeprecatedPreprintProviderTaxonomies(DeprecatedView, views.PreprintProviderTaxonomies):
     view_category = 'preprint_providers'
     max_version = '2.7'
-    ordering = ('is_other', 'text')
+    ordering = ('_order', 'text')
 
 class DeprecatedPreprintProviderHighlightedSubjectList(DeprecatedView, views.PreprintProviderHighlightedSubjectList):
     view_category = 'preprint_providers'
     max_version = '2.7'
-    ordering = ('is_other', 'text')
+    ordering = ('_order', 'text')
 
 
 class DeprecatedPreprintProviderLicenseList(DeprecatedView, views.PreprintProviderLicenseList):

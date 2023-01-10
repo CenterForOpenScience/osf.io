@@ -105,6 +105,12 @@ class MeetingSubmissionSerializer(NodeSerializer):
     def get_modified(self, obj):
         return obj.valid_submissions.last().modified
 
+    def get_author(self, obj):
+        contrib_queryset = obj.contributor_set.filter(visible=True).order_by('_order')
+        if contrib_queryset:
+            return contrib_queryset.first().user
+        return None
+
     def get_author_id(self, obj):
         # Author guid is annotated on queryset in ListView
         if getattr(obj, 'author_id', None):

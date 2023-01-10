@@ -252,7 +252,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
     view_category = 'nodes'
     view_name = 'node-list'
 
-    ordering = ('-modified', )  # default ordering
+    ordering = ('-date_modified',)
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
@@ -1108,7 +1108,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
         ExcludeWithdrawals,
     )
 
-    ordering = ('_materialized_path',)  # default ordering
+    ordering = ('name',)  # default ordering
 
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]

@@ -270,7 +270,7 @@ class CollectionProviderTaxonomies(DeprecatedView, GenericProviderTaxonomies):
     view_category = 'collection-providers'
     provider_class = CollectionProvider  # Not actually the model being serialized, privatize to avoid issues
 
-    ordering = ('is_other', 'text')
+    ordering = ('_order', 'text')
 
     max_version = '2.14'
 
@@ -282,7 +282,7 @@ class RegistrationProviderTaxonomies(DeprecatedView, GenericProviderTaxonomies):
     provider_class = RegistrationProvider  # Not actually the model being serialized, privatize to avoid issues
 
     max_version = '2.14'
-    ordering = ('is_other', 'text')
+    ordering = ('_order', 'text')
 
 class PreprintProviderTaxonomies(GenericProviderTaxonomies):
     """
@@ -292,7 +292,7 @@ class PreprintProviderTaxonomies(GenericProviderTaxonomies):
     provider_class = PreprintProvider  # Not actually the model being serialized, privatize to avoid issues
 
     max_version = '2.14'
-    ordering = ('is_other', 'text')
+    ordering = ('_order', 'text')
 
 
 class BaseProviderSubjects(SubjectList):
@@ -312,13 +312,13 @@ class BaseProviderSubjects(SubjectList):
 class CollectionProviderSubjects(BaseProviderSubjects):
     view_category = 'collection-providers'
     provider_class = CollectionProvider  # Not actually the model being serialized, privatize to avoid issues
-    ordering = ('is_other', 'text')
+    ordering = ('_order', 'text')
 
 
 class RegistrationProviderSubjects(BaseProviderSubjects):
     view_category = 'registration-providers'
     provider_class = RegistrationProvider  # Not actually the model being serialized, privatize to avoid issues
-    ordering = ('is_other', 'text')
+    ordering = ('_order', 'text')
 
 
 class PreprintProviderSubjects(BaseProviderSubjects):
@@ -326,7 +326,7 @@ class PreprintProviderSubjects(BaseProviderSubjects):
     """
     view_category = 'preprint-providers'
     provider_class = PreprintProvider  # Not actually the model being serialized, privatize to avoid issues
-    ordering = ('is_other', 'text')
+    ordering = ('_order', 'text')
 
 
 class GenericProviderHighlightedTaxonomyList(JSONAPIBaseView, generics.ListAPIView):
@@ -375,13 +375,13 @@ class PreprintProviderHighlightedTaxonomyList(DeprecatedView, GenericProviderHig
     provider_class = PreprintProvider
 
     max_version = '2.14'
-    ordering = ('is_other', 'text')
+    ordering = ('_order', 'text')
 
 
 class GenericProviderHighlightedSubjectList(GenericProviderHighlightedTaxonomyList):
     view_name = 'highlighted-subject-list'
     serializer_class = SubjectSerializer
-    ordering = ('is_other', 'text')
+    ordering = ('_order', 'text')
 
 
 class CollectionProviderHighlightedSubjectList(GenericProviderHighlightedSubjectList):
