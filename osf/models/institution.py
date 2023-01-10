@@ -164,21 +164,21 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
         try:
             return self.asset_files.get(name='logo').file.url
         except InstitutionAssetFile.DoesNotExist:
-            return None
+            return '/static/img/institutions/shields/placeholder-shield.png'
 
     @property
     def logo_path_rounded_corners(self):
         try:
             return self.asset_files.get(name='logo_rounded_corners').file.url
         except InstitutionAssetFile.DoesNotExist:
-            return None
+            return '/static/img/institutions/shields/placeholder-shield.png'
 
     @property
     def banner_path(self):
         try:
             return self.asset_files.get(name='banner').file.url
         except InstitutionAssetFile.DoesNotExist:
-            return None
+            return '/static/img/institutions/banners/placeholder-banner.png'
 
     def update_search(self):
         from website.search.search import update_institution, update_node
