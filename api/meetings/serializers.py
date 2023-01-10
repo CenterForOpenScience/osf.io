@@ -77,9 +77,13 @@ class MeetingSubmissionSerializer(NodeSerializer):
         'title',
         'meeting_category',
         'author_name',
+        'created',
+        'modified',
     ])
 
     author_name = ser.SerializerMethodField()
+    created = ser.SerializerMethodField()
+    modified = ser.SerializerMethodField()
     download_count = ser.SerializerMethodField()
     meeting_category = ser.SerializerMethodField()
 
@@ -95,11 +99,11 @@ class MeetingSubmissionSerializer(NodeSerializer):
         'download': 'get_download_link',
     })
 
-    def get_author(self, obj):
-        contrib_queryset = obj.contributor_set.filter(visible=True).order_by('_order')
-        if contrib_queryset:
-            return contrib_queryset.first().user
-        return None
+    def get_created(self, obj):
+        return obj.valid_submissions.last().created
+
+    def get_modified(self, obj):
+        return obj.valid_submissions.last().modified
 
     def get_author_id(self, obj):
         # Author guid is annotated on queryset in ListView
