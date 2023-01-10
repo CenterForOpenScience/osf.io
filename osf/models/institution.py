@@ -171,7 +171,7 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
         try:
             return self.asset_files.get(name='logo_rounded_corners').file.url
         except InstitutionAssetFile.DoesNotExist:
-            return '/static/img/institutions/shields/placeholder-shield.png'
+            return '/static/img/institutions/shields-rounded-corners/placeholder-shield-rounded-corners.png'
 
     @property
     def banner_path(self):
