@@ -5,6 +5,9 @@ from api.subscriptions.views import (
     PreprintProviderSubscriptionDetail,
     RegistrationProviderSubscriptionDetail,
     CollectionProviderSubscriptionDetail,
+    PreprintProviderSubscriptionList,
+    RegistrationProviderSubscriptionList,
+    CollectionProviderSubscriptionList,
 )
 
 app_name = 'osf'
@@ -30,6 +33,11 @@ urlpatterns = [
                         PreprintProviderSubscriptionDetail.as_view(),
                         name=PreprintProviderSubscriptionDetail.view_name,
                     ),
+                    re_path(
+                        r'^(?P<provider_id>\w+)/subscriptions/$',
+                        PreprintProviderSubscriptionList.as_view(),
+                        name=PreprintProviderSubscriptionList.view_name,
+                    ),
                 ], 'preprints',
             ),
             namespace='preprint-providers',
@@ -54,6 +62,11 @@ urlpatterns = [
                         r'^(?P<provider_id>\w+)/subscriptions/(?P<subscription_id>\w+)/$',
                         CollectionProviderSubscriptionDetail.as_view(),
                         name=CollectionProviderSubscriptionDetail.view_name,
+                    ),
+                    re_path(
+                        r'^(?P<provider_id>\w+)/subscriptions/$',
+                        CollectionProviderSubscriptionList.as_view(),
+                        name=CollectionProviderSubscriptionList.view_name,
                     ),
                 ], 'collections',
             ),
@@ -83,6 +96,11 @@ urlpatterns = [
                         r'^(?P<provider_id>\w+)/subscriptions/(?P<subscription_id>\w+)/$',
                         RegistrationProviderSubscriptionDetail.as_view(),
                         name=RegistrationProviderSubscriptionDetail.view_name,
+                    ),
+                    re_path(
+                        r'^(?P<provider_id>\w+)/subscriptions/$',
+                        RegistrationProviderSubscriptionList.as_view(),
+                        name=RegistrationProviderSubscriptionList.view_name,
                     ),
                 ], 'registrations',
             ),

@@ -110,3 +110,15 @@ class PreprintProviderSubscriptionDetail(AbstractProviderSubscriptionDetail):
 
 class RegistrationProviderSubscriptionDetail(AbstractProviderSubscriptionDetail):
     provider_class = RegistrationProvider
+
+
+class CollectionProviderSubscriptionList(SubscriptionList):
+    pass
+
+
+class PreprintProviderSubscriptionList(SubscriptionList):
+    pass
+
+
+class RegistrationProviderSubscriptionList(SubscriptionList):
+    pass
