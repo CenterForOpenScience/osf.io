@@ -91,6 +91,7 @@ from api.schema_responses.permissions import (
     RegistrationSchemaResponseListPermission,
 )
 from api.schema_responses.serializers import RegistrationSchemaResponseSerializer
+from django.db.models import F
 
 
 class RegistrationMixin(NodeMixin):
@@ -285,7 +286,7 @@ class RegistrationContributorsList(BaseContributorList, RegistrationMixin, UserM
 
     def get_default_queryset(self):
         node = self.get_node(check_object_permissions=False)
-        return node.contributor_set.all().prefetch_related('user__guids')
+        return node.contributor_set.all().prefetch_related('user__guids').annotate(modified=F('user__modified'))
 
 
 class RegistrationContributorDetail(BaseContributorDetail, RegistrationMixin, UserMixin):

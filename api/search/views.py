@@ -88,9 +88,13 @@ class BaseSearchView(JSONAPIBaseView, generics.ListCreateAPIView):
                 reverse = True
 
             if sort:
+                source = self.get_serializer_class()._declared_fields[sort].source
+                if source:
+                    sort = source
+
                 serializer.instance = sorted(
                     serializer.instance,
-                    key=lambda item: getattr(item, sort, -1),
+                    key=lambda item: str(getattr(item, sort, -1)),
                     reverse=reverse,
                 )
 
@@ -98,6 +102,7 @@ class BaseSearchView(JSONAPIBaseView, generics.ListCreateAPIView):
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
 
 class Search(BaseSearchView):
     """

@@ -125,8 +125,7 @@ class OSFOrderingFilter(OrderingFilter):
 class ElasticOSFOrderingFilter(OSFOrderingFilter):
     """ This is too enable sorting for ES endpoints that use ES results instead of a typical queryset"""
     def filter_queryset(self, request, queryset, view):
-        sorted_list = queryset.copy()
-        sort = request.query_params.get('sort')
+        sort = request.query_params.get(self.ordering_param)
         reverse = False
         if sort:
             if sort.startswith('-'):
@@ -137,11 +136,11 @@ class ElasticOSFOrderingFilter(OSFOrderingFilter):
                 source = view.get_serializer_class()._declared_fields[sort].source
                 if not source:
                     source = sort
-                sorted_list['results'] = sorted(queryset['results'], key=lambda item: item['_source'][source], reverse=reverse)
+                queryset['results'] = sorted(queryset['results'], key=lambda item: item['_source'][source], reverse=reverse)
             except KeyError:
                 pass
 
-        return sorted_list
+        return queryset
 
 
 class SortNotImplemented(OrderingFilter):
@@ -158,10 +157,13 @@ class RawListOrderingFilter(OrderingFilter):
     def filter_queryset(self, request, raw_list, view):
         ordering = self.get_ordering(request, raw_list, view)
         if ordering:
-            ordering = [
-                view.get_serializer_class()._declared_fields[item.lstrip('-')].source if
-                view.get_serializer_class()._declared_fields[item.lstrip('-')].source else item for item in ordering
-            ]
+
+            declared_fields = view.get_serializer_class()._declared_fields
+
+            get_source = lambda item: declared_fields[item.lstrip('-')].source
+            format_sort = lambda item: f"-{get_source(item)}" if item.startswith('-') else get_source(item)
+
+            ordering = [format_sort(item) if get_source(item) and get_source(item) != '*' else item for item in ordering]
             return sorted(
                 raw_list,
                 key=functools.cmp_to_key(sort_multiple(ordering)),
