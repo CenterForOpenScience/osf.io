@@ -64,21 +64,19 @@ class OSFOrderingFilter(OrderingFilter):
         ordering = self.get_ordering(request, queryset, view)
 
         declared_fields = view.get_serializer_class()._declared_fields
-
-        try:
-            get_source = lambda item: declared_fields[item.lstrip('-')].source
-            format_sort = lambda item: f'-{get_source(item)}' if item.startswith('-') else get_source(item)
-            ordering = [
-                format_sort(item) if get_source(item) and get_source(item) != '*' else item for item in ordering
-            ]
-        except KeyError:
-            return queryset
-
         distinct_fields = queryset.query.distinct_fields
         queryset.query.distinct_fields = ()
 
         if ordering:
-            return queryset.order_by(*ordering)
+            try:
+                get_source = lambda item: declared_fields[item.lstrip('-')].source
+                format_sort = lambda item: f'-{get_source(item)}' if item.startswith('-') else get_source(item)
+                ordering = [
+                    format_sort(item) if get_source(item) and get_source(item) != '*' else item for item in ordering
+                ]
+                queryset = queryset.order_by(*ordering)
+            except KeyError:
+                return queryset
 
         if distinct_fields:
             queryset = queryset.distinct(*distinct_fields)
