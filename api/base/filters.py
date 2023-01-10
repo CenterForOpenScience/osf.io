@@ -54,77 +54,42 @@ class OSFOrderingFilter(OrderingFilter):
 
         return super().get_ordering(request, queryset, view)
 
+    def remove_invalid_fields(self, queryset, fields, view, request):
+        return fields
+
     def filter_queryset(self, request, queryset, view):
         """
         Lazy evaluation of `distinct` to prevent conflicting ordering when on query params
         """
         ordering = self.get_ordering(request, queryset, view)
 
-        fields = queryset.query.distinct_fields
+        declared_fields = view.get_serializer_class()._declared_fields
+
+        try:
+            get_source = lambda item: declared_fields[item.lstrip('-')].source
+            format_sort = lambda item: f'-{get_source(item)}' if item.startswith('-') else get_source(item)
+            ordering = [
+                format_sort(item) if get_source(item) and get_source(item) != '*' else item for item in ordering
+            ]
+        except KeyError:
+            return queryset
+
+        distinct_fields = queryset.query.distinct_fields
         queryset.query.distinct_fields = ()
+
         if ordering:
             return queryset.order_by(*ordering)
 
-        if fields:
-            queryset = queryset.distinct(*fields)
+        if distinct_fields:
+            queryset = queryset.distinct(*distinct_fields)
 
         return queryset
 
-    def get_serializer_source_field(self, view, request):
-        """
-        Returns a dictionary of serializer fields and source names. i.e. {'date_created': 'created'}
 
-        Logic borrowed from OrderingFilter.get_default_valid_fields with modifications to retrieve
-        source fields for serializer field names.
-
-        :param view api view
-        :
-        """
-        field_to_source_mapping = {}
-
-        if hasattr(view, 'get_serializer_class'):
-            serializer_class = view.get_serializer_class()
-        else:
-            serializer_class = getattr(view, 'serializer_class', None)
-
-        # This will not allow any serializer fields with nested related fields to be sorted on
-        for field_name, field in serializer_class(context={'request': request}).fields.items():
-            if not getattr(field, 'write_only', False) and not field.source == '*' and field_name != field.source:
-                field_to_source_mapping[field_name] = field.source.replace('.', '_')
-
-        return field_to_source_mapping
-
-    # Overrides OrderingFilter
-    def remove_invalid_fields(self, queryset, fields, view, request):
-        """
-        Returns an array of valid fields to be used for ordering.
-        Any valid source fields which are input remain in the valid fields list using the super method.
-        Serializer fields are mapped to their source fields and returned.
-        :param fields, array, input sort fields
-        :returns array of source fields for sorting.
-        """
-        valid_fields = super().remove_invalid_fields(queryset, fields, view, request)
-
-        # sort on annotations
-        sort_param = request.query_params.get(self.ordering_param)
-        valid_fields += [sort_param for item in queryset.query.annotations.keys() if item == sort_param.lstrip('-')]
-
-        # sort on serializer fields
-        if not valid_fields:
-            for invalid_field in fields:
-                ordering_sign = '-' if invalid_field[0] == '-' else ''
-                invalid_field = invalid_field.lstrip('-')
-
-                field_source_mapping = self.get_serializer_source_field(view, request)
-                source_field = field_source_mapping.get(invalid_field, None)
-                if source_field:
-                    valid_fields.append(ordering_sign + source_field)
-        return valid_fields
-
-
-class ElasticOSFOrderingFilter(OSFOrderingFilter):
+class ElasticOSFOrderingFilter(OrderingFilter):
     """ This is too enable sorting for ES endpoints that use ES results instead of a typical queryset"""
     def filter_queryset(self, request, queryset, view):
+        ordering = self.get_ordering(request, queryset, view)
         sort = request.query_params.get(self.ordering_param)
         reverse = False
         if sort:
@@ -142,6 +107,8 @@ class ElasticOSFOrderingFilter(OSFOrderingFilter):
 
         return queryset
 
+    def remove_invalid_fields(self, queryset, fields, view, request):
+        return fields
 
 class SortNotImplemented(OrderingFilter):
     """
@@ -161,7 +128,7 @@ class RawListOrderingFilter(OrderingFilter):
             declared_fields = view.get_serializer_class()._declared_fields
 
             get_source = lambda item: declared_fields[item.lstrip('-')].source
-            format_sort = lambda item: f"-{get_source(item)}" if item.startswith('-') else get_source(item)
+            format_sort = lambda item: f'-{get_source(item)}' if item.startswith('-') else get_source(item)
 
             ordering = [format_sort(item) if get_source(item) and get_source(item) != '*' else item for item in ordering]
             return sorted(
@@ -194,14 +161,7 @@ class RawListOrderingFilter(OrderingFilter):
         return [item for item in view.get_serializer_class()._declared_fields]
 
     def remove_invalid_fields(self, queryset, fields, view, request):
-        valid_fields = self.get_valid_fields(queryset, view, {'request': request})
-
-        def term_valid(term):
-            if term.startswith('-'):
-                term = term[1:]
-            return term in valid_fields
-
-        return [term for term in fields if term_valid(term)]
+        return fields
 
 
 class FilterMixin(object):

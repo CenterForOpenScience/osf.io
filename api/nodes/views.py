@@ -701,7 +701,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
     view_name = 'node-registrations'
     filter_backends = [RawListOrderingFilter, ]
 
-    ordering = ('-modified',)
+    ordering = ('-date_modified',)
 
     def get_serializer_class(self):
         if self.request.method in ('PUT', 'POST'):
