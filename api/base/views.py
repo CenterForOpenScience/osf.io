@@ -560,8 +560,6 @@ class BaseNodeLinksDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
 class BaseNodeLinksList(JSONAPIBaseView, generics.ListAPIView):
 
-    ordering = ('-modified',)
-
     def get_queryset(self):
         auth = get_user_auth(self.request)
         query = self.get_node()\

@@ -87,7 +87,6 @@ class OSFOrderingFilter(OrderingFilter):
 class ElasticOSFOrderingFilter(OrderingFilter):
     """ This is too enable sorting for ES endpoints that use ES results instead of a typical queryset"""
     def filter_queryset(self, request, queryset, view):
-        ordering = self.get_ordering(request, queryset, view)
         sort = request.query_params.get(self.ordering_param)
         reverse = False
         if sort:
