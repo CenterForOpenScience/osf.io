@@ -62,10 +62,7 @@ class OSFOrderingFilter(OrderingFilter):
         Lazy evaluation of `distinct` to prevent conflicting ordering when on query params
         """
         ordering = self.get_ordering(request, queryset, view)
-
         declared_fields = view.get_serializer_class()._declared_fields
-        distinct_fields = queryset.query.distinct_fields
-        queryset.query.distinct_fields = ()
 
         if ordering:
             try:
@@ -78,8 +75,13 @@ class OSFOrderingFilter(OrderingFilter):
             except KeyError:
                 return queryset
 
+        distinct_fields = queryset.query.distinct_fields
         if distinct_fields:
-            queryset = queryset.distinct(*distinct_fields)
+            if ordering:
+                order_fields = tuple([field.lstrip('-') for field in ordering])
+                queryset = queryset.distinct(*tuple(set(distinct_fields + order_fields)))
+            else:
+                queryset = queryset.distinct(*distinct_fields)
 
         return queryset
 
