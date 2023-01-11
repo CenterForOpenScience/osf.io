@@ -1,6 +1,6 @@
-from django.core.validators import URLValidator
 import rest_framework.serializers as ser
 
+from framework.auth.core import Auth
 from api.base.serializers import (
     IDField,
     JSONAPISerializer,
@@ -22,14 +22,7 @@ class FundingInfoSerializer(ser.Serializer):
     award_title = ser.CharField()
 
 
-class CustomMetadataPropertySerializer(ser.Serializer):
-    property_uri = ser.CharField(validators=[URLValidator])
-    value_as_text = ser.CharField()
-
-
 class CustomItemMetadataSerializer(JSONAPISerializer):
-    EDITABLE_FIELDS = ('language', 'resource_type_general', 'funding_info')
-
     id = IDField(read_only=True, source='guid._id')
     guid = RelationshipField(
         read_only=True,
@@ -51,10 +44,8 @@ class CustomItemMetadataSerializer(JSONAPISerializer):
         type_ = 'custom-item-metadata-records'
 
     def update(self, guid_metadata_record, validated_data):
-        for field_name in self.EDITABLE_FIELDS:
-            if field_name in validated_data:
-                setattr(guid_metadata_record, field_name, validated_data[field_name])
-        guid_metadata_record.save()
+        user = self.context['request'].user
+        guid_metadata_record.update(validated_data, Auth(user))
         return guid_metadata_record
 
     def get_absolute_url(self, obj):
@@ -67,8 +58,6 @@ class CustomItemMetadataSerializer(JSONAPISerializer):
 
 
 class CustomFileMetadataSerializer(CustomItemMetadataSerializer):
-    EDITABLE_FIELDS = ('title', 'description', 'language', 'resource_type_general', 'funding_info')
-
     title = ser.CharField(required=False, allow_blank=True)  # TODO: max-length
     description = ser.CharField(required=False, allow_blank=True)  # TODO: max-length
 

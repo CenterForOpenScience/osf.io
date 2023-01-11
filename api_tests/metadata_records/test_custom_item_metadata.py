@@ -1,7 +1,7 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from osf.models import GuidMetadataRecord
+from osf.models import GuidMetadataRecord, Preprint
 from osf.utils import permissions
 from osf_tests.factories import (
     AuthUserFactory,
@@ -16,6 +16,7 @@ from .utils import ExpectedMetadataRecord
 class TestCustomItemMetadataRecordDetail:
     APIV2_PATH = 'custom_item_metadata_records/'
     APIV2_RESOURCE_TYPE = 'custom-item-metadata-record'
+    EXPECTED_LOG_ACTION = 'guid_metadata_updated'
 
     def make_url(self, guid):
         if guid is None:
@@ -34,6 +35,25 @@ class TestCustomItemMetadataRecordDetail:
                 'attributes': attributes,
             }
         }
+
+    def get_loggable_referent(self, osfguid):
+        return osfguid.referent
+
+    def assert_expected_log(self, osfguid, user, updated_fields):
+        loggable_referent = self.get_loggable_referent(osfguid)
+        referent_param = (
+            'preprint'
+            if isinstance(loggable_referent, Preprint)
+            else 'node'
+        )
+        log = loggable_referent.logs.first()
+        assert log.action == self.EXPECTED_LOG_ACTION
+        assert log.user == user
+        assert log.params[referent_param] == loggable_referent._id
+        assert log.params['guid'] == osfguid._id
+        assert log.params['urls']['view'] == f'/{osfguid._id}'
+        assert log.params['updated_fields'] == updated_fields
+        return log
 
     @pytest.fixture(scope='class')
     def user_admin(self):
@@ -138,39 +158,39 @@ class TestCustomItemMetadataRecordDetail:
     @pytest.fixture(params=['admin', 'readwrite', 'readonly', 'rando'])
     def anybody(self, request, user_admin, user_readwrite, user_readonly, user_rando):
         if request.param == 'admin':
-            return user_admin.auth
+            return user_admin
         if request.param == 'readwrite':
-            return user_readwrite.auth
+            return user_readwrite
         if request.param == 'readonly':
-            return user_readonly.auth
+            return user_readonly
         if request.param == 'rando':
-            return user_rando.auth
+            return user_rando
         raise NotImplementedError
 
     @pytest.fixture(params=['admin', 'readwrite', 'readonly'])
     def anybody_with_read_permission(self, request, user_admin, user_readwrite, user_readonly):
         if request.param == 'admin':
-            return user_admin.auth
+            return user_admin
         if request.param == 'readwrite':
-            return user_readwrite.auth
+            return user_readwrite
         if request.param == 'readonly':
-            return user_readonly.auth
+            return user_readonly
         raise NotImplementedError
 
     @pytest.fixture(params=['admin', 'readwrite'])
     def anybody_with_write_permission(self, request, user_admin, user_readwrite):
         if request.param == 'admin':
-            return user_admin.auth
+            return user_admin
         if request.param == 'readwrite':
-            return user_readwrite.auth
+            return user_readwrite
         raise NotImplementedError
 
     @pytest.fixture(params=['readonly', 'rando'])
     def anybody_without_write_permission(self, request, user_readonly, user_rando):
         if request.param == 'readonly':
-            return user_readonly.auth
+            return user_readonly
         if request.param == 'rando':
-            return user_rando.auth
+            return user_rando
         raise NotImplementedError
 
     def test_anonymous(self, app, public_osfguid, private_osfguid):
@@ -214,7 +234,7 @@ class TestCustomItemMetadataRecordDetail:
         # can GET public
         res = app.get(
             self.make_url(public_osfguid),
-            auth=anybody,
+            auth=anybody.auth,
         )
         assert res.status_code == 200
         assert res.json['data']['id'] == public_osfguid._id
@@ -224,7 +244,7 @@ class TestCustomItemMetadataRecordDetail:
             res = app.get(
                 self.make_url(None),
                 self.make_payload(osfguid, language='foo'),
-                auth=anybody,
+                auth=anybody.auth,
                 expect_errors=True,
             )
             assert res.status_code == 404
@@ -233,7 +253,7 @@ class TestCustomItemMetadataRecordDetail:
             res = app.post_json_api(
                 self.make_url(None),
                 self.make_payload(osfguid, language='foo'),
-                auth=anybody,
+                auth=anybody.auth,
                 expect_errors=True,
             )
             assert res.status_code == 404
@@ -242,7 +262,7 @@ class TestCustomItemMetadataRecordDetail:
             res = app.post_json_api(
                 self.make_url(osfguid),
                 self.make_payload(osfguid, language='foo'),
-                auth=anybody,
+                auth=anybody.auth,
                 expect_errors=True,
             )
             assert res.status_code == 405
@@ -250,7 +270,7 @@ class TestCustomItemMetadataRecordDetail:
             # cannot DELETE
             res = app.delete_json_api(
                 self.make_url(osfguid),
-                auth=anybody,
+                auth=anybody.auth,
                 expect_errors=True,
             )
             assert res.status_code == 405
@@ -270,7 +290,7 @@ class TestCustomItemMetadataRecordDetail:
             res = app.patch_json_api(
                 self.make_url(osfguid),
                 self.make_payload(osfguid, language='hah'),
-                auth=anybody_without_write_permission,
+                auth=anybody_without_write_permission.auth,
                 expect_errors=True,
             )
             assert res.status_code == 403
@@ -278,7 +298,7 @@ class TestCustomItemMetadataRecordDetail:
             res = app.put_json_api(
                 self.make_url(osfguid),
                 self.make_payload(osfguid, language='foo'),
-                auth=anybody_without_write_permission,
+                auth=anybody_without_write_permission.auth,
                 expect_errors=True,
             )
             assert res.status_code == 403
@@ -287,7 +307,7 @@ class TestCustomItemMetadataRecordDetail:
         # can GET private
         res = app.get(
             self.make_url(private_osfguid),
-            auth=anybody_with_read_permission,
+            auth=anybody_with_read_permission.auth,
         )
         assert res.status_code == 200
         assert res.json['data']['id'] == private_osfguid._id
@@ -307,21 +327,36 @@ class TestCustomItemMetadataRecordDetail:
                     language='nga',
                     resource_type_general='Text',
                 ),
-                auth=anybody_with_write_permission,
+                auth=anybody_with_write_permission.auth,
             )
             assert res.status_code == 200
             db_record = GuidMetadataRecord.objects.for_guid(osfguid)
             expected.assert_expectations(db_record=db_record, api_record=res.json['data'])
+            self.assert_expected_log(
+                osfguid,
+                user=anybody_with_write_permission,
+                updated_fields={
+                    'language': {'old': '', 'new': 'nga'},
+                    'resource_type_general': {'old': '', 'new': 'Text'},
+                },
+            )
 
             # can PATCH
             expected.language = 'nga-CD'
             res = app.patch_json_api(
                 self.make_url(osfguid),
                 self.make_payload(osfguid, language='nga-CD'),
-                auth=anybody_with_write_permission,
+                auth=anybody_with_write_permission.auth,
             )
             assert res.status_code == 200
             expected.assert_expectations(db_record=db_record, api_record=res.json['data'])
+            self.assert_expected_log(
+                osfguid,
+                user=anybody_with_write_permission,
+                updated_fields={
+                    'language': {'old': 'nga', 'new': 'nga-CD'},
+                },
+            )
 
             # can PATCH funders
             funding_info_1 = [{
@@ -336,10 +371,17 @@ class TestCustomItemMetadataRecordDetail:
             res = app.patch_json_api(
                 self.make_url(osfguid),
                 self.make_payload(osfguid, funders=funding_info_1),
-                auth=anybody_with_write_permission,
+                auth=anybody_with_write_permission.auth,
             )
             assert res.status_code == 200
             expected.assert_expectations(db_record=db_record, api_record=res.json['data'])
+            self.assert_expected_log(
+                osfguid,
+                user=anybody_with_write_permission,
+                updated_fields={
+                    'funding_info': {'old': [], 'new': funding_info_1},
+                },
+            )
 
             # can PATCH funders again
             funding_info_2 = [{
@@ -361,11 +403,17 @@ class TestCustomItemMetadataRecordDetail:
             res = app.patch_json_api(
                 self.make_url(osfguid),
                 self.make_payload(osfguid, funders=funding_info_2),
-                auth=anybody_with_write_permission,
+                auth=anybody_with_write_permission.auth,
             )
             assert res.status_code == 200
             expected.assert_expectations(db_record=db_record, api_record=res.json['data'])
-        # TODO: assert node.logs.first().action == NodeLog.FILE_METADATA_UPDATED
+            self.assert_expected_log(
+                osfguid,
+                user=anybody_with_write_permission,
+                updated_fields={
+                    'funding_info': {'old': funding_info_1, 'new': funding_info_2},
+                },
+            )
 
     # def test_update_fails_with_extra_key(self, app, user_readwrite, public_file_guid):
     #     payload = make_payload(

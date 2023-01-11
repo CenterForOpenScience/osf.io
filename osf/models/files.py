@@ -442,6 +442,14 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
         return self
 
+    def update_search(self):
+        from website import search
+        try:
+            search.search.update_file(self)
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
+            sentry.log_exception()
+
     def _serialize(self, **kwargs):
         return {
             'id': self._id,
