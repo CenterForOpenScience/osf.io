@@ -327,8 +327,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, UserNodesFilte
         default_queryset = user.nodes_contributor_or_group_member_to
         if user != self.request.user:
             # Further restrict UserNodes to nodes the *requesting* user can view
-            node_ids = Node.objects.get_nodes_for_user(self.request.user, base_queryset=default_queryset, include_public=True).values_list('id', flat=True)
-            return Node.objects.filter(id__in=node_ids)
+            return Node.objects.get_nodes_for_user(user)
         return self.optimize_node_queryset(default_queryset)
 
     # overrides ListAPIView
