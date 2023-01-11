@@ -11,7 +11,8 @@ from framework.exceptions import HTTPError
 from framework.analytics import update_counter
 from framework.celery_tasks import app
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
-from osf.models import BaseFileNode, Guid
+from framework.sessions import session
+from osf.models import BaseFileNode, Guid, Session
 
 from addons.osfstorage import settings
 
@@ -19,15 +20,20 @@ logger = logging.getLogger(__name__)
 LOCATION_KEYS = ['service', settings.WATERBUTLER_RESOURCE, 'object']
 
 def enqueue_update_analytics(node, file, version_idx, action='download'):
-    enqueue_postcommit_task(update_analytics_async, (node._id, file._id, version_idx, action), {}, celery=True)
+    enqueue_postcommit_task(update_analytics_async, (node._id, file._id, version_idx, session._id, session.data, action), {}, celery=True)
 
 @app.task(max_retries=5, default_retry_delay=60)
-def update_analytics_async(node_id, file_id, version_idx, action='download'):
+def update_analytics_async(node_id, file_id, version_idx, session_id=None, session_data=None, action='download'):
+    if not session_data:
+        session_data = {}
     node = Guid.load(node_id).referent
     file = BaseFileNode.load(file_id)
-    update_analytics(node, file, version_idx, action)
+    session_obj = Session.load(session_id)
+    if not session_obj:
+        session_obj = Session(data=session_data)
+    update_analytics(node, file, version_idx, session_obj, action)
 
-def update_analytics(node, file, version_idx, action='download'):
+def update_analytics(node, file, version_idx, session_obj, action='download'):
     """
     :param Node node: Root node to update
     :param str file_id: The _id field of a filenode
@@ -47,8 +53,8 @@ def update_analytics(node, file, version_idx, action='download'):
     }
     resource = node.guids.first()
 
-    update_counter(resource, file, version=None, action=action, node_info=node_info)
-    update_counter(resource, file, version_idx, action, node_info=node_info)
+    update_counter(resource, file, version=None, action=action, node_info=node_info, session_obj=session_obj)
+    update_counter(resource, file, version_idx, action, node_info=node_info, session_obj=session_obj)
 
 
 def serialize_revision(node, record, version, index, anon=False):
