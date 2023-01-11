@@ -109,6 +109,22 @@ function findByTempID(parent, tmpID) {
     return item;
 }
 
+// Show the proper units (KB, MB, GB, etc.)
+function formatProperUnit(bytes, decimals) {
+    if (bytes <= 0) return '0 Bytes';
+    if (decimals === undefined) {
+        decimals = 2;
+    }
+
+    var k = 1000;
+    var dm = decimals < 0 ? 0 : decimals;
+    var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+
+    var i = Math.floor(Math.log(bytes) / Math.log(k));
+
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
 // Replace is the "default" conflict, when a user resolves a conflict by explicitly replacing it simply
 // executes a normal move and adds the conflicted file to the ready queue, because of this
 var replace = function(tb, cb, item) {
@@ -953,7 +969,7 @@ function _fangornComplete(treebeard, file) {
 function _fangornDropzoneSuccess(treebeard, file, response) {
     treebeard.options.uploadInProgress = false;
 
-    var parent = file.treebeardParent, item,revisedItem, child;
+    var parent = file.treebeardParent, item, revisedItem, child;
 
     for (var i = 0; i < parent.children.length; i++) {
         child = parent.children[i];
@@ -964,6 +980,11 @@ function _fangornDropzoneSuccess(treebeard, file, response) {
             item = child;
         }
     }
+
+    // in folder empty
+    if(item  === undefined || item === null)
+        return;
+
     // RESPONSES
     // OSF : Object with actionTake : "file_added"
     // DROPBOX : Object; addon : 'dropbox'
@@ -1067,7 +1088,7 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
 }
 
 /**
- * Click event for when upload buttonin Action Column, it essentially runs the hiddenFileInput.click
+ * Click event for when upload button in Action Column, it essentially runs the hiddenFileInput.click
  * @param event DOM event object for click
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
  * @param {Object} col Information pertinent to that column where this upload event is run from
@@ -1080,10 +1101,253 @@ function _uploadEvent(event, item, col) {
     } catch (e) {
         window.event.cancelBubble = true;
     }
+    self.dropzone.hiddenFileInput.removeAttribute('webkitdirectory');
     self.dropzoneItemCache = item;
     self.dropzone.hiddenFileInput.click();
     if (!item.open) {
         self.updateFolder(null, item);
+    }
+}
+
+/**
+ * Click event for when upload folder button in Action Column, it essentially runs the hiddenFileInput.click
+ * @param event DOM event object for click
+ * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
+ * @param {Object} mode
+ * @param {Object} col Information pertinent to that column where this upload event is run from
+ * @private
+ */
+function _uploadFolderEvent(event, item, mode, col) {
+    var tb = this;  // jshint ignore:line
+
+    // clear cache of input before upload new folder
+    if (tb.dropzone.hiddenFileInput) {
+        document.body.removeChild(tb.dropzone.hiddenFileInput);
+    }
+
+    tb.dropzone.hiddenFileInput = document.createElement('input');
+    tb.dropzone.hiddenFileInput.setAttribute('type', 'file');
+    if (tb.dropzone.options.maxFiles == null || tb.dropzone.options.maxFiles > 1) {
+        tb.dropzone.hiddenFileInput.setAttribute('multiple', 'multiple');
+    }
+    if (tb.dropzone.options.acceptedFiles != null) {
+        tb.dropzone.hiddenFileInput.setAttribute('accept', tb.dropzone.options.acceptedFiles);
+    }
+    tb.dropzone.hiddenFileInput.style.visibility = 'hidden';
+    tb.dropzone.hiddenFileInput.style.position = 'absolute';
+    tb.dropzone.hiddenFileInput.style.top = '0';
+    tb.dropzone.hiddenFileInput.style.left = '0';
+    tb.dropzone.hiddenFileInput.style.height = '0';
+    tb.dropzone.hiddenFileInput.style.width = '0';
+    document.body.appendChild(tb.dropzone.hiddenFileInput);
+
+    try {
+        event.stopPropagation();
+    } catch (e) {
+        window.event.cancelBubble = true;
+    }
+
+    // set for select folder
+    tb.dropzone.hiddenFileInput.setAttribute('webkitdirectory', 'true');
+    tb.dropzone.hiddenFileInput.click();
+    if (!item.open) {
+        tb.updateFolder(null, item);
+    }
+    tb.dropzone.hiddenFileInput.addEventListener('change', _onchange);
+
+    function _onchange() {
+        var node_parent = tb.multiselected()[0];
+        var root_parent = tb.multiselected()[0];
+        var files = [];
+        var total_files_size = 0;
+
+        // get all files in folder
+        files = tb.dropzone.hiddenFileInput.files;
+        total_files_size = 0;
+
+        // check folder is empty
+        if (files.length === 0) {
+            $osf.growl('Error', gettext('The folder that wants to upload is empty.'), 'danger', 5000);
+            return;
+        }
+
+        // calculate total files size in folder
+        for (var i = 0; i < files.length; i++) {
+            total_files_size += files[i].size;
+        }
+
+        node_parent.open = true;
+        total_files_size = parseFloat(total_files_size).toFixed(2);
+        var quota = null;
+
+        if (!item.data.provider) {
+            return;
+        }
+
+        // call api get used quota and max quota
+        quota = $.ajax({
+            async: false,
+            method: 'GET',
+            url: item.data.nodeApiUrl + 'get_creator_quota/',
+        });
+
+        if (!quota.responseJSON) {
+            return;
+        }
+
+        quota = quota.responseJSON;
+
+        // check upload quota for upload folder
+        if (parseFloat(quota.used) + parseFloat(total_files_size) > quota.max) {
+            $osf.growl('Error', sprintf(gettext('Not enough quota to upload. The total size of the folder %1$s.'),
+            formatProperUnit(total_files_size)),
+            'danger', 5000);
+            return;
+        }
+
+        var created_folders = [];
+        var created_path = [];
+
+        // Start
+        node_parent = _pushObject(node_parent, 0, files, files[0], 0, _pushObject);
+
+        function _pushObject(node_parent, index, list_paths, file, file_index, next) {
+            var _obj, folder_name;
+            // Stop
+            if (!file) {
+                // console.log('Stop');
+                return node_parent;
+            }
+            // get item object
+            if (index >=0 && index < list_paths.length) {
+                _obj = list_paths[index];
+            }
+            // check type of File
+            if (typeof _obj === typeof file) {
+                // console.log(file);
+                if (file.webkitRelativePath.length === 0) {
+                    tb.dropzoneItemCache = tb.multiselected()[0];
+                    tb.dropzone.addFile(file);
+                    // next file
+                    var next_file_index = ++file_index;
+                    return _pushObject(node_parent, 0, files, files[next_file_index], next_file_index, _pushObject);
+                }
+
+                // change list_paths of File obj
+                var new_list_paths = file.webkitRelativePath.split('/');
+                return _pushObject(node_parent, 0, new_list_paths, file, file_index, _pushObject);
+            }
+
+            // else, it is folder and file
+            folder_name = _obj;
+            if (file.name === folder_name) {
+                // next file
+                // console.log(folder_name, parent && parent.data.name);
+                return _pushFile(node_parent, file, file_index);
+            }
+            // Create each folder detected from file path
+            // console.log(folder_name, parent && parent.data.name);
+            return _pushFolder(node_parent, index, list_paths, file, file_index, next);
+        }
+
+        function _pushFile(node_parent, file, file_index) {
+            node_parent.open = true;
+            tb.dropzoneItemCache = node_parent;
+            tb.dropzone.addFile(file);
+            // console.log('Pushed');
+            // next file
+            var next_file_index = ++file_index;
+            return _pushObject(root_parent, 0, files, files[next_file_index], next_file_index, _pushObject);
+        }
+
+        function _pushFolder(node_parent, index, list_paths, file, file_index, next) {
+            var folder_name;
+            if (index >=0 && index < list_paths.length) {
+                folder_name = list_paths[index];
+            }
+            // var currentFolder = created_folders.find(x => x.name === folder_name);
+            var currentFolder = null;
+            for(var i = 0; i < created_folders.length; i++){
+                if(created_folders[i].name === folder_name){
+                    currentFolder = created_folders[i];
+                    break;
+                }
+            }
+            var currentFolderPath = '/' + folder_name + '/';
+
+            node_parent.open = true;
+
+            if (node_parent.data.materialized) {
+                currentFolderPath = node_parent.data.materialized + folder_name + '/';
+            }
+
+            // check folder is created
+            // var child = node_parent.children.find((e) => {
+            //     return e.data.materialized === currentFolderPath;
+            // });
+            var child = null;
+            for(var j = 0; j < node_parent.children.length; j++){
+                if(node_parent.children[j].data.materialized === currentFolderPath){
+                    child = node_parent.children[j];
+                    break;
+                }
+            }
+            if (!!child) {
+                // console.log('child', child);
+                var next_folder_index = ++index;
+                return next(child, next_folder_index, list_paths, file, file_index, next);
+            }
+
+            if (currentFolder && created_path.includes(currentFolderPath)) {
+                // console.log('currentFolder.parent', currentFolder.parent);
+                var new_next_folder_index = ++index;
+                return next(currentFolder.parent, new_next_folder_index, list_paths, file, file_index, next);
+            }
+
+            created_path.push(currentFolderPath);
+            // console.log('Creating');
+
+            // prepare data for request new folder
+            var extra = {};
+            var path = node_parent.data.path || '/';
+            var options = {name: folder_name, kind: 'folder', waterbutlerURL: node_parent.data.waterbutlerURL};
+            if ((node_parent.data.provider === 'github') || (node_parent.data.provider === 'gitlab')) {
+                extra.branch = node_parent.data.branch;
+                options.branch = node_parent.data.branch;
+            }
+
+            // call api for create folder
+            m.request({
+                method: 'PUT',
+                background: true,
+                config: $osf.setXHRAuthorization,
+                url: waterbutler.buildCreateFolderUrl(path, node_parent.data.provider, node_parent.data.nodeId, options, extra)
+            }).then(function (item) {
+                item = tb.options.lazyLoadPreprocess.call(this, item).data;
+                inheritFromParent({data: item}, node_parent, ['branch']);
+                item = tb.createItem(item, node_parent.id);
+                node_parent = item;
+                orderFolder.call(tb, node_parent);
+
+                // store folder is created
+                created_folders.push({
+                    'name': folder_name,
+                    'node_parent': node_parent,
+                });
+                // console.log('Created');
+                // nest folder
+                var next_folder_index = ++index;
+                return next(node_parent, next_folder_index, list_paths, file, file_index, next);
+            }, function (data) {
+                if (data && data.code === 409) {
+                    $osf.growl(data.message);
+                    m.redraw();
+                } else {
+                    $osf.growl(gettext('Folder creation failed.'));
+                }
+                return root_parent;
+            });
+        }
     }
 }
 
@@ -2006,6 +2270,12 @@ var FGItemButtons = {
         if (tb.options.placement !== 'fileview') {
             if (window.File && window.FileReader && item.kind === 'folder' && item.data.provider && item.data.permissions && item.data.permissions.edit) {
                 rowButtons.push(
+                    // handler of Upload Folder button
+                    m.component(FGButton, {
+                        onclick: function (event) {_uploadFolderEvent.call(tb, event, item, mode); },
+                        icon: 'fa fa-plus',
+                        className: 'text-success'
+                    }, gettext('Upload Folder')),
                     m.component(FGButton, {
                         onclick: function(event) {_uploadEvent.call(tb, event, item); },
                         icon: 'fa fa-upload',
