@@ -27,7 +27,7 @@ def test_querying_on_domains():
 @pytest.mark.django_db
 def test_institution_banner_path_none():
     inst = InstitutionFactory()
-    assert inst.banner_path is None
+    assert inst.banner_path == '/static/img/institutions/banners/placeholder-banner.png'
     InstitutionAssetFileFactory(institutions=[inst], name='banner')
     assert inst.banner_path is not None
 
@@ -35,7 +35,7 @@ def test_institution_banner_path_none():
 @pytest.mark.django_db
 def test_institution_logo_path_none():
     inst = InstitutionFactory()
-    assert inst.logo_path is None
+    assert inst.logo_path == '/static/img/institutions/shields/placeholder-shield.png'
     InstitutionAssetFileFactory(institutions=[inst], name='logo')
     assert inst.logo_path is not None
 
