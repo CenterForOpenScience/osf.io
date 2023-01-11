@@ -9,12 +9,23 @@ import functools
 from osf.exceptions import ValidationValueError
 from framework.exceptions import HTTPError
 from framework.analytics import update_counter
+from framework.celery_tasks import app
+from framework.postcommit_tasks.handlers import enqueue_postcommit_task
+from osf.models import BaseFileNode, Guid
 
 from addons.osfstorage import settings
 
 logger = logging.getLogger(__name__)
 LOCATION_KEYS = ['service', settings.WATERBUTLER_RESOURCE, 'object']
 
+def enqueue_update_analytics(node, file, version_idx, action='download'):
+    enqueue_postcommit_task(update_analytics_async, (node._id, file._id, version_idx, action), {}, celery=True)
+
+@app.task(max_retries=5, default_retry_delay=60)
+def update_analytics_async(node_id, file_id, version_idx, action='download'):
+    node = Guid.load(node_id).referent
+    file = BaseFileNode.load(file_id)
+    update_analytics(node, file, version_idx, action)
 
 def update_analytics(node, file, version_idx, action='download'):
     """
