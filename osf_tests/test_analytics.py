@@ -3,7 +3,6 @@
 Unit tests for analytics logic in framework/analytics/__init__.py
 """
 
-import mock
 import pytest
 from django.utils import timezone
 from nose.tools import *  # noqa: F403
@@ -12,7 +11,7 @@ from datetime import datetime
 
 from addons.osfstorage.models import OsfStorageFile
 from framework import analytics
-from osf.models import PageCounter, OSFGroup
+from osf.models import PageCounter, OSFGroup, Session
 
 from tests.base import OsfTestCase
 from osf_tests.factories import UserFactory, ProjectFactory
@@ -92,34 +91,34 @@ def page_counter_for_individual_version(project, file_node3):
 @pytest.mark.django_db
 class TestPageCounter:
 
-    @mock.patch('osf.models.analytics.session')
-    def test_download_update_counter(self, mock_session, project, file_node):
+    def test_download_update_counter(self, project, file_node):
+        mock_session = Session()
         mock_session.data = {}
         resource = project.guids.first()
-        PageCounter.update_counter(resource, file_node, version=None, action='download', node_info={})
+        PageCounter.update_counter(resource, file_node, version=None, action='download', node_info={}, session_obj=mock_session)
 
         page_counter = PageCounter.objects.get(resource=resource, file=file_node, version=None, action='download')
         assert page_counter.total == 1
         assert page_counter.unique == 1
 
-        PageCounter.update_counter(resource, file_node, version=None, action='download', node_info={})
+        PageCounter.update_counter(resource, file_node, version=None, action='download', node_info={}, session_obj=mock_session)
 
         page_counter.refresh_from_db()
         assert page_counter.total == 2
         assert page_counter.unique == 1
 
-    @mock.patch('osf.models.analytics.session')
-    def test_download_update_counter_contributor(self, mock_session, user, project, file_node):
+    def test_download_update_counter_contributor(self, user, project, file_node):
+        mock_session = Session()
         mock_session.data = {'auth_user_id': user._id}
         resource = project.guids.first()
 
-        PageCounter.update_counter(resource, file_node, version=None, action='download', node_info={'contributors': project.contributors})
+        PageCounter.update_counter(resource, file_node, version=None, action='download', node_info={'contributors': project.contributors}, session_obj=mock_session)
 
         page_counter = PageCounter.objects.get(resource=resource, file=file_node, version=None, action='download')
         assert page_counter.total == 0
         assert page_counter.unique == 0
 
-        PageCounter.update_counter(resource, file_node, version=None, action='download', node_info={'contributors': project.contributors})
+        PageCounter.update_counter(resource, file_node, version=None, action='download', node_info={'contributors': project.contributors}, session_obj=mock_session)
 
         page_counter.refresh_from_db()
         assert page_counter.total == 0
@@ -131,7 +130,7 @@ class TestPageCounter:
 
         mock_session.data = {'auth_user_id': group_member._id}
         PageCounter.update_counter(resource, file_node, version=None, action='download', node_info={
-            'contributors': project.contributors_and_group_members}
+            'contributors': project.contributors_and_group_members}, session_obj=mock_session
         )
         page_counter.refresh_from_db()
         assert page_counter.total == 1
@@ -139,7 +138,7 @@ class TestPageCounter:
 
         platform_group.make_member(group_member)
         PageCounter.update_counter(resource, file_node, version=None, action='download', node_info={
-            'contributors': project.contributors_and_group_members}
+            'contributors': project.contributors_and_group_members}, session_obj=mock_session
         )
         assert page_counter.total == 1
         assert page_counter.unique == 1
