@@ -1,9 +1,9 @@
 <% from datetime import datetime %>
-<footer class="footer">
+<div style="padding-top: 10px; margin-top: 20px; text-shadow: 0 1px 0 #fff; width: 100%; color: #515151; text-align: center; background-color: #efefef;">
     <div class="container-fluid">
         <div class="row">
             <div class="col-sm-12 col-md-8 col-md-offset-2">
-                <p>
+                <p class="footer-links">
                     <span>
                         Copyright &copy; 2011-${datetime.utcnow().year}
                     </span>

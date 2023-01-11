@@ -1,6 +1,6 @@
 <%def name="nav(service_name, service_url, service_support_url)">
 <link rel="stylesheet" href='/static/css/nav.css'>
-<div class="osf-nav-wrapper">
+<div class="osf-nav-wrapper" role="navigation">
 
 <nav class="navbar navbar-inverse navbar-fixed-top" id="navbarScope">
     <div class="container">

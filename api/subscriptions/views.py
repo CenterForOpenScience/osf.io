@@ -8,9 +8,20 @@ from framework.auth.oauth_scopes import CoreScopes
 from api.base.views import JSONAPIBaseView
 from api.base.filters import ListFilterMixin
 from api.base import permissions as base_permissions
-from api.subscriptions.serializers import SubscriptionSerializer
+from api.subscriptions.serializers import (
+    SubscriptionSerializer,
+    RegistrationSubscriptionSerializer,
+    CollectionSubscriptionSerializer,
+    PreprintSubscriptionSerializer,
+)
 from api.subscriptions.permissions import IsSubscriptionOwner
-from osf.models import NotificationSubscription
+from osf.models import (
+    NotificationSubscription,
+    CollectionProvider,
+    RegistrationProvider,
+    PreprintProvider,
+    AbstractProvider,
+)
 
 
 class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
@@ -61,3 +72,59 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
             raise NotFound
         self.check_object_permissions(self.request, obj)
         return obj
+
+
+class AbstractProviderSubscriptionDetail(SubscriptionDetail):
+    view_name = 'provider-notification-subscription-detail'
+    view_category = 'notification-subscriptions'
+    serializer_class = SubscriptionSerializer
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
+        IsSubscriptionOwner,
+    )
+
+    required_read_scopes = [CoreScopes.SUBSCRIPTIONS_READ]
+    required_write_scopes = [CoreScopes.SUBSCRIPTIONS_WRITE]
+    provider_class = None
+
+    def __init__(self, *args, **kwargs):
+        assert issubclass(self.provider_class, AbstractProvider), 'Class must be subclass of AbstractProvider'
+        super().__init__(*args, **kwargs)
+
+    def get_object(self):
+        subscription_id = self.kwargs['subscription_id']
+        provider = self.provider_class.objects.get(_id=self.kwargs['provider_id'])
+        try:
+            obj = NotificationSubscription.objects.get(
+                _id=subscription_id,
+                provider_id=provider.id,
+            )
+        except ObjectDoesNotExist:
+            raise NotFound
+        self.check_object_permissions(self.request, obj)
+        return obj
+
+
+class CollectionProviderSubscriptionDetail(AbstractProviderSubscriptionDetail):
+    provider_class = CollectionProvider
+
+
+class PreprintProviderSubscriptionDetail(AbstractProviderSubscriptionDetail):
+    provider_class = PreprintProvider
+
+
+class RegistrationProviderSubscriptionDetail(AbstractProviderSubscriptionDetail):
+    provider_class = RegistrationProvider
+
+
+class CollectionProviderSubscriptionList(SubscriptionList):
+    serializer_class = CollectionSubscriptionSerializer
+
+
+class PreprintProviderSubscriptionList(SubscriptionList):
+    serializer_class = PreprintSubscriptionSerializer
+
+
+class RegistrationProviderSubscriptionList(SubscriptionList):
+    serializer_class = RegistrationSubscriptionSerializer

@@ -49,3 +49,18 @@ class SubscriptionSerializer(JSONAPISerializer):
         notification_type = validated_data.get('notification_type')
         instance.add_user_to_subscription(user, notification_type, save=True)
         return instance
+
+
+class RegistrationSubscriptionSerializer(SubscriptionSerializer):
+    class Meta:
+        type_ = 'registration-subscription'
+
+
+class CollectionSubscriptionSerializer(SubscriptionSerializer):
+    class Meta:
+        type_ = 'collection-subscription'
+
+
+class PreprintSubscriptionSerializer(SubscriptionSerializer):
+    class Meta:
+        type_ = 'preprint-subscription'

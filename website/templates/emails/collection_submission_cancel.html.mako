@@ -9,23 +9,23 @@
     <br>
     <p>
         % if is_admin:
-            You have changed the privacy of <a href="${node.absolute_url}">${node.title}</a> and it has therefore been
-            removed from
-            % if collection.provider:
+             The request to add <a href="${node.absolute_url}">${node.title}</a> to
+             % if collection.provider:
                 <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.provider.name}</a>
             % else:
                 <a href="${settings.DOMAIN + 'myprojects/'}">${collection.provider.name}</a>
             % endif
-            . If you wish to be associated with the collection, you will need to request addition to the collection again.
+
+            was canceled. If you wish to be associated with the collection, you will need to request to be added again.
         % else:
-            <a href="${remover.absolute_url}">${remover.fullname}</a> has changed the privacy settings for
-            <a href="${node.absolute_url}">${node.title}</a> it has therefore been removed from
+            <a href="${remover.absolute_url}">${remover.fullname}</a> canceled the request to add
+            <a href="${node.absolute_url}">${node.title}</a>to
             % if collection.provider:
                 <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.provider.name}</a>
             % else:
                 <a href="${settings.DOMAIN + 'myprojects/'}">${collection.provider.name}</a>
             % endif
-            It will need to be re-submitteds to be included in the collection again.
+            If you wish to be associated with the collection, an admin will need to request addition again.
         % endif
     </p>
     <p>
