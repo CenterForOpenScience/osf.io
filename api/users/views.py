@@ -318,10 +318,9 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, UserNodesFilte
     view_category = 'users'
     view_name = 'user-nodes'
 
-    ordering = ('-last_logged',)
+    ordering = ('-date_modified',)
 
     # overrides NodesFilterMixin
-
     def get_default_queryset(self):
         user = self.get_user()
         # Nodes the requested user has read_permissions on

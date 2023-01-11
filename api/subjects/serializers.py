@@ -47,6 +47,7 @@ class SubjectSerializer(JSONAPISerializer):
     id = ser.CharField(source='_id', required=True)
     text = ser.CharField(max_length=200)
     taxonomy_name = ser.CharField(source='provider.share_title', read_only=True)
+    _order = ser.CharField(source='is_other', read_only=True)
 
     parent = RelationshipField(
         related_view='subjects:subject-detail',

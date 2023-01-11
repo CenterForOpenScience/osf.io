@@ -73,7 +73,7 @@ class OSFOrderingFilter(OrderingFilter):
                 ]
                 queryset = queryset.order_by(*ordering)
             except KeyError:
-                return queryset
+                pass
 
         distinct_fields = queryset.query.distinct_fields
         if distinct_fields:

@@ -126,7 +126,7 @@ class InstitutionNodeList(JSONAPIBaseView, generics.ListAPIView, InstitutionMixi
     view_category = 'institutions'
     view_name = 'institution-nodes'
 
-    ordering = ('-modified', )
+    ordering = ('-date_modified', )
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
