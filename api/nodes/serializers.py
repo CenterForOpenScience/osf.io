@@ -53,6 +53,7 @@ class RegistrationProviderRelationshipField(RelationshipField):
         provider = self.get_object(data)
         return {'provider': provider}
 
+
 def get_institutions_to_add_remove(institutions, new_institutions):
     diff = relationship_diff(
         current_items={inst._id: inst for inst in institutions.all()},

@@ -122,18 +122,30 @@ def update_institution(institution, index=None):
     search_engine.update_institution(institution, index=index)
 
 @requires_search
-def update_collected_metadata(cgm_id, collection_id=None, index=None, op='update'):
+def update_collected_metadata(node_id, collection_id=None, index=None, op='update'):
     index = index or settings.ELASTIC_INDEX
 
     if settings.USE_CELERY:
-        enqueue_task(search_engine.update_cgm_async.s(cgm_id, collection_id=collection_id, op=op, index=index))
+        enqueue_task(
+            search_engine.update_collection_submission_async.s(
+                node_id,
+                collection_id=collection_id,
+                op=op,
+                index=index
+            )
+        )
     else:
-        search_engine.update_cgm_async(cgm_id, collection_id=collection_id, op=op, index=index)
+        search_engine.update_collection_submission_async(
+            node_id,
+            collection_id=collection_id,
+            op=op,
+            index=index
+        )
 
 @requires_search
-def bulk_update_collected_metadata(cgms, op='update', index=None):
+def bulk_update_collection_submissions(collection_submissions, op='update', index=None):
     index = index or settings.ELASTIC_INDEX
-    search_engine.bulk_update_cgm(cgms, op=op, index=index)
+    search_engine.bulk_update_collection_submission(collection_submissions, op=op, index=index)
 
 @requires_search
 def delete_all():

@@ -316,62 +316,131 @@
 % if (user['can_comment'] or node['has_comments']) and not node['anonymous']:
     <%include file="include/comment_pane_template.mako"/>
 % endif
-
-% if node['is_collected']:
-    <div class="collections-container">
-    % for i, collection in enumerate(node['collections'][:5]):
+% if ([x for x in node['collections'] if x['state'] in ('removed', 'rejected', 'pending')] and user['is_contributor_or_group_member']) or [x for x in node['collections'] if x['state'] == 'accepted']:
     <div class="row">
-        <div class="col-xs-12">
-            <div style="margin-top: 5px;">
-                Included in <a href="${collection['url']}" target="_blank">${collection['title']}</a>
-                <img style="margin: 0px 0px 2px 5px;" height="16", width="16" src="${collection['logo']}">
-                % if permissions.ADMIN in user['permissions']:
-                  <a href="${collection['url']}${node['id']}/edit"><i class="fa fa-edit" aria-label="Edit in Collection"></i></a>
-                % endif
-            &nbsp;<span id="metadata${i}-toggle" class="fa bk-toggle-icon fa-angle-down" data-toggle="collapse" data-target="#metadata${i}"></span>
-            </div>
-            <div id="metadata${i}" class="collection-details collapse">
-                <ul style="margin-left: 30px; padding: 0; margin-bottom: 0;" class="list-unstyled">
+        <div class="collections-container col-12">
+            <div class="collections-box" style="font-size: 15px;">
+                <div class="clearfix" id="collections-header" data-toggle="collapse" href="#collectionList" role="button" style="margin: 10px;">
+                    <div class="pull-left" style="margin-top: 5px">
+                        <img src="${ node['collections'][0]['logo']}" style="display: inline; height: 25px; width: 25px; margin-left: 5px;"/>
+                        % if 'accepted' in [x['state'] for x in node['collections']]:
+                            <div style="display: inline; margin: 10px; margin-left: 0px;" >
+                            % if len([x for x in node['collections'] if x['state'] == 'accepted']) - 1:
+                                Included in <a>${node['collections'][0]['collection_title']}</a> and <a>${len([x for x in node['collections'] if x['state'] == 'accepted']) - 1}</a> more
+                            % else:
+                                Included in <a>${node['collections'][0]['collection_title']}</a>
+                            % endif
+                            </div>
+                        % elif node['collections'][0]['state'] == 'pending'  and user['is_contributor_or_group_member']:
+                            <div style="display: inline; margin: 10px; margin-left: 0px;" >
+                            % if len([x for x in node['collections'] if x['state'] == 'pending']) - 1:
+                                Pending entry into <a>${node['collections'][0]['collection_title']}</a>
+                            % else:
+                                Pending entry into <a>${node['collections'][0]['collection_title']}</a>
+                            % endif:
+                            </div>
+                        % else:
+                            <div style="display: inline; margin: 10px; margin-left: 0px;" >
+                                <i>See Collection History</i>
+                            </div>
+                        % endif
+                    </div>
+                    <div class="pull-right">
+                        <button id='collections-caret-down' class="btn btn-link" aria-label="Toggle Collections" ><i class="fa fa-angle-down"></i></button>
+                    </div>
+                </div>
+                <div id="collectionList" class="collapse">
+                     <div class="panel-body" style="text-align: left;">
+                        % for collection in node['collections']:
 
-                    % if collection['type']:
-                      <li>Type:&nbsp;&nbsp;<b>${collection['type']}</b></li>
-                    % endif
-
-                    % if collection['status']:
-                      <li>Status:&nbsp;&nbsp;<b>${collection['status']}</b></li>
-                    % endif
-
-                    % if collection['volume']:
-                      <li>Volume:&nbsp;&nbsp;<b>${collection['volume']}</b></li>
-                    % endif
-
-                    % if collection['issue']:
-                      <li>Issue:&nbsp;&nbsp;<b>${collection['issue']}</b></li>
-                    % endif
-
-                    % if collection['program_area']:
-                      <li>Program Area:&nbsp;&nbsp;<b>${collection['program_area']}</b></li>
-                    % endif
-
-                    % if collection['subjects']:
-                      <li>
-                        <dl class="dl-horizontal dl-subjects">
-                          <dt>Subjects:&nbsp;&nbsp;</dt>
-                          <dd>
-                          % for subject in collection['subjects']:
-                            <span class='subject-preview'>
-                              <small> ${subject} </small>
-                            </span>
-                          % endfor
-                          </dd>
-                        </dl>
-                      </li>
-                    % endif
-                </ul>
+                            % if collection['state'] == 'accepted':
+                                % if user['is_admin']:
+                                    <a class="fa fa-pencil pull-right collection-pencil" href="${collection['url']}${node['id']}/edit"></a>
+                                % endif
+                                <img src="${collection['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
+                                <div style="display: inline;">
+                                    Included in <a href="${collection['url']}" >${collection['collection_title']}</a>
+                                </div>
+                                % if collection['study_design'] and collection['type']:
+                                    <div  style="padding-left: 30px;">
+                                        Study Design: <i>${collection['study_design']}</i> |&nbsp; Type: <i>${collection['type']}</i>
+                                    </div>
+                                % elif collection['study_design']:
+                                    <div  style="padding-left: 30px;">
+                                        Study Design: <i>${collection['study_design']}</i>
+                                    </div>
+                                % elif collection['type']:
+                                    <div  style="padding-left: 30px;">
+                                        Type: <i>${collection['type']}</i>
+                                    </div>
+                                % endif
+                                <hr>
+                            % elif collection['state'] == 'pending' and user['is_contributor_or_group_member']:
+                                <img src="${collection['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
+                                <div style="display: inline;">
+                                    Pending entry into <a href="${collection['url']}" >${collection['collection_title']}</a>
+                                </div>
+                                % if collection['study_design'] and collection['type']:
+                                    <div  style="padding-left: 30px;">
+                                        Study Design: <i>${collection['study_design']}</i> |&nbsp; Type: <i>${collection['type']}</i>
+                                    </div>
+                                % elif collection['study_design']:
+                                    <div  style="padding-left: 30px;">
+                                        Study Design: <i>${collection['study_design']}</i>
+                                    </div>
+                                % elif collection['type']:
+                                    <div  style="padding-left: 30px;">
+                                        Type: <i>${collection['type']}</i>
+                                    </div>
+                                % endif
+                                <hr>
+                            % elif collection['state'] == 'rejected' and user['is_contributor_or_group_member']:
+                                % if user['is_admin']:
+                                    <a class="fa fa-repeat collections-retry-icon pull-right" collection_id=${collection['collection_id']} node_id=${collection['node_id']} ></a>
+                                % endif
+                                <img src="${collection['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
+                                <div style="display: inline;">
+                                    Rejected from <a href="${collection['url']}" >${collection['collection_title']}</a>
+                                </div>
+                                % if user['is_admin']:
+                                    <div style="padding-left: 30px;">
+                                        <a class="comment-popover"
+                                           data-toggle="popover"
+                                           data-placement="bottom"
+                                           data-content="${collection['comment']}"
+                                        >
+                                            See justification
+                                            <i class="fa fa-angle-down" /></i>
+                                        </a>
+                                    </div>
+                                % endif
+                                <hr>
+                            % elif collection['state'] == 'removed' and user['is_contributor_or_group_member']:
+                                % if user['is_admin']:
+                                    <a class="fa fa-repeat collections-retry-icon pull-right" collection_id=${collection['collection_id']} node_id=${collection['node_id']} ></a>
+                                % endif
+                                <img src="${collection['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
+                                <div style="display: inline;">
+                                    Removed from <a href="${collection['url']}" >${collection['collection_title']}</a>
+                                </div>
+                                % if user['is_admin']:
+                                    <div style="padding-left: 30px;">
+                                        <a class="comment-popover"
+                                           data-toggle="popover"
+                                           data-placement="bottom"
+                                           data-content="${collection['comment']}"
+                                        >
+                                            See justification
+                                            <i class="fa fa-angle-down" /></i>
+                                        </a>
+                                    </div>
+                                % endif
+                                <hr>
+                            % endif
+                        % endfor
+                     </div>
             </div>
         </div>
-    </div>
-    % endfor
     </div>
 % endif
 

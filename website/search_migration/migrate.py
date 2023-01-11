@@ -21,8 +21,8 @@ from osf.models import OSFUser, Institution, AbstractNode, BaseFileNode, Preprin
 from website import settings
 from website.app import init_app
 from website.search.elastic_search import client as es_client
-from website.search.elastic_search import bulk_update_cgm
-from website.search.search import update_institution, bulk_update_collected_metadata
+from website.search.elastic_search import bulk_update_collection_submission
+from website.search.search import update_institution, bulk_update_collection_submissions
 
 
 logger = logging.getLogger(__name__)
@@ -162,7 +162,7 @@ def migrate_users(index, delete, increment=10000):
         logger.info('{} users marked deleted'.format(total_users))
 
 def migrate_collected_metadata(index, delete):
-    cgms = CollectionSubmission.objects.filter(
+    collection_submissions = CollectionSubmission.objects.filter(
         collection__provider__isnull=False,
         collection__is_public=True,
         collection__deleted__isnull=True,
@@ -181,10 +181,10 @@ def migrate_collected_metadata(index, delete):
         'doc_as_upsert': True,
     } for doc in list(docs))
 
-    bulk_update_cgm(None, actions=actions, op='delete', index=index)
+    bulk_update_collection_submission(None, actions=actions, op='delete', index=index)
 
-    bulk_update_collected_metadata(cgms, index=index)
-    logger.info('{} collection submissions migrated'.format(cgms.count()))
+    bulk_update_collection_submissions(collection_submissions, index=index)
+    logger.info('{} collection submissions migrated'.format(collection_submissions.count()))
 
 def migrate_institutions(index):
     for inst in Institution.objects.filter(is_deleted=False):

@@ -2,6 +2,10 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+22.11.0 (2022-12-19)
+====================
+- Allow moderation of submissions to Collections
+
 22.11.0 (2022-11-21)
 ====================
 - Enable monitoring and moderation of OSF resoruces based on links to external
