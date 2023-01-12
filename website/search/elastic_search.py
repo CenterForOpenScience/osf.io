@@ -1069,7 +1069,8 @@ def serialize_guid_metadata(guid):
 
 
 def _funding_values(guid_metadata_record, funding_field):
-    return filter(None, (
+    return [
         funding_info[funding_field]
         for funding_info in guid_metadata_record.funding_info
-    ))
+        if funding_info[funding_field]
+    ]
