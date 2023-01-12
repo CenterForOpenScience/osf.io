@@ -376,9 +376,6 @@
                                 % endif
                                 <hr>
                             % elif collection['state'] == 'pending' and user['is_contributor_or_group_member']:
-                                % if user['is_admin']:
-                                    <a class="fa fa-close collections-cancel-icon pull-right" collection_id=${collection['collection_id']} node_id=${collection['node_id']} aria-label="Cancel Submission Request Button"></a>
-                                % endif
                                 <img src="${collection['logo']}" style="display: inline; height: 25px; margin-top: -2px;" alt="collection logo" />
                                 <div style="display: inline;">
                                     Pending entry into <a href="${collection['url']}" >${collection['collection_title']}</a>
@@ -399,7 +396,7 @@
                                 <hr>
                             % elif collection['state'] == 'rejected' and user['is_contributor_or_group_member']:
                                 % if user['is_admin']:
-                                    <a class="fa fa-repeat collections-retry-icon pull-right" collection_id=${collection['collection_id']} node_id=${collection['node_id']} aria-label="Edit Collection Button"></a>
+                                    <a class="fa fa-repeat collections-retry-icon pull-right" collection_id=${collection['collection_id']} node_id=${collection['node_id']} aria-label="Retry Submission Button"></a>
                                 % endif
                                 <img src="${collection['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
                                 <div style="display: inline;">

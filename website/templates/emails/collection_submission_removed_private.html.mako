@@ -10,7 +10,7 @@
     <p>
         % if is_admin:
             You have changed the privacy of <a href="${node.absolute_url}">${node.title}</a> and it has therefore been
-            removed from
+            removed from the
             % if collection.provider:
                 <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.provider.name}</a>
             % else:
@@ -19,13 +19,9 @@
             . If you wish to be associated with the collection, you will need to request addition to the collection again.
         % else:
             <a href="${remover.absolute_url}">${remover.fullname}</a> has changed the privacy settings for
-            <a href="${node.absolute_url}">${node.title}</a> it has therefore been removed from
-            % if collection.provider:
-                <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.provider.name}</a>
-            % else:
-                <a href="${settings.DOMAIN + 'myprojects/'}">${collection.provider.name}</a>
-            % endif
-            It will need to be re-submitteds to be included in the collection again.
+            <a href="${node.absolute_url}">${node.title}</a> it has therefore been removed from the
+            <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.provider.name}</a>.
+            If you wish to be associated with the collection an admin will need to reapply to the collection again.
         % endif
     </p>
     <p>
