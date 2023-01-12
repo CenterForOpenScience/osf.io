@@ -311,10 +311,7 @@ class CollectionFactory(DjangoModelFactory):
     @classmethod
     def _create(cls, *args, **kwargs):
         collected_types = kwargs.pop('collected_types', ContentType.objects.filter(app_label='osf', model__in=['abstractnode', 'basefilenode', 'collection', 'preprint']))
-        _id = kwargs.pop('_id', None)
         obj = cls._build(*args, **kwargs)
-        if _id and _id != 'osf':
-            obj._id = _id
         obj.save()
         # M2M, requires initial save
         obj.collected_types.add(*collected_types)
@@ -335,11 +332,8 @@ class CollectionProviderFactory(DjangoModelFactory):
     @classmethod
     def _create(cls, *args, **kwargs):
         user = kwargs.pop('creator', None)
-        _id = kwargs.pop('_id', None)
         obj = cls._build(*args, **kwargs)
         obj._creator = user or UserFactory()  # Generates primary_collection
-        if _id and _id != 'osf':
-            obj._id = _id
         obj.save()
         return obj
 

@@ -836,7 +836,11 @@ def update_collection_submission_async(self, node_id, collection_id=None, op='up
                 continue
             if collection_submission.guid.referent.deleted:
                 continue
-            if collection_submission.state is not CollectionSubmissionStates.ACCEPTED:
+            if collection_submission.state in [
+                CollectionSubmissionStates.REMOVED,
+                CollectionSubmissionStates.REJECTED,
+                CollectionSubmissionStates.PENDING
+            ]:
                 continue
         try:
             update_collection_submission(collection_submission, op=op, index=index)

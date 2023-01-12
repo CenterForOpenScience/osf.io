@@ -30,10 +30,11 @@ class TestSerializeRevision(StorageTestCase):
         self.record.save()
 
     def test_serialize_revision(self):
-        sessions.sessions[request._get_current_object()] = Session()
-        utils.update_analytics(self.project, self.record, 0)
-        utils.update_analytics(self.project, self.record, 0)
-        utils.update_analytics(self.project, self.record, 2)
+        mock_session = Session()
+        sessions.sessions[request._get_current_object()] = mock_session
+        utils.update_analytics(self.project, self.record, 0, mock_session)
+        utils.update_analytics(self.project, self.record, 0, mock_session)
+        utils.update_analytics(self.project, self.record, 2, mock_session)
         expected = {
             'index': 1,
             'user': {
@@ -57,10 +58,11 @@ class TestSerializeRevision(StorageTestCase):
         assert_equal(self.record.get_download_count(version=0), 2)
 
     def test_anon_revisions(self):
-        sessions.sessions[request._get_current_object()] = Session()
-        utils.update_analytics(self.project, self.record, 0)
-        utils.update_analytics(self.project, self.record, 0)
-        utils.update_analytics(self.project, self.record, 2)
+        mock_session = Session()
+        sessions.sessions[request._get_current_object()] = mock_session
+        utils.update_analytics(self.project, self.record, 0, mock_session)
+        utils.update_analytics(self.project, self.record, 0, mock_session)
+        utils.update_analytics(self.project, self.record, 2, mock_session)
         expected = {
             'index': 2,
             'user': None,

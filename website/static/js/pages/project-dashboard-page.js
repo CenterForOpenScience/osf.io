@@ -111,8 +111,6 @@ $(document).ready(function () {
         // If the clicked element has .keep-open, don't allow the event to propagate
         return !(target.hasClass('keep-open') || target.parents('.keep-open').length);
     });
-    var collectionsActionsURL = $osf.apiV2Url('collection_submission_actions/');
-
     $('.collections-retry-icon').on('click', function (evt) {
         var target = $(evt.target);
         var payload = {
@@ -132,38 +130,7 @@ $(document).ready(function () {
                 }
             }
         };
-
-        var request = $osf.ajaxJSON(
-            'POST',
-            collectionsActionsURL,
-            {
-                data: payload,
-                isCors: true
-            }
-        );
-        request.done(function(resp) {
-            location.reload();
-        });
-    });
-    $('.collections-cancel-icon').on('click', function (evt) {
-        var target = $(evt.target);
-        var payload = {
-            data: {
-                type: 'collection-submission-actions',
-                attributes: {
-                    comment: 'Canceled via project overview page',
-                    trigger: 'cancel',
-                },
-                relationships: {
-                    target: {
-                        data: {
-                            id: evt.target.getAttribute('node_id') + '-' + evt.target.getAttribute('collection_id'),
-                            type: 'collection-submission',
-                        }
-                    }
-                }
-            }
-        };
+        var collectionsActionsURL = $osf.apiV2Url('collection_submission_actions/');
 
         var request = $osf.ajaxJSON(
             'POST',

@@ -116,10 +116,6 @@ class CollectionProviderSerializer(ProviderSerializer):
     )
     reviews_workflow = ser.ChoiceField(choices=Workflows.choices(), read_only=True)
 
-    subscriptions = RelationshipField(
-        related_view='providers:collection-providers:notification-subscription-list',
-        related_view_kwargs={'provider_id': '<_id>'},
-    )
     filterable_fields = frozenset([
         'allow_submissions',
         'allow_commenting',
@@ -175,11 +171,6 @@ class RegistrationProviderSerializer(ProviderSerializer):
         related_view_kwargs={'provider_id': '<_id>'},
     )
 
-    subscriptions = RelationshipField(
-        related_view='providers:registration-providers:notification-subscription-list',
-        related_view_kwargs={'provider_id': '<_id>'},
-    )
-
     links = LinksField({
         'self': 'get_absolute_url',
         'external_url': 'get_external_url',
@@ -229,11 +220,6 @@ class PreprintProviderSerializer(MetricsSerializerMixin, ProviderSerializer):
 
     moderators = RelationshipField(
         related_view='providers:preprint-providers:provider-moderator-list',
-        related_view_kwargs={'provider_id': '<_id>'},
-    )
-
-    subscriptions = RelationshipField(
-        related_view='providers:preprint-providers:notification-subscription-list',
         related_view_kwargs={'provider_id': '<_id>'},
     )
 
