@@ -88,6 +88,8 @@ class CollectionSubmissionActionSerializer(JSONAPISerializer):
                 collection_submission.remove(user=user, comment=comment)
             elif trigger == CollectionSubmissionsTriggers.RESUBMIT:
                 collection_submission.resubmit(user=user, comment=comment)
+            elif trigger == CollectionSubmissionsTriggers.CANCEL:
+                collection_submission.cancel(user=user, comment=comment)
             else:
                 raise JSONAPIAttributeException(attribute='trigger', detail='Invalid trigger.')
         except PermissionsError as exc:
