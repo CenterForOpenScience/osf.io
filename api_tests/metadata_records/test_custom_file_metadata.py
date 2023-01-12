@@ -12,6 +12,14 @@ from .utils import ExpectedMetadataRecord
 class TestCustomFileMetadataRecordDetail(ParentTestClass):
     APIV2_PATH = 'custom_file_metadata_records/'
     APIV2_RESOURCE_TYPE = 'custom-file-metadata-record'
+    EXPECTED_LOG_ACTION = 'file_metadata_updated'
+
+    def get_loggable_referent(self, osfguid):
+        return osfguid.referent.target
+
+    def assert_expected_log(self, osfguid, user, updated_fields):
+        log = super().assert_expected_log(osfguid, user, updated_fields)
+        assert log.params['path'] == osfguid.referent.materialized_path
 
     @pytest.fixture(scope='class')
     def public_preprint_file_osfguid(self, public_preprint):
@@ -73,7 +81,7 @@ class TestCustomFileMetadataRecordDetail(ParentTestClass):
             res = app.patch_json_api(
                 self.make_url(osfguid),
                 self.make_payload(osfguid, title='title!'),
-                auth=anybody_with_write_permission,
+                auth=anybody_with_write_permission.auth,
             )
             assert res.status_code == 200
             api_record = res.json['data']
@@ -81,15 +89,29 @@ class TestCustomFileMetadataRecordDetail(ParentTestClass):
             assert api_record['attributes']['description'] == ''
             db_record = GuidMetadataRecord.objects.for_guid(osfguid)
             expected.assert_expectations(db_record=db_record, api_record=api_record)
+            self.assert_expected_log(
+                osfguid,
+                user=anybody_with_write_permission,
+                updated_fields={
+                    'title': {'old': '', 'new': 'title!'},
+                },
+            )
 
             expected.description = 'description!'
             res = app.patch_json_api(
                 self.make_url(osfguid),
                 self.make_payload(osfguid, description='description!'),
-                auth=anybody_with_write_permission,
+                auth=anybody_with_write_permission.auth,
             )
             assert res.status_code == 200
             api_record = res.json['data']
             assert api_record['attributes']['title'] == 'title!'
             assert api_record['attributes']['description'] == 'description!'
             expected.assert_expectations(db_record=db_record, api_record=api_record)
+            self.assert_expected_log(
+                osfguid,
+                user=anybody_with_write_permission,
+                updated_fields={
+                    'description': {'old': '', 'new': 'description!'},
+                },
+            )
