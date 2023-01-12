@@ -12,7 +12,9 @@ from addons.nextcloud import settings
 from addons.nextcloud.serializer import NextcloudSerializer
 from addons.nextcloud.settings import DEFAULT_HOSTS, USE_SSL
 from osf.models.external import BasicAuthProviderMixin
-from website.util import api_v2_url
+from website.util import api_v2_url, timestamp
+from addons.nextcloudinstitutions import utils
+
 logger = logging.getLogger(__name__)
 
 
@@ -25,7 +27,48 @@ class NextcloudFolder(NextcloudFileNode, Folder):
 
 
 class NextcloudFile(NextcloudFileNode, File):
-    pass
+    @property
+    def _hashes(self):
+        try:
+            return self._history[-1]['extra']['hashes']['nextcloud']
+        except (IndexError, KeyError):
+            return None
+
+    # return (hash_type, hash_value)
+    def get_hash_for_timestamp(self):
+        hashes = self._hashes
+        if hashes:
+            if 'sha512' in hashes:
+                return timestamp.HASH_TYPE_SHA512, hashes['sha512']
+        return None, None  # unsupported
+
+    def _my_node_settings(self):
+        node = self.target
+        if node:
+            addon = node.get_addon(self.provider)
+            if addon:
+                return addon
+        return None
+
+    def get_timestamp(self):
+        node_settings = self._my_node_settings()
+        path = self.path
+        if node_settings:
+            return utils.get_timestamp(
+                node_settings,
+                node_settings.folder_id + path,
+                provider_name=self.provider)
+        return None, None, None
+
+    def set_timestamp(self, timestamp_data, timestamp_status, context):
+        node_settings = self._my_node_settings()
+        path = self.path
+        if node_settings:
+            utils.set_timestamp(
+                node_settings,
+                node_settings.folder_id + path,
+                timestamp_data, timestamp_status, context=context,
+                provider_name=self.provider)
 
 
 class NextcloudProvider(BasicAuthProviderMixin):
