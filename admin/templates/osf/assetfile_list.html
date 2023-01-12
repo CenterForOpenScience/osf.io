@@ -74,12 +74,24 @@
 {% endblock content %}
 
 {% block bottom_js %}
-    <script>
-        function filterSubjects(provider_id) {
-            document.location.search = "?provider_id=" + provider_id;
-        }
-        $(document).ready(function() {
-            $('.provider-filter-selector').select2()
-        })
-    </script>
+    {% if on_provider_route %}
+        <script>
+            function filterSubjects(provider_id) {
+                document.location.search = "?provider_id=" + provider_id;
+            }
+            $(document).ready(function() {
+                $('.provider-filter-selector').select2()
+            })
+        </script>
+    {%endif%}
+    {% if on_institution_route %}
+        <script>
+            function filterSubjects(institution_id) {
+                document.location.search = "?institution_id=" + institution_id;
+            }
+            $(document).ready(function() {
+                $('.provider-filter-selector').select2()
+            })
+        </script>
+    {%endif%}
 {% endblock %}
