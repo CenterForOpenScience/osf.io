@@ -23,6 +23,13 @@ class FundingInfoSerializer(ser.Serializer):
 
 
 class CustomItemMetadataSerializer(JSONAPISerializer):
+    non_anonymized_fields = {
+        'id',
+        'guid',
+        'resource_type_general',
+        'language',
+    }
+
     id = IDField(read_only=True, source='guid._id')
     guid = RelationshipField(
         read_only=True,
@@ -58,6 +65,11 @@ class CustomItemMetadataSerializer(JSONAPISerializer):
 
 
 class CustomFileMetadataSerializer(CustomItemMetadataSerializer):
+    non_anonymized_fields = CustomItemMetadataSerializer.non_anonymized_fields | {
+        'title',
+        'description',
+    }
+
     title = ser.CharField(required=False, allow_blank=True)  # TODO: max-length
     description = ser.CharField(required=False, allow_blank=True)  # TODO: max-length
 
