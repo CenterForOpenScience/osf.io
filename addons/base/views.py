@@ -7,7 +7,6 @@ from future.moves.urllib.parse import quote
 from django.utils import timezone
 
 from flask import make_response
-from flask import redirect
 from flask import request
 import furl
 import jwe
@@ -31,6 +30,7 @@ from framework.auth import cas
 from framework.auth import oauth_scopes
 from framework.auth.decorators import collect_auth, must_be_logged_in, must_be_signed
 from framework.exceptions import HTTPError
+from framework.flask import redirect
 from framework.sentry import log_exception
 from framework.routing import json_renderer, proxy_url
 from framework.transactions.handlers import no_auto_transaction
