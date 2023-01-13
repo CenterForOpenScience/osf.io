@@ -4021,6 +4021,10 @@ msgstr ""
 msgid "Comments"
 msgstr ""
 
+#: website/static/js/js_messages.js:21
+msgid "Metadata"
+msgstr ""
+
 #: website/static/js/js_messages.js:23
 msgid "Default Notification Settings"
 msgstr ""

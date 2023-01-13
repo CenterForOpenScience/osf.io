@@ -31,6 +31,7 @@ from website.search.search import update_institution, bulk_update_collected_meta
 from website.search.util import unicode_normalize
 from addons.wiki.models import WikiPage
 from addons.osfstorage.models import OsfStorageFile
+from addons.metadata.search import migrate_file_metadata
 
 logger = logging.getLogger(__name__)
 
@@ -357,6 +358,7 @@ def migrate(delete, remove=False, remove_all=False, index=None, app=None):
     migrate_preprint_files(new_index, delete=delete)
     migrate_collected_metadata(new_index, delete=delete)
     migrate_groups(new_index, delete=delete)
+    migrate_file_metadata(search, new_index, delete=delete)
 
     set_up_alias(index, new_index)
 

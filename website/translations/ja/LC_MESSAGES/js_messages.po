@@ -5254,7 +5254,7 @@ msgstr "コンポーネント"
 
 #: website/static/js/js_messages.js:21
 msgid "Registrations"
-msgstr "登録"
+msgstr "プロジェクトメタデータ"
 
 #: website/static/js/js_messages.js:21
 msgid "Users"
@@ -5287,6 +5287,10 @@ msgstr "Wiki"
 #: website/static/js/js_messages.js:21
 msgid "Comments"
 msgstr "コメント"
+
+#: website/static/js/js_messages.js:21
+msgid "Metadata"
+msgstr "ファイルメタデータ"
 
 #: website/static/js/js_messages.js:23
 msgid "Default Notification Settings"
