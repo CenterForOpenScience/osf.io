@@ -476,8 +476,9 @@ function createFileCapacityFieldElement(createHandler, options) {
         });
       }
       input.addClass('form-control');
-      const container = $('<div>').css('display', 'flex').append(input);
+      const container = $('<div>').append(input);
       if (!options || (!options.readonly && !options.multiple)) {
+        container.css('display', 'flex');
         const calcIndicator = $('<i class="fa fa-spinner fa-pulse">')
           .hide();
         const calcButton = $('<a class="btn btn-default btn-sm">')
@@ -537,8 +538,9 @@ function createFileURLFieldElement(createHandler, options) {
         });
       }
       input.addClass('form-control');
-      const container = $('<div>').css('display', 'flex').append(input);
+      const container = $('<div>').append(input);
       if (!options || (!options.readonly && !options.multiple)) {
+        container.css('display', 'flex');
         const fillButton = $('<a class="btn btn-default btn-sm">')
           .append($('<i class="fa fa-refresh"></i>'))
           .append($('<span></span>').text(_('Fill')));

@@ -1883,7 +1883,7 @@ function MetadataButtons() {
             .append($('<div class="modal-footer"></div>')
               .css('display', 'flex')
               .css('align-items', 'center')
-              .append(close)
+              .append(close.css('margin-left', 'auto'))
               .append(save)))));
     $(window).on('beforeunload', function() {
       if ($(dialog).data('bs.modal').isShown) {
