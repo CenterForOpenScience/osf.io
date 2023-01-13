@@ -1765,6 +1765,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if not affiliation:
             return False
         affiliation.delete()
+        if self.has_perm('view_institutional_metrics', affiliation.institution):
+            group = affiliation.institution.get_group('institutional_admins')
+            group.user_set.remove(self)
+            group.save()
         return True
 
     def get_activity_points(self):
