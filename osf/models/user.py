@@ -1686,6 +1686,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     def is_affiliated_with_institution(self, institution):
         """Return if this user is affiliated with the given ``institution``."""
+        if not institution:
+            return False
         return InstitutionAffiliation.objects.filter(user__id=self.id, institution__id=institution.id).exists()
 
     def get_institution_affiliation(self, institution_id):
@@ -1714,12 +1716,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         affiliation if added or updated; returns ``None`` if affiliation exists and there is nothing to update.
         """
         if self.is_affiliated_with_institution(institution):
-            if not sso_department:
+            if not sso_identity and not sso_department and not sso_mail:
                 return None
             affiliation = InstitutionAffiliation.objects.get(user__id=self.id, institution__id=institution.id)
-            if affiliation.sso_department == sso_department:
-                return None
-            affiliation.sso_department = sso_department
+            if sso_department and affiliation.sso_department != sso_department:
+                affiliation.sso_department = sso_department
+            if sso_mail and affiliation.sso_mail != sso_mail:
+                affiliation.sso_mail = sso_mail
+            if sso_identity and affiliation.sso_identity != sso_identity:
+                affiliation.sso_identity = sso_identity
             affiliation.save()
             return affiliation
         affiliation = InstitutionAffiliation.objects.create(
@@ -1730,6 +1735,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             sso_department=sso_department,
             sso_other_attributes={}
         )
+        return affiliation
+
+    def remove_sso_identity_from_affiliation(self, institution):
+        if not self.is_affiliated_with_institution(institution):
+            return None
+        affiliation = InstitutionAffiliation.objects.get(user__id=self.id, institution__id=institution.id)
+        affiliation.sso_identity = ''
+        affiliation.save()
         return affiliation
 
     def copy_institution_affiliation_when_merging_user(self, user):

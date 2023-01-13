@@ -4,6 +4,7 @@ from osf.models.base import BaseModel
 from osf.models.validators import validate_email
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import LowercaseEmailField
+from osf.exceptions import InstitutionAffiliationStateError
 
 
 class InstitutionAffiliation(BaseModel):
@@ -42,6 +43,7 @@ def get_user_by_institution_identity(institution, sso_identity):
     except InstitutionAffiliation.DoesNotExist:
         return None
     except InstitutionAffiliation.MultipleObjectsReturned:
-        # TODO: add exception handling
-        return None
+        raise InstitutionAffiliationStateError(
+            f'Duplicate SSO Identity: institution={institution._id}, sso_identity={sso_identity}'
+        )
     return affiliation.user

@@ -19,7 +19,7 @@ from osf import features
 from osf.models import Institution
 from osf.models.institution import SharedSsoAffiliationFilterCriteriaAction
 
-from website.mails import send_mail, WELCOME_OSF4I, DUPLICATE_ACCOUNTS_OSF4I, ADD_SSO_EMAIL_OSF4I
+from website.mails import send_mail, WELCOME_OSF4I  # , DUPLICATE_ACCOUNTS_OSF4I, ADD_SSO_EMAIL_OSF4I
 from website.settings import OSF_SUPPORT_EMAIL, DOMAIN
 
 logger = logging.getLogger(__name__)
@@ -208,7 +208,8 @@ class InstitutionAuthentication(BaseAuthentication):
         # Attempt to find an existing user that matches the email(s) provided via SSO. Create a new one if not found.
         # If a user is found, it is possible that the user is inactive (e.g. unclaimed, disabled, unconfirmed, etc.).
         # If a new user is created, the user object is confirmed but not registered (i.e. inactive until registered).
-        user, is_created, duplicate_user, email_to_add = get_or_create_institutional_user(
+        # TODO: Handle this new exception with CAS
+        user, is_created, duplicate_user, email_to_add, identity_to_add = get_or_create_institutional_user(
             fullname,
             sso_email,
             sso_identity,
@@ -310,36 +311,50 @@ class InstitutionAuthentication(BaseAuthentication):
         # Add the email to the user's account if it is identified by the eppn
         if email_to_add:
             assert not is_created and email_to_add == sso_email
-            user.emails.add(email_to_add)
-            send_mail(
-                to_addr=user.username,
-                mail=ADD_SSO_EMAIL_OSF4I,
-                user=user,
-                email_to_add=email_to_add,
-                domain=DOMAIN,
-                osf_support_email=OSF_SUPPORT_EMAIL,
-            )
+            user.emails.create(address=email_to_add)
+            logger.warning('# TODO: notify user of new email added')
+            pass
+            # send_mail(
+            #     to_addr=user.username,
+            #     mail=ADD_SSO_EMAIL_OSF4I,
+            #     user=user,
+            #     email_to_add=email_to_add,
+            #     domain=DOMAIN,
+            #     osf_support_email=OSF_SUPPORT_EMAIL,
+            # )
 
         # Inform the user that a potential duplicate account is found
-        # Note: DON't automatically merge accounts. Must leave the decision to the user.
+        # Remove sso identity from the duplicate user since it will be added to the authn user
+        # Note: DON't automatically merge accounts. MUST leave the decision to the user.
         if duplicate_user:
             assert not is_created and email_to_add is None
-            send_mail(
-                to_addr=user.username,
-                mail=DUPLICATE_ACCOUNTS_OSF4I,
-                user=user,
-                duplicate_user=duplicate_user,
-                domain=DOMAIN,
-                osf_support_email=OSF_SUPPORT_EMAIL,
-            )
+            duplicate_user.remove_sso_identity_from_affiliation(institution)
+            if secondary_institution:
+                duplicate_user.remove_sso_identity_from_affiliation(secondary_institution)
+            logger.warning('# TODO: notify user of potential duplicate accounts')
+            pass
+            # send_mail(
+            #     to_addr=user.username,
+            #     mail=DUPLICATE_ACCOUNTS_OSF4I,
+            #     user=user,
+            #     duplicate_user=duplicate_user,
+            #     domain=DOMAIN,
+            #     osf_support_email=OSF_SUPPORT_EMAIL,
+            # )
 
         # Affiliate the user to the primary institution if not previously affiliated
-        user.add_or_update_affiliated_institution(institution, sso_mail=sso_email, sso_department=department)
+        user.add_or_update_affiliated_institution(
+            institution,
+            sso_identity=identity_to_add,
+            sso_mail=sso_email,
+            sso_department=department,
+        )
 
         # Affiliate the user to the secondary institution if not previously affiliated
         if secondary_institution:
             user.add_or_update_affiliated_institution(
                 secondary_institution,
+                sso_identity=identity_to_add,
                 sso_mail=sso_email,
                 sso_department=department,
             )

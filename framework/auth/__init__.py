@@ -14,6 +14,8 @@ from framework.celery_tasks.handlers import enqueue_task
 from framework.sessions import session, create_session
 from framework.sessions.utils import remove_session
 
+from osf.exceptions import InstitutionAffiliationStateError
+
 
 __all__ = [
     'Auth',
@@ -132,25 +134,30 @@ def get_or_create_institutional_user(fullname, sso_email, sso_identity, primary_
     from osf.models.institution_affiliation import get_user_by_institution_identity
 
     user_by_email = get_user(email=sso_email)
-    user_by_identity = get_user_by_institution_identity(primary_institution, sso_identity)
+    try:
+        user_by_identity = get_user_by_institution_identity(primary_institution, sso_identity)
+    except InstitutionAffiliationStateError as e:
+        raise e
 
     if user_by_identity:
-        # CASE 1/?: the user is only found by identity but not by email
+        # CASE 1/5: the user is only found by identity but not by email, return the user and the sso email to add
         if not user_by_email:
-            return user_by_identity, False, None, sso_email,
-        # CASE 2/?: the same user is found by both email and identity
+            return user_by_identity, False, None, sso_email, None
+        # CASE 2/5: the same user is found by both email and identity, return the user
         if user_by_email == user_by_identity:
-            return user_by_identity, False, None, None
-        # CASE 3/?: two different users are found, one by email and the other by identity
-        return user_by_identity, False, user_by_email, None
-    # CASE 4/?: the user is only found by email but not by identity
+            return user_by_email, False, None, None, None
+        # CASE 3/5: two different users are found, one by email and the other by identity, return the user found
+        # by email as the authn user and the user found by identity as the duplicate; in addition, return the
+        # sso identity to be added to the user found by email
+        return user_by_email, False, user_by_identity, None, sso_identity
+    # CASE 4/5: the user is only found by email but not by identity, return the user and the sso identity to add
     if user_by_email:
-        return user_by_email, False, None, None
-    # CASE 5/?: If no user is found, create a confirmed user and return it.
-    # Institution users are created as confirmed with a strong and random password. Users don't need the password
-    # since they sign in via institution SSO. They can reset their password to enable email/password login.
+        return user_by_email, False, None, None, sso_identity
+    # CASE 5/5: If no user is found, create a confirmed user and return the user and sso identity.
+    # Note: Institution users are created as confirmed with a strong and random password. Users don't need the
+    # password since they sign in via SSO. They can reset their password to enable email/password login.
     user = OSFUser.create_confirmed(sso_email, str(uuid.uuid4()), fullname)
-    return user, True, None, None
+    return user, True, None, None, sso_identity
 
 
 def get_or_create_user(fullname, address, reset_password=True, is_spam=False):
