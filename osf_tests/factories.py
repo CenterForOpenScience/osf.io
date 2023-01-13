@@ -1108,3 +1108,26 @@ class BrandFactory(DjangoModelFactory):
 
     primary_color = factory.Faker('hex_color')
     secondary_color = factory.Faker('hex_color')
+
+
+class ContentTypeFactory(DjangoModelFactory):
+    class Meta:
+        model = ContentType
+
+
+class OsfStorageFileFactory(DjangoModelFactory):
+    class Meta:
+        model = OsfStorageFile
+    id = 1
+    provider = 'osfstorage'
+    target_content_type = factory.SubFactory(ContentTypeFactory)
+    target_object_id = 1
+    path = 'fake_path'
+
+
+class ResponeFactory:
+    def __init__(self, raw):
+        self.raw = raw
+
+    def close(self):
+        return None
