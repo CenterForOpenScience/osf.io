@@ -25,10 +25,10 @@ class Command(BaseCommand):
         script_start_time = datetime.datetime.now()
         logger.info(f'Script started time: {script_start_time}')
 
-        dry_run = options.get('dry_run', True)
+        dry_run = options.get('dry_run', False)
         if dry_run:
             logger.warning('Dry Run: This is a dry-run pass!')
-        migrate_user_institution_affiliation(dry_run=True)
+        migrate_user_institution_affiliation(dry_run=dry_run)
 
         script_finish_time = datetime.datetime.now()
         logger.info(f'Script finished time: {script_finish_time}')
@@ -42,10 +42,12 @@ def migrate_user_institution_affiliation(dry_run=True):
 
     institution_count = 0
     user_count = 0
+    skipped_user_count = 0
 
     for institution in institutions:
         institution_count += 1
         user_count_per_institution = 0
+        skipped_user_count_per_institution = 0
         users = institution.osfuser_set.all()
         user_total_per_institution = users.count()
         logger.info(f'Migrating affiliation for <{institution.name}> [{institution_count}/{institution_total}]')
@@ -60,11 +62,20 @@ def migrate_user_institution_affiliation(dry_run=True):
                     sso_identity=InstitutionAffiliation.DEFAULT_VALUE_FOR_SSO_IDENTITY_NOT_AVAILABLE,
                     sso_department=user.department
                 )
-                logger.info(f'\tAffiliation=<{affiliation}> migrated for user=<{user._id}> @ institution=<{institution._id}>')
+                if affiliation:
+                    logger.info(f'\tAffiliation=<{affiliation}> migrated or updated '
+                                f'for user=<{user._id}> @ institution=<{institution._id}>')
+                else:
+                    skipped_user_count_per_institution += 1
+                    skipped_user_count += 1
+                    logger.info(f'\tSkip migration or update since affiliation exists '
+                                f'for user=<{user._id}> @ institution=<{institution._id}>')
             else:
                 logger.warning(f'\tDry Run: Affiliation not migrated for {user._id} @ {institution._id}!')
         if user_count_per_institution == 0:
             logger.warning(f'No eligible user found')
         else:
-            logger.info(f'Finished migrating affiliation for {user_count_per_institution} users @ <{institution.name}>')
-    logger.info(f'Finished migrating affiliation for {user_count} users @ {institution_count} institutions.')
+            logger.info(f'Finished migrating affiliation for {user_count_per_institution} users '
+                        f'@ <{institution.name}>, including {skipped_user_count_per_institution} skipped users')
+    logger.info(f'Finished migrating affiliation for {user_count} users @ {institution_count} institutions, '
+                f'including {skipped_user_count} skipped users')
