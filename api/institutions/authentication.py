@@ -16,6 +16,7 @@ from framework import sentry
 from framework.auth import get_or_create_institutional_user
 
 from osf import features
+from osf.exceptions import InstitutionAffiliationStateError
 from osf.models import Institution
 from osf.models.institution import SharedSsoAffiliationFilterCriteriaAction
 
@@ -208,13 +209,18 @@ class InstitutionAuthentication(BaseAuthentication):
         # Attempt to find an existing user that matches the email(s) provided via SSO. Create a new one if not found.
         # If a user is found, it is possible that the user is inactive (e.g. unclaimed, disabled, unconfirmed, etc.).
         # If a new user is created, the user object is confirmed but not registered (i.e. inactive until registered).
-        # TODO: Handle this new exception with CAS
-        user, is_created, duplicate_user, email_to_add, identity_to_add = get_or_create_institutional_user(
-            fullname,
-            sso_email,
-            sso_identity,
-            institution,
-        )
+        try:
+            user, is_created, duplicate_user, email_to_add, identity_to_add = get_or_create_institutional_user(
+                fullname,
+                sso_email,
+                sso_identity,
+                institution,
+            )
+        except InstitutionAffiliationStateError:
+            message = f'Institution SSO Error: duplicate SSO identity {sso_identity} found for institution ' \
+                      f'[{institution._id}]. More info: SSO email is [{sso_email}]'
+            logger.error(message)
+            raise PermissionDenied(detail='DuplicateSSOIdentityPerInstitution')
 
         # Existing but inactive users need to be either "activated" or failed the auth
         activation_required = False

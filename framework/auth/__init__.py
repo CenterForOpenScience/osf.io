@@ -14,8 +14,6 @@ from framework.celery_tasks.handlers import enqueue_task
 from framework.sessions import session, create_session
 from framework.sessions.utils import remove_session
 
-from osf.exceptions import InstitutionAffiliationStateError
-
 
 __all__ = [
     'Auth',
@@ -128,16 +126,16 @@ def get_or_create_institutional_user(fullname, sso_email, sso_identity, primary_
     :param str sso_email: user's email, which comes from the email attribute during SSO
     :param str sso_identity: user's institutional identity, which comes from the identity attribute during SSO
     :param Institution primary_institution: the primary institution
+    :raises ``InstitutionAffiliationStateError`` when same SSO identity is found on more than one users per institution
     """
 
     from osf.models import OSFUser
     from osf.models.institution_affiliation import get_user_by_institution_identity
 
     user_by_email = get_user(email=sso_email)
-    try:
-        user_by_identity = get_user_by_institution_identity(primary_institution, sso_identity)
-    except InstitutionAffiliationStateError as e:
-        raise e
+    # ``InstitutionAffiliationStateError`` can be raised by ``get_user_by_institution_identity()``, the caller of
+    # ``get_or_create_institutional_user()`` must handle it properly
+    user_by_identity = get_user_by_institution_identity(primary_institution, sso_identity)
 
     if user_by_identity:
         # CASE 1/5: the user is only found by identity but not by email, return the user and the sso email to add

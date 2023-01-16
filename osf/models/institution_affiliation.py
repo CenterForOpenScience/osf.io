@@ -1,3 +1,5 @@
+import logging
+
 from django.db import models
 
 from osf.models.base import BaseModel
@@ -5,6 +7,9 @@ from osf.models.validators import validate_email
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import LowercaseEmailField
 from osf.exceptions import InstitutionAffiliationStateError
+
+
+logger = logging.getLogger(__name__)
 
 
 class InstitutionAffiliation(BaseModel):
@@ -32,7 +37,8 @@ class InstitutionAffiliation(BaseModel):
 
 
 def get_user_by_institution_identity(institution, sso_identity):
-    """Return the user with the given sso_identity for the given institution.
+    """Return the user with the given sso_identity for the given institution if found. Return ``None`` if missing
+    input arguments or if not found. Raise exception if multiple users are found.
     """
     if not institution or not sso_identity:
         return None
@@ -42,8 +48,8 @@ def get_user_by_institution_identity(institution, sso_identity):
         affiliation = InstitutionAffiliation.objects.get(institution___id=institution._id, sso_identity=sso_identity)
     except InstitutionAffiliation.DoesNotExist:
         return None
-    except InstitutionAffiliation.MultipleObjectsReturned:
-        raise InstitutionAffiliationStateError(
-            f'Duplicate SSO Identity: institution={institution._id}, sso_identity={sso_identity}'
-        )
+    except InstitutionAffiliation.MultipleObjectsReturned as err:
+        message = f'Duplicate SSO Identity: institution={institution._id}, sso_identity={sso_identity}, err={str(err)}'
+        logger.error(message)
+        raise InstitutionAffiliationStateError(message)
     return affiliation.user
