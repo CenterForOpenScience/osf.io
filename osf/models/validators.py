@@ -375,11 +375,16 @@ class RegistrationResponsesValidator:
             question.registration_response_key,  # default
         )
 
-        if question.block_type in ('single-select-input', 'e-rad-award-funder-input',
-                                   'e-rad-award-field-input'):
+        if question.block_type in ('single-select-input', 'e-rad-award-field-input'):
             return {
                 'type': 'string',
                 'enum': self._get_multiple_choice_options(question),
+                'description': question_text,
+            }
+        elif question.block_type == 'e-rad-award-funder-input':
+            # allow any option
+            return {
+                'type': 'string',
                 'description': question_text,
             }
         elif question.block_type == 'multi-select-input':

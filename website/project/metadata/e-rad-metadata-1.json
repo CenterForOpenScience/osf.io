@@ -12,24 +12,93 @@
           "qid": "funder",
           "nav": "資金配分機関情報",
           "title": "資金配分機関情報|Funder",
+          "help": "資金配分機関情報を選択してください。一覧に無い場合は英語略称を記入してください。|Please select the funder. If not listed, please enter the English abbreviation.",
           "type": "choose",
           "format": "e-rad-award-funder",
           "options": [
-            {
-              "text": "JST",
-              "tooltip": "国立研究開発法人科学技術振興機構|Japan Science and Technology Agency|1020"
-            },
-            {
-              "text": "NEDO",
-              "tooltip": "国立研究開発法人新エネルギー・産業技術総合開発機構|New Energy and Industrial Technology Development Organization|1305"
-            },
             {
               "text": "AMED",
               "tooltip": "国立研究開発法人日本医療研究開発機構|Japan Agency for Medical Research and Development|303"
             },
             {
-              "text": "BRAIN",
-              "tooltip": "生物系特定産業技術研究支援センター|Bio-oriented Technology Research Advancement Institution|1205"
+              "text": "MOD",
+              "tooltip": "防衛省|Ministry of Defense|501"
+            },
+            {
+              "text": "NRA",
+              "tooltip": "原子力規制庁|Nuclear Regulation Authority|1503"
+            },
+            {
+              "text": "ERCA",
+              "tooltip": "独立行政法人環境再生保全機構|Environmental Restoration and Conservation Agency|1502"
+            },
+            {
+              "text": "CAO",
+              "tooltip": "内閣府|Cabinet Office|301"
+            },
+            {
+              "text": "SOUMU",
+              "tooltip": "総務省|Ministry of Internal Affairs and Communications|601"
+            },
+            {
+              "text": "FDMA",
+              "tooltip": "消防庁|Fire and Disaster Management Agenc|605"
+            },
+            {
+              "text": "NICT",
+              "tooltip": "国立研究開発法人情報通信研究機構|National Institute of Information and Communications Technology|615"
+            },
+            {
+              "text": "MEXT",
+              "tooltip": "文部科学省|Ministry of Education|1001"
+            },
+            {
+              "text": "JST",
+              "tooltip": "国立研究開発法人科学技術振興機構|Japan Science and Technology Agency|1020"
+            },
+            {
+              "text": "JSPS",
+              "tooltip": "独立行政法人日本学術振興会|Japan Society for the Promotion of Science|1025"
+            },
+            {
+              "text": "MHLW",
+              "tooltip": "厚生労働省|Ministry of Health|1101"
+            },
+            {
+              "text": "MAFF",
+              "tooltip": "農林水産省|Ministry of Agriculture|1201"
+            },
+            {
+              "text": "PRIMAFF",
+              "tooltip": "農林水産省農林水産政策研究所|Policy Research Institute|1203"
+            },
+            {
+              "text": "NARO",
+              "tooltip": "国立研究開発法人農業・食品産業技術総合研究機構|National Agriculture and Food Research Organization|1205"
+            },
+            {
+              "text": "METI",
+              "tooltip": "経済産業省|Ministry of Economy|1301"
+            },
+            {
+              "text": "NEDO",
+              "tooltip": "国立研究開発法人新エネルギー・産業技術総合開発機構|New Energy and Industrial Technology Development|1305 Organization"
+            },
+            {
+              "text": "MLIT",
+              "tooltip": "国土交通省|Ministry of Land|1401"
+            },
+            {
+              "text": "NILIM",
+              "tooltip": "国土技術政策総合研究所|Ministry of Land|1405"
+            },
+            {
+              "text": "ENV",
+              "tooltip": "環境省|Ministry of the Environment|1501"
+            },
+            {
+              "text": "BIBIOHN",
+              "tooltip": "国立研究開発法人医薬基盤・健康・栄養研究所|National Institutes of Biomedical Innovation|1106"
             }
           ],
           "required": true
