@@ -50,6 +50,9 @@ def migrate_user_institution_affiliation(dry_run=True):
         skipped_user_count_per_institution = 0
         users = institution.osfuser_set.all()
         user_total_per_institution = users.count()
+        sso_identity = ''
+        if not institution.delegation_protocol:
+            sso_identity = InstitutionAffiliation.DEFAULT_VALUE_FOR_SSO_IDENTITY_NOT_AVAILABLE
         logger.info(f'Migrating affiliation for <{institution.name}> [{institution_count}/{institution_total}]')
         for user in institution.osfuser_set.all():
             user_count_per_institution += 1
@@ -59,7 +62,7 @@ def migrate_user_institution_affiliation(dry_run=True):
             if not dry_run:
                 affiliation = user.add_or_update_affiliated_institution(
                     institution,
-                    sso_identity=InstitutionAffiliation.DEFAULT_VALUE_FOR_SSO_IDENTITY_NOT_AVAILABLE,
+                    sso_identity=sso_identity,
                     sso_department=user.department
                 )
                 if affiliation:
