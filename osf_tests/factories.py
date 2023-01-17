@@ -1126,7 +1126,7 @@ class OsfStorageFileFactory(DjangoModelFactory):
     path = 'fake_path'
 
 
-class ResponeFactory:
+class ResponseFactory:
     def __init__(self, raw):
         self.raw = raw
 
