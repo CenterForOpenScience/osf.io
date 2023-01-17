@@ -1710,16 +1710,18 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     def add_or_update_affiliated_institution(self, institution, sso_identity=None, sso_mail=None, sso_department=None):
         """Add one or update the existing institution affiliation between the current user and the given ``institution``
-        with attributes. ``sso_department`` is the only attribute that needs to be updated for now.
+        with attributes. ``sso_department`` is the only attribute that needs to be updated for now. Returns the
+        affiliation if added or updated; returns ``None`` if affiliation exists and there is nothing to update.
         """
         if self.is_affiliated_with_institution(institution):
             if not sso_department:
                 return None
             affiliation = InstitutionAffiliation.objects.get(user__id=self.id, institution__id=institution.id)
-            if affiliation.sso_department != sso_department:
-                affiliation.sso_department = sso_department
-                affiliation.save()
-                return affiliation
+            if affiliation.sso_department == sso_department:
+                return None
+            affiliation.sso_department = sso_department
+            affiliation.save()
+            return affiliation
         affiliation = InstitutionAffiliation.objects.create(
             user=self,
             institution=institution,
