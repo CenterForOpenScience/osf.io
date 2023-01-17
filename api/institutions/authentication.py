@@ -219,13 +219,15 @@ class InstitutionAuthentication(BaseAuthentication):
         except InstitutionAffiliationStateError:
             message = f'Institution SSO Error: duplicate SSO identity {sso_identity} found for institution ' \
                       f'[{institution._id}]. More info: SSO email is [{sso_email}]'
+            sentry.log_message(message)
             logger.error(message)
-            raise PermissionDenied(detail='DuplicateSSOIdentityPerInstitution')
+            raise PermissionDenied(detail='InstitutionSsoDuplicateIdentity')
 
         # Existing but inactive users need to be either "activated" or failed the auth
         activation_required = False
         new_password_required = False
         if not is_created:
+            # TODO: fix the case when user is found by identity only and the ``sso_email`` needs to be added
             try:
                 drf.check_user(user)
                 logger.info(f'Institution SSO: active user [sso_email={sso_email}]')

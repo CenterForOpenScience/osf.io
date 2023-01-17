@@ -122,6 +122,7 @@ def get_or_create_institutional_user(fullname, sso_email, sso_identity, primary_
         2. whether the user is newly created or not
         3. whether a potential duplicate user is found or not
         4. the extra email to add to the user account
+    Note: secondary institution always have a primary institution which shares its email and identity
     :param str fullname: user's full name
     :param str sso_email: user's email, which comes from the email attribute during SSO
     :param str sso_identity: user's institutional identity, which comes from the identity attribute during SSO
