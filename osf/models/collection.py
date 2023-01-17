@@ -230,6 +230,7 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
         collection_submission = self.collectionsubmission_set.filter(guid=obj.guids.first())
         if collection_submission:
             collection_submission = collection_submission.get()
+            # IN_PROGRESS is "pre-submission", before the first save or after a submission cancellation.
             if collection_submission.state == CollectionSubmissionStates.IN_PROGRESS:
                 collection_submission.submit(user=collector, comment='Submitted via collect_object')
             else:
