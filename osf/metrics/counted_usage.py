@@ -9,7 +9,7 @@ from elasticsearch_metrics.signals import pre_save
 from django.dispatch import receiver
 import pytz
 
-from osf.metrics.utils import stable_key
+from osf.metrics.reporters.utils import stable_key
 from osf.models import Guid
 
 

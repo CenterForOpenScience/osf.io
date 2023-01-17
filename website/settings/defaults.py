@@ -429,7 +429,9 @@ class CeleryConfig:
         'osf.management.commands.update_institution_project_counts',
         'osf.management.commands.populate_branched_from',
         'osf.management.commands.cumulative_plos_metrics',
+        'osf.management.commands.spam_metrics',
         'osf.management.commands.daily_reporters_go',
+        'osf.management.commands.monthly_reporters_go',
     }
 
     med_pri_modules = {
@@ -527,6 +529,7 @@ class CeleryConfig:
         'osf.management.commands.cumulative_plos_metrics',
         'api.providers.tasks',
         'osf.management.commands.daily_reporters_go',
+        'osf.management.commands.monthly_reporters_go',
     )
 
     # Modules that need metrics and release requirements
@@ -624,6 +627,15 @@ class CeleryConfig:
                 'task': 'management.commands.daily_reporters_go',
                 'schedule': crontab(minute=0, hour=6),  # Daily 1:00 a.m.
                 'kwargs': {'also_send_to_keen': True},
+            },
+            'monthly_reporters_go': {
+                'task': 'management.commands.monthly_reporters_go',
+                'schedule': crontab(minute=30, hour=6, day_of_month=2),  # Second day of month 1:30 a.m.
+            },
+            'spam_metrics': {
+                'task': 'management.commands.spam_metrics',
+                'schedule': crontab(hour=5, day_of_month=1),  # First day of month 12:00 a.m.
+                'kwargs': {'dry_run': False},
             },
             # 'data_storage_usage': {
             #   'task': 'management.commands.data_storage_usage',
@@ -2052,6 +2064,8 @@ REG_METRICS_BASE_FOLDER = None
 PLOS_METRICS_BASE_FOLDER = None
 PLOS_METRICS_INITIAL_FILE_DOWNLOAD_URL = None
 PLOS_METRICS_OSF_TOKEN = None
+SPAM_METRICS_BASE_FOLDER = None
+SPAM_METRICS_OSF_TOKEN = None
 
 STORAGE_WARNING_THRESHOLD = .9  # percent of maximum storage used before users get a warning message
 STORAGE_LIMIT_PUBLIC = 50

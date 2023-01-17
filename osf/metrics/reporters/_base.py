@@ -64,3 +64,16 @@ class DailyReporter:
             write_key=write_key,
         )
         client.add_events(keen_events_by_collection)
+
+
+class MonthlyReporter:
+    def report(self, report_yearmonth: YearMonth):
+        """build a report for the given month
+        """
+        raise NotImplementedError(f'{self.__name__} must implement `report`')
+
+    def run_and_record_for_month(self, report_yearmonth: YearMonth):
+        report = self.report(report_yearmonth)
+        report.report_yearmonth = str(report_yearmonth)
+        report.save()
+

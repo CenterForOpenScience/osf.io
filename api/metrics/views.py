@@ -27,7 +27,7 @@ from api.nodes.permissions import MustBePublic
 from osf.features import ENABLE_RAW_METRICS
 from osf.metrics import PreprintDownload, PreprintView, RegistriesModerationMetrics, CountedUsage
 from osf.metrics import reports
-from osf.metrics.utils import stable_key
+from osf.metrics.reporters.utils import stable_key
 from osf.models import AbstractNode
 
 

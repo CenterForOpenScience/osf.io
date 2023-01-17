@@ -1,3 +1,4 @@
+import typing
 from hashlib import sha256
 
 
@@ -13,3 +14,11 @@ def stable_key(*key_parts):
 
     plain_key = '|'.join(map(str, key_parts))
     return sha256(bytes(plain_key, encoding='utf')).hexdigest()
+
+
+class YearMonth(typing.NamedTuple):
+    year: int
+    month: int
+
+    def __str__(self):
+        return f'{self.year}-{self.month}'
