@@ -5,11 +5,14 @@
 <head>
     <meta charset="utf-8">
     <title>OSF | ${self.title()}</title>
-    % if settings.GOOGLE_SITE_VERIFICATION:
+    % if settings.GOOGLE_SITE_VERIFICATION and node and node.get('is_public'):
         <meta name="google-site-verification" content="${settings.GOOGLE_SITE_VERIFICATION}" />
-    % endif
+    % else:
+        <meta name="robots" content="noindex">
+    % endif:
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="${self.description()}">
+    <meta name="description" content="${self.description_meta()}">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="fragment" content="!">
 
@@ -35,54 +38,56 @@
     % endif
 
     <!-- Metadata tags-->
-    <meta name="dc.title" content="${self.title_meta()}" />
-    <meta name="dc.type" content="collection" />
-    <meta name="citation_title" content="${self.title_meta()}" />
-    %if self.identifier_meta():
-        <meta name="citation_doi" content="${self.identifier_meta()['doi']}" />
-        <meta name="dc.identifier" content="${self.identifier_meta()['doi']}" />
-        <meta name="dc.identifier" content="${self.identifier_meta()['ark']}" />
-    %endif
-    <meta name="citation_publisher" content="OSF" />
-    %for institution in self.institutions_meta()[:10]:
-        <meta name="citation_author_institution" content="${institution}" />
-    %endfor
-    %for rel in self.relations_meta():
-        %if rel:
-            <meta name="dc.relation" scheme="DCTERMS.URI" content="${rel}" />
+    % if node and node.get('is_public'):
+        <meta name="dc.title" content="${self.title_meta()}" />
+        <meta name="dc.type" content="collection" />
+        <meta name="citation_title" content="${self.title_meta()}" />
+        %if self.identifier_meta():
+            <meta name="citation_doi" content="${self.identifier_meta()['doi']}" />
+            <meta name="dc.identifier" content="${self.identifier_meta()['doi']}" />
+            <meta name="dc.identifier" content="${self.identifier_meta()['ark']}" />
         %endif
-    %endfor
-    <meta name="dc.abstract" content="${self.description_meta()}" />
-    <meta name="dc.license" content="${self.license_meta()}" />
-    <meta name="dc.datemodified" content="${self.datemodified_meta()}" />
-    <meta name="dc.datesubmitted" content="${self.datecreated_meta()}" />
-    <meta name="dc.publisher" content="OSF" />
-    <meta name="dc.language" content="en" />
-    <meta name="dc.identifier" content="${self.url_meta()}" />
-    <meta name="citation_description" content="${self.description_meta()}" />
-    <meta name="citation_public_url" content="${self.url_meta()}" />
-    <meta name="citation_publication_date" content="${self.datecreated_meta()}" />
+        <meta name="citation_publisher" content="OSF" />
+        %for institution in self.institutions_meta()[:10]:
+            <meta name="citation_author_institution" content="${institution}" />
+        %endfor
+        %for rel in self.relations_meta():
+            %if rel:
+                <meta name="dc.relation" scheme="DCTERMS.URI" content="${rel}" />
+            %endif
+        %endfor
+        <meta name="dc.abstract" content="${self.description_meta()}" />
+        <meta name="dc.license" content="${self.license_meta()}" />
+        <meta name="dc.datemodified" content="${self.datemodified_meta()}" />
+        <meta name="dc.datesubmitted" content="${self.datecreated_meta()}" />
+        <meta name="dc.publisher" content="OSF" />
+        <meta name="dc.language" content="en" />
+        <meta name="dc.identifier" content="${self.url_meta()}" />
+        <meta name="citation_description" content="${self.description_meta()}" />
+        <meta name="citation_public_url" content="${self.url_meta()}" />
+        <meta name="citation_publication_date" content="${self.datecreated_meta()}" />
 
-    <!-- Facebook display -->
-    <meta property="og:ttl" content="3" />
-    <meta property="og:site_name" content="OSF" />
-    <meta property="og:url" content="${self.url_meta()}" />
-    <meta property="og:title" content="${self.title_meta()}" />
-    <meta property="og:description" content="${self.description_meta()}" />
-    <meta property="og:image" content="${self.image_meta()}" />
-    <meta property="og:image:type" content="image/png" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="OSF" />
+        <!-- Facebook display -->
+        <meta property="og:ttl" content="3" />
+        <meta property="og:site_name" content="OSF" />
+        <meta property="og:url" content="${self.url_meta()}" />
+        <meta property="og:title" content="${self.title_meta()}" />
+        <meta property="og:description" content="${self.description_meta()}" />
+        <meta property="og:image" content="${self.image_meta()}" />
+        <meta property="og:image:type" content="image/png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content="OSF" />
 
-    %for author in self.authors_meta()[:10]:
-        <meta name="dc.creator" content="${author}" />
-        <meta name="citation_author" content="${author}" />
-    %endfor
-    %for tag in self.keywords_meta()[:10]:
-        <meta name="citation_keywords" content="${tag}" />
-        <meta name="dc.subject" content="${tag}" />
-    %endfor
+        %for author in self.authors_meta()[:10]:
+            <meta name="dc.creator" content="${author}" />
+            <meta name="citation_author" content="${author}" />
+        %endfor
+        %for tag in self.keywords_meta()[:10]:
+            <meta name="citation_keywords" content="${tag}" />
+            <meta name="dc.subject" content="${tag}" />
+        %endfor
+    %endif
 
     <!-- Twitter display -->
     <meta name="twitter:card" content="summary">
