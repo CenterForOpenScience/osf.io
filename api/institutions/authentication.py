@@ -130,6 +130,7 @@ class InstitutionAuthentication(BaseAuthentication):
             logger.error(message)
             sentry.log_message(message)
             raise PermissionDenied(detail='InstitutionSsoInvalidInstitution')
+
         sso_identity = provider['user'].get('ssoIdentity')
         sso_email = provider['user'].get('ssoEmail')
         fullname = provider['user'].get('fullname')
@@ -142,15 +143,17 @@ class InstitutionAuthentication(BaseAuthentication):
 
         # Check selective login first
         if provider['id'] in INSTITUTION_SELECTIVE_SSO_MAP:
+            # Selective SSO: login not allowed
             if selective_sso_filter != INSTITUTION_SELECTIVE_SSO_MAP[provider['id']]:
-                message = f'Institution SSO Error: user [sso_email={sso_email}] is not allowed for ' \
-                          f'institution SSO [id={institution._id}] due to selective SSO rules'
+                message = f'Institution SSO Error: user is not allowed for institution SSO due to selective SSO ' \
+                          f'rules [sso_email={sso_email}, sso_identity={sso_identity}, institution={institution._id}]'
                 logger.error(message)
                 sentry.log_message(message)
                 raise PermissionDenied(detail='InstitutionSsoSelectiveNotAllowed')
+            # Selective SSO: login allowed
             logger.info(
-                f'Institution SSO: selective SSO verified for user [sso_email={sso_email}] '
-                f'at institution [id={institution._id}]',
+                f'Institution SSO: selective SSO verified for user '
+                f'[sso_email={sso_email}, sso_identity={sso_identity}, institution={institution._id}]',
             )
 
         # Check secondary institutions which uses the SSO of primary ones
@@ -168,31 +171,36 @@ class InstitutionAuthentication(BaseAuthentication):
             elif criteria_action == SharedSsoAffiliationFilterCriteriaAction.CONTAINS.value:
                 secondary_institution_id = switch_map.get('institution_id') if criteria_value in attribute_value else None
             else:
-                message = 'Institution Shared SSO Error: invalid affiliation filter criteria action [{}]; ' \
-                          'primary=[{}], sso_email=[{}]'.format(criteria_action, provider['id'], sso_email)
+                message = f'Institution Shared SSO Error: invalid affiliation filter criteria action ' \
+                          f'[action={criteria_action}, primary={provider["id"]}, ' \
+                          f'sso_email={sso_email}, sso_identity={sso_identity}]'
                 logger.error(message)
                 sentry.log_message(message)
             # Attempt to load the secondary institution by ID
             if secondary_institution_id:
                 logger.info(
-                    'Institution Shared SSO Eligible: primary=[{}], secondary=[{}], '
-                    'filter=[{}: {} {} {}], sso_email=[{}]'.format(
-                        provider['id'], secondary_institution_id, attribute_name,
-                        attribute_value, criteria_action, criteria_value, sso_email,
-                    ),
+                    f'Institution Shared SSO Eligible: '
+                    f'[primary={provider["id"]}, secondary={secondary_institution_id}, '
+                    f'filter=[{attribute_name}: {attribute_value} {criteria_action} {criteria_value}], '
+                    f'sso_email={sso_email}, sso_identity={sso_identity}]',
                 )
                 secondary_institution = Institution.load(secondary_institution_id)
                 if not secondary_institution:
                     # Log errors and inform Sentry but do not raise an exception if OSF fails
                     # to load the secondary institution from database
-                    message = 'Institution Shared SSO Warning: invalid secondary institution [{}], primary=[{}], ' \
-                              'sso_email=[{}]'.format(secondary_institution_id, provider['id'], sso_email)
+                    message = f'Institution Shared SSO Warning: ' \
+                              f'invalid secondary institution, use the primary one instead ' \
+                              f'[primary={provider["id"]}, second={secondary_institution_id}, ' \
+                              f'sso_email={sso_email}, sso_identity={sso_identity}]'
                     logger.error(message)
                     sentry.log_message(message)
             else:
                 # SSO from primary institution only
-                logger.info('Institution SSO: primary=[{}], secondary=[None], '
-                            'sso_email=[{}]'.format(provider['id'], sso_email))
+                logger.info(
+                    f'Institution Shared SSO Not Eligible: use the primary institution only'
+                    f'[primary={provider["id"]}, secondary=None, '
+                    f'sso_email={sso_email}, sso_identity={sso_identity}]',
+                )
 
         # Use given name and family name to build full name if it is not provided
         if given_name and family_name and not fullname:
@@ -200,8 +208,8 @@ class InstitutionAuthentication(BaseAuthentication):
 
         # Non-empty full name is required. Fail the auth and inform sentry if not provided.
         if not fullname:
-            message = 'Institution SSO Error: missing fullname ' \
-                      'for user [{}] from institution [{}]'.format(sso_email, provider['id'])
+            message = f'Institution SSO Error: missing full name ' \
+                      f'[sso_email={sso_email}, sso_identity={sso_identity}, institution={provider["id"]}]'
             logger.error(message)
             sentry.log_message(message)
             raise PermissionDenied(detail='InstitutionSsoMissingUserNames')
@@ -226,11 +234,12 @@ class InstitutionAuthentication(BaseAuthentication):
         # Existing but inactive users need to be either "activated" or failed the auth
         activation_required = False
         new_password_required = False
+        sso_user_info = f'[guid={user._id}, username={user.username}, sso_email={sso_email}, ' \
+                        f'sso_identity={sso_identity}, institution_id={institution._id}]'
         if not is_created:
-            # TODO: fix the case when user is found by identity only and the ``sso_email`` needs to be added
             try:
                 drf.check_user(user)
-                logger.info(f'Institution SSO: active user [sso_email={sso_email}]')
+                logger.info(f'Institution SSO: user status - active {sso_user_info}')
             except exceptions.UnclaimedAccountError:
                 # Unclaimed user (i.e. a user that has been added as an unregistered contributor)
                 user.unclaimed_records = {}
@@ -238,7 +247,7 @@ class InstitutionAuthentication(BaseAuthentication):
                 # Unclaimed users have an unusable password when being added as an unregistered
                 # contributor. Thus, a random usable password must be assigned during activation.
                 new_password_required = True
-                logger.warning(f'Institution SSO: unclaimed contributor [sso_email={sso_email}]')
+                logger.warning(f'Institution SSO: user status - unclaimed contributor {sso_user_info}')
             except exceptions.UnconfirmedAccountError:
                 if user.has_usable_password():
                     # Unconfirmed user from default username / password signup
@@ -248,26 +257,24 @@ class InstitutionAuthentication(BaseAuthentication):
                     # sign-up. However, it must be overwritten by a new random one so the creator
                     # (if he is not the real person) can not access the account after activation.
                     new_password_required = True
-                    logger.warning(f'Institution SSO: unconfirmed user [sso_email={sso_email}]')
+                    logger.warning(f'Institution SSO: user status - unconfirmed user {sso_user_info}')
                 else:
                     # Login take-over has not been implemented for unconfirmed user created via
                     # external IdP login (ORCiD).
-                    message = f'Institution SSO Error: SSO is not eligible for an unconfirmed account ' \
-                              f'[sso_email={sso_email}] created via IdP login'
+                    message = f'Institution SSO Error: SSO is not eligible ' \
+                              f'for an unconfirmed account {sso_user_info} created via ORCiD login'
                     sentry.log_message(message)
                     logger.error(message)
                     raise PermissionDenied(detail='InstitutionSsoAccountNotConfirmed')
             except exceptions.DeactivatedAccountError:
                 # Deactivated user: login is not allowed for deactivated users
-                message = f'Institution SSO Error: SSO is not eligible for a deactivated account ' \
-                          f'[sso_email={sso_email}]'
+                message = f'Institution SSO Error: SSO is not eligible for a deactivated account {sso_user_info}'
                 sentry.log_message(message)
                 logger.error(message)
                 raise PermissionDenied(detail='InstitutionSsoAccountDisabled')
             except exceptions.MergedAccountError:
                 # Merged user: this shouldn't happen since merged users do not have an email
-                message = f'Institution SSO Error: SSO is not eligible for a merged account ' \
-                          f'[sso_email={sso_email}]'
+                message = f'Institution SSO Error: SSO is not eligible for a merged account {sso_user_info}'
                 sentry.log_message(message)
                 logger.error(message)
                 raise PermissionDenied(detail='InstitutionSsoAccountMerged')
@@ -275,13 +282,12 @@ class InstitutionAuthentication(BaseAuthentication):
                 # Other invalid status: this shouldn't happen unless the user happens to be in a
                 # temporary state. Such state requires more updates before the user can be saved
                 # to the database.
-                message = f'Institution SSO Error: SSO is not eligible for an inactive account ' \
-                          f'[sso_email={sso_email}] with an unknown or invalid status'
+                message = f'Institution SSO Error: SSO is not eligible for an invalid account {sso_user_info}'
                 sentry.log_message(message)
                 logger.error(message)
                 raise PermissionDenied(detail='InstitutionSsoInvalidAccount')
         else:
-            logger.info(f'Institution SSO: new user created with [sso_email={sso_email}]')
+            logger.info(f'Institution SSO: new user created {sso_user_info}')
 
         # Both created and activated accounts need to be updated and registered
         if is_created or activation_required:
