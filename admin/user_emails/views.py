@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import logging
 
+from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.db.models import Q
 from django.shortcuts import redirect
 from django.urls import reverse
@@ -23,10 +24,10 @@ from website import settings
 logger = logging.getLogger(__name__)
 
 
-class UserEmailsFormView(RdmPermissionMixin, FormView):
+class UserEmailsFormView(PermissionRequiredMixin, RdmPermissionMixin, FormView):
     template_name = 'user_emails/search.html'
     object_type = 'osfuser'
-    permission_required = ()
+    permission_required = 'osf.view_osfuser'
     raise_exception = True
     form_class = UserEmailsSearchForm
 
@@ -67,7 +68,7 @@ class UserEmailsFormView(RdmPermissionMixin, FormView):
         return self.redirect_url
 
 
-class UserEmailsSearchList(RdmPermissionMixin, ListView):
+class UserEmailsSearchList(PermissionRequiredMixin, RdmPermissionMixin, ListView):
     template_name = 'user_emails/user_list.html'
     permission_required = 'osf.view_osfuser'
     raise_exception = True
@@ -109,7 +110,7 @@ class UserEmailsSearchList(RdmPermissionMixin, ListView):
         return super(UserEmailsSearchList, self).get_context_data(**kwargs)
 
 
-class UserEmailsView(RdmPermissionMixin, GuidView):
+class UserEmailsView(PermissionRequiredMixin, RdmPermissionMixin, GuidView):
     template_name = 'user_emails/user_emails.html'
     context_object_name = 'user'
     permission_required = 'osf.view_osfuser'
@@ -144,7 +145,7 @@ class UserEmailsView(RdmPermissionMixin, GuidView):
         }
 
 
-class UserPrimaryEmail(RdmPermissionMixin, View):
+class UserPrimaryEmail(PermissionRequiredMixin, RdmPermissionMixin, View):
     permission_required = 'osf.view_osfuser'
     raise_exception = True
 

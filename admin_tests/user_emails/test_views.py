@@ -339,7 +339,9 @@ class TestUserEmailsView(AdminTestCase):
         self.view.request = self.request
         result = self.view.get_object()
         view = views.UserEmailsView
-        view.is_admin = True
+        view_permission = Permission.objects.get(codename='view_osfuser')
+        self.user.user_permissions.add(view_permission)
+        self.user.save()
 
         response = view.as_view()(
             self.request,
@@ -483,8 +485,9 @@ class TestUserPrimaryEmail(AdminTestCase):
         user.affiliated_institutions.add(institution)
         request.user = user
 
-        # view = views.UserPrimaryEmail
-        # view.is_admin = True
+        view_permission = Permission.objects.get(codename='view_osfuser')
+        user.user_permissions.add(view_permission)
+        user.save()
 
         response = self.view(
             request,
