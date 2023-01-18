@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from framework.auth import Auth
 from osf.models import AbstractNode
-from osf_tests.factories import ProjectFactory, OsfStorageFileFactory, InstitutionFactory, ResponeFactory
+from osf_tests.factories import ProjectFactory, OsfStorageFileFactory, InstitutionFactory, ResponseFactory
 from tests.base import OsfTestCase
 from website.util import waterbutler
 
@@ -52,7 +52,7 @@ class TestWaterbutler(OsfTestCase):
         mock_shutil.return_value = None
         mock_waterbutler_api.return_value = None
         mock_os_join.return_value = 'test_full_path'
-        mock_request.return_value = ResponeFactory('raw_data')
+        mock_request.return_value = ResponseFactory('raw_data')
         with mock.patch('builtins.open', mock.mock_open(read_data='data output')):
             res = waterbutler.download_file('fake_cookie', self.file_node, 'test_download_path')
             assert res == 'test_full_path'
