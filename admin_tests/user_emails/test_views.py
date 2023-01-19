@@ -1,16 +1,15 @@
-from datetime import datetime
 import mock
 import pytest
 from django.contrib.sessions.middleware import SessionMiddleware
+from django.core.exceptions import PermissionDenied
+from django.test import RequestFactory
+from django.urls import reverse
+from nose import tools as nt
 
 from admin.user_emails import views
 from admin.user_emails.forms import UserEmailsSearchForm
 from admin_tests.utilities import setup_view, setup_form_view
-from django.contrib.auth.models import Permission
-from django.test import RequestFactory
-from django.urls import reverse
 from framework.exceptions import HTTPError
-from nose import tools as nt
 from osf.models.user import OSFUser, Email
 from osf_tests.factories import (
     UserFactory,
@@ -163,8 +162,8 @@ class TestUserEmailsFormView(AdminTestCase):
         email = 'test@mail.com'
         data = {'name': name, 'email': email}
 
-        mockOSFUser.filter.return_value.filter.return_value.\
-            distinct.return_value.get.\
+        mockOSFUser.filter.return_value.filter.return_value. \
+            distinct.return_value.get. \
             side_effect = OSFUser.MultipleObjectsReturned
 
         form = UserEmailsSearchForm(data=data)
@@ -177,13 +176,19 @@ class TestUserEmailsFormView(AdminTestCase):
         user = UserFactory()
         guid = user._id
 
-        change_permission = Permission.objects.get(codename='view_osfuser')
-        user.user_permissions.add(change_permission)
-        user.save()
-
         request = RequestFactory().get(reverse('user-emails:search'))
-        request.user = user
 
+        with nt.assert_raises(PermissionDenied):
+            request.user = user
+            self.view_permission.as_view()(request, guid=guid)
+
+        user.is_staff = True
+        request.user = user
+        response = self.view_permission.as_view()(request, guid=guid)
+        self.assertEqual(response.status_code, 200)
+
+        user.is_superuser = True
+        request.user = user
         response = self.view_permission.as_view()(request, guid=guid)
         self.assertEqual(response.status_code, 200)
 
@@ -254,32 +259,25 @@ class TestUserEmailSearchList(AdminTestCase):
         nt.assert_equal(result['users'][0]['name'], data['name'])
         nt.assert_equal(result['object_list'][0]['name'], data['name'])
 
-    @pytest.mark.skip
-    def test_get_context_data_method_with_user_is_disabled_equal_True(self):
-        view = views.UserEmailsSearchList()
-        view = setup_view(view, self.request)
-        data = {'name': 'Broken Matt Hardy', 'is_disabled': True,
-                'date_disabled': datetime(2022, 2, 14)}
-        view.kwargs = data
-        view.object_list = [{'name': 'Broken Matt Hardy'}]
-        result = view.get_context_data()
-
-        nt.assert_equal(result['users'][0]['name'], data['name'])
-        nt.assert_equal(result['object_list'][0]['name'], data['name'])
-        nt.assert_equal(result['users'][0]['disabled'], data['date_disabled'])
-
     def test_UserEmailsSearchList_with_correct_view_permissions(self):
         user = UserFactory()
 
-        change_permission = Permission.objects.get(codename='view_osfuser')
-        user.user_permissions.add(change_permission)
-        user.save()
-
         request = RequestFactory().get(reverse('user-emails:search_list',
                                                kwargs={'name': 'Hardy'}))
+        with nt.assert_raises(PermissionDenied):
+            request.user = user
+            self.view_permission.kwargs = {'name': 'Hardy'}
+            self.view_permission.as_view()(request, name='Hardy')
+
+        user.is_staff = True
         request.user = user
         self.view_permission.kwargs = {'name': 'Hardy'}
+        response = self.view_permission.as_view()(request, name='Hardy')
+        self.assertEqual(response.status_code, 200)
 
+        user.is_superuser = True
+        request.user = user
+        self.view_permission.kwargs = {'name': 'Hardy'}
         response = self.view_permission.as_view()(request, name='Hardy')
         self.assertEqual(response.status_code, 200)
 
@@ -303,18 +301,26 @@ class TestUserEmailsView(AdminTestCase):
         self.view = views.UserEmailsView()
 
     def test_UserEmailsView_correct_view_permissions(self):
-        user = UserFactory()
+        user = AuthUserFactory()
         guid = user._id
-
-        view_permission = Permission.objects.get(codename='view_osfuser')
-        user.user_permissions.add(view_permission)
-        user.save()
+        institution = InstitutionFactory()
+        user.affiliated_institutions.add(institution)
 
         request = RequestFactory().get(reverse('user-emails:user',
                                                kwargs={'guid': guid}))
         add_session_to_request(request)
-        request.user = user
 
+        with nt.assert_raises(PermissionDenied):
+            request.user = user
+            views.UserEmailsView.as_view()(request, guid=guid)
+
+        user.is_staff = True
+        request.user = user
+        response = views.UserEmailsView.as_view()(request, guid=guid)
+        self.assertEqual(response.status_code, 200)
+
+        user.is_superuser = True
+        request.user = user
         response = views.UserEmailsView.as_view()(request, guid=guid)
         self.assertEqual(response.status_code, 200)
 
@@ -335,13 +341,11 @@ class TestUserEmailsView(AdminTestCase):
         self.view.kwargs = {'guid': self.user._id}
         institution = InstitutionFactory()
         self.user.affiliated_institutions.add(institution)
+        self.user.is_staff = True
         self.request.user = self.user
         self.view.request = self.request
         result = self.view.get_object()
         view = views.UserEmailsView
-        view_permission = Permission.objects.get(codename='view_osfuser')
-        self.user.user_permissions.add(view_permission)
-        self.user.save()
 
         response = view.as_view()(
             self.request,
@@ -358,14 +362,13 @@ class TestUserEmailsView(AdminTestCase):
 
     def test_get_object_pk_not_in_all_institution_users_id(self):
         self.view.kwargs = {'guid': self.user._id}
+        self.user.is_staff = True
         self.request.user = self.user
         self.view.request = self.request
         view = views.UserEmailsView
-        view.is_admin = True
 
-        with nt.assert_raises(HTTPError) as exc_info:
+        with nt.assert_raises(PermissionDenied):
             self.view.get_object()
-        nt.assert_equal(exc_info.exception.code, 403)
 
     def test_get_context_data(self):
         self.view.request = self.request
@@ -383,8 +386,8 @@ class TestUserPrimaryEmail(AdminTestCase):
         self.user.emails.create(address='alternate1@gmail.com')
         self.user.emails.create(address='alternate2@gmail.com')
         self.user.emails.create(address='Email@gmail.com')
-        change_permission = Permission.objects.get(codename='view_osfuser')
-        self.user.user_permissions.add(change_permission)
+        self.user.is_staff = True
+        self.user.is_superuser = True
         self.user.save()
         self.view = views.UserPrimaryEmail.as_view()
         self.view_permission = views.UserPrimaryEmail
@@ -463,15 +466,23 @@ class TestUserPrimaryEmail(AdminTestCase):
     def test_UserPrimaryEmail_correct_view_permissions(self):
         user = UserFactory()
         guid = user._id
-
-        change_permission = Permission.objects.get(codename='view_osfuser')
-        user.user_permissions.add(change_permission)
-        user.save()
+        institution = InstitutionFactory()
+        user.affiliated_institutions.add(institution)
 
         request = RequestFactory().post(reverse('user-emails:primary',
                                                 kwargs={'guid': guid}))
-        request.user = user
 
+        with nt.assert_raises(PermissionDenied):
+            request.user = user
+            self.view_permission.as_view()(request, guid=guid)
+
+        user.is_staff = True
+        request.user = user
+        response = self.view_permission.as_view()(request, guid=guid)
+        self.assertEqual(response.status_code, 302)
+
+        user.is_superuser = True
+        request.user = user
         response = self.view_permission.as_view()(request, guid=guid)
         self.assertEqual(response.status_code, 302)
 
@@ -479,15 +490,12 @@ class TestUserPrimaryEmail(AdminTestCase):
     def test_post_is_admin(self, mock_is_admin):
         mock_is_admin.return_value = True
         user = UserFactory()
+        user.is_staff = True
         request = RequestFactory().post(reverse('user-emails:primary',
                                                 kwargs={'guid': user._id}))
         institution = InstitutionFactory()
         user.affiliated_institutions.add(institution)
         request.user = user
-
-        view_permission = Permission.objects.get(codename='view_osfuser')
-        user.user_permissions.add(view_permission)
-        user.save()
 
         response = self.view(
             request,

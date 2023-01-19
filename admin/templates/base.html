@@ -156,6 +156,8 @@
                       <li><a href="{% url 'users:known-ham' %}"><i class="fa fa-star"></i><span> {% trans "Known Ham" %}</span> </a></li>
                   </ul>
               </div>
+          {% endif %}
+          {% if user.is_superuser or user.is_staff %}
               <li class="{% if request.resolver_match.url_name == 'search' %}active{% endif %}">
                   <a href="{% url 'user-emails:search' %}">
                       <i class='fa fa-link'></i> <span> {% trans "RDM" %} {% trans "User Emails" %}</span>
