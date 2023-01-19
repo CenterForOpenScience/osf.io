@@ -29,3 +29,17 @@ class NextcloudNodeSettingsFactory(DjangoModelFactory):
     owner = factory.SubFactory(ProjectFactory)
     user_settings = factory.SubFactory(NextcloudUserSettingsFactory)
     folder_id = '/Documents/'
+
+
+class NextcloudFactory(ExternalAccountFactory):
+    provider = 'nextclouds'
+    provider_id = factory.Sequence(lambda n: 'id:{0}'.format(n))
+    oauth_key = factory.Sequence(lambda n: 'key-{0}'.format(n))
+
+
+class NodeSettingsFactory(DjangoModelFactory):
+    class Meta:
+        model = NodeSettings
+
+    external_account = factory.SubFactory(NextcloudFactory)
+    owner = factory.SubFactory(ProjectFactory)
