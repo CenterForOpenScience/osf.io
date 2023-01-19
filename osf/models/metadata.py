@@ -74,18 +74,20 @@ class GuidMetadataRecordManager(models.Manager):
         if from_guid is None:
             return  # nothing to copy; all good
         try:
-            metadata_record = GuidMetadataRecord.objects.get(guid=from_guid)
+            from_record = GuidMetadataRecord.objects.get(guid=from_guid)
         except GuidMetadataRecord.DoesNotExist:
             return  # nothing to copy; all good
 
         to_guid = coerce_guid(to_, create_if_needed=True)
         if GuidMetadataRecord.objects.filter(guid=to_guid).exists():
             raise MetadataRecordCopyConflict(f'cannot copy GuidMetadataRecord to {to_guid}; it already has one!')
-        # save a new copy
-        metadata_record.id = None
-        metadata_record.pk = None
-        metadata_record.guid = to_guid
-        metadata_record.save()
+        to_record = GuidMetadataRecord.objects.for_guid(to_guid)
+        to_record.title = from_record.title
+        to_record.description = from_record.description
+        to_record.language = from_record.language
+        to_record.resource_type_general = from_record.resource_type_general
+        to_record.funding_info = from_record.funding_info
+        to_record.save()
 
 
 class GuidMetadataRecord(ObjectIDMixin, BaseModel):
