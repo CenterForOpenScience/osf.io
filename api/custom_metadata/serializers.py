@@ -13,13 +13,29 @@ from api.base.utils import absolute_reverse
 # TODO: max_lengths, uri validation
 
 
+class FundingInfoListSerializer(ser.ListSerializer):
+    def to_internal_value(self, data):
+        validated_data = super().to_internal_value(data)
+
+        # quietly remove funding-infos with all blank values
+        def not_all_blank(funding_info):
+            return not all(
+                value == ''
+                for value in funding_info.values()
+            )
+        return list(filter(not_all_blank, validated_data))
+
+
 class FundingInfoSerializer(ser.Serializer):
-    funder_name = ser.CharField()
-    funder_identifier = ser.CharField()
-    funder_identifier_type = ser.CharField()
-    award_number = ser.CharField()
-    award_uri = ser.CharField()
-    award_title = ser.CharField()
+    funder_name = ser.CharField(allow_blank=True, default='')
+    funder_identifier = ser.CharField(allow_blank=True, default='')
+    funder_identifier_type = ser.CharField(allow_blank=True, default='')
+    award_number = ser.CharField(allow_blank=True, default='')
+    award_uri = ser.CharField(allow_blank=True, default='')
+    award_title = ser.CharField(allow_blank=True, default='')
+
+    class Meta:
+        list_serializer_class = FundingInfoListSerializer
 
 
 class CustomItemMetadataSerializer(JSONAPISerializer):

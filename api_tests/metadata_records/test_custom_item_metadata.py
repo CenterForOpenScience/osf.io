@@ -359,91 +359,143 @@ class TestCustomItemMetadataRecordDetail:
             )
 
             # can PATCH funders
-            funding_info_1 = [{
-                'funder_name': 'hell-o',
-                'funder_identifier': 'https://hello.example/money',
-                'funder_identifier_type': 'uri',
-                'award_number': '7',
-                'award_uri': 'http://award.example/7',
-                'award_title': 'award seven',
-            }]
-            expected.funding_info = funding_info_1
-            res = app.patch_json_api(
-                self.make_url(osfguid),
-                self.make_payload(osfguid, funders=funding_info_1),
-                auth=anybody_with_write_permission.auth,
+            good_funding_infos = (
+                [{
+                    'funder_name': 'hell-o',
+                    'funder_identifier': 'https://hello.example/money',
+                    'funder_identifier_type': 'uri',
+                    'award_number': '7',
+                    'award_uri': 'http://award.example/7',
+                    'award_title': 'award seven',
+                }],
+                [{
+                    'funder_name': 'hell-o',
+                    'funder_identifier': 'https://hello.example/money',
+                    'funder_identifier_type': 'uri',
+                    'award_number': '7',
+                    'award_uri': 'http://award.example/7',
+                    'award_title': 'award seven',
+                }, {
+                    'funder_name': 'shell-o',
+                    'funder_identifier': 'https://shello.example/smelly-money',
+                    'funder_identifier_type': 'uri',
+                    'award_number': 'splevin',
+                    'award_uri': 'http://shello.example/award-number-splevin',
+                    'award_title': 'award splevin',
+                }],
+                [{
+                    'funder_name': 'hey',
+                    'funder_identifier': 'look:',
+                    'funder_identifier_type': 'any',
+                    'award_number': 'string',
+                    'award_uri': 'is',
+                    'award_title': 'valid!',
+                }],
+                [{
+                    'funder_name': 'any',
+                }, {
+                    'funder_identifier': 'one',
+                }, {
+                    'funder_identifier_type': 'non-blank',
+                }, {
+                    'award_number': 'field',
+                }, {
+                    'award_uri': 'is',
+                }, {
+                    'award_title': 'enough',
+                }],
+                [{
+                    'funder_name': 'NIH probably',
+                    'funder_identifier': 'https://doi.org/10.blah/deeblah',
+                    'funder_identifier_type': 'Crossref Funder ID',
+                    'award_number': '27',
+                    'award_uri': 'https://awards.example/twenty-seven',
+                    'award_title': 'Award Twentyseven',
+                }, {
+                    'funder_name': 'NSF probably',
+                    'funder_identifier': 'https://doi.org/10.blah/dooblah',
+                    'funder_identifier_type': 'Crossref Funder ID',
+                    'award_number': '28',
+                    'award_uri': 'https://awards.example/twenty-eight',
+                    'award_title': 'Award Twentyeight',
+                }, {
+                    'funder_name': 'Mx. Moneypockets',
+                    'funder_identifier': '',
+                    'funder_identifier_type': '',
+                    'award_number': '10000000',
+                    'award_uri': 'https://moneypockets.example/millions',
+                    'award_title': 'Because i said so',
+                }],
+                [],
             )
-            assert res.status_code == 200
-            expected.assert_expectations(db_record=db_record, api_record=res.json['data'])
-            self.assert_expected_log(
-                osfguid,
-                user=anybody_with_write_permission,
-                updated_fields={
-                    'funding_info': {'old': [], 'new': funding_info_1},
-                },
+            previous_funding_info = []
+            for good_funding_info in good_funding_infos:
+                expected.funding_info = good_funding_info
+                res = app.patch_json_api(
+                    self.make_url(osfguid),
+                    self.make_payload(osfguid, funders=good_funding_info),
+                    auth=anybody_with_write_permission.auth,
+                )
+                assert res.status_code == 200
+                expected.assert_expectations(db_record=db_record, api_record=res.json['data'])
+                self.assert_expected_log(
+                    osfguid,
+                    user=anybody_with_write_permission,
+                    updated_fields={
+                        'funding_info': {'old': previous_funding_info, 'new': expected.funding_info},
+                    },
+                )
+                previous_funding_info = expected.funding_info
+
+            # funders cleaned
+            cleaned_funding_infos = (
+                (
+                    [{'funder_name': 'hello', 'extra': 'ignored'}, {}],  # given
+                    [{'funder_name': 'hello'}],  # cleaned
+                ),
+                (
+                    [{}],  # given
+                    [],  # cleaned
+                ),
+                (
+                    [{'extra': 'ignored'}],  # given
+                    [],  # cleaned
+                ),
+                (
+                    [{'award_number': 7}],  # given
+                    [{'award_number': '7'}],  # cleaned
+                ),
             )
+            for given_funding_info, cleaned_funding_info in cleaned_funding_infos:
+                expected.funding_info = cleaned_funding_info
+                res = app.patch_json_api(
+                    self.make_url(osfguid),
+                    self.make_payload(osfguid, funders=given_funding_info),
+                    auth=anybody_with_write_permission.auth,
+                )
+                assert res.status_code == 200
+                expected.assert_expectations(db_record=db_record, api_record=res.json['data'])
+                self.assert_expected_log(
+                    osfguid,
+                    user=anybody_with_write_permission,
+                    updated_fields={
+                        'funding_info': {'old': previous_funding_info, 'new': expected.funding_info},
+                    },
+                )
+                previous_funding_info = expected.funding_info
 
-            # can PATCH funders again
-            funding_info_2 = [{
-                'funder_name': 'hell-o',
-                'funder_identifier': 'https://hello.example/money',
-                'funder_identifier_type': 'uri',
-                'award_number': '7',
-                'award_uri': 'http://award.example/7',
-                'award_title': 'award seven',
-            }, {
-                'funder_name': 'shell-o',
-                'funder_identifier': 'https://shello.example/smelly-money',
-                'funder_identifier_type': 'uri',
-                'award_number': 'splevin',
-                'award_uri': 'http://shello.example/award-number-splevin',
-                'award_title': 'award splevin',
-            }]
-            expected.funding_info = funding_info_2
-            res = app.patch_json_api(
-                self.make_url(osfguid),
-                self.make_payload(osfguid, funders=funding_info_2),
-                auth=anybody_with_write_permission.auth,
+            # funders validated
+            bad_funding_infos = (
+                [{'award_number': None}],
+                [{'award_number': {'number': '7'}}],
             )
-            assert res.status_code == 200
-            expected.assert_expectations(db_record=db_record, api_record=res.json['data'])
-            self.assert_expected_log(
-                osfguid,
-                user=anybody_with_write_permission,
-                updated_fields={
-                    'funding_info': {'old': funding_info_1, 'new': funding_info_2},
-                },
-            )
-
-    # def test_update_fails_with_extra_key(self, app, user_readwrite, public_file_guid):
-    #     payload = make_payload(
-    #         public_file_guid,
-    #         cat='mackerel',
-    #     )
-    #     res = app.patch_json_api(make_url(public_file_guid), payload, auth=user_readwrite.auth, expect_errors=True)
-    #     assert res.status_code == 400
-    #     assert 'Additional properties are not allowed' in res.json['errors'][0]['detail']
-    #     assert res.json['errors'][0]['meta'].get('metadata_schema', None)
-    #     # assert public_record.metadata == {}
-
-    # def test_update_fails_with_invalid_json(self, app, user, public_record, make_payload):
-    #     payload = make_payload(public_record)
-    #     payload['data']['attributes']['metadata']['related_publication_doi'] = 'dinosaur'
-    #     res = app.patch_json_api(make_url(public_record), payload, auth=user.auth, expect_errors=True)
-    #     public_record.reload()
-    #     assert res.status_code == 400
-    #     assert res.json['errors'][0]['detail'] == 'Your response of dinosaur for the field related_publication_doi was invalid.'
-    #     assert public_record.metadata == {}
-
-    # def test_cannot_update_registration_metadata_record(self, app, user, registration_record, make_payload):
-    #     url = '/{}files/{}/metadata_records/{}/'.format(API_BASE, registration_record.file._id, registration_record._id)
-    #     res = app.patch_json_api(url, make_payload(registration_record), auth=user.auth, expect_errors=True)
-    #     assert res.status_code == 403
-
-    # def test_update_file_metadata_for_preprint_file(self, app, user_readwrite, preprint_record, preprint):
-    #     res = app.patch_json_api(make_url(preprint_record), make_payload(preprint_record), auth=user.auth)
-    #     preprint_record.reload()
-    #     assert res.status_code == 200
-    #     assert res.json['data']['attributes']['metadata'] == metadata_record_json
-    #     assert preprint_record.metadata == metadata_record_json
-    #     assert preprint.logs.first().action == PreprintLog.FILE_METADATA_UPDATED
+            for bad_funding_info in bad_funding_infos:
+                res = app.patch_json_api(
+                    self.make_url(osfguid),
+                    self.make_payload(osfguid, funders=bad_funding_info),
+                    auth=anybody_with_write_permission.auth,
+                    expect_errors=True,
+                )
+                assert res.status_code == 400
+                # check it hasn't changed in the db
+                expected.assert_expectations(db_record=db_record, api_record=None)
