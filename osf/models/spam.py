@@ -228,7 +228,7 @@ class SpamMixin(models.Model):
         """Must return is_spam"""
         pass
 
-    def do_check_spam(self, author, author_email, content, request_headers, update=True):
+    def do_check_spam(self, author, author_email, content, request_headers):
         if self.is_hammy:
             return False
         if self.is_spammy:
@@ -264,25 +264,25 @@ class SpamMixin(models.Model):
             sentry.log_exception()
             oopspam_is_spam = False
 
-        if update:
-            self.spam_pro_tip = pro_tip
-            self.spam_data['headers'] = {
-                'Remote-Addr': remote_addr,
-                'User-Agent': user_agent,
-                'Referer': referer,
-            }
-            self.spam_data['content'] = content
-            self.spam_data['author'] = author
-            self.spam_data['author_email'] = author_email
-            if akismet_is_spam and oopspam_is_spam:
-                self.flag_spam()
-                self.spam_data['who_flagged'] = 'both'
-                self.spam_data['oopspam_data'] = oopspam_details
-            elif akismet_is_spam:
-                self.flag_spam()
-                self.spam_data['who_flagged'] = 'akismet'
-            elif oopspam_is_spam:
-                self.flag_spam()
-                self.spam_data['who_flagged'] = 'oopspam'
-                self.spam_data['oopspam_data'] = oopspam_details
+        self.spam_pro_tip = pro_tip
+        self.spam_data['headers'] = {
+            'Remote-Addr': remote_addr,
+            'User-Agent': user_agent,
+            'Referer': referer,
+        }
+        self.spam_data['content'] = content
+        self.spam_data['author'] = author
+        self.spam_data['author_email'] = author_email
+        if akismet_is_spam and oopspam_is_spam:
+            self.flag_spam()
+            self.spam_data['who_flagged'] = 'both'
+            self.spam_data['oopspam_data'] = oopspam_details
+        elif akismet_is_spam:
+            self.flag_spam()
+            self.spam_data['who_flagged'] = 'akismet'
+        elif oopspam_is_spam:
+            self.flag_spam()
+            self.spam_data['who_flagged'] = 'oopspam'
+            self.spam_data['oopspam_data'] = oopspam_details
+
         return akismet_is_spam or oopspam_is_spam
