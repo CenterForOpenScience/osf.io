@@ -162,8 +162,8 @@ class TestUserEmailsFormView(AdminTestCase):
         email = 'test@mail.com'
         data = {'name': name, 'email': email}
 
-        mockOSFUser.filter.return_value.filter.return_value. \
-            distinct.return_value.get. \
+        mockOSFUser.filter.return_value.filter.return_value.\
+            distinct.return_value.get.\
             side_effect = OSFUser.MultipleObjectsReturned
 
         form = UserEmailsSearchForm(data=data)

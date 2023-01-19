@@ -148,8 +148,7 @@ class UserEmailsView(RdmAdminRequiredMixin, GuidView):
 
         if self.is_admin:
             now_institutions_id = list(request_user.affiliated_institutions.all().values_list('pk', flat=True))
-            all_institution_users_id = list(
-                OSFUser.objects.filter(affiliated_institutions__in=now_institutions_id).distinct().values_list('pk', flat=True))
+            all_institution_users_id = list(OSFUser.objects.filter(affiliated_institutions__in=now_institutions_id).distinct().values_list('pk', flat=True))
 
             if user.pk not in all_institution_users_id:
                 return self.handle_no_permission()
@@ -175,8 +174,7 @@ class UserPrimaryEmail(RdmAdminRequiredMixin, View):
 
         if self.is_admin:
             now_institutions_id = list(request_user.affiliated_institutions.all().values_list('pk', flat=True))
-            all_institution_users_id = list(
-                OSFUser.objects.filter(affiliated_institutions__in=now_institutions_id).distinct().values_list('pk', flat=True))
+            all_institution_users_id = list(OSFUser.objects.filter(affiliated_institutions__in=now_institutions_id).distinct().values_list('pk', flat=True))
 
             if user.pk not in all_institution_users_id:
                 return permission_denied(self.request, Exception('You cannot access this specific page'))
