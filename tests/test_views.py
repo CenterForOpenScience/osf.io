@@ -5984,7 +5984,7 @@ class TestTimestampView(OsfTestCase):
         ## check TimestampError(TimestampVerifyResult.inspection_result_statu != 1) in response
         assert 'osfstorage_test_file1.status_1' not in res
         assert 'osfstorage_test_file2.status_3' in res
-        # assert 'osfstorage_test_file3.status_3' not in res
+        assert 'osfstorage_test_file3.status_3' in res
         assert 's3_test_file1.status_3' in res
 
     @mock.patch('website.util.timestamp.check_file_timestamp')
