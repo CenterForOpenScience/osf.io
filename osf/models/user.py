@@ -1686,6 +1686,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     def is_affiliated_with_institution(self, institution):
         """Return if this user is affiliated with the given ``institution``."""
+        if not institution:
+            return False
         return InstitutionAffiliation.objects.filter(user__id=self.id, institution__id=institution.id).exists()
 
     def get_institution_affiliation(self, institution_id):
@@ -1710,26 +1712,45 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     def add_or_update_affiliated_institution(self, institution, sso_identity=None, sso_mail=None, sso_department=None):
         """Add one or update the existing institution affiliation between the current user and the given ``institution``
-        with attributes. ``sso_department`` is the only attribute that needs to be updated for now. Returns the
-        affiliation if added or updated; returns ``None`` if affiliation exists and there is nothing to update.
+        with attributes. Returns the affiliation if created or updated; returns ``None`` if affiliation exists and
+        there is nothing to update.
         """
-        if self.is_affiliated_with_institution(institution):
-            if not sso_department:
-                return None
-            affiliation = InstitutionAffiliation.objects.get(user__id=self.id, institution__id=institution.id)
-            if affiliation.sso_department == sso_department:
-                return None
-            affiliation.sso_department = sso_department
-            affiliation.save()
+        # CASE 1: affiliation not found -> create and return the affiliation
+        if not self.is_affiliated_with_institution(institution):
+            affiliation = InstitutionAffiliation.objects.create(
+                user=self,
+                institution=institution,
+                sso_identity=sso_identity,
+                sso_mail=sso_mail,
+                sso_department=sso_department,
+                sso_other_attributes={}
+            )
             return affiliation
-        affiliation = InstitutionAffiliation.objects.create(
-            user=self,
-            institution=institution,
-            sso_identity=sso_identity,
-            sso_mail=sso_mail,
-            sso_department=sso_department,
-            sso_other_attributes={}
-        )
+        # CASE 2: affiliation exists
+        updated = False
+        affiliation = InstitutionAffiliation.objects.get(user__id=self.id, institution__id=institution.id)
+        if sso_department and affiliation.sso_department != sso_department:
+            affiliation.sso_department = sso_department
+            updated = True
+        if sso_mail and affiliation.sso_mail != sso_mail:
+            affiliation.sso_mail = sso_mail
+            updated = True
+        if sso_identity and affiliation.sso_identity != sso_identity:
+            affiliation.sso_identity = sso_identity
+            updated = True
+        # CASE 1.1: nothing to update -> return None
+        if not updated:
+            return None
+        # CASE 1.3: at least one attribute is updated -> return the affiliation
+        affiliation.save()
+        return affiliation
+
+    def remove_sso_identity_from_affiliation(self, institution):
+        if not self.is_affiliated_with_institution(institution):
+            return None
+        affiliation = InstitutionAffiliation.objects.get(user__id=self.id, institution__id=institution.id)
+        affiliation.sso_identity = ''
+        affiliation.save()
         return affiliation
 
     def copy_institution_affiliation_when_merging_user(self, user):

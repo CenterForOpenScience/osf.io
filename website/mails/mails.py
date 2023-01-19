@@ -435,6 +435,18 @@ WELCOME_OSF4I = Mail(
     engagement=True
 )
 
+# TODO: need email details from the Product Team
+DUPLICATE_ACCOUNTS_OSF4I = Mail(
+    'duplicate_accounts_sso_osf4i',
+    subject='Potential duplicate account found'
+)
+
+# TODO: need email details from the Product Team
+ADD_SSO_EMAIL_OSF4I = Mail(
+    'add_sso_email_osf4i',
+    subject='Your institutional email has been added to your account'
+)
+
 EMPTY = Mail('empty', subject='${subject}')
 
 REVIEWS_SUBMISSION_CONFIRMATION = Mail(

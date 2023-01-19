@@ -114,6 +114,51 @@ def register_unconfirmed(username, password, fullname, campaign=None, accepted_t
     return user
 
 
+def get_or_create_institutional_user(fullname, sso_email, sso_identity, primary_institution):
+    """
+    Get or create an institutional user by fullname, email address and sso identity and institution.
+    Returns a tuple of four objects ``(user, is_created, duplicate_user, email_to_add)``:
+        1. the user to authenticate
+        2. whether the user is newly created or not
+        3. whether a potential duplicate user is found or not
+        4. the extra email to add to the user account
+    Note: secondary institution always have a primary institution which shares its email and identity
+    :param str fullname: user's full name
+    :param str sso_email: user's email, which comes from the email attribute during SSO
+    :param str sso_identity: user's institutional identity, which comes from the identity attribute during SSO
+    :param Institution primary_institution: the primary institution
+    :raises ``InstitutionAffiliationStateError`` when same SSO identity is found on more than one users per institution
+    """
+
+    from osf.models import OSFUser
+    from osf.models.institution_affiliation import get_user_by_institution_identity
+
+    user_by_email = get_user(email=sso_email)
+    # ``InstitutionAffiliationStateError`` can be raised by ``get_user_by_institution_identity()``, the caller of
+    # ``get_or_create_institutional_user()`` must handle it properly
+    user_by_identity = get_user_by_institution_identity(primary_institution, sso_identity)
+
+    if user_by_identity:
+        # CASE 1/5: the user is only found by identity but not by email, return the user and the sso email to add
+        if not user_by_email:
+            return user_by_identity, False, None, sso_email, None
+        # CASE 2/5: the same user is found by both email and identity, return the user
+        if user_by_email == user_by_identity:
+            return user_by_email, False, None, None, None
+        # CASE 3/5: two different users are found, one by email and the other by identity, return the user found
+        # by email as the authn user and the user found by identity as the duplicate; in addition, return the
+        # sso identity to be added to the user found by email
+        return user_by_email, False, user_by_identity, None, sso_identity
+    # CASE 4/5: the user is only found by email but not by identity, return the user and the sso identity to add
+    if user_by_email:
+        return user_by_email, False, None, None, sso_identity
+    # CASE 5/5: If no user is found, create a confirmed user and return the user and sso identity.
+    # Note: Institution users are created as confirmed with a strong and random password. Users don't need the
+    # password since they sign in via SSO. They can reset their password to enable email/password login.
+    user = OSFUser.create_confirmed(sso_email, str(uuid.uuid4()), fullname)
+    return user, True, None, None, sso_identity
+
+
 def get_or_create_user(fullname, address, reset_password=True, is_spam=False):
     """
     Get or create user by fullname and email address.

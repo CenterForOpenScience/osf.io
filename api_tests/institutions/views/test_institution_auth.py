@@ -26,10 +26,13 @@ def make_user(username, fullname):
 
 def make_payload(
         institution,
-        username,
+        sso_email,
         fullname='Fake User',
         given_name='',
         family_name='',
+        middle_names='',
+        suffix='',
+        sso_identity='',
         department='',
         is_member_of='',
         user_roles='',
@@ -40,12 +43,13 @@ def make_payload(
         'provider': {
             'id': institution._id,
             'user': {
-                'middleNames': '',
+                'ssoIdentity': sso_identity,
+                'ssoEmail': sso_email,
+                'fullname': fullname,
                 'familyName': family_name,
                 'givenName': given_name,
-                'fullname': fullname,
-                'suffix': '',
-                'username': username,
+                'middleNames': middle_names,
+                'suffix': suffix,
                 'department': department,
                 'isMemberOf': is_member_of,
                 'userRoles': user_roles,
@@ -57,7 +61,7 @@ def make_payload(
     return jwe.encrypt(
         jwt.encode(
             {
-                'sub': username,
+                'sub': sso_email,
                 'data': json.dumps(data)
             },
             settings.JWT_SECRET,

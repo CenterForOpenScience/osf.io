@@ -1,9 +1,17 @@
+import logging
+
 from django.db import models
+
+from framework import sentry
 
 from osf.models.base import BaseModel
 from osf.models.validators import validate_email
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import LowercaseEmailField
+from osf.exceptions import InstitutionAffiliationStateError
+
+
+logger = logging.getLogger(__name__)
 
 
 class InstitutionAffiliation(BaseModel):
@@ -28,3 +36,24 @@ class InstitutionAffiliation(BaseModel):
 
     def __str__(self):
         return f'{self.user._id}::{self.institution._id}::{self.sso_identity}'
+
+
+def get_user_by_institution_identity(institution, sso_identity):
+    """Return the user with the given sso_identity for the given institution if found. Return ``None`` if missing
+    inputs or if user not found. Raise exception if multiple users found.
+    """
+    if not institution or not sso_identity:
+        return None
+    # Skip the default identity that is used only for institutions that don't have SSO
+    if sso_identity == InstitutionAffiliation.DEFAULT_VALUE_FOR_SSO_IDENTITY_NOT_AVAILABLE:
+        return None
+    try:
+        affiliation = InstitutionAffiliation.objects.get(institution___id=institution._id, sso_identity=sso_identity)
+    except InstitutionAffiliation.DoesNotExist:
+        return None
+    except InstitutionAffiliation.MultipleObjectsReturned as err:
+        message = f'Duplicate SSO Identity: institution={institution._id}, sso_identity={sso_identity}, err={str(err)}'
+        logger.error(message)
+        sentry.log_message(message)
+        raise InstitutionAffiliationStateError(message)
+    return affiliation.user
