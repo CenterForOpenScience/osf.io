@@ -1,13 +1,9 @@
-import requests
 import json
-
+import requests
 from website import settings
 
-class OOPSpamClientError(Exception):
+from osf.external.oopspam.exceptions import OOPSpamClientError
 
-    def __init__(self, reason):
-        super(OOPSpamClientError, self).__init__(reason)
-        self.reason = reason
 
 class OOPSpamClient(object):
 

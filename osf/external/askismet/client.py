@@ -3,12 +3,7 @@ from __future__ import absolute_import
 import requests
 from website import settings
 
-
-class AkismetClientError(Exception):
-
-    def __init__(self, reason):
-        super(AkismetClientError, self).__init__(reason)
-        self.reason = reason
+from osf.external.askismet.exceptions import AkismetClientError
 
 
 class AkismetClient(object):
@@ -48,7 +43,7 @@ class AkismetClient(object):
         if not self._is_apikey_valid():
             raise AkismetClientError('Invalid API key')
 
-    def check_comment(self, user_ip, user_agent, **kwargs):
+    def check_content(self, user_ip, user_agent, **kwargs):
         """
         Check if a comment is spam
 
