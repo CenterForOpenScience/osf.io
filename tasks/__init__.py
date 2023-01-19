@@ -374,6 +374,7 @@ API_TESTS3 = [
     'api_tests/crossref',
     'api_tests/files',
     'api_tests/guids',
+    'api_tests/metadata_records',
     'api_tests/reviews',
     'api_tests/regions',
     'api_tests/search',
