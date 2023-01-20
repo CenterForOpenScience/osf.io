@@ -365,7 +365,6 @@ class TestUserEmailsView(AdminTestCase):
         self.user.is_staff = True
         self.request.user = self.user
         self.view.request = self.request
-        view = views.UserEmailsView
 
         with nt.assert_raises(PermissionDenied):
             self.view.get_object()
