@@ -3,28 +3,30 @@ import logging
 import operator
 from functools import reduce
 
+from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q, OuterRef, Exists
 from django.apps import apps
 from django.core.management.base import BaseCommand
 from osf.external.spam import tasks as spam_tasks
-from osf.models import DomainReference
+from osf.models import AbstractNode, DomainReference
 
 
 logger = logging.getLogger(__name__)
 
 DOMAIN_SEARCH_REGEX = r'(\w+\.\w+\w+\.\w+)|\w+\.\w+\w+'
-from django.contrib.contenttypes.models import ContentType
-from osf.models import Node
 
 
 def backfill_domain_references(model_name, dry_run=False, batch_size=None):
     model = apps.get_model(model_name)
 
-    search_fields = list(model.SPAM_CHECK_FIELDS)
-    if model == Node:
-        search_fields += ['wikis__versions__content']
+    spam_fields = list(model.SPAM_CHECK_FIELDS)
+    if issubclass(model, AbstractNode):
+        spam_fields += ['wikis__versions__content']
 
-    spam_queries = (Q(**{f'{field}__regex': DOMAIN_SEARCH_REGEX}) for field in search_fields)
+    spam_queries = (
+        Q(**{f'{field}__regex': DOMAIN_SEARCH_REGEX})
+        for field in spam_fields
+    )
     spam_content_query = reduce(operator.or_, spam_queries)
 
     spam_check_items = model.objects.annotate(
@@ -36,6 +38,8 @@ def backfill_domain_references(model_name, dry_run=False, batch_size=None):
         )
     ).filter(exclude=False).filter(spam_content_query)[:batch_size]
 
+    spam_check_count = spam_check_items.count()
+    logger.info(f'Queuing {spam_check_count} {model_name}s for domain extraction')
     for item in spam_check_items:
         logger.info(f'{item}, queued')
         spam_content = item._get_spam_content()
@@ -59,8 +63,8 @@ class Command(BaseCommand):
             '--model_name',
             type=str,
             required=True,
-            help='The name of the model to be searched for domains, '
-                 'remember WikiVersions app label name is addons_wiki.WikiVersion',
+            choices=['osf.Node', 'osf.Registration', 'osf.Preprint', 'osf.Comment', 'osf.User'],
+            help='The name of the model to be searched for domains'
         )
         parser.add_argument(
             '--batch_size',

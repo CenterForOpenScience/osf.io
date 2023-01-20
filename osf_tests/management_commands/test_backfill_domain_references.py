@@ -5,10 +5,11 @@ from django.contrib.contenttypes.models import ContentType
 from addons.wiki.tests.factories import WikiVersionFactory
 from osf.management.commands import backfill_domain_references as backfill_task
 from osf_tests.factories import (
-    NodeFactory,
-    RegistrationFactory,
     CommentFactory,
-    PreprintFactory
+    NodeFactory,
+    PreprintFactory,
+    RegistrationFactory,
+    UserFactory,
 )
 from osf.models.notable_domain import DomainReference, NotableDomain
 from urllib.parse import urlparse
@@ -40,6 +41,13 @@ class TestBackfillDomainReferences:
     @pytest.fixture()
     def test_wiki(self, spam_domain):
         return WikiVersionFactory(content=f'I am spam: {spam_domain.geturl()}')
+
+    @pytest.fixture()
+    def test_user(self, spam_domain):
+        user = UserFactory()
+        user.social['profileWebsites'] = [spam_domain.geturl()]
+        user.save()
+        return user
 
     @pytest.mark.enable_enqueue_task
     def test_backfill_project_domain_references(self, test_node, spam_domain):
@@ -104,5 +112,18 @@ class TestBackfillDomainReferences:
         created_reference = DomainReference.objects.get(
             referrer_object_id=test_comment.id,
             referrer_content_type=ContentType.objects.get_for_model(test_comment)
+        )
+        assert created_reference.domain == domain
+
+    @pytest.mark.enable_enqueue_task
+    def test_backfill_user_domain_references(self, test_user, spam_domain):
+        assert DomainReference.objects.count() == 0
+        with mock.patch.object(backfill_task.spam_tasks.requests, 'head'):
+            backfill_task.backfill_domain_references(model_name='osf.OSFUser')
+
+        domain = NotableDomain.objects.get(domain=spam_domain.netloc)
+        created_reference = DomainReference.objects.get(
+            referrer_object_id=test_user.id,
+            referrer_content_type=ContentType.objects.get_for_model(test_user)
         )
         assert created_reference.domain == domain

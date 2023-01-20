@@ -165,8 +165,19 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     SPAM_USER_PROFILE_FIELDS = {
         'schools': ['degree', 'institution', 'department'],
-        'jobs': ['title', 'institution', 'department']
+        'jobs': ['title', 'institution', 'department'],
+        'social': ['profileWebsites'],
     }
+    # Normalized form of the SPAM_USER_PROFILE_FIELDS to match other SPAM_CHECK_FIELDS formats
+    SPAM_CHECK_FIELDS = [
+        'schools__degree',
+        'schools__institution',
+        'schools__department',
+        'jobs__title',
+        'jobs__institution',
+        'jobs__department',
+        'social__profileWebsites'
+    ]
 
     # The primary email address for the account.
     # This value is unique, but multiple "None" records exist for:
@@ -1764,30 +1775,40 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         default_timestamp = dt.datetime(1970, 1, 1, 12, 0, 0, tzinfo=pytz.utc)
         return self.comments_viewed_timestamp.get(target_id, default_timestamp)
 
-    def _get_spam_content(self, saved_fields):
-        content = []
-        for field, contents in saved_fields.items():
-            if field in self.SPAM_USER_PROFILE_FIELDS.keys():
-                for item in contents:
-                    for key, value in item.items():
-                        if key in self.SPAM_USER_PROFILE_FIELDS[field]:
-                            content.append(value)
-        return ' '.join(content).strip()
+    def _get_spam_content(self, saved_fields=None):
+        spam_check_fields = set(self.SPAM_USER_PROFILE_FIELDS.keys())
+        spam_check_source = {}
+        if saved_fields:
+            spam_check_source = saved_fields
+            spam_check_fields = spam_check_fields.intersection(set(saved_fields.keys()))
+        else:
+            spam_check_source = {field: getattr(self, field) for field in spam_check_fields}
+        logger.warn(f'NORMALIZED SPAM CONTENT: {spam_check_source}')
+
+        spam_check_contents = []
+        for spam_field in spam_check_fields:
+            spam_field_content = spam_check_source[spam_field]
+            if not spam_field_content:
+                continue
+            for subfield in self.SPAM_USER_PROFILE_FIELDS[spam_field]:
+                subfield_content = str(spam_field_content.get(subfield, ''))
+                if subfield_content:
+                    spam_check_contents.append(subfield_content)
+        return ' '.join(spam_check_contents).strip()
 
     def check_spam(self, saved_fields, request_headers):
         if not website_settings.SPAM_CHECK_ENABLED:
             return False
         is_spam = False
-        if set(self.SPAM_USER_PROFILE_FIELDS.keys()).intersection(set(saved_fields.keys())):
-            content = self._get_spam_content(saved_fields)
-            if content:
-                is_spam = self.do_check_spam(
-                    self.fullname,
-                    self.username,
-                    content,
-                    request_headers
-                )
-                self.save()
+        content = self._get_spam_content(saved_fields)
+        if content:
+            is_spam = self.do_check_spam(
+                self.fullname,
+                self.username,
+                content,
+                request_headers
+            )
+            self.save()
 
         return is_spam
 
