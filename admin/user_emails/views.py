@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import logging
 
+from django.contrib.auth.mixins import UserPassesTestMixin
 from django.db.models import Q
 from django.shortcuts import redirect
 from django.urls import reverse
@@ -23,10 +24,29 @@ from website import settings
 logger = logging.getLogger(__name__)
 
 
-class UserEmailsFormView(RdmPermissionMixin, FormView):
+class RdmAdminRequiredMixin(UserPassesTestMixin, RdmPermissionMixin):
+    """
+    Includes methods of UserPassesTestMixin and RdmPermissionMixin
+    Only permitted if superuser or administrator
+    """
+
+    raise_exception = True
+
+    def test_func(self):
+        """check user authentication"""
+        # login check
+        if not self.is_authenticated:
+            return False
+
+        # permitted if superuser or administrator
+        if self.is_super_admin or self.is_admin:
+            return True
+        return False
+
+
+class UserEmailsFormView(RdmAdminRequiredMixin, FormView):
     template_name = 'user_emails/search.html'
     object_type = 'osfuser'
-    permission_required = ()
     raise_exception = True
     form_class = UserEmailsSearchForm
 
@@ -67,9 +87,8 @@ class UserEmailsFormView(RdmPermissionMixin, FormView):
         return self.redirect_url
 
 
-class UserEmailsSearchList(RdmPermissionMixin, ListView):
+class UserEmailsSearchList(RdmAdminRequiredMixin, ListView):
     template_name = 'user_emails/user_list.html'
-    permission_required = 'osf.view_osfuser'
     raise_exception = True
     form_class = UserEmailsSearchForm
     paginate_by = 25
@@ -109,10 +128,10 @@ class UserEmailsSearchList(RdmPermissionMixin, ListView):
         return super(UserEmailsSearchList, self).get_context_data(**kwargs)
 
 
-class UserEmailsView(RdmPermissionMixin, GuidView):
+class UserEmailsView(RdmAdminRequiredMixin, GuidView):
     template_name = 'user_emails/user_emails.html'
-    context_object_name = 'user'
-    permission_required = 'osf.view_osfuser'
+    # to avoid the context 'user', let use another object name
+    context_object_name = 'osf_user'
     raise_exception = True
 
     def get_context_data(self, **kwargs):
@@ -132,7 +151,7 @@ class UserEmailsView(RdmPermissionMixin, GuidView):
             all_institution_users_id = list(OSFUser.objects.filter(affiliated_institutions__in=now_institutions_id).distinct().values_list('pk', flat=True))
 
             if user.pk not in all_institution_users_id:
-                raise HTTPError(http_status.HTTP_403_FORBIDDEN)
+                return self.handle_no_permission()
 
         return {
             'id': user._id,
@@ -144,8 +163,7 @@ class UserEmailsView(RdmPermissionMixin, GuidView):
         }
 
 
-class UserPrimaryEmail(RdmPermissionMixin, View):
-    permission_required = 'osf.view_osfuser'
+class UserPrimaryEmail(RdmAdminRequiredMixin, View):
     raise_exception = True
 
     def post(self, request, *args, **kwargs):
@@ -159,7 +177,6 @@ class UserPrimaryEmail(RdmPermissionMixin, View):
             all_institution_users_id = list(OSFUser.objects.filter(affiliated_institutions__in=now_institutions_id).distinct().values_list('pk', flat=True))
 
             if user.pk not in all_institution_users_id:
-                # raise HTTPError(http_status.HTTP_403_FORBIDDEN)
                 return permission_denied(self.request, Exception('You cannot access this specific page'))
 
         # Refer to website.profile.views.update_user
@@ -174,8 +191,6 @@ class UserPrimaryEmail(RdmPermissionMixin, View):
                 return redirect(reverse('user-emails:user', kwargs={'guid': user._id}))
 
             if primary_email_address not in user_emails:
-                # raise HTTPError(http_status.HTTP_403_FORBIDDEN)
-                # return permission_denied(self.request)
                 user.emails.create(address=primary_email_address.lower().strip())
             username = primary_email_address
 
