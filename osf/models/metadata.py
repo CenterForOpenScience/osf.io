@@ -93,8 +93,10 @@ class GuidMetadataRecordManager(models.Manager):
 class GuidMetadataRecord(ObjectIDMixin, BaseModel):
     guid = models.OneToOneField('Guid', related_name='metadata_record', on_delete=models.CASCADE)
 
-    title = models.TextField(blank=True)  # TODO: handle unnecessarily redundant duplication
-    description = models.TextField(blank=True)  # TODO: handle unnecessarily redundant duplication
+    # TODO: consider consolidating title/description/etc. metadata fields from many
+    #       models (perhaps replace EditableFieldsMixin with a model like this)
+    title = models.TextField(blank=True)
+    description = models.TextField(blank=True)
     language = models.TextField(blank=True)  # TODO: choices?
     resource_type_general = models.TextField(blank=True)  # TODO: choices?
 
@@ -103,6 +105,7 @@ class GuidMetadataRecord(ObjectIDMixin, BaseModel):
         'items': {
             'type': 'object',
             'required': [],
+            'minProperties': 1,
             'additionalProperties': False,
             'properties': {
                 'funder_name': {'type': 'string'},

@@ -6,9 +6,10 @@ import logging
 import re
 
 from datacite import DataCiteMDSClient, schema43
+from django.apps import apps
 from django.core.exceptions import ImproperlyConfigured
 
-from osf.metadata.utils import datacite_format_subjects, datacite_format_contributors, datacite_format_creators
+from osf.metadata import utils
 from website.identifiers.clients.base import AbstractIdentifierClient
 from website import settings
 
@@ -38,7 +39,7 @@ class DataCiteClient(AbstractIdentifierClient):
             contributor__node=node.id
         )
 
-        contributors = datacite_format_contributors(non_bib_contributors)
+        contributors = utils.datacite_format_contributors(non_bib_contributors)
         contributors.append({
             'nameType': 'Organizational',
             'contributorType': 'HostingInstitution',
@@ -66,7 +67,7 @@ class DataCiteClient(AbstractIdentifierClient):
                     'identifierType': 'DOI',
                 }
             ],
-            'creators': datacite_format_creators(node.visible_contributors),
+            'creators': utils.datacite_format_creators(node.visible_contributors),
             'contributors': contributors,
             'titles': [
                 {'title': node.title}
@@ -110,7 +111,22 @@ class DataCiteClient(AbstractIdentifierClient):
                 'rightsURI': node.node_license.url
             }]
 
-        data['subjects'] = datacite_format_subjects(node)
+        data['subjects'] = utils.datacite_format_subjects(node)
+
+        guid_metadata_record = apps.get_model('osf.GuidMetadataRecord').objects.for_guid(node._id)
+        if guid_metadata_record.language:
+            data['language'] = guid_metadata_record.language
+        if guid_metadata_record.resource_type_general:
+            if guid_metadata_record.resource_type_general in utils.DATACITE_RESOURCE_TYPES_GENERAL:
+                data['types']['resourceTypeGeneral'] = guid_metadata_record.resource_type_general
+            else:
+                data['types']['resourceType'] = guid_metadata_record.resource_type_general
+                data['types']['resourceTypeGeneral'] = 'Other'
+        if guid_metadata_record.funding_info:
+            data['fundingReferences'] = [
+                utils.datacite_format_funding_reference(funding_ref)
+                for funding_ref in guid_metadata_record.funding_info
+            ]
 
         # Validate dictionary
         assert schema43.validate(data)

@@ -332,6 +332,13 @@ def resolve_guid(guid, suffix=None):
         if login_redirect_response:
             return login_redirect_response
 
+    if clean_suffix == 'metadata':
+        format_arg = request.args.get('format')
+        if format_arg:
+            return guid_metadata_download(guid, resource, format_arg)
+        else:
+            return use_ember_app()
+
     # Stream to ember app if resource has emberized view
     addon_paths = [f'files/{addon.short_name}' for addon in settings.ADDONS_AVAILABLE_DICT.values() if 'storage' in addon.categories] + ['files']
 
@@ -353,13 +360,6 @@ def resolve_guid(guid, suffix=None):
         if isinstance(resource.target, Registration) and waffle.flag_is_active(request, features.EMBER_FILE_REGISTRATION_DETAIL):
             return use_ember_app()
         if isinstance(resource.target, Node) and waffle.flag_is_active(request, features.EMBER_FILE_PROJECT_DETAIL):
-            return use_ember_app()
-
-    if clean_suffix == 'metadata':
-        format_arg = request.args.get('format')
-        if format_arg:
-            return guid_metadata_download(guid, resource, format_arg)
-        else:
             return use_ember_app()
 
     # Redirect to legacy endpoint for Nodes, Wikis etc.
@@ -430,17 +430,12 @@ def get_storage_region_list(user, node=False):
 
 
 def guid_metadata_download(guid, resource, metadata_format):
-    # TODO: this is brittle; clean up doi-client stuff and handle errors well
-    if metadata_format == 'json-ld':
-        metadata_graph = gather_osfguid_metadata(guid, 100)
-        serialized_metadata = metadata_graph.serialize(format='json-ld', auto_compact=True)
-        content_type = 'application/ld+json'
-        filename = f'{guid}-metadata.json'
-    elif metadata_format == 'turtle':
+    if metadata_format == 'turtle':
         metadata_graph = gather_osfguid_metadata(guid, 100)
         serialized_metadata = metadata_graph.serialize(format=metadata_format)
         content_type = 'text/turtle'
         filename = f'{guid}-metadata.ttl'
+    # TODO: elif metadata_format == 'json-ld' (need a stable json-ld serialization)
     elif metadata_format == 'datacite-xml':
         datacite_client = resource.get_doi_client()
         serialized_metadata = datacite_client.build_metadata(resource, as_xml=True)

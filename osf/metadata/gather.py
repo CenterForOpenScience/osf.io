@@ -55,7 +55,7 @@ def _format_size_as_megabytes(number_of_bytes: int):
     if number_of_bytes is None or number_of_bytes < 0:
         return None
     number_of_megabytes = number_of_bytes / (2**20)
-    return f'{number_of_megabytes} MB'
+    return f'{number_of_megabytes:.6} MB'
 
 class MetadataGatherer:
     """for gathering metadata about a specific guid-identified object
@@ -101,7 +101,8 @@ class MetadataGatherer:
     def _gather_identifiers(self):
         for guid in self.focus.guids.all().values_list('_id', flat=True):
             guid_uri = rdfutils.osfguid_uri(guid)
-            yield (SAME_AS, guid_uri)
+            if guid_uri != self.focus_uri:
+                yield (SAME_AS, guid_uri)
             yield (DCT.identifier, str(guid_uri))
 
         if hasattr(self.focus, 'get_identifier_uri'):

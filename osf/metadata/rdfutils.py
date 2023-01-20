@@ -13,6 +13,7 @@ OSF_CONTEXT = {
     'osf': OSF,
     'dct': rdflib.DCTERMS,
     'foaf': rdflib.FOAF,
+    'owl': rdflib.OWL,
 }
 
 

@@ -22,6 +22,24 @@ DATACITE_RESOURCE_TYPE_MAP = {
     '(:unas)': 'Other'
 }
 
+DATACITE_RESOURCE_TYPES_GENERAL = {
+    'Audiovisual',
+    'Collection',
+    'DataPaper',
+    'Dataset',
+    'Event',
+    'Image',
+    'InteractiveResource',
+    'Model',
+    'PhysicalObject',
+    'Service',
+    'Software',
+    'Sound',
+    'Text',
+    'Workflow',
+    'Other',
+}
+
 
 def datacite_format_name_identifiers(user):
     data = {
@@ -157,4 +175,15 @@ def datacite_format_rights(license):
     return {
         'rights': license.name,
         'rightsURI': license.url
+    }
+
+
+def datacite_format_funding_reference(funding_ref):
+    return {
+        'funderName': funding_ref.get('funder_name'),
+        'funderIdentifier': funding_ref.get('funder_identifier'),
+        'funderIdentifierType': funding_ref.get('funder_identifier_type'),
+        'awardNumber': funding_ref.get('award_number'),
+        'awardURI': funding_ref.get('award_uri'),
+        'awardTitle': funding_ref.get('award_title'),
     }
