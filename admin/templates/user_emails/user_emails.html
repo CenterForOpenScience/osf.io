@@ -73,15 +73,15 @@
                     <tbody>
                     <tr>
                         <td class="w-label nowrap"><strong>{% trans "Name" %}</strong></td>
-                        <td>{{ user.name }}</td>
+                        <td>{{ osf_user.name }}</td>
                     </tr>
                     <tr>
                         <td class="w-label nowrap"><strong>{% trans "Username" %}</strong></td>
-                        <td>{{ user.username }}</td>
+                        <td>{{ osf_user.username }}</td>
                     </tr>
                     <tr>
                         <td class="w-label nowrap"><strong>{% trans "EPPN" %}</strong></td>
-                        <td>{{ user.eppn }}</td>
+                        <td>{{ osf_user.eppn }}</td>
                     </tr>
                     </tbody>
                 </table>
@@ -93,9 +93,9 @@
                     <tr>
                         <td class="w-label nowrap"><strong>{% trans "Affiliation" %}</strong></td>
                         <td>
-                            {% if user.affiliations is not None %}
+                            {% if osf_user.affiliations is not None %}
                                 <ul style="max-height: 6em; overflow: auto; padding-left: 1em; margin: 0;">
-                                    {% for affiliation in user.affiliations %}
+                                    {% for affiliation in osf_user.affiliations %}
                                         <li>{{ affiliation.name }}</li>
                                     {% endfor %}
                                 </ul>
@@ -113,7 +113,7 @@
             </div>
             <div class="col-md-12 clearfix">
                 <form class="form-inline flex-container"
-                      method="POST" action="{% url 'user-emails:primary' user.id %}"
+                      method="POST" action="{% url 'user-emails:primary' osf_user.id %}"
                       onsubmit="return validateForm()"
                       style="margin-top: 15px; margin-bottom: 15px; ">
                     <div class="form-group flex-item">
@@ -137,13 +137,13 @@
                 <table class="table table-striped table-hover table-responsive">
                     <thead></thead>
                     <tbody>
-                    {% for email in user.emails %}
+                    {% for email in osf_user.emails %}
                         <tr>
                             <td>
-                                {% if email == user.username %}
+                                {% if email == osf_user.username %}
                                     <button type="button" class="btn btn-default disabled">{% trans "Primary" %}</button>
                                 {% else %}
-                                    <form id="set_primary_{{ email.id }}" method="POST" action="{% url 'user-emails:primary' user.id %}">
+                                    <form id="set_primary_{{ email.id }}" method="POST" action="{% url 'user-emails:primary' osf_user.id %}">
                                         {% csrf_token %}
                                         <input type="hidden" name="primary_email" value="{{ email }}">
                                         <button type="submit" class="btn btn-primary">{% trans "Set Primary" %}</button>
