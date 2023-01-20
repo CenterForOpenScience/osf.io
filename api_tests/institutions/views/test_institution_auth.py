@@ -1018,7 +1018,7 @@ class TestInstitutionAuthnSelectiveSSO:
         payload = make_payload(institution_selective, username, selective_sso_filter='')
         res = app.post(url_auth_institution, payload, expect_errors=True)
         assert res.status_code == 403
-        assert {'detail': 'InstitutionSsoSelectiveNotAllowed'} in res.json['errors']
+        assert {'detail': 'InstitutionSsoSelectiveLoginDenied'} in res.json['errors']
 
     def test_selective_sso_denied_invalid_filter(self, app, url_auth_institution, institution_selective):
 
@@ -1028,4 +1028,4 @@ class TestInstitutionAuthnSelectiveSSO:
         payload = make_payload(institution_selective, username, selective_sso_filter='invalid_non_empty_filter')
         res = app.post(url_auth_institution, payload, expect_errors=True)
         assert res.status_code == 403
-        assert {'detail': 'InstitutionSsoSelectiveNotAllowed'} in res.json['errors']
+        assert {'detail': 'InstitutionSsoSelectiveLoginDenied'} in res.json['errors']

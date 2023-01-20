@@ -149,7 +149,7 @@ class InstitutionAuthentication(BaseAuthentication):
                           f'rules [sso_email={sso_email}, sso_identity={sso_identity}, institution={institution._id}]'
                 logger.error(message)
                 sentry.log_message(message)
-                raise PermissionDenied(detail='InstitutionSsoSelectiveNotAllowed')
+                raise PermissionDenied(detail='InstitutionSsoSelectiveLoginDenied')
             # Selective SSO: login allowed
             logger.info(
                 f'Institution SSO: selective SSO verified for user '
@@ -265,19 +265,19 @@ class InstitutionAuthentication(BaseAuthentication):
                               f'for an unconfirmed account {sso_user_info} created via ORCiD login'
                     sentry.log_message(message)
                     logger.error(message)
-                    raise PermissionDenied(detail='InstitutionSsoAccountNotConfirmed')
+                    raise PermissionDenied(detail='InstitutionSsoAccountInactive')
             except exceptions.DeactivatedAccountError:
                 # Deactivated user: login is not allowed for deactivated users
                 message = f'Institution SSO Error: SSO is not eligible for a deactivated account {sso_user_info}'
                 sentry.log_message(message)
                 logger.error(message)
-                raise PermissionDenied(detail='InstitutionSsoAccountDisabled')
+                raise PermissionDenied(detail='InstitutionSsoAccountInactive')
             except exceptions.MergedAccountError:
                 # Merged user: this shouldn't happen since merged users do not have an email
                 message = f'Institution SSO Error: SSO is not eligible for a merged account {sso_user_info}'
                 sentry.log_message(message)
                 logger.error(message)
-                raise PermissionDenied(detail='InstitutionSsoAccountMerged')
+                raise PermissionDenied(detail='InstitutionSsoAccountInactive')
             except exceptions.InvalidAccountError:
                 # Other invalid status: this shouldn't happen unless the user happens to be in a
                 # temporary state. Such state requires more updates before the user can be saved
@@ -285,7 +285,7 @@ class InstitutionAuthentication(BaseAuthentication):
                 message = f'Institution SSO Error: SSO is not eligible for an invalid account {sso_user_info}'
                 sentry.log_message(message)
                 logger.error(message)
-                raise PermissionDenied(detail='InstitutionSsoInvalidAccount')
+                raise PermissionDenied(detail='InstitutionSsoAccountInactive')
         else:
             logger.info(f'Institution SSO: new user created {sso_user_info}')
 
