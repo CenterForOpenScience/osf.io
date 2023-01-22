@@ -6,9 +6,9 @@ def optimize_subject_query(subject_queryset):
     """
     return subject_queryset.prefetch_related('parent', 'provider').annotate(
         children_count=Count('children'),
-        is_other=Case(
+        _order=Case(
             When(text__startswith='Other', then=True),
             default=False,
             output_field=BooleanField(),
         ),
-    ).order_by('is_other', 'text')
+    )
