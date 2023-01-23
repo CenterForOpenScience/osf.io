@@ -763,7 +763,7 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
     view_name = 'node-pointers'
     model_class = CollectionSubmission
 
-    ordering = ('-modified',)
+    ordering = ('_order', '-modified',)
 
     def get_queryset(self):
         return self.get_collection().collectionsubmission_set.filter(
