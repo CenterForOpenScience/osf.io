@@ -58,9 +58,9 @@ class AbstractProviderSubscriptionList(SubscriptionList):
             provider___id=self.kwargs['provider_id'],
             provider__type=self.provider_class._typedmodels_type,
         ).filter(
-                Q(none=user) |
-                Q(email_digest=user) |
-                Q(email_transactional=user),
+            Q(none=user) |
+            Q(email_digest=user) |
+            Q(email_transactional=user),
         ).distinct()
 
 
