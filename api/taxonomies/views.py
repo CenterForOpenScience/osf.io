@@ -28,7 +28,7 @@ class TaxonomyList(DeprecatedView, JSONAPIBaseView, generics.ListAPIView, ListFi
     view_name = 'taxonomy-list'
     max_version = '2.5'
 
-    ordering = ('_order', 'text',)
+    ordering = ('is_other', 'text',)
 
     def get_default_queryset(self):
         return optimize_subject_query(Subject.objects.all())
