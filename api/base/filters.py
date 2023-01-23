@@ -52,20 +52,20 @@ class OSFOrderingFilter(OrderingFilter):
     # override
     def filter_queryset(self, request, queryset, view):
         ordering = self.get_ordering(request, queryset, view)
+        if not ordering:
+            return queryset
+
         if isinstance(queryset, DjangoQuerySet):
-            if queryset.ordered:
-                return queryset
-            elif ordering and getattr(queryset.query, 'distinct_fields', None):
+            if getattr(queryset.query, 'distinct_fields', None):
                 order_fields = tuple([field.lstrip('-') for field in ordering])
                 distinct_fields = queryset.query.distinct_fields
                 queryset.query.distinct_fields = tuple(set(distinct_fields + order_fields))
-            return super(OSFOrderingFilter, self).filter_queryset(request, queryset, view)
-        if ordering:
-            if isinstance(ordering, (list, tuple)):
-                sorted_list = sorted(queryset, key=cmp_to_key(sort_multiple(ordering)))
-                return sorted_list
-            return queryset.sort(*ordering)
-        return queryset
+            return super().filter_queryset(request, queryset, view)
+        elif isinstance(ordering, (list, tuple)):
+            sorted_list = sorted(queryset, key=cmp_to_key(sort_multiple(ordering)))
+            return sorted_list
+        else:
+            raise NotImplementedError()
 
     def get_serializer_source_field(self, view, request):
         """

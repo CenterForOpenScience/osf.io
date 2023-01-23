@@ -397,7 +397,7 @@ class PreprintProvider(AbstractProvider):
             if len(self.subjects_acceptable) == 0:
                 return optimize_subject_query(Subject.objects.filter(parent__isnull=True, provider___id='osf'))
             tops = set([sub[0][0] for sub in self.subjects_acceptable])
-            return [Subject.load(sub) for sub in tops]
+            return Subject.objects.filter(_id__in=tops)
 
     @property
     def landing_url(self):
