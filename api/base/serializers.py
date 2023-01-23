@@ -944,13 +944,13 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                         related_type = 'collection-submission'
                     elif related_type == 'collection-providers' and related_class.view_name == 'collection-provider-detail':
                         related_id = resolved_url.kwargs['provider_id']
-                        related_type = 'collections'
+                        related_type = 'collection-providers'
                     elif related_type == 'registration-providers' and related_class.view_name == 'registration-provider-detail':
                         related_id = resolved_url.kwargs['provider_id']
-                        related_type = 'registrations'
+                        related_type = 'registration-providers'
                     elif related_type == 'preprint-providers' and related_class.view_name == 'preprint-provider-detail':
                         related_id = resolved_url.kwargs['provider_id']
-                        related_type = 'preprints'
+                        related_type = 'preprint-providers'
                     else:
                         related_id = resolved_url.kwargs[related_type[:-1] + '_id']
                 except KeyError:

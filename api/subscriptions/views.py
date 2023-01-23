@@ -51,6 +51,19 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
         return self.get_queryset_from_request()
 
 
+class AbstractProviderSubscriptionList(SubscriptionList):
+    def get_default_queryset(self):
+        user = self.request.user
+        return NotificationSubscription.objects.filter(
+            provider___id=self.kwargs['provider_id'],
+            provider__type=self.provider_class._typedmodels_type,
+        ).filter(
+            Q(none=user) |
+            Q(email_digest=user) |
+            Q(email_transactional=user),
+        ).distinct()
+
+
 class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
     view_name = 'notification-subscription-detail'
     view_category = 'notification-subscriptions'
@@ -120,13 +133,16 @@ class RegistrationProviderSubscriptionDetail(AbstractProviderSubscriptionDetail)
     serializer_class = RegistrationSubscriptionSerializer
 
 
-class CollectionProviderSubscriptionList(SubscriptionList):
+class CollectionProviderSubscriptionList(AbstractProviderSubscriptionList):
+    provider_class = CollectionProvider
     serializer_class = CollectionSubscriptionSerializer
 
 
-class PreprintProviderSubscriptionList(SubscriptionList):
+class PreprintProviderSubscriptionList(AbstractProviderSubscriptionList):
+    provider_class = PreprintProvider
     serializer_class = PreprintSubscriptionSerializer
 
 
-class RegistrationProviderSubscriptionList(SubscriptionList):
+class RegistrationProviderSubscriptionList(AbstractProviderSubscriptionList):
+    provider_class = RegistrationProvider
     serializer_class = RegistrationSubscriptionSerializer
