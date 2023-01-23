@@ -249,7 +249,7 @@ class GenericProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
     pagination_class = IncreasedPageSizePagination
     view_name = 'taxonomy-list'
 
-    ordering = ('_order', 'text')
+    ordering = ('is_other', 'text')
 
     def get_queryset(self):
         parent = self.request.query_params.get('filter[parents]', None) or self.request.query_params.get('filter[parent]', None)
