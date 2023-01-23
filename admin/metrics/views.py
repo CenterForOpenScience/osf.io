@@ -22,8 +22,7 @@ class MetricsView2(PermissionRequiredMixin, TemplateView):
     raise_exception = True
 
     def get_context_data(self, **kwargs):
-
+        kwargs.update(KEEN_CREDENTIALS.copy())
         api_report_url = '{}_/metrics/reports/'.format(settings.API_DOMAIN)
-
         kwargs.update({'metrics_url': api_report_url})
         return super(MetricsView2, self).get_context_data(**kwargs)
