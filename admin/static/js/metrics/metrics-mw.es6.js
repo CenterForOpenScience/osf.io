@@ -320,8 +320,8 @@ var getOneDayTimeframe = function(daysBack, monthsBack) {
     today.setDate(today.getDate() + 1);
     end = today.toISOString();
     return {
-        "start": start,
-        "end": end
+        "start": start.replace('T00:00:00.000Z', ''),
+        "end": end.replace('T00:00:00.000Z', ''),
     };
 };
 
@@ -346,8 +346,8 @@ var getVariableDayTimeframe = function(endDaysBack, totalDays) {
     date.setDate(date.getDate() - totalDays);
     start = date.toISOString();
     return {
-        "start": start,
-        "end": end
+        "start": start.replace('T00:00:00.000Z', ''),
+        "end": end.replace('T00:00:00.000Z', ''),
     };
 };
 
@@ -372,8 +372,8 @@ var getInterval = function(endDate, priorDays) {
     date.setDate(date.getDate() - priorDays);
     start = date.toISOString();
     return {
-        "start": start,
-        "end": end
+        "start": start.replace('T00:00:00.000Z', ''),
+        "end": end.replace('T00:00:00.000Z', ''),
     };
 };
 
