@@ -5,7 +5,7 @@ import random
 import datetime
 
 from django.core.management.base import BaseCommand
-from osf.metrics import CountedUsage
+from osf.metrics import CountedAuthUsage
 
 
 logger = logging.getLogger(__name__)
@@ -68,11 +68,12 @@ class Command(BaseCommand):
         for _ in range(n):
             seconds_back = random.randint(0, max_age)
             timestamp_time = now - datetime.timedelta(seconds=seconds_back)
-            CountedUsage.record(
+            CountedAuthUsage.record(
                 platform_iri=PLATFORM_IRI,
                 timestamp=timestamp_time,
                 item_guid=ITEM_GUID,
                 session_id='freshen by key',
+                user_is_authenticated=bool(random.randint(0,1)),
             )
 
     def _run_date_query(self, time_range_filter):
@@ -111,5 +112,5 @@ class Command(BaseCommand):
         }
 
     def _run_query(self, query_dict):
-        analytics_search = CountedUsage.search().update_from_dict(query_dict)
+        analytics_search = CountedAuthUsage.search().update_from_dict(query_dict)
         return analytics_search.execute()

@@ -17,7 +17,7 @@ from api.metrics.permissions import IsPreprintMetricsUser, IsRawMetricsUser, IsR
 from api.metrics.serializers import (
     PreprintMetricSerializer,
     RawMetricsSerializer,
-    CountedUsageSerializer,
+    CountedAuthUsageSerializer,
     DailyReportSerializer,
     ReportNameSerializer,
     NodeAnalyticsSerializer,
@@ -29,7 +29,7 @@ from api.base.views import JSONAPIBaseView
 from api.base.waffle_decorators import require_switch
 from api.nodes.permissions import MustBePublic
 from osf.features import ENABLE_RAW_METRICS
-from osf.metrics import PreprintDownload, PreprintView, RegistriesModerationMetrics, CountedUsage
+from osf.metrics import PreprintDownload, PreprintView, RegistriesModerationMetrics, CountedAuthUsage
 from osf.metrics import reports
 from osf.metrics.utils import stable_key
 from osf.models import AbstractNode
@@ -334,11 +334,11 @@ class RecentReportList(JSONAPIBaseView):
         return JsonResponse({'data': serializer.data})
 
 
-class CountedUsageView(JSONAPIBaseView):
+class CountedAuthUsageView(JSONAPIBaseView):
     view_category = 'metrics'
     view_name = 'counted-usage'
 
-    serializer_class = CountedUsageSerializer
+    serializer_class = CountedAuthUsageSerializer
 
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
@@ -420,7 +420,7 @@ class NodeAnalyticsQuery(JSONAPIBaseView):
 
     def _run_query(self, node_guid, timespan):
         query_dict = self._build_query_payload(node_guid, NodeAnalyticsQuery.Timespan(timespan))
-        analytics_search = CountedUsage.search().update_from_dict(query_dict)
+        analytics_search = CountedAuthUsage.search().update_from_dict(query_dict)
         return analytics_search.execute()
 
     def _build_query_payload(self, node_guid, timespan):
@@ -551,7 +551,7 @@ class UserVisitsQuery(JSONAPIBaseView):
 
     def _run_query(self, timespan):
         query_dict = self._build_query_payload(timespan)
-        analytics_search = CountedUsage.search().update_from_dict(query_dict)
+        analytics_search = CountedAuthUsage.search().update_from_dict(query_dict)
         return analytics_search.execute()
 
     def _build_query_payload(self, timespan):

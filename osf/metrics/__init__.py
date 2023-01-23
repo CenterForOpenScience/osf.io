@@ -1,4 +1,4 @@
-from .counted_usage import CountedUsage
+from .counted_usage import CountedAuthUsage
 
 from .preprint_metrics import (
     PreprintView,
@@ -36,7 +36,7 @@ DAILY_REPORTS = (
 
 
 __all__ = (
-    'CountedUsage',
+    'CountedAuthUsage',
     'DAILY_REPORTS',
     'InstitutionProjectCounts',
     'PreprintView',

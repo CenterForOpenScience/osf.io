@@ -22,8 +22,8 @@ urlpatterns = [
     ),
     re_path(
         r'^events/counted_usage/$',
-        views.CountedUsageView.as_view(),
-        name=views.CountedUsageView.view_name,
+        views.CountedAuthUsageView.as_view(),
+        name=views.CountedAuthUsageView.view_name,
     ),
     re_path(
         r'^query/node_analytics/(?P<node_guid>[a-z0-9]+)/(?P<timespan>week|fortnight|month)/$',
