@@ -186,6 +186,18 @@ class CoreScopes(object):
     METRICS_BASIC = 'metrics_basic'
     METRICS_RESTRICTED = 'metrics_restricted'
 
+    READ_SCHEMA_RESPONSES = 'read_schema_responses'
+    WRITE_SCHEMA_RESPONSES = 'write_schema_responses'
+
+    READ_REGISTRATION_RESOURCES = 'read_registration_resources'
+    WRITE_REGISTRATION_RESOURCES = 'write_registration_resources'
+
+    READ_COLLECTION_SUBMISSION_ACTION = 'read_collection_submission_action'
+    WRITE_COLLECTION_SUBMISSION_ACTION = 'write_collection_submission_action'
+
+    READ_COLLECTION_SUBMISSION = 'read_collection_submission'
+    WRITE_COLLECTION_SUBMISSION = 'write_collection_submission'
+
 
 class ComposedScopes(object):
     """
@@ -217,8 +229,8 @@ class ComposedScopes(object):
     METASCHEMAS_READ = (CoreScopes.SCHEMA_READ, )
 
     # Draft registrations
-    DRAFT_READ = (CoreScopes.NODE_DRAFT_REGISTRATIONS_READ, )
-    DRAFT_WRITE = (CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE, )
+    DRAFT_READ = (CoreScopes.NODE_DRAFT_REGISTRATIONS_READ, CoreScopes.DRAFT_REGISTRATIONS_READ, CoreScopes.DRAFT_CONTRIBUTORS_READ)
+    DRAFT_WRITE = (CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE, CoreScopes.DRAFT_REGISTRATIONS_WRITE, CoreScopes.DRAFT_CONTRIBUTORS_WRITE)
 
     # OSF Groups
     GROUP_READ = (CoreScopes.OSF_GROUPS_READ, )
@@ -238,12 +250,12 @@ class ComposedScopes(object):
                           CoreScopes.NODE_CITATIONS_READ, CoreScopes.NODE_COMMENTS_READ, CoreScopes.NODE_LOG_READ,
                           CoreScopes.NODE_FORKS_READ, CoreScopes.WIKI_BASE_READ, CoreScopes.LICENSE_READ,
                           CoreScopes.IDENTIFIERS_READ, CoreScopes.NODE_PREPRINTS_READ, CoreScopes.PREPRINT_REQUESTS_READ,
-                          CoreScopes.REGISTRATION_REQUESTS_READ)
+                          CoreScopes.REGISTRATION_REQUESTS_READ, CoreScopes.READ_SCHEMA_RESPONSES, CoreScopes.READ_REGISTRATION_RESOURCES)
     NODE_METADATA_WRITE = NODE_METADATA_READ + \
                     (CoreScopes.NODE_BASE_WRITE, CoreScopes.NODE_CHILDREN_WRITE, CoreScopes.NODE_LINKS_WRITE, CoreScopes.IDENTIFIERS_WRITE,
                      CoreScopes.NODE_CITATIONS_WRITE, CoreScopes.NODE_COMMENTS_WRITE, CoreScopes.NODE_FORKS_WRITE,
                      CoreScopes.NODE_PREPRINTS_WRITE, CoreScopes.PREPRINT_REQUESTS_WRITE, CoreScopes.WIKI_BASE_WRITE,
-                     CoreScopes.REGISTRATION_REQUESTS_WRITE)
+                     CoreScopes.REGISTRATION_REQUESTS_WRITE, CoreScopes.WRITE_SCHEMA_RESPONSES, CoreScopes.WRITE_REGISTRATION_RESOURCES)
 
     # Preprints collection
     # TODO: Move Metrics scopes to their own restricted composed scope once the Admin app can manage scopes on tokens/apps
@@ -256,9 +268,9 @@ class ComposedScopes(object):
     ORGANIZER_WRITE = ORGANIZER_READ + (CoreScopes.ORGANIZER_COLLECTIONS_BASE_WRITE, CoreScopes.NODE_LINKS_WRITE, CoreScopes.COLLECTED_META_WRITE)
 
     # Privileges relating to editing content uploaded under that node
-    NODE_DATA_READ = (CoreScopes.NODE_FILE_READ, CoreScopes.WIKI_BASE_READ)
+    NODE_DATA_READ = (CoreScopes.NODE_FILE_READ, CoreScopes.WIKI_BASE_READ, CoreScopes.NODE_ADDON_READ)
     NODE_DATA_WRITE = NODE_DATA_READ + \
-                        (CoreScopes.NODE_FILE_WRITE, CoreScopes.WIKI_BASE_WRITE)
+                        (CoreScopes.NODE_FILE_WRITE, CoreScopes.WIKI_BASE_WRITE, CoreScopes.NODE_ADDON_WRITE)
 
     # Privileges relating to editing content uploaded under that preprint
     PREPRINT_DATA_READ = (CoreScopes.PREPRINT_FILE_READ,)
@@ -292,12 +304,42 @@ class ComposedScopes(object):
     REVIEWS_WRITE = (CoreScopes.ACTIONS_WRITE, CoreScopes.MODERATORS_WRITE, CoreScopes.PROVIDERS_WRITE)
 
     # Full permissions: all routes intended to be exposed to third party API users
-    FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ + GUIDS_READ + METASCHEMAS_READ + DRAFT_READ + REVIEWS_READ + PREPRINT_ALL_READ + GROUP_READ + (CoreScopes.MEETINGS_READ, CoreScopes.INSTITUTION_READ, CoreScopes.SEARCH, CoreScopes.SCOPES_READ)
-    FULL_WRITE = FULL_READ + NODE_ALL_WRITE + USERS_WRITE + ORGANIZER_WRITE + DRAFT_WRITE + REVIEWS_WRITE + PREPRINT_ALL_WRITE + GROUP_WRITE
+    FULL_READ = NODE_ALL_READ \
+                + USERS_READ\
+                + ORGANIZER_READ\
+                + GUIDS_READ\
+                + METASCHEMAS_READ\
+                + DRAFT_READ\
+                + REVIEWS_READ\
+                + PREPRINT_ALL_READ\
+                + GROUP_READ\
+                + (
+                    CoreScopes.MEETINGS_READ,
+                    CoreScopes.INSTITUTION_READ,
+                    CoreScopes.SEARCH,
+                    CoreScopes.SCOPES_READ
+                )\
+                + (
+                    CoreScopes.READ_COLLECTION_SUBMISSION,
+                    CoreScopes.READ_COLLECTION_SUBMISSION_ACTION,
+                )
+
+    FULL_WRITE = FULL_READ\
+                 + NODE_ALL_WRITE\
+                 + USERS_WRITE\
+                 + ORGANIZER_WRITE\
+                 + DRAFT_WRITE\
+                 + REVIEWS_WRITE\
+                 + PREPRINT_ALL_WRITE\
+                 + GROUP_WRITE\
+                 + (
+                     CoreScopes.WRITE_COLLECTION_SUBMISSION_ACTION,
+                     CoreScopes.WRITE_COLLECTION_SUBMISSION
+                 )
 
     # Admin permissions- includes functionality not intended for third-party use
     ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE + TOKENS_WRITE + COMMENT_REPORTS_WRITE + USERS_CREATE + REVIEWS_WRITE +\
-                    (CoreScopes.USER_EMAIL_READ, CoreScopes.USER_ADDON_READ, CoreScopes.NODE_ADDON_READ, CoreScopes.NODE_ADDON_WRITE, CoreScopes.WAFFLE_READ, )
+                    (CoreScopes.USER_EMAIL_READ, CoreScopes.USER_ADDON_READ, CoreScopes.WAFFLE_READ, )
 
 # List of all publicly documented scopes, mapped to composed scopes defined above.
 #   Return as sets to enable fast comparisons of provided scopes vs those required by a given node

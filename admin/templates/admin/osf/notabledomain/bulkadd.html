@@ -1,0 +1,26 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block content %}
+    <form method="POST">
+        {% csrf_token %}
+        <h1><label for="notable_email_domains">{% trans "Bulk-add notable email domains" %}</label></h1>
+        <p>{% trans "Pls enter domain names delimited by newlines (e.g. copy-paste one column from a spreadsheet)" %}</p>
+
+        <textarea id="notable_email_domains" name="notable_email_domains"></textarea>
+        <fieldset>
+            <legend>{% trans "Choose note:" %}</legend>
+            <ul>
+                {% for note in note_choices %}
+                    <li>
+                        <label>
+                            <input type="radio" name="note" value="{{ note.value }}" />
+                            {% trans note.name %}
+                        </label>
+                    </li>
+                {% endfor %}
+            </ul>
+        </fieldset>
+        <input type="submit" value={% trans "Submit" %} />
+    </form>
+{% endblock %}

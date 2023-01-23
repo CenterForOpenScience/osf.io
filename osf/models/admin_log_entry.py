@@ -1,13 +1,16 @@
 from django.contrib.admin.models import LogEntry, LogEntryManager
 
 UNKNOWN = 0
-ACCEPT_PREREG = 10
-REJECT_PREREG = 11
-COMMENT_PREREG = 12
-CHECKOUT_CHECKUP = 13
+
+# Depreciated, used for Prereg Challenge
+# ACCEPT_PREREG = 10
+# REJECT_PREREG = 11
+# COMMENT_PREREG = 12
+# CHECKOUT_CHECKUP = 13
 
 CONFIRM_SPAM = 20
 CONFIRM_HAM = 21
+UNFLAG_SPAM = 22
 
 NODE_REMOVED = 30
 NODE_RESTORED = 31

@@ -19,12 +19,12 @@
 
                                     <!-- ko if: $parent.category().name === name -->
                                         <li class="active"> <!-- TODO: simplify markup; only the active class really needs to be conditional -->
-                                            <a data-bind="click: $parent.filter.bind($data)"><span data-bind="text: display"></span><span class="badge pull-right" data-bind="text: count"></span></a>
+                                            <a data-bind="click: $parent.filter.bind($data)"><span data-bind="text: display"></span><span class="badge pull-right" style="background-color: #595959; color:white;" data-bind="text: count"></span></a>
                                         </li>
                                     <!-- /ko -->
                                     <!-- ko if: $parent.category().name !== name -->
                                         <li>
-                                            <a data-bind="click: $parent.filter.bind($data)"><span data-bind="text: display"></span><span class="badge pull-right" data-bind="text: count"></span></a>
+                                            <a data-bind="click: $parent.filter.bind($data)"><span data-bind="text: display"></span><span class="badge pull-right" style="background-color: #595959; color:white;" data-bind="text: count"></span></a>
                                         </li>
                                     <!-- /ko -->
                                 </ul>
@@ -103,7 +103,7 @@
                             <li data-bind="css: {disabled: !prevPageExists()}">
                                 <a href="#" data-bind="click: pagePrev">Previous Page </a>
                             </li>
-                            <span data-bind="visible: totalPages() > 0">
+                            <li data-bind="visible: totalPages() > 0">
                                 <span data-bind="text: navLocation"></span>
                             </span>
                             <li data-bind="css: {disabled: !nextPageExists()}">
@@ -137,7 +137,7 @@
 
         <div class="row">
             <div class="col-md-2">
-                <img class="social-profile-image" data-bind="visible: profileImageUrl(), attr: {src: profileImageUrl()}">
+                <img class="social-profile-image" data-bind="visible: profileImageUrl(), attr: {src: profileImageUrl()}" alt="profile image" >
             </div>
             <div class="col-md-10">
                 <h4><a data-bind="attr: {href: url}, text: user"></a></h4>
@@ -172,7 +172,7 @@
                     </li>
                     <li data-bind="visible: social.scholar">
                         <a data-bind="attr: {href: social.scholar}">
-                            <img class="social-icons" src="/static/img/googlescholar.png"data-toggle="tooltip" title="Google Scholar">
+                            <img class="social-icons" src="/static/img/googlescholar.png"data-toggle="tooltip" title="Google Scholar" alt="google scholar icon">
                         </a>
                     </li>
                     <li data-bind="visible: social.impactStory">
@@ -192,7 +192,7 @@
                     </li>
                     <li data-bind="visible: social.researchGate">
                         <a data-bind="attr: {href: social.researchGate}">
-                            <img class="social-icons" src="/static/img/researchgate.jpg" style="PADDING-BOTTOM: 7px" data-toggle="tooltip" title="ResearchGate"></i>
+                            <img class="social-icons" src="/static/img/researchgate.jpg" style="PADDING-BOTTOM: 7px" data-toggle="tooltip" title="ResearchGate"  alt="ResearchGate icon"></i>
                         </a>
                     </li>
                     <li data-bind="visible: social.academiaInstitution + social.academiaProfileID">
@@ -202,12 +202,12 @@
                     </li>
                     <li data-bind="visible: social.baiduScholar">
                         <a data-bind="attr: {href: social.baiduScholar}">
-                            <img class="social-icons" src="/static/img/baiduscholar.png"data-toggle="tooltip" style="PADDING-BOTTOM: 5px" title="Baidu Scholar">
+                            <img class="social-icons" src="/static/img/baiduscholar.png"data-toggle="tooltip" style="PADDING-BOTTOM: 5px" title="Baidu Scholar" alt="Baidu Scholar icon">
                         </a>
                     </li>
                     <li data-bind="visible: social.ssrn">
                         <a data-bind="attr: {href: social.ssrn}">
-                            <img class="social-icons" src="/static/img/SSRN.png"data-toggle="tooltip" style="PADDING-BOTTOM: 5px" title="SSRN">
+                            <img class="social-icons" src="/static/img/SSRN.png"data-toggle="tooltip" style="PADDING-BOTTOM: 5px" title="SSRN"  alt="SSRN icon">
                         </a>
                     </li>
                 </ul>
@@ -390,7 +390,10 @@
     <script type="text/javascript">
         window.contextVars = $.extend(true, {}, window.contextVars, {
             search:true,
-            shareUrl: ${ shareUrl | sjson, n }
+            shareUrl: ${ shareUrl | sjson, n },
+            analyticsMeta: {
+                searchProviderId: 'osf',
+            },
         });
     </script>
 

@@ -6,7 +6,6 @@ from django.db.models import Sum
 from django.db.models.expressions import RawSQL
 from django.utils import timezone
 
-from framework.sessions import session
 from osf.models.base import BaseModel, Guid
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
@@ -67,8 +66,8 @@ class PageCounter(BaseModel):
     unique = models.PositiveIntegerField(default=0)
 
     action = models.CharField(max_length=128, null=False, blank=False)
-    resource = models.ForeignKey(Guid, related_name='pagecounters', null=False, blank=False)
-    file = models.ForeignKey('osf.BaseFileNode', null=False, blank=False, related_name='pagecounters')
+    resource = models.ForeignKey(Guid, related_name='pagecounters', null=False, blank=False, on_delete=models.CASCADE)
+    file = models.ForeignKey('osf.BaseFileNode', null=False, blank=False, related_name='pagecounters', on_delete=models.CASCADE)
     version = models.IntegerField(null=True, blank=True)
 
     @classmethod
@@ -97,7 +96,7 @@ class PageCounter(BaseModel):
         )
 
     @classmethod
-    def update_counter(cls, resource, file, version, action, node_info):
+    def update_counter(cls, resource, file, version, action, node_info, session_obj):
         if version is not None:
             page = '{0}:{1}:{2}:{3}'.format(action, resource._id, file._id, version)
         else:
@@ -106,7 +105,7 @@ class PageCounter(BaseModel):
         cleaned_page = cls.clean_page(page)
         date = timezone.now()
         date_string = date.strftime('%Y/%m/%d')
-        visited_by_date = session.data.get('visited_by_date', {'date': date_string, 'pages': []})
+        visited_by_date = session_obj.data.get('visited_by_date', {'date': date_string, 'pages': []})
         with transaction.atomic():
             # Temporary backwards compat - when creating new PageCounters, temporarily keep writing to _id field.
             # After we're sure this is stable, we can stop writing to the _id field, and query on
@@ -145,7 +144,7 @@ class PageCounter(BaseModel):
 
             # update their sessions
             visited_by_date['pages'].append(cleaned_page)
-            session.data['visited_by_date'] = visited_by_date
+            session_obj.data['visited_by_date'] = visited_by_date
 
             if date_string in model_instance.date.keys():
                 if 'total' not in model_instance.date[date_string].keys():
@@ -158,17 +157,17 @@ class PageCounter(BaseModel):
             # if the user who is downloading isn't a contributor to the project
             page_type = cleaned_page.split(':')[0]
             if page_type in ('download', 'view') and node_info:
-                if node_info['contributors'].filter(guids___id__isnull=False, guids___id=session.data.get('auth_user_id')).exists():
+                if node_info['contributors'].filter(guids___id__isnull=False, guids___id=session_obj.data.get('auth_user_id')).exists():
                     model_instance.save()
                     return
 
-            visited = session.data.get('visited', [])
+            visited = session_obj.data.get('visited', [])
             if page not in visited:
                 model_instance.unique += 1
                 visited.append(page)
-                session.data['visited'] = visited
+                session_obj.data['visited'] = visited
 
-            session.save()
+            session_obj.save()
             model_instance.total += 1
 
             model_instance.save()

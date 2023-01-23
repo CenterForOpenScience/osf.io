@@ -160,16 +160,16 @@
                 "text": "OneDrive files and their versions can be viewed/downloaded via OSF.  OneNote files are unexportable and cannot be downloaded or viewed."
             },
             "Add / update files": {
-                "status": "none",
-                "text": "The OneDrive add-on is read-only."
+                "status": "full",
+                "text": "Adding/updating files in the project via OSF will be reflected in OneDrive."
             },
             "Delete files": {
-                "status": "none",
-                "text": "The OneDrive add-on is read-only."
+                "status": "full",
+                "text": "Files deleted via OSF will be deleted in OneDrive."
             },
             "Logs": {
                 "status": "partial",
-                "text": "OSF keeps track of changes you make to your OneDrive add-on configuration.  It does not track changes to OneDrive content."
+                "text": "OSF keeps track of changes you make to your OneDrive content through OSF, but not for changes made using OneDrive directly."
             },
             "Forking": {
                 "status": "partial",

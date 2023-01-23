@@ -2,8 +2,14 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils import timezone
+
+from osf.exceptions import (
+    IdentifierHasReferencesError,
+    NoSuchPIDValidatorError,
+)
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.fields import NonNaiveDateTimeField
+from osf.utils import identifiers as identifier_utils
 
 
 class Identifier(ObjectIDMixin, BaseModel):
@@ -27,6 +33,26 @@ class Identifier(ObjectIDMixin, BaseModel):
         self.deleted = timezone.now()
         if save:
             self.save()
+
+    def delete(self):
+        '''Used to delete an orphaned Identifier (distinct from setting `deleted`)'''
+        if self.object_id or self.artifact_metadata.filter(deleted__isnull=True).exists():
+            raise IdentifierHasReferencesError
+        super().delete()
+
+    def validate_identifier_value(self):
+        # We created the PID, so assume valid
+        if self.object_id is not None:
+            return True
+
+        # If we don't know how to validate a PID, assume it's fine
+        try:
+            validator = identifier_utils.PIDValidator.for_identifier_category(self.category)
+        except NoSuchPIDValidatorError:
+            return True
+
+        # Let the caller decide what to do with any validation errors
+        return validator.validate(self.value)
 
 
 class IdentifierMixin(models.Model):
@@ -52,6 +78,10 @@ class IdentifierMixin(models.Model):
             return client.create_identifier(self, category)
 
     def request_identifier_update(self, category):
+        '''Noop if no existing identifier value for the category.'''
+        if not self.get_identifier_value(category):
+            return
+
         client = self.get_doi_client()
         if client:
             return client.update_identifier(self, category)
@@ -68,12 +98,13 @@ class IdentifierMixin(models.Model):
         identifier = self.get_identifier(category)
         return identifier.value if identifier else None
 
-    def set_identifier_value(self, category, value):
+    def set_identifier_value(self, category, value=None):
+        defaults = {'value': value} if value is not None else {}
         identifier, created = Identifier.objects.get_or_create(object_id=self.pk,
                                                                content_type=ContentType.objects.get_for_model(self),
                                                                category=category,
-                                                               defaults=dict(value=value))
-        if not created:
+                                                               defaults=defaults)
+        if value and not created:
             identifier.value = value
             identifier.save()
 

@@ -7,8 +7,15 @@ from django.db import connection
 
 from framework.celery_tasks import app as celery_app
 from framework.sentry import log_exception
-from osf.models import OSFUser, AbstractNode, AbstractProvider, RegistrationProvider
-from osf.models import NotificationDigest
+from osf.models import (
+    OSFUser,
+    AbstractNode,
+    AbstractProvider,
+    RegistrationProvider,
+    CollectionProvider,
+    NotificationDigest,
+)
+from osf.registrations.utils import get_registration_provider_submissions_url
 from osf.utils.permissions import ADMIN
 from website import mails, settings
 from website.notifications.utils import NotificationsDict
@@ -68,7 +75,7 @@ def _send_reviews_moderator_emails(send_type):
         additional_context = dict()
         if isinstance(provider, RegistrationProvider):
             provider_type = 'registration'
-            submissions_url = f'{settings.DOMAIN}registries/{provider._id}/moderation/submissions',
+            submissions_url = get_registration_provider_submissions_url(provider)
             withdrawals_url = f'{submissions_url}?state=pending_withdraw'
             notification_settings_url = f'{settings.DOMAIN}registries/{provider._id}/moderation/notifications'
             if provider.brand:
@@ -76,6 +83,16 @@ def _send_reviews_moderator_emails(send_type):
                     'logo_url': provider.brand.hero_logo_image,
                     'top_bar_color': provider.brand.primary_color
                 }
+        elif isinstance(provider, CollectionProvider):
+            provider_type = 'collection'
+            submissions_url = f'{settings.DOMAIN}collections/{provider._id}/moderation/'
+            notification_settings_url = f'{settings.DOMAIN}registries/{provider._id}/moderation/notifications'
+            if provider.brand:
+                additional_context = {
+                    'logo_url': provider.brand.hero_logo_image,
+                    'top_bar_color': provider.brand.primary_color
+                }
+            withdrawals_url = ''
         else:
             provider_type = 'preprint'
             submissions_url = f'{settings.DOMAIN}reviews/preprints/{provider._id}',

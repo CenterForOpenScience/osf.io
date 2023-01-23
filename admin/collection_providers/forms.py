@@ -13,6 +13,8 @@ class CollectionProviderForm(forms.ModelForm):
     volume_choices = forms.CharField(widget=forms.HiddenInput(), required=False)
     issue_choices = forms.CharField(widget=forms.HiddenInput(), required=False)
     program_area_choices = forms.CharField(widget=forms.HiddenInput(), required=False)
+    school_type_choices = forms.CharField(widget=forms.HiddenInput(), required=False)
+    study_design_choices = forms.CharField(widget=forms.HiddenInput(), required=False)
     _id = forms.SlugField(
         required=True,
         help_text='URL Slug',
@@ -23,7 +25,7 @@ class CollectionProviderForm(forms.ModelForm):
         model = CollectionProvider
         exclude = ['primary_identifier_name', 'primary_collection', 'type', 'allow_commenting', 'advisory_board',
                    'example', 'domain', 'domain_redirect_enabled', 'reviews_comments_anonymous',
-                   'reviews_comments_private', 'reviews_workflow']
+                   'reviews_comments_private']
 
         widgets = {
             'licenses_acceptable': forms.CheckboxSelectMultiple(),
@@ -59,6 +61,9 @@ class CollectionProviderForm(forms.ModelForm):
         )
 
     def clean_collected_type_choices(self):
+        if not self.data.get('collected_type_choices'):
+            return {'added': [], 'removed': []}
+
         collection_provider = self.instance
         # if this is to modify an existing CollectionProvider
         if collection_provider.primary_collection:
@@ -86,6 +91,9 @@ class CollectionProviderForm(forms.ModelForm):
         }
 
     def clean_status_choices(self):
+        if not self.data.get('status_choices'):
+            return {'added': [], 'removed': []}
+
         collection_provider = self.instance
         # if this is to modify an existing CollectionProvider
         if collection_provider.primary_collection:
@@ -113,6 +121,9 @@ class CollectionProviderForm(forms.ModelForm):
         }
 
     def clean_volume_choices(self):
+        if not self.data.get('volume_choices'):
+            return {'added': [], 'removed': []}
+
         collection_provider = self.instance
         # if this is to modify an existing CollectionProvider
         if collection_provider.primary_collection:
@@ -140,6 +151,9 @@ class CollectionProviderForm(forms.ModelForm):
         }
 
     def clean_issue_choices(self):
+        if not self.data.get('issue_choices'):
+            return {'added': [], 'removed': []}
+
         collection_provider = self.instance
         # if this is to modify an existing CollectionProvider
         if collection_provider.primary_collection:
@@ -167,6 +181,9 @@ class CollectionProviderForm(forms.ModelForm):
         }
 
     def clean_program_area_choices(self):
+        if not self.data.get('program_area_choices'):
+            return {'added': [], 'removed': []}
+
         collection_provider = self.instance
         # if this is to modify an existing CollectionProvider
         if collection_provider.primary_collection:
@@ -192,3 +209,62 @@ class CollectionProviderForm(forms.ModelForm):
             'added': program_area_choices_added,
             'removed': program_area_choices_removed,
         }
+
+    def clean_school_type_choices(self):
+        if not self.data.get('school_type_choices'):
+            return {'added': [], 'removed': []}
+
+        collection_provider = self.instance
+        primary_collection = collection_provider.primary_collection
+        if primary_collection:  # Modifying an existing CollectionProvider
+            old_choices = {c.strip(' ') for c in primary_collection.school_type_choices}
+            updated_choices = {c.strip(' ') for c in json.loads(self.data.get('school_type_choices'))}
+            added_choices = updated_choices - old_choices
+            removed_choices = old_choices - updated_choices
+            active_removed_choices = set(
+                primary_collection.collectionsubmission_set.filter(
+                    school_type__in=removed_choices
+                ).values_list('school_type', flat=True)
+            )
+            if active_removed_choices:
+                raise forms.ValidationError(
+                    'Cannot remove the following choices for "school_type", as they are '
+                    f'currently in use: {active_removed_choices}'
+                )
+        else:  # Creating a new CollectionProvider
+            added_choices = set()
+            removed_choices = set()
+            choices = self.data.get('school_type_choices')
+            if choices:
+                added_choices = json.loads(choices)
+        return {'added': added_choices, 'removed': removed_choices}
+
+    def clean_study_design_choices(self):
+        if not self.data.get('study_design_choices'):
+            return {'added': [], 'removed': []}
+
+        collection_provider = self.instance
+        primary_collection = collection_provider.primary_collection
+        if primary_collection:  # Modifying an existing CollectionProvider
+            old_choices = {c.strip(' ') for c in primary_collection.study_design_choices}
+            updated_choices = {c.strip(' ') for c in json.loads(self.data.get('study_design_choices'))}
+            added_choices = updated_choices - old_choices
+            removed_choices = old_choices - updated_choices
+
+            active_removed_choices = set(
+                primary_collection.collectionsubmission_set.filter(
+                    study_design__in=removed_choices
+                ).values_list('school_type', flat=True)
+            )
+            if active_removed_choices:
+                raise forms.ValidationError(
+                    'Cannot remove the following choices for "study_design", as they are '
+                    f'currently in use: {active_removed_choices}'
+                )
+        else:  # Creating a new CollectionProvider
+            added_choices = set()
+            removed_choices = set()
+            choices = self.data.get('study_design_choices')
+            if choices:
+                added_choices = json.loads(choices)
+        return {'added': added_choices, 'removed': removed_choices}

@@ -81,7 +81,6 @@ class TestAnUnregisteredUser(OsfTestCase):
 
 
 @pytest.mark.enable_bookmark_creation
-@pytest.mark.enable_quickfiles_creation
 class TestAUser(OsfTestCase):
 
     def setUp(self):
@@ -396,7 +395,6 @@ class TestPrivateLinkView(OsfTestCase):
 
 
 @pytest.mark.enable_bookmark_creation
-@pytest.mark.enable_quickfiles_creation
 class TestMergingAccounts(OsfTestCase):
 
     def setUp(self):
@@ -892,7 +890,7 @@ class TestForgotPassword(OsfTestCase):
     # test that non-existing user cannot receive reset password email
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_not_active_user_no_reset_password_email(self, mock_send_mail):
-        self.user.disable_account()
+        self.user.deactivate_account()
         self.user.save()
 
         # load forgot password page and submit email
@@ -1004,7 +1002,7 @@ class TestForgotPasswordInstitution(OsfTestCase):
     # test that non-existing user cannot receive institutional reset password email
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_not_active_user_no_reset_password_email(self, mock_send_mail):
-        self.user.disable_account()
+        self.user.deactivate_account()
         self.user.save()
 
         res = self.app.post(self.post_url, {'forgot_password-email': self.user.username})

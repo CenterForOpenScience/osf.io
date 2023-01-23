@@ -19,11 +19,17 @@
                         <h3 style="padding: 0 15px 5px 15px; margin: 30px 0 0 0;border: none;list-style: none;font-weight: 300; border-bottom: 1px solid #eee; text-align: left;">
                             Hello ${name},
                             <p>
-                            Below are the recent registration submission and withdrawal requests that require your attention.
+                            Below are the recent submissions
+                            % if reviews_withdrawal_url:
+                                 and withdrawal requests
+                            % endif
+                             that require your attention.
                             <p>
-                            <a href=${reviews_submissions_url}>View all submissions</a>
+                            <a href="${reviews_submissions_url}">View all submissions</a>
                             <br>
-                            <a href=${reviews_withdrawal_url}> View all withdrawal requests</a>
+                            % if reviews_withdrawal_url:
+                                <a href="${reviews_withdrawal_url}"> View all withdrawal requests</a>
+                            % endif
                         </h3>
                     </th>
                 </tr>

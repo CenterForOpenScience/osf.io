@@ -98,7 +98,7 @@
                                                     </span><br>
                                                 </span>
                                                 <span data-bind="visible: contributor.social.personal">
-                                                    <a data-bind="attr: {href: contributor.social.personal}" data-toggle="tooltip" title="Personal Website"  target="_blank">
+                                                    <a data-bind="attr: {href: contributor.social.personal}" data-toggle="tooltip" title="Personal Website" target="_blank">
                                                         <i class="fa fa-globe social-icons fa-lg"></i>
                                                     </a>
                                                 </span>

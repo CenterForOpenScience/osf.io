@@ -9,9 +9,7 @@ from django.test.utils import CaptureQueriesContext
 from django.utils.timezone import now
 
 from osf.utils.sanitize import strip_html
-from osf.models import QuickFilesNode
 from api.base.settings.defaults import API_BASE
-from api.base.utils import waterbutler_api_url_for
 from osf_tests.factories import (
     AuthUserFactory,
     CollectionFactory,
@@ -23,7 +21,6 @@ from website.views import find_bookmark_collection
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestUserDetail:
 
     @pytest.fixture()
@@ -118,17 +115,6 @@ class TestUserDetail:
         assert 'relationships' not in user_json
         assert user_json['links'] == {}
 
-    def test_files_relationship_upload(self, app, user_one):
-        url = '/{}users/{}/'.format(API_BASE, user_one._id)
-        res = app.get(url, auth=user_one)
-        quickfiles = QuickFilesNode.objects.get(creator=user_one)
-        user_json = res.json['data']
-        upload_url = user_json['relationships']['quickfiles']['links']['upload']['href']
-        waterbutler_upload = waterbutler_api_url_for(
-            quickfiles._id, 'osfstorage')
-
-        assert upload_url == waterbutler_upload
-
     def test_preprint_relationship(self, app, user_one):
         url = '/{}users/{}/'.format(API_BASE, user_one._id)
         preprint_url = '/{}users/{}/preprints/'.format(API_BASE, user_one._id)
@@ -198,7 +184,6 @@ class TestUserDetail:
         assert 'linkedIn' not in user_social_json.keys()
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 @pytest.mark.enable_bookmark_creation
 class TestUserRoutesNodeRoutes:
 
@@ -443,7 +428,6 @@ class TestUserRoutesNodeRoutes:
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestUserUpdate:
 
     @pytest.fixture()
@@ -1140,7 +1124,6 @@ class TestUserUpdate:
         assert user_one.accepted_terms_of_service is None
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestDeactivatedUser:
 
     @pytest.fixture()
@@ -1194,7 +1177,6 @@ class TestDeactivatedUser:
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class UserProfileMixin(object):
 
     @pytest.fixture()
@@ -1317,7 +1299,6 @@ class UserProfileMixin(object):
         del request_payload['data']['attributes'][request_key][0]['endYear']
         res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "For 'ongoing' the field value True is not valid under any of the given schemas"
 
     def test_user_put_profile_date_validate_end_date(self, app, user_one, user_one_url, request_payload, request_key):
         # End date is greater then start date
@@ -1343,7 +1324,6 @@ class UserProfileMixin(object):
         res = app.put_json_api(user_one_url, start_dates_no_end_dates_payload, auth=user_one.auth, expect_errors=True)
         user_one.reload()
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "For 'ongoing' the field value True is not valid under any of the given schemas"
 
     def test_user_put_profile_date_validate_end_date_no_start_date(self, app, user_one, user_attr, user_one_url, end_dates_no_start_dates_payload, request_key):
         # End dates, but no start dates

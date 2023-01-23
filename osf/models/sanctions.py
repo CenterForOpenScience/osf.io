@@ -1,7 +1,3 @@
-import pytz
-import functools
-
-from dateutil.parser import parse as parse_date
 from django.apps import apps
 from django.utils import timezone
 from django.conf import settings
@@ -22,26 +18,26 @@ from osf.exceptions import (
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils import tokens
-from osf.utils.machines import SanctionStateMachine
-from osf.utils.workflows import SanctionStates, SanctionTypes
+from osf.utils.machines import ApprovalsMachine
+from osf.utils.workflows import ApprovalStates, SanctionTypes
 
 VIEW_PROJECT_URL_TEMPLATE = osf_settings.DOMAIN + '{node_id}/'
 
 
-class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
+class Sanction(ObjectIDMixin, BaseModel):
     """Sanction class is a generic way to track approval states"""
     # Neither approved not cancelled
-    UNAPPROVED = SanctionStates.UNAPPROVED.db_name
+    UNAPPROVED = ApprovalStates.UNAPPROVED.db_name
     # Has approval
-    APPROVED = SanctionStates.APPROVED.db_name
+    APPROVED = ApprovalStates.APPROVED.db_name
     # Rejected by at least one contributor
-    REJECTED = SanctionStates.REJECTED.db_name
+    REJECTED = ApprovalStates.REJECTED.db_name
     # Embargo has been completed
-    COMPLETED = SanctionStates.COMPLETED.db_name
+    COMPLETED = ApprovalStates.COMPLETED.db_name
     # Approved by admins but pending moderator approval/rejection
-    PENDING_MODERATION = SanctionStates.PENDING_MODERATION.db_name
+    PENDING_MODERATION = ApprovalStates.PENDING_MODERATION.db_name
     # Rejected by a moderator
-    MODERATOR_REJECTED = SanctionStates.MODERATOR_REJECTED.db_name
+    MODERATOR_REJECTED = ApprovalStates.MODERATOR_REJECTED.db_name
 
     SANCTION_TYPE = SanctionTypes.UNDEFINED
     DISPLAY_NAME = 'Sanction'
@@ -76,29 +72,36 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
     end_date = NonNaiveDateTimeField(null=True, blank=True, default=None)
     initiation_date = NonNaiveDateTimeField(default=timezone.now, null=True, blank=True)
 
-    state = models.CharField(choices=SanctionStates.char_field_choices(),
+    state = models.CharField(choices=ApprovalStates.char_field_choices(),
                              default=UNAPPROVED,
                              max_length=255)
 
-    def __repr__(self):
-        return '<{self.__class__.__name__}(end_date={self.end_date!r}) with _id {self._id!r}>'.format(
-            self=self)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.approvals_machine = ApprovalsMachine(
+            model=self,
+            state_property_name='approval_stage',
+            active_state=self.approval_stage
+        )
+
+    def __str__(self):
+        return f'<{self.__class__.__name__}(end_date={self.end_date!r}) with _id {self._id!r}>'
 
     @property
     def is_pending_approval(self):
         '''The sanction is awaiting admin approval.'''
-        return self.approval_stage is SanctionStates.UNAPPROVED
+        return self.approval_stage is ApprovalStates.UNAPPROVED
 
     @property
     def is_approved(self):
         '''The sanction has received all required admin and moderator approvals.'''
-        return self.approval_stage is SanctionStates.APPROVED
+        return self.approval_stage is ApprovalStates.APPROVED
 
     @property
     def is_rejected(self):
         '''The sanction has been rejected by either an admin or a moderator.'''
         rejected_states = [
-            SanctionStates.REJECTED, SanctionStates.MODERATOR_REJECTED
+            ApprovalStates.REJECTED, ApprovalStates.MODERATOR_REJECTED
         ]
         return self.approval_stage in rejected_states
 
@@ -108,7 +111,7 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
 
     @property
     def approval_stage(self):
-        return SanctionStates.from_db_name(self.state)
+        return ApprovalStates.from_db_name(self.state)
 
     @approval_stage.setter
     def approval_stage(self, state):
@@ -117,6 +120,17 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
     @property
     def target_registration(self):
         return self._get_registration()
+
+    @property
+    def revisable(self):
+        '''Controls state machine flow on a 'reject' trigger.
+
+        True -> IN_PROGRESS
+        False -> [MODERATOR_]REJECTED
+
+        Sanctions do not represent a revisable entity, so return False
+        '''
+        return False
 
     # The Sanction object will also inherit the following functions from the SanctionStateMachine:
     #
@@ -167,6 +181,20 @@ class Sanction(ObjectIDMixin, BaseModel, SanctionStateMachine):
     def forcibly_reject(self):
         self.state = Sanction.REJECTED
 
+    def _save_transition(self, event_data):
+        """Record the effects of a state transition in the database."""
+        self.save()
+        new_state = event_data.transition.dest
+        # No need to update registration state with no sanction state change
+        if new_state is None:
+            return
+
+        user = event_data.kwargs.get('user')
+        if user is None and event_data.args:
+            user = event_data.args[0]
+        comment = event_data.kwargs.get('comment', '')
+        self.target_registration.update_moderation_state(initiated_by=user, comment=comment)
+
     class Meta:
         abstract = True
 
@@ -180,7 +208,7 @@ class TokenApprovableSanction(Sanction):
 
     def _verify_user_role(self, user, action):
         '''Confirm that user is allowed to act on the sanction in its current approval_stage.'''
-        if self.approval_stage is SanctionStates.UNAPPROVED:
+        if self.approval_stage is ApprovalStates.UNAPPROVED:
             # Allow user is None when UNAPPROVED to support timed
             # sanction expiration from within OSF via the 'accept' trigger
             if user is None or user._id in self.approval_state:
@@ -188,12 +216,12 @@ class TokenApprovableSanction(Sanction):
             return False
 
         required_permission = f'{action}_submissions'
-        if self.approval_stage is SanctionStates.PENDING_MODERATION:
+        if self.approval_stage is ApprovalStates.PENDING_MODERATION:
             return user.has_perm(required_permission, self.target_registration.provider)
 
         return False
 
-    def _validate_request(self, event_data):
+    def _validate_trigger(self, event_data):
         '''Verify that an approve/accept/reject call meets all preconditions.'''
         action = event_data.event.name
         user = event_data.kwargs.get('user')
@@ -209,7 +237,7 @@ class TokenApprovableSanction(Sanction):
 
         # Moderator auth is validated by API, no token to check
         # user is None and no prior exception -> OSF-internal accept call
-        if self.approval_stage is SanctionStates.PENDING_MODERATION or user is None:
+        if self.approval_stage is ApprovalStates.PENDING_MODERATION or user is None:
             return True
 
         token = event_data.kwargs.get('token')
@@ -475,23 +503,6 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
     def pending_registration(self):
         return not self.for_existing_registration and self.is_pending_approval
 
-        # def __repr__(self):
-        #     pass
-        # from osf.models import Node
-        #
-        # parent_registration = None
-        # try:
-        #     parent_registration = Node.find_one(Q('embargo', 'eq', self))
-        # except NoResultsFound:
-        #     pass
-        # return ('<Embargo(parent_registration={0}, initiated_by={1}, '
-        #         'end_date={2}) with _id {3}>').format(
-        #     parent_registration,
-        #     self.initiated_by,
-        #     self.end_date,
-        #     self._id
-        # )
-
     def _get_registration(self):
         return self.registrations.first()
 
@@ -606,6 +617,11 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
                 'embargo_id': self._id,
             },
             auth=Auth(self.initiated_by), )
+
+        # Make placeholder identifiers for all Registrations to allow resources to be added
+        # This Identifier will be grabbed and populated when the Registration is made public
+        for registration in parent_registration.node_and_primary_descendants():
+            registration.set_identifier_value(category='doi', value=None)
         self.save()
 
     def approve_embargo(self, user, token):
@@ -870,9 +886,6 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
 
         self.save()
 
-        doi = registration.request_identifier('doi')['doi']
-        registration.set_identifier_value('doi', doi)
-
     def _on_reject(self, event_data):
         user = event_data.kwargs.get('user')
         if user is None and event_data.args:
@@ -890,73 +903,6 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
             },
             auth=Auth(user),
         )
-
-
-class DraftRegistrationApproval(Sanction):
-
-    SANCTION_TYPE = SanctionTypes.DRAFT_REGISTRATION_APPROVAL
-    mode = Sanction.ANY
-
-    # Since draft registrations that require approval are not immediately registered,
-    # meta stores registration_choice and embargo_end_date (when applicable)
-    meta = DateTimeAwareJSONField(default=dict, blank=True)
-
-    def _send_rejection_email(self, user, draft):
-        mails.send_mail(
-            to_addr=user.username,
-            mail=mails.DRAFT_REGISTRATION_REJECTED,
-            user=user,
-            osf_url=osf_settings.DOMAIN,
-            provider=draft.provider,
-            can_change_preferences=False,
-        )
-
-    def approve(self, user):
-        self.state = Sanction.APPROVED
-        self._on_complete(user)
-
-    def reject(self, user):
-        self.state = Sanction.REJECTED
-        self._on_reject(user)
-
-    def _on_complete(self, user):
-        DraftRegistration = apps.get_model('osf.DraftRegistration')
-
-        draft = DraftRegistration.objects.get(approval=self)
-
-        initiator = draft.initiator.merged_by or draft.initiator
-        auth = Auth(initiator)
-        registration = draft.register(auth=auth, save=True)
-        registration_choice = self.meta['registration_choice']
-
-        if registration_choice == 'immediate':
-            sanction = functools.partial(registration.require_approval, initiator)
-        elif registration_choice == 'embargo':
-            embargo_end_date = parse_date(self.meta.get('embargo_end_date'))
-            if not embargo_end_date.tzinfo:
-                embargo_end_date = embargo_end_date.replace(tzinfo=pytz.UTC)
-            sanction = functools.partial(
-                registration.embargo_registration,
-                initiator,
-                embargo_end_date
-            )
-        else:
-            raise ValueError("'registration_choice' must be either 'embargo' or 'immediate'")
-        sanction(notify_initiator_on_complete=True)
-
-        doi = registration.request_identifier('doi')['doi']
-        registration.set_identifier_value('doi', doi)
-
-    def _on_reject(self, user, *args, **kwargs):
-        DraftRegistration = apps.get_model('osf.DraftRegistration')
-
-        # clear out previous registration options
-        self.meta = {}
-        self.save()
-
-        draft = DraftRegistration.objects.get(approval=self)
-        initiator = draft.initiator.merged_by or draft.initiator
-        self._send_rejection_email(initiator, draft)
 
 
 class EmbargoTerminationApproval(EmailApprovableSanction):
@@ -1050,7 +996,8 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
 
     def _on_complete(self, event_data):
         super()._on_complete(event_data)
-        self.target_registration.terminate_embargo(forced=True)
+        if self.target_registration.is_embargoed:  # if the embargo expires normally, this is noop.
+            self.target_registration.terminate_embargo(forced=True)
 
     def _on_reject(self, event_data):
         # Just forget this ever happened.

@@ -138,7 +138,7 @@ var PublicNode = {
 
     view: function(ctrl)  {
         return m('div', [
-            m('li.project list-group-item list-group-item-node cite-container', [
+            m('p.project list-group-item list-group-item-node cite-container', [
                 m('h4.list-group-item-heading', [
                     m('span.component-overflow.f-w-lg', {style: 'line-height: 1.5;'}, [
                         m('span.project-statuses-lg'),
@@ -182,7 +182,7 @@ var PublicNodes = {
 
         var OSF_SUPPORT_EMAIL = $osf.osfSupportEmail();
 
-        return m('ul.list-group m-md', [
+        return m('p.list-group m-md', [
             // Error message if the request fails
             ctrl.failed ? m('p', [
                 'Unable to retrieve public ' + ctrl.nodeType + ' at this time. Please refresh the page or contact ',
@@ -198,11 +198,11 @@ var PublicNodes = {
                 ctrl.publicProjects().length !== 0 ? ctrl.publicProjects().map(function(node) {
                     return m.component(PublicNode, {nodeType: ctrl.nodeType, node: node});
                 }) : ctrl.isProfile ?
-                    m('div.help-block', {}, [
+                    m('p.help-block', {}, [
                         'You have no public ' + ctrl.nodeType + '.',
                         m('p', {}, [
                             'Find out how to make your ' + ctrl.nodeType + ' ',
-                            m('a', {'href': 'https://openscience.zendesk.com/hc/en-us/articles/360018981414', 'target': '_blank'}, 'public'),
+                            m('a', {'href': 'https://help.osf.io/article/285-control-your-privacy-settings', 'target': '_blank'}, 'public'),
                             '.'
                         ])
                     ])

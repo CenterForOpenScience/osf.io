@@ -295,10 +295,10 @@ def populate_collection_providers(add_data):
 
                 status = random.choice(provider.primary_collection.status_choices)
                 collected_type = random.choice(provider.primary_collection.collected_type_choices)
-                cgm = provider.primary_collection.collect_object(node, user, collected_type=collected_type, status=status)
+                collection_submission = provider.primary_collection.collect_object(node, user, collected_type=collected_type, status=status)
                 rando_subjects = random.sample(subjects, min(len(subjects), 5))
-                cgm.subjects.add(*rando_subjects)
-                cgm.save()
+                collection_submission.subjects.add(*rando_subjects)
+                collection_submission.save()
 
         logger.info('{} collection provider: {}'.format('Added' if created else 'Updated', _id))
 

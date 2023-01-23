@@ -11,7 +11,7 @@ from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 from framework.exceptions import PermissionsError
 from framework.auth.core import get_user, Auth
 from framework.sentry import log_exception
-from osf.exceptions import BlacklistedEmailError
+from osf.exceptions import BlockedEmailError
 from osf.models import base
 from osf.models.mixins import GuardianMixin, Loggable
 from osf.models import Node, OSFUser, NodeLog
@@ -222,8 +222,8 @@ class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
 
         try:
             validate_email(email)
-        except BlacklistedEmailError:
-            raise ValidationError('Email address domain is blacklisted.')
+        except BlockedEmailError:
+            raise ValidationError('Email address domain is blocked.')
 
         user = get_user(email=email)
         if user:

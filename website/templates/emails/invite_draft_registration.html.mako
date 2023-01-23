@@ -9,25 +9,32 @@
     Hello ${fullname},
     <p>
     ${referrer.fullname} has added you as a contributor on
-    % if node.title == 'Untitled':
+    % if not node.title or node.title == 'Untitled':
       <a href="${node.absolute_url}">a new registration draft</a>
     % else:
       a new registration draft titled <a href="${node.absolute_url}">${node.title}</a>
     % endif
-    to be submitted for inclusion in the ${node.provider.name} registry.
+    to be submitted for inclusion in the
+	<a href="${settings.DOMAIN}/registries/${node.provider._id if node.provider else 'osf'}">${node.provider.name if node.provider else "OSF Registry"}</a>.
     </p>
     <p>
     <a href="${claim_url}">Click here</a> to set a password for your account.
-    <\p>
+    </p>
     <p>
     Once you have set a password, you will be able to contribute to this registration draft as well as
 	create your own projects, registrations, and preprints on the OSF. You will be able to access this draft
-    by going to your <a href="${settings.DOMAIN}registries/my-registrations">"My Registrations" page.</a>
-    <\p>
+    by going to your <a href="${settings.DOMAIN}registries/my-registrations?tab=drafts">"My Registrations" page.</a>
+    </p>
     <p>
-    If you are not ${fullname} or if you have been erroneously associated with "${node.title}" then
-    email ${osf_contact_email} with the subject line "Claiming Error" to report the problem.
-    <\p>
+    If you are not ${fullname} or if you have been erroneously associated with
+    % if not node.title or node.title == 'Untitled':
+	  this registration draft
+    % else:
+      "${node.title}"
+	% endif
+    email <a href="mailto:${osf_contact_email}">${osf_contact_email}</a> with the subject line
+    "Claiming Error" to report the problem.
+    </p>
     <p>
     Sincerely,
     <p>
@@ -37,6 +44,6 @@
     or <a href="https://cos.io/">https://cos.io/</a> for information about its supporting organization,
     the Center for Open Science.
     <p>
-    Questions? Email ${osf_contact_email}
+    Questions? Email <a href="mailto:${osf_contact_email}">${osf_contact_email}</a>
 </tr>
 </%def>

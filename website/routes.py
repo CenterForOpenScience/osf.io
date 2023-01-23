@@ -39,7 +39,6 @@ from osf.models import Institution
 from osf.utils import sanitize
 from osf.utils import permissions
 from website import util
-from website import prereg
 from website import settings
 from website import language
 from website.util import metrics
@@ -146,6 +145,7 @@ def get_globals():
         'reauth_url': util.web_url_for('auth_logout', redirect_url=request.url, reauth=True),
         'profile_url': cas.get_profile_url(),
         'enable_institutions': settings.ENABLE_INSTITUTIONS,
+        'page_route_name': request.url_rule.endpoint.replace('__', '.'),
         'keen': {
             'public': {
                 'project_id': settings.KEEN['public']['project_id'],
@@ -519,8 +519,8 @@ def make_url_map(app):
         Rule(
             '/prereg/',
             'get',
-            prereg.prereg_landing_page,
-            OsfWebRenderer('prereg_landing_page.mako', trust=False)
+            website_views.redirect_to_registration_workflow,
+            notemplate
         ),
 
         Rule(

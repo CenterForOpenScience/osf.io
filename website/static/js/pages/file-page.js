@@ -14,7 +14,7 @@ $(function() {
     // Tag input
     $('#fileTags').tagsInput({
         width: '100%',
-        interactive: window.contextVars.currentUser.canEdit,
+        interactive: window.contextVars.currentUser.canEdit && !window.contextVars.node.isRegistration,
         maxChars: 128,
         defaultText: 'Add a tag to enhance discoverability',
         onAddTag: function (tag) {
@@ -26,6 +26,8 @@ $(function() {
                     extra: { tag: tag, url: url, textStatus: textStatus, error: error }
                 });
             });
+            $('.tag').attr('aria-label', 'Tag');
+
         },
         onRemoveTag: function (tag) {
             // Don't try to delete a blank tag (would result in a server error)
@@ -51,6 +53,8 @@ $(function() {
     }
 
     $('#fileTags_tag').attr('maxlength', '128');
+    $('#fileTags').attr('aria-label', 'Tag');
+    $('#fileTags_tag').attr('aria-label', 'Tag');
     if (!window.contextVars.currentUser.canEdit || window.contextVars.node.isRegistration) {
         $('a[title="Removing tag"]').remove();
         $('span.tag span').each(function(idx, elm) {
@@ -59,7 +63,7 @@ $(function() {
     }
 
     var titleEditable = function () {
-        var readOnlyProviders = ['bitbucket', 'figshare', 'dataverse', 'gitlab', 'onedrive'];
+        var readOnlyProviders = ['bitbucket', 'figshare', 'dataverse', 'gitlab'];
         var ctx = window.contextVars;
         if (readOnlyProviders.indexOf(ctx.file.provider) >= 0 || ctx.file.checkoutUser || !ctx.currentUser.canEdit || ctx.node.isRegistration)
             return false;

@@ -14,7 +14,7 @@ from api.base.serializers import (
     ShowIfVersion, TargetTypeField, TypeField,
     WaterbutlerLink, relationship_diff, BaseAPISerializer,
     HideIfWikiDisabled, ShowIfAdminScopeOrAnonymous,
-    ValuesListField,
+    ValuesListField, TargetField,
 )
 from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
 from api.base.utils import (
@@ -37,7 +37,8 @@ from osf.exceptions import NodeStateError
 from osf.models import (
     Comment, DraftRegistration, ExternalAccount, Institution,
     RegistrationSchema, AbstractNode, PrivateLink, Preprint,
-    RegistrationProvider, OSFGroup, NodeLicense,
+    RegistrationProvider, OSFGroup, NodeLicense, DraftNode,
+    Registration, Node,
 )
 from website.project import new_private_link
 from website.project.model import NodeUpdateError
@@ -51,6 +52,7 @@ class RegistrationProviderRelationshipField(RelationshipField):
     def to_internal_value(self, data):
         provider = self.get_object(data)
         return {'provider': provider}
+
 
 def get_institutions_to_add_remove(institutions, new_institutions):
     diff = relationship_diff(
@@ -247,6 +249,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     non_anonymized_fields = [
         'access_requests_enabled',
         'affiliated_institutions',
+        'affiliate_user_institutions',
         'analytics_key',
         'category',
         'children',
@@ -555,6 +558,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         user = self.context['request'].user
         request_version = self.context['request'].version
         default_perm = [osf_permissions.READ] if StrictVersion(request_version) < StrictVersion('2.11') else []
+
+        # View only link users should always get `READ` permissions regardless of other permissions
+        if Auth(private_key=self.context['request'].query_params.get('view_only')).private_link:
+            return [osf_permissions.READ]
+
         if user.is_anonymous:
             return default_perm
 
@@ -1407,6 +1415,20 @@ class NodeStorageProviderSerializer(JSONAPISerializer):
         help_text='The folder in which this file exists',
     )
 
+    target = TargetField(link_type='related', meta={'type': 'get_target_type'})
+
+    def get_target_type(self, obj):
+        if isinstance(obj, Preprint):
+            return 'preprints'
+        elif isinstance(obj, DraftNode):
+            return 'draft_nodes'
+        elif isinstance(obj, Registration):
+            return 'registrations'
+        elif isinstance(obj, Node):
+            return 'nodes'
+        else:
+            raise NotImplementedError()
+
     class Meta:
         type_ = 'files'
 
@@ -1528,6 +1550,12 @@ class DraftRegistrationLegacySerializer(JSONAPISerializer):
         'html': 'get_absolute_url',
     })
 
+    affiliate_user_institutions = ser.BooleanField(
+        required=False,
+        default=True,
+        help_text='Specify whether user institution affiliations should be copied over to the draft registration.',
+    )
+
     def get_absolute_url(self, obj):
         return obj.absolute_url
 
@@ -1568,6 +1596,7 @@ class DraftRegistrationLegacySerializer(JSONAPISerializer):
         registration_responses = validated_data.pop('registration_responses', None)
         schema = validated_data.pop('registration_schema')
         provider = validated_data.pop('provider', None)
+        affiliate_user_institutions = validated_data.pop('affiliate_user_institutions', True)
 
         self.enforce_metadata_or_registration_responses(metadata, registration_responses)
 
@@ -1581,6 +1610,9 @@ class DraftRegistrationLegacySerializer(JSONAPISerializer):
 
         if registration_responses:
             self.update_registration_responses(draft, registration_responses)
+
+        if affiliate_user_institutions and draft.branched_from_type == DraftNode:
+            draft.affiliated_institutions.set(draft.creator.affiliated_institutions.all())
 
         return draft
 

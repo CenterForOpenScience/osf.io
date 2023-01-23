@@ -6,6 +6,7 @@ from api.actions.serializers import ReviewableCountsRelationshipField
 from api.base.utils import absolute_reverse, get_user_auth
 from api.base.serializers import JSONAPISerializer, IDField, LinksField, RelationshipField, ShowIfVersion, TypeField, TypedRelationshipField
 from api.nodes.serializers import RegistrationProviderRelationshipField
+from api.collections_providers.fields import CollectionProviderRelationshipField
 from api.preprints.serializers import PreprintProviderRelationshipField
 from api.providers.workflows import Workflows
 from api.base.metrics import MetricsSerializerMixin
@@ -34,7 +35,6 @@ class ProviderSerializer(JSONAPISerializer):
     allow_submissions = ser.BooleanField(read_only=True)
     allow_commenting = ser.BooleanField(read_only=True)
     assets = ser.SerializerMethodField(read_only=True)
-    in_sloan_study = ser.BooleanField(read_only=True)
 
     share_source = ser.CharField(read_only=True)
     share_publish_type = ser.CharField(read_only=True)
@@ -110,11 +110,18 @@ class CollectionProviderSerializer(ProviderSerializer):
         related_view_kwargs={'collection_id': '<primary_collection._id>'},
     )
 
+    moderators = RelationshipField(
+        related_view='providers:collection-providers:provider-moderator-list',
+        related_view_kwargs={'provider_id': '<_id>'},
+    )
+    reviews_workflow = ser.ChoiceField(choices=Workflows.choices(), read_only=True)
+
     filterable_fields = frozenset([
         'allow_submissions',
         'allow_commenting',
         'description',
         'domain',
+        'reviews_workflow',
         'domain_redirect_enabled',
         'id',
         'name',
@@ -156,6 +163,8 @@ class RegistrationProviderSerializer(ProviderSerializer):
 
     reviews_workflow = ser.ChoiceField(choices=Workflows.choices(), read_only=True)
     reviews_comments_anonymous = ser.BooleanField(read_only=True)
+    allow_updates = ser.BooleanField(read_only=True)
+    allow_bulk_uploads = ser.BooleanField(read_only=True)
 
     registrations = ReviewableCountsRelationshipField(
         related_view='providers:registration-providers:registrations-list',
@@ -376,6 +385,24 @@ class RegistrationModeratorSerializer(ModeratorSerializer):
     def get_absolute_url(self, obj):
         return absolute_reverse(
             'providers:registration-providers:provider-moderator-detail', kwargs={
+                'provider_id': self.get_provider(obj),
+                'moderator_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
+
+
+class CollectionsModeratorSerializer(ModeratorSerializer):
+
+    provider = CollectionProviderRelationshipField(
+        related_view='providers:collection-providers:collection-provider-detail',
+        related_view_kwargs={'provider_id': 'get_provider'},
+        read_only=True,
+    )
+
+    def get_absolute_url(self, obj):
+        return absolute_reverse(
+            'providers:collection-providers:provider-moderator-detail', kwargs={
                 'provider_id': self.get_provider(obj),
                 'moderator_id': obj._id,
                 'version': self.context['request'].parser_context['kwargs']['version'],

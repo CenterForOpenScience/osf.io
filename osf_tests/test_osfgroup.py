@@ -166,7 +166,7 @@ class TestOSFGroup:
         assert osf_group.has_permission(unreg_manager, MEMBER) is True
         assert osf_group._id in unreg_manager.unclaimed_records
 
-        # Add unregistered member with blacklisted email
+        # Add unregistered member with blocked email
         with pytest.raises(ValidationError):
             osf_group.add_unregistered_member(test_fullname, 'test@example.com', auth=Auth(manager), role=MANAGER)
 
@@ -362,7 +362,6 @@ class TestOSFGroup:
         assert member in write_users
         assert member not in admin_users
 
-    @pytest.mark.enable_quickfiles_creation
     def test_merge_users_transfers_group_membership(self, member, manager, osf_group):
         # merge member
         other_user = AuthUserFactory()
@@ -377,7 +376,6 @@ class TestOSFGroup:
         assert osf_group.is_member(other_other_user)
         assert osf_group.has_permission(other_other_user, MANAGE)
 
-    @pytest.mark.enable_quickfiles_creation
     def test_merge_users_already_group_manager(self, member, manager, osf_group):
         # merge users - both users have group membership - different roles
         manager.merge_user(member)

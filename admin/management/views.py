@@ -1,3 +1,4 @@
+from dateutil.parser import isoparse
 from django.views.generic import TemplateView, View
 from django.contrib import messages
 from django.http import HttpResponse
@@ -5,14 +6,16 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 
 from osf.management.commands.manage_switch_flags import manage_waffle
 from osf.management.commands.update_registration_schemas import update_registration_schemas
+from osf.management.commands.daily_reporters_go import daily_reporters_go
 from scripts.find_spammy_content import manage_spammy_content
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.shortcuts import redirect
 from osf.models import Preprint, Node, Registration
 
+
 class ManagementCommands(TemplateView):
-    """ Basic form to trigger various management commands
-    """
+    '''Basic form to trigger various management commands'''
+
     template_name = 'management/commands.html'
     object_type = 'management'
 
@@ -40,12 +43,15 @@ class GetSpamDataCSV(ManagementCommandPermissionView):
     def post(self, request, *args, **kwargs):
         days = int(request.POST.get('days_get', 0))
         models = []
+        fast = False
         if request.POST.get('preprint_get', None):
             models.append(Preprint)
         if request.POST.get('node_get', None):
             models.append(Node)
         if request.POST.get('registration_get', None):
             models.append(Registration)
+        if request.POST.get('fast_get', None):
+            fast = True
         regex = request.POST.get('regex_get', None)
         if not days:
             messages.error(request, 'A number of days over 0 must be specified. Check your inputs and try again')
@@ -57,7 +63,7 @@ class GetSpamDataCSV(ManagementCommandPermissionView):
             messages.error(request, 'A regular expression input must be specified. Check your inputs and try again')
             return redirect(reverse('management:commands'))
         response = HttpResponse(content_type='text/csv')
-        manage_spammy_content(regex, days, models, response_object=response)
+        manage_spammy_content(regex, days, models, response_object=response, fast=fast)
         filename = 'spam_document.csv'
         response['Content-Disposition'] = f'attachment; filename={filename}'
         return response
@@ -85,4 +91,24 @@ class BanSpamByRegex(ManagementCommandPermissionView):
             return redirect(reverse('management:commands'))
         spam_ban_count = manage_spammy_content(regex, days, models, ban=True)
         messages.success(request, f'{spam_ban_count} users have been banned')
+        return redirect(reverse('management:commands'))
+
+
+class DailyReportersGo(ManagementCommandPermissionView):
+
+    def post(self, request, *args, **kwargs):
+        also_keen = bool(request.POST.get('also_send_to_keen', False))
+        report_date = request.POST.get('report_date', None)
+        if report_date:
+            report_date = isoparse(report_date).date()
+        else:
+            report_date = None
+
+        errors = daily_reporters_go(report_date=report_date, also_send_to_keen=also_keen)
+
+        if errors:
+            for reporter_name, error_msg in errors.items():
+                messages.error(request, f'{reporter_name} failed: {error_msg}')
+        else:
+            messages.success(request, 'Daily reporters successfully went.')
         return redirect(reverse('management:commands'))

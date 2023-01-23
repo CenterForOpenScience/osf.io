@@ -1,7 +1,7 @@
 from copy import deepcopy
 from distutils.version import StrictVersion
 
-from django.db.models import Q, Exists, OuterRef
+from django.db.models import F, Q, Exists, OuterRef
 
 from api.base.exceptions import InvalidFilterOperator, InvalidFilterValue
 from api.base.filters import ListFilterMixin
@@ -26,6 +26,8 @@ class NodesFilterMixin(ListFilterMixin):
         if filters:
             for key, field_names in filters.items():
                 for field_name, operation in field_names.items():
+                    if field_name == 'tags':
+                        queryset = queryset.distinct('id')
                     # filter[parent]=null
                     if field_name == 'parent' and operation['op'] == 'eq' and not operation['value']:
                         queryset = queryset.get_roots()
@@ -44,15 +46,7 @@ class NodesFilterMixin(ListFilterMixin):
             elif operation['op'] == 'ne':
                 if not operation['value']:
                     # filter[parent][ne]=null
-                    child_ids = (
-                        NodeRelation.objects.filter(
-                            is_node_link=False,
-                        )
-                        .exclude(parent__type='osf.collection')
-                        .exclude(child__is_deleted=True)
-                        .values_list('child_id', flat=True)
-                    )
-                    return Q(id__in=set(child_ids))
+                    return ~Q(root_id=F('id'))
                 # TODO: support this case in the future:
                 # else filter[parent][ne]=<nid>
                 raise InvalidFilterValue(detail='Only "null" is accepted as valid input to "filter[parent][ne]"')

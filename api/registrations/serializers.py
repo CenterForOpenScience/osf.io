@@ -12,6 +12,7 @@ from api.base.utils import absolute_reverse, get_user_auth, is_truthy
 from api.base.versioning import CREATE_REGISTRATION_FIELD_CHANGE_VERSION
 from website.project.model import NodeUpdateError
 
+from addons.osfstorage.models import OsfStorageFile
 from api.files.serializers import OsfStorageFileSerializer
 from api.nodes.serializers import (
     NodeSerializer,
@@ -28,12 +29,14 @@ from api.base.serializers import (
     IDField, RelationshipField, LinksField, HideIfWithdrawal,
     FileRelationshipField, NodeFileHyperLinkField, HideIfRegistration,
     ShowIfVersion, VersionedDateTimeField, ValuesListField,
+    HideIfWithdrawalOrWikiDisabled,
 )
 from framework.auth.core import Auth
-from osf.exceptions import ValidationValueError, NodeStateError
-from osf.models import Node, AbstractNode
+from osf.exceptions import NodeStateError
+from osf.models import Node
 from osf.utils.registrations import strip_registered_meta_comments
-from framework.sentry import log_exception
+from osf.utils.workflows import ApprovalStates
+
 
 class RegistrationSerializer(NodeSerializer):
     admin_only_editable_fields = [
@@ -52,6 +55,13 @@ class RegistrationSerializer(NodeSerializer):
         'date_withdrawn',
         'embargo_end_date',
         'embargoed',
+        'has_analytic_code',
+        'has_data',
+        'has_materials',
+        'has_papers',
+        'has_supplements',
+        'latest_response',
+        'original_response',
         'pending_embargo_approval',
         'pending_embargo_termination_approval',
         'pending_registration_approval',
@@ -64,10 +74,24 @@ class RegistrationSerializer(NodeSerializer):
         'registration_responses',
         'registration_schema',
         'registration_supplement',
+        'resources',
+        'schema_responses',
         'withdrawal_justification',
         'withdrawn',
     ]
 
+    # Union filterable fields unique to the RegistrationSerializer with
+    # filterable fields from the NodeSerializer
+    filterable_fields = NodeSerializer.filterable_fields ^ frozenset([
+        'revision_state',
+        'has_data',
+        'has_analytic_code',
+        'has_materials',
+        'has_papers',
+        'has_supplements',
+    ])
+
+    ia_url = ser.URLField(read_only=True)
     reviews_state = ser.CharField(source='moderation_state', read_only=True)
     title = ser.CharField(read_only=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
@@ -133,6 +157,15 @@ class RegistrationSerializer(NodeSerializer):
         'and some information will not change. By default, the description will '
         'be cleared and the project will be made private.',
     ))
+
+    # Populated via annnotation
+    revision_state = HideIfWithdrawal(ser.CharField(read_only=True, required=False))
+    has_data = HideIfWithdrawal(ser.BooleanField(read_only=True, required=False))
+    has_analytic_code = HideIfWithdrawal(ser.BooleanField(read_only=True, required=False))
+    has_materials = HideIfWithdrawal(ser.BooleanField(read_only=True, required=False))
+    has_papers = HideIfWithdrawal(ser.BooleanField(read_only=True, required=False))
+    has_supplements = HideIfWithdrawal(ser.BooleanField(read_only=True, required=False))
+
     registration_supplement = ser.SerializerMethodField()
     # Will be deprecated in favor of registration_responses
     registered_meta = HideIfWithdrawal(ser.SerializerMethodField(
@@ -190,7 +223,7 @@ class RegistrationSerializer(NodeSerializer):
         related_meta={'count': 'get_files_count'},
     ))
 
-    wikis = HideIfWithdrawal(RelationshipField(
+    wikis = HideIfWithdrawalOrWikiDisabled(RelationshipField(
         related_view='registrations:registration-wikis',
         related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_wiki_page_count'},
@@ -351,6 +384,26 @@ class RegistrationSerializer(NodeSerializer):
 
     provider_specific_metadata = ser.JSONField(required=False)
 
+    schema_responses = HideIfWithdrawal(RelationshipField(
+        related_view='registrations:schema-responses-list',
+        related_view_kwargs={'node_id': '<_id>'},
+    ))
+
+    original_response = HideIfWithdrawal(RelationshipField(
+        related_view='schema_responses:schema-responses-detail',
+        related_view_kwargs={'schema_response_id': 'get_original_response_id'},
+    ))
+
+    latest_response = HideIfWithdrawal(RelationshipField(
+        related_view='schema_responses:schema-responses-detail',
+        related_view_kwargs={'schema_response_id': 'get_latest_response_id'},
+    ))
+
+    resources = HideIfWithdrawal(RelationshipField(
+        related_view='registrations:resource-list',
+        related_view_kwargs={'node_id': '<_id>'},
+    ))
+
     @property
     def subjects_related_view(self):
         # Overrides TaxonomizableSerializerMixin
@@ -381,8 +434,15 @@ class RegistrationSerializer(NodeSerializer):
         return None
 
     def get_registration_responses(self, obj):
+        latest_approved_response = obj.root.schema_responses.filter(
+            reviews_state=ApprovalStates.APPROVED.db_name,
+        ).first()
+        if latest_approved_response is not None:
+            return self.anonymize_fields(obj, latest_approved_response.all_responses)
+
         if obj.registration_responses:
             return self.anonymize_registration_responses(obj)
+
         return None
 
     def get_embargo_end_date(self, obj):
@@ -409,6 +469,20 @@ class RegistrationSerializer(NodeSerializer):
 
     def get_files_count(self, obj):
         return obj.files_count or 0
+
+    def get_original_response_id(self, obj):
+        original_response = obj.root.schema_responses.last()
+        if original_response:
+            return original_response._id
+        return None
+
+    def get_latest_response_id(self, obj):
+        latest_approved = obj.root.schema_responses.filter(
+            reviews_state=ApprovalStates.APPROVED.db_name,
+        ).first()
+        if latest_approved:
+            return latest_approved._id
+        return None
 
     def anonymize_registered_meta(self, obj):
         """
@@ -640,18 +714,10 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         registering = children + [draft.branched_from._id]
         orphan_files = self._find_orphan_files(registering, draft)
         if orphan_files:
-            orphan_files_names = [file_data['selectedFileName'] for file_data in orphan_files]
+            orphan_files_names = [file_data['file_name'] for file_data in orphan_files]
             raise exceptions.ValidationError('All files attached to this form must be registered to complete the process. '
                                              'The following file(s) are attached, but are not part of a component being'
                                              ' registered: {}'.format(', '.join(orphan_files_names)))
-
-        try:
-            # Still validating metadata, but whether `registration_responses` or `registration_metadata` were populated
-            # on the draft, the other field was built and populated as well.  Both should exist.
-            draft.validate_metadata(metadata=draft.registration_metadata, required_fields=True)
-        except ValidationValueError:
-            log_exception()  # Probably indicates a bug on our end, so log to sentry
-            # TODO: Raise an error once our JSON schemas are updated
 
         try:
             registration = draft.register(auth, save=True, child_ids=children)
@@ -676,14 +742,15 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         return registration
 
     def _find_orphan_files(self, registering, draft):
-        from website.archiver.utils import find_selected_files
-        files = find_selected_files(draft.registration_schema, draft.registration_metadata)
+        file_qids = draft.registration_schema.schema_blocks.filter(
+            block_type='file-input',
+        ).values_list('registration_response_key', flat=True)
+
         orphan_files = []
-        for key, value in files.items():
-            if 'extra' in value:
-                for file_metadata in value['extra']:
-                    if not self._is_attached_file_valid(file_metadata, registering):
-                        orphan_files.append(file_metadata)
+        for qid in file_qids:
+            for file_response in draft.registration_responses.get(qid, []):
+                if not self._is_attached_file_valid(file_response, registering):
+                        orphan_files.append(file_response)
 
         return orphan_files
 
@@ -701,31 +768,26 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         :param registering - node ids you are registering
         :return boolean
         """
-
-        node_id = file_metadata.get('nodeId')
-        if node_id not in registering:
+        try:
+            attached_file = OsfStorageFile.objects.get(_id=file_metadata['file_id'])
+        except OsfStorageFile.DoesNotExist:
             return False
 
-        node = AbstractNode.load(node_id)
-        if not node:
-            # node in registration_metadata doesn't exist
+        # Confirm that the file has the expected name
+        normalized_file_names = [
+            normalize('NFD', file_metadata['file_name']),
+            normalize('NFC', file_metadata['file_name']),
+        ]
+        if attached_file.name not in normalized_file_names:
             return False
 
-        specified_sha = file_metadata.get('sha256', '')
-
-        file = node.files.filter(name=normalize('NFD', file_metadata.get('selectedFileName', ''))).first() or \
-               node.files.filter(name=normalize('NFC', file_metadata.get('selectedFileName', ''))).first()
-        if not file:
-            # file with this name does not exist on the node
+        # Confirm that the file belongs to a node being registered
+        if attached_file.target._id not in registering:
             return False
 
-        match = False
-        for version in file.versions.all():
-            if specified_sha == version.metadata.get('sha256'):
-                match = True
-
-        if not match:
-            # Specified sha256 does not match a version on the specified file
+        # Confirm that the given hash represents the latest version of the file
+        specified_sha = file_metadata['file_hashes']['sha256']
+        if attached_file.last_known_metadata['hashes']['sha256'] != specified_sha:
             return False
 
         return True

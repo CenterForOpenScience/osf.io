@@ -742,3 +742,30 @@ raw_subfolder_response = [
 ]
 
 
+dummy_user_info = {
+    'id': '12354ce7-e007-cb42-a0cb-4cd2391a657a',
+    'name': 'fakefolk@example.com - OneDrive Personal',
+    'link': 'https://graph.microsoft.com/v1.0/users/12354ce7-e007-cb42-a0cb-4cd2391a657a',
+    'drive_id': 'b!aGTf8UN135z3UN35zUN335z3iVNn3mB2ZiWctJ-Dr1N35Uz3q4K',
+    'mail': 'fakefolk@example.com',
+}
+
+
+raw_me_response = {
+    'id': '12354ce7-e007-cb42-a0cb-4cd2391a657a',
+    'displayName': 'Pulchritudinous Gulch',
+    'userPrincipalName': 'fakefolk@example.com'
+}
+raw_user_personal_drive_response = {
+    'id': 'b!aGTf8UN135z3UN35zUN335z3iVNn3mB2ZiWctJ-Dr1N35Uz3q4K',
+    'driveType': 'personal'
+}
+raw_user_business_drive_response = {'id': 'incomplete-drive-id', 'driveType': 'business'}
+
+class MockOneDriveClient(object):
+
+    def user_info_for_token(self):
+        return dummy_user_info
+
+    def folders(self):
+        return raw_root_folder_response

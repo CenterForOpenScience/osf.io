@@ -138,13 +138,20 @@ def change_embargo_date(registration, user, end_date):
 
     validate_embargo_date(registration, user, end_date)
 
-    registration._initiate_embargo(user, end_date,
-                                         for_existing_registration=True,
-                                         notify_initiator_on_complete=False)
+    if registration.embargo:
+        registration.embargo.end_date = end_date
+    else:
+        registration._initiate_embargo(
+            user,
+            end_date,
+            for_existing_registration=True,
+            notify_initiator_on_complete=False
+        )
 
-    if registration.is_public:
-        registration.is_public = False
-        registration.save()
+    registration.is_public = False
+
+    registration.embargo.save()
+    registration.save()
 
     update_admin_log(
         user_id=user.id,

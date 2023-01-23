@@ -87,7 +87,7 @@
                                 <!-- Version Picker -->
                                 <span>Wiki Version:</span>
                                 <div style="display: inline-block">
-                                <select class="form-control" data-bind="value:viewVersion" id="viewVersionSelect">
+                                <select class="form-control" data-bind="value:viewVersion" id="viewVersionSelect" aria-label="Select Version">
                                     % if user['can_edit_wiki_body']:
                                         <option value="preview" ${'selected' if version_settings['view'] == 'preview' else ''}>Preview</option>
                                     % endif
@@ -401,6 +401,7 @@ ${parent.javascript_bottom()}
         }
     };
     window.contextVars.analyticsMeta = $.extend(true, {}, window.contextVars.analyticsMeta, {
+        itemGuid: ${node['id'] | sjson, n},
         pageMeta: {
             title: 'Wiki: ' + ${wiki_name | sjson, n },
             public: true,

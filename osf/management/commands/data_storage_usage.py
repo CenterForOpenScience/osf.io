@@ -511,7 +511,6 @@ def process_usages(
         ('total', 0),
         ('deleted', 0),
         ('registrations', 0),
-        ('nd_quick_files', 0),
         ('nd_public_nodes', 0),
         ('nd_private_nodes', 0),
         ('nd_preprints', 0),
@@ -560,7 +559,6 @@ def process_usages(
     summary_data['total'] = summary_totals.get('total', 0)
     summary_data['deleted'] = summary_totals.get('deleted', 0)
     summary_data['registrations'] = summary_totals.get('osf.registration', 0)
-    summary_data['nd_quick_files'] = summary_totals.get('osf.quickfilesnode', 0)
     summary_data['nd_public_nodes'] = summary_totals.get('osf.node', 0)
     summary_data['nd_private_nodes'] = summary_totals.get('osf.private-node', 0)
     summary_data['nd_preprints'] = summary_totals.get('nd_preprints', 0)

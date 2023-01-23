@@ -1,0 +1,100 @@
+{% load node_extras %}
+
+{% if embargo %}
+    <tr>
+        <td>Embargo</td>
+        <td>
+            <table class="table table-bordered table-hover">
+                <tbody>
+                    <tr>
+                        <td>Name</td>
+                        <td>{{ embargo }}</td>
+                    </tr>
+                    <tr>
+                        <td>State</td>
+                        <td>{{ embargo.state  }}</td>
+                    </tr>
+                    <tr>
+                        <td>Created</td>
+                        <td>{{ embargo.created | date:"F j, Y P" }}</td>
+                    </tr>
+                    <tr>
+                        <td>Embargo Initiation</td>
+                        <td>{{ embargo.initiation_date | date:"F j, Y P" }}</td>
+                    </tr>
+                    <tr>
+                        <td>Embargo End</td>
+                        <td>
+                            <form id="embargo-update-form" class="row">
+                                <div class="form-group row">
+                                    {% csrf_token %}
+                                    <div class="col-sm-1">
+                                        <input id='datepicker' type='datetime' name="date" class="form-control" value='{{ embargo.end_date | date:"F j, Y P" }}' />
+                                    </div>
+                                    <div class="col-sm-1">
+                                        <input id='embargo-update-submit' class="form-button btn btn-danger" type="submit" value="Update embargo"/>
+                                    </div>
+                                </div>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Modified</td>
+                        <td>{{ embargo.modified | date:"F j, Y P" }}</td>
+                    </tr>
+                    <tr>
+                        <td>Initiated by</td>
+                        <td><a href="{{ embargo.initiated_by | reverse_user }}">{{ embargo.initiated_by }}</a></td>
+                    </tr>
+                    <tr>
+                        <td>Approval State</td>
+                        <td><p>{{ embargo.approval_state }}</p></td>
+                    </tr>
+                    <tr>
+                        <td>Stashed Urls</td>
+                        <td><p>{{ embargo.stashed_urls }}</p></td>
+                    </tr>
+                    <tr>
+                        <td>For Existing Registration</td>
+                        <td>{{ embargo.for_existing_registration }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </td>
+    </tr>
+    <div class="modal" id="update-embargo-modal" style="display:none;">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form class="well">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">x</button>
+                        <h3>Are you sure you want to update this embargo?</h3>
+                    </div>
+                    <div class="modal-body">
+                        Make sure you have confirmed this change with all the project admins.
+                    </div>
+                    <div class="modal-footer">
+                        <input class="btn btn-danger" type="submit" value="Confirm" />
+                        <button type="button" class="btn btn-default" data-dismiss="modal">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% else %}
+    <tr>
+        <td>Embargo</td>
+        <td>No Embargo for this Node</td>
+    </tr>
+{% endif %}
+
+{% block bottom_js %}
+    <script src="/static/js/nodes/update_embargo.js"></script>
+    <script>
+        window.templateVars = {
+            'updateEmbargoUrl': '{% url 'nodes:update-embargo' guid=node.guid %}',
+        }
+    </script>
+{% endblock %}

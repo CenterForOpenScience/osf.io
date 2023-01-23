@@ -8,6 +8,9 @@ OSF_META_SCHEMA_FILES = [
     'osf-standard-2.json',
     'brandt-prereg-2.json',
     'brandt-postcomp-2.json',
+    'character-lab-fully-powered-study.json',
+    'character-lab-pilot-study.json',
+    'character-lab-winter.json',
     'prereg-prize.json',
     'erpc-prize.json',
     'confirmatory-general-2.json',
@@ -28,14 +31,19 @@ OSF_META_SCHEMA_FILES = [
     'asist-hypothesis-capability-registration.json',
     'asist-results-registration.json',
     'real-world-evidence.json',
+    'real-world-evidence-2.json',
     'qualitative-research.json',
     'secondary-data.json',
-    'character-lab-fully-powered-study.json',
-    'character-lab-pilot-study.json',
+    'hypothesis-testing-studies-using-youth-data.json',
+    'other-studies-using-youth-data.json',
+    'character-lab-short-form-registration.json',
+    'character-lab-long-form-registration.json',
+    'global-flourishing-preregistration.json',
+    'global-flourishing.json',
+    'sample-schema.json',
 ]
 
 METASCHEMA_ORDERING = (
-    'Prereg Challenge',
     'OSF Preregistration',
     'Open-Ended Registration',
     'Preregistration Template from AsPredicted.org',
@@ -53,7 +61,7 @@ METASCHEMA_ORDERING = (
     'Real World Evidence in Health Outcomes Minimum Recommended Form',
     'Qualitative Preregistration',
     'ASIST Results Registration',
-    'ASIST Hypothesis/Capability Registration'
+    'ASIST Hypothesis/Capability Registration',
 )
 
 

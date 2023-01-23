@@ -645,7 +645,7 @@ button.close {
 
 /* Bootstrap Accesibility Override */
 .btn-success-high-contrast {
-    background-color: #52A452;
+    background-color: #006803;
     border-color: #54AC54;
 }
 
@@ -932,4 +932,21 @@ table.add-links {
 .storage-disabled {
     box-shadow: none;
     opacity: .65;
+}
+
+.subnav-header {
+    color: #205075;
+}
+
+.high-contrast-link {
+    color: #595959;
+}
+
+.high-contrast-link-italic {
+    color: #595959;
+    font-style: italic;
+}
+
+.text-smaller {
+    color: #4d4d4d;
 }

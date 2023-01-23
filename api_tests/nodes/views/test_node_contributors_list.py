@@ -29,7 +29,6 @@ def user():
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 @pytest.mark.enable_implicit_clean
 class NodeCRUDTestCase:
 
@@ -105,7 +104,6 @@ class NodeCRUDTestCase:
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 @pytest.mark.enable_implicit_clean
 class TestNodeContributorList(NodeCRUDTestCase):
 
@@ -326,7 +324,6 @@ class TestNodeContributorList(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 @pytest.mark.enable_implicit_clean
 class TestNodeContributorAdd(NodeCRUDTestCase):
 
@@ -596,7 +593,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             url_public, data, auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Unregistered contributor email address domain is blacklisted.'
+        assert res.json['errors'][0]['detail'] == 'Unregistered contributor email address domain is blocked.'
 
     def test_contributor_create_invalid_data(
             self, app, user_three, url_public):
@@ -1289,7 +1286,6 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 @pytest.mark.enable_implicit_clean
 class TestNodeContributorCreateValidation(NodeCRUDTestCase):
 
@@ -2117,7 +2113,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
             auth=user.auth,
             expect_errors=True, bulk=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == '"true and false" is not a valid boolean.'
+        assert res.json['errors'][0]['detail'] == 'Must be a valid boolean.'
 
         res = app.get(url_public, auth=user.auth)
         data = res.json['data']
@@ -2535,7 +2531,7 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
             auth=user.auth,
             expect_errors=True, bulk=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == '"true and false" is not a valid boolean.'
+        assert res.json['errors'][0]['detail'] == 'Must be a valid boolean.'
 
         res = app.get(url_public, auth=user.auth)
         data = res.json['data']
@@ -2903,7 +2899,6 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 @pytest.mark.enable_implicit_clean
 class TestNodeContributorFiltering:
 

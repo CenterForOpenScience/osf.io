@@ -97,6 +97,9 @@ class TestSpam:
         user.spam_status = SpamStatus.SPAM
         user.save()
 
+        assert user.is_spam
+        assert not user.is_ham
+
         user.confirm_ham(save=True)
 
         data = parse_qs(mock_akismet.calls[0].request.body)
@@ -105,6 +108,7 @@ class TestSpam:
         assert data['comment_author_email'] == [user.email]
         assert data['blog'] == [settings.DOMAIN]
 
+        assert user.is_ham
         assert user.spam_status == SpamStatus.HAM
         assert user.spam_data == spam_data
 
@@ -118,6 +122,8 @@ class TestSpam:
         assert node.is_public
 
         user.confirm_spam()
+        assert user.is_spam
+        assert not user.is_ham
         assert user.spam_status == SpamStatus.SPAM
         node.refresh_from_db()
 
@@ -126,6 +132,8 @@ class TestSpam:
         assert node.logs.latest().should_hide
 
         user.confirm_ham()
+        assert user.is_ham
+        assert not user.is_spam
         assert user.spam_status == SpamStatus.HAM
 
         node.refresh_from_db()

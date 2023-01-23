@@ -25,7 +25,6 @@ from django.utils.functional import cached_property
 from keen import scoped_keys
 from psycopg2._psycopg import AsIs
 from typedmodels.models import TypedModel, TypedModelManager
-from include import IncludeManager
 from guardian.models import (
     GroupObjectPermissionBase,
     UserObjectPermissionBase,
@@ -40,7 +39,7 @@ from framework.sentry import log_exception
 from osf.exceptions import (InvalidTagError, NodeStateError,
                             TagNotFoundError)
 from osf.models.contributor import Contributor
-from osf.models.collection import CollectionSubmission
+from osf.models.collection_submission import CollectionSubmission
 
 from osf.models.identifiers import Identifier, IdentifierMixin
 from osf.models.licenses import NodeLicenseRecord
@@ -55,8 +54,9 @@ from osf.models.user import OSFUser
 from osf.models.validators import validate_title, validate_doi
 from framework.auth.core import Auth
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.utils.fields import NonNaiveDateTimeField
+from osf.utils.fields import NonNaiveDateTimeField, ensure_str
 from osf.utils.requests import get_request_and_user_id, string_type_request_headers
+from osf.utils.workflows import CollectionSubmissionStates
 from osf.utils import sanitize
 from website import language, settings
 from website.citations.utils import datetime_to_csl
@@ -178,7 +178,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
         return qs.filter(is_deleted=False)
 
 
-class AbstractNodeManager(TypedModelManager, IncludeManager):
+class AbstractNodeManager(TypedModelManager):
 
     def get_queryset(self):
         qs = AbstractNodeQuerySet(self.model, using=self._db)
@@ -270,7 +270,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     SPAM_CHECK_FIELDS = {
         'title',
         'description',
-        'addons_forward_node_settings__url'  # the often spammed redirect URL
+    }
+
+    SPAM_ADDONS = {
+        'forward': 'addons_forward_node_settings__url',
+        'wiki': 'wikis__versions__content'
     }
 
     # Fields that are writable by Node.update
@@ -330,7 +334,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     is_fork = models.BooleanField(default=False, db_index=True)
     is_public = models.BooleanField(default=False, db_index=True)
     is_deleted = models.BooleanField(default=False, db_index=True)
-    access_requests_enabled = models.NullBooleanField(default=True, db_index=True)
+    access_requests_enabled = models.BooleanField(null=True, blank=True, default=True, db_index=True)
 
     custom_citation = models.TextField(blank=True, null=True)
 
@@ -369,6 +373,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     custom_storage_usage_limit_public = models.DecimalField(decimal_places=9, max_digits=100, null=True, blank=True)
     custom_storage_usage_limit_private = models.DecimalField(decimal_places=9, max_digits=100, null=True, blank=True)
+
+    schema_responses = GenericRelation('osf.SchemaResponse', related_query_name='nodes')
 
     class Meta:
         base_manager_name = 'objects'
@@ -487,21 +493,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return not self.is_registration and not self.is_fork
 
     @property
-    def is_collected(self):
-        """is included in a collection"""
-        return self.collecting_metadata_qs.exists()
-
-    @property
-    def collecting_metadata_qs(self):
+    def collection_submissions(self):
         return CollectionSubmission.objects.filter(
             guid=self.guids.first(),
             collection__provider__isnull=False,
             collection__deleted__isnull=True,
-            collection__is_bookmark_collection=False)
-
-    @property
-    def collecting_metadata_list(self):
-        return list(self.collecting_metadata_qs)
+            collection__is_bookmark_collection=False,
+        )
 
     @property
     def has_linked_published_preprints(self):
@@ -670,7 +668,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return DraftRegistration.objects.filter(
             models.Q(branched_from=self) &
             models.Q(deleted__isnull=True) &
-            (models.Q(registered_node=None) | models.Q(registered_node__is_deleted=True))
+            (models.Q(registered_node=None) | models.Q(registered_node__deleted__isnull=False)),
         )
 
     @property
@@ -724,7 +722,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         try:
             search.search.update_node(self, bulk=False, async_update=True)
-            if self.is_collected and self.is_public:
+            if self.collection_submissions.exists() and self.is_public:
                 search.search.update_collected_metadata(self._id)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
@@ -828,8 +826,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return NodeLog.objects.filter(
             node_id=self.id,
             should_hide=False
-        ).order_by('-date').include(
-            'node__guids', 'user__guids', 'original_node__guids', limit_includes=10
+        ).order_by('-date').prefetch_related(
+            'node__guids', 'user__guids', 'original_node__guids',
         )
 
     def get_absolute_url(self):
@@ -979,7 +977,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def osfstorage_region(self):
         from addons.osfstorage.models import Region
         osfs_settings = self._settings_model('osfstorage')
-        region_subquery = osfs_settings.objects.filter(owner=self.id).values('region_id')
+        region_subquery = osfs_settings.objects.filter(owner=self.id).values_list('region_id', flat=True)[0]
         return Region.objects.get(id=region_subquery)
 
     @property
@@ -1158,10 +1156,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def get_spam_fields(self, saved_fields):
         # Override for SpamOverrideMixin
         check_fields = self.SPAM_CHECK_FIELDS.copy()
-        if not self.has_addon('forward'):
-            check_fields.remove('addons_forward_node_settings__url')
-        return check_fields if self.is_public and 'is_public' in saved_fields else check_fields.intersection(
-            saved_fields)
+        for addon, check_field in self.SPAM_ADDONS.items():
+            if self.has_addon(addon):
+                check_fields.add(check_field)
+
+        if not saved_fields or self.is_public and 'is_public' in saved_fields:
+            return check_fields
+        return check_fields.intersection(saved_fields)
 
     def callback(self, callback, recursive=False, *args, **kwargs):
         """Invoke callbacks of attached add-ons and collect messages.
@@ -1203,7 +1204,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             elif self.storage_limit_status.value >= settings.StorageLimits.OVER_PRIVATE:
                 raise NodeStateError('This project exceeds private project storage limits and thus cannot be converted into a private project.')
 
-    def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False, check_addons=True):
+    def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False, check_addons=True, force=False):
         """Set the permissions for this node. Also, based on meeting_creation, queues
         an email to user about abilities of public projects.
 
@@ -1212,9 +1213,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         :param bool log: Whether to add a NodeLog for the privacy change.
         :param bool meeting_creation: Whether this was created due to a meetings email.
         :param bool check_addons: Check and collect messages for addons?
+        :param bool force: force private for spam.
         """
         if auth and not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Must be an admin to change privacy settings.')
+
         if permissions == 'public' and not self.is_public:
             if self.is_spam or (settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE and self.is_spammy):
                 # TODO: Should say will review within a certain agreed upon time period.
@@ -1233,13 +1236,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.is_public = True
             self.keenio_read_key = self.generate_keenio_read_key()
         elif permissions == 'private' and self.is_public:
-            if self.is_registration and not self.is_pending_embargo:
+            if self.is_registration and not self.is_pending_embargo and not force:
                 raise NodeStateError('Public registrations must be withdrawn, not made private.')
 
             self.check_privacy_change_viability(auth)
 
             self.is_public = False
             self.keenio_read_key = ''
+            self._remove_from_associated_collections(auth, force=force)
         else:
             return False
 
@@ -1251,8 +1255,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     status.push_status_message(message, kind='info', trust=False)
 
         # Update existing identifiers
-        if self.get_identifier('doi'):
-            enqueue_task(update_doi_metadata_on_change.s(self._id))
+        if self.get_identifier_value('doi'):
+            update_doi_metadata_on_change(self._id)
+        elif self.is_registration:
+            doi = self.request_identifier('doi')['doi']
+            self.set_identifier_value('doi', doi)
 
         if log:
             action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE
@@ -1272,7 +1279,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return True
 
     def generate_keenio_read_key(self):
-        return scoped_keys.encrypt(settings.KEEN['public']['master_key'], options={
+        encrypted_read_key = scoped_keys.encrypt(settings.KEEN['public']['master_key'], options={
             'filters': [{
                 'property_name': 'node.id',
                 'operator': 'eq',
@@ -1280,6 +1287,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             }],
             'allowed_operations': [READ]
         })
+        return ensure_str(encrypted_read_key)
 
     @property
     def private_links_active(self):
@@ -1413,18 +1421,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered.node_license = original.license.copy() if original.license else None
         registered.wiki_private_uuids = {}
 
-        # Need to save here in order to set many-to-many fields
+        # Need to save here in order to set many-to-many fields, set is_public to false to avoid Spam filter/reindexing.
+        registered.is_public = False
         registered.save()
 
         registered.registered_schema.add(schema)
 
-        # Sets registration_metadata and registration_responses
-        registered.copy_registered_meta_and_registration_responses(draft_registration, save=False)
-
         # Clone each log from the original node for this registration.
         self.clone_logs(registered)
 
-        registered.is_public = False
         registered.access_requests_enabled = False
 
         if parent:
@@ -1466,11 +1471,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         registered.root = None  # Recompute root on save
 
-        if self.logs.filter(action=NodeLog.PROJECT_CREATED_FROM_DRAFT_REG).exists():
+        if not self.logs.filter(action=NodeLog.PROJECT_CREATED_FROM_DRAFT_REG).exists():
+            registered.branched_from_node = True
+        elif self.registrations.count() == 1:
+            # First registration on a converted  DratNode is *the* "No-Project registration"
             registered.branched_from_node = False
         else:
             registered.branched_from_node = True
-
         registered.save()
 
         # Copying over editable fields as the last step so the root is accurate
@@ -1485,6 +1492,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             alternative_resource = None
 
         registered.copy_editable_fields(resource, auth=auth, alternative_resource=alternative_resource)
+        registered.copy_registration_responses_into_schema_response(draft_registration)
 
         if settings.ENABLE_ARCHIVER:
             registered.refresh_from_db()
@@ -1592,6 +1600,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if isinstance(forked, Registration):
             forked.recast('osf.node')
 
+        forked.custom_storage_usage_limit_private = None
+        forked.custom_storage_usage_limit_public = None
         forked.custom_citation = ''
         forked.is_fork = True
         forked.forked_date = when
@@ -1845,12 +1855,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         :param bool unique_users: If True, a given admin will only be yielded once
             during iteration.
         """
-        visited_user_ids = []
+        visited_user_ids = set()
         for node in self.node_and_primary_descendants(*args, **kwargs):
             for contrib in node.active_contributors(*args, **kwargs):
                 if unique_users:
                     if contrib._id not in visited_user_ids:
-                        visited_user_ids.append(contrib._id)
+                        visited_user_ids.add(contrib._id)
                         yield (contrib, node)
                 else:
                     yield (contrib, node)
@@ -1863,13 +1873,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         :param bool unique_users: If True, a given admin will only be yielded once
             during iteration.
         """
-        visited_user_ids = []
+        visited_user_ids = set()
         for node in self.node_and_primary_descendants(*args, **kwargs):
             for contrib in node.contributors.all():
                 if node.has_permission(contrib, ADMIN) and contrib.is_active:
                     if unique_users:
                         if contrib._id not in visited_user_ids:
-                            visited_user_ids.append(contrib._id)
+                            visited_user_ids.add(contrib._id)
                             yield (contrib, node)
                     else:
                         yield (contrib, node)
@@ -2217,6 +2227,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             node.deleted = log_date
             node.add_remove_node_log(auth=auth, date=log_date)
             project_signals.node_deleted.send(node)
+            node._remove_from_associated_collections(auth)
 
         bulk_update(hierarchy, update_fields=['is_deleted', 'deleted_date', 'deleted'])
 
@@ -2385,12 +2396,47 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         source_tag = self.all_tags.filter(
             system=True,
             name__in=[
-                CampaignSourceTags.Prereg.value,
                 CampaignSourceTags.OsfRegisteredReports.value,
                 CampaignSourceTags.Osf4m.value
             ]
         ).first() or osf_provider_tag
         contributor.add_system_tag(source_tag)
+
+    def _remove_from_associated_collections(self, auth=None, force=False):
+        for submission in self.guids.first().collectionsubmission_set.all():
+            associated_collection = submission.collection
+            if associated_collection.is_bookmark_collection and not self.deleted:
+                if self.contributors.filter(pk=associated_collection.creator.id).exists():
+                    continue
+
+            user = getattr(auth, 'user', None)
+
+            if submission.state == CollectionSubmissionStates.ACCEPTED:
+                submission.remove(
+                    user=user,
+                    comment='Removed from collection due to implicit removal due to privacy changes.',
+                    removed_due_to_privacy=True
+                )
+            elif submission.state == CollectionSubmissionStates.PENDING and user:
+                submission.reject(
+                    user=user,
+                    comment='Rejected from collection due to implicit removal due to privacy changes.',
+                    force=True
+                )
+            elif force and submission.state == CollectionSubmissionStates.ACCEPTED:
+                request, user_id = get_request_and_user_id()
+                submission.remove(
+                    user=request.user,
+                    comment='Removed from collection via system command.',  # typically spam
+                    force=True
+                )
+            elif force and submission.state == CollectionSubmissionStates.PENDING:
+                request, user_id = get_request_and_user_id()
+                submission.reject(
+                    user=request.user,
+                    comment='Rejected from collection via system command.',  # typically spam
+                    force=True
+                )
 
 
 class NodeUserObjectPermission(UserObjectPermissionBase):

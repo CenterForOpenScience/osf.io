@@ -33,18 +33,16 @@ from osf.models import (
     NodeLog,
     Contributor,
     RegistrationSchema,
-    Sanction,
     NodeRelation,
     Registration,
     DraftRegistration,
-    DraftRegistrationApproval,
     CollectionSubmission
 )
 
 from addons.wiki.models import WikiPage, WikiVersion
 from osf.models.node import AbstractNodeQuerySet
 from osf.exceptions import ValidationError, ValidationValueError, UserStateError
-from osf.utils.workflows import DefaultStates
+from osf.utils.workflows import DefaultStates, CollectionSubmissionStates
 from framework.auth.core import Auth
 
 from osf_tests.factories import (
@@ -2071,12 +2069,12 @@ class TestRegisterNode:
         root.add_contributor(bib_contrib, auth=Auth(user))
         non_bib_contrib = UserFactory()
         root.add_contributor(non_bib_contrib, visible=False, auth=Auth(user))
-        schema = RegistrationSchema.objects.get(name='Prereg Challenge', schema_version=2)
+        schema = RegistrationSchema.objects.get(name='OSF Preregistration', schema_version=2)
 
         draft_reg = DraftRegistrationFactory(branched_from=root)
 
         data = {
-            'q2': {
+            'q1': {
                 'comments': [],
                 'value': 'Dawn Pattison, James Brown, Carrie Skinner',
                 'extra': []
@@ -2088,7 +2086,7 @@ class TestRegisterNode:
             }
         }
         flat_data = {
-            'q2': 'Dawn Pattison, James Brown, Carrie Skinner',
+            'q1': 'Dawn Pattison, James Brown, Carrie Skinner',
             'q3': 'research questions'
         }
 
@@ -2767,21 +2765,6 @@ class TestNodeTraversals:
         reg.delete_registration_tree(save=True)
         assert Node.objects.filter(guids___id__in=reg_ids, is_deleted=False).count() == 0
         assert mock_update_search.call_count == orig_call_count + len(reg_ids)
-
-    def test_delete_registration_tree_sets_draft_registration_approvals_to_none(self, user):
-        reg = RegistrationFactory()
-
-        dr = DraftRegistrationFactory(initiator=user)
-        approval = DraftRegistrationApproval(state=Sanction.APPROVED)
-        approval.save()
-        dr.approval = approval
-        dr.registered_node = reg
-        dr.save()
-
-        reg.delete_registration_tree(save=True)
-
-        dr.reload()
-        assert dr.approval is None
 
     @mock.patch('osf.models.node.AbstractNode.update_search')
     def test_delete_registration_tree_deletes_backrefs(self, mock_update_search):
@@ -4604,7 +4587,9 @@ class TestCollectionProperties:
             public_non_provided_collection, private_non_provided_collection, bookmark_collection, collector):
 
         # test_collection_properties
-        assert not node.is_collected
+        assert not node.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists()
 
         collection_one.collect_object(node, collector)
         collection_two.collect_object(node, collector)
@@ -4613,10 +4598,12 @@ class TestCollectionProperties:
         bookmark_collection.collect_object(node, collector)
         collection_public.collect_object(node, collector)
 
-        assert node.is_collected
-        assert len(node.collecting_metadata_list) == 3
+        assert node.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists()
+        assert len(node.collection_submissions) == 3
 
-        ids_actual = {cgm.collection._id for cgm in node.collecting_metadata_list}
+        ids_actual = {collection_submission.collection._id for collection_submission in node.collection_submissions}
         ids_expected = {collection_one._id, collection_two._id, collection_public._id}
         ids_not_expected = {bookmark_collection._id, public_non_provided_collection._id, private_non_provided_collection._id}
 
@@ -4633,11 +4620,11 @@ class TestCollectionProperties:
         public_non_provided_collection.collect_object(node, collector)
         private_non_provided_collection.collect_object(node, collector)
         bookmark_collection.collect_object(node, collector)
-        cgm = collection_public.collect_object(node, collector, status='Complete', collected_type='Dataset')
-        cgm.set_subjects(subjects, Auth(collector))
+        collection_submission = collection_public.collect_object(node, collector, status='Complete', collected_type='Dataset')
+        collection_submission.set_subjects(subjects, Auth(collector))
 
         ## test_not_logged_in_user_only_sees_public_collection_info
-        collection_summary = serialize_collections(node.collecting_metadata_list, Auth())
+        collection_summary = serialize_collections(node.collection_submissions, Auth())
 
         # test_subjects_are_serialized
         assert len(collection_summary[0]['subjects'])
@@ -4650,11 +4637,11 @@ class TestCollectionProperties:
         node.add_contributor(contributor=contrib, auth=Auth(user))
         node.save()
 
-        collection_summary = serialize_collections(node.collecting_metadata_list, Auth(contrib))
+        collection_summary = serialize_collections(node.collection_submissions, Auth(contrib))
         assert len(collection_summary) == 1
         assert self._collection_url(collection_public) == collection_summary[0]['url']
 
-        collection_summary = serialize_collections(node.collecting_metadata_list, Auth(user))
+        collection_summary = serialize_collections(node.collection_submissions, Auth(user))
         assert len(collection_summary) == 1
         assert self._collection_url(collection_public) == collection_summary[0]['url']
 
@@ -4662,7 +4649,7 @@ class TestCollectionProperties:
         node.add_contributor(contributor=collector, auth=Auth(user))
         node.save()
 
-        collection_summary = serialize_collections(node.collecting_metadata_list, Auth(collector))
+        collection_summary = serialize_collections(node.collection_submissions, Auth(collector))
         assert len(collection_summary) == 3
         urls_actual = {summary['url'] for summary in collection_summary}
         urls_expected = {
@@ -4677,7 +4664,7 @@ class TestCollectionProperties:
         bookmark_collection_public.is_public = True
         bookmark_collection_public.save()
 
-        collection_summary = serialize_collections(node.collecting_metadata_list, Auth(collector))
+        collection_summary = serialize_collections(node.collection_submissions, Auth(collector))
         assert len(collection_summary) == 3
         urls_actual = {summary['url'] for summary in collection_summary}
         assert self._collection_url(bookmark_collection_public) not in urls_actual

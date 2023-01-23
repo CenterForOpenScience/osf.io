@@ -20,11 +20,18 @@ from api.base.utils import absolute_reverse
 from api.requests.views import NodeRequestMixin, PreprintRequestMixin
 from api.requests.permissions import NodeRequestPermission, PreprintRequestPermission
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import PreprintProvider, ReviewAction, NodeRequestAction, PreprintRequestAction, BaseAction
+from osf.models import (
+    PreprintProvider,
+    ReviewAction,
+    NodeRequestAction,
+    PreprintRequestAction,
+    BaseAction,
+    CollectionSubmissionAction,
+)
 
 
 def get_review_actions_queryset():
-    return ReviewAction.objects.include(
+    return ReviewAction.objects.prefetch_related(
         'creator__guids',
         'target__guids',
         'target__provider',
@@ -91,10 +98,10 @@ class ActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         action_querysets = [
             action_subclass.objects.filter(_id=action_id, is_deleted=False)
             for action_subclass in BaseAction.__subclasses__()
-        ]
+        ] + [CollectionSubmissionAction.objects.filter(_id=action_id, deleted__isnull=True)]
         if action_querysets:
             action = [action_queryset for action_queryset in action_querysets if action_queryset][0]  # clear empty querysets
-            action.include(
+            action.prefetch_related(
                 'creator__guids',
                 'target__guids',
                 'target__provider',

@@ -14,9 +14,8 @@
                         <div class="col-sm-6">
                             <div data-bind="if: hasDefaultHosts">
                                 <div class="form-group">
-                                    <label for="hostSelect">ownCloud Instance</label>
+                                    <label>ownCloud Instance</label>
                                     <select class="form-control"
-                                            id="hostSelect"
                                             data-bind="options: visibleHosts,
                                                        optionsCaption: 'Select an ownCloud Instance',
                                                        value: selectedHost,

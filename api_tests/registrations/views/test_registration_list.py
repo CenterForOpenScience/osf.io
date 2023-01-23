@@ -13,7 +13,7 @@ from api_tests.subjects.mixins import SubjectsFilterMixin
 from api_tests.registrations.filters.test_filters import RegistrationListFilteringMixin
 from api_tests.utils import create_test_file
 from framework.auth.core import Auth
-from osf.models import RegistrationSchema, DraftRegistration
+from osf.models import RegistrationSchema
 from osf_tests.factories import (
     EmbargoFactory,
     ProjectFactory,
@@ -27,7 +27,8 @@ from osf_tests.factories import (
     SubjectFactory,
     InstitutionFactory,
 )
-from osf_tests.management_commands.test_migration_registration_responses import prereg_registration_responses
+from osf_tests.utils import get_default_test_schema
+from osf_tests.test_registrations import prereg_registration_responses
 from rest_framework import exceptions
 from tests.base import ApiTestCase
 from website import settings
@@ -38,7 +39,6 @@ from osf.utils import permissions
 SCHEMA_VERSION = 2
 
 
-@pytest.mark.enable_quickfiles_creation
 class TestRegistrationList(ApiTestCase):
 
     def setUp(self):
@@ -121,7 +121,6 @@ class TestRegistrationList(ApiTestCase):
         assert_not_in(self.public_project._id, ids)
         assert_not_in(self.project._id, ids)
 
-@pytest.mark.enable_quickfiles_creation
 class TestSparseRegistrationList(ApiTestCase):
 
     def setUp(self):
@@ -1352,68 +1351,39 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'This draft has already been registered and cannot be modified.'
 
-    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
-    def test_cannot_register_draft_that_is_pending_review(
-            self, mock_enqueue, app, user, payload, url_registrations):
-        with mock.patch.object(DraftRegistration, 'is_pending_review', mock.PropertyMock(return_value=True)):
-            res = app.post_json_api(
-                url_registrations,
-                payload,
-                auth=user.auth,
-                expect_errors=True)
-        assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'This draft is pending review and cannot be modified.'
-
-    def test_cannot_register_draft_that_has_already_been_approved(
-            self, app, user, payload, url_registrations):
-        with mock.patch.object(DraftRegistration, 'requires_approval', mock.PropertyMock(return_value=True)), mock.patch.object(DraftRegistration, 'is_approved', mock.PropertyMock(return_value=True)):
-            res = app.post_json_api(
-                url_registrations,
-                payload,
-                auth=user.auth,
-                expect_errors=True)
-        assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'This draft has already been approved and cannot be modified.'
-
     def test_cannot_register_draft_that_has_orphan_files(
             self, app, user, payload, draft_registration, url_registrations):
-        schema = draft_registration.registration_schema
-        schema.schema['pages'][0]['questions'][0].update({
-            u'description': u'Upload files!',
-            u'format': u'osf-upload-open',
-            u'qid': u'qwhatever',
-            u'title': u'Upload an analysis script with clear comments',
-            u'type': u'osf-upload',
-        })
-        schema.save()
+        draft_registration.registration_schema = get_default_test_schema()
 
-        draft_registration.registration_metadata = {
-            'qwhatever': {
-                'value': 'file 1',
-                'extra': [{
-                    'nodeId': 'badid',
-                    'selectedFileName': 'file 1',
-                }]
+        draft_registration.registration_responses['q6'] = [
+            {
+                'file_name': 'fake file',
+                'file_id': 12345678909876543210,
+                'file_urls': {
+                    'html': 'notaurl',
+                    'download': 'alsonotaurl',
+                },
+                'file_hashes': {'sha256': 'gobbledygook'},
             }
-        }
+        ]
+
         draft_registration.save()
         res = app.post_json_api(
             url_registrations,
             payload,
             auth=user.auth,
-            expect_errors=True)
+            expect_errors=True
+        )
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'All files attached to this form must be registered to complete the' \
-                                                  ' process. The following file(s) are attached, but are not part of' \
-                                                  ' a component being registered: file 1'
+        assert 'fake file' in res.json['errors'][0]['detail']
 
     def test_assert_file_validity_on_registration_metadata(
         self, app, user, payload, url_registrations, project_public
     ):
         file_name = 'registration_file.pdf'
         sha256 = 'asdfjkl'
-        file = create_test_file(project_public, user, file_name)
-        version = file.versions.first()
+        attached_file = create_test_file(project_public, user, file_name)
+        version = attached_file.versions.first()
         # mock sha256
         version.metadata['sha256'] = sha256
         version.save()
@@ -1456,11 +1426,11 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
 
         file_view_url = urljoin(settings.DOMAIN, '/project/{}/files/osfstorage/{}'.format(
             prereg_draft_registration.branched_from._id,
-            file._id,
+            attached_file._id,
         ))
         prereg_registration_responses['q7.uploader'] = [{
             'file_name': file_name,
-            'file_id': file._id,
+            'file_id': attached_file._id,
             'file_hashes': {
                 'sha256': 'incorrect_sha',
             },
@@ -1481,7 +1451,7 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
 
         prereg_registration_responses['q7.uploader'] = [{
             'file_name': file_name,
-            'file_id': file._id,
+            'file_id': attached_file._id,
             'file_hashes': {
                 'sha256': sha256,
             },
@@ -1589,12 +1559,12 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_need_admin_perms_on_draft(
-            self, mock_enqueue, app, user, payload_ver, url_registrations_ver):
+            self, mock_enqueue, app, user, schema, payload_ver, url_registrations_ver):
         user_two = AuthUserFactory()
         group = OSFGroupFactory(creator=user)
 
         # User is an admin contributor on draft registration but not on node
-        draft_registration = DraftRegistrationFactory(creator=user_two)
+        draft_registration = DraftRegistrationFactory(creator=user_two, registration_schema=schema)
         draft_registration.add_contributor(user, permissions.ADMIN)
         draft_registration.branched_from.add_contributor(user, permissions.WRITE)
         payload_ver['data']['attributes']['draft_registration_id'] = draft_registration._id
@@ -1604,7 +1574,7 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
         assert res.status_code == 201
 
         # User is admin on draft and node
-        draft_registration = DraftRegistrationFactory(creator=user)
+        draft_registration = DraftRegistrationFactory(creator=user, registration_schema=schema)
         assert draft_registration.branched_from.is_admin_contributor(user) is True
         assert draft_registration.has_permission(user, permissions.ADMIN) is True
         payload_ver['data']['attributes']['draft_registration_id'] = draft_registration._id
@@ -1612,7 +1582,7 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
         assert res.status_code == 201
 
         # User is an admin group contributor on the node but not on draft registration
-        draft_registration = DraftRegistrationFactory(creator=user_two)
+        draft_registration = DraftRegistrationFactory(creator=user_two, registration_schema=schema)
         draft_registration.branched_from.add_osf_group(group, permissions.ADMIN)
         payload_ver['data']['attributes']['draft_registration_id'] = draft_registration._id
         assert draft_registration.branched_from.is_admin_contributor(user) is False
@@ -1623,7 +1593,7 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
         assert res.json['errors'][0]['detail'] == 'You must be an admin contributor on the draft registration to create a registration.'
 
         # User is an admin contributor on node but not on draft registration
-        draft_registration = DraftRegistrationFactory(creator=user_two)
+        draft_registration = DraftRegistrationFactory(creator=user_two, registration_schema=schema)
         draft_registration.add_contributor(user, permissions.WRITE)
         draft_registration.branched_from.add_contributor(user, permissions.ADMIN)
         payload_ver['data']['attributes']['draft_registration_id'] = draft_registration._id

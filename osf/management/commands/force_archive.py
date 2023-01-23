@@ -26,12 +26,13 @@ import requests
 
 import django
 django.setup()
+from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand
 from django.db.models import Q
 from django.db.utils import IntegrityError
 from django.utils import timezone
 
-from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder
+from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder, OsfStorageFileNode
 from framework.exceptions import HTTPError
 from osf.models import Node, NodeLog, Registration, BaseFileNode
 from api.base.utils import waterbutler_api_url_for
@@ -151,7 +152,7 @@ def perform_wb_copy(reg, node_settings):
         if SKIP_COLLISIONS:
             complete_archive_target(reg, node_settings.short_name)
             return
-    params = {'cookie': user.get_or_create_cookie()}
+    params = {'cookie': user.get_or_create_cookie().decode()}
     data = {
         'action': 'copy',
         'path': '/',
@@ -276,14 +277,14 @@ def revert_log_actions(file_tree, reg, obj_cache):
         logs_to_revert = logs_to_revert.exclude(action__in=PERMISSIBLE_BLACKLIST)
     for log in list(logs_to_revert):
         try:
-            file_obj = BaseFileNode.objects.get(_id=log.params['urls']['view'].split('/')[5])
+            file_obj = BaseFileNode.objects.get(_id=log.params['urls']['view'].split('/')[4])
         except KeyError:
             try:
                 file_obj = BaseFileNode.objects.get(_id=log.params['source']['path'].rstrip('/').split('/')[-1])
             except BaseFileNode.DoesNotExist:
                 # Bad log data
                 file_obj = BaseFileNode.objects.get(_id=log.params['destination']['path'].rstrip('/').split('/')[-1])
-        assert file_obj.node in reg.registered_from.root.node_and_primary_descendants()
+        assert file_obj.target in reg.registered_from.root.node_and_primary_descendants()
         if log.action == 'osf_storage_file_added':
             # Find and mark deleted
             logger.info('Reverting add {}:{} from {}'.format(file_obj._id, file_obj.name, log.date))
@@ -319,6 +320,7 @@ def build_file_tree(reg, node_settings):
     obj_cache = set(n.files.values_list('_id', flat=True))
 
     def _recurse(file_obj, node):
+        ct_id = ContentType.objects.get_for_model(node.__class__()).id
         serialized = {
             'object': file_obj,
             'name': file_obj.name,
@@ -326,7 +328,7 @@ def build_file_tree(reg, node_settings):
             'version': int(file_obj.versions.latest('created').identifier) if file_obj.versions.exists() else None
         }
         if not file_obj.is_file:
-            serialized['children'] = [_recurse(child, node) for child in node.files.filter(parent_id=file_obj.id)]
+            serialized['children'] = [_recurse(child, node) for child in OsfStorageFileNode.objects.filter(target_object_id=node.id, target_content_type_id=ct_id, parent_id=file_obj.id)]
         return serialized
 
     current_tree = _recurse(node_settings.get_root(), n)

@@ -8,8 +8,8 @@
                         <div class="col-sm-6">
                             <!-- Select GitLab installation -->
                             <div class="form-group">
-                                <label for="hostSelect">GitLab Repository</label>
-                                <select class="form-control" id="hostSelect"
+                                <label>GitLab Repository</label>
+                                <select class="form-control"
                                         data-bind="options: visibleHosts,
                                                    optionsCaption: 'Select a GitLab repository',
                                                    value: selectedHost,

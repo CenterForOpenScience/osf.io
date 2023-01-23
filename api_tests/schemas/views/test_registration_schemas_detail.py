@@ -1,6 +1,7 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
+from osf.migrations import ensure_invisible_and_inactive_schema
 from osf.models import RegistrationSchema
 from osf_tests.factories import (
     AuthUserFactory,
@@ -10,16 +11,23 @@ pytestmark = pytest.mark.django_db
 
 SCHEMA_VERSION = 2
 
+
 @pytest.fixture()
 def user():
     return AuthUserFactory()
 
+
 @pytest.fixture()
 def schema():
     return RegistrationSchema.objects.filter(
-        name='Prereg Challenge',
+        name='OSF Preregistration',
         schema_version=SCHEMA_VERSION
     ).first()
+
+
+@pytest.fixture(autouse=True)
+def invisible_and_inactive_schema():
+    return ensure_invisible_and_inactive_schema()
 
 
 class TestDeprecatedMetaSchemaDetail:
@@ -55,7 +63,7 @@ class TestRegistrationSchemaDetail:
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         data = res.json['data']['attributes']
-        assert data['name'] == 'Prereg Challenge'
+        assert data['name'] == 'OSF Preregistration'
         assert data['schema_version'] == 2
         assert res.json['data']['id'] == schema._id
 

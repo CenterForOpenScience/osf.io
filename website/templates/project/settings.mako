@@ -94,13 +94,13 @@
                         </div>
                         <div class="form-group">
                             <label for="title">Title:</label>
-                            <input class="form-control" type="text" maxlength="200" placeholder="Required" data-bind="value: title,
+                            <input class="form-control" aria-label="Title Input" type="text" maxlength="200" placeholder="Required" data-bind="value: title,
                                                                                                       valueUpdate: 'afterkeydown'">
                             <span class="text-danger" data-bind="validationMessage: title"></span>
                         </div>
                         <div class="form-group">
                             <label for="description">Description:</label>
-                            <textarea placeholder="Optional" data-bind="value: description,
+                            <textarea aria-label="Description Input" placeholder="Optional" data-bind="value: description,
                                              valueUpdate: 'afterkeydown'",
                             class="form-control resize-vertical" style="max-width: 100%"></textarea>
                         </div>
@@ -132,14 +132,14 @@
             <div class="panel panel-default">
                 <span id="nodeStorageLocation" class="anchor"></span>
                 <div class="panel-heading clearfix">
-                    <h3 id="nodeStorageLocation" class="panel-title">Storage Location</h3>
+                    <h3 class="panel-title">Storage Location</h3>
                 </div>
                 <div class="panel-body">
                     <p>
                         <b>Storage location:</b> ${node['storage_location']}
                     </p>
                     <div class="help-block">
-                        <p class="text-muted">Storage location cannot be changed after project is created.</p>
+                        <p class="high-contrast-link-italic">Storage location cannot be changed after project is created.</p>
                     </div>
 
                 </div>
@@ -241,7 +241,7 @@
                             </div>
 
                             <form id="wikiSettings" class="osf-treebeard-minimal">
-                                <div id="wgrid">
+                                <div id="wiki-grid">
                                     <div class="spinner-loading-wrapper">
                                         <div class="ball-scale ball-scale-blue">
                                             <div></div>
@@ -272,16 +272,17 @@
                     <div class="panel-body">
 
                         <form class="form" id="commentSettings">
+                            <div style="display: none;" id="privacyOptions">privacy options</div>
 
                             <div class="radio">
                                 <label>
-                                    <input type="radio" name="commentLevel" value="private" ${'checked' if comments['level'] == 'private' else ''}>
+                                    <input type="radio" name="commentLevel" aria-labelledby="privacyOptions" value="private" ${'checked' if comments['level'] == 'private' else ''}>
                                     Only contributors can post comments
                                 </label>
                             </div>
                             <div class="radio">
                                 <label>
-                                    <input type="radio" name="commentLevel" value="public" ${'checked' if comments['level'] == 'public' else ''}>
+                                    <input type="radio" name="commentLevel" aria-labelledby="privacyOptions" value="public" ${'checked' if comments['level'] == 'public' else ''}>
                                     When the ${node['node_type']} is public, any OSF user can post comments
                                 </label>
                             </div>
@@ -311,7 +312,7 @@
                     </div>
                     <div class="panel-body">
                         <div class="help-block">
-                            <p class="text-muted">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
+                            <p class="high-contrast-link-italic">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
                         </div>
                         <form id="notificationSettings" class="osf-treebeard-minimal">
                             <div id="grid">
@@ -431,7 +432,7 @@
                             <li>institutional logos to be displayed on public projects</li>
                             <li>public projects to be discoverable on specific institutional landing pages</li>
                             <li>single sign-on to the OSF with institutional credentials</li>
-                            <li><a href="https://openscience.zendesk.com/hc/en-us/categories/360001550913">FAQ</a></li>
+                            <li><a href="https://help.osf.io/article/203-faqs">FAQ</a></li>
                          </ul>
                          <!-- /ko -->
                      </div>
@@ -442,7 +443,7 @@
                          <tbody>
                              <!-- ko foreach: {data: affiliatedInstitutions, as: 'item'} -->
                              <tr>
-                                 <td><img class="img-circle" width="50px" height="50px" data-bind="attr: {src: item.logo_path_rounded_corners}"></td>
+                                 <td><img class="img-circle" width="50px" height="50px" aria-label="Institution Logo" alt="Institution Logo" data-bind="attr: {src: item.logo_path_rounded_corners}"></td>
                                  <td><span data-bind="text: item.name"></span></td>
                                  <td>
                                      % if permissions.ADMIN in user['permissions']:
@@ -464,7 +465,7 @@
                          <tbody>
                              <!-- ko foreach: {data: availableInstitutions, as: 'item'} -->
                              <tr>
-                                 <td><img class="img-circle" width="50px" height="50px" data-bind="attr: {src: item.logo_path_rounded_corners}"></td>
+                                 <td><img class="img-circle" width="50px" height="50px" aria-label="Institution Logo" alt="Institution Logo" data-bind="attr: {src: item.logo_path_rounded_corners}"></td>
                                  <td><span data-bind="text: item.name"></span></td>
                                  % if permissions.WRITE in user['permissions']:
                                      <td><button

@@ -1,4 +1,5 @@
 from blinker import ANY
+from enum import Enum
 from future.moves.urllib.parse import urlparse
 from contextlib import contextmanager
 from addons.osfstorage import settings as osfstorage_settings
@@ -64,3 +65,40 @@ def only_supports_methods(view, expected_methods):
         view = view()
     expected_methods.append('OPTIONS')
     return set(expected_methods) == set(view.allowed_methods)
+
+
+class UserRoles(Enum):
+    UNAUTHENTICATED = 0
+    NONCONTRIB = 1
+    MODERATOR = 2
+    READ_USER = 3
+    WRITE_USER = 4
+    ADMIN_USER = 5
+
+    @classmethod
+    def contributor_roles(cls, include_moderator=False):
+        base_roles = [cls.READ_USER, cls.WRITE_USER, cls.ADMIN_USER]
+        if include_moderator:
+            return [cls.MODERATOR, *base_roles]
+        return base_roles
+
+    @classmethod
+    def noncontributor_roles(cls):
+        return [cls.UNAUTHENTICATED, cls.NONCONTRIB, cls.MODERATOR]
+
+    @classmethod
+    def write_roles(cls):
+        return [cls.WRITE_USER, cls.ADMIN_USER]
+
+    @classmethod
+    def excluding(cls, *excluded_roles):
+        return [role for role in cls if role not in excluded_roles]
+
+    def get_permissions_string(self):
+        if self is UserRoles.READ_USER:
+            return 'read'
+        if self is UserRoles.WRITE_USER:
+            return 'write'
+        if self is UserRoles.ADMIN_USER:
+            return 'admin'
+        return None

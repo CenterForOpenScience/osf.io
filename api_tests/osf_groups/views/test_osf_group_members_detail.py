@@ -42,7 +42,6 @@ def bad_url(osf_group):
     return '/{}groups/{}/members/{}/'.format(API_BASE, osf_group._id, '12345')
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestOSFGroupMembersDetail:
     def test_return_perms(self, app, member, manager, user, osf_group, url, bad_url):
         with override_flag(OSF_GROUPS, active=True):
@@ -102,7 +101,6 @@ def build_update_payload(group_id, user_id, role):
     }
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestOSFGroupMembersUpdate:
     def test_update_role(self, app, member, manager, user, osf_group, url):
         with override_flag(OSF_GROUPS, active=True):
@@ -190,7 +188,6 @@ class TestOSFGroupMembersUpdate:
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestOSFGroupMembersDelete:
     def test_delete_perms(self, app, member, manager, user, osf_group, url):
         with override_flag(OSF_GROUPS, active=True):

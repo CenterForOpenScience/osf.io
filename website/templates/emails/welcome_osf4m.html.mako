@@ -17,7 +17,7 @@
             <li>You have one place to reference when looking for your research materials</li>
             <li>You can monitor interest in your data and materials by tracking downloads, just like you can for your ${conference} presentation.</li>
         </ul>
-        To learn more about how the OSF can help you manage your research, read our <a href="https://openscience.zendesk.com/hc/en-us/?utm_source=notification&utm_medium=email&utm_campaign=welcome">Guides</a>.
+        To learn more about how the OSF can help you manage your research, read our <a href="https://help.osf.io/">Guides</a>.
         The best part? It’s all free! OSF is supported by the non-profit technology company, the <a href="https://cos.io/">Center for Open Science</a>.
         <br><br>
         Best wishes,

@@ -184,10 +184,6 @@ CONFIRM_EMAIL = Mail(
     'confirm',
     subject='Add a new email to your OSF account'
 )
-CONFIRM_EMAIL_PREREG = Mail(
-    'confirm_prereg',
-    subject='OSF Account Verification, OSF Preregistration'
-)
 CONFIRM_EMAIL_ERPC = Mail(
     'confirm_erpc',
     subject='OSF Account Verification, Election Research Preacceptance Competition'
@@ -207,6 +203,31 @@ CONFIRM_EMAIL_MODERATION = lambda provider: Mail(
 
 # Merge account, add or remove email confirmation emails.
 CONFIRM_MERGE = Mail('confirm_merge', subject='Confirm account merge')
+COLLECTION_SUBMISSION_REJECTED = lambda collection, node: Mail(
+    'collection_submission_rejected',
+    subject=f'{node.title} was not accepted into {collection.title}'
+)
+COLLECTION_SUBMISSION_SUBMITTED = lambda submitter, node: Mail(
+    'collection_submission_submitted',
+    subject=f'{submitter.fullname} has requested to add {node.title} to a collection'
+)
+COLLECTION_SUBMISSION_ACCEPTED = lambda collection, node: Mail(
+    'collection_submission_accepted',
+    subject=f'{node.title} was accepted into {collection.title}'
+)
+COLLECTION_SUBMISSION_REMOVED_MODERATOR = lambda collection, node: Mail(
+    'collection_submission_removed_moderator',
+    subject=f'{node.title} was removed from {collection.title}'
+)
+COLLECTION_SUBMISSION_REMOVED_ADMIN = lambda collection, node: Mail(
+    'collection_submission_removed_admin',
+    subject=f'{node.title} was removed from {collection.title}'
+)
+COLLECTION_SUBMISSION_REMOVED_PRIVATE = lambda collection, node: Mail(
+    'collection_submission_removed_private',
+    subject=f'{node.title} was removed from {collection.title}'
+)
+
 PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='Primary email changed')
 
 
@@ -245,7 +266,7 @@ CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = Mail(
 )
 CONTRIBUTOR_ADDED_DRAFT_REGISTRATION = Mail(
     'contributor_added_draft_registration',
-    subject='You have been added as a contributor to a draft registration.'
+    subject='You have a new registration draft.'
 )
 MODERATOR_ADDED = lambda provider: Mail(
     'moderator_added',
@@ -306,11 +327,11 @@ TRANSACTIONAL = Mail(
 # Retraction related Mail objects
 PENDING_RETRACTION_ADMIN = Mail(
     'pending_retraction_admin',
-    subject='Withdrawal pending for one of your projects.'
+    subject='Withdrawal pending for one of your registrations.'
 )
 PENDING_RETRACTION_NON_ADMIN = Mail(
     'pending_retraction_non_admin',
-    subject='Withdrawal pending for one of your projects.'
+    subject='Withdrawal pending for one of your registrations.'
 )
 PENDING_RETRACTION_NON_ADMIN = Mail(
     'pending_retraction_non_admin',
@@ -319,24 +340,24 @@ PENDING_RETRACTION_NON_ADMIN = Mail(
 # Embargo related Mail objects
 PENDING_EMBARGO_ADMIN = Mail(
     'pending_embargo_admin',
-    subject='Registration pending for one of your projects.'
+    subject='Admin decision pending for one of your registrations.'
 )
 PENDING_EMBARGO_NON_ADMIN = Mail(
     'pending_embargo_non_admin',
-    subject='Registration pending for one of your projects.'
+    subject='Admin decision pending for one of your registrations.'
 )
 # Registration related Mail Objects
 PENDING_REGISTRATION_ADMIN = Mail(
     'pending_registration_admin',
-    subject='Registration pending for one of your projects.'
+    subject='Admin decision pending for one of your registrations.'
 )
 PENDING_REGISTRATION_NON_ADMIN = Mail(
     'pending_registration_non_admin',
-    subject='Registration pending for one of your projects.'
+    subject='Admin decision pending for one of your registrations.'
 )
 PENDING_EMBARGO_TERMINATION_ADMIN = Mail(
     'pending_embargo_termination_admin',
-    subject='Request to end an embargo early for one of your projects.'
+    subject='Request to end an embargo early for one of your registrations.'
 )
 PENDING_EMBARGO_TERMINATION_NON_ADMIN = Mail(
     'pending_embargo_termination_non_admin',
@@ -474,4 +495,67 @@ TOU_NOTIF = Mail(
 STORAGE_CAP_EXCEEDED_ANNOUNCEMENT = Mail(
     'storage_cap_exceeded_announcement',
     subject='Action Required to avoid disruption to your OSF project',
+)
+
+INSTITUTION_DEACTIVATION = Mail(
+    'institution_deactivation',
+    subject='Your OSF login has changed - here\'s what you need to know!'
+)
+
+REGISTRATION_BULK_UPLOAD_PRODUCT_OWNER = Mail(
+    'registration_bulk_upload_product_owner',
+    subject='Registry Could Not Bulk Upload Registrations'
+)
+
+REGISTRATION_BULK_UPLOAD_SUCCESS_ALL = Mail(
+    'registration_bulk_upload_success_all',
+    subject='Registrations Successfully Bulk Uploaded to your Community\'s Registry'
+)
+
+REGISTRATION_BULK_UPLOAD_SUCCESS_PARTIAL = Mail(
+    'registration_bulk_upload_success_partial',
+    subject='Some Registrations Successfully Bulk Uploaded to your Community\'s Registry'
+)
+
+REGISTRATION_BULK_UPLOAD_FAILURE_ALL = Mail(
+    'registration_bulk_upload_failure_all',
+    subject='Registrations Were Not Bulk Uploaded to your Community\'s Registry'
+)
+
+REGISTRATION_BULK_UPLOAD_FAILURE_DUPLICATES = Mail(
+    'registration_bulk_upload_failure_duplicates',
+    subject='Registrations Were Not Bulk Uploaded to your Community\'s Registry'
+)
+
+REGISTRATION_BULK_UPLOAD_UNEXPECTED_FAILURE = Mail(
+    'registration_bulk_upload_unexpected_failure',
+    subject='Registrations Were Not Bulk Uploaded to your Community\'s Registry'
+)
+
+SCHEMA_RESPONSE_INITIATED = Mail(
+    'updates_initiated',
+    subject='Updates for ${resource_type} ${title} are in progress'
+)
+
+
+SCHEMA_RESPONSE_SUBMITTED = Mail(
+    'updates_pending_approval',
+    subject='Updates for ${resource_type} ${title} are pending Admin approval'
+)
+
+
+SCHEMA_RESPONSE_APPROVED = Mail(
+    'updates_approved',
+    subject='The updates for ${resource_type} ${title} have been approved'
+)
+
+
+SCHEMA_RESPONSE_REJECTED = Mail(
+    'updates_rejected',
+    subject='The updates for ${resource_type} ${title} were not accepted'
+)
+
+QUICKFILES_MIGRATED = Mail(
+    'quickfiles_migrated',
+    subject='Your Quick Files have moved'
 )

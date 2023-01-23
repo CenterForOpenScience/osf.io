@@ -4,7 +4,6 @@ from django.http import HttpResponse
 from django.core import serializers
 from django.db.models import When, Case, Value, IntegerField, F
 from django.core.exceptions import ValidationError
-from django.core.management import call_command
 from django.urls import reverse_lazy
 from django.shortcuts import redirect
 from django.views.generic import View, CreateView, ListView, DetailView, UpdateView, DeleteView, TemplateView
@@ -16,8 +15,9 @@ from django.http import JsonResponse
 from admin.registration_providers.forms import RegistrationProviderForm, RegistrationProviderCustomTaxonomyForm
 from admin.base import settings
 from admin.base.forms import ImportFileForm
+from admin.preprint_providers.views import ImportProviderView
 from website import settings as website_settings
-from osf.models import RegistrationProvider, NodeLicense, RegistrationSchema, OSFUser
+from osf.models import RegistrationProvider
 
 
 class CreateRegistrationProvider(PermissionRequiredMixin, CreateView):
@@ -202,8 +202,12 @@ class DeleteRegistrationProvider(PermissionRequiredMixin, DeleteView):
     def get_context_data(self, *args, **kwargs):
         registration_provider = self.get_object()
         kwargs['provider_name'] = registration_provider.name
-        kwargs['has_collected_submissions'] = registration_provider.primary_collection.collectionsubmission_set.exists()
-        kwargs['collected_submissions_count'] = registration_provider.primary_collection.collectionsubmission_set.count()
+        if registration_provider.primary_collection:
+            kwargs['has_collected_submissions'] = registration_provider.primary_collection.collectionsubmission_set.exists()
+            kwargs['collected_submissions_count'] = registration_provider.primary_collection.collectionsubmission_set.count()
+        else:
+            kwargs['has_collected_submissions'] = False
+            kwargs['collected_submission_count'] = 0
         kwargs['provider_id'] = registration_provider.id
         return super(DeleteRegistrationProvider, self).get_context_data(*args, **kwargs)
 
@@ -251,64 +255,9 @@ class ExportRegistrationProvider(PermissionRequiredMixin, View):
             return result
 
 
-class ImportRegistrationProvider(PermissionRequiredMixin, View):
+class ImportRegistrationProvider(ImportProviderView):
     permission_required = 'osf.change_registrationprovider'
-    raise_exception = True
-
-    def post(self, request, *args, **kwargs):
-        form = ImportFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            file_str = self.parse_file(request.FILES['file'])
-            file_json = json.loads(file_str)
-            cleaned_result = file_json['fields']
-            try:
-                registration_provider = self.create_or_update_provider(cleaned_result)
-            except ValidationError:
-                messages.error(request, 'A Validation Error occured, this JSON is invalid or shares an id with an already existing provider.')
-                return redirect('registration_providers:create')
-            return redirect('registration_providers:detail', registration_provider_id=registration_provider.id)
-
-    def parse_file(self, f):
-        parsed_file = ''
-        for chunk in f.chunks():
-            if isinstance(chunk, bytes):
-                chunk = chunk.decode()
-            parsed_file += chunk
-        return parsed_file
-
-    def get_page_provider(self):
-        page_provider_id = self.kwargs.get('registration_provider_id', '')
-        if page_provider_id:
-            return RegistrationProvider.objects.get(id=page_provider_id)
-
-    def add_subjects(self, provider, subject_data):
-        call_command('populate_custom_taxonomies', '--provider', provider._id, '--data', json.dumps(subject_data), '--type', 'osf.registrationprovider')
-
-    def create_or_update_provider(self, provider_data):
-        provider = self.get_page_provider()
-        licenses = [NodeLicense.objects.get(license_id=license_id) for license_id in provider_data.pop('licenses_acceptable', [])]
-        default_license = provider_data.pop('default_license', False)
-        subject_data = provider_data.pop('subjects', False)
-        provider_data.pop('additional_providers')
-
-        if provider:
-            for key, val in provider_data.items():
-                setattr(provider, key, val)
-            provider.save()
-        else:
-            provider = RegistrationProvider(**provider_data)
-            provider._creator = self.request.user
-            provider.save()
-
-        if licenses:
-            provider.licenses_acceptable.set(licenses)
-        if default_license:
-            provider.default_license = NodeLicense.objects.get(license_id=default_license)
-
-        # Only adds the JSON taxonomy if there is no existing taxonomy data
-        if subject_data and not provider.subjects.count():
-            self.add_subjects(provider, subject_data)
-        return provider
+    provider_class = RegistrationProvider
 
 
 class ProcessCustomTaxonomy(PermissionRequiredMixin, View):
@@ -387,6 +336,7 @@ class ChangeSchema(TemplateView):
     raise_exception = True
 
     def get_context_data(self, **kwargs):
+        from osf.models import RegistrationSchema
         registration_provider = RegistrationProvider.objects.get(id=self.kwargs['registration_provider_id'])
         ids = registration_provider.schemas.all().values_list('id', flat=True)
         context = super().get_context_data(**kwargs)
@@ -405,6 +355,8 @@ class ChangeSchema(TemplateView):
         return context
 
     def post(self, request, *args, **kwargs):
+        from osf.models import RegistrationSchema
+
         registration_provider = RegistrationProvider.objects.get(id=self.kwargs['registration_provider_id'])
         data = dict(request.POST)
         del data['csrfmiddlewaretoken']  # just to remove the key from the form dict
@@ -414,77 +366,3 @@ class ChangeSchema(TemplateView):
         registration_provider.schemas.add(*schemas)
 
         return redirect('registration_providers:detail', registration_provider_id=registration_provider.id)
-
-
-class AddAdminOrModerator(TemplateView):
-    permission_required = 'osf.change_registrationprovider'
-    template_name = 'registration_providers/edit_moderators.html'
-
-    raise_exception = True
-
-    def get_context_data(self, **kwargs):
-        registration_provider = RegistrationProvider.objects.get(id=self.kwargs['registration_provider_id'])
-        context = super().get_context_data(**kwargs)
-        context['registration_provider'] = registration_provider
-        context['moderators'] = registration_provider.get_group('moderator').user_set.all()
-        context['admins'] = registration_provider.get_group('admin').user_set.all()
-        return context
-
-    def post(self, request, *args, **kwargs):
-        registration_provider = RegistrationProvider.objects.get(id=self.kwargs['registration_provider_id'])
-        data = dict(request.POST)
-        del data['csrfmiddlewaretoken']  # just to remove the key from the form dict
-
-        target_user = OSFUser.load(data['add-moderators-form'][0])
-        if target_user is None:
-            messages.error(request, f'User for guid: {data["add-moderators-form"][0]} could not be found')
-            return redirect('registration_providers:add_admin_or_moderator', registration_provider_id=registration_provider.id)
-
-        if 'admin' in data:
-            registration_provider.add_to_group(target_user, 'admin')
-            target_type = 'admin'
-        else:
-            registration_provider.add_to_group(target_user, 'moderator')
-            target_type = 'moderator'
-
-        messages.success(request, f'The following {target_type} was successfully added: {target_user.fullname} ({target_user.username})')
-
-        return redirect('registration_providers:add_admin_or_moderator', registration_provider_id=registration_provider.id)
-
-
-class RemoveAdminsAndModerators(TemplateView):
-    permission_required = 'osf.change_registrationprovider'
-    template_name = 'registration_providers/edit_moderators.html'
-
-    raise_exception = True
-
-    def get_context_data(self, **kwargs):
-        registration_provider = RegistrationProvider.objects.get(id=self.kwargs['registration_provider_id'])
-        context = super().get_context_data(**kwargs)
-        context['registration_provider'] = registration_provider
-        context['moderators'] = registration_provider.get_group('moderator').user_set.all()
-        context['admins'] = registration_provider.get_group('admin').user_set.all()
-        return context
-
-    def post(self, request, *args, **kwargs):
-        registration_provider = RegistrationProvider.objects.get(id=self.kwargs['registration_provider_id'])
-        data = dict(request.POST)
-        del data['csrfmiddlewaretoken']  # just to remove the key from the form dict
-
-        to_be_removed = list(data.keys())
-        removed_admins = [admin.replace('Admin-', '') for admin in to_be_removed if 'Admin-' in admin]
-        removed_moderators = [moderator.replace('Moderator-', '') for moderator in to_be_removed if 'Moderator-' in moderator]
-        moderators = OSFUser.objects.filter(id__in=removed_moderators)
-        admins = OSFUser.objects.filter(id__in=removed_admins)
-        registration_provider.get_group('moderator').user_set.remove(*moderators)
-        registration_provider.get_group('admin').user_set.remove(*admins)
-
-        if moderators:
-            moderator_names = ' ,'.join(moderators.values_list('fullname', flat=True))
-            messages.success(request, f'The following moderators were successfully removed: {moderator_names}')
-
-        if admins:
-            admin_names = ' ,'.join(admins.values_list('fullname', flat=True))
-            messages.success(request, f'The following admins were successfully removed: {admin_names}')
-
-        return redirect('registration_providers:remove_admins_and_moderators', registration_provider_id=registration_provider.id)

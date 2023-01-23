@@ -2,10 +2,13 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from framework.auth.oauth_scopes import CoreScopes
 
-from osf.models import AbstractNode, Registration, OSFUser, RegistrationProvider
+from osf.models import Registration, OSFUser, RegistrationProvider, OutcomeArtifact
 from osf.utils.permissions import WRITE_NODE
+from osf.utils.workflows import ApprovalStates
+
 from api.base import permissions as base_permissions
 from api.base import generic_bulk_views as bulk_views
+from api.base.exceptions import Gone
 from api.base.filters import ListFilterMixin
 from api.base.views import (
     JSONAPIBaseView,
@@ -20,8 +23,12 @@ from api.base.serializers import HideIfWithdrawal, LinkedRegistrationsRelationsh
 from api.base.serializers import LinkedNodesRelationshipSerializer
 from api.base.pagination import NodeContributorPagination
 from api.base.exceptions import Conflict
-from api.base.parsers import JSONAPIRelationshipParser, JSONAPIMultipleRelationshipsParser
-from api.base.parsers import JSONAPIRelationshipParserForRegularJSON, JSONAPIMultipleRelationshipsParserForRegularJSON
+from api.base.parsers import (
+    JSONAPIRelationshipParser,
+    JSONAPIMultipleRelationshipsParser,
+    JSONAPIRelationshipParserForRegularJSON,
+    JSONAPIMultipleRelationshipsParserForRegularJSON,
+)
 from api.base.utils import (
     get_user_auth,
     default_node_list_permission_queryset,
@@ -73,6 +80,17 @@ from framework.sentry import log_exception
 from osf.utils.permissions import ADMIN
 from api.providers.permissions import MustBeModerator
 from api.providers.views import ProviderMixin
+from api.registrations import annotations
+
+from api.resources import annotations as resource_annotations
+from api.resources.permissions import RegistrationResourceListPermission
+from api.resources.serializers import ResourceSerializer
+from api.schema_responses import annotations as schema_response_annotations
+from api.schema_responses.permissions import (
+    MODERATOR_VISIBLE_STATES,
+    RegistrationSchemaResponseListPermission,
+)
+from api.schema_responses.serializers import RegistrationSchemaResponseSerializer
 
 
 class RegistrationMixin(NodeMixin):
@@ -83,21 +101,21 @@ class RegistrationMixin(NodeMixin):
     serializer_class = RegistrationSerializer
     node_lookup_url_kwarg = 'node_id'
 
-    def get_node(self, check_object_permissions=True):
-        node = get_object_or_error(
-            AbstractNode,
-            self.kwargs[self.node_lookup_url_kwarg],
-            self.request,
-            display_name='node',
+    def get_node(self, check_object_permissions=True, **annotations):
+        guid = self.kwargs[self.node_lookup_url_kwarg]
+        node = Registration.objects.filter(guids___id=guid).annotate(**annotations)
 
-        )
-        # Nodes that are folders/collections are treated as a separate resource, so if the client
-        # requests a collection through a node endpoint, we return a 404
-        if node.is_collection or not node.is_registration:
+        try:
+            node = node.get()
+        except Registration.DoesNotExist:
             raise NotFound
-        # May raise a permission denied
+
+        if node.deleted:
+            raise Gone(detail='The requested registration is no longer available.')
+
         if check_object_permissions:
             self.check_object_permissions(self.request, node)
+
         return node
 
 
@@ -135,7 +153,12 @@ class RegistrationList(JSONAPIBaseView, generics.ListCreateAPIView, bulk_views.B
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
-        return default_node_list_permission_queryset(user=self.request.user, model_cls=Registration)
+        return default_node_list_permission_queryset(
+            user=self.request.user,
+            model_cls=Registration,
+            revision_state=annotations.REVISION_STATE,
+            **resource_annotations.make_open_practice_badge_annotations(),
+        )
 
     def is_blacklisted(self):
         query_params = self.parse_query_params(self.request.query_params)
@@ -222,13 +245,17 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, Regist
 
     # overrides RetrieveAPIView
     def get_object(self):
-        registration = self.get_node()
+        registration = self.get_node(
+            revision_state=annotations.REVISION_STATE,
+            **resource_annotations.make_open_practice_badge_annotations(),
+        )
         if not registration.is_registration:
             raise ValidationError('This is not a registration.')
+
         return registration
 
-    def get_renderer_context(self):
-        context = super(RegistrationDetail, self).get_renderer_context()
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
         show_counts = is_truthy(self.request.query_params.get('related_counts', False))
         if show_counts:
             registration = self.get_object()
@@ -259,7 +286,7 @@ class RegistrationContributorsList(BaseContributorList, RegistrationMixin, UserM
 
     def get_default_queryset(self):
         node = self.get_node(check_object_permissions=False)
-        return node.contributor_set.all().include('user__guids')
+        return node.contributor_set.all().prefetch_related('user__guids')
 
 
 class RegistrationContributorDetail(BaseContributorDetail, RegistrationMixin, UserMixin):
@@ -540,6 +567,8 @@ class RegistrationFilesList(NodeFilesList, RegistrationMixin):
     """
     view_category = 'registrations'
     view_name = 'registration-files'
+
+    ordering_fields = ['modified', 'name', 'date_modified']
     serializer_class = RegistrationFileSerializer
 
 
@@ -850,3 +879,93 @@ class RegistrationRequestList(JSONAPIBaseView, ListFilterMixin, generics.ListCre
 
     def get_queryset(self):
         return self.get_queryset_from_request()
+
+
+class RegistrationSchemaResponseList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, RegistrationMixin):
+    required_read_scopes = [CoreScopes.READ_SCHEMA_RESPONSES]
+    required_write_scopes = [CoreScopes.NULL]
+
+    permission_classes = (
+        RegistrationSchemaResponseListPermission,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ExcludeWithdrawals,
+    )
+
+    view_category = 'registrations'
+    view_name = 'schema-responses-list'
+
+    serializer_class = RegistrationSchemaResponseSerializer
+
+    def get_object(self):
+        return self.get_node()
+
+    def get_default_queryset(self):
+        '''Return all SchemaResponses on the Registration that should be visible to the user.
+
+        For contributors to the Registration, this should be all of its SchemaResponses.
+        For moderators, this should be all PENDING_MODERATION or APPROVED SchemaResponses
+        For all others, this should be only the APPROVED responses.
+        '''
+        user = self.request.user
+        registration = self.get_node()
+
+        # Get the SchemaResponses from the root
+        all_responses = registration.root.schema_responses.annotate(
+            is_pending_current_user_approval=(
+                schema_response_annotations.is_pending_current_user_approval(user)
+            ),
+            is_original_response=schema_response_annotations.IS_ORIGINAL_RESPONSE,
+        )
+
+        is_contributor = registration.has_permission(user, 'read') if user else False
+        if is_contributor:
+            return all_responses
+
+        is_moderator = (
+            user and
+            registration.is_moderated and
+            user.has_perm('view_submissions', registration.provider)
+        )
+        if is_moderator:
+            return all_responses.filter(
+                reviews_state__in=[state.db_name for state in MODERATOR_VISIBLE_STATES],
+            )
+        return all_responses.filter(reviews_state=ApprovalStates.APPROVED.db_name)
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+
+class RegistrationResourceList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, RegistrationMixin):
+    permission_classes = (
+        RegistrationResourceListPermission,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.READ_REGISTRATION_RESOURCES]
+    required_write_scopes = [CoreScopes.WRITE_REGISTRATION_RESOURCES]
+
+    view_category = 'registrations'
+    view_name = 'resource-list'
+
+    serializer_class = ResourceSerializer
+
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
+
+    def get_node(self):
+        return super().get_node(check_object_permissions=False)
+
+    def get_default_queryset(self):
+        root_registration = self.get_node()
+        return OutcomeArtifact.objects.for_registration(root_registration).filter(
+            finalized=True,
+            deleted__isnull=True,
+        )
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+    def get_permissions_proxy(self):
+        return self.get_node()

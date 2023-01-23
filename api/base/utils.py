@@ -7,7 +7,8 @@ from hashids import Hashids
 
 from django.utils.http import urlquote
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import QuerySet, F
+from django.db.models import QuerySet
+from rest_framework import fields
 from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
 
@@ -23,11 +24,9 @@ from osf.utils.requests import check_select_for_update
 from website import settings as website_settings
 from website import util as website_util  # noqa
 
-# These values are copied from rest_framework.fields.BooleanField
-# BooleanField cannot be imported here without raising an
-# ImproperlyConfigured error
-TRUTHY = set(('t', 'T', 'true', 'True', 'TRUE', '1', 1, True, 'on', 'ON', 'On', 'y', 'Y', 'YES', 'yes'))
-FALSY = set(('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False, 'off', 'OFF', 'Off', 'n', 'N', 'NO', 'no'))
+# See https://github.com/encode/django-rest-framework/blob/3.13.1/rest_framework/fields.py#L699-L721
+TRUTHY = fields.BooleanField.TRUE_VALUES
+FALSY = fields.BooleanField.FALSE_VALUES
 
 UPDATE_METHODS = ['PUT', 'PATCH']
 
@@ -145,7 +144,7 @@ def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_nam
 
 def default_node_list_queryset(model_cls):
     assert model_cls in {Node, Registration}
-    return model_cls.objects.filter(is_deleted=False).annotate(region=F('addons_osfstorage_node_settings__region___id'))
+    return model_cls.objects.filter(is_deleted=False)
 
 def default_node_permission_queryset(user, model_cls):
     """
@@ -155,12 +154,14 @@ def default_node_permission_queryset(user, model_cls):
     assert model_cls in {Node, Registration}
     return model_cls.objects.get_nodes_for_user(user, include_public=True)
 
-def default_node_list_permission_queryset(user, model_cls):
+def default_node_list_permission_queryset(user, model_cls, **annotations):
     # **DO NOT** change the order of the querysets below.
     # If get_roots() is called on default_node_list_qs & default_node_permission_qs,
     # Django's alaising will break and the resulting QS will be empty and you will be sad.
     qs = default_node_permission_queryset(user, model_cls) & default_node_list_queryset(model_cls)
-    return qs.annotate(region=F('addons_osfstorage_node_settings__region___id'))
+    if annotations:
+        qs = qs.annotate(**annotations)
+    return qs
 
 def extend_querystring_params(url, params):
     scheme, netloc, path, query, _ = urlsplit(url)
@@ -190,6 +191,20 @@ def has_admin_scope(request):
         return False
 
     return set(ComposedScopes.ADMIN_LEVEL).issubset(normalize_scopes(token.attributes['accessTokenScope']))
+
+
+def has_pigeon_scope(request):
+    """ Helper function to determine if a request token has OSF pigeon scope
+    """
+    token = request.auth
+    if token is None or not isinstance(token, CasResponse):
+        return False
+
+    if token.attributes['accessToken'] == website_settings.PIGEON_CALLBACK_BEARER_TOKEN:
+        return True
+    else:
+        return False
+
 
 def is_deprecated(request_version, min_version=None, max_version=None):
     if not min_version and not max_version:

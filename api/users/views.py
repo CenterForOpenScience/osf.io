@@ -8,7 +8,7 @@ from rest_framework.throttling import UserRateThrottle
 from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
 from api.base.waffle_decorators import require_flag
-from api.base.exceptions import Conflict, UserGone
+from api.base.exceptions import Conflict, UserGone, Gone
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
 from api.base.parsers import (
     JSONAPIRelationshipParser,
@@ -24,7 +24,7 @@ from api.base.utils import (
     hashids,
     is_truthy,
 )
-from api.base.views import JSONAPIBaseView, WaterButlerMixin
+from api.base.views import JSONAPIBaseView
 from api.base.throttling import SendEmailThrottle, SendEmailDeactivationThrottle, NonCookieAuthThrottle, BurstRateThrottle
 from api.institutions.serializers import InstitutionSerializer
 from api.nodes.filters import NodesFilterMixin, UserNodesFilterMixin
@@ -32,7 +32,9 @@ from api.nodes.serializers import DraftRegistrationLegacySerializer
 from api.nodes.utils import NodeOptimizationMixin
 from api.osf_groups.serializers import GroupSerializer
 from api.preprints.serializers import PreprintSerializer
+from api.registrations import annotations as registration_annotations
 from api.registrations.serializers import RegistrationSerializer
+from api.resources import annotations as resource_annotations
 
 from api.users.permissions import (
     CurrentUser, ReadOnlyOrCurrentUser,
@@ -50,7 +52,6 @@ from api.users.serializers import (
     UserNodeSerializer,
     UserSettingsSerializer,
     UserSettingsUpdateSerializer,
-    UserQuickFilesSerializer,
     UserAccountExportSerializer,
     ReadEmailUserDetailSerializer,
     UserChangePasswordSerializer,
@@ -75,7 +76,6 @@ from osf.models import (
     Contributor,
     ExternalAccount,
     Guid,
-    QuickFilesNode,
     AbstractNode,
     Preprint,
     Node,
@@ -331,7 +331,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, UserNodesFilte
         return (
             self.get_queryset_from_request()
             .select_related('node_license')
-            .include('contributor__user__guids', 'root__guids', limit_includes=10)
+            .prefetch_related('contributor_set__user__guids', 'root__guids')
         )
 
 
@@ -362,35 +362,20 @@ class UserGroups(JSONAPIBaseView, generics.ListAPIView, UserMixin, ListFilterMix
         return self.get_queryset_from_request()
 
 
-class UserQuickFiles(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, UserMixin, ListFilterMixin):
+class UserQuickFiles(JSONAPIBaseView, generics.ListAPIView):
+    view_category = 'users'
+    view_name = 'user-quickfiles'
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
 
-    ordering = ('-last_touched')
+    required_read_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.NULL]
 
-    required_read_scopes = [CoreScopes.USERS_READ]
-    required_write_scopes = [CoreScopes.USERS_WRITE]
-
-    serializer_class = UserQuickFilesSerializer
-    view_category = 'users'
-    view_name = 'user-quickfiles'
-
-    def get_node(self, check_object_permissions):
-        return QuickFilesNode.objects.get_for_user(self.get_user(check_permissions=False))
-
-    def get_default_queryset(self):
-        self.kwargs[self.path_lookup_url_kwarg] = '/'
-        self.kwargs[self.provider_lookup_url_kwarg] = 'osfstorage'
-        files_list = self.fetch_from_waterbutler()
-
-        return files_list.children.prefetch_related('versions', 'tags').include('guids')
-
-    # overrides ListAPIView
-    def get_queryset(self):
-        return self.get_queryset_from_request()
+    def get(self, *args, **kwargs):
+        raise Gone()
 
 
 class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFilterMixin):
@@ -476,13 +461,23 @@ class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesF
     def get_default_queryset(self):
         user = self.get_user()
         current_user = self.request.user
-        qs = default_node_list_permission_queryset(user=current_user, model_cls=Registration)
+        qs = default_node_list_permission_queryset(
+            user=current_user,
+            model_cls=Registration,
+            revision_state=registration_annotations.REVISION_STATE,
+            **resource_annotations.make_open_practice_badge_annotations()
+        )
         # OSF group members not copied to registration.  Only registration contributors need to be checked here.
         return qs.filter(contributor__user__id=user.id)
 
     # overrides ListAPIView
     def get_queryset(self):
-        return self.get_queryset_from_request().select_related('node_license').include('contributor__user__guids', 'root__guids', limit_includes=10)
+        return self.get_queryset_from_request().select_related(
+            'node_license',
+        ).prefetch_related(
+            'contributor_set__user__guids',
+            'root__guids',
+        )
 
 class UserDraftRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     permission_classes = (

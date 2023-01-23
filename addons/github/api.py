@@ -151,7 +151,30 @@ class GitHubClient(object):
             return self.gh3.revoke_authorization(self.access_token)
 
     def check_authorization(self):
-        return self.gh3.check_authorization(self.access_token)
+        """Check an authorization created by a registered application.
+
+        OAuth applications can use this method to check token validity
+        without hitting normal rate limits because of failed login attempts.
+        If the token is valid, it will return True, otherwise it will return
+        False.
+
+        :returns:
+            True if token is valid, False otherwise
+        :rtype:
+            bool
+        """
+        if self.access_token:
+            url = self.gh3._build_url('user')
+            resp = self.gh3._get(
+                url,
+                headers={
+                    'Authorization': f'token {self.access_token}',
+                    'Accept': 'application/vnd.github.v3+json'
+                },
+            )
+
+            return self.gh3._boolean(resp, 200, 404)
+        return False
 
 
 def ref_to_params(branch=None, sha=None):

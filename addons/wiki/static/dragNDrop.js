@@ -141,6 +141,9 @@ var addDragNDrop = function(editor, panels, cm, TextareaState) {
     };
     editor.enable = function() {
         $('#aceLoadingBall').css('display', 'none');
+
+        $('.ace_text-input').attr('aria-label', 'Text Input');  // Hack for A11y tests
+
         editor.container.style.pointerEvents = 'initial';
         editor.container.style.opacity = 1;
         editor.renderer.setStyle('disabled', false);

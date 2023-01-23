@@ -12,6 +12,7 @@ import pytz
 import factory.django
 from factory.django import DjangoModelFactory
 from django.apps import apps
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from django.db.utils import IntegrityError
@@ -28,9 +29,13 @@ from osf import models
 from osf.models.sanctions import Sanction
 from osf.models.storage import PROVIDER_ASSET_NAME_CHOICES
 from osf.utils.names import impute_names_model
-from osf.utils.workflows import DefaultStates, DefaultTriggers
+from osf.utils.workflows import (
+    DefaultStates,
+    DefaultTriggers,
+    ApprovalStates,
+    SchemaResponseTriggers
+)
 from addons.osfstorage.models import OsfStorageFile, Region
-
 fake = Factory.create()
 
 # If tests are run on really old processors without high precision this might fail. Unlikely to occur.
@@ -54,8 +59,7 @@ class UserFactory(DjangoModelFactory):
     fullname = factory.Sequence(lambda n: 'Freddie Mercury{0}'.format(n))
 
     username = factory.LazyFunction(fake_email)
-    password = factory.PostGenerationMethodCall('set_password',
-                                                'queenfan86')
+    password = factory.PostGenerationMethodCall('set_password', 'queenfan86', notify=False)
     is_registered = True
     date_confirmed = factory.Faker('date_time_this_decade', tzinfo=pytz.utc)
     merged_by = None
@@ -248,6 +252,8 @@ class InstitutionFactory(DjangoModelFactory):
     domains = FakeList('url', n=3)
     email_domains = FakeList('domain_name', n=1)
     logo_name = factory.Faker('file_name')
+    orcid_record_verified_source = ''
+    delegation_protocol = ''
 
     class Meta:
         model = models.Institution
@@ -385,12 +391,12 @@ class RegistrationFactory(BaseNodeFactory):
     def _create(cls, target_class, project=None, is_public=False,
                 schema=None, draft_registration=None,
                 archive=False, embargo=None, registration_approval=None, retraction=None,
-                provider=None,
+                provider=None, has_doi=False,
                 *args, **kwargs):
         user = None
         if project:
             user = project.creator
-        user = kwargs.pop('user', None) or kwargs.get('creator') or user or UserFactory()
+        user = kwargs.pop('user', None) or kwargs.get('creator') or user or AuthUserFactory()
         kwargs['creator'] = user
         provider = provider or models.RegistrationProvider.get_default()
         # Original project to be registered
@@ -404,14 +410,23 @@ class RegistrationFactory(BaseNodeFactory):
             )
         project.save()
 
+        if draft_registration:
+            schema = draft_registration.registration_schema
+        else:
+            schema = schema or get_default_metaschema()
+
         # Default registration parameters
-        schema = schema or get_default_metaschema()
+        parent_registration = kwargs.get('parent')
+        if parent_registration:
+            schema = parent_registration.registration_schema
+            draft_registration = parent_registration.draft_registration.get()
+
         if not draft_registration:
             draft_registration = DraftRegistrationFactory(
                 branched_from=project,
                 initator=user,
                 registration_schema=schema,
-                provider=provider
+                provider=provider,
             )
         auth = Auth(user=user)
         register = lambda: project.register_node(
@@ -419,6 +434,7 @@ class RegistrationFactory(BaseNodeFactory):
             auth=auth,
             draft_registration=draft_registration,
             provider=provider,
+            parent=parent_registration
         )
 
         def add_approval_step(reg):
@@ -450,7 +466,12 @@ class RegistrationFactory(BaseNodeFactory):
         reg.files_count = reg.registered_from.files.filter(deleted_on__isnull=True).count()
         draft_registration.registered_node = reg
         draft_registration.save()
+        reg.creator = user  # keep auth if passed
         reg.save()
+
+        if has_doi:
+            IdentifierFactory(referent=reg, category='doi')
+
         return reg
 
 
@@ -619,8 +640,8 @@ class SubjectFactory(DjangoModelFactory):
             osf = models.PreprintProvider.load('osf') or PreprintProviderFactory(_id='osf')
             bepress_subject = SubjectFactory(provider=osf)
         try:
-            ret = super(SubjectFactory, cls)._create(target_class, parent=parent, provider=provider, bepress_subject=bepress_subject, *args, **kwargs)
-        except IntegrityError:
+            ret = super()._create(target_class, parent=parent, provider=provider, bepress_subject=bepress_subject, *args, **kwargs)
+        except (IntegrityError, ValidationError):
             ret = models.Subject.objects.get(text=kwargs['text'])
             if parent:
                 ret.parent = parent
@@ -640,14 +661,22 @@ class PreprintProviderFactory(DjangoModelFactory):
 
     @classmethod
     def _build(cls, target_class, *args, **kwargs):
-        instance = super(PreprintProviderFactory, cls)._build(target_class, *args, **kwargs)
+        try:
+            instance = models.PreprintProvider.objects.get(_id=kwargs['_id'])
+        except models.PreprintProvider.DoesNotExist:
+            instance = super()._build(target_class, *args, **kwargs)
+
         if not instance.share_title:
             instance.share_title = instance._id
         return instance
 
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
-        instance = super(PreprintProviderFactory, cls)._create(target_class, *args, **kwargs)
+        try:
+            instance = models.PreprintProvider.objects.get(_id=kwargs['_id'])
+        except models.PreprintProvider.DoesNotExist:
+            instance = super()._create(target_class, *args, **kwargs)
+
         if not instance.share_title:
             instance.share_title = instance._id
             instance.save()
@@ -670,12 +699,18 @@ class PreprintFactory(DjangoModelFactory):
     creator = factory.SubFactory(AuthUserFactory)
 
     doi = factory.Sequence(lambda n: '10.123/{}'.format(n))
-    provider = factory.SubFactory(PreprintProviderFactory)
 
     @classmethod
     def _build(cls, target_class, *args, **kwargs):
         creator = kwargs.pop('creator', None) or UserFactory()
         provider = kwargs.pop('provider', None) or PreprintProviderFactory()
+
+        # pre Django 3 behavior
+        reviews_workflow = kwargs.pop('reviews_workflow', None)
+        if reviews_workflow:
+            provider.reviews_workflow = reviews_workflow
+            provider.save()
+
         project = kwargs.pop('project', None) or None
         title = kwargs.pop('title', None) or 'Untitled'
         description = kwargs.pop('description', None) or 'None'
@@ -1057,16 +1092,16 @@ class ChronosJournalFactory(DjangoModelFactory):
     class Meta:
         model = models.ChronosJournal
 
-    name = factory.Faker('text')
-    title = factory.Faker('text')
+    name = factory.Faker('company')
+    title = factory.Faker('sentence')
     journal_id = factory.Faker('ean')
 
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
         kwargs['raw_response'] = kwargs.get('raw_response', {
-            'TITLE': kwargs.get('title', factory.Faker('text').generate([])),
+            'TITLE': kwargs.get('title', factory.Faker('sentence').generate([])),
             'JOURNAL_ID': kwargs.get('title', factory.Faker('ean').generate([])),
-            'NAME': kwargs.get('name', factory.Faker('text').generate([])),
+            'NAME': kwargs.get('name', factory.Faker('company').generate([])),
             'JOURNAL_URL': factory.Faker('url').generate([]),
             'PUBLISHER_ID': factory.Faker('ean').generate([]),
             'PUBLISHER_NAME': factory.Faker('name').generate([])
@@ -1114,3 +1149,58 @@ class BrandFactory(DjangoModelFactory):
 
     primary_color = factory.Faker('hex_color')
     secondary_color = factory.Faker('hex_color')
+
+
+class SchemaResponseFactory(DjangoModelFactory):
+    initiator = factory.SubFactory(AuthUserFactory)
+    revision_justification = "We're talkin' about practice!"
+    submitted_timestamp = FuzzyDateTime(datetime.datetime(1970, 1, 1, tzinfo=pytz.UTC))
+    registration = factory.SubFactory(RegistrationFactory)
+
+    class Meta:
+        model = models.SchemaResponse
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        from django.contrib.contenttypes.models import ContentType
+        SchemaResponse = models.SchemaResponse
+        justification = kwargs.get('revision_justification')
+        initiator = kwargs.get('initiator')
+        registration = kwargs.get('registration')
+        content_type = ContentType.objects.get_for_model(registration)
+        schema = registration.registered_schema.get()
+        if not registration.schema_responses.exists():
+            return SchemaResponse.create_initial_response(initiator, registration, schema, justification)
+        else:
+            previous_schema_response = SchemaResponse.objects.filter(
+                object_id=registration.id,
+                content_type_id=content_type
+            ).get()
+            previous_schema_response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
+            previous_schema_response.save()
+            return SchemaResponse.create_from_previous_response(initiator, previous_schema_response, justification)
+
+
+class SchemaResponseActionFactory(DjangoModelFactory):
+    class Meta:
+        model = models.SchemaResponseAction
+
+    trigger = FuzzyChoice(choices=SchemaResponseTriggers.char_field_choices())
+    comment = factory.Faker('text')
+    from_state = FuzzyChoice(choices=ApprovalStates.char_field_choices())
+    to_state = FuzzyChoice(choices=ApprovalStates.char_field_choices())
+
+    target = factory.SubFactory(SchemaResponseFactory)
+    creator = factory.SubFactory(AuthUserFactory)
+
+    is_deleted = False
+
+
+class RegistrationBulkUploadJobFactory(DjangoModelFactory):
+    class Meta:
+        model = models.RegistrationBulkUploadJob
+
+
+class RegistrationBulkUploadRowFactory(DjangoModelFactory):
+    class Meta:
+        model = models.RegistrationBulkUploadRow

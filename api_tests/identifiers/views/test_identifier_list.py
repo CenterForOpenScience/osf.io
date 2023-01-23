@@ -137,7 +137,7 @@ class TestRegistrationIdentifierList:
 
     def test_do_not_return_deleted_identifier(
             self, app, registration):
-        registration.is_deleted = True
+        registration.deleted = timezone.now()
         registration.save()
         url = '/{}registrations/{}/identifiers/'.format(API_BASE, registration._id)
         res = app.get(url, expect_errors=True)

@@ -6,14 +6,16 @@ import logging
 from decimal import Decimal
 
 import pytz
-import ciso8601
+from dateutil.parser import isoparse
 from django.contrib.postgres import lookups
-from django.contrib.postgres.fields.jsonb import JSONField
-from django.contrib.postgres.forms.jsonb import JSONField as JSONFormField
 from django.core.serializers.json import DjangoJSONEncoder
+from django.db.models import JSONField
+from django.forms import JSONField as JSONFormField
+
 from osf.exceptions import NaiveDatetimeException, ValidationError
 
 logger = logging.getLogger(__name__)
+
 
 def coerce_nonnaive_datetimes(json_data):
     if isinstance(json_data, list):
@@ -59,11 +61,11 @@ def decode_datetime_objects(nested_value):
         for key, value in nested_value.items():
             if isinstance(value, dict) and 'type' in value.keys():
                 if value['type'] == 'encoded_datetime':
-                    nested_value[key] = ciso8601.parse_datetime(value['value'])
+                    nested_value[key] = isoparse(value['value'])
                 if value['type'] == 'encoded_date':
-                    nested_value[key] = ciso8601.parse_datetime(value['value']).date()
+                    nested_value[key] = isoparse(value['value']).date()
                 if value['type'] == 'encoded_time':
-                    nested_value[key] = ciso8601.parse_datetime(value['value']).time()
+                    nested_value[key] = isoparse(value['value']).time()
                 if value['type'] == 'encoded_decimal':
                     nested_value[key] = Decimal(value['value'])
             elif isinstance(value, dict):
@@ -84,10 +86,9 @@ class DateTimeAwareJSONField(JSONField):
         defaults.update(kwargs)
         return super(DateTimeAwareJSONField, self).formfield(**defaults)
 
-    def from_db_value(self, value, expression, connection, context):
-        if value is None:
-            return None
-        return super(DateTimeAwareJSONField, self).to_python(decode_datetime_objects(value))
+    def from_db_value(self, value, expression, connection):
+        value = super(DateTimeAwareJSONField, self).from_db_value(value, None, None)
+        return decode_datetime_objects(value)
 
     def get_prep_lookup(self, lookup_type, value):
         if lookup_type in ('has_key', 'has_keys', 'has_any_keys'):
@@ -96,9 +97,11 @@ class DateTimeAwareJSONField(JSONField):
 
 
 class DateTimeAwareJSONFormField(JSONFormField):
+
     def to_python(self, value):
+        value = super(DateTimeAwareJSONFormField, self).to_python(value)
         try:
-            return decode_datetime_objects(json.loads(value))
+            return decode_datetime_objects(value)
         except TypeError:
             raise ValidationError(
                 self.error_messages['invalid'],
@@ -115,6 +118,7 @@ class DateTimeAwareJSONFormField(JSONFormField):
                 code='invalid',
                 params={'value': value},
             )
+
 
 JSONField.register_lookup(lookups.DataContains)
 JSONField.register_lookup(lookups.ContainedBy)

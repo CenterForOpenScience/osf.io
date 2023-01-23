@@ -4,7 +4,7 @@ from future.moves.urllib.parse import urlparse
 
 import furl
 import waffle
-from django.core.urlresolvers import resolve, reverse, NoReverseMatch
+from django.urls import resolve, reverse, NoReverseMatch
 from django.core.exceptions import ImproperlyConfigured
 from distutils.version import StrictVersion
 
@@ -15,13 +15,21 @@ from rest_framework.fields import get_attribute as get_nested_attributes
 from rest_framework.mixins import RetrieveModelMixin
 
 from api.base import utils
+from api.base.exceptions import EnumFieldMemberError
 from osf.utils import permissions as osf_permissions
 from osf.utils import sanitize
 from osf.utils import functional
 from api.base import exceptions as api_exceptions
 from api.base.settings import BULK_SETTINGS
 from framework.auth import core as auth_core
-from osf.models import AbstractNode, DraftRegistration, MaintenanceState, Preprint
+from osf.models import (
+    AbstractNode,
+    DraftRegistration,
+    MaintenanceState,
+    Preprint,
+    Guid,
+    BaseFileNode,
+)
 from website import settings
 from website.project.model import has_anonymous_link
 from api.base.versioning import KEBAB_CASE_VERSION, get_kebab_snake_case_field
@@ -258,6 +266,18 @@ class HideIfWikiDisabled(ConditionalField):
         has_wiki_addon = instance.has_wiki_addon if hasattr(instance, 'has_wiki_addon') else instance.has_addon('wiki')
         return not utils.is_deprecated(request.version, min_version='2.8') and not has_wiki_addon
 
+class HideIfWithdrawalOrWikiDisabled(ConditionalField):
+    """
+    If wiki is disabled or registration is withdrawn, don't show relationship field, only available after 2.7
+    """
+
+    def should_hide(self, instance):
+        request = self.context.get('request')
+        has_wiki_addon = instance.has_wiki_addon if hasattr(instance, 'has_wiki_addon') else instance.has_addon('wiki')
+        return instance.is_retracted or (not utils.is_deprecated(request.version, min_version='2.8') and not has_wiki_addon)
+
+    def should_be_none(self, instance):
+        return not isinstance(self.field, RelationshipField)
 
 class HideIfNotNodePointerLog(ConditionalField):
     """
@@ -395,11 +415,28 @@ class IDField(ser.CharField):
             if request.method in utils.UPDATE_METHODS and not utils.is_bulk_request(request):
                 id_field = self.get_id(self.root.instance)
                 if id_field != data:
-                    raise api_exceptions.Conflict(detail=('The id you used in the URL, "{}", does not match the id you used in the json body\'s id field, "{}". The object "{}" exists, otherwise you\'d get a 404, so most likely you need to change the id field to match.'.format(id_field, data, id_field)))
+                    raise api_exceptions.Conflict(
+                        detail=(
+                            f'The id you used in the URL, "{id_field}", does not match the id you used in the json'
+                            f' body\'s id field, "{data}". The object "{id_field}" exists, otherwise you\'d get a'
+                            f' 404, so most likely you need to change the id field to match.'
+                        ),
+                    )
         return super(IDField, self).to_internal_value(data)
 
     def get_id(self, obj):
         return getattr(obj, self.source, '_id')
+
+
+class GuidOrIDField(IDField):
+
+    def get_id(self, obj):
+        if isinstance(obj, BaseFileNode) and self.source == '_id':
+            guid = Guid.load(self.context['view'].kwargs['file_id'])
+            if guid:
+                return guid._id
+
+        return super().get_id(obj)
 
 
 class TypeField(ser.CharField):
@@ -883,7 +920,13 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 try:
                     related_type = resolved_url.namespace.split(':')[-1]
                     # TODO: change kwargs to preprint_provider_id and registration_id
-                    if related_type in ('preprint_providers', 'preprint-providers', 'registration-providers'):
+                    if related_class.view_name == 'node-settings':
+                        related_id = resolved_url.kwargs['node_id']
+                        related_type = 'node-setting'
+                    elif related_class.view_name == 'node-storage':
+                        related_id = resolved_url.kwargs['node_id']
+                        related_type = 'node-storage'
+                    elif related_type in ('preprint_providers', 'preprint-providers', 'registration-providers'):
                         related_id = resolved_url.kwargs['provider_id']
                     elif related_type in ('registrations', 'draft_nodes'):
                         related_id = resolved_url.kwargs['node_id']
@@ -896,6 +939,9 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                     elif related_type == 'institutions' and related_class.view_name == 'institution-summary-metrics':
                         related_id = resolved_url.kwargs['institution_id']
                         related_type = 'institution-summary-metrics'
+                    elif related_type == 'collections' and related_class.view_name == 'collection-submission-detail':
+                        related_id = f'{resolved_url.kwargs["collection_submission_id"]}-{resolved_url.kwargs["collection_id"]}'
+                        related_type = 'collection-submission'
                     else:
                         related_id = resolved_url.kwargs[related_type[:-1] + '_id']
                 except KeyError:
@@ -949,6 +995,10 @@ class TargetField(ser.Field):
             'view': 'nodes:node-detail',
             'lookup_kwarg': 'node_id',
         },
+        'registration': {
+            'view': 'registrations:registration-detail',
+            'lookup_kwarg': 'node_id',
+        },
         'preprint': {
             'view': 'preprints:preprint-detail',
             'lookup_kwarg': 'preprint_id',
@@ -976,11 +1026,15 @@ class TargetField(ser.Field):
         """
         Resolves the view for target node or target comment when embedding.
         """
-        view_info = self.view_map.get(resource.target.referent._name, None)
+        if hasattr(resource.target, 'referent'):
+            name = resource.target.referent._name
+        else:
+            name = resource.target.__class__.__name__.lower()
+
+        view_info = self.view_map.get(name, None)
         if not view_info:
-            raise api_exceptions.TargetNotSupportedError('{} is not a supported target type'.format(
-                resource.target._name,
-            ))
+            raise api_exceptions.TargetNotSupportedError(f'{name} is not a supported target type')
+
         if not view_info['view']:
             return None, None, None
         embed_value = resource.target._id
@@ -1059,11 +1113,8 @@ class LinksField(ser.Field):
         # not just the field attribute.
         return obj
 
-    def extend_absolute_info_url(self, obj):
-        return utils.extend_querystring_if_key_exists(obj.get_absolute_info_url(), self.context['request'], 'view_only')
-
-    def extend_absolute_url(self, obj):
-        return utils.extend_querystring_if_key_exists(obj.get_absolute_url(), self.context['request'], 'view_only')
+    def _extend_url_with_vol_key(self, url):
+        return utils.extend_querystring_if_key_exists(url, self.context['request'], 'view_only')
 
     def to_representation(self, obj):
         ret = {}
@@ -1072,16 +1123,18 @@ class LinksField(ser.Field):
                 url = _url_val(value, obj=obj, serializer=self.parent, request=self.context['request'])
             except SkipField:
                 continue
+
+            if name in ['self', 'info']:
+                ret[name] = self._extend_url_with_vol_key(url)
             else:
                 ret[name] = url
-        if hasattr(obj, 'get_absolute_url') and 'self' not in self.links:
-            ret['self'] = self.extend_absolute_url(obj)
+
+        if 'self' not in ret and hasattr(obj, 'get_absolute_url'):
+            ret['self'] = self._extend_url_with_vol_key(obj.get_absolute_url())
 
         if 'info' in ret:
             if hasattr(obj, 'get_absolute_info_url'):
-                ret['info'] = self.extend_absolute_info_url(obj)
-            else:
-                ret['info'] = utils.extend_querystring_if_key_exists(ret['info'], self.context['request'], 'view_only')
+                ret['info'] = self._extend_url_with_vol_key(obj.get_absolute_info_url())
 
         return ret
 
@@ -1943,3 +1996,23 @@ class DisableIfSwitch(HideIfSwitch):
         """
         super(DisableIfSwitch, self).__init__(switch_name, field, hide_if, **kwargs)
         self.validators.append(SwitchValidator(self.switch_name))
+
+
+class EnumField(ser.ChoiceField):
+    """
+    Custom field for using Int enums internally in a human-readable way.
+    """
+    def __init__(self, enum_class, **kwargs):
+        self._enum_class = enum_class
+        # We usually define this on the Enum class
+        choices = tuple((entry.value, entry.name.lower()) for entry in enum_class)
+        super().__init__(choices=choices, **kwargs)
+
+    def to_representation(self, value):
+        return self._enum_class(value).name.lower()
+
+    def to_internal_value(self, data):
+        try:
+            return self._enum_class[data.upper()].value
+        except KeyError:
+            raise EnumFieldMemberError(self._enum_class, data)

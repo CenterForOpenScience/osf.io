@@ -4,7 +4,7 @@ from rest_framework.exceptions import NotFound
 from api.base.exceptions import Conflict
 from api.base.serializers import JSONAPISerializer, RelationshipField, LinksField, ConditionalField
 from api.base.utils import absolute_reverse, get_user_auth
-from osf.external.chronos import ChronosClient
+from osf.external.chronos.chronos import ChronosClient
 from osf.models import ChronosJournal
 from osf.utils.workflows import ChronosSubmissionStatus
 

@@ -49,6 +49,7 @@ services:
   ###################
 
   elasticsearch:
+    platform: linux/amd64
     image: elasticsearch:2
     ports:
       - 9200:9200
@@ -502,3 +503,16 @@ services:
       - preprints_dist_vol:/preprints
       - reviews_dist_vol:/reviews
     stdin_open: true
+
+  pigeon:
+    image: quay.io/centerforopenscience/osf-pigeon
+    restart: unless-stopped
+    environment:
+      - .osf-pigeon.env
+    ports:
+      - 2020:2020
+    env_file:
+      - .osf-pigeon.env
+    stdin_open: true
+    volumes:
+      - /srv

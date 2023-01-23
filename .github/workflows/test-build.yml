@@ -2,6 +2,9 @@ name: osf.io
 
 on: [push, pull_request]
 
+permissions:
+  contents: read
+
 env:
   WHEELHOUSE: ~/.cache/wheelhouse
   ELASTICSEARCH_ARCHIVE: elasticsearch-2.4.5.tar.gz
@@ -155,7 +158,7 @@ jobs:
       - uses: ./.github/actions/start-build
       - name: NVM & yarn install
         run: |
-         invoke assets --dev
+          invoke assets --dev
       - name: Run test
         run: invoke test_travis_api1_and_js -n 1
 

@@ -99,7 +99,14 @@ def json_api_exception_handler(exc, context):
             response['X-OSF-OTP'] = 'required; app'
 
         if isinstance(exc, JSONAPIException):
-            errors.extend([{'source': exc.source or {}, 'detail': exc.detail, 'meta': exc.meta or {}}])
+            errors.extend([
+                {
+                    'source': exc.source or {},
+                    'detail': exc.detail,
+                    'meta': exc.meta or {},
+                    'status': str(exc.status_code),
+                },
+            ])
         elif isinstance(message, dict):
             errors.extend(dict_error_formatting(message, context, index=None))
         else:
@@ -311,3 +318,13 @@ class NonDescendantNodeError(APIException):
 class PermanentlyMovedError(APIException):
     status_code = 301
     default_detail = _('This object has permanently moved.')
+
+
+class EnumFieldMemberError(JSONAPIException):
+
+    def __init__(self, enum_class, bad_value, source=None, meta=None):
+        choices = [entry.name.lower() for entry in enum_class]
+        detail = (
+            f'"{bad_value}" is not a supported value for this field. Valid options are: {choices}'
+        )
+        super().__init__(detail=detail, source=source, meta=meta)

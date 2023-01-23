@@ -23,7 +23,6 @@ from osf.models import (
     OSFGroup,
     Tag,
     Preprint,
-    QuickFilesNode,
 )
 from addons.wiki.models import WikiPage
 from addons.osfstorage.models import OsfStorageFile
@@ -34,7 +33,7 @@ from osf_tests import factories
 from tests.base import OsfTestCase
 from tests.test_features import requires_search
 from tests.utils import run_celery_tasks
-
+from osf.utils.workflows import CollectionSubmissionStates
 
 TEST_INDEX = 'test'
 
@@ -110,16 +109,26 @@ class TestCollectionsSearch(OsfTestCase):
         docs = query_collections('Salif Keita')['results']
         assert_equal(len(docs), 0)
 
-        assert_false(self.node_one.is_collected)
-        assert_false(self.node_public.is_collected)
+        assert_false(self.node_one.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists())
+        assert_false(self.node_public.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists())
 
         self.collection_one.collect_object(self.node_one, self.user)
         self.collection_public.collect_object(self.node_public, self.user)
         self.reg_collection.collect_object(self.reg_public, self.user)
 
-        assert_true(self.node_one.is_collected)
-        assert_true(self.node_public.is_collected)
-        assert_true(self.reg_public.is_collected)
+        assert_true(self.node_one.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists())
+        assert_true(self.node_public.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists())
+        assert_true(self.reg_public.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists())
 
         docs = query_collections('Salif Keita')['results']
         assert_equal(len(docs), 3)
@@ -189,10 +198,18 @@ class TestCollectionsSearch(OsfTestCase):
         self.collection_private.collect_object(self.node_public, self.user)
         self.reg_collection_private.collect_object(self.reg_public, self.user)
 
-        assert_true(self.node_one.is_collected)
-        assert_true(self.node_two.is_collected)
-        assert_true(self.node_public.is_collected)
-        assert_true(self.reg_public.is_collected)
+        assert_true(self.node_one.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists())
+        assert_true(self.node_two.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists())
+        assert_true(self.node_public.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists())
+        assert_true(self.reg_public.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists())
 
         docs = query_collections('Salif Keita')['results']
         assert_equal(len(docs), 0)
@@ -229,16 +246,24 @@ class TestCollectionsSearch(OsfTestCase):
     def test_removed_submission_are_removed_from_index(self):
         self.collection_public.collect_object(self.node_one, self.user)
         self.reg_collection.collect_object(self.reg_public, self.user)
-        assert_true(self.node_one.is_collected)
-        assert_true(self.reg_public.is_collected)
+        assert_true(self.node_one.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists())
+        assert_true(self.reg_public.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists())
 
         docs = query_collections('Salif Keita')['results']
         assert_equal(len(docs), 2)
 
-        self.collection_public.remove_object(self.node_one)
-        self.reg_collection.remove_object(self.reg_public)
-        assert_false(self.node_one.is_collected)
-        assert_false(self.reg_public.is_collected)
+        self.collection_public.remove_object(self.node_one, Auth(self.user))
+        self.reg_collection.remove_object(self.reg_public, Auth(self.user))
+        assert_false(self.node_one.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists())
+        assert_false(self.reg_public.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists())
 
         docs = query_collections('Salif Keita')['results']
         assert_equal(len(docs), 0)
@@ -257,7 +282,7 @@ class TestCollectionsSearch(OsfTestCase):
         assert_equal(docs[0]['_source']['contributors'][0]['fullname'], self.user.fullname)
         assert_equal(docs[0]['_source']['url'], self.node_one.url)
         assert_equal(docs[0]['_source']['id'], '{}-{}'.format(self.node_one._id,
-            self.node_one.collecting_metadata_list[0].collection._id))
+            self.node_one.collection_submissions[0].collection._id))
         assert_equal(docs[0]['_source']['category'], 'collectionSubmission')
 
     def test_search_updated_after_id_change(self):
@@ -329,7 +354,6 @@ class TestUserUpdate(OsfTestCase):
         # Ensure user is not in search index
         assert_equal(len(query_user(user.fullname)['results']), 0)
 
-    @pytest.mark.enable_quickfiles_creation
     def test_merged_user(self):
         user = factories.UserFactory(fullname='Annie Lennox')
         merged_user = factories.UserFactory(fullname='Lisa Stansfield')
@@ -1385,7 +1409,9 @@ class TestSearchMigration(OsfTestCase):
         node = factories.NodeFactory(creator=self.user, title='Ali Bomaye', is_public=True)
         collection_one.collect_object(node, self.user)
         collection_two.collect_object(node, self.user)
-        assert node.is_collected
+        assert node.collection_submissions.filter(
+            machine_state=CollectionSubmissionStates.ACCEPTED
+        ).exists()
 
         docs = query_collections('*')['results']
         assert len(docs) == 2
@@ -1514,43 +1540,3 @@ class TestSearchFiles(OsfTestCase):
         assert_equal(file_.path, path)
         assert_equal(find[0]['guid_url'], None)
         assert_equal(find[0]['deep_url'], deep_url)
-
-    @pytest.mark.enable_quickfiles_creation
-    def test_quickfiles_files_appear_in_search(self):
-        quickfiles = QuickFilesNode.objects.get(creator=self.node.creator)
-        quickfiles_osf_storage = quickfiles.get_addon('osfstorage')
-        quickfiles_root = quickfiles_osf_storage.get_root()
-
-        quickfiles_root.append_file('GreenLight.mp3')
-        find = query_file('GreenLight.mp3')['results']
-        assert_equal(len(find), 1)
-        assert find[0]['node_url'] == '/{}/quickfiles/'.format(quickfiles.creator._id)
-
-    @pytest.mark.enable_quickfiles_creation
-    def test_qatest_quickfiles_files_not_appear_in_search(self):
-        quickfiles = QuickFilesNode.objects.get(creator=self.node.creator)
-        quickfiles_osf_storage = quickfiles.get_addon('osfstorage')
-        quickfiles_root = quickfiles_osf_storage.get_root()
-
-        file = quickfiles_root.append_file('GreenLight.mp3')
-        tag = Tag(name='qatest')
-        tag.save()
-        file.tags.add(tag)
-        file.save()
-
-        find = query_file('GreenLight.mp3')['results']
-        assert_equal(len(find), 0)
-
-    @pytest.mark.enable_quickfiles_creation
-    def test_quickfiles_spam_user_files_do_not_appear_in_search(self):
-        quickfiles = QuickFilesNode.objects.get(creator=self.node.creator)
-        quickfiles_osf_storage = quickfiles.get_addon('osfstorage')
-        quickfiles_root = quickfiles_osf_storage.get_root()
-        quickfiles_root.append_file('GreenLight.mp3')
-
-        self.node.creator.disable_account()
-        self.node.creator.confirm_spam()
-        self.node.creator.save()
-
-        find = query_file('GreenLight.mp3')['results']
-        assert_equal(len(find), 0)

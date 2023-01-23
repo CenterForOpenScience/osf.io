@@ -48,7 +48,7 @@ var STATE_MAP = {
 };
 
 var SYNC_UPLOAD_ADDONS = ['github', 'dataverse'];
-var READ_ONLY_ADDONS = ['bitbucket', 'gitlab', 'onedrive'];
+var READ_ONLY_ADDONS = ['bitbucket', 'gitlab'];
 var MOVE_INTERVAL;
 var MILLSECOND_PER_MOVE_REQUEST = 500;
 
@@ -579,7 +579,7 @@ function doItemOp(operation, to, from, rename, conflict) {
                 var s = filesRemaining.conflicts.length > 1 ? 's' : '';
                 var mithrilContent = m('div', { className: 'text-center' }, [
                     m('p.h4', filesRemaining.conflicts.length + ' conflict' + s + ' left to resolve.'),
-                    m('div', {className: 'ball-pulse ball-scale-blue text-center'}, [
+                    m('li', {className: 'ball-pulse ball-scale-blue text-center'}, [
                         m('div',''),
                         m('div',''),
                         m('div',''),
@@ -2222,7 +2222,7 @@ var FGToolbar = {
         }
 
         var storageLimitsStatus = window.contextVars.node.storageLimitsStatus;
-        if(storageLimitsStatus && window.contextVars.currentUser.canEdit) {
+        if(storageLimitsStatus && storageLimitsStatus.text && window.contextVars.currentUser.canEdit) {
             generalButtons.push(
                 m.component(FGButton, {
                     icon: 'fa fa-exclamation-triangle',
@@ -2237,7 +2237,6 @@ var FGToolbar = {
         if(
             (items.length > 1) &&
             (ctrl.tb.multiselected()[0].data.provider !== 'github') &&
-            (ctrl.tb.multiselected()[0].data.provider !== 'onedrive') &&
             (ctrl.tb.options.placement !== 'fileview') &&
             !(
                 (ctrl.tb.multiselected()[0].data.provider === 'dataverse') &&
@@ -2263,7 +2262,7 @@ var FGToolbar = {
                     ctrl.mode(toolbarModes.FILTER);
                 },
                 icon: 'fa fa-search',
-                className : 'text-primary'
+                className : 'high-contrast-link'
             }, 'Filter'));
             if (ctrl.tb.options.placement !== 'fileview') {
                 generalButtons.push(m.component(FGButton, {

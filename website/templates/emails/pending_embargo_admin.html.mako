@@ -18,12 +18,12 @@
     % if is_moderated:
       If approved by all admin contributors, the registration will be submitted for moderator review.
       If the moderators approve, the registration will be embargoed until
-      ${embargo_end_date.date()}, at which point it will be made public as part of the.
-      ${reviewable.provider.name if (reviewable.provider and reviewable.provider._id != 'osf') else 'OSF'} registry.
+      ${embargo_end_date.date()}, at which time it will be made public as part of the
+      <a href="${settings.DOMAIN}/registries/${reviewable.provider._id if reviewable.provider else 'osf'}">${reviewable.provider.name if reviewable.provider else "OSF Registry"}</a>.
     % else:
       If approved by all admin contributors, the registration will be embargoed until
       ${embargo_end_date.date()}, at which point it will be made public as part of the
-      ${reviewable.provider.name if (reviewable.provider and reviewable.provider._id != 'osf') else 'OSF'} registry.
+      <a href="${settings.DOMAIN}/registries/${reviewable.provider._id if reviewable.provider else 'osf'}">${reviewable.provider.name if reviewable.provider else "OSF Registry"}</a>.
     % endif
     </p>
     <p style="color:red;">
@@ -31,8 +31,8 @@
     this registration before it is automatically submitted.
     </p>
     <p>
-    Approve this embargoed registration: <a href="${approval_link}">Click here</a>.<br>
-    Cancel this embargoed registration: <a href="${disapproval_link}">Click here</a>.
+    To approve this embargoed registration: <a href="${approval_link}">Click here</a>.<br>
+    To cancel this embargoed registration: <a href="${disapproval_link}">Click here</a>.
     </p>
     <p>
     Note: If any admin clicks their cancel link, the submission will be cancelled immediately, and the

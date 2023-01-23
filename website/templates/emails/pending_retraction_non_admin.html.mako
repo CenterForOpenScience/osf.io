@@ -3,6 +3,7 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
+    <%!from website import settings%>
     Hello ${user.fullname},
     <p>
     ${initiated_by} has requested final approval to withdraw your registration
@@ -22,8 +23,8 @@
       If approved by all admin contributors, the registration will be marked as withdrawn.
     % endif
     Its content will be removed from the
-    ${reviewable.provider.name if (reviewable.provider and reviewable.provider._id != 'osf') else 'OSF'} registry.
-    but bssic metadata will be left behind. The title of the withdrawn registration and its list of contributors will remain.
+    <a href="${settings.DOMAIN}/registries/${reviewable.provider._id if reviewable.provider else 'osf'}">${reviewable.provider.name if reviewable.provider else "OSF Registry"}</a>,
+    but basic metadata will be left behind. The title of the withdrawn registration and its list of contributors will remain.
     % if reviewable.withdrawal_justification:
       The provided justification or explanation of the withdrawal will also be visible.
     % endif

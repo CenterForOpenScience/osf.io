@@ -172,7 +172,7 @@
                     <div>
                         <a data-bind="click: trackClick.bind($data, 'Create Account')" class="btn btn-primary" href="${web_url_for('index')}#signUp">Create an Account</a>
 
-                        <a data-bind="click: trackClick.bind($data, 'Learn More')" class="btn btn-primary" href="https://openscience.zendesk.com/hc/en-us" target="_blank" rel="noreferrer">Learn More</a>
+                        <a data-bind="click: trackClick.bind($data, 'Learn More')" class="btn btn-primary" href="https://help.osf.io/article/384-managing-projects" target="_blank" rel="noreferrer">Learn More</a>
                         <a data-bind="click: dismiss">Hide this message</a>
                     </div>
                 </div>
@@ -243,7 +243,11 @@
                     anon: ${ anon | sjson, n },
                 },
                 maintenance: ${ maintenance | sjson, n},
-                analyticsMeta: {},
+                analyticsMeta: {
+                    pageMeta: {
+                        routeName: ${page_route_name | sjson, n},
+                    },
+                },
                 osfSupportEmail: ${osf_support_email | sjson, n },
                 csrfCookieName: ${ csrf_cookie_name | sjson, n },
             });
@@ -381,12 +385,13 @@
 
 <%def name="content_wrap()">
     <div class="watermarked">
-        <div class="container ${self.container_class()}">
-
+        <div class="container ${self.container_class()}" role="main">
             % if status:
                 ${self.alert()}
             % endif
 
+            ### A11y Reccommended header
+            <h1 style="display: none;">Main content</h1>
             ${self.content()}
         </div><!-- end container -->
     </div><!-- end watermarked -->

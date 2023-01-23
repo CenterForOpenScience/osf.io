@@ -4,7 +4,9 @@ import logging
 from django.db import models
 from django.utils import timezone
 from framework import sentry
+
 from osf.exceptions import ValidationValueError, ValidationTypeError
+from osf.external.spam.tasks import check_resource_for_domains
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils import akismet, oopspam
@@ -111,6 +113,24 @@ class SpamMixin(models.Model):
     def is_spammy(self):
         return self.spam_status in [SpamStatus.FLAGGED, SpamStatus.SPAM]
 
+    @property
+    def is_ham(self):
+        return self.spam_status == SpamStatus.HAM
+
+    @property
+    def is_hammy(self):
+        return self.is_ham or (
+            self.spam_status == SpamStatus.UNKNOWN and self.is_assumed_ham
+        )
+
+    @property
+    def is_assumed_ham(self):
+        """If True, will automatically skip spam checks.
+
+        Override to set criteria for assumed ham.
+        """
+        return False
+
     def report_abuse(self, user, save=False, **kwargs):
         """Report object is spam or other abuse of OSF
 
@@ -150,11 +170,17 @@ class SpamMixin(models.Model):
         if save:
             self.save()
 
-    def confirm_ham(self, save=False):
+    def unspam(self, save=False):
+        self.spam_status = SpamStatus.UNKNOWN
+        if save:
+            self.save()
+
+    def confirm_ham(self, save=False, train_akismet=True):
         # not all mixins will implement check spam pre-req, only submit ham when it was incorrectly flagged
         if (
             settings.SPAM_CHECK_ENABLED and
-            self.spam_data and self.spam_status in [SpamStatus.FLAGGED, SpamStatus.SPAM]
+            'headers' in self.spam_data and self.spam_status in [SpamStatus.FLAGGED, SpamStatus.SPAM] and
+            train_akismet
         ):
             client = _get_akismet_client()
             client.submit_ham(
@@ -170,11 +196,18 @@ class SpamMixin(models.Model):
         if save:
             self.save()
 
-    def confirm_spam(self, save=False):
+    def confirm_spam(self, domains=None, save=False, train_akismet=True):
+        if domains:
+            if 'domains' in self.spam_data:
+                self.spam_data['domains'].extend(domains)
+                self.spam_data['domains'] = list(set(self.spam_data['domains']))
+            else:
+                self.spam_data['domains'] = domains
         # not all mixins will implement check spam pre-req, only submit spam when it was incorrectly flagged
         if (
             settings.SPAM_CHECK_ENABLED and
-            self.spam_data and self.spam_status in [SpamStatus.UNKNOWN, SpamStatus.HAM]
+            'headers' in self.spam_data and self.spam_status in [SpamStatus.UNKNOWN, SpamStatus.HAM] and
+            train_akismet
         ):
             client = _get_akismet_client()
             client.submit_spam(
@@ -196,14 +229,21 @@ class SpamMixin(models.Model):
         pass
 
     def do_check_spam(self, author, author_email, content, request_headers, update=True):
-        if self.spam_status == SpamStatus.HAM:
+        if self.is_hammy:
             return False
         if self.is_spammy:
             return True
 
+        check_resource_for_domains.apply_async(
+            kwargs=dict(
+                guid=self.guids.first()._id,
+                content=content,
+            )
+        )
+
         akismet_client = _get_akismet_client()
         oopspam_client = _get_oopspam_client()
-        remote_addr = request_headers['Remote-Addr']
+        remote_addr = request_headers.get('Remote-Addr') or request_headers['Host']  # for local testing
         user_agent = request_headers.get('User-Agent')
         referer = request_headers.get('Referer')
         akismet_is_spam, pro_tip = akismet_client.check_comment(

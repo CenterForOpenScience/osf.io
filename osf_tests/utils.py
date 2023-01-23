@@ -12,14 +12,22 @@ from website.signals import ALL_SIGNALS
 from website.archiver import ARCHIVER_SUCCESS
 from website.archiver import listeners as archiver_listeners
 
-from osf.models import Sanction, RegistrationProvider
+from osf.models import (
+    Sanction,
+    RegistrationProvider,
+    RegistrationSchema,
+    NotificationSubscription
+)
+
+from osf.utils.migrations import create_schema_blocks_for_atomic_schema
+
+from osf_tests.default_test_schema import DEFAULT_TEST_SCHEMA_NAME, DEFAULT_TEST_SCHEMA
 
 from .factories import (
     get_default_metaschema,
     RegistrationProviderFactory,
     DraftRegistrationFactory,
 )
-
 
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py
 class CaptureSignals(object):
@@ -120,7 +128,7 @@ def mock_archive(project, schema=None, auth=None, data=None, parent=None,
     provider = provider or RegistrationProvider.objects.first() or RegistrationProviderFactory(_id='osf')
 
     with mock.patch('framework.celery_tasks.handlers.enqueue_task'):
-        draft_reg = DraftRegistrationFactory(branched_from=project)
+        draft_reg = DraftRegistrationFactory(branched_from=project, registration_schema=schema)
         registration = project.register_node(
             schema=schema,
             auth=auth,
@@ -198,3 +206,49 @@ def create_mock_gcs_client():
     mock_client = mock.create_autospec(Client)
     mock_client.get_bucket.return_value = create_mock_bucket()
     return mock_client
+
+def get_default_test_schema():
+    try:
+        test_schema = RegistrationSchema.objects.get(name=DEFAULT_TEST_SCHEMA_NAME)
+    except RegistrationSchema.DoesNotExist:
+        test_schema = RegistrationSchema.objects.create(
+            name=DEFAULT_TEST_SCHEMA_NAME,
+            schema_version=1,
+            schema=DEFAULT_TEST_SCHEMA
+        )
+        create_schema_blocks_for_atomic_schema(test_schema)
+
+    return test_schema
+
+
+def _ensure_subscriptions(provider):
+    '''Make sure a provider's subscriptions exist.
+
+    Provider subscriptions are populated by an on_save signal when the provider is created.
+    This has led to observed race conditions and probabalistic test failures.
+    Avoid that.
+    '''
+    for subscription in provider.DEFAULT_SUBSCRIPTIONS:
+        NotificationSubscription.objects.get_or_create(
+            _id=f'{provider._id}_{subscription}',
+            event_name=subscription,
+            provider=provider
+        )
+
+def assert_notification_correctness(send_mail_mock, expected_template, expected_recipients):
+    '''Confirms that a mocked send_mail function contains the appropriate calls.'''
+    assert send_mail_mock.call_count == len(expected_recipients)
+
+    recipients = set()
+    templates = set()
+    for _, call_kwargs in send_mail_mock.call_args_list:
+        recipients.add(call_kwargs['to_addr'])
+        templates.add(call_kwargs['mail'])
+
+    assert recipients == expected_recipients
+
+    try:
+        assert templates == {expected_template}
+    except AssertionError:  # the non-static subject attributes mean we need a different comparison
+        assert set([template.tpl_prefix for template in list(templates)]) == {expected_template.tpl_prefix}
+        assert set([template._subject for template in list(templates)]) == {expected_template._subject}

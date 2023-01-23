@@ -124,8 +124,6 @@ def adminserver(ctx, port=8001, host='127.0.0.1', pty=True):
 @task
 def shell(ctx, transaction=True, print_sql=False, notebook=False):
     cmd = 'DJANGO_SETTINGS_MODULE="api.base.settings" python3 manage.py osf_shell'
-    if print_sql:
-        cmd += ' --print-sql'
     if notebook:
         cmd += ' --notebook'
     if not transaction:
@@ -350,24 +348,28 @@ API_TESTS1 = [
     'api_tests/users',
 ]
 API_TESTS2 = [
-    'api_tests/actions',
     'api_tests/chronos',
     'api_tests/meetings',
     'api_tests/metrics',
     'api_tests/nodes',
     'api_tests/osf_groups',
     'api_tests/requests',
+    'api_tests/resources',
+    'api_tests/schema_responses',
     'api_tests/subscriptions',
     'api_tests/waffle',
     'api_tests/wb',
 ]
 API_TESTS3 = [
+    'api_tests/actions',
     'api_tests/addons_tests',
     'api_tests/alerts',
     'api_tests/applications',
     'api_tests/banners',
     'api_tests/base',
     'api_tests/collections',
+    'api_tests/collection_submissions',
+    'api_tests/collection_submission_actions',
     'api_tests/comments',
     'api_tests/crossref',
     'api_tests/files',
@@ -376,7 +378,6 @@ API_TESTS3 = [
     'api_tests/regions',
     'api_tests/search',
     'api_tests/scopes',
-    'api_tests/sloan',
     'api_tests/subjects',
     'api_tests/taxonomies',
     'api_tests/test',
@@ -459,7 +460,6 @@ def test(ctx, all=False, lint=False):
         test_addons(ctx)
         # TODO: Enable admin tests
         test_admin(ctx)
-        karma(ctx)
 
 @task
 def remove_failures_from_testmon(ctx, db_path=None):
@@ -470,15 +470,9 @@ def remove_failures_from_testmon(ctx, db_path=None):
 
 @task
 def travis_setup(ctx):
-    ctx.run('npm install -g bower', echo=True)
-
     with open('package.json', 'r') as fobj:
         package_json = json.load(fobj)
         ctx.run('npm install @centerforopenscience/list-of-licenses@{}'.format(package_json['dependencies']['@centerforopenscience/list-of-licenses']), echo=True)
-
-    with open('bower.json', 'r') as fobj:
-        bower_json = json.load(fobj)
-        ctx.run('bower install {}'.format(bower_json['dependencies']['styles']), echo=True)
 
 @task
 def test_travis_addons(ctx, numprocesses=None, coverage=False, testmon=False):
@@ -500,8 +494,6 @@ def test_travis_website(ctx, numprocesses=None, coverage=False, testmon=False):
 
 @task
 def test_travis_api1_and_js(ctx, numprocesses=None, coverage=False, testmon=False):
-    # TODO: Uncomment when https://github.com/travis-ci/travis-ci/issues/8836 is resolved
-    # karma(ctx)
     #travis_setup(ctx)
     test_api1(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
 
@@ -516,14 +508,6 @@ def test_travis_api2(ctx, numprocesses=None, coverage=False, testmon=False):
 def test_travis_api3_and_osf(ctx, numprocesses=None, coverage=False, testmon=False):
     #travis_setup(ctx)
     test_api3(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon)
-
-@task
-def karma(ctx, travis=False):
-    """Run JS tests with Karma. Requires Chrome to be installed."""
-    if travis:
-        return ctx.run('yarn test-travis', echo=True)
-    ctx.run('yarn test', echo=True)
-
 
 @task
 def wheelhouse(ctx, addons=False, release=False, dev=False, pty=True):

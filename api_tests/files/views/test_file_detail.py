@@ -10,16 +10,18 @@ from addons.base.utils import get_mfr_url
 from addons.github.models import GithubFileNode
 from addons.osfstorage import settings as osfstorage_settings
 from addons.osfstorage.listeners import checkin_files_task
+from addons.osfstorage.tests.factories import FileVersionFactory
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as api_utils
 from framework.auth.core import Auth
-from osf.models import NodeLog, Session, QuickFilesNode
+from osf.models import NodeLog, Session, QuickFilesNode, Node, FileVersionUserMetadata
 from osf.utils.permissions import WRITE, READ
 from osf.utils.workflows import DefaultStates
 from osf_tests.factories import (
     AuthUserFactory,
     CommentFactory,
     ProjectFactory,
+    RegistrationFactory,
     UserFactory,
     PreprintFactory,
 )
@@ -42,7 +44,6 @@ def user():
 
 
 @pytest.mark.django_db
-@pytest.mark.enable_quickfiles_creation
 class TestFileView:
 
     @pytest.fixture()
@@ -60,6 +61,10 @@ class TestFileView:
     @pytest.fixture()
     def file_url(self, file):
         return '/{}files/{}/'.format(API_BASE, file._id)
+
+    @pytest.fixture()
+    def file_guid_url(self, file):
+        return f'/{API_BASE}files/{file.get_guid(create=True)._id}/'
 
     def test_must_have_auth_and_be_contributor(self, app, file_url):
         # test_must_have_auth(self, app, file_url):
@@ -90,32 +95,6 @@ class TestFileView:
         assert res.status_code == 410
 
         res = app.get(url_with_id, auth=user.auth, expect_errors=True)
-        assert res.status_code == 410
-
-    def test_disabled_users_quickfiles_file_detail_gets_410(self, app, quickfiles_node, user):
-        file_node = api_utils.create_test_file(quickfiles_node, user, create_guid=True)
-        url_with_guid = '/{}files/{}/'.format(
-            API_BASE, file_node.get_guid()._id
-        )
-        url_with_id = '/{}files/{}/'.format(API_BASE, file_node._id)
-
-        res = app.get(url_with_id)
-        assert res.status_code == 200
-
-        res = app.get(url_with_guid, auth=user.auth)
-        assert res.status_code == 200
-
-        user.is_disabled = True
-        user.save()
-
-        res = app.get(url_with_id, expect_errors=True)
-        assert res.json['errors'][0]['detail'] == 'This user has been deactivated and their' \
-                                                  ' quickfiles are no longer available.'
-        assert res.status_code == 410
-
-        res = app.get(url_with_guid, expect_errors=True)
-        assert res.json['errors'][0]['detail'] == 'This user has been deactivated and their' \
-                                                  ' quickfiles are no longer available.'
         assert res.status_code == 410
 
     def test_file_guid_guid_status(self, app, user, file, file_url):
@@ -168,7 +147,7 @@ class TestFileView:
         assert mock_allow.call_count == 1
 
     def test_get_file(self, app, user, file_url, file):
-        res = app.get(file_url, auth=user.auth)
+        res = app.get(f'{file_url}?version=2.2', auth=user.auth)
         file.versions.first().reload()
         assert res.status_code == 200
         assert set(res.json.keys()) == {'meta', 'data'}
@@ -308,7 +287,7 @@ class TestFileView:
         assert file.checkout is None
         assert res.status_code == 200
 
-    def test_checkout_file_error(self, app, user, file_url, file):
+    def test_checkout_file_error(self, app, user, file_url, file_guid_url, file):
         # test_checkout_file_no_type
         res = app.put_json_api(
             file_url,
@@ -351,13 +330,18 @@ class TestFileView:
             }, auth=user.auth, expect_errors=True)
         assert res.status_code == 409
 
-        # test_checkout_file_no_attributes
+        # test_use_guid_as_id
         res = app.put_json_api(
-            file_url,
-            {'data': {'id': file._id, 'type': 'files'}},
-            auth=user.auth, expect_errors=True
-        )
-        assert res.status_code == 400
+            file_guid_url, {
+                'data': {
+                    'id': file.get_guid(create=True)._id,
+                    'type': 'files',
+                    'attributes': {
+                        'checkout': user._id
+                    }
+                }
+            }, auth=user.auth, expect_errors=True)
+        assert res.status_code == 200
 
     def test_must_set_self(self, app, user, file, file_url):
         user_unauthorized = UserFactory()
@@ -615,19 +599,6 @@ class TestFileView:
         assert node._id in split_href
         assert node.id not in split_href
 
-    def test_embed_user_on_quickfiles_detail(self, app, user):
-        quickfiles = QuickFilesNode.objects.get(creator=user)
-        osfstorage = quickfiles.get_addon('osfstorage')
-        root = osfstorage.get_root()
-        test_file = root.append_file('speedyfile.txt')
-
-        url = '/{}files/{}/?embed=user'.format(API_BASE, test_file._id)
-        res = app.get(url, auth=user.auth)
-
-        assert res.json['data'].get('embeds', None)
-        assert res.json['data']['embeds'].get('user')
-        assert res.json['data']['embeds']['user']['data']['id'] == user._id
-
 
 @pytest.mark.django_db
 class TestFileVersionView:
@@ -727,33 +698,37 @@ class TestFileVersionView:
 @pytest.mark.django_db
 class TestFileTagging:
 
-    @pytest.fixture()
-    def node(self, user):
-        return ProjectFactory(creator=user)
+    @pytest.fixture
+    def node(self, user, request):
+        if request.param == 'project':
+            return ProjectFactory(creator=user)
+        if request.param == 'registration':
+            return RegistrationFactory(creator=user)
 
     @pytest.fixture()
-    def file_one(self, user, node):
-        return api_utils.create_test_file(
-            node, user, filename='file_one')
+    def file(self, user, node):
+        return api_utils.create_test_file(node, user, filename='file_one')
 
     @pytest.fixture()
-    def payload(self, file_one):
+    def payload(self, file):
         payload = {
             'data': {
                 'type': 'files',
-                'id': file_one._id,
+                'id': file._id,
                 'attributes': {
-                    'checkout': None,
                     'tags': ['goofy']
                 }
             }
         }
+        if isinstance(file.target, Node):
+            payload['data']['attributes']['checkout'] = None
         return payload
 
     @pytest.fixture()
-    def url(self, file_one):
-        return '/{}files/{}/'.format(API_BASE, file_one._id)
+    def url(self, file):
+        return '/{}files/{}/'.format(API_BASE, file._id)
 
+    @pytest.mark.parametrize('node', ['registration', 'project'], indirect=True)
     def test_tags_add_and_update_properly(self, app, user, url, payload):
         # test_tags_add_properly
         res = app.put_json_api(url, payload, auth=user.auth)
@@ -770,6 +745,7 @@ class TestFileTagging:
         assert len(res.json['data']['attributes']['tags']) == 1
         assert res.json['data']['attributes']['tags'][0] == 'goofier'
 
+    @pytest.mark.parametrize('node', ['registration', 'project'], indirect=True)
     def test_tags_add_and_remove_properly(self, app, user, url, payload):
         app.put_json_api(url, payload, auth=user.auth)
         payload['data']['attributes']['tags'] = []
@@ -777,15 +753,16 @@ class TestFileTagging:
         assert res.status_code == 200
         assert len(res.json['data']['attributes']['tags']) == 0
 
+    @pytest.mark.parametrize('node', ['registration', 'project'], indirect=True)
     def test_put_wo_tags_doesnt_remove_tags(self, app, user, url, payload):
         app.put_json_api(url, payload, auth=user.auth)
-        payload['data']['attributes'] = {'checkout': None}
         res = app.put_json_api(url, payload, auth=user.auth)
         assert res.status_code == 200
         # Ensure adding tag data is correct from the PUT response
         assert len(res.json['data']['attributes']['tags']) == 1
         assert res.json['data']['attributes']['tags'][0] == 'goofy'
 
+    @pytest.mark.parametrize('node', ['registration', 'project'], indirect=True)
     def test_add_and_remove_tag_adds_log(self, app, user, url, payload, node):
         # test_add_tag_adds_log
         count = node.logs.count()
@@ -942,3 +919,62 @@ class TestPreprintFileView:
         # Admin contrib
         res = app.get(file_url, auth=user.auth, expect_errors=True)
         assert res.status_code == 403
+
+@pytest.mark.django_db
+class TestShowAsUnviewed:
+
+    @pytest.fixture
+    def node(self, user):
+        return ProjectFactory(creator=user, is_public=True)
+
+    @pytest.fixture
+    def test_file(self, user, node):
+        test_file = api_utils.create_test_file(node, user, create_guid=False)
+        test_file.add_version(FileVersionFactory())
+        return test_file
+
+    @pytest.fixture
+    def url(self, test_file):
+        return f'/{API_BASE}files/{test_file._id}/'
+
+    def test_show_as_unviewed__previously_seen(self, app, user, test_file, url):
+        FileVersionUserMetadata.objects.create(
+            user=user,
+            file_version=test_file.versions.order_by('created').first()
+        )
+
+        res = app.get(url, auth=user.auth)
+        assert res.json['data']['attributes']['show_as_unviewed']
+
+        FileVersionUserMetadata.objects.create(
+            user=user,
+            file_version=test_file.versions.order_by('-created').first()
+        )
+
+        res = app.get(url, auth=user.auth)
+        assert not res.json['data']['attributes']['show_as_unviewed']
+
+    def test_show_as_unviewed__not_previously_seen(self, app, user, test_file, url):
+        res = app.get(url, auth=user.auth)
+        assert not res.json['data']['attributes']['show_as_unviewed']
+
+    def test_show_as_unviewed__different_user(self, app, user, test_file, url):
+        FileVersionUserMetadata.objects.create(
+            user=user,
+            file_version=test_file.versions.order_by('created').first()
+        )
+        file_viewer = AuthUserFactory()
+
+        res = app.get(url, auth=file_viewer.auth)
+        assert not res.json['data']['attributes']['show_as_unviewed']
+
+    def test_show_as_unviewed__anonymous_user(self, app, test_file, url):
+        res = app.get(url)
+        assert not res.json['data']['attributes']['show_as_unviewed']
+
+    def test_show_as_unviewed__no_versions(self, app, user, test_file, url):
+        # Most Non-OSFStorage providers don't have versions; make sure this still works
+        test_file.versions.all().delete()
+
+        res = app.get(url, auth=user.auth)
+        assert not res.json['data']['attributes']['show_as_unviewed']

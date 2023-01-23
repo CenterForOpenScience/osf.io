@@ -3,6 +3,7 @@ import os
 
 import logging
 
+import re
 import mock
 import responses
 import pytest
@@ -67,10 +68,6 @@ def fake():
 _MOCKS = {
     'osf.models.user.new_bookmark_collection': {
         'mark': 'enable_bookmark_creation',
-        'replacement': lambda *args, **kwargs: None,
-    },
-    'osf.models.user._create_quickfiles_project': {
-        'mark': 'enable_quickfiles_creation',
         'replacement': lambda *args, **kwargs: None,
     },
     'framework.celery_tasks.handlers._enqueue_task': {
@@ -169,7 +166,8 @@ def mock_akismet():
     """
     with mock.patch.object(website_settings, 'SPAM_CHECK_ENABLED', True):
         with mock.patch.object(website_settings, 'AKISMET_ENABLED', True):
-            with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
+            with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
+                rsps.add(responses.POST, f'https://test.crossref.org/servlet/deposit', status=200)
                 yield rsps
 
 
@@ -193,12 +191,28 @@ def mock_datacite(registration):
         data = ET.tostring(base_xml)
 
     with mock.patch.object(website_settings, 'DATACITE_ENABLED', True):
-        with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
-            rsps.add(responses.GET, f'{website_settings.DATACITE_URL}/metadata', body=data, status=200)
-            rsps.add(responses.POST, f'{website_settings.DATACITE_URL}/metadata', body=f'OK ({doi})', status=201)
-            rsps.add(responses.POST, f'{website_settings.DATACITE_URL}/doi', body=f'OK ({doi})', status=201)
-            rsps.add(responses.DELETE, f'{website_settings.DATACITE_URL}/metadata/{doi}', status=200)
-            yield rsps
+        with mock.patch.object(website_settings, 'DATACITE_USERNAME', 'TestDataciteUsername'):
+            with mock.patch.object(website_settings, 'DATACITE_PASSWORD', 'TestDatacitePassword'):
+                with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
+                    rsps.add(responses.GET, f'{website_settings.DATACITE_URL}/metadata', body=data, status=200)
+                    rsps.add(responses.POST, f'{website_settings.DATACITE_URL}/metadata', body=f'OK ({doi})', status=201)
+                    rsps.add(responses.POST, f'{website_settings.DATACITE_URL}/doi', body=f'OK ({doi})', status=201)
+                    rsps.add(responses.DELETE, f'{website_settings.DATACITE_URL}/metadata/{doi}', status=200)
+                    yield rsps
+
+
+@pytest.fixture
+def mock_crossref():
+    """
+    This should be used to mock our our crossref integration.
+    Relevant endpoints:
+    """
+    with mock.patch.object(website_settings, 'CROSSREF_URL', 'https://test.crossref.org/servlet/deposit'):
+        with mock.patch.object(website_settings, 'CROSSREF_USERNAME', 'TestCrossrefUsername'):
+            with mock.patch.object(website_settings, 'CROSSREF_PASSWORD', 'TestCrossrefPassword'):
+                with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
+                    rsps.add(responses.POST, website_settings.CROSSREF_URL, status=200)
+                    yield rsps
 
 
 @pytest.fixture
@@ -210,5 +224,48 @@ def mock_oopspam():
     """
     with mock.patch.object(website_settings, 'SPAM_CHECK_ENABLED', True):
         with mock.patch.object(website_settings, 'OOPSPAM_APIKEY', 'FFFFFF'):
-            with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
+            with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
                 yield rsps
+
+
+@pytest.fixture
+def mock_pigeon():
+    """
+    This should be used to mock our Internet Archive archiving microservice osf-pigeon.
+    Relevent endpoints:
+    '{settings.OSF_PIGEON_URL}archive/{guid}'
+    '{settings.OSF_PIGEON_URL}metadata/{guid}'
+
+    """
+    def request_callback(request):
+        guid = request.url.split('/')[-1]
+        from osf.models import Registration
+        reg = Registration.load(guid)
+        reg.ia_url = 'https://test.ia.url.com'
+        reg.save()
+        return (200, {}, None)
+
+    with mock.patch.object(website_settings, 'IA_ARCHIVE_ENABLED', True):
+        with mock.patch.object(website_settings, 'OSF_PIGEON_URL', 'http://test.pigeon.osf.io/'):
+            with mock.patch('osf.external.internet_archive.tasks.settings.OSF_PIGEON_URL', 'http://test.pigeon.osf.io/'):
+                with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
+                    rsps.add_callback(
+                        method=responses.POST,
+                        url=re.compile(f'{website_settings.OSF_PIGEON_URL}archive/(.*)'),
+                        callback=request_callback
+                    )
+                    rsps.add(
+                        method=responses.POST,
+                        url=re.compile(f'{website_settings.OSF_PIGEON_URL}metadata/(.*)'),
+                        status=200
+                    )
+                    yield rsps
+
+@pytest.fixture
+def mock_celery():
+    """
+    This should only be necessary for postcommit tasks.
+    """
+    with mock.patch.object(website_settings, 'USE_CELERY', True):
+        with mock.patch('osf.external.internet_archive.tasks.enqueue_postcommit_task') as mock_celery:
+            yield mock_celery
