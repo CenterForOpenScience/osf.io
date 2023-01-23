@@ -8,10 +8,11 @@ from addons.base.models import BaseUserSettings, BaseNodeSettings
 from addons.osfstorage.models import OsfStorageFileNode
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
-from osf.models import DraftRegistration, BaseFileNode
+from osf.models import DraftRegistration, BaseFileNode, NodeLog, AbstractNode
 from osf.models.base import BaseModel
 from osf.models.metaschema import RegistrationSchema
 from osf.utils.fields import EncryptedTextField
+from addons.metadata import SHORT_NAME
 
 logger = logging.getLogger(__name__)
 
@@ -246,6 +247,49 @@ class NodeSettings(BaseNodeSettings):
         return {
             'formats': formats
         }
+
+    def update_file_metadata_for(self, action, payload, auth):
+        if action in [NodeLog.FILE_RENAMED, NodeLog.FILE_MOVED, NodeLog.FILE_COPIED]:
+            src = payload['source']
+            dest = payload['destination']
+        elif action in [NodeLog.FILE_REMOVED]:
+            src = payload['metadata']
+            dest = payload['metadata']
+        else:
+            return
+        if src['nid'] == dest['nid']:
+            source_addon = self
+        else:
+            source_node = AbstractNode.load(payload['source']['nid'])
+            if source_node is None:
+                return
+            source_addon = source_node.get_addon(SHORT_NAME)
+            if source_addon is None:
+                return
+        src_path = os.path.join(src['provider'], src['materialized'])
+        dest_path = os.path.join(dest['provider'], dest['materialized'])
+        if src_path.endswith('/'):
+            q = source_addon.file_metadata.filter(path__startswith=src_path)
+            path_suffixes = [fm.path[len(src_path):] for fm in q.all()]
+        else:
+            path_suffixes = ['']
+        for path_suffix in path_suffixes:
+            src_path_child = src_path + path_suffix
+            dest_path_child = dest_path + path_suffix
+            q = source_addon.file_metadata.filter(path=src_path_child)
+            if not q.exists():
+                continue
+            if action in [NodeLog.FILE_RENAMED, NodeLog.FILE_MOVED, NodeLog.FILE_COPIED]:
+                m = q.first()
+                file_metadata = {
+                    'path': dest_path_child,
+                    'folder': m.folder,
+                    'hash': m.hash,
+                    'items': self._get_file_metadata(m).get('items', [])
+                }
+                self.set_file_metadata(dest_path_child, file_metadata, auth)
+            if action in [NodeLog.FILE_RENAMED, NodeLog.FILE_MOVED, NodeLog.FILE_REMOVED]:
+                self.delete_file_metadata(src_path_child, auth)
 
     def _get_file_metadata(self, file_metadata):
         if file_metadata.metadata is None or file_metadata.metadata == '':

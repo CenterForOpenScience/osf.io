@@ -24,6 +24,7 @@ from addons.base.models import BaseStorageAddon
 from addons.osfstorage.models import OsfStorageFile
 from addons.osfstorage.models import OsfStorageFileNode
 from addons.osfstorage.utils import update_analytics
+from addons.metadata.apps import AddonAppConfig as MetadataAppConfig
 
 from framework import sentry
 from framework.auth import Auth
@@ -516,6 +517,11 @@ def create_waterbutler_log(payload, **kwargs):
 
         else:
             node.create_waterbutler_log(auth, action, payload)
+
+        if hasattr(node, 'get_addon'):
+            metadata_addon = node.get_addon(MetadataAppConfig.short_name)
+            if metadata_addon:
+                metadata_addon.update_file_metadata_for(action, payload, auth)
 
         if not isinstance(node, Preprint):
             # Create/update timestamp record
