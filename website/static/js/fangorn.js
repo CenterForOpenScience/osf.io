@@ -1287,7 +1287,7 @@ function _uploadFolderEvent(event, item, mode, col) {
             // });
             var child = null;
             for(var j = 0; j < node_parent.children.length; j++){
-                if(node_parent.children[j].data.materialized === currentFolderPath){
+                if(encodeURI(node_parent.children[j].data.materialized) === encodeURI(currentFolderPath)){
                     child = node_parent.children[j];
                     break;
                 }
@@ -1301,7 +1301,7 @@ function _uploadFolderEvent(event, item, mode, col) {
             if (currentFolder && created_path.includes(currentFolderPath)) {
                 // console.log('currentFolder.parent', currentFolder.parent);
                 var new_next_folder_index = ++index;
-                return next(currentFolder.parent, new_next_folder_index, list_paths, file, file_index, next);
+                return next(currentFolder.node_parent, new_next_folder_index, list_paths, file, file_index, next);
             }
 
             created_path.push(currentFolderPath);
