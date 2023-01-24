@@ -106,14 +106,23 @@ class AbstractProviderSubscriptionDetail(SubscriptionDetail):
 
     def get_object(self):
         subscription_id = self.kwargs['subscription_id']
-        provider = self.provider_class.objects.get(_id=self.kwargs['provider_id'])
-        try:
-            obj = NotificationSubscription.objects.get(
-                _id=subscription_id,
-                provider_id=provider.id,
-            )
-        except ObjectDoesNotExist:
-            raise NotFound
+        if self.kwargs.get('provider_id'):
+            provider = self.provider_class.objects.get(_id=self.kwargs.get('provider_id'))
+            try:
+                obj = NotificationSubscription.objects.get(
+                    _id=subscription_id,
+                    provider_id=provider.id,
+                )
+            except ObjectDoesNotExist:
+                raise NotFound
+        else:
+            try:
+                obj = NotificationSubscription.objects.get(
+                    _id=subscription_id,
+                    provider__type=self.provider_class._typedmodels_type,
+                )
+            except ObjectDoesNotExist:
+                    raise NotFound
         self.check_object_permissions(self.request, obj)
         return obj
 
