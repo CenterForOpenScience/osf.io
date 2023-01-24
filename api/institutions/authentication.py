@@ -20,7 +20,7 @@ from osf.exceptions import InstitutionAffiliationStateError
 from osf.models import Institution
 from osf.models.institution import SharedSsoAffiliationFilterCriteriaAction
 
-from website.mails import send_mail, WELCOME_OSF4I  # , DUPLICATE_ACCOUNTS_OSF4I, ADD_SSO_EMAIL_OSF4I
+from website.mails import send_mail, WELCOME_OSF4I, DUPLICATE_ACCOUNTS_OSF4I, ADD_SSO_EMAIL_OSF4I
 from website.settings import OSF_SUPPORT_EMAIL, DOMAIN
 
 logger = logging.getLogger(__name__)
@@ -326,16 +326,14 @@ class InstitutionAuthentication(BaseAuthentication):
         if email_to_add:
             assert not is_created and email_to_add == sso_email
             user.emails.create(address=email_to_add)
-            logger.warning('# TODO: notify user of new email added')
-            pass
-            # send_mail(
-            #     to_addr=user.username,
-            #     mail=ADD_SSO_EMAIL_OSF4I,
-            #     user=user,
-            #     email_to_add=email_to_add,
-            #     domain=DOMAIN,
-            #     osf_support_email=OSF_SUPPORT_EMAIL,
-            # )
+            send_mail(
+                to_addr=user.username,
+                mail=ADD_SSO_EMAIL_OSF4I,
+                user=user,
+                email_to_add=email_to_add,
+                domain=DOMAIN,
+                osf_support_email=OSF_SUPPORT_EMAIL,
+            )
 
         # Inform the user that a potential duplicate account is found
         # Remove sso identity from the duplicate user since it will be added to the authn user
@@ -345,16 +343,14 @@ class InstitutionAuthentication(BaseAuthentication):
             duplicate_user.remove_sso_identity_from_affiliation(institution)
             if secondary_institution:
                 duplicate_user.remove_sso_identity_from_affiliation(secondary_institution)
-            logger.warning('# TODO: notify user of potential duplicate accounts')
-            pass
-            # send_mail(
-            #     to_addr=user.username,
-            #     mail=DUPLICATE_ACCOUNTS_OSF4I,
-            #     user=user,
-            #     duplicate_user=duplicate_user,
-            #     domain=DOMAIN,
-            #     osf_support_email=OSF_SUPPORT_EMAIL,
-            # )
+            send_mail(
+                to_addr=user.username,
+                mail=DUPLICATE_ACCOUNTS_OSF4I,
+                user=user,
+                duplicate_user=duplicate_user,
+                domain=DOMAIN,
+                osf_support_email=OSF_SUPPORT_EMAIL,
+            )
 
         # Affiliate the user to the primary institution if not previously affiliated
         user.add_or_update_affiliated_institution(
