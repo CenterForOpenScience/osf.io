@@ -73,7 +73,7 @@ class Command(BaseCommand):
                 timestamp=timestamp_time,
                 item_guid=ITEM_GUID,
                 session_id='freshen by key',
-                user_is_authenticated=bool(random.randint(0,1)),
+                user_is_authenticated=bool(random.randint(0, 1)),
             )
 
     def _run_date_query(self, time_range_filter):
