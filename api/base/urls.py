@@ -63,6 +63,7 @@ urlpatterns = [
                 re_path(r'^providers/', include('api.providers.urls', namespace='providers')),
                 re_path(r'^regions/', include('api.regions.urls', namespace='regions')),
                 re_path(r'^registrations/', include('api.registrations.urls', namespace='registrations')),
+                re_path(r'^registration_subscriptions/', include('api.registration_subscriptions.urls', namespace='registration_subscriptions')),
                 re_path(r'^requests/', include(('api.requests.urls', 'requests'), namespace='requests')),
                 re_path(r'^resources/', include('api.resources.urls', namespace='resources')),
                 re_path(r'^scopes/', include('api.scopes.urls', namespace='scopes')),
