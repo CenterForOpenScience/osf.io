@@ -1,5 +1,4 @@
 from osf.models import GuidMetadataRecord
-from api_tests.utils import create_test_file
 from osf_tests import factories
 from tests.base import OsfTestCase
 
@@ -14,8 +13,7 @@ class TestMetadataDownload(OsfTestCase):
             title='this is a project title!',
             description='this is a project description!',
         )
-        # registration = factories.RegistrationFactory(project=project)
-        # file = create_test_file(project, user)
+        project.set_identifier_value(category='doi', value=f'10.70102/FK2osf.io/{project._id}')
 
         # unauthed, private project
         resp = self.app.get(f'/{project._id}/metadata/?format=datacite-json')
@@ -50,7 +48,7 @@ class TestMetadataDownload(OsfTestCase):
         metadata_record = GuidMetadataRecord.objects.for_guid(project._id)
         metadata_record.update({
             'language': 'es',
-            'resource_type_general': 'Book',
+            'resource_type_general': 'Dataset',
             'funding_info': [
                 {
                     'funder_name': 'Mx. Moneypockets',
@@ -84,37 +82,15 @@ class TestMetadataDownload(OsfTestCase):
 
 # doubled {{}} cleaned by a call to .format()
 BASIC_DATACITE_JSON = '''{{
-  "identifiers": [
-    {{
-      "identifier": "10.70102/FK2osf.io/{project_id}",
-      "identifierType": "DOI"
-    }}
-  ],
-  "creators": [
-    {{
-      "nameIdentifiers": [
-        {{
-          "nameIdentifier": "http://localhost:5000/{user_id}/",
-          "nameIdentifierScheme": "URL"
-        }}
-      ],
-      "nameType": "Personal",
-      "creatorName": "Person McNamington",
-      "familyName": "McNamington",
-      "givenName": "Person",
-      "name": "Person McNamington"
-    }}
-  ],
   "contributors": [
     {{
-      "nameType": "Organizational",
-      "contributorType": "HostingInstitution",
       "contributorName": "Open Science Framework",
+      "contributorType": "HostingInstitution",
       "name": "Open Science Framework",
       "nameIdentifiers": [
         {{
           "name": "Open Science Framework",
-          "nameIdentifier": "https://ror.org/05d5mza29/",
+          "nameIdentifier": "https://ror.org/05d5mza29",
           "nameIdentifierScheme": "ROR"
         }},
         {{
@@ -122,21 +98,23 @@ BASIC_DATACITE_JSON = '''{{
           "nameIdentifier": "https://grid.ac/institutes/grid.466501.0/",
           "nameIdentifierScheme": "GRID"
         }}
-      ]
+      ],
+      "nameType": "Organizational"
     }}
   ],
-  "titles": [
+  "creators": [
     {{
-      "title": "this is a project title!"
+      "affiliation": [],
+      "name": "Person McNamington",
+      "nameIdentifiers": [
+        {{
+          "nameIdentifier": "http://localhost:5000/{user_id}",
+          "nameIdentifierScheme": "URL"
+        }}
+      ],
+      "nameType": "Personal"
     }}
   ],
-  "publisher": "Open Science Framework",
-  "publicationYear": "{year}",
-  "types": {{
-    "resourceType": "Project",
-    "resourceTypeGeneral": "Text"
-  }},
-  "schemaVersion": "http://datacite.org/schema/kernel-4",
   "dates": [
     {{
       "date": "{date}",
@@ -145,31 +123,53 @@ BASIC_DATACITE_JSON = '''{{
     {{
       "date": "{date}",
       "dateType": "Updated"
-    }},
-    {{
-      "date": "{date}",
-      "dateType": "Issued"
     }}
   ],
   "descriptions": [
     {{
-      "descriptionType": "Abstract",
-      "description": "this is a project description!"
+      "description": "this is a project description!",
+      "descriptionType": "Abstract"
     }}
   ],
-  "subjects": []
+  "fundingReferences": [],
+  "identifiers": [
+    {{
+      "identifier": "10.70102/FK2osf.io/{project_id}",
+      "identifierType": "DOI"
+    }},
+    {{
+      "identifier": "http://localhost:5000/{project_id}",
+      "identifierType": "URL"
+    }}
+  ],
+  "publicationYear": "{year}",
+  "publisher": "Open Science Framework",
+  "relatedIdentifiers": [],
+  "rightsList": [],
+  "schemaVersion": "http://datacite.org/schema/kernel-4",
+  "subjects": [],
+  "titles": [
+    {{
+      "title": "this is a project title!"
+    }}
+  ],
+  "types": {{
+    "resourceType": "Project",
+    "resourceTypeGeneral": "Text"
+  }}
 }}'''
 
 
 BASIC_DATACITE_XML = '''<?xml version='1.0' encoding='utf-8'?>
 <resource xmlns="http://datacite.org/schema/kernel-4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4.3/metadata.xsd">
   <identifier identifierType="DOI">10.70102/FK2osf.io/{project_id}</identifier>
+  <alternateIdentifiers>
+    <alternateIdentifier alternateIdentifierType="URL">http://localhost:5000/{project_id}</alternateIdentifier>
+  </alternateIdentifiers>
   <creators>
     <creator>
       <creatorName nameType="Personal">Person McNamington</creatorName>
-      <givenName>Person</givenName>
-      <familyName>McNamington</familyName>
-      <nameIdentifier nameIdentifierScheme="URL">http://localhost:5000/{user_id}/</nameIdentifier>
+      <nameIdentifier nameIdentifierScheme="URL">http://localhost:5000/{user_id}</nameIdentifier>
     </creator>
   </creators>
   <titles>
@@ -180,14 +180,13 @@ BASIC_DATACITE_XML = '''<?xml version='1.0' encoding='utf-8'?>
   <contributors>
     <contributor contributorType="HostingInstitution">
       <contributorName nameType="Organizational">Open Science Framework</contributorName>
-      <nameIdentifier nameIdentifierScheme="ROR">https://ror.org/05d5mza29/</nameIdentifier>
+      <nameIdentifier nameIdentifierScheme="ROR">https://ror.org/05d5mza29</nameIdentifier>
       <nameIdentifier nameIdentifierScheme="GRID">https://grid.ac/institutes/grid.466501.0/</nameIdentifier>
     </contributor>
   </contributors>
   <dates>
     <date dateType="Created">{date}</date>
     <date dateType="Updated">{date}</date>
-    <date dateType="Issued">{date}</date>
   </dates>
   <resourceType resourceTypeGeneral="Text">Project</resourceType>
   <descriptions>
@@ -199,59 +198,36 @@ BASIC_DATACITE_XML = '''<?xml version='1.0' encoding='utf-8'?>
 BASIC_TURTLE = '''@prefix dct: <http://purl.org/dc/terms/> .
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 @prefix osf: <https://osf.io/vocab/2022/> .
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
 
-<http://localhost:5000/{project_id}> a osf:Node ;
-    dct:available false ;
+<http://localhost:5000/{project_id}> a osf:Project ;
     dct:created "{date}" ;
     dct:creator <http://localhost:5000/{user_id}> ;
     dct:description "this is a project description!" ;
-    dct:identifier "http://localhost:5000/{project_id}" ;
+    dct:identifier "http://localhost:5000/{project_id}",
+        "https://doi.org/10.70102/FK2osf.io/{project_id}" ;
     dct:modified "{date}" ;
     dct:title "this is a project title!" ;
-    dct:type osf:project .
+    dct:type osf:project ;
+    owl:sameAs <https://doi.org/10.70102/FK2osf.io/{project_id}> .
 
 <http://localhost:5000/{user_id}> a osf:OSFUser ;
-    dct:created "{date}" ;
     dct:identifier "http://localhost:5000/{user_id}" ;
-    dct:modified "{date}" ;
     foaf:name "Person McNamington" .
 
 '''
 
 
 COMPLICATED_DATACITE_JSON = '''{{
-  "identifiers": [
-    {{
-      "identifier": "10.70102/FK2osf.io/{project_id}",
-      "identifierType": "DOI"
-    }}
-  ],
-  "creators": [
-    {{
-      "nameIdentifiers": [
-        {{
-          "nameIdentifier": "http://localhost:5000/{user_id}/",
-          "nameIdentifierScheme": "URL"
-        }}
-      ],
-      "nameType": "Personal",
-      "creatorName": "Person McNamington",
-      "familyName": "McNamington",
-      "givenName": "Person",
-      "name": "Person McNamington"
-    }}
-  ],
   "contributors": [
     {{
-      "nameType": "Organizational",
-      "contributorType": "HostingInstitution",
       "contributorName": "Open Science Framework",
+      "contributorType": "HostingInstitution",
       "name": "Open Science Framework",
       "nameIdentifiers": [
         {{
           "name": "Open Science Framework",
-          "nameIdentifier": "https://ror.org/05d5mza29/",
+          "nameIdentifier": "https://ror.org/05d5mza29",
           "nameIdentifierScheme": "ROR"
         }},
         {{
@@ -259,21 +235,23 @@ COMPLICATED_DATACITE_JSON = '''{{
           "nameIdentifier": "https://grid.ac/institutes/grid.466501.0/",
           "nameIdentifierScheme": "GRID"
         }}
-      ]
+      ],
+      "nameType": "Organizational"
     }}
   ],
-  "titles": [
+  "creators": [
     {{
-      "title": "this is a project title!"
+      "affiliation": [],
+      "name": "Person McNamington",
+      "nameIdentifiers": [
+        {{
+          "nameIdentifier": "http://localhost:5000/{user_id}",
+          "nameIdentifierScheme": "URL"
+        }}
+      ],
+      "nameType": "Personal"
     }}
   ],
-  "publisher": "Open Science Framework",
-  "publicationYear": "{year}",
-  "types": {{
-    "resourceType": "Book",
-    "resourceTypeGeneral": "Other"
-  }},
-  "schemaVersion": "http://datacite.org/schema/kernel-4",
   "dates": [
     {{
       "date": "{date}",
@@ -282,42 +260,63 @@ COMPLICATED_DATACITE_JSON = '''{{
     {{
       "date": "{date}",
       "dateType": "Updated"
-    }},
-    {{
-      "date": "{date}",
-      "dateType": "Issued"
     }}
   ],
   "descriptions": [
     {{
-      "descriptionType": "Abstract",
-      "description": "this is a project description!"
+      "description": "this is a project description!",
+      "descriptionType": "Abstract"
     }}
   ],
-  "subjects": [],
-  "language": "es",
   "fundingReferences": [
     {{
-      "funderName": "Mx. Moneypockets",
+      "awardNumber": "10000000",
+      "awardTitle": "because reasons",
+      "awardURI": "https://moneypockets.example/millions",
       "funderIdentifier": "https://doi.org/10.$$$$",
       "funderIdentifierType": "Crossref Funder ID",
-      "awardNumber": "10000000",
-      "awardURI": "https://moneypockets.example/millions",
-      "awardTitle": "because reasons"
+      "funderName": "Mx. Moneypockets"
     }}
-  ]
+  ],
+  "identifiers": [
+    {{
+      "identifier": "10.70102/FK2osf.io/{project_id}",
+      "identifierType": "DOI"
+    }},
+    {{
+      "identifier": "http://localhost:5000/{project_id}",
+      "identifierType": "URL"
+    }}
+  ],
+  "language": "es",
+  "publicationYear": "{year}",
+  "publisher": "Open Science Framework",
+  "relatedIdentifiers": [],
+  "rightsList": [],
+  "schemaVersion": "http://datacite.org/schema/kernel-4",
+  "subjects": [],
+  "titles": [
+    {{
+      "title": "this is a project title!"
+    }}
+  ],
+  "types": {{
+    "resourceType": "Project",
+    "resourceTypeGeneral": "Dataset"
+  }}
 }}'''
 
 
 COMPLICATED_DATACITE_XML = '''<?xml version='1.0' encoding='utf-8'?>
 <resource xmlns="http://datacite.org/schema/kernel-4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4.3/metadata.xsd">
   <identifier identifierType="DOI">10.70102/FK2osf.io/{project_id}</identifier>
+  <alternateIdentifiers>
+    <alternateIdentifier alternateIdentifierType="URL">http://localhost:5000/{project_id}</alternateIdentifier>
+  </alternateIdentifiers>
   <creators>
     <creator>
       <creatorName nameType="Personal">Person McNamington</creatorName>
-      <givenName>Person</givenName>
-      <familyName>McNamington</familyName>
-      <nameIdentifier nameIdentifierScheme="URL">http://localhost:5000/{user_id}/</nameIdentifier>
+      <nameIdentifier nameIdentifierScheme="URL">http://localhost:5000/{user_id}</nameIdentifier>
     </creator>
   </creators>
   <titles>
@@ -328,17 +327,16 @@ COMPLICATED_DATACITE_XML = '''<?xml version='1.0' encoding='utf-8'?>
   <contributors>
     <contributor contributorType="HostingInstitution">
       <contributorName nameType="Organizational">Open Science Framework</contributorName>
-      <nameIdentifier nameIdentifierScheme="ROR">https://ror.org/05d5mza29/</nameIdentifier>
+      <nameIdentifier nameIdentifierScheme="ROR">https://ror.org/05d5mza29</nameIdentifier>
       <nameIdentifier nameIdentifierScheme="GRID">https://grid.ac/institutes/grid.466501.0/</nameIdentifier>
     </contributor>
   </contributors>
   <dates>
     <date dateType="Created">{date}</date>
     <date dateType="Updated">{date}</date>
-    <date dateType="Issued">{date}</date>
   </dates>
   <language>es</language>
-  <resourceType resourceTypeGeneral="Other">Book</resourceType>
+  <resourceType resourceTypeGeneral="Dataset">Project</resourceType>
   <descriptions>
     <description descriptionType="Abstract">this is a project description!</description>
   </descriptions>
@@ -356,29 +354,30 @@ COMPLICATED_DATACITE_XML = '''<?xml version='1.0' encoding='utf-8'?>
 COMPLICATED_TURTLE = '''@prefix dct: <http://purl.org/dc/terms/> .
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 @prefix osf: <https://osf.io/vocab/2022/> .
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
 
-<http://localhost:5000/{project_id}> a osf:Node ;
-    dct:available false ;
+<http://localhost:5000/{project_id}> a osf:Project ;
     dct:created "{date}" ;
     dct:creator <http://localhost:5000/{user_id}> ;
     dct:description "this is a project description!" ;
-    dct:identifier "http://localhost:5000/{project_id}" ;
+    dct:identifier "http://localhost:5000/{project_id}",
+        "https://doi.org/10.70102/FK2osf.io/{project_id}" ;
     dct:language "es" ;
     dct:modified "{date}" ;
     dct:title "this is a project title!" ;
     dct:type osf:project,
-        "Book" ;
-    osf:funder [ dct:identifier "https://doi.org/10.$$$$" ;
+        "Dataset" ;
+    owl:sameAs <https://doi.org/10.70102/FK2osf.io/{project_id}> ;
+    osf:funder [ a osf:Funder ;
+            dct:identifier "https://doi.org/10.$$$$" ;
             foaf:name "Mx. Moneypockets" ;
             osf:award_number "10000000" ;
             osf:award_title "because reasons" ;
-            osf:award_uri "https://moneypockets.example/millions" ] .
+            osf:award_uri "https://moneypockets.example/millions" ;
+            osf:funder_identifier_type "Crossref Funder ID" ] .
 
 <http://localhost:5000/{user_id}> a osf:OSFUser ;
-    dct:created "{date}" ;
     dct:identifier "http://localhost:5000/{user_id}" ;
-    dct:modified "{date}" ;
     foaf:name "Person McNamington" .
 
 '''

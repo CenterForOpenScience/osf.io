@@ -4,16 +4,27 @@ import rdflib.compare
 from website import settings as website_settings
 
 
+# namespace for osf's own concepts:
 OSF = rdflib.Namespace('https://osf.io/vocab/2022/')
+# PID namespaces:
 OSFIO = rdflib.Namespace(website_settings.DOMAIN)
+DOI = rdflib.Namespace('https://doi.org/')
+ORCID = rdflib.Namespace('https://orcid.org/')
+ROR = rdflib.Namespace('https://ror.org/')
+# standard namespaces we use often:
+DCT = rdflib.DCTERMS
+FOAF = rdflib.FOAF
+OWL = rdflib.OWL
+RDF = rdflib.RDF
 
 
-# in addition to rdflib's 'core' (rdf, rdfs, owl...)
+# vocabularies that will be shortened to prefix form
+# (in addition to rdflib's 'core' (rdf, rdfs...))
 OSF_CONTEXT = {
     'osf': OSF,
-    'dct': rdflib.DCTERMS,
-    'foaf': rdflib.FOAF,
-    'owl': rdflib.OWL,
+    'dct': DCT,
+    'foaf': FOAF,
+    'owl': OWL,
 }
 
 
@@ -24,37 +35,15 @@ def contextualized_graph():
     return graph
 
 
-def osfguid_uri(guid):
-    """return a rdflib.URIRef or None
-
-    "URI": "uniform resource identifier"
-    "URL": "uniform resource locator" (a URI that is expected to resolve)
-    "IRI": "internationalized resource identifier"
-    "IRL": "internationalized resource locator" (an IRI that is expected to resolve)
-
-    @param guid: a string, Guid instance, or another model instance that has a Guid
-    @returns rdflib.URIRef or None
-    """
-    if hasattr(guid, 'guids'):  # quacks like a Guid referent
-        guid = guid.guids.first()
-    if hasattr(guid, '_id'):  # quacks like a Guid instance
-        guid = guid._id
-    if not guid:
-        return None
-    if not isinstance(guid, str):
-        raise ValueError('guid_uri expects str, guid instance, or guid referent')
-    return OSFIO[guid]
-
-
-def try_osfguid_from_uri(uri):
-    if uri.startswith(website_settings.DOMAIN):
-        path = uri[len(website_settings.DOMAIN):].strip('/')
+def try_osfguid_from_iri(iri):
+    if iri.startswith(website_settings.DOMAIN):
+        path = iri[len(website_settings.DOMAIN):].strip('/')
         if '/' not in path:
             return path
     return None
 
 
-def checksum_urn(checksum_algorithm, checksum_hex):
+def checksum_iri(checksum_algorithm, checksum_hex):
     urn = f'urn:checksum/{checksum_algorithm}/{checksum_hex}'
     return rdflib.URIRef(urn)
 
@@ -67,3 +56,12 @@ def graph_equals(actual_rdf_graph, expected_triples):
         actual_rdf_graph,
         expected_rdf_graph,
     )
+
+
+def format_dct_extent(number_of_bytes: int):
+    # following the dcterms:extent recommendation to specify in megabytes
+    # https://www.dublincore.org/specifications/dublin-core/dcmi-terms/terms/extent/
+    if number_of_bytes is None or number_of_bytes < 0:
+        return None
+    number_of_megabytes = number_of_bytes / (2**20)
+    return f'{number_of_megabytes:.6} MB'

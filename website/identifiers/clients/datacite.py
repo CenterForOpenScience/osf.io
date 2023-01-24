@@ -1,15 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
-import datetime
 import logging
 import re
 
-from datacite import DataCiteMDSClient, schema43
-from django.apps import apps
+from datacite import DataCiteMDSClient
 from django.core.exceptions import ImproperlyConfigured
 
-from osf.metadata import utils
+from osf.metadata import pls_gather_metadata_file
 from website.identifiers.clients.base import AbstractIdentifierClient
 from website import settings
 
@@ -34,108 +32,14 @@ class DataCiteClient(AbstractIdentifierClient):
     def build_metadata(self, node, doi_value=None, as_xml=True):
         """Return the formatted datacite metadata XML as a string.
         """
-        non_bib_contributors = node.contributors.filter(
-            contributor__visible=False,
-            contributor__node=node.id
-        )
-
-        contributors = utils.datacite_format_contributors(non_bib_contributors)
-        contributors.append({
-            'nameType': 'Organizational',
-            'contributorType': 'HostingInstitution',
-            'contributorName': 'Open Science Framework',
-            'name': 'Open Science Framework',
-            'nameIdentifiers': [
-                {
-                    'name': 'Open Science Framework',
-                    'nameIdentifier': f'https://ror.org/{settings.OSF_ROR_ID}/',
-                    'nameIdentifierScheme': 'ROR',
-                },
-                {
-                    'name': 'Open Science Framework',
-                    'nameIdentifier': f'https://grid.ac/institutes/{settings.OSF_GRID_ID}/',
-                    'nameIdentifierScheme': 'GRID',
-                }
-            ],
-        })
-
-        date_created = node.created.date() if not node.type == 'osf.registration' else node.registered_date.date()
-        data = {
-            'identifiers': [
-                {
-                    'identifier': doi_value or node.get_identifier_value('doi') or self.build_doi(node),
-                    'identifierType': 'DOI',
-                }
-            ],
-            'creators': utils.datacite_format_creators(node.visible_contributors),
-            'contributors': contributors,
-            'titles': [
-                {'title': node.title}
-            ],
-            'publisher': 'Open Science Framework',
-            'publicationYear': str(datetime.datetime.now().year),
-            'types': {
-                'resourceType': 'Pre-registration' if node.type == 'osf.registration' else 'Project',
-                'resourceTypeGeneral': 'Text'
+        return pls_gather_metadata_file(
+            osf_item=node,
+            format_key=('datacite-xml' if as_xml else 'datacite-json'),
+            serializer_config={
+                'doi_value': doi_value or self._get_doi_value(node),
+                'as_dict': (not as_xml),
             },
-            'schemaVersion': 'http://datacite.org/schema/kernel-4',
-            'dates': [
-                {
-                    'date': str(date_created),
-                    'dateType': 'Created'
-                },
-                {
-                    'date': str(node.modified.date()),
-                    'dateType': 'Updated'
-                },
-                {
-                    'date': str(datetime.datetime.now().date()),
-                    'dateType': 'Issued'
-                },
-            ]
-        }
-
-        related_identifiers = _format_related_identifiers(node)
-        if related_identifiers:
-            data['relatedIdentifiers'] = _format_related_identifiers(node)
-
-        if node.description:
-            data['descriptions'] = [{
-                'descriptionType': 'Abstract',
-                'description': node.description
-            }]
-
-        if node.node_license:
-            data['rightsList'] = [{
-                'rights': node.node_license.name,
-                'rightsURI': node.node_license.url
-            }]
-
-        data['subjects'] = utils.datacite_format_subjects(node)
-
-        guid_metadata_record = apps.get_model('osf.GuidMetadataRecord').objects.for_guid(node._id)
-        if guid_metadata_record.language:
-            data['language'] = guid_metadata_record.language
-        if guid_metadata_record.resource_type_general:
-            if guid_metadata_record.resource_type_general in utils.DATACITE_RESOURCE_TYPES_GENERAL:
-                data['types']['resourceTypeGeneral'] = guid_metadata_record.resource_type_general
-            else:
-                data['types']['resourceType'] = guid_metadata_record.resource_type_general
-                data['types']['resourceTypeGeneral'] = 'Other'
-        if guid_metadata_record.funding_info:
-            data['fundingReferences'] = [
-                utils.datacite_format_funding_reference(funding_ref)
-                for funding_ref in guid_metadata_record.funding_info
-            ]
-
-        # Validate dictionary
-        assert schema43.validate(data)
-
-        if not as_xml:
-            return data
-
-        # Generate DataCite XML from dictionary.
-        return schema43.tostring(data)
+        ).serialized_metadata
 
     def build_doi(self, object):
         return settings.DOI_FORMAT.format(
@@ -149,9 +53,9 @@ class DataCiteClient(AbstractIdentifierClient):
     def create_identifier(self, node, category, doi_value=None):
         if category != 'doi':
             raise NotImplementedError('Creating an identifier with category {} is not supported'.format(category))
-
-        doi_value = doi_value or node.get_identifier_value('doi') or self.build_doi(node)
+        doi_value = doi_value or self._get_doi_value(node)
         metadata = self.build_metadata(node, doi_value=doi_value)
+
         if settings.DATACITE_ENABLED:
             resp = self._client.metadata_post(metadata)
             # Typical response: 'OK (10.70102/FK2osf.io/cq695)' to doi 10.70102/FK2osf.io/cq695
@@ -166,7 +70,7 @@ class DataCiteClient(AbstractIdentifierClient):
     def update_identifier(self, node, category, doi_value=None):
         if category != 'doi':
             raise NotImplementedError('Updating metadata not supported for {}'.format(category))
-        doi_value = doi_value or node.get_identifier_value('doi') or self.build_doi(node)
+        doi_value = doi_value or self._get_doi_value(node)
 
         # Reuse create logic to post updated metadata if the resource is still public
         if node.is_public and not node.deleted:
@@ -176,32 +80,5 @@ class DataCiteClient(AbstractIdentifierClient):
             self._client.metadata_delete(doi_value)
         return {'doi': doi_value}
 
-
-def _format_related_identifiers(node):
-    from osf.models import OutcomeArtifact
-
-    related_identifiers = []
-    if node.type == 'osf.registration':
-        # Only include active resources and only include each resource once
-        related_pids = OutcomeArtifact.objects.for_registration(node).filter(
-            finalized=True,
-            deleted__isnull=True
-        ).values_list('pid', flat=True)
-        related_identifiers = [
-            {
-                'relatedIdentifier': pid,
-                'relatedIdentifierType': 'DOI',
-                'relationType': 'IsSupplementedBy',
-            }
-            for pid in set(related_pids)
-        ]
-
-    if node.article_doi:
-        related_identifiers.append(
-            {
-                'relatedIdentifier': node.article_doi,
-                'relatedIdentifierType': 'DOI',
-                'relationType': 'IsSupplementTo'
-            }
-        )
-    return related_identifiers
+    def _get_doi_value(self, node):
+        return node.get_identifier_value('doi') or self.build_doi(node)

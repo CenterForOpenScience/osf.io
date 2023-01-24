@@ -330,7 +330,7 @@ class TestCustomItemMetadataRecordDetail:
                 auth=anybody_with_write_permission.auth,
             )
             assert res.status_code == 200
-            db_record = GuidMetadataRecord.objects.for_guid(osfguid)
+            db_record = GuidMetadataRecord.objects.get(guid=osfguid)
             expected.assert_expectations(db_record=db_record, api_record=res.json['data'])
             self.assert_expected_log(
                 osfguid,

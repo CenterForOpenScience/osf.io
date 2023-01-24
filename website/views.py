@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 import furl
 import waffle
 import itertools
-import json
 from rest_framework import status as http_status
 import logging
 import math
@@ -26,7 +25,7 @@ from website.institutions.views import serialize_institution
 
 from addons.osfstorage.models import Region, OsfStorageFile
 
-from osf import features
+from osf import features, exceptions
 from osf.models import Guid, Institution, Preprint, AbstractNode, Node, DraftNode, Registration, BaseFileNode
 
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, DOMAIN
@@ -35,7 +34,7 @@ from website.ember_osf_web.views import use_ember_app
 from website.project.decorators import check_contributor_auth
 from website.project.model import has_anonymous_link
 from osf.utils import permissions
-from osf.metadata.gather import gather_osfguid_metadata
+from osf.metadata import pls_gather_metadata_file
 
 from api.waffle.utils import storage_i18n_flag_active
 
@@ -430,34 +429,18 @@ def get_storage_region_list(user, node=False):
 
 
 def guid_metadata_download(guid, resource, metadata_format):
-    if metadata_format == 'turtle':
-        metadata_graph = gather_osfguid_metadata(guid, 100)
-        serialized_metadata = metadata_graph.serialize(format=metadata_format)
-        content_type = 'text/turtle'
-        filename = f'{guid}-metadata.ttl'
-    # TODO: elif metadata_format == 'json-ld' (need a stable json-ld serialization)
-    elif metadata_format == 'datacite-xml':
-        datacite_client = resource.get_doi_client()
-        serialized_metadata = datacite_client.build_metadata(resource, as_xml=True)
-        content_type = 'application/xml'
-        filename = f'{guid}-datacite.xml'
-    elif metadata_format == 'datacite-json':
-        datacite_client = resource.get_doi_client()
-        serialized_metadata = json.dumps(
-            datacite_client.build_metadata(resource, as_xml=False),
-            indent=2,
-        )
-        content_type = 'application/json'
-        filename = f'{guid}-datacite.json'
-    else:
+    try:
+        result = pls_gather_metadata_file(resource, metadata_format)
+    except exceptions.InvalidMetadataFormat as error:
         raise HTTPError(
             http_status.HTTP_400_BAD_REQUEST,
-            data=f'bad param `format={metadata_format}` (valid values include "json-ld", "turtle", "datacite-xml", and "datacite-json")',
+            data={'message_long': error.message},
         )
-    return Response(
-        serialized_metadata,
-        content_type=content_type,
-        headers={
-            'Content-Disposition': f'attachment; filename={filename}',
-        },
-    )
+    else:
+        return Response(
+            result.serialized_metadata,
+            content_type=result.mediatype,
+            headers={
+                'Content-Disposition': f'attachment; filename={result.filename}',
+            },
+        )

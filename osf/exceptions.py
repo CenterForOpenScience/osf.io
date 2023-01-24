@@ -270,3 +270,11 @@ class CannotFinalizeArtifactError(OSFError):
             f'Could not set `finalized=True` for OutcomeArtifact with id [{artifact._id}]. '
             f'The following required fields are not set: {incomplete_fields}'
         )
+
+
+class InvalidMetadataFormat(OSFError):
+    def __init__(self, given_format_key, valid_formats):
+        self.message = (
+            f'Invalid format_key (got "{given_format_key}"; '
+            f'expected one of {valid_formats})'
+        )

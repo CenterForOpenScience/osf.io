@@ -2,13 +2,11 @@
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, transaction
 
+from osf.metadata.gather.osf import coerce_guid
 from osf.models.base import (
     BaseModel,
-    Guid,
-    GuidMixin,
     InvalidGuid,
     ObjectIDMixin,
-    OptionalGuidMixin,
 )
 from osf.models.validators import JsonschemaValidator
 
@@ -17,61 +15,38 @@ class MetadataRecordCopyConflict(Exception):
     pass
 
 
-def coerce_guid(maybe_guid, create_if_needed=False):
-    if isinstance(maybe_guid, Guid):
-        return maybe_guid
-    if isinstance(maybe_guid, GuidMixin):
-        return maybe_guid.guids.first()
-    if isinstance(maybe_guid, OptionalGuidMixin):
-        return maybe_guid.get_guid(create=create_if_needed)
-    raise NotImplementedError(f'cannot coerce into Guid: {maybe_guid}')
-
-
 class GuidMetadataRecordManager(models.Manager):
-    def for_guid(self, guid, allowed_referent_models=None):
+    def for_guid(self, maybe_guid, allowed_referent_models=None):
         """get a GuidMetadataRecord instance for the given osf:Guid.
 
-        @param guid: `str` or `osf.models.Guid` instance
+        @param maybe_guid: `str` or instance of `Guid`, `GuidMixin`, or `OptionalGuidMixin`
         @param allowed_referent_models: (optional) iterable of model classes
         @returns `GuidMetadataRecord` instance (unsaved unless it already existed)
         @raises `InvalidGuid` if the given guid does not exist (or refers to
                 a type not in the given `allowed_referent_models`)
         """
-        guid_qs = (
-            Guid.objects.all()
-            .select_related('metadata_record')
-        )
-        if isinstance(guid, str):
-            guid_qs = guid_qs.filter(_id=guid)
-        elif isinstance(guid, Guid):
-            guid_qs = guid_qs.filter(_id=guid._id)
-        else:
-            raise InvalidGuid(f'expected str or Guid, got {guid} (of type {type(guid)})')
-
+        guid = coerce_guid(maybe_guid, create_if_needed=True)
         if allowed_referent_models is not None:
             allowed_content_types = set(
                 ContentType.objects
                 .get_for_models(*allowed_referent_models)
                 .values()
             )
-            guid_qs = guid_qs.filter(content_type__in=allowed_content_types)
-
+            if guid.content_type not in allowed_content_types:
+                raise InvalidGuid(
+                    f'guid exists ({guid}) but is a disallowed type (allowed: {allowed_content_types})',
+                )
         try:
-            found_guid = guid_qs.get()
-        except Guid.DoesNotExist:
-            raise InvalidGuid(
-                f'guid does not exist: {guid}',
-            )
-        try:
-            return found_guid.metadata_record
+            return GuidMetadataRecord.objects.get(guid=guid)
         except GuidMetadataRecord.DoesNotExist:
             # new, unsaved GuidMetadataRecord
-            return GuidMetadataRecord(guid=found_guid)
+            return GuidMetadataRecord(guid=guid)
 
     @transaction.atomic
     def copy(self, from_, to_):
-        from_guid = coerce_guid(from_)
-        if from_guid is None:
+        try:
+            from_guid = coerce_guid(from_)
+        except InvalidGuid:
             return  # nothing to copy; all good
         try:
             from_record = GuidMetadataRecord.objects.get(guid=from_guid)
