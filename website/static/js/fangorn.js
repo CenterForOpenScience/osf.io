@@ -603,6 +603,7 @@ function doItemOp(operation, to, from, rename, conflict) {
         return;
     }
 
+    var origFrom = Object.assign({}, from);
     if (operation === OPERATIONS.COPY) {
         from = tb.createItem($.extend(true, {status: operation.status}, from.data), to.id);
     } else {
@@ -695,6 +696,7 @@ function doItemOp(operation, to, from, rename, conflict) {
         }
         // no need to redraw because fangornOrderFolder does it
         orderFolder.call(tb, from.parent());
+        resolveconfigOption.call(tb, from, 'onMoveComplete', [from, origFrom, to, moveSpec]);
     }).fail(function(xhr, textStatus) {
         if (to.data.provider === from.provider) {
             tb.pendingFileOps.pop();
