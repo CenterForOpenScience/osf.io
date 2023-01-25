@@ -1,3 +1,6 @@
+'''a gather.Basket holds gathered metadata and coordinates gatherer actions.
+
+'''
 import datetime
 import typing
 
@@ -21,21 +24,48 @@ class Basket:
         self.gathered_metadata = rdfutils.contextualized_graph()
         self._gathertasks_done = set()
 
+    def pls_gather_by_map(self, predicate_map):
+        '''go gatherers, go!
+
+        @predicate_map: dict with rdflib.URIRef keys
+
+        use the predicate_map to get all relevant gatherers,
+        ask them to gather metadata about this basket's focus,
+        and keep the gathered metadata in this basket.
+
+        for example:
+        ```
+        basket.pls_gather_by_map({
+            DCT.title: None,            # request the focus item's DCT.title(s)
+            DCT.relation: {             # request the focus item's DCT.relation(s)
+                DCT.title: None,        #   ...and that related item's DCT.title(s)
+                DCT.creator: {          #   ...and that related item's DCT.creator(s)
+                    FOAF.name: None,    #       ...and those creators' FOAF.name(s)
+                },
+            },
+        })
+        '''
+        for triple in self._gather_by_map(predicate_map, self.focus):
+            self.gathered_metadata.add(triple)
+
     def __getitem__(self, slice_or_arg) -> typing.Iterable[rdflib.term.Node]:
-        """for convenient getting of values
-        """
+        '''convenience for getting values from the basket
+
+        basket[subject:predicate] -> generator of objects that complete the rdf triple
+        basket[predicate] -> same, with this basket's focus as the implicit subject
+
+        if this isn't enough, access basket.gathered_metadata directly (or improve this!)
+        '''
         if isinstance(slice_or_arg, slice):
             focus_iri = slice_or_arg.start
             predicate = slice_or_arg.stop
-            # TODO: use slice_or_arg.step for "expected type"
+            # TODO: use slice_or_arg.step to constrain "expected type"
         else:
             focus_iri = self.focus.iri
             predicate = slice_or_arg
         yield from self.gathered_metadata.objects(focus_iri, predicate)
 
-    def pls_gather_by_map(self, predicate_map):
-        for triple in self._gather_by_map(predicate_map, self.focus):
-            self.gathered_metadata.add(triple)
+    ##### END public api #####
 
     def _gather_by_map(self, predicate_map, with_focus=None):
         if with_focus is None:
@@ -49,27 +79,28 @@ class Basket:
                 predicate_iri: None
                 for predicate_iri in predicate_map
             }
-        for predicate_iri in predicate_map.keys():
-            for (subj, pred, obj) in self._gather_by_predicate(predicate_iri, with_focus):
-                if isinstance(obj, Focus):
-                    yield (subj, pred, obj.iri)
-                    if subj == with_focus.iri:
-                        next_steps = predicate_map.get(pred, None)
-                        if next_steps:
-                            yield from self._gather_by_map(
-                                next_steps,
-                                with_focus=obj,
-                            )
-                else:
-                    yield (subj, pred, obj)
+        for (subj, pred, obj) in self._gather_by_predicates(predicate_map.keys(), with_focus):
+            if isinstance(obj, Focus):
+                yield (subj, pred, obj.iri)
+                if subj == with_focus.iri:
+                    next_steps = predicate_map.get(pred, None)
+                    if next_steps:
+                        yield from self._gather_by_map(
+                            next_steps,
+                            with_focus=obj,
+                        )
+            else:
+                yield (subj, pred, obj)
 
-    def _gather_by_predicate(self, predicate_iri, with_focus=None):
+    def _gather_by_predicates(self, predicate_iris, with_focus=None):
         if with_focus is None:
             with_focus = self.focus
-        for gatherer in get_gatherers(predicate_iri, with_focus.rdftype):
+        for gatherer in get_gatherers(with_focus.rdftype, predicate_iris):
             yield from self._do_a_gathertask(gatherer, with_focus)
 
     def _do_a_gathertask(self, gatherer, focus):
+        '''invoke gatherer with the given focus, but only if it hasn't already been done
+        '''
         if (gatherer, focus) not in self._gathertasks_done:
             self._gathertasks_done.add((gatherer, focus))  # eager
             for triple in gatherer(focus):
@@ -79,8 +110,7 @@ class Basket:
 
     def _defocus(self, triple, focus):
         """
-        fill in the (partial) triple, given its focus,
-        and blur any rough edges that are easy to see
+        fill in the (partial) triple, given its focus
         """
         if len(triple) == 2:  # allow omitting subject
             triple = (focus.iri, *triple)

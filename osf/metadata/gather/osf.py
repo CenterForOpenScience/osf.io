@@ -1,9 +1,14 @@
+'''gatherers of metadata from the osf database, in particular
+'''
+import typing
+
 from django.contrib.contenttypes.models import ContentType
 from django import db
 import rdflib
 
+from osf import exceptions
 from osf import models as osfdb
-from osf.metadata import rdfutils
+from osf.metadata import gather
 from osf.metadata.rdfutils import (
     RDF,
     OWL,
@@ -13,13 +18,61 @@ from osf.metadata.rdfutils import (
     OSFIO,
     DOI,
     ORCID,
+    checksum_iri,
+    format_dct_extent,
 )
+from osf.metadata.serializers import METADATA_SERIALIZERS
 from osf.utils import workflows as osfworkflows
 from osf.utils.outcomes import ArtifactTypes
 
-from .basket import Basket
-from .focus import Focus
-from .gatherer import gatherer
+
+##### BEGIN "public" api #####
+
+class SerializedMetadataFile(typing.NamedTuple):
+    mediatype: str
+    filename: str
+    serialized_metadata: str
+
+
+def pls_gather_metadata_file(osf_item, format_key, serializer_config=None) -> SerializedMetadataFile:
+    '''for when you don't care about rdf or gatherbaskets, just want metadata about a thing
+
+    @osf_item: the thing (osf model instance or 5-ish character guid string)
+    @format_key: str (must be in .serializers.METADATA_SERIALIZERS)
+    @serializer_config: optional dict (use only when you know the serializer will understand)
+    '''
+    try:
+        serializer_class = METADATA_SERIALIZERS[format_key]
+    except KeyError:
+        valid_formats = ', '.join(METADATA_SERIALIZERS.keys())
+        raise exceptions.InvalidMetadataFormat(format_key, valid_formats)
+    else:
+        osfguid = osfdb.base.coerce_guid(osf_item, create_if_needed=True)
+        basket = pls_gather_item_metadata(osfguid.referent)
+        serializer = serializer_class(serializer_config)
+        return SerializedMetadataFile(
+            serializer.mediatype,
+            serializer.filename(osfguid._id),
+            serializer.serialize(basket),
+        )
+
+def pls_gather_item_metadata(osf_item) -> gather.Basket:
+    '''for when you just want a basket of rdf metadata about a thing
+
+    @osf_item: the thing (osf model instance or 5-ish character guid string)
+    '''
+    focus = get_osf_focus(osf_item)
+    basket = gather.Basket(focus)
+    if focus.rdftype == OSF.File:
+        basket.pls_gather_by_map(OSF_FILE_METADATA)
+    elif focus.rdftype in (OSF.Project, OSF.Component, OSF.Preprint, OSF.Registration):
+        basket.pls_gather_by_map(OSF_NODELIKE_METADATA)
+    else:
+        basket.pls_gather_by_map(OSF_COMMON_METADATA)
+    return basket
+
+
+##### END "public" api #####
 
 
 ##### BEGIN osfmap #####
@@ -85,42 +138,12 @@ OSF_ARTIFACT_PREDICATES = {
 
 ##### BEGIN osf-specific utils #####
 
-def pls_gather_item_metadata(osf_item) -> Basket:
-    focus = get_osf_focus(osf_item)
-    basket = Basket(focus)
-    if focus.rdftype == OSF.File:
-        basket.pls_gather_by_map(OSF_FILE_METADATA)
-    elif focus.rdftype in (OSF.Project, OSF.Component, OSF.Preprint, OSF.Registration):
-        basket.pls_gather_by_map(OSF_NODELIKE_METADATA)
-    else:
-        basket.pls_gather_by_map(OSF_COMMON_METADATA)
-    return basket
-
-
-def coerce_guid(maybe_guid, create_if_needed=False):
-    if isinstance(maybe_guid, osfdb.Guid):
-        return maybe_guid
-    if isinstance(maybe_guid, osfdb.base.GuidMixin):
-        return maybe_guid.guids.first()
-    if isinstance(maybe_guid, osfdb.base.OptionalGuidMixin):
-        guid = maybe_guid.get_guid(create=create_if_needed)
-        if guid is None:
-            raise osfdb.base.InvalidGuid(f'guid does not exist ({maybe_guid})')
-        return guid
-    if isinstance(maybe_guid, str):
-        try:
-            return osfdb.Guid.objects.get(_id=maybe_guid)
-        except osfdb.Guid.DoesNotExist:
-            raise osfdb.base.InvalidGuid(f'guid does not exist ({maybe_guid})')
-    raise NotImplementedError(f'cannot coerce {type(maybe_guid)} ({maybe_guid}) into Guid')
-
-
 def get_osf_focus(osf_item):
     if isinstance(osf_item, str):
-        osf_item = coerce_guid(osf_item).referent
+        osf_item = osfdb.base.coerce_guid(osf_item).referent
     iri = osf_iri(osf_item)
     rdftype = get_rdf_type(osf_item)
-    focus = Focus(
+    focus = gather.Focus(
         iri=iri,
         rdftype=rdftype,
         dbmodel=osf_item,
@@ -164,7 +187,7 @@ def osf_iri(guid_or_model):
     """
     if isinstance(guid_or_model, osfdb.FileVersion):
         return rdflib.BNode()  # TODO: do file-version web urls even work?
-    guid = coerce_guid(guid_or_model)
+    guid = osfdb.base.coerce_guid(guid_or_model)
     return OSFIO[guid._id]
 
 ##### END osf-specific utils #####
@@ -173,8 +196,8 @@ def osf_iri(guid_or_model):
 ##### BEGIN the gatherers #####
 #
 
-@gatherer(DCT.identifier, rdflib.OWL.sameAs)
-def gather_identifiers(focus: Focus):
+@gather.er(DCT.identifier, rdflib.OWL.sameAs)
+def gather_identifiers(focus: gather.Focus):
     guids_qs = getattr(focus.dbmodel, 'guids', None)
     if guids_qs is not None:
         for osfguid in guids_qs.values_list('_id', flat=True):
@@ -186,12 +209,12 @@ def gather_identifiers(focus: Focus):
     if hasattr(focus.dbmodel, 'get_identifier_value'):
         doi = focus.dbmodel.get_identifier_value('doi')
         if doi:
-            doi_iri = rdfutils.DOI[doi]
+            doi_iri = DOI[doi]
             yield (OWL.sameAs, doi_iri)
             yield (DCT.identifier, str(doi_iri))
 
 
-@gatherer(DCT.type)
+@gather.er(DCT.type)
 def gather_flexible_types(focus):
     # TODO: crosswalk from osf:category to something more intentional
     category = getattr(focus.dbmodel, 'category', None)
@@ -201,7 +224,7 @@ def gather_flexible_types(focus):
         yield (DCT.type, focus.guid_metadata_record.resource_type_general)
 
 
-@gatherer(DCT.created)
+@gather.er(DCT.created)
 def gather_created(focus):
     if focus.rdftype == OSF.Registration:
         yield (DCT.created, getattr(focus.dbmodel, 'registered_date', None))
@@ -209,14 +232,14 @@ def gather_created(focus):
         yield (DCT.created, getattr(focus.dbmodel, 'created', None))
 
 
-@gatherer(DCT.available)
+@gather.er(DCT.available)
 def gather_available(focus):
     embargo_end_date = getattr(focus.dbmodel, 'embargo_end_date', None)
     if embargo_end_date:
         yield (DCT.available, embargo_end_date)
 
 
-@gatherer(DCT.modified)
+@gather.er(DCT.modified)
 def gather_modified(focus):
     last_logged = getattr(focus.dbmodel, 'last_logged', None)
     if last_logged is not None:
@@ -225,7 +248,7 @@ def gather_modified(focus):
         yield (DCT.modified, getattr(focus.dbmodel, 'modified', None))
 
 
-@gatherer(DCT.dateSubmitted, DCT.dateAccepted)
+@gather.er(DCT.dateSubmitted, DCT.dateAccepted)
 def gather_moderation_dates(focus):
     if hasattr(focus.dbmodel, 'actions'):
         submit_triggers = [
@@ -253,7 +276,7 @@ def gather_moderation_dates(focus):
         # TODO: withdrawn?
 
 
-@gatherer(DCT.dateCopyrighted, DCT.rightsHolder, DCT.rights)
+@gather.er(DCT.dateCopyrighted, DCT.rightsHolder, DCT.rights)
 def gather_licensing(focus):
     license_record = getattr(focus.dbmodel, 'node_license', None)
     if license_record is not None:
@@ -270,27 +293,27 @@ def gather_licensing(focus):
         yield (license_iri, FOAF.name, license.name)
 
 
-@gatherer(DCT.title)
+@gather.er(DCT.title)
 def gather_title(focus):
     yield (DCT.title, getattr(focus.dbmodel, 'title', None))
     if hasattr(focus, 'guid_metadata_record'):
         yield (DCT.title, focus.guid_metadata_record.title)
 
 
-@gatherer(DCT.language)
+@gather.er(DCT.language)
 def gather_language(focus):
     if hasattr(focus, 'guid_metadata_record'):
         yield (DCT.language, focus.guid_metadata_record.language)
 
 
-@gatherer(DCT.description)
+@gather.er(DCT.description)
 def gather_description(focus):
     yield (DCT.description, getattr(focus.dbmodel, 'description', None))
     if hasattr(focus, 'guid_metadata_record'):
         yield (DCT.description, focus.guid_metadata_record.description)
 
 
-@gatherer(OSF.keyword)
+@gather.er(OSF.keyword)
 def gather_keywords(focus):
     if hasattr(focus.dbmodel, 'tags'):
         tag_names = (
@@ -302,7 +325,7 @@ def gather_keywords(focus):
             yield (OSF.keyword, tag_name)
 
 
-@gatherer(DCT.subject)
+@gather.er(DCT.subject)
 def gather_subjects(focus):
     if hasattr(focus.dbmodel, 'subjects'):
         for subject in focus.dbmodel.subjects.all().select_related('bepress_subject'):
@@ -312,14 +335,14 @@ def gather_subjects(focus):
                 yield (DCT.subject, subject.bepress_subject.text)
 
 
-@gatherer(focustype_iris=[OSF.File])
+@gather.er(focustype_iris=[OSF.File])
 def gather_file_locations(focus):
     if isinstance(focus.dbmodel, osfdb.BaseFileNode):
         yield (OSF.file_name, getattr(focus.dbmodel, 'name', None))
         yield (OSF.file_path, getattr(focus.dbmodel, 'materialized_path', None))
 
 
-@gatherer(
+@gather.er(
     DCT.hasVersion,
     OSF.has_content,
     focustype_iris=[OSF.File],
@@ -337,22 +360,22 @@ def gather_versions(focus):
                 yield (DCT.hasVersion, blankversion)
                 for checksum_algorithm, checksum_value in checksums.items():
                     if ' ' not in checksum_algorithm:
-                        yield (blankversion, DCT.requires, rdfutils.checksum_iri(checksum_algorithm, checksum_value))
+                        yield (blankversion, DCT.requires, checksum_iri(checksum_algorithm, checksum_value))
 
 
-@gatherer(focustype_iris=[OSF.FileVersion])
+@gather.er(focustype_iris=[OSF.FileVersion])
 def gather_fileversion(version_focus):
     version = version_focus.dbmodel
     yield (DCT.creator, get_osf_focus(version.creator))
     yield (DCT.created, version.created)
     yield (DCT.modified, version.created)
-    yield (DCT.requires, rdfutils.checksum_iri('sha-256', version.metadata['sha256']))
+    yield (DCT.requires, checksum_iri('sha-256', version.metadata['sha256']))
     yield (DCT.format, version.content_type)
-    yield (DCT.extent, rdfutils.format_dct_extent(version.size))
+    yield (DCT.extent, format_dct_extent(version.size))
     yield (OSF.version_number, version.identifier)
 
 
-@gatherer(DCT.hasPart, DCT.isPartOf)
+@gather.er(DCT.hasPart, DCT.isPartOf)
 def gather_parts(focus):
     # TODO: files without osfguids too?
     #       (maybe only for registration files, if they don't all have osfguids)
@@ -378,7 +401,7 @@ def gather_parts(focus):
             yield (DCT.isPartOf, get_osf_focus(container))
 
 
-@gatherer(DCT.relation)
+@gather.er(DCT.relation)
 def gather_related_items(focus):
     related_article_doi = getattr(focus.dbmodel, 'article_doi', None)
     if related_article_doi:
@@ -411,14 +434,14 @@ def gather_related_items(focus):
                 yield (artifact_bnode, DCT.description, outcome_artifact.description)
 
 
-@gatherer(DCT.requires)
+@gather.er(DCT.requires)
 def gather_content_requirements(focus):
     primary_file = getattr(focus.dbmodel, 'primary_file', None)
     if primary_file:
         yield from (DCT.requires, get_osf_focus(primary_file))
 
 
-@gatherer(
+@gather.er(
     DCT.creator,
     DCT.contributor,
     focustype_iris=[OSF.Project, OSF.Component, OSF.Registration, OSF.Preprint],
@@ -447,7 +470,7 @@ def gather_agents(focus):
         yield (DCT.contributor, get_osf_focus(user))
 
 
-@gatherer(OSF.affiliated_institution)
+@gather.er(OSF.affiliated_institution)
 def gather_affiliated_institutions(focus):
     if hasattr(focus.dbmodel, 'get_affiliated_institutions'):
         institution_qs = focus.dbmodel.get_affiliated_institutions()
@@ -468,7 +491,7 @@ def gather_affiliated_institutions(focus):
         yield (institution_iri, DCT.identifier, osf_institution.identifier_domain)
 
 
-@gatherer(OSF.funder)
+@gather.er(OSF.funder)
 def gather_funding(focus):
     if hasattr(focus, 'guid_metadata_record'):
         for funding in focus.guid_metadata_record.funding_info:
@@ -483,7 +506,7 @@ def gather_funding(focus):
             yield (funder_bnode, OSF.award_title, funding['award_title'])
 
 
-@gatherer(focustype_iris=[OSF.OSFUser])
+@gather.er(focustype_iris=[OSF.OSFUser])
 def gather_user_basics(focus):
     yield (FOAF.name, focus.dbmodel.fullname)
 

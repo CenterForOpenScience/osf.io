@@ -10,7 +10,12 @@ from .focus import Focus
 Gatherer = typing.Callable[[Focus], typing.Iterable[tuple]]
 
 
-# module-private
+# module-private registry of gatherers by their iris of interest,
+# built by the @gatherer decorator (via add_gatherer)
+#
+# outer dict maps from focustype_iri (or None) to inner dict,
+# inner dict maps from predicate_iri (or None) to a set of callables.
+# (see tests.test_metadata_gatherer_registry for examples)
 __gatherer_registry = {}
 
 
@@ -19,7 +24,9 @@ def gatherer(*predicate_iris, focustype_iris=None):
 
     for example:
         ```
-        @gatherer(DCT.language, focustype_iris=[OSF.MyType])
+        from osf.metadata import gather
+
+        @gather.er(DCT.language, focustype_iris=[OSF.MyType])
         def gather_language(focus: gather.Focus):
             yield (DCT.language, getattr(focus.dbmodel, 'language'))
         ```
@@ -48,10 +55,10 @@ def add_gatherer(gatherer, predicate_iris, focustype_iris):
         )
 
 
-def get_gatherers(predicate_iri, focustype_iri):
+def get_gatherers(focustype_iri, predicate_iris):
     gatherer_set = set()
     for focustype in (None, focustype_iri):
         for_focustype = __gatherer_registry.get(focustype, {})
-        for predicate in (None, predicate_iri):
+        for predicate in (None, *predicate_iris):
             gatherer_set.update(for_focustype.get(predicate, ()))
     return gatherer_set

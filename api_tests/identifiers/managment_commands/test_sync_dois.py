@@ -27,7 +27,7 @@ class TestSyncDOIs:
     @pytest.fixture()
     def registration(self):
         registration = RegistrationFactory()
-        doi = registration.get_doi_client().build_doi(registration)
+        doi = registration.request_identifier('doi')['doi']
         registration.set_identifier_value(category='doi', value=doi)
         registration.is_public = True
         registration.save()

@@ -2,11 +2,11 @@
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, transaction
 
-from osf.metadata.gather.osf import coerce_guid
 from osf.models.base import (
     BaseModel,
     InvalidGuid,
     ObjectIDMixin,
+    coerce_guid,
 )
 from osf.models.validators import JsonschemaValidator
 

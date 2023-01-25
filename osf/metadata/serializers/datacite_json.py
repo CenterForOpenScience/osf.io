@@ -15,6 +15,7 @@ from osf.metadata.rdfutils import (
     OSF,
     OWL,
     ROR,
+    primitivify_rdf,
 )
 from osf.metadata.serializers import _base
 
@@ -67,7 +68,7 @@ class DataciteJsonMetadataSerializer(_base.MetadataSerializer):
         if language:
             metadata['language'] = language
 
-        metadata = _deep_stringify(metadata)
+        metadata = primitivify_rdf(metadata)
         try:
             datacite_schema43.validator.validate(metadata)
         except Exception:
@@ -108,22 +109,6 @@ RESOURCE_TYPES_GENERAL = {
     'Workflow',
     'Other',
 }
-
-
-def _deep_stringify(obj):
-    if isinstance(obj, str):
-        return str(obj)
-    if isinstance(obj, list):
-        return [
-            _deep_stringify(val)
-            for val in obj
-        ]
-    if isinstance(obj, dict):
-        return {
-            key: _deep_stringify(val)
-            for key, val in obj.items()
-        }
-    return obj
 
 
 def _format_contributors(basket):
