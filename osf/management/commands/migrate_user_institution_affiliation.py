@@ -50,7 +50,7 @@ def migrate_user_institution_affiliation(dry_run=True):
         skipped_user_count_per_institution = 0
         users = institution.osfuser_set.all()
         user_total_per_institution = users.count()
-        sso_identity = ''
+        sso_identity = None
         if not institution.delegation_protocol:
             sso_identity = InstitutionAffiliation.DEFAULT_VALUE_FOR_SSO_IDENTITY_NOT_AVAILABLE
         logger.info(f'Migrating affiliation for <{institution.name}> [{institution_count}/{institution_total}]')

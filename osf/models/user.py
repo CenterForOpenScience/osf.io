@@ -1749,7 +1749,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if not self.is_affiliated_with_institution(institution):
             return None
         affiliation = InstitutionAffiliation.objects.get(user__id=self.id, institution__id=institution.id)
-        affiliation.sso_identity = ''
+        affiliation.sso_identity = None
         affiliation.save()
         return affiliation
 
