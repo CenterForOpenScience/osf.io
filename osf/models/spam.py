@@ -10,9 +10,9 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 
 from osf.external.oopspam.client import OOPSpamClient
-from osf.external.oopspam.tasks import check_resource_with_oopspam
 from osf.external.askismet.client import AkismetClient
-from osf.external.askismet.tasks import check_resource_with_akismet, submit_ham, submit_spam
+from osf.external.askismet.tasks import submit_ham, submit_spam
+from osf.external.spam.tasks import check_resource_with_spam_services
 
 from website import settings
 
@@ -232,16 +232,7 @@ class SpamMixin(models.Model):
                 content=content,
             )
         )
-        check_resource_with_akismet.apply_async(
-            kwargs=dict(
-                guid=self.guids.first()._id,
-                content=content,
-                author=author,
-                author_email=author_email,
-                request_kwargs=request_kwargs,
-            )
-        )
-        check_resource_with_oopspam.apply_async(
+        check_resource_with_spam_services.apply_async(
             kwargs=dict(
                 guid=self.guids.first()._id,
                 content=content,

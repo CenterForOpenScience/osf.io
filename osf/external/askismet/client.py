@@ -8,14 +8,15 @@ from osf.external.askismet.exceptions import AkismetClientError
 
 class AkismetClient(object):
 
+    NAME = 'akismet'
     API_PROTOCOL = 'https://'
     API_HOST = 'rest.akismet.com'
 
-    def __init__(self, apikey, website, verify=False):
-        self.apikey = apikey
-        self.website = website
+    def __init__(self):
+        self.apikey = settings.AKISMET_APIKEY
+        self.website = settings.DOMAIN
         self._apikey_is_valid = None
-        if verify:
+        if bool(settings.AKISMET_APIKEY):
             self._verify_apikey()
 
     @property

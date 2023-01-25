@@ -7,6 +7,7 @@ from osf.external.oopspam.exceptions import OOPSpamClientError
 
 class OOPSpamClient(object):
 
+    NAME = 'oopspam'
     API_PROTOCOL = 'https://'
     API_HOST = 'oopspam.p.rapidapi.com/v1/spamdetection'
     API_URL = f'{API_PROTOCOL}{API_HOST}'
@@ -23,18 +24,22 @@ class OOPSpamClient(object):
             'x-rapidapi-host': 'oopspam.p.rapidapi.com'
         }
 
-    def check_content(self, user_ip, content):
+    def check_content(self, user_ip, content, **kwargs):
         if not self.apikey:
             return False, ''
-        payload = {}
-        payload['checkForLength'] = False
-        payload['content'] = content
+        payload = {
+            'checkForLength': False,
+            'content': content
+        }
         if settings.OOPSPAM_CHECK_IP:
             payload['senderIP'] = user_ip
 
-        headers = self._default_headers
-
-        response = requests.request('POST', self.website, data=json.dumps(payload), headers=headers)
+        response = requests.request(
+            'POST',
+            self.website,
+            data=json.dumps(payload),
+            headers=self._default_headers
+        )
 
         if response.status_code != requests.codes.ok:
             raise OOPSpamClientError(reason=response.text)
