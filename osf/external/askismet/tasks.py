@@ -1,7 +1,6 @@
 from framework.celery_tasks import app as celery_app
 
 from osf.external.askismet.client import AkismetClient
-from website import settings
 
 
 @celery_app.task()
@@ -9,11 +8,7 @@ def check_resource_with_akismet(guid, content, author, author_email, request_kwa
     from osf.models import Guid
     resource = Guid.load(guid).referent
 
-    client = AkismetClient(
-        apikey=settings.AKISMET_APIKEY,
-        website=settings.DOMAIN,
-        verify=bool(settings.AKISMET_APIKEY)
-    )
+    client = AkismetClient()
 
     is_spam, pro_tip = client.check_content(
         user_ip=request_kwargs.get('remote_addr'),
@@ -51,11 +46,7 @@ def submit_spam(guid):
     from osf.models import Guid
     resource = Guid.load(guid).referent
 
-    client = AkismetClient(
-        apikey=settings.AKISMET_APIKEY,
-        website=settings.DOMAIN,
-        verify=bool(settings.AKISMET_APIKEY)
-    )
+    client = AkismetClient()
 
     client.submit_spam(
         user_ip=resource.spam_data['headers']['Remote-Addr'],
@@ -72,11 +63,7 @@ def submit_ham(guid):
     from osf.models import Guid
     resource = Guid.load(guid).referent
 
-    client = AkismetClient(
-        apikey=settings.AKISMET_APIKEY,
-        website=settings.DOMAIN,
-        verify=bool(settings.AKISMET_APIKEY)
-    )
+    client = AkismetClient()
 
     client.submit_ham(
         user_ip=resource.spam_data['headers']['Remote-Addr'],

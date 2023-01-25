@@ -14,8 +14,6 @@ from osf.external.askismet.client import AkismetClient
 from osf.external.askismet.tasks import submit_ham, submit_spam
 from osf.external.spam.tasks import check_resource_with_spam_services
 
-from website import settings
-
 logger = logging.getLogger(__name__)
 
 
@@ -24,11 +22,7 @@ def _get_akismet_client():
     AKISMET_APIKEY should be `None` for local testing.
     :return:
     """
-    return AkismetClient(
-        apikey=settings.AKISMET_APIKEY,
-        website=settings.DOMAIN,
-        verify=bool(settings.AKISMET_APIKEY)
-    )
+    return AkismetClient()
 
 def _get_oopspam_client():
     """

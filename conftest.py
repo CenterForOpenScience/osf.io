@@ -223,9 +223,10 @@ def mock_oopspam():
     'https://oopspam.p.rapidapi.com/v1/spamdetection'
     """
     with mock.patch.object(website_settings, 'SPAM_CHECK_ENABLED', True):
-        with mock.patch.object(website_settings, 'OOPSPAM_APIKEY', 'FFFFFF'):
-            with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
-                yield rsps
+        with mock.patch.object(website_settings, 'OOPSPAM_ENABLED', True):
+            with mock.patch.object(website_settings, 'OOPSPAM_APIKEY', 'FFFFFF'):
+                with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
+                    yield rsps
 
 
 @pytest.fixture

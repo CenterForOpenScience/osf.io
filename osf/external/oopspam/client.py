@@ -11,10 +11,8 @@ class OOPSpamClient(object):
     API_PROTOCOL = 'https://'
     API_HOST = 'oopspam.p.rapidapi.com/v1/spamdetection'
     API_URL = f'{API_PROTOCOL}{API_HOST}'
-
-    def __init__(self, apikey=None, website=None):
-        self.apikey = apikey or settings.OOPSPAM_APIKEY
-        self.website = website or self.API_URL
+    apikey = settings.OOPSPAM_APIKEY
+    website = API_URL
 
     @property
     def _default_headers(self):
@@ -25,8 +23,9 @@ class OOPSpamClient(object):
         }
 
     def check_content(self, user_ip, content, **kwargs):
-        if not self.apikey:
+        if not settings.OOPSPAM_ENABLED:
             return False, ''
+
         payload = {
             'checkForLength': False,
             'content': content

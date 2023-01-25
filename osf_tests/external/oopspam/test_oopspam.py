@@ -35,8 +35,10 @@ class TestUserSpamOOPSpam:
         spam_content = user._get_spam_content(saved_fields)
         assert spam_content == expected_content.strip()
 
+    @mock.patch('osf.external.oopspam.client.OOPSpamClient')
     @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
-    @mock.patch('osf.models.spam._get_oopspam_client')
+    @mock.patch.object(settings, 'OOPSPAM_APIKEY', 'FFFFFF')
+    @mock.patch.object(settings, 'OOPSPAM_ENABLED', True)
     @pytest.mark.enable_enqueue_task
     def test_do_check_spam(self, mock_get_oopspam_client, user):
         new_mock = mock.MagicMock()
@@ -46,7 +48,7 @@ class TestUserSpamOOPSpam:
         suspicious_content = 'spam eggs sausage and spam'
         with mock.patch('osf.models.user.OSFUser._get_spam_content', mock.Mock(return_value=suspicious_content)):
             with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
-                rsps.add(responses.POST, f'https://none.rest.akismet.com/1.1/comment-check', status=200)
+                rsps.add(responses.POST, f'https://oopspam.p.rapidapi.com/v1/spamdetection', status=200, json={'Score': 6})
                 user.do_check_spam(
                     author=user.fullname,
                     author_email=user.username,
