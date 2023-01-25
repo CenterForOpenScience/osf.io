@@ -278,7 +278,3 @@ class InvalidMetadataFormat(OSFError):
             f'Invalid format_key (got "{given_format_key}"; '
             f'expected one of {valid_formats})'
         )
-
-
-class MetadataSerializationError(OSFError):
-    pass

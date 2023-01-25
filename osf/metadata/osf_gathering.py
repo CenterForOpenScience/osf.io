@@ -50,15 +50,11 @@ def pls_gather_metadata_file(osf_item, format_key, serializer_config=None) -> Se
         serializer = serializer_class(serializer_config)
         osfguid = osfdb.base.coerce_guid(osf_item, create_if_needed=True)
         basket = pls_gather_item_metadata(osfguid.referent)
-        try:
-            return SerializedMetadataFile(
-                serializer.mediatype,
-                serializer.filename(osfguid._id),
-                serializer.serialize(basket),
-            )
-        except Exception as e:
-            # whatever the error is, make it catchable as MetadataSerializationError
-            raise exceptions.MetadataSerializationError from e
+        return SerializedMetadataFile(
+            serializer.mediatype,
+            serializer.filename(osfguid._id),
+            serializer.serialize(basket),
+        )
 
 def pls_gather_item_metadata(osf_item) -> gather.Basket:
     '''for when you just want a basket of rdf metadata about a thing

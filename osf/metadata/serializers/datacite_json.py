@@ -44,10 +44,7 @@ class DataciteJsonMetadataSerializer(_base.MetadataSerializer):
                 }
                 for license_iri in basket[DCT.rights]
             ],
-            'titles': [
-                {'title': title}
-                for title in basket[DCT.title]
-            ],
+            'titles': _format_titles(basket),
             'descriptions': [
                 {
                     'descriptionType': 'Abstract',
@@ -109,6 +106,16 @@ RESOURCE_TYPES_GENERAL = {
     'Workflow',
     'Other',
 }
+
+
+def _format_titles(basket):
+    titles = list(basket[DCT.title])
+    if not titles and basket.focus.rdftype == OSF.File:
+        titles.append(next(basket[OSF.file_name], ''))
+    return [
+        {'title': title}
+        for title in titles
+    ]
 
 
 def _format_contributors(basket):
@@ -175,6 +182,15 @@ def _format_creators(basket):
             'nameType': 'Personal',
             'affiliation': _format_affiliations(basket, creator_iri),
         })
+
+    if not creators_json and basket.focus.rdftype == OSF.File:
+        for version_creator_iri in set(basket[DCT.hasVersion / DCT.creator]):
+            creators_json.append({
+                'name': next(basket[version_creator_iri:FOAF.name], ''),
+                'nameIdentifiers': _format_name_identifiers(basket, version_creator_iri),
+                'nameType': 'Personal',
+                'affiliation': _format_affiliations(basket, version_creator_iri),
+            })
     return creators_json
 
 
@@ -248,11 +264,16 @@ def _format_related_identifiers(basket):
         related_identifiers.append(
             _format_related_identifier(related_iri, 'IsSupplementedBy'),
         )
-
     for related_iri in basket[OSF.is_supplement_to_article]:
         related_identifiers.append(
             _format_related_identifier(related_iri, 'IsSupplementTo'),
         )
+    for related_iri in basket[DCT.isPartOf]:
+        related_identifiers.append(
+            _format_related_identifier(related_iri, 'IsPartOf'),
+        )
+    # TODO: HasPart as well -- but large numbers of files could be problems
+
     return related_identifiers
 
 

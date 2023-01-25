@@ -97,11 +97,17 @@ class TestMetadataDownload(OsfTestCase):
         assert resp.content_disposition == f'attachment; filename={file_guid}-metadata.ttl'
         assert resp.unicode_body == FILE_TURTLE.format(**format_kwargs)
 
-        # (but sadly acknowledge datacite validation fails on files at the moment)
-        resp = self.app.get(f'/{file_guid}/metadata/?format=datacite-json', auth=user.auth, expect_errors=True)
-        assert resp.status_code == 422
-        resp = self.app.get(f'/{file_guid}/metadata/?format=datacite-xml', auth=user.auth, expect_errors=True)
-        assert resp.status_code == 422
+        resp = self.app.get(f'/{file_guid}/metadata/?format=datacite-json', auth=user.auth)
+        assert resp.status_code == 200
+        assert resp.content_type == 'application/json'
+        assert resp.content_disposition == f'attachment; filename={file_guid}-datacite.json'
+        assert resp.unicode_body == FILE_DATACITE_JSON.format(**format_kwargs)
+
+        resp = self.app.get(f'/{file_guid}/metadata/?format=datacite-xml', auth=user.auth)
+        assert resp.status_code == 200
+        assert resp.content_type == 'application/xml'
+        assert resp.content_disposition == f'attachment; filename={file_guid}-datacite.xml'
+        assert resp.unicode_body == FILE_DATACITE_XML.format(**format_kwargs)
 
 
 # doubled {{}} cleaned by a call to .format()
@@ -461,4 +467,120 @@ FILE_TURTLE = '''@prefix dct: <http://purl.org/dc/terms/> .
     dct:identifier "http://localhost:5000/{user_id}" ;
     foaf:name "Person McNamington" .
 
+'''
+
+
+FILE_DATACITE_JSON = '''{{
+  "contributors": [
+    {{
+      "contributorName": "Open Science Framework",
+      "contributorType": "HostingInstitution",
+      "name": "Open Science Framework",
+      "nameIdentifiers": [
+        {{
+          "name": "Open Science Framework",
+          "nameIdentifier": "https://ror.org/05d5mza29",
+          "nameIdentifierScheme": "ROR"
+        }},
+        {{
+          "name": "Open Science Framework",
+          "nameIdentifier": "https://grid.ac/institutes/grid.466501.0/",
+          "nameIdentifierScheme": "GRID"
+        }}
+      ],
+      "nameType": "Organizational"
+    }}
+  ],
+  "creators": [
+    {{
+      "affiliation": [],
+      "name": "Person McNamington",
+      "nameIdentifiers": [
+        {{
+          "nameIdentifier": "http://localhost:5000/{user_id}",
+          "nameIdentifierScheme": "URL"
+        }}
+      ],
+      "nameType": "Personal"
+    }}
+  ],
+  "dates": [
+    {{
+      "date": "{date}",
+      "dateType": "Created"
+    }},
+    {{
+      "date": "{date}",
+      "dateType": "Updated"
+    }}
+  ],
+  "descriptions": [],
+  "fundingReferences": [],
+  "identifiers": [
+    {{
+      "identifier": "",
+      "identifierType": "DOI"
+    }},
+    {{
+      "identifier": "http://localhost:5000/{file_id}",
+      "identifierType": "URL"
+    }}
+  ],
+  "publicationYear": "{year}",
+  "publisher": "Open Science Framework",
+  "relatedIdentifiers": [
+    {{
+      "relatedIdentifier": "http://localhost:5000/{project_id}",
+      "relatedIdentifierType": "URL",
+      "relationType": "IsPartOf"
+    }}
+  ],
+  "rightsList": [],
+  "schemaVersion": "http://datacite.org/schema/kernel-4",
+  "subjects": [],
+  "titles": [
+    {{
+      "title": "my-file.blarg"
+    }}
+  ],
+  "types": {{
+    "resourceType": "File",
+    "resourceTypeGeneral": "Text"
+  }}
+}}'''
+
+
+FILE_DATACITE_XML = '''<?xml version='1.0' encoding='utf-8'?>
+<resource xmlns="http://datacite.org/schema/kernel-4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4.3/metadata.xsd">
+  <identifier identifierType="DOI"></identifier>
+  <alternateIdentifiers>
+    <alternateIdentifier alternateIdentifierType="URL">http://localhost:5000/{file_id}</alternateIdentifier>
+  </alternateIdentifiers>
+  <creators>
+    <creator>
+      <creatorName nameType="Personal">Person McNamington</creatorName>
+      <nameIdentifier nameIdentifierScheme="URL">http://localhost:5000/{user_id}</nameIdentifier>
+    </creator>
+  </creators>
+  <titles>
+    <title>my-file.blarg</title>
+  </titles>
+  <publisher>Open Science Framework</publisher>
+  <publicationYear>{year}</publicationYear>
+  <contributors>
+    <contributor contributorType="HostingInstitution">
+      <contributorName nameType="Organizational">Open Science Framework</contributorName>
+      <nameIdentifier nameIdentifierScheme="ROR">https://ror.org/05d5mza29</nameIdentifier>
+      <nameIdentifier nameIdentifierScheme="GRID">https://grid.ac/institutes/grid.466501.0/</nameIdentifier>
+    </contributor>
+  </contributors>
+  <dates>
+    <date dateType="Created">{date}</date>
+    <date dateType="Updated">{date}</date>
+  </dates>
+  <resourceType resourceTypeGeneral="Text">File</resourceType>
+  <relatedIdentifiers>
+    <relatedIdentifier relatedIdentifierType="URL" relationType="IsPartOf">http://localhost:5000/{project_id}</relatedIdentifier>
+  </relatedIdentifiers>
+</resource>
 '''
