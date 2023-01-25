@@ -19,6 +19,7 @@ from website.ember_osf_web.decorators import ember_flag_is_active
 from api.waffle.utils import flag_is_active, storage_i18n_flag_active, storage_usage_flag_active
 from framework.exceptions import HTTPError
 from osf.models.nodelog import NodeLog
+from osf.models.user import OSFUser
 from osf.utils.functional import rapply
 from osf.utils.registrations import strip_registered_meta_comments
 from osf.utils import sanitize
@@ -877,7 +878,11 @@ def _view_project(node, auth, primary=False,
 
 def get_affiliated_institutions(obj):
     ret = []
-    for institution in obj.affiliated_institutions.all():
+    if isinstance(obj, OSFUser):
+        institutions = obj.get_affiliated_institutions()
+    else:
+        institutions = obj.affiliated_institutions.all()
+    for institution in institutions:
         ret.append({
             'name': institution.name,
             'logo_path': institution.logo_path,

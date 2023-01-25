@@ -447,7 +447,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
         assert res.json['errors'][0]['detail'] == '"data visualization" is not a valid choice.'
 
     #   test_some_registration_fields_are_editable
-        user.affiliated_institutions.add(institution_one)
+        user.add_or_update_affiliated_institution(institution_one)
         year = '2009'
         copyright_holders = ['Grapes McGee']
         description = 'New description'

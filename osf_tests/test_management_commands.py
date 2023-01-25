@@ -279,8 +279,7 @@ class TestInstitutionMetricsUpdate:
     def user1(self, institution):
         # Private: 4, Public: 4 (+1 from user2 fixture)
         user = AuthUserFactory()
-        institution.osfuser_set.add(user)
-        institution.save()
+        user.add_or_update_affiliated_institution(institution)
 
         for i in range(5):
             project = ProjectFactory(creator=user, is_public=False)
@@ -303,8 +302,7 @@ class TestInstitutionMetricsUpdate:
     def user2(self, institution, user1):
         # Private: 10, Public: 1
         user = AuthUserFactory()
-        institution.osfuser_set.add(user)
-        institution.save()
+        user.add_or_update_affiliated_institution(institution)
 
         for i in range(10):
             project = ProjectFactory(creator=user, is_public=False)
@@ -322,8 +320,7 @@ class TestInstitutionMetricsUpdate:
     def user3(self, institution):
         # Private: 0, Public: 0
         user = AuthUserFactory()
-        institution.osfuser_set.add(user)
-        institution.save()
+        user.add_or_update_affiliated_institution(institution)
 
         return user
 

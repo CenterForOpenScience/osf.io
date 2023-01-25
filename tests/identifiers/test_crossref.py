@@ -292,7 +292,7 @@ class TestCrossRefClient:
         institution = InstitutionFactory()
         institution.ror_uri = 'http://ror.org/WHATisITgoodFOR/'
         institution.save()
-        preprint.creator.affiliated_institutions.add(institution)
+        preprint.creator.add_or_update_affiliated_institution(institution)
         preprint.creator.save()
 
         crossref_xml = crossref_client.build_metadata(preprint)

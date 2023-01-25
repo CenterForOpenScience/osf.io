@@ -45,8 +45,8 @@ class InstitutionSummaryReporter(DailyReporter):
                 institution_id=institution._id,
                 institution_name=institution.name,
                 users=RunningTotal(
-                    total=institution.osfuser_set.filter(is_active=True).count(),
-                    total_daily=institution.osfuser_set.filter(date_confirmed__date=date).count(),
+                    total=institution.get_institution_users().filter(is_active=True).count(),
+                    total_daily=institution.get_institution_users().filter(date_confirmed__date=date).count(),
                 ),
                 nodes=NodeRunningTotals(
                     total=node_qs.count(),
