@@ -117,11 +117,12 @@ def register_unconfirmed(username, password, fullname, campaign=None, accepted_t
 def get_or_create_institutional_user(fullname, sso_email, sso_identity, primary_institution):
     """
     Get or create an institutional user by fullname, email address and sso identity and institution.
-    Returns a tuple of four objects ``(user, is_created, duplicate_user, email_to_add)``:
+    Returns a tuple of five objects ``(user, is_created, duplicate_user, email_to_add, identity_to_add)``:
         1. the user to authenticate
         2. whether the user is newly created or not
         3. whether a potential duplicate user is found or not
         4. the extra email to add to the user account
+        5. the sso identity to add to the affiliation
     Note: secondary institution always have a primary institution which shares its email and identity
     :param str fullname: user's full name
     :param str sso_email: user's email, which comes from the email attribute during SSO
@@ -136,7 +137,10 @@ def get_or_create_institutional_user(fullname, sso_email, sso_identity, primary_
     user_by_email = get_user(email=sso_email)
     # ``InstitutionAffiliationStateError`` can be raised by ``get_user_by_institution_identity()``, the caller of
     # ``get_or_create_institutional_user()`` must handle it properly
-    user_by_identity = get_user_by_institution_identity(primary_institution, sso_identity)
+    user_by_identity, is_identity_eligible = get_user_by_institution_identity(primary_institution, sso_identity)
+    # Avoid adding an sso identity that is not eligible
+    if not is_identity_eligible:
+        sso_identity = None
 
     if user_by_identity:
         # CASE 1/5: the user is only found by identity but not by email, return the user and the sso email to add

@@ -132,6 +132,8 @@ class InstitutionAuthentication(BaseAuthentication):
             raise PermissionDenied(detail='InstitutionSsoInvalidInstitution')
 
         sso_identity = provider['user'].get('ssoIdentity')
+        sso_identity = sso_identity.strip() if sso_identity else None
+
         sso_email = provider['user'].get('ssoEmail')
         fullname = provider['user'].get('fullname')
         given_name = provider['user'].get('givenName')

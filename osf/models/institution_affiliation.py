@@ -40,20 +40,21 @@ class InstitutionAffiliation(BaseModel):
 
 def get_user_by_institution_identity(institution, sso_identity):
     """Return the user with the given sso_identity for the given institution if found. Return ``None`` if missing
-    inputs or if user not found. Raise exception if multiple users found.
+    inputs or if user not found. Raise exception if multiple users found. In addition, returns a second value which
+    determines whether the sso_identity is an eligible identity.
     """
     if not institution or not sso_identity:
-        return None
+        return None, False
     # Skip the default identity that is used only for institutions that don't have SSO
     if sso_identity == InstitutionAffiliation.DEFAULT_VALUE_FOR_SSO_IDENTITY_NOT_AVAILABLE:
-        return None
+        return None, False
     try:
         affiliation = InstitutionAffiliation.objects.get(institution___id=institution._id, sso_identity=sso_identity)
     except InstitutionAffiliation.DoesNotExist:
-        return None
+        return None, True
     except InstitutionAffiliation.MultipleObjectsReturned as err:
         message = f'Duplicate SSO Identity: institution={institution._id}, sso_identity={sso_identity}, err={str(err)}'
         logger.error(message)
         sentry.log_message(message)
         raise InstitutionAffiliationStateError(message)
-    return affiliation.user
+    return affiliation.user, True
