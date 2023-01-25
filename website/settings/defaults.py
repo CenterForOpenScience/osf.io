@@ -630,12 +630,7 @@ class CeleryConfig:
             },
             'monthly_reporters_go': {
                 'task': 'management.commands.monthly_reporters_go',
-                'schedule': crontab(minute=30, hour=6, day_of_month=2),  # Second day of month 1:30 a.m.
-            },
-            'spam_metrics': {
-                'task': 'management.commands.spam_metrics',
-                'schedule': crontab(hour=5, day_of_month=1),  # First day of month 12:00 a.m.
-                'kwargs': {'dry_run': False},
+                'schedule': crontab(minute=30, hour=6, day_of_month=2),     # Second day of month 1:30 a.m.
             },
             # 'data_storage_usage': {
             #   'task': 'management.commands.data_storage_usage',

@@ -3,11 +3,25 @@ from datetime import datetime
 import logging
 import pytz
 
-from website.settings import KEEN as keen_settings
 from keen.client import KeenClient
+
+from osf.metrics.utils import YearMonth
+from website.settings import KEEN as keen_settings
 
 
 logger = logging.getLogger(__name__)
+
+
+class MonthlyReporter:
+    def report(self, report_yearmonth: YearMonth):
+        """build a report for the given month
+        """
+        raise NotImplementedError(f'{self.__name__} must implement `report`')
+
+    def run_and_record_for_month(self, report_yearmonth: YearMonth):
+        report = self.report(report_yearmonth)
+        report.report_yearmonth = str(report_yearmonth)
+        report.save()
 
 
 class DailyReporter:

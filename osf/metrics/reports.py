@@ -1,7 +1,6 @@
 from django.dispatch import receiver
 from elasticsearch_dsl import InnerDoc
 from elasticsearch_metrics import metrics
-
 from elasticsearch_metrics.signals import pre_save as metrics_pre_save
 
 from osf.metrics.utils import stable_key, YearMonth
@@ -57,6 +56,8 @@ def set_report_id(sender, instance, **kwargs):
             if not duf_value or not isinstance(duf_value, str):
                 raise ReportInvalid(f'{sender.__name__}.{duf_name} MUST have a non-empty string value (got {duf_value})')
             instance.meta.id = stable_key(instance.report_date, duf_value)
+    elif issubclass(sender, MonthlyReport):
+        instance.meta.id = stable_key(instance.report_yearmonth)
 
 
 #### BEGIN reusable inner objects #####
