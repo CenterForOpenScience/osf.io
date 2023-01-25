@@ -7,7 +7,7 @@ import re
 from datacite import DataCiteMDSClient
 from django.core.exceptions import ImproperlyConfigured
 
-from osf.metadata.gather.osf import pls_gather_metadata_file
+from osf.metadata.osf_gathering import pls_gather_metadata_file
 from website.identifiers.clients.base import AbstractIdentifierClient
 from website import settings
 
