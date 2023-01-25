@@ -20,6 +20,7 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.forms import utils as form_utils
 from framework.routing import proxy_url
+from framework import sentry
 from website import settings
 from website.institutions.views import serialize_institution
 
@@ -435,6 +436,15 @@ def guid_metadata_download(guid, resource, metadata_format):
         raise HTTPError(
             http_status.HTTP_400_BAD_REQUEST,
             data={'message_long': error.message},
+        )
+    except exceptions.MetadataSerializationError:
+        sentry.log_exception()
+        error_message = f'error serializing metadata in format "{metadata_format}"'
+        if metadata_format != 'turtle':
+            error_message = f'{error_message} (perhaps try `format=turtle`?)'
+        raise HTTPError(
+            http_status.HTTP_422_UNPROCESSABLE_ENTITY,
+            data={'message_long': error_message},
         )
     else:
         return Response(

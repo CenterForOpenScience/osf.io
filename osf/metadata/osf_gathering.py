@@ -47,14 +47,18 @@ def pls_gather_metadata_file(osf_item, format_key, serializer_config=None) -> Se
         valid_formats = ', '.join(METADATA_SERIALIZERS.keys())
         raise exceptions.InvalidMetadataFormat(format_key, valid_formats)
     else:
+        serializer = serializer_class(serializer_config)
         osfguid = osfdb.base.coerce_guid(osf_item, create_if_needed=True)
         basket = pls_gather_item_metadata(osfguid.referent)
-        serializer = serializer_class(serializer_config)
-        return SerializedMetadataFile(
-            serializer.mediatype,
-            serializer.filename(osfguid._id),
-            serializer.serialize(basket),
-        )
+        try:
+            return SerializedMetadataFile(
+                serializer.mediatype,
+                serializer.filename(osfguid._id),
+                serializer.serialize(basket),
+            )
+        except Exception as e:
+            # whatever the error is, make it catchable as MetadataSerializationError
+            raise exceptions.MetadataSerializationError from e
 
 def pls_gather_item_metadata(osf_item) -> gather.Basket:
     '''for when you just want a basket of rdf metadata about a thing
@@ -122,7 +126,6 @@ OSF_NODELIKE_METADATA = {
     **OSF_COMMON_METADATA,
     DCT.isPartOf: OSF_COMMON_METADATA,
     DCT.hasPart: OSF_COMMON_METADATA,
-    OSF.has_file: OSF_FILE_METADATA,
 }
 
 OSF_ARTIFACT_PREDICATES = {
@@ -150,8 +153,8 @@ def get_osf_focus(osf_item):
     )
     try:
         focus.guid_metadata_record = osfdb.GuidMetadataRecord.objects.for_guid(osf_item)
-    except Exception:
-        pass
+    except osfdb.base.InvalidGuid:
+        pass  # is ok for a focus to be something non-osfguidy
     return focus
 
 
@@ -369,14 +372,15 @@ def gather_fileversion(version_focus):
     yield (DCT.creator, get_osf_focus(version.creator))
     yield (DCT.created, version.created)
     yield (DCT.modified, version.created)
-    yield (DCT.requires, checksum_iri('sha-256', version.metadata['sha256']))
-    yield (DCT.format, version.content_type)
+    if 'sha256' in version.metadata:
+        yield (DCT.requires, checksum_iri('sha-256', version.metadata['sha256']))
+    yield (DCT['format'], version.content_type)  # DCT.format gets the str.format method
     yield (DCT.extent, format_dct_extent(version.size))
     yield (OSF.version_number, version.identifier)
 
 
-@gather.er(DCT.hasPart, DCT.isPartOf)
-def gather_parts(focus):
+@gather.er(DCT.hasPart, OSF.has_file)
+def gather_files(focus):
     # TODO: files without osfguids too?
     #       (maybe only for registration files, if they don't all have osfguids)
     files_with_osfguids = (
@@ -390,15 +394,24 @@ def gather_parts(focus):
     )
     for file in files_with_osfguids:
         yield (DCT.hasPart, get_osf_focus(file))
+        yield (OSF.has_file, get_osf_focus(file))
 
+
+@gather.er(DCT.hasPart, DCT.isPartOf, OSF.has_child, OSF.is_child_of)
+def gather_parts(focus):
     if hasattr(focus.dbmodel, 'children'):
         for child in focus.dbmodel.children.all():
             yield (DCT.hasPart, get_osf_focus(child))
+            yield (OSF.has_child, get_osf_focus(child))
 
-    for container_attr in ('parent_node', 'target'):
-        container = getattr(focus.dbmodel, container_attr, None)
-        if container is not None:
-            yield (DCT.isPartOf, get_osf_focus(container))
+    parent = getattr(focus.dbmodel, 'parent_node', None)
+    if parent is not None:
+        yield (DCT.isPartOf, get_osf_focus(parent))
+        yield (OSF.is_child_of, get_osf_focus(parent))
+
+    container = getattr(focus.dbmodel, 'target', None)
+    if container is not None:
+        yield (DCT.isPartOf, get_osf_focus(container))
 
 
 @gather.er(DCT.relation)

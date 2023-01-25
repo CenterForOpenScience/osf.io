@@ -60,7 +60,7 @@ def coerce_guid(maybe_guid, create_if_needed=False):
             return Guid.objects.get(_id=maybe_guid)
         except Guid.DoesNotExist:
             raise InvalidGuid(f'guid does not exist ({maybe_guid})')
-    raise NotImplementedError(f'cannot coerce {type(maybe_guid)} ({maybe_guid}) into Guid')
+    raise InvalidGuid(f'cannot coerce {type(maybe_guid)} ({maybe_guid}) into Guid')
 
 
 class QuerySetExplainMixin:

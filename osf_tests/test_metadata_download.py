@@ -1,3 +1,4 @@
+from api_tests.utils import create_test_file
 from osf.models import GuidMetadataRecord
 from osf_tests import factories
 from tests.base import OsfTestCase
@@ -61,6 +62,16 @@ class TestMetadataDownload(OsfTestCase):
             ],
         }, auth=user)
 
+        file = create_test_file(
+            project,
+            user,
+            filename='my-file.blarg',
+            size=7,
+            sha256='6ac3c336e4094835293a3fed8a4b5fedde1b5e2626d9838fed50693bba00af0e',
+        )
+        file_guid = file.get_guid()._id
+        format_kwargs['file_id'] = file_guid
+
         resp = self.app.get(f'/{project._id}/metadata/?format=datacite-json', auth=user.auth)
         assert resp.status_code == 200
         assert resp.content_type == 'application/json'
@@ -78,6 +89,19 @@ class TestMetadataDownload(OsfTestCase):
         assert resp.content_type == 'text/turtle'
         assert resp.content_disposition == f'attachment; filename={project._id}-metadata.ttl'
         assert resp.unicode_body == COMPLICATED_TURTLE.format(**format_kwargs)
+
+        ### now check that file
+        resp = self.app.get(f'/{file_guid}/metadata/?format=turtle', auth=user.auth)
+        assert resp.status_code == 200
+        assert resp.content_type == 'text/turtle'
+        assert resp.content_disposition == f'attachment; filename={file_guid}-metadata.ttl'
+        assert resp.unicode_body == FILE_TURTLE.format(**format_kwargs)
+
+        # (but sadly acknowledge datacite validation fails on files at the moment)
+        resp = self.app.get(f'/{file_guid}/metadata/?format=datacite-json', auth=user.auth, expect_errors=True)
+        assert resp.status_code == 422
+        resp = self.app.get(f'/{file_guid}/metadata/?format=datacite-xml', auth=user.auth, expect_errors=True)
+        assert resp.status_code == 422
 
 
 # doubled {{}} cleaned by a call to .format()
@@ -355,6 +379,63 @@ COMPLICATED_TURTLE = '''@prefix dct: <http://purl.org/dc/terms/> .
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 @prefix osf: <https://osf.io/vocab/2022/> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
+
+<http://localhost:5000/{project_id}> a osf:Project ;
+    dct:created "{date}" ;
+    dct:creator <http://localhost:5000/{user_id}> ;
+    dct:description "this is a project description!" ;
+    dct:hasPart <http://localhost:5000/{file_id}> ;
+    dct:identifier "http://localhost:5000/{project_id}",
+        "https://doi.org/10.70102/FK2osf.io/{project_id}" ;
+    dct:language "es" ;
+    dct:modified "{date}" ;
+    dct:title "this is a project title!" ;
+    dct:type osf:project,
+        "Dataset" ;
+    owl:sameAs <https://doi.org/10.70102/FK2osf.io/{project_id}> ;
+    osf:funder [ a osf:Funder ;
+            dct:identifier "https://doi.org/10.$$$$" ;
+            foaf:name "Mx. Moneypockets" ;
+            osf:award_number "10000000" ;
+            osf:award_title "because reasons" ;
+            osf:award_uri "https://moneypockets.example/millions" ;
+            osf:funder_identifier_type "Crossref Funder ID" ] ;
+    osf:has_file <http://localhost:5000/{file_id}> .
+
+<http://localhost:5000/{user_id}> a osf:OSFUser ;
+    dct:identifier "http://localhost:5000/{user_id}" ;
+    foaf:name "Person McNamington" .
+
+<http://localhost:5000/{file_id}> a osf:File ;
+    dct:created "{date}" ;
+    dct:identifier "http://localhost:5000/{file_id}" ;
+    dct:modified "{date}" ;
+    osf:file_name "my-file.blarg" ;
+    osf:file_path "/my-file.blarg" .
+
+'''
+
+
+FILE_TURTLE = '''@prefix dct: <http://purl.org/dc/terms/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix osf: <https://osf.io/vocab/2022/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+
+<http://localhost:5000/{file_id}> a osf:File ;
+    dct:created "{date}" ;
+    dct:hasVersion [ a osf:FileVersion ;
+            dct:created "{date}" ;
+            dct:creator <http://localhost:5000/{user_id}> ;
+            dct:extent "0.000007 MB" ;
+            dct:format "img/png" ;
+            dct:modified "{date}" ;
+            dct:requires <urn:checksum:sha-256::6ac3c336e4094835293a3fed8a4b5fedde1b5e2626d9838fed50693bba00af0e> ;
+            osf:version_number "1" ] ;
+    dct:identifier "http://localhost:5000/{file_id}" ;
+    dct:isPartOf <http://localhost:5000/{project_id}> ;
+    dct:modified "{date}" ;
+    osf:file_name "my-file.blarg" ;
+    osf:file_path "/my-file.blarg" .
 
 <http://localhost:5000/{project_id}> a osf:Project ;
     dct:created "{date}" ;

@@ -64,7 +64,15 @@ def format_dct_extent(number_of_bytes: int) -> str:
     if number_of_bytes is None or number_of_bytes < 0:
         return None
     number_of_megabytes = number_of_bytes / (2**20)
-    return f'{number_of_megabytes:.6} MB'
+
+    # format with variable precision
+    if number_of_megabytes >= 1.0:      # precision = 1, e.g. '7.2 MB'
+        formatted_number = f'{number_of_megabytes:.1f}'
+    elif number_of_megabytes >= 0.001:  # precision = 3, e.g. '0.723 MB'
+        formatted_number = f'{number_of_megabytes:.3f}'
+    else:                               # precision = 6, e.g. '0.000123 MB'
+        formatted_number = f'{number_of_megabytes:.6f}'
+    return f'{formatted_number} MB'
 
 
 def primitivify_rdf(thing):
