@@ -304,7 +304,7 @@ class TestNodeCreate:
     @pytest.fixture()
     def user(self, institution):
         auth_user = AuthUserFactory()
-        auth_user.affiliated_institutions.add(institution)
+        auth_user.add_or_update_affiliated_institution(institution)
         return auth_user
 
     @pytest.fixture()

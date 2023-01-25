@@ -45,7 +45,7 @@ def datacite_format_name_identifiers(user):
 
 def datacite_format_affiliations(user):
     data = {'affiliation': []}
-    for affiliated_institution in user.affiliated_institutions.all():
+    for affiliated_institution in user.get_affiliated_institutions():
         data['affiliation'].append({
             'name': affiliated_institution.name,
         })
@@ -80,7 +80,7 @@ def datacite_format_creators(creators):
     creators_json = []
     for creator in creators:
         data = {}
-        if creator.affiliated_institutions.exists():
+        if creator.has_affiliated_institutions():
             data.update(datacite_format_affiliations(creator))
         data.update(datacite_format_name_identifiers(creator))
         data.update({
@@ -105,7 +105,7 @@ def datacite_format_contributors(contributors):
     contributors_json = []
     for contributor in contributors:
         data = {}
-        if contributor.affiliated_institutions.exists():
+        if contributor.has_affiliated_institutions():
             data.update(datacite_format_affiliations(contributor))
         data.update(datacite_format_name_identifiers(contributor))
         data.update({

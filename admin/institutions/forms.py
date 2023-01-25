@@ -7,7 +7,7 @@ class InstitutionForm(forms.ModelForm):
         model = Institution
 
         exclude = [
-            'is_deleted', 'contributors'
+            'is_deleted', 'contributors', 'banner_name', 'logo_name'
         ]
 
 class InstitutionalMetricsAdminRegisterForm(forms.Form):

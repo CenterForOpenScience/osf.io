@@ -1567,7 +1567,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def add_affiliations(self, user, new):
         # add all of the user's affiliations to the forked or templated node
-        for affiliation in user.affiliated_institutions.all():
+        for affiliation in user.get_affiliated_institutions():
             new.affiliated_institutions.add(affiliation)
 
     # TODO: Optimize me (e.g. use bulk create)
