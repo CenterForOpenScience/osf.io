@@ -44,7 +44,7 @@ def get_user_by_institution_identity(institution, sso_identity):
     determines whether the sso_identity is an eligible identity.
     """
     if not institution or not sso_identity:
-        return None, True
+        return None, False
     # Skip the default identity that is used only for institutions that don't have SSO
     if sso_identity == InstitutionAffiliation.DEFAULT_VALUE_FOR_SSO_IDENTITY_NOT_AVAILABLE:
         return None, False
