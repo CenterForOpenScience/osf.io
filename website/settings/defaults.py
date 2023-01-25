@@ -430,6 +430,7 @@ class CeleryConfig:
         'osf.management.commands.populate_branched_from',
         'osf.management.commands.cumulative_plos_metrics',
         'osf.management.commands.daily_reporters_go',
+        'osf.management.commands.monthly_reporters_go',
     }
 
     med_pri_modules = {
@@ -527,6 +528,7 @@ class CeleryConfig:
         'osf.management.commands.cumulative_plos_metrics',
         'api.providers.tasks',
         'osf.management.commands.daily_reporters_go',
+        'osf.management.commands.monthly_reporters_go',
     )
 
     # Modules that need metrics and release requirements
@@ -624,6 +626,10 @@ class CeleryConfig:
                 'task': 'management.commands.daily_reporters_go',
                 'schedule': crontab(minute=0, hour=6),  # Daily 1:00 a.m.
                 'kwargs': {'also_send_to_keen': True},
+            },
+            'monthly_reporters_go': {
+                'task': 'management.commands.monthly_reporters_go',
+                'schedule': crontab(minute=30, hour=6, day_of_month=2),     # Second day of month 1:30 a.m.
             },
             # 'data_storage_usage': {
             #   'task': 'management.commands.data_storage_usage',

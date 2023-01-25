@@ -1,9 +1,9 @@
 from django.dispatch import receiver
 from elasticsearch_dsl import InnerDoc
 from elasticsearch_metrics import metrics
-from elasticsearch_metrics.signals import pre_save
+from elasticsearch_metrics.signals import pre_save as metrics_pre_save
 
-from osf.metrics.utils import stable_key
+from osf.metrics.utils import stable_key, YearMonth
 
 
 class ReportInvalid(Exception):
@@ -28,7 +28,19 @@ class DailyReport(metrics.Metric):
         source = metrics.MetaField(enabled=True)
 
 
-@receiver(pre_save)
+class MonthlyReport(metrics.Metric):
+    """MonthlyReport (abstract base for report-based metrics that run monthly)
+    """
+
+    report_yearmonth = metrics.Date(format='strict_year_month', required=True)
+
+    class Meta:
+        abstract = True
+        dynamic = metrics.MetaField('strict')
+        source = metrics.MetaField(enabled=True)
+
+
+@receiver(metrics_pre_save)
 def set_report_id(sender, instance, **kwargs):
     # Set the document id to a hash of "unique together"
     # values (just `report_date` by default) to get
@@ -44,6 +56,8 @@ def set_report_id(sender, instance, **kwargs):
             if not duf_value or not isinstance(duf_value, str):
                 raise ReportInvalid(f'{sender.__name__}.{duf_name} MUST have a non-empty string value (got {duf_value})')
             instance.meta.id = stable_key(instance.report_date, duf_value)
+    elif issubclass(sender, MonthlyReport):
+        instance.meta.id = stable_key(instance.report_yearmonth)
 
 
 #### BEGIN reusable inner objects #####
