@@ -2506,14 +2506,12 @@ class TestUserSpamAkismet:
     def test_check_spam(self, mock_do_check_spam, user):
 
         # test check_spam for other saved fields
-        with mock.patch('osf.models.OSFUser._get_spam_content', mock.Mock(return_value='some content!')):
-            assert user.check_spam(saved_fields={'fullname': 'Dusty Rhodes'}, request_headers=None) is False
-            assert mock_do_check_spam.call_count == 0
+        assert user.check_spam(saved_fields={'fullname': 'Dusty Rhodes'}, request_headers=None) is False
+        assert mock_do_check_spam.call_count == 0
 
         # test check spam for correct saved_fields
-        with mock.patch('osf.models.OSFUser._get_spam_content', mock.Mock(return_value='some content!')):
-            user.check_spam(saved_fields={'schools': ['one']}, request_headers=None)
-            assert mock_do_check_spam.call_count == 1
+        user.check_spam(saved_fields={'schools': [{'degree': 'BA'}]}, request_headers=None)
+        assert mock_do_check_spam.call_count == 1
 
 
 class TestUserSpamOOPSpam:
@@ -2565,11 +2563,9 @@ class TestUserSpamOOPSpam:
     def test_check_spam(self, mock_do_check_spam, user):
 
         # test check_spam for other saved fields
-        with mock.patch('osf.models.OSFUser._get_spam_content', mock.Mock(return_value='some content!')):
-            assert user.check_spam(saved_fields={'fullname': 'Dusty Rhodes'}, request_headers=None) is False
-            assert mock_do_check_spam.call_count == 0
+        user.check_spam(saved_fields={'fullname': 'Dusty Rhodes'}, request_headers=None)
+        assert mock_do_check_spam.call_count == 0
 
         # test check spam for correct saved_fields
-        with mock.patch('osf.models.OSFUser._get_spam_content', mock.Mock(return_value='some content!')):
-            user.check_spam(saved_fields={'schools': ['one']}, request_headers=None)
-            assert mock_do_check_spam.call_count == 1
+        user.check_spam(saved_fields={'schools': ['one']}, request_headers=None)
+        assert mock_do_check_spam.call_count == 1

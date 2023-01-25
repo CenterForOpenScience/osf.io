@@ -1790,10 +1790,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             spam_field_content = spam_check_source[spam_field]
             if not spam_field_content:
                 continue
-            for subfield in self.SPAM_USER_PROFILE_FIELDS[spam_field]:
-                subfield_content = str(spam_field_content.get(subfield, ''))
-                if subfield_content:
-                    spam_check_contents.append(subfield_content)
+            if spam_field in ['schools', 'jobs']:
+                spam_check_contents.extend(
+                    _get_nested_spam_check_content(spam_check_source, spam_field)
+                )
+            else:  # Only other currently checked field is social['profileWebsites']
+                spam_check_contents.extend(
+                    spam_check_source.get('social', dict()).get('profileWebsites', list())
+                )
         return ' '.join(spam_check_contents).strip()
 
     def check_spam(self, saved_fields, request_headers):
@@ -1945,3 +1949,14 @@ def add_default_user_addons(sender, instance, created, **kwargs):
 def create_bookmark_collection(sender, instance, created, **kwargs):
     if created:
         new_bookmark_collection(instance)
+
+
+def _get_nested_spam_check_content(spam_check_source, field_name):
+    spam_check_data = spam_check_source[field_name]
+    spam_check_content = []
+    for entry in spam_check_data:
+        for spam_check_subfield in OSFUser.SPAM_USER_PROFILE_FIELDS[field_name]:
+            subfield_content = entry.get(spam_check_subfield)
+            if subfield_content:
+                spam_check_content.append(subfield_content)
+    return spam_check_content
