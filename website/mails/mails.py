@@ -437,12 +437,12 @@ WELCOME_OSF4I = Mail(
 
 DUPLICATE_ACCOUNTS_OSF4I = Mail(
     'duplicate_accounts_sso_osf4i',
-    subject='Potential duplicate account found'
+    subject='Duplicate OSF Accounts'
 )
 
 ADD_SSO_EMAIL_OSF4I = Mail(
     'add_sso_email_osf4i',
-    subject='Your institutional email has been added to your account'
+    subject='Your OSF Account Email Address'
 )
 
 EMPTY = Mail('empty', subject='${subject}')
