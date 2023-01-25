@@ -3,8 +3,6 @@ from elasticsearch_dsl import InnerDoc
 from elasticsearch_metrics import metrics
 from elasticsearch_metrics.signals import pre_save as metrics_pre_save
 
-from osf.metrics.utils import stable_key, YearMonth
-
 
 class ReportInvalid(Exception):
     """Tried to save a report with invalid something-or-other
@@ -47,6 +45,8 @@ def set_report_id(sender, instance, **kwargs):
     # "ON CONFLICT UPDATE" behavior -- if the document
     # already exists, it will be updated rather than duplicated.
     # Cannot detect/avoid conflicts this way, but that's ok.
+    from osf.metrics.reporters.utils import stable_key
+
     if issubclass(sender, DailyReport):
         duf_name = instance.DAILY_UNIQUE_FIELD
         if duf_name is None:
