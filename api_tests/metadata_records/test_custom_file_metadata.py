@@ -87,7 +87,7 @@ class TestCustomFileMetadataRecordDetail(ParentTestClass):
             api_record = res.json['data']
             assert api_record['attributes']['title'] == 'title!'
             assert api_record['attributes']['description'] == ''
-            db_record = GuidMetadataRecord.objects.for_guid(osfguid)
+            db_record = GuidMetadataRecord.objects.get(guid=osfguid)
             expected.assert_expectations(db_record=db_record, api_record=api_record)
             self.assert_expected_log(
                 osfguid,

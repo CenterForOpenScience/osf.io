@@ -1,21 +1,20 @@
 from __future__ import print_function
-import os
-
+from unittest import mock
 import logging
-
+import os
 import re
-import mock
-import responses
-import pytest
-from faker import Factory
-from website import settings as website_settings
 
-from framework.celery_tasks import app as celery_app
-
-from elasticsearch_dsl.connections import connections
 from django.core.management import call_command
 from django.db import transaction
+from elasticsearch_dsl.connections import connections
+from faker import Factory
+import pytest
+import responses
 import xml.etree.ElementTree as ET
+
+from framework.celery_tasks import app as celery_app
+from website import settings as website_settings
+
 
 logger = logging.getLogger(__name__)
 
@@ -169,7 +168,7 @@ def mock_akismet():
     with mock.patch.object(website_settings, 'SPAM_CHECK_ENABLED', True):
         with mock.patch.object(website_settings, 'AKISMET_ENABLED', True):
             with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
-                rsps.add(responses.POST, f'https://test.crossref.org/servlet/deposit', status=200)
+                rsps.add(responses.POST, 'https://test.crossref.org/servlet/deposit', status=200)
                 yield rsps
 
 

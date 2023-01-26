@@ -25,7 +25,7 @@ from website.institutions.views import serialize_institution
 
 from addons.osfstorage.models import Region, OsfStorageFile
 
-from osf import features
+from osf import features, exceptions
 from osf.models import Guid, Institution, Preprint, AbstractNode, Node, DraftNode, Registration, BaseFileNode
 
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, DOMAIN
@@ -34,6 +34,7 @@ from website.ember_osf_web.views import use_ember_app
 from website.project.decorators import check_contributor_auth
 from website.project.model import has_anonymous_link
 from osf.utils import permissions
+from osf.metadata.osf_gathering import pls_gather_metadata_file
 
 from api.waffle.utils import storage_i18n_flag_active
 
@@ -330,6 +331,13 @@ def resolve_guid(guid, suffix=None):
         if login_redirect_response:
             return login_redirect_response
 
+    if clean_suffix == 'metadata':
+        format_arg = request.args.get('format')
+        if format_arg:
+            return guid_metadata_download(guid, resource, format_arg)
+        else:
+            return use_ember_app()
+
     # Stream to ember app if resource has emberized view
     addon_paths = [f'files/{addon.short_name}' for addon in settings.ADDONS_AVAILABLE_DICT.values() if 'storage' in addon.categories] + ['files']
 
@@ -352,9 +360,6 @@ def resolve_guid(guid, suffix=None):
             return use_ember_app()
         if isinstance(resource.target, Node) and waffle.flag_is_active(request, features.EMBER_FILE_PROJECT_DETAIL):
             return use_ember_app()
-
-    if clean_suffix == 'metadata':
-        return use_ember_app()
 
     # Redirect to legacy endpoint for Nodes, Wikis etc.
     url = _build_guid_url(unquote(resource.deep_url), suffix)
@@ -421,3 +426,21 @@ def get_storage_region_list(user, node=False):
     available_regions.insert(0, available_regions.pop(available_regions.index(default_region)))  # default should be at top of list for UI.
 
     return available_regions
+
+
+def guid_metadata_download(guid, resource, metadata_format):
+    try:
+        result = pls_gather_metadata_file(resource, metadata_format)
+    except exceptions.InvalidMetadataFormat as error:
+        raise HTTPError(
+            http_status.HTTP_400_BAD_REQUEST,
+            data={'message_long': error.message},
+        )
+    else:
+        return Response(
+            result.serialized_metadata,
+            content_type=result.mediatype,
+            headers={
+                'Content-Disposition': f'attachment; filename={result.filename}',
+            },
+        )
