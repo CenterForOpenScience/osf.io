@@ -10,7 +10,7 @@ import osf.models.validators
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0006_collections_moderation'),
+        ('osf', '0007_institution_rework'),
     ]
 
     operations = [
@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
                 ('description', models.TextField(blank=True)),
                 ('language', models.TextField(blank=True)),
                 ('resource_type_general', models.TextField(blank=True)),
-                ('funding_info', models.JSONField(default=list, validators=[osf.models.validators.JsonschemaValidator({'items': {'additionalProperties': False, 'properties': {'award_number': {'type': 'string'}, 'award_title': {'type': 'string'}, 'award_uri': {'type': 'string'}, 'funder_identifier': {'type': 'string'}, 'funder_identifier_type': {'type': 'string'}, 'funder_name': {'type': 'string'}}, 'required': [], 'type': 'object'}, 'type': 'array'})])),
+                ('funding_info', models.JSONField(blank=True, default=list, validators=[osf.models.validators.JsonschemaValidator({'items': {'additionalProperties': False, 'minProperties': 1, 'properties': {'award_number': {'type': 'string'}, 'award_title': {'type': 'string'}, 'award_uri': {'type': 'string'}, 'funder_identifier': {'type': 'string'}, 'funder_identifier_type': {'type': 'string'}, 'funder_name': {'type': 'string'}}, 'required': [], 'type': 'object'}, 'type': 'array'})])),
                 ('guid', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='metadata_record', to='osf.guid')),
             ],
             options={

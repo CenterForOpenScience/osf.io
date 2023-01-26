@@ -324,7 +324,7 @@ class TestRegisterNode:
         node = factories.NodeFactory()
         institution = factories.InstitutionFactory()
 
-        user.affiliated_institutions.add(institution)
+        user.add_or_update_affiliated_institution(institution)
         user.save()
 
         node.add_affiliated_institution(institution, user=user)

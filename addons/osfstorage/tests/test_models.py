@@ -185,9 +185,9 @@ class TestOsfstorageFileNode(StorageTestCase):
         mock_session.data = {}
         child = self.node_settings.get_root().append_file('Test')
 
-        utils.update_analytics(self.project, child, 0)
-        utils.update_analytics(self.project, child, 1)
-        utils.update_analytics(self.project, child, 2)
+        utils.update_analytics(self.project, child, 0, mock_session)
+        utils.update_analytics(self.project, child, 1, mock_session)
+        utils.update_analytics(self.project, child, 2, mock_session)
 
         assert_equals(child.get_download_count(), 3)
         assert_equals(child.get_download_count(0), 1)
