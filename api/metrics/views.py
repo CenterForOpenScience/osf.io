@@ -9,11 +9,17 @@ from elasticsearch.exceptions import NotFoundError, RequestError
 from elasticsearch_dsl.connections import get_connection
 from rest_framework.exceptions import ValidationError
 from rest_framework import permissions as drf_permissions
+from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
+from rest_framework.settings import api_settings as drf_api_settings
 
 from framework.auth.oauth_scopes import CoreScopes
 from api.base.permissions import TokenHasScope
 from api.metrics.permissions import IsPreprintMetricsUser, IsRawMetricsUser, IsRegistriesModerationMetricsUser
+from api.metrics.renderers import (
+    MetricsReportsCsvRenderer,
+    MetricsReportsTsvRenderer,
+)
 from api.metrics.serializers import (
     PreprintMetricSerializer,
     RawMetricsSerializer,
@@ -24,7 +30,7 @@ from api.metrics.serializers import (
     UserVisitsSerializer,
     UniqueUserVisitsSerializer,
 )
-from api.metrics.utils import parse_datetimes
+from api.metrics.utils import parse_datetimes, parse_date_range
 from api.base.views import JSONAPIBaseView
 from api.base.waffle_decorators import require_switch
 from api.nodes.permissions import MustBePublic
@@ -269,11 +275,11 @@ class ReportNameList(JSONAPIBaseView):
             VIEWABLE_REPORTS.keys(),
             many=True,
         )
-        return JsonResponse({'data': serializer.data})
+        return Response({'data': serializer.data})
 
 
 class RecentReportList(JSONAPIBaseView):
-    MAX_COUNT = 1000
+    MAX_COUNT = 10000
     DEFAULT_DAYS_BACK = 13
 
     permission_classes = (
@@ -288,40 +294,28 @@ class RecentReportList(JSONAPIBaseView):
     view_name = 'recent-report-list'
 
     serializer_class = DailyReportSerializer
+    renderer_classes = (
+        *drf_api_settings.DEFAULT_RENDERER_CLASSES,
+        MetricsReportsCsvRenderer,
+        MetricsReportsTsvRenderer,
+    )
 
     def get(self, request, *args, report_name):
         try:
             report_class = VIEWABLE_REPORTS[report_name]
         except KeyError:
-            return JsonResponse(
+            return Response(
                 {'errors': [{
                     'title': 'unknown report name',
                     'detail': f'unknown report: "{report_name}"',
                 }]},
                 status=404,
             )
-
-        days_back = request.GET.get('days_back', self.DEFAULT_DAYS_BACK)
-        report_date = {'gte': f'now/d-{days_back}d'}
-
-        if request.GET.get('timeframe', False):
-            timeframe = request.GET.get('timeframe')
-            if timeframe is not None:
-                m = re.match(r'previous_(\d+)_days?', timeframe)
-                if m:
-                    days_back = m.group(1)
-                else:
-                    raise Exception('Unsupported timeframe format: "{}"'.format(timeframe))
-                report_date = {'gte': f'now/d-{days_back}d'}
-        elif request.GET.get('timeframeStart'):
-            tsStart = request.GET.get('timeframeStart')
-            tsEnd = request.GET.get('timeframeEnd')
-            report_date = {'gte': tsStart, 'lt': tsEnd}
-
+        report_date_range = parse_date_range(request.GET)
         search_recent = (
             report_class.search()
-            .filter('range', report_date=report_date)
-            .sort('-report_date')
+            .filter('range', report_date=report_date_range)
+            .sort('report_date')
             [:self.MAX_COUNT]
         )
 
@@ -331,7 +325,21 @@ class RecentReportList(JSONAPIBaseView):
             many=True,
             context={'report_name': report_name},
         )
-        return JsonResponse({'data': serializer.data})
+        accepted_format = request.accepted_renderer.format
+        response_headers = {}
+        if accepted_format in ('tsv', 'csv'):
+            from_date = report_date_range['gte']
+            until_date = report_date_range['lte']
+            filename = (
+                f'{report_name}__'
+                f'until_{until_date}__'
+                f'from_{from_date}.{accepted_format}'
+            )
+            response_headers['Content-Disposition'] = f'attachment; filename={filename}'
+        return Response(
+            {'data': serializer.data},
+            headers=response_headers,
+        )
 
 
 class CountedAuthUsageView(JSONAPIBaseView):
@@ -416,7 +424,7 @@ class NodeAnalyticsQuery(JSONAPIBaseView):
                 'timespan': timespan,
             },
         )
-        return JsonResponse({'data': serializer.data})
+        return Response({'data': serializer.data})
 
     def _run_query(self, node_guid, timespan):
         query_dict = self._build_query_payload(node_guid, NodeAnalyticsQuery.Timespan(timespan))
