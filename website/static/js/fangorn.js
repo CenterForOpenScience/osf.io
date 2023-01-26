@@ -2279,27 +2279,34 @@ var FGToolbar = {
             );
         }
         // multiple selection icons
-        // Special cased to not show 'delete multiple' for github or published dataverses
         if(
-            (items.length > 1) &&
-            (ctrl.tb.multiselected()[0].data.provider !== 'github') &&
-            (ctrl.tb.options.placement !== 'fileview') &&
-            !(
+          (items.length > 1) &&
+          (ctrl.tb.options.placement !== 'fileview')
+        ) {
+            var addonItemsButtons = resolveconfigOption.call(ctrl.tb, items[0], 'multipleItemsButtons', [items]) || [];
+            addonItemsButtons.forEach(function(addonButton) {
+                generalButtons.push(addonButton);
+            });
+            // Special cased to not show 'delete multiple' for github or published dataverses
+            if (
+              (ctrl.tb.multiselected()[0].data.provider !== 'github') &&
+              !(
                 (ctrl.tb.multiselected()[0].data.provider === 'dataverse') &&
                 (ctrl.tb.multiselected()[0].parent().data.version === 'latest-published')
-            )
-        ) {
-            if (showDeleteMultiple(items)) {
-                generalButtons.push(
-                    m.component(FGButton, {
-                        onclick: function(event) {
-                            var configOption = resolveconfigOption.call(ctrl.tb, item, 'removeEvent', [event, items]); // jshint ignore:line
-                            if(!configOption){ _removeEvent.call(ctrl.tb, null, items); }
-                        },
-                        icon: 'fa fa-trash',
-                        className : 'text-danger'
-                    }, gettext('Delete Multiple'))
-                );
+              )
+            ) {
+                if (showDeleteMultiple(items)) {
+                    generalButtons.push(
+                      m.component(FGButton, {
+                          onclick: function(event) {
+                              var configOption = resolveconfigOption.call(ctrl.tb, item, 'removeEvent', [event, items]); // jshint ignore:line
+                              if(!configOption){ _removeEvent.call(ctrl.tb, null, items); }
+                          },
+                          icon: 'fa fa-trash',
+                          className : 'text-danger'
+                      }, gettext('Delete Multiple'))
+                    );
+                }
             }
         }
         generalButtons.push(

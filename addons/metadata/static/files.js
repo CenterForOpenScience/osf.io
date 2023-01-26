@@ -207,7 +207,7 @@ function MetadataButtons() {
 
   self.createFields = function(schema, item, options, callback) {
     const fields = [];
-    const itemData = item.data || {};
+    const itemData = options.multiple ? {} : item.data || {};
     (schema.pages || []).forEach(function(page) {
       (page.questions || []).forEach(function(question) {
         if (!question.qid || !question.qid.match(/^grdm-file:.+/)) {
@@ -227,7 +227,7 @@ function MetadataButtons() {
     return fields;
   };
 
-  self.fieldsChanged = function() {
+  self.fieldsChanged = function(event, options) {
     if (!self.lastFields) {
       return;
     }
@@ -245,7 +245,8 @@ function MetadataButtons() {
           self.erad,
           fieldSet.question,
           value,
-          fieldSetsAndValues
+          fieldSetsAndValues,
+          options
         );
       } catch(e) {
         error = e.message;
@@ -262,18 +263,21 @@ function MetadataButtons() {
     });
   }
 
-  self.prepareFields = function(context, container, schema, filepath, fileitem) {
-    const lastMetadataItems = (self.lastMetadata.items || []).filter(function(item) {
-      const resolved = self.resolveActiveSchemaId(item.schema) || self.currentSchemaId;
-      return resolved === schema.id;
-    });
-    const lastMetadataItem = lastMetadataItems[0] || {};
+  self.prepareFields = function(context, container, schema, filepath, fileitem, options) {
+    var lastMetadataItem = {};
+    if (!options.multiple) {
+      lastMetadataItem = (self.lastMetadata.items || []).filter(function(item) {
+        const resolved = self.resolveActiveSchemaId(item.schema) || self.currentSchemaId;
+        return resolved === schema.id;
+      })[0] || {};
+    }
     container.empty();
     const fields = self.createFields(
       schema.attributes.schema,
       lastMetadataItem,
       {
         readonly: !((context.projectMetadata || {}).editable),
+        multiple: options.multiple,
         context: context,
         filepath: filepath,
         wbcache: context.wbcache,
@@ -294,7 +298,7 @@ function MetadataButtons() {
         errorContainer: errorContainer
       });
     });
-    self.fieldsChanged();
+    self.fieldsChanged(null, options);
   }
 
   self.findSchemaById = function(schemaId) {
@@ -480,7 +484,8 @@ function MetadataButtons() {
         fieldContainer,
         self.findSchemaById(self.currentSchemaId),
         filepath,
-        item
+        item,
+        {}
       );
     });
     dialog.toolbar.append(selector.group);
@@ -502,9 +507,72 @@ function MetadataButtons() {
       fieldContainer,
       self.findSchemaById(self.currentSchemaId),
       filepath,
-      item
+      item,
+      {}
     );
     dialog.container.append(fieldContainer);
+    dialog.dialog.modal('show');
+  };
+
+
+  /**
+   * Start editing multiple metadata.
+   */
+  self.editMultipleMetadata = function(context, filepaths, items) {
+    if (!self.editMultipleMetadataDialog) {
+      self.editMultipleMetadataDialog = self.initEditMultipleMetadataDialog();
+    }
+    const dialog = self.editMultipleMetadataDialog;
+    console.log(logPrefix, 'edit multiple metadata: ', filepaths, items);
+    self.currentItem = items;
+    self.lastMetadata = {
+      path: filepaths,
+      items: [],
+    };
+    self.editingContext = context;
+
+    // toolbar
+    const currentMetadatas = filepaths.map(function(filepath) {
+      return self.findMetadataByPath(context.nodeId, filepath);
+    }).filter(Boolean);
+    const targetItems = currentMetadatas.map(function(currentMedatata) {
+      return (currentMedatata.items || []).filter(function(item) {
+        return item.active;
+      })[0] || null;
+    });
+    const targetItem = targetItems.filter(Boolean)[0] || {};
+    const selector = self.createSchemaSelector(targetItem);
+    self.currentSchemaId = selector.currentSchemaId;
+    selector.schema.change(function(event) {
+      if (event.target.value === self.currentSchemaId) {
+        return;
+      }
+      self.currentSchemaId = event.target.value;
+      self.prepareFields(
+        context,
+        fieldContainer,
+        self.findSchemaById(self.currentSchemaId),
+        filepaths,
+        items,
+        {multiple: true}
+      );
+    });
+    dialog.toolbar.empty();
+    dialog.toolbar.append(selector.group);
+
+    // container
+    dialog.container.empty();
+    const fieldContainer = $('<div></div>');
+    self.prepareFields(
+      context,
+      fieldContainer,
+      self.findSchemaById(self.currentSchemaId),
+      filepaths,
+      items,
+      {multiple: true}
+    );
+    dialog.container.append(fieldContainer);
+
     dialog.dialog.modal('show');
   };
 
@@ -1091,14 +1159,8 @@ function MetadataButtons() {
     const context = self.findContextByNodeId(item ? item.data.nodeId : contextVars.node.id);
     if (!context) {
       console.warn('Metadata not loaded for project:', item ? item.data.nodeId : null);
-      const viewButton = createButton({
-        onclick: function(event) {
-        },
-        icon: 'fa fa-spinner fa-pulse',
-        className : 'text-default disabled'
-      }, _('Loading Metadata'));
-      viewButton.disabled = true;
-      return [viewButton];
+      const loadingButton = self.createLoadingButton(createButton);
+      return [loadingButton];
     }
     if (!context.addonAttached) {
       return [];
@@ -1152,6 +1214,63 @@ function MetadataButtons() {
       buttons.push(deleteButton)
     }
     return buttons;
+  }
+
+  self.createFangornMultipleItemsButtons = function(filepaths, items) {
+    return self.createMultipleItemsButtonsBase(
+      filepaths,
+      items,
+      function(options, label) {
+        return m.component(Fangorn.Components.button, options, label);
+      }
+    );
+  }
+
+  self.createMultipleItemsButtonsBase = function(filepaths, items, createButton) {
+    // assert filepaths.length > 1
+    // assert filepaths.length == items.length
+    const contexts = items.map(function(item) {
+      return self.findContextByNodeId(item ? item.data.nodeId : contextVars.node.id);
+    });
+    const context = contexts[0];
+    if (!context) {
+      console.warn('Metadata not loaded for project:', items[0] ? items[0].data.nodeId : null);
+      const loadingButton = self.createLoadingButton(createButton);
+      return [loadingButton];
+    }
+    if (!context.addonAttached) {
+      return [];
+    }
+    if (contexts.slice(1).filter(function(context) {
+      return context !== contexts[0];
+    }).length > 0) {
+      // unmatched contexts
+      return [];
+    }
+    const projectMetadata = context.projectMetadata;
+    if (!projectMetadata.editable) {
+      // readonly
+      return [];
+    }
+    const editButton = createButton({
+      onclick: function(event) {
+        self.editMultipleMetadata(context, filepaths, items);
+      },
+      icon: 'fa fa-edit',
+      className : 'text-primary'
+    }, _('Edit Multiple Metadata'));
+    return [editButton];
+  }
+
+  self.createLoadingButton = function(createButton) {
+    const viewButton = createButton({
+      onclick: function(event) {
+      },
+      icon: 'fa fa-spinner fa-pulse',
+      className : 'text-default disabled'
+    }, _('Loading Metadata'));
+    viewButton.disabled = true;
+    return viewButton;
   }
 
   /**
@@ -1425,6 +1544,22 @@ function MetadataButtons() {
                   }
                 };
               };
+            } if (propname == 'multipleItemsButtons') {
+              return function (items) {
+                var base = [];
+                if (target[propname] !== undefined) {
+                  const prop = target[propname];
+                  const baseButtons = typeof prop === 'function' ? prop.apply(this, [items]) : prop;
+                  if (baseButtons !== undefined) {
+                    base = baseButtons;
+                  }
+                }
+                const filepaths = items.map(function(item) {
+                  return item.data.provider + (item.data.materialized || '/');
+                });
+                const buttons = self.createFangornMultipleItemsButtons(filepaths, items);
+                return base.concat(buttons);
+              }
             } else if (propname == 'resolveRows') {
               return function(item) {
                 var base = null;
@@ -1523,6 +1658,114 @@ function MetadataButtons() {
     });
   };
 
+  /**
+   * Save the edited multiple metadata.
+   */
+  self.saveEditMultipleMetadataModal = function() {
+    const context = self.editingContext;
+    if (!self.currentSchemaId) {
+      return Promise.resolve();
+    }
+    const metadatas = self.lastMetadata.path
+      .map(function(filepath, i) {
+        const currentMetadata = self.findMetadataByPath(context.nodeId, filepath);
+        const metadata = Object.assign({}, currentMetadata);
+        if (!currentMetadata) {
+          metadata.path = filepath;
+          metadata.folder = self.currentItem[i].kind === 'folder';
+        }
+        const currentItems = metadata.items || [];
+        // inactivate old items
+        metadata.items = currentItems
+          .filter(function(item) {
+            return item.schema !== self.currentSchemaId;
+          })
+          .map(function(item) {
+            return Object.assign({}, item, {
+              active: false
+            });
+          });
+        // create new item
+        const oldMetacontent = currentItems
+          .filter(function(item) {
+            return item.schema === self.currentSchemaId;
+          })[0] || {};
+        const metacontent = {
+          schema: self.currentSchemaId,
+          active: true,
+          data: Object.assign({}, oldMetacontent.data),
+        };
+        self.lastFields.forEach(function(field) {
+          const value = field.field.getValue(field.input);
+          const clear = field.field.checkedClear && field.field.checkedClear();
+          if (clear) {
+            delete metacontent.data[field.field.label];
+          } else if (value) {
+            metacontent.data[field.field.label] = {
+              extra: [],
+              comments: [],
+              value: value
+            };
+          }
+        });
+        metadata.items.unshift(metacontent);
+        return metadata;
+      });
+    return Promise.all(self.currentItem.map(function(fileitem) {
+      return context.wbcache.computeHash(fileitem);
+    }))
+      .catch(function(error) {
+        self.currentItem = null;
+        return Promise.reject(error);
+      })
+      .then(function(hashes) {
+        return new Promise(function(resolve, reject) {
+          function patchTopMetadata() {
+            const metadata = metadatas.pop();
+            const hash = hashes.pop();
+            const url = context.baseUrl + 'files/' + metadata.path;
+            $.ajax({
+              method: 'PATCH',
+              url: url,
+              contentType: 'application/json',
+              data: JSON.stringify(Object.assign({}, metadata, {
+                hash: hash,
+              })),
+            }).done(function(data) {
+              console.log(logPrefix, 'saved: ', hash, data);
+              if (metadatas.length) {
+                patchTopMetadata();
+              } else {
+                resolve();
+              }
+            }).fail(function(xhr, status, error) {
+              Raven.captureMessage('Error while retrieving addon info', {
+                extra: {
+                  url: url,
+                  status: status,
+                  error: error
+                }
+              });
+              reject(error);
+            });
+          }
+          patchTopMetadata();
+        });
+      })
+      .then(function() {
+        self.currentItem = null;
+        self.editingContext = null;
+        return new Promise(function(resolve) {
+          self.loadMetadata(context.nodeId, context.baseUrl, function() {
+            if (self.fileViewPath) {
+              self.refreshFileViewButtons(self.fileViewPath);
+            }
+            resolve();
+          });
+        });
+      });
+  };
+
   self.closeModal = function() {
     console.log(logPrefix, 'Modal closed');
     self.deleteConfirmingFilepath = null;
@@ -1553,12 +1796,13 @@ function MetadataButtons() {
       .append($('<i></i>').addClass('fa fa-copy'))
       .append(_('Copy to clipboard'))
       .attr('type', 'button');
-    const copyStatus = $('<div></div>');
+    const copyStatus = $('<div></div>')
+      .css('text-align', 'left');
     copyToClipboard.on('click', function(event) {
       self.copyToClipboard(event, copyStatus);
     });
     const toolbar = $('<div></div>');
-    const container = $('<ul></ul>');
+    const container = $('<ul></ul>').css('padding', '0 20px');
     var notice = $('<span></span>');
     if (editable) {
       notice = $('<div></div>')
@@ -1603,6 +1847,57 @@ function MetadataButtons() {
     };
   };
 
+
+  /**
+   * Create the Edit Multiple Metadata dialog.
+   */
+  self.initEditMultipleMetadataDialog = function() {
+    const dialog = $('<div class="modal fade" data-backdrop="static"></div>');
+    const close = $('<a href="#" class="btn btn-default" data-dismiss="modal"></a>').text(_('Close'));
+    close.click(self.closeModal);
+    const save = $('<a href="#" class="btn btn-success"></a>').text(_('Save'));
+    save.click(function() {
+      osfBlock.block();
+      self.saveEditMultipleMetadataModal()
+        .finally(function() {
+          osfBlock.unblock();
+          $(dialog).modal('hide');
+      });
+    });
+    const toolbar = $('<div></div>');
+    const container = $('<ul></ul>').css('padding', '0 20px');
+    dialog
+      .append($('<div class="modal-dialog modal-lg"></div>')
+        .append($('<div class="modal-content"></div>')
+          .append($('<div class="modal-header"></div>')
+            .append($('<h3></h3>').text(_('Edit Multiple File Metadata'))))
+          .append($('<form></form>')
+            .append($('<div class="modal-body"></div>')
+              .append($('<div class="row"></div>')
+                .append($('<div class="col-sm-12"></div>')
+                  .append(toolbar))
+                .append($('<div class="col-sm-12"></div>')
+                  .css('overflow-y', 'scroll')
+                  .css('height', '70vh')
+                  .append(container))))
+            .append($('<div class="modal-footer"></div>')
+              .css('display', 'flex')
+              .css('align-items', 'center')
+              .append(close.css('margin-left', 'auto'))
+              .append(save)))));
+    $(window).on('beforeunload', function() {
+      if ($(dialog).data('bs.modal').isShown) {
+        return _('You have unsaved changes.');
+      }
+    });
+    dialog.appendTo($('#treeGrid'));
+    return {
+      dialog: dialog,
+      container: container,
+      toolbar: toolbar,
+    };
+  };
+
   self.initConfirmDeleteDialog = function() {
     const dialog = $('<div class="modal fade"></div>');
     const close = $('<a href="#" class="btn btn-default" data-dismiss="modal"></a>').text(_('Close'));
@@ -1637,7 +1932,7 @@ function MetadataButtons() {
     close.click(self.closeModal);
     var select = $('<a href="#" class="btn btn-success"></a>').text(_('Select'));
     select.click(self.selectDraftModal);
-    var container = $('<ul></ul>');
+    var container = $('<ul></ul>').css('padding', '0 20px');
     var dialog = $('<div class="modal fade"></div>')
       .append($('<div class="modal-dialog modal-lg"></div>')
         .append($('<div class="modal-content"></div>')
@@ -1686,7 +1981,7 @@ function MetadataButtons() {
     copyToClipboard.on('click', function(event) {
       self.copyToClipboard(event, copyStatus);
     });
-    const container = $('<ul></ul>');
+    const container = $('<ul></ul>').css('padding', '0 20px');
     dialog
       .append($('<div class="modal-dialog modal-lg"></div>')
         .append($('<div class="modal-content"></div>')
@@ -1716,7 +2011,6 @@ function MetadataButtons() {
   self.initPasteMetadataDialog = function() {
     const dialog = $('<div class="modal fade"></div>');
     const close = $('<a href="#" class="btn btn-default" data-dismiss="modal"></a>').text(_('Close'));
-    close.click(self.closeModal);
     dialog
       .append($('<div class="modal-dialog modal-lg"></div>')
         .append($('<div class="modal-content"></div>')
@@ -1743,7 +2037,6 @@ function MetadataButtons() {
         const text = (event.clipboardData || window.clipboardData).getData('text');
         self.setMetadataFromJson(text);
         dialog.modal('hide');
-        self.closeModal();
       }
       document.addEventListener('paste', self.pasteMetadataEvent);
     }
