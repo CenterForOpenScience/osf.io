@@ -463,9 +463,127 @@
           "qid": "grdm-file:data-policy-license",
           "nav": "管理対象データの利活用・提供方針 (ライセンス)",
           "title": "管理対象データの利活用・提供方針 (ライセンス)|Data utilization and provision policy (License)",
-          "type": "string",
-          "format": "text",
-          "required": true
+          "required": true,
+          "type": "choose",
+          "format": "singleselect",
+          "options": [
+            {
+              "text": "group:None:1",
+              "tooltip": "None"
+            },
+            {
+              "text": "NO_LICENSE",
+              "tooltip": "ライセンスなし|No license"
+            },
+            {
+              "text": "group:Content",
+              "tooltip": "コンテンツ用|Content"
+            },
+            {
+              "text": "CC0",
+              "tooltip": "CC0 1.0 Universal"
+            },
+            {
+              "text": "CC0PD",
+              "tooltip": "CC0 1.0 パブリック・ドメイン提供|CC0 1.0 Public Domain Dedication"
+            },
+            {
+              "text": "CCBY",
+              "tooltip": "CC BY 4.0 表示 国際|CC BY 4.0 Attribution International"
+            },
+            {
+              "text": "CCBYSA",
+              "tooltip": "CC BY-SA 4.0 表示—継承|CC BY-SA 4.0 Attribution-ShareAlike"
+            },
+            {
+              "text": "CCBYND",
+              "tooltip": "CC BY-ND 4.0 表示—改変禁止|CC BY-ND 4.0 Attribution—NoDerivatives"
+            },
+            {
+              "text": "CCBYNC",
+              "tooltip": "CC BY-NC 4.0 表示—非営利|CC BY-NC 4.0 Attribution—NonCommercial"
+            },
+            {
+              "text": "CCBYNCSA",
+              "tooltip": "CC BY-NC-SA 4.0 表示—非営利—継承|CC BY-NC-SA 4.0 Attribution—NonCommercial—ShareAlike"
+            },
+            {
+              "text": "CCBYNCND",
+              "tooltip": "CC BY-NC-ND 4.0 表示—非営利—改変禁止|CC BY-NC-ND 4.0 Attribution—NonCommercial—NoDerivatives"
+            },
+            {
+              "text": "AFL",
+              "tooltip": "Academic Free License (AFL) 3.0"
+            },
+            {
+              "text": "PD",
+              "tooltip": "パブリックドメイン|Public Domain"
+            },
+            {
+              "text": "group:CodePermissive",
+              "tooltip": "コード用 - 非コピーレフト|Code - Permissive"
+            },
+            {
+              "text": "MIT",
+              "tooltip": "MIT License"
+            },
+            {
+              "text": "Apache2",
+              "tooltip": "Apache License 2.0"
+            },
+            {
+              "text": "BSD2",
+              "tooltip": "BSD 2-Clause \"Simplified\" License"
+            },
+            {
+              "text": "BSD3",
+              "tooltip": "BSD 3-Clause \"New\"/\"Revised\" License"
+            },
+            {
+              "text": "group:CodeCopyleft",
+              "tooltip": "コード用 - コピーレフト|Code - Copyleft"
+            },
+            {
+              "text": "GPL3",
+              "tooltip": "GNU General Public License (GPL) 3.0"
+            },
+            {
+              "text": "GPL2",
+              "tooltip": "GNU General Public License (GPL) 2.0"
+            },
+            {
+              "text": "group:CodeOther",
+              "tooltip": "コード用 - その他|Code - Other"
+            },
+            {
+              "text": "Artistic2",
+              "tooltip": "Artistic License 2.0"
+            },
+            {
+              "text": "Eclipse1",
+              "tooltip": "Eclipse Public License 1.0"
+            },
+            {
+              "text": "LGPL3",
+              "tooltip": "GNU Lesser General Public License (LGPL) 3.0"
+            },
+            {
+              "text": "LGPL2_1",
+              "tooltip": "GNU Lesser General Public License (LGPL) 2.1"
+            },
+            {
+              "text": "Mozilla2",
+              "tooltip": "Mozilla Public License 2.0"
+            },
+            {
+              "text": "group:None:2",
+              "tooltip": "None"
+            },
+            {
+              "text": "OTHER",
+              "tooltip": "その他|Other"
+            }
+          ]
         },
         {
           "qid": "grdm-file:data-policy-cite-ja",
