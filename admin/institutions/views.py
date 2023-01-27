@@ -54,7 +54,8 @@ class InstitutionDisplay(PermissionRequiredMixin, DetailView):
         institution_dict = model_to_dict(institution)
         kwargs.setdefault('page_number', self.request.GET.get('page', '1'))
         kwargs['institution'] = institution_dict
-        kwargs['logohost'] = settings.OSF_URL
+        kwargs['logo_path'] = institution.logo_path
+        kwargs['banner_path'] = institution.banner_path
         fields = institution_dict
         kwargs['change_form'] = InstitutionForm(initial=fields)
         kwargs['import_form'] = ImportFileForm()

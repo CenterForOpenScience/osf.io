@@ -20,7 +20,7 @@ from django.urls import resolve, reverse
 def user():
     user = UserFactory()
     inst = InstitutionFactory()
-    user.affiliated_institutions.add(inst)
+    user.add_or_update_affiliated_institution(inst)
     return user
 
 

@@ -48,7 +48,7 @@ class TestRegistrationRelationshipInstitutions(TestNodeRelationshipInstitutions)
             node, node_institutions_url,
             create_payload):
         user = AuthUserFactory()
-        user.affiliated_institutions.add(institution_one)
+        user.add_or_update_affiliated_institution(institution_one)
         user.save()
         node.add_contributor(user)
         node.save()
@@ -69,7 +69,7 @@ class TestRegistrationRelationshipInstitutions(TestNodeRelationshipInstitutions)
             self, app, institution_one, node,
             node_institutions_url, create_payload):
         user = AuthUserFactory()
-        user.affiliated_institutions.add(institution_one)
+        user.add_or_update_affiliated_institution(institution_one)
         user.save()
         node.add_contributor(user)
         node.affiliated_institutions.add(institution_one)

@@ -1384,7 +1384,7 @@ class TestNodeCreate:
     @pytest.fixture()
     def user_one(self, institution_one):
         auth_user = AuthUserFactory()
-        auth_user.affiliated_institutions.add(institution_one)
+        auth_user.add_or_update_affiliated_institution(institution_one)
         return auth_user
 
     @pytest.fixture()
@@ -1772,7 +1772,7 @@ class TestNodeCreate:
         assert region_id == region._id
 
         institution_two = InstitutionFactory()
-        user_one.affiliated_institutions.add(institution_two)
+        user_one.add_or_update_affiliated_institution(institution_two)
 
         private_project['data']['relationships'] = {
             'affiliated_institutions': {

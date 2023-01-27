@@ -1088,6 +1088,21 @@ class ProviderAssetFileFactory(DjangoModelFactory):
         instance.save()
         return instance
 
+class InstitutionAssetFileFactory(DjangoModelFactory):
+    class Meta:
+        model = models.InstitutionAssetFile
+
+    name = FuzzyChoice(choices=PROVIDER_ASSET_NAME_CHOICES)
+    file = factory.django.FileField(filename=factory.Faker('text'))
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        institutions = kwargs.pop('institutions', [])
+        instance = super(InstitutionAssetFileFactory, cls)._create(target_class, *args, **kwargs)
+        instance.institutions.add(*institutions)
+        instance.save()
+        return instance
+
 class ChronosJournalFactory(DjangoModelFactory):
     class Meta:
         model = models.ChronosJournal

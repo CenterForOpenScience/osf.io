@@ -660,8 +660,8 @@ class NodeCRUDTestCase:
     @pytest.fixture()
     def user_two(self, institution_one, institution_two):
         auth_user = AuthUserFactory()
-        auth_user.affiliated_institutions.add(institution_one)
-        auth_user.affiliated_institutions.add(institution_two)
+        auth_user.add_or_update_affiliated_institution(institution_one)
+        auth_user.add_or_update_affiliated_institution(institution_two)
         return auth_user
 
     @pytest.fixture()

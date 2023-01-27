@@ -39,7 +39,7 @@ class TestInstitutionRelationshipNodes:
     @pytest.fixture()
     def user(self, institution):
         user = AuthUserFactory()
-        user.affiliated_institutions.add(institution)
+        user.add_or_update_affiliated_institution(institution)
         user.save()
         return user
 
@@ -167,7 +167,7 @@ class TestInstitutionRelationshipNodes:
             institution
     ):
         user = AuthUserFactory()
-        user.affiliated_institutions.add(institution)
+        user.add_or_update_affiliated_institution(institution)
         node.add_contributor(user)
         node.save()
         res = app.post_json_api(
@@ -186,7 +186,7 @@ class TestInstitutionRelationshipNodes:
             institution
     ):
         user = AuthUserFactory()
-        user.affiliated_institutions.add(institution)
+        user.add_or_update_affiliated_institution(institution)
         node.add_contributor(user, permissions=permissions.READ)
         node.save()
 
@@ -397,7 +397,7 @@ class TestInstitutionRelationshipRegistrations:
     @pytest.fixture()
     def admin(self, institution):
         user = AuthUserFactory()
-        user.affiliated_institutions.add(institution)
+        user.add_or_update_affiliated_institution(institution)
         user.save()
         return user
 
@@ -408,7 +408,7 @@ class TestInstitutionRelationshipRegistrations:
     @pytest.fixture()
     def affiliated_user(self, institution):
         user = AuthUserFactory()
-        user.affiliated_institutions.add(institution)
+        user.add_or_update_affiliated_institution(institution)
         user.save()
         return user
 

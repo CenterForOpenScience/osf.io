@@ -192,7 +192,7 @@ class CrossRefClient(AbstractIdentifierClient):
                         institution.ror_uri,
                         type='ror'
                     ),
-                ) for institution in contributor.affiliated_institutions.all() if institution.ror_uri
+                ) for institution in contributor.get_affiliated_institutions() if institution.ror_uri
             ]
             if affiliations:
                 person.append(element.affiliations(*affiliations))

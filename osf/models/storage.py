@@ -15,7 +15,18 @@ PROVIDER_ASSET_NAME_CHOICES = [
     ('wide_white', 'wide_white'),
 ]
 
-class ProviderAssetFile(BaseModel):
+INSTITUTION_ASSET_NAME_CHOICES = [
+    ('banner', 'banner'),
+    ('logo', 'logo'),
+    ('logo_rounded_corners', 'logo_rounded_corners'),
+]
+
+class AssetFile(BaseModel):
+    class Meta:
+        abstract = True
+    file = models.FileField(upload_to='assets')
+
+class ProviderAssetFile(AssetFile):
     class Meta:
         permissions = (
             # Clashes with built-in permissions
@@ -23,5 +34,9 @@ class ProviderAssetFile(BaseModel):
         )
 
     name = models.CharField(choices=PROVIDER_ASSET_NAME_CHOICES, max_length=63)
-    file = models.FileField(upload_to='assets')
     providers = models.ManyToManyField('AbstractProvider', blank=True, related_name='asset_files')
+
+
+class InstitutionAssetFile(AssetFile):
+    name = models.CharField(choices=INSTITUTION_ASSET_NAME_CHOICES, max_length=63)
+    institutions = models.ManyToManyField('Institution', blank=True, related_name='asset_files')

@@ -280,7 +280,7 @@ class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
             auth=user.auth, expect_errors=True)
         assert res.status_code == 201
         draft_registration = DraftRegistration.load(res.json['data']['id'])
-        assert not draft_registration.affiliated_institutions.all() == user.affiliated_institutions.all()
+        assert not draft_registration.affiliated_institutions.all() == user.get_affiliated_institutions()
 
 
 class TestDraftRegistrationCreateWithoutNode(TestDraftRegistrationCreate):
