@@ -1,3 +1,5 @@
+import pytz
+import datetime
 import typing
 from hashlib import sha256
 
@@ -22,3 +24,11 @@ class YearMonth(typing.NamedTuple):
 
     def __str__(self):
         return f'{self.year}-{self.month}'
+
+    def target_month(self):
+        return datetime.datetime(self.year, self.month, 1, tzinfo=pytz.utc)
+
+    def next_month(self):
+        if self.month == 12:
+            return datetime.datetime(self.year + 1, 1, 1, tzinfo=pytz.utc)
+        return datetime.datetime(self.year, self.month + 1, 1, tzinfo=pytz.utc)
