@@ -12,7 +12,8 @@ urlpatterns = [
         include([
             re_path(r'^$', views.home, name='home'),
             re_path(r'^admin/', admin.site.urls),
-            re_path(r'^asset_files/', include('admin.asset_files.urls', namespace='asset_files')),
+            re_path(r'^provider_asset_files/', include('admin.provider_asset_files.urls', namespace='provider_asset_files')),
+            re_path(r'^institution_asset_files/', include('admin.institution_asset_files.urls', namespace='institution_asset_files')),
             re_path(r'^banners/', include('admin.banners.urls', namespace='banners')),
             re_path(r'^brands/', include('admin.brands.urls', namespace='brands')),
             re_path(r'^comments/', include('admin.comments.urls', namespace='comments')),

@@ -26,7 +26,7 @@ def update_institution_project_counts():
             timestamp=now
         )
 
-        for user in institution.osfuser_set.all():
+        for user in institution.get_institution_users():
             user_public_project_count = Node.objects.get_nodes_for_user(
                 user=user,
                 base_queryset=institution_public_projects_qs

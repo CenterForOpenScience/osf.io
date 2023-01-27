@@ -9,7 +9,7 @@ from osf_tests.factories import (
 
 
 @pytest.mark.django_db
-class TestUserInstititutionRelationship:
+class TestUserInstitutionRelationship:
 
     @pytest.fixture()
     def institution_one(self):
@@ -22,8 +22,8 @@ class TestUserInstititutionRelationship:
     @pytest.fixture()
     def user(self, institution_one, institution_two):
         user = AuthUserFactory()
-        user.affiliated_institutions.add(institution_one)
-        user.affiliated_institutions.add(institution_two)
+        user.add_or_update_affiliated_institution(institution_one)
+        user.add_or_update_affiliated_institution(institution_two)
         user.save()
         return user
 
@@ -76,7 +76,7 @@ class TestUserInstititutionRelationship:
 
         user.reload()
 
-        ids = list(user.affiliated_institutions.values_list('_id', flat=True))
+        ids = list(user.get_institution_affiliations().values_list('institution___id', flat=True))
         assert institution_one._id not in ids
         assert institution_two._id in ids
 
@@ -95,7 +95,7 @@ class TestUserInstititutionRelationship:
 
         user.reload()
 
-        ids = list(user.affiliated_institutions.values_list('_id', flat=True))
+        ids = list(user.get_institution_affiliations().values_list('institution___id', flat=True))
         assert institution_one._id not in ids
         assert institution_two._id not in ids
 
@@ -113,7 +113,7 @@ class TestUserInstititutionRelationship:
 
         user.reload()
 
-        ids = list(user.affiliated_institutions.values_list('_id', flat=True))
+        ids = list(user.get_institution_affiliations().values_list('institution___id', flat=True))
         assert institution_one._id in ids
         assert institution_two._id in ids
 
