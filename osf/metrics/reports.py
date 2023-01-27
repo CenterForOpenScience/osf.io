@@ -1,9 +1,7 @@
 from django.dispatch import receiver
 from elasticsearch_dsl import InnerDoc
 from elasticsearch_metrics import metrics
-from elasticsearch_metrics.signals import pre_save
-
-from osf.metrics.utils import stable_key
+from elasticsearch_metrics.signals import pre_save as metrics_pre_save
 
 
 class ReportInvalid(Exception):
@@ -28,13 +26,27 @@ class DailyReport(metrics.Metric):
         source = metrics.MetaField(enabled=True)
 
 
-@receiver(pre_save)
+class MonthlyReport(metrics.Metric):
+    """MonthlyReport (abstract base for report-based metrics that run monthly)
+    """
+
+    report_yearmonth = metrics.Date(format='strict_year_month', required=True)
+
+    class Meta:
+        abstract = True
+        dynamic = metrics.MetaField('strict')
+        source = metrics.MetaField(enabled=True)
+
+
+@receiver(metrics_pre_save)
 def set_report_id(sender, instance, **kwargs):
     # Set the document id to a hash of "unique together"
     # values (just `report_date` by default) to get
     # "ON CONFLICT UPDATE" behavior -- if the document
     # already exists, it will be updated rather than duplicated.
     # Cannot detect/avoid conflicts this way, but that's ok.
+    from osf.metrics.reporters.utils import stable_key
+
     if issubclass(sender, DailyReport):
         duf_name = instance.DAILY_UNIQUE_FIELD
         if duf_name is None:
@@ -44,6 +56,8 @@ def set_report_id(sender, instance, **kwargs):
             if not duf_value or not isinstance(duf_value, str):
                 raise ReportInvalid(f'{sender.__name__}.{duf_name} MUST have a non-empty string value (got {duf_value})')
             instance.meta.id = stable_key(instance.report_date, duf_value)
+    elif issubclass(sender, MonthlyReport):
+        instance.meta.id = stable_key(instance.report_yearmonth)
 
 
 #### BEGIN reusable inner objects #####
@@ -154,3 +168,16 @@ class UserSummaryReport(DailyReport):
     new_users_daily = metrics.Integer()
     new_users_with_institution_daily = metrics.Integer()
     unconfirmed = metrics.Integer()
+
+class SpamReport(DailyReport):
+    confirmed_spam_node = metrics.Integer()
+    nodes_confirmed_ham = metrics.Integer()
+    nodes_flagged = metrics.Integer()
+    registration_confirmed_spam = metrics.Integer()
+    registration_confirmed_ham = metrics.Integer()
+    registration_flagged = metrics.Integer()
+    preprint_confirmed_spam = metrics.Integer()
+    preprint_confirmed_ham = metrics.Integer()
+    preprint_flagged = metrics.Integer()
+    users_marked_as_spam = metrics.Integer()
+    user_marked_as_ham = metrics.Integer()
