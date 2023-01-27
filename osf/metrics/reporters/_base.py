@@ -19,9 +19,10 @@ class MonthlyReporter:
         raise NotImplementedError(f'{self.__name__} must implement `report`')
 
     def run_and_record_for_month(self, report_yearmonth: YearMonth):
-        report = self.report(report_yearmonth)
-        report.report_yearmonth = str(report_yearmonth)
-        report.save()
+        reports = self.report(report_yearmonth)
+        for report in reports:
+            report.report_yearmonth = str(report_yearmonth)
+            report.save()
 
 
 class DailyReporter:

@@ -69,9 +69,11 @@ class Command(BaseCommand):
             default={'year': None, 'month': None},
             help='year and month (YYYY-MM)',
         )
+
     def handle(self, *args, **options):
         errors = monthly_reporters_go(
-            report_date=options.get('date'),
+            report_year=options.get('yearmonth', {}).get('year'),
+            report_month=options.get('yearmonth', {}).get('month'),
         )
         for error_key, error_val in errors:
             self.stdout.write(self.style.ERROR(f'error running {error_key}: ') + error_val)
