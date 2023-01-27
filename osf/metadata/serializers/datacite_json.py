@@ -37,13 +37,7 @@ class DataciteJsonMetadataSerializer(_base.MetadataSerializer):
                 'identifier': basket.focus.iri,
                 'identifierType': 'URL',
             }],
-            'rightsList': [
-                {
-                    'rights': next(basket[license_iri:FOAF.name], None),
-                    'rightsURI': license_iri,
-                }
-                for license_iri in basket[DCT.rights]
-            ],
+            'rightsList': _format_rights(basket),
             'titles': _format_titles(basket),
             'descriptions': [
                 {
@@ -147,6 +141,19 @@ def _format_contributors(basket):
         ],
     })
     return contributors_json
+
+
+def _format_rights(basket):
+    rights_list = []
+    for rights_value in basket[DCT.rights]:
+        if isinstance(rights_value, rdflib.URIRef):
+            rights_list.append({
+                'rights': next(basket[rights_value:FOAF.name], ''),
+                'rightsUri': rights_value,
+            })
+        elif isinstance(rights_value, rdflib.Literal):
+            rights_list.append({'rights': rights_value})
+    return rights_list
 
 
 def _format_affiliations(basket, focus_iri):

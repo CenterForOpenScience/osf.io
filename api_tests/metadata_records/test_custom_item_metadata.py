@@ -363,7 +363,7 @@ class TestCustomItemMetadataRecordDetail:
                 [{
                     'funder_name': 'hell-o',
                     'funder_identifier': 'https://hello.example/money',
-                    'funder_identifier_type': 'uri',
+                    'funder_identifier_type': 'Other',
                     'award_number': '7',
                     'award_uri': 'http://award.example/7',
                     'award_title': 'award seven',
@@ -371,38 +371,24 @@ class TestCustomItemMetadataRecordDetail:
                 [{
                     'funder_name': 'hell-o',
                     'funder_identifier': 'https://hello.example/money',
-                    'funder_identifier_type': 'uri',
+                    'funder_identifier_type': 'Crossref Funder ID',
                     'award_number': '7',
                     'award_uri': 'http://award.example/7',
                     'award_title': 'award seven',
                 }, {
                     'funder_name': 'shell-o',
                     'funder_identifier': 'https://shello.example/smelly-money',
-                    'funder_identifier_type': 'uri',
+                    'funder_identifier_type': 'ROR',
                     'award_number': 'splevin',
                     'award_uri': 'http://shello.example/award-number-splevin',
                     'award_title': 'award splevin',
                 }],
                 [{
-                    'funder_name': 'hey',
-                    'funder_identifier': 'look:',
-                    'funder_identifier_type': 'any',
-                    'award_number': 'string',
-                    'award_uri': 'is',
-                    'award_title': 'valid!',
-                }],
-                [{
-                    'funder_name': 'any',
+                    'funder_name': 'funder_name',
                 }, {
-                    'funder_identifier': 'one',
+                    'funder_name': 'is',
                 }, {
-                    'funder_identifier_type': 'non-blank',
-                }, {
-                    'award_number': 'field',
-                }, {
-                    'award_uri': 'is',
-                }, {
-                    'award_title': 'enough',
+                    'funder_name': 'enough',
                 }],
                 [{
                     'funder_name': 'NIH probably',
@@ -450,20 +436,12 @@ class TestCustomItemMetadataRecordDetail:
             # funders cleaned
             cleaned_funding_infos = (
                 (
-                    [{'funder_name': 'hello', 'extra': 'ignored'}, {}],  # given
+                    [{'funder_name': 'hello', 'extra': 'ignored'}],  # given
                     [{'funder_name': 'hello'}],  # cleaned
                 ),
                 (
-                    [{}],  # given
-                    [],  # cleaned
-                ),
-                (
-                    [{'extra': 'ignored'}],  # given
-                    [],  # cleaned
-                ),
-                (
-                    [{'award_number': 7}],  # given
-                    [{'award_number': '7'}],  # cleaned
+                    [{'funder_name': 'foo', 'award_number': 7}],  # given
+                    [{'funder_name': 'foo', 'award_number': '7'}],  # cleaned
                 ),
             )
             for given_funding_info, cleaned_funding_info in cleaned_funding_infos:
@@ -486,16 +464,37 @@ class TestCustomItemMetadataRecordDetail:
 
             # funders validated
             bad_funding_infos = (
-                [{'award_number': None}],
-                [{'award_number': {'number': '7'}}],
+                {
+                    'bad': [{}],
+                    'expected_errors': [{'source': {'pointer': '/data/attributes/funders/funder_name'}, 'detail': ['This field is required.']}],
+                }, {
+                    'bad': [{'funder_name': 'good'}, {}, {}],
+                    'expected_errors': [
+                        {'source': {'pointer': '/data/attributes/funders/funder_name'}, 'detail': ['This field is required.']},
+                        {'source': {'pointer': '/data/attributes/funders/funder_name'}, 'detail': ['This field is required.']},
+                    ],
+                }, {
+                    'bad': [{'award_number': '7'}],
+                    'expected_errors': [{'source': {'pointer': '/data/attributes/funders/funder_name'}, 'detail': ['This field is required.']}],
+                }, {
+                    'bad': [{'funder_name': 'foo', 'award_number': {'number': '7'}}],
+                    'expected_errors': [{'source': {'pointer': '/data/attributes/funders/award_number'}, 'detail': ['Not a valid string.']}],
+                }, {
+                    'bad': [{'funder_name': 'foo', 'award_uri': 'not a uri'}],
+                    'expected_errors': [{'source': {'pointer': '/data/attributes/funders/award_uri'}, 'detail': ['Enter a valid URL.']}],
+                }, {
+                    'bad': [{'funder_name': 'foo', 'funder_identifier_type': 'not one of the choices'}],
+                    'expected_errors': [{'source': {'pointer': '/data/attributes/funders/funder_identifier_type'}, 'detail': ['"not one of the choices" is not a valid choice.']}],
+                },
             )
             for bad_funding_info in bad_funding_infos:
                 res = app.patch_json_api(
                     self.make_url(osfguid),
-                    self.make_payload(osfguid, funders=bad_funding_info),
+                    self.make_payload(osfguid, funders=bad_funding_info['bad']),
                     auth=anybody_with_write_permission.auth,
                     expect_errors=True,
                 )
                 assert res.status_code == 400
+                assert res.json['errors'] == bad_funding_info['expected_errors']
                 # check it hasn't changed in the db
                 expected.assert_expectations(db_record=db_record, api_record=None)

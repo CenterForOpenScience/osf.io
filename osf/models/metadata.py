@@ -79,15 +79,17 @@ class GuidMetadataRecord(ObjectIDMixin, BaseModel):
         'type': 'array',
         'items': {
             'type': 'object',
-            'required': [],
-            'minProperties': 1,
+            'required': ['funder_name'],
             'additionalProperties': False,
             'properties': {
                 'funder_name': {'type': 'string'},
                 'funder_identifier': {'type': 'string'},
-                'funder_identifier_type': {'type': 'string'},
+                'funder_identifier_type': {
+                    'type': 'string',
+                    'enum': ['ISNI', 'GRID', 'Crossref Funder ID', 'ROR', 'Other'],
+                },
                 'award_number': {'type': 'string'},
-                'award_uri': {'type': 'string'},
+                'award_uri': {'type': 'string', 'format': 'uri'},
                 'award_title': {'type': 'string'},
             },
         },
