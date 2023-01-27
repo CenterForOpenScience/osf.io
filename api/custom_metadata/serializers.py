@@ -1,3 +1,4 @@
+from rest_framework.fields import empty
 import rest_framework.serializers as ser
 
 from framework.auth.core import Auth
@@ -10,32 +11,54 @@ from api.base.serializers import (
 from api.base.utils import absolute_reverse
 
 
-# TODO: max_lengths, uri validation
+REASONABLE_MAX_LENGTH = (2**16) - 1  # 65535
 
 
-class FundingInfoListSerializer(ser.ListSerializer):
-    def to_internal_value(self, data):
-        validated_data = super().to_internal_value(data)
+class AlwaysRequiredCharField(ser.CharField):
+    def __init__(self, *args, **kwargs):
+        if not kwargs.get('required', True):
+            raise ValueError('AlwaysRequiredCharField does not accept required=False')
+        super().__init__(*args, **kwargs, required=True)
 
-        # quietly remove funding-infos with all blank values
-        def not_all_blank(funding_info):
-            return not all(
-                value == ''
-                for value in funding_info.values()
-            )
-        return list(filter(not_all_blank, validated_data))
+    def validate_empty_values(self, data):
+        # override Field.validate_empty_values:
+        #   this field is required even in a PATCH request
+        #   (where the root serializer has partial=True)
+        if data is empty:
+            self.fail('required')
+        return super().validate_empty_values(data)
 
 
 class FundingInfoSerializer(ser.Serializer):
-    funder_name = ser.CharField(allow_blank=True, default='')
-    funder_identifier = ser.CharField(allow_blank=True, default='')
-    funder_identifier_type = ser.CharField(allow_blank=True, default='')
-    award_number = ser.CharField(allow_blank=True, default='')
-    award_uri = ser.CharField(allow_blank=True, default='')
-    award_title = ser.CharField(allow_blank=True, default='')
-
-    class Meta:
-        list_serializer_class = FundingInfoListSerializer
+    funder_name = AlwaysRequiredCharField(
+        allow_blank=False,
+        max_length=REASONABLE_MAX_LENGTH,
+    )
+    funder_identifier = ser.CharField(
+        allow_blank=True,
+        default='',
+        max_length=REASONABLE_MAX_LENGTH,
+    )
+    funder_identifier_type = ser.ChoiceField(
+        choices=['ISNI', 'GRID', 'Crossref Funder ID', 'ROR', 'Other'],
+        allow_blank=True,
+        default='',
+    )
+    award_number = ser.CharField(
+        allow_blank=True,
+        default='',
+        max_length=REASONABLE_MAX_LENGTH,
+    )
+    award_uri = ser.URLField(
+        allow_blank=True,
+        default='',
+        max_length=REASONABLE_MAX_LENGTH,
+    )
+    award_title = ser.CharField(
+        allow_blank=True,
+        default='',
+        max_length=REASONABLE_MAX_LENGTH,
+    )
 
 
 class CustomItemMetadataSerializer(JSONAPISerializer):
@@ -52,8 +75,16 @@ class CustomItemMetadataSerializer(JSONAPISerializer):
         related_view='guids:guid-detail',
         related_view_kwargs={'guids': '<guid._id>'},
     )
-    language = ser.CharField(required=False, allow_blank=True)  # TODO: choices
-    resource_type_general = ser.CharField(required=False, allow_blank=True)  # TODO: choices
+    language = ser.CharField(
+        required=False,
+        allow_blank=True,
+        max_length=REASONABLE_MAX_LENGTH,
+    )
+    resource_type_general = ser.CharField(
+        required=False,
+        allow_blank=True,
+        max_length=REASONABLE_MAX_LENGTH,
+    )
     funders = FundingInfoSerializer(
         many=True,
         source='funding_info',

@@ -1,5 +1,6 @@
 from api_tests.utils import create_test_file
 from osf.models import GuidMetadataRecord
+from osf.models.licenses import NodeLicense
 from osf_tests import factories
 from tests.base import OsfTestCase
 
@@ -13,6 +14,13 @@ class TestMetadataDownload(OsfTestCase):
             creator=user,
             title='this is a project title!',
             description='this is a project description!',
+            node_license=factories.NodeLicenseRecordFactory(
+                node_license=NodeLicense.objects.get(
+                    name='No license',
+                ),
+                year='2252',
+                copyright_holders=['Me', 'You'],
+            ),
         )
         project.set_identifier_value(category='doi', value=f'10.70102/FK2osf.io/{project._id}')
 
@@ -25,8 +33,13 @@ class TestMetadataDownload(OsfTestCase):
             'project_id': project._id,
             'user_id': user._id,
             'date': str(today),
-            'year': str(today.year),
         }
+
+        resp = self.app.get(f'/{project._id}/metadata/?format=turtle', auth=user.auth)
+        assert resp.status_code == 200
+        assert resp.content_type == 'text/turtle'
+        assert resp.content_disposition == f'attachment; filename={project._id}-metadata.ttl'
+        assert resp.unicode_body == BASIC_TURTLE.format(**format_kwargs)
 
         resp = self.app.get(f'/{project._id}/metadata/?format=datacite-json', auth=user.auth)
         assert resp.status_code == 200
@@ -39,12 +52,6 @@ class TestMetadataDownload(OsfTestCase):
         assert resp.content_type == 'application/xml'
         assert resp.content_disposition == f'attachment; filename={project._id}-datacite.xml'
         assert resp.unicode_body == BASIC_DATACITE_XML.format(**format_kwargs)
-
-        resp = self.app.get(f'/{project._id}/metadata/?format=turtle', auth=user.auth)
-        assert resp.status_code == 200
-        assert resp.content_type == 'text/turtle'
-        assert resp.content_disposition == f'attachment; filename={project._id}-metadata.ttl'
-        assert resp.unicode_body == BASIC_TURTLE.format(**format_kwargs)
 
         metadata_record = GuidMetadataRecord.objects.for_guid(project._id)
         metadata_record.update({
@@ -61,6 +68,10 @@ class TestMetadataDownload(OsfTestCase):
                 },
             ],
         }, auth=user)
+        project.node_license.node_license = NodeLicense.objects.get(
+            name='CC-By Attribution-NonCommercial-NoDerivatives 4.0 International',
+        )
+        project.node_license.save()
 
         file = create_test_file(
             project,
@@ -71,6 +82,12 @@ class TestMetadataDownload(OsfTestCase):
         )
         file_guid = file.get_guid()._id
         format_kwargs['file_id'] = file_guid
+
+        resp = self.app.get(f'/{project._id}/metadata/?format=turtle', auth=user.auth)
+        assert resp.status_code == 200
+        assert resp.content_type == 'text/turtle'
+        assert resp.content_disposition == f'attachment; filename={project._id}-metadata.ttl'
+        assert resp.unicode_body == COMPLICATED_TURTLE.format(**format_kwargs)
 
         resp = self.app.get(f'/{project._id}/metadata/?format=datacite-json', auth=user.auth)
         assert resp.status_code == 200
@@ -84,13 +101,8 @@ class TestMetadataDownload(OsfTestCase):
         assert resp.content_disposition == f'attachment; filename={project._id}-datacite.xml'
         assert resp.unicode_body == COMPLICATED_DATACITE_XML.format(**format_kwargs)
 
-        resp = self.app.get(f'/{project._id}/metadata/?format=turtle', auth=user.auth)
-        assert resp.status_code == 200
-        assert resp.content_type == 'text/turtle'
-        assert resp.content_disposition == f'attachment; filename={project._id}-metadata.ttl'
-        assert resp.unicode_body == COMPLICATED_TURTLE.format(**format_kwargs)
-
         ### now check that file
+        format_kwargs['year'] = str(today.year)
         resp = self.app.get(f'/{file_guid}/metadata/?format=turtle', auth=user.auth)
         assert resp.status_code == 200
         assert resp.content_type == 'text/turtle'
@@ -172,10 +184,14 @@ BASIC_DATACITE_JSON = '''{{
       "identifierType": "URL"
     }}
   ],
-  "publicationYear": "{year}",
+  "publicationYear": "2252",
   "publisher": "Open Science Framework",
   "relatedIdentifiers": [],
-  "rightsList": [],
+  "rightsList": [
+    {{
+      "rights": "No license"
+    }}
+  ],
   "schemaVersion": "http://datacite.org/schema/kernel-4",
   "subjects": [],
   "titles": [
@@ -206,7 +222,7 @@ BASIC_DATACITE_XML = '''<?xml version='1.0' encoding='utf-8'?>
     <title>this is a project title!</title>
   </titles>
   <publisher>Open Science Framework</publisher>
-  <publicationYear>{year}</publicationYear>
+  <publicationYear>2252</publicationYear>
   <contributors>
     <contributor contributorType="HostingInstitution">
       <contributorName nameType="Organizational">Open Science Framework</contributorName>
@@ -219,6 +235,9 @@ BASIC_DATACITE_XML = '''<?xml version='1.0' encoding='utf-8'?>
     <date dateType="Updated">{date}</date>
   </dates>
   <resourceType resourceTypeGeneral="Text">Project</resourceType>
+  <rightsList>
+    <rights>No license</rights>
+  </rightsList>
   <descriptions>
     <description descriptionType="Abstract">this is a project description!</description>
   </descriptions>
@@ -233,10 +252,14 @@ BASIC_TURTLE = '''@prefix dct: <http://purl.org/dc/terms/> .
 <http://localhost:5000/{project_id}> a osf:Project ;
     dct:created "{date}" ;
     dct:creator <http://localhost:5000/{user_id}> ;
+    dct:dateCopyrighted "2252" ;
     dct:description "this is a project description!" ;
     dct:identifier "http://localhost:5000/{project_id}",
         "https://doi.org/10.70102/FK2osf.io/{project_id}" ;
     dct:modified "{date}" ;
+    dct:rights "No license" ;
+    dct:rightsHolder "Me",
+        "You" ;
     dct:title "this is a project title!" ;
     dct:type osf:project ;
     owl:sameAs <https://doi.org/10.70102/FK2osf.io/{project_id}> .
@@ -319,10 +342,15 @@ COMPLICATED_DATACITE_JSON = '''{{
     }}
   ],
   "language": "es",
-  "publicationYear": "{year}",
+  "publicationYear": "2252",
   "publisher": "Open Science Framework",
   "relatedIdentifiers": [],
-  "rightsList": [],
+  "rightsList": [
+    {{
+      "rights": "CC-By Attribution-NonCommercial-NoDerivatives 4.0 International",
+      "rightsUri": "https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode"
+    }}
+  ],
   "schemaVersion": "http://datacite.org/schema/kernel-4",
   "subjects": [],
   "titles": [
@@ -353,7 +381,7 @@ COMPLICATED_DATACITE_XML = '''<?xml version='1.0' encoding='utf-8'?>
     <title>this is a project title!</title>
   </titles>
   <publisher>Open Science Framework</publisher>
-  <publicationYear>{year}</publicationYear>
+  <publicationYear>2252</publicationYear>
   <contributors>
     <contributor contributorType="HostingInstitution">
       <contributorName nameType="Organizational">Open Science Framework</contributorName>
@@ -367,6 +395,9 @@ COMPLICATED_DATACITE_XML = '''<?xml version='1.0' encoding='utf-8'?>
   </dates>
   <language>es</language>
   <resourceType resourceTypeGeneral="Dataset">Project</resourceType>
+  <rightsList>
+    <rights rightsURI="https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode">CC-By Attribution-NonCommercial-NoDerivatives 4.0 International</rights>
+  </rightsList>
   <descriptions>
     <description descriptionType="Abstract">this is a project description!</description>
   </descriptions>
@@ -389,12 +420,16 @@ COMPLICATED_TURTLE = '''@prefix dct: <http://purl.org/dc/terms/> .
 <http://localhost:5000/{project_id}> a osf:Project ;
     dct:created "{date}" ;
     dct:creator <http://localhost:5000/{user_id}> ;
+    dct:dateCopyrighted "2252" ;
     dct:description "this is a project description!" ;
     dct:hasPart <http://localhost:5000/{file_id}> ;
     dct:identifier "http://localhost:5000/{project_id}",
         "https://doi.org/10.70102/FK2osf.io/{project_id}" ;
     dct:language "es" ;
     dct:modified "{date}" ;
+    dct:rights <https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode> ;
+    dct:rightsHolder "Me",
+        "You" ;
     dct:title "this is a project title!" ;
     dct:type osf:project,
         "Dataset" ;
@@ -411,6 +446,8 @@ COMPLICATED_TURTLE = '''@prefix dct: <http://purl.org/dc/terms/> .
 <http://localhost:5000/{user_id}> a osf:OSFUser ;
     dct:identifier "http://localhost:5000/{user_id}" ;
     foaf:name "Person McNamington" .
+
+<https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode> foaf:name "CC-By Attribution-NonCommercial-NoDerivatives 4.0 International" .
 
 <http://localhost:5000/{file_id}> a osf:File ;
     dct:created "{date}" ;
@@ -446,11 +483,15 @@ FILE_TURTLE = '''@prefix dct: <http://purl.org/dc/terms/> .
 <http://localhost:5000/{project_id}> a osf:Project ;
     dct:created "{date}" ;
     dct:creator <http://localhost:5000/{user_id}> ;
+    dct:dateCopyrighted "2252" ;
     dct:description "this is a project description!" ;
     dct:identifier "http://localhost:5000/{project_id}",
         "https://doi.org/10.70102/FK2osf.io/{project_id}" ;
     dct:language "es" ;
     dct:modified "{date}" ;
+    dct:rights <https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode> ;
+    dct:rightsHolder "Me",
+        "You" ;
     dct:title "this is a project title!" ;
     dct:type osf:project,
         "Dataset" ;
@@ -462,6 +503,8 @@ FILE_TURTLE = '''@prefix dct: <http://purl.org/dc/terms/> .
             osf:award_title "because reasons" ;
             osf:award_uri "https://moneypockets.example/millions" ;
             osf:funder_identifier_type "Crossref Funder ID" ] .
+
+<https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode> foaf:name "CC-By Attribution-NonCommercial-NoDerivatives 4.0 International" .
 
 <http://localhost:5000/{user_id}> a osf:OSFUser ;
     dct:identifier "http://localhost:5000/{user_id}" ;

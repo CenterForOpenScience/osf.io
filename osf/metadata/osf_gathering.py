@@ -283,13 +283,13 @@ def gather_licensing(focus):
         for copyright_holder in license_record.copyright_holders:
             yield (DCT.rightsHolder, copyright_holder)
         license = license_record.node_license  # yes, it is node.node_license.node_license
-        license_iri = (
-            rdflib.URIRef(license.url)
-            if (license is not None) and license.url
-            else rdflib.BNode()
-        )
-        yield (DCT.rights, license_iri)
-        yield (license_iri, FOAF.name, license.name)
+        if license is not None:
+            if license.url:
+                license_iri = rdflib.URIRef(license.url)
+                yield (DCT.rights, license_iri)
+                yield (license_iri, FOAF.name, license.name)
+            elif license.name:
+                yield (DCT.rights, license.name)
 
 
 @gather.er(DCT.title)

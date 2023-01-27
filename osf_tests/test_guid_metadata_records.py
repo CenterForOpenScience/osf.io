@@ -11,23 +11,26 @@ GOOD_FUNDING_INFOS = (
     [{
         'funder_name': 'hey',
         'funder_identifier': 'look:',
-        'funder_identifier_type': 'any',
+        'funder_identifier_type': 'ROR',
         'award_number': 'string',
-        'award_uri': 'is',
+        'award_uri': 'http://is.example',
         'award_title': 'valid!',
     }],
     [{
-        'funder_name': 'any',
+        'funder_name': 'just the name is good enough',
+    }],
+    [{
+        'funder_name': 'just',
     }, {
-        'funder_identifier': 'one',
+        'funder_name': 'the',
     }, {
-        'funder_identifier_type': 'field',
+        'funder_name': 'name',
     }, {
-        'award_number': 'is',
+        'funder_name': 'is',
     }, {
-        'award_uri': 'good',
+        'funder_name': 'good',
     }, {
-        'award_title': 'enough',
+        'funder_name': 'enough',
     }],
     [{
         'funder_name': 'NIH probably',
@@ -45,8 +48,6 @@ GOOD_FUNDING_INFOS = (
         'award_title': 'Award Twentyeight',
     }, {
         'funder_name': 'Mx. Moneypockets',
-        'funder_identifier': '',
-        'funder_identifier_type': '',
         'award_number': '10000000',
         'award_uri': 'https://moneypockets.example/millions',
         'award_title': 'Because i said so',
@@ -55,9 +56,13 @@ GOOD_FUNDING_INFOS = (
 
 BAD_FUNDING_INFOS = (
     [{}],
-    [{'unknown': 'field'}],
-    [{'award_number': 7, 'award_title': 'see award_number should be a string'}],
-    [{'funder_name': 'this one is ok, but the next in the array is not'}, {}],
+    [{'missing': 'there is one required field'}],
+    [{'funder_name': 'ok', 'unknown': 'bad'}],
+    [{'funder_name': 'see award_number should be a string', 'award_number': 7}],
+    [{'funder_name': 'this one is ok, but the empty object next in the array is not'}, {}],
+    [{'funder_name': 'bad funder_identifier_type', 'funder_identifier_type': 'something'}],
+    # TODO: consider installing the package that will make jsonschema validate format='uri'
+    # [{'funder_name': 'bad award_uri', 'award_uri': 'not a uri'}],
 )
 
 @pytest.mark.django_db
