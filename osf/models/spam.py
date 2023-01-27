@@ -3,15 +3,16 @@ import logging
 
 from django.db import models
 from django.utils import timezone
-from framework import sentry
 
 from osf.exceptions import ValidationValueError, ValidationTypeError
 from osf.external.spam.tasks import check_resource_for_domains
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
-from osf.utils import akismet, oopspam
 
-from website import settings
+from osf.external.oopspam.client import OOPSpamClient
+from osf.external.askismet.client import AkismetClient
+from osf.external.askismet.tasks import submit_ham, submit_spam
+from osf.external.spam.tasks import check_resource_with_spam_services
 
 logger = logging.getLogger(__name__)
 
@@ -21,18 +22,14 @@ def _get_akismet_client():
     AKISMET_APIKEY should be `None` for local testing.
     :return:
     """
-    return akismet.AkismetClient(
-        apikey=settings.AKISMET_APIKEY,
-        website=settings.DOMAIN,
-        verify=bool(settings.AKISMET_APIKEY)
-    )
+    return AkismetClient()
 
 def _get_oopspam_client():
     """
     OOPSPAM_APIKEY should be `None` for local testing.
     :return:
     """
-    return oopspam.OOPSpamClient()
+    return OOPSpamClient()
 
 
 def _validate_reports(value, *args, **kwargs):
@@ -175,64 +172,53 @@ class SpamMixin(models.Model):
         if save:
             self.save()
 
-    def confirm_ham(self, save=False, train_akismet=True):
-        # not all mixins will implement check spam pre-req, only submit ham when it was incorrectly flagged
-        if (
-            settings.SPAM_CHECK_ENABLED and
-            'headers' in self.spam_data and self.spam_status in [SpamStatus.FLAGGED, SpamStatus.SPAM] and
-            train_akismet
-        ):
-            client = _get_akismet_client()
-            client.submit_ham(
-                user_ip=self.spam_data['headers']['Remote-Addr'],
-                user_agent=self.spam_data['headers'].get('User-Agent'),
-                referrer=self.spam_data['headers'].get('Referer'),
-                comment_content=self.spam_data['content'],
-                comment_author=self.spam_data['author'],
-                comment_author_email=self.spam_data['author_email'],
-            )
-            logger.info('confirm_ham update sent')
+    def confirm_ham(self, save=False, train_spam_services=True):
         self.spam_status = SpamStatus.HAM
         if save:
             self.save()
 
-    def confirm_spam(self, domains=None, save=False, train_akismet=True):
+        if train_spam_services and self.spam_data:
+            submit_ham.apply_async(
+                kwargs=dict(
+                    guid=self.guids.first()._id,
+                )
+            )
+
+    def confirm_spam(self, domains=None, save=True, train_spam_services=True):
         if domains:
             if 'domains' in self.spam_data:
                 self.spam_data['domains'].extend(domains)
                 self.spam_data['domains'] = list(set(self.spam_data['domains']))
             else:
                 self.spam_data['domains'] = domains
-        # not all mixins will implement check spam pre-req, only submit spam when it was incorrectly flagged
-        if (
-            settings.SPAM_CHECK_ENABLED and
-            'headers' in self.spam_data and self.spam_status in [SpamStatus.UNKNOWN, SpamStatus.HAM] and
-            train_akismet
-        ):
-            client = _get_akismet_client()
-            client.submit_spam(
-                user_ip=self.spam_data['headers']['Remote-Addr'],
-                user_agent=self.spam_data['headers'].get('User-Agent'),
-                referrer=self.spam_data['headers'].get('Referer'),
-                comment_content=self.spam_data['content'],
-                comment_author=self.spam_data['author'],
-                comment_author_email=self.spam_data['author_email'],
+        elif train_spam_services and self.spam_data:
+            submit_spam.apply_async(
+                kwargs=dict(
+                    guid=self.guids.first()._id,
+                )
             )
-            logger.info('confirm_spam update sent')
+
         self.spam_status = SpamStatus.SPAM
         if save:
             self.save()
 
     @abc.abstractmethod
-    def check_spam(self, user, saved_fields, request_headers, save=False):
+    def check_spam(self, user, saved_fields, request, save=False):
         """Must return is_spam"""
         pass
 
-    def do_check_spam(self, author, author_email, content, request_headers, update=True):
+    def do_check_spam(self, author, author_email, content, request_headers):
         if self.is_hammy:
             return False
         if self.is_spammy:
             return True
+
+        request_kwargs = {
+            'remote_addr': request_headers.get('Remote-Addr') or request_headers['Host'],  # for local testing
+            'user_agent': request_headers.get('User-Agent'),
+            'referer': request_headers.get('Referer'),
+        }
+        request_kwargs.update(request_headers)
 
         check_resource_for_domains.apply_async(
             kwargs=dict(
@@ -240,49 +226,12 @@ class SpamMixin(models.Model):
                 content=content,
             )
         )
-
-        akismet_client = _get_akismet_client()
-        oopspam_client = _get_oopspam_client()
-        remote_addr = request_headers.get('Remote-Addr') or request_headers['Host']  # for local testing
-        user_agent = request_headers.get('User-Agent')
-        referer = request_headers.get('Referer')
-        akismet_is_spam, pro_tip = akismet_client.check_comment(
-            user_ip=remote_addr,
-            user_agent=user_agent,
-            referrer=referer,
-            comment_content=content,
-            comment_author=author,
-            comment_author_email=author_email
-        )
-
-        try:
-            oopspam_is_spam, oopspam_details = oopspam_client.check_content(
-                user_ip=remote_addr,
-                content=content
+        check_resource_with_spam_services.apply_async(
+            kwargs=dict(
+                guid=self.guids.first()._id,
+                content=content,
+                author=author,
+                author_email=author_email,
+                request_kwargs=request_kwargs,
             )
-        except oopspam.OOPSpamClientError:
-            sentry.log_exception()
-            oopspam_is_spam = False
-
-        if update:
-            self.spam_pro_tip = pro_tip
-            self.spam_data['headers'] = {
-                'Remote-Addr': remote_addr,
-                'User-Agent': user_agent,
-                'Referer': referer,
-            }
-            self.spam_data['content'] = content
-            self.spam_data['author'] = author
-            self.spam_data['author_email'] = author_email
-            if akismet_is_spam and oopspam_is_spam:
-                self.flag_spam()
-                self.spam_data['who_flagged'] = 'both'
-                self.spam_data['oopspam_data'] = oopspam_details
-            elif akismet_is_spam:
-                self.flag_spam()
-                self.spam_data['who_flagged'] = 'akismet'
-            elif oopspam_is_spam:
-                self.flag_spam()
-                self.spam_data['who_flagged'] = 'oopspam'
-                self.spam_data['oopspam_data'] = oopspam_details
-        return akismet_is_spam or oopspam_is_spam
+        )

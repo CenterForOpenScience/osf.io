@@ -4,6 +4,8 @@ import requests
 from framework.celery_tasks import app as celery_app
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
+from osf.external.askismet.client import AkismetClient
+from osf.external.oopspam.client import OOPSpamClient
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -11,6 +13,9 @@ logging.basicConfig(level=logging.INFO)
 
 DOMAIN_REGEX = re.compile(r'\W*(?P<protocol>\w+://)?(?P<www>www\.)?(?P<domain>([\w-]+\.)+[a-zA-Z]+)(?P<path>[/\-\.\w]*)?\W*')
 REDIRECT_CODES = {301, 302, 303, 307, 308}
+
+SPAM_CLIENTS = [AkismetClient(), OOPSpamClient()]
+
 
 @celery_app.task()
 def reclassify_domain_references(notable_domain_id, current_note, previous_note):
@@ -80,3 +85,48 @@ def _extract_domains(content):
         if domain not in extracted_domains:
             extracted_domains.add(domain)
             yield domain
+
+
+@celery_app.task()
+def check_resource_with_spam_services(guid, content, author, author_email, request_kwargs):
+    any_is_spam = False
+    from osf.models import Guid
+    resource = Guid.load(guid).referent
+
+    kwargs = dict(
+        user_ip=request_kwargs.get('remote_addr'),
+        user_agent=request_kwargs.get('user_agent'),
+        referrer=request_kwargs.get('referer'),
+        comment_content=content,
+        comment_author=author,
+        comment_author_email=author_email,
+        content=content,
+    )
+
+    for client in SPAM_CLIENTS:
+        is_spam, details = client.check_content(**kwargs)
+        print('results', is_spam, details)
+        if is_spam:
+            any_is_spam = True
+            if not resource.spam_data.get('who_flagged'):
+                resource.spam_data['who_flagged'] = client.NAME
+            elif resource.spam_data['who_flagged'] != client.NAME:
+                resource.spam_data['who_flagged'] = 'both'
+
+            if client.NAME == 'akismet':
+                resource.spam_pro_tip = details
+            if client.NAME == 'oopspam':
+                resource.spam_data['oopspam_data'] = details
+
+    if any_is_spam:
+        resource.spam_data['headers'] = {
+            'Remote-Addr': request_kwargs.get('remote_addr'),
+            'User-Agent': request_kwargs.get('user_agent'),
+            'Referer': request_kwargs.get('referer'),
+        }
+        resource.spam_data['content'] = content
+        resource.spam_data['author'] = author
+        resource.spam_data['author_email'] = author_email
+        resource.flag_spam()
+
+    resource.save()
