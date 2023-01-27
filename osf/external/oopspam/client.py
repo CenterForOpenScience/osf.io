@@ -14,17 +14,7 @@ class OOPSpamClient(object):
     apikey = settings.OOPSPAM_APIKEY
     website = API_URL
 
-    @property
-    def _default_headers(self):
-        return {
-            'content-type': 'application/json',
-            'x-rapidapi-key': self.apikey,
-            'x-rapidapi-host': 'oopspam.p.rapidapi.com'
-        }
-
     def check_content(self, user_ip, content, **kwargs):
-        if not settings.OOPSPAM_ENABLED:
-            return False, ''
 
         payload = {
             'checkForLength': False,
@@ -33,11 +23,14 @@ class OOPSpamClient(object):
         if settings.OOPSPAM_CHECK_IP:
             payload['senderIP'] = user_ip
 
-        response = requests.request(
-            'POST',
+        response = requests.post(
             self.website,
             data=json.dumps(payload),
-            headers=self._default_headers
+            headers={
+                'content-type': 'application/json',
+                'x-rapidapi-key': self.apikey,
+                'x-rapidapi-host': 'oopspam.p.rapidapi.com'
+            }
         )
 
         if response.status_code != requests.codes.ok:

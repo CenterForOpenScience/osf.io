@@ -1955,7 +1955,7 @@ AKISMET_ENABLED = False
 OOPSPAM_APIKEY = None
 OOPSPAM_SPAM_LEVEL = 3  # The minimum level (out of 6) that is flagged as spam.
 OOPSPAM_CHECK_IP = True  # Whether OOPSpam checks IP addresses. When testing locally, turn this off
-OOPSPAM_ENABLED = False
+OOPSPAM_ENABLED = True
 
 # spam options
 SPAM_CHECK_ENABLED = False
