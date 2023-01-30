@@ -38,7 +38,7 @@ class SparseNodeSerializer(NodeSerializer):
     parent = RelationshipField(
         related_view='sparse:node-detail',
         related_view_kwargs={'node_id': '<parent_id>'},
-        filter_key='parent_node',
+        source='parent_node',
     )
     root = RelationshipField(
         related_view='sparse:node-detail',
@@ -54,8 +54,8 @@ class SparseNodeSerializer(NodeSerializer):
             },
         )
 
-    # Overrides SparseFieldsetMixin
-    def parse_sparse_fields(self, allow_unsafe=False, **kwargs):
+    # Overrides BaseAPISerializer
+    def parse_sparse_fields(self):
         """
         SparseNodes are faster mostly because they subset the fields that they return
         to only the necessary fields for a list view.
@@ -80,13 +80,13 @@ class SparseNodeSerializer(NodeSerializer):
             'tags',
             'title',
         ]
-        for field_name in self.fields.fields.copy().keys():
+        for field_name in list(self.fields.keys()):
             if field_name in ('id', 'links', 'type'):
                 # MUST return these fields
                 continue
             if field_name not in fieldset:
                 self.fields.pop(field_name)
-        return super(SparseNodeSerializer, self).parse_sparse_fields(allow_unsafe, **kwargs)
+        return super().parse_sparse_fields()
 
     class Meta:
         type_ = 'sparse-nodes'
@@ -124,7 +124,7 @@ class SparseRegistrationSerializer(RegistrationSerializer):
     parent = RelationshipField(
         related_view='sparse:registration-detail',
         related_view_kwargs={'node_id': '<parent_id>'},
-        filter_key='parent_node',
+        source='parent_node',
     )
     root = RelationshipField(
         related_view='sparse:registration-detail',
@@ -140,8 +140,8 @@ class SparseRegistrationSerializer(RegistrationSerializer):
             },
         )
 
-    # Overrides SparseFieldsetMixin
-    def parse_sparse_fields(self, allow_unsafe=False, **kwargs):
+    # Overrides BaseAPISerializer
+    def parse_sparse_fields(self):
         """
         SparseRegistrations are faster mostly because they subset the fields that they return
         to only the necessary fields for a list view.
@@ -175,13 +175,13 @@ class SparseRegistrationSerializer(RegistrationSerializer):
             'withdrawn',
 
         ]
-        for field_name in self.fields.fields.copy().keys():
+        for field_name in list(self.fields.keys()):
             if field_name in ('id', 'links', 'type'):
                 # MUST return these fields
                 continue
             if field_name not in fieldset:
                 self.fields.pop(field_name)
-        return super(SparseRegistrationSerializer, self).parse_sparse_fields(allow_unsafe, **kwargs)
+        return super().parse_sparse_fields()
 
     class Meta:
         type_ = 'sparse-registrations'

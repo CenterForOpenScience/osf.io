@@ -32,7 +32,7 @@ class NodeRelationshipField(RelationshipField):
             node = self.context['view'].get_node(node_id=node_id) if node_id else None
         else:
             node = Node.load(node_id)
-        return {'branched_from': node}
+        return node
 
 
 class DraftRegistrationSerializer(DraftRegistrationLegacySerializer, TaxonomizableSerializerMixin):
@@ -62,12 +62,15 @@ class DraftRegistrationSerializer(DraftRegistrationLegacySerializer, Taxonomizab
         self_view='draft_registrations:draft-registration-relationships-institutions',
         self_view_kwargs={'draft_id': '<_id>'},
         read_only=False,
-        many=True,
         required=False,
     )
 
     branched_from = NodeRelationshipField(
-        related_view=lambda n: 'draft_nodes:draft-node-detail' if getattr(n, 'type', False) == 'osf.draftnode' else 'nodes:node-detail',
+        related_view=lambda draft_reg: (
+            'draft_nodes:draft-node-detail'
+            if getattr(draft_reg.branched_from, 'type', False) == 'osf.draftnode'
+            else 'nodes:node-detail'
+        ),
         related_view_kwargs={'node_id': '<branched_from._id>'},
         read_only=False,
         required=False,
