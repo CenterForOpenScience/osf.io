@@ -18,8 +18,8 @@ class CustomFileMetadataDetail(JSONAPIBaseView, rest_framework.generics.Retrieve
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.GUIDS_READ]  # TODO
-    required_write_scopes = [CoreScopes.NULL]  # TODO
+    required_read_scopes = [CoreScopes.GUIDS_READ]
+    required_write_scopes = [CoreScopes.GUID_METADATA_WRITE]
 
     serializer_class = CustomFileMetadataSerializer
     view_category = 'custom-file-metadata'
@@ -44,8 +44,8 @@ class CustomItemMetadataDetail(JSONAPIBaseView, rest_framework.generics.Retrieve
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.GUIDS_READ]  # TODO
-    required_write_scopes = [CoreScopes.NULL]  # TODO
+    required_read_scopes = [CoreScopes.GUIDS_READ]
+    required_write_scopes = [CoreScopes.GUID_METADATA_WRITE]
 
     serializer_class = CustomItemMetadataSerializer
     view_category = 'custom-item-metadata'
