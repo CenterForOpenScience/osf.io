@@ -192,6 +192,7 @@ class MockAddon(object):
 
     def __init__(self, **kwargs):
         self._id = fake.md5()
+        self.folder_id = fake.md5()
 
     def _get_file_tree(self, user, version):
         return FILE_TREE

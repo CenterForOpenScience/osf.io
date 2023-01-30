@@ -5,6 +5,7 @@ import pytest
 
 from addons.nextcloud.tests.factories import NodeSettingsFactory
 from addons.nextcloudinstitutions.utils import get_timestamp, set_timestamp
+from addons.nextcloudinstitutions.tests.factories import NextcloudInstitutionsNodeSettingsFactory
 
 
 @pytest.mark.django_db
@@ -25,6 +26,20 @@ class TestUtils(unittest.TestCase):
         with mock.patch('addons.nextcloudinstitutions.utils.NextcloudClient.login', mock_client):
             with mock.patch('addons.nextcloudinstitutions.utils.MetadataClient.get_metadata', mock_metadata):
                 res = get_timestamp(self.node, path, provider_name)
+                assert res == (None, None, None)
+
+    def test_get_timestamp_nextcloudinstitutions(self):
+        mock_metadata = mock.MagicMock()
+        mock_metadata.return_value = None
+        mock_client = mock.MagicMock()
+        mock_client.login.return_value = True
+
+        path = 'test_path'
+        node = NextcloudInstitutionsNodeSettingsFactory()
+        provider_name = 'nextcloudinstitutions'
+        with mock.patch('addons.nextcloudinstitutions.utils.NextcloudClient.login', mock_client):
+            with mock.patch('addons.nextcloudinstitutions.utils.MetadataClient.get_metadata', mock_metadata):
+                res = get_timestamp(node, path, provider_name)
                 assert res == (None, None, None)
 
     def test_get_timestamp(self):
@@ -91,3 +106,18 @@ class TestUtils(unittest.TestCase):
         with mock.patch('addons.nextcloudinstitutions.utils.NextcloudClient.login', mock_client):
             with mock.patch('addons.nextcloudinstitutions.utils.MetadataClient.set_metadata', mock_metadata):
                 set_timestamp(self.node, path, timestamp_data, timestamp_status, None, provider_name)
+
+    def test_set_timestamp_nextcloudinstitutions(self):
+        mock_metadata = mock.MagicMock()
+        mock_metadata.return_value = 'abc'
+        mock_client = mock.MagicMock()
+        mock_client.login.return_value = True
+
+        path = 'test_path'
+        node = NextcloudInstitutionsNodeSettingsFactory()
+        timestamp_data = b'abcxyz'
+        provider_name = 'nextcloudinstitutions'
+        timestamp_status = 1
+        with mock.patch('addons.nextcloudinstitutions.utils.NextcloudClient.login', mock_client):
+            with mock.patch('addons.nextcloudinstitutions.utils.MetadataClient.set_metadata', mock_metadata):
+                set_timestamp(node, path, timestamp_data, timestamp_status, None, provider_name)
