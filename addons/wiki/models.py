@@ -180,11 +180,12 @@ class WikiVersion(ObjectIDMixin, BaseModel):
     def check_spam(self):
         request, user_id = get_request_and_user_id()
         user = OSFUser.load(user_id)
+        if not user:  # for tests and admin operations
+            return False
+
         request_headers = string_type_request_headers(request)
         node = self.wiki_page.node
 
-        if not settings.SPAM_CHECK_ENABLED:
-            return False
         if settings.SPAM_CHECK_PUBLIC_ONLY and not node.is_public:
             return False
         if user.is_hammy:

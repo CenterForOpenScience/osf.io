@@ -43,7 +43,7 @@ class TestForward(ForwardAddonTestCase, OsfTestCase):
             log_count
         )
 
-    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
     @mock.patch('osf.models.node.Node.do_check_spam')
     def test_change_url_check_spam(self, mock_check_spam):
         self.project.is_public = True

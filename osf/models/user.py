@@ -1859,11 +1859,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                     for key, value in item.items():
                         if key in self.SPAM_USER_PROFILE_FIELDS[field]:
                             content.append(value)
-        return ' '.join(content).strip()
+
+        content = [item for item in content if item]
+        if content:
+            return ' '.join(content).strip()
 
     def check_spam(self, saved_fields, request_headers):
-        if not website_settings.SPAM_CHECK_ENABLED:
-            return False
         is_spam = False
         if set(self.SPAM_USER_PROFILE_FIELDS.keys()).intersection(set(saved_fields.keys())):
             content = self._get_spam_content(saved_fields)
