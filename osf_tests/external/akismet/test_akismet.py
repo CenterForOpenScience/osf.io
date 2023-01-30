@@ -61,7 +61,7 @@ class TestUserSpamAkismet:
         user.confirm_ham(train_spam_services=False)
         assert user.do_check_spam(None, None, None, None) is False
 
-    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
     @mock.patch.object(settings, 'AKISMET_ENABLED', True)
     @mock.patch('osf.models.OSFUser.do_check_spam')
     def test_check_spam(self, mock_do_check_spam, user):
@@ -115,7 +115,7 @@ class TestSpam:
         }
 
     @pytest.mark.enable_enqueue_task
-    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
     def test_do_spam_check_true(self, mock_akismet, user, request_headers):
         mock_akismet.add(
             responses.POST,

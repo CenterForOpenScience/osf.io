@@ -224,7 +224,7 @@ class TestSpamState:
 @pytest.mark.django_db
 class TestSpamCheckEmailDomain:
     @mock.patch('osf.models.spam.SpamMixin.do_check_spam', return_value=False)
-    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_CHECK_PUBLIC_ONLY', False)
     def test_trusted_domain(self, mock_do_check_spam):
         user = UserFactory()

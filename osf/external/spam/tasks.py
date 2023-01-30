@@ -6,6 +6,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from osf.external.askismet.client import AkismetClient
 from osf.external.oopspam.client import OOPSpamClient
+from website.settings import OOPSPAM_ENABLED, AKISMET_ENABLED
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -13,8 +14,6 @@ logging.basicConfig(level=logging.INFO)
 
 DOMAIN_REGEX = re.compile(r'\W*(?P<protocol>\w+://)?(?P<www>www\.)?(?P<domain>([\w-]+\.)+[a-zA-Z]+)(?P<path>[/\-\.\w]*)?\W*')
 REDIRECT_CODES = {301, 302, 303, 307, 308}
-
-SPAM_CLIENTS = [AkismetClient(), OOPSpamClient()]
 
 
 @celery_app.task()
@@ -103,9 +102,14 @@ def check_resource_with_spam_services(guid, content, author, author_email, reque
         content=content,
     )
 
-    for client in SPAM_CLIENTS:
+    spam_clients = []
+    if AKISMET_ENABLED:
+        spam_clients.append(AkismetClient())
+    if OOPSPAM_ENABLED:
+        spam_clients.append(OOPSpamClient())
+
+    for client in spam_clients:
         is_spam, details = client.check_content(**kwargs)
-        print('results', is_spam, details)
         if is_spam:
             any_is_spam = True
             if not resource.spam_data.get('who_flagged'):

@@ -1965,7 +1965,7 @@ OOPSPAM_CHECK_IP = True  # Whether OOPSpam checks IP addresses. When testing loc
 OOPSPAM_ENABLED = False
 
 # spam options
-SPAM_CHECK_ENABLED = False
+SPAM_SERVICES_ENABLED = False
 SPAM_CHECK_PUBLIC_ONLY = True
 SPAM_ACCOUNT_SUSPENSION_ENABLED = False
 SPAM_ACCOUNT_SUSPENSION_THRESHOLD = timedelta(hours=24)

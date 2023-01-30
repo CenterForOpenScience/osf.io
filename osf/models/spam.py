@@ -9,27 +9,12 @@ from osf.external.spam.tasks import check_resource_for_domains
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 
-from osf.external.oopspam.client import OOPSpamClient
-from osf.external.askismet.client import AkismetClient
 from osf.external.askismet.tasks import submit_ham, submit_spam
 from osf.external.spam.tasks import check_resource_with_spam_services
 
+from website import settings
+
 logger = logging.getLogger(__name__)
-
-
-def _get_akismet_client():
-    """
-    AKISMET_APIKEY should be `None` for local testing.
-    :return:
-    """
-    return AkismetClient()
-
-def _get_oopspam_client():
-    """
-    OOPSPAM_APIKEY should be `None` for local testing.
-    :return:
-    """
-    return OOPSpamClient()
 
 
 def _validate_reports(value, *args, **kwargs):
@@ -226,12 +211,13 @@ class SpamMixin(models.Model):
                 content=content,
             )
         )
-        check_resource_with_spam_services.apply_async(
-            kwargs=dict(
-                guid=self.guids.first()._id,
-                content=content,
-                author=author,
-                author_email=author_email,
-                request_kwargs=request_kwargs,
+        if settings.SPAM_SERVICES_ENABLED:
+            check_resource_with_spam_services.apply_async(
+                kwargs=dict(
+                    guid=self.guids.first()._id,
+                    content=content,
+                    author=author,
+                    author_email=author_email,
+                    request_kwargs=request_kwargs,
+                )
             )
-        )
