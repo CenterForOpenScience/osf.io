@@ -36,7 +36,7 @@ class TestUserSpamOOPSpam:
         assert spam_content == expected_content.strip()
 
     @mock.patch('osf.external.oopspam.client.OOPSpamClient')
-    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
     @mock.patch.object(settings, 'OOPSPAM_APIKEY', 'FFFFFF')
     @mock.patch.object(settings, 'OOPSPAM_ENABLED', True)
     @pytest.mark.enable_enqueue_task
@@ -61,7 +61,7 @@ class TestUserSpamOOPSpam:
         assert user.spam_data['author'] == user.fullname
         assert user.spam_data['author_email'] == user.username
 
-    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
     @mock.patch.object(settings, 'OOPSPAM_APIKEY', 'FFFFFF')
     @mock.patch('osf.models.OSFUser.do_check_spam')
     def test_check_spam(self, mock_do_check_spam, user):

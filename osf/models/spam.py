@@ -12,6 +12,8 @@ from osf.utils.fields import NonNaiveDateTimeField
 from osf.external.askismet.tasks import submit_ham, submit_spam
 from osf.external.spam.tasks import check_resource_with_spam_services
 
+from website import settings
+
 logger = logging.getLogger(__name__)
 
 
@@ -209,12 +211,13 @@ class SpamMixin(models.Model):
                 content=content,
             )
         )
-        check_resource_with_spam_services.apply_async(
-            kwargs=dict(
-                guid=self.guids.first()._id,
-                content=content,
-                author=author,
-                author_email=author_email,
-                request_kwargs=request_kwargs,
+        if settings.SPAM_SERVICES_ENABLED:
+            check_resource_with_spam_services.apply_async(
+                kwargs=dict(
+                    guid=self.guids.first()._id,
+                    content=content,
+                    author=author,
+                    author_email=author_email,
+                    request_kwargs=request_kwargs,
+                )
             )
-        )

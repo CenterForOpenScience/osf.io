@@ -6,7 +6,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from osf.external.askismet.client import AkismetClient
 from osf.external.oopspam.client import OOPSpamClient
-from website.settings import OOPSPAM_ENABLED, AKISMET_ENABLED
+from website import settings
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -103,9 +103,9 @@ def check_resource_with_spam_services(guid, content, author, author_email, reque
     )
 
     spam_clients = []
-    if AKISMET_ENABLED:
+    if settings.AKISMET_ENABLED:
         spam_clients.append(AkismetClient())
-    if OOPSPAM_ENABLED:
+    if settings.OOPSPAM_ENABLED:
         spam_clients.append(OOPSpamClient())
 
     for client in spam_clients:
