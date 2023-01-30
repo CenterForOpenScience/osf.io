@@ -3,6 +3,7 @@ from rest_framework.exceptions import ValidationError
 from api.nodes.serializers import RegistrationProviderRelationshipField
 from api.collections_providers.fields import CollectionProviderRelationshipField
 from api.preprints.serializers import PreprintProviderRelationshipField
+from website.util import api_v2_url
 
 
 from api.base.serializers import JSONAPISerializer, LinksField
@@ -63,6 +64,9 @@ class RegistrationSubscriptionSerializer(SubscriptionSerializer):
         required=False,
     )
 
+    def get_absolute_url(self, obj):
+        return api_v2_url(f'registration_subscriptions/{obj._id}')
+
     class Meta:
         type_ = 'registration-subscription'
 
@@ -75,6 +79,9 @@ class CollectionSubscriptionSerializer(SubscriptionSerializer):
         required=False,
     )
 
+    def get_absolute_url(self, obj):
+        return api_v2_url(f'collection_subscriptions/{obj._id}')
+
     class Meta:
         type_ = 'collection-subscription'
 
@@ -85,6 +92,9 @@ class PreprintSubscriptionSerializer(SubscriptionSerializer):
         related_view_kwargs={'provider_id': '<provider._id>'},
         read_only=False,
     )
+
+    def get_absolute_url(self, obj):
+        return api_v2_url(f'preprints_subscriptions/{obj._id}')
 
     class Meta:
         type_ = 'preprint-subscription'
