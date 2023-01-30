@@ -507,12 +507,12 @@ def gather_funding(focus):
             funder_bnode = rdflib.BNode()
             yield (OSF.funder, funder_bnode)
             yield (funder_bnode, RDF.type, OSF.Funder)
-            yield (funder_bnode, FOAF.name, funding['funder_name'])
-            yield (funder_bnode, DCT.identifier, funding['funder_identifier'])
-            yield (funder_bnode, OSF.funder_identifier_type, funding['funder_identifier_type'])
-            yield (funder_bnode, OSF.award_number, funding['award_number'])
-            yield (funder_bnode, OSF.award_uri, funding['award_uri'])
-            yield (funder_bnode, OSF.award_title, funding['award_title'])
+            yield (funder_bnode, FOAF.name, funding.get('funder_name'))
+            yield (funder_bnode, DCT.identifier, funding.get('funder_identifier'))
+            yield (funder_bnode, OSF.funder_identifier_type, funding.get('funder_identifier_type'))
+            yield (funder_bnode, OSF.award_number, funding.get('award_number'))
+            yield (funder_bnode, OSF.award_uri, funding.get('award_uri'))
+            yield (funder_bnode, OSF.award_title, funding.get('award_title'))
 
 
 @gather.er(focustype_iris=[OSF.OSFUser])
