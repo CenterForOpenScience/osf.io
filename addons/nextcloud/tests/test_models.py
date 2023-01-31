@@ -1,23 +1,18 @@
-from nose.tools import assert_is_not_none, assert_equal
-import pytest
 import unittest
-
 from unittest import mock
+
+import pytest
+from nose.tools import assert_is_not_none, assert_equal
+
 from addons.base.tests.models import (OAuthAddonNodeSettingsTestSuiteMixin,
                                       OAuthAddonUserSettingTestSuiteMixin)
-
 from addons.nextcloud.models import NodeSettings
-from osf_tests.test_archiver import MockAddon
+from addons.nextcloud.settings import USE_SSL
 from addons.nextcloud.tests.factories import (
     NextcloudAccountFactory, NextcloudNodeSettingsFactory,
     NextcloudUserSettingsFactory, NextcloudFileFactory
 )
-from addons.nextcloud.settings import USE_SSL
-from admin.rdm_addons.utils import get_rdm_addon_option
-from osf_tests.factories import (
-    ExternalAccountFactory,
-    UserFactory, InstitutionFactory
-)
+from osf_tests.test_archiver import MockAddon
 
 pytestmark = pytest.mark.django_db
 
