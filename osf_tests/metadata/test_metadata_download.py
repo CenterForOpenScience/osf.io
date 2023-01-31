@@ -82,6 +82,8 @@ class TestMetadataDownload(OsfTestCase):
         )
         file_guid = file.get_guid()._id
         format_kwargs['file_id'] = file_guid
+        format_kwargs['raw_file_id'] = file._id
+        format_kwargs['fileversion_id'] = file.versions.first().identifier
 
         resp = self.app.get(f'/{project._id}/metadata/?format=turtle', auth=user.auth)
         assert resp.status_code == 200
@@ -264,7 +266,8 @@ BASIC_TURTLE = '''@prefix dct: <http://purl.org/dc/terms/> .
     dct:type osf:project ;
     owl:sameAs <https://doi.org/10.70102/FK2osf.io/{project_id}> .
 
-<http://localhost:5000/{user_id}> a osf:OSFUser ;
+<http://localhost:5000/{user_id}> a dct:Agent,
+        osf:OSFUser ;
     dct:identifier "http://localhost:5000/{user_id}" ;
     foaf:name "Person McNamington" .
 
@@ -443,7 +446,8 @@ COMPLICATED_TURTLE = '''@prefix dct: <http://purl.org/dc/terms/> .
             osf:funder_identifier_type "Crossref Funder ID" ] ;
     osf:has_file <http://localhost:5000/{file_id}> .
 
-<http://localhost:5000/{user_id}> a osf:OSFUser ;
+<http://localhost:5000/{user_id}> a dct:Agent,
+        osf:OSFUser ;
     dct:identifier "http://localhost:5000/{user_id}" ;
     foaf:name "Person McNamington" .
 
@@ -466,14 +470,7 @@ FILE_TURTLE = '''@prefix dct: <http://purl.org/dc/terms/> .
 
 <http://localhost:5000/{file_id}> a osf:File ;
     dct:created "{date}" ;
-    dct:hasVersion [ a osf:FileVersion ;
-            dct:created "{date}" ;
-            dct:creator <http://localhost:5000/{user_id}> ;
-            dct:extent "0.000007 MB" ;
-            dct:format "img/png" ;
-            dct:modified "{date}" ;
-            dct:requires <urn:checksum:sha-256::6ac3c336e4094835293a3fed8a4b5fedde1b5e2626d9838fed50693bba00af0e> ;
-            osf:version_number "1" ] ;
+    dct:hasVersion <http://localhost:8000/v2/files/{raw_file_id}/versions/{fileversion_id}/> ;
     dct:identifier "http://localhost:5000/{file_id}" ;
     dct:isPartOf <http://localhost:5000/{project_id}> ;
     dct:modified "{date}" ;
@@ -504,9 +501,19 @@ FILE_TURTLE = '''@prefix dct: <http://purl.org/dc/terms/> .
             osf:award_uri "https://moneypockets.example/millions" ;
             osf:funder_identifier_type "Crossref Funder ID" ] .
 
+<http://localhost:8000/v2/files/{raw_file_id}/versions/{fileversion_id}/> a osf:FileVersion ;
+    dct:created "{date}" ;
+    dct:creator <http://localhost:5000/{user_id}> ;
+    dct:extent "0.000007 MB" ;
+    dct:format "img/png" ;
+    dct:modified "{date}" ;
+    dct:requires <urn:checksum:sha-256::6ac3c336e4094835293a3fed8a4b5fedde1b5e2626d9838fed50693bba00af0e> ;
+    osf:version_number "1" .
+
 <https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode> foaf:name "CC-By Attribution-NonCommercial-NoDerivatives 4.0 International" .
 
-<http://localhost:5000/{user_id}> a osf:OSFUser ;
+<http://localhost:5000/{user_id}> a dct:Agent,
+        osf:OSFUser ;
     dct:identifier "http://localhost:5000/{user_id}" ;
     foaf:name "Person McNamington" .
 

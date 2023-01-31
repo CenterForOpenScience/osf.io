@@ -249,6 +249,7 @@ class InstitutionFactory(DjangoModelFactory):
     name = factory.Faker('company')
     login_url = factory.Faker('url')
     logout_url = factory.Faker('url')
+    identifier_domain = factory.Faker('url')
     domains = FakeList('url', n=3)
     email_domains = FakeList('domain_name', n=1)
     logo_name = factory.Faker('file_name')
@@ -498,16 +499,20 @@ class SanctionFactory(DjangoModelFactory):
         abstract = True
 
     @classmethod
-    def _create(cls, target_class, initiated_by=None, approve=False, *args, **kwargs):
+    def _create(cls, target_class, initiated_by=None, approve=False, target_item=None, *args, **kwargs):
         user = kwargs.pop('user', None) or UserFactory()
         kwargs['initiated_by'] = initiated_by or user
         sanction = super()._create(target_class, *args, **kwargs)
-        reg_kwargs = {
-            'creator': user,
-            'user': user,
-            sanction.SHORT_NAME: sanction
-        }
-        RegistrationFactory(**reg_kwargs)
+        if target_item is not None:
+            setattr(target_item, sanction.SHORT_NAME, sanction)
+            target_item.save()
+        else:
+            reg_kwargs = {
+                'creator': user,
+                'user': user,
+                sanction.SHORT_NAME: sanction
+            }
+            RegistrationFactory(**reg_kwargs)
         if not approve:
             sanction.state = Sanction.UNAPPROVED
             sanction.save()
