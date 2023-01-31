@@ -7,7 +7,7 @@ from django.utils import timezone
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 from nose.tools import assert_raises
-from osf.models import Node, Registration, Sanction, RegistrationSchema, NodeLog
+from osf.models import Node, Registration, Sanction, RegistrationSchema, NodeLog, GuidMetadataRecord
 from addons.wiki.models import WikiPage
 from osf.utils.permissions import ADMIN
 from osf.registrations.utils import get_registration_provider_submissions_url
@@ -186,6 +186,15 @@ class TestRegisterNode:
             set(project.tags.values_list('name', flat=True))
         )
 
+    def test_guid_metadata(self, project, auth):
+        GuidMetadataRecord.objects.for_guid(project._id).update(
+            new_values={'language': 'blarg'},
+            auth=auth,
+        )
+        reg = factories.RegistrationFactory(project=project)
+        reg_guid_metadata = GuidMetadataRecord.objects.get(guid=reg.guids.first())
+        assert reg_guid_metadata.language == 'blarg'
+
     def test_nodes(self, project, user):
 
         # Create some nodes
@@ -215,7 +224,7 @@ class TestRegisterNode:
 
         # Registration has the nodes
         assert registration._nodes.count() == 2
-        assert(
+        assert (
             set(registration._nodes.values_list('title', flat=True)) ==
             set(project._nodes.values_list('title', flat=True))
         )

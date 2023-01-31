@@ -62,6 +62,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     gitlab_user = ser.CharField(read_only=True, source='gitlab.user')
     gitlab_repo = ser.CharField(read_only=True, source='gitlab.repo')
     group = ser.CharField(read_only=True)
+    guid = ser.CharField(read_only=True)
     file = ser.DictField(read_only=True)
     filename = ser.CharField(read_only=True)
     kind = ser.CharField(read_only=True)
@@ -214,12 +215,20 @@ class NodeLogSerializer(JSONAPISerializer):
         type_ = 'logs'
 
     node = RelationshipField(
-        related_view=lambda n: 'registrations:registration-detail' if getattr(n, 'is_registration', False) else 'nodes:node-detail',
+        related_view=lambda log: (
+            'registrations:registration-detail'
+            if getattr(log.node, 'is_registration', False)
+            else 'nodes:node-detail'
+        ),
         related_view_kwargs={'node_id': '<node._id>'},
     )
 
     original_node = RelationshipField(
-        related_view=lambda n: 'registrations:registration-detail' if getattr(n, 'is_registration', False) else 'nodes:node-detail',
+        related_view=lambda log: (
+            'registrations:registration-detail'
+            if getattr(log.original_node, 'is_registration', False)
+            else 'nodes:node-detail'
+        ),
         related_view_kwargs={'node_id': '<original_node._id>'},
     )
 

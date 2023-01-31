@@ -85,8 +85,7 @@ class TargetRelationshipField(RelationshipField):
         return self.TargetClass.load(object_id)
 
     def to_internal_value(self, data):
-        target = self.get_object(data)
-        return {'target': target}
+        return self.get_object(data)
 
 
 class PreprintRequestTargetRelationshipField(TargetRelationshipField):
@@ -126,7 +125,6 @@ class BaseActionSerializer(JSONAPISerializer):
         read_only=True,
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<creator._id>'},
-        filter_key='creator__guids___id',
         always_embed=True,
     )
 
@@ -200,7 +198,6 @@ class ReviewActionSerializer(BaseActionSerializer):
         read_only=True,
         related_view='users:user-detail',
         related_view_kwargs={'user_id': '<creator._id>'},
-        filter_key='creator__guids___id',
         always_embed=True,
     ))
 

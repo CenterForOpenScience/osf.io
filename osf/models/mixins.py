@@ -103,9 +103,13 @@ class Loggable(models.Model):
 
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True, request=None):
         AbstractNode = apps.get_model('osf.AbstractNode')
+        OSFUser = apps.get_model('osf.OSFUser')
         user = None
         if auth:
-            user = auth.user
+            if isinstance(auth, OSFUser):
+                user = auth
+            else:
+                user = auth.user
         elif request:
             user = request.user
 

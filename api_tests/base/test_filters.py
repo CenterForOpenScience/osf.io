@@ -9,6 +9,7 @@ from django.utils import timezone
 
 from nose.tools import *  # noqa:
 
+from rest_framework import generics
 from rest_framework import serializers as ser
 
 from unittest import TestCase
@@ -85,9 +86,11 @@ class FakeRecord(object):
         self.foobar = foobar
 
 
-class FakeListView(ListFilterMixin):
-
+class FakeListView(ListFilterMixin, generics.GenericAPIView):
     serializer_class = FakeSerializer
+
+    def get_serializer_context(self):
+        return {}
 
 
 class TestFilterMixin(ApiTestCase):
