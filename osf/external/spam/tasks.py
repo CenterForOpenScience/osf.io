@@ -88,9 +88,14 @@ def _extract_domains(content):
 
 @celery_app.task()
 def check_resource_with_spam_services(guid, content, author, author_email, request_kwargs):
+    """
+    Return statements used only for debugging and recording keeping
+    """
     any_is_spam = False
     from osf.models import Guid
     resource = Guid.load(guid).referent
+    if not resource:
+        return f'{resource} not found'
 
     kwargs = dict(
         user_ip=request_kwargs.get('remote_addr'),
@@ -134,3 +139,5 @@ def check_resource_with_spam_services(guid, content, author, author_email, reque
         resource.flag_spam()
 
     resource.save()
+
+    return f'{resource} is spam: {any_is_spam} {resource.spam_data.get("content")}'
