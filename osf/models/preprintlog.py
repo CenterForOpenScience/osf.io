@@ -35,6 +35,7 @@ class PreprintLog(ObjectIDMixin, BaseModel):
 
     FILE_UPDATED = 'file_updated'
     FILE_METADATA_UPDATED = 'file_metadata_updated'
+    GUID_METADATA_UPDATED = 'guid_metadata_updated'
 
     SUBJECTS_UPDATED = 'subjects_updated'
 
@@ -70,6 +71,7 @@ class PreprintLog(ObjectIDMixin, BaseModel):
         EDITED_DESCRIPTION,
         FILE_UPDATED,
         FILE_METADATA_UPDATED,
+        GUID_METADATA_UPDATED,
         MADE_CONTRIBUTOR_VISIBLE,
         SUPPLEMENTAL_NODE_ADDED,
         MADE_CONTRIBUTOR_INVISIBLE,

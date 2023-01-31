@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from addons.osfstorage import settings as osfstorage_settings
 
 
-def create_test_file(target, user, filename='test_file', create_guid=True, size=1337):
+def create_test_file(target, user, filename='test_file', create_guid=True, size=1337, sha256=None):
     osfstorage = target.get_addon('osfstorage')
     root_node = osfstorage.get_root()
     test_file = root_node.append_file(filename)
@@ -20,7 +20,8 @@ def create_test_file(target, user, filename='test_file', create_guid=True, size=
         osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
     }, {
         'size': size,
-        'contentType': 'img/png'
+        'contentType': 'img/png',
+        'sha256': sha256,
     }).save()
     return test_file
 

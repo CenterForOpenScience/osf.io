@@ -165,7 +165,7 @@ class InstitutionUserList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView
 
     def get_default_queryset(self):
         institution = self.get_institution()
-        return institution.osfuser_set.all()
+        return institution.get_institution_users()
 
     # overrides RetrieveAPIView
     def get_queryset(self):

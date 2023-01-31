@@ -21,8 +21,7 @@ class GuidRelationshipField(RelationshipField):
         return Guid.load(_id)
 
     def to_internal_value(self, data):
-        guid = self.get_object(data)
-        return {'guid': guid}
+        return self.get_object(data)
 
 
 class CollectionSerializer(JSONAPISerializer):

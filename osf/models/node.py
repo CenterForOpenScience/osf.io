@@ -43,6 +43,7 @@ from osf.models.collection_submission import CollectionSubmission
 
 from osf.models.identifiers import Identifier, IdentifierMixin
 from osf.models.licenses import NodeLicenseRecord
+from osf.models.metadata import GuidMetadataRecord
 from osf.models.mixins import (AddonModelMixin, CommentableMixin, Loggable, GuardianMixin,
                                NodeLinkMixin, SpamOverrideMixin, RegistrationResponseMixin,
                                EditableFieldsMixin)
@@ -1436,6 +1437,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             node_relation = NodeRelation.objects.get(parent=parent.registered_from, child=original)
             NodeRelation.objects.get_or_create(_order=node_relation._order, parent=parent, child=registered)
 
+        GuidMetadataRecord.objects.copy(from_=original, to_=registered)
+
         # After register callback
         for addon in original.get_addons():
             _, message = addon.after_register(original, registered, auth.user)
@@ -1567,7 +1570,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def add_affiliations(self, user, new):
         # add all of the user's affiliations to the forked or templated node
-        for affiliation in user.affiliated_institutions.all():
+        for affiliation in user.get_affiliated_institutions():
             new.affiliated_institutions.add(affiliation)
 
     # TODO: Optimize me (e.g. use bulk create)
@@ -1618,6 +1621,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         forked.tags.add(*self.all_tags.values_list('pk', flat=True))
         forked.subjects.add(*self.subjects.values_list('pk', flat=True))
+
+        GuidMetadataRecord.objects.copy(from_=original, to_=forked)
 
         if parent:
             node_relation = NodeRelation.objects.get(parent=parent.forked_from, child=original)
