@@ -13,9 +13,6 @@ from osf.external.askismet.tasks import submit_ham, submit_spam
 from osf.external.spam.tasks import check_resource_with_spam_services
 from osf.utils.fields import ensure_str
 
-
-from website import settings
-
 from website import settings
 
 logger = logging.getLogger(__name__)

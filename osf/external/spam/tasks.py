@@ -93,9 +93,10 @@ def check_resource_with_spam_services(guid, content, author, author_email, reque
     """
     any_is_spam = False
     from osf.models import Guid
-    resource = Guid.load(guid).referent
-    if not resource:
-        return f'{resource} not found'
+    guid = Guid.load(guid)
+    if not guid:
+        f'{guid} not found'
+    resource = guid.referent
 
     kwargs = dict(
         user_ip=request_kwargs.get('remote_addr'),
