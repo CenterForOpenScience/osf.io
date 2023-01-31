@@ -39,7 +39,10 @@ def reclassify_domain_references(notable_domain_id, current_note, previous_note)
 @celery_app.task()
 def check_resource_for_domains(guid, content):
     from osf.models import Guid, NotableDomain, DomainReference
-    resource = Guid.load(guid).referent
+    guid = Guid.load(guid)
+    if not guid:
+        return f'{guid} not found'
+    resource = guid.referent
     spammy_domains = []
     referrer_content_type = ContentType.objects.get_for_model(resource)
     for domain in _extract_domains(content):
@@ -95,7 +98,7 @@ def check_resource_with_spam_services(guid, content, author, author_email, reque
     from osf.models import Guid
     guid = Guid.load(guid)
     if not guid:
-        f'{guid} not found'
+        return f'{guid} not found'
     resource = guid.referent
 
     kwargs = dict(
