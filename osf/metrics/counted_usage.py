@@ -118,7 +118,7 @@ def _fill_document_id(counted_usage):
     # cannot detect/avoid conflicts this way, but that's ok
     # because we want to approximate `counter:Double-Click Filtering`
 
-    if counted_usage.pageview_info is not None:
+    if counted_usage.pageview_info:
         target_identifier = counted_usage.pageview_info.page_url
     else:
         target_identifier = counted_usage.item_guid

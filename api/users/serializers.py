@@ -238,10 +238,9 @@ class UserSerializer(JSONAPISerializer):
             elif 'accepted_terms_of_service' == attr:
                 if value and not instance.accepted_terms_of_service:
                     instance.accepted_terms_of_service = timezone.now()
-            elif 'region_id' == attr:
-                region_id = validated_data.get('region_id')
+            elif 'default_region' == attr:
                 user_settings = instance._settings_model('osfstorage').objects.get(owner=instance)
-                user_settings.default_region_id = region_id
+                user_settings.default_region_id = value
                 user_settings.save()
                 instance.default_region = self.context['request'].data['default_region']
             else:

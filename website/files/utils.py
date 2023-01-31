@@ -1,3 +1,5 @@
+from osf.models.metadata import GuidMetadataRecord
+
 
 def copy_files(src, target_node, parent=None, name=None):
     """Copy the files from src to the target node
@@ -37,10 +39,7 @@ def copy_files(src, target_node, parent=None, name=None):
             node_file_version.save()
 
         # copy over file metadata records
-        if cloned.provider == 'osfstorage':
-            for record in cloned.records.all():
-                record.metadata = src.records.get(schema__name=record.schema.name).metadata
-                record.save()
+        GuidMetadataRecord.objects.copy(from_=src, to_=cloned)
 
     if not src.is_file:
         for child in src.children:
