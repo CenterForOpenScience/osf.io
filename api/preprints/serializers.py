@@ -25,6 +25,7 @@ from api.base.utils import absolute_reverse, get_user_auth
 from api.base.parsers import NO_DATA_ERROR
 from api.nodes.serializers import (
     NodeCitationSerializer,
+    NodeLicenseRelationshipField,
     NodeLicenseSerializer,
     NodeContributorsSerializer,
     NodeStorageProviderSerializer,
@@ -47,7 +48,6 @@ from osf.models import (
 )
 from osf.utils import permissions as osf_permissions
 
-
 from osf.exceptions import PreprintStateError
 
 
@@ -56,8 +56,8 @@ class PrimaryFileRelationshipField(RelationshipField):
         return BaseFileNode.load(file_id)
 
     def to_internal_value(self, data):
-        file = self.get_object(data)
-        return {'primary_file': file}
+        return self.get_object(data)
+
 
 class NodeRelationshipField(RelationshipField):
     def get_object(self, node_id):
@@ -67,23 +67,22 @@ class NodeRelationshipField(RelationshipField):
             raise exceptions.ValidationError(detail='Node not correctly specified.')
 
     def to_internal_value(self, data):
-        node = self.get_object(data)
-        return {'node': node}
+        return self.get_object(data)
+
 
 class PreprintProviderRelationshipField(RelationshipField):
     def get_object(self, node_id):
         return PreprintProvider.load(node_id)
 
     def to_internal_value(self, data):
-        provider = self.get_object(data)
-        return {'provider': provider}
+        return self.get_object(data)
 
 
 class PreprintLicenseRelationshipField(RelationshipField):
     def to_internal_value(self, license_id):
         license = NodeLicense.load(license_id)
         if license:
-            return {'license_type': license}
+            return license
         raise exceptions.NotFound('Unable to find specified license.')
 
 
@@ -154,12 +153,11 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<node._id>'},
         read_only=False,
-        many=False,
         self_view='preprints:preprint-node-relationship',
         self_view_kwargs={'preprint_id': '<_id>'},
     ))
 
-    license = PreprintLicenseRelationshipField(
+    license = NodeLicenseRelationshipField(
         related_view='licenses:license-detail',
         related_view_kwargs={'license_id': '<license.node_license._id>'},
         read_only=False,

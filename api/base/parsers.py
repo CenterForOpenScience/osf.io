@@ -1,9 +1,9 @@
 import json
 import jsonschema
 import codecs
-
 import time
 import collections
+
 from django.core.exceptions import ImproperlyConfigured
 from rest_framework.parsers import JSONParser
 from rest_framework.exceptions import ParseError, NotAuthenticated

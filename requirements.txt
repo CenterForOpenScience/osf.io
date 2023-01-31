@@ -90,6 +90,10 @@ transitions==0.8.2
 # identifiers
 datacite==1.1.2
 
+# metadata
+rdflib==5.0.0
+rdflib-jsonld==0.5.0
+
 
 # Metrics
 git+https://github.com/CenterForOpenScience/django-elasticsearch-metrics@2022.0.6

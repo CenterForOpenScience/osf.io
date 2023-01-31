@@ -173,6 +173,13 @@ class TestFileView:
         # so that downloads don't 301
         assert res.json['data']['links']['download'].endswith('/')
 
+        # test_embed_target
+        res = app.get(f'{file_url}?embed=target', auth=user.auth)
+        assert res.status_code == 200
+        embedded_target = res.json['data']['embeds']['target']['data']
+        assert embedded_target['id'] == file.target._id
+        assert embedded_target['attributes']['title'] == file.target.title
+
     def test_file_has_rel_link_to_owning_project(
             self, app, user, file_url, node):
         res = app.get(file_url, auth=user.auth)
