@@ -2074,6 +2074,8 @@ class SpamOverrideMixin(SpamMixin):
         return b' '.join(content).decode()
 
     def check_spam(self, user, saved_fields, request_headers):
+        if not user:  # in case of tests and staff admin operations
+            return False
         if settings.SPAM_CHECK_PUBLIC_ONLY and not self.is_public:
             return False
         if user.is_hammy:
