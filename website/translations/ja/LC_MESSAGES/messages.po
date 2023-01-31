@@ -1936,12 +1936,12 @@ msgstr "Wiki本文"
 
 #: website/templates/search_grdm.mako:553
 msgid "File Metadata"
-msgstr ""
+msgstr "ファイルメタデータ"
 
 #: website/templates/search_grdm.mako:573
 #: website/templates/search_grdm.mako:576
 msgid "Project Metadata"
-msgstr ""
+msgstr "プロジェクトメタデータ"
 
 #: website/templates/search_grdm.mako:618
 msgid "Modified by"
