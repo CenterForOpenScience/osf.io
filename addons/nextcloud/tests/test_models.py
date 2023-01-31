@@ -76,12 +76,18 @@ class TestNextcloudFile(unittest.TestCase):
         assert res == (None, None)
 
     def test_my_node_settings(self):
-        with mock.patch('osf.models.mixins.AddonModelMixin.get_addon') as mock_get_addon:
-            test_obj = NextcloudFileFactory()
-            mock_addon = MockAddon()
-            mock_get_addon.return_value = mock_addon
-            res = test_obj._my_node_settings()
-            assert res != None
+        mock_rename_folder = mock.MagicMock()
+        mock_get_folder_info = mock.MagicMock()
+        mock_get_folder_info.return_value = {'title': 'test_title'}
+        mock_rename_folder.return_value = None
+        with mock.patch('addons.iqbrims.client.IQBRIMSClient.rename_folder', mock_rename_folder):
+            with mock.patch('addons.iqbrims.client.IQBRIMSClient.get_folder_info', mock_get_folder_info):
+                with mock.patch('osf.models.mixins.AddonModelMixin.get_addon') as mock_get_addon:
+                    test_obj = NextcloudFileFactory()
+                    mock_addon = MockAddon()
+                    mock_get_addon.return_value = mock_addon
+                    res = test_obj._my_node_settings()
+                    assert res != None
 
     def test_my_node_settings_return_none(self):
         test_obj = NextcloudFileFactory()
@@ -91,13 +97,19 @@ class TestNextcloudFile(unittest.TestCase):
     def test_get_timestamp(self):
         mock_utils = mock.MagicMock()
         mock_utils.return_value = 'abc'
-        with mock.patch('osf.models.mixins.AddonModelMixin.get_addon') as mock_get_addon:
-            with mock.patch('addons.nextcloudinstitutions.utils.get_timestamp', mock_utils):
-                test_obj = NextcloudFileFactory()
-                mock_addon = MockAddon()
-                mock_get_addon.return_value = mock_addon
-                res = test_obj.get_timestamp()
-                assert res == 'abc'
+        mock_rename_folder = mock.MagicMock()
+        mock_get_folder_info = mock.MagicMock()
+        mock_get_folder_info.return_value = {'title': 'test_title'}
+        mock_rename_folder.return_value = None
+        with mock.patch('addons.iqbrims.client.IQBRIMSClient.rename_folder', mock_rename_folder):
+            with mock.patch('addons.iqbrims.client.IQBRIMSClient.get_folder_info', mock_get_folder_info):
+                with mock.patch('osf.models.mixins.AddonModelMixin.get_addon') as mock_get_addon:
+                    with mock.patch('addons.nextcloudinstitutions.utils.get_timestamp', mock_utils):
+                        test_obj = NextcloudFileFactory()
+                        mock_addon = MockAddon()
+                        mock_get_addon.return_value = mock_addon
+                        res = test_obj.get_timestamp()
+                        assert res == 'abc'
 
     def test_get_timestamp_return_none(self):
         test_obj = NextcloudFileFactory()
@@ -107,20 +119,32 @@ class TestNextcloudFile(unittest.TestCase):
     def test_set_timestamp(self):
         mock_utils = mock.MagicMock()
         mock_utils.return_value = 'abc'
-        with mock.patch('osf.models.mixins.AddonModelMixin.get_addon') as mock_get_addon:
-            with mock.patch('addons.nextcloudinstitutions.utils.set_timestamp', mock_utils):
-                test_obj = NextcloudFileFactory()
-                mock_addon = MockAddon()
-                mock_get_addon.return_value = mock_addon
-                test_obj.set_timestamp('timestamp_data', 'timestamp_status', 'context')
+        mock_rename_folder = mock.MagicMock()
+        mock_get_folder_info = mock.MagicMock()
+        mock_get_folder_info.return_value = {'title': 'test_title'}
+        mock_rename_folder.return_value = None
+        with mock.patch('addons.iqbrims.client.IQBRIMSClient.rename_folder', mock_rename_folder):
+            with mock.patch('addons.iqbrims.client.IQBRIMSClient.get_folder_info', mock_get_folder_info):
+                with mock.patch('osf.models.mixins.AddonModelMixin.get_addon') as mock_get_addon:
+                    with mock.patch('addons.nextcloudinstitutions.utils.set_timestamp', mock_utils):
+                        test_obj = NextcloudFileFactory()
+                        mock_addon = MockAddon()
+                        mock_get_addon.return_value = mock_addon
+                        test_obj.set_timestamp('timestamp_data', 'timestamp_status', 'context')
 
     def test_get_hash_for_timestamp(self):
         mock_hash = mock.MagicMock()
         mock_hash = {'sha512': 'data_sha512'}
-        with mock.patch('osf.models.mixins.AddonModelMixin.get_addon') as mock_get_addon:
-            with mock.patch('addons.nextcloud.models.NextcloudFile._hashes', mock_hash):
-                test_obj = NextcloudFileFactory()
-                mock_addon = MockAddon()
-                mock_get_addon.return_value = mock_addon
-                res = test_obj.get_hash_for_timestamp()
-                assert res == ('sha512', 'data_sha512')
+        mock_rename_folder = mock.MagicMock()
+        mock_get_folder_info = mock.MagicMock()
+        mock_get_folder_info.return_value = {'title': 'test_title'}
+        mock_rename_folder.return_value = None
+        with mock.patch('addons.iqbrims.client.IQBRIMSClient.rename_folder', mock_rename_folder):
+            with mock.patch('addons.iqbrims.client.IQBRIMSClient.get_folder_info', mock_get_folder_info):
+                with mock.patch('osf.models.mixins.AddonModelMixin.get_addon') as mock_get_addon:
+                    with mock.patch('addons.nextcloud.models.NextcloudFile._hashes', mock_hash):
+                        test_obj = NextcloudFileFactory()
+                        mock_addon = MockAddon()
+                        mock_get_addon.return_value = mock_addon
+                        res = test_obj.get_hash_for_timestamp()
+                        assert res == ('sha512', 'data_sha512')
