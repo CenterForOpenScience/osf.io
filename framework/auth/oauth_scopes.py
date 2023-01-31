@@ -176,6 +176,7 @@ class CoreScopes(object):
     COLLECTED_META_WRITE = 'collected_meta_write'
 
     GUIDS_READ = 'guids.base_read'
+    GUID_METADATA_WRITE = 'guids.base_write'
 
     WIKI_BASE_READ = 'wikis.base_read'
     WIKI_BASE_WRITE = 'wikis.base_write'
@@ -224,6 +225,7 @@ class ComposedScopes(object):
 
     # Guid redirect view
     GUIDS_READ = (CoreScopes.GUIDS_READ, )
+    GUIDS_WRITE = (CoreScopes.GUID_METADATA_WRITE, )
 
     # Metaschemas collection
     METASCHEMAS_READ = (CoreScopes.SCHEMA_READ, )
@@ -327,6 +329,7 @@ class ComposedScopes(object):
     FULL_WRITE = FULL_READ\
                  + NODE_ALL_WRITE\
                  + USERS_WRITE\
+                 + GUIDS_WRITE\
                  + ORGANIZER_WRITE\
                  + DRAFT_WRITE\
                  + REVIEWS_WRITE\

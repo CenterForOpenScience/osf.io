@@ -453,10 +453,12 @@ class TestRelationshipField:
             related_view_kwargs={'node_id': '<_id>', 'node_link_id': '<_id>'},
         )
 
-        # If related_view_kwargs is a callable, this field _must_ match the property name on
-        # the target record
         registered_from = RelationshipField(
-            related_view=lambda n: 'registrations:registration-detail' if n and n.is_registration else 'nodes:node-detail',
+            related_view=lambda n: (
+                'registrations:registration-detail'
+                if n.registered_from and n.registered_from.is_registration
+                else 'nodes:node-detail'
+            ),
             related_view_kwargs=lambda n: {'node_id': '<registered_from._id>'})
 
         field_with_filters = base_serializers.RelationshipField(

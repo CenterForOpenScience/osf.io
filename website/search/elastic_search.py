@@ -23,6 +23,7 @@ from framework.database import paginated
 from osf.models import AbstractNode
 from osf.models import OSFUser
 from osf.models import BaseFileNode
+from osf.models import GuidMetadataRecord
 from osf.models import Institution
 from osf.models import OSFGroup
 from osf.models import QuickFilesNode
@@ -399,6 +400,7 @@ def serialize_node(node, category):
         normalized_title = node.title
     normalized_title = unicodedata.normalize('NFKD', normalized_title)
     elastic_document = {
+        **serialize_guid_metadata(node._id),
         'id': node._id,
         'contributors': [
             {
@@ -778,6 +780,7 @@ def update_file(file_, index=None, delete=False):
     # File URL's not provided for preprint files, because the File Detail Page will
     # just reroute to preprints detail
     file_doc = {
+        **serialize_guid_metadata(file_guid),
         'id': file_._id,
         'deep_url': None if isinstance(target, Preprint) else file_deep_url,
         'guid_url': None if isinstance(target, Preprint) else guid_url,
@@ -869,8 +872,7 @@ def create_index(index=None):
     """
     index = index or INDEX
     document_types = ['project', 'component', 'registration', 'user', 'file', 'institution', 'preprint', 'collectionSubmission']
-    project_like_types = ['project', 'component', 'registration', 'preprint']
-    analyzed_fields = ['title', 'description']
+    guid_metadata_types = ['project', 'component', 'registration', 'preprint', 'file']
 
     client().indices.create(index, ignore=[400])  # HTTP 400 if index already exists
     for type_ in document_types:
@@ -902,13 +904,22 @@ def create_index(index=None):
                             # be explicitly mapped as a string to allow date ranges, which break on the inferred type
                             'year': {'type': 'string'},
                         }
-                    }
+                    },
+
                 }
             }
-            if type_ in project_like_types:
-                analyzers = {field: ENGLISH_ANALYZER_PROPERTY
-                             for field in analyzed_fields}
-                mapping['properties'].update(analyzers)
+            if type_ in guid_metadata_types:
+                mapping['properties'].update({
+                    'title': ENGLISH_ANALYZER_PROPERTY,
+                    'description': ENGLISH_ANALYZER_PROPERTY,
+                    'language': NOT_ANALYZED_PROPERTY,
+                    'resource_type_general': NOT_ANALYZED_PROPERTY,
+                    'funder_name': {'type': 'string'},
+                    'funder_identifier': NOT_ANALYZED_PROPERTY,
+                    'award_number': NOT_ANALYZED_PROPERTY,
+                    'award_uri': NOT_ANALYZED_PROPERTY,
+                    'award_title': {'type': 'string'},
+                })
 
             if type_ == 'user':
                 fields = {
@@ -1032,3 +1043,30 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
         'pages': pages,
         'page': page,
     }
+
+
+def serialize_guid_metadata(guid):
+    serialized_guid_metadata = {}
+    if guid:
+        guid_metadata_record = GuidMetadataRecord.objects.for_guid(guid)
+        if guid_metadata_record.id:
+            serialized_guid_metadata = {
+                'title': guid_metadata_record.title or None,
+                'description': guid_metadata_record.description or None,
+                'language': guid_metadata_record.language or None,
+                'resource_type_general': guid_metadata_record.resource_type_general or None,
+                'funder_name': _funding_values(guid_metadata_record, 'funder_name'),
+                'funder_identifier': _funding_values(guid_metadata_record, 'funder_identifier'),
+                'award_number': _funding_values(guid_metadata_record, 'award_number'),
+                'award_uri': _funding_values(guid_metadata_record, 'award_uri'),
+                'award_title': _funding_values(guid_metadata_record, 'award_title'),
+            }
+    return serialized_guid_metadata
+
+
+def _funding_values(guid_metadata_record, funding_field):
+    return [
+        funding_info[funding_field]
+        for funding_info in guid_metadata_record.funding_info
+        if funding_info[funding_field]
+    ]

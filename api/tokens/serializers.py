@@ -9,12 +9,6 @@ from api.base.serializers import JSONAPISerializer, LinksField, IDField, TypeFie
 from api.scopes.serializers import SCOPES_RELATIONSHIP_VERSION
 
 
-class TokenScopesRelationshipField(RelationshipField):
-
-    def to_internal_value(self, data):
-        return {'scopes': data}
-
-
 class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
     """Serialize data about a registered personal access token"""
 
@@ -25,7 +19,7 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
 
         # Dynamically adding scopes field here, depending on the version
         if expect_scopes_as_relationships(request):
-            field = TokenScopesRelationshipField(
+            field = RelationshipField(
                 related_view='tokens:token-scopes-list',
                 related_view_kwargs={'_id': '<_id>'},
                 always_embed=True,

@@ -213,7 +213,7 @@ class TestAffiliatedNodeList(AdminTestCase):
             content_type_id=ContentType.objects.get_for_model(AbstractNode).id
         ).first()
         self.user.user_permissions.add(self.view_node)
-        self.user.affiliated_institutions.add(self.institution)
+        self.user.add_or_update_affiliated_institution(self.institution)
         self.user.save()
 
         self.node1 = ProjectFactory(creator=self.user)

@@ -41,11 +41,16 @@ class NodeStateError(NodeError):
     """
     pass
 
+
 class UserStateError(OSFError):
     """Raised when the user's state is not suitable for the requested action
 
     Example: user.gdpr_delete() is called, but the user has resources that cannot be deleted.
     """
+    pass
+
+
+class InstitutionAffiliationStateError(OSFError):
     pass
 
 
@@ -269,4 +274,12 @@ class CannotFinalizeArtifactError(OSFError):
         self.message = (
             f'Could not set `finalized=True` for OutcomeArtifact with id [{artifact._id}]. '
             f'The following required fields are not set: {incomplete_fields}'
+        )
+
+
+class InvalidMetadataFormat(OSFError):
+    def __init__(self, given_format_key, valid_formats):
+        self.message = (
+            f'Invalid format_key (got "{given_format_key}"; '
+            f'expected one of {valid_formats})'
         )
