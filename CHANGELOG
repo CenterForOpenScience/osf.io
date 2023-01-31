@@ -2,6 +2,11 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+23.02.0 (2023-1-30)
+===================
+- Guid Metadata
+- Tickets: [ENG-4170][ENG-4171][ENG-4172][ENG-4173][ENG-4174][ENG-4175]
+
 23.01.0 (2023-1-25)
 ===================
 - [Institution Rework] [ENG-4229] Add unit tests to cover reworked SSO flow with identity and affiliation (#10313)
