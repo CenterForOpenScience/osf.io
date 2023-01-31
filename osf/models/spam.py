@@ -216,11 +216,14 @@ class SpamMixin(models.Model):
             )
         )
         if settings.SPAM_SERVICES_ENABLED:
+            for key, value in request_kwargs.items():
+                request_kwargs[key] = ensure_str(value)
+
             check_resource_with_spam_services.apply_async(
                 kwargs=dict(
                     guid=self.guids.first()._id,
                     content=content,
-                    author=ensure_str(author),
+                    author=author,
                     author_email=author_email,
                     request_kwargs=request_kwargs,
                 )
