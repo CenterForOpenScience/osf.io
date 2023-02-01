@@ -182,21 +182,48 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
         return self.get_allowed_storage_location().filter(pk=storage_id).exists()
 
     def get_institutional_storage(self):
+        """The all institutional storages which this institution can be used.
+
+        If None, set default storage base on the default regions of the osfstorage.
+
+        :return: list of regions
+        """
         from addons.osfstorage.models import Region
+        if not Region.objects.filter(_id=self._id).exists():
+            # set up NII storage
+            from admin.rdm_custom_storage_location import utils
+            utils.set_default_storage(self._id)
         return Region.objects.filter(_id=self._id).order_by('pk')
 
     def get_allowed_institutional_storage(self):
-        from addons.osfstorage.models import Region
-        return Region.objects.filter(_id=self._id)
+        """The allowed institutional storages.
+
+        The alternate name of get_institutional_storage method.
+
+        :return: list of regions
+        """
+        return self.get_institutional_storage()
 
     def get_default_region(self):
-        from addons.osfstorage.models import Region
-        return Region.objects.filter(_id=self._id).first()
+        """The default region is the first one of the allowed institutional storages.
+
+        :return: region the default
+        """
+        return self.get_allowed_institutional_storage().first()
 
     def get_default_institutional_storage(self):
+        """The alternate name of get_default_region method.
+
+        :return: region the default
+        """
         return self.get_default_region()
 
     def is_allowed_institutional_storage_id(self, storage_id):
+        """It is whether an allowed institutional storages.
+
+        :param storage_id: input id of the storage for checking
+        :return: boolean True/False
+        """
         return self.get_allowed_institutional_storage().filter(pk=storage_id).exists()
 
 

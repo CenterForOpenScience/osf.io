@@ -170,10 +170,6 @@ class TestInstitution(AdminTestCase):
     def test_get_institutional_storage(self):
         institution = InstitutionFactory()
         res = institution.get_institutional_storage()
-        nt.assert_equals(len(list(res)), 0)
-
-        RegionFactory(_id=institution.guid)
-        res = institution.get_institutional_storage()
         nt.assert_equals(len(list(res)), 1)
 
         RegionFactory(_id=institution.guid)
@@ -182,10 +178,6 @@ class TestInstitution(AdminTestCase):
 
     def test_get_allowed_institutional_storage(self):
         institution = InstitutionFactory()
-        res = institution.get_allowed_institutional_storage()
-        nt.assert_equals(len(list(res)), 0)
-
-        RegionFactory(_id=institution.guid)
         res = institution.get_allowed_institutional_storage()
         nt.assert_equals(len(list(res)), 1)
 
@@ -196,28 +188,26 @@ class TestInstitution(AdminTestCase):
     def test_get_default_region(self):
         institution = InstitutionFactory()
         res = institution.get_default_region()
-        nt.assert_equals(res, None)
+        first_source = institution.get_institutional_storage().first()
+        nt.assert_equals(res, first_source)
 
-        source = RegionFactory(_id=institution.guid)
+        last_source = RegionFactory(_id=institution.guid)
         res = institution.get_default_region()
-        nt.assert_equals(res, source)
-
-        RegionFactory(_id=institution.guid)
-        res = institution.get_default_region()
-        nt.assert_equals(res, source)
+        nt.assert_equals(res, first_source)
+        nt.assert_equals(institution.get_institutional_storage().last(), last_source)
+        nt.assert_not_equals(res, last_source)
 
     def test_get_default_institutional_storage(self):
         institution = InstitutionFactory()
         res = institution.get_default_institutional_storage()
-        nt.assert_equals(res, None)
+        first_source = institution.get_institutional_storage().first()
+        nt.assert_equals(res, first_source)
 
-        source = RegionFactory(_id=institution.guid)
+        last_source = RegionFactory(_id=institution.guid)
         res = institution.get_default_institutional_storage()
-        nt.assert_equals(res, source)
-
-        RegionFactory(_id=institution.guid)
-        res = institution.get_default_institutional_storage()
-        nt.assert_equals(res, source)
+        nt.assert_equals(res, first_source)
+        nt.assert_equals(institution.get_institutional_storage().last(), last_source)
+        nt.assert_not_equals(res, last_source)
 
     def test_is_allowed_institutional_storage_id(self):
         institution = InstitutionFactory()
