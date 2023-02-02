@@ -89,7 +89,7 @@ def _extract_domains(content):
             yield domain
 
 
-@celery_app.task()
+@celery_app.task(ignore_results=False, max_retries=5, default_retry_delay=60)
 def check_resource_with_spam_services(guid, content, author, author_email, request_kwargs):
     """
     Return statements used only for debugging and recording keeping
