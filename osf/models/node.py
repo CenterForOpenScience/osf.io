@@ -2429,16 +2429,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     comment='Request to review this submission was canceled due to privacy changes.',
                 )
             elif force and submission.state == CollectionSubmissionStates.ACCEPTED:
-                _, user_id = get_request_and_user_id()
                 submission.remove(
-                    user=OSFUser.load(user_id),
                     comment='Removed from collection via system command.',  # typically spam
                     force=True
                 )
             elif force and submission.state == CollectionSubmissionStates.PENDING:
-                _, user_id = get_request_and_user_id()
                 submission.cancel(
-                    user=OSFUser.load(user_id),
                     comment='Rejected from collection via system command.',  # typically spam
                     force=True
                 )
