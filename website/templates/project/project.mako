@@ -320,7 +320,7 @@
     <div class="row">
         <div class="collections-container col-12">
             <div class="collections-box" style="font-size: 15px;">
-                <div class="clearfix" id="collections-header" data-toggle="collapse" href="#collectionList" role="button" style="margin: 10px;">
+                <div class="clearfix" id="collections-header" data-toggle="collapse" href="#collectionList" style="margin: 10px;">
                     <div class="pull-left" style="margin-top: 5px">
                         <img src="${ node['collections'][0]['logo']}" style="display: inline; height: 25px; width: 25px; margin-left: 5px;"/>
                         % if 'accepted' in [x['state'] for x in node['collections']]:
@@ -349,15 +349,15 @@
                         <button id='collections-caret-down' class="btn btn-link" aria-label="Toggle Collections" ><i class="fa fa-angle-down"></i></button>
                     </div>
                 </div>
-                <div id="collectionList" class="collapse">
+                <div id="collectionList" class="collapse" aria-expanded="true">
                      <div class="panel-body" style="text-align: left;">
                         % for collection in node['collections']:
 
                             % if collection['state'] == 'accepted':
                                 % if user['is_admin']:
-                                    <a class="fa fa-pencil pull-right collection-pencil" href="${collection['url']}${node['id']}/edit"></a>
+                                    <a class="fa fa-pencil pull-right collection-pencil" href="${collection['url']}${node['id']}/edit" aria-label="Edit Collection Button"></a>
                                 % endif
-                                <img src="${collection['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
+                                <img src="${collection['logo']}" style="display: inline; height: 25px; margin-top: -2px;" alt="collection logo" />
                                 <div style="display: inline;">
                                     Included in <a href="${collection['url']}" >${collection['collection_title']}</a>
                                 </div>
@@ -376,7 +376,10 @@
                                 % endif
                                 <hr>
                             % elif collection['state'] == 'pending' and user['is_contributor_or_group_member']:
-                                <img src="${collection['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
+                                % if user['is_admin']:
+                                    <a class="fa fa-close collections-cancel-icon pull-right" collection_id=${collection['collection_id']} node_id=${collection['node_id']} aria-label="Cancel Submission Request Button"></a>
+                                % endif
+                                <img src="${collection['logo']}" style="display: inline; height: 25px; margin-top: -2px;" alt="collection logo" />
                                 <div style="display: inline;">
                                     Pending entry into <a href="${collection['url']}" >${collection['collection_title']}</a>
                                 </div>
@@ -396,7 +399,7 @@
                                 <hr>
                             % elif collection['state'] == 'rejected' and user['is_contributor_or_group_member']:
                                 % if user['is_admin']:
-                                    <a class="fa fa-repeat collections-retry-icon pull-right" collection_id=${collection['collection_id']} node_id=${collection['node_id']} ></a>
+                                    <a class="fa fa-repeat collections-retry-icon pull-right" collection_id=${collection['collection_id']} node_id=${collection['node_id']} aria-label="Retry Submission Button"></a>
                                 % endif
                                 <img src="${collection['logo']}" style="display: inline; height: 25px; margin-top: -2px;"/>
                                 <div style="display: inline;">
