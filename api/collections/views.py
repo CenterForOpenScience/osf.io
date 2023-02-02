@@ -1,6 +1,6 @@
 from guardian.core import ObjectPermissionChecker
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q
+from django.db.models import OuterRef, Subquery, CharField, Q, F
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, PermissionDenied
 
@@ -339,7 +339,14 @@ class CollectionSubmissionList(JSONAPIBaseView, generics.ListCreateAPIView, Coll
             return CollectionSubmissionSerializer
 
     def get_default_queryset(self):
-        return self.get_collection().collectionsubmission_set.all()
+        return self.get_collection().collectionsubmission_set.all().annotate(
+            date_modified=F('modified'),
+            date_created=F('created'),
+            title=Subquery(
+                AbstractNode.objects.filter(guids___id=OuterRef('guid___id')).values_list('title', flat=True),
+                output_field=CharField(),
+            ),
+        )
 
     def get_queryset(self):
         return self.get_queryset_from_request()
@@ -756,7 +763,7 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
     view_name = 'node-pointers'
     model_class = CollectionSubmission
 
-    ordering = ('-modified',)
+    ordering = ('_order', '-modified',)
 
     def get_queryset(self):
         return self.get_collection().collectionsubmission_set.filter(

@@ -551,7 +551,7 @@ class NodeImplicitContributorsList(JSONAPIBaseView, generics.ListAPIView, ListFi
     serializer_class = UserSerializer
     view_category = 'nodes'
     view_name = 'node-implicit-contributors'
-    ordering = ('_order',)  # default ordering
+    ordering = ('contributor___order',)  # default ordering
 
     def get_default_queryset(self):
         node = self.get_node()

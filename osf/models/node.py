@@ -2417,17 +2417,16 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
             user = getattr(auth, 'user', None)
 
-            if submission.state == CollectionSubmissionStates.ACCEPTED:
+            if submission.state == CollectionSubmissionStates.ACCEPTED and not force:
                 submission.remove(
                     user=user,
                     comment='Removed from collection due to implicit removal due to privacy changes.',
                     removed_due_to_privacy=True
                 )
-            elif submission.state == CollectionSubmissionStates.PENDING and user:
-                submission.reject(
+            elif submission.state == CollectionSubmissionStates.PENDING and user and not force:
+                submission.cancel(
                     user=user,
-                    comment='Rejected from collection due to implicit removal due to privacy changes.',
-                    force=True
+                    comment='Request to review this submission was canceled due to privacy changes.',
                 )
             elif force and submission.state == CollectionSubmissionStates.ACCEPTED:
                 request, user_id = get_request_and_user_id()
@@ -2438,7 +2437,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 )
             elif force and submission.state == CollectionSubmissionStates.PENDING:
                 request, user_id = get_request_and_user_id()
-                submission.reject(
+                submission.cancel(
                     user=request.user,
                     comment='Rejected from collection via system command.',  # typically spam
                     force=True

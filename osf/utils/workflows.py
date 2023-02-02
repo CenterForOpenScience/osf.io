@@ -186,6 +186,7 @@ class CollectionSubmissionsTriggers(ModerationEnum):
     REJECT = 2
     REMOVE = 3
     RESUBMIT = 4
+    CANCEL = 5
 
 
 @unique
@@ -501,6 +502,15 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
         'after': ['_make_public', '_notify_contributors_pending', '_notify_moderators_pending'],
         'conditions': ['is_hybrid_moderated'],
         'unless': ['is_submitted_by_moderator_contributor']
+    },
+    {
+        'trigger': 'cancel',
+        'source': [CollectionSubmissionStates.PENDING],
+        'dest': CollectionSubmissionStates.IN_PROGRESS,
+        'before': ['_validate_cancel'],
+        'after': ['_notify_cancel'],
+        'conditions': [],
+        'unless': []
     },
 ]
 

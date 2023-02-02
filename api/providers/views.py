@@ -249,14 +249,14 @@ class GenericProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
     pagination_class = IncreasedPageSizePagination
     view_name = 'taxonomy-list'
 
-    ordering = ('-id',)
+    ordering = ('is_other', 'text')
 
     def get_queryset(self):
         parent = self.request.query_params.get('filter[parents]', None) or self.request.query_params.get('filter[parent]', None)
         provider = get_object_or_error(self.provider_class, self.kwargs['provider_id'], self.request, display_name=self.provider_class.__name__)
         if parent:
             if parent == 'null':
-                return provider.top_level_subjects
+                return optimize_subject_query(provider.top_level_subjects)
             return optimize_subject_query(provider.all_subjects.filter(parent___id=parent))
         return optimize_subject_query(provider.all_subjects)
 
@@ -298,7 +298,7 @@ class BaseProviderSubjects(SubjectList):
         provider = get_object_or_error(self.provider_class, self.kwargs['provider_id'], self.request, display_name=self.provider_class.__name__)
         if parent:
             if parent == 'null':
-                return provider.top_level_subjects
+                return optimize_subject_query(provider.top_level_subjects)
             return optimize_subject_query(provider.all_subjects.filter(parent___id=parent))
         return optimize_subject_query(provider.all_subjects)
 
@@ -319,6 +319,7 @@ class PreprintProviderSubjects(BaseProviderSubjects):
     view_category = 'preprint-providers'
     provider_class = PreprintProvider  # Not actually the model being serialized, privatize to avoid issues
 
+    ordering = ('is_other', 'text',)
 
 class GenericProviderHighlightedTaxonomyList(JSONAPIBaseView, generics.ListAPIView):
     permission_classes = (
@@ -332,6 +333,8 @@ class GenericProviderHighlightedTaxonomyList(JSONAPIBaseView, generics.ListAPIVi
     required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = TaxonomySerializer
+
+    ordering = ('is_other', 'text',)
 
     def get_queryset(self):
         provider = get_object_or_error(self.provider_class, self.kwargs['provider_id'], self.request, display_name=self.provider_class.__name__)
