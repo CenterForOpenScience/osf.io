@@ -9,7 +9,7 @@ from api.base.parsers import JSONAPIRelationshipParser, JSONAPIRelationshipParse
 from api.base import permissions as base_permissions
 from api.subjects.serializers import SubjectSerializer, SubjectsRelationshipSerializer
 from api.taxonomies.utils import optimize_subject_query
-from osf.models import Subject
+from osf.models import Subject, PreprintProvider
 from framework.auth.oauth_scopes import CoreScopes
 
 
@@ -108,7 +108,11 @@ class SubjectList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     ordering = ('is_other', '-id',)
 
     def get_default_queryset(self):
-        return optimize_subject_query(Subject.objects.all())
+        return optimize_subject_query(
+            Subject.objects.filter(
+                provider=PreprintProvider.get_default(),
+            ),
+        )
 
     def get_queryset(self):
         return self.get_queryset_from_request()
