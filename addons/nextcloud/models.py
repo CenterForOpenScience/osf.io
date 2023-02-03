@@ -29,20 +29,31 @@ class NextcloudFolder(NextcloudFileNode, Folder):
 class NextcloudFile(NextcloudFileNode, File):
     @property
     def _hashes(self):
+        """This property for getting the latest hash value when uploading files on Nextcloud
+
+        :return: None or a dictionary contain MD5, SHA256 and SHA512 hashes value of the Nextcloud
+        """
         try:
             return self._history[-1]['extra']['hashes']['nextcloud']
         except (IndexError, KeyError):
             return None
 
-    # return (hash_type, hash_value)
     def get_hash_for_timestamp(self):
+        """This method use for getting hash type SHA512
+
+        :return: (None, None) or a tuple includes type hash and the SHA512 hash
+        """
         hashes = self._hashes
         if hashes:
             if 'sha512' in hashes:
                 return timestamp.HASH_TYPE_SHA512, hashes['sha512']
-        return None, None  # unsupported
+        return None, None
 
     def _my_node_settings(self):
+        """This method use for getting an addon config of the project
+
+        :return: None or the addon config
+        """
         node = self.target
         if node:
             addon = node.get_addon(self.provider)
@@ -51,22 +62,30 @@ class NextcloudFile(NextcloudFileNode, File):
         return None
 
     def get_timestamp(self):
+        """This method use for getting timestamp data from Nextcloud server
+
+        :return: (None, None, None) or a tuple includes a decoded timestamp, a timestamp status and a context
+        """
         node_settings = self._my_node_settings()
-        path = self.path
         if node_settings:
             return utils.get_timestamp(
                 node_settings,
-                node_settings.folder_id + path,
+                node_settings.folder_id + self.path,
                 provider_name=self.provider)
         return None, None, None
 
     def set_timestamp(self, timestamp_data, timestamp_status, context):
+        """This method use for setting timestamp data to Nextcloud server
+
+        :param timestamp_data: a string of 8-bit binary bytes this is the decoded value of the timestamp
+        :param timestamp_status: an integer value this is the status of the timestamp
+        :param context: a dictionary contains a url, username and password.
+        """
         node_settings = self._my_node_settings()
-        path = self.path
         if node_settings:
             utils.set_timestamp(
                 node_settings,
-                node_settings.folder_id + path,
+                node_settings.folder_id + self.path,
                 timestamp_data, timestamp_status, context=context,
                 provider_name=self.provider)
 

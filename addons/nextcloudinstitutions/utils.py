@@ -111,6 +111,7 @@ def get_timestamp(node_settings, path, provider_name=SHORT_NAME):
     if provider_name == 'nextcloud':
         external_account = node_settings.external_account
     else:
+        # This case for nextcloudinstitutions
         provider = node_settings.provider
         external_account = provider.account
     url, username = external_account.provider_id.rsplit(':', 1)
@@ -148,6 +149,7 @@ def set_timestamp(node_settings, path, timestamp_data, timestamp_status, context
         if provider_name == 'nextcloud':
             external_account = node_settings.external_account
         else:
+            # This case for nextcloudinstitutions
             provider = node_settings.provider
             external_account = provider.account
         url, username = external_account.provider_id.rsplit(':', 1)
