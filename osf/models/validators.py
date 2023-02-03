@@ -398,7 +398,11 @@ class RegistrationResponsesValidator:
                 'description': question_text,
             }
         elif question.block_type in ('short-text-input', 'long-text-input', 'contributors-input',
-                                     'e-rad-award-number-input', 'e-rad-award-title-ja-input',
+                                     'japan-grant-number-input',
+                                     'jgn-program-name-ja-input',
+                                     'jgn-program-name-en-input',
+                                     'e-rad-award-number-input',
+                                     'e-rad-award-title-ja-input',
                                      'e-rad-award-title-en-input',
                                      'e-rad-researcher-number-input',
                                      'e-rad-researcher-name-ja-input',

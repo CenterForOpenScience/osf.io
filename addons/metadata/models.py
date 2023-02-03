@@ -87,6 +87,11 @@ class ERadRecord(BaseModel):
     bunya_cd = models.TextField(blank=True, null=True)
     bunya_mei = models.TextField(blank=True, null=True)
 
+    japan_grant_number = models.TextField(blank=True, null=True)
+    program_name_ja = models.TextField(blank=True, null=True)
+    program_name_en = models.TextField(blank=True, null=True)
+    funding_stream_code = models.TextField(blank=True, null=True)
+
     class Meta:
         indexes = [
             models.Index(fields=['kenkyusha_no', 'kadai_id', 'nendo'])
