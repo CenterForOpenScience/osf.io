@@ -218,12 +218,25 @@ function reformatResponse(newQuery, res) {
         // output should be a single value in a key called "result"
         // input may be an object or a one-element array; unwrap array
         //   targetProperty is the name of the property in the unwrapped response
-        var thisData = Array.isArray(res.data) ? res.data[0] : res.data;
-        if (!thisData.attributes) {
-            keenFormatResp['result'] = undefined;
+        var thisData;
+        if (Array.isArray(res.data)) {
+            if (res.data.length > 1) {
+                console.debug('In "singleval" respReformatter, expected 1 data point, but ' +
+                              'received ' + res.data.length + '.', res.data);
+            }
+            if (res.data.length >= 1) {
+                thisData = res.data[0];
+            }
         }
         else {
+            thisData = res.data;
+        }
+
+        if (thisData && thisData.attributes) {
             keenFormatResp['result'] = _diveIntoProperties(newQuery.targetProperty, thisData.attributes);
+        }
+        else {
+            keenFormatResp['result'] = 'No data';
         }
     }
     else if (newQuery.respReformatter === "table") {
@@ -248,6 +261,24 @@ function reformatResponse(newQuery, res) {
                 attributes: attrs,
             };
             keenFormatResp['result'].push(remade);
+        });
+    }
+    else if (newQuery.respReformatter === "return-sublist") {
+        keenFormatResp['result'] = [];
+        res.data.attributes[newQuery.listKey].forEach(thisData => {
+            var interval = 1;
+            var remade = {
+                timeframe: getInterval(thisData.date, interval),
+                value: thisData[newQuery.targetProperty],
+            };
+            keenFormatResp['result'].push(remade);
+        });
+    }
+    else if (newQuery.respReformatter === "sum-over") {
+        keenFormatResp['result'] = 0;
+        res.data.forEach(thisData => {
+            var attrs = thisData['attributes'];
+            keenFormatResp['result'] += _diveIntoProperties(newQuery.targetProperty, attrs);
         });
     }
     else if (newQuery.respReformatter === "extract-list") {
@@ -362,15 +393,14 @@ var getVariableDayTimeframe = function(endDaysBack, totalDays) {
 var getInterval = function(endDate, priorDays) {
     var start = null;
     var end = null;
+
     var date = new Date(endDate);
-
-    date.setUTCDate(date.getDate());
-    date.setUTCHours(0, 0, 0, 0, 0);
-
     end = date.toISOString();
 
-    date.setDate(date.getDate() - priorDays);
+    date = new Date(date.getTime() - (priorDays * 24 * 60 * 60 * 1000));
+    date.setUTCHours(0, 0, 0, 0, 0);
     start = date.toISOString();
+
     return {
         "start": start.replace('T00:00:00.000Z', ''),
         "end": end.replace('T00:00:00.000Z', ''),
@@ -624,6 +654,10 @@ var renderMetric = function(element, type, query, height, colors) {
 
     _resolveQueries([query]).then(res => {
         var newRes = reformatResponse(query.params, res);
+        if (newRes['result'] === 'No data') {
+            chart.message('No data');
+            return;
+        }
         var metricChart = chart.data(newRes);
         metricChart.dataset.sortRows("desc", function(row) {
             return row[1];
@@ -992,7 +1026,7 @@ var InstitutionMetrics = function() {
         targetProperty: "users.total",
         timeframe: "previous_1_day",
         timezone: "UTC",
-        respReformatter: "singleval",
+        respReformatter: "sum-over",  // FIXME: this should be a sum of all
     });
     renderMetric("#total-institutional-users", "metric", institutional_user_count, defaultHeight);
 
@@ -1008,7 +1042,7 @@ var InstitutionMetrics = function() {
         respReformatter: "table",
     });
     renderMetricsForInsts(yesterdaysInstUserCount, [
-        ["#affiliated-public-nodes",                  "users.total",                     ],
+        ["#affiliated-public-nodes",                  "nodes.public",                    ],
         ["#affiliated-private-nodes",                 "nodes.private",                   ],
         ["#affiliated-public-registered-nodes",       "registered_nodes.public",         ],
         ["#affiliated-embargoed-registered-nodes",    "registered_nodes.embargoed_v2",   ],
@@ -1029,13 +1063,23 @@ var ActiveUserMetrics = function() {
     // Recent Daily Unique Sessions
     var recentDailyUniqueSessions = new MetricParams({
         eventCollection: "user_visits",
-        targetProperty: "unique_visits.0.count",
+        targetProperty: "count",
         interval: "daily",
         timeframe: "previous_14_days",
         timezone: "UTC",
         endpoint: "query",
-        respReformatter: "singleval",
+        respReformatter: "return-sublist",  // FIXME: this is the wrong reformatter
+        listKey: "unique_visits",
     });
+
+    // The response format is:
+    // {"data": {"id": "unique-user-visits:{'gte': 'now/d-31d'}", "type": "unique-user-visits-analytics",
+    //   "attributes": {"unique_visits": [
+    //     {"date": "2023-01-09", "count": 2}, {"date": "2023-01-10", "count": 4},
+    //     {"date": "2023-01-11", "count": 2}, {"date": "2023-01-12", "count": 3},
+    //     {"date": "2023-01-13", "count": 5}, {"date": "2023-01-14", "count": 4},
+    //     {"date": "2023-01-15", "count": 6}, {"date": "2023-01-16", "count": 5}, {"date": "2023-01-17", "count": 6}, {"date": "2023-01-18", "count": 4}, {"date": "2023-01-19", "count": 6}, {"date": "2023-01-20", "count": 5}, {"date": "2023-01-21", "count": 3}, {"date": "2023-01-22", "count": 5}, {"date": "2023-01-23", "count": 0}, {"date": "2023-01-24", "count": 0}, {"date": "2023-01-25", "count": 0}, {"date": "2023-01-26", "count": 0}, {"date": "2023-01-27", "count": 11}, {"date": "2023-01-28", "count": 0}, {"date": "2023-01-29", "count": 0}, {"date": "2023-01-30", "count": 0}, {"date": "2023-01-31", "count": 1}]}}}
+
     renderMetric("#recent-daily-unique-sessions", "line", recentDailyUniqueSessions, defaultHeight);
 
     // Daily Active Users
