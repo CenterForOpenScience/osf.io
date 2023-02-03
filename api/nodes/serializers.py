@@ -537,6 +537,12 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view_kwargs={'node_id': '<_id>'},
     )
 
+    subjects_acceptable = HideIfRegistration(RelationshipField(
+        related_view='subjects:subject-list',
+        related_view_kwargs={},
+        read_only=True,
+    ))
+
     @property
     def subjects_related_view(self):
         # Overrides TaxonomizableSerializerMixin
