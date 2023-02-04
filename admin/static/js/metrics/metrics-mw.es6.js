@@ -213,6 +213,9 @@ function reformatResponse(newQuery, res) {
         });
 
         keenFormatResp['result'] = Object.values(intervals);
+        keenFormatResp['result'].forEach(record => {
+            record.value.sort((a, b) => a.groupKeySrc.localeCompare(b.groupKeySrc));
+        });
     }
     else if (newQuery.respReformatter === "singleval") {
         // output should be a single value in a key called "result"
