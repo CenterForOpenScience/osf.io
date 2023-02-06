@@ -75,7 +75,8 @@ class NotificationSubscription(BaseModel):
                 self.owner.parent_node.save()
 
         if save:
-            self.save()
+            # Do not clean legacy objects
+            self.save(clean=False)
 
     def remove_user_from_subscription(self, user, save=True):
         for notification_type in NOTIFICATION_TYPES:

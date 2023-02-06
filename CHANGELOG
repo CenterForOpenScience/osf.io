@@ -2,6 +2,12 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+23.03.0 (2023-2-06)
+===================
+- Bug/A11y fixes for Collections moderation
+- Allow Project admins  to cancel pending Collection submissions
+- Tickets: [ENG-4239][ENG-4246][ENG-4253]
+
 23.02.0 (2023-1-30)
 ===================
 - Guid Metadata
