@@ -8,11 +8,12 @@ from django.urls import resolve, reverse, NoReverseMatch
 from django.core.exceptions import ImproperlyConfigured
 from distutils.version import StrictVersion
 
-from rest_framework import exceptions, permissions
+from rest_framework import exceptions
 from rest_framework import serializers as ser
 from rest_framework.fields import SkipField
 from rest_framework.fields import get_attribute as get_nested_attributes
 from rest_framework.mixins import RetrieveModelMixin
+from rest_framework.reverse import reverse as drf_reverse
 
 from api.base import utils
 from api.base.exceptions import EnumFieldMemberError
@@ -552,7 +553,7 @@ class AnonymizedRegexField(AuthorizedCharField):
 
         return value
 
-class RelationshipField(ser.HyperlinkedIdentityField):
+class RelationshipField(ser.Field):
     """
     RelationshipField that permits the return of both self and related links, along with optional
     meta information. ::
@@ -582,17 +583,10 @@ class RelationshipField(ser.HyperlinkedIdentityField):
     'root._id' is enclosed in angular brackets, but 'get_region_id' is not.
     'root._id' will be looked up on the target, but 'get_region_id' will be executed on the serializer.
 
-    Field can handle a filter_key, which operates as the source field (but
-    is named differently to not interfere with HyperLinkedIdentifyField's source
-
-    The ``filter_key`` argument defines the Mongo key (or ODM field name) to filter on
-    when using the ``FilterMixin`` on a view. ::
-
-        parent = RelationshipField(
-            related_view='nodes:node-detail',
-            related_view_kwargs={'node_id': '<parent_node._id>'},
-            filter_key='parent_node'
-        )
+    Field can handle a filter_key, which is a django field lookup used by
+    `api.base.filters.FilterMixin` to filter a QuerySet for requests to a
+    list view with a `filter[field_name]=foo` query param. An alternative
+    to adding more noise to the various `postprocess_query_param` methods
 
     Field can include optional filters:
 
@@ -606,51 +600,43 @@ class RelationshipField(ser.HyperlinkedIdentityField):
     json_api_link = True  # serializes to a links object
 
     def __init__(
-        self, related_view=None, related_view_kwargs=None, self_view=None, self_view_kwargs=None,
-        self_meta=None, related_meta=None, always_embed=False, filter=None, filter_key=None, required=False, **kwargs
+        self, *,
+        related_view=None, related_view_kwargs=None, related_meta=None,
+        self_view=None, self_view_kwargs=None, self_meta=None,
+        filter=None, always_embed=False, filter_key=None,
+        # ser.Field params with altered defaults:
+        required=False, read_only=True,
+        **kwargs,
     ):
-        related_view = related_view
-        self_view = self_view
-        related_kwargs = related_view_kwargs
-        self_kwargs = self_view_kwargs
         self.views = {'related': related_view, 'self': self_view}
-        self.view_kwargs = {'related': related_kwargs, 'self': self_kwargs}
+        self.view_kwargs = {'related': related_view_kwargs, 'self': self_view_kwargs}
         self.related_meta = related_meta
         self.self_meta = self_meta
-        self.always_embed = always_embed
         self.filter = filter
+        self.always_embed = always_embed
         self.filter_key = filter_key
 
-        assert (related_view is not None or self_view is not None), 'Self or related view must be specified.'
         if related_view:
-            assert related_kwargs is not None, 'Must provide related view kwargs.'
-            if not callable(related_kwargs):
+            assert related_view_kwargs is not None, 'Must provide related view kwargs.'
+            if not callable(related_view_kwargs):
                 assert isinstance(
-                    related_kwargs,
+                    related_view_kwargs,
                     dict,
                 ), "Related view kwargs must have format {'lookup_url_kwarg: lookup_field}."
         if self_view:
-            assert self_kwargs is not None, 'Must provide self view kwargs.'
-            assert isinstance(self_kwargs, dict), "Self view kwargs must have format {'lookup_url_kwarg: lookup_field}."
+            assert self_view_kwargs is not None, 'Must provide self view kwargs.'
+            assert isinstance(self_view_kwargs, dict), "Self view kwargs must have format {'lookup_url_kwarg: lookup_field}."
+        self.view_name = related_view or self_view
+        assert self.view_name is not None, 'self_view or related_view must be specified.'
+        self.lookup_url_kwarg = (
+            related_view_kwargs
+            if related_view
+            else self_view_kwargs
+        )
+        super().__init__(required=required, read_only=read_only, **kwargs)
 
-        view_name = related_view
-        if view_name:
-            lookup_kwargs = related_kwargs
-        else:
-            view_name = self_view
-            lookup_kwargs = self_kwargs
-        if kwargs.get('lookup_url_kwarg', None):
-            lookup_kwargs = kwargs.pop('lookup_url_kwarg')
-        super(RelationshipField, self).__init__(view_name, lookup_url_kwarg=lookup_kwargs, **kwargs)
-
-        # Allow a RelationshipField to be modified if explicitly set so
-        if kwargs.get('read_only') is not None:
-            self.read_only = kwargs['read_only']
-
-        # Allow a RelationshipField to be required
-        if required:
-            assert not self.read_only, 'May not set both `read_only` and `required`'
-            self.required = required
+    def get_attribute(self, instance):
+        return instance
 
     def resolve(self, resource, field_name, request):
         """
@@ -658,14 +644,14 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         """
         lookup_url_kwarg = self.lookup_url_kwarg
         if callable(lookup_url_kwarg):
-            lookup_url_kwarg = lookup_url_kwarg(getattr(resource, field_name))
+            lookup_url_kwarg = lookup_url_kwarg(self.get_attribute(resource))
 
         kwargs = {attr_name: self.lookup_attribute(resource, attr) for (attr_name, attr) in lookup_url_kwarg.items()}
         kwargs.update({'version': request.parser_context['kwargs']['version']})
 
         view = self.view_name
-        if callable(self.view_name):
-            view = view(getattr(resource, field_name))
+        if callable(view):
+            view = self._handle_callable_view(resource, view)
         return resolve(
             reverse(
                 view,
@@ -777,9 +763,8 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         return kwargs_retrieval
 
     def _handle_callable_view(self, obj, view):
-        return view(getattr(obj, self.field_name))
+        return view(self.get_attribute(obj))
 
-    # Overrides HyperlinkedIdentityField
     def get_url(self, obj, view_name, request, format):
         urls = {}
         for view_name, view in self.views.items():
@@ -794,7 +779,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                         view = self._handle_callable_view(obj, view)
                     if request.parser_context['kwargs'].get('version', False):
                         kwargs.update({'version': request.parser_context['kwargs']['version']})
-                    url = self.reverse(view, kwargs=kwargs, request=request, format=format)
+                    url = drf_reverse(view, kwargs=kwargs, request=request, format=format)
                     if self.filter:
                         formatted_filters = self.format_filter(obj)
                         if formatted_filters:
@@ -857,7 +842,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
     def to_internal_value(self, data):
         return data
 
-    # Overrides HyperlinkedIdentityField
+    # Overrides Field
     def to_representation(self, value):
         request = self.context.get('request', None)
         format = self.context.get('format', None)
@@ -871,7 +856,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         # By default use whatever format is given for the current context
         # unless the target is a different type to the source.
         #
-        # Eg. Consider a HyperlinkedIdentityField pointing from a json
+        # Eg. Consider a RelationshipField pointing from a json
         # representation to an html property of that representation...
         #
         # '/snippets/1/' should link to '/snippets/1/highlight/'
@@ -942,6 +927,12 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                     elif related_type == 'collections' and related_class.view_name == 'collection-submission-detail':
                         related_id = f'{resolved_url.kwargs["collection_submission_id"]}-{resolved_url.kwargs["collection_id"]}'
                         related_type = 'collection-submission'
+                    elif related_type == 'custom-item-metadata':
+                        related_id = resolved_url.kwargs['guid_id']
+                        related_type = 'custom-item-metadata-records'
+                    elif related_type == 'custom-file-metadata':
+                        related_id = resolved_url.kwargs['guid_id']
+                        related_type = 'custom-file-metadata-records'
                     else:
                         related_id = resolved_url.kwargs[related_type[:-1] + '_id']
                 except KeyError:
@@ -1259,9 +1250,6 @@ class RelatedLambdaRelationshipField(RelationshipField):
         self.view_lambda_argument = view_lambda_argument
         super().__init__(**kws)
 
-    def get_attribute(self, instance):
-        return instance
-
     def _handle_callable_view(self, obj, view):
         return view(getattr(obj, self.view_lambda_argument))
 
@@ -1371,29 +1359,19 @@ class JSONAPIListSerializer(ser.ListSerializer):
         return ret
 
 
-class SparseFieldsetMixin(object):
-    def parse_sparse_fields(self, allow_unsafe=False, **kwargs):
-        request = kwargs.get('context', {}).get('request', None)
-        if request and (allow_unsafe or request.method in permissions.SAFE_METHODS):
+class BaseAPISerializer(ser.Serializer):
+    def parse_sparse_fields(self):
+        request = self.context.get('request')
+        if request:
             sparse_fieldset_query_param = 'fields[{}]'.format(get_meta_type(self, request))
             if sparse_fieldset_query_param in request.query_params:
                 fieldset = request.query_params[sparse_fieldset_query_param].split(',')
-                for field_name in self.fields.fields.copy().keys():
+                for field_name in list(self.fields.keys()):
                     if field_name in ('id', 'links', 'type'):
                         # MUST return these fields
                         continue
                     if field_name not in fieldset:
                         self.fields.pop(field_name)
-
-class BaseAPISerializer(ser.Serializer, SparseFieldsetMixin):
-
-    def __init__(self, *args, **kwargs):
-        self.parse_sparse_fields(**kwargs)
-        super(BaseAPISerializer, self).__init__(*args, **kwargs)
-        self.model_field_names = [
-            name if field.source == '*' else field.source
-            for name, field in self.fields.items()
-        ]
 
 
 class JSONAPISerializer(BaseAPISerializer):
@@ -1448,18 +1426,6 @@ class JSONAPISerializer(BaseAPISerializer):
                 _validated_data[field] = data[field]
         return _validated_data
 
-    def get_unwrapped_field(self, field):
-        """
-        Returns the lowest nested field. If no nesting, returns the original field.
-        :param field, highest field
-
-        Assumes nested structures like the following:
-        - field, field.field, field.child_relation, field.field.child_relation, etc.
-        """
-        while hasattr(field, 'field'):
-            field = field.field
-        return getattr(field, 'child_relation', field)
-
     # overrides Serializer
     def to_representation(self, obj, envelope='data'):
         """Serialize to final representation.
@@ -1471,7 +1437,7 @@ class JSONAPISerializer(BaseAPISerializer):
         request = self.context.get('request')
         type_ = get_meta_type(self, request)
         assert type_ is not None, 'Must define Meta.type_ or Meta.get_type()'
-        self.parse_sparse_fields(allow_unsafe=True, context=self.context)
+        self.parse_sparse_fields()
 
         data = {
             'id': '',
@@ -1511,12 +1477,9 @@ class JSONAPISerializer(BaseAPISerializer):
             )
 
         for field in fields:
-            nested_field = self.get_unwrapped_field(field)
+            nested_field = utils.decompose_field(field)
             try:
-                if hasattr(field, 'child_relation'):
-                    attribute = field.child_relation.get_attribute(obj)
-                else:
-                    attribute = field.get_attribute(obj)
+                attribute = field.get_attribute(obj)
             except SkipField:
                 continue
             if attribute is None:
@@ -1530,16 +1493,10 @@ class JSONAPISerializer(BaseAPISerializer):
                     data['attributes'][field.field_name] = None
             else:
                 try:
-                    if hasattr(field, 'child_relation'):
-                        if hasattr(attribute, 'all'):
-                            representation = field.child_relation.to_representation(attribute.all())
-                        else:
-                            representation = field.child_relation.to_representation(attribute)
+                    if hasattr(attribute, 'all'):
+                        representation = field.to_representation(attribute.all())
                     else:
-                        if hasattr(attribute, 'all'):
-                            representation = field.to_representation(attribute.all())
-                        else:
-                            representation = field.to_representation(attribute)
+                        representation = field.to_representation(attribute)
                 except SkipField:
                     continue
                 if getattr(field, 'json_api_link', False) or getattr(nested_field, 'json_api_link', False):
