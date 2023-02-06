@@ -35,7 +35,7 @@
                             </div>
                         </div>
                         <div class="osf-treebeard">
-                            <div id="nodesPrivacyTreebeard">
+                            <div id="nodesPrivacyTreebeard-anchor">
                                 <div class="spinner-loading-wrapper">
                                     <div class="ball-scale ball-scale-blue">
                                         <div></div>
