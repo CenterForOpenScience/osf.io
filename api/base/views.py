@@ -505,7 +505,7 @@ class BaseContributorDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
 class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
-    ordering = ('-modified',)
+    ordering = ('-user__modified',)
 
     def get_default_queryset(self):
         node = self.get_node()

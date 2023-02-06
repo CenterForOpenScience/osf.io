@@ -322,6 +322,22 @@ class TestModeratedCollectionSubmission:
             moderated_collection_submission.resubmit(user=user, comment='Test Comment')
         assert moderated_collection_submission.state == CollectionSubmissionStates.REMOVED
 
+    @pytest.mark.parametrize('user_role', UserRoles.excluding(UserRoles.ADMIN_USER))
+    def test_cancel_fails(self, node, user_role, moderated_collection_submission):
+        user = configure_test_auth(node, user_role)
+        moderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.PENDING)
+        moderated_collection_submission.save()
+        with pytest.raises(PermissionsError):
+            moderated_collection_submission.cancel(user=user, comment='Test Comment')
+        assert moderated_collection_submission.state == CollectionSubmissionStates.PENDING
+
+    def test_cancel_succeeds(self, node, moderated_collection_submission):
+        user = configure_test_auth(node, UserRoles.ADMIN_USER)
+        moderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.PENDING)
+        moderated_collection_submission.save()
+        moderated_collection_submission.cancel(user=user, comment='Test Comment')
+        assert moderated_collection_submission.state == CollectionSubmissionStates.IN_PROGRESS
+
 
 @pytest.mark.django_db
 class TestUnmoderatedCollectionSubmission:
@@ -392,6 +408,22 @@ class TestUnmoderatedCollectionSubmission:
         with pytest.raises(PermissionsError):
             unmoderated_collection_submission.resubmit(user=user, comment='Test Comment')
         assert unmoderated_collection_submission.state == CollectionSubmissionStates.REMOVED
+
+    @pytest.mark.parametrize('user_role', UserRoles.excluding(UserRoles.ADMIN_USER))
+    def test_cancel_fails(self, node, user_role, unmoderated_collection_submission):
+        user = configure_test_auth(node, user_role)
+        unmoderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.PENDING)
+        unmoderated_collection_submission.save()
+        with pytest.raises(PermissionsError):
+            unmoderated_collection_submission.cancel(user=user, comment='Test Comment')
+        assert unmoderated_collection_submission.state == CollectionSubmissionStates.PENDING
+
+    def test_cancel_succeeds(self, node, unmoderated_collection_submission):
+        user = configure_test_auth(node, UserRoles.ADMIN_USER)
+        unmoderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.PENDING)
+        unmoderated_collection_submission.save()
+        unmoderated_collection_submission.cancel(user=user, comment='Test Comment')
+        assert unmoderated_collection_submission.state == CollectionSubmissionStates.IN_PROGRESS
 
 
 @pytest.mark.django_db
@@ -577,3 +609,19 @@ class TestHybridModeratedCollectionSubmission:
         hybrid_moderated_collection_submission.save()
         hybrid_moderated_collection_submission.resubmit(user=user, comment='Test Comment')
         assert hybrid_moderated_collection_submission.state == CollectionSubmissionStates.ACCEPTED
+
+    @pytest.mark.parametrize('user_role', UserRoles.excluding(UserRoles.ADMIN_USER))
+    def test_cancel_fails(self, node, user_role, hybrid_moderated_collection_submission):
+        user = configure_test_auth(node, user_role)
+        hybrid_moderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.PENDING)
+        hybrid_moderated_collection_submission.save()
+        with pytest.raises(PermissionsError):
+            hybrid_moderated_collection_submission.cancel(user=user, comment='Test Comment')
+        assert hybrid_moderated_collection_submission.state == CollectionSubmissionStates.PENDING
+
+    def test_cancel_succeeds(self, node, hybrid_moderated_collection_submission):
+        user = configure_test_auth(node, UserRoles.ADMIN_USER)
+        hybrid_moderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.PENDING)
+        hybrid_moderated_collection_submission.save()
+        hybrid_moderated_collection_submission.cancel(user=user, comment='Test Comment')
+        assert hybrid_moderated_collection_submission.state == CollectionSubmissionStates.IN_PROGRESS
