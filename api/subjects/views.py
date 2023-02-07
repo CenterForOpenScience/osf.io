@@ -105,7 +105,7 @@ class SubjectList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     view_category = 'subjects'
     view_name = 'subject-list'
 
-    ordering = ('-id',)
+    ordering = ('is_other', '-id',)
 
     def get_default_queryset(self):
         return optimize_subject_query(Subject.objects.all())

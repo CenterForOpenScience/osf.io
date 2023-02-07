@@ -184,6 +184,7 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
 
     filterable_fields = frozenset([
         'id',
+        'title',
         'collected_type',
         'date_created',
         'date_modified',
@@ -212,8 +213,11 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
         related_view='collection_submissions:collection-submission-action-list',
         related_view_kwargs={'collection_submission_id': '<_id>'},
     )
-    date_created = VersionedDateTimeField(source='created', read_only=True)
-    date_modified = VersionedDateTimeField(source='modified', read_only=True)
+
+    # Populated via annotations
+    title = ser.CharField(read_only=True)
+    date_created = VersionedDateTimeField(read_only=True)
+    date_modified = VersionedDateTimeField(read_only=True)
 
     @property
     def subjects_related_view(self):

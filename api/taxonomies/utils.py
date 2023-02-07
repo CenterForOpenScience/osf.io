@@ -11,4 +11,4 @@ def optimize_subject_query(subject_queryset):
             default=False,
             output_field=BooleanField(),
         ),
-    ).order_by('is_other', 'text')
+    )

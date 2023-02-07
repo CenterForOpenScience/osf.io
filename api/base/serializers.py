@@ -927,6 +927,15 @@ class RelationshipField(ser.Field):
                     elif related_type == 'collections' and related_class.view_name == 'collection-submission-detail':
                         related_id = f'{resolved_url.kwargs["collection_submission_id"]}-{resolved_url.kwargs["collection_id"]}'
                         related_type = 'collection-submission'
+                    elif related_type == 'collection-providers' and related_class.view_name == 'collection-provider-detail':
+                        related_id = resolved_url.kwargs['provider_id']
+                        related_type = 'collection-providers'
+                    elif related_type == 'registration-providers' and related_class.view_name == 'registration-provider-detail':
+                        related_id = resolved_url.kwargs['provider_id']
+                        related_type = 'registration-providers'
+                    elif related_type == 'preprint-providers' and related_class.view_name == 'preprint-provider-detail':
+                        related_id = resolved_url.kwargs['provider_id']
+                        related_type = 'preprint-providers'
                     elif related_type == 'custom-item-metadata':
                         related_id = resolved_url.kwargs['guid_id']
                         related_type = 'custom-item-metadata-records'

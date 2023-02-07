@@ -227,6 +227,10 @@ COLLECTION_SUBMISSION_REMOVED_PRIVATE = lambda collection, node: Mail(
     'collection_submission_removed_private',
     subject=f'{node.title} was removed from {collection.title}'
 )
+COLLECTION_SUBMISSION_CANCEL = lambda collection, node: Mail(
+    'collection_submission_cancel',
+    subject=f'Request to add {node.title} to {collection.title} was canceled'
+)
 
 PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='Primary email changed')
 
