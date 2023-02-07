@@ -79,7 +79,7 @@
                 </div>
                 <div data-bind="if: !canRemoveNode() && !pageChanged()">
                     <span>${_('<b %(removedContributor)s></b> cannot be\
-                        removed as a contributor.  You need at least one administrator, bibliographic contributor, and registered user.') % dict(removedContributor=_('data-bind="text:removeSelf() ? \'You\' : contributorToRemove()[\'fullname\']"')) | n}</span>
+                        removed as a contributor.  You need at least one administrator and bibliographic contributor.') % dict(removedContributor=_('data-bind="text:removeSelf() ? \'You\' : contributorToRemove()[\'fullname\']"')) | n}</span>
                 </div>
                 <div data-bind="if: pageChanged()">
                     <span>${_("Please save or discard your existing changes before removing a contributor.")}</span>

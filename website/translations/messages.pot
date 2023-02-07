@@ -3087,8 +3087,8 @@ msgstr ""
 #, python-format
 msgid ""
 "<b %(removedContributor)s></b> cannot be                        removed "
-"as a contributor.  You need at least one administrator, bibliographic "
-"contributor, and registered user."
+"as a contributor.  You need at least one administrator and bibliographic "
+"contributor."
 msgstr ""
 
 #: website/templates/project/modal_remove_contributor.mako:82
