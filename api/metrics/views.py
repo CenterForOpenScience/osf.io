@@ -240,7 +240,7 @@ VIEWABLE_REPORTS = {
     'osfstorage_file_count': reports.OsfstorageFileCountReport,
     'preprint_summary': reports.PreprintSummaryReport,
     'user_summary': reports.UserSummaryReport,
-    'spam_report': reports.SpamReport,
+    'spam_summary': reports.SpamSummaryReport,
 }
 
 
