@@ -9,6 +9,7 @@ from elasticsearch_metrics.signals import pre_save
 from django.dispatch import receiver
 import pytz
 
+from osf.metrics.utils import stable_key
 from osf.models import Guid
 
 
@@ -132,8 +133,6 @@ def _fill_document_id(counted_usage):
     )
     time_in_seconds = (counted_usage.timestamp - day_start).total_seconds()
     time_window = int(time_in_seconds / 30)
-
-    from osf.metrics.reporters.utils import stable_key
 
     counted_usage.meta.id = stable_key(
         # unique-together values:

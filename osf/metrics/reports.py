@@ -1,7 +1,11 @@
+import datetime
+
 from django.dispatch import receiver
 from elasticsearch_dsl import InnerDoc
 from elasticsearch_metrics import metrics
 from elasticsearch_metrics.signals import pre_save as metrics_pre_save
+
+from osf.metrics.utils import stable_key, YearMonth
 
 
 class ReportInvalid(Exception):
@@ -26,11 +30,36 @@ class DailyReport(metrics.Metric):
         source = metrics.MetaField(enabled=True)
 
 
+class YearmonthField(metrics.Date):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs, format='strict_year_month', required=True)
+
+    def deserialize(self, data):
+        if isinstance(data, YearMonth):
+            return data
+        elif isinstance(data, str):
+            return YearMonth.from_str(data)
+        elif isinstance(data, (datetime.datetime, datetime.date)):
+            return YearMonth.from_date(data)
+        else:
+            raise ValueError('unsure how to deserialize "{data}" (of type {type(data)}) to YearMonth')
+
+    def serialize(self, data):
+        if isinstance(data, str):
+            return data
+        elif isinstance(data, YearMonth):
+            return str(data)
+        elif isinstance(data, (datetime.datetime, datetime.date)):
+            return str(YearMonth.from_date(data))
+        else:
+            raise ValueError(f'unsure how to serialize "{data}" (of type {type(data)}) as YYYY-MM')
+
+
 class MonthlyReport(metrics.Metric):
     """MonthlyReport (abstract base for report-based metrics that run monthly)
     """
 
-    report_yearmonth = metrics.Date(format='strict_year_month', required=True)
+    report_yearmonth = YearmonthField()
 
     class Meta:
         abstract = True
@@ -45,7 +74,6 @@ def set_report_id(sender, instance, **kwargs):
     # "ON CONFLICT UPDATE" behavior -- if the document
     # already exists, it will be updated rather than duplicated.
     # Cannot detect/avoid conflicts this way, but that's ok.
-    from osf.metrics.reporters.utils import stable_key
 
     if issubclass(sender, DailyReport):
         duf_name = instance.DAILY_UNIQUE_FIELD

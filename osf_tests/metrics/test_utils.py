@@ -2,7 +2,7 @@ from datetime import date
 
 import pytest
 
-from osf.metrics.reporters.utils import stable_key
+from osf.metrics.utils import stable_key
 
 
 class TestStableKey:

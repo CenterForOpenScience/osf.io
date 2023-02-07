@@ -23,17 +23,18 @@ from api.metrics.serializers import (
     RawMetricsSerializer,
     CountedUsageSerializer,
     DailyReportSerializer,
+    MonthlyReportSerializer,
     ReportNameSerializer,
     NodeAnalyticsSerializer,
 )
-from api.metrics.utils import parse_datetimes, parse_date_range
+from api.metrics.utils import parse_datetimes, parse_date_range, parse_yearmonth_range
 from api.base.views import JSONAPIBaseView
 from api.base.waffle_decorators import require_switch
 from api.nodes.permissions import MustBePublic
 from osf.features import ENABLE_RAW_METRICS
 from osf.metrics import PreprintDownload, PreprintView, RegistriesModerationMetrics, CountedUsage
 from osf.metrics import reports
-from osf.metrics.reporters.utils import stable_key
+from osf.metrics.utils import stable_key
 from osf.models import AbstractNode
 
 
@@ -274,7 +275,6 @@ class ReportNameList(JSONAPIBaseView):
 
 class RecentReportList(JSONAPIBaseView):
     MAX_COUNT = 10000
-    DEFAULT_DAYS_BACK = 13
 
     permission_classes = (
         TokenHasScope,
@@ -305,17 +305,27 @@ class RecentReportList(JSONAPIBaseView):
                 }]},
                 status=404,
             )
-        report_date_range = parse_date_range(request.GET)
+        is_daily = issubclass(report_class, reports.DailyReport)
+        is_monthly = issubclass(report_class, reports.MonthlyReport)
+        if is_daily:
+            serializer_class = DailyReportSerializer
+            range_field_name = 'report_date'
+            range_parser = parse_date_range
+        elif is_monthly:
+            serializer_class = MonthlyReportSerializer
+            range_field_name = 'report_yearmonth'
+            range_parser = parse_yearmonth_range
+        else:
+            raise ValueError(f'report class must subclass DailyReport or MonthlyReport: {report_class}')
+        range_filter = range_parser(request.GET)
         search_recent = (
             report_class.search()
-            .filter('range', report_date=report_date_range)
-            .sort('report_date')
+            .filter('range', **{range_field_name: range_filter})
+            .sort(range_field_name)
             [:self.MAX_COUNT]
         )
-
         search_response = search_recent.execute()
-
-        serializer = self.serializer_class(
+        serializer = serializer_class(
             search_response,
             many=True,
             context={'report_name': report_name},
@@ -323,8 +333,8 @@ class RecentReportList(JSONAPIBaseView):
         accepted_format = request.accepted_renderer.format
         response_headers = {}
         if accepted_format in ('tsv', 'csv'):
-            from_date = report_date_range['gte']
-            until_date = report_date_range['lte']
+            from_date = search_response.hits[0][range_field_name]
+            until_date = search_response.hits[-1][range_field_name]
             filename = (
                 f'{report_name}__'
                 f'until_{until_date}__'

@@ -5,7 +5,7 @@ import pytz
 
 from keen.client import KeenClient
 
-from osf.metrics.reporters.utils import YearMonth
+from osf.metrics.utils import YearMonth
 from website.settings import KEEN as keen_settings
 
 
@@ -21,7 +21,7 @@ class MonthlyReporter:
     def run_and_record_for_month(self, report_yearmonth: YearMonth):
         reports = self.report(report_yearmonth)
         for report in reports:
-            report.report_yearmonth = str(report_yearmonth)
+            assert report.report_yearmonth == report_yearmonth
             report.save()
 
 
