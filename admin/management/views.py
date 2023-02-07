@@ -7,6 +7,7 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from osf.management.commands.manage_switch_flags import manage_waffle
 from osf.management.commands.update_registration_schemas import update_registration_schemas
 from osf.management.commands.daily_reporters_go import daily_reporters_go
+from osf.management.commands.monthly_reporters_go import monthly_reporters_go
 from scripts.find_spammy_content import manage_spammy_content
 from django.urls import reverse
 from django.shortcuts import redirect
@@ -111,4 +112,26 @@ class DailyReportersGo(ManagementCommandPermissionView):
                 messages.error(request, f'{reporter_name} failed: {error_msg}')
         else:
             messages.success(request, 'Daily reporters successfully went.')
+        return redirect(reverse('management:commands'))
+
+
+class MonthlyReportersGo(ManagementCommandPermissionView):
+
+    def post(self, request, *args, **kwargs):
+        monthly_report_date = request.POST.get('monthly_report_date', None)
+        if monthly_report_date:
+            report_date = isoparse(monthly_report_date).date()
+        else:
+            report_date = None
+
+        errors = monthly_reporters_go(
+            report_month=report_date.month,
+            report_year=report_date.year
+        )
+
+        if errors:
+            for reporter_name, error_msg in errors.items():
+                messages.error(request, f'{reporter_name} failed: {error_msg}')
+        else:
+            messages.success(request, 'Monthly reporters successfully went.')
         return redirect(reverse('management:commands'))
