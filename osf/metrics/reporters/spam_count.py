@@ -1,6 +1,6 @@
 from osf.models import OSFUser
 
-from osf.metrics.reports import SpamReport
+from osf.metrics.reports import SpamSummaryReport
 from ._base import MonthlyReporter
 from osf.models import PreprintLog, NodeLog
 from osf.models.spam import SpamStatus
@@ -12,7 +12,7 @@ class SpamCountReporter(MonthlyReporter):
         target_month = report_yearmonth.target_month()
         next_month = report_yearmonth.next_month()
 
-        report = SpamReport(
+        report = SpamSummaryReport(
             report_date=report_yearmonth,
             # Node Log entries
             confirmed_spam_node=NodeLog.objects.filter(
