@@ -359,31 +359,6 @@ var getOneDayTimeframe = function(daysBack, monthsBack) {
     };
 };
 
-/**
- * Configure a time frame for $endDaysBack days ago (end) and $totalDays days prior to that (start)
- *
- * @method getVariableDayTimeframe
- * @param {Integer} endDaysBack - the number of days back to set as the end day
- * @param {Integer} totalDays - the number of days before end day to reach the start day
- * @return {Object} the keen-formatted timeframe
- */
-var getVariableDayTimeframe = function(endDaysBack, totalDays) {
-    var start = null;
-    var end = null;
-    var date = new Date();
-
-    date.setUTCDate(date.getDate() - endDaysBack);
-    date.setUTCHours(0, 0, 0, 0, 0);
-
-    end = date.toISOString();
-
-    date.setDate(date.getDate() - totalDays);
-    start = date.toISOString();
-    return {
-        "start": start.replace('T00:00:00.000Z', ''),
-        "end": end.replace('T00:00:00.000Z', ''),
-    };
-};
 
 /**
  * Configure a timeframe ending on endDate (end) and starting priorDays prior (start)
@@ -449,7 +424,6 @@ var getMetricTitle = function(metric, type) {
 };
 
 var renderKeenMetric = function(element, type, query, height, colors, keenClient) {
-
     if (!keenClient) {
         keenClient = client;
     }
@@ -644,6 +618,8 @@ var renderMetricsForInsts = function(instQuery, eachMetric) {
 
 var renderMetric = function(element, type, query, height, colors) {
 
+    console.log('$$$ renderMetric: initing for "' + element + '"', query);
+
     var chart = new keenDataviz()
         .el(element)
         .height(height)
@@ -655,12 +631,15 @@ var renderMetric = function(element, type, query, height, colors) {
         chart.colors([colors]);
     }
 
+    console.log('$$$ renderMetric: resolving for "' + element + '"', query);
     _resolveQueries([query]).then(res => {
+        console.log('$$$ renderMetric:   response for "' + element + '"', query, res);
         var newRes = reformatResponse(query.params, res);
         if (newRes['result'] === 'No data') {
             chart.message('No data');
             return;
         }
+
         var metricChart = chart.data(newRes);
         metricChart.dataset.sortRows("desc", function(row) {
             return row[1];
@@ -680,15 +659,6 @@ var activeUsersQuery = new MetricParams({
     targetProperty: "active",
     timeframe: "previous_1_days",
     timezone: "UTC",
-    respReformatter: "singleval",
-});
-
-var dailyActiveUsersQuery = new MetricParams({
-    eventCollection: "unique_user_visits",
-    targetProperty: "unique_visits.0.count",
-    timeframe: "previous_1_days",
-    timezone: "UTC",
-    endpoint: "query",
     respReformatter: "singleval",
 });
 
@@ -1057,183 +1027,6 @@ var InstitutionMetrics = function() {
 };
 
 
-// <+><+><+><+><+><+><+<+>+
-//   active user metrics |
-// ><+><+><+><+><+><+><+><+
-
-var ActiveUserMetrics = function() {
-
-    // Recent Daily Unique Sessions
-    var recentDailyUniqueSessions = new MetricParams({
-        eventCollection: "user_visits",
-        targetProperty: "count",
-        interval: "daily",
-        timeframe: "previous_14_days",
-        timezone: "UTC",
-        endpoint: "query",
-        respReformatter: "return-sublist",  // FIXME: this is the wrong reformatter
-        listKey: "unique_visits",
-    });
-
-    // The response format is:
-    // {"data": {"id": "unique-user-visits:{'gte': 'now/d-31d'}", "type": "unique-user-visits-analytics",
-    //   "attributes": {"unique_visits": [
-    //     {"date": "2023-01-09", "count": 2}, {"date": "2023-01-10", "count": 4},
-    //     {"date": "2023-01-11", "count": 2}, {"date": "2023-01-12", "count": 3},
-    //     {"date": "2023-01-13", "count": 5}, {"date": "2023-01-14", "count": 4},
-    //     {"date": "2023-01-15", "count": 6}, {"date": "2023-01-16", "count": 5}, {"date": "2023-01-17", "count": 6}, {"date": "2023-01-18", "count": 4}, {"date": "2023-01-19", "count": 6}, {"date": "2023-01-20", "count": 5}, {"date": "2023-01-21", "count": 3}, {"date": "2023-01-22", "count": 5}, {"date": "2023-01-23", "count": 0}, {"date": "2023-01-24", "count": 0}, {"date": "2023-01-25", "count": 0}, {"date": "2023-01-26", "count": 0}, {"date": "2023-01-27", "count": 11}, {"date": "2023-01-28", "count": 0}, {"date": "2023-01-29", "count": 0}, {"date": "2023-01-30", "count": 0}, {"date": "2023-01-31", "count": 1}]}}}
-
-    renderMetric("#recent-daily-unique-sessions", "line", recentDailyUniqueSessions, defaultHeight);
-
-    // Daily Active Users
-    renderMetric("#daily-active-users", "metric", dailyActiveUsersQuery, defaultHeight);
-
-    // Daily Active Users / Total Users
-    renderCalculationBetweenTwoQueries(dailyActiveUsersQuery, activeUsersQuery,
-                                       "#daily-active-over-total-users", null, "percentage");
-
-    // Monthly Active Users
-    var monthlyActiveUsersQuery = new MetricParams({
-        eventCollection: "unique_user_visits",
-        targetProperty: "unique_visits.0.count",
-        timeframe: "previous_1_months",
-        timezone: "UTC",
-        endpoint: "query",
-        respReformatter: "singleval",
-    });
-    renderMetric("#monthly-active-users", "metric", monthlyActiveUsersQuery, defaultHeight, monthColor);
-
-
-    // Monthly Active Users / Total Users
-    renderCalculationBetweenTwoQueries(monthlyActiveUsersQuery, activeUsersQuery,
-                                       "#monthly-active-over-total-users", null, 'percentage', monthColor);
-
-
-    // Monthly Growth of MAU% -- Two months ago vs 1 month ago
-    var twoMonthsAgoActiveUsersQuery = new MetricParams({
-        eventCollection: "unique_user_visits",
-        targetProperty: "unique_visits.0.count",
-        timeframe: "previous_2_months",
-        timezone: "UTC",
-        endpoint: "query",
-        respReformatter: "singleval",
-    });
-    differenceGrowthBetweenMetrics(twoMonthsAgoActiveUsersQuery, monthlyActiveUsersQuery,
-                                   activeUsersQuery, "#monthly-active-user-increase", monthColor);
-
-    // Yearly Active Users
-    var yearlyActiveUsersQuery = new MetricParams({
-        eventCollection: "unique_user_visits",
-        targetProperty: "unique_visits.0.count",
-        timeframe: "previous_1_years",
-        timezone: "UTC",
-        endpoint: "query",
-        respReformatter: "singleval",
-    });
-    renderMetric("#yearly-active-users", "metric", yearlyActiveUsersQuery, defaultHeight, yearColor);
-
-    // Yearly Active Users / Total Users
-    renderCalculationBetweenTwoQueries(yearlyActiveUsersQuery, activeUsersQuery,
-                                       "#yearly-active-over-total-users", null, 'percentage', yearColor);
-
-    // Average Projects per User
-    renderCalculationBetweenTwoQueries(totalProjectsQuery, activeUsersQuery,
-                                       "#projects-per-user", null, 'division');
-
-    // Average Projects per MAU
-    renderCalculationBetweenTwoQueries(totalProjectsQuery, monthlyActiveUsersQuery,
-                                       "#projects-per-monthly-user", null, 'division');
-};
-
-
-// <+><+><+><+><+><+><+<+>+
-//   healthy user metrics |
-// ><+><+><+><+><+><+><+><+
-
-var HealthyUserMetrics = function() {
-
-    // Previous 30 Days Active Users
-    var thirtyDaysActiveUsersQuery = new MetricParams({
-        eventCollection: "unique_user_visits",
-        targetProperty: "unique_visits.0.count",
-        timeframe: "previous_30_days",
-        timezone: "UTC",
-        endpoint: "query",
-        respReformatter: "singleval",
-    });
-
-    // stickiness ratio - DAU/MAU
-    renderCalculationBetweenTwoQueries(dailyActiveUsersQuery, thirtyDaysActiveUsersQuery,
-                                       "#stickiness-ratio-1-day-ago", null, "percentage");
-
-    // 7 Days back Active Users
-    var weekBackThirtyDaysActiveUsersQuery = new MetricParams({
-        eventCollection: "unique_user_visits",
-        targetProperty: "unique_visits.0.count",
-        timeframe: getVariableDayTimeframe(7, 30),
-        endpoint: "query",
-        respReformatter: "singleval",
-    });
-
-    // 7 Days back Active Users
-    var weekBackDailyActiveUsersQuery = new MetricParams({
-        eventCollection: "unique_user_visits",
-        targetProperty: "unique_visits.0.count",
-        timeframe: getVariableDayTimeframe(7, 1),
-        endpoint: "query",
-        respReformatter: "singleval",
-    });
-
-    // stickiness ratio - DAU/MAU for 1 week ago
-    renderCalculationBetweenTwoQueries(weekBackDailyActiveUsersQuery, weekBackThirtyDaysActiveUsersQuery,
-                                       "#stickiness-ratio-1-week-ago", null, "percentage");
-
-    // 28 Days back Active Users
-    var monthBackThirtyDaysActiveUsersQuery = new MetricParams({
-        eventCollection: "unique_user_visits",
-        targetProperty: "unique_visits.0.count",
-        timeframe: getVariableDayTimeframe(28, 30),
-        endpoint: "query",
-        respReformatter: "singleval",
-    });
-
-    // 28 Days back Active Users
-    var monthBackDailyActiveUsersQuery = new MetricParams({
-        eventCollection: "unique_user_visits",
-        targetProperty: "unique_visits.0.count",
-        timeframe: getVariableDayTimeframe(28, 1),
-        endpoint: "query",
-        respReformatter: "singleval",
-    });
-
-    // stickiness ratio - DAU/MAU for 4 weeks ago
-    renderCalculationBetweenTwoQueries(monthBackDailyActiveUsersQuery, monthBackThirtyDaysActiveUsersQuery,
-                                       "#stickiness-ratio-4-weeks-ago", null, "percentage");
-
-    // 364 Days back Active Users
-    var yearBackThirtyDaysActiveUsersQuery = new MetricParams({
-        eventCollection: "unique_user_visits",
-        targetProperty: "unique_visits.0.count",
-        timeframe: getVariableDayTimeframe(364, 30),
-        endpoint: "query",
-        respReformatter: "singleval",
-    });
-
-    // 364 Days back Active Users
-    var yearBackDailyActiveUsersQuery = new MetricParams({
-        eventCollection: "unique_user_visits",
-        targetProperty: "unique_visits.0.count",
-        timeframe: getVariableDayTimeframe(364, 1),
-        endpoint: "query",
-        respReformatter: "singleval",
-    });
-
-    // stickiness ratio - DAU/MAU for 52 weeks ago
-    renderCalculationBetweenTwoQueries(yearBackDailyActiveUsersQuery, yearBackThirtyDaysActiveUsersQuery,
-                                       "#stickiness-ratio-52-weeks-ago", null, "percentage");
-};
-
-
 // <+><+><+><+><+>>+
 //   raw numbers   |
 // ><+><+><+><><+><+
@@ -1352,8 +1145,6 @@ module.exports = {
     UserGainMetrics: UserGainMetrics,
     NodeLogsPerUser: NodeLogsPerUser,
     InstitutionMetrics: InstitutionMetrics,
-    ActiveUserMetrics: ActiveUserMetrics,
-    HealthyUserMetrics:HealthyUserMetrics,
     RawNumberMetrics: RawNumberMetrics,
     AddonMetrics: AddonMetrics,
     PreprintMetrics: PreprintMetrics,

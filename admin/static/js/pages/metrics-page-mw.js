@@ -18,14 +18,6 @@ keenAnalysis.ready(function() {
         Metrics.InstitutionMetrics();
     };
 
-    $('#active-user-tab')[0].onclick = function() {
-        Metrics.ActiveUserMetrics();
-    };
-
-    $('#healthy-user-tab')[0].onclick = function() {
-        Metrics.HealthyUserMetrics();
-    };
-
     $('#raw-numbers-tab')[0].onclick = function() {
         Metrics.RawNumberMetrics();
     };
