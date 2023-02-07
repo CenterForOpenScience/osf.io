@@ -20,3 +20,8 @@ DAILY_REPORTERS = (
     PreprintCountReporter,
     UserCountReporter,
 )
+
+
+MONTHLY_REPORTERS = (
+    # TODO
+)
