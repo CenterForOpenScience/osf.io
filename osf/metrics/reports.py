@@ -170,7 +170,7 @@ class UserSummaryReport(DailyReport):
     unconfirmed = metrics.Integer()
 
 
-class SpamReport(MonthlyReport):
+class SpamSummaryReport(MonthlyReport):
     confirmed_spam_node = metrics.Integer()
     nodes_confirmed_ham = metrics.Integer()
     nodes_flagged = metrics.Integer()

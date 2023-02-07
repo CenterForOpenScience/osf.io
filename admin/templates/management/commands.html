@@ -99,6 +99,23 @@
                     </nav>
                 </form>
             </section>
+            <section>
+                <h4><u>Monthly Reporters, Go!</u></h4>
+                <p>Use this management command to run all daily metrics reports.</p>
+                <form method="post"
+                      action="{% url 'management:monthly_reporters_go'%}">
+                    {% csrf_token %}
+                    <label for="monthly_report_date">
+                        Report date:
+                    </label>
+                    <input type="date" name="monthly_report_date" id="monthly_report_date"/>
+                    (default: yesterday)
+                    <br>
+                    <nav>
+                        <input class="btn btn-success" type="submit" value="Run" />
+                    </nav>
+                </form>
+            </section>
         </div>
     </section>
 {% endblock %}
