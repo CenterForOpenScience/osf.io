@@ -236,7 +236,7 @@ PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='プライバリ�
 # Contributor added confirmation emails
 INVITE_DEFAULT = Mail(
     'invite_default',
-    subject='GakuNin RDMプロジェクトのメンバーに追加されました / You have been added as a contributor to a GakuNin RDM project.'
+    subject='You have been added as a contributor to a GakuNin RDM project.'
 )
 INVITE_PREPRINT = lambda template, provider: Mail(
     'invite_preprints_{}'.format(template),
