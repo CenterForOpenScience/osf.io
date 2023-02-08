@@ -118,7 +118,7 @@ class MonthlyReportSerializer(ser.BaseSerializer):
 
         return {
             'id': instance.meta.id,
-            'type': f'daily-report:{report_name}',
+            'type': f'monthly-report:{report_name}',
             'attributes': {
                 **report_as_dict,
                 'report_month': report_yearmonth,
