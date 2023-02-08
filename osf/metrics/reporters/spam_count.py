@@ -9,8 +9,8 @@ from osf.models.spam import SpamStatus
 class SpamCountReporter(MonthlyReporter):
 
     def report(self, report_yearmonth):
-        target_month = report_yearmonth.target_month()
-        next_month = report_yearmonth.next_month()
+        target_month = report_yearmonth.as_datetime()
+        next_month = report_yearmonth.next().as_datetime()
 
         report = SpamSummaryReport(
             report_yearmonth=str(report_yearmonth),

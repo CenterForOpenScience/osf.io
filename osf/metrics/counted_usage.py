@@ -26,7 +26,7 @@ class PageviewInfo(InnerDoc):
     page_title = metrics.Keyword()
     route_name = metrics.Keyword(
         fields={
-            'by_prefix': metrics.Text(analyzer=route_prefix_analyzer),
+            'by_prefix': metrics.Text(analyzer=route_prefix_analyzer, fielddata=True),
         },
     )
 

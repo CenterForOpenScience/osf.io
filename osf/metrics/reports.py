@@ -218,19 +218,18 @@ class SpamSummaryReport(MonthlyReport):
     user_marked_as_ham = metrics.Integer()
 
 
-class MonthlyUseReport(MonthlyReport):
-    total_session_hours = metrics.Integer()
+class MonthlySessionhoursReport(MonthlyReport):
+    total_sessionhour_count = metrics.Integer()
     average_sessions_per_hour = metrics.Float()
 
 
-class MonthlyRouteUse(MonthlyReport):
-    UNIQUE_TOGETHER = ('report_yearmonth', 'route_name')
+class MonthlyRouteUseReport(MonthlyReport):
+    UNIQUE_TOGETHER = ('report_yearmonth', 'route_name',)
     route_name = metrics.Keyword(
         fields={
-            'by_prefix': metrics.Text(analyzer=route_prefix_analyzer),
+            # "route_name.by_prefix" subfield for aggregating subroutes
+            'by_prefix': metrics.Text(analyzer=route_prefix_analyzer, fielddata=True),
         },
     )
     use_count = metrics.Integer()
     sessionhour_count = metrics.Integer()
-    use_count__with_subroutes = metrics.Integer()
-    sessionhour_count__with_subroutes = metrics.Integer()
