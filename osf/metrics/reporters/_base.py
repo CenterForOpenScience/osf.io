@@ -21,7 +21,7 @@ class MonthlyReporter:
     def run_and_record_for_month(self, report_yearmonth: YearMonth):
         reports = self.report(report_yearmonth)
         for report in reports:
-            report.report_yearmonth = str(report_yearmonth.target_month())
+            report.report_yearmonth = str(report_yearmonth)
             report.save()
 
 
