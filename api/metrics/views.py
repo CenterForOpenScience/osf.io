@@ -409,6 +409,7 @@ class CountedAuthUsageView(JSONAPIBaseView):
             session_id_parts = [
                 client_session_id,
                 current_date_str,
+                now.hour,
             ]
         elif user_is_authenticated:
             session_id_parts = [

@@ -4,6 +4,7 @@ import typing
 from hashlib import sha256
 
 import pytz
+from elasticsearch_dsl import analyzer, tokenizer
 
 
 def stable_key(*key_parts):
@@ -52,3 +53,9 @@ class YearMonth(typing.NamedTuple):
         if self.month == 12:
             return datetime.datetime(self.year + 1, 1, 1, tzinfo=pytz.utc)
         return datetime.datetime(self.year, self.month + 1, 1, tzinfo=pytz.utc)
+
+
+# for fields that represent dot-delimited paths to allow querying/aggregating by prefix
+# (e.g. 'root.to.leaf' yields terms ['root', 'root.to', 'root.to.leaf'])
+route_prefix_tokenizer = tokenizer('route_prefix_tokenizer', 'path_hierarchy', delimiter='.')
+route_prefix_analyzer = analyzer('route_prefix_analyzer', tokenizer=route_prefix_tokenizer)
