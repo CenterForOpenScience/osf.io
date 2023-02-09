@@ -4,7 +4,9 @@ from rest_framework import serializers as ser
 
 from api.base.serializers import BaseAPISerializer
 from api.base.utils import absolute_reverse
+from framework.celery_tasks.handlers import enqueue_task
 from osf.metrics.counted_usage import CountedUsage
+from osf.metrics.tasks import record_counted_usage
 from website import settings as website_settings
 
 
@@ -60,14 +62,19 @@ class CountedUsageSerializer(ser.Serializer):
         return data
 
     def create(self, validated_data):
-        return CountedUsage.record(
-            platform_iri=website_settings.DOMAIN,
-            provider_id=validated_data.get('provider_id'),
-            item_guid=validated_data.get('item_guid'),
-            session_id=validated_data['session_id'],  # must be provided by the view
-            action_labels=validated_data.get('action_labels'),
-            pageview_info=validated_data.get('pageview_info'),
-        )
+        record_kwargs = {  # passed to CountedUsage.record()
+            'platform_iri': website_settings.DOMAIN,
+            'provider_id': validated_data.get('provider_id'),
+            'item_guid': validated_data.get('item_guid'),
+            'session_id': validated_data['session_id'],  # must be provided by the view
+            'action_labels': validated_data.get('action_labels'),
+            'pageview_info': validated_data.get('pageview_info'),
+        }
+        if website_settings.USE_CELERY:
+            enqueue_task(record_counted_usage.s(record_kwargs))
+        else:
+            record_counted_usage(record_kwargs)
+        return {}
 
 
 class ReportNameSerializer(ser.BaseSerializer):
