@@ -7,8 +7,9 @@ class InstitutionForm(forms.ModelForm):
         model = Institution
 
         exclude = [
-            'is_deleted', 'contributors', 'banner_name', 'logo_name'
+            'is_deleted', 'contributors'
         ]
+
 
 class InstitutionalMetricsAdminRegisterForm(forms.Form):
     """ A form that finds an existing OSF User, and grants permissions to that
