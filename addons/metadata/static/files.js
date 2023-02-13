@@ -1588,14 +1588,18 @@ function MetadataButtons() {
                 const fromFilepath = from.data.provider + (from.data.materialized || '/');
                 const projectMetadata = context.projectMetadata;
                 const fromFilepaths = projectMetadata.files
-                  .map(f => f.path)
-                  .filter(p => p.substring(0, fromFilepath.length) === fromFilepath);
+                  .map(function(f) { return f.path; })
+                  .filter(function(p) {
+                    return p.substring(0, fromFilepath.length) === fromFilepath;
+                  });
                 if (!fromFilepaths.length) {
                   return;
                 }
                 const toFilepath = item.data.provider + (item.data.materialized || '/');
                 const toFilepaths = fromFilepaths
-                  .map(p => toFilepath + p.replace(fromFilepath, ''));
+                  .map(function(p) {
+                    return toFilepath + p.replace(fromFilepath, '');
+                  });
                 // try reload project metadata
                 const interval = 250;
                 const maxRetry = 10;
@@ -1604,8 +1608,10 @@ function MetadataButtons() {
                   self.loadMetadata(context.nodeId, context.baseUrl, function() {
                     const context2 = self.findContextByNodeId(context.nodeId);
                     const matches = toFilepaths
-                      .map(p => context2.projectMetadata.files.find(f => f.path === p));
-                    const unmatchCount = matches.filter(m => !m).length;
+                      .map(function(p) {
+                        return context2.projectMetadata.files.find(function(f) { return f.path === p; });
+                      });
+                    const unmatchCount = matches.filter(function(m) { return !m; }).length;
                     console.log(logPrefix, 'reloaded metadata: ', {
                       context: context2,
                       unmatchCount: unmatchCount,

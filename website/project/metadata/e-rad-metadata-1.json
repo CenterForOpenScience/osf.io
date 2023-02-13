@@ -12,7 +12,7 @@
           "qid": "funder",
           "nav": "資金配分機関情報",
           "title": "資金配分機関情報|Funder",
-          "help": "資金配分機関情報を選択してください。一覧に無い場合は英語略称を記入してください。|Please select the funder. If not listed, please enter the English abbreviation.",
+          "help": "資金配分機関情報を選択してください。一覧に無い場合は英語略称を記入してください。例: ABC012|Please select the funder. If not listed, please enter the English abbreviation. E.g, ABC012",
           "type": "choose",
           "format": "e-rad-award-funder",
           "options": [
@@ -101,7 +101,8 @@
               "tooltip": "国立研究開発法人医薬基盤・健康・栄養研究所|National Institutes of Biomedical Innovation|1106"
             }
           ],
-          "required": true
+          "required": true,
+          "pattern": "^[a-zA-Z0-9]+$"
         },
         {
           "qid": "e-rad-project-id",
@@ -117,7 +118,8 @@
           "title": "プロジェクト名 (日本語)|Project name (Japanese)",
           "type": "string",
           "format": "e-rad-award-title-ja",
-          "required": true
+          "required": true,
+          "space_normalization": true
         },
         {
           "qid": "project-name-en",
@@ -125,7 +127,8 @@
           "title": "Project name (English)",
           "type": "string",
           "format": "e-rad-award-title-en",
-          "required": true
+          "required": true,
+          "space_normalization": true
         },
         {
           "qid": "project-research-field",
@@ -202,7 +205,8 @@
           "title": "データ No.|Data No.",
           "type": "string",
           "format": "text",
-          "required": false
+          "required": false,
+          "space_normalization": true
         },
         {
           "qid": "grdm-file:title-ja",
@@ -210,7 +214,8 @@
           "title": "データの名称 (日本語)|Title (Japanese)",
           "type": "string",
           "format": "text",
-          "required": true
+          "required": true,
+          "space_normalization": true
         },
         {
           "qid": "grdm-file:title-en",
@@ -218,7 +223,8 @@
           "title": "Title (English)",
           "type": "string",
           "format": "text",
-          "required": true
+          "required": true,
+          "space_normalization": true
         },
         {
           "qid": "grdm-file:date-issued-updated",
@@ -226,7 +232,9 @@
           "title": "掲載日・掲載更新日|Date (Issued / Updated)",
           "type": "string",
           "format": "date",
-          "required": false
+          "required": false,
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "help": "例: 2010-01-01|E.g., 2010-01-01"
         },
         {
           "qid": "grdm-file:data-description-ja",
@@ -508,7 +516,9 @@
           "title": "概略データ量|File size",
           "type": "string",
           "format": "file-capacity",
-          "required": false
+          "required": false,
+          "pattern": "^[><]?([0-9]+(\\.[0-9]+)?-)?([0-9]+)(\\.[0-9]+)?([A-Za-z]*B)$",
+          "help": "例: >100GB, <10GB, 100-10MB|E.g., >100GB, <10GB, 100-10MB"
         },
         {
           "qid": "grdm-file:data-policy-free",
@@ -702,7 +712,9 @@
           "title": "公開予定日 (公開期間猶予の場合)|Publication date (for embargoed access)",
           "type": "string",
           "format": "date",
-          "required": false
+          "required": false,
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "help": "例: 2010-01-01|E.g., 2010-01-01"
         },
         {
           "qid": "grdm-file:repo-information-ja",
@@ -726,7 +738,9 @@
           "title": "リポジトリURL・DOIリンク|Repository URL/ DOI link",
           "type": "string",
           "format": "file-url",
-          "required": false
+          "required": false,
+          "pattern": "[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_\\+.~#?&//=]*)$",
+          "help": "例: https://example.com/example|E.g., https://example.com/example|"
         },
         {
           "qid": "grdm-file:creators",
@@ -734,7 +748,8 @@
           "title": "データ作成者|Creator Name",
           "type": "string",
           "format": "file-creators",
-          "required": false
+          "required": false,
+          "help": "e-Rad研究者番号の例: ABCD0123| E.g., e-Rad Researcher Number: ABCD0123"
         },
         {
           "qid": "grdm-file:hosting-inst-ja",
@@ -742,7 +757,8 @@
           "title": "データ管理組織 (日本語)|Hosting institution (Japanese)",
           "type": "string",
           "format": "file-institution-ja",
-          "required": true
+          "required": true,
+          "space_normalization": true
         },
         {
           "qid": "grdm-file:hosting-inst-en",
@@ -750,7 +766,8 @@
           "title": "Hosting institution (English)",
           "type": "string",
           "format": "file-institution-en",
-          "required": true
+          "required": true,
+          "space_normalization": true
         },
         {
           "qid": "grdm-file:data-man-number",
@@ -758,7 +775,9 @@
           "title": "データ管理者の e-Rad 研究者番号|Data manager identifier (e-Rad)",
           "type": "string",
           "format": "e-rad-researcher-number",
-          "required": false
+          "required": false,
+          "pattern": "^[a-zA-Z0-9]+$",
+          "help": "例: ABCD0123|E.g., ABCD0123"
         },
         {
           "qid": "grdm-file:data-man-name-ja",
@@ -766,7 +785,8 @@
           "title": "データ管理者 (日本語)|Data manager (Japanese)",
           "type": "string",
           "format": "e-rad-researcher-name-ja",
-          "required": false
+          "required": false,
+          "space_normalization": true
         },
         {
           "qid": "grdm-file:data-man-name-en",
@@ -774,7 +794,8 @@
           "title": "Data manager (English)",
           "type": "string",
           "format": "e-rad-researcher-name-en",
-          "required": false
+          "required": false,
+          "space_normalization": true
         },
         {
           "qid": "grdm-file:data-man-address-ja",
@@ -782,7 +803,8 @@
           "title": "データ管理者の所属機関の連絡先住所 (日本語)|Contact address of data manager (Japanese)",
           "type": "string",
           "format": "text",
-          "required": true
+          "required": true,
+          "space_normalization": true
         },
         {
           "qid": "grdm-file:data-man-address-en",
@@ -790,7 +812,8 @@
           "title": "Contact address of data manager (English)",
           "type": "string",
           "format": "text",
-          "required": true
+          "required": true,
+          "space_normalization": true
         },
         {
           "qid": "grdm-file:data-man-tel",
@@ -798,7 +821,8 @@
           "title": "データ管理者の所属機関の連絡先電話番号|Contact phone number of data manager",
           "type": "string",
           "format": "text",
-          "required": true
+          "required": true,
+          "space_normalization": true
         },
         {
           "qid": "grdm-file:data-man-email",
@@ -806,7 +830,8 @@
           "title": "データ管理者の所属機関の連絡先メールアドレス|Contact mail address of data manager",
           "type": "string",
           "format": "text",
-          "required": true
+          "required": true,
+          "space_normalization": true
         },
         {
           "qid": "grdm-file:remarks-ja",
