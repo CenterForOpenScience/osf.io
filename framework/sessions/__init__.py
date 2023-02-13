@@ -4,6 +4,8 @@ from future.moves.urllib.parse import urlparse, parse_qs, urlunparse, urlencode
 
 from django.apps import apps
 from django.utils import timezone
+from importlib import import_module
+from django.conf import settings
 import bson.objectid
 import itsdangerous
 from flask import request
@@ -17,6 +19,7 @@ from framework.flask import redirect
 from framework.sessions.utils import remove_session
 from website import settings
 
+SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
 
 def add_key_to_url(url, scheme, key):
     """Redirects the user to the requests URL with the given key appended to the query parameters."""
@@ -87,24 +90,32 @@ def set_session(session):
     sessions[request._get_current_object()] = session
 
 
+# def create_session(response, data=None):
+#     Session = apps.get_model('osf.Session')
+#     current_session = get_session()
+#     if current_session:
+#         current_session.data.update(data or {})
+#         current_session.save()
+#         cookie_value = itsdangerous.Signer(settings.SECRET_KEY).sign(current_session._id)
+#     else:
+#         session_id = str(bson.objectid.ObjectId())
+#         new_session = Session(_id=session_id, data=data or {})
+#         new_session.save()
+#         cookie_value = itsdangerous.Signer(settings.SECRET_KEY).sign(session_id)
+#         set_session(new_session)
+#     if response is not None:
+#         response.set_cookie(settings.COOKIE_NAME, value=cookie_value, domain=settings.OSF_COOKIE_DOMAIN,
+#                             secure=settings.SESSION_COOKIE_SECURE, httponly=settings.SESSION_COOKIE_HTTPONLY,
+#                             samesite=settings.SESSION_COOKIE_SAMESITE)
+#         return response
+
 def create_session(response, data=None):
-    Session = apps.get_model('osf.Session')
-    current_session = get_session()
-    if current_session:
-        current_session.data.update(data or {})
-        current_session.save()
-        cookie_value = itsdangerous.Signer(settings.SECRET_KEY).sign(current_session._id)
-    else:
-        session_id = str(bson.objectid.ObjectId())
-        new_session = Session(_id=session_id, data=data or {})
-        new_session.save()
-        cookie_value = itsdangerous.Signer(settings.SECRET_KEY).sign(session_id)
-        set_session(new_session)
-    if response is not None:
-        response.set_cookie(settings.COOKIE_NAME, value=cookie_value, domain=settings.OSF_COOKIE_DOMAIN,
-                            secure=settings.SESSION_COOKIE_SECURE, httponly=settings.SESSION_COOKIE_HTTPONLY,
-                            samesite=settings.SESSION_COOKIE_SAMESITE)
-        return response
+    s = SessionStore()
+    new_session = s.create()
+    resposne.set_cookie(settings.COOKIE_NAME, value=new_session.session_key, domain=settings.OSF_COOKIE_DOMAIN,
+#                             secure=settings.SESSION_COOKIE_SECURE, httponly=settings.SESSION_COOKIE_HTTPONLY,
+#                             samesite=settings.SESSION_COOKIE_SAMESITE)
+
 
 
 sessions = WeakKeyDictionary()
