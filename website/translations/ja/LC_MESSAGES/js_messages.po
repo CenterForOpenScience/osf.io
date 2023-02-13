@@ -4333,7 +4333,7 @@ msgstr "メンバーを追加できませんでした"
 
 #: website/static/js/contribManager.js:300
 msgid "Must have at least one registered admin contributor"
-msgstr "登録された管理メンバーーが少なくとも1人必要です"
+msgstr "登録された管理者が少なくとも1人必要です"
 
 #: website/static/js/contribManager.js:308
 msgid "Must have at least one bibliographic contributor"
