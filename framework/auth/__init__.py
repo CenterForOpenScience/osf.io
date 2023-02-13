@@ -30,7 +30,7 @@ __all__ = [
 check_password = bcrypt.check_password_hash
 
 
-def authenticate(user, access_token, response, user_updates=None):
+def authenticate(user, response, user_updates=None):
     data = {
         'auth_user_username': user.username,
         'auth_user_id': user._primary_key,
@@ -52,16 +52,13 @@ def external_first_login_authenticate(user, response):
     :param response: the response to return
     :return: the response
     """
-
-    data = session.data if session._get_current_object() else {}
-    data.update({
+    data = {
         'auth_user_external_id_provider': user['external_id_provider'],
         'auth_user_external_id': user['external_id'],
         'auth_user_fullname': user['fullname'],
-        'auth_user_access_token': user['access_token'],
         'auth_user_external_first_login': True,
         'service_url': user['service_url'],
-    })
+    }
     user_identity = '{}#{}'.format(user['external_id_provider'], user['external_id'])
     print_cas_log(
         f'Finalizing first-time login from external IdP - data updated: user=[{user_identity}]',

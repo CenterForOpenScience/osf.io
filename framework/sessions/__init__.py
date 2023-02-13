@@ -119,7 +119,7 @@ def set_session(session):
 
 def create_session(response, data=None):
     current_session = get_session()
-    #TODO: check if session data changed and decide whether to save the session object
+    # TODO: check if session data changed and decide whether to save the session object
     current_session['auth_user_username'] = data['auth_user_username']
     current_session['auth_user_id'] = data['auth_user_id']
     current_session['auth_user_fullname'] = data['auth_user_fullname']
@@ -133,6 +133,7 @@ def create_session(response, data=None):
                             secure=settings.SESSION_COOKIE_SECURE, httponly=settings.SESSION_COOKIE_HTTPONLY,
                             samesite=settings.SESSION_COOKIE_SAMESITE)
         return response
+
 
 sessions = WeakKeyDictionary()
 session = LocalProxy(get_session)
