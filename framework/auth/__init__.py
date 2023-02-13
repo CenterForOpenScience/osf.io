@@ -31,13 +31,11 @@ check_password = bcrypt.check_password_hash
 
 
 def authenticate(user, access_token, response, user_updates=None):
-    data = session.data if session._get_current_object() else {}
-    data.update({
+    data = {
         'auth_user_username': user.username,
         'auth_user_id': user._primary_key,
         'auth_user_fullname': user.fullname,
-        'auth_user_access_token': access_token,
-    })
+    }
     print_cas_log(f'Finalizing authentication - data updated: user=[{user._id}]', LogLevel.INFO)
     enqueue_task(update_user_from_activity.s(user._id, timezone.now().timestamp(), cas_login=True, updates=user_updates))
     print_cas_log(f'Finalizing authentication - user update queued: user=[{user._id}]', LogLevel.INFO)
