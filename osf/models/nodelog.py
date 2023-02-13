@@ -49,6 +49,7 @@ class NodeLog(ObjectIDMixin, BaseModel):
 
     CONTRIB_ADDED = 'contributor_added'
     CONTRIB_REMOVED = 'contributor_removed'
+    CONTRIB_REJECTED = 'contributor_rejected'
     CONTRIB_REORDERED = 'contributors_reordered'
 
     CHECKED_IN = 'checked_in'

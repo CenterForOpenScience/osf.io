@@ -105,11 +105,27 @@
           "pattern": "^[a-zA-Z0-9]+$"
         },
         {
-          "qid": "e-rad-project-id",
-          "nav": "e-Radの課題番号",
-          "title": "e-Radの課題番号|e-Rad project ID",
+          "qid": "program-name-ja",
+          "nav": "プログラム名 (日本語)",
+          "title": "プログラム名 (日本語)|Program name (Japanese)",
           "type": "string",
-          "format": "e-rad-award-number",
+          "format": "jgn-program-name-ja",
+          "required": true
+        },
+        {
+          "qid": "program-name-en",
+          "nav": "Program name (English)",
+          "title": "Program name (English)",
+          "type": "string",
+          "format": "jgn-program-name-en",
+          "required": true
+        },
+        {
+          "qid": "japan-grant-number",
+          "nav": "体系的番号",
+          "title": "体系的番号|Japan Grant Number",
+          "type": "string",
+          "format": "japan-grant-number",
           "required": true
         },
         {

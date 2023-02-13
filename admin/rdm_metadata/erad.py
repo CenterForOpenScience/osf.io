@@ -3,16 +3,10 @@ from io import StringIO
 import logging
 import os
 from addons.metadata.models import ERadRecordSet
+from addons.metadata.views import ERAD_COLUMNS
 
 
 logger = logging.getLogger(__name__)
-
-
-ERAD_COLUMNS = [
-    'KENKYUSHA_NO', 'KENKYUSHA_SHIMEI', 'KENKYUKIKAN_CD', 'KENKYUKIKAN_MEI',
-    'HAIBUNKIKAN_CD', 'HAIBUNKIKAN_MEI', 'NENDO', 'SEIDO_CD', 'SEIDO_MEI',
-    'JIGYO_CD', 'JIGYO_MEI', 'KADAI_ID', 'KADAI_MEI', 'BUNYA_CD', 'BUNYA_MEI'
-]
 
 
 def validate_record(record_num, row):

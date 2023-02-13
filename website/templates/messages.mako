@@ -22,7 +22,7 @@ ${_("Read your primary email address.")}
 ${_("""
 <div style="text-align: center">
 <div>
-<h4>We've updated our <a target="_blank" href="https://support.rdm.nii.ac.jp/terms">Terms of Use</a> and <a target="_blank" href="https://support.rdm.nii.ac.jp/terms/privacy">Privacy Policy</a>. Please read them carefully.</h4>""")}
+<h4>We've updated our <a target="_blank" href="https://support.rdm.nii.ac.jp/terms">Terms of Use</a> and <a target="_blank" href="https://support.rdm.nii.ac.jp/terms/">Privacy Policy</a>. Please read them carefully.</h4>""")}
 ${_("""<h5><input type="checkbox" id="accept" style="margin-right: 5px">I have read and agree to these terms.</input></h5>
     </div>""")}
 ${_("""<button class="btn btn-primary" data-dismiss="alert" id="continue" disabled>Continue</button>

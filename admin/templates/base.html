@@ -104,7 +104,7 @@
           <ul class="sidebar-menu">
             <li class="header">{% trans "Menu" %}</li>
 
-            {% if perms.osf.admin_institution_entitlement or user.is_superuser or user.is_staff %}
+            {% if user.is_superuser or user.is_staff %}
                 <li>
                     <a href="{% url 'institutions:entitlements' %}">
                         <i class='fa fa-link'></i><span> {% trans "Login Availability Control" %}</span>
@@ -157,11 +157,13 @@
                   </ul>
               </div>
           {% endif %}
-          <li>
-              <a href="{% url 'user-emails:search' %}">
-                  <i class='fa fa-link'></i> <span> {% trans "RDM" %} {% trans "User Emails" %}</span>
-              </a>
-          </li>
+          {% if user.is_superuser or user.is_staff %}
+              <li class="{% if request.resolver_match.url_name == 'search' %}active{% endif %}">
+                  <a href="{% url 'user-emails:search' %}">
+                      <i class='fa fa-link'></i> <span> {% trans "RDM" %} {% trans "User Emails" %}</span>
+                  </a>
+              </li>
+          {% endif %}
           {% if perms.osf.view_spam %}
             <li><a href="{% url 'spam:spam' %}"><i class='fa fa-link'></i> <span>{% trans "RDM Spam" %}</span></a></li>
           {% endif %}

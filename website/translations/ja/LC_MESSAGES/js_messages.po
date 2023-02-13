@@ -3227,29 +3227,30 @@ msgid ""
 "            </tr>\n"
 "            <tr class=\"danger\">\n"
 "                <td>View / download file versions</td>\n"
-"                <td>The GakuNin Federated Computing Services (Jupyter) add-on does not provide Storage "
-"Features.</td>\n"
+"                <td>The GakuNin Federated Computing Services (Jupyter) "
+"add-on does not provide Storage Features.</td>\n"
 "            </tr>\n"
 "            <tr class=\"danger\">\n"
 "                <td>Add / update files</td>\n"
-"                <td>The GakuNin Federated Computing Services (Jupyter) add-on does not provide Storage "
-"Features.</td>\n"
+"                <td>The GakuNin Federated Computing Services (Jupyter) "
+"add-on does not provide Storage Features.</td>\n"
 "            </tr>\n"
 "            <tr class=\"danger\">\n"
 "                <td>Delete files</td>\n"
-"                <td>The GakuNin Federated Computing Services (Jupyter) add-on does not provide Storage "
-"Features.</td>\n"
+"                <td>The GakuNin Federated Computing Services (Jupyter) "
+"add-on does not provide Storage Features.</td>\n"
 "            </tr>\n"
 "            <tr class=\"danger\">\n"
 "                <td>Logs</td>\n"
-"                <td>The GakuNin Federated Computing Services (Jupyter) add-on does not provide Storage "
-"Features.</td>\n"
+"                <td>The GakuNin Federated Computing Services (Jupyter) "
+"add-on does not provide Storage Features.</td>\n"
 "            </tr>\n"
 "            <tr class=\"warning\">\n"
 "                <td>Forking</td>\n"
 "                <td>Forking a project or component copies information "
-"about linked GakuNin Federated Computing Services (Jupyter) but the GakuNin RDM does not affect authentication"
-" of GakuNin Federated Computing Services (Jupyter).</td>\n"
+"about linked GakuNin Federated Computing Services (Jupyter) but the "
+"GakuNin RDM does not affect authentication of GakuNin Federated Computing"
+" Services (Jupyter).</td>\n"
 "            </tr>\n"
 "    </tbody>\n"
 "\n"
@@ -4563,6 +4564,10 @@ msgstr "<i> 削除中...</i>"
 msgid "Delete failed."
 msgstr "削除に失敗しました。"
 
+# website/static/js/fangorn.js:1199
+msgid "Not enough quota to upload. The total size of the folder %1$s."
+msgstr "アップロードするための空き容量が足りません。フォルダのサイズは%1$sです。"
+
 #: website/static/js/fangorn.js:1202
 msgid ""
 "This folder and all of its contents will be deleted. This folder is "
@@ -4818,6 +4823,10 @@ msgstr "書き込みアクセス権を持つメンバーのみ。"
 #: website/static/js/fangorn.js:2287
 msgid "How to Use the File Browser"
 msgstr "ファイルブラウザの使用方法"
+
+#: website/static/js/fangorn.js:2289
+msgid "Upload Folder"
+msgstr "フォルダのアップロード"
 
 #: website/static/js/fangorn.js:2351
 msgid "Please wait for current action to complete"
@@ -5611,6 +5620,9 @@ msgstr "${user}が${contributors}をコントリビューターとして${node}�
 #: website/static/js/logActionsList_extract.js:28
 msgid "${user} removed ${contributors} as contributor(s) from ${node}"
 msgstr "${user}が${node}からコントリビューターとして${contributors}を削除しました"
+
+msgid "${contributors} cancelled invitation as contributor(s) from ${node}"
+msgstr "${contributors}は${node}からのコントリビューターとしての招待をキャンセルしました"
 
 #: website/static/js/logActionsList_extract.js:29
 msgid "${user} reordered contributors for ${node}"
