@@ -2075,36 +2075,31 @@ class SpamOverrideMixin(SpamMixin):
 
     def check_spam(self, user, saved_fields, request_headers):
         if not user:  # in case of tests and staff admin operations
-            return False
+            return
         if settings.SPAM_CHECK_PUBLIC_ONLY and not self.is_public:
-            return False
+            return
         if user.is_hammy:
-            return False
+            return
         if getattr(self, 'provider', False) and self.provider.reviews_workflow == Workflows.PRE_MODERATION.value:
-            return False
+            return
         host = ''
         if request_headers:
             host = request_headers.get('Host', '')
         if host.startswith('admin') or ':8001' in host:
-            return False
+            return
         if hasattr(self, 'conferences') and self.conferences.filter(auto_check_spam=False).exists():
-            return False
+            return
 
         content = self._get_spam_content(saved_fields)
         if not content:
             return
 
-        is_spam = self.do_check_spam(
+        self.do_check_spam(
             user.fullname,
             user.username,
             content,
             request_headers,
         )
-        logger.info("{} ({}) '{}' smells like {} (tip: {})".format(
-            self.__class__.__name__, self._id, self.title.encode('utf-8'), 'SPAM' if is_spam else 'HAM', self.spam_pro_tip
-        ))
-
-        return is_spam
 
     def _check_spam_user(self, user):
         if (

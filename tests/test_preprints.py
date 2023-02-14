@@ -905,7 +905,8 @@ class TestPreprintSpam:
         with mock.patch('osf.models.preprint.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
             with mock.patch('osf.models.preprint.Preprint.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
                 preprint.set_privacy('public')
-                assert preprint.check_spam(user, None, None) is False
+                preprint.check_spam(user, None, None)
+                assert preprint.is_public
 
     @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
     def test_check_spam_only_public_preprint_by_default(self, preprint, user):
@@ -913,7 +914,8 @@ class TestPreprintSpam:
         with mock.patch('osf.models.preprint.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
             with mock.patch('osf.models.preprint.Preprint.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
                 preprint.set_privacy('private')
-                assert preprint.check_spam(user, None, None) is False
+                preprint.check_spam(user, None, None)
+                assert not preprint.is_public
 
     @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
     def test_check_spam_skips_ham_user(self, preprint, user):
@@ -921,7 +923,9 @@ class TestPreprintSpam:
             with mock.patch('osf.models.Preprint.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
                 user.confirm_ham()
                 preprint.set_privacy('public')
-                assert preprint.check_spam(user, None, None) is False
+                preprint.check_spam(user, None, None)
+                assert preprint.is_public
+
 
     @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_CHECK_PUBLIC_ONLY', False)
@@ -931,7 +935,8 @@ class TestPreprintSpam:
         with mock.patch('osf.models.preprint.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
             with mock.patch('osf.models.preprint.Preprint.do_check_spam', mock.Mock(return_value=True)):
                 preprint.set_privacy('private')
-                assert preprint.check_spam(user, None, None) is True
+                preprint.check_spam(user, None, None)
+                assert not preprint.is_public
 
     @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_CHECK_PUBLIC_ONLY', False)
@@ -941,7 +946,7 @@ class TestPreprintSpam:
         with mock.patch('osf.models.preprint.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
             with mock.patch('osf.models.preprint.Preprint.do_check_spam', mock.Mock(return_value=True)):
                 preprint.set_privacy('private')
-                assert preprint.check_spam(user, None, None) is True
+                preprint.check_spam(user, None, None)
                 assert preprint.is_public is False
                 preprint.confirm_ham()
                 assert preprint.is_spam is False
@@ -953,12 +958,13 @@ class TestPreprintSpam:
         preprint.save()
         with mock.patch('osf.models.preprint.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
             with mock.patch('osf.models.preprint.Preprint.do_check_spam', mock.Mock(return_value=True)):
-                assert preprint.check_spam(user, None, None) is True
+                preprint.check_spam(user, None, None)
                 assert preprint.is_public is True
                 preprint.confirm_ham()
                 assert preprint.is_spam is False
                 assert preprint.is_public is True
 
+    @pytest.mark.enable_enqueue_task
     @mock.patch('website.mailchimp_utils.unsubscribe_mailchimp')
     @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
@@ -978,8 +984,9 @@ class TestPreprintSpam:
                 preprint3.add_contributor(user2)
                 preprint3.save()
 
-                assert preprint.check_spam(user, None, None) is True
+                preprint.check_spam(user, None, None)
 
+                user.refresh_from_db()
                 assert user.is_disabled is True
                 preprint.reload()
                 assert preprint.is_public is False
@@ -998,7 +1005,7 @@ class TestPreprintSpam:
             with mock.patch('osf.models.Preprint.do_check_spam', mock.Mock(return_value=True)):
                 preprint.creator.date_confirmed = timezone.now() - datetime.timedelta(days=9001)
                 preprint.set_privacy('public')
-                assert preprint.check_spam(user, None, None) is True
+                preprint.check_spam(user, None, None)
                 assert preprint.is_public is True
 
     def test_flag_spam_make_preprint_private(self, preprint):

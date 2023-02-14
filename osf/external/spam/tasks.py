@@ -145,6 +145,9 @@ def check_resource_with_spam_services(guid, content, author, author_email, reque
         if hasattr(resource, '_check_spam_user'):
             user = OSFUser.objects.get(username=author_email)
             resource._check_spam_user(user)
+        elif hasattr(resource, 'suspend_spam_user'):
+            user = OSFUser.objects.get(username=author_email)
+            resource.suspend_spam_user(user)
 
     resource.save()
 

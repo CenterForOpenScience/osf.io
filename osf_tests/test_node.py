@@ -2326,7 +2326,8 @@ class TestNodeSpam:
         with mock.patch('osf.models.node.Node._get_spam_content', mock.Mock(return_value='some content!')):
             with mock.patch('osf.models.node.Node.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
                 project.set_privacy('public')
-                assert project.check_spam(user, None, None) is False
+                project.check_spam(user, None, None)
+                assert project.is_public
 
     @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
     def test_check_spam_only_public_node_by_default(self, project, user):
@@ -2334,7 +2335,8 @@ class TestNodeSpam:
         with mock.patch('osf.models.node.Node._get_spam_content', mock.Mock(return_value='some content!')):
             with mock.patch('osf.models.node.Node.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
                 project.set_privacy('private')
-                assert project.check_spam(user, None, None) is False
+                project.check_spam(user, None, None)
+                assert not project.is_public
 
     @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
     def test_check_spam_skips_ham_user(self, project, user):
@@ -2342,7 +2344,8 @@ class TestNodeSpam:
             with mock.patch('osf.models.AbstractNode.do_check_spam', mock.Mock(side_effect=Exception('should not get here'))):
                 user.confirm_ham()
                 project.set_privacy('public')
-                assert project.check_spam(user, None, None) is False
+                project.check_spam(user, None, None)
+                assert project.is_public
 
     @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_CHECK_PUBLIC_ONLY', False)
@@ -2352,8 +2355,10 @@ class TestNodeSpam:
         with mock.patch('osf.models.node.Node._get_spam_content', mock.Mock(return_value='some content!')):
             with mock.patch('osf.models.node.Node.do_check_spam', mock.Mock(return_value=True)):
                 project.set_privacy('private')
-                assert project.check_spam(user, None, None) is True
+                project.check_spam(user, None, None)
+                assert not project.is_public
 
+    @pytest.mark.enable_enqueue_task
     @mock.patch('website.mails.send_mail')
     @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
@@ -2373,8 +2378,9 @@ class TestNodeSpam:
                 project3.add_contributor(user2)
                 project3.save()
 
-                assert project.check_spam(user, None, None) is True
+                project.check_spam(user, None, None)
 
+                user.refresh_from_db()
                 assert user.is_disabled is True
                 project.reload()
                 assert project.is_public is False
@@ -2393,7 +2399,7 @@ class TestNodeSpam:
             with mock.patch('osf.models.AbstractNode.do_check_spam', mock.Mock(return_value=True)):
                 project.creator.date_confirmed = timezone.now() - datetime.timedelta(days=9001)
                 project.set_privacy('public')
-                assert project.check_spam(user, None, None) is True
+                project.check_spam(user, None, None)
                 assert project.is_public is True
 
     def test_flag_spam_make_node_private(self, project):
