@@ -7,6 +7,10 @@ from osf.external.oopspam.exceptions import OOPSpamClientError
 
 class OOPSpamClient(object):
 
+    def __init__(self, apikey=None, website=None):
+        self.apikey = apikey or settings.OOPSPAM_APIKEY
+        self.website = website or self.API_URL
+
     NAME = 'oopspam'
     API_PROTOCOL = 'https://'
     API_HOST = 'oopspam.p.rapidapi.com/v1/spamdetection'
