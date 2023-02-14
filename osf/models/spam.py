@@ -9,8 +9,8 @@ from osf.external.spam.tasks import check_resource_for_domains
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 
-from osf.external.askismet.tasks import submit_ham, submit_spam
 from osf.external.spam.tasks import check_resource_with_spam_services
+from osf.external.askismet import tasks as akismet_tasks
 from osf.utils.fields import ensure_str
 
 from website import settings
@@ -164,7 +164,7 @@ class SpamMixin(models.Model):
             self.save()
 
         if train_spam_services and self.spam_data:
-            submit_ham.apply_async(
+            akismet_tasks.submit_ham.apply_async(
                 kwargs=dict(
                     guid=self.guids.first()._id,
                 )
@@ -178,7 +178,7 @@ class SpamMixin(models.Model):
             else:
                 self.spam_data['domains'] = domains
         elif train_spam_services and self.spam_data:
-            submit_spam.apply_async(
+            akismet_tasks.submit_spam.apply_async(
                 kwargs=dict(
                     guid=self.guids.first()._id,
                 )
