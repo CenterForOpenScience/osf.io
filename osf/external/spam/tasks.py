@@ -95,7 +95,7 @@ def check_resource_with_spam_services(guid, content, author, author_email, reque
     Return statements used only for debugging and recording keeping
     """
     any_is_spam = False
-    from osf.models import Guid
+    from osf.models import Guid, OSFUser
     guid = Guid.load(guid)
     if not guid:
         return f'{guid} not found'
@@ -141,6 +141,10 @@ def check_resource_with_spam_services(guid, content, author, author_email, reque
         resource.spam_data['author'] = author
         resource.spam_data['author_email'] = author_email
         resource.flag_spam()
+
+        if hasattr(resource, '_check_spam_user'):
+            user = OSFUser.objects.get(username=author_email)
+            resource._check_spam_user(user)
 
     resource.save()
 

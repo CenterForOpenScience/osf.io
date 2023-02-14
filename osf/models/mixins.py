@@ -2103,8 +2103,6 @@ class SpamOverrideMixin(SpamMixin):
         logger.info("{} ({}) '{}' smells like {} (tip: {})".format(
             self.__class__.__name__, self._id, self.title.encode('utf-8'), 'SPAM' if is_spam else 'HAM', self.spam_pro_tip
         ))
-        if is_spam:
-            self._check_spam_user(user)
 
         return is_spam
 
