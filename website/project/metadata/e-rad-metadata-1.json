@@ -12,7 +12,7 @@
           "qid": "funder",
           "nav": "資金配分機関情報",
           "title": "資金配分機関情報|Funder",
-          "help": "資金配分機関情報を選択してください。一覧に無い場合は英語略称を記入してください。例: ABC012|Please select the funder. If not listed, please enter the English abbreviation. E.g, ABC012",
+          "help": "資金配分機関情報を選択してください。一覧に無い場合は英語略称を記入してください。|Please select the funder. If not listed, please enter the English abbreviation.",
           "type": "choose",
           "format": "e-rad-award-funder",
           "options": [
@@ -756,7 +756,7 @@
           "format": "file-url",
           "required": false,
           "pattern": "[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_\\+.~#?&//=]*)$",
-          "help": "例: https://example.com/example|E.g., https://example.com/example|"
+          "help": "例: https://example.com/example|E.g., https://example.com/example"
         },
         {
           "qid": "grdm-file:creators",
@@ -765,7 +765,7 @@
           "type": "string",
           "format": "file-creators",
           "required": false,
-          "help": "e-Rad研究者番号の例: ABCD0123| E.g., e-Rad Researcher Number: ABCD0123"
+          "help": "e-Rad 研究者番号(半角数字)|e-Rad Researcher Number(single-byte numeric characters)"
         },
         {
           "qid": "grdm-file:hosting-inst-ja",
@@ -793,7 +793,7 @@
           "format": "e-rad-researcher-number",
           "required": false,
           "pattern": "^[a-zA-Z0-9]+$",
-          "help": "例: ABCD0123|E.g., ABCD0123"
+          "help": "e-Rad 研究者番号(半角数字)|e-Rad Researcher Number(single-byte numeric characters)"
         },
         {
           "qid": "grdm-file:data-man-name-ja",
