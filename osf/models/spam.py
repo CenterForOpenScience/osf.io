@@ -195,9 +195,9 @@ class SpamMixin(models.Model):
 
     def do_check_spam(self, author, author_email, content, request_headers):
         if self.is_hammy:
-            return False
+            return
         if self.is_spammy:
-            return True
+            return
 
         request_kwargs = {
             'remote_addr': request_headers.get('Remote-Addr') or request_headers['Host'],  # for local testing
