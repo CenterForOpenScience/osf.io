@@ -132,7 +132,8 @@ def create_session(response, data=None):
         response.set_cookie(settings.COOKIE_NAME, value=current_session.session_key, domain=settings.OSF_COOKIE_DOMAIN,
                             secure=settings.SESSION_COOKIE_SECURE, httponly=settings.SESSION_COOKIE_HTTPONLY,
                             samesite=settings.SESSION_COOKIE_SAMESITE)
-        return response
+        return session, response
+    return session, None
 
 
 sessions = WeakKeyDictionary()

@@ -39,7 +39,9 @@ def authenticate(user, response, user_updates=None):
     print_cas_log(f'Finalizing authentication - data updated: user=[{user._id}]', LogLevel.INFO)
     enqueue_task(update_user_from_activity.s(user._id, timezone.now().timestamp(), cas_login=True, updates=user_updates))
     print_cas_log(f'Finalizing authentication - user update queued: user=[{user._id}]', LogLevel.INFO)
-    response = create_session(response, data=data)
+    usr_session, response = create_session(response, data=data)
+    from osf.models import UserSessionMap
+    UserSessionMap.objects.create(user=user, session_key=usr_session.session_key, expire_date=usr_session.expire_date)
     print_cas_log(f'Finalizing authentication - session created: user=[{user._id}]', LogLevel.INFO)
     return response
 
