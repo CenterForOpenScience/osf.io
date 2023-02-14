@@ -255,7 +255,7 @@ def create_schema_block(state, schema_id, block_type, display_text='', required=
 
     try:
         RegistrationSchemaBlock.objects.create(**params, **additional)
-    except ValueError:
+    except TypeError:
         # for old migration
         RegistrationSchemaBlock.objects.create(**params)
 
