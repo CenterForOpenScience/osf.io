@@ -11,6 +11,15 @@ class AkismetClient(object):
     API_HOST = 'rest.akismet.com'
     apikey = settings.AKISMET_APIKEY
     website = settings.DOMAIN
+    ALLOWED_ARGS = (
+        'referrer',
+        'permalink',
+        'is_test',
+        'comment_author',
+        'comment_author_email',
+        'comment_author_url',
+        'comment_content',
+    )
 
     @property
     def _default_headers(self):
@@ -28,16 +37,9 @@ class AkismetClient(object):
         :return: a (bool, str) tuple representing (is_spam, pro_tip)
         """
         allowed_args = (
-            'referrer',
-            'permalink',
-            'is_test',
-            'comment_author',
-            'comment_author_email',
-            'comment_author_url',
-            'comment_content',
             'comment_date_gmt',
-            'comment_post_modified_gmt'
-        )
+            'comment_post_modified_gmt',
+        ) + self.ALLOWED_ARGS
 
         allowed_kwargs = {
             k: kwargs.get(k)
@@ -65,18 +67,9 @@ class AkismetClient(object):
         return res.text == 'true', res.headers.get('X-akismet-pro-tip')
 
     def submit_spam(self, user_ip, user_agent, **kwargs):
-        allowed_args = (
-            'referrer',
-            'permalink',
-            'is_test',
-            'comment_author',
-            'comment_author_email',
-            'comment_author_url',
-            'comment_content'
-        )
         allowed_kwargs = {
             k: kwargs.get(k)
-            for k in allowed_args
+            for k in self.ALLOWED_ARGS
             if k in kwargs
         }
         data = {
@@ -95,18 +88,9 @@ class AkismetClient(object):
             raise AkismetClientError(reason=res.text)
 
     def submit_ham(self, user_ip, user_agent, **kwargs):
-        allowed_args = (
-            'referrer',
-            'permalink',
-            'is_test',
-            'comment_author',
-            'comment_author_email',
-            'comment_author_url',
-            'comment_content'
-        )
         allowed_kwargs = {
             k: kwargs.get(k)
-            for k in allowed_args
+            for k in self.ALLOWED_ARGS
             if k in kwargs
         }
         data = {
