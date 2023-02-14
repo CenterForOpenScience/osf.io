@@ -6,9 +6,9 @@ from osf.external.askismet.exceptions import AkismetClientError
 
 class AkismetClient(object):
 
-    def __init__(self, apikey, website, verify=False):
-        self.apikey = apikey
-        self.website = website
+    def __init__(self, apikey=None, website=None, verify=False):
+        self.apikey = self.apikey or apikey
+        self.website = self.website or website
         self._apikey_is_valid = None
         if verify:
             self._verify_apikey()

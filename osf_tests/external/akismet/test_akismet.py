@@ -58,7 +58,7 @@ class TestUserSpamAkismet:
         assert user.spam_data['author_email'] == user.username
 
         # test do_check_spam for ham user
-        user.confirm_ham(train_spam_services=False)
+        user.confirm_ham(train_spam_services=False, save=True)
         user.do_check_spam(user, None, None, None)
         user.refresh_from_db()
         assert user.spam_status == SpamStatus.HAM
