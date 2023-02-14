@@ -59,7 +59,10 @@ class TestUserSpamAkismet:
 
         # test do_check_spam for ham user
         user.confirm_ham(train_spam_services=False)
-        assert user.do_check_spam(None, None, None, None) is False
+        assert user.do_check_spam(None, None, None, None) is None
+        user.refresh_from_db()
+        assert user.spam_status == SpamStatus.HAM
+
 
     @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
     @mock.patch.object(settings, 'AKISMET_ENABLED', True)
