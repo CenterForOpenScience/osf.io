@@ -12,7 +12,7 @@ from framework.auth.tasks import update_user_from_activity
 from framework.auth.utils import LogLevel, print_cas_log
 from framework.celery_tasks.handlers import enqueue_task
 from framework.sessions import session, create_session
-# from framework.sessions.utils import remove_session
+from framework.sessions.utils import remove_session
 
 
 __all__ = [
@@ -74,7 +74,7 @@ def external_first_login_authenticate(user, response):
 
 def logout():
     """Clear users' session(s) and log them out of OSF."""
-    session.flush()
+    remove_session(session)
 
 
 def register_unconfirmed(username, password, fullname, campaign=None, accepted_terms_of_service=None):
