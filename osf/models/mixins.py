@@ -2119,6 +2119,11 @@ class SpamOverrideMixin(SpamMixin):
             self.suspend_spam_user(user)
 
     def suspend_spam_user(self, user):
+        """
+        This suspends a users account and makes all there resources private, key word here is SUSPENDS this should not
+        delete the account or any info associated with it. It should not be assumed the account is spam and it should
+        not be used to train spam detecting services.
+        """
         if user.is_ham:
             return False
         self.confirm_spam(save=True, train_spam_services=False)
@@ -2141,13 +2146,13 @@ class SpamOverrideMixin(SpamMixin):
         # Make public nodes private from this contributor
         for node in user.all_nodes:
             if self._id != node._id and len(node.contributors) == 1 and node.is_public and not node.is_quickfiles:
-                node.confirm_spam(save=True)
+                node.confirm_spam(save=True, train_spam_services=False)
                 node.set_privacy('private', log=False, save=True, force=True)
 
         # Make preprints private from this contributor
         for preprint in user.preprints.all():
             if self._id != preprint._id and len(preprint.contributors) == 1 and preprint.is_public:
-                preprint.confirm_spam(save=True)
+                preprint.confirm_spam(save=True, train_spam_services=False)
                 preprint.set_privacy('private', log=False, save=True)
 
     def flag_spam(self):
