@@ -149,7 +149,8 @@ def before_request():
     from framework.auth.core import get_user
     from framework.auth import cas
     from framework.utils import throttle_period_expired
-    Session = apps.get_model('osf.Session')
+    UserSessionMap = apps.get_model('osf.UserSessionMap')
+    # Session = apps.get_model('osf.Session')
 
     # Central Authentication Server Ticket Validation and Authentication
     ticket = request.args.get('ticket')
@@ -166,8 +167,10 @@ def before_request():
         )
         # Create an empty session
         # TODO: Shoudn't need to create a session for Basic Auth
-        user_session = Session()
-        set_session(user_session)
+        user_session = get_session()
+        UserSessionMap.objects.create(user=user, session_key=user_session.session_key, expire_date=user_session.expire_date)
+
+        # set_session(user_session)
 
         if user:
             user_addon = user.get_addon('twofactor')
@@ -175,16 +178,18 @@ def before_request():
                 otp = request.headers.get('X-OSF-OTP')
                 if otp is None or not user_addon.verify_code(otp):
                     # Must specify two-factor authentication OTP code or invalid two-factor authentication OTP code.
-                    user_session.data['auth_error_code'] = http_status.HTTP_401_UNAUTHORIZED
+                    user_session['auth_error_code'] = http_status.HTTP_401_UNAUTHORIZED
                     return
-            user_session.data['auth_user_username'] = user.username
-            user_session.data['auth_user_fullname'] = user.fullname
-            if user_session.data.get('auth_user_id', None) != user._primary_key:
-                user_session.data['auth_user_id'] = user._primary_key
-                user_session.save()
+            user_session['auth_user_username'] = user.username
+            user_session['auth_user_fullname'] = user.fullname
+            session_data = user_session.get_decode()
+            if session_data.get('auth_user_id', None) != user._primary_key:
+                user_session['auth_user_id'] = user._primary_key
+                user_session.modified = True
         else:
             # Invalid key: Not found in database
-            user_session.data['auth_error_code'] = http_status.HTTP_401_UNAUTHORIZED
+            user_session['auth_error_code'] = http_status.HTTP_401_UNAUTHORIZED
+            user_session.modified = True
         return
 
     cookie = request.cookies.get(settings.COOKIE_NAME)
