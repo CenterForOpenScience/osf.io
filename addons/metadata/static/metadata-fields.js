@@ -208,15 +208,13 @@ function validateAvailableDateField(erad, question, value, fieldSetAndValues) {
 
 function validateCreators(erad, question, value) {
   const creators = JSON.parse(value);
-  if (creators.some(function(creator) {
-    return Object.values(creator).some(function(v){ return !v; });
-  })) {
-    throw new Error(_("This field can't be blank."));
+  if (!creators) {
+    return;
   }
   if (creators.some(function(creator) {
-    return ! /^[0-9a-zA-Z]+$/.test(creator.number)
+    return ! /^[0-9a-zA-Z]*$/.test(creator.number || '');
   })) {
-    throw new Error(_("Please enter the correct value. ") + getLocalizedText(question.help))
+    throw new Error(_("Please enter the correct value. ") + getLocalizedText(question.help));
   }
 }
 
