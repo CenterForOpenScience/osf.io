@@ -6,7 +6,6 @@ from django.apps import apps
 from django.utils import timezone
 from importlib import import_module
 from django.conf import settings as django_conf_settings
-# import bson.objectid
 import itsdangerous
 from flask import request
 import furl
@@ -16,10 +15,10 @@ from werkzeug.local import LocalProxy
 from framework.celery_tasks.handlers import enqueue_task
 from osf.utils.fields import ensure_str
 from framework.flask import redirect
-from framework.sessions.utils import remove_session
 from website import settings
 
 SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
+
 
 def add_key_to_url(url, scheme, key):
     """Redirects the user to the requests URL with the given key appended to the query parameters."""
@@ -87,7 +86,6 @@ def prepare_private_key():
 
 def get_session():
     session_key = request.cookies.get(settings.COOKIE_NAME)
-    session_store = SessionStore()
     if session_store.exists(session_key=session_key):
         user_session = session_store.get(session_key)
     else:
@@ -140,17 +138,17 @@ def create_session(response, data=None):
 
 sessions = WeakKeyDictionary()
 session = LocalProxy(get_session)
+session_store = SessionStore()
 
 
 # Request callbacks
 # NOTE: This gets attached in website.app.init_app to ensure correct callback order
 def before_request():
+
     # TODO: Fix circular import
     from framework.auth.core import get_user
     from framework.auth import cas
-    from framework.utils import throttle_period_expired
     UserSessionMap = apps.get_model('osf.UserSessionMap')
-    # Session = apps.get_model('osf.Session')
 
     # Central Authentication Server Ticket Validation and Authentication
     ticket = request.args.get('ticket')
@@ -169,7 +167,6 @@ def before_request():
         # TODO: Shoudn't need to create a session for Basic Auth
         user_session = get_session()
         UserSessionMap.objects.create(user=user, session_key=user_session.session_key, expire_date=user_session.expire_date)
-
         # set_session(user_session)
 
         if user:
@@ -195,22 +192,26 @@ def before_request():
     cookie = request.cookies.get(settings.COOKIE_NAME)
     if cookie:
         try:
-            session_id = ensure_str(itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie))
-            user_session = Session.load(session_id) or Session(_id=session_id)
+            session_key = ensure_str(itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie))
+            user_session = session_store.get(session_key)
         except itsdangerous.BadData:
             return None
-        if not throttle_period_expired(user_session.created, settings.OSF_SESSION_TIMEOUT):
+        if user_session:
             # Update date last login when making non-api requests
             from framework.auth.tasks import update_user_from_activity
-            if user_session.data.get('auth_user_id') and 'api' not in request.url:
+            try:
+                user_session_entry = UserSessionMap.objects.get(session_key=session_key)
                 enqueue_task(update_user_from_activity.s(
-                    user_session.data.get('auth_user_id'),
+                    user_session.data.get(user_session_entry.user._id),
                     timezone.now().timestamp(),
                     cas_login=False
                 ))
-            set_session(user_session)
+            except UserSessionMap.MultipleObjectsReturned:
+                # TODO: handle error
+                pass
         else:
-            remove_session(user_session)
+            # TODO: maybe remove the entry from UserSessionMap
+            pass
 
 
 def after_request(response):
