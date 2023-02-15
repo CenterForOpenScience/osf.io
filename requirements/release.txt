@@ -5,4 +5,4 @@
 # newrelic APM agent
 newrelic==7.16.0.178
 # uwsgi
-uwsgi==2.0.16
+uwsgi

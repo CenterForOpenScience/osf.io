@@ -1,9 +1,11 @@
-FROM node:8-alpine3.9
+FROM python:3.11.1-alpine
 
-# Source: https://github.com/docker-library/httpd/blob/7976cabe162268bd5ad2d233d61e340447bfc371/2.4/alpine/Dockerfile#L3
-RUN set -x \
-    && addgroup -g 82 -S www-data \
-    && adduser -h /var/www -u 82 -D -S -G www-data www-data
+
+RUN set -eux \
+    & apk add \
+        --no-cache \
+        nodejs \
+        yarn
 
 RUN apk add --no-cache --virtual .run-deps \
     gcc \
@@ -14,21 +16,13 @@ RUN apk add --no-cache --virtual .run-deps \
     bash \
     python3 \
     git \
-    # lxml2
     libxml2 \
     libxslt \
-    # psycopg2
     postgresql-libs \
-    # cryptography
     libffi \
-    # gevent
     libev \
     libevent \
     && yarn global add bower
-
-RUN apk add curl
-RUN curl https://bootstrap.pypa.io/pip/3.6/get-pip.py -o get-pip.py
-RUN python3 get-pip.py --force-reinstall pip==21.0
 
 WORKDIR /code
 
@@ -36,50 +30,49 @@ COPY ./requirements.txt ./
 COPY ./requirements/ ./requirements/
 COPY ./addons/bitbucket/requirements.txt ./addons/bitbucket/
 COPY ./addons/box/requirements.txt ./addons/box/
-#COPY ./addons/citations/requirements.txt ./addons/citations/
 COPY ./addons/dataverse/requirements.txt ./addons/dataverse/
 COPY ./addons/dropbox/requirements.txt ./addons/dropbox/
-#COPY ./addons/figshare/requirements.txt ./addons/figshare/
-#COPY ./addons/forward/requirements.txt ./addons/forward/
 COPY ./addons/github/requirements.txt ./addons/github/
 COPY ./addons/gitlab/requirements.txt ./addons/gitlab/
-#COPY ./addons/googledrive/requirements.txt ./addons/googledrive/
 COPY ./addons/mendeley/requirements.txt ./addons/mendeley/
 COPY ./addons/onedrive/requirements.txt /code/addons/onedrive/
-#COPY ./addons/osfstorage/requirements.txt ./addons/osfstorage/
 COPY ./addons/owncloud/requirements.txt ./addons/owncloud/
 COPY ./addons/s3/requirements.txt ./addons/s3/
 COPY ./addons/twofactor/requirements.txt ./addons/twofactor/
-#COPY ./addons/wiki/requirements.txt ./addons/wiki/
 COPY ./addons/zotero/requirements.txt ./addons/zotero/
 
 RUN set -ex \
     && mkdir -p /var/www \
-    && chown www-data:www-data /var/www \
     && apk add --no-cache --virtual .build-deps \
         build-base \
         linux-headers \
         python3-dev \
-        # lxml2
         musl-dev \
         libxml2-dev \
         libxslt-dev \
-        # psycopg2
         postgresql-dev \
-        # cryptography
-        libffi-dev \
-    && for reqs_file in \
-        /code/requirements.txt \
-        /code/requirements/release.txt \
-        /code/addons/*/requirements.txt \
-    ; do \
-        pip3 install --no-cache-dir -r "$reqs_file" \
-    ; done \
-    && (pip3 uninstall uritemplate.py --yes || true) \
-    && pip3 install --no-cache-dir uritemplate.py==0.3.0 \
-    # Fix: https://github.com/CenterForOpenScience/osf.io/pull/6783
-    && python3 -m compileall /usr/lib/python3.6 || true \
-    && apk del .build-deps
+        libffi-dev
+
+
+RUN  pip3 install --no-cache-dir -r /code/requirements.txt
+RUN  pip3 install --no-cache-dir -r /code/requirements/release.txt
+RUN  pip3 install --no-cache-dir -r /code/addons/bitbucket/requirements.txt
+RUN  pip3 install --no-cache-dir -r /code/addons/box/requirements.txt
+# RUN  pip3 install --no-cache-dir -r /code/addons/citations/requirements.txt
+RUN  pip3 install --no-cache-dir -r /code/addons/dataverse/requirements.txt
+RUN  pip3 install --no-cache-dir -r /code/addons/dropbox/requirements.txt
+# RUN  pip3 install --no-cache-dir -r /code/addons/figshare/requirements.txt
+# RUN  pip3 install --no-cache-dir -r /code/addons/forward/requirements.txt
+RUN  pip3 install --no-cache-dir -r /code/addons/github/requirements.txt
+RUN  pip3 install --no-cache-dir -r /code/addons/gitlab/requirements.txt
+# RUN  pip3 install --no-cache-dir -r /code/addons/googledrive/requirements.txt
+RUN  pip3 install --no-cache-dir -r /code/addons/mendeley/requirements.txt
+RUN  pip3 install --no-cache-dir -r /code/addons/onedrive/requirements.txt
+# RUN  pip3 install --no-cache-dir -r /code/addons/osfstorage/requirements.txt
+RUN  pip3 install --no-cache-dir -r /code/addons/owncloud/requirements.txt
+RUN  pip3 install --no-cache-dir -r /code/addons/s3/requirements.txt
+# RUN  pip3 install --no-cache-dir -r /code/addons/wiki/requirements.txt
+# RUN  pip3 install --no-cache-dir -r /code/addons/zotero/requirements.txt
 
 # Settings
 COPY ./tasks/ ./tasks/
@@ -132,11 +125,15 @@ COPY ./addons/s3/static/ ./addons/s3/static/
 COPY ./addons/twofactor/static/ ./addons/twofactor/static/
 COPY ./addons/wiki/static/ ./addons/wiki/static/
 COPY ./addons/zotero/static/ ./addons/zotero/static/
+
+RUN pip3 install --upgrade setuptools
+RUN pip3 install invoke==2.0.0
+
 RUN \
     # OSF
     yarn install --frozen-lockfile \
     && mkdir -p ./website/static/built/ \
-    && invoke build_js_config_files \
+    && invoke build-js-config-files \
     && yarn run webpack-prod \
     # Admin
     && cd ./admin \
@@ -145,7 +142,17 @@ RUN \
     && cd ../ \
     # Cleanup
     && yarn cache clean \
-    && npm cache clean --force
+
+# RUN export DJANGO_SETTINGS_MODULE=api.base.settings
+# RUN python3 ~/manage.py collectstatic --noinput --no-init-app
+# RUN export DJANGO_SETTINGS_MODULE=admin.base.settings
+# RUN python3 ~/manage.py collectstatic --noinput --no-init-app
+
+# RUN touch $file && chmod o+w ./website/templates/_log_templates.mako
+# RUN touch $file && chmod o+w ./website/static/built/nodeCategories.json
+#
+# RUN rm ./website/settings/local.py
+# RUN rm ./api/base/settings/local.py
 
 # Copy the rest of the code over
 COPY ./ ./
@@ -153,21 +160,7 @@ COPY ./ ./
 ARG GIT_COMMIT=
 ENV GIT_COMMIT ${GIT_COMMIT}
 
-# TODO: Admin/API should fully specify their bower static deps, and not include ./website/static in their defaults.py.
-#       (this adds an additional 300+mb to the build image)
-RUN for module in \
-        api.base.settings \
-        admin.base.settings \
-    ; do \
-        export DJANGO_SETTINGS_MODULE=$module \
-        && python3 manage.py collectstatic --noinput --no-init-app \
-    ; done \
-    && for file in \
-        ./website/templates/_log_templates.mako \
-        ./website/static/built/nodeCategories.json \
-    ; do \
-        touch $file && chmod o+w $file \
-    ; done \
-    && rm ./website/settings/local.py ./api/base/settings/local.py
+
+
 
 CMD ["su-exec", "nobody", "invoke", "--list"]
