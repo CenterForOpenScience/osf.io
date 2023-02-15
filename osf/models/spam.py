@@ -206,22 +206,19 @@ class SpamMixin(models.Model):
         }
         request_kwargs.update(request_headers)
 
-        check_resource_for_domains.apply_async(
-            kwargs=dict(
-                guid=self.guids.first()._id,
-                content=content,
-            )
+        check_resource_for_domains(
+            self.guids.first()._id,
+            content,
         )
+
         if settings.SPAM_SERVICES_ENABLED:
             for key, value in request_kwargs.items():
                 request_kwargs[key] = ensure_str(value)
 
-            check_resource_with_spam_services.apply_async(
-                kwargs=dict(
-                    guid=self.guids.first()._id,
-                    content=content,
-                    author=author,
-                    author_email=author_email,
-                    request_kwargs=request_kwargs,
-                )
+            check_resource_with_spam_services(
+                self.guids.first()._id,
+                content,
+                author,
+                author_email,
+                request_kwargs,
             )

@@ -2,6 +2,7 @@ import re
 import logging
 import requests
 from framework.celery_tasks import app as celery_app
+from framework.postcommit_tasks.handlers import run_postcommit
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from osf.external.askismet.client import AkismetClient
@@ -36,7 +37,9 @@ def reclassify_domain_references(notable_domain_id, current_note, previous_note)
             item.save()
             item.referrer.save()
 
-@celery_app.task()
+
+@run_postcommit(once_per_request=False, celery=True)
+@celery_app.task(ignore_results=False, max_retries=5, default_retry_delay=60)
 def check_resource_for_domains(guid, content):
     from osf.models import Guid, NotableDomain, DomainReference
     guid = Guid.load(guid)
@@ -89,6 +92,7 @@ def _extract_domains(content):
             yield domain
 
 
+@run_postcommit(once_per_request=False, celery=True)
 @celery_app.task(ignore_results=False, max_retries=5, default_retry_delay=60)
 def check_resource_with_spam_services(guid, content, author, author_email, request_kwargs):
     """
@@ -97,8 +101,6 @@ def check_resource_with_spam_services(guid, content, author, author_email, reque
     any_is_spam = False
     from osf.models import Guid, OSFUser
     guid = Guid.load(guid)
-    if not guid:
-        return f'{guid} not found'
     resource = guid.referent
 
     kwargs = dict(
