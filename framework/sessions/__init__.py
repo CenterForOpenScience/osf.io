@@ -87,10 +87,11 @@ def prepare_private_key():
 
 def get_session():
     session_key = request.cookies.get(settings.COOKIE_NAME)
-    user_session = SessionStore(session_key=session_key)
-    if not user_session:
-        s = SessionStore()
-        user_session = s.create()
+    session_store = SessionStore()
+    if session_store.exists(session_key=session_key):
+        user_session = session_store.get(session_key)
+    else:
+        user_session = session_store.create()
     return user_session
 
 
