@@ -143,12 +143,6 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
             expect_errors=True)
         assert res.status_code == 200
 
-        #   test_osf_group_with_read_permissions
-        project_public.remove_osf_group(group)
-        project_public.add_osf_group(group, permissions.READ)
-        res = app.get(url_draft_registrations, auth=group_mem.auth, expect_errors=True)
-        assert res.status_code == 200
-
     def test_cannot_view_draft_list(self, app, user_non_contrib, url_draft_registrations):
         #   test_logged_in_non_contributor_cannot_view_draft_list
         res = app.get(
@@ -357,24 +351,6 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             url_draft_registrations,
             payload,
             auth=user_non_contrib.auth,
-            expect_errors=True)
-        assert res.status_code == 403
-
-    #   test_group_admin_cannot_create_draft
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload,
-            auth=group_mem.auth,
-            expect_errors=True)
-        assert res.status_code == 403
-
-    #   test_group_write_contrib_cannot_create_draft
-        project_public.remove_osf_group(group)
-        project_public.add_osf_group(group, permissions.WRITE)
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload,
-            auth=group_mem.auth,
             expect_errors=True)
         assert res.status_code == 403
 
