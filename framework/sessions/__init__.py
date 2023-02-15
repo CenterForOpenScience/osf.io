@@ -128,8 +128,9 @@ def create_session(response, data=None):
     current_session['auth_user_external_id'] = data['auth_user_external_id']
     current_session['service_url'] = data['service_url']
     current_session.save()
+    cookie_value = itsdangerous.Signer(settings.SECRET_KEY).sign(current_session.session_key)
     if response is not None:
-        response.set_cookie(settings.COOKIE_NAME, value=current_session.session_key, domain=settings.OSF_COOKIE_DOMAIN,
+        response.set_cookie(settings.COOKIE_NAME, value=cookie_value, domain=settings.OSF_COOKIE_DOMAIN,
                             secure=settings.SESSION_COOKIE_SECURE, httponly=settings.SESSION_COOKIE_HTTPONLY,
                             samesite=settings.SESSION_COOKIE_SAMESITE)
         return session, response
