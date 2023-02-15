@@ -39,34 +39,35 @@ def authenticate(user, response, user_updates=None):
     print_cas_log(f'Finalizing authentication - data updated: user=[{user._id}]', LogLevel.INFO)
     enqueue_task(update_user_from_activity.s(user._id, timezone.now().timestamp(), cas_login=True, updates=user_updates))
     print_cas_log(f'Finalizing authentication - user update queued: user=[{user._id}]', LogLevel.INFO)
-    usr_session, response = create_session(response, data=data)
+    user_session, response = create_session(response, data=data)
     from osf.models import UserSessionMap
-    UserSessionMap.objects.create(user=user, session_key=usr_session.session_key, expire_date=usr_session.expire_date)
+    UserSessionMap.objects.create(user=user, session_key=user_session.session_key, expire_date=user_session.expire_date)
     print_cas_log(f'Finalizing authentication - session created: user=[{user._id}]', LogLevel.INFO)
     return response
 
 
-def external_first_login_authenticate(user, response):
+def external_first_login_authenticate(user_dict, response):
     """
     Create a special unauthenticated session for user login through external identity provider for the first time.
 
-    :param user: the user with external credential
+    :param user_dict: the user with external credential
     :param response: the response to return
     :return: the response
     """
     data = {
-        'auth_user_external_id_provider': user['external_id_provider'],
-        'auth_user_external_id': user['external_id'],
-        'auth_user_fullname': user['fullname'],
+        'auth_user_external_id_provider': user_dict['external_id_provider'],
+        'auth_user_external_id': user_dict['external_id'],
+        'auth_user_fullname': user_dict['fullname'],
         'auth_user_external_first_login': True,
-        'service_url': user['service_url'],
+        'service_url': user_dict['service_url'],
     }
-    user_identity = '{}#{}'.format(user['external_id_provider'], user['external_id'])
+    user_identity = '{}#{}'.format(user_dict['external_id_provider'], user_dict['external_id'])
     print_cas_log(
         f'Finalizing first-time login from external IdP - data updated: user=[{user_identity}]',
         LogLevel.INFO,
     )
-    response = create_session(response, data=data)
+    # Note: we don't need to keep track of this anonymous session, and thus no entry is created in `UserSessionMap`
+    _, response = create_session(response, data=data)
     print_cas_log(
         f'Finalizing first-time login from external IdP - anonymous session created: user=[{user_identity}]',
         LogLevel.INFO,
