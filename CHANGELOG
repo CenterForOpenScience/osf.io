@@ -2,7 +2,35 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
-22.11.0 (2022-12-19)
+23.03.0 (2023-2-06)
+===================
+- Bug/A11y fixes for Collections moderation
+- Allow Project admins  to cancel pending Collection submissions
+- Tickets: [ENG-4239][ENG-4246][ENG-4253]
+
+23.02.0 (2023-1-30)
+===================
+- Guid Metadata
+- Tickets: [ENG-4170][ENG-4171][ENG-4172][ENG-4173][ENG-4174][ENG-4175]
+
+23.01.0 (2023-1-25)
+===================
+- [Institution Rework] [ENG-4229] Add unit tests to cover reworked SSO flow with identity and affiliation (#10313)
+- [Institution Rework] [ENG-4202] Another follow-up: Fix/Improve email templates (#10311)
+- [Institution Rework] [ENG-4202] Follow-up: Add email templates (#10308)
+- [Institution Rework] [ENG-4204] Part 2: Minor tweak SSO exceptions for CAS (#10299)
+- [Institution Rework] [ENG-4198] Fix/Improve Migration Command (#10293)
+- [Institution Rework] [Bug Fix] Remove user from institution metrics admin when affiliation is removed (#10290)
+- [Institution Rework] [Bug Fix] Exclude banner_name and logo_name from form fields (#10289)
+- [Institution Rework] [Bug Fix] Fix admin asset and institution filter (#10283)
+- [Institution Rework] [Bug Fix] Return placeholder images as fallback (#10282)
+- [Institution Rework] [ENG-4202] [ENG-4204] Rework Institution SSO flow with identity and affiliation - API Part (#10260)
+- [Institution Rework] [ENG-4216] [ENG-4217] Change asset references (#10247)
+- [Institution Rework] [ENG-4206] [ENG-4207] Institution assets rework (#10240)
+- [Institution Rework] [ENG-4199] [ENG-4200] Update user-institution affiliation references (#10236)
+- [Institution Rework] [ENG-4197] [ENG-4198] Add a new model for user-institution affiliation (#10227)
+
+22.12.0 (2022-12-19)
 ====================
 - Allow moderation of submissions to Collections
 

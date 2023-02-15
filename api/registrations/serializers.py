@@ -230,7 +230,11 @@ class RegistrationSerializer(NodeSerializer):
     ))
 
     forked_from = HideIfWithdrawal(RelationshipField(
-        related_view=lambda n: 'registrations:registration-detail' if getattr(n, 'is_registration', False) else 'nodes:node-detail',
+        related_view=lambda reg: (
+            'registrations:registration-detail'
+            if getattr(reg.forked_from, 'is_registration', False)
+            else 'nodes:node-detail'
+        ),
         related_view_kwargs={'node_id': '<forked_from_id>'},
     ))
 
@@ -285,7 +289,7 @@ class RegistrationSerializer(NodeSerializer):
     parent = RelationshipField(
         related_view='registrations:registration-detail',
         related_view_kwargs={'node_id': '<parent_node._id>'},
-        filter_key='parent_node',
+        source='parent_node',
     )
 
     root = RelationshipField(
@@ -305,7 +309,6 @@ class RegistrationSerializer(NodeSerializer):
         self_view='registrations:registration-relationships-institutions',
         self_view_kwargs={'node_id': '<_id>'},
         read_only=False,
-        many=True,
         required=False,
     )
 

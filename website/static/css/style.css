@@ -78,6 +78,10 @@ a {
     left:0;
 }
 
+.footer-links > a {
+    color: #264F82;
+}
+
 .warningBannerText {
     margin-left: 10%;
     margin-right: 75px;

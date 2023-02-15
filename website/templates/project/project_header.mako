@@ -35,6 +35,11 @@
                             </a>
                         </li>
                     % if not node['is_retracted']:
+                        <li id="projectNavMetadata">
+                            <a href="${node['url']}metadata/" class="subnav-header">
+                                Metadata
+                            </a>
+                        </li>
                         <li id="projectNavFiles">
                             <a href="${node['url']}files/" class="subnav-header">
                                 Files

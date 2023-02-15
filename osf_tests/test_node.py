@@ -128,7 +128,7 @@ class TestParentNode:
     def project_with_affiliations(self, user):
         institution = InstitutionFactory()
         another_institution = InstitutionFactory()
-        user.affiliated_institutions.add(institution)
+        user.add_or_update_affiliated_institution(institution)
         user.save()
         original = ProjectFactory(creator=user)
         original.affiliated_institutions.add(*[institution, another_institution])
@@ -385,7 +385,7 @@ class TestParentNode:
 
     def test_fork_has_correct_affiliations(self, user, auth, project_with_affiliations):
         fork = project_with_affiliations.fork_node(auth=auth)
-        user_affiliations = user.affiliated_institutions.values_list('id', flat=True)
+        user_affiliations = user.get_institution_affiliations().values_list('institution__id', flat=True)
         project_affiliations = project_with_affiliations.affiliated_institutions.values_list('id', flat=True)
         fork_affiliations = fork.affiliated_institutions.values_list('id', flat=True)
         assert set(project_affiliations) != set(user_affiliations)
@@ -419,7 +419,7 @@ class TestParentNode:
 
     def test_template_has_correct_affiliations(self, user, auth, project_with_affiliations):
         template = project_with_affiliations.use_as_template(auth=auth)
-        user_affiliations = user.affiliated_institutions.values_list('id', flat=True)
+        user_affiliations = user.get_institution_affiliations().values_list('institution__id', flat=True)
         project_affiliations = project_with_affiliations.affiliated_institutions.values_list('id', flat=True)
         template_affiliations = template.affiliated_institutions.values_list('id', flat=True)
         assert set(project_affiliations) != set(user_affiliations)
@@ -2179,7 +2179,8 @@ def test_find_by_institutions():
     inst1, inst2 = InstitutionFactory(), InstitutionFactory()
     project = ProjectFactory(is_public=True)
     user = project.creator
-    user.affiliated_institutions.add(inst1, inst2)
+    user.add_or_update_affiliated_institution(inst1)
+    user.add_or_update_affiliated_institution(inst2)
     project.add_affiliated_institution(inst1, user=user)
     project.save()
 

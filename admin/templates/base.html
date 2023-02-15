@@ -176,6 +176,19 @@
                   </ul>
               </div>
           {% endif %}
+          {% if perms.osf.view_institutionassetfile %}
+              <li><a role="button" data-toggle="collapse" href="#collapseInstitutionAssetFiles">
+                  <i class='fa fa-caret-down'></i> Institution Assets
+              </a></li>
+              <div class="collapse" id="collapseInstitutionAssetFiles">
+                  <ul class="sidebar-menu sidebar-menu-inner">
+                      <li><a href="{% url 'institution_asset_files:list' %}"><i class='fa fa-link'></i><span> List</span> </a></li>
+                      {% if perms.osf.change_institutionassetfile %}
+                      <li><a href="{% url 'institution_asset_files:create' %}"><i class='fa fa-link'></i><span> Create</span> </a></li>
+                      {% endif %}
+                  </ul>
+              </div>
+          {% endif %}
           {% if perms.osf.view_brand %}
               <li><a role="button" data-toggle="collapse" href="#collapseBrands">
                   <i class='fa fa-caret-down'></i> Brands
@@ -204,14 +217,14 @@
               </div>
           {% endif %}
           {% if perms.osf.view_providerassetfile %}
-              <li><a role="button" data-toggle="collapse" href="#collapseAssetFiles">
+              <li><a role="button" data-toggle="collapse" href="#collapseProviderAssetFiles">
                   <i class='fa fa-caret-down'></i> Provider Assets
               </a></li>
-              <div class="collapse" id="collapseAssetFiles">
+              <div class="collapse" id="collapseProviderAssetFiles">
                   <ul class="sidebar-menu sidebar-menu-inner">
-                      <li><a href="{% url 'asset_files:list' %}"><i class='fa fa-link'></i><span> List</span> </a></li>
+                      <li><a href="{% url 'provider_asset_files:list' %}"><i class='fa fa-link'></i><span> List</span> </a></li>
                       {% if perms.osf.change_providerassetfile %}
-                      <li><a href="{% url 'asset_files:create' %}"><i class='fa fa-link'></i><span> Create</span> </a></li>
+                      <li><a href="{% url 'provider_asset_files:create' %}"><i class='fa fa-link'></i><span> Create</span> </a></li>
                       {% endif %}
                   </ul>
               </div>
@@ -317,10 +330,10 @@
       </div><!-- /.content-wrapper -->
 
       <!-- Main Footer -->
-      <footer class="main-footer">
+      <div class="main-footer">
         <!-- Default to the left -->
         <strong>Copyright &copy; 2015-2016 <a href="http://www.osf.io">osf.io</a>.</strong> All rights reserved.
-      </footer>
+      </div>
 
     </div><!-- ./wrapper -->
 

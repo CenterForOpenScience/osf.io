@@ -29,7 +29,7 @@ class ChronosJournalRelationshipField(RelationshipField):
             journal = ChronosJournal.objects.get(journal_id=journal_id)
         except ChronosJournal.DoesNotExist:
             raise NotFound('Unable to find specified journal.')
-        return {'journal': journal}
+        return journal
 
 
 class ChronosJournalSerializer(JSONAPISerializer):

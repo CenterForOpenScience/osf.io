@@ -230,10 +230,14 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
         collection_submission = self.collectionsubmission_set.filter(guid=obj.guids.first())
         if collection_submission:
             collection_submission = collection_submission.get()
-            try:
-                collection_submission.resubmit(user=collector, comment='Resubmitted via collect_object')
-            except MachineError:
-                raise ValidationError('Object already exists in collection.')
+            # IN_PROGRESS is "pre-submission", before the first save or after a submission cancellation.
+            if collection_submission.state == CollectionSubmissionStates.IN_PROGRESS:
+                collection_submission.submit(user=collector, comment='Submitted via collect_object')
+            else:
+                try:
+                    collection_submission.resubmit(user=collector, comment='Resubmitted via collect_object')
+                except MachineError:
+                    raise ValidationError('Object already exists in collection.')
             return collection_submission
         else:
             collection_submission = self.collectionsubmission_set.create(guid=obj.guids.first(), creator=collector)

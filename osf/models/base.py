@@ -45,6 +45,24 @@ def generate_object_id():
     return str(bson.ObjectId())
 
 
+def coerce_guid(maybe_guid, create_if_needed=False):
+    if isinstance(maybe_guid, Guid):
+        return maybe_guid
+    if isinstance(maybe_guid, GuidMixin):
+        return maybe_guid.guids.first()
+    if isinstance(maybe_guid, OptionalGuidMixin):
+        guid = maybe_guid.get_guid(create=create_if_needed)
+        if guid is None:
+            raise InvalidGuid(f'guid does not exist ({maybe_guid})')
+        return guid
+    if isinstance(maybe_guid, str):
+        try:
+            return Guid.objects.get(_id=maybe_guid)
+        except Guid.DoesNotExist:
+            raise InvalidGuid(f'guid does not exist ({maybe_guid})')
+    raise InvalidGuid(f'cannot coerce {type(maybe_guid)} ({maybe_guid}) into Guid')
+
+
 class QuerySetExplainMixin:
     def explain(self, *args):
         extra_arguments = ''

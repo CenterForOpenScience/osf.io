@@ -227,6 +227,10 @@ COLLECTION_SUBMISSION_REMOVED_PRIVATE = lambda collection, node: Mail(
     'collection_submission_removed_private',
     subject=f'{node.title} was removed from {collection.title}'
 )
+COLLECTION_SUBMISSION_CANCEL = lambda collection, node: Mail(
+    'collection_submission_cancel',
+    subject=f'Request to add {node.title} to {collection.title} was canceled'
+)
 
 PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='Primary email changed')
 
@@ -433,6 +437,16 @@ WELCOME_OSF4I = Mail(
     'welcome_osf4i',
     subject='Welcome to OSF',
     engagement=True
+)
+
+DUPLICATE_ACCOUNTS_OSF4I = Mail(
+    'duplicate_accounts_sso_osf4i',
+    subject='Duplicate OSF Accounts'
+)
+
+ADD_SSO_EMAIL_OSF4I = Mail(
+    'add_sso_email_osf4i',
+    subject='Your OSF Account Email Address'
 )
 
 EMPTY = Mail('empty', subject='${subject}')

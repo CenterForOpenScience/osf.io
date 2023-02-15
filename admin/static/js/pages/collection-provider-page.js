@@ -85,12 +85,12 @@ $(document).ready(function() {
    });
 
    var schoolTypeItems = JSON.parse($('#id_school_type_choices').val());
-   programAreaItems.forEach(function(element){
+   schoolTypeItems.forEach(function(element){
        $('#tags-input-school-type').tagsinput('add', element)
    });
 
    var studyDesignItems = JSON.parse($('#id_study_design_choices').val());
-   programAreaItems.forEach(function(element){
+   studyDesignItems.forEach(function(element){
        $('#tags-input-study-design').tagsinput('add', element)
    });
 });
