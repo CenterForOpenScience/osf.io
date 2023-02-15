@@ -32,10 +32,13 @@ def reclassify_domain_references(notable_domain_id, current_note, previous_note)
             item.save()
             item.referrer.save()
 
-@celery_app.task()
+
+@celery_app.task(ignore_results=False, max_retries=5, default_retry_delay=60)
 def check_resource_for_domains(guid, content):
     from osf.models import Guid, NotableDomain, DomainReference
-    resource = Guid.load(guid).referent
+    guid = Guid.load(guid)
+    resource = guid.referent
+
     spammy_domains = []
     referrer_content_type = ContentType.objects.get_for_model(resource)
     for domain in _extract_domains(content):
