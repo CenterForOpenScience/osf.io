@@ -8,7 +8,6 @@ pytest-socket==0.3.5
 pytest-xdist==1.34.0
 pytest-django==3.10.0
 python-coveralls==2.9.3
-pytest-testmon==1.0.3
 nose
 factory-boy==2.10.0
 webtest-plus==0.3.3
