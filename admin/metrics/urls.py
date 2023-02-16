@@ -7,5 +7,4 @@ app_name = 'admin'
 
 urlpatterns = [
     re_path(r'^$', login(views.MetricsView.as_view()), name='metrics'),
-    re_path(r'^mw$', login(views.MetricsView2.as_view()), name='metrics-mw'),
 ]
