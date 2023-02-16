@@ -2,6 +2,11 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+23.04.0 (2023-2-16)
+===================
+-Admin App metrics now pulled from ES instead of Keen
+
+
 23.03.0 (2023-2-06)
 ===================
 - Bug/A11y fixes for Collections moderation
