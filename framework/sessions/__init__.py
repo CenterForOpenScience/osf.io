@@ -182,11 +182,11 @@ def before_request():
             session_data = user_session.get_decode()
             if session_data.get('auth_user_id', None) != user._primary_key:
                 user_session['auth_user_id'] = user._primary_key
-                user_session.modified = True
+                user_session.save()
         else:
             # Invalid key: Not found in database
             user_session['auth_error_code'] = http_status.HTTP_401_UNAUTHORIZED
-            user_session.modified = True
+            user_session.save()
         return
 
     cookie = request.cookies.get(settings.COOKIE_NAME)
@@ -202,7 +202,7 @@ def before_request():
             try:
                 user_session_entry = UserSessionMap.objects.get(session_key=session_key)
                 enqueue_task(update_user_from_activity.s(
-                    user_session.data.get(user_session_entry.user._id),
+                    user_session_entry.user._id,
                     timezone.now().timestamp(),
                     cas_login=False
                 ))
