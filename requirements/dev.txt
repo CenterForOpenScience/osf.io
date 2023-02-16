@@ -20,7 +20,7 @@ responses==0.10.6
 # Syntax checking
 flake8==3.6.0
 flake8-mutable==1.2.0
-pre-commit==1.10.5
+pre-commit
 
 # Django Debug Toolbar for local development
 django-debug-toolbar==3.2.4
