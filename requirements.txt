@@ -46,7 +46,7 @@ requests>=2.21.0
 urllib3==1.26.5
 oauthlib==2.0.6
 requests-oauthlib==0.8.0
-raven==6.4.0
+raven
 
 # API requirements
 Django==3.2.17
