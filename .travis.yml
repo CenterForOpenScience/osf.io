@@ -144,7 +144,7 @@ install:
        travis_retry invoke assets --dev
       fi
 
-    - travis_retry invoke travis_addon_settings
+    - travis_retry invoke travis-addon-settings
     - travis_retry pip install psycopg2==2.9.5
     - travis_retry invoke requirements --dev --addons
 

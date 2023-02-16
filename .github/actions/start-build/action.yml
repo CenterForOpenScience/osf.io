@@ -22,7 +22,7 @@ runs:
     shell: bash
     run: |
       pip install psycopg2==2.9.5
-      invoke travis_addon_settings
+      invoke travis-addon-settings
       invoke requirements --dev --addons
       # use yarn add --exact to match versions in yarn.lock w/o installing all deps
       yarn add --exact bower@^1.8.8
