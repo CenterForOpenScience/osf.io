@@ -7,8 +7,8 @@
 
 future==0.18.2
 invoke==2.0.0
-Werkzeug==1.0.0
-Flask==1.0
+Werkzeug
+Flask==2.0.3
 gevent
 Mako==1.0.7
 Markdown==3.3.7
