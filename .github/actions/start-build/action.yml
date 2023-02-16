@@ -14,7 +14,7 @@ runs:
     shell: bash
     run: |
       pip install --upgrade pip
-      pip install invoke==0.13.0
+      pip install invoke==2.0.0
       pip install flake8==2.4.0 --force-reinstall --upgrade
       pip install wheel
       invoke wheelhouse --dev --addons
