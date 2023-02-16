@@ -20,7 +20,7 @@ itsdangerous
 lxml
 jinja2==3.0.1
 mailchimp==2.0.9
-nameparser==0.5.3
+nameparser
 bcrypt==3.1.4
 python-dateutil==2.8.1
 pytz
