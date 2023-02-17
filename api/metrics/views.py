@@ -23,7 +23,7 @@ from api.base.waffle_decorators import require_switch
 from api.metrics.permissions import (
     IsPreprintMetricsUser,
     IsRawMetricsUser,
-    IsRegistriesModerationMetricsUser
+    IsRegistriesModerationMetricsUser,
 )
 from api.metrics.renderers import (
     MetricsReportsCsvRenderer,
@@ -52,7 +52,7 @@ from osf.metrics import (
     PreprintDownload,
     PreprintView,
     RegistriesModerationMetrics,
-    CountedAuthUsage
+    CountedAuthUsage,
 )
 from osf.models import AbstractNode
 
