@@ -6,13 +6,6 @@ from osf.external.askismet.exceptions import AkismetClientError
 
 class AkismetClient(object):
 
-    def __init__(self, apikey=None, website=None, verify=False):
-        self.apikey = self.apikey or apikey
-        self.website = self.website or website
-        self._apikey_is_valid = None
-        if verify:
-            self._verify_apikey()
-
     NAME = 'akismet'
     API_PROTOCOL = 'https://'
     API_HOST = 'rest.akismet.com'
@@ -27,6 +20,13 @@ class AkismetClient(object):
         'comment_author_url',
         'comment_content',
     )
+
+    def __init__(self, apikey=None, website=None, verify=False):
+        self.apikey = self.apikey or apikey
+        self.website = self.website or website
+        self._apikey_is_valid = None
+        if verify:
+            self._verify_apikey()
 
     def _is_apikey_valid(self):
         if self._apikey_is_valid is not None:

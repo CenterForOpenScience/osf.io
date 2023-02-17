@@ -2101,7 +2101,7 @@ class SpamOverrideMixin(SpamMixin):
             request_headers,
         )
 
-    def _check_spam_user(self, user):
+    def check_spam_user(self, user):
         if (
             settings.SPAM_ACCOUNT_SUSPENSION_ENABLED
             and (timezone.now() - user.date_confirmed) <= settings.SPAM_ACCOUNT_SUSPENSION_THRESHOLD
