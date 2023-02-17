@@ -5,17 +5,26 @@ from enum import Enum
 
 from django.http import JsonResponse, HttpResponse, Http404
 from django.utils import timezone
+
 from elasticsearch.exceptions import NotFoundError, RequestError
 from elasticsearch_dsl.connections import get_connection
+
+from framework.auth.oauth_scopes import CoreScopes
+
 from rest_framework.exceptions import ValidationError
 from rest_framework import permissions as drf_permissions
 from rest_framework.response import Response
 from rest_framework.generics import GenericAPIView
 from rest_framework.settings import api_settings as drf_api_settings
 
-from framework.auth.oauth_scopes import CoreScopes
+from api.base.views import JSONAPIBaseView
 from api.base.permissions import TokenHasScope
-from api.metrics.permissions import IsPreprintMetricsUser, IsRawMetricsUser, IsRegistriesModerationMetricsUser
+from api.base.waffle_decorators import require_switch
+from api.metrics.permissions import (
+    IsPreprintMetricsUser,
+    IsRawMetricsUser,
+    IsRegistriesModerationMetricsUser
+)
 from api.metrics.renderers import (
     MetricsReportsCsvRenderer,
     MetricsReportsTsvRenderer,
@@ -25,22 +34,27 @@ from api.metrics.serializers import (
     RawMetricsSerializer,
     DailyReportSerializer,
     ReportNameSerializer,
-)
-from api.metrics.utils import parse_datetimes, parse_date_range
-from api.metrics.serializers import (
     NodeAnalyticsSerializer,
     UserVisitsSerializer,
     UniqueUserVisitsSerializer,
     CountedAuthUsageSerializer,
 )
-from api.base.views import JSONAPIBaseView
-from api.base.waffle_decorators import require_switch
-from osf.features import ENABLE_RAW_METRICS
-from osf.metrics import PreprintDownload, PreprintView, RegistriesModerationMetrics, CountedAuthUsage
-from osf.metrics import reports
-from osf.metrics.utils import stable_key
-from osf.models import AbstractNode
+from api.metrics.utils import (
+    parse_datetimes,
+    parse_date_range,
+)
 from api.nodes.permissions import MustBePublic
+
+from osf.features import ENABLE_RAW_METRICS
+from osf.metrics import (
+    utils,
+    reports,
+    PreprintDownload,
+    PreprintView,
+    RegistriesModerationMetrics,
+    CountedAuthUsage
+)
+from osf.models import AbstractNode
 
 
 logger = logging.getLogger(__name__)
@@ -390,7 +404,7 @@ class CountedAuthUsageView(JSONAPIBaseView):
                 now.hour,
             ]
             user_is_authenticated = False
-        return stable_key(*session_id_parts), user_is_authenticated
+        return utils.stable_key(*session_id_parts), user_is_authenticated
 
 
 class NodeAnalyticsQuery(JSONAPIBaseView):

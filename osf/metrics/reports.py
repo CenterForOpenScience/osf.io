@@ -203,7 +203,7 @@ class UserSummaryReport(DailyReport):
 
 
 class SpamSummaryReport(MonthlyReport):
-    confirmed_spam_node = metrics.Integer()
+    node_confirmed_spam = metrics.Integer()
     nodes_confirmed_ham = metrics.Integer()
     nodes_flagged = metrics.Integer()
     registration_confirmed_spam = metrics.Integer()
@@ -213,4 +213,4 @@ class SpamSummaryReport(MonthlyReport):
     preprint_confirmed_ham = metrics.Integer()
     preprint_flagged = metrics.Integer()
     users_marked_as_spam = metrics.Integer()
-    user_marked_as_ham = metrics.Integer()
+    users_marked_as_ham = metrics.Integer()

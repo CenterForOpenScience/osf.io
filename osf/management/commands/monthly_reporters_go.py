@@ -23,17 +23,10 @@ def monthly_reporters_go(report_year=None, report_month=None):
     if report_year is None and report_month is None:
         # default to last month
         today = timezone.now().date()
-        if today.month == 1:
-            report_yearmonth = YearMonth(
-                year=today.year - 1,
-                month=MAXMONTH,
-            )
-        else:
-            report_yearmonth = YearMonth(
-                year=today.year,
-                month=today.month - 1,
-            )
-    else:
+        report_yearmonth = YearMonth(
+            year=today.year,
+            month=today.month - 1 or MAXMONTH,
+        )
         assert report_year and report_month
         report_yearmonth = YearMonth(report_year, report_month)
 
