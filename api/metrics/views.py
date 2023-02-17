@@ -31,7 +31,7 @@ from api.metrics.serializers import (
     NodeAnalyticsSerializer,
     UserVisitsSerializer,
     UniqueUserVisitsSerializer,
-    CountedAuthUsageSerializer
+    CountedAuthUsageSerializer,
 )
 from api.base.views import JSONAPIBaseView
 from api.base.waffle_decorators import require_switch
