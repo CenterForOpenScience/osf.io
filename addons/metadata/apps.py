@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 from addons.base.apps import BaseAddonAppConfig
-from . import SHORT_NAME
+from . import DISPLAY_NAME, SHORT_NAME
 
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -17,7 +17,7 @@ class AddonAppConfig(BaseAddonAppConfig):
     name = 'addons.{}'.format(SHORT_NAME)
     label = 'addons_{}'.format(SHORT_NAME)
 
-    full_name = 'Metadata'
+    full_name = DISPLAY_NAME
 
     owners = ['user', 'node']
 

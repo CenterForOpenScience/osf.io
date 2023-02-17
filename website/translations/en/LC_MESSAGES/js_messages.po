@@ -4076,7 +4076,7 @@ msgstr ""
 
 #: website/static/js/js_messages.js:21
 msgid "Registrations"
-msgstr ""
+msgstr "Project Metadata"
 
 #: website/static/js/js_messages.js:21
 msgid "Users"
@@ -4109,6 +4109,10 @@ msgstr ""
 #: website/static/js/js_messages.js:21
 msgid "Comments"
 msgstr ""
+
+#: website/static/js/js_messages.js:21
+msgid "Metadata"
+msgstr "File Metadata"
 
 #: website/static/js/js_messages.js:23
 msgid "Default Notification Settings"
