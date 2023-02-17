@@ -1,3 +1,5 @@
+import re
+
 import pytz
 
 from datetime import timedelta, datetime
@@ -5,11 +7,15 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 
+DATETIME_FORMAT = '%Y-%m-%dT%H:%M'
+DATE_FORMAT = '%Y-%m-%d'
+# YEARMONTH_FORMAT = '%Y-%m'
+
+DEFAULT_DAYS_BACK = 5
+
+
 def parse_datetimes(query_params):
     now = timezone.now()
-    date_format = '%Y-%m-%d'
-    datetime_format = '%Y-%m-%dT%H:%M'
-    default_days_back = 5
 
     on_date = query_params.get('on_date', None)
     start_datetime = query_params.get('start_datetime', None)
@@ -32,15 +38,15 @@ def parse_datetimes(query_params):
         raise ValidationError('You cannot provide a specific end_datetime with no start_datetime')
 
     if on_date:
-        start_datetime = datetime.strptime(on_date, date_format)
+        start_datetime = datetime.strptime(on_date, DATE_FORMAT)
         end_datetime = start_datetime.replace(hour=23, minute=59, second=59, microsecond=999)
 
     else:
         # default date range: 6 days ago to 1 day ago, at midnight
-        default_start = (now - timedelta(default_days_back + 1)).replace(hour=0, minute=0, second=0, microsecond=0)
+        default_start = (now - timedelta(DEFAULT_DAYS_BACK + 1)).replace(hour=0, minute=0, second=0, microsecond=0)
         default_end = (now - timedelta(1)).replace(hour=23, minute=59, second=59, microsecond=999)
 
-        format_to_use = datetime_format if using_time else date_format
+        format_to_use = DATETIME_FORMAT if using_time else DATE_FORMAT
         try:
             start_datetime = datetime.strptime(start_datetime, format_to_use).replace(tzinfo=pytz.utc) if start_datetime else default_start
             end_datetime = datetime.strptime(end_datetime, format_to_use).replace(tzinfo=pytz.utc) if end_datetime else default_end
@@ -55,3 +61,55 @@ def parse_datetimes(query_params):
         raise ValidationError('The end_datetime must be after the start_datetime')
 
     return start_datetime, end_datetime
+
+
+def parse_date_param(param_value):
+    try:
+        return datetime.strptime(param_value, DATE_FORMAT).date()
+    except ValueError:
+        raise ValidationError(f'Invalid date value: "{param_value}" (expected format "YYYY-MM-DD")')
+
+
+def parse_dates(query_params):
+    start_date_param = query_params.get('start_date', None)
+    end_date_param = query_params.get('end_date', None)
+
+    if end_date_param and not start_date_param:
+        raise ValidationError('You cannot provide a specific end_date with no start_date')
+    start_date = (
+        parse_date_param(start_date_param)
+        if start_date_param
+        else (timezone.now() - timedelta(days=DEFAULT_DAYS_BACK)).date()
+    )
+    end_date = (
+        parse_date_param(end_date_param)
+        if end_date_param
+        else timezone.now().date()
+    )
+
+    if start_date > end_date:
+        raise ValidationError('The end_date must be after the start_date')
+    return start_date, end_date
+
+
+def parse_date_range(query_params):
+    if query_params.get('days_back', None):
+        days_back = query_params.get('days_back', DEFAULT_DAYS_BACK)
+        report_date_range = {'gte': f'now/d-{days_back}d'}
+    elif query_params.get('timeframe', False):
+        timeframe = query_params.get('timeframe')
+        if timeframe is not None:
+            m = re.match(r'previous_(\d+)_days?', timeframe)
+            if m:
+                days_back = m.group(1)
+            else:
+                raise Exception('Unsupported timeframe format: "{}"'.format(timeframe))
+            report_date_range = {'gte': f'now/d-{days_back}d'}
+    elif query_params.get('timeframeStart'):
+        tsStart = query_params.get('timeframeStart')
+        tsEnd = query_params.get('timeframeEnd')
+        report_date_range = {'gte': tsStart, 'lt': tsEnd}
+    else:
+        start_date, end_date = parse_dates(query_params)
+        report_date_range = {'gte': str(start_date), 'lte': str(end_date)}
+    return report_date_range
