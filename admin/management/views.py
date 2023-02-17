@@ -104,11 +104,9 @@ class DailyReportersGo(ManagementCommandPermissionView):
         else:
             report_date = None
 
-        errors = daily_reporters_go(report_date=report_date, also_send_to_keen=also_keen)
-
-        if errors:
-            for reporter_name, error_msg in errors.items():
-                messages.error(request, f'{reporter_name} failed: {error_msg}')
-        else:
-            messages.success(request, 'Daily reporters successfully went.')
+        daily_reporters_go.apply_async(kwargs={
+            'report_date': report_date,
+            'also_send_to_keen': also_keen
+        })
+        messages.success(request, 'Daily reporters going!')
         return redirect(reverse('management:commands'))
