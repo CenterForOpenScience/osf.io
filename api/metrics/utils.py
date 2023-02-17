@@ -16,6 +16,13 @@ YEARMONTH_FORMAT = '%Y-%m'
 DEFAULT_DAYS_BACK = 5
 
 
+DATETIME_FORMAT = '%Y-%m-%dT%H:%M'
+DATE_FORMAT = '%Y-%m-%d'
+# YEARMONTH_FORMAT = '%Y-%m'
+
+DEFAULT_DAYS_BACK = 5
+
+
 def parse_datetimes(query_params):
     now = timezone.now()
 

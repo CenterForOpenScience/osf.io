@@ -1,11 +1,14 @@
+import logging
 import datetime
 
 from rest_framework import serializers as ser
 
 from api.base.serializers import BaseAPISerializer
 from api.base.utils import absolute_reverse
-from osf.metrics.counted_usage import CountedUsage
+from osf.metrics.counted_usage import CountedAuthUsage
 from website import settings as website_settings
+
+logger = logging.getLogger(__name__)
 
 
 class PreprintMetricSerializer(BaseAPISerializer):
@@ -23,9 +26,9 @@ class RawMetricsSerializer():
 
 def validate_action_label(label):
     try:
-        CountedUsage.ActionLabel(label)
+        CountedAuthUsage.ActionLabel(label)
     except ValueError:
-        valid_labels = ', '.join(label.value for label in CountedUsage.ActionLabel)
+        valid_labels = ', '.join(label.value for label in CountedAuthUsage.ActionLabel)
         raise ser.ValidationError(
             f'Invalid value in action_labels! Valid labels: {valid_labels}',
         )
@@ -38,7 +41,7 @@ class PageviewInfoSerializer(ser.Serializer):
     route_name = ser.CharField(max_length=4095, required=False)
 
 
-class CountedUsageSerializer(ser.Serializer):
+class CountedAuthUsageSerializer(ser.Serializer):
     item_guid = ser.CharField(max_length=255, required=False)
     client_session_id = ser.CharField(max_length=255, required=False)
     provider_id = ser.CharField(max_length=255, required=False)
@@ -60,11 +63,12 @@ class CountedUsageSerializer(ser.Serializer):
         return data
 
     def create(self, validated_data):
-        return CountedUsage.record(
+        return CountedAuthUsage.record(
             platform_iri=website_settings.DOMAIN,
             provider_id=validated_data.get('provider_id'),
             item_guid=validated_data.get('item_guid'),
             session_id=validated_data['session_id'],  # must be provided by the view
+            user_is_authenticated=validated_data['user_is_authenticated'],  # must be provided by the view
             action_labels=validated_data.get('action_labels'),
             pageview_info=validated_data.get('pageview_info'),
         )
@@ -169,5 +173,45 @@ class NodeAnalyticsSerializer(ser.BaseSerializer):
                 'unique_visits': unique_visits,
                 'time_of_day': time_of_day,
                 'referer_domain': referer_domain,
+            },
+        }
+
+
+class UserVisitsSerializer(ser.BaseSerializer):
+    def to_representation(self, instance):
+        aggs = instance.aggregations
+        unique_visits = [
+            {
+                'date': bucket['key'].date(),
+                'count': bucket['doc_count'],
+            }
+            for bucket in aggs['unique-visits'].buckets
+        ]
+        timespan = self.context['timespan']
+        return {
+            'id': f'user-visits:{timespan}',
+            'type': 'user-visits-analytics',
+            'attributes': {
+                'unique_visits': unique_visits,
+            },
+        }
+
+
+class UniqueUserVisitsSerializer(ser.BaseSerializer):
+    def to_representation(self, instance):
+        aggs = instance.aggregations
+        unique_visits = [
+            {
+                'date': bucket['key'].date(),
+                'count': bucket['doc_count'],
+            }
+            for bucket in aggs['unique-visits'].buckets
+        ]
+        timespan = self.context['timespan']
+        return {
+            'id': f'unique-user-visits:{timespan}',
+            'type': 'unique-user-visits-analytics',
+            'attributes': {
+                'unique_visits': unique_visits,
             },
         }

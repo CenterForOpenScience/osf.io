@@ -1,3 +1,5 @@
+# from .active_users import ActiveUserReporter
+from .storage_addon_usage import StorageAddonUsageReporter
 from .download_count import DownloadCountReporter
 from .institution_summary import InstitutionSummaryReporter
 from .new_user_domain import NewUserDomainReporter
@@ -10,13 +12,13 @@ from .spam_count import SpamCountReporter
 
 DAILY_REPORTERS = (
     # ActiveUserReporter,
-    # AddonUsageReporter,
     DownloadCountReporter,
     InstitutionSummaryReporter,
     NewUserDomainReporter,
     NodeCountReporter,
     OsfstorageFileCountReporter,
     PreprintCountReporter,
+    StorageAddonUsageReporter,
     UserCountReporter,
 )
 
