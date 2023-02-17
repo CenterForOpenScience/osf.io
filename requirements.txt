@@ -12,7 +12,7 @@ Flask==2.0.3
 gevent
 Mako==1.0.7
 Markdown==3.3.7
-WTForms==1.0.4
+WTForms
 celery==5.0.0
 kombu==5.0.2
 amqp==5.1.1

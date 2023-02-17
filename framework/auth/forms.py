@@ -9,7 +9,7 @@ from framework.forms import (
     Form,
     NoHtmlCharacters,
     PasswordField,
-    TextField,
+    TextAreaField,
     HiddenField,
     validators,
     BootstrapTextInput,
@@ -54,7 +54,7 @@ class EmailExists(object):
 
 
 # The order fields are defined determines their order on the page.
-name_field = TextField(
+name_field = TextAreaField(
     'Full Name',
     [
         validators.Required(message=u'Full name is required'),
@@ -64,7 +64,7 @@ name_field = TextField(
     widget=BootstrapTextInput(),
 )
 
-name_field_not_required = TextField(
+name_field_not_required = TextAreaField(
     'Full Name',
     [
         NoHtmlCharacters(),
@@ -73,7 +73,7 @@ name_field_not_required = TextField(
     widget=BootstrapTextInput(),
 )
 
-email_field = TextField('Email Address',
+email_field = TextAreaField('Email Address',
     [
         validators.Required(message=u'Email address is required'),
         validators.Length(min=6, message=u'Email address is too short'),
@@ -85,7 +85,7 @@ email_field = TextField('Email Address',
     widget=BootstrapTextInput())
 
 
-unique_email_field = TextField('Email Address',
+unique_email_field = TextAreaField('Email Address',
     [
         validators.Required(message=u'Email address is required'),
         validators.Length(min=6, message=u'Email address is too short'),
@@ -97,7 +97,7 @@ unique_email_field = TextField('Email Address',
     filters=[lowerstripped],
     widget=BootstrapTextInput())
 
-confirm_email_field = TextField(
+confirm_email_field = TextAreaField(
     'Verify Email Address',
     [
         validators.EqualTo(
