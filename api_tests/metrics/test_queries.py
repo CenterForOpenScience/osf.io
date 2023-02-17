@@ -84,7 +84,7 @@ class TestNodeAnalyticsQuery:
         }
         resp = app.get(f'/_/metrics/query/node_analytics/{guid}/{timespan}/')
 
-        assert resp.json == {'data': {
+        assert resp.json['data'] == {
             'id': f'{guid}:{timespan}',
             'type': 'node-analytics',
             'attributes': {
@@ -106,6 +106,6 @@ class TestNodeAnalyticsQuery:
                     {'referer_domain': 'elsewhere.example.com', 'count': 4},
                 ],
             },
-        }}
+        }
 
         assert mock_search.call_count == 1

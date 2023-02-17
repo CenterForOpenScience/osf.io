@@ -22,12 +22,22 @@ urlpatterns = [
     ),
     re_path(
         r'^events/counted_usage/$',
-        views.CountedUsageView.as_view(),
-        name=views.CountedUsageView.view_name,
+        views.CountedAuthUsageView.as_view(),
+        name=views.CountedAuthUsageView.view_name,
     ),
     re_path(
         r'^query/node_analytics/(?P<node_guid>[a-z0-9]+)/(?P<timespan>week|fortnight|month)/$',
         views.NodeAnalyticsQuery.as_view(),
         name=views.NodeAnalyticsQuery.view_name,
+    ),
+    re_path(
+        r'^query/user_visits/$',
+        views.UserVisitsQuery.as_view(),
+        name=views.UserVisitsQuery.view_name,
+    ),
+    re_path(
+        r'^query/unique_user_visits/$',
+        views.UniqueUserVisitsQuery.as_view(),
+        name=views.UniqueUserVisitsQuery.view_name,
     ),
 ]

@@ -93,17 +93,21 @@ class RegistrationRunningTotals(InnerDoc):
 #     past_year = metrics.Integer()
 
 
-class AddonUsageReport(DailyReport):
-    DAILY_UNIQUE_FIELD = 'addon_shortname'
-
+class UsageByStorageAddon(InnerDoc):
     addon_shortname = metrics.Keyword()
-    users_enabled_count = metrics.Integer()
-    users_authorized_count = metrics.Integer()
-    users_linked_count = metrics.Integer()
-    nodes_total_count = metrics.Integer()
-    nodes_connected_count = metrics.Integer()
-    nodes_deleted_count = metrics.Integer()
-    nodes_disconnected_count = metrics.Integer()
+
+    enabled_usersettings = metrics.Object(RunningTotal)
+    linked_usersettings = metrics.Object(RunningTotal)
+    deleted_usersettings = metrics.Object(RunningTotal)
+    usersetting_links = metrics.Object(RunningTotal)
+
+    connected_nodesettings = metrics.Object(RunningTotal)
+    disconnected_nodesettings = metrics.Object(RunningTotal)
+    deleted_nodesettings = metrics.Object(RunningTotal)
+
+
+class StorageAddonUsage(DailyReport):
+    usage_by_addon = metrics.Object(UsageByStorageAddon, multi=True)
 
 
 class DownloadCountReport(DailyReport):
