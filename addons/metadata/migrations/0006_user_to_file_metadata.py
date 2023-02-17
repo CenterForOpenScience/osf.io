@@ -11,7 +11,7 @@ import osf.utils.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('addons_metadata', '0005_add_index_erad_record'),
+        ('addons_metadata', '0006_add_japan_grant_number'),
     ]
 
     operations = [
