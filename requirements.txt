@@ -55,7 +55,7 @@ djangorestframework==3.13.1
 django-cors-headers==3.10.1
 djangorestframework-bulk==0.2.1
 hashids==1.2.0
-pyjwt==1.5.3
+pyjwt
 django-celery-beat
 django-celery-results
 pyjwe==1.0.0
