@@ -1,6 +1,7 @@
 import re
 import json
 import logging
+from enum import Enum
 
 from django.http import JsonResponse, HttpResponse, Http404
 from django.utils import timezone
@@ -26,7 +27,12 @@ from api.metrics.serializers import (
     ReportNameSerializer,
 )
 from api.metrics.utils import parse_datetimes, parse_date_range
-from api.metrics.serializers import NodeAnalyticsSerializer, UserVisitsSerializer, UniqueUserVisitsSerializer
+from api.metrics.serializers import (
+    NodeAnalyticsSerializer,
+    UserVisitsSerializer,
+    UniqueUserVisitsSerializer,
+    CountedAuthUsageSerializer
+)
 from api.base.views import JSONAPIBaseView
 from api.base.waffle_decorators import require_switch
 from osf.features import ENABLE_RAW_METRICS
