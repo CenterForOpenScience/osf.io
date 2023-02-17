@@ -1,4 +1,4 @@
-from dropbox.dropbox import Dropbox
+from dropbox import Dropbox
 from dropbox.exceptions import DropboxException
 
 from website.util import api_url_for
