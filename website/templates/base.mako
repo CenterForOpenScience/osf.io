@@ -89,12 +89,19 @@
     <meta name="twitter:site" content="@OSFramework">
     <meta name="twitter:creator" content="@OSFramework">
 
+    <!-- Google Dataset -->
+    ${google_dataset_tags}
+    <!-- Google w Dataset -->
+
+
     ${includes_top()}
     ${self.stylesheets()}
     <script src="${"/static/public/js/base-page.js" | webpack_asset}"></script>
     ${self.javascript()}
 
     <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,600,300' rel='stylesheet' type='text/css'>
+
+
 
 </head>
 <body data-spy="scroll" data-target=".scrollspy">
