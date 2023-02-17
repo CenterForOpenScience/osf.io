@@ -115,6 +115,7 @@
     %>
 </%def>
 
+
 ## To change the position of alert on project pages, override alert()
 <%def name="alert()"> </%def>
 

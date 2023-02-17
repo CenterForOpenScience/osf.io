@@ -90,8 +90,11 @@
     <meta name="twitter:creator" content="@OSFramework">
 
     <!-- Google Dataset -->
-    ${google_dataset_tags}
-    <!-- Google w Dataset -->
+    % if node and node.get('is_public'):
+        <script type="application/ld+json">
+            ${google_dataset_tags| unicode, n }
+        </script>
+    % endif
 
 
     ${includes_top()}
@@ -100,8 +103,6 @@
     ${self.javascript()}
 
     <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,600,300' rel='stylesheet' type='text/css'>
-
-
 
 </head>
 <body data-spy="scroll" data-target=".scrollspy">

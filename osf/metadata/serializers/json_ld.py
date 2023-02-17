@@ -9,46 +9,58 @@ class JsonLdMetadataSerializer(_base.MetadataSerializer):
         return f'{osfguid}-metadata.json-ld'
 
     def serialize(self, basket: gather.Basket):
-        print(basket)
-        print(basket.__dict__)
-        return {
-           "@context": "https://schema.org",
-           "@type": "Dataset",
-           "@id": format_id(basket),
-           "dateCreated": "2020-04-06T16:16:20+00:00",
-           "dateModified": "2020-04-06T16:16:24+00:00",
-           "name": format_name(basket),
-           "description": format_description(basket),
-           "url": format_url(basket),
-           "keywords":"Homo sapiens",
-           "publisher":{
-              "@type": "Organization",
-              "name": "Center For Open Science"
-           },
-           "creator": format_creators(basket),
-           "distribution": format_distibution(basket),
-           "license": format_license(basket),
-           "identifier":"https://doi.org/10.6084/m9.figshare.10266554.v2",
-           "citation":"https://doi.org/10.1038/s41597-019-0303-3"
+        node = basket.focus.dbmodel
+
+        data = {
+            '@context': 'https://schema.org',
+            '@type': 'Dataset',
+            'dateCreated': str(node.created),
+            'dateModified': str(node.modified),
+            'name': node.title,
+            'description': node.description,
+            'url': node.absolute_url,
+            'keywords': [tag.name for tag in node.tags.all()],
+            'publisher': {
+                '@type': 'Organization',
+                'name': 'Center For Open Science'
+            },
+            'creator': format_creators(node),
+            'distribution': format_distribution(node),
         }
 
+        if node.license:
+            data['license'] = node.license.url
+
+        if node.identifiers.exists():
+            data['identifier'] = f'https://doi.org/{node.identifiers.get(category="doi").value}'
+
+        return data
 
 
-def format_creators(self):
+def format_creators(node):
+    creator_json = []
+    for contributor in node.contributors.all():
+        creator_json.append({
+            '@type': 'Person',
+            'name': contributor.fullname,
+        })
+
+    return creator_json
+
+
+def format_distribution(node):
     return [
         {
-            "@type": "Person",
-            "name": "Metadata Creator"
+            '@type': 'DataDownload',
+            'contentUrl': f'{node.osfstorage_region.waterbutler_url}/v1/resources/{node._id}/providers/osfstorage/?zip=',
+            'encodingFormat': 'URL',
         }
     ]
 
 
-def format_distibution(self):
+def format_identifier(node):
     return [
         {
-            "@type": "DataDownload",
-            "contentUrl": "https://figshare.com/ndownloader/files/22224060",
-            "encodingFormat": "text/plain",
-            "license": "https://creativecommons.org/publicdomain/zero/1.0/"
+            'contentUrl': f'{node.osfstorage_region.waterbutler_url}/v1/resources/{node._id}/providers/osfstorage/?zip=',
         }
     ]
