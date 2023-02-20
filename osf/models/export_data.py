@@ -17,7 +17,7 @@ from osf.models import (
     Institution,
     RdmFileTimestamptokenVerifyResult,
 )
-from website import settings as web_settings
+from admin.base import settings as admin_settings
 
 logger = logging.getLogger(__name__)
 
@@ -281,8 +281,8 @@ class ExportData(base.BaseModel):
 
     @property
     def export_data_temp_file_path(self):
-        """~/admin/_export_{source.id}_{process_start_timestamp}.json as temporary file"""
-        return os.path.join(web_settings.ROOT, 'admin', '_' + self.export_data_folder_name + '.json')
+        """/tmp/_export_{source.id}_{process_start_timestamp}.json as temporary file"""
+        return os.path.join(admin_settings.TEMPORARY_PATH, '_' + self.export_data_folder_name + '.json')
 
     def get_export_data_filename(self, institution_guid=None):
         """get export_data_{institution_guid}_{process_start_timestamp}.json file name for each institution"""
