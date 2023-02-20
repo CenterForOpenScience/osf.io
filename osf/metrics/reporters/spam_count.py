@@ -15,19 +15,19 @@ class SpamCountReporter(MonthlyReporter):
         report = SpamSummaryReport(
             report_yearmonth=str(report_yearmonth),
             # Node Log entries
-            confirmed_spam_node=NodeLog.objects.filter(
+            node_confirmed_spam=NodeLog.objects.filter(
                 action=NodeLog.CONFIRM_SPAM,
                 created__gt=target_month,
                 created__lt=next_month,
                 node__type='osf.node',
             ).count(),
-            nodes_confirmed_ham=NodeLog.objects.filter(
+            node_confirmed_ham=NodeLog.objects.filter(
                 action=NodeLog.CONFIRM_HAM,
                 created__gt=target_month,
                 created__lt=next_month,
                 node__type='osf.node',
             ).count(),
-            nodes_flagged=NodeLog.objects.filter(
+            node_flagged=NodeLog.objects.filter(
                 action=NodeLog.FLAG_SPAM,
                 created__gt=target_month,
                 created__lt=next_month,
@@ -69,7 +69,7 @@ class SpamCountReporter(MonthlyReporter):
                 created__lt=next_month,
             ).count(),
             # New Users marked as Spam/Ham
-            users_marked_as_spam=OSFUser.objects.filter(
+            user_marked_as_spam=OSFUser.objects.filter(
                 spam_status=SpamStatus.SPAM,
                 created__gt=target_month,
                 created__lt=next_month,
