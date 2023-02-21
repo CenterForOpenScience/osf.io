@@ -179,7 +179,7 @@ def before_request():
                     return
             user_session['auth_user_username'] = user.username
             user_session['auth_user_fullname'] = user.fullname
-            session_data = user_session.get_decode()
+            session_data = user_session.get_decoded()
             if session_data.get('auth_user_id', None) != user._primary_key:
                 user_session['auth_user_id'] = user._primary_key
                 user_session.save()
