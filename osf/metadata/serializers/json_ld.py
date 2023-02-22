@@ -1,5 +1,6 @@
 from osf.metadata import gather
 from osf.metadata.serializers import _base
+from osf.metadata.rdfutils import DCT, OSF, FOAF
 
 
 class JsonLdMetadataSerializer(_base.MetadataSerializer):
@@ -9,58 +10,35 @@ class JsonLdMetadataSerializer(_base.MetadataSerializer):
         return f'{osfguid}-metadata.json-ld'
 
     def serialize(self, basket: gather.Basket):
-        node = basket.focus.dbmodel
-
         data = {
             '@context': 'https://schema.org',
             '@type': 'Dataset',
-            'dateCreated': str(node.created),
-            'dateModified': str(node.modified),
-            'name': node.title,
-            'description': node.description,
-            'url': node.absolute_url,
-            'keywords': [tag.name for tag in node.tags.all()],
+            'dateCreated': next(basket[DCT.created]),
+            'dateModified': next(basket[DCT.modified]),
+            'name': next(basket[DCT.title]),
+            'description': next(basket[DCT.description]),
+            'url': next(basket[DCT.identifier]),
+            'keywords': [keyword for keyword in basket[OSF.keyword]],
             'publisher': {
                 '@type': 'Organization',
                 'name': 'Center For Open Science'
             },
-            'creator': format_creators(node),
-            'distribution': format_distribution(node),
+            'creator': format_creators(basket),
+            'identifier': [keyword for keyword in basket[DCT.identifier]]
         }
 
-        if node.license:
-            data['license'] = node.license.url
-
-        if node.identifiers.exists():
-            data['identifier'] = f'https://doi.org/{node.identifiers.get(category="doi").value}'
+        license = next(basket[DCT.rights])
+        if license:
+            data['license'] = license
 
         return data
 
 
-def format_creators(node):
-    creator_json = []
-    for contributor in node.contributors.all():
-        creator_json.append({
+def format_creators(basket):
+    creator_data = []
+    for creator_iri in basket[DCT.creator]:
+        creator_data.append({
             '@type': 'Person',
-            'name': contributor.fullname,
+            'name': next(basket[creator_iri:FOAF.name]),
         })
-
-    return creator_json
-
-
-def format_distribution(node):
-    return [
-        {
-            '@type': 'DataDownload',
-            'contentUrl': f'{node.osfstorage_region.waterbutler_url}/v1/resources/{node._id}/providers/osfstorage/?zip=',
-            'encodingFormat': 'URL',
-        }
-    ]
-
-
-def format_identifier(node):
-    return [
-        {
-            'contentUrl': f'{node.osfstorage_region.waterbutler_url}/v1/resources/{node._id}/providers/osfstorage/?zip=',
-        }
-    ]
+    return creator_data
