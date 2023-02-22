@@ -3,7 +3,7 @@ from osf.metadata.serializers import _base
 from osf.metadata.rdfutils import DCT, OSF, FOAF
 
 
-class JsonLdMetadataSerializer(_base.MetadataSerializer):
+class GoogleDatasetJsonLdSerializer(_base.MetadataSerializer):
     mediatype = 'application/ld+json'
 
     def filename(self, osfguid: str):
@@ -27,7 +27,7 @@ class JsonLdMetadataSerializer(_base.MetadataSerializer):
             'identifier': [keyword for keyword in basket[DCT.identifier]]
         }
 
-        license = next(basket[DCT.rights])
+        license = next(basket[DCT.rights], None)
         if license:
             data['license'] = license
 

@@ -62,7 +62,7 @@ from addons.wiki.utils import serialize_wiki_widget
 from addons.wiki.models import WikiVersion
 from addons.dataverse.utils import serialize_dataverse_widget
 from addons.forward.utils import serialize_forward_widget
-from osf.metadata.serializers.json_ld import JsonLdMetadataSerializer
+from osf.metadata.serializers.google_dataset_json_ld import GoogleDatasetJsonLdSerializer
 
 from osf.metadata.osf_gathering import pls_gather_item_metadata
 
@@ -840,7 +840,7 @@ def _view_project(node, auth, primary=False,
         'addon_widgets': widgets,
         'addon_widget_js': js,
         'addon_widget_css': css,
-        'google_dataset_tags': json.dumps(JsonLdMetadataSerializer().serialize(pls_gather_item_metadata(node))),
+        'google_dataset_tags': json.dumps(GoogleDatasetJsonLdSerializer().serialize(pls_gather_item_metadata(node))),
         'node_categories': [
             {'value': key, 'display_name': value}
             for key, value in list(settings.NODE_CATEGORY_MAP.items())
