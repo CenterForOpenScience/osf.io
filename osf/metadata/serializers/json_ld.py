@@ -4,7 +4,7 @@ from osf.metadata.rdfutils import DCT, OSF, FOAF
 
 
 class JsonLdMetadataSerializer(_base.MetadataSerializer):
-    mediatype = 'text/json-ld'
+    mediatype = 'application/ld+json'
 
     def filename(self, osfguid: str):
         return f'{osfguid}-metadata.json-ld'
