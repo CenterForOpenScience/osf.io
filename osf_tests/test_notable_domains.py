@@ -22,9 +22,6 @@ from osf_tests.factories import (
 )
 
 
-from website import settings
-
-
 class TestDomainExtraction:
 
     @pytest.mark.parametrize('protocol_component', ['', 'http://', 'https://', 'ftp://'])
@@ -205,7 +202,6 @@ class TestNotableDomain:
 
     @pytest.mark.enable_enqueue_task
     @pytest.mark.parametrize('factory', [NodeFactory, RegistrationFactory, PreprintFactory])
-    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     def test_spam_check(self, app, factory, spam_domain, marked_as_spam_domain, request_context):
         obj = factory()
         obj.is_public = True
@@ -273,7 +269,6 @@ class TestNotableDomain:
         ).count() == 1
 
     @pytest.mark.enable_enqueue_task
-    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     def test_extract_domains_from_wiki__public_project_extracts_domains_on_wiki_save(self, request_context):
         assert DomainReference.objects.count() == 0
 
@@ -292,7 +287,6 @@ class TestNotableDomain:
         assert references.first().referrer == project
 
     @pytest.mark.enable_enqueue_task
-    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
     def test_extract_domains_from_wiki__project_checks_wiki_content_on_make_public(self, request_context):
         wiki_version = WikiVersionFactory()
         project = wiki_version.wiki_page.node

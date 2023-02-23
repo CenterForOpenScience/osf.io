@@ -112,6 +112,24 @@ class DailyReportSerializer(ser.BaseSerializer):
         }
 
 
+class MonthlyReportSerializer(ser.BaseSerializer):
+    def to_representation(self, instance):
+        # TODO: detangle datamodel (osf.metrics.reports) from api serialization
+        # (don't use `to_dict` here)
+        report_as_dict = instance.to_dict()
+        report_name = self.context['report_name']
+        report_yearmonth = report_as_dict['report_yearmonth']
+
+        return {
+            'id': instance.meta.id,
+            'type': f'monthly-report:{report_name}',
+            'attributes': {
+                **report_as_dict,
+                'report_month': report_yearmonth,
+            },
+        }
+
+
 class NodeAnalyticsSerializer(ser.BaseSerializer):
     def to_representation(self, instance):
         aggs = instance.aggregations

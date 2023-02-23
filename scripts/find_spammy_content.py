@@ -70,7 +70,7 @@ def find_spammy_content(regex, days, model, ban):
             item_data['fullname'] = item.creator.fullname
             data.append(item_data)
             if ban:
-                item.suspend_spam_user(item.creator, train_akismet=False)
+                item.suspend_spam_user(item.creator)
     return data
 
 def find_spammy_content_fast(regex, days, model, ban):
@@ -92,5 +92,5 @@ def find_spammy_content_fast(regex, days, model, ban):
         item_data['fullname'] = item['creator__fullname']
         data.append(item_data)
         if ban:
-            model.load(item['guids___id']).suspend_spam_user(item['creator__guids___id'], train_akismet=False)
+            model.load(item['guids___id']).suspend_spam_user(item['creator__guids___id'])
     return data
