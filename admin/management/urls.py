@@ -15,4 +15,5 @@ urlpatterns = [
     re_path(r'^get_spam_csv', views.GetSpamDataCSV.as_view(), name='get_spam_csv'),
     re_path(r'^ban_spam_regex', views.BanSpamByRegex.as_view(), name='ban_spam_regex'),
     re_path(r'^daily_reporters_go', views.DailyReportersGo.as_view(), name='daily_reporters_go'),
+    re_path(r'^monthly_reporters_go', views.MonthlyReportersGo.as_view(), name='monthly_reporters_go'),
 ]

@@ -2009,13 +2009,13 @@ class SpamOverrideMixin(SpamMixin):
         super().unspam(save=save)
         self.undelete(save=save)
 
-    def confirm_spam(self, domains=None, save=True, train_akismet=True):
+    def confirm_spam(self, domains=None, save=True, train_spam_services=True):
         """
         This should add behavior specific nodes/preprints confirmed to be spam.
         :param save:
         :return:
         """
-        super().confirm_spam(save=save, domains=domains or [], train_akismet=train_akismet)
+        super().confirm_spam(save=save, domains=domains or [], train_spam_services=train_spam_services)
         self.deleted = timezone.now()
         was_public = self.is_public
         self.set_privacy('private', auth=None, log=False, save=False, force=True)
@@ -2031,13 +2031,13 @@ class SpamOverrideMixin(SpamMixin):
         if save:
             self.save()
 
-    def confirm_ham(self, save=False, train_akismet=True):
+    def confirm_ham(self, save=False, train_spam_services=True):
         """
         This should add behavior specific nodes/preprints confirmed to be ham.
         :param save:
         :return:
         """
-        super().confirm_ham(save=save, train_akismet=train_akismet)
+        super().confirm_ham(save=save, train_spam_services=train_spam_services)
         self.undelete(save=save)
 
         log = self.add_log(
@@ -2074,41 +2074,34 @@ class SpamOverrideMixin(SpamMixin):
         return b' '.join(content).decode()
 
     def check_spam(self, user, saved_fields, request_headers):
-        if not settings.SPAM_CHECK_ENABLED:
-            return False
+        if not user:  # in case of tests and staff admin operations
+            return
         if settings.SPAM_CHECK_PUBLIC_ONLY and not self.is_public:
-            return False
+            return
         if user.is_hammy:
-            return False
+            return
         if getattr(self, 'provider', False) and self.provider.reviews_workflow == Workflows.PRE_MODERATION.value:
-            return False
+            return
         host = ''
         if request_headers:
             host = request_headers.get('Host', '')
         if host.startswith('admin') or ':8001' in host:
-            return False
+            return
         if hasattr(self, 'conferences') and self.conferences.filter(auto_check_spam=False).exists():
-            return False
+            return
 
         content = self._get_spam_content(saved_fields)
         if not content:
             return
 
-        is_spam = self.do_check_spam(
+        self.do_check_spam(
             user.fullname,
             user.username,
             content,
             request_headers,
         )
-        logger.info("{} ({}) '{}' smells like {} (tip: {})".format(
-            self.__class__.__name__, self._id, self.title.encode('utf-8'), 'SPAM' if is_spam else 'HAM', self.spam_pro_tip
-        ))
-        if is_spam:
-            self._check_spam_user(user)
 
-        return is_spam
-
-    def _check_spam_user(self, user):
+    def check_spam_user(self, user):
         if (
             settings.SPAM_ACCOUNT_SUSPENSION_ENABLED
             and (timezone.now() - user.date_confirmed) <= settings.SPAM_ACCOUNT_SUSPENSION_THRESHOLD
@@ -2118,10 +2111,15 @@ class SpamOverrideMixin(SpamMixin):
         ):
             self.suspend_spam_user(user)
 
-    def suspend_spam_user(self, user, train_akismet=False):
+    def suspend_spam_user(self, user):
+        """
+        This suspends a users account and makes all there resources private, key word here is SUSPENDS this should not
+        delete the account or any info associated with it. It should not be assumed the account is spam and it should
+        not be used to train spam detecting services.
+        """
         if user.is_ham:
             return False
-        self.confirm_spam(save=True, train_akismet=train_akismet)
+        self.confirm_spam(save=True, train_spam_services=False)
         self.set_privacy('private', log=False, save=True)
 
         # Suspend the flagged user for spam.
@@ -2141,22 +2139,22 @@ class SpamOverrideMixin(SpamMixin):
         # Make public nodes private from this contributor
         for node in user.all_nodes:
             if self._id != node._id and len(node.contributors) == 1 and node.is_public and not node.is_quickfiles:
-                node.confirm_spam(save=True, train_akismet=train_akismet)
-                node.set_privacy('private', log=False, save=True)
+                node.confirm_spam(save=True, train_spam_services=False)
+                node.set_privacy('private', log=False, save=True, force=True)
 
         # Make preprints private from this contributor
         for preprint in user.preprints.all():
             if self._id != preprint._id and len(preprint.contributors) == 1 and preprint.is_public:
-                preprint.confirm_spam(save=True, train_akismet=train_akismet)
+                preprint.confirm_spam(save=True, train_spam_services=False)
                 preprint.set_privacy('private', log=False, save=True)
 
     def flag_spam(self):
         """ Overrides SpamMixin#flag_spam.
         """
-        super(SpamOverrideMixin, self).flag_spam()
+        super().flag_spam()
         if settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE:
             was_public = self.is_public
-            self.set_privacy('private', auth=None, log=False, save=False, check_addons=False)
+            self.set_privacy('private', auth=None, log=False, save=False, check_addons=False, force=True)
             log = self.add_log(
                 action=self.log_class.FLAG_SPAM,
                 params={**self.log_params, 'was_public': was_public},
