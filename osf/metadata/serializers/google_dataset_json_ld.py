@@ -16,7 +16,7 @@ class GoogleDatasetJsonLdSerializer(_base.MetadataSerializer):
             'dateCreated': next(basket[DCT.created]),
             'dateModified': next(basket[DCT.modified]),
             'name': next(basket[DCT.title]),
-            'description': next(basket[DCT.description]),
+            'description': next(basket[DCT.description], None),
             'url': next(basket[DCT.identifier]),
             'keywords': [keyword for keyword in basket[OSF.keyword]],
             'publisher': {
