@@ -323,7 +323,7 @@ def _format_types(basket):
         'resourceTypeGeneral': 'Text',
     }
     if focustype.startswith(OSF):
-        types['resourceType'] = focustype[len(OSF):]
+        types['resourceType'] = basket.osf_type
     if types['resourceType'] == 'Registration':
         types['resourceType'] = 'Pre-registration'  # for back-compat
     for general_type in basket[DCT.type]:

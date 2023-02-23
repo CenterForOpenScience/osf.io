@@ -9,6 +9,7 @@ import rdflib
 from osf.metadata import rdfutils
 from .focus import Focus
 from .gatherer import get_gatherers
+from osf.metadata.rdfutils import OSF
 
 
 class Basket:
@@ -134,3 +135,10 @@ class Basket:
             # unless already rdflib-erated, assume it's literal
             triple_object = rdflib.Literal(triple_object)
         return triple_object
+
+    @property
+    def osf_type(self) -> str:
+        """
+        Capitalized resource type ("Project", "Registration", etc)
+        """
+        return self.focus.rdftype[len(OSF):]

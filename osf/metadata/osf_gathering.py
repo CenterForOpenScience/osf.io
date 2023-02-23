@@ -65,8 +65,10 @@ def pls_gather_item_metadata(osf_item) -> gather.Basket:
     basket = gather.Basket(focus)
     if focus.rdftype == OSF.File:
         basket.pls_gather_by_map(OSF_FILE_METADATA)
-    elif focus.rdftype in (OSF.Project, OSF.Component, OSF.Preprint, OSF.Registration):
+    elif focus.rdftype in (OSF.Project, OSF.Component, OSF.Preprint):
         basket.pls_gather_by_map(OSF_NODELIKE_METADATA)
+    elif focus.rdftype == OSF.Registration:
+        basket.pls_gather_by_map(OSF_REGISTRATION_METADATA)
     else:
         basket.pls_gather_by_map(OSF_COMMON_METADATA)
     return basket
@@ -122,6 +124,11 @@ OSF_NODELIKE_METADATA = {
     **OSF_COMMON_METADATA,
     DCT.isPartOf: OSF_COMMON_METADATA,
     DCT.hasPart: OSF_COMMON_METADATA,
+}
+
+OSF_REGISTRATION_METADATA = {
+    **OSF_NODELIKE_METADATA,
+    OSF.archivedAt: None,
 }
 
 OSF_ARTIFACT_PREDICATES = {
@@ -525,3 +532,11 @@ def gather_user_basics(focus):
     if orcid:
         orcid_iri = ORCID[orcid]
         yield (DCT.identifier, str(orcid_iri))
+
+
+@gather.er(
+    OSF.archivedAt,
+    focustype_iris=[OSF.Registration]
+)
+def gather_ia_url(focus):
+    yield (OSF.archivedAt, focus.dbmodel.ia_url)
