@@ -274,7 +274,7 @@ class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
 
         project = ProjectFactory(is_public=True, creator=user)
         payload['data']['relationships']['branched_from']['data']['id'] = project._id
-        user.affiliated_institutions.set(Institution.objects.filter(id__lt=3))
+        user.add_multiple_institutions_non_sso(Institution.objects.filter(id__lt=3))
         res = app.post_json_api(
             url_draft_registrations, payload,
             auth=user.auth, expect_errors=True)
