@@ -7,6 +7,7 @@ from .node_count import NodeCountReporter
 from .osfstorage_file_count import OsfstorageFileCountReporter
 from .preprint_count import PreprintCountReporter
 from .user_count import UserCountReporter
+from .spam_count import SpamCountReporter
 
 
 DAILY_REPORTERS = (
@@ -19,4 +20,8 @@ DAILY_REPORTERS = (
     PreprintCountReporter,
     StorageAddonUsageReporter,
     UserCountReporter,
+)
+
+MONTHLY_REPORTERS = (
+    SpamCountReporter,
 )

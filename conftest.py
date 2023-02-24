@@ -165,7 +165,7 @@ def mock_akismet():
     f'https://{api_key}.rest.akismet.com/1.1/submit-ham'
     f'https://{api_key}.rest.akismet.com/1.1/comment-check'
     """
-    with mock.patch.object(website_settings, 'SPAM_CHECK_ENABLED', True):
+    with mock.patch.object(website_settings, 'SPAM_SERVICES_ENABLED', True):
         with mock.patch.object(website_settings, 'AKISMET_ENABLED', True):
             with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
                 rsps.add(responses.POST, 'https://test.crossref.org/servlet/deposit', status=200)
@@ -223,10 +223,11 @@ def mock_oopspam():
     Relevent endpoints:
     'https://oopspam.p.rapidapi.com/v1/spamdetection'
     """
-    with mock.patch.object(website_settings, 'SPAM_CHECK_ENABLED', True):
-        with mock.patch.object(website_settings, 'OOPSPAM_APIKEY', 'FFFFFF'):
-            with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
-                yield rsps
+    with mock.patch.object(website_settings, 'SPAM_SERVICES_ENABLED', True):
+        with mock.patch.object(website_settings, 'OOPSPAM_ENABLED', True):
+            with mock.patch.object(website_settings, 'OOPSPAM_APIKEY', 'FFFFFF'):
+                with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
+                    yield rsps
 
 
 @pytest.fixture
