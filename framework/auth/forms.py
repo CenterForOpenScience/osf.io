@@ -57,7 +57,7 @@ class EmailExists(object):
 name_field = TextAreaField(
     'Full Name',
     [
-        validators.Required(message=u'Full name is required'),
+        validators.DataRequired(message=u'Full name is required'),
         NoHtmlCharacters(),
     ],
     filters=[stripped],
@@ -75,7 +75,7 @@ name_field_not_required = TextAreaField(
 
 email_field = TextAreaField('Email Address',
     [
-        validators.Required(message=u'Email address is required'),
+        validators.DataRequired(message=u'Email address is required'),
         validators.Length(min=6, message=u'Email address is too short'),
         validators.Length(max=120, message=u'Email address is too long'),
         validators.Email(message=u'Email address is invalid'),
@@ -87,7 +87,7 @@ email_field = TextAreaField('Email Address',
 
 unique_email_field = TextAreaField('Email Address',
     [
-        validators.Required(message=u'Email address is required'),
+        validators.DataRequired(message=u'Email address is required'),
         validators.Length(min=6, message=u'Email address is too short'),
         validators.Length(max=120, message=u'Email address is too long'),
         validators.Email(message=u'Email address is invalid'),
@@ -110,7 +110,7 @@ confirm_email_field = TextAreaField(
 
 password_field = PasswordField('Password',
     [
-        validators.Required(message=u'Password is required'),
+        validators.DataRequired(message=u'Password is required'),
         validators.Length(min=8, message=u'Password is too short. '
             'Password should be at least 8 characters.'),
         validators.Length(max=255, message=u'Password is too long. '
@@ -133,7 +133,7 @@ confirm_password_field = PasswordField(
 class ResetPasswordForm(Form):
     password = PasswordField('New Password',
         [
-            validators.Required(message=u'Password is required'),
+            validators.DataRequired(message=u'Password is required'),
             validators.Length(min=8, message=u'Password is too short. '
                 'Password should be at least 8 characters.'),
             validators.Length(max=255, message=u'Password is too long. '
@@ -157,7 +157,7 @@ class SetEmailAndPasswordForm(ResetPasswordForm):
     token = HiddenField()
     accepted_terms_of_service = BooleanField(
         [
-            validators.Required(message=u'This field is required'),
+            validators.DataRequired(message=u'This field is required'),
         ]
     )
 
@@ -172,7 +172,7 @@ class ResendConfirmationForm(Form):
     email = email_field
     accepted_terms_of_service = BooleanField(
         [
-            validators.Required(message=u'This field is required'),
+            validators.DataRequired(message=u'This field is required'),
         ],
         widget=CheckboxInput()
     )
