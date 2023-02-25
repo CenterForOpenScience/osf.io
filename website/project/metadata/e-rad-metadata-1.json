@@ -110,7 +110,7 @@
           "title": "プログラム名 (日本語)|Program name (Japanese)",
           "type": "string",
           "format": "jgn-program-name-ja",
-          "required": true
+          "required": false
         },
         {
           "qid": "program-name-en",
@@ -118,7 +118,7 @@
           "title": "Program name (English)",
           "type": "string",
           "format": "jgn-program-name-en",
-          "required": true
+          "required": false
         },
         {
           "qid": "japan-grant-number",
