@@ -39,7 +39,7 @@ from addons.osfstorage.models import OsfStorageFile, Region
 fake = Factory.create()
 
 # If tests are run on really old processors without high precision this might fail. Unlikely to occur.
-fake_email = lambda: '{}+{}@{}'.format(FAKE_EMAIL_NAME, int(time.clock() * 1000000), FAKE_EMAIL_DOMAIN)
+fake_email = lambda: '{}+{}@{}'.format(FAKE_EMAIL_NAME, int(time.perf_counter() * 1000000), FAKE_EMAIL_DOMAIN)
 
 # Do this out of a cls context to avoid setting "t" as a local
 PROVIDER_ASSET_NAME_CHOICES = tuple([t[0] for t in PROVIDER_ASSET_NAME_CHOICES])
