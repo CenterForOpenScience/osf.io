@@ -16,6 +16,7 @@ from nose.tools import (assert_equal, assert_false, assert_in, assert_is,
 
 from github3 import GitHubError
 from github3.repos import Repository
+from github3.session import GitHubSession
 
 from tests.base import OsfTestCase, get_default_metaschema
 
@@ -106,7 +107,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
                                                          'id': '12345',
                                                          'owner':
                                                              {'login': 'test name'}
-                                                         }))
+                                                         , 'committer': {'name': 'test'}}), GitHubSession())
                                    ]
         result = self.node_settings.get_folders()
 
@@ -124,7 +125,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
                                                          'id': '12345',
                                                          'owner':
                                                              {'login': 'test name'}
-                                                         }))
+                                                         , 'committer': {'name': 'test'}}), GitHubSession())
                                    ]
         self.node_settings.user_settings = None
         with pytest.raises(exceptions.InvalidAuthError):
@@ -185,7 +186,7 @@ class TestCallbacks(OsfTestCase):
     def test_before_page_load_osf_public_gh_public(self, mock_repo):
         self.project.is_public = True
         self.project.save()
-        mock_repo.return_value = Repository.from_json(dumps({'private': False}))
+        mock_repo.return_value = Repository.from_json(dumps({'private': False, 'committer': {'name': 'test'}}), GitHubSession())
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
@@ -197,7 +198,7 @@ class TestCallbacks(OsfTestCase):
     def test_before_page_load_osf_public_gh_private(self, mock_repo):
         self.project.is_public = True
         self.project.save()
-        mock_repo.return_value = Repository.from_json(dumps({'private': True}))
+        mock_repo.return_value = Repository.from_json(dumps({'private': True, 'committer': {'name': 'test'}}), GitHubSession())
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
@@ -207,7 +208,7 @@ class TestCallbacks(OsfTestCase):
 
     @mock.patch('addons.github.api.GitHubClient.repo')
     def test_before_page_load_osf_private_gh_public(self, mock_repo):
-        mock_repo.return_value = Repository.from_json(dumps({'private': False}))
+        mock_repo.return_value = Repository.from_json(dumps({'private': False, 'committer': {'name': 'test'}}), GitHubSession())
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
@@ -217,7 +218,7 @@ class TestCallbacks(OsfTestCase):
 
     @mock.patch('addons.github.api.GitHubClient.repo')
     def test_before_page_load_osf_private_gh_private(self, mock_repo):
-        mock_repo.return_value = Repository.from_json(dumps({'private': True}))
+        mock_repo.return_value = Repository.from_json(dumps({'private': True, 'committer': {'name': 'test'}}), GitHubSession())
         message = self.node_settings.before_page_load(self.project, self.project.creator)
         mock_repo.assert_called_with(
             self.node_settings.user,
