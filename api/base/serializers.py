@@ -1283,7 +1283,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
         errors = {}
         bulk_skip_uneditable = utils.is_truthy(self.context['request'].query_params.get('skip_uneditable', False))
 
-        if isinstance(data, collections.Mapping):
+        if isinstance(data, collections.abc.Mapping):
             errors = data.get('errors', None)
             data = data.get('data', None)
         if enable_esi:

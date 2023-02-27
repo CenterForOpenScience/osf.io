@@ -164,7 +164,7 @@ class JSONAPIParser(JSONParser):
                 return data_collection
 
             else:
-                if not isinstance(data, collections.Mapping):
+                if not isinstance(data, collections.abc.Mapping):
                     raise ParseError('Expected a dictionary of items.')
                 return self.flatten_data(data, parser_context, is_list=False)
 

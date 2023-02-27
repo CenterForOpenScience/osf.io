@@ -6,7 +6,7 @@ import bleach
 
 
 def is_iterable(obj):
-    return isinstance(obj, collections.Iterable)
+    return isinstance(obj, collections.abc.Iterable)
 
 
 def is_iterable_but_not_string(obj):
