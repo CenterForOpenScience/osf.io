@@ -7,6 +7,7 @@ import pytest
 import mendeley
 from nose.tools import *  # noqa:
 from github3.repos import Repository
+from github3.session import GitHubSession
 
 
 from addons.bitbucket.tests.factories import BitbucketAccountFactory, BitbucketNodeSettingsFactory
@@ -727,7 +728,7 @@ class TestNodeGitHubAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
             'id': '12345',
             'owner':
                 {'login': 'test name'}
-        }))
+        }), GitHubSession())
 
         mock_connection = mock.MagicMock()
         mock_client.return_value = mock_connection
