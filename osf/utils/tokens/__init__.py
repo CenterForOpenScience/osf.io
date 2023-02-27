@@ -90,11 +90,12 @@ def encode(payload):
         payload,
         settings.JWT_SECRET,
         algorithm=settings.JWT_ALGORITHM
-    ).decode()
+    )
 
 
 def decode(encoded_token):
     return jwt.decode(
         encoded_token,
         settings.JWT_SECRET,
-        algorithms=[settings.JWT_ALGORITHM])
+        algorithms=[settings.JWT_ALGORITHM]
+    )
