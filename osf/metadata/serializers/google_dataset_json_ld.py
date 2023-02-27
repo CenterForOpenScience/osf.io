@@ -25,11 +25,11 @@ class GoogleDatasetJsonLdSerializer(_base.MetadataSerializer):
                 'name': 'Center For Open Science'
             },
             'creator': format_creators(basket),
-            'identifier': [identifier for identifer in basket[DCT.identifier]],
+            'identifier': [identifer for identifer in basket[DCT.identifier]],
             'license': next(basket[DCT.rights], None)
         }
 
-        if basket.osf_type == 'Registration':
+        if basket.focus.rdftype == OSF.Registration:
             _id = basket.focus.guid_metadata_record.guid._id
             registration_metadata = {
                 'distribution': [
@@ -46,7 +46,7 @@ class GoogleDatasetJsonLdSerializer(_base.MetadataSerializer):
                 registration_metadata['distribution'].append(
                     {
                         '@type': 'DataDownload',
-                        'contentUrl': next(basket[OSF.archivedAt]),
+                        'contentUrl': ia_url,
                         'encodingFormat': 'URL',
                     }
                 )

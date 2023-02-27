@@ -16,6 +16,7 @@ from osf.metadata.rdfutils import (
     OWL,
     ROR,
     primitivify_rdf,
+    without_namespace,
 )
 from osf.metadata.serializers import _base
 
@@ -323,7 +324,7 @@ def _format_types(basket):
         'resourceTypeGeneral': 'Text',
     }
     if focustype.startswith(OSF):
-        types['resourceType'] = basket.osf_type
+        types['resourceType'] = without_namespace(focustype, OSF)
     if types['resourceType'] == 'Registration':
         types['resourceType'] = 'Pre-registration'  # for back-compat
     for general_type in basket[DCT.type]:
