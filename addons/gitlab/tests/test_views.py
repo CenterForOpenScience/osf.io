@@ -12,6 +12,7 @@ from tests.base import OsfTestCase, get_default_metaschema
 from osf_tests.factories import ProjectFactory, UserFactory, AuthUserFactory, DraftRegistrationFactory
 
 from github3.repos.branch import Branch
+from github3.session import GitHubSession
 
 from framework.exceptions import HTTPError
 from framework.auth import Auth
@@ -539,16 +540,24 @@ class TestGitLabSettings(OsfTestCase):
                 'name': 'master',
                 'commit': {
                     'sha': '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+                    'author': {},
+                    'ETag': '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+                    'commit': {'ETag': {}, 'sha': u'e22d92d5d90bb8f9695e9a5e2e2311a5c1997230', 'url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass', u'author': {}, 'committer': {'name': 'test'}, 'message': 'test message', 'tree': {'url': 'test.com', 'sha': 'e22d92d5d90bb8f9695e9a5e2e2311a5c1997230'}},
+                    'comments_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
                     'url': 'https://api.gitlab.com/repos/octocat/Hello-World/commits/c5b97d5ae6c19d5c5df71a34c7fbeeda2479ccbc',
                 }
-            })),
+            , 'committer': {'name': 'test'}}), GitHubSession()),
             Branch.from_json(dumps({
                 'name': 'develop',
                 'commit': {
                     'sha': '6dcb09b5b57875asdasedawedawedwedaewdwdass',
+                    'author': {},
+                    'commit': {'ETag': {}, 'sha': u'e22d92d5d90bb8f9695e9a5e2e2311a5c1997230', 'url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass', u'author': {}, 'committer': {'name': 'test'}, 'message': 'test message', 'tree': {'url': 'test.com', 'sha': 'e22d92d5d90bb8f9695e9a5e2e2311a5c1997230'}},
+                    'ETag': '6dcb09b5b57875f334f61aebed695e2e4193db5e',
+                    'comments_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
                     'url': 'https://api.gitlab.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
                 }
-            }))
+            , 'committer': {'name': 'test'}}), GitHubSession())
         ]
 
         registration = self.project.register_node(
