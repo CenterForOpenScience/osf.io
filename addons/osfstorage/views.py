@@ -403,7 +403,7 @@ def osfstorage_download(file_node, payload, **kwargs):
     user_id = payload.get('user')
     if user_id:
         current_session = get_session()
-        current_session.data['auth_user_id'] = user_id
+        current_session['auth_user_id'] = user_id
         current_session.save()
 
     if not request.args.get('version'):

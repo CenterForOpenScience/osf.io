@@ -1,13 +1,16 @@
 import logging
-
+from importlib import import_module
 from dateutil import parser
 from django.db import models, transaction
 from django.db.models import Sum
 from django.db.models.expressions import RawSQL
 from django.utils import timezone
+from api.base import settings
 
 from osf.models.base import BaseModel, Guid
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
+session_store = SessionStore()
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +99,7 @@ class PageCounter(BaseModel):
         )
 
     @classmethod
-    def update_counter(cls, resource, file, version, action, node_info, session_obj):
+    def update_counter(cls, resource, file, version, action, node_info, session_key):
         if version is not None:
             page = '{0}:{1}:{2}:{3}'.format(action, resource._id, file._id, version)
         else:
@@ -105,7 +108,9 @@ class PageCounter(BaseModel):
         cleaned_page = cls.clean_page(page)
         date = timezone.now()
         date_string = date.strftime('%Y/%m/%d')
-        visited_by_date = session_obj.data.get('visited_by_date', {'date': date_string, 'pages': []})
+        session_obj = session_store.get(session_key=session_key)
+        session_data = session_obj.get_decoded()
+        visited_by_date = session_data.get('visited_by_date', {'date': date_string, 'pages': []})
         with transaction.atomic():
             # Temporary backwards compat - when creating new PageCounters, temporarily keep writing to _id field.
             # After we're sure this is stable, we can stop writing to the _id field, and query on
@@ -144,7 +149,7 @@ class PageCounter(BaseModel):
 
             # update their sessions
             visited_by_date['pages'].append(cleaned_page)
-            session_obj.data['visited_by_date'] = visited_by_date
+            session_obj['visited_by_date'] = visited_by_date
 
             if date_string in model_instance.date.keys():
                 if 'total' not in model_instance.date[date_string].keys():
@@ -161,11 +166,11 @@ class PageCounter(BaseModel):
                     model_instance.save()
                     return
 
-            visited = session_obj.data.get('visited', [])
+            visited = session_data.get('visited', [])
             if page not in visited:
                 model_instance.unique += 1
                 visited.append(page)
-                session_obj.data['visited'] = visited
+                session_obj['visited'] = visited
 
             session_obj.save()
             model_instance.total += 1
