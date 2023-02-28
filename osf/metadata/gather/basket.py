@@ -39,10 +39,10 @@ class Basket:
         for example:
         ```
         basket.pls_gather({
-            DCT.title: None,            # request the focus item's DCT.title(s)
-            DCT.relation: {             # request the focus item's DCT.relation(s)
-                DCT.title: None,        #   ...and that related item's DCT.title(s)
-                DCT.creator: {          #   ...and that related item's DCT.creator(s)
+            DCTERMS.title: None,            # request the focus item's DCTERMS.title(s)
+            DCTERMS.relation: {             # request the focus item's DCTERMS.relation(s)
+                DCTERMS.title: None,        #   ...and that related item's DCTERMS.title(s)
+                DCTERMS.creator: {          #   ...and that related item's DCTERMS.creator(s)
                     FOAF.name: None,    #       ...and those creators' FOAF.name(s)
                 },
             },

@@ -9,7 +9,7 @@ from osf.metadata import gather
 from osf.metadata.rdfutils import (
     RDF,
     OWL,
-    DCT,
+    DCTERMS,
     FOAF,
     OSF,
     OSFIO,
@@ -35,78 +35,145 @@ def pls_get_magic_metadata_basket(osf_item) -> gather.Basket:
 
 
 def osfmap_for_type(rdftype_iri: str):
-    if rdftype_iri == OSF.File:
-        return OSF_FILE_METADATA
-    elif rdftype_iri in (OSF.Project, OSF.Component, OSF.Preprint):
-        return OSF_NODELIKE_METADATA
-    elif rdftype_iri == (OSF.Registration, OSF.RegistrationComponent):
-        return OSF_REGISTRATION_METADATA
-    else:
-        return OSF_COMMON_METADATA
+    try:
+        return OSFMAP[rdftype_iri]
+    except KeyError:
+        raise ValueError(f'invalid OSFMAP type! expected one of {set(OSFMAP.keys())}, got {rdftype_iri}')
 
 
 ##### END "public" api #####
 
 
 ##### BEGIN osfmap #####
+# TODO: replace these dictionaries with dctap tsv
 
 OSF_AGENT_REFERENCE = {
-    DCT.identifier: None,
+    DCTERMS.identifier: None,
+    DCTERMS.type: None,
     FOAF.name: None,
-    OSF.affiliated_institution: None,
+    OSF.affiliatedInstitution: None,
 }
 
-OSF_COMMON_METADATA = {
-    DCT.identifier: None,
-    OWL.sameAs: None,
-    DCT.type: None,
-    DCT.title: None,
-    DCT.description: None,
-    DCT.created: None,
-    DCT.available: None,
-    DCT.modified: None,
-    DCT.dateSubmitted: None,
-    DCT.dateAccepted: None,
-    DCT.dateCopyrighted: None,
-    DCT.creator: OSF_AGENT_REFERENCE,
-    DCT.contributor: OSF_AGENT_REFERENCE,
-    DCT.language: None,
-    DCT.relation: None,
-    DCT.rightsHolder: None,
-    DCT.rights: None,
-    DCT.subject: None,
-    OSF.keyword: None,
-    OSF.affiliated_institution: None,
+OSF_OBJECT_REFERENCE = {  # could reference non-osf objects too
+    DCTERMS.creator: OSF_AGENT_REFERENCE,
+    DCTERMS.created: None,
+    DCTERMS.identifier: None,
+    DCTERMS.title: None,
+    DCTERMS.type: None,
+}
+
+OSF_FILE_REFERENCE = {
+    DCTERMS.identifier: None,
+    DCTERMS.title: None,
+    DCTERMS.created: None,
+    DCTERMS.modified: None,
+    OSF.isContainedBy: OSF_OBJECT_REFERENCE,
+    OSF.fileName: None,
+    OSF.filePath: None,
+}
+
+OSF_OBJECT = {
+    DCTERMS.available: None,
+    DCTERMS.contributor: OSF_AGENT_REFERENCE,
+    DCTERMS.created: None,
+    DCTERMS.creator: OSF_AGENT_REFERENCE,
+    DCTERMS.dateAccepted: None,
+    DCTERMS.dateCopyrighted: None,
+    DCTERMS.dateSubmitted: None,
+    DCTERMS.description: None,
+    DCTERMS.hasPart: OSF_OBJECT_REFERENCE,
+    DCTERMS.hasVersion: OSF_OBJECT_REFERENCE,
+    DCTERMS.identifier: None,
+    DCTERMS.isPartOf: OSF_OBJECT_REFERENCE,
+    DCTERMS.isVersionOf: OSF_OBJECT_REFERENCE,
+    DCTERMS.language: None,
+    DCTERMS.modified: None,
+    DCTERMS.publisher: OSF_AGENT_REFERENCE,
+    DCTERMS.references: OSF_OBJECT_REFERENCE,
+    DCTERMS.relation: OSF_OBJECT_REFERENCE,
+    DCTERMS.rights: None,
+    DCTERMS.rightsHolder: None,
+    DCTERMS.subject: None,
+    DCTERMS.title: None,
+    DCTERMS.type: None,
+    OSF.affiliatedInstitution: None,
     OSF.funder: None,
+    OSF.contains: OSF_FILE_REFERENCE,
+    OSF.hasRoot: OSF_OBJECT_REFERENCE,
+    OSF.keyword: None,
+    OWL.sameAs: None,
 }
 
-OSF_FILE_METADATA = {
-    **OSF_COMMON_METADATA,
-    DCT.hasVersion: {
-        DCT.creator: OSF_AGENT_REFERENCE,
+OSF_FILEVERSION = {
+    DCTERMS.created: None,
+    DCTERMS.creator: OSF_AGENT_REFERENCE,
+    DCTERMS.extent: None,
+    DCTERMS.modified: None,
+    DCTERMS.requires: None,
+    DCTERMS['format']: None,
+    OSF.versionNumber: None,
+}
+
+OSFMAP = {
+    OSF.Project: {
+        **OSF_OBJECT,
+        OSF.supplements: OSF_OBJECT_REFERENCE,
     },
-    OSF.file_name: None,
-    OSF.file_path: None,
-    DCT.isPartOf: OSF_COMMON_METADATA,
-}
-
-OSF_NODELIKE_METADATA = {
-    **OSF_COMMON_METADATA,
-    DCT.isPartOf: OSF_COMMON_METADATA,
-    DCT.hasPart: OSF_COMMON_METADATA,
-}
-
-OSF_REGISTRATION_METADATA = {
-    **OSF_NODELIKE_METADATA,
-    OSF.archivedAt: None,
+    OSF.ProjectComponent: {
+        **OSF_OBJECT,
+        OSF.supplements: OSF_OBJECT_REFERENCE,
+    },
+    OSF.Registration: {
+        **OSF_OBJECT,
+        OSF.archivedAt: None,
+        OSF.hasAnalyticCodeResource: OSF_OBJECT_REFERENCE,
+        OSF.hasDataResource: OSF_OBJECT_REFERENCE,
+        OSF.hasMaterialsResource: OSF_OBJECT_REFERENCE,
+        OSF.hasPapersResource: OSF_OBJECT_REFERENCE,
+        OSF.hasSupplementalResource: OSF_OBJECT_REFERENCE,
+    },
+    OSF.RegistrationComponent: {
+        **OSF_OBJECT,
+        OSF.archivedAt: None,
+        OSF.hasAnalyticCodeResource: OSF_OBJECT_REFERENCE,
+        OSF.hasDataResource: OSF_OBJECT_REFERENCE,
+        OSF.hasMaterialsResource: OSF_OBJECT_REFERENCE,
+        OSF.hasPapersResource: OSF_OBJECT_REFERENCE,
+        OSF.hasSupplementalResource: OSF_OBJECT_REFERENCE,
+    },
+    OSF.Preprint: {
+        **OSF_OBJECT,
+        OSF.isSupplementedBy: OSF_OBJECT_REFERENCE,
+    },
+    OSF.File: {
+        DCTERMS.created: None,
+        DCTERMS.description: None,
+        DCTERMS.hasVersion: OSF_FILEVERSION,
+        DCTERMS.identifier: None,
+        DCTERMS.language: None,
+        DCTERMS.modified: None,
+        DCTERMS.title: None,
+        DCTERMS.type: None,
+        OSF.isContainedBy: OSF_OBJECT_REFERENCE,
+        OSF.fileName: None,
+        OSF.filePath: None,
+        OSF.funder: None,
+        OWL.sameAs: None,
+    },
+    OSF.Agent: {
+        DCTERMS.identifier: None,
+        FOAF.name: None,
+        OSF.affiliatedInstitution: None,
+        OWL.sameAs: None,
+    },
 }
 
 OSF_ARTIFACT_PREDICATES = {
-    ArtifactTypes.DATA: OSF.data_resource,
-    ArtifactTypes.ANALYTIC_CODE: OSF.analytic_code_resource,
-    ArtifactTypes.MATERIALS: OSF.materials_resource,
-    ArtifactTypes.PAPERS: OSF.papers_resource,
-    ArtifactTypes.SUPPLEMENTS: OSF.supplements_resource,
+    ArtifactTypes.ANALYTIC_CODE: OSF.hasAnalyticCodeResource,
+    ArtifactTypes.DATA: OSF.hasDataResource,
+    ArtifactTypes.MATERIALS: OSF.hasMaterialsResource,
+    ArtifactTypes.PAPERS: OSF.hasPapersResource,
+    ArtifactTypes.SUPPLEMENTS: OSF.hasSupplementalResource,
 }
 
 ##### END osfmap #####
@@ -138,7 +205,7 @@ def get_rdf_type(osfguid_referent):
         osfguid_referent = osfguid_referent.referent
 
     if isinstance(osfguid_referent, osfdb.OSFUser):
-        return OSF.OSFUser
+        return OSF.Agent
     if isinstance(osfguid_referent, osfdb.BaseFileNode):
         return OSF.File
     if isinstance(osfguid_referent, osfdb.Preprint):
@@ -153,7 +220,7 @@ def get_rdf_type(osfguid_referent):
         return (
             OSF.Project
             if is_root(osfguid_referent)
-            else OSF.Component
+            else OSF.ProjectComponent
         )
     raise NotImplementedError
 
@@ -173,7 +240,7 @@ def osf_iri(guid_or_model):
 ##### BEGIN the gatherers #####
 #
 
-@gather.er(DCT.identifier, rdflib.OWL.sameAs)
+@gather.er(DCTERMS.identifier, rdflib.OWL.sameAs)
 def gather_identifiers(focus: gather.Focus):
     guids_qs = getattr(focus.dbmodel, 'guids', None)
     if guids_qs is not None:
@@ -181,51 +248,47 @@ def gather_identifiers(focus: gather.Focus):
             osfguid_iri = osf_iri(osfguid)
             if osfguid_iri != focus.iri:
                 yield (OWL.sameAs, osfguid_iri)
-            yield (DCT.identifier, str(osfguid_iri))
+            yield (DCTERMS.identifier, str(osfguid_iri))
 
     if hasattr(focus.dbmodel, 'get_identifier_value'):
         doi = focus.dbmodel.get_identifier_value('doi')
         if doi:
             doi_iri = DOI[doi]
             yield (OWL.sameAs, doi_iri)
-            yield (DCT.identifier, str(doi_iri))
+            yield (DCTERMS.identifier, str(doi_iri))
 
 
-@gather.er(DCT.type)
+@gather.er(DCTERMS.type)
 def gather_flexible_types(focus):
-    # TODO: crosswalk from osf:category to something more intentional
-    category = getattr(focus.dbmodel, 'category', None)
-    if category:
-        yield (DCT.type, OSF[category])
     if hasattr(focus, 'guid_metadata_record'):
-        yield (DCT.type, focus.guid_metadata_record.resource_type_general)
+        yield (DCTERMS.type, focus.guid_metadata_record.resource_type_general)
 
 
-@gather.er(DCT.created)
+@gather.er(DCTERMS.created)
 def gather_created(focus):
     if focus.rdftype == OSF.Registration:
-        yield (DCT.created, getattr(focus.dbmodel, 'registered_date', None))
+        yield (DCTERMS.created, getattr(focus.dbmodel, 'registered_date', None))
     else:
-        yield (DCT.created, getattr(focus.dbmodel, 'created', None))
+        yield (DCTERMS.created, getattr(focus.dbmodel, 'created', None))
 
 
-@gather.er(DCT.available)
+@gather.er(DCTERMS.available)
 def gather_available(focus):
     embargo = getattr(focus.dbmodel, 'embargo', None)
     if embargo:
-        yield (DCT.available, embargo.end_date)
+        yield (DCTERMS.available, embargo.end_date)
 
 
-@gather.er(DCT.modified)
+@gather.er(DCTERMS.modified)
 def gather_modified(focus):
     last_logged = getattr(focus.dbmodel, 'last_logged', None)
     if last_logged is not None:
-        yield (DCT.modified, last_logged)
+        yield (DCTERMS.modified, last_logged)
     else:
-        yield (DCT.modified, getattr(focus.dbmodel, 'modified', None))
+        yield (DCTERMS.modified, getattr(focus.dbmodel, 'modified', None))
 
 
-@gather.er(DCT.dateSubmitted, DCT.dateAccepted)
+@gather.er(DCTERMS.dateSubmitted, DCTERMS.dateAccepted)
 def gather_moderation_dates(focus):
     if hasattr(focus.dbmodel, 'actions'):
         submit_triggers = [
@@ -248,46 +311,46 @@ def gather_moderation_dates(focus):
                 filter=db.models.Q(trigger__in=accept_triggers),
             ),
         )
-        yield (DCT.dateSubmitted, action_dates.get('date_submitted'))
-        yield (DCT.dateAccepted, action_dates.get('date_accepted'))
+        yield (DCTERMS.dateSubmitted, action_dates.get('date_submitted'))
+        yield (DCTERMS.dateAccepted, action_dates.get('date_accepted'))
         # TODO: withdrawn?
 
 
-@gather.er(DCT.dateCopyrighted, DCT.rightsHolder, DCT.rights)
+@gather.er(DCTERMS.dateCopyrighted, DCTERMS.rightsHolder, DCTERMS.rights)
 def gather_licensing(focus):
     license_record = getattr(focus.dbmodel, 'node_license', None)
     if license_record is not None:
-        yield (DCT.dateCopyrighted, license_record.year)
+        yield (DCTERMS.dateCopyrighted, license_record.year)
         for copyright_holder in license_record.copyright_holders:
-            yield (DCT.rightsHolder, copyright_holder)
+            yield (DCTERMS.rightsHolder, copyright_holder)
         license = license_record.node_license  # yes, it is node.node_license.node_license
         if license is not None:
             if license.url:
                 license_iri = rdflib.URIRef(license.url)
-                yield (DCT.rights, license_iri)
+                yield (DCTERMS.rights, license_iri)
                 yield (license_iri, FOAF.name, license.name)
             elif license.name:
-                yield (DCT.rights, license.name)
+                yield (DCTERMS.rights, license.name)
 
 
-@gather.er(DCT.title)
+@gather.er(DCTERMS.title)
 def gather_title(focus):
-    yield (DCT.title, getattr(focus.dbmodel, 'title', None))
+    yield (DCTERMS.title, getattr(focus.dbmodel, 'title', None))
     if hasattr(focus, 'guid_metadata_record'):
-        yield (DCT.title, focus.guid_metadata_record.title)
+        yield (DCTERMS.title, focus.guid_metadata_record.title)
 
 
-@gather.er(DCT.language)
+@gather.er(DCTERMS.language)
 def gather_language(focus):
     if hasattr(focus, 'guid_metadata_record'):
-        yield (DCT.language, focus.guid_metadata_record.language)
+        yield (DCTERMS.language, focus.guid_metadata_record.language)
 
 
-@gather.er(DCT.description)
+@gather.er(DCTERMS.description)
 def gather_description(focus):
-    yield (DCT.description, getattr(focus.dbmodel, 'description', None))
+    yield (DCTERMS.description, getattr(focus.dbmodel, 'description', None))
     if hasattr(focus, 'guid_metadata_record'):
-        yield (DCT.description, focus.guid_metadata_record.description)
+        yield (DCTERMS.description, focus.guid_metadata_record.description)
 
 
 @gather.er(OSF.keyword)
@@ -302,25 +365,26 @@ def gather_keywords(focus):
             yield (OSF.keyword, tag_name)
 
 
-@gather.er(DCT.subject)
+@gather.er(DCTERMS.subject)
 def gather_subjects(focus):
     if hasattr(focus.dbmodel, 'subjects'):
         for subject in focus.dbmodel.subjects.all().select_related('bepress_subject'):
             # TODO: subject iri, not just text
-            yield (DCT.subject, subject.text)
+            yield (DCTERMS.subject, subject.text)
             if subject.bepress_subject:
-                yield (DCT.subject, subject.bepress_subject.text)
+                yield (DCTERMS.subject, subject.bepress_subject.text)
 
 
 @gather.er(focustype_iris=[OSF.File])
 def gather_file_basics(focus):
     if isinstance(focus.dbmodel, osfdb.BaseFileNode):
-        yield (OSF.file_name, getattr(focus.dbmodel, 'name', None))
-        yield (OSF.file_path, getattr(focus.dbmodel, 'materialized_path', None))
+        yield (OSF.isContainedBy, OsfFocus(focus.dbmodel.target))
+        yield (OSF.fileName, getattr(focus.dbmodel, 'name', None))
+        yield (OSF.filePath, getattr(focus.dbmodel, 'materialized_path', None))
 
 
 @gather.er(
-    DCT.hasVersion,
+    DCTERMS.hasVersion,
     focustype_iris=[OSF.File],
 )
 def gather_versions(focus):
@@ -339,32 +403,32 @@ def gather_versions(focus):
                         },
                     ),
                 )
-                yield (DCT.hasVersion, fileversion_iri)
+                yield (DCTERMS.hasVersion, fileversion_iri)
                 yield from _gather_fileversion(fileversion, fileversion_iri)
         else:  # quacks like non-osfstorage BaseFileNode
             checksums = getattr(focus.dbmodel, '_hashes', {})
             if checksums:
                 blankversion = rdflib.BNode()
-                yield (DCT.hasVersion, blankversion)
+                yield (DCTERMS.hasVersion, blankversion)
                 for checksum_algorithm, checksum_value in checksums.items():
                     if ' ' not in checksum_algorithm:
-                        yield (blankversion, DCT.requires, checksum_iri(checksum_algorithm, checksum_value))
+                        yield (blankversion, DCTERMS.requires, checksum_iri(checksum_algorithm, checksum_value))
 
 
 def _gather_fileversion(fileversion, fileversion_iri):
     yield (fileversion_iri, RDF.type, OSF.FileVersion)
-    yield (fileversion_iri, DCT.creator, OsfFocus(fileversion.creator))
-    yield (fileversion_iri, DCT.created, fileversion.created)
-    yield (fileversion_iri, DCT.modified, fileversion.modified)
-    yield (fileversion_iri, DCT['format'], fileversion.content_type)
-    yield (fileversion_iri, DCT.extent, format_dct_extent(fileversion.size))
-    yield (fileversion_iri, OSF.version_number, fileversion.identifier)
+    yield (fileversion_iri, DCTERMS.creator, OsfFocus(fileversion.creator))
+    yield (fileversion_iri, DCTERMS.created, fileversion.created)
+    yield (fileversion_iri, DCTERMS.modified, fileversion.modified)
+    yield (fileversion_iri, DCTERMS['format'], fileversion.content_type)
+    yield (fileversion_iri, DCTERMS.extent, format_dct_extent(fileversion.size))
+    yield (fileversion_iri, OSF.versionNumber, fileversion.identifier)
     version_sha256 = (fileversion.metadata or {}).get('sha256')
     if version_sha256:
-        yield (fileversion_iri, DCT.requires, checksum_iri('sha-256', version_sha256))
+        yield (fileversion_iri, DCTERMS.requires, checksum_iri('sha-256', version_sha256))
 
 
-@gather.er(DCT.hasPart, OSF.has_file)
+@gather.er(OSF.contains)
 def gather_files(focus):
     # TODO: files without osfguids too?
     #       (maybe only for registration files, if they don't all have osfguids)
@@ -381,97 +445,122 @@ def gather_files(focus):
 
     for file in files_with_osfguids:
         file_focus = OsfFocus(file)
-        yield (DCT.hasPart, file_focus)
-        yield (OSF.has_file, file_focus)
+        yield (OSF.contains, file_focus)
         if (primary_file_id is not None) and file.id == primary_file_id:
-            yield (DCT.requires, file_focus)
+            yield (DCTERMS.requires, file_focus)
 
 
-@gather.er(DCT.hasPart, DCT.isPartOf, OSF.has_child, OSF.has_parent)
+@gather.er(DCTERMS.hasPart, DCTERMS.isPartOf)
 def gather_parts(focus):
     if isinstance(focus.dbmodel, osfdb.AbstractNode):
-        if not is_root(focus.dbmodel):
+        if not is_root(focus.dbmodel) and focus.dbmodel.root.is_public:
             root_focus = OsfFocus(focus.dbmodel.root)
-            yield (DCT.isPartOf, root_focus)
-            yield (OSF.has_root, root_focus)
-        for child in osfdb.AbstractNode.objects.get_children(focus.dbmodel):
-            childfocus = OsfFocus(child)
-            yield (DCT.hasPart, childfocus)
-            if child.parent_node == focus.dbmodel:
-                yield (OSF.has_child, childfocus)
-            else:
-                yield (OSF.has_descendent, childfocus)
+            yield (OSF.hasRoot, root_focus)
+        child_relations = (
+            osfdb.NodeRelation.objects
+            .filter(parent=focus.dbmodel, is_node_link=False)
+            .select_related('child')
+        )
+        for child_relation in child_relations:
+            child = child_relation.child
+            if child.is_public:
+                yield (DCTERMS.hasPart, OsfFocus(child))
     parent = getattr(focus.dbmodel, 'parent_node', None)
-    if parent is not None:
-        yield (DCT.isPartOf, OsfFocus(parent))
-        yield (OSF.has_parent, OsfFocus(parent))
-    container = getattr(focus.dbmodel, 'target', None)
-    if container is not None:
-        yield (DCT.isPartOf, OsfFocus(container))
+    if parent is not None and parent.is_public:
+        yield (DCTERMS.isPartOf, OsfFocus(parent))
 
 
 @gather.er(
-    DCT.relation,
-    OSF.is_supplement_to_article,
-    *OSF_ARTIFACT_PREDICATES.values(),
+    DCTERMS.hasVersion,
+    OSF.isSupplementedBy,
+    focustype_iris=[OSF.Preprint],
 )
-def gather_related_items(focus):
+def gather_preprint_related_items(focus):
+    published_article_doi = getattr(focus.dbmodel, 'article_doi', None)
+    if published_article_doi:
+        article_iri = DOI[published_article_doi]
+        yield (DCTERMS.hasVersion, article_iri)
+        yield (article_iri, DCTERMS.identifier, str(article_iri))
+    supplemental_node = focus.dbmodel.node
+    if supplemental_node and supplemental_node.is_public:
+        yield (OSF.isSupplementedBy, OsfFocus(supplemental_node))
+
+
+@gather.er(
+    DCTERMS.references,
+    focustype_iris=[OSF.Project, OSF.ProjectComponent, OSF.Registration, OSF.RegistrationComponent]
+)
+def gather_node_links(focus):
+    node_links = (
+        osfdb.NodeRelation.objects
+        .filter(parent=focus.dbmodel, is_node_link=True)
+        .select_related('child')
+    )
+    for node_link in node_links:
+        linked_node = node_link.child
+        if linked_node.is_public:
+            yield (DCTERMS.references, OsfFocus(linked_node))
+
+
+@gather.er(
+    DCTERMS.hasVersion,
+    OSF.supplements,
+    focustype_iris=[OSF.Project, OSF.ProjectComponent],
+)
+def gather_project_related_items(focus):
+    for registration in focus.dbmodel.registrations.all():
+        if registration.is_public:
+            yield (DCTERMS.hasVersion, OsfFocus(registration))
+    for preprint in focus.dbmodel.preprints.all():
+        if preprint.verified_publishable:
+            yield (OSF.supplements, OsfFocus(preprint))
+
+
+@gather.er(
+    DCTERMS.references,
+    DCTERMS.isVersionOf,
+    DCTERMS.relation,
+    *OSF_ARTIFACT_PREDICATES.values(),
+    focustype_iris=[OSF.Registration, OSF.RegistrationComponent],
+)
+def gather_registration_related_items(focus):
     related_article_doi = getattr(focus.dbmodel, 'article_doi', None)
     if related_article_doi:
-        yield (DCT.relation, DOI[related_article_doi])
-        yield (OSF.is_supplement_to_article, DOI[related_article_doi])
-    if isinstance(focus.dbmodel, osfdb.Registration):
-        # TODO: should the title/description/tags/etc fields on osf.models.Outcome
-        #       overwrite the same fields on osf.models.Registration?
-        artifact_qs = (
-            osfdb.OutcomeArtifact.objects
-            .for_registration(focus.dbmodel)
-            .filter(
-                finalized=True,
-                deleted__isnull=True
-            )
+        article_iri = DOI[related_article_doi]
+        yield (DCTERMS.relation, article_iri)
+        yield (article_iri, DCTERMS.identifier, str(article_iri))
+    yield (DCTERMS.isVersionOf, OsfFocus(focus.dbmodel.registered_from))
+    # TODO: should the title/description/tags/etc fields on osf.models.Outcome
+    #       overwrite the same fields on osf.models.Registration?
+    artifact_qs = (
+        osfdb.OutcomeArtifact.objects
+        .for_registration(focus.dbmodel)
+        .filter(
+            finalized=True,
+            deleted__isnull=True
         )
-        for outcome_artifact in artifact_qs:
-            should_include_artifact = (
-                outcome_artifact.identifier.category == 'doi'
-                and outcome_artifact.artifact_type in OSF_ARTIFACT_PREDICATES
-            )
-            if should_include_artifact:
-                artifact_iri = DOI[outcome_artifact.identifier.value]
-                yield (OSF_ARTIFACT_PREDICATES[outcome_artifact.artifact_type], artifact_iri)
-                yield (artifact_iri, DCT.identifier, str(artifact_iri))
-                yield (artifact_iri, DCT.title, outcome_artifact.title)
-                yield (artifact_iri, DCT.description, outcome_artifact.description)
+    )
+    for outcome_artifact in artifact_qs:
+        should_include_artifact = (
+            outcome_artifact.identifier.category == 'doi'
+            and outcome_artifact.artifact_type in OSF_ARTIFACT_PREDICATES
+        )
+        if should_include_artifact:
+            artifact_iri = DOI[outcome_artifact.identifier.value]
+            yield (OSF_ARTIFACT_PREDICATES[outcome_artifact.artifact_type], artifact_iri)
+            yield (artifact_iri, DCTERMS.identifier, str(artifact_iri))
+            yield (artifact_iri, DCTERMS.title, outcome_artifact.title)
+            yield (artifact_iri, DCTERMS.description, outcome_artifact.description)
 
 
-@gather.er(
-    DCT.creator,
-    DCT.contributor,
-    focustype_iris=[OSF.Project, OSF.Component, OSF.Registration, OSF.RegistrationComponent, OSF.Preprint],
-)
+@gather.er(DCTERMS.creator)
 def gather_agents(focus):
-    if focus.rdftype in (OSF.Project, OSF.Component, OSF.Registration, OSF.RegistrationComponent):
-        contributor_filter_name = 'contributor__node'
-    elif focus.rdftype == OSF.Preprint:
-        contributor_filter_name = 'contributor__preprint'
-    else:
-        return
-    creators = focus.dbmodel.contributors.filter(
-        contributor__visible=True,
-        **{contributor_filter_name: focus.dbmodel},
-    )
-    for user in creators:
-        yield (DCT.creator, OsfFocus(user))
-    contributors = focus.dbmodel.contributors.filter(
-        contributor__visible=False,
-        **{contributor_filter_name: focus.dbmodel},
-    )
-    # TODO: some nuance in contributor roles
-    for user in contributors:
-        yield (DCT.contributor, OsfFocus(user))
+    # TODO: contributor roles
+    for user in getattr(focus.dbmodel, 'visible_contributors', ()):
+        yield (DCTERMS.creator, OsfFocus(user))
 
 
-@gather.er(OSF.affiliated_institution)
+@gather.er(OSF.affiliatedInstitution)
 def gather_affiliated_institutions(focus):
     if hasattr(focus.dbmodel, 'get_affiliated_institutions'):   # like OSFUser
         institution_qs = focus.dbmodel.get_affiliated_institutions()
@@ -486,10 +575,12 @@ def gather_affiliated_institutions(focus):
             institution_iri = rdflib.URIRef(osf_institution.identifier_domain)
         else:                                       # fallback to a blank node
             institution_iri = rdflib.BNode()
-        yield (OSF.affiliated_institution, institution_iri)
+        yield (OSF.affiliatedInstitution, institution_iri)
+        yield (institution_iri, RDF.type, OSF.Agent)
+        yield (institution_iri, DCTERMS.type, FOAF.Organization)
         yield (institution_iri, FOAF.name, osf_institution.name)
-        yield (institution_iri, DCT.identifier, osf_institution.ror_uri)
-        yield (institution_iri, DCT.identifier, osf_institution.identifier_domain)
+        yield (institution_iri, DCTERMS.identifier, osf_institution.ror_uri)
+        yield (institution_iri, DCTERMS.identifier, osf_institution.identifier_domain)
 
 
 @gather.er(OSF.funder)
@@ -498,30 +589,31 @@ def gather_funding(focus):
         for funding in focus.guid_metadata_record.funding_info:
             funder_bnode = rdflib.BNode()
             yield (OSF.funder, funder_bnode)
-            yield (funder_bnode, RDF.type, OSF.Funder)
+            yield (funder_bnode, RDF.type, OSF.FundingReference)
             yield (funder_bnode, FOAF.name, funding.get('funder_name'))
-            yield (funder_bnode, DCT.identifier, funding.get('funder_identifier'))
-            yield (funder_bnode, OSF.funder_identifier_type, funding.get('funder_identifier_type'))
-            yield (funder_bnode, OSF.award_number, funding.get('award_number'))
-            yield (funder_bnode, OSF.award_uri, funding.get('award_uri'))
-            yield (funder_bnode, OSF.award_title, funding.get('award_title'))
+            yield (funder_bnode, DCTERMS.identifier, funding.get('funder_identifier'))
+            yield (funder_bnode, OSF.funderIdentifierType, funding.get('funder_identifier_type'))
+            yield (funder_bnode, OSF.awardNumber, funding.get('award_number'))
+            yield (funder_bnode, OSF.awardUri, funding.get('award_uri'))
+            yield (funder_bnode, OSF.awardTitle, funding.get('award_title'))
 
 
-@gather.er(focustype_iris=[OSF.OSFUser])
+@gather.er(focustype_iris=[OSF.Agent])
 def gather_user_basics(focus):
-    yield (RDF.type, DCT.Agent)
-    yield (FOAF.name, focus.dbmodel.fullname)
-    for social_link in focus.dbmodel.social_links.values():
-        if isinstance(social_link, str):
-            yield (DCT.identifier, social_link)
-        elif isinstance(social_link, list):
-            for link in social_link:
-                yield (DCT.identifier, link)
-    orcid = focus.dbmodel.get_verified_external_id('ORCID', verified_only=True)
-    if orcid:
-        orcid_iri = ORCID[orcid]
-        yield (OWL.sameAs, orcid_iri)
-        yield (DCT.identifier, str(orcid_iri))
+    if isinstance(focus.dbmodel, osfdb.OSFUser):
+        yield (DCTERMS.type, FOAF.Person)
+        yield (FOAF.name, focus.dbmodel.fullname)
+        for social_link in focus.dbmodel.social_links.values():
+            if isinstance(social_link, str):
+                yield (DCTERMS.identifier, social_link)
+            elif isinstance(social_link, list):
+                for link in social_link:
+                    yield (DCTERMS.identifier, link)
+        orcid = focus.dbmodel.get_verified_external_id('ORCID', verified_only=True)
+        if orcid:
+            orcid_iri = ORCID[orcid]
+            yield (OWL.sameAs, orcid_iri)
+            yield (DCTERMS.identifier, str(orcid_iri))
 
 
 @gather.er(
@@ -530,3 +622,29 @@ def gather_user_basics(focus):
 )
 def gather_ia_url(focus):
     yield (OSF.archivedAt, focus.dbmodel.ia_url)
+
+
+@gather.er(DCTERMS.publisher)
+def gather_publisher(focus):
+    provider = getattr(focus.dbmodel, 'provider', None)
+    if provider is None:
+        yield from _publisher_tripleset(iri=rdflib.URIRef(OSFIO), name='OSF')
+    else:
+        if isinstance(provider, osfdb.PreprintProvider):
+            provider_path_prefix = 'preprints'
+        elif isinstance(provider, osfdb.RegistrationProvider):
+            provider_path_prefix = 'registries'
+        elif isinstance(provider, osfdb.CollectionProvider):
+            provider_path_prefix = 'collections'
+        else:
+            raise ValueError(f'unknown provider type: {type(provider)} (for provider {provider})')
+        provider_iri = OSFIO[f'{provider_path_prefix}/{provider._id}']
+        yield from _publisher_tripleset(iri=provider_iri, name=provider.name, url=provider.domain)
+
+def _publisher_tripleset(iri, name, url=None):
+    yield (DCTERMS.publisher, iri)
+    yield (iri, RDF.type, OSF.Agent)
+    yield (iri, DCTERMS.type, FOAF.Organization)
+    yield (iri, FOAF.name, name)
+    yield (iri, DCTERMS.identifier, str(iri))
+    yield (iri, DCTERMS.identifier, url)

@@ -15,10 +15,12 @@ DOI = rdflib.Namespace('https://doi.org/')
 ORCID = rdflib.Namespace('https://orcid.org/')
 ROR = rdflib.Namespace('https://ror.org/')
 # external terminology namespaces:
-DCT = rdflib.Namespace('http://purl.org/dc/terms/')                     # "dublin core terms"
+DCTERMS = rdflib.Namespace('http://purl.org/dc/terms/')                 # "dublin core terms"
 FOAF = rdflib.Namespace('http://xmlns.com/foaf/0.1/')                   # "friend of a friend"
-OWL = rdflib.Namespace('http://www.w3.org/2002/07/owl#')                # "ontology web language"
+OWL = rdflib.Namespace('http://www.w3.org/2002/07/owl#')                # "web ontology language"
 RDF = rdflib.Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#')   # "resource description framework"
+# datacite v4.4: https://schema.datacite.org/meta/kernel-4.4/metadata.xsd
+DATACITE = rdflib.Namespace('http://datacite.org/schema/kernel-4')
 
 
 # namespace prefixes that will be shortened by default
@@ -26,16 +28,17 @@ RDF = rdflib.Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#')   # "resou
 # (in addition to rdflib's 'core' (rdf, rdfs...))
 OSF_CONTEXT = {
     'osf': OSF,
-    'dct': DCT,
+    'dcterms': DCTERMS,
     'foaf': FOAF,
     'owl': OWL,
 }
 
 
-def contextualized_graph() -> rdflib.Graph:
-    '''get a new rdf graph with default namespace prefixes already bound
+def contextualized_graph(graph=None) -> rdflib.Graph:
+    '''bind default namespace prefixes to a new (or given) rdf graph
     '''
-    graph = rdflib.Graph()
+    if graph is None:
+        graph = rdflib.Graph()
     for prefix, namespace in OSF_CONTEXT.items():
         graph.bind(prefix, namespace)
     return graph
@@ -53,7 +56,7 @@ def checksum_iri(checksum_algorithm, checksum_hex) -> rdflib.URIRef:
 
 
 def format_dct_extent(number_of_bytes: int) -> str:
-    '''format filesize value for dct:extent
+    '''format filesize value for dcterms:extent
 
     following the dcterms:extent recommendation to specify in megabytes:
     https://www.dublincore.org/specifications/dublin-core/dcmi-terms/terms/extent/
