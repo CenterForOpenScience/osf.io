@@ -723,12 +723,18 @@ class TestNodeGitHubAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
 
     @mock.patch('addons.github.models.GitHubClient')
     def test_folder_list_GET_expected_behavior(self, mock_client):
-        mock_repo = Repository.from_json(dumps({
-            'name': 'test',
-            'id': '12345',
-            'owner':
-                {'login': 'test name'}
-        }), GitHubSession())
+        mock_repo = Repository.from_json(
+            dumps(
+                {
+                    'name': 'test',
+                    'id': '12345',
+                    'url': 'https://testurl.com/',
+                    'owner':
+                        {'login': 'test name'}
+                }
+            ),
+            GitHubSession()
+        )
 
         mock_connection = mock.MagicMock()
         mock_client.return_value = mock_connection

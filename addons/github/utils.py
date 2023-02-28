@@ -4,6 +4,7 @@ from future.moves.urllib.parse import unquote_plus
 import hashlib
 from rest_framework import status as http_status
 from github3.repos.branch import Branch
+from github3.session import GitHubSession
 
 from framework.exceptions import HTTPError
 from addons.base.exceptions import HookError
@@ -74,7 +75,7 @@ def get_refs(addon, branch=None, sha=None, connection=None):
         branch = repo.default_branch
     # Get registered branches if provided
     registered_branches = (
-        [Branch.from_json(b) for b in addon.registration_data.get('branches', [])]
+        [Branch.from_json(b, GitHubSession()) for b in addon.registration_data.get('branches', [])]
         if addon.owner.is_registration
         else []
     )

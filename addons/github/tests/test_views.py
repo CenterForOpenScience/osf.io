@@ -22,6 +22,7 @@ from addons.github.serializer import GitHubSerializer
 from addons.github.utils import check_permissions
 from tests.base import OsfTestCase, get_default_metaschema
 from osf_tests.factories import ProjectFactory, UserFactory, AuthUserFactory, DraftRegistrationFactory
+from github3.session import GitHubSession
 
 pytestmark = pytest.mark.django_db
 
@@ -493,20 +494,196 @@ class TestGithubSettings(OsfTestCase):
     def test_link_repo_registration(self, mock_branches):
 
         mock_branches.return_value = [
-            Branch.from_json(dumps({
-                'name': 'master',
-                'commit': {
-                    'sha': '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-                    'url': 'https://api.github.com/repos/octocat/Hello-World/commits/c5b97d5ae6c19d5c5df71a34c7fbeeda2479ccbc',
-                }
-            })),
-            Branch.from_json(dumps({
-                'name': 'develop',
-                'commit': {
-                    'sha': '6dcb09b5b57875asdasedawedawedwedaewdwdass',
-                    'url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
-                }
-            }))
+            Branch.from_json(
+                dumps(
+                    {
+                        'commit': {
+                            'parents': [
+                                'ab64bbdcc51b170d21588e5c5d391ee5c0c96dfd',
+                                '4cffe90e0a41ad3f5190079d7c8f036bde29cbe6'
+                            ],
+                            'sha': '444a74d0d90a4aea744dacb31a14f87b5c30759c',
+                            'html_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                            'author': {
+                                'avatar_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'events_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'following_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'followers_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'id': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'login': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'organizations_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'received_events_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'repos_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'starred_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'type': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'gists_url': u'https://api.github.com/users/{user}/gists{{/gist_id}}',
+                                'html_url': 'https://github.com/{user}',
+                                'subscriptions_url': 'https://api.github.com/users/{user}/subscriptions',
+                                'gravatar_id': 'c74f9cfd7776305a82ede0b765d65402',
+                            },
+                            'commit': {
+                                'parents': [
+                                    'ab64bbdcc51b170d21588e5c5d391ee5c0c96dfd',
+                                    '4cffe90e0a41ad3f5190079d7c8f036bde29cbe6'
+                                ],
+                                'html_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'ETag': {},
+                                'sha': u'e22d92d5d90bb8f9695e9a5e2e2311a5c1997230',
+                                'url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'author': {},
+                                'committer': {
+                                    'avatar_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                    'name': 'test',
+                                    'events_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                    'following_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                    'followers_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                    'id': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                    'login': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                    'organizations_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                    'received_events_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                    'repos_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                    'starred_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                    'type': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                    'gists_url': 'https://api.github.com/users/{user}/gists{{/gist_id}}',
+                                    'url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                    'html_url': 'https://github.com/{user}',
+                                    'subscriptions_url': 'https://api.github.com/users/{user}/subscriptions',
+                                    'gravatar_id': u'c74f9cfd7776305a82ede0b765d65402',
+                                },
+                                'message': 'test message',
+                                'tree': {
+                                    'url': 'test.com',
+                                    'sha': 'e22d92d5d90bb8f9695e9a5e2e2311a5c1997230',
+                                }
+                            },
+                            'comments_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                            'url': 'https://api.github.com/repos/{user}/mock-repo/commits/444a74d0d90a4aea744dacb31a14f87b5c30759c',
+                            'committer': {
+                                'avatar_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'events_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'following_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'followers_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'name': 'test',
+                                'id': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'login': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'organizations_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'received_events_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'gists_url': u'https://api.github.com/users/{user}/gists{{/gist_id}}',
+                                'repos_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'starred_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'type': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'html_url': 'https://github.com/{user}',
+                                'subscriptions_url': 'https://api.github.com/users/{user}/subscriptions',
+                                'gravatar_id': u'c74f9cfd7776305a82ede0b765d65402',
+                            }
+                        },
+                        'events_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                        '_links': [],
+                        'protected': False,
+                        'protection': {},
+                        'protection_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                        'name': 'master',
+                    }
+                ),
+                GitHubSession()
+            ),
+            Branch.from_json(
+                dumps(
+                    {
+                        'commit': {
+                            'parents': [
+                                'ab64bbdcc51b170d21588e5c5d391ee5c0c96dfd',
+                                '4cffe90e0a41ad3f5190079d7c8f036bde29cbe6'
+                            ],
+                            'sha': '444a74d0d90a4aea744dacb31a14f87b5c30759c',
+                            'html_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                            'author': {
+                                'avatar_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'events_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'following_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'followers_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'id': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'login': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'organizations_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'received_events_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'repos_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'starred_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'type': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'gists_url': 'https://api.github.com/users/{user}/gists{{/gist_id}}',
+                                'html_url': 'https://github.com/{user}',
+                                'subscriptions_url': 'https://api.github.com/users/{user}/subscriptions',
+                                'gravatar_id': u'c74f9cfd7776305a82ede0b765d65402',
+                            },
+                            'commit': {
+                                'parents': [
+                                    'ab64bbdcc51b170d21588e5c5d391ee5c0c96dfd',
+                                    '4cffe90e0a41ad3f5190079d7c8f036bde29cbe6'
+                                ],
+                                'html_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'ETag': {},
+                                'sha': u'e22d92d5d90bb8f9695e9a5e2e2311a5c1997230',
+                                'url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'author': {},
+                                'committer': {
+                                    'avatar_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                    'name': 'test',
+                                    'events_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                    'following_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                    'followers_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                    'id': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                    'login': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                    'organizations_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                    'received_events_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                    'repos_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                    'starred_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                    'type': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                    'gists_url': 'https://api.github.com/users/{user}/gists{{/gist_id}}',
+                                    'url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                    'html_url': 'https://github.com/{user}',
+                                    'subscriptions_url': 'https://api.github.com/users/{user}/subscriptions',
+                                    'gravatar_id': u'c74f9cfd7776305a82ede0b765d65402',
+                                },
+                                'message': 'test message',
+                                'tree': {
+                                    'url': 'test.com',
+                                    'sha': 'e22d92d5d90bb8f9695e9a5e2e2311a5c1997230',
+                                }
+                            },
+                            'comments_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                            'url': 'https://api.github.com/repos/{user}/mock-repo/commits/444a74d0d90a4aea744dacb31a14f87b5c30759c',
+                            'committer': {
+                                'avatar_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'events_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'following_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'followers_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'name': 'test',
+                                'id': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'login': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'organizations_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'received_events_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'gists_url': u'https://api.github.com/users/{user}/gists{{/gist_id}}',
+                                'repos_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'starred_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'type': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                                'html_url': 'https://github.com/{user}',
+                                'subscriptions_url': 'https://api.github.com/users/{user}/subscriptions',
+                                'gravatar_id': u'c74f9cfd7776305a82ede0b765d65402',
+                            }
+                        },
+                        'events_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                        '_links': [],
+                        'protected': False,
+                        'protection': {},
+                        'protection_url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
+                        'name': 'develop',
+                    }
+                ),
+                GitHubSession()
+            )
         ]
 
         registration = self.project.register_node(
