@@ -81,7 +81,7 @@ class TestDataCiteClient:
         assert len(creators.getchildren()) == len(registration.visible_contributors)
 
         publisher = root.find('{%s}publisher' % schema40.ns[None])
-        assert publisher.text == 'Open Science Framework'
+        assert publisher.text == 'OSF Registries'
 
         pub_year = root.find('{%s}publicationYear' % schema40.ns[None])
         assert pub_year.text == str(registration.registered_date.year)
@@ -108,11 +108,11 @@ class TestDataCiteClient:
         registration.save()
 
         metadata_xml = datacite_client.build_metadata(registration)
-        # includes visible contrib name
+        # includes visible contrib name as creator
         assert f'<contributorName nameType="Personal">{visible_contrib.fullname}</contributorName>' not in metadata_xml
         assert f'<creatorName nameType="Personal">{visible_contrib.fullname}</creatorName>' in metadata_xml
-
-        assert f'<contributorName nameType="Personal">{invisible_contrib.fullname}</contributorName>' in metadata_xml
+        # does not include invisible contrib name
+        assert f'<contributorName nameType="Personal">{invisible_contrib.fullname}</contributorName>' not in metadata_xml
         assert f'<creatorName nameType="Personal">{invisible_contrib.fullname}</creatorName>' not in metadata_xml
 
     def test_datacite_format_related_resources(self, datacite_client):
@@ -132,18 +132,24 @@ class TestDataCiteClient:
             {
                 'relatedIdentifier': data_artifact.identifier.value,
                 'relatedIdentifierType': 'DOI',
-                'relationType': 'IsSupplementedBy',
+                'relationType': 'References',
             },
             {
                 'relatedIdentifier': materials_artifact.identifier.value,
                 'relatedIdentifierType': 'DOI',
-                'relationType': 'IsSupplementedBy',
+                'relationType': 'References',
             },
             {
                 'relatedIdentifier': 'publication',
                 'relatedIdentifierType': 'DOI',
-                'relationType': 'IsSupplementTo',
+                'relationType': 'References',
             },
+            {
+                'relatedIdentifier': registration.registered_from.absolute_url.rstrip('/'),
+                'relatedIdentifierType': 'URL',
+                'relationType': 'IsVersionOf',
+            },
+
         ]
         formatted_relationships = metadata_dict['relatedIdentifiers']
         sort_func = lambda x: x['relatedIdentifier']
@@ -166,7 +172,12 @@ class TestDataCiteClient:
             {
                 'relatedIdentifier': identifier.value,
                 'relatedIdentifierType': 'DOI',
-                'relationType': 'IsSupplementedBy',
+                'relationType': 'References',
+            },
+            {
+                'relatedIdentifier': registration.registered_from.absolute_url.strip('/'),
+                'relatedIdentifierType': 'URL',
+                'relationType': 'IsVersionOf',
             },
         ]
         assert metadata_dict['relatedIdentifiers'] == expected_relationships
@@ -193,7 +204,12 @@ class TestDataCiteClient:
             {
                 'relatedIdentifier': active_artifact.identifier.value,
                 'relatedIdentifierType': 'DOI',
-                'relationType': 'IsSupplementedBy',
+                'relationType': 'References',
+            },
+            {
+                'relatedIdentifier': registration.registered_from.absolute_url.strip('/'),
+                'relatedIdentifierType': 'URL',
+                'relationType': 'IsVersionOf',
             },
         ]
         assert metadata_dict['relatedIdentifiers'] == expected_relationships

@@ -2,7 +2,7 @@ import json
 from osf.metadata import gather
 from osf.metadata.serializers import _base
 from osf.metadata.rdfutils import (
-    DCT,
+    DCTERMS,
     OSF,
     FOAF,
     OSFIO,
@@ -26,19 +26,19 @@ class GoogleDatasetJsonLdSerializer(_base.MetadataSerializer):
         metadata = {
             '@context': 'https://schema.org',
             '@type': 'Dataset',
-            'dateCreated': next(basket[DCT.created]),
-            'dateModified': next(basket[DCT.modified]),
-            'name': next(basket[DCT.title]),
-            'description': next(basket[DCT.description], None),
-            'url': next(url for url in basket[DCT.identifier] if url.startswith(OSFIO)),
+            'dateCreated': next(basket[DCTERMS.created]),
+            'dateModified': next(basket[DCTERMS.modified]),
+            'name': next(basket[DCTERMS.title | OSF.fileName]),
+            'description': next(basket[DCTERMS.description], None),
+            'url': next(url for url in basket[DCTERMS.identifier] if url.startswith(OSFIO)),
             'keywords': [keyword for keyword in basket[OSF.keyword]],
             'publisher': {
                 '@type': 'Organization',
                 'name': 'Center For Open Science'
             },
             'creator': format_creators(basket),
-            'identifier': [identifer for identifer in basket[DCT.identifier]],
-            'license': next(basket[DCT.rights], None)
+            'identifier': [identifer for identifer in basket[DCTERMS.identifier]],
+            'license': next(basket[DCTERMS.rights], None)
         }
 
         if basket.focus.rdftype == OSF.Registration:
@@ -68,7 +68,7 @@ class GoogleDatasetJsonLdSerializer(_base.MetadataSerializer):
 
 def format_creators(basket):
     creator_data = []
-    for creator_iri in basket[DCT.creator]:
+    for creator_iri in basket[DCTERMS.creator]:
         creator_data.append({
             '@type': 'Person',
             'name': next(basket[creator_iri:FOAF.name]),

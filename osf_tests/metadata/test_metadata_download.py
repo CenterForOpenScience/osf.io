@@ -130,17 +130,17 @@ class TestMetadataDownload(OsfTestCase):
 BASIC_DATACITE_JSON = '''{{
   "contributors": [
     {{
-      "contributorName": "Open Science Framework",
+      "contributorName": "Center for Open Science",
       "contributorType": "HostingInstitution",
-      "name": "Open Science Framework",
+      "name": "Center for Open Science",
       "nameIdentifiers": [
         {{
-          "name": "Open Science Framework",
+          "name": "Center for Open Science",
           "nameIdentifier": "https://ror.org/05d5mza29",
           "nameIdentifierScheme": "ROR"
         }},
         {{
-          "name": "Open Science Framework",
+          "name": "Center for Open Science",
           "nameIdentifier": "https://grid.ac/institutes/grid.466501.0/",
           "nameIdentifierScheme": "GRID"
         }}
@@ -189,7 +189,7 @@ BASIC_DATACITE_JSON = '''{{
     }}
   ],
   "publicationYear": "2252",
-  "publisher": "Open Science Framework",
+  "publisher": "OSF",
   "relatedIdentifiers": [],
   "rightsList": [
     {{
@@ -225,11 +225,11 @@ BASIC_DATACITE_XML = '''<?xml version='1.0' encoding='utf-8'?>
   <titles>
     <title>this is a project title!</title>
   </titles>
-  <publisher>Open Science Framework</publisher>
+  <publisher>OSF</publisher>
   <publicationYear>2252</publicationYear>
   <contributors>
     <contributor contributorType="HostingInstitution">
-      <contributorName nameType="Organizational">Open Science Framework</contributorName>
+      <contributorName nameType="Organizational">Center for Open Science</contributorName>
       <nameIdentifier nameIdentifierScheme="ROR">https://ror.org/05d5mza29</nameIdentifier>
       <nameIdentifier nameIdentifierScheme="GRID">https://grid.ac/institutes/grid.466501.0/</nameIdentifier>
     </contributor>
@@ -248,48 +248,51 @@ BASIC_DATACITE_XML = '''<?xml version='1.0' encoding='utf-8'?>
 </resource>
 '''
 
-BASIC_TURTLE = '''@prefix dct: <http://purl.org/dc/terms/> .
+BASIC_TURTLE = '''@prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 @prefix osf: <https://osf.io/vocab/2022/> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 
 <http://localhost:5000/{project_id}> a osf:Project ;
-    dct:created "{date}" ;
-    dct:creator <http://localhost:5000/{user_id}> ;
-    dct:dateCopyrighted "2252" ;
-    dct:description "this is a project description!" ;
-    dct:identifier "http://localhost:5000/{project_id}",
+    dcterms:created "{date}" ;
+    dcterms:creator <http://localhost:5000/{user_id}> ;
+    dcterms:dateCopyrighted "2252" ;
+    dcterms:description "this is a project description!" ;
+    dcterms:identifier "http://localhost:5000/{project_id}",
         "https://doi.org/10.70102/FK2osf.io/{project_id}" ;
-    dct:modified "{date}" ;
-    dct:rights "No license" ;
-    dct:rightsHolder "Me",
+    dcterms:modified "{date}" ;
+    dcterms:publisher <http://localhost:5000/> ;
+    dcterms:rights "No license" ;
+    dcterms:rightsHolder "Me",
         "You" ;
-    dct:title "this is a project title!" ;
-    dct:type osf:project ;
+    dcterms:title "this is a project title!" ;
     owl:sameAs <https://doi.org/10.70102/FK2osf.io/{project_id}> .
 
-<http://localhost:5000/{user_id}> a dct:Agent,
-        osf:OSFUser ;
-    dct:identifier "http://localhost:5000/{user_id}" ;
+<http://localhost:5000/{user_id}> a osf:Agent ;
+    dcterms:identifier "http://localhost:5000/{user_id}" ;
+    dcterms:type foaf:Person ;
     foaf:name "Person McNamington" .
 
-'''
+<http://localhost:5000/> a osf:Agent ;
+    dcterms:identifier "http://localhost:5000/" ;
+    dcterms:type foaf:Organization ;
+    foaf:name "OSF" .'''
 
 
 COMPLICATED_DATACITE_JSON = '''{{
   "contributors": [
     {{
-      "contributorName": "Open Science Framework",
+      "contributorName": "Center for Open Science",
       "contributorType": "HostingInstitution",
-      "name": "Open Science Framework",
+      "name": "Center for Open Science",
       "nameIdentifiers": [
         {{
-          "name": "Open Science Framework",
+          "name": "Center for Open Science",
           "nameIdentifier": "https://ror.org/05d5mza29",
           "nameIdentifierScheme": "ROR"
         }},
         {{
-          "name": "Open Science Framework",
+          "name": "Center for Open Science",
           "nameIdentifier": "https://grid.ac/institutes/grid.466501.0/",
           "nameIdentifierScheme": "GRID"
         }}
@@ -348,7 +351,7 @@ COMPLICATED_DATACITE_JSON = '''{{
   ],
   "language": "es",
   "publicationYear": "{project_created_year}",
-  "publisher": "Open Science Framework",
+  "publisher": "OSF",
   "relatedIdentifiers": [],
   "rightsList": [
     {{
@@ -385,11 +388,11 @@ COMPLICATED_DATACITE_XML = '''<?xml version='1.0' encoding='utf-8'?>
   <titles>
     <title>this is a project title!</title>
   </titles>
-  <publisher>Open Science Framework</publisher>
+  <publisher>OSF</publisher>
   <publicationYear>{project_created_year}</publicationYear>
   <contributors>
     <contributor contributorType="HostingInstitution">
-      <contributorName nameType="Organizational">Open Science Framework</contributorName>
+      <contributorName nameType="Organizational">Center for Open Science</contributorName>
       <nameIdentifier nameIdentifierScheme="ROR">https://ror.org/05d5mza29</nameIdentifier>
       <nameIdentifier nameIdentifierScheme="GRID">https://grid.ac/institutes/grid.466501.0/</nameIdentifier>
     </contributor>
@@ -417,125 +420,109 @@ COMPLICATED_DATACITE_XML = '''<?xml version='1.0' encoding='utf-8'?>
 </resource>
 '''
 
-COMPLICATED_TURTLE = '''@prefix dct: <http://purl.org/dc/terms/> .
+COMPLICATED_TURTLE = '''@prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 @prefix osf: <https://osf.io/vocab/2022/> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 
 <http://localhost:5000/{project_id}> a osf:Project ;
-    dct:created "{date}" ;
-    dct:creator <http://localhost:5000/{user_id}> ;
-    dct:dateCopyrighted "2250-2254" ;
-    dct:description "this is a project description!" ;
-    dct:hasPart <http://localhost:5000/{file_id}> ;
-    dct:identifier "http://localhost:5000/{project_id}",
+    dcterms:created "{date}" ;
+    dcterms:creator <http://localhost:5000/{user_id}> ;
+    dcterms:dateCopyrighted "2250-2254" ;
+    dcterms:description "this is a project description!" ;
+    dcterms:identifier "http://localhost:5000/{project_id}",
         "https://doi.org/10.70102/FK2osf.io/{project_id}" ;
-    dct:language "es" ;
-    dct:modified "{date}" ;
-    dct:rights <https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode> ;
-    dct:rightsHolder "Me",
+    dcterms:language "es" ;
+    dcterms:modified "{date}" ;
+    dcterms:publisher <http://localhost:5000/> ;
+    dcterms:rights <https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode> ;
+    dcterms:rightsHolder "Me",
         "You" ;
-    dct:title "this is a project title!" ;
-    dct:type osf:project,
-        "Dataset" ;
+    dcterms:title "this is a project title!" ;
+    dcterms:type "Dataset" ;
     owl:sameAs <https://doi.org/10.70102/FK2osf.io/{project_id}> ;
-    osf:funder [ a osf:Funder ;
-            dct:identifier "https://doi.org/10.$$$$" ;
+    osf:contains <http://localhost:5000/{file_id}> ;
+    osf:funder [ a osf:FundingReference ;
+            dcterms:identifier "https://doi.org/10.$$$$" ;
             foaf:name "Mx. Moneypockets" ;
-            osf:award_number "10000000" ;
-            osf:award_title "because reasons" ;
-            osf:award_uri "https://moneypockets.example/millions" ;
-            osf:funder_identifier_type "Crossref Funder ID" ] ;
-    osf:has_file <http://localhost:5000/{file_id}> .
-
-<http://localhost:5000/{user_id}> a dct:Agent,
-        osf:OSFUser ;
-    dct:identifier "http://localhost:5000/{user_id}" ;
-    foaf:name "Person McNamington" .
-
-<https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode> foaf:name "CC-By Attribution-NonCommercial-NoDerivatives 4.0 International" .
+            osf:awardNumber "10000000" ;
+            osf:awardTitle "because reasons" ;
+            osf:awardUri "https://moneypockets.example/millions" ;
+            osf:funderIdentifierType "Crossref Funder ID" ] .
 
 <http://localhost:5000/{file_id}> a osf:File ;
-    dct:created "{date}" ;
-    dct:identifier "http://localhost:5000/{file_id}" ;
-    dct:modified "{date}" ;
-    osf:file_name "my-file.blarg" ;
-    osf:file_path "/my-file.blarg" .
+    dcterms:created "{date}" ;
+    dcterms:identifier "http://localhost:5000/{file_id}" ;
+    dcterms:modified "{date}" ;
+    osf:fileName "my-file.blarg" ;
+    osf:filePath "/my-file.blarg" ;
+    osf:isContainedBy <http://localhost:5000/{project_id}> .
 
-'''
+<http://localhost:5000/{user_id}> a osf:Agent ;
+    dcterms:identifier "http://localhost:5000/{user_id}" ;
+    dcterms:type foaf:Person ;
+    foaf:name "Person McNamington" .
+
+<http://localhost:5000/> a osf:Agent ;
+    dcterms:identifier "http://localhost:5000/" ;
+    dcterms:type foaf:Organization ;
+    foaf:name "OSF" .
+
+<https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode> foaf:name "CC-By Attribution-NonCommercial-NoDerivatives 4.0 International" .'''
 
 
-FILE_TURTLE = '''@prefix dct: <http://purl.org/dc/terms/> .
+FILE_TURTLE = '''@prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 @prefix osf: <https://osf.io/vocab/2022/> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 
 <http://localhost:5000/{file_id}> a osf:File ;
-    dct:created "{date}" ;
-    dct:hasVersion <http://localhost:8000/v2/files/{raw_file_id}/versions/{fileversion_id}/> ;
-    dct:identifier "http://localhost:5000/{file_id}" ;
-    dct:isPartOf <http://localhost:5000/{project_id}> ;
-    dct:modified "{date}" ;
-    osf:file_name "my-file.blarg" ;
-    osf:file_path "/my-file.blarg" .
+    dcterms:created "{date}" ;
+    dcterms:hasVersion <http://localhost:8000/v2/files/{raw_file_id}/versions/1/> ;
+    dcterms:identifier "http://localhost:5000/{file_id}" ;
+    dcterms:modified "{date}" ;
+    osf:fileName "my-file.blarg" ;
+    osf:filePath "/my-file.blarg" ;
+    osf:isContainedBy <http://localhost:5000/{project_id}> .
+
+<http://localhost:8000/v2/files/{raw_file_id}/versions/1/> a osf:FileVersion ;
+    dcterms:created "{date}" ;
+    dcterms:creator <http://localhost:5000/{user_id}> ;
+    dcterms:extent "0.000007 MB" ;
+    dcterms:format "img/png" ;
+    dcterms:modified "{date}" ;
+    dcterms:requires <urn:checksum:sha-256::6ac3c336e4094835293a3fed8a4b5fedde1b5e2626d9838fed50693bba00af0e> ;
+    osf:versionNumber "1" .
 
 <http://localhost:5000/{project_id}> a osf:Project ;
-    dct:created "{date}" ;
-    dct:creator <http://localhost:5000/{user_id}> ;
-    dct:dateCopyrighted "2250-2254" ;
-    dct:description "this is a project description!" ;
-    dct:identifier "http://localhost:5000/{project_id}",
+    dcterms:created "{date}" ;
+    dcterms:creator <http://localhost:5000/{user_id}> ;
+    dcterms:identifier "http://localhost:5000/{project_id}",
         "https://doi.org/10.70102/FK2osf.io/{project_id}" ;
-    dct:language "es" ;
-    dct:modified "{date}" ;
-    dct:rights <https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode> ;
-    dct:rightsHolder "Me",
-        "You" ;
-    dct:title "this is a project title!" ;
-    dct:type osf:project,
-        "Dataset" ;
-    owl:sameAs <https://doi.org/10.70102/FK2osf.io/{project_id}> ;
-    osf:funder [ a osf:Funder ;
-            dct:identifier "https://doi.org/10.$$$$" ;
-            foaf:name "Mx. Moneypockets" ;
-            osf:award_number "10000000" ;
-            osf:award_title "because reasons" ;
-            osf:award_uri "https://moneypockets.example/millions" ;
-            osf:funder_identifier_type "Crossref Funder ID" ] .
+    dcterms:title "this is a project title!" ;
+    dcterms:type "Dataset" ;
+    owl:sameAs <https://doi.org/10.70102/FK2osf.io/{project_id}> .
 
-<http://localhost:8000/v2/files/{raw_file_id}/versions/{fileversion_id}/> a osf:FileVersion ;
-    dct:created "{date}" ;
-    dct:creator <http://localhost:5000/{user_id}> ;
-    dct:extent "0.000007 MB" ;
-    dct:format "img/png" ;
-    dct:modified "{date}" ;
-    dct:requires <urn:checksum:sha-256::6ac3c336e4094835293a3fed8a4b5fedde1b5e2626d9838fed50693bba00af0e> ;
-    osf:version_number "1" .
-
-<https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode> foaf:name "CC-By Attribution-NonCommercial-NoDerivatives 4.0 International" .
-
-<http://localhost:5000/{user_id}> a dct:Agent,
-        osf:OSFUser ;
-    dct:identifier "http://localhost:5000/{user_id}" ;
-    foaf:name "Person McNamington" .
-
-'''
+<http://localhost:5000/{user_id}> a osf:Agent ;
+    dcterms:identifier "http://localhost:5000/{user_id}" ;
+    dcterms:type foaf:Person ;
+    foaf:name "Person McNamington" .'''
 
 
 FILE_DATACITE_JSON = '''{{
   "contributors": [
     {{
-      "contributorName": "Open Science Framework",
+      "contributorName": "Center for Open Science",
       "contributorType": "HostingInstitution",
-      "name": "Open Science Framework",
+      "name": "Center for Open Science",
       "nameIdentifiers": [
         {{
-          "name": "Open Science Framework",
+          "name": "Center for Open Science",
           "nameIdentifier": "https://ror.org/05d5mza29",
           "nameIdentifierScheme": "ROR"
         }},
         {{
-          "name": "Open Science Framework",
+          "name": "Center for Open Science",
           "nameIdentifier": "https://grid.ac/institutes/grid.466501.0/",
           "nameIdentifierScheme": "GRID"
         }}
@@ -570,17 +557,18 @@ FILE_DATACITE_JSON = '''{{
   "fundingReferences": [],
   "identifiers": [
     {{
-      "identifier": "",
-      "identifierType": "DOI"
-    }},
-    {{
       "identifier": "http://localhost:5000/{file_id}",
       "identifierType": "URL"
     }}
   ],
   "publicationYear": "{file_created_year}",
-  "publisher": "Open Science Framework",
+  "publisher": "OSF",
   "relatedIdentifiers": [
+    {{
+      "relatedIdentifier": "http://localhost:8000/v2/files/{raw_file_id}/versions/1/",
+      "relatedIdentifierType": "URL",
+      "relationType": "HasVersion"
+    }},
     {{
       "relatedIdentifier": "http://localhost:5000/{project_id}",
       "relatedIdentifierType": "URL",
@@ -604,7 +592,6 @@ FILE_DATACITE_JSON = '''{{
 
 FILE_DATACITE_XML = '''<?xml version='1.0' encoding='utf-8'?>
 <resource xmlns="http://datacite.org/schema/kernel-4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4.3/metadata.xsd">
-  <identifier identifierType="DOI"></identifier>
   <alternateIdentifiers>
     <alternateIdentifier alternateIdentifierType="URL">http://localhost:5000/{file_id}</alternateIdentifier>
   </alternateIdentifiers>
@@ -617,11 +604,11 @@ FILE_DATACITE_XML = '''<?xml version='1.0' encoding='utf-8'?>
   <titles>
     <title>my-file.blarg</title>
   </titles>
-  <publisher>Open Science Framework</publisher>
+  <publisher>OSF</publisher>
   <publicationYear>{file_created_year}</publicationYear>
   <contributors>
     <contributor contributorType="HostingInstitution">
-      <contributorName nameType="Organizational">Open Science Framework</contributorName>
+      <contributorName nameType="Organizational">Center for Open Science</contributorName>
       <nameIdentifier nameIdentifierScheme="ROR">https://ror.org/05d5mza29</nameIdentifier>
       <nameIdentifier nameIdentifierScheme="GRID">https://grid.ac/institutes/grid.466501.0/</nameIdentifier>
     </contributor>
@@ -632,6 +619,7 @@ FILE_DATACITE_XML = '''<?xml version='1.0' encoding='utf-8'?>
   </dates>
   <resourceType resourceTypeGeneral="Text">File</resourceType>
   <relatedIdentifiers>
+    <relatedIdentifier relatedIdentifierType="URL" relationType="HasVersion">http://localhost:8000/v2/files/{raw_file_id}/versions/1/</relatedIdentifier>
     <relatedIdentifier relatedIdentifierType="URL" relationType="IsPartOf">http://localhost:5000/{project_id}</relatedIdentifier>
   </relatedIdentifiers>
 </resource>

@@ -22,3 +22,9 @@ class Focus:
 
     def __hash__(self):
         return hash((self.iri, self.rdftype))
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}(iri={self.iri}, rdftype={self.rdftype})'
+
+    def __str__(self):
+        return repr(self)
