@@ -180,25 +180,31 @@ def _format_affiliations(basket, focus_iri):
     return affiliations
 
 
-def _format_creators(basket):
-    creators_json = []
-    for creator_iri in basket[DCT.creator]:
-        creators_json.append({
-            'name': next(basket[creator_iri:FOAF.name], ''),
-            'nameIdentifiers': _format_name_identifiers(basket, creator_iri),
-            'nameType': 'Personal',
-            'affiliation': _format_affiliations(basket, creator_iri),
-        })
+def _format_name(basket, agent_iri, name_type='Personal'):
+    return {
+        'name': next(basket[agent_iri:FOAF.name], ''),
+        'nameIdentifiers': _format_name_identifiers(basket, agent_iri),
+        'nameType': name_type,
+        'affiliation': _format_affiliations(basket, agent_iri),
+    }
 
-    if not creators_json and basket.focus.rdftype == OSF.File:
-        for version_creator_iri in set(basket[DCT.hasVersion / DCT.creator]):
-            creators_json.append({
-                'name': next(basket[version_creator_iri:FOAF.name], ''),
-                'nameIdentifiers': _format_name_identifiers(basket, version_creator_iri),
-                'nameType': 'Personal',
-                'affiliation': _format_affiliations(basket, version_creator_iri),
-            })
-    return creators_json
+
+def _format_creators(basket):
+    creator_iris = set(basket[DCT.creator])
+    if (not creator_iris) and (basket.focus.rdftype == OSF.File):
+        creator_iris.update(basket[DCT.hasVersion / DCT.creator])
+    if not creator_iris:
+        creator_iris.update(basket[DCT.isPartOf / DCT.creator])
+    if not creator_iris:
+        creator_iris.update(basket[DCT.contributor])
+    if not creator_iris:
+        creator_iris.update(basket[DCT.isPartOf / DCT.contributor])
+    if not creator_iris:
+        raise ValueError(f'gathered no creators or contributors around {basket.focus.iri}')
+    return [
+        _format_name(basket, creator_iri)
+        for creator_iri in creator_iris
+    ]
 
 
 def _format_date(basket, date_iri, datacite_datetype):
