@@ -17,7 +17,7 @@ import werkzeug.wrappers
 from framework import sentry
 from framework.exceptions import HTTPError
 from framework.flask import app, redirect
-from framework.sessions import session
+from framework.sessions import get_session
 
 from website import settings
 
@@ -102,10 +102,9 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
     """
     @functools.wraps(fn)
     def wrapped(*args, **kwargs):
-        if session:
-            session_error_code = session.data.get('auth_error_code')
-        else:
-            session_error_code = None
+        current_session = get_session()
+        session_data = current_session.get_decoded()
+        session_error_code = session_data.get('auth_error_code', None)
         if session_error_code:
             return renderer(
                 HTTPError(session_error_code),
