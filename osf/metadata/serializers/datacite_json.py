@@ -325,7 +325,7 @@ def _format_types(basket):
     }
     if focustype.startswith(OSF):
         types['resourceType'] = without_namespace(focustype, OSF)
-    if types['resourceType'] == 'Registration':
+    if types['resourceType'] == OSF.Registration:
         types['resourceType'] = 'Pre-registration'  # for back-compat
     for general_type in basket[DCT.type]:
         if isinstance(general_type, rdflib.Literal):
