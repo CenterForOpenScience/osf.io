@@ -85,12 +85,17 @@ def prepare_private_key():
 #     return user_session
 
 def get_session():
-    session_key = request.cookies.get(settings.COOKIE_NAME)
-    if session_store.exists(session_key=session_key):
-        user_session = session_store.get(session_key)
-    else:
-        user_session = session_store.create()
-    return user_session
+    secret = settings.SECRET_KEY
+    cookie = request.cookies.get(settings.COOKIE_NAME)
+    if not cookie:
+        s = SessionStore()
+        s.create()
+        return s
+    try:
+        session_key = ensure_str(itsdangerous.Signer(secret).unsign(cookie))
+        return SessionStore(session_key=session_key)
+    except itsdangerous.BadSignature:
+        return None
 
 
 def set_session(session):
@@ -119,13 +124,13 @@ def set_session(session):
 def create_session(response, data=None):
     current_session = get_session()
     # TODO: check if session data changed and decide whether to save the session object
-    current_session['auth_user_username'] = data['auth_user_username']
-    current_session['auth_user_id'] = data['auth_user_id']
-    current_session['auth_user_fullname'] = data['auth_user_fullname']
-    current_session['auth_user_external_first_login'] = data['auth_user_external_first_login']
-    current_session['auth_user_external_id_provider'] = data['auth_user_external_id_provider']
-    current_session['auth_user_external_id'] = data['auth_user_external_id']
-    current_session['service_url'] = data['service_url']
+    current_session['auth_user_username'] = data.get('auth_user_username')
+    current_session['auth_user_id'] = data.get('auth_user_id')
+    current_session['auth_user_fullname'] = data.get('auth_user_fullname')
+    current_session['auth_user_external_first_login'] = data.get('auth_user_external_first_login')
+    current_session['auth_user_external_id_provider'] = data.get('auth_user_external_id_provider')
+    current_session['auth_user_external_id'] = data.get('auth_user_external_id')
+    current_session['service_url'] = data.get('service_url')
     current_session.save()
     cookie_value = itsdangerous.Signer(settings.SECRET_KEY).sign(current_session.session_key)
     if response is not None:
@@ -138,7 +143,6 @@ def create_session(response, data=None):
 
 sessions = WeakKeyDictionary()
 session = LocalProxy(get_session)
-session_store = SessionStore()
 
 
 # Request callbacks
@@ -166,7 +170,7 @@ def before_request():
         # Create an empty session
         # TODO: Shoudn't need to create a session for Basic Auth
         user_session = get_session()
-        UserSessionMap.objects.create(user=user, session_key=user_session.session_key, expire_date=user_session.expire_date)
+        UserSessionMap.objects.create(user=user, session_key=user_session.session_key, expire_date=user_session.get_expiry_date())
         # set_session(user_session)
 
         if user:
@@ -179,8 +183,7 @@ def before_request():
                     return
             user_session['auth_user_username'] = user.username
             user_session['auth_user_fullname'] = user.fullname
-            session_data = user_session.get_decoded()
-            if session_data.get('auth_user_id', None) != user._primary_key:
+            if user_session.get('auth_user_id', None) != user._primary_key:
                 user_session['auth_user_id'] = user._primary_key
                 user_session.save()
         else:
@@ -193,7 +196,7 @@ def before_request():
     if cookie:
         try:
             session_key = ensure_str(itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie))
-            user_session = session_store.get(session_key)
+            user_session = SessionStore(session_key=session_key)
         except itsdangerous.BadData:
             return None
         if user_session:
@@ -206,7 +209,8 @@ def before_request():
                     timezone.now().timestamp(),
                     cas_login=False
                 ))
-            except UserSessionMap.MultipleObjectsReturned:
+            # except UserSessionMap.MultipleObjectsReturned:
+            except:
                 # TODO: handle error
                 pass
         else:

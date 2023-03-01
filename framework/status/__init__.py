@@ -32,8 +32,7 @@ def push_status_message(message, kind='warning', dismissible=True, trust=True, j
     # TODO: Change the default to trust=False once conversion to markupsafe rendering is complete
     try:
         current_session = get_session()
-        session_data = current_session.get_decoded()
-        statuses = session_data.get('status', None)
+        statuses = current_session.get('status', None)
     except RuntimeError as e:
         exception_message = str(e)
         if 'Working outside of request context.' in exception_message:
@@ -65,8 +64,7 @@ def push_status_message(message, kind='warning', dismissible=True, trust=True, j
 
 def pop_status_messages(level=0):
     current_session = get_session()
-    session_data = current_session.get_decoded()
-    messages = session_data.get('status', None)
+    messages = current_session.get('status', None)
     for message in messages or []:
         if len(message) == 5:
             message += [None, None]  # Make sure all status's have enough arguments
@@ -79,8 +77,7 @@ def pop_status_messages(level=0):
 
 def pop_previous_status_messages(level=0):
     current_session = get_session()
-    session_data = current_session.get_decoded()
-    messages = session_data.get('status_prev', None)
+    messages = current_session.get('status_prev', None)
     if messages:
         current_session['status_prev'] = None
         current_session.save()

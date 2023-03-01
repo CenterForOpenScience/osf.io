@@ -75,8 +75,7 @@ def validate_social(value):
 
 def get_current_user_id():
     current_session = get_session()
-    session_data = current_session.get_decoded()
-    return session_data.get('auth_user_id', None)
+    return current_session.get('auth_user_id', None)
 
 
 # TODO - rename to _get_current_user_from_session /HRYBACKI

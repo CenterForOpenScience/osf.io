@@ -23,7 +23,6 @@ from osf.utils.fields import ensure_str
 from website import settings
 
 SessionStore = import_module(api_settings.SESSION_ENGINE).SessionStore
-session_store = SessionStore()
 
 def get_session_from_cookie(cookie_val):
     """
@@ -38,8 +37,9 @@ def get_session_from_cookie(cookie_val):
     except itsdangerous.BadSignature:
         return None
     
-    if session_store.exists(session_key=session_id):
-        return session_store.get(session_id)
+    if SessionStore().exists(session_key=session_id):
+        session = SessionStore(session_key=session_id)
+        return session
     else:
         return None
 
@@ -129,8 +129,7 @@ class OSFSessionAuthentication(authentication.BaseAuthentication):
         session = get_session_from_cookie(cookie_val)
         if not session:
             return None
-        session_data = session.get_decoded()
-        user_id = session_data.get('auth_user_id', None)
+        user_id = session.get('auth_user_id', None)
         user = OSFUser.load(user_id)
         if user:
             if waffle.switch_is_active(features.ENFORCE_CSRF):

@@ -146,8 +146,7 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
         """
 
         # create a dict on the session object if it's not already there
-        session_data = session.get_decoded()
-        if session_data.get('oauth_states') is None:
+        if session.get('oauth_states') is None:
             session['oauth_states'] = {}
 
         if self._oauth_version == OAUTH2:
@@ -230,13 +229,12 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
         This is called in the view that handles the user once they are returned
         to the OSF after authenticating on the external service.
         """
-        session_data = session.get_decoded()
         if 'error' in request.args:
             return False
 
         # make sure the user has temporary credentials for this provider
         try:
-            cached_credentials = session_data['oauth_states'][self.short_name]
+            cached_credentials = session['oauth_states'][self.short_name]
         except KeyError:
             raise PermissionsError('OAuth flow not recognized.')
 
@@ -292,7 +290,6 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
         return self._set_external_account(user, info)
 
     def _set_external_account(self, user, info):
-        session_data = session.get_decoded()
         self.account, created = ExternalAccount.objects.get_or_create(
             provider=self.short_name,
             provider_id=info['provider_id'],
@@ -322,7 +319,7 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
             user.external_accounts.add(self.account)
             user.save()
 
-        if self.short_name in session_data.get('oauth_states', {}):
+        if self.short_name in session.get('oauth_states', {}):
             del session['oauth_states'][self.short_name]
             session.save()
 
