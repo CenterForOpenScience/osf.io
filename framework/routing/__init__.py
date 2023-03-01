@@ -103,8 +103,10 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
     @functools.wraps(fn)
     def wrapped(*args, **kwargs):
         current_session = get_session()
-        session_data = current_session.get_decoded()
-        session_error_code = session_data.get('auth_error_code', None)
+        try:
+            session_error_code = current_session['auth_error_code']
+        except KeyError:
+            session_error_code = None
         if session_error_code:
             return renderer(
                 HTTPError(session_error_code),

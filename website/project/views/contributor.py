@@ -752,8 +752,7 @@ def replace_unclaimed_user_with_registered(user):
 
     """
     current_session = get_session()
-    session_data = current_session.get_decoded()
-    unreg_user_info = session_data.get('unreg_user', None)
+    unreg_user_info = current_session.get('unreg_user', None)
     if unreg_user_info:
         unreg_user = OSFUser.load(unreg_user_info['uid'])
         pid = unreg_user_info['pid']
