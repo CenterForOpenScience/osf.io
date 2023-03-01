@@ -10,7 +10,7 @@ invoke==2.0.0
 Werkzeug==2.0.3
 Flask==2.0.3
 gevent
-Mako==1.2.4
+Mako==1.1.6
 Markdown==3.3.7
 WTForms==3.0.0
 email_validator==1.3.1
