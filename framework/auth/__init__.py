@@ -41,7 +41,7 @@ def authenticate(user, response, user_updates=None):
     print_cas_log(f'Finalizing authentication - user update queued: user=[{user._id}]', LogLevel.INFO)
     user_session, response = create_session(response, data=data)
     from osf.models import UserSessionMap
-    UserSessionMap.objects.create(user=user, session_key=user_session.session_key, expire_date=user_session.expire_date)
+    UserSessionMap.objects.create(user=user, session_key=user_session.session_key, expire_date=user_session.get_expiry_date())
     print_cas_log(f'Finalizing authentication - session created: user=[{user._id}]', LogLevel.INFO)
     return response
 

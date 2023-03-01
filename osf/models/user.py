@@ -59,7 +59,6 @@ from website.util.metrics import OsfSourceTags
 from importlib import import_module
 
 SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
-session_store = SessionStore()
 
 logger = logging.getLogger(__name__)
 
@@ -1824,15 +1823,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             '-expired_date'
         ).first()
 
-        if not session_store.exists(session_key=user_session_map.session_key):
-            user_session = session_store.create()
+        if not SessionStore().exists(session_key=user_session_map.session_key):
+            user_session = SessionStore()
             user_session['auth_user_id'] = self._id
             user_session['auth_user_username'] = self.username
             user_session['auth_user_fullname'] = self.fullname
             user_session.save()
-            UserSessionMap.objects.create(user=self, session_key=user_session.session_key, expire_date=user_session.expire_date)
+            UserSessionMap.objects.create(user=self, session_key=user_session.session_key, expire_date=user_session.get_expiry_date())
         else:
-            user_session = session_store.get(user_session_map.session_key)
+            user_session = SessionStore(session_key=user_session_map.session_key)
 
         signer = itsdangerous.Signer(secret)
         return signer.sign(user_session.session_key)
@@ -1852,11 +1851,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         except itsdangerous.BadSignature:
             return None
 
-        user_session = session_store.get(session_id)
+        user_session = SessionStore(session_key=session_id)
         if user_session is None:
             return None
-        session_data = user_session.get_decoded()
-        return cls.load(session_data.get('auth_user_id'))
+
+        return cls.load(user_session.get('auth_user_id'))
 
     def get_node_comment_timestamps(self, target_id):
         """ Returns the timestamp for when comments were last viewed on a node, file or wiki.

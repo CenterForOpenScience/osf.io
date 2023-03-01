@@ -10,7 +10,6 @@ from api.base import settings
 from osf.models.base import BaseModel, Guid
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
-session_store = SessionStore()
 
 logger = logging.getLogger(__name__)
 
@@ -108,9 +107,8 @@ class PageCounter(BaseModel):
         cleaned_page = cls.clean_page(page)
         date = timezone.now()
         date_string = date.strftime('%Y/%m/%d')
-        session_obj = session_store.get(session_key=session_key)
-        session_data = session_obj.get_decoded()
-        visited_by_date = session_data.get('visited_by_date', {'date': date_string, 'pages': []})
+        session_obj = SessionStore(session_key=session_key)
+        visited_by_date = session_obj.get('visited_by_date', {'date': date_string, 'pages': []})
         with transaction.atomic():
             # Temporary backwards compat - when creating new PageCounters, temporarily keep writing to _id field.
             # After we're sure this is stable, we can stop writing to the _id field, and query on
@@ -166,7 +164,7 @@ class PageCounter(BaseModel):
                     model_instance.save()
                     return
 
-            visited = session_data.get('visited', [])
+            visited = session_obj.get('visited', [])
             if page not in visited:
                 model_instance.unique += 1
                 visited.append(page)
