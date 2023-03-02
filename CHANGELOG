@@ -2,6 +2,12 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+23.05.0 (2023-3-02)
+===================
+-Make Spam checks with external services async
+-Add monthly Spam reporting metrics
+-Fix bugs and add unit tests for new metadata feature
+
 23.04.0 (2023-2-16)
 ===================
 -Admin App metrics now pulled from ES instead of Keen
