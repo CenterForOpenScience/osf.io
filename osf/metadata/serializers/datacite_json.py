@@ -1,4 +1,5 @@
 from datetime import datetime
+import re
 import json
 
 from datacite import schema43 as datacite_schema43
@@ -180,25 +181,31 @@ def _format_affiliations(basket, focus_iri):
     return affiliations
 
 
-def _format_creators(basket):
-    creators_json = []
-    for creator_iri in basket[DCT.creator]:
-        creators_json.append({
-            'name': next(basket[creator_iri:FOAF.name], ''),
-            'nameIdentifiers': _format_name_identifiers(basket, creator_iri),
-            'nameType': 'Personal',
-            'affiliation': _format_affiliations(basket, creator_iri),
-        })
+def _format_name(basket, agent_iri, name_type='Personal'):
+    return {
+        'name': next(basket[agent_iri:FOAF.name], ''),
+        'nameIdentifiers': _format_name_identifiers(basket, agent_iri),
+        'nameType': name_type,
+        'affiliation': _format_affiliations(basket, agent_iri),
+    }
 
-    if not creators_json and basket.focus.rdftype == OSF.File:
-        for version_creator_iri in set(basket[DCT.hasVersion / DCT.creator]):
-            creators_json.append({
-                'name': next(basket[version_creator_iri:FOAF.name], ''),
-                'nameIdentifiers': _format_name_identifiers(basket, version_creator_iri),
-                'nameType': 'Personal',
-                'affiliation': _format_affiliations(basket, version_creator_iri),
-            })
-    return creators_json
+
+def _format_creators(basket):
+    creator_iris = set(basket[DCT.creator])
+    if (not creator_iris) and (basket.focus.rdftype == OSF.File):
+        creator_iris.update(basket[DCT.hasVersion / DCT.creator])
+    if not creator_iris:
+        creator_iris.update(basket[DCT.isPartOf / DCT.creator])
+    if not creator_iris:
+        creator_iris.update(basket[DCT.contributor])
+    if not creator_iris:
+        creator_iris.update(basket[DCT.isPartOf / DCT.contributor])
+    if not creator_iris:
+        raise ValueError(f'gathered no creators or contributors around {basket.focus.iri}')
+    return [
+        _format_name(basket, creator_iri)
+        for creator_iri in creator_iris
+    ]
 
 
 def _format_date(basket, date_iri, datacite_datetype):
@@ -232,9 +239,11 @@ def _format_funding_references(basket):
 
 
 def _format_publication_year(basket):
-    year_copyrighted = next(basket[DCT.dateCopyrighted], None)
-    if year_copyrighted:
-        return year_copyrighted
+    date_copyrighted = next(basket[DCT.dateCopyrighted], None)
+    # dct:dateCopyrighted could contain a date range or other descriptive text;
+    # if not datacite's required YYYY, use a stricter date
+    if date_copyrighted and re.fullmatch(r'\d{4}', date_copyrighted):
+        return date_copyrighted
     for date_predicate in (DCT.available, DCT.dateAccepted, DCT.created, DCT.modified):
         date_str = next(basket[date_predicate], None)
         if date_str:

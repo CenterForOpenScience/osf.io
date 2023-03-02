@@ -429,7 +429,9 @@ class CeleryConfig:
         'osf.management.commands.update_institution_project_counts',
         'osf.management.commands.populate_branched_from',
         'osf.management.commands.cumulative_plos_metrics',
+        'osf.management.commands.spam_metrics',
         'osf.management.commands.daily_reporters_go',
+        'osf.management.commands.monthly_reporters_go',
     }
 
     med_pri_modules = {
@@ -527,6 +529,8 @@ class CeleryConfig:
         'osf.management.commands.cumulative_plos_metrics',
         'api.providers.tasks',
         'osf.management.commands.daily_reporters_go',
+        'osf.management.commands.monthly_reporters_go',
+        'osf.external.spam.tasks',
     )
 
     # Modules that need metrics and release requirements
@@ -624,6 +628,10 @@ class CeleryConfig:
                 'task': 'management.commands.daily_reporters_go',
                 'schedule': crontab(minute=0, hour=6),  # Daily 1:00 a.m.
                 'kwargs': {'also_send_to_keen': True},
+            },
+            'monthly_reporters_go': {
+                'task': 'management.commands.monthly_reporters_go',
+                'schedule': crontab(minute=30, hour=6, day_of_month=2),     # Second day of month 1:30 a.m.
             },
             # 'data_storage_usage': {
             #   'task': 'management.commands.data_storage_usage',
@@ -1955,9 +1963,10 @@ AKISMET_ENABLED = False
 OOPSPAM_APIKEY = None
 OOPSPAM_SPAM_LEVEL = 3  # The minimum level (out of 6) that is flagged as spam.
 OOPSPAM_CHECK_IP = True  # Whether OOPSpam checks IP addresses. When testing locally, turn this off
+OOPSPAM_ENABLED = False
 
 # spam options
-SPAM_CHECK_ENABLED = False
+SPAM_SERVICES_ENABLED = False
 SPAM_CHECK_PUBLIC_ONLY = True
 SPAM_ACCOUNT_SUSPENSION_ENABLED = False
 SPAM_ACCOUNT_SUSPENSION_THRESHOLD = timedelta(hours=24)

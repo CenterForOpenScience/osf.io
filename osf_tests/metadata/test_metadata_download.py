@@ -33,6 +33,7 @@ class TestMetadataDownload(OsfTestCase):
             'project_id': project._id,
             'user_id': user._id,
             'date': str(today),
+            'project_created_year': project.created.year,
         }
 
         resp = self.app.get(f'/{project._id}/metadata/?format=turtle', auth=user.auth)
@@ -71,6 +72,7 @@ class TestMetadataDownload(OsfTestCase):
         project.node_license.node_license = NodeLicense.objects.get(
             name='CC-By Attribution-NonCommercial-NoDerivatives 4.0 International',
         )
+        project.node_license.year = '2250-2254'
         project.node_license.save()
 
         file = create_test_file(
@@ -82,6 +84,8 @@ class TestMetadataDownload(OsfTestCase):
         )
         file_guid = file.get_guid()._id
         format_kwargs['file_id'] = file_guid
+        format_kwargs['raw_file_id'] = file._id
+        format_kwargs['fileversion_id'] = file.versions.first().identifier
 
         resp = self.app.get(f'/{project._id}/metadata/?format=turtle', auth=user.auth)
         assert resp.status_code == 200
@@ -102,7 +106,7 @@ class TestMetadataDownload(OsfTestCase):
         assert resp.unicode_body == COMPLICATED_DATACITE_XML.format(**format_kwargs)
 
         ### now check that file
-        format_kwargs['year'] = str(today.year)
+        format_kwargs['file_created_year'] = file.created.year
         resp = self.app.get(f'/{file_guid}/metadata/?format=turtle', auth=user.auth)
         assert resp.status_code == 200
         assert resp.content_type == 'text/turtle'
@@ -264,7 +268,8 @@ BASIC_TURTLE = '''@prefix dct: <http://purl.org/dc/terms/> .
     dct:type osf:project ;
     owl:sameAs <https://doi.org/10.70102/FK2osf.io/{project_id}> .
 
-<http://localhost:5000/{user_id}> a osf:OSFUser ;
+<http://localhost:5000/{user_id}> a dct:Agent,
+        osf:OSFUser ;
     dct:identifier "http://localhost:5000/{user_id}" ;
     foaf:name "Person McNamington" .
 
@@ -342,7 +347,7 @@ COMPLICATED_DATACITE_JSON = '''{{
     }}
   ],
   "language": "es",
-  "publicationYear": "2252",
+  "publicationYear": "{project_created_year}",
   "publisher": "Open Science Framework",
   "relatedIdentifiers": [],
   "rightsList": [
@@ -381,7 +386,7 @@ COMPLICATED_DATACITE_XML = '''<?xml version='1.0' encoding='utf-8'?>
     <title>this is a project title!</title>
   </titles>
   <publisher>Open Science Framework</publisher>
-  <publicationYear>2252</publicationYear>
+  <publicationYear>{project_created_year}</publicationYear>
   <contributors>
     <contributor contributorType="HostingInstitution">
       <contributorName nameType="Organizational">Open Science Framework</contributorName>
@@ -420,7 +425,7 @@ COMPLICATED_TURTLE = '''@prefix dct: <http://purl.org/dc/terms/> .
 <http://localhost:5000/{project_id}> a osf:Project ;
     dct:created "{date}" ;
     dct:creator <http://localhost:5000/{user_id}> ;
-    dct:dateCopyrighted "2252" ;
+    dct:dateCopyrighted "2250-2254" ;
     dct:description "this is a project description!" ;
     dct:hasPart <http://localhost:5000/{file_id}> ;
     dct:identifier "http://localhost:5000/{project_id}",
@@ -443,7 +448,8 @@ COMPLICATED_TURTLE = '''@prefix dct: <http://purl.org/dc/terms/> .
             osf:funder_identifier_type "Crossref Funder ID" ] ;
     osf:has_file <http://localhost:5000/{file_id}> .
 
-<http://localhost:5000/{user_id}> a osf:OSFUser ;
+<http://localhost:5000/{user_id}> a dct:Agent,
+        osf:OSFUser ;
     dct:identifier "http://localhost:5000/{user_id}" ;
     foaf:name "Person McNamington" .
 
@@ -466,14 +472,7 @@ FILE_TURTLE = '''@prefix dct: <http://purl.org/dc/terms/> .
 
 <http://localhost:5000/{file_id}> a osf:File ;
     dct:created "{date}" ;
-    dct:hasVersion [ a osf:FileVersion ;
-            dct:created "{date}" ;
-            dct:creator <http://localhost:5000/{user_id}> ;
-            dct:extent "0.000007 MB" ;
-            dct:format "img/png" ;
-            dct:modified "{date}" ;
-            dct:requires <urn:checksum:sha-256::6ac3c336e4094835293a3fed8a4b5fedde1b5e2626d9838fed50693bba00af0e> ;
-            osf:version_number "1" ] ;
+    dct:hasVersion <http://localhost:8000/v2/files/{raw_file_id}/versions/{fileversion_id}/> ;
     dct:identifier "http://localhost:5000/{file_id}" ;
     dct:isPartOf <http://localhost:5000/{project_id}> ;
     dct:modified "{date}" ;
@@ -483,7 +482,7 @@ FILE_TURTLE = '''@prefix dct: <http://purl.org/dc/terms/> .
 <http://localhost:5000/{project_id}> a osf:Project ;
     dct:created "{date}" ;
     dct:creator <http://localhost:5000/{user_id}> ;
-    dct:dateCopyrighted "2252" ;
+    dct:dateCopyrighted "2250-2254" ;
     dct:description "this is a project description!" ;
     dct:identifier "http://localhost:5000/{project_id}",
         "https://doi.org/10.70102/FK2osf.io/{project_id}" ;
@@ -504,9 +503,19 @@ FILE_TURTLE = '''@prefix dct: <http://purl.org/dc/terms/> .
             osf:award_uri "https://moneypockets.example/millions" ;
             osf:funder_identifier_type "Crossref Funder ID" ] .
 
+<http://localhost:8000/v2/files/{raw_file_id}/versions/{fileversion_id}/> a osf:FileVersion ;
+    dct:created "{date}" ;
+    dct:creator <http://localhost:5000/{user_id}> ;
+    dct:extent "0.000007 MB" ;
+    dct:format "img/png" ;
+    dct:modified "{date}" ;
+    dct:requires <urn:checksum:sha-256::6ac3c336e4094835293a3fed8a4b5fedde1b5e2626d9838fed50693bba00af0e> ;
+    osf:version_number "1" .
+
 <https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode> foaf:name "CC-By Attribution-NonCommercial-NoDerivatives 4.0 International" .
 
-<http://localhost:5000/{user_id}> a osf:OSFUser ;
+<http://localhost:5000/{user_id}> a dct:Agent,
+        osf:OSFUser ;
     dct:identifier "http://localhost:5000/{user_id}" ;
     foaf:name "Person McNamington" .
 
@@ -569,7 +578,7 @@ FILE_DATACITE_JSON = '''{{
       "identifierType": "URL"
     }}
   ],
-  "publicationYear": "{year}",
+  "publicationYear": "{file_created_year}",
   "publisher": "Open Science Framework",
   "relatedIdentifiers": [
     {{
@@ -609,7 +618,7 @@ FILE_DATACITE_XML = '''<?xml version='1.0' encoding='utf-8'?>
     <title>my-file.blarg</title>
   </titles>
   <publisher>Open Science Framework</publisher>
-  <publicationYear>{year}</publicationYear>
+  <publicationYear>{file_created_year}</publicationYear>
   <contributors>
     <contributor contributorType="HostingInstitution">
       <contributorName nameType="Organizational">Open Science Framework</contributorName>
