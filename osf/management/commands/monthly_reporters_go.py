@@ -20,15 +20,14 @@ MAXMONTH = 12
 def monthly_reporters_go(report_year=None, report_month=None):
     init_app()  # OSF-specific setup
 
-    if report_year is None and report_month is None:
-        # default to last month
+    if report_year and report_month:
+        report_yearmonth = YearMonth(report_year, report_month)
+    else:  # default to last month if year and month not provided
         today = timezone.now().date()
         report_yearmonth = YearMonth(
-            year=today.year,
+            year=today.year if today.month > 1 else today.year - 1,
             month=today.month - 1 or MAXMONTH,
         )
-        assert report_year and report_month
-        report_yearmonth = YearMonth(report_year, report_month)
 
     errors = {}
     for reporter_class in MONTHLY_REPORTERS:
