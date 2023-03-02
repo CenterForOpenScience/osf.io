@@ -33,6 +33,7 @@ from api.metrics.serializers import (
     PreprintMetricSerializer,
     RawMetricsSerializer,
     DailyReportSerializer,
+    MonthlyReportSerializer,
     ReportNameSerializer,
     NodeAnalyticsSerializer,
     UserVisitsSerializer,
@@ -42,6 +43,7 @@ from api.metrics.serializers import (
 from api.metrics.utils import (
     parse_datetimes,
     parse_date_range,
+    parse_yearmonth_range,
 )
 from api.nodes.permissions import MustBePublic
 
@@ -329,15 +331,31 @@ class RecentReportList(JSONAPIBaseView):
                 }]},
                 status=404,
             )
-        report_date_range = parse_date_range(request.GET)
+        is_daily = issubclass(report_class, reports.DailyReport)
+        days_back = request.GET.get('days_back', self.DEFAULT_DAYS_BACK)
+        is_monthly = issubclass(report_class, reports.MonthlyReport)
+
+        if is_daily:
+            serializer_class = DailyReportSerializer
+            range_field_name = 'report_date'
+            range_parser = parse_date_range
+        elif is_monthly:
+            serializer_class = MonthlyReportSerializer
+            range_field_name = 'report_yearmonth'
+            range_parser = parse_yearmonth_range
+        else:
+            raise ValueError(f'report class must subclass DailyReport or MonthlyReport: {report_class}')
+        range_filter = range_parser(request.GET)
         search_recent = (
             report_class.search()
-            .filter('range', report_date=report_date_range)
-            .sort('report_date')
+            .filter('range', report_date={'gte': f'now/d-{days_back}d'})
+            .filter('range', **{range_field_name: range_filter})
+            .sort(range_field_name)
             [:self.MAX_COUNT]
         )
+        report_date_range = parse_date_range(request.GET)
         search_response = search_recent.execute()
-        serializer = self.serializer_class(
+        serializer = serializer_class(
             search_response,
             many=True,
             context={'report_name': report_name},
