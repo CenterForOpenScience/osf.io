@@ -551,7 +551,7 @@ class NodeImplicitContributorsList(JSONAPIBaseView, generics.ListAPIView, ListFi
     serializer_class = UserSerializer
     view_category = 'nodes'
     view_name = 'node-implicit-contributors'
-    ordering = ('_order',)  # default ordering
+    ordering = ('contributor___order',)  # default ordering
 
     def get_default_queryset(self):
         node = self.get_node()
@@ -1563,8 +1563,10 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMi
         return self.get_node().get_logs_queryset(auth)
 
     def get_queryset(self):
-        return self.get_queryset_from_request().include(
-            'node__guids', 'user__guids', 'original_node__guids', limit_includes=10,
+        return self.get_queryset_from_request().prefetch_related(
+            'node__guids',
+            'user__guids',
+            'original_node__guids',
         )
 
 

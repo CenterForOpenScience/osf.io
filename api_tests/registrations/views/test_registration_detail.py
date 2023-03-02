@@ -432,7 +432,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             expect_errors=True
         )
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == '"Dr.Strange" is not a valid boolean.'
+        assert res.json['errors'][0]['detail'] == 'Must be a valid boolean.'
 
         invalid_public_payload = make_payload(
             id=public_registration._id,
@@ -447,7 +447,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
         assert res.json['errors'][0]['detail'] == '"data visualization" is not a valid choice.'
 
     #   test_some_registration_fields_are_editable
-        user.affiliated_institutions.add(institution_one)
+        user.add_or_update_affiliated_institution(institution_one)
         year = '2009'
         copyright_holders = ['Grapes McGee']
         description = 'New description'

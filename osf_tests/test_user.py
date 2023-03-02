@@ -34,7 +34,7 @@ from osf.models import (
     Tag,
     Contributor,
     Session,
-    NotableEmailDomain,
+    NotableDomain,
     PreprintContributor,
     DraftRegistrationContributor,
 )
@@ -485,9 +485,9 @@ class TestOSFUser:
             u.save()
 
     def test_add_blocked_domain_unconfirmed_email(self, user):
-        NotableEmailDomain.objects.get_or_create(
+        NotableDomain.objects.get_or_create(
             domain='mailinator.com',
-            note=NotableEmailDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION,
+            note=NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT,
         )
         with pytest.raises(BlockedEmailError) as e:
             user.add_unconfirmed_email('kanye@mailinator.com')
@@ -818,17 +818,17 @@ class TestOSFUser:
         user = UserFactory(username=user_email)
         user.update_affiliated_institutions_by_email_domain()
 
-        assert user.affiliated_institutions.count() == 1
+        assert user.get_affiliated_institutions().count() == 1
         assert user.is_affiliated_with_institution(institution) is True
 
         user.update_affiliated_institutions_by_email_domain()
 
-        assert user.affiliated_institutions.count() == 1
+        assert user.get_affiliated_institutions().count() == 1
 
     def test_is_affiliated_with_institution(self, user):
         institution1, institution2 = InstitutionFactory(), InstitutionFactory()
 
-        user.affiliated_institutions.add(institution1)
+        user.add_or_update_affiliated_institution(institution1)
         user.save()
 
         assert user.is_affiliated_with_institution(institution1) is True
@@ -2450,126 +2450,3 @@ class TestUserGdprDelete:
             user.gdpr_delete()
         assert exc_info.value.args[0] == 'You cannot delete this user because they have an external account for' \
                                          ' github attached to Node {}, which has other contributors.'.format(project_with_two_admins_and_addon_credentials._id)
-
-
-class TestUserSpamAkismet:
-
-    @pytest.fixture
-    def user(self):
-        return AuthUserFactory()
-
-    def test_get_spam_content(self, user):
-        schools_list = []
-        expected_content = ''
-
-        for _ in range(2):
-            institution = fake.company()
-            degree = fake.catch_phrase()
-            schools_list.append({
-                'degree': degree,
-                'institution': institution
-            })
-            expected_content += '{} {} '.format(degree, institution)
-        saved_fields = {'schools': schools_list}
-
-        spam_content = user._get_spam_content(saved_fields)
-        assert spam_content == expected_content.strip()
-
-    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
-    @mock.patch.object(settings, 'AKISMET_ENABLED', True)
-    @mock.patch('osf.models.spam._get_akismet_client')
-    def test_do_check_spam(self, mock_get_akismet_client, user):
-        new_mock = mock.MagicMock()
-        new_mock.check_comment = mock.MagicMock(return_value=(True, None))
-        mock_get_akismet_client.return_value = new_mock
-
-        suspicious_content = 'spam eggs sausage and spam'
-        with mock.patch('osf.models.user.OSFUser._get_spam_content', mock.Mock(return_value=suspicious_content)):
-            user.do_check_spam(
-                author=user.fullname,
-                author_email=user.username,
-                content=suspicious_content,
-                request_headers={'Referrer': 'Woo', 'User-Agent': 'yay', 'Remote-Addr': 'ok'}
-            )
-        user.save()
-        assert user.spam_data['content'] == suspicious_content
-        assert user.spam_data['author'] == user.fullname
-        assert user.spam_data['author_email'] == user.username
-
-        # test do_check_spam for ham user
-        user.confirm_ham()
-        assert user.do_check_spam(None, None, None, None) is False
-
-    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
-    @mock.patch.object(settings, 'AKISMET_ENABLED', True)
-    @mock.patch('osf.models.OSFUser.do_check_spam')
-    def test_check_spam(self, mock_do_check_spam, user):
-
-        # test check_spam for other saved fields
-        with mock.patch('osf.models.OSFUser._get_spam_content', mock.Mock(return_value='some content!')):
-            assert user.check_spam(saved_fields={'fullname': 'Dusty Rhodes'}, request_headers=None) is False
-            assert mock_do_check_spam.call_count == 0
-
-        # test check spam for correct saved_fields
-        with mock.patch('osf.models.OSFUser._get_spam_content', mock.Mock(return_value='some content!')):
-            user.check_spam(saved_fields={'schools': ['one']}, request_headers=None)
-            assert mock_do_check_spam.call_count == 1
-
-
-class TestUserSpamOOPSpam:
-
-    @pytest.fixture
-    def user(self):
-        return AuthUserFactory()
-
-    def test_get_spam_content(self, user):
-        schools_list = []
-        expected_content = ''
-
-        for _ in range(2):
-            institution = fake.company()
-            degree = fake.catch_phrase()
-            schools_list.append({
-                'degree': degree,
-                'institution': institution
-            })
-            expected_content += '{} {} '.format(degree, institution)
-        saved_fields = {'schools': schools_list}
-
-        spam_content = user._get_spam_content(saved_fields)
-        assert spam_content == expected_content.strip()
-
-    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
-    @mock.patch('osf.models.spam._get_oopspam_client')
-    def test_do_check_spam(self, mock_get_oopspam_client, user):
-        new_mock = mock.MagicMock()
-        new_mock.check_content = mock.MagicMock(return_value=(True, None))
-        mock_get_oopspam_client.return_value = new_mock
-
-        suspicious_content = 'spam eggs sausage and spam'
-        with mock.patch('osf.models.user.OSFUser._get_spam_content', mock.Mock(return_value=suspicious_content)):
-            user.do_check_spam(
-                author=user.fullname,
-                author_email=user.username,
-                content=suspicious_content,
-                request_headers={'Referrer': 'Woo', 'User-Agent': 'yay', 'Remote-Addr': 'ok'}
-            )
-        user.save()
-        assert user.spam_data['content'] == suspicious_content
-        assert user.spam_data['author'] == user.fullname
-        assert user.spam_data['author_email'] == user.username
-
-    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
-    @mock.patch.object(settings, 'OOPSPAM_APIKEY', 'FFFFFF')
-    @mock.patch('osf.models.OSFUser.do_check_spam')
-    def test_check_spam(self, mock_do_check_spam, user):
-
-        # test check_spam for other saved fields
-        with mock.patch('osf.models.OSFUser._get_spam_content', mock.Mock(return_value='some content!')):
-            assert user.check_spam(saved_fields={'fullname': 'Dusty Rhodes'}, request_headers=None) is False
-            assert mock_do_check_spam.call_count == 0
-
-        # test check spam for correct saved_fields
-        with mock.patch('osf.models.OSFUser._get_spam_content', mock.Mock(return_value='some content!')):
-            user.check_spam(saved_fields={'schools': ['one']}, request_headers=None)
-            assert mock_do_check_spam.call_count == 1

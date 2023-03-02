@@ -13,7 +13,6 @@ from django.apps import apps
 from django.db import connection
 from django.db.migrations.operations.base import Operation
 
-from osf.models.base import generate_object_id
 from osf.utils.sanitize import strip_html, unescape_entities
 from website import settings
 from website.project.metadata.schemas import get_osf_meta_schemas
@@ -40,6 +39,7 @@ FORMAT_TYPE_TO_TYPE_MAP = {
     ('textarea-lg', 'string'): 'long-text-input',
     ('textarea-xl', 'string'): 'long-text-input',
 }
+
 
 def get_osf_models():
     """
@@ -349,6 +349,7 @@ def create_schema_blocks_for_question(state, rs, question, sub=False):
             create_schema_blocks_for_question(state, rs, subquestion, sub=True)
     else:
         # All schema blocks related to a particular question share the same schema_block_group_key.
+        from osf.models.base import generate_object_id
         schema_block_group_key = generate_object_id()
         title, description, help, example = find_title_description_help_example(rs, question)
 
@@ -412,6 +413,7 @@ def create_schema_blocks_for_atomic_schema(schema):
         # Each 'question-label' generates a 'schema_block_group_key' that is inherited
         # By all input and input-option blocks until the next question-label appears
         if block_type == 'question-label':
+            from osf.models.base import generate_object_id
             current_group_key = generate_object_id()
             block['schema_block_group_key'] = current_group_key
         elif block_type == 'paragraph':  # if a paragraph trails a question-label

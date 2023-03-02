@@ -12,7 +12,7 @@ from framework.auth import Auth
 
 from tests.base import DbTestCase
 from osf_tests.factories import UserFactory, CommentFactory, ProjectFactory, PreprintFactory, RegistrationFactory, AuthUserFactory
-from osf.models import NotableEmailDomain, SpamStatus
+from osf.models import NotableDomain, SpamStatus
 from website import settings, mails
 
 
@@ -224,7 +224,7 @@ class TestSpamState:
 @pytest.mark.django_db
 class TestSpamCheckEmailDomain:
     @mock.patch('osf.models.spam.SpamMixin.do_check_spam', return_value=False)
-    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_CHECK_PUBLIC_ONLY', False)
     def test_trusted_domain(self, mock_do_check_spam):
         user = UserFactory()
@@ -239,9 +239,9 @@ class TestSpamCheckEmailDomain:
         # but what if we trust the user's email domain?
         user_email_address = user.emails.values_list('address', flat=True).first()
         user_email_domain = user_email_address.rpartition('@')[2].lower()
-        NotableEmailDomain.objects.create(
+        NotableDomain.objects.create(
             domain=user_email_domain,
-            note=NotableEmailDomain.Note.ASSUME_HAM_UNTIL_REPORTED,
+            note=NotableDomain.Note.ASSUME_HAM_UNTIL_REPORTED,
         )
 
         # should not call do_check_spam this time

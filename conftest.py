@@ -1,20 +1,20 @@
 from __future__ import print_function
-import os
-
+from unittest import mock
 import logging
-
+import os
 import re
-import mock
-import responses
-import pytest
+
+from django.core.management import call_command
+from django.db import transaction
+from elasticsearch_dsl.connections import connections
 from faker import Factory
-from website import settings as website_settings
+import pytest
+import responses
+import xml.etree.ElementTree as ET
 
 from framework.celery_tasks import app as celery_app
+from website import settings as website_settings
 
-from elasticsearch_dsl.connections import connections
-from django.core.management import call_command
-import xml.etree.ElementTree as ET
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ SILENT_LOGGERS = [
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(scope='session', autouse=True)
 def override_settings():
     """Override settings for the test environment.
     """
@@ -127,12 +127,13 @@ def es6_client():
 
 
 @pytest.fixture(scope='function', autouse=True)
-def _es_marker(request, es6_client):
+def _es_marker(request):
     """Clear out all indices and index templates before and after
     tests marked with ``es``.
     """
     marker = request.node.get_closest_marker('es')
     if marker:
+        es6_client = request.getfixturevalue('es6_client')
 
         def teardown_es():
             es6_client.indices.delete(index='*')
@@ -164,10 +165,10 @@ def mock_akismet():
     f'https://{api_key}.rest.akismet.com/1.1/submit-ham'
     f'https://{api_key}.rest.akismet.com/1.1/comment-check'
     """
-    with mock.patch.object(website_settings, 'SPAM_CHECK_ENABLED', True):
+    with mock.patch.object(website_settings, 'SPAM_SERVICES_ENABLED', True):
         with mock.patch.object(website_settings, 'AKISMET_ENABLED', True):
             with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
-                rsps.add(responses.POST, f'https://test.crossref.org/servlet/deposit', status=200)
+                rsps.add(responses.POST, 'https://test.crossref.org/servlet/deposit', status=200)
                 yield rsps
 
 
@@ -222,10 +223,11 @@ def mock_oopspam():
     Relevent endpoints:
     'https://oopspam.p.rapidapi.com/v1/spamdetection'
     """
-    with mock.patch.object(website_settings, 'SPAM_CHECK_ENABLED', True):
-        with mock.patch.object(website_settings, 'OOPSPAM_APIKEY', 'FFFFFF'):
-            with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
-                yield rsps
+    with mock.patch.object(website_settings, 'SPAM_SERVICES_ENABLED', True):
+        with mock.patch.object(website_settings, 'OOPSPAM_ENABLED', True):
+            with mock.patch.object(website_settings, 'OOPSPAM_APIKEY', 'FFFFFF'):
+                with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
+                    yield rsps
 
 
 @pytest.fixture
@@ -269,3 +271,49 @@ def mock_celery():
     with mock.patch.object(website_settings, 'USE_CELERY', True):
         with mock.patch('osf.external.internet_archive.tasks.enqueue_postcommit_task') as mock_celery:
             yield mock_celery
+
+
+def rolledback_transaction(loglabel):
+    class ExpectedRollback(Exception):
+        pass
+    try:
+        with transaction.atomic():
+            logger.debug(f'{loglabel}: started transaction')
+            yield
+            raise ExpectedRollback('this is an expected rollback; all is well')
+    except ExpectedRollback:
+        logger.debug(f'{loglabel}: rolled back transaction (as planned)')
+    else:
+        raise ExpectedRollback('expected a rollback but did not get one; something is wrong')
+
+
+@pytest.fixture(scope='class')
+def _class_scoped_db(django_db_setup, django_db_blocker):
+    """a class-scoped version of the `django_db` mark
+    (so we can use class-scoped fixtures to set up data
+    for use across several tests)
+
+    recommend using via the `with_class_scoped_db` fixture
+    (so each function gets a nested transaction) instead of
+    referencing directly.
+    """
+    with django_db_blocker.unblock():
+        yield from rolledback_transaction('class_transaction')
+
+
+@pytest.fixture(scope='function')
+def with_class_scoped_db(_class_scoped_db):
+    """wrap each function and the entire class in transactions
+    (so fixtures can have scope='class' for reuse across tests,
+    but what happens in each test stays in that test)
+
+    example usage:
+    ```
+    @pytest.mark.usefixtures('with_class_scoped_db')
+    class TestMyStuff:
+        @pytest.fixture(scope='class')
+        def helpful_thing(self):
+            return HelpfulThingFactory()
+    ```
+    """
+    yield from rolledback_transaction('function_transaction')

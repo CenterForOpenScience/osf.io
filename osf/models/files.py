@@ -13,7 +13,6 @@ from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from typedmodels.models import TypedModel, TypedModelManager
-from include import IncludeManager
 
 from framework.analytics import get_basic_counters
 from framework import sentry
@@ -40,7 +39,7 @@ PROVIDER_MAP = {}
 logger = logging.getLogger(__name__)
 
 
-class BaseFileNodeManager(TypedModelManager, IncludeManager):
+class BaseFileNodeManager(TypedModelManager):
 
     def get_queryset(self):
         qs = super(BaseFileNodeManager, self).get_queryset()
@@ -310,13 +309,6 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
             **kwargs
         )
 
-    def update_version_metadata(self, location, metadata):
-        try:
-            self.versions.get(location=location).update_metadata(metadata)
-            return
-        except ObjectDoesNotExist:
-            raise VersionNotFoundError(location)
-
     def touch(self, auth_header, revision=None, **kwargs):
         """The bread and butter of File, collects metadata about self
         and creates versions and updates self when required.
@@ -449,6 +441,14 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
             self.save()
 
         return self
+
+    def update_search(self):
+        from website import search
+        try:
+            search.search.update_file(self)
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
+            sentry.log_exception()
 
     def _serialize(self, **kwargs):
         return {
@@ -796,8 +796,6 @@ class FileVersion(ObjectIDMixin, BaseModel):
     region = models.ForeignKey('addons_osfstorage.Region', null=True, blank=True, on_delete=models.CASCADE)
 
     purged = NonNaiveDateTimeField(blank=True, null=True)
-
-    includable_objects = IncludeManager()
 
     @property
     def location_hash(self):

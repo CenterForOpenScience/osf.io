@@ -331,7 +331,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, UserNodesFilte
         return (
             self.get_queryset_from_request()
             .select_related('node_license')
-            .include('contributor__user__guids', 'root__guids', limit_includes=10)
+            .prefetch_related('contributor_set__user__guids', 'root__guids')
         )
 
 
@@ -419,7 +419,7 @@ class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
 
     def get_queryset(self):
         user = self.get_user()
-        return user.affiliated_institutions.all()
+        return user.get_affiliated_institutions()
 
 
 class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMixin):
@@ -456,7 +456,12 @@ class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesF
 
     # overrides ListAPIView
     def get_queryset(self):
-        return self.get_queryset_from_request().select_related('node_license').include('contributor__user__guids', 'root__guids', limit_includes=10)
+        return self.get_queryset_from_request().select_related(
+            'node_license',
+        ).prefetch_related(
+            'contributor_set__user__guids',
+            'root__guids',
+        )
 
 class UserDraftRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     permission_classes = (
@@ -500,7 +505,7 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
     def get_object(self):
         user = self.get_user(check_permissions=False)
         obj = {
-            'data': user.affiliated_institutions.all(),
+            'data': user.get_affiliated_institutions(),
             'self': user,
         }
         self.check_object_permissions(self.request, obj)
@@ -509,7 +514,7 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
     def perform_destroy(self, instance):
         data = self.request.data['data']
         user = self.request.user
-        current_institutions = set(user.affiliated_institutions.values_list('_id', flat=True))
+        current_institutions = set(user.get_institution_affiliations().values_list('institution___id', flat=True))
 
         # DELETEs normally dont get type checked
         # not the best way to do it, should be enforced everywhere, maybe write a test for it
@@ -518,7 +523,7 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
                 raise Conflict()
         for val in data:
             if val['id'] in current_institutions:
-                user.remove_institution(val['id'])
+                user.remove_affiliated_institution(val['id'])
         user.save()
 
 

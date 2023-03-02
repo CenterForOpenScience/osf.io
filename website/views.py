@@ -25,7 +25,7 @@ from website.institutions.views import serialize_institution
 
 from addons.osfstorage.models import Region, OsfStorageFile
 
-from osf import features
+from osf import features, exceptions
 from osf.models import Guid, Institution, Preprint, AbstractNode, Node, DraftNode, Registration, BaseFileNode
 
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, DOMAIN
@@ -34,6 +34,7 @@ from website.ember_osf_web.views import use_ember_app
 from website.project.decorators import check_contributor_auth
 from website.project.model import has_anonymous_link
 from osf.utils import permissions
+from osf.metadata.osf_gathering import pls_gather_metadata_file
 
 from api.waffle.utils import storage_i18n_flag_active
 
@@ -108,7 +109,7 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
     user = auth.user
     if node.can_view(auth):
         # Re-query node with contributor guids included to prevent N contributor queries
-        node = AbstractNode.objects.filter(pk=node.pk).include('contributor__user__guids').get()
+        node = AbstractNode.objects.filter(pk=node.pk).prefetch_related('contributor_set__user__guids').get()
         contributor_data = serialize_contributors_for_summary(node)
         summary.update({
             'can_view': True,
@@ -293,8 +294,14 @@ def resolve_guid(guid, suffix=None):
     for example the url `/<file-guid>/?action=download` a response for file data is served.
     '''
 
+    clean_suffix = (
+        suffix.rstrip('/').lower()
+        if suffix
+        else ''
+    )
+
     # Legacies views that serve bytes
-    if suffix and 'download' == suffix.rstrip('/'):
+    if 'download' == clean_suffix:
         return resolve_guid_download(guid)
     if 'download' == request.args.get('action'):
         return resolve_guid_download(guid)
@@ -314,15 +321,22 @@ def resolve_guid(guid, suffix=None):
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
     if isinstance(resource, AbstractNode):
-        response = check_contributor_auth(
+        login_redirect_response = check_contributor_auth(
             resource,
             auth=Auth.from_kwargs(request.args.to_dict(), {}),
             include_public=True,
             include_view_only_anon=True,
             include_groups=True
         )
-        if response:
-            return response
+        if login_redirect_response:
+            return login_redirect_response
+
+    if clean_suffix == 'metadata':
+        format_arg = request.args.get('format')
+        if format_arg:
+            return guid_metadata_download(guid, resource, format_arg)
+        else:
+            return use_ember_app()
 
     # Stream to ember app if resource has emberized view
     addon_paths = [f'files/{addon.short_name}' for addon in settings.ADDONS_AVAILABLE_DICT.values() if 'storage' in addon.categories] + ['files']
@@ -332,20 +346,20 @@ def resolve_guid(guid, suffix=None):
             return redirect(resource.absolute_url, http_status.HTTP_301_MOVED_PERMANENTLY)
         return stream_emberapp(EXTERNAL_EMBER_APPS['preprints']['server'], preprints_dir)
 
-    elif isinstance(resource, Registration) and (not suffix or suffix.rstrip('/').lower() in ('comments', 'links', 'components', 'resources',)) and waffle.flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
-        return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
+    elif isinstance(resource, Registration) and (clean_suffix in ('', 'comments', 'links', 'components', 'resources',)) and waffle.flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
+        return use_ember_app()
 
-    elif isinstance(resource, Registration) and suffix and suffix.rstrip('/').lower() in ('files', 'files/osfstorage') and waffle.flag_is_active(request, features.EMBER_REGISTRATION_FILES):
-        return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
+    elif isinstance(resource, Registration) and (clean_suffix in ('files', 'files/osfstorage')) and waffle.flag_is_active(request, features.EMBER_REGISTRATION_FILES):
+        return use_ember_app()
 
-    elif isinstance(resource, Node) and suffix and any(path.startswith(suffix.rstrip('/').lower()) for path in addon_paths) and waffle.flag_is_active(request, features.EMBER_PROJECT_FILES):
-        return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
+    elif isinstance(resource, Node) and clean_suffix and any(path.startswith(clean_suffix) for path in addon_paths) and waffle.flag_is_active(request, features.EMBER_PROJECT_FILES):
+        return use_ember_app()
 
     elif isinstance(resource, BaseFileNode) and resource.is_file and not isinstance(resource.target, Preprint):
         if isinstance(resource.target, Registration) and waffle.flag_is_active(request, features.EMBER_FILE_REGISTRATION_DETAIL):
-            return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
+            return use_ember_app()
         if isinstance(resource.target, Node) and waffle.flag_is_active(request, features.EMBER_FILE_PROJECT_DETAIL):
-            return stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
+            return use_ember_app()
 
     # Redirect to legacy endpoint for Nodes, Wikis etc.
     url = _build_guid_url(unquote(resource.deep_url), suffix)
@@ -412,3 +426,21 @@ def get_storage_region_list(user, node=False):
     available_regions.insert(0, available_regions.pop(available_regions.index(default_region)))  # default should be at top of list for UI.
 
     return available_regions
+
+
+def guid_metadata_download(guid, resource, metadata_format):
+    try:
+        result = pls_gather_metadata_file(resource, metadata_format)
+    except exceptions.InvalidMetadataFormat as error:
+        raise HTTPError(
+            http_status.HTTP_400_BAD_REQUEST,
+            data={'message_long': error.message},
+        )
+    else:
+        return Response(
+            result.serialized_metadata,
+            content_type=result.mediatype,
+            headers={
+                'Content-Disposition': f'attachment; filename={result.filename}',
+            },
+        )

@@ -65,7 +65,7 @@ def format_validators_errors(error_description, error_key, context, index):
         for key, value in error_description.items():
             errors.append({
                 'source': {
-                    'pointer': f'/data/{index}{get_resource_object_member(error_key, context)}/' + error_key,
+                    'pointer': f'/data/{index}{get_resource_object_member(error_key, context)}/{error_key}/{key}',
                 },
                 'detail': value,
             })

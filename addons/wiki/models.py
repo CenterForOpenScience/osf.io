@@ -67,16 +67,12 @@ def build_html_output(content, node):
         content,
         extensions=[
             wikilinks.WikiLinkExtension(
-                configs=[
-                    ('base_url', ''),
-                    ('end_url', ''),
-                    ('build_url', functools.partial(build_wiki_url, node))
-                ]
+                base_url='',
+                end_url='',
+                build_url=functools.partial(build_wiki_url, node)
             ),
             fenced_code.FencedCodeExtension(),
-            codehilite.CodeHiliteExtension(
-                [('css_class', 'highlight')]
-            )
+            codehilite.CodeHiliteExtension(css_class='highlight')
         ]
     )
 
@@ -184,32 +180,27 @@ class WikiVersion(ObjectIDMixin, BaseModel):
     def check_spam(self):
         request, user_id = get_request_and_user_id()
         user = OSFUser.load(user_id)
+        if not user:  # for tests and admin operations
+            return
+
         request_headers = string_type_request_headers(request)
         node = self.wiki_page.node
 
-        if not settings.SPAM_CHECK_ENABLED:
-            return False
         if settings.SPAM_CHECK_PUBLIC_ONLY and not node.is_public:
-            return False
+            return
         if user.is_hammy:
-            return False
+            return
 
         content = self._get_spam_content(node)
         if not content:
             return
-        is_spam = node.do_check_spam(
+
+        node.do_check_spam(
             user.fullname,
             user.username,
             content,
             request_headers
         )
-
-        logger.info("Node ({}) '{}' smells like {} (tip: {})".format(
-            node._id, node.title.encode('utf-8'), 'SPAM' if is_spam else 'HAM', node.spam_pro_tip
-        ))
-        if is_spam:
-            node._check_spam_user(user)
-        return is_spam
 
     def _get_spam_content(self, node):
         content = []

@@ -13,8 +13,9 @@ from rest_framework.parsers import FileUploadParser
 from rest_framework.response import Response
 
 from api.actions.serializers import RegistrationActionSerializer
+from api.collection_submission_actions.serializers import CollectionSubmissionActionSerializer
 from api.base import permissions as base_permissions
-from osf.models.action import RegistrationAction
+from osf.models.action import RegistrationAction, CollectionSubmissionAction
 from api.base.exceptions import InvalidFilterValue, InvalidFilterOperator, Conflict
 from api.base.filters import PreprintFilterMixin, ListFilterMixin
 from api.base.views import JSONAPIBaseView, DeprecatedView
@@ -23,7 +24,12 @@ from api.base.pagination import MaxSizePagination, IncreasedPageSizePagination
 from api.base.utils import get_object_or_error, get_user_auth, is_truthy
 from api.licenses.views import LicenseList
 from api.collections.permissions import CanSubmitToCollectionOrPublic
-from api.collections.serializers import CollectionSubmissionSerializer, CollectionSubmissionCreateSerializer
+from api.collections.serializers import (
+    CollectionSubmissionSerializer,
+    CollectionSubmissionCreateSerializer,
+    LegacyCollectionSubmissionSerializer,
+    LegacyCollectionSubmissionCreateSerializer,
+)
 from api.preprints.permissions import PreprintPublishedOrAdmin
 from api.preprints.serializers import PreprintSerializer
 from api.providers.permissions import CanAddModerator, CanDeleteModerator, CanUpdateModerator, CanSetUpProvider, MustBeModerator
@@ -33,6 +39,7 @@ from api.providers.serializers import (
     PreprintModeratorSerializer,
     RegistrationProviderSerializer,
     RegistrationModeratorSerializer,
+    CollectionsModeratorSerializer,
 )
 from api.registrations import annotations as registration_annotations
 from api.registrations.serializers import RegistrationSerializer
@@ -242,14 +249,14 @@ class GenericProviderTaxonomies(JSONAPIBaseView, generics.ListAPIView):
     pagination_class = IncreasedPageSizePagination
     view_name = 'taxonomy-list'
 
-    ordering = ('-id',)
+    ordering = ('is_other', 'text')
 
     def get_queryset(self):
         parent = self.request.query_params.get('filter[parents]', None) or self.request.query_params.get('filter[parent]', None)
         provider = get_object_or_error(self.provider_class, self.kwargs['provider_id'], self.request, display_name=self.provider_class.__name__)
         if parent:
             if parent == 'null':
-                return provider.top_level_subjects
+                return optimize_subject_query(provider.top_level_subjects)
             return optimize_subject_query(provider.all_subjects.filter(parent___id=parent))
         return optimize_subject_query(provider.all_subjects)
 
@@ -291,7 +298,7 @@ class BaseProviderSubjects(SubjectList):
         provider = get_object_or_error(self.provider_class, self.kwargs['provider_id'], self.request, display_name=self.provider_class.__name__)
         if parent:
             if parent == 'null':
-                return provider.top_level_subjects
+                return optimize_subject_query(provider.top_level_subjects)
             return optimize_subject_query(provider.all_subjects.filter(parent___id=parent))
         return optimize_subject_query(provider.all_subjects)
 
@@ -312,6 +319,7 @@ class PreprintProviderSubjects(BaseProviderSubjects):
     view_category = 'preprint-providers'
     provider_class = PreprintProvider  # Not actually the model being serialized, privatize to avoid issues
 
+    ordering = ('is_other', 'text',)
 
 class GenericProviderHighlightedTaxonomyList(JSONAPIBaseView, generics.ListAPIView):
     permission_classes = (
@@ -325,6 +333,8 @@ class GenericProviderHighlightedTaxonomyList(JSONAPIBaseView, generics.ListAPIVi
     required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = TaxonomySerializer
+
+    ordering = ('is_other', 'text',)
 
     def get_queryset(self):
         provider = get_object_or_error(self.provider_class, self.kwargs['provider_id'], self.request, display_name=self.provider_class.__name__)
@@ -476,6 +486,7 @@ class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, Prepri
                 }
         return context
 
+
 class CollectionProviderSubmissionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, ProviderMixin):
     provider_class = CollectionProvider
     permission_classes = (
@@ -487,15 +498,15 @@ class CollectionProviderSubmissionList(JSONAPIBaseView, generics.ListCreateAPIVi
     required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
 
     model_class = CollectionSubmission
-    serializer_class = CollectionSubmissionSerializer
+    serializer_class = LegacyCollectionSubmissionSerializer
     view_category = 'collected-metadata'
-    view_name = 'provider-collected-metadata-list'
+    view_name = 'provider-collection-submission-list'
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
-            return CollectionSubmissionCreateSerializer
+            return LegacyCollectionSubmissionCreateSerializer
         else:
-            return CollectionSubmissionSerializer
+            return LegacyCollectionSubmissionSerializer
 
     def get_default_queryset(self):
         provider = self.get_provider()
@@ -659,6 +670,20 @@ class ProviderModeratorsDetail(ModeratorMixin, JSONAPIBaseView, generics.Retriev
             raise ValidationError(str(e))
 
 
+class CollectionProviderModeratorsList(ProviderModeratorsList):
+    provider_type = CollectionProvider
+    serializer_class = CollectionsModeratorSerializer
+
+    view_category = 'collection-providers'
+
+
+class CollectionProviderModeratorsDetail(ProviderModeratorsDetail):
+    provider_type = CollectionProvider
+    serializer_class = CollectionsModeratorSerializer
+
+    view_category = 'collection-providers'
+
+
 class PreprintProviderModeratorsList(ProviderModeratorsList):
     provider_type = PreprintProvider
     serializer_class = PreprintModeratorSerializer
@@ -804,6 +829,32 @@ class RegistrationProviderActionList(JSONAPIBaseView, generics.ListAPIView, List
 
     def get_default_queryset(self):
         return RegistrationAction.objects.filter(
+            target__provider_id=self.get_provider().id,
+            target__deleted__isnull=True,
+        )
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+
+class CollectionProviderActionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, ProviderMixin):
+    provider_class = RegistrationProvider
+
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
+        MustBeModerator,
+    )
+    view_category = 'actions'
+    view_name = 'collection-provider-action-list'
+
+    required_read_scopes = [CoreScopes.READ_COLLECTION_SUBMISSION_ACTION]
+    required_write_scopes = [CoreScopes.WRITE_COLLECTION_SUBMISSION_ACTION]
+
+    serializer_class = CollectionSubmissionActionSerializer
+
+    def get_default_queryset(self):
+        return CollectionSubmissionAction.objects.filter(
             target__provider_id=self.get_provider().id,
             target__deleted__isnull=True,
         )

@@ -62,11 +62,7 @@ from website.project.views.node import _should_show_wiki_widget, abbrev_authors
 from website.util import api_url_for, web_url_for
 from website.util import rubeus
 from website.util.metrics import OsfSourceTags, OsfClaimedTags, provider_source_tag, provider_claimed_tag
-from osf import features
 from osf.utils import permissions
-from osf.models import Comment
-from osf.models import OSFUser, Tag
-from osf.models.spam import SpamStatus
 from osf.models import (
     Comment,
     AbstractNode,
@@ -74,8 +70,7 @@ from osf.models import (
     OSFUser,
     Tag,
     SpamStatus,
-    NodeRelation,
-    NotableEmailDomain
+    NotableDomain
 )
 
 from tests.base import (
@@ -92,7 +87,7 @@ from tests.test_cas_authentication import generate_external_user_with_resp
 from api_tests.utils import create_test_file
 
 
-from osf.models import NodeRelation, NotableEmailDomain
+from osf.models import NodeRelation, NotableDomain
 
 from osf_tests.factories import (
     fake_email,
@@ -379,8 +374,8 @@ class TestProjectViews(OsfTestCase):
         # user is automatically affiliated with institutions
         # that matched email domains
         user.reload()
-        assert_in(inst1, user.affiliated_institutions.all())
-        assert_in(inst2, user.affiliated_institutions.all())
+        assert_in(inst1, user.get_affiliated_institutions())
+        assert_in(inst2, user.get_affiliated_institutions())
 
     def test_edit_title_empty(self):
         node = ProjectFactory(creator=self.user1)
@@ -3346,9 +3341,9 @@ class TestAuthViews(OsfTestCase):
         assert_equal(users.count(), 1)
 
     def test_register_blocked_email_domain(self):
-        NotableEmailDomain.objects.get_or_create(
+        NotableDomain.objects.get_or_create(
             domain='mailinator.com',
-            note=NotableEmailDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION,
+            note=NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT,
         )
         url = api_url_for('register_user')
         name, email, password = fake.name(), 'bad@mailinator.com', 'agreatpasswordobviously'

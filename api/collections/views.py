@@ -1,6 +1,6 @@
 from guardian.core import ObjectPermissionChecker
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q
+from django.db.models import OuterRef, Subquery, CharField, Q, F
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, PermissionDenied
 
@@ -21,10 +21,12 @@ from api.collections.permissions import (
     CollectionWriteOrPublicForPointers,
     CollectionWriteOrPublicForRelationshipPointers,
     CanSubmitToCollectionOrPublic,
-    CanUpdateDeleteCGMOrPublic,
+    CanUpdateDeleteCollectionSubmissionOrPublic,
     ReadOnlyIfCollectedRegistration,
 )
 from api.collections.serializers import (
+    LegacyCollectionSubmissionSerializer,
+    LegacyCollectionSubmissionCreateSerializer,
     CollectionSubmissionSerializer,
     CollectionSubmissionCreateSerializer,
     CollectionSerializer,
@@ -46,6 +48,7 @@ from osf.models import (
     Registration,
     Preprint,
 )
+from osf.utils.workflows import CollectionSubmissionStates
 
 
 class CollectionMixin(object):
@@ -71,14 +74,16 @@ class CollectionMixin(object):
     def collection_preprints(self, collection, user):
         return Preprint.objects.can_view(
             Preprint.objects.filter(
-                guids__in=collection.guid_links.all(), deleted__isnull=True,
-            ), user=user,
+                guids__in=collection.active_guids,
+                deleted__isnull=True,
+            ),
+            user=user,
         )
 
     def get_collection_submission(self, check_object_permissions=True):
         collection_submission = get_object_or_error(
             CollectionSubmission,
-            Q(collection=Collection.load(self.kwargs['collection_id']), guid___id=self.kwargs['cgm_id']),
+            Q(collection=Collection.load(self.kwargs['collection_id']), guid___id=self.kwargs['collection_submission_id']),
             self.request,
             'submission',
         )
@@ -313,7 +318,7 @@ class CollectionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, C
         collection.delete()
 
 
-class CollectedMetaList(JSONAPIBaseView, generics.ListCreateAPIView, CollectionMixin, ListFilterMixin):
+class CollectionSubmissionList(JSONAPIBaseView, generics.ListCreateAPIView, CollectionMixin, ListFilterMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         CanSubmitToCollectionOrPublic,
@@ -325,13 +330,52 @@ class CollectedMetaList(JSONAPIBaseView, generics.ListCreateAPIView, CollectionM
     model_class = CollectionSubmission
     serializer_class = CollectionSubmissionSerializer
     view_category = 'collections'
-    view_name = 'collected-metadata-list'
+    view_name = 'collection-submission-list'
 
     def get_serializer_class(self):
         if self.request.method == 'POST':
             return CollectionSubmissionCreateSerializer
         else:
             return CollectionSubmissionSerializer
+
+    def get_default_queryset(self):
+        return self.get_collection().collectionsubmission_set.all().annotate(
+            date_modified=F('modified'),
+            date_created=F('created'),
+            title=Subquery(
+                AbstractNode.objects.filter(guids___id=OuterRef('guid___id')).values_list('title', flat=True),
+                output_field=CharField(),
+            ),
+        )
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        collection = self.get_collection()
+        serializer.save(creator=user, collection=collection)
+
+
+class LegacyCollectionSubmissionList(JSONAPIBaseView, generics.ListCreateAPIView, CollectionMixin, ListFilterMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        CanSubmitToCollectionOrPublic,
+        base_permissions.TokenHasScope,
+    )
+    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
+    required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
+
+    model_class = CollectionSubmission
+    serializer_class = LegacyCollectionSubmissionSerializer
+    view_category = 'collections'
+    view_name = 'collected-metadata-list'
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return LegacyCollectionSubmissionCreateSerializer
+        else:
+            return LegacyCollectionSubmissionSerializer
 
     def get_default_queryset(self):
         return self.get_collection().collectionsubmission_set.all()
@@ -345,10 +389,10 @@ class CollectedMetaList(JSONAPIBaseView, generics.ListCreateAPIView, CollectionM
         serializer.save(creator=user, collection=collection)
 
 
-class CollectedMetaDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CollectionMixin):
+class CollectionSubmissionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CollectionMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        CanUpdateDeleteCGMOrPublic,
+        CanUpdateDeleteCollectionSubmissionOrPublic,
         base_permissions.TokenHasScope,
     )
     required_read_scopes = [CoreScopes.COLLECTED_META_READ]
@@ -356,7 +400,7 @@ class CollectedMetaDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
 
     serializer_class = CollectionSubmissionSerializer
     view_category = 'collections'
-    view_name = 'collected-metadata-detail'
+    view_name = 'collection-submission-detail'
 
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
 
@@ -365,38 +409,88 @@ class CollectedMetaDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView
         return self.get_collection_submission()
 
     def perform_destroy(self, instance):
-        # Skip collection permission check -- perms class checks when getting CGM
-        collection = self.get_collection(check_object_permissions=False)
-        collection.remove_object(instance)
+        if instance.state == CollectionSubmissionStates.ACCEPTED:
+            instance.remove(
+                user=self.request.user,
+                comment='Implicit removal via deletion',
+                force=True,
+            )
+        elif instance.state == CollectionSubmissionStates.PENDING:
+            instance.reject(
+                user=self.request.user,
+                comment='Implicit rejection via deletion',
+                force=True,
+            )
+        elif instance.state in [CollectionSubmissionStates.REMOVED, CollectionSubmissionStates.REJECTED]:
+            raise ValidationError(f'Resource {instance} is already removed')
 
     def perform_update(self, serializer):
         serializer.save()
 
 
-class CollectedMetaSubjectsList(BaseResourceSubjectsList, CollectionMixin):
+class LegacyCollectionSubmissionDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CollectionMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        CanUpdateDeleteCollectionSubmissionOrPublic,
+        base_permissions.TokenHasScope,
+    )
+    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
+    required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
+
+    serializer_class = LegacyCollectionSubmissionSerializer
+    view_category = 'collections'
+    view_name = 'collection-submission-detail'
+
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
+
+    # overrides RetrieveAPIView
+    def get_object(self):
+        return self.get_collection_submission()
+
+    def perform_destroy(self, instance):
+        if instance.state == CollectionSubmissionStates.ACCEPTED:
+            instance.remove(
+                user=self.request.user,
+                comment='Implicit removal via deletion',
+                force=True,
+            )
+        elif instance.state == CollectionSubmissionStates.PENDING:
+            instance.reject(
+                user=self.request.user,
+                comment='Implicit rejection via deletion',
+                force=True,
+            )
+        elif instance.state in [CollectionSubmissionStates.REMOVED, CollectionSubmissionStates.REJECTED]:
+            raise ValidationError(f'Resource {instance} is already removed')
+
+    def perform_update(self, serializer):
+        serializer.save()
+
+
+class CollectionSubmissionSubjectsList(BaseResourceSubjectsList, CollectionMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/collected_meta_subjects).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        CanUpdateDeleteCGMOrPublic,
+        CanUpdateDeleteCollectionSubmissionOrPublic,
         base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.COLLECTED_META_READ]
 
     view_category = 'collections'
-    view_name = 'collected-metadata-subjects'
+    view_name = 'collection-submissions-subjects-list'
 
     def get_resource(self):
         return self.get_collection_submission()
 
 
-class CollectedMetaSubjectsRelationship(SubjectRelationshipBaseView, CollectionMixin):
+class CollectionSubmissionSubjectsRelationshipList(SubjectRelationshipBaseView, CollectionMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/collected_meta_subjects_relationship).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        CanUpdateDeleteCGMOrPublic,
+        CanUpdateDeleteCollectionSubmissionOrPublic,
         base_permissions.TokenHasScope,
     )
 
@@ -404,7 +498,7 @@ class CollectedMetaSubjectsRelationship(SubjectRelationshipBaseView, CollectionM
     required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
 
     view_category = 'collections'
-    view_name = 'collected-metadata-relationships-subjects'
+    view_name = 'collection-submission-subjects-relationship-list'
 
     def get_resource(self, check_object_permissions=True):
         return self.get_collection_submission(check_object_permissions)
@@ -471,7 +565,7 @@ class LinkedNodesList(BaseLinkedList, CollectionMixin, NodeOptimizationMixin):
 
     def get_queryset(self):
         auth = get_user_auth(self.request)
-        node_ids = self.get_collection().guid_links.filter(content_type_id=ContentType.objects.get_for_model(Node).id).values_list('object_id', flat=True)
+        node_ids = self.get_collection().active_guids.filter(content_type_id=ContentType.objects.get_for_model(Node).id).values_list('object_id', flat=True)
         nodes = Node.objects.filter(id__in=node_ids, is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).order_by('-modified')
         return self.optimize_node_queryset(nodes)
 
@@ -563,7 +657,7 @@ class LinkedRegistrationsList(BaseLinkedList, CollectionMixin):
 
     def get_queryset(self):
         auth = get_user_auth(self.request)
-        return Registration.objects.filter(guids__in=self.get_collection().guid_links.all(), is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).order_by('-modified')
+        return Registration.objects.filter(guids__in=self.get_collection().active_guids.all(), is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).order_by('-modified')
 
     # overrides APIView
     def get_parser_context(self, http_request):
@@ -669,18 +763,30 @@ class NodeLinksList(JSONAPIBaseView, bulk_views.BulkDestroyJSONAPIView, bulk_vie
     view_name = 'node-pointers'
     model_class = CollectionSubmission
 
-    ordering = ('-modified',)
+    ordering = ('_order', '-modified',)
 
     def get_queryset(self):
-        return self.get_collection().collectionsubmission_set.filter(guid___id__in=AbstractNode.objects.filter(guids__in=self.get_collection().guid_links.all(), is_deleted=False).values_list('guids___id', flat=True))
+        return self.get_collection().collectionsubmission_set.filter(
+            guid___id__in=AbstractNode.objects.filter(
+                guids__in=self.get_collection().active_guids,
+                is_deleted=False,
+            ).values_list(
+                'guids___id',
+                flat=True,
+            ),
+        )
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
         collection = self.get_collection()
-        try:
-            collection.remove_object(instance)
-        except ValueError as err:  # pointer doesn't belong to node
-            raise ValidationError(str(err))
+        if instance.collection != collection:
+            raise ValidationError(f'Resource [{instance.guid._id}] is not part of collection {collection._id}')
+
+        instance.remove(
+            user=self.request.user,
+            comment='User requested removal via NodeLinksList',
+            force=True,
+        )
 
     # overrides ListCreateAPIView
     def get_parser_context(self, http_request):
@@ -742,12 +848,15 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
 
     # overrides RetrieveAPIView
     def get_object(self):
-        node_link_lookup_url_kwarg = 'node_link_id'
+        guid = self.kwargs['node_link_id']
+
         node_link = get_object_or_error(
-            CollectionSubmission,
-            self.kwargs[node_link_lookup_url_kwarg],
-            self.request,
-            'node link',
+            CollectionSubmission.objects.filter(
+                guid___id=guid,
+                machine_state=CollectionSubmissionStates.ACCEPTED,
+            ),
+            request=self.request,
+            display_name='node link',
         )
         # May raise a permission denied
         self.kwargs['node_id'] = self.kwargs['collection_id']
@@ -759,7 +868,7 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, Collecti
         collection = self.get_collection()
         pointer = self.get_object()
         try:
-            collection.remove_object(pointer.guid.referent)
+            collection.remove_object(pointer.guid.referent, get_user_auth(request=self.request))
         except ValueError as err:  # pointer doesn't belong to node
             raise ValidationError(str(err))
         collection.save()
@@ -846,9 +955,11 @@ class CollectionLinkedNodesRelationship(LinkedNodesRelationship, CollectionMixin
             'data': [
                 pointer for pointer in
                 Node.objects.filter(
-                    guids__in=collection.guid_links.all(), is_deleted=False,
+                    guids__in=collection.active_guids,
+                    is_deleted=False,
                 ).can_view(
-                    user=auth.user, private_link=auth.private_link,
+                    user=auth.user,
+                    private_link=auth.private_link,
                 ).order_by('-modified')
             ], 'self': collection,
         }
@@ -861,7 +972,7 @@ class CollectionLinkedNodesRelationship(LinkedNodesRelationship, CollectionMixin
         collection = instance['self']
         for val in data:
             if val['id'] in current_pointers:
-                collection.remove_object(current_pointers[val['id']])
+                collection.remove_object(current_pointers[val['id']], get_user_auth(self.request))
 
 
 class CollectionLinkedPreprintsRelationship(CollectionLinkedNodesRelationship):
@@ -969,7 +1080,7 @@ class CollectionLinkedRegistrationsRelationship(CollectionLinkedNodesRelationshi
             'data': [
                 pointer for pointer in
                 Registration.objects.filter(
-                    guids__in=collection.guid_links.all(), is_deleted=False,
+                    guids__in=collection.active_guids.all(), is_deleted=False,
                 ).can_view(
                     user=auth.user, private_link=auth.private_link,
                 ).order_by('-modified')

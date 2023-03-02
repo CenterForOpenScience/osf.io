@@ -46,25 +46,26 @@ def sort_multiple(fields):
         return 0
     return sort_fn
 
+
 class OSFOrderingFilter(OrderingFilter):
     """Adaptation of rest_framework.filters.OrderingFilter to work with modular-odm."""
     # override
     def filter_queryset(self, request, queryset, view):
         ordering = self.get_ordering(request, queryset, view)
+        if not ordering:
+            return queryset
+
         if isinstance(queryset, DjangoQuerySet):
-            if queryset.ordered:
-                return queryset
-            elif ordering and getattr(queryset.query, 'distinct_fields', None):
+            if getattr(queryset.query, 'distinct_fields', None):
                 order_fields = tuple([field.lstrip('-') for field in ordering])
                 distinct_fields = queryset.query.distinct_fields
                 queryset.query.distinct_fields = tuple(set(distinct_fields + order_fields))
-            return super(OSFOrderingFilter, self).filter_queryset(request, queryset, view)
-        if ordering:
-            if isinstance(ordering, (list, tuple)):
-                sorted_list = sorted(queryset, key=cmp_to_key(sort_multiple(ordering)))
-                return sorted_list
-            return queryset.sort(*ordering)
-        return queryset
+            return super().filter_queryset(request, queryset, view)
+        elif isinstance(ordering, (list, tuple)):
+            sorted_list = sorted(queryset, key=cmp_to_key(sort_multiple(ordering)))
+            return sorted_list
+        else:
+            raise NotImplementedError()
 
     def get_serializer_source_field(self, view, request):
         """
@@ -110,6 +111,26 @@ class OSFOrderingFilter(OrderingFilter):
                 if source_field:
                     valid_fields.append(ordering_sign + source_field)
         return valid_fields
+
+
+class ElasticOSFOrderingFilter(OSFOrderingFilter):
+    """ This is too enable sorting for ES endpoints that use ES results instead of a typical queryset"""
+    def filter_queryset(self, request, queryset, view):
+        sorted_list = queryset.copy()
+        sort = request.query_params.get('sort')
+        reverse = False
+        if sort:
+            if sort.startswith('-'):
+                sort = sort.lstrip('-')
+                reverse = True
+
+            try:
+                source = view.get_serializer_class()._declared_fields[sort].source
+                sorted_list['results'] = sorted(queryset['results'], key=lambda item: item['_source'][source], reverse=reverse)
+            except KeyError:
+                pass
+
+        return sorted_list
 
 
 class FilterMixin(object):
@@ -160,21 +181,16 @@ class FilterMixin(object):
 
         :raises InvalidFilterError: If the filter field is not valid
         """
-        predeclared_fields = self.serializer_class._declared_fields
-        initialized_fields = self.get_serializer().fields if hasattr(self, 'get_serializer') else {}
-        serializer_fields = predeclared_fields.copy()
-        # Merges fields that were declared on serializer with fields that may have been dynamically added
-        serializer_fields.update(initialized_fields)
-
-        if field_name not in serializer_fields:
+        serializer = self.get_serializer()
+        if field_name not in serializer.fields:
             raise InvalidFilterError(detail="'{0}' is not a valid field for this endpoint.".format(field_name))
-        if field_name not in getattr(self.serializer_class, 'filterable_fields', set()):
+        if field_name not in getattr(serializer, 'filterable_fields', set()):
             raise InvalidFilterFieldError(parameter='filter', value=field_name)
-        field = serializer_fields[field_name]
+        field = serializer.fields[field_name]
         # You cannot filter on deprecated fields.
         if isinstance(field, ShowIfVersion) and utils.is_deprecated(self.request.version, field.min_version, field.max_version):
             raise InvalidFilterFieldError(parameter='filter', value=field_name)
-        return serializer_fields[field_name]
+        return field
 
     def _validate_operator(self, field, field_name, op):
         """
@@ -268,7 +284,7 @@ class FilterMixin(object):
 
                     source_field_name = field_name
                     if not isinstance(field, ser.SerializerMethodField):
-                        source_field_name = self.convert_key(field_name, field)
+                        source_field_name = self.convert_key(field)
 
                     # Special case date(time)s to allow for ambiguous date matches
                     if isinstance(field, self.DATE_FIELDS):
@@ -321,16 +337,19 @@ class FilterMixin(object):
         """
         pass
 
-    def convert_key(self, field_name, field):
-        """Used so that that queries on fields with the source attribute set will work
-        :param basestring field_name: text representation of the field name
+    def convert_key(self, field):
+        """Used so queries on fields with the source or filter_key attributes set will work
         :param rest_framework.fields.Field field: Field instance
         """
         field = utils.decompose_field(field)
-        source = field.source
-        if source == '*':
-            source = getattr(field, 'filter_key', None)
-        return source or field_name
+        filter_key = getattr(field, 'filter_key', None)
+        if not filter_key:
+            filter_key = (
+                field.source
+                if field.source not in (None, '*')
+                else field.field_name
+            )
+        return filter_key
 
     def convert_value(self, value, field):
         """Used to convert incoming values from query params to the appropriate types for filter comparisons
@@ -338,8 +357,6 @@ class FilterMixin(object):
         :param rest_framework.fields.Field field: Field instance
         """
         field = utils.decompose_field(field)
-        if isinstance(field, ShowIfVersion):
-            field = field.field
         if isinstance(field, ser.BooleanField):
             if utils.is_truthy(value):
                 return True

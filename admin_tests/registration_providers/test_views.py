@@ -12,6 +12,7 @@ from osf_tests.factories import (
 from osf.models import RegistrationProvider, RegistrationSchema
 from admin_tests.utilities import setup_view, setup_form_view
 from admin.registration_providers import views
+from admin.providers.views import AddAdminOrModerator, RemoveAdminsAndModerators
 from admin.registration_providers.forms import RegistrationProviderForm
 from admin_tests.mixins.providers import (
     ProcessCustomTaxonomyMixinBase,
@@ -268,16 +269,16 @@ class TestEditModerators:
 
     @pytest.fixture()
     def remove_moderator_view(self, req, provider):
-        view = views.RemoveAdminsAndModerators()
+        view = RemoveAdminsAndModerators()
         view = setup_view(view, req)
-        view.kwargs = {'registration_provider_id': provider.id}
+        view.kwargs = {'provider_id': provider.id}
         return view
 
     @pytest.fixture()
     def add_moderator_view(self, req, provider):
-        view = views.AddAdminOrModerator()
+        view = AddAdminOrModerator()
         view = setup_view(view, req)
-        view.kwargs = {'registration_provider_id': provider.id}
+        view.kwargs = {'provider_id': provider.id}
         return view
 
     def test_get(self, add_moderator_view, remove_moderator_view, req):

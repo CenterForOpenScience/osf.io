@@ -128,7 +128,7 @@ def osfstorage_get_revisions(file_node, payload, target, **kwargs):
 
     version_count = file_node.versions.count()
     counts = dict(PageCounter.objects.filter(resource=file_node.target.guids.first().id, file=file_node, action='download').values_list('_id', 'total'))
-    qs = FileVersion.includable_objects.filter(basefilenode__id=file_node.id).include('creator__guids').order_by('-created')
+    qs = FileVersion.objects.filter(basefilenode__id=file_node.id).prefetch_related('creator__guids').order_by('-created')
 
     for i, version in enumerate(qs):
         version._download_count = counts.get('{}{}'.format(counter_prefix, version_count - i - 1), 0)

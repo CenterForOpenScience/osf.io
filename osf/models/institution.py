@@ -16,7 +16,9 @@ from framework import sentry
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.models import base
 from osf.models.contributor import InstitutionalContributor
+from osf.models.institution_affiliation import InstitutionAffiliation
 from osf.models.mixins import Loggable, GuardianMixin
+from osf.models.storage import InstitutionAssetFile
 from website import mails
 from website import settings as website_settings
 
@@ -113,7 +115,8 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
     class Meta:
         # custom permissions for use in the OSF Admin App
         permissions = (
-            ('view_institution', 'Can view institution details'),
+            # Clashes with built-in permissions
+            # ('view_institution', 'Can view institution details'),
             ('view_institutional_metrics', 'Can access metrics endpoints for their Institution'),
         )
 
@@ -122,6 +125,9 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
         super(Institution, self).__init__(*args, **kwargs)
 
     def __unicode__(self):
+        return u'{} : ({})'.format(self.name, self._id)
+
+    def __str__(self):
         return u'{} : ({})'.format(self.name, self._id)
 
     @property
@@ -155,25 +161,24 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
 
     @property
     def logo_path(self):
-        if self.logo_name:
-            return '/static/img/institutions/shields/{}'.format(self.logo_name)
-        else:
-            return None
+        try:
+            return self.asset_files.get(name='logo').file.url
+        except InstitutionAssetFile.DoesNotExist:
+            return '/static/img/institutions/shields/placeholder-shield.png'
 
     @property
     def logo_path_rounded_corners(self):
-        logo_base = '/static/img/institutions/shields-rounded-corners/{}-rounded-corners.png'
-        if self.logo_name:
-            return logo_base.format(self.logo_name.replace('.png', ''))
-        else:
-            return None
+        try:
+            return self.asset_files.get(name='logo_rounded_corners').file.url
+        except InstitutionAssetFile.DoesNotExist:
+            return '/static/img/institutions/shields-rounded-corners/placeholder-shield-rounded-corners.png'
 
     @property
     def banner_path(self):
-        if self.banner_name:
-            return '/static/img/institutions/banners/{}'.format(self.banner_name)
-        else:
-            return None
+        try:
+            return self.asset_files.get(name='banner').file.url
+        except InstitutionAssetFile.DoesNotExist:
+            return '/static/img/institutions/banners/placeholder-banner.png'
 
     def update_search(self):
         from website.search.search import update_institution, update_node
@@ -202,7 +207,7 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
         forgot_password = 'forgotpassword' if website_settings.DOMAIN.endswith('/') else '/forgotpassword'
         attempts = 0
         success = 0
-        for user in self.osfuser_set.all():
+        for user in self.get_institution_users():
             try:
                 attempts += 1
                 mails.send_mail(
@@ -245,6 +250,11 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
             message = f'Action rejected - reactivating an active institution [{self._id}].'
             logger.warning(message)
             sentry.log_message(message)
+
+    def get_institution_users(self):
+        from osf.models.user import OSFUser
+        qs = InstitutionAffiliation.objects.filter(institution__id=self.id).values_list('user', flat=True)
+        return OSFUser.objects.filter(pk__in=qs)
 
 
 @receiver(post_save, sender=Institution)

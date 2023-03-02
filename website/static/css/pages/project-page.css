@@ -268,3 +268,19 @@ li.addon-categories a{
     color: #595959;
     font-style: italic;
 }
+
+.collections-box {
+	mix-blend-mode: normal;
+	text-align: right;
+	border-radius: 0px;
+	border-width: 1px;
+	border-color: rgb(221, 221, 221);
+	border-style: solid;
+	font-feature-settings: "liga" 0;
+	color: black;
+	font-style: normal;
+	font-weight: normal;
+	line-height: normal;
+	text-transform: none;
+	box-shadow: rgba(0, 0, 0, 0.1) 0px 1px 2px 0px;
+}

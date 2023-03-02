@@ -8,6 +8,7 @@ from hashids import Hashids
 from django.utils.http import urlquote
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import QuerySet
+from rest_framework import fields
 from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
 
@@ -23,29 +24,27 @@ from osf.utils.requests import check_select_for_update
 from website import settings as website_settings
 from website import util as website_util  # noqa
 
-# These values are copied from rest_framework.fields.BooleanField
-# BooleanField cannot be imported here without raising an
-# ImproperlyConfigured error
-TRUTHY = set(('t', 'T', 'true', 'True', 'TRUE', '1', 1, True, 'on', 'ON', 'On', 'y', 'Y', 'YES', 'yes'))
-FALSY = set(('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False, 'off', 'OFF', 'Off', 'n', 'N', 'NO', 'no'))
+# See https://github.com/encode/django-rest-framework/blob/3.13.1/rest_framework/fields.py#L699-L721
+TRUTHY = fields.BooleanField.TRUE_VALUES
+FALSY = fields.BooleanField.FALSE_VALUES
 
 UPDATE_METHODS = ['PUT', 'PATCH']
 
 hashids = Hashids(alphabet='abcdefghijklmnopqrstuvwxyz', salt=HASHIDS_SALT)
 
-def decompose_field(field):
-    from api.base.serializers import (
-        HideIfWithdrawal, HideIfRegistration,
-        HideIfDisabled, AllowMissing, NoneIfWithdrawal,
-    )
-    WRAPPER_FIELDS = (HideIfWithdrawal, HideIfRegistration, HideIfDisabled, AllowMissing, NoneIfWithdrawal)
 
-    while isinstance(field, WRAPPER_FIELDS):
-        try:
-            field = getattr(field, 'field')
-        except AttributeError:
-            break
-    return field
+def decompose_field(field):
+    """
+    Returns the lowest nested field. If no nesting, returns the original field.
+    :param field, highest field
+
+    Assumes nested structures like the following:
+    - field, field.field, field.child_relation, field.field.child_relation, etc.
+    """
+    while hasattr(field, 'field'):
+        field = field.field
+    return getattr(field, 'child_relation', field)
+
 
 def is_bulk_request(request):
     """

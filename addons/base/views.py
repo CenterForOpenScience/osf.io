@@ -7,7 +7,6 @@ from future.moves.urllib.parse import quote
 from django.utils import timezone
 
 from flask import make_response
-from flask import redirect
 from flask import request
 import furl
 import jwe
@@ -22,7 +21,7 @@ from api.caching.tasks import update_storage_usage_with_size
 from addons.base import exceptions as addon_errors
 from addons.base.models import BaseStorageAddon
 from addons.osfstorage.models import OsfStorageFileNode
-from addons.osfstorage.utils import update_analytics
+from addons.osfstorage.utils import enqueue_update_analytics
 
 from framework import sentry
 from framework.auth import Auth
@@ -30,6 +29,7 @@ from framework.auth import cas
 from framework.auth import oauth_scopes
 from framework.auth.decorators import collect_auth, must_be_logged_in, must_be_signed
 from framework.exceptions import HTTPError
+from framework.flask import redirect
 from framework.sentry import log_exception
 from framework.routing import json_renderer
 from framework.transactions.handlers import no_auto_transaction
@@ -330,9 +330,9 @@ def get_auth(auth, **kwargs):
                     # version index is 0 based
                     version_index = version - 1
                     if action == 'render':
-                        update_analytics(node, filenode, version_index, 'view')
+                        enqueue_update_analytics(node, filenode, version_index, 'view')
                     elif action == 'download' and not from_mfr:
-                        update_analytics(node, filenode, version_index, 'download')
+                        enqueue_update_analytics(node, filenode, version_index, 'download')
                     if waffle.switch_is_active(features.ELASTICSEARCH_METRICS):
                         if isinstance(node, Preprint):
                             metric_class = get_metric_class_for_action(action, from_mfr=from_mfr)

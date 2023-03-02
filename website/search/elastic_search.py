@@ -23,6 +23,7 @@ from framework.database import paginated
 from osf.models import AbstractNode
 from osf.models import OSFUser
 from osf.models import BaseFileNode
+from osf.models import GuidMetadataRecord
 from osf.models import Institution
 from osf.models import OSFGroup
 from osf.models import Preprint
@@ -30,6 +31,7 @@ from osf.models import SpamStatus
 from addons.wiki.models import WikiPage
 from osf.models import CollectionSubmission
 from osf.utils.sanitize import unescape_entities
+from osf.utils.workflows import CollectionSubmissionStates
 from website import settings
 from website.filters import profile_image_url
 from osf.models.licenses import serialize_node_license_record
@@ -397,14 +399,15 @@ def serialize_node(node, category):
         normalized_title = node.title
     normalized_title = unicodedata.normalize('NFKD', normalized_title)
     elastic_document = {
+        **serialize_guid_metadata(node._id),
         'id': node._id,
         'contributors': [
             {
-                'fullname': x['fullname'],
-                'url': '/{}/'.format(x['guids___id']) if x['is_active'] else None
+                'fullname': x['user__fullname'],
+                'url': '/{}/'.format(x['user__guids___id']) if x['user__is_active'] else None
             }
-            for x in node._contributors.filter(contributor__visible=True).order_by('contributor___order')
-            .values('fullname', 'guids___id', 'is_active')
+            for x in node.contributor_set.filter(visible=True).order_by('_order')
+            .values('user__fullname', 'user__guids___id', 'user__is_active')
         ],
         'groups': [
             {
@@ -452,11 +455,11 @@ def serialize_preprint(preprint, category):
         'id': preprint._id,
         'contributors': [
             {
-                'fullname': x['fullname'],
-                'url': '/{}/'.format(x['guids___id']) if x['is_active'] else None
+                'fullname': x['user__fullname'],
+                'url': '/{}/'.format(x['user__guids___id']) if x['user__is_active'] else None
             }
-            for x in preprint._contributors.filter(preprintcontributor__visible=True).order_by('preprintcontributor___order')
-            .values('fullname', 'guids___id', 'is_active')
+            for x in preprint.contributor_set.filter(visible=True).order_by('_order')
+            .values('user__fullname', 'user__guids___id', 'user__is_active')
         ],
         'title': preprint.title,
         'normalized_title': normalized_title,
@@ -582,36 +585,39 @@ def bulk_update_nodes(serialize, nodes, index=None, category=None):
     if actions:
         return helpers.bulk(client(), actions)
 
-def serialize_cgm_contributor(contrib):
+
+def serialize_collection_submission_contributor(contrib):
     return {
-        'fullname': contrib['fullname'],
-        'url': '/{}/'.format(contrib['guids___id']) if contrib['is_active'] else None
+        'fullname': contrib['user__fullname'],
+        'url': '/{}/'.format(contrib['user__guids___id']) if contrib['user__is_active'] else None
     }
 
-def serialize_cgm(cgm):
-    obj = cgm.guid.referent
+
+def serialize_collection_submission(collection_submission):
+    obj = collection_submission.guid.referent
     contributors = []
-    if hasattr(obj, '_contributors'):
-        contributors = obj._contributors.filter(contributor__visible=True).order_by('contributor___order').values('fullname', 'guids___id', 'is_active')
+    if hasattr(obj, 'contributor_set'):
+        contributors = obj.contributor_set.filter(visible=True).order_by('_order').values('user__fullname', 'user__guids___id', 'user__is_active')
 
     tags = []
     if hasattr(obj, 'tags'):
         tags = list(obj.tags.filter(system=False).values_list('name', flat=True))
 
     return {
-        'id': cgm._id,
+        'id': collection_submission._id,
         'abstract': getattr(obj, 'description', ''),
-        'contributors': [serialize_cgm_contributor(contrib) for contrib in contributors],
-        'provider': getattr(cgm.collection.provider, '_id', None),
-        'modified': max(cgm.modified, obj.modified),
-        'collectedType': cgm.collected_type,
-        'status': cgm.status,
-        'volume': cgm.volume,
-        'issue': cgm.issue,
-        'programArea': cgm.program_area,
-        'schoolType': cgm.school_type,
-        'studyDesign': cgm.study_design,
-        'subjects': list(cgm.subjects.values_list('text', flat=True)),
+        'contributors': [serialize_collection_submission_contributor(contrib) for contrib in contributors],
+        'provider': getattr(collection_submission.collection.provider, '_id', None),
+        'modified': max(collection_submission.modified, obj.modified),
+        'created': max(collection_submission.created, obj.created),
+        'collectedType': collection_submission.collected_type,
+        'status': collection_submission.status,
+        'volume': collection_submission.volume,
+        'issue': collection_submission.issue,
+        'programArea': collection_submission.program_area,
+        'schoolType': collection_submission.school_type,
+        'studyDesign': collection_submission.study_design,
+        'subjects': list(collection_submission.subjects.values_list('text', flat=True)),
         'title': getattr(obj, 'title', ''),
         'url': getattr(obj, 'url', ''),
         'tags': tags,
@@ -619,17 +625,17 @@ def serialize_cgm(cgm):
     }
 
 @requires_search
-def bulk_update_cgm(cgms, actions=None, op='update', index=None):
+def bulk_update_collection_submission(collection_submissions, actions=None, op='update', index=None):
     index = index or INDEX
-    if not actions and cgms:
+    if not actions and collection_submissions:
         actions = ({
             '_op_type': op,
             '_index': index,
-            '_id': cgm._id,
+            '_id': collection_submission._id,
             '_type': 'collectionSubmission',
-            'doc': serialize_cgm(cgm),
+            'doc': serialize_collection_submission(collection_submission),
             'doc_as_upsert': True,
-        } for cgm in cgms)
+        } for collection_submission in collection_submissions)
 
     try:
         helpers.bulk(client(), actions or [], refresh=True, raise_on_error=False)
@@ -758,6 +764,7 @@ def update_file(file_, index=None, delete=False):
     # File URL's not provided for preprint files, because the File Detail Page will
     # just reroute to preprints detail
     file_doc = {
+        **serialize_guid_metadata(file_guid),
         'id': file_._id,
         'deep_url': None if isinstance(target, Preprint) else file_deep_url,
         'guid_url': None if isinstance(target, Preprint) else guid_url,
@@ -799,36 +806,38 @@ def update_institution(institution, index=None):
 
 
 @celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
-def update_cgm_async(self, cgm_id, collection_id=None, op='update', index=None):
+def update_collection_submission_async(self, node_id, collection_id=None, op='update', index=None):
     CollectionSubmission = apps.get_model('osf.CollectionSubmission')
     qs = CollectionSubmission.objects.filter(
-        guid___id=cgm_id,
+        guid___id=node_id,
         collection__provider__isnull=False,
         collection__deleted__isnull=True,
-        collection__is_bookmark_collection=False)
+        collection__is_bookmark_collection=False,
+    )
     if collection_id:
         qs = qs.filter(collection_id=collection_id)
 
-    for cgm in qs:
-        if op != 'delete' and \
-            ((hasattr(cgm.guid.referent, 'is_public') and not cgm.guid.referent.is_public) or
-                (hasattr(cgm.guid.referent, 'is_deleted') and cgm.guid.referent.is_deleted)):
-            logger.exception('May only delete search index of private or deleted object')
-            return
-
+    for collection_submission in qs:
+        if op == 'update':
+            if not collection_submission.guid.referent.is_public:
+                continue
+            if collection_submission.guid.referent.deleted:
+                continue
+            if collection_submission.state is not CollectionSubmissionStates.ACCEPTED:
+                continue
         try:
-            update_cgm(cgm, op=op, index=index)
+            update_collection_submission(collection_submission, op=op, index=index)
         except Exception as exc:
             self.retry(exc=exc)
 
 @requires_search
-def update_cgm(cgm, op='update', index=None):
+def update_collection_submission(collection_submission, op='update', index=None):
     index = index or INDEX
     if op == 'delete':
-        client().delete(index=index, doc_type='collectionSubmission', id=cgm._id, refresh=True, ignore=[404])
+        client().delete(index=index, doc_type='collectionSubmission', id=collection_submission._id, refresh=True, ignore=[404])
         return
-    collection_submission_doc = serialize_cgm(cgm)
-    client().index(index=index, doc_type='collectionSubmission', body=collection_submission_doc, id=cgm._id, refresh=True)
+    collection_submission_doc = serialize_collection_submission(collection_submission)
+    client().index(index=index, doc_type='collectionSubmission', body=collection_submission_doc, id=collection_submission._id, refresh=True)
 
 @requires_search
 def delete_all():
@@ -847,8 +856,7 @@ def create_index(index=None):
     """
     index = index or INDEX
     document_types = ['project', 'component', 'registration', 'user', 'file', 'institution', 'preprint', 'collectionSubmission']
-    project_like_types = ['project', 'component', 'registration', 'preprint']
-    analyzed_fields = ['title', 'description']
+    guid_metadata_types = ['project', 'component', 'registration', 'preprint', 'file']
 
     client().indices.create(index, ignore=[400])  # HTTP 400 if index already exists
     for type_ in document_types:
@@ -880,13 +888,22 @@ def create_index(index=None):
                             # be explicitly mapped as a string to allow date ranges, which break on the inferred type
                             'year': {'type': 'string'},
                         }
-                    }
+                    },
+
                 }
             }
-            if type_ in project_like_types:
-                analyzers = {field: ENGLISH_ANALYZER_PROPERTY
-                             for field in analyzed_fields}
-                mapping['properties'].update(analyzers)
+            if type_ in guid_metadata_types:
+                mapping['properties'].update({
+                    'title': ENGLISH_ANALYZER_PROPERTY,
+                    'description': ENGLISH_ANALYZER_PROPERTY,
+                    'language': NOT_ANALYZED_PROPERTY,
+                    'resource_type_general': NOT_ANALYZED_PROPERTY,
+                    'funder_name': {'type': 'string'},
+                    'funder_identifier': NOT_ANALYZED_PROPERTY,
+                    'award_number': NOT_ANALYZED_PROPERTY,
+                    'award_uri': NOT_ANALYZED_PROPERTY,
+                    'award_title': {'type': 'string'},
+                })
 
             if type_ == 'user':
                 fields = {
@@ -1010,3 +1027,30 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
         'pages': pages,
         'page': page,
     }
+
+
+def serialize_guid_metadata(guid):
+    serialized_guid_metadata = {}
+    if guid:
+        guid_metadata_record = GuidMetadataRecord.objects.for_guid(guid)
+        if guid_metadata_record.id:
+            serialized_guid_metadata = {
+                'title': guid_metadata_record.title or None,
+                'description': guid_metadata_record.description or None,
+                'language': guid_metadata_record.language or None,
+                'resource_type_general': guid_metadata_record.resource_type_general or None,
+                'funder_name': _funding_values(guid_metadata_record, 'funder_name'),
+                'funder_identifier': _funding_values(guid_metadata_record, 'funder_identifier'),
+                'award_number': _funding_values(guid_metadata_record, 'award_number'),
+                'award_uri': _funding_values(guid_metadata_record, 'award_uri'),
+                'award_title': _funding_values(guid_metadata_record, 'award_title'),
+            }
+    return serialized_guid_metadata
+
+
+def _funding_values(guid_metadata_record, funding_field):
+    return [
+        funding_info[funding_field]
+        for funding_info in guid_metadata_record.funding_info
+        if funding_info[funding_field]
+    ]

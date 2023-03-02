@@ -368,10 +368,13 @@ API_TESTS3 = [
     'api_tests/banners',
     'api_tests/base',
     'api_tests/collections',
+    'api_tests/collection_submissions',
+    'api_tests/collection_submission_actions',
     'api_tests/comments',
     'api_tests/crossref',
     'api_tests/files',
     'api_tests/guids',
+    'api_tests/metadata_records',
     'api_tests/reviews',
     'api_tests/regions',
     'api_tests/search',
@@ -468,15 +471,9 @@ def remove_failures_from_testmon(ctx, db_path=None):
 
 @task
 def travis_setup(ctx):
-    ctx.run('npm install -g bower', echo=True)
-
     with open('package.json', 'r') as fobj:
         package_json = json.load(fobj)
         ctx.run('npm install @centerforopenscience/list-of-licenses@{}'.format(package_json['dependencies']['@centerforopenscience/list-of-licenses']), echo=True)
-
-    with open('bower.json', 'r') as fobj:
-        bower_json = json.load(fobj)
-        ctx.run('bower install {}'.format(bower_json['dependencies']['styles']), echo=True)
 
 @task
 def test_travis_addons(ctx, numprocesses=None, coverage=False, testmon=False):

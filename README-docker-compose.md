@@ -23,6 +23,7 @@
       && sudo chown root:wheel $libdir/$file \
       && sudo launchctl load $libdir/$file
     ```
+
   - Ubuntu
     - Add loopback alias
       `sudo ifconfig lo:0 192.168.168.167 netmask 255.255.255.255 up`
@@ -73,7 +74,7 @@
   - `$ docker-compose up --force-recreate --no-deps preprints`
 
 1. Application Settings
- - e.g. OSF & OSF API local.py
+  - e.g. OSF & OSF API local.py
 
     `$ cp ./website/settings/local-dist.py ./website/settings/local.py`
 
@@ -94,6 +95,36 @@
     ```
 
       _NOTE: Similar docker-compose.\<name\>.env environment configuration files exist for services._
+
+  #### Special Instructions for Apple Chipset (M1, M2, etc.) and other ARM64 architecture
+
+  * _NOTE: The `elasticsearch`, `elasticsearch6`, and `sharejs` containers are incompatible with ARM64._
+
+  - Running containers with docker-compose
+
+    - Copy an ARM64-compatible configuration to `docker-compose.override.yml`:
+
+    `$ cp ./docker-compose-dist-arm64.override.yml ./docker-compose.override.yml`
+
+    - In `webite/settings/local.py`, disable `SEARCH_ENGINE`
+    ```python
+      # SEARCH_ENGINE = 'elastic'
+      SEARCH_ENGINE = None
+    ```
+
+  - Building the Docker image
+
+    - If you wish to use an OSF image other than the latest `develop-arm64`:
+      - Build the image
+      ```bash
+      $ cd <path-to-osf.io>
+      $ git checkout <master|develop|etc>
+      $ docker buildx build --platform linux/arm64 -t osf:<branch>-arm64 .
+      ```
+      - In `docker-compose.override.yml`, replace any `quay.io/centerforopenscience/osf:develop-arm64` with the locally-tagged image above:
+      ```yml
+      image: osf:<branch>-arm64
+      ```
 
 ## Application Runtime
 
@@ -139,6 +170,50 @@
 
   ```bash
   $ docker-compose logs -f --tail 100 web
+  ```
+
+### Helpful aliases
+
+- Start all containers
+  ```bash
+  alias dcsa="docker-compose up -d assets admin_assets mfr wb fakecas sharejs worker elasticsearch elasticsearch6 web api admin preprints"
+  ```
+
+- Shut down all containers
+  ```bash
+  alias dchs="docker-compose down"
+  ```
+
+- Attach to container logs
+  - dcl <container>. Ie. `dcl web` will log only the web container
+  ```bash
+  alias dcl="docker-compose logs -f --tail 100 "
+  ```
+
+- Run migrations (Starting a fresh database or changes to migrations)
+  ```bash
+  alias dcm="docker-compose run --rm web python3 manage.py migrate"
+  ```
+
+- Download requirements (Whenever the requirements change or first-time set-up)
+  ```bash
+  alias dcreq="docker-compose up requirements mfr_requirements wb_requirements"
+  ```
+
+- Restart the containers
+  - `$ dcr <container>`. Ie. `dcr web` will restart the web container
+  ```bash
+  alias dcr="docker-compose restart -t 0 "
+  ```
+
+- Start the OSF shell (Interactive python shell that allows working directly with the osf on a code level instead of a web level.)
+  ```bash
+  alias dcosfs="docker-compose run --rm web python3 manage.py osf_shell"
+  ```
+
+- List all these commands
+  ```bash
+  alias dchelp="echo 'dcsa (start all), dchs (hard stop), dcl (logs), dcm (migrations), dcr (restart a process), dcosfs (OSF Shell), dcreq(requirements)'"
   ```
 
 ## Running arbitrary commands

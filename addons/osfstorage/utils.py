@@ -9,14 +9,31 @@ import functools
 from osf.exceptions import ValidationValueError
 from framework.exceptions import HTTPError
 from framework.analytics import update_counter
+from framework.celery_tasks import app
+from framework.postcommit_tasks.handlers import enqueue_postcommit_task
+from framework.sessions import session
+from osf.models import BaseFileNode, Guid, Session
 
 from addons.osfstorage import settings
 
 logger = logging.getLogger(__name__)
 LOCATION_KEYS = ['service', settings.WATERBUTLER_RESOURCE, 'object']
 
+def enqueue_update_analytics(node, file, version_idx, action='download'):
+    enqueue_postcommit_task(update_analytics_async, (node._id, file._id, version_idx, session._id, session.data, action), {}, celery=True)
 
-def update_analytics(node, file, version_idx, action='download'):
+@app.task(max_retries=5, default_retry_delay=60)
+def update_analytics_async(node_id, file_id, version_idx, session_id=None, session_data=None, action='download'):
+    if not session_data:
+        session_data = {}
+    node = Guid.load(node_id).referent
+    file = BaseFileNode.load(file_id)
+    session_obj = Session.load(session_id)
+    if not session_obj:
+        session_obj = Session(data=session_data)
+    update_analytics(node, file, version_idx, session_obj, action)
+
+def update_analytics(node, file, version_idx, session_obj, action='download'):
     """
     :param Node node: Root node to update
     :param str file_id: The _id field of a filenode
@@ -36,8 +53,8 @@ def update_analytics(node, file, version_idx, action='download'):
     }
     resource = node.guids.first()
 
-    update_counter(resource, file, version=None, action=action, node_info=node_info)
-    update_counter(resource, file, version_idx, action, node_info=node_info)
+    update_counter(resource, file, version=None, action=action, node_info=node_info, session_obj=session_obj)
+    update_counter(resource, file, version_idx, action, node_info=node_info, session_obj=session_obj)
 
 
 def serialize_revision(node, record, version, index, anon=False):
@@ -113,26 +130,3 @@ def must_be(_type):
             return func(self, *args, **kwargs)
         return wrapped
     return _must_be
-
-
-def copy_files(src, target_settings, parent=None, name=None):
-    """Copy the files from src to the target nodesettings
-    :param OsfStorageFileNode src: The source to copy children from
-    :param NodeSettings target_settings: The node settings of the project to copy files to
-    :param OsfStorageFileNode parent: The parent of to attach the clone of src to, if applicable
-    """
-    cloned = src.clone()
-    cloned.parent = parent
-    cloned.name = name or cloned.name
-    cloned.node_settings = target_settings
-
-    if src.is_file:
-        cloned.versions = src.versions
-
-    cloned.save()
-
-    if src.is_folder:
-        for child in src.children:
-            copy_files(child, target_settings, parent=cloned)
-
-    return cloned

@@ -10,42 +10,43 @@ logging.basicConfig(level=logging.INFO)
 
 LOG_THRESHOLD = 11
 
+def get_elastic_query(date, provider):
+    return {
+        'query': {
+            'bool': {
+                'must': [
+                    {
+                        'match': {
+                            'type': 'preprint'
+                        }
+                    },
+                    {
+                        'match': {
+                            'sources': provider.share_source or provider.name,
+                        }
+                    }
+                ],
+                'filter': [
+                    {
+                        'range': {
+                            'date': {
+                                'lte': '{}||/d'.format(date.strftime('%Y-%m-%d'))
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    }
+
 
 class PreprintCountReporter(DailyReporter):
     def report(self, date):
         from osf.models import PreprintProvider
 
-        elastic_query = {
-            'query': {
-                'bool': {
-                    'must': [
-                        {
-                            'match': {
-                                'type': 'preprint'
-                            }
-                        },
-                        {
-                            'match': {
-                                'sources': None
-                            }
-                        }
-                    ],
-                    'filter': [
-                        {
-                            'range': {
-                                'date': {
-                                    'lte': '{}||/d'.format(date.strftime('%Y-%m-%d'))
-                                }
-                            }
-                        }
-                    ]
-                }
-            }
-        }
-
         reports = []
         for preprint_provider in PreprintProvider.objects.all():
-            elastic_query['query']['bool']['must'][1]['match']['sources'] = preprint_provider.share_source
+            elastic_query = get_elastic_query(date, preprint_provider)
             resp = requests.post(f'{settings.SHARE_URL}api/v2/search/creativeworks/_search', json=elastic_query).json()
             reports.append(
                 PreprintSummaryReport(

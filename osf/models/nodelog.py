@@ -1,5 +1,3 @@
-from include import IncludeManager
-
 from django.apps import apps
 from django.db import models
 from django.utils import timezone
@@ -16,8 +14,6 @@ class NodeLog(ObjectIDMixin, BaseModel):
         'user': 'user__guids___id',
         'original_node': 'original_node__guids___id'
     }
-
-    objects = IncludeManager()
 
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
 
@@ -66,6 +62,7 @@ class NodeLog(ObjectIDMixin, BaseModel):
     FILE_TAG_REMOVED = 'file_tag_removed'
 
     FILE_METADATA_UPDATED = 'file_metadata_updated'
+    GUID_METADATA_UPDATED = 'guid_metadata_updated'
 
     EDITED_TITLE = 'edit_title'
     EDITED_DESCRIPTION = 'edit_description'
@@ -163,7 +160,7 @@ class NodeLog(ObjectIDMixin, BaseModel):
                 RETRACTION_CANCELLED, RETRACTION_INITIATED, EXTERNAL_REGISTRATION_CREATED, EXTERNAL_REGISTRATION_IMPORTED,
                 REGISTRATION_APPROVAL_CANCELLED, REGISTRATION_APPROVAL_INITIATED, REGISTRATION_APPROVAL_APPROVED,
                 PREREG_REGISTRATION_INITIATED, PROJECT_CREATED_FROM_DRAFT_REG,
-                GROUP_ADDED, GROUP_UPDATED, GROUP_REMOVED,
+                GROUP_ADDED, GROUP_UPDATED, GROUP_REMOVED, GUID_METADATA_UPDATED,
                 AFFILIATED_INSTITUTION_ADDED, AFFILIATED_INSTITUTION_REMOVED, PREPRINT_INITIATED,
                 PREPRINT_FILE_UPDATED, PREPRINT_LICENSE_UPDATED, VIEW_ONLY_LINK_ADDED, VIEW_ONLY_LINK_REMOVED,
                 RESOURCE_ADDED, RESOURCE_UPDATED, RESOURCE_REMOVED] + list(sum([

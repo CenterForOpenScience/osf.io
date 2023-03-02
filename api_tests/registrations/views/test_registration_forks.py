@@ -406,7 +406,7 @@ class TestRegistrationForkCreate:
             API_BASE, new_registration._id, '?embed=node_links')
 
         res = app.post_json_api(url, fork_data, auth=user.auth)
-        assert res.json['data']['embeds']['node_links']['data'][1]['embeds']['target_node']['data']['id'] == pointer._id
+        assert res.json['data']['embeds']['node_links']['data'][0]['embeds']['target_node']['data']['id'] == pointer._id
         assert res.json['data']['embeds']['node_links']['links']['meta']['total'] == 2
 
     def test_cannot_fork_retractions(

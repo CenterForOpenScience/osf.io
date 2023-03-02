@@ -105,7 +105,7 @@ def paginated(model, query=None, increment=200, each=True, include=None):
         are yielded.
     """
     if include and query:
-        queryset = model.objects.filter(query).include(*include)
+        queryset = model.objects.filter(query).prefetch_related(*include)
     elif query:
         queryset = model.objects.filter(query)
     else:

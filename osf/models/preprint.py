@@ -5,7 +5,6 @@ import logging
 import re
 
 from dirtyfields import DirtyFieldsMixin
-from include import IncludeManager
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
@@ -57,7 +56,7 @@ from django.contrib.postgres.fields import ArrayField
 logger = logging.getLogger(__name__)
 
 
-class PreprintManager(IncludeManager):
+class PreprintManager(models.Manager):
     def get_queryset(self):
         return GuidMixinQuerySet(self.model, using=self._db)
 
@@ -207,7 +206,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         blank=True,
         null=True,
     )
-    has_coi = models.NullBooleanField(
+    has_coi = models.BooleanField(
         blank=True,
         null=True
     )
@@ -253,7 +252,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
     class Meta:
         permissions = (
-            ('view_preprint', 'Can view preprint details in the admin app'),
+            # Clashes with built-in permissions
+            # ('view_preprint', 'Can view preprint details in the admin app'),
             ('read_preprint', 'Can read the preprint'),
             ('write_preprint', 'Can write the preprint'),
             ('admin_preprint', 'Can manage the preprint'),
@@ -631,12 +631,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         first_save = not bool(self.pk)
         saved_fields = self.get_dirty_fields() or []
         old_subjects = kwargs.pop('old_subjects', [])
-        if saved_fields and (not settings.SPAM_CHECK_PUBLIC_ONLY or self.verified_publishable):
-            request, user_id = get_request_and_user_id()
-            request_headers = string_type_request_headers(request)
-            user = OSFUser.load(user_id)
-            if user:
-                self.check_spam(user, saved_fields, request_headers)
 
         if not first_save and ('ever_public' in saved_fields and saved_fields['ever_public']):
             raise ValidationError('Cannot set "ever_public" to False')
@@ -644,6 +638,13 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             raise ValidationError('Cannot save non-initial preprint without primary file.')
 
         ret = super(Preprint, self).save(*args, **kwargs)
+
+        if saved_fields and (not settings.SPAM_CHECK_PUBLIC_ONLY or self.verified_publishable):
+            request, user_id = get_request_and_user_id()
+            request_headers = string_type_request_headers(request)
+            user = OSFUser.load(user_id)
+            if user:
+                self.check_spam(user, saved_fields, request_headers)
 
         if first_save:
             self._set_default_region()

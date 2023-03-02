@@ -22,7 +22,7 @@ from django.contrib.auth.hashers import check_password
 from django.contrib.auth.models import PermissionsMixin
 from django.dispatch import receiver
 from django.db import models
-from django.db.models import Count
+from django.db.models import Count, Exists, OuterRef
 from django.db.models.signals import post_save
 from django.utils import timezone
 from guardian.shortcuts import get_objects_for_user
@@ -38,16 +38,17 @@ from framework.sessions.utils import remove_sessions_for_user
 from osf.utils.requests import get_current_request
 from osf.exceptions import reraise_django_validation_errors, UserStateError
 from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
-from osf.models.notable_email_domain import NotableEmailDomain
+from osf.models.notable_domain import NotableDomain
 from osf.models.contributor import Contributor, RecentlyAddedContributor
 from osf.models.institution import Institution
+from osf.models.institution_affiliation import InstitutionAffiliation
 from osf.models.mixins import AddonModelMixin
 from osf.models.spam import SpamMixin
 from osf.models.session import Session
 from osf.models.tag import Tag
 from osf.models.validators import validate_email, validate_social, validate_history_item
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
+from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField, ensure_str
 from osf.utils.names import impute_names
 from osf.utils.requests import check_select_for_update
 from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, MANAGER, MEMBER, MANAGE, ADMIN
@@ -574,7 +575,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         Nodes where user is a bibliographic contributor (group membership not factored in)
         """
-        return self.nodes.filter(is_deleted=False, contributor__visible=True, type__in=['osf.node', 'osf.registration'])
+        return self.nodes.annotate(
+            self_is_visible=Exists(Contributor.objects.filter(node_id=OuterRef('id'), user_id=self.id, visible=True))
+        ).filter(deleted__isnull=True, self_is_visible=True, type__in=['osf.node', 'osf.registration'])
 
     @property
     def all_nodes(self):
@@ -753,7 +756,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 self.email_verifications[k] = v
         user.email_verifications = {}
 
-        self.affiliated_institutions.add(*user.affiliated_institutions.values_list('pk', flat=True))
+        self.copy_institution_affiliation_when_merging_user(user)
 
         for service in user.external_identity:
             for service_id in user.external_identity[service].keys():
@@ -1394,23 +1397,27 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         return True
 
-    def confirm_spam(self, save=True):
+    def confirm_spam(self, save=True, train_spam_services=False):
         self.deactivate_account()
-        super().confirm_spam(save=save)
+        super().confirm_spam(save=save, train_spam_services=train_spam_services)
 
+        # Don't train on resources merely associated with spam user
         for node in self.nodes.filter(is_public=True, is_deleted=False):
-            node.confirm_spam(train_akismet=False)
+            node.confirm_spam(train_spam_services=train_spam_services)
+
         for preprint in self.preprints.filter(is_public=True, deleted__isnull=True):
-            preprint.confirm_spam(train_akismet=False)
+            preprint.confirm_spam(train_spam_services=train_spam_services)
 
-    def confirm_ham(self, save=False):
+    def confirm_ham(self, save=False, train_spam_services=False):
         self.reactivate_account()
-        super().confirm_ham(save=save)
+        super().confirm_ham(save=save, train_spam_services=train_spam_services)
 
+        # Don't train on resources merely associated with spam user
         for node in self.nodes.filter():
-            node.confirm_ham(save=save, train_akismet=False)
+            node.confirm_ham(save=save, train_spam_services=train_spam_services)
+
         for preprint in self.preprints.filter():
-            preprint.confirm_ham(save=save, train_akismet=False)
+            preprint.confirm_ham(save=save, train_spam_services=train_spam_services)
 
     @property
     def is_assumed_ham(self):
@@ -1420,8 +1427,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             address.rpartition('@')[2].lower()
             for address in user_email_addresses
         ]
-        user_has_trusted_email = NotableEmailDomain.objects.filter(
-            note=NotableEmailDomain.Note.ASSUME_HAM_UNTIL_REPORTED,
+        user_has_trusted_email = NotableDomain.objects.filter(
+            note=NotableDomain.Note.ASSUME_HAM_UNTIL_REPORTED,
             domain__in=user_email_domains,
         ).exists()
 
@@ -1669,30 +1676,114 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                     .format(**locals())
 
     def is_affiliated_with_institution(self, institution):
-        """Return if this user is affiliated with ``institution``."""
-        return self.affiliated_institutions.filter(id=institution.id).exists()
+        """Return if this user is affiliated with the given ``institution``."""
+        if not institution:
+            return False
+        return InstitutionAffiliation.objects.filter(user__id=self.id, institution__id=institution.id).exists()
+
+    def get_institution_affiliation(self, institution_id):
+        """Return the affiliation between the current user and a given institution by ``institution_id``."""
+        try:
+            return InstitutionAffiliation.objects.get(user__id=self.id, institution___id=institution_id)
+        except InstitutionAffiliation.DoesNotExist:
+            return None
+
+    def has_affiliated_institutions(self):
+        """Return if the current user is affiliated with any institutions."""
+        return InstitutionAffiliation.objects.filter(user__id=self.id).exists()
+
+    def get_affiliated_institutions(self):
+        """Return a queryset of all affiliated institutions for the current user."""
+        qs = InstitutionAffiliation.objects.filter(user__id=self.id).values_list('institution', flat=True)
+        return Institution.objects.filter(pk__in=qs)
+
+    def get_institution_affiliations(self):
+        """Return a queryset of all institution affiliations for the current user."""
+        return InstitutionAffiliation.objects.filter(user__id=self.id)
+
+    def add_or_update_affiliated_institution(self, institution, sso_identity=None, sso_mail=None, sso_department=None):
+        """Add one or update the existing institution affiliation between the current user and the given ``institution``
+        with attributes. Returns the affiliation if created or updated; returns ``None`` if affiliation exists and
+        there is nothing to update.
+        """
+        # CASE 1: affiliation not found -> create and return the affiliation
+        if not self.is_affiliated_with_institution(institution):
+            affiliation = InstitutionAffiliation.objects.create(
+                user=self,
+                institution=institution,
+                sso_identity=sso_identity,
+                sso_mail=sso_mail,
+                sso_department=sso_department,
+                sso_other_attributes={}
+            )
+            return affiliation
+        # CASE 2: affiliation exists
+        updated = False
+        affiliation = InstitutionAffiliation.objects.get(user__id=self.id, institution__id=institution.id)
+        if sso_department and affiliation.sso_department != sso_department:
+            affiliation.sso_department = sso_department
+            updated = True
+        if sso_mail and affiliation.sso_mail != sso_mail:
+            affiliation.sso_mail = sso_mail
+            updated = True
+        if sso_identity and affiliation.sso_identity != sso_identity:
+            affiliation.sso_identity = sso_identity
+            updated = True
+        # CASE 1.1: nothing to update -> return None
+        if not updated:
+            return None
+        # CASE 1.3: at least one attribute is updated -> return the affiliation
+        affiliation.save()
+        return affiliation
+
+    def remove_sso_identity_from_affiliation(self, institution):
+        if not self.is_affiliated_with_institution(institution):
+            return None
+        affiliation = InstitutionAffiliation.objects.get(user__id=self.id, institution__id=institution.id)
+        affiliation.sso_identity = None
+        affiliation.save()
+        return affiliation
+
+    def copy_institution_affiliation_when_merging_user(self, user):
+        """Copy institution affiliations of the given ``user`` to the current user during merge."""
+        affiliations = InstitutionAffiliation.objects.filter(user__id=user.id)
+        for affiliation in affiliations:
+            self.add_or_update_affiliated_institution(
+                affiliation.institution,
+                sso_identity=affiliation.sso_identity,
+                sso_mail=affiliation.sso_mail,
+                sso_department=affiliation.sso_department
+            )
+
+    def add_multiple_institutions_non_sso(self, institutions):
+        """Add multiple affiliations for the user and a list of institutions, only used for email domain non-SSO."""
+        for institution in institutions:
+            self.add_or_update_affiliated_institution(
+                institution,
+                sso_identity=InstitutionAffiliation.DEFAULT_VALUE_FOR_SSO_IDENTITY_NOT_AVAILABLE
+            )
 
     def update_affiliated_institutions_by_email_domain(self):
-        """
-        Append affiliated_institutions by email domain.
-        :return:
-        """
+        """Append affiliated_institutions by email domain."""
         try:
             email_domains = [email.split('@')[1].lower() for email in self.emails.values_list('address', flat=True)]
-            insts = Institution.objects.filter(email_domains__overlap=email_domains)
-            if insts.exists():
-                self.affiliated_institutions.add(*insts)
+            institutions = Institution.objects.filter(email_domains__overlap=email_domains)
+            if institutions.exists():
+                self.add_multiple_institutions_non_sso(institutions)
         except IndexError:
             pass
 
-    def remove_institution(self, inst_id):
-        try:
-            inst = self.affiliated_institutions.get(_id=inst_id)
-        except Institution.DoesNotExist:
+    def remove_affiliated_institution(self, institution_id):
+        """Remove the affiliation between the current user and a given institution by ``institution_id``."""
+        affiliation = self.get_institution_affiliation(institution_id)
+        if not affiliation:
             return False
-        else:
-            self.affiliated_institutions.remove(inst)
-            return True
+        affiliation.delete()
+        if self.has_perm('view_institutional_metrics', affiliation.institution):
+            group = affiliation.institution.get_group('institutional_admins')
+            group.user_set.remove(self)
+            group.save()
+        return True
 
     def get_activity_points(self):
         return analytics.get_total_activity_count(self._id)
@@ -1733,12 +1824,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         secret = secret or settings.SECRET_KEY
 
         try:
-            token = itsdangerous.Signer(secret).unsign(cookie)
+            session_id = ensure_str(itsdangerous.Signer(secret).unsign(cookie))
         except itsdangerous.BadSignature:
             return None
 
-        user_session = Session.load(token)
-
+        user_session = Session.load(session_id)
         if user_session is None:
             return None
 
@@ -1758,11 +1848,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                     for key, value in item.items():
                         if key in self.SPAM_USER_PROFILE_FIELDS[field]:
                             content.append(value)
-        return ' '.join(content).strip()
+
+        content = [item for item in content if item]
+        if content:
+            return ' '.join(content).strip()
 
     def check_spam(self, saved_fields, request_headers):
-        if not website_settings.SPAM_CHECK_ENABLED:
-            return False
         is_spam = False
         if set(self.SPAM_USER_PROFILE_FIELDS.keys()).intersection(set(saved_fields.keys())):
             content = self._get_spam_content(saved_fields)
@@ -1895,7 +1986,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     class Meta:
         # custom permissions for use in the OSF Admin App
         permissions = (
-            ('view_osfuser', 'Can view user details'),
+            # Clashes with built-in permissions
+            # ('view_osfuser', 'Can view user details'),
         )
 
 @receiver(post_save, sender=OSFUser)

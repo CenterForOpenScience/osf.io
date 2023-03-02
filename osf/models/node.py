@@ -25,7 +25,6 @@ from django.utils.functional import cached_property
 from keen import scoped_keys
 from psycopg2._psycopg import AsIs
 from typedmodels.models import TypedModel, TypedModelManager
-from include import IncludeManager
 from guardian.models import (
     GroupObjectPermissionBase,
     UserObjectPermissionBase,
@@ -40,10 +39,11 @@ from framework.sentry import log_exception
 from osf.exceptions import (InvalidTagError, NodeStateError,
                             TagNotFoundError)
 from osf.models.contributor import Contributor
-from osf.models.collection import CollectionSubmission
+from osf.models.collection_submission import CollectionSubmission
 
 from osf.models.identifiers import Identifier, IdentifierMixin
 from osf.models.licenses import NodeLicenseRecord
+from osf.models.metadata import GuidMetadataRecord
 from osf.models.mixins import (AddonModelMixin, CommentableMixin, Loggable, GuardianMixin,
                                NodeLinkMixin, SpamOverrideMixin, RegistrationResponseMixin,
                                EditableFieldsMixin)
@@ -55,8 +55,9 @@ from osf.models.user import OSFUser
 from osf.models.validators import validate_title, validate_doi
 from framework.auth.core import Auth
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.utils.fields import NonNaiveDateTimeField
+from osf.utils.fields import NonNaiveDateTimeField, ensure_str
 from osf.utils.requests import get_request_and_user_id, string_type_request_headers
+from osf.utils.workflows import CollectionSubmissionStates
 from osf.utils import sanitize
 from website import language, settings
 from website.citations.utils import datetime_to_csl
@@ -178,7 +179,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
         return qs.filter(is_deleted=False)
 
 
-class AbstractNodeManager(TypedModelManager, IncludeManager):
+class AbstractNodeManager(TypedModelManager):
 
     def get_queryset(self):
         qs = AbstractNodeQuerySet(self.model, using=self._db)
@@ -270,7 +271,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     SPAM_CHECK_FIELDS = {
         'title',
         'description',
-        'addons_forward_node_settings__url'  # the often spammed redirect URL
+    }
+
+    SPAM_ADDONS = {
+        'forward': 'addons_forward_node_settings__url',
+        'wiki': 'wikis__versions__content'
     }
 
     # Fields that are writable by Node.update
@@ -330,7 +335,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     is_fork = models.BooleanField(default=False, db_index=True)
     is_public = models.BooleanField(default=False, db_index=True)
     is_deleted = models.BooleanField(default=False, db_index=True)
-    access_requests_enabled = models.NullBooleanField(default=True, db_index=True)
+    access_requests_enabled = models.BooleanField(null=True, blank=True, default=True, db_index=True)
 
     custom_citation = models.TextField(blank=True, null=True)
 
@@ -485,21 +490,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return not self.is_registration and not self.is_fork
 
     @property
-    def is_collected(self):
-        """is included in a collection"""
-        return self.collecting_metadata_qs.exists()
-
-    @property
-    def collecting_metadata_qs(self):
+    def collection_submissions(self):
         return CollectionSubmission.objects.filter(
             guid=self.guids.first(),
             collection__provider__isnull=False,
             collection__deleted__isnull=True,
-            collection__is_bookmark_collection=False)
-
-    @property
-    def collecting_metadata_list(self):
-        return list(self.collecting_metadata_qs)
+            collection__is_bookmark_collection=False,
+        )
 
     @property
     def has_linked_published_preprints(self):
@@ -722,7 +719,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         try:
             search.search.update_node(self, bulk=False, async_update=True)
-            if self.is_collected and self.is_public:
+            if self.collection_submissions.exists() and self.is_public:
                 search.search.update_collected_metadata(self._id)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
@@ -826,8 +823,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return NodeLog.objects.filter(
             node_id=self.id,
             should_hide=False
-        ).order_by('-date').include(
-            'node__guids', 'user__guids', 'original_node__guids', limit_includes=10
+        ).order_by('-date').prefetch_related(
+            'node__guids', 'user__guids', 'original_node__guids',
         )
 
     def get_absolute_url(self):
@@ -977,7 +974,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def osfstorage_region(self):
         from addons.osfstorage.models import Region
         osfs_settings = self._settings_model('osfstorage')
-        region_subquery = osfs_settings.objects.filter(owner=self.id).values('region_id')
+        region_subquery = osfs_settings.objects.filter(owner=self.id).values_list('region_id', flat=True)[0]
         return Region.objects.get(id=region_subquery)
 
     @property
@@ -1156,10 +1153,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def get_spam_fields(self, saved_fields):
         # Override for SpamOverrideMixin
         check_fields = self.SPAM_CHECK_FIELDS.copy()
-        if not self.has_addon('forward'):
-            check_fields.remove('addons_forward_node_settings__url')
-        return check_fields if self.is_public and 'is_public' in saved_fields else check_fields.intersection(
-            saved_fields)
+        for addon, check_field in self.SPAM_ADDONS.items():
+            if self.has_addon(addon):
+                check_fields.add(check_field)
+
+        if not saved_fields or self.is_public and 'is_public' in saved_fields:
+            return check_fields
+        return check_fields.intersection(saved_fields)
 
     def callback(self, callback, recursive=False, *args, **kwargs):
         """Invoke callbacks of attached add-ons and collect messages.
@@ -1240,6 +1240,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
             self.is_public = False
             self.keenio_read_key = ''
+            self._remove_from_associated_collections(auth, force=force)
         else:
             return False
 
@@ -1275,7 +1276,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return True
 
     def generate_keenio_read_key(self):
-        return scoped_keys.encrypt(settings.KEEN['public']['master_key'], options={
+        encrypted_read_key = scoped_keys.encrypt(settings.KEEN['public']['master_key'], options={
             'filters': [{
                 'property_name': 'node.id',
                 'operator': 'eq',
@@ -1283,6 +1284,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             }],
             'allowed_operations': [READ]
         })
+        return ensure_str(encrypted_read_key)
 
     @property
     def private_links_active(self):
@@ -1431,6 +1433,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             node_relation = NodeRelation.objects.get(parent=parent.registered_from, child=original)
             NodeRelation.objects.get_or_create(_order=node_relation._order, parent=parent, child=registered)
 
+        GuidMetadataRecord.objects.copy(from_=original, to_=registered)
+
         # After register callback
         for addon in original.get_addons():
             _, message = addon.after_register(original, registered, auth.user)
@@ -1562,7 +1566,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def add_affiliations(self, user, new):
         # add all of the user's affiliations to the forked or templated node
-        for affiliation in user.affiliated_institutions.all():
+        for affiliation in user.get_affiliated_institutions():
             new.affiliated_institutions.add(affiliation)
 
     # TODO: Optimize me (e.g. use bulk create)
@@ -1613,6 +1617,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         forked.tags.add(*self.all_tags.values_list('pk', flat=True))
         forked.subjects.add(*self.subjects.values_list('pk', flat=True))
+
+        GuidMetadataRecord.objects.copy(from_=original, to_=forked)
 
         if parent:
             node_relation = NodeRelation.objects.get(parent=parent.forked_from, child=original)
@@ -1967,9 +1973,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         self.update_or_enqueue_on_node_updated(user_id, first_save, saved_fields)
 
         user = User.load(user_id)
-        if user and self.check_spam(user, saved_fields, request_headers):
+        if user:
             # Specifically call the super class save method to avoid recursion into model save method.
-            super(AbstractNode, self).save()
+            super().save()
+            self.check_spam(user, saved_fields, request_headers)
 
     def resolve(self):
         """For compat with v1 Pointers."""
@@ -2222,6 +2229,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             node.deleted = log_date
             node.add_remove_node_log(auth=auth, date=log_date)
             project_signals.node_deleted.send(node)
+            node._remove_from_associated_collections(auth)
 
         bulk_update(hierarchy, update_fields=['is_deleted', 'deleted_date', 'deleted'])
 
@@ -2395,6 +2403,37 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             ]
         ).first() or osf_provider_tag
         contributor.add_system_tag(source_tag)
+
+    def _remove_from_associated_collections(self, auth=None, force=False):
+        for submission in self.guids.first().collectionsubmission_set.all():
+            associated_collection = submission.collection
+            if associated_collection.is_bookmark_collection and not self.deleted:
+                if self.contributors.filter(pk=associated_collection.creator.id).exists():
+                    continue
+
+            user = getattr(auth, 'user', None)
+
+            if submission.state == CollectionSubmissionStates.ACCEPTED and not force:
+                submission.remove(
+                    user=user,
+                    comment='Removed from collection due to implicit removal due to privacy changes.',
+                    removed_due_to_privacy=True
+                )
+            elif submission.state == CollectionSubmissionStates.PENDING and user and not force:
+                submission.cancel(
+                    user=user,
+                    comment='Request to review this submission was canceled due to privacy changes.',
+                )
+            elif force and submission.state == CollectionSubmissionStates.ACCEPTED:
+                submission.remove(
+                    comment='Removed from collection via system command.',  # typically spam
+                    force=True
+                )
+            elif force and submission.state == CollectionSubmissionStates.PENDING:
+                submission.cancel(
+                    comment='Rejected from collection via system command.',  # typically spam
+                    force=True
+                )
 
 
 class NodeUserObjectPermission(UserObjectPermissionBase):

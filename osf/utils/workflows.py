@@ -27,6 +27,10 @@ class ModerationEnum(IntEnum):
     def db_name(self):
         return self.name.lower()
 
+    @classmethod
+    def excluding(cls, *excluded_roles):
+        return [role for role in cls if role not in excluded_roles]
+
 
 class SanctionTypes(ModerationEnum):
     '''A simple descriptor for the type of a sanction class'''
@@ -50,6 +54,16 @@ class ApprovalStates(ModerationEnum):
     MODERATOR_REJECTED = 5
     COMPLETED = 6  # Embargo only
     IN_PROGRESS = 7  # Revisions only
+
+
+class CollectionSubmissionStates(ModerationEnum):
+    '''The states of a CollectionSubmission object.'''
+
+    IN_PROGRESS = 1
+    PENDING = 2
+    REJECTED = 3
+    ACCEPTED = 4
+    REMOVED = 5
 
 
 class RegistrationModerationStates(ModerationEnum):
@@ -163,6 +177,16 @@ class SchemaResponseTriggers(ModerationEnum):
             (ApprovalStates.PENDING_MODERATION, ApprovalStates.IN_PROGRESS): cls.MODERATOR_REJECT,
         }
         return transition_to_trigger_mappings.get((from_state, to_state))
+
+
+class CollectionSubmissionsTriggers(ModerationEnum):
+    '''The acceptable 'triggers' to use with a CollectionSubmissionsAction'''
+    SUBMIT = 0
+    ACCEPT = 1
+    REJECT = 2
+    REMOVE = 3
+    RESUBMIT = 4
+    CANCEL = 5
 
 
 @unique
@@ -352,6 +376,141 @@ APPROVAL_TRANSITIONS = [
         'trigger': 'reject',
         'source': [ApprovalStates.REJECTED, ApprovalStates.MODERATOR_REJECTED],
         'dest': None,
+    },
+]
+
+
+COLLECTION_SUBMISSION_TRANSITIONS = [
+    {
+        'trigger': 'submit',
+        'source': [CollectionSubmissionStates.IN_PROGRESS],
+        'dest': CollectionSubmissionStates.ACCEPTED,
+        'before': [],
+        'after': ['_notify_accepted'],
+        'unless': ['is_moderated', 'is_hybrid_moderated'],
+    },
+    {
+        'trigger': 'submit',
+        'source': [CollectionSubmissionStates.IN_PROGRESS],
+        'dest': CollectionSubmissionStates.PENDING,
+        'before': [],
+        'after': ['_notify_contributors_pending', '_notify_moderators_pending'],
+        'conditions': ['is_moderated'],
+    },
+    {
+        'trigger': 'submit',
+        'source': [CollectionSubmissionStates.IN_PROGRESS],
+        'dest': CollectionSubmissionStates.ACCEPTED,
+        'before': [],
+        'after': ['_notify_contributors_pending', '_notify_moderators_pending'],
+        'conditions': ['is_hybrid_moderated', 'is_submitted_by_moderator_contributor'],
+    },
+    {
+        'trigger': 'submit',
+        'source': [CollectionSubmissionStates.IN_PROGRESS],
+        'dest': CollectionSubmissionStates.PENDING,
+        'before': [],
+        'conditions': ['is_hybrid_moderated'],
+        'after': ['_notify_contributors_pending', '_notify_moderators_pending'],
+        'unless': ['is_submitted_by_moderator_contributor'],
+    },
+    {
+        'trigger': 'accept',
+        'source': [CollectionSubmissionStates.PENDING],
+        'dest': CollectionSubmissionStates.ACCEPTED,
+        'before': ['_validate_accept'],
+        'after': ['_notify_accepted', '_make_public'],
+        'conditions': ['is_moderated'],
+    },
+    {
+        'trigger': 'accept',
+        'source': [CollectionSubmissionStates.PENDING],
+        'dest': CollectionSubmissionStates.ACCEPTED,
+        'before': ['_validate_accept'],
+        'after': ['_notify_accepted', '_make_public'],
+        'conditions': ['is_hybrid_moderated'],
+    },
+    {
+        'trigger': 'reject',
+        'source': [CollectionSubmissionStates.PENDING],
+        'dest': CollectionSubmissionStates.REJECTED,
+        'before': ['_validate_reject'],
+        'after': ['_notify_moderated_rejected'],
+        'conditions': ['is_moderated'],
+    },
+    {
+        'trigger': 'reject',
+        'source': [CollectionSubmissionStates.PENDING],
+        'dest': CollectionSubmissionStates.REJECTED,
+        'before': ['_validate_reject'],
+        'after': ['_notify_moderated_rejected'],
+        'conditions': ['is_hybrid_moderated'],
+    },
+    {
+        'trigger': 'remove',
+        'source': [CollectionSubmissionStates.ACCEPTED],
+        'dest': CollectionSubmissionStates.REMOVED,
+        'before': ['_validate_remove'],
+        'after': ['_remove_from_search', '_notify_removed'],
+        'unless': ['is_hybrid_moderated', 'is_moderated'],
+    },
+    {
+        'trigger': 'remove',
+        'source': [CollectionSubmissionStates.ACCEPTED],
+        'dest': CollectionSubmissionStates.REMOVED,
+        'before': ['_validate_remove'],
+        'after': ['_remove_from_search', '_notify_removed'],
+        'conditions': ['is_hybrid_moderated'],
+    },
+    {
+        'trigger': 'remove',
+        'source': [CollectionSubmissionStates.ACCEPTED],
+        'dest': CollectionSubmissionStates.REMOVED,
+        'before': ['_validate_remove'],
+        'after': ['_remove_from_search', '_notify_removed'],
+        'conditions': ['is_moderated'],
+    },
+    {
+        'trigger': 'resubmit',
+        'source': [CollectionSubmissionStates.REJECTED, CollectionSubmissionStates.REMOVED],
+        'dest': CollectionSubmissionStates.ACCEPTED,
+        'before': ['_validate_resubmit'],
+        'after': ['_make_public', '_notify_accepted'],
+        'unless': ['is_moderated', 'is_hybrid_moderated'],
+    },
+    {
+        'trigger': 'resubmit',
+        'source': [CollectionSubmissionStates.REJECTED, CollectionSubmissionStates.REMOVED],
+        'dest': CollectionSubmissionStates.PENDING,
+        'before': ['_validate_resubmit'],
+        'after': ['_make_public', '_notify_contributors_pending', '_notify_moderators_pending'],
+        'conditions': ['is_moderated'],
+    },
+    {
+        'trigger': 'resubmit',
+        'source': [CollectionSubmissionStates.REJECTED, CollectionSubmissionStates.REMOVED],
+        'dest': CollectionSubmissionStates.ACCEPTED,
+        'before': [],
+        'after': ['_make_public', '_notify_accepted'],
+        'conditions': ['is_hybrid_moderated', 'is_submitted_by_moderator_contributor'],
+    },
+    {
+        'trigger': 'resubmit',
+        'source': [CollectionSubmissionStates.REJECTED, CollectionSubmissionStates.REMOVED],
+        'dest': CollectionSubmissionStates.PENDING,
+        'before': ['_validate_resubmit'],
+        'after': ['_make_public', '_notify_contributors_pending', '_notify_moderators_pending'],
+        'conditions': ['is_hybrid_moderated'],
+        'unless': ['is_submitted_by_moderator_contributor']
+    },
+    {
+        'trigger': 'cancel',
+        'source': [CollectionSubmissionStates.PENDING],
+        'dest': CollectionSubmissionStates.IN_PROGRESS,
+        'before': ['_validate_cancel'],
+        'after': ['_notify_cancel'],
+        'conditions': [],
+        'unless': []
     },
 ]
 

@@ -35,7 +35,7 @@ def log_exception():
     })
 
 
-def log_message(message, extra_data=None):
+def log_message(message, extra_data=None, level=logging.ERROR):
     if not enabled:
         logger.warning(
             'Sentry called to log message, but is not active: %s' % message
@@ -48,4 +48,4 @@ def log_message(message, extra_data=None):
         extra_data = {}
     extra.update(extra_data)
 
-    return sentry.captureMessage(message, extra=extra)
+    return sentry.captureMessage(message, extra=extra, level=level)

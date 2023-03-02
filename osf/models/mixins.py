@@ -10,8 +10,6 @@ from django.utils import timezone
 from django.utils.functional import cached_property
 from guardian.shortcuts import assign_perm, get_perms, remove_perm, get_group_perms
 
-from include import IncludeQuerySet
-
 from api.providers.workflows import Workflows, PUBLIC_STATES
 from framework import status
 from framework.auth import Auth
@@ -105,9 +103,13 @@ class Loggable(models.Model):
 
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True, request=None):
         AbstractNode = apps.get_model('osf.AbstractNode')
+        OSFUser = apps.get_model('osf.OSFUser')
         user = None
         if auth:
-            user = auth.user
+            if isinstance(auth, OSFUser):
+                user = auth
+            else:
+                user = auth.user
         elif request:
             user = request.user
 
@@ -967,9 +969,9 @@ class ReviewProviderMixin(GuardianMixin):
     class Meta:
         abstract = True
 
-    reviews_workflow = models.CharField(null=True, blank=True, max_length=15, choices=Workflows.choices())
-    reviews_comments_private = models.NullBooleanField()
-    reviews_comments_anonymous = models.NullBooleanField()
+    reviews_workflow = models.CharField(null=True, blank=True, max_length=30, choices=Workflows.choices())
+    reviews_comments_private = models.BooleanField(null=True, blank=True)
+    reviews_comments_anonymous = models.BooleanField(null=True, blank=True)
 
     DEFAULT_SUBSCRIPTIONS = ['new_pending_submissions']
 
@@ -980,8 +982,6 @@ class ReviewProviderMixin(GuardianMixin):
     def get_reviewable_state_counts(self):
         assert self.REVIEWABLE_RELATION_NAME, 'REVIEWABLE_RELATION_NAME must be set to compute state counts'
         qs = getattr(self, self.REVIEWABLE_RELATION_NAME)
-        if isinstance(qs, IncludeQuerySet):
-            qs = qs.include(None)
         qs = qs.filter(
             deleted__isnull=True
         ).exclude(
@@ -1310,17 +1310,19 @@ class ContributorMixin(models.Model):
         """
         return (each.user for each in self._get_admin_contributors_query(users))
 
-    def _get_admin_contributors_query(self, users):
+    def _get_admin_contributors_query(self, users, require_active=True):
         """
         Returns Contributor queryset whose objects have admin permissions to the node.
         Group permissions not included.
         """
-        return self.contributor_class.objects.select_related('user').filter(
+        qs = self.contributor_class.objects.select_related('user').filter(
             user__in=users,
-            user__is_active=True,
             user__groups=self.get_group(ADMIN).id,
             **{self.guardian_object_type: self}
         )
+        if require_active:
+            qs = qs.filter(user__is_active=True)
+        return qs
 
     def add_contributor(self, contributor, permissions=None, visible=True,
                         send_email=None, auth=None, log=True, save=False):
@@ -1605,7 +1607,7 @@ class ContributorMixin(models.Model):
         if save:
             self.save()
 
-    def remove_contributor(self, contributor, auth, log=True):
+    def remove_contributor(self, contributor, auth, log=True, _force=False):
         """Remove a contributor from this node.
 
         :param contributor: User object, the contributor to be removed
@@ -1619,14 +1621,15 @@ class ContributorMixin(models.Model):
             del contributor.unclaimed_records[self._id]
             contributor.save()
 
-        # If user is the only visible contributor, return False
-        if not self.contributor_set.exclude(user=contributor).filter(visible=True).exists():
-            return False
+        if not _force:
+            # If user is the only visible contributor, return False
+            if not self.contributor_set.exclude(user=contributor).filter(visible=True).exists():
+                return False
 
-        # Node must have at least one registered admin user
-        admin_query = self._get_admin_contributors_query(self._contributors.all()).exclude(user=contributor)
-        if not admin_query.exists():
-            return False
+            # Node must have at least one registered admin user
+            admin_query = self._get_admin_contributors_query(self._contributors.all()).exclude(user=contributor)
+            if not admin_query.exists():
+                return False
 
         contrib_obj = self.contributor_set.get(user=contributor)
         contrib_obj.delete()
@@ -1988,13 +1991,31 @@ class SpamOverrideMixin(SpamMixin):
     def get_spam_fields(self):
         return NotImplementedError()
 
-    def confirm_spam(self, save=True, train_akismet=True):
+    def undelete(self, save=False):
+        if self.logs.filter(action__in=[self.log_class.FLAG_SPAM, self.log_class.CONFIRM_SPAM]):
+            spam_log = self.logs.filter(action__in=[self.log_class.FLAG_SPAM, self.log_class.CONFIRM_SPAM]).latest()
+            # set objects to prior public state if known, unless it's a registration pending approval.
+            if spam_log.params.get('was_public', False) and not getattr(self, 'is_pending_registration', False):
+                self.set_privacy('public', log=False)
+
+            self.is_deleted = False
+            self.deleted = None
+            self.update_search()
+
+        if save:
+            self.save()
+
+    def unspam(self, save=False):
+        super().unspam(save=save)
+        self.undelete(save=save)
+
+    def confirm_spam(self, domains=None, save=True, train_spam_services=True):
         """
         This should add behavior specific nodes/preprints confirmed to be spam.
         :param save:
         :return:
         """
-        super().confirm_spam(save=save, train_akismet=train_akismet)
+        super().confirm_spam(save=save, domains=domains or [], train_spam_services=train_spam_services)
         self.deleted = timezone.now()
         was_public = self.is_public
         self.set_privacy('private', auth=None, log=False, save=False, force=True)
@@ -2010,23 +2031,14 @@ class SpamOverrideMixin(SpamMixin):
         if save:
             self.save()
 
-    def confirm_ham(self, save=False, train_akismet=True):
+    def confirm_ham(self, save=False, train_spam_services=True):
         """
         This should add behavior specific nodes/preprints confirmed to be ham.
         :param save:
         :return:
         """
-        super().confirm_ham(save=save, train_akismet=train_akismet)
-
-        if self.logs.filter(action__in=[self.log_class.FLAG_SPAM, self.log_class.CONFIRM_SPAM]):
-            spam_log = self.logs.filter(action__in=[self.log_class.FLAG_SPAM, self.log_class.CONFIRM_SPAM]).latest()
-            # set objects to prior public state if known, unless it's a registration pending approval.
-            if spam_log.params.get('was_public', False) and not getattr(self, 'is_pending_registration', False):
-                self.set_privacy('public', log=False)
-
-            self.is_deleted = False
-            self.deleted = None
-            self.update_search()
+        super().confirm_ham(save=save, train_spam_services=train_spam_services)
+        self.undelete(save=save)
 
         log = self.add_log(
             action=self.log_class.CONFIRM_HAM,
@@ -2062,41 +2074,34 @@ class SpamOverrideMixin(SpamMixin):
         return b' '.join(content).decode()
 
     def check_spam(self, user, saved_fields, request_headers):
-        if not settings.SPAM_CHECK_ENABLED:
-            return False
+        if not user:  # in case of tests and staff admin operations
+            return
         if settings.SPAM_CHECK_PUBLIC_ONLY and not self.is_public:
-            return False
+            return
         if user.is_hammy:
-            return False
+            return
         if getattr(self, 'provider', False) and self.provider.reviews_workflow == Workflows.PRE_MODERATION.value:
-            return False
+            return
         host = ''
         if request_headers:
             host = request_headers.get('Host', '')
         if host.startswith('admin') or ':8001' in host:
-            return False
+            return
         if hasattr(self, 'conferences') and self.conferences.filter(auto_check_spam=False).exists():
-            return False
+            return
 
         content = self._get_spam_content(saved_fields)
         if not content:
             return
 
-        is_spam = self.do_check_spam(
+        self.do_check_spam(
             user.fullname,
             user.username,
             content,
             request_headers,
         )
-        logger.info("{} ({}) '{}' smells like {} (tip: {})".format(
-            self.__class__.__name__, self._id, self.title.encode('utf-8'), 'SPAM' if is_spam else 'HAM', self.spam_pro_tip
-        ))
-        if is_spam:
-            self._check_spam_user(user)
 
-        return is_spam
-
-    def _check_spam_user(self, user):
+    def check_spam_user(self, user):
         if (
             settings.SPAM_ACCOUNT_SUSPENSION_ENABLED
             and (timezone.now() - user.date_confirmed) <= settings.SPAM_ACCOUNT_SUSPENSION_THRESHOLD
@@ -2106,10 +2111,15 @@ class SpamOverrideMixin(SpamMixin):
         ):
             self.suspend_spam_user(user)
 
-    def suspend_spam_user(self, user, train_akismet=False):
+    def suspend_spam_user(self, user):
+        """
+        This suspends a users account and makes all there resources private, key word here is SUSPENDS this should not
+        delete the account or any info associated with it. It should not be assumed the account is spam and it should
+        not be used to train spam detecting services.
+        """
         if user.is_ham:
             return False
-        self.confirm_spam(save=True, train_akismet=train_akismet)
+        self.confirm_spam(save=True, train_spam_services=False)
         self.set_privacy('private', log=False, save=True)
 
         # Suspend the flagged user for spam.
@@ -2129,22 +2139,22 @@ class SpamOverrideMixin(SpamMixin):
         # Make public nodes private from this contributor
         for node in user.all_nodes:
             if self._id != node._id and len(node.contributors) == 1 and node.is_public:
-                node.confirm_spam(save=True, train_akismet=train_akismet)
-                node.set_privacy('private', log=False, save=True)
+                node.confirm_spam(save=True, train_spam_services=False)
+                node.set_privacy('private', log=False, save=True, force=True)
 
         # Make preprints private from this contributor
         for preprint in user.preprints.all():
             if self._id != preprint._id and len(preprint.contributors) == 1 and preprint.is_public:
-                preprint.confirm_spam(save=True, train_akismet=train_akismet)
+                preprint.confirm_spam(save=True, train_spam_services=False)
                 preprint.set_privacy('private', log=False, save=True)
 
     def flag_spam(self):
         """ Overrides SpamMixin#flag_spam.
         """
-        super(SpamOverrideMixin, self).flag_spam()
+        super().flag_spam()
         if settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE:
             was_public = self.is_public
-            self.set_privacy('private', auth=None, log=False, save=False, check_addons=False)
+            self.set_privacy('private', auth=None, log=False, save=False, check_addons=False, force=True)
             log = self.add_log(
                 action=self.log_class.FLAG_SPAM,
                 params={**self.log_params, 'was_public': was_public},
@@ -2169,7 +2179,7 @@ class RegistrationResponseMixin(models.Model):
     Mixin to be shared between DraftRegistrations and Registrations.
     """
     registration_responses = DateTimeAwareJSONField(default=dict, blank=True)
-    registration_responses_migrated = models.NullBooleanField(default=True, db_index=True)
+    registration_responses_migrated = models.BooleanField(null=True, blank=True, default=True, db_index=True)
 
     def get_registration_metadata(self, schema):
         raise NotImplementedError()

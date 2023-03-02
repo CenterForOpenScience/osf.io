@@ -30,6 +30,7 @@ from website.util import api_v2_url
 from functools import reduce
 from osf.models.notifications import NotificationSubscription
 
+
 class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, DirtyFieldsMixin, BaseModel):
     class Meta:
         unique_together = ('_id', 'type')
@@ -242,11 +243,13 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
 
 
 class CollectionProvider(AbstractProvider):
+    DEFAULT_SUBSCRIPTIONS = ['new_pending_submissions']
 
     class Meta:
         permissions = (
             # custom permissions for use in the OSF Admin App
-            ('view_collectionprovider', 'Can view collection provider details'),
+            # Clashes with built-in permissions
+            # ('view_collectionprovider', 'Can view collection provider details'),
         )
 
     @property
@@ -284,11 +287,11 @@ class RegistrationProvider(AbstractProvider):
     #
     # Ex:
     # [{'field_name': 'foo'}, {'field_name': 'bar'}]
-    additional_metadata_fields = DateTimeAwareJSONField(blank=True)
+    additional_metadata_fields = DateTimeAwareJSONField(blank=True, null=True)
     default_schema = models.ForeignKey('osf.registrationschema', related_name='default_schema', null=True, blank=True, on_delete=models.SET_NULL)
-    bulk_upload_auto_approval = models.NullBooleanField(default=False)
-    allow_updates = models.NullBooleanField(default=False)
-    allow_bulk_uploads = models.NullBooleanField(default=False)
+    bulk_upload_auto_approval = models.BooleanField(null=True, blank=True, default=False)
+    allow_updates = models.BooleanField(null=True, blank=True, default=False)
+    allow_bulk_uploads = models.BooleanField(null=True, blank=True, default=False)
 
     def __init__(self, *args, **kwargs):
         self._meta.get_field('share_publish_type').default = 'Registration'
@@ -297,7 +300,8 @@ class RegistrationProvider(AbstractProvider):
     class Meta:
         permissions = (
             # custom permissions for use in the OSF Admin App
-            ('view_registrationprovider', 'Can view registration provider details'),
+            # Clashes with built-in permissions
+            # ('view_registrationprovider', 'Can view registration provider details'),
         )
 
     @classmethod
@@ -311,8 +315,9 @@ class RegistrationProvider(AbstractProvider):
                 """,
                 [cls.default__id]
             )
-            default_id = cursor.fetchone()[0]
-        return default_id
+            default_id = cursor.fetchone()
+            if default_id:
+                return default_id[0]
 
     @property
     def readable_type(self):
@@ -356,7 +361,8 @@ class PreprintProvider(AbstractProvider):
     class Meta:
         permissions = (
             # custom permissions for use in the OSF Admin App
-            ('view_preprintprovider', 'Can view preprint provider details'),
+            # Clashes with built-in permissions
+            # ('view_preprintprovider', 'Can view preprint provider details'),
         )
 
     @property
@@ -391,7 +397,7 @@ class PreprintProvider(AbstractProvider):
             if len(self.subjects_acceptable) == 0:
                 return optimize_subject_query(Subject.objects.filter(parent__isnull=True, provider___id='osf'))
             tops = set([sub[0][0] for sub in self.subjects_acceptable])
-            return [Subject.load(sub) for sub in tops]
+            return Subject.objects.filter(_id__in=tops)
 
     @property
     def landing_url(self):
@@ -422,6 +428,7 @@ def rules_to_subjects(rules):
     return Subject.objects.filter(reduce(lambda x, y: x | y, q)) if len(q) > 1 else (Subject.objects.filter(q[0]) if len(q) else Subject.objects.filter(provider___id='osf', provider__type='osf.preprintprovider'))
 
 
+@receiver(post_save, sender=CollectionProvider)
 @receiver(post_save, sender=PreprintProvider)
 @receiver(post_save, sender=RegistrationProvider)
 def create_provider_auth_groups(sender, instance, created, **kwargs):
@@ -429,6 +436,7 @@ def create_provider_auth_groups(sender, instance, created, **kwargs):
         instance.update_group_permissions()
 
 
+@receiver(post_save, sender=CollectionProvider)
 @receiver(post_save, sender=PreprintProvider)
 @receiver(post_save, sender=RegistrationProvider)
 def create_provider_notification_subscriptions(sender, instance, created, **kwargs):

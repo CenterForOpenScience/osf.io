@@ -286,7 +286,7 @@ class RegistrationContributorsList(BaseContributorList, RegistrationMixin, UserM
 
     def get_default_queryset(self):
         node = self.get_node(check_object_permissions=False)
-        return node.contributor_set.all().include('user__guids')
+        return node.contributor_set.all().prefetch_related('user__guids')
 
 
 class RegistrationContributorDetail(BaseContributorDetail, RegistrationMixin, UserMixin):
@@ -331,7 +331,7 @@ class RegistrationImplicitContributorsList(JSONAPIBaseView, generics.ListAPIView
     serializer_class = UserSerializer
     view_category = 'registrations'
     view_name = 'registration-implicit-contributors'
-    ordering = ('_order',)  # default ordering
+    ordering = ('contributor___order',)  # default ordering
 
     def get_default_queryset(self):
         node = self.get_node()

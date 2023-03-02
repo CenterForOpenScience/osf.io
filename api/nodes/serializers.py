@@ -50,8 +50,8 @@ class RegistrationProviderRelationshipField(RelationshipField):
         return RegistrationProvider.load(_id)
 
     def to_internal_value(self, data):
-        provider = self.get_object(data)
-        return {'provider': provider}
+        return self.get_object(data)
+
 
 def get_institutions_to_add_remove(institutions, new_institutions):
     diff = relationship_diff(
@@ -101,7 +101,7 @@ class RegionRelationshipField(RelationshipField):
             region_id = Region.objects.filter(_id=data).values_list('id', flat=True).get()
         except Region.DoesNotExist:
             raise exceptions.ValidationError(detail='Region {} is invalid.'.format(data))
-        return {'region_id': region_id}
+        return region_id
 
 
 class NodeTagField(ser.Field):
@@ -149,6 +149,10 @@ class NodeLicenseSerializer(BaseAPISerializer):
 
 
 class NodeLicenseRelationshipField(RelationshipField):
+    def __init__(self, **kwargs):
+        # HACK: because of persistent name confusion on 'license', set `source='*'`
+        # and always put the internal value at `validated_data['license_type']`
+        super().__init__(source='*', **kwargs)
 
     def lookup_attribute(self, obj, lookup_field):
         """
@@ -404,7 +408,11 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     ))
 
     forked_from = RelationshipField(
-        related_view=lambda n: 'registrations:registration-detail' if getattr(n, 'is_registration', False) else 'nodes:node-detail',
+        related_view=lambda node: (
+            'registrations:registration-detail'
+            if getattr(node.forked_from, 'is_registration', False)
+            else 'nodes:node-detail'
+        ),
         related_view_kwargs={'node_id': '<forked_from_guid>'},
     )
 
@@ -448,7 +456,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     parent = RelationshipField(
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<parent_id>'},
-        filter_key='parent_node',
+        source='parent_node',
     )
 
     identifiers = RelationshipField(
@@ -462,7 +470,6 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         self_view='nodes:node-relationships-institutions',
         self_view_kwargs={'node_id': '<_id>'},
         read_only=False,
-        many=True,
         required=False,
     )
 
@@ -762,8 +769,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         license_details = None
         if 'affiliated_institutions' in validated_data:
             affiliated_institutions = validated_data.pop('affiliated_institutions')
-        if 'region_id' in validated_data:
-            region_id = validated_data.pop('region_id')
+        if 'region' in validated_data:
+            region_id = validated_data.pop('region')
         if 'license_type' in validated_data or 'license' in validated_data:
             try:
                 license_details = get_license_details(None, validated_data)
@@ -1508,7 +1515,7 @@ class RegistrationSchemaRelationshipField(RelationshipField):
         latest_version = RegistrationSchema.objects.get_latest_version(schema.name).schema_version
         if latest_version != schema.schema_version or not schema.active:
             raise exceptions.ValidationError('Registration supplement must be an active schema.')
-        return {'registration_schema': schema}
+        return schema
 
 
 class DraftRegistrationLegacySerializer(JSONAPISerializer):
@@ -1527,7 +1534,11 @@ class DraftRegistrationLegacySerializer(JSONAPISerializer):
     )
 
     branched_from = RelationshipField(
-        related_view=lambda n: 'draft_nodes:draft-node-detail' if getattr(n, 'type', False) == 'osf.draftnode' else 'nodes:node-detail',
+        related_view=lambda draft_reg: (
+            'draft_nodes:draft-node-detail'
+            if getattr(draft_reg.branched_from, 'type', False) == 'osf.draftnode'
+            else 'nodes:node-detail'
+        ),
         related_view_kwargs={'node_id': '<branched_from._id>'},
     )
 
