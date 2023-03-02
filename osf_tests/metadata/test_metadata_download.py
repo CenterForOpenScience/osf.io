@@ -33,6 +33,7 @@ class TestMetadataDownload(OsfTestCase):
             'project_id': project._id,
             'user_id': user._id,
             'date': str(today),
+            'project_created_year': project.created.year,
         }
 
         resp = self.app.get(f'/{project._id}/metadata/?format=turtle', auth=user.auth)
@@ -71,6 +72,7 @@ class TestMetadataDownload(OsfTestCase):
         project.node_license.node_license = NodeLicense.objects.get(
             name='CC-By Attribution-NonCommercial-NoDerivatives 4.0 International',
         )
+        project.node_license.year = '2250-2254'
         project.node_license.save()
 
         file = create_test_file(
@@ -104,7 +106,7 @@ class TestMetadataDownload(OsfTestCase):
         assert resp.unicode_body == COMPLICATED_DATACITE_XML.format(**format_kwargs)
 
         ### now check that file
-        format_kwargs['year'] = str(today.year)
+        format_kwargs['file_created_year'] = file.created.year
         resp = self.app.get(f'/{file_guid}/metadata/?format=turtle', auth=user.auth)
         assert resp.status_code == 200
         assert resp.content_type == 'text/turtle'
@@ -345,7 +347,7 @@ COMPLICATED_DATACITE_JSON = '''{{
     }}
   ],
   "language": "es",
-  "publicationYear": "2252",
+  "publicationYear": "{project_created_year}",
   "publisher": "Open Science Framework",
   "relatedIdentifiers": [],
   "rightsList": [
@@ -384,7 +386,7 @@ COMPLICATED_DATACITE_XML = '''<?xml version='1.0' encoding='utf-8'?>
     <title>this is a project title!</title>
   </titles>
   <publisher>Open Science Framework</publisher>
-  <publicationYear>2252</publicationYear>
+  <publicationYear>{project_created_year}</publicationYear>
   <contributors>
     <contributor contributorType="HostingInstitution">
       <contributorName nameType="Organizational">Open Science Framework</contributorName>
@@ -423,7 +425,7 @@ COMPLICATED_TURTLE = '''@prefix dct: <http://purl.org/dc/terms/> .
 <http://localhost:5000/{project_id}> a osf:Project ;
     dct:created "{date}" ;
     dct:creator <http://localhost:5000/{user_id}> ;
-    dct:dateCopyrighted "2252" ;
+    dct:dateCopyrighted "2250-2254" ;
     dct:description "this is a project description!" ;
     dct:hasPart <http://localhost:5000/{file_id}> ;
     dct:identifier "http://localhost:5000/{project_id}",
@@ -480,7 +482,7 @@ FILE_TURTLE = '''@prefix dct: <http://purl.org/dc/terms/> .
 <http://localhost:5000/{project_id}> a osf:Project ;
     dct:created "{date}" ;
     dct:creator <http://localhost:5000/{user_id}> ;
-    dct:dateCopyrighted "2252" ;
+    dct:dateCopyrighted "2250-2254" ;
     dct:description "this is a project description!" ;
     dct:identifier "http://localhost:5000/{project_id}",
         "https://doi.org/10.70102/FK2osf.io/{project_id}" ;
@@ -576,7 +578,7 @@ FILE_DATACITE_JSON = '''{{
       "identifierType": "URL"
     }}
   ],
-  "publicationYear": "{year}",
+  "publicationYear": "{file_created_year}",
   "publisher": "Open Science Framework",
   "relatedIdentifiers": [
     {{
@@ -616,7 +618,7 @@ FILE_DATACITE_XML = '''<?xml version='1.0' encoding='utf-8'?>
     <title>my-file.blarg</title>
   </titles>
   <publisher>Open Science Framework</publisher>
-  <publicationYear>{year}</publicationYear>
+  <publicationYear>{file_created_year}</publicationYear>
   <contributors>
     <contributor contributorType="HostingInstitution">
       <contributorName nameType="Organizational">Open Science Framework</contributorName>
