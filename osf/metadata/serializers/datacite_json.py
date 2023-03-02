@@ -1,4 +1,5 @@
 from datetime import datetime
+import re
 import json
 
 from datacite import schema43 as datacite_schema43
@@ -238,9 +239,11 @@ def _format_funding_references(basket):
 
 
 def _format_publication_year(basket):
-    year_copyrighted = next(basket[DCT.dateCopyrighted], None)
-    if year_copyrighted:
-        return year_copyrighted
+    date_copyrighted = next(basket[DCT.dateCopyrighted], None)
+    # dct:dateCopyrighted could contain a date range or other descriptive text;
+    # if not datacite's required YYYY, use a stricter date
+    if date_copyrighted and re.fullmatch(r'\d{4}', date_copyrighted):
+        return date_copyrighted
     for date_predicate in (DCT.available, DCT.dateAccepted, DCT.created, DCT.modified):
         date_str = next(basket[date_predicate], None)
         if date_str:
