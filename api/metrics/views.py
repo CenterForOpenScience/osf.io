@@ -332,7 +332,7 @@ class RecentReportList(JSONAPIBaseView):
                 status=404,
             )
         is_daily = issubclass(report_class, reports.DailyReport)
-        days_back = request.GET.get('days_back', self.DEFAULT_DAYS_BACK)
+        days_back = request.GET.get('days_back', self.DEFAULT_DAYS_BACK if is_daily else None)
         is_monthly = issubclass(report_class, reports.MonthlyReport)
 
         if is_daily:
@@ -348,11 +348,13 @@ class RecentReportList(JSONAPIBaseView):
         range_filter = range_parser(request.GET)
         search_recent = (
             report_class.search()
-            .filter('range', report_date={'gte': f'now/d-{days_back}d'})
             .filter('range', **{range_field_name: range_filter})
             .sort(range_field_name)
             [:self.MAX_COUNT]
         )
+        if days_back:
+            search_recent.filter('range', report_date={'gte': f'now/d-{days_back}d'})
+
         report_date_range = parse_date_range(request.GET)
         search_response = search_recent.execute()
         serializer = serializer_class(
