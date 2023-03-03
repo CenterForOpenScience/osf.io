@@ -61,7 +61,8 @@ SESSION_COOKIE_NAME = 'api'
 SESSION_COOKIE_SECURE = osf_settings.SECURE_MODE
 SESSION_COOKIE_HTTPONLY = osf_settings.SESSION_COOKIE_HTTPONLY
 SESSION_COOKIE_SAMESITE = osf_settings.SESSION_COOKIE_SAMESITE
-SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_CACHE_ALIAS = 'redis'
 
 # csrf:
 CSRF_COOKIE_NAME = 'api-csrf'
@@ -338,6 +339,13 @@ STORAGE_USAGE_MAX_ENTRIES = 10000000
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    },
+    'redis': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': os.environ.get('REDIS_HOST', 'redis://192.168.168.167:6379'),
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        },
     },
     STORAGE_USAGE_CACHE_NAME: {
         'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
