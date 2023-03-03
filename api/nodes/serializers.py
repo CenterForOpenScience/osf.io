@@ -251,8 +251,6 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     # list if it doesn't expose user data
     non_anonymized_fields = [
         'access_requests_enabled',
-        'affiliated_institutions',
-        'affiliate_user_institutions',
         'analytics_key',
         'category',
         'children',
@@ -269,7 +267,6 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         'fork',
         'forked_from',
         'id',
-        'identifiers',
         'license',
         'linked_by_nodes',
         'linked_by_registrations',
