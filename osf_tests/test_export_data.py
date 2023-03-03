@@ -120,7 +120,7 @@ class TestExportData(TestCase):
             'file_path': None
         }
 
-        projects = cls.institution.nodes.filter(category='project')
+        projects = cls.institution.nodes.filter(type='osf.node')
         projects__ids = projects.values_list('id', flat=True)
         object_id = projects__ids[0]
         target = AbstractNode(id=object_id)
