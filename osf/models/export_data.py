@@ -129,8 +129,8 @@ class ExportData(base.BaseModel):
         base_file_versions_set = BaseFileVersionsThrough.objects.filter(fileversion__in=file_versions)
         base_file_nodes__ids = base_file_versions_set.values_list('basefilenode_id', flat=True).distinct('basefilenode_id')
 
-        # get project list
-        projects = institution.nodes.filter(category='project')
+        # get project list, includes public/private/deleted projects
+        projects = institution.nodes.filter(type='osf.node')
         projects__ids = projects.values_list('id', flat=True)
         source_project_ids = set()
 
