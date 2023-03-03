@@ -288,7 +288,7 @@ class NodeSettings(BaseNodeSettings):
         for path_suffix in path_suffixes:
             src_path_child = src_path + path_suffix
             dest_path_child = dest_path + path_suffix
-            q = source_addon.file_metadata.filter(path=src_path_child)
+            q = source_addon.file_metadata.filter(deleted__isnull=True, path=src_path_child)
             if not q.exists():
                 continue
             if action in [NodeLog.FILE_RENAMED, NodeLog.FILE_MOVED, NodeLog.FILE_COPIED]:
