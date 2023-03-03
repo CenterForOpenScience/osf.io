@@ -3,6 +3,8 @@
 version: '3.4'
 
 volumes:
+  redis_data_vol:
+    external: false
   postgres_data_vol:
     external: false
   mongo_data_vol:
@@ -47,6 +49,14 @@ services:
   ###################
   # Shared Services #
   ###################
+
+  redis:
+    image: redis:latest
+    restart: unless-stopped
+    ports:
+    - 6379:6379
+    volumes:
+      - redis_data_vol:/data
 
   elasticsearch:
     platform: linux/amd64
@@ -468,6 +478,7 @@ services:
       - postgres
       - rabbitmq
       - elasticsearch
+      - redis
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
     env_file:
@@ -489,6 +500,7 @@ services:
       - postgres
       - rabbitmq
       - elasticsearch
+      - redis
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
     env_file:
