@@ -58,7 +58,7 @@ def test_institution_logo_path_rounded_corners():
 
 @pytest.mark.django_db
 def test_institution_banner_path():
-    inst = InstitutionFactory(banner_name='osf-banner.png')
+    inst = InstitutionFactory()
     logo = InstitutionAssetFileFactory(institutions=[inst], name='banner')
     expected_banner_path = logo.file.url
     assert inst.banner_path == expected_banner_path
