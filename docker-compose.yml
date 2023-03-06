@@ -51,7 +51,7 @@ services:
   ###################
 
   redis:
-    image: redis:latest
+    image: redis:7.0.9
     restart: unless-stopped
     ports:
     - 6379:6379
