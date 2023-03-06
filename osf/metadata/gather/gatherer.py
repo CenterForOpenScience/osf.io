@@ -2,21 +2,26 @@
 
 gatherers register their interests via the `@gatherer` decorator
 '''
+import datetime
+import functools
 import typing
+
+import rdflib
 
 from .focus import Focus
 
 
 Gatherer = typing.Callable[[Focus], typing.Iterable[tuple]]
-
-
 # module-private registry of gatherers by their iris of interest,
 # built by the @gatherer decorator (via add_gatherer)
-#
-# outer dict maps from focustype_iri (or None) to inner dict,
-# inner dict maps from predicate_iri (or None) to a set of callables.
-# (see tests.test_metadata_gatherer_registry for examples)
-__gatherer_registry = {}
+GathererRegistry = typing.Dict[             # outer dict maps
+    typing.Optional[rdflib.URIRef],         # from focustype_iri (or None)
+    typing.Dict[                            # to inner dict, which maps
+        typing.Optional[rdflib.URIRef],     # from predicate_iri (or None)
+        typing.Set[Gatherer],               # to a set of gatherers.
+    ],
+]
+__gatherer_registry: GathererRegistry = {}
 
 
 def gatherer(*predicate_iris, focustype_iris=None):
@@ -31,9 +36,10 @@ def gatherer(*predicate_iris, focustype_iris=None):
             yield (DCT.language, getattr(focus.dbmodel, 'language'))
         ```
     """
-    def _decorator(gatherer_fun):
-        add_gatherer(gatherer_fun, predicate_iris, focustype_iris)
-        return gatherer_fun
+    def _decorator(gatherer: Gatherer):
+        tidy_gatherer = _make_gatherer_tidy(gatherer)
+        add_gatherer(tidy_gatherer, predicate_iris, focustype_iris)
+        return tidy_gatherer
     return _decorator
 
 
@@ -62,3 +68,42 @@ def get_gatherers(focustype_iri, predicate_iris):
         for predicate in (None, *predicate_iris):
             gatherer_set.update(for_focustype.get(predicate, ()))
     return gatherer_set
+
+
+class QuietlySkippleTriple(Exception):
+    pass
+
+
+def _make_gatherer_tidy(inner_gatherer: Gatherer) -> Gatherer:
+    @functools.wraps(inner_gatherer)
+    def tidy_gatherer(focus: Focus):
+        for triple in inner_gatherer(focus):
+            try:
+                yield _tidy_gathered_triple(triple, focus)
+            except QuietlySkippleTriple:
+                pass
+    return tidy_gatherer
+
+
+def _tidy_gathered_triple(triple, focus) -> tuple:
+    """
+    fill in the (perhaps partial) triple, given its focus,
+    and convert some common python types to rdflib representation
+    """
+    if len(triple) == 2:  # allow omitting subject
+        triple = (focus.iri, *triple)
+    if len(triple) != 3:  # triple means three
+        raise ValueError(f'_defocus: not triple enough (got {triple})')
+    if any((v is None or v == '') for v in triple):
+        raise QuietlySkippleTriple
+    subj, pred, obj = triple
+    if isinstance(obj, datetime.datetime):
+        # no need for finer granularity than date (TODO: is that wrong?)
+        obj = obj.date()
+    if isinstance(obj, datetime.date):
+        # encode dates as iso8601-formatted string literals (TODO: is xsd:dateTime good?)
+        obj = obj.isoformat()
+    if not isinstance(obj, (Focus, rdflib.term.Node)):
+        # unless a Focus or already rdflib-erated, assume it's literal
+        obj = rdflib.Literal(obj)
+    return (subj, pred, obj)

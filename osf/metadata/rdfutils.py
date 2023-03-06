@@ -7,18 +7,18 @@ from website import settings as website_settings
 
 
 # namespace for osf's own concepts:
-OSF = rdflib.Namespace('https://osf.io/vocab/2022/')
-# namespace for resources on _this_ osf instance:
+OSF = rdflib.Namespace('https://osf.io/vocab/2022/')  # TODO: publish something helpful there
+# namespace for resources on _this_ osf instance (example: `node_iri = OSFIO[node._id]`):
 OSFIO = rdflib.Namespace(website_settings.DOMAIN)
 # external pid namespaces:
 DOI = rdflib.Namespace('https://doi.org/')
 ORCID = rdflib.Namespace('https://orcid.org/')
 ROR = rdflib.Namespace('https://ror.org/')
 # external terminology namespaces:
-DCT = rdflib.DCTERMS
-FOAF = rdflib.FOAF
-OWL = rdflib.OWL
-RDF = rdflib.RDF
+DCT = rdflib.Namespace('http://purl.org/dc/terms/')                     # "dublin core terms"
+FOAF = rdflib.Namespace('http://xmlns.com/foaf/0.1/')                   # "friend of a friend"
+OWL = rdflib.Namespace('http://www.w3.org/2002/07/owl#')                # "ontology web language"
+RDF = rdflib.Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#')   # "resource description framework"
 
 
 # namespace prefixes that will be shortened by default
@@ -64,14 +64,14 @@ def format_dct_extent(number_of_bytes: int) -> str:
     if number_of_bytes is None or number_of_bytes < 0:
         return None
     number_of_megabytes = number_of_bytes / (2**20)
-
     # format with variable precision
-    if number_of_megabytes >= 1.0:      # precision = 1, e.g. '7.2 MB'
-        formatted_number = f'{number_of_megabytes:.1f}'
-    elif number_of_megabytes >= 0.001:  # precision = 3, e.g. '0.723 MB'
-        formatted_number = f'{number_of_megabytes:.3f}'
-    else:                               # precision = 6, e.g. '0.000123 MB'
-        formatted_number = f'{number_of_megabytes:.6f}'
+    assert number_of_megabytes >= 0.0
+    if number_of_megabytes > 1.0:
+        formatted_number = f'{number_of_megabytes:.1f}'  # precision = 1, e.g. '7.2 MB'
+    elif number_of_megabytes > 0.001:
+        formatted_number = f'{number_of_megabytes:.3f}'  # precision = 3, e.g. '0.723 MB'
+    else:
+        formatted_number = f'{number_of_megabytes:.6f}'  # precision = 6, e.g. '0.000123 MB'
     return f'{formatted_number} MB'
 
 
@@ -107,6 +107,11 @@ def primitivify_rdf(thing):
             primitivify_rdf(val)
             for val in thing
         )
+    if isinstance(thing, set):
+        return {
+            primitivify_rdf(val)
+            for val in thing
+        }
     if isinstance(thing, list):
         return [
             primitivify_rdf(val)
@@ -114,7 +119,7 @@ def primitivify_rdf(thing):
         ]
     if isinstance(thing, dict):
         return {
-            key: primitivify_rdf(val)
+            primitivify_rdf(key): primitivify_rdf(val)
             for key, val in thing.items()
         }
     return thing  # end recursion with pass-thru
