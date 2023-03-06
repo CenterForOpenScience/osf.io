@@ -15,7 +15,7 @@ from framework.auth.signals import user_registered
 from framework.auth.utils import validate_email, validate_recaptcha
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
-from framework.sessions import get_session
+from framework.sessions import session
 from framework.transactions.handlers import no_auto_transaction
 from framework.utils import get_timestamp, throttle_period_expired
 from osf.models import Tag
@@ -699,9 +699,8 @@ def claim_user_registered(auth, node, **kwargs):
 
     # Store the unreg_user data on the session in case the user registers
     # a new account
-    current_session = get_session()
-    current_session['unreg_user'] = {'uid': uid, 'pid': pid, 'token': token}
-    current_session.save()
+    session['unreg_user'] = {'uid': uid, 'pid': pid, 'token': token}
+    session.save()
 
     # If a user is already validated though external auth, it is OK to claim
     should_claim = check_external_auth(auth.user)
@@ -751,8 +750,7 @@ def replace_unclaimed_user_with_registered(user):
     account.
 
     """
-    current_session = get_session()
-    unreg_user_info = current_session.get('unreg_user', None)
+    unreg_user_info = session.get('unreg_user', None)
     if unreg_user_info:
         unreg_user = OSFUser.load(unreg_user_info['uid'])
         pid = unreg_user_info['pid']
