@@ -44,7 +44,7 @@ from osf.models.institution import Institution
 from osf.models.institution_affiliation import InstitutionAffiliation
 from osf.models.mixins import AddonModelMixin
 from osf.models.spam import SpamMixin
-from osf.models.session import Session, UserSessionMap
+from osf.models.session import UserSessionMap
 from osf.models.tag import Tag
 from osf.models.validators import validate_email, validate_social, validate_history_item
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
@@ -1815,21 +1815,22 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         :param str secret: The key to sign the cookie with
         :returns: The signed cookie
         """
-        secret = secret or settings.SECRET_KEY
+        secret = secret or website_settings.SECRET_KEY
 
-        user_session_map = UserSessionMap.objects.filter(
-            user__id=self.id
-        ).order_by(
-            '-expired_date'
-        ).first()
+        user_session_map = UserSessionMap.objects.filter(user__id=self.id).order_by('-expired_date').first()
 
         if not SessionStore().exists(session_key=user_session_map.session_key):
             user_session = SessionStore()
+            user_session.create()
             user_session['auth_user_id'] = self._id
             user_session['auth_user_username'] = self.username
             user_session['auth_user_fullname'] = self.fullname
             user_session.save()
-            UserSessionMap.objects.create(user=self, session_key=user_session.session_key, expire_date=user_session.get_expiry_date())
+            UserSessionMap.objects.create(
+                user=self,
+                session_key=user_session.session_key,
+                expire_date=user_session.get_expiry_date()
+            )
         else:
             user_session = SessionStore(session_key=user_session_map.session_key)
 
@@ -1844,18 +1845,17 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if not cookie:
             return None
 
-        secret = secret or settings.SECRET_KEY
+        secret = secret or website_settings.SECRET_KEY
 
         try:
-            session_id = ensure_str(itsdangerous.Signer(secret).unsign(cookie))
+            session_key = ensure_str(itsdangerous.Signer(secret).unsign(cookie))
         except itsdangerous.BadSignature:
             return None
 
-        user_session = SessionStore(session_key=session_id)
-        if user_session is None:
+        if not SessionStore().exists(session_key=session_key):
             return None
-
-        return cls.load(user_session.get('auth_user_id'))
+        user_session = SessionStore(session_key=session_key)
+        return cls.load(user_session.get('auth_user_id', None))
 
     def get_node_comment_timestamps(self, target_id):
         """ Returns the timestamp for when comments were last viewed on a node, file or wiki.
