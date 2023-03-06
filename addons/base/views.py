@@ -270,16 +270,14 @@ def get_auth(auth, **kwargs):
         if cas_resp.authenticated and not getattr(auth, 'user'):
             auth.user = OSFUser.load(cas_resp.user)
 
-    try:
-        data = jwt.decode(
-            jwe.decrypt(request.args.get('payload', '').encode('utf-8'), WATERBUTLER_JWE_KEY),
-            settings.WATERBUTLER_JWT_SECRET,
-            options={'require_exp': True},
-            algorithm=settings.WATERBUTLER_JWT_ALGORITHM
-        )['data']
-    except (jwt.InvalidTokenError, KeyError) as err:
-        sentry.log_message(str(err))
-        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
+    from osf.utils.fields import ensure_bytes, ensure_str
+
+    data = jwt.decode(
+        jwe.decrypt(ensure_bytes(request.args.get('payload', b'')), WATERBUTLER_JWE_KEY),
+        settings.WATERBUTLER_JWT_SECRET,
+        options={'require_exp': True},
+        algorithms=settings.WATERBUTLER_JWT_ALGORITHM
+    )['data']
 
     if not auth.user:
         auth.user = OSFUser.from_cookie(data.get('cookie', ''))
@@ -374,7 +372,7 @@ def get_auth(auth, **kwargs):
                 _internal=True
             )
         }
-    }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), WATERBUTLER_JWE_KEY)}
+    }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM).encode(), WATERBUTLER_JWE_KEY)}
 
 
 LOG_ACTION_MAP = {

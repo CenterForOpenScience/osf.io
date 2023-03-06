@@ -19,6 +19,7 @@ from osf import features
 from osf.exceptions import InstitutionAffiliationStateError
 from osf.models import Institution
 from osf.models.institution import SharedSsoAffiliationFilterCriteriaAction
+from osf.utils.fields import ensure_str, ensure_bytes
 
 from website.mails import send_mail, WELCOME_OSF4I, DUPLICATE_ACCOUNTS_OSF4I, ADD_SSO_EMAIL_OSF4I
 from website.settings import OSF_SUPPORT_EMAIL, DOMAIN
@@ -111,15 +112,12 @@ class InstitutionAuthentication(BaseAuthentication):
         """
 
         # Verify / decrypt / decode the payload
-        try:
-            payload = jwt.decode(
-                jwe.decrypt(request.body, settings.JWE_SECRET),
-                settings.JWT_SECRET,
-                options={'verify_exp': False},
-                algorithm='HS256',
-            )
-        except (jwt.InvalidTokenError, TypeError, jwe.exceptions.MalformedData):
-            raise AuthenticationFailed(detail='InstitutionSsoRequestNotAuthorized')
+        payload = jwt.decode(
+            jwe.decrypt(ensure_bytes(request.body), settings.JWE_SECRET),
+            settings.JWT_SECRET,
+            options={'verify_exp': False},
+            algorithm='HS256',
+        )
 
         # Load institution and user data
         data = json.loads(payload['data'])

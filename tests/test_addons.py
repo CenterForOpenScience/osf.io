@@ -89,7 +89,7 @@ class TestAddonAuth(OsfTestCase):
             metrics={'uri': settings.MFR_SERVER_URL},
             provider=self.node_addon.config.short_name), **kwargs),
             'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
-        }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), self.JWE_KEY)}
+        }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM).encode(), self.JWE_KEY)}
         return api_url_for('get_auth', **options)
 
     def test_auth_download(self):

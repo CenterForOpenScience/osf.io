@@ -290,8 +290,11 @@ NODE_CATEGORY_MAP = osf_settings.NODE_CATEGORY_MAP
 
 DEBUG_TRANSACTIONS = DEBUG
 
-JWT_SECRET = b'osf_api_cas_login_jwt_secret_32b'
-JWE_SECRET = b'osf_api_cas_login_jwe_secret_32b'
+# no encryption key wrapping # header, encrypted_key, iv, ciphertext, tag
+JWT_SECRET = b'h..O.ci.OBA7UU/Rd9j0Zn+9korAyQ=='
+
+# no encryption key wrapping # header, encrypted_key, iv, ciphertext, tag
+JWE_SECRET = b'h..O.ci.OBA7UU/Rd9j0Zn+9korAyQ=='
 
 ENABLE_VARNISH = osf_settings.ENABLE_VARNISH
 ENABLE_ESI = osf_settings.ENABLE_ESI

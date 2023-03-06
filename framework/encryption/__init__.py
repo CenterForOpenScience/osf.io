@@ -15,12 +15,12 @@ def ensure_bytes(value):
 def encrypt(value):
     if value:
         value = ensure_bytes(value)
-        return jwe.encrypt(bytes(value), SENSITIVE_DATA_KEY)
+        return jwe.encrypt(value, SENSITIVE_DATA_KEY)
     return None
 
 
 def decrypt(value):
     if value:
         value = ensure_bytes(value)
-        return jwe.decrypt(bytes(value), SENSITIVE_DATA_KEY)
+        return jwe.decrypt(value, SENSITIVE_DATA_KEY)
     return None

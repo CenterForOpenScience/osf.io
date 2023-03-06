@@ -378,7 +378,7 @@ STUCK_FILES_DELETE_TIMEOUT = timedelta(days=45) # Registration files stuck for x
 
 ENABLE_ARCHIVER = True
 
-JWT_SECRET = 'changeme'
+JWT_SECRET = 'h..O.ci.OBA7UU/Rd9j0Zn+9korAyQ=='
 JWT_ALGORITHM = 'HS256'
 
 ##### CELERY #####
@@ -724,9 +724,11 @@ class CeleryConfig:
 
 
 WATERBUTLER_JWE_SALT = 'yusaltydough'
-WATERBUTLER_JWE_SECRET = 'CirclesAre4Squares'
+# no encryption key wrapping
+WATERBUTLER_JWE_SECRET = 'h..O.ci.OBA7UU/Rd9j0Zn+9korAyQ=='
 
-WATERBUTLER_JWT_SECRET = 'ILiekTrianglesALot'
+# no encryption key wrapping
+WATERBUTLER_JWT_SECRET = 'h..O.ci.OBA7UU/Rd9j0Zn+9korAyQ=='
 WATERBUTLER_JWT_ALGORITHM = 'HS256'
 WATERBUTLER_JWT_EXPIRATION = 15
 
