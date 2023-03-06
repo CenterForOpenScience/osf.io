@@ -2,7 +2,7 @@
 
 from collections import namedtuple
 
-from framework.sessions import get_session
+from framework.sessions import session
 
 Status = namedtuple('Status', ['message', 'jumbotron', 'css_class', 'dismissible', 'trust', 'id', 'extra'])  # trust=True displays msg as raw HTML
 
@@ -31,8 +31,7 @@ def push_status_message(message, kind='warning', dismissible=True, trust=True, j
     """
     # TODO: Change the default to trust=False once conversion to markupsafe rendering is complete
     try:
-        current_session = get_session()
-        statuses = current_session.get('status', None)
+        statuses = session.get('status', None)
     except RuntimeError as e:
         exception_message = str(e)
         if 'Working outside of request context.' in exception_message:
@@ -58,27 +57,25 @@ def push_status_message(message, kind='warning', dismissible=True, trust=True, j
                            id=id,
                            extra=extra,
                            trust=trust))
-    current_session['status'] = statuses
-    current_session.save()
+    session['status'] = statuses
+    session.save()
 
 
 def pop_status_messages(level=0):
-    current_session = get_session()
-    messages = current_session.get('status', None)
+    messages = session.get('status', None)
     for message in messages or []:
         if len(message) == 5:
             message += [None, None]  # Make sure all status's have enough arguments
-    current_session['status_prev'] = messages
-    if messages:
-        current_session['status'] = None
-        current_session.save()
+    session['status_prev'] = messages
+    if 'status' in session:
+        session.pop('status', None)
+        session.save()
     return messages
 
 
 def pop_previous_status_messages(level=0):
-    current_session = get_session()
-    messages = current_session.get('status_prev', None)
-    if messages:
-        current_session['status_prev'] = None
-        current_session.save()
+    messages = session.get('status_prev', None)
+    if 'status_prev' in session:
+        session.pop('status_prev', None)
+        session.save()
     return messages
