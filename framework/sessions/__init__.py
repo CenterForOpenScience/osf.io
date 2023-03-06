@@ -9,7 +9,6 @@ from django.conf import settings as django_conf_settings
 import itsdangerous
 from flask import request
 import furl
-from weakref import WeakKeyDictionary
 from werkzeug.local import LocalProxy
 
 from framework.celery_tasks.handlers import enqueue_task
@@ -76,15 +75,16 @@ def prepare_private_key():
         return redirect(new_url, code=http_status.HTTP_307_TEMPORARY_REDIRECT)
 
 
-# def get_session():
-#     Session = apps.get_model('osf.Session')
-#     user_session = sessions.get(request._get_current_object())
-#     if not user_session:
-#         user_session = Session()
-#         set_session(user_session)
-#     return user_session
-
+# TODO: rename to `get_existing_or_create_blank_session()`
 def get_session():
+    """
+    Get existing session from request context or create a new blank Django Session.
+    Case 0: If cookie does not exist, create a new session and return it.
+            Note, the newly created session is not "authenticated" until session data is updated.
+    Case 1: If cookie exists but is not valid, return None
+    Case 2: If cookie exists and is valid but its session is not found, return None
+    Case 3: If cookie exists, is valid and its session is found, return the session
+    """
     secret = settings.SECRET_KEY
     cookie = request.cookies.get(settings.COOKIE_NAME)
     if not cookie:
@@ -93,55 +93,38 @@ def get_session():
         return s
     try:
         session_key = ensure_str(itsdangerous.Signer(secret).unsign(cookie))
-        return SessionStore(session_key=session_key)
+        return SessionStore(session_key=session_key) if SessionStore().exists(session_key=session_key) else None
     except itsdangerous.BadSignature:
         return None
 
 
-def set_session(session):
-    sessions[request._get_current_object()] = session
-
-
-# def create_session(response, data=None):
-#     Session = apps.get_model('osf.Session')
-#     current_session = get_session()
-#     if current_session:
-#         current_session.data.update(data or {})
-#         current_session.save()
-#         cookie_value = itsdangerous.Signer(settings.SECRET_KEY).sign(current_session._id)
-#     else:
-#         session_id = str(bson.objectid.ObjectId())
-#         new_session = Session(_id=session_id, data=data or {})
-#         new_session.save()
-#         cookie_value = itsdangerous.Signer(settings.SECRET_KEY).sign(session_id)
-#         set_session(new_session)
-#     if response is not None:
-#         response.set_cookie(settings.COOKIE_NAME, value=cookie_value, domain=settings.OSF_COOKIE_DOMAIN,
-#                             secure=settings.SESSION_COOKIE_SECURE, httponly=settings.SESSION_COOKIE_HTTPONLY,
-#                             samesite=settings.SESSION_COOKIE_SAMESITE)
-#         return response
-
+# TODO: rename to `create_or_update_session_with_set_cookie()`
 def create_session(response, data=None):
-    current_session = get_session()
+    """
+    Create or update an existing session with information provided in the given `data` dictionary; and return the
+    updated session and the set-cookie response as a tuple.
+    """
+    # Temporary Notes: not sure why `get_session()` was used directly instead of `session`
+    user_session = get_session()
     # TODO: check if session data changed and decide whether to save the session object
-    current_session['auth_user_username'] = data.get('auth_user_username')
-    current_session['auth_user_id'] = data.get('auth_user_id')
-    current_session['auth_user_fullname'] = data.get('auth_user_fullname')
-    current_session['auth_user_external_first_login'] = data.get('auth_user_external_first_login')
-    current_session['auth_user_external_id_provider'] = data.get('auth_user_external_id_provider')
-    current_session['auth_user_external_id'] = data.get('auth_user_external_id')
-    current_session['service_url'] = data.get('service_url')
-    current_session.save()
-    cookie_value = itsdangerous.Signer(settings.SECRET_KEY).sign(current_session.session_key)
+    for key, value in data.items() if data else {}:
+        user_session[key] = value
+    user_session.save()
+    cookie_value = itsdangerous.Signer(settings.SECRET_KEY).sign(user_session.session_key)
     if response is not None:
-        response.set_cookie(settings.COOKIE_NAME, value=cookie_value, domain=settings.OSF_COOKIE_DOMAIN,
-                            secure=settings.SESSION_COOKIE_SECURE, httponly=settings.SESSION_COOKIE_HTTPONLY,
-                            samesite=settings.SESSION_COOKIE_SAMESITE)
+        response.set_cookie(
+            settings.COOKIE_NAME,
+            value=cookie_value,
+            domain=settings.OSF_COOKIE_DOMAIN,
+            secure=settings.SESSION_COOKIE_SECURE,
+            httponly=settings.SESSION_COOKIE_HTTPONLY,
+            samesite=settings.SESSION_COOKIE_SAMESITE
+        )
         return session, response
     return session, None
 
 
-sessions = WeakKeyDictionary()
+# Note: Use `LocalProxy` to ensure Thread-safe for `werkzeug`.
 session = LocalProxy(get_session)
 
 
