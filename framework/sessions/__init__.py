@@ -137,7 +137,7 @@ def before_request():
     from framework.auth import cas
     UserSessionMap = apps.get_model('osf.UserSessionMap')
 
-    # Central Authentication Server Ticket Validation and Authentication
+    # Request Type 1: Service ticket validation during CAS login.
     ticket = request.args.get('ticket')
     if ticket:
         service_url = furl.furl(request.url)
@@ -145,6 +145,7 @@ def before_request():
         # Attempt to authenticate wih CAS, and return a proper redirect response
         return cas.make_response_from_ticket(ticket=ticket, service_url=service_url.url)
 
+    # Request Type 2: Basic Auth with username and password in Authorization headers
     if request.authorization:
         user = get_user(
             email=request.authorization.username,
@@ -152,53 +153,50 @@ def before_request():
         )
         # Create an empty session
         # TODO: Shoudn't need to create a session for Basic Auth
+        # Temporary Notes: not sure why `get_session()` was used directly instead of `session`
         user_session = get_session()
         UserSessionMap.objects.create(user=user, session_key=user_session.session_key, expire_date=user_session.get_expiry_date())
-        # set_session(user_session)
 
         if user:
             user_addon = user.get_addon('twofactor')
             if user_addon and user_addon.is_confirmed:
                 otp = request.headers.get('X-OSF-OTP')
                 if otp is None or not user_addon.verify_code(otp):
-                    # Must specify two-factor authentication OTP code or invalid two-factor authentication OTP code.
                     user_session['auth_error_code'] = http_status.HTTP_401_UNAUTHORIZED
                     return
             user_session['auth_user_username'] = user.username
             user_session['auth_user_fullname'] = user.fullname
             if user_session.get('auth_user_id', None) != user._primary_key:
                 user_session['auth_user_id'] = user._primary_key
-                user_session.save()
         else:
             # Invalid key: Not found in database
             user_session['auth_error_code'] = http_status.HTTP_401_UNAUTHORIZED
-            user_session.save()
+        user_session.save()
         return
 
+    # Request Type 3: Cookie Auth
     cookie = request.cookies.get(settings.COOKIE_NAME)
     if cookie:
         try:
             session_key = ensure_str(itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie))
-            user_session = SessionStore(session_key=session_key)
+            if not SessionStore().exists(session_key=session_key):
+                return None
         except itsdangerous.BadData:
             return None
-        if user_session:
-            # Update date last login when making non-api requests
-            from framework.auth.tasks import update_user_from_activity
-            try:
-                user_session_entry = UserSessionMap.objects.get(session_key=session_key)
-                enqueue_task(update_user_from_activity.s(
+        # Update date last login when making non-api requests
+        from framework.auth.tasks import update_user_from_activity
+        try:
+            user_session_entry = UserSessionMap.objects.get(session_key=session_key)
+            enqueue_task(
+                update_user_from_activity.s(
                     user_session_entry.user._id,
                     timezone.now().timestamp(),
                     cas_login=False
-                ))
-            # except UserSessionMap.MultipleObjectsReturned:
-            except:
-                # TODO: handle error
-                pass
-        else:
-            # TODO: maybe remove the entry from UserSessionMap
-            pass
+                )
+            )
+        except UserSessionMap.MultipleObjectsReturned:
+            # TODO: log an error message to sentry
+            return None
 
 
 def after_request(response):
