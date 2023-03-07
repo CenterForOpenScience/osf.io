@@ -4,16 +4,21 @@ from django.db import migrations, models
 
 
 class DeleteModelIfExist(migrations.DeleteModel):
-    """T
+    """
+    If the model isn't there, ignore it.
     """
 
     def state_forwards(self, app_label, state):
         try:
-            state.models[app_label, self.name_lower]
-        except KeyError:
-            return
+            return super().state_forwards(app_label, state)
+        except LookupError:
+            pass
 
-        state.remove_model(app_label, self.name_lower)
+    def database_forwards(self, app_label, schema_editor, from_state, to_state):
+        try:
+            return super().database_forwards(app_label, schema_editor, from_state, to_state)
+        except LookupError:
+            pass
 
 
 class Migration(migrations.Migration):
