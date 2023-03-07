@@ -1,4 +1,4 @@
-from .counted_usage import CountedUsage
+from .counted_usage import CountedAuthUsage
 
 from .preprint_metrics import (
     PreprintView,
@@ -13,30 +13,30 @@ from .institution_metrics import (
 from .registry_metrics import RegistriesModerationMetrics
 
 from .reports import (
-    AddonUsageReport,
     DownloadCountReport,
     InstitutionSummaryReport,
     NewUserDomainReport,
     NodeSummaryReport,
     OsfstorageFileCountReport,
     PreprintSummaryReport,
+    StorageAddonUsage,
     UserSummaryReport,
 )
 
 DAILY_REPORTS = (
-    AddonUsageReport,
     DownloadCountReport,
     InstitutionSummaryReport,
     NewUserDomainReport,
     NodeSummaryReport,
     OsfstorageFileCountReport,
     PreprintSummaryReport,
+    StorageAddonUsage,
     UserSummaryReport,
 )
 
 
 __all__ = (
-    'CountedUsage',
+    'CountedAuthUsage',
     'DAILY_REPORTS',
     'InstitutionProjectCounts',
     'PreprintView',
