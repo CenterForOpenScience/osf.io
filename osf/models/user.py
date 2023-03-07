@@ -380,18 +380,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # requests are canceled
     contacted_deactivation = models.BooleanField(default=False)
 
-    affiliated_institutions = models.ManyToManyField('Institution', blank=True)
-
     notifications_configured = DateTimeAwareJSONField(default=dict, blank=True)
 
     # The time at which the user agreed to our updated ToS and Privacy Policy (GDPR, 25 May 2018)
     accepted_terms_of_service = NonNaiveDateTimeField(null=True, blank=True)
 
     chronos_user_id = models.TextField(null=True, blank=True, db_index=True)
-
-    # The primary department to which the institution user belongs,
-    # in case we support multiple departments in the future.
-    department = models.TextField(null=True, blank=True)
 
     objects = OSFUserManager()
 

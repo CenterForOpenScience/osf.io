@@ -1944,7 +1944,6 @@ class TestUserMerging(OsfTestCase):
             'username',
             'verification_key',
             'verification_key_v2',
-            'affiliated_institutions',
             'contributor_added_email_records',
             'requested_deactivation',
         ]
