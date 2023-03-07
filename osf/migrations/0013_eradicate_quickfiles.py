@@ -9,7 +9,7 @@ class DeleteModelIfExist(migrations.DeleteModel):
 
     def state_forwards(self, app_label, state):
         try:
-            self.models[app_label, self.name_lower]
+            state.models[app_label, self.name_lower]
         except KeyError:
             return
 
