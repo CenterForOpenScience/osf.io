@@ -68,10 +68,6 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, default='', null=True)
 
-    # TODO Could `banner_name` and `logo_name` be a FilePathField?
-    banner_name = models.CharField(max_length=255, blank=True, null=True)
-    logo_name = models.CharField(max_length=255, blank=True, null=True)
-
     # Institution integration type
     delegation_protocol = models.CharField(
         choices=[(type.value, type.name) for type in IntegrationType],

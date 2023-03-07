@@ -7,11 +7,12 @@ class Focus:
     iri: rdflib.URIRef
     rdftype: rdflib.URIRef  # TODO: allow multiple types, but don't make a big deal about it
 
-    def __init__(self, iri, rdftype, dbmodel=None):
+    def __init__(self, iri, rdftype):
         assert (iri and rdftype)
+        assert isinstance(iri, rdflib.URIRef)
+        assert isinstance(rdftype, rdflib.URIRef)
         self.iri = iri
         self.rdftype = rdftype
-        self.dbmodel = dbmodel  # TODO: improve gardeners to keep this out of Focus
 
     def __eq__(self, other):
         return (

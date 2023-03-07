@@ -53,8 +53,9 @@ class TestMetricsReports:
             },
         }
         resp = app.get(f'/_/metrics/reports/{report_name}/recent/')
-
-        assert resp.json == {'data': [
+        assert resp.status_code == 200
+        assert resp.headers['Content-Type'] == 'application/vnd.api+json; charset=utf-8'
+        assert resp.json['data'] == [
             {
                 'id': 'hi-by',
                 'type': f'daily-report:{report_name}',
@@ -70,4 +71,25 @@ class TestMetricsReports:
                     'hello': 'upwa',
                 },
             }
-        ]}
+        ]
+
+        resp = app.get(f'/_/metrics/reports/{report_name}/recent/?format=tsv')
+        assert resp.status_code == 200
+        assert resp.headers['Content-Type'] == 'text/tab-separated-values; charset=utf-8'
+        assert resp.unicode_body == TSV_REPORTS
+
+        resp = app.get(f'/_/metrics/reports/{report_name}/recent/?format=csv')
+        assert resp.status_code == 200
+        assert resp.headers['Content-Type'] == 'text/csv; charset=utf-8'
+        assert resp.unicode_body == CSV_REPORTS
+
+
+TSV_REPORTS = '''report_date	hello
+1234-12-12	goodbye
+1234-12-11	upwa
+'''.replace('\n', '\r\n')
+
+CSV_REPORTS = '''report_date,hello
+1234-12-12,goodbye
+1234-12-11,upwa
+'''.replace('\n', '\r\n')

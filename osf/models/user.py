@@ -385,18 +385,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # requests are canceled
     contacted_deactivation = models.BooleanField(default=False)
 
-    affiliated_institutions = models.ManyToManyField('Institution', blank=True)
-
     notifications_configured = DateTimeAwareJSONField(default=dict, blank=True)
 
     # The time at which the user agreed to our updated ToS and Privacy Policy (GDPR, 25 May 2018)
     accepted_terms_of_service = NonNaiveDateTimeField(null=True, blank=True)
 
     chronos_user_id = models.TextField(null=True, blank=True, db_index=True)
-
-    # The primary department to which the institution user belongs,
-    # in case we support multiple departments in the future.
-    department = models.TextField(null=True, blank=True)
 
     objects = OSFUserManager()
 
@@ -1413,23 +1407,25 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         return True
 
-    def confirm_spam(self, save=True):
+    def confirm_spam(self, save=True, train_spam_services=False):
         self.deactivate_account()
-        super().confirm_spam(save=save)
+        super().confirm_spam(save=save, train_spam_services=train_spam_services)
 
+        # Don't train on resources merely associated with spam user
         for node in self.nodes.filter(is_public=True, is_deleted=False).exclude(type='osf.quickfilesnode'):
-            node.confirm_spam(train_akismet=False)
+            node.confirm_spam(train_spam_services=train_spam_services)
         for preprint in self.preprints.filter(is_public=True, deleted__isnull=True):
-            preprint.confirm_spam(train_akismet=False)
+            preprint.confirm_spam(train_spam_services=train_spam_services)
 
-    def confirm_ham(self, save=False):
+    def confirm_ham(self, save=False, train_spam_services=False):
         self.reactivate_account()
-        super().confirm_ham(save=save)
+        super().confirm_ham(save=save, train_spam_services=train_spam_services)
 
+        # Don't train on resources merely associated with spam user
         for node in self.nodes.filter().exclude(type='osf.quickfilesnode'):
-            node.confirm_ham(save=save, train_akismet=False)
+            node.confirm_ham(save=save, train_spam_services=train_spam_services)
         for preprint in self.preprints.filter():
-            preprint.confirm_ham(save=save, train_akismet=False)
+            preprint.confirm_ham(save=save, train_spam_services=train_spam_services)
 
     @property
     def is_assumed_ham(self):
@@ -1863,11 +1859,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                     for key, value in item.items():
                         if key in self.SPAM_USER_PROFILE_FIELDS[field]:
                             content.append(value)
-        return ' '.join(content).strip()
+
+        content = [item for item in content if item]
+        if content:
+            return ' '.join(content).strip()
 
     def check_spam(self, saved_fields, request_headers):
-        if not website_settings.SPAM_CHECK_ENABLED:
-            return False
         is_spam = False
         if set(self.SPAM_USER_PROFILE_FIELDS.keys()).intersection(set(saved_fields.keys())):
             content = self._get_spam_content(saved_fields)

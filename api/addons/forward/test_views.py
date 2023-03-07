@@ -20,7 +20,7 @@ class TestForward(ForwardAddonTestCase, OsfTestCase):
         super(TestForward, self).setUp()
         self.app.authenticate(*self.user.auth)
 
-    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
     @mock.patch('osf.models.node.Node.do_check_spam')
     def test_change_url_check_spam(self, mock_check_spam):
         self.project.is_public = True
@@ -39,7 +39,7 @@ class TestForward(ForwardAddonTestCase, OsfTestCase):
         assert author_email == self.user.username
         assert content == 'http://possiblyspam.com'
 
-    @mock.patch.object(settings, 'SPAM_CHECK_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
     @mock.patch('osf.models.node.Node.do_check_spam')
     def test_change_url_check_spam_node_settings(self, mock_check_spam):
         self.project.is_public = True
