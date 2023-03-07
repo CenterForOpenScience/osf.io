@@ -120,8 +120,8 @@ def create_session(response, data=None):
             httponly=settings.SESSION_COOKIE_HTTPONLY,
             samesite=settings.SESSION_COOKIE_SAMESITE
         )
-        return session, response
-    return session, None
+        return user_session, response
+    return user_session, None
 
 
 # Note: Use `LocalProxy` to ensure Thread-safe for `werkzeug`.
@@ -194,7 +194,7 @@ def before_request():
                     cas_login=False
                 )
             )
-        except UserSessionMap.MultipleObjectsReturned:
+        except UserSessionMap.MultipleObjectsReturned or UserSessionMap.DoesNotExist:
             # TODO: log an error message to sentry
             return None
 
