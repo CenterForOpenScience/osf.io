@@ -146,7 +146,7 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
         """
 
         # create a dict on the session object if it's not already there
-        if session.get('oauth_states') is None:
+        if session.get('oauth_states', None) is None:
             session['oauth_states'] = {}
 
         if self._oauth_version == OAUTH2:
