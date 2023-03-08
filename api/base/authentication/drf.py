@@ -24,6 +24,7 @@ from website import settings
 
 SessionStore = import_module(api_settings.SESSION_ENGINE).SessionStore
 
+
 def get_session_from_cookie(cookie_val):
     """
     Given a cookie value, return the Django native `Session` object or `None`, using the SessionStore.
@@ -31,17 +32,11 @@ def get_session_from_cookie(cookie_val):
     :param cookie_val: the cookie
     :return: the Django native `Session` object or None
     """
-
     try:
-        session_id = ensure_str(itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie_val))
+        session_key = ensure_str(itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie_val))
     except itsdangerous.BadSignature:
         return None
-    
-    if SessionStore().exists(session_key=session_id):
-        session = SessionStore(session_key=session_id)
-        return session
-    else:
-        return None
+    return SessionStore(session_key=session_key) if SessionStore().exists(session_key=session_key) else None
 
 
 def check_user(user):
@@ -131,13 +126,13 @@ class OSFSessionAuthentication(authentication.BaseAuthentication):
             return None
         user_id = session.get('auth_user_id', None)
         user = OSFUser.load(user_id)
-        if user:
-            if waffle.switch_is_active(features.ENFORCE_CSRF):
-                self.enforce_csrf(request)
-                # CSRF passed with authenticated user
-            check_user(user)
-            return user, None
-        return None
+        if not user:
+            return None
+        if waffle.switch_is_active(features.ENFORCE_CSRF):
+            self.enforce_csrf(request)
+            # CSRF passed with authenticated user
+        check_user(user)
+        return user, None
 
     def enforce_csrf(self, request):
         """
