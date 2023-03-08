@@ -402,9 +402,10 @@ def osfstorage_download(file_node, payload, **kwargs):
     # to project.
     user_id = payload.get('user')
     if user_id:
-        current_session = get_session()
-        current_session.data['auth_user_id'] = user_id
-        current_session.save()
+        # Temporary Notes: not sure why `get_session()` was used directly instead of `session`
+        user_session = get_session()
+        user_session['auth_user_id'] = user_id
+        user_session.save()
 
     if not request.args.get('version'):
         version_id = None

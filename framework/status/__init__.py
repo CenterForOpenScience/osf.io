@@ -17,6 +17,7 @@ TYPE_MAP = {
     'default': 'default',
 }
 
+
 def push_status_message(message, kind='warning', dismissible=True, trust=True, jumbotron=False, id=None, extra=None):
     """
     Push a status message that will be displayed as a banner on the next page loaded by the user.
@@ -30,7 +31,7 @@ def push_status_message(message, kind='warning', dismissible=True, trust=True, j
     """
     # TODO: Change the default to trust=False once conversion to markupsafe rendering is complete
     try:
-        statuses = session.data.get('status')
+        statuses = session.get('status', None)
     except RuntimeError as e:
         exception_message = str(e)
         if 'Working outside of request context.' in exception_message:
@@ -56,23 +57,25 @@ def push_status_message(message, kind='warning', dismissible=True, trust=True, j
                            id=id,
                            extra=extra,
                            trust=trust))
-    session.data['status'] = statuses
+    session['status'] = statuses
     session.save()
 
+
 def pop_status_messages(level=0):
-    messages = session.data.get('status')
+    messages = session.get('status', None)
     for message in messages or []:
         if len(message) == 5:
             message += [None, None]  # Make sure all status's have enough arguments
-    session.status_prev = messages
-    if 'status' in session.data:
-        del session.data['status']
+    session['status_prev'] = messages
+    if 'status' in session:
+        session.pop('status', None)
         session.save()
     return messages
 
+
 def pop_previous_status_messages(level=0):
-    messages = session.data.get('status_prev')
-    if 'status_prev' in session.data:
-        del session.data['status_prev']
+    messages = session.get('status_prev', None)
+    if 'status_prev' in session:
+        session.pop('status_prev', None)
         session.save()
     return messages

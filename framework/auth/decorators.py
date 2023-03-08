@@ -71,7 +71,6 @@ def must_be_logged_in(func):
     """
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
-
         kwargs['auth'] = Auth.from_kwargs(request.args.to_dict(), kwargs)
         if kwargs['auth'].logged_in:
             return func(*args, **kwargs)

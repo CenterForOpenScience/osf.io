@@ -699,9 +699,7 @@ def claim_user_registered(auth, node, **kwargs):
 
     # Store the unreg_user data on the session in case the user registers
     # a new account
-    session.data['unreg_user'] = {
-        'uid': uid, 'pid': pid, 'token': token
-    }
+    session['unreg_user'] = {'uid': uid, 'pid': pid, 'token': token}
     session.save()
 
     # If a user is already validated though external auth, it is OK to claim
@@ -752,7 +750,7 @@ def replace_unclaimed_user_with_registered(user):
     account.
 
     """
-    unreg_user_info = session.data.get('unreg_user')
+    unreg_user_info = session.get('unreg_user', None)
     if unreg_user_info:
         unreg_user = OSFUser.load(unreg_user_info['uid'])
         pid = unreg_user_info['pid']

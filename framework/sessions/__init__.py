@@ -9,7 +9,6 @@ from django.conf import settings as django_conf_settings
 import itsdangerous
 from flask import request
 import furl
-from weakref import WeakKeyDictionary
 from werkzeug.local import LocalProxy
 
 from framework.celery_tasks.handlers import enqueue_task
@@ -76,69 +75,65 @@ def prepare_private_key():
         return redirect(new_url, code=http_status.HTTP_307_TEMPORARY_REDIRECT)
 
 
-# def get_session():
-#     Session = apps.get_model('osf.Session')
-#     user_session = sessions.get(request._get_current_object())
-#     if not user_session:
-#         user_session = Session()
-#         set_session(user_session)
-#     return user_session
-
+# TODO: rename to `get_existing_or_create_blank_session()`
 def get_session():
-    session_key = request.cookies.get(settings.COOKIE_NAME)
-    if session_store.exists(session_key=session_key):
-        user_session = session_store.get(session_key)
-    else:
-        user_session = session_store.create()
-    return user_session
+    """
+    Get existing session from request context or create a new blank Django Session.
+    Case 0: If cookie does not exist, create a new session and return it.
+            Note, the newly created session is not "authenticated" until session data is updated.
+    Case 1: If cookie exists but is not valid, return None
+    Case 2: If cookie exists and is valid but its session is not found, return None
+    Case 3: If cookie exists, is valid and its session is found, return the session
+    """
+    secret = settings.SECRET_KEY
+    cookie = request.cookies.get(settings.COOKIE_NAME)
+    if not cookie:
+        s = SessionStore()
+        s.create()
+        return s
+    try:
+        session_key = ensure_str(itsdangerous.Signer(secret).unsign(cookie))
+        return SessionStore(session_key=session_key) if SessionStore().exists(session_key=session_key) else None
+    except itsdangerous.BadSignature:
+        return None
 
 
-def set_session(session):
-    sessions[request._get_current_object()] = session
-
-
-# def create_session(response, data=None):
-#     Session = apps.get_model('osf.Session')
-#     current_session = get_session()
-#     if current_session:
-#         current_session.data.update(data or {})
-#         current_session.save()
-#         cookie_value = itsdangerous.Signer(settings.SECRET_KEY).sign(current_session._id)
-#     else:
-#         session_id = str(bson.objectid.ObjectId())
-#         new_session = Session(_id=session_id, data=data or {})
-#         new_session.save()
-#         cookie_value = itsdangerous.Signer(settings.SECRET_KEY).sign(session_id)
-#         set_session(new_session)
-#     if response is not None:
-#         response.set_cookie(settings.COOKIE_NAME, value=cookie_value, domain=settings.OSF_COOKIE_DOMAIN,
-#                             secure=settings.SESSION_COOKIE_SECURE, httponly=settings.SESSION_COOKIE_HTTPONLY,
-#                             samesite=settings.SESSION_COOKIE_SAMESITE)
-#         return response
-
+# TODO: rename to `create_or_update_session_with_set_cookie()`
 def create_session(response, data=None):
-    current_session = get_session()
+    """
+    Create or update an existing session with information provided in the given `data` dictionary; and return the
+    updated session and the set-cookie response as a tuple.
+    """
+    # Temporary Notes: not sure why `get_session()` was used directly instead of `session`
+    user_session = get_session()
+    # TODO: handle old cookies better, current hack "returning None, None" prevents "NoneType" issue but users remain
+    #       stuck in sign-in (when using fake-cas) until the old cookie is removed manually. When using new-cas, this
+    #       leads to deadly sign-in infinite loops. This happens when the cookie was created using a different session
+    #       implementation. e.g. 1) when switching from old Session to Django Session; or 2) when switching Django
+    #       Session backend between DB to Redis; etc. The proper solution is to return a response to remove the cookie
+    #       and redirect users to sign-in again. Need a ticket.
+    if not user_session:
+        return None, None
     # TODO: check if session data changed and decide whether to save the session object
-    current_session['auth_user_username'] = data['auth_user_username']
-    current_session['auth_user_id'] = data['auth_user_id']
-    current_session['auth_user_fullname'] = data['auth_user_fullname']
-    current_session['auth_user_external_first_login'] = data['auth_user_external_first_login']
-    current_session['auth_user_external_id_provider'] = data['auth_user_external_id_provider']
-    current_session['auth_user_external_id'] = data['auth_user_external_id']
-    current_session['service_url'] = data['service_url']
-    current_session.save()
-    cookie_value = itsdangerous.Signer(settings.SECRET_KEY).sign(current_session.session_key)
+    for key, value in data.items() if data else {}:
+        user_session[key] = value
+    user_session.save()
+    cookie_value = itsdangerous.Signer(settings.SECRET_KEY).sign(user_session.session_key)
     if response is not None:
-        response.set_cookie(settings.COOKIE_NAME, value=cookie_value, domain=settings.OSF_COOKIE_DOMAIN,
-                            secure=settings.SESSION_COOKIE_SECURE, httponly=settings.SESSION_COOKIE_HTTPONLY,
-                            samesite=settings.SESSION_COOKIE_SAMESITE)
-        return session, response
-    return session, None
+        response.set_cookie(
+            settings.COOKIE_NAME,
+            value=cookie_value,
+            domain=settings.OSF_COOKIE_DOMAIN,
+            secure=settings.SESSION_COOKIE_SECURE,
+            httponly=settings.SESSION_COOKIE_HTTPONLY,
+            samesite=settings.SESSION_COOKIE_SAMESITE
+        )
+        return user_session, response
+    return user_session, None
 
 
-sessions = WeakKeyDictionary()
+# Note: Use `LocalProxy` to ensure Thread-safe for `werkzeug`.
 session = LocalProxy(get_session)
-session_store = SessionStore()
 
 
 # Request callbacks
@@ -150,7 +145,7 @@ def before_request():
     from framework.auth import cas
     UserSessionMap = apps.get_model('osf.UserSessionMap')
 
-    # Central Authentication Server Ticket Validation and Authentication
+    # Request Type 1: Service ticket validation during CAS login.
     ticket = request.args.get('ticket')
     if ticket:
         service_url = furl.furl(request.url)
@@ -158,6 +153,7 @@ def before_request():
         # Attempt to authenticate wih CAS, and return a proper redirect response
         return cas.make_response_from_ticket(ticket=ticket, service_url=service_url.url)
 
+    # Request Type 2: Basic Auth with username and password in Authorization headers
     if request.authorization:
         user = get_user(
             email=request.authorization.username,
@@ -165,53 +161,50 @@ def before_request():
         )
         # Create an empty session
         # TODO: Shoudn't need to create a session for Basic Auth
+        # Temporary Notes: not sure why `get_session()` was used directly instead of `session`
         user_session = get_session()
-        UserSessionMap.objects.create(user=user, session_key=user_session.session_key, expire_date=user_session.expire_date)
-        # set_session(user_session)
+        UserSessionMap.objects.create(user=user, session_key=user_session.session_key, expire_date=user_session.get_expiry_date())
 
         if user:
             user_addon = user.get_addon('twofactor')
             if user_addon and user_addon.is_confirmed:
                 otp = request.headers.get('X-OSF-OTP')
                 if otp is None or not user_addon.verify_code(otp):
-                    # Must specify two-factor authentication OTP code or invalid two-factor authentication OTP code.
                     user_session['auth_error_code'] = http_status.HTTP_401_UNAUTHORIZED
                     return
             user_session['auth_user_username'] = user.username
             user_session['auth_user_fullname'] = user.fullname
-            session_data = user_session.get_decode()
-            if session_data.get('auth_user_id', None) != user._primary_key:
+            if user_session.get('auth_user_id', None) != user._primary_key:
                 user_session['auth_user_id'] = user._primary_key
-                user_session.save()
         else:
             # Invalid key: Not found in database
             user_session['auth_error_code'] = http_status.HTTP_401_UNAUTHORIZED
-            user_session.save()
+        user_session.save()
         return
 
+    # Request Type 3: Cookie Auth
     cookie = request.cookies.get(settings.COOKIE_NAME)
     if cookie:
         try:
             session_key = ensure_str(itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie))
-            user_session = session_store.get(session_key)
+            if not SessionStore().exists(session_key=session_key):
+                return None
         except itsdangerous.BadData:
             return None
-        if user_session:
-            # Update date last login when making non-api requests
-            from framework.auth.tasks import update_user_from_activity
-            try:
-                user_session_entry = UserSessionMap.objects.get(session_key=session_key)
-                enqueue_task(update_user_from_activity.s(
+        # Update date last login when making non-api requests
+        from framework.auth.tasks import update_user_from_activity
+        try:
+            user_session_entry = UserSessionMap.objects.get(session_key=session_key)
+            enqueue_task(
+                update_user_from_activity.s(
                     user_session_entry.user._id,
                     timezone.now().timestamp(),
                     cas_login=False
-                ))
-            except UserSessionMap.MultipleObjectsReturned:
-                # TODO: handle error
-                pass
-        else:
-            # TODO: maybe remove the entry from UserSessionMap
-            pass
+                )
+            )
+        except UserSessionMap.MultipleObjectsReturned or UserSessionMap.DoesNotExist:
+            # TODO: log an error message to sentry
+            return None
 
 
 def after_request(response):
