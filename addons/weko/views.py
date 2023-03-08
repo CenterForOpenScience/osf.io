@@ -1,10 +1,7 @@
-"""Views for the node settings page."""
+"""Views for the WEKO addon."""
 # -*- coding: utf-8 -*-
-import datetime
+import json
 from rest_framework import status as http_status
-import os
-import re
-from lxml import etree
 import logging
 
 from flask import request
@@ -12,31 +9,115 @@ from flask import redirect
 
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
-from django.core.exceptions import ValidationError
-from osf.models import ExternalAccount
+from framework.celery_tasks.handlers import enqueue_task
+from framework.celery_tasks import app as celery_app
 
 from addons.base import generic_views
-from addons.weko import client
-from addons.weko.serializer import WEKOSerializer
-from addons.weko import settings as weko_settings
-from addons.weko.provider import REPOID_BASIC_AUTH, WEKOProvider
+from .apps import SHORT_NAME
+from .serializer import WEKOSerializer
+from . import settings as weko_settings
 from osf.utils import permissions
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
     must_have_permission, must_not_be_registration,
     must_be_contributor_or_public,
 )
+from osf.models import AbstractNode, Registration, DraftRegistration, RegistrationSchema
 
 from website.util import rubeus, api_url_for
 from website.oauth.utils import get_service
 from website.oauth.signals import oauth_complete
 
 from admin.rdm_addons.decorators import must_be_rdm_addons_allowed
+from admin.rdm_addons.utils import get_rdm_addon_option
+from addons.metadata import SHORT_NAME as METADATA_SHORT_NAME
+from .deposit import deposit_metadata
+from .schema import get_available_schema_id
+
 
 logger = logging.getLogger('addons.weko.views')
 
-SHORT_NAME = 'weko'
-FULL_NAME = 'WEKO'
+
+def _get_repository_options(user_settings):
+    repos = list(weko_settings.REPOSITORY_IDS)
+    for institution_id in user_settings.owner.affiliated_institutions.all():
+        rdm_addon_option = get_rdm_addon_option(institution_id, SHORT_NAME, create=False)
+        if rdm_addon_option is None:
+            continue
+        for account in rdm_addon_option.external_accounts.all():
+            display_name = account.display_name if '#' not in account.display_name else account.display_name[account.display_name.index('#') + 1:]
+            repos.append({
+                'id': account.provider_id,
+                'name': display_name,
+            })
+    return repos
+
+def _response_files_metadata(addon, files):
+    return {
+        'data': {
+            'id': addon.owner._id,
+            'type': 'metadata-node-files',
+            'attributes': files,
+        }
+    }
+
+def _response_file_metadata(addon, path, progress=None, result=None, error=None):
+    attr = {
+        'path': path,
+    }
+    if progress is not None:
+        attr['progress'] = progress
+    if result is not None:
+        attr['result'] = result
+    else:
+        attr['progress_url'] = request.path
+    if error is not None:
+        attr['error'] = error
+    return {
+        'data': {
+            'id': addon.owner._id,
+            'type': 'weko-sword-result',
+            'attributes': attr,
+        }
+    }
+
+def _response_project_metadata(addon, metadata_type, metadata_id, progress=None, result=None, error=None):
+    attr = {
+        'metadata_type': metadata_type,
+        'metadata_id': metadata_id,
+    }
+    if progress is not None:
+        attr['progress'] = progress
+    if result is not None:
+        attr['result'] = result
+    else:
+        attr['progress_url'] = request.path
+    if error is not None:
+        attr['error'] = error
+    return {
+        'data': {
+            'id': addon.owner._id,
+            'type': 'weko-sword-result',
+            'attributes': attr,
+        }
+    }
+
+def _response_registration_schema(schema):
+    return {
+        'id': schema._id,
+        'attributes': {
+            'name': schema.name,
+            'description': schema.description,
+        },
+    }
+
+def _get_file_metadata_node(node, metadata_node_id):
+    if node._id == metadata_node_id:
+        return node
+    nodes = [n for n in node.nodes if n._id == metadata_node_id]
+    if len(nodes) == 0:
+        raise ValueError('Unexpected node ID: {}'.format(metadata_node_id))
+    return AbstractNode.objects.filter(guids___id=metadata_node_id).first()
 
 @must_be_logged_in
 @must_be_rdm_addons_allowed(SHORT_NAME)
@@ -46,12 +127,12 @@ def weko_oauth_connect(repoid, auth):
 
 @must_be_logged_in
 @must_be_rdm_addons_allowed(SHORT_NAME)
-def weko_oauth_callback(repoid, auth):
+def weko_oauth_callback(repodomain, auth):
     user = auth.user
     provider = get_service(SHORT_NAME)
 
     # Retrieve permanent credentials from provider
-    if not provider.repo_auth_callback(user=user, repoid=repoid):
+    if not provider.repo_auth_callback(user=user, repodomain=repodomain):
         return {}
 
     if provider.account and not user.external_accounts.filter(id=provider.account.id).exists():
@@ -101,7 +182,7 @@ def weko_user_config_get(auth, **kwargs):
             'urls': {
                 'accounts': api_url_for('weko_account_list'),
             },
-            'repositories': weko_settings.REPOSITORY_IDS
+            'repositories': _get_repository_options(user_addon),
         },
     }, http_status.HTTP_200_OK
 
@@ -127,187 +208,18 @@ def weko_set_config(node_addon, user_addon, auth, **kwargs):
     if index_id is None:
         return HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
-    connection = client.connect_from_settings(weko_settings, node_addon)
-    index = client.get_index_by_id(connection, index_id)
-
-    node_addon.set_folder(index, auth)
+    index = node_addon.set_folder(index_id, auth)
 
     return {'index': index.title}, http_status.HTTP_200_OK
 
-@must_be_logged_in
-@must_be_rdm_addons_allowed(SHORT_NAME)
-def weko_add_user_account(auth, **kwargs):
-    """Verifies new external account credentials and adds to user's list"""
-    try:
-        sword_url = request.json['sword_url']
-        access_key = request.json['access_key']
-        secret_key = request.json['secret_key']
-    except KeyError:
-        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
-
-    if not (sword_url and access_key and secret_key):
-        return {
-            'message': 'All the fields above are required.'
-        }, http_status.HTTP_400_BAD_REQUEST
-
-    try:
-        user_info = client.connect_or_error(sword_url,
-                                            username=access_key,
-                                            password=secret_key).get_login_user()
-    except (HTTPError, IOError):
-        logging.exception('Connection error')
-        user_info = None
-    if not user_info:
-        return {
-            'message': ('Unable to access account.\n'
-                'Check to make sure that the above credentials are valid, '
-                'and that they have permission to list indices.')
-        }, http_status.HTTP_400_BAD_REQUEST
-
-    provider = WEKOProvider(account=None, host=sword_url,
-                            username=access_key, password=secret_key)
-    try:
-        provider.account.save()
-    except ValidationError:
-        # ... or get the old one
-        provider.account = ExternalAccount.objects.get(
-            provider=SHORT_NAME,
-            provider_id='{}:{}:{}'.format(REPOID_BASIC_AUTH, sword_url,
-                                          access_key).lower()
-        )
-        if provider.account.oauth_key != secret_key:
-            provider.account.oauth_key = secret_key
-            provider.account.save()
-    assert provider.account is not None
-
-    if not auth.user.external_accounts.filter(id=provider.account.id).exists():
-        auth.user.external_accounts.add(provider.account)
-
-    # Ensure WEKO is enabled.
-    auth.user.get_or_add_addon('weko', auth=auth)
-    auth.user.save()
-
-    return {}
-
-## Crud ##
-
-@must_be_contributor_or_public
-@must_have_addon(SHORT_NAME, 'node')
-def weko_get_serviceitemtype(node_addon, **kwargs):
-    connection = client.connect_from_settings_or_401(weko_settings, node_addon)
-    return client.get_serviceitemtype(connection)
-
-@must_be_contributor_or_public
-@must_have_addon(SHORT_NAME, 'node')
-def weko_get_item_view(itemid, node_addon, **kwargs):
-    connection = client.connect_from_settings_or_401(weko_settings, node_addon)
-    index_url = client.get_all_indices(connection)[0].about
-    base_url = re.compile(r'^(.+)\?action=.*$').match(index_url).group(1)
-    return {'url': '{}?action=repository_uri&item_id={}'.format(base_url, itemid)}, http_status.HTTP_200_OK
-
-@must_have_permission('write')
-@must_not_be_registration
-@must_have_addon(SHORT_NAME, 'node')
-def weko_add_item_created(node_addon, auth, **kwargs):
-    parent_id = request.json.get('parent_id', None)
-    item_id = request.json.get('item_id', None)
-    title = request.json.get('title', None)
-
-    node_addon.owner.add_log(
-        action='weko_item_created',
-        params={
-            'project': parent_id,
-            'node': item_id,
-            'filename': title
-        },
-        auth=auth,
-        log_date=datetime.datetime.utcnow(),
-    )
-    return {'status': 'added'}, http_status.HTTP_200_OK
-
-@must_have_permission('write')
-@must_not_be_registration
-@must_have_addon(SHORT_NAME, 'node')
-def weko_create_index(node_addon, auth, **kwargs):
-    node = node_addon.owner
-
-    now = datetime.datetime.utcnow()
-    parent_index_id = request.json.get('parent_index', None)
-    title_ja = request.json.get('title_ja', None)
-    title_en = request.json.get('title_en', None)
-
-    connection = client.connect_from_settings_or_401(weko_settings, node_addon)
-    if parent_index_id is None:
-        parent_index_id = node_addon.index_id
-
-    index_id = client.create_index(connection, title_ja, title_en,
-                                   parent_index_id)
-
-    # Add a log
-    node.add_log(
-        action='weko_index_created',
-        params={
-            'project': node.parent_id,
-            'node': node._id,
-            'filename': title_ja
-        },
-        auth=auth,
-        log_date=now,
-    )
-
-    indices = client.get_all_indices(connection)
-
-    return {'nodeId': node._id,
-            'name': title_ja,
-            'kind': 'folder',
-            'path': _get_path(indices, index_id),
-            'provider': SHORT_NAME}, http_status.HTTP_200_OK
-
-@must_have_permission('write')
-@must_not_be_registration
-@must_have_addon(SHORT_NAME, 'node')
-def weko_generate_metadata(node_addon, auth, **kwargs):
-    uploaded_filename = request.args.get('filename', None)
-    uploaded_filenames = request.args.get('filenames', None)
-    if uploaded_filename is None or uploaded_filenames is None:
-        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
-    uploaded_filenames = uploaded_filenames.split('\n')
-
-    service_item_type = int(request.args.get('serviceItemType', None))
-    connection = client.connect_from_settings_or_401(weko_settings, node_addon)
-    item_types = client.get_serviceitemtype(connection)['item_type']
-    internal_item_type_id = 10000 + service_item_type + 1
-
-    item_type = item_types[service_item_type]
-    title, ext = os.path.splitext(uploaded_filename)
-    title_en = title
-
-    contributors = []
-    for contributor in node_addon.owner.contributors:
-        contributors.append({'family': contributor.family_name,
-                             'name': contributor.given_name})
-
-    post_xml = client.create_import_xml(item_type,
-                                        internal_item_type_id,
-                                        uploaded_filenames,
-                                        title, title_en,
-                                        contributors)
-    res = etree.tostring(post_xml, encoding='UTF-8', xml_declaration=True)
-    return res, http_status.HTTP_200_OK
-
 ## HGRID ##
 
-def _weko_root_folder(node_addon, auth, **kwargs):
+@must_be_contributor_or_public
+@must_have_addon(SHORT_NAME, 'node')
+def weko_root_folder(node_addon, auth, **kwargs):
     # Quit if no indices linked
     if not node_addon.complete:
         return []
-
-    connection = client.connect_from_settings(weko_settings, node_addon)
-    index = client.get_index_by_id(connection, node_addon.index_id)
-
-    if index is None:
-        return []
-
     return [rubeus.build_addon_root(
         node_addon,
         node_addon.index_title,
@@ -315,16 +227,203 @@ def _weko_root_folder(node_addon, auth, **kwargs):
         private_key=kwargs.get('view_only', None),
     )]
 
-
 @must_be_contributor_or_public
 @must_have_addon(SHORT_NAME, 'node')
-def weko_root_folder(node_addon, auth, **kwargs):
-    return _weko_root_folder(node_addon, auth=auth)
+def weko_get_file_metadata(auth, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    addon = node.get_addon(SHORT_NAME)
+    return _response_files_metadata(addon, [])
 
-def _get_path(indices, index_id):
-    index = filter(lambda i: str(i.identifier) == str(index_id), indices)[0]
-    if index.parentIdentifier is None:
-        return '/weko:{}/'.format(index_id)
-    else:
-        return '{}weko:{}/'.format(_get_path(indices, index.parentIdentifier),
-                              index_id)
+@must_have_permission('write')
+@must_have_addon(SHORT_NAME, 'node')
+@must_have_addon(METADATA_SHORT_NAME, 'node')
+def weko_publish_file(auth, did=None, index_id=None, mnode=None, filepath=None, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    mnode_obj = _get_file_metadata_node(node, mnode)
+    addon = node.get_addon(SHORT_NAME)
+    metadata_addon = mnode_obj.get_addon(METADATA_SHORT_NAME)
+    file_metadata_ = metadata_addon.get_file_metadata_for_path(filepath)
+    if not addon.validate_index_id(index_id):
+        logger.error(f'The index is not out of range: {index_id}')
+        return HTTPError(http_status.HTTP_400_BAD_REQUEST)
+    schema_id = request.json.get('schema_id', None) if request.json is not None else None
+    if schema_id is None:
+        schema_id = get_available_schema_id(file_metadata_)
+    addon.set_publish_task_id(filepath, None)
+    project_metadata_ids_text = request.json.get('project_metadata_ids', None) if request.json is not None else None
+    project_metadata_ids = project_metadata_ids_text.split(',') if project_metadata_ids_text is not None else []
+    project_metadatas = []
+    for project_metadata_id in project_metadata_ids:
+        project_metadata_ = None
+        if len(project_metadata_id) == 0:
+            continue
+        if project_metadata_id is not None and project_metadata_id.startswith('registration/'):
+            id = project_metadata_id[len('registration/'):]
+            project_metadata = Registration.objects.filter(guids___id=id).first()
+            project_metadata_ = project_metadata.registered_meta[schema_id]
+        elif project_metadata_id is not None and project_metadata_id.startswith('draft-registration/'):
+            id = project_metadata_id[len('draft-registration/'):]
+            project_metadata = DraftRegistration.objects.filter(_id=id).first()
+            project_metadata_ = project_metadata.registration_metadata
+        elif project_metadata_id is not None:
+            logger.error(f'Invalid project metadata ID: {project_metadata_id}')
+            return HTTPError(http_status.HTTP_400_BAD_REQUEST)
+        project_metadatas.append(project_metadata_)
+    enqueue_task(deposit_metadata.s(
+        auth.user._id, index_id, node._id, mnode_obj._id,
+        schema_id,
+        [file_metadata_],
+        project_metadatas,
+        [filepath],
+        filepath,
+        delete_after=True,
+    ))
+    return _response_file_metadata(addon, filepath)
+
+@must_have_permission('read')
+@must_have_addon(SHORT_NAME, 'node')
+@must_have_addon(METADATA_SHORT_NAME, 'node')
+def weko_get_publishing_file(auth, did=None, index_id=None, mnode=None, filepath=None, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    addon = node.get_addon(SHORT_NAME)
+    task_info = addon.get_publish_task_id(filepath)
+    if task_info is None:
+        return HTTPError(http_status.HTTP_404_NOT_FOUND)
+    task_id = task_info['task_id']
+    if task_id is None:
+        return _response_file_metadata(addon, filepath)
+    aresult = celery_app.AsyncResult(task_id)
+    error = None
+    progress = None
+    result = None
+    if aresult.failed():
+        error = str(aresult.info)
+    elif aresult.info is not None and 'progress' in aresult.info:
+        progress = {
+            'state': aresult.state,
+            'rate': aresult.info['progress'],
+        }
+    elif aresult.info is not None and 'result' in aresult.info:
+        result = aresult.info['result']
+    return _response_file_metadata(addon, filepath, progress=progress, error=error, result=result)
+
+def _publish_project_metadata(auth, node, addon, index_id, metadata_type, metadata_id, schema_id, project_metadata):
+    if not addon.validate_index_id(index_id):
+        logger.error(f'The index is not out of range: {index_id}')
+        return HTTPError(http_status.HTTP_400_BAD_REQUEST)
+    status_path = f'/_/{metadata_type}/{metadata_id}'
+    addon.set_publish_task_id(status_path, None)
+    logger.info(f'Metadata: {project_metadata}')
+    files_text = project_metadata.get('grdm-files', {}).get('value', '')
+    if len(files_text) == 0:
+        logger.error(f'No files: {project_metadata}')
+        return HTTPError(http_status.HTTP_400_BAD_REQUEST)
+    files = json.loads(files_text)
+    if len(files) == 0:
+        logger.error(f'No files: {project_metadata}')
+        return HTTPError(http_status.HTTP_400_BAD_REQUEST)
+    filepaths = [file['path'] for file in files]
+    file_metadata = [{
+        'items': [
+            {
+                'schema': schema_id,
+                'data': file['metadata'],
+            }
+        ]
+    } for file in files]
+    enqueue_task(deposit_metadata.s(
+        auth.user._id, index_id, node._id, node._id,
+        schema_id, file_metadata, [project_metadata], filepaths, status_path,
+    ))
+    return _response_project_metadata(addon, metadata_type, metadata_id)
+
+def _get_publishing_project_metadata_progress(addon, metadata_type, metadata_id):
+    status_path = f'/_/{metadata_type}/{metadata_id}'
+    task_info = addon.get_publish_task_id(status_path)
+    if task_info is None:
+        return HTTPError(http_status.HTTP_404_NOT_FOUND)
+    task_id = task_info['task_id']
+    if task_id is None:
+        return _response_project_metadata(addon, metadata_type, metadata_id)
+    aresult = celery_app.AsyncResult(task_id)
+    error = None
+    progress = None
+    result = None
+    if aresult.failed():
+        error = str(aresult.info)
+    elif aresult.info is not None and 'progress' in aresult.info:
+        progress = {
+            'state': aresult.state,
+            'rate': aresult.info['progress'],
+        }
+    elif aresult.info is not None and 'result' in aresult.info:
+        result = aresult.info['result']
+    return _response_project_metadata(addon, metadata_type, metadata_id, progress=progress, error=error, result=result)
+
+
+@must_have_permission('write')
+@must_have_addon(SHORT_NAME, 'node')
+@must_have_addon(METADATA_SHORT_NAME, 'node')
+def weko_publish_registration(auth, did=None, index_id=None, registration_id=None, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    addon = node.get_addon(SHORT_NAME)
+    project_metadata = Registration.objects.filter(guids___id=registration_id).first()
+    schema = project_metadata.registered_schema.first()
+    project_metadata_ = project_metadata.registered_meta[schema._id]
+    return _publish_project_metadata(
+        auth, node, addon, index_id,
+        'registration', registration_id, schema._id, project_metadata_,
+    )
+
+@must_have_permission('read')
+@must_have_addon(SHORT_NAME, 'node')
+@must_have_addon(METADATA_SHORT_NAME, 'node')
+def weko_get_publishing_registration(auth, did=None, index_id=None, registration_id=None, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    addon = node.get_addon(SHORT_NAME)
+    return _get_publishing_project_metadata_progress(addon, 'registration', registration_id)
+
+@must_have_permission('write')
+@must_have_addon(SHORT_NAME, 'node')
+@must_have_addon(METADATA_SHORT_NAME, 'node')
+def weko_publish_draft_registration(auth, did=None, index_id=None, draft_registration_id=None, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    addon = node.get_addon(SHORT_NAME)
+    project_metadata = DraftRegistration.objects.filter(_id=draft_registration_id).first()
+    project_metadata_ = project_metadata.registration_metadata
+    schema = project_metadata.registration_schema
+    return _publish_project_metadata(
+        auth, node, addon, index_id,
+        'draft_registration', draft_registration_id, schema._id, project_metadata_,
+    )
+
+@must_have_permission('read')
+@must_have_addon(SHORT_NAME, 'node')
+@must_have_addon(METADATA_SHORT_NAME, 'node')
+def weko_get_publishing_draft_registration(auth, did=None, index_id=None, draft_registration_id=None, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    addon = node.get_addon(SHORT_NAME)
+    return _get_publishing_project_metadata_progress(addon, 'draft_registration', draft_registration_id)
+
+@must_have_permission('read')
+@must_have_addon(SHORT_NAME, 'node')
+@must_have_addon(METADATA_SHORT_NAME, 'node')
+def weko_get_available_schemas(auth, **kwargs):
+    from .models import RegistrationMetadataMapping
+    available_schema_ids = [
+        mapping.registration_schema_id
+        for mapping in RegistrationMetadataMapping.objects.all()
+    ]
+    node = kwargs['node'] or kwargs['project']
+    addon = node.get_addon(SHORT_NAME)
+    schemas = [
+        _response_registration_schema(RegistrationSchema.objects.get(_id=schema_id))
+        for schema_id in available_schema_ids
+    ]
+    return {
+        'data': {
+            'id': addon.owner._id,
+            'type': 'weko-schemas',
+            'attributes': schemas,
+        }
+    }

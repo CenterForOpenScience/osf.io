@@ -1,9 +1,26 @@
 from addons.base.serializer import OAuthAddonSerializer
-from addons.weko import client
-from addons.weko import settings as weko_settings
+from . import settings as weko_settings
+from .apps import SHORT_NAME
 from website.util import api_url_for, web_url_for
 
+from admin.rdm_addons.utils import get_rdm_addon_option
+
 from requests import exceptions as requests_exceptions
+
+
+def _get_repository_options(node_settings):
+    repos = list(weko_settings.REPOSITORY_IDS)
+    for institution_id in node_settings.owner.affiliated_institutions.all():
+        rdm_addon_option = get_rdm_addon_option(institution_id, SHORT_NAME, create=False)
+        if rdm_addon_option is None:
+            continue
+        for account in rdm_addon_option.external_accounts.all():
+            display_name = account.display_name if '#' not in account.display_name else account.display_name[account.display_name.index('#') + 1:]
+            repos.append({
+                'id': account.provider_id,
+                'name': display_name,
+            })
+    return repos
 
 
 class WEKOSerializer(OAuthAddonSerializer):
@@ -14,10 +31,10 @@ class WEKOSerializer(OAuthAddonSerializer):
 
     def credentials_are_valid(self, user_settings, cl):
         try:
-            conn = client.connect_from_settings(weko_settings, self.node_settings)
-            if conn is None:
+            c = self.node_settings.create_client()
+            if c is None:
                 return False
-            conn.get_login_user()
+            c.get_login_user()
         except requests_exceptions.HTTPError:
             return False
         return True
@@ -60,7 +77,6 @@ class WEKOSerializer(OAuthAddonSerializer):
             'auth': api_url_for('weko_oauth_connect',
                                 repoid='<repoid>'),
             'set': node.api_url_for('weko_set_config'),
-            'create': node.api_url_for('weko_add_user_account'),
             'importAuth': node.api_url_for('weko_import_auth'),
             'deauthorize': node.api_url_for('weko_deauthorize_node'),
             'accounts': api_url_for('weko_account_list'),
@@ -69,20 +85,16 @@ class WEKOSerializer(OAuthAddonSerializer):
     @property
     def serialized_node_settings(self):
         result = super(WEKOSerializer, self).serialized_node_settings
-        result['repositories'] = weko_settings.REPOSITORY_IDS
+        result['repositories'] = _get_repository_options(self.node_settings)
 
         # Update with WEKO specific fields
         if self.node_settings.has_auth:
-            connection = client.connect_from_settings(weko_settings, self.node_settings)
-            all_indices = client.get_all_indices(connection)
-            indices = list(filter(lambda i: i.nested == 0, all_indices))
+            c = self.node_settings.create_client()
+            indices = c.get_indices()
 
             result.update({
                 'validCredentials': True,
-                'indices': [
-                    {'title': index.title, 'id': index.identifier, 'about': index.about}
-                    for index in indices
-                ],
+                'indices': [self._serialize_index(index) for index in indices],
                 'savedIndex': {
                     'title': self.node_settings.index_title,
                     'id': self.node_settings.index_id,
@@ -106,7 +118,7 @@ class WEKOSerializer(OAuthAddonSerializer):
         valid_credentials = self.credentials_are_valid(user_settings, client)
 
         result = {
-            'repositories': weko_settings.REPOSITORY_IDS,
+            'repositories': _get_repository_options(self.node_settings),
             'userIsOwner': user_is_owner,
             'nodeHasAuth': node_settings.has_auth,
             'urls': self.serialized_urls,
@@ -124,3 +136,10 @@ class WEKOSerializer(OAuthAddonSerializer):
             # Show available indices
             result.update(self.serialized_node_settings)
         return result
+
+    def _serialize_index(self, index):
+        return {
+            'title': index.title,
+            'id': index.identifier,
+            'children': [self._serialize_index(i) for i in index.children],
+        }

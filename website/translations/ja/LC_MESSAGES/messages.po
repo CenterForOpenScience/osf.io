@@ -576,12 +576,85 @@ msgid "Service Base URL"
 msgstr "サービスベースURL"
 
 #: addons/jupyterhub/templates/jupyterhub_node_settings.mako:102
+#: addons/metadata/templates/metadata_node_settings.mako:75
 msgid "OK"
 msgstr "OK"
 
 #: addons/metadata/templates/metadata_node_settings.mako:12
 msgid "No configuration items."
 msgstr "設定項目はありません。"
+
+#: addons/metadata/templates/metadata_node_settings.mako:17
+msgid "Imported add-on settings can be restored:"
+msgstr "アドオンをインポートされた設定に復元可能です:"
+
+#: addons/metadata/templates/metadata_node_settings.mako:26
+#: website/templates/project/timestamp.mako:60
+msgid "Apply"
+msgstr "適用"
+
+#: addons/metadata/templates/metadata_node_settings.mako:32
+msgid ""
+"Please set the credentials for each add-on to apply the imported add-on "
+"settings:"
+msgstr "アドオンにインポートされた設定を適用するには、アドオンに認証情報を設定してください:"
+
+#: addons/metadata/templates/metadata_node_settings.mako:52
+msgid "Apply imported add-on settings"
+msgstr "アドオンへのインポートされた設定の適用"
+
+#: addons/metadata/templates/metadata_node_settings.mako:63
+msgid ""
+"Restore imported add-on settings? This operation performs settings for "
+"folders, etc., using the imported settings."
+msgstr "インポートされたアドオン設定へと復元しますか？この操作は、インポートされた設定を用いて，アドオンのフォルダ設定に対する変更を実施します。"
+
+#: addons/metadata/templates/metadata_progress.mako:2
+#: addons/metadata/templates/metadata_project_importer.mako:2
+#: addons/metadata/templates/metadata_project_importer.mako:11
+msgid "Import Project"
+msgstr "プロジェクトのインポート"
+
+#: addons/metadata/templates/metadata_progress.mako:13
+msgid "Importing..."
+msgstr "インポートしています..."
+
+#: addons/metadata/templates/metadata_progress.mako:19
+msgid "Preparing node settings..."
+msgstr "ノードを準備しています..."
+
+#: addons/metadata/templates/metadata_progress.mako:20
+msgid "Preparing folders..."
+msgstr "フォルダを準備しています..."
+
+#: addons/metadata/templates/metadata_progress.mako:21
+msgid "Preparing files..."
+msgstr "ファイルを準備しています..."
+
+#: addons/metadata/templates/metadata_progress.mako:22
+msgid "Finished."
+msgstr "完了"
+
+#: addons/metadata/templates/metadata_progress.mako:27
+msgid "An error occurred during the import process:"
+msgstr "インポート処理中にエラーが発生しました:"
+
+#: addons/metadata/templates/metadata_project_importer.mako:15
+msgid "URL to import:"
+msgstr "インポートするURL:"
+
+#: addons/metadata/templates/metadata_project_importer.mako:21
+msgid "Title of an imported project"
+msgstr "インポート後のプロジェクト名"
+
+#: addons/metadata/templates/metadata_project_importer.mako:22
+msgid "Enter the title of an imported project"
+msgstr "インポート後のプロジェクト名を入力してください"
+
+#: addons/metadata/templates/metadata_project_importer.mako:27
+#: website/templates/profile/personal_tokens_detail.mako:51
+msgid "Create"
+msgstr "作成"
 
 #: addons/nextcloud/templates/nextcloud_credentials_modal.mako:6
 msgid "Connect an Nextcloud Account"
@@ -2711,10 +2784,6 @@ msgstr "スコープ"
 msgid "Scopes limit access for personal access tokens."
 msgstr "スコープは、個人アクセストークンのアクセスを制限します。"
 
-#: website/templates/profile/personal_tokens_detail.mako:51
-msgid "Create"
-msgstr "作成"
-
 #: website/templates/profile/personal_tokens_detail.mako:65
 msgid "This is the only time your token will be displayed."
 msgstr "画面を離れると、トークンは二度と表示されません"
@@ -3485,6 +3554,11 @@ msgid "Metadata"
 msgstr "メタデータ"
 
 #: website/templates/project/project_header.mako:76
+#: website/templates/project/project_header.mako:78
+msgid "Export"
+msgstr "エクスポート"
+
+#: website/templates/project/project_header.mako:76
 msgid "Computation"
 msgstr "解析"
 
@@ -3823,10 +3897,6 @@ msgstr "終了日"
 #: website/templates/project/timestamp.mako:53
 msgid "User"
 msgstr "ユーザー"
-
-#: website/templates/project/timestamp.mako:60
-msgid "Apply"
-msgstr "適用"
 
 #: website/templates/project/timestamp.mako:69
 msgid "Verify"

@@ -10,8 +10,10 @@ from . import SHORT_NAME
 from .models import RegistrationReportFormat, get_draft_files, FIELD_GRDM_FILES, schema_has_field
 from .utils import make_report_as_csv
 from .suggestion import suggestion_metadata, _erad_candidates, valid_suggestion_key
+from .packages import import_project, export_project, get_task_result
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
+from framework.flask import redirect
 from osf.models import AbstractNode, DraftRegistration, Registration
 from osf.models.metaschema import RegistrationSchema
 from osf.utils.permissions import WRITE
@@ -22,10 +24,27 @@ from website.project.decorators import (
     must_be_contributor,
 )
 from website.ember_osf_web.views import use_ember_app
+from website.util import web_url_for, api_url_for
 
 
 logger = logging.getLogger(__name__)
 
+
+def _response_config(addon):
+    return {
+        'data': {
+            'type': 'metadata-config',
+            'attributes': {
+                'imported_addon_settings': [{
+                    'name': imported.name,
+                    'folder_id': imported.folder_id,
+                    'applicable': imported.is_applicable,
+                    'applied': imported.is_applied,
+                    'full_name': imported.full_name,
+                } for imported in addon.imported_addon_settings.all()],
+            }
+        }
+    }
 
 def _response_project_metadata(user, addon):
     attr = {
@@ -82,6 +101,32 @@ def _get_file_metadata_node(node, metadata_node_id):
 
 @must_be_valid_project
 @must_be_logged_in
+@must_have_permission('read')
+@must_have_addon(SHORT_NAME, 'node')
+def metadata_get_config(auth, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    addon = node.get_addon(SHORT_NAME)
+    return _response_config(addon)
+
+@must_be_valid_project
+@must_be_logged_in
+@must_have_permission('admin')
+@must_have_addon(SHORT_NAME, 'node')
+def metadata_update_config(auth, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    addon = node.get_addon(SHORT_NAME)
+    addon_names = request.json.get('addons', [])
+    if len(addon_names) == 0:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+    try:
+        addon.apply_imported_addon_settings(addon_names, auth)
+    except ValueError:
+        logger.exception('Failed to apply imported addon settings')
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+    return _response_config(addon)
+
+@must_be_valid_project
+@must_be_logged_in
 @must_have_permission('write')
 def metadata_get_erad_candidates(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
@@ -102,7 +147,6 @@ def metadata_get_erad_candidates(auth, **kwargs):
     }
 
 @must_be_valid_project
-@must_be_logged_in
 @must_have_permission('read')
 @must_have_addon(SHORT_NAME, 'node')
 def metadata_get_project(auth, **kwargs):
@@ -123,7 +167,6 @@ def metadata_get_schemas(auth, **kwargs):
     return _response_schemas(addon, schemas)
 
 @must_be_valid_project
-@must_be_logged_in
 @must_have_permission('read')
 @must_have_addon(SHORT_NAME, 'node')
 def metadata_get_file(auth, filepath=None, **kwargs):
@@ -132,7 +175,6 @@ def metadata_get_file(auth, filepath=None, **kwargs):
     return _response_file_metadata(addon, filepath)
 
 @must_be_valid_project
-@must_be_logged_in
 @must_have_permission('write')
 @must_have_addon(SHORT_NAME, 'node')
 def metadata_set_file(auth, filepath=None, **kwargs):
@@ -140,13 +182,12 @@ def metadata_set_file(auth, filepath=None, **kwargs):
     addon = node.get_addon(SHORT_NAME)
     try:
         addon.set_file_metadata(filepath, request.json, auth=auth)
-    except ValueError as e:
-        logger.error('Invalid metadata: ' + str(e))
+    except ValueError:
+        logger.exception('Invalid metadata')
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
     return _response_file_metadata(addon, filepath)
 
 @must_be_valid_project
-@must_be_logged_in
 @must_have_permission('write')
 @must_have_addon(SHORT_NAME, 'node')
 def metadata_set_file_hash(auth, filepath=None, **kwargs):
@@ -160,7 +201,6 @@ def metadata_set_file_hash(auth, filepath=None, **kwargs):
     return _response_file_metadata(addon, filepath)
 
 @must_be_valid_project
-@must_be_logged_in
 @must_have_permission('write')
 @must_have_addon(SHORT_NAME, 'node')
 def metadata_delete_file(auth, filepath=None, **kwargs):
@@ -170,7 +210,6 @@ def metadata_delete_file(auth, filepath=None, **kwargs):
     return _response_file_metadata(addon, filepath)
 
 @must_be_valid_project
-@must_be_logged_in
 @must_have_permission('write')
 @must_have_addon(SHORT_NAME, 'node')
 def metadata_set_file_to_drafts(auth, did=None, mnode=None, filepath=None, **kwargs):
@@ -216,7 +255,6 @@ def metadata_set_file_to_drafts(auth, did=None, mnode=None, filepath=None, **kwa
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
 @must_be_valid_project
-@must_be_logged_in
 @must_have_permission('write')
 @must_have_addon(SHORT_NAME, 'node')
 def metadata_delete_file_from_drafts(auth, did=None, mnode=None, filepath=None, **kwargs):
@@ -254,7 +292,12 @@ def metadata_report_list_view(**kwargs):
     return use_ember_app()
 
 @must_be_valid_project
-@must_be_logged_in
+@must_be_contributor
+@must_have_addon(SHORT_NAME, 'node')
+def metadata_package_view(**kwargs):
+    return use_ember_app()
+
+@must_be_valid_project
 @must_have_permission('read')
 @must_have_addon(SHORT_NAME, 'node')
 def metadata_export_draft_registrations_csv(auth, did=None, **kwargs):
@@ -282,7 +325,6 @@ def metadata_export_draft_registrations_csv(auth, did=None, **kwargs):
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
 @must_be_valid_project
-@must_be_logged_in
 @must_have_permission('read')
 def metadata_export_registrations_csv(auth, rid=None, **kwargs):
     registration = kwargs['node'] or kwargs['project']
@@ -337,3 +379,67 @@ def metadata_file_metadata_suggestions(auth, filepath=None, **kwargs):
             }
         }
     }
+
+@must_be_logged_in
+def metadata_import_project_page(auth):
+    title = request.args.get('title', '')
+    url = request.args.get('url', None)
+    if url is None:
+        logger.warning('Missing parameters: url')
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+    return {
+        'url': url,
+        'default_title': title,
+    }
+
+@must_be_logged_in
+def metadata_import_project(auth):
+    task = import_project.delay(
+        request.json['url'],
+        auth.user._id,
+        request.json['title'],
+    )
+    return {
+        'task_id': task.task_id,
+        'progress_url': web_url_for('metadata_task_progress_page', taskid=task.task_id),
+    }
+
+@must_be_logged_in
+def metadata_task_progress_page(auth, taskid=None, **kwargs):
+    result = get_task_result(auth, taskid)
+    if result['state'] == 'SUCCESS':
+        return redirect(result['info']['node_url'])
+    return {
+        'task_id': taskid,
+        'result': result,
+    }
+
+@must_be_logged_in
+def metadata_task_progress(auth, taskid=None):
+    return get_task_result(auth, taskid)
+
+@must_be_valid_project
+@must_be_logged_in
+@must_have_permission('read')
+@must_have_addon(SHORT_NAME, 'node')
+def metadata_export_project(auth, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    task = export_project.delay(
+        auth.user._id,
+        node._id,
+        request.json,
+    )
+    return {
+        'node_id': node._id,
+        'task_id': task.task_id,
+        'progress_api_url': api_url_for(
+            'metadata_node_task_progress',
+            **dict([(k, v) for k, v in kwargs.items() if k in ['nid', 'pid']] + [('taskid', task.task_id)]),
+        ),
+    }
+
+@must_be_valid_project
+@must_have_permission('read')
+@must_have_addon(SHORT_NAME, 'node')
+def metadata_node_task_progress(auth, taskid=None, **kwargs):
+    return get_task_result(auth, taskid)

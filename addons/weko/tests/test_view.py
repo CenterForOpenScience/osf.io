@@ -14,23 +14,42 @@ from addons.base.tests.views import (
 )
 from addons.weko.tests.utils import WEKOAddonTestCase
 from website.util import api_url_for
-from addons.weko.tests.utils import ConnectionMock
+from addons.weko.tests import utils
 from admin.rdm_addons.utils import get_rdm_addon_option
+
+
+fake_host = 'https://weko3.test.nii.ac.jp/weko/sword/'
+
+
+def mock_requests_get(url, **kwargs):
+    if url == 'https://weko3.test.nii.ac.jp/weko/api/tree':
+        return utils.MockResponse(utils.fake_weko_indices, 200)
+    if url == 'https://weko3.test.nii.ac.jp/weko/api/index/?search_type=2&q=100':
+        return utils.MockResponse(utils.fake_weko_items, 200)
+    if url == 'https://weko3.test.nii.ac.jp/weko/api/records/1000':
+        return utils.MockResponse(utils.fake_weko_item, 200)
+    return utils.mock_response_404
 
 
 class TestWEKOViews(WEKOAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCase):
     def setUp(self):
-        self.mock_connect_or_error = mock.patch('addons.weko.client.connect_or_error')
-        self.mock_connect_or_error.return_value = ConnectionMock()
-        self.mock_connect_or_error.start()
-        self.mock_connect_from_settings = mock.patch('addons.weko.client.connect_from_settings')
-        self.mock_connect_from_settings.return_value = ConnectionMock()
-        self.mock_connect_from_settings.start()
+        self.mock_requests_get = mock.patch('requests.get')
+        self.mock_requests_get.side_effect = mock_requests_get
+        self.mock_requests_get.start()
+        self.mock_find_repository = mock.patch('addons.weko.provider.find_repository')
+        self.mock_find_repository.return_value = {
+            'host': fake_host,
+            'client_id': None,
+            'client_secret': None,
+            'authorize_url': None,
+            'access_token_url': None,
+        }
+        self.mock_find_repository.start()
         super(TestWEKOViews, self).setUp()
 
     def tearDown(self):
-        self.mock_connect_or_error.stop()
-        self.mock_connect_from_settings.stop()
+        self.mock_requests_get.stop()
+        self.mock_find_repository.stop()
         super(TestWEKOViews, self).tearDown()
 
     def test_weko_settings_rdm_addons_denied(self):
@@ -40,14 +59,13 @@ class TestWEKOViews(WEKOAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTe
         rdm_addon_option = get_rdm_addon_option(institution.id, self.ADDON_SHORT_NAME)
         rdm_addon_option.is_allowed = False
         rdm_addon_option.save()
-        url = self.project.api_url_for('weko_add_user_account')
-        rv = self.app.post_json(url,{
-            'sword_url': 'http://dummy.io',
-            'access_key': 'aldkjf',
-            'secret_key': 'las'
-        }, auth=self.user.auth, expect_errors=True)
+        url = self.project.api_url_for('weko_oauth_connect', repoid='test')
+        rv = self.app.get(
+            url,
+            auth=self.user.auth,
+            expect_errors=True
+        )
         assert_equal(rv.status_int, http_status.HTTP_403_FORBIDDEN)
-        assert_in(b'You are prohibited from using this add-on.', rv.body)
 
     def test_weko_set_index_no_settings(self):
         user = AuthUserFactory()
