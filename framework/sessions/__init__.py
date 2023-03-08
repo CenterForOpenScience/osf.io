@@ -88,9 +88,7 @@ def get_session():
     secret = settings.SECRET_KEY
     cookie = request.cookies.get(settings.COOKIE_NAME)
     if not cookie:
-        s = SessionStore()
-        s.create()
-        return s
+        return SessionStore()
     try:
         session_key = ensure_str(itsdangerous.Signer(secret).unsign(cookie))
         return SessionStore(session_key=session_key) if SessionStore().exists(session_key=session_key) else None
