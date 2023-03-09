@@ -1,7 +1,13 @@
 import json
 from osf.metadata import gather
 from osf.metadata.serializers import _base
-from osf.metadata.rdfutils import DCT, OSF, FOAF
+from osf.metadata.rdfutils import (
+    DCT,
+    OSF,
+    FOAF,
+    OSFIO
+)
+
 from website import settings
 
 class GoogleDatasetJsonLdSerializer(_base.MetadataSerializer):
@@ -18,7 +24,7 @@ class GoogleDatasetJsonLdSerializer(_base.MetadataSerializer):
             'dateModified': next(basket[DCT.modified]),
             'name': next(basket[DCT.title]),
             'description': next(basket[DCT.description], None),
-            'url': next(basket[DCT.identifier]),
+            'url': next(url for url in basket[DCT.identifier] if url.startswith(OSFIO)),
             'keywords': [keyword for keyword in basket[OSF.keyword]],
             'publisher': {
                 '@type': 'Organization',
