@@ -374,6 +374,32 @@
                                         Type: <i>${collection['type']}</i>
                                     </div>
                                 % endif
+                                % if collection['status'] and collection['issue']:
+                                    <div  style="padding-left: 30px;">
+                                        Status: <i>${collection['status']}</i> |&nbsp; Issue: <i>${collection['issue']}</i>
+                                    </div>
+                                % elif collection['status']:
+                                    <div  style="padding-left: 30px;">
+                                        Status: <i>${collection['status']}</i>
+                                    </div>
+                                % elif collection['issue']:
+                                    <div  style="padding-left: 30px;">
+                                        Issue: <i>${collection['issue']}</i>
+                                    </div>
+                                % endif
+                                % if collection['volume'] and collection['program_area']:
+                                    <div  style="padding-left: 30px;">
+                                        Volume: <i>${collection['volume']}</i> |&nbsp; Program Area: <i>${collection['program_area']}</i>
+                                    </div>
+                                % elif collection['volume']:
+                                    <div  style="padding-left: 30px;">
+                                        Volume: <i>${collection['volume']}</i>
+                                    </div>
+                                % elif collection['program_area']:
+                                    <div  style="padding-left: 30px;">
+                                        Program Area: <i>${collection['program_area']}</i>
+                                    </div>
+                                % endif
                                 <hr>
                             % elif collection['state'] == 'pending' and user['is_contributor_or_group_member']:
                                 % if user['is_admin']:
@@ -394,6 +420,32 @@
                                 % elif collection['type']:
                                     <div  style="padding-left: 30px;">
                                         Type: <i>${collection['type']}</i>
+                                    </div>
+                                % endif
+                                % if collection['status'] and collection['issue']:
+                                    <div  style="padding-left: 30px;">
+                                        Status: <i>${collection['status']}</i> |&nbsp; Issue: <i>${collection['issue']}</i>
+                                    </div>
+                                % elif collection['status']:
+                                    <div  style="padding-left: 30px;">
+                                        Status: <i>${collection['status']}</i>
+                                    </div>
+                                % elif collection['issue']:
+                                    <div  style="padding-left: 30px;">
+                                        Issue: <i>${collection['issue']}</i>
+                                    </div>
+                                % endif
+                                % if collection['volume'] and collection['program_area']:
+                                    <div  style="padding-left: 30px;">
+                                        Volume: <i>${collection['volume']}</i> |&nbsp; Program Area: <i>${collection['program_area']}</i>
+                                    </div>
+                                % elif collection['volume']:
+                                    <div  style="padding-left: 30px;">
+                                        Volume: <i>${collection['volume']}</i>
+                                    </div>
+                                % elif collection['program_area']:
+                                    <div  style="padding-left: 30px;">
+                                        Program Area: <i>${collection['program_area']}</i>
                                     </div>
                                 % endif
                                 <hr>
