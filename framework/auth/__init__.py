@@ -40,9 +40,8 @@ def authenticate(user, response, user_updates=None):
     enqueue_task(update_user_from_activity.s(user._id, timezone.now().timestamp(), cas_login=True, updates=user_updates))
     print_cas_log(f'Finalizing authentication - user update queued: user=[{user._id}]', LogLevel.INFO)
     user_session, response = create_session(response, data=data)
-    # TODO: handle old cookies better
     if not user_session:
-        return None
+        return response
     from osf.models import UserSessionMap
     UserSessionMap.objects.create(user=user, session_key=user_session.session_key, expire_date=user_session.get_expiry_date())
     print_cas_log(f'Finalizing authentication - session created: user=[{user._id}]', LogLevel.INFO)
@@ -71,9 +70,8 @@ def external_first_login_authenticate(user_dict, response):
     )
     # Note: we don't need to keep track of this anonymous session, and thus no entry is created in `UserSessionMap`
     user_session, response = create_session(response, data=data)
-    # TODO: handle old cookies better
     if not user_session:
-        return None
+        return response
     print_cas_log(
         f'Finalizing first-time login from external IdP - anonymous session created: user=[{user_identity}]',
         LogLevel.INFO,

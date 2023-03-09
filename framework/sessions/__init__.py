@@ -103,16 +103,10 @@ def create_session(response, data=None):
     Create or update an existing session with information provided in the given `data` dictionary; and return the
     updated session and the set-cookie response as a tuple.
     """
-    # Temporary Notes: not sure why `get_session()` was used directly instead of `session`
     user_session = get_session()
-    # TODO: handle old cookies better, current hack "returning None, None" prevents "NoneType" issue but users remain
-    #       stuck in sign-in (when using fake-cas) until the old cookie is removed manually. When using new-cas, this
-    #       leads to deadly sign-in infinite loops. This happens when the cookie was created using a different session
-    #       implementation. e.g. 1) when switching from old Session to Django Session; or 2) when switching Django
-    #       Session backend between DB to Redis; etc. The proper solution is to return a response to remove the cookie
-    #       and redirect users to sign-in again. Need a ticket.
     if not user_session:
-        return None, None
+        response.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
+        return None, response
     # TODO: check if session data changed and decide whether to save the session object
     for key, value in data.items() if data else {}:
         user_session[key] = value
