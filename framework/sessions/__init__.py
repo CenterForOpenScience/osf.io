@@ -79,8 +79,9 @@ def prepare_private_key():
 def get_session():
     """
     Get existing session from request context or create a new blank Django Session.
-    Case 0: If cookie does not exist, create a new session and return it.
-            Note, the newly created session is not "authenticated" until session data is updated.
+    Case 0: If cookie does not exist, return a new SessionStore().
+            Note: this SessionStore object is empty, it is not saved to the backend (DB or Cache),  and it doesn't
+            have a `session_key`. It is the caller that takes care of the `.save()` if the session is updated.
     Case 1: If cookie exists but is not valid, return None
     Case 2: If cookie exists and is valid but its session is not found, return None
     Case 3: If cookie exists, is valid and its session is found, return the session
