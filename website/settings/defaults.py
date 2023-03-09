@@ -414,7 +414,7 @@ class CeleryConfig:
         'scripts.populate_popular_projects_and_registrations',
         'website.search.elastic_search',
         'scripts.generate_sitemap',
-        'scripts.clear_sessions',
+        'osf.management.commands.clear_user_session_maps',
         'osf.management.commands.delete_withdrawn_or_failed_registration_files',
         'osf.management.commands.check_crossref_dois',
         'osf.management.commands.find_spammy_files',
@@ -508,11 +508,11 @@ class CeleryConfig:
         'scripts.approve_registrations',
         'scripts.approve_embargo_terminations',
         'scripts.triggered_mails',
-        'scripts.clear_sessions',
         'scripts.send_queued_mails',
         'scripts.generate_sitemap',
         'scripts.premigrate_created_modified',
         'scripts.add_missing_identifiers_to_preprints',
+        'osf.management.commands.clear_user_session_maps',
         'osf.management.commands.deactivate_requested_accounts',
         'osf.management.commands.check_crossref_dois',
         'osf.management.commands.find_spammy_files',
@@ -599,8 +599,8 @@ class CeleryConfig:
                 'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
                 'kwargs': {'dry_run': False},
             },
-            'clear_sessions': {
-                'task': 'scripts.clear_sessions',
+            'clear_user_session_maps': {
+                'task': 'management.commands.clear_user_session_maps',
                 'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
                 'kwargs': {'dry_run': False},
             },
