@@ -1,10 +1,10 @@
-# -*- coding: utf-8 -*-
+from importlib import import_module
+
 from rest_framework import status as http_status
 from future.moves.urllib.parse import urlparse, parse_qs, urlunparse, urlencode
 
 from django.apps import apps
 from django.utils import timezone
-from importlib import import_module
 from django.conf import settings as django_conf_settings
 import itsdangerous
 from flask import request
@@ -12,9 +12,11 @@ import furl
 from werkzeug.local import LocalProxy
 
 from framework.celery_tasks.handlers import enqueue_task
-from osf.utils.fields import ensure_str
 from framework.flask import redirect
+from osf.utils.fields import ensure_str
+from osf.exceptions import InvalidCookieOrSessionError
 from website import settings
+from website.util import web_url_for
 
 SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
@@ -75,25 +77,33 @@ def prepare_private_key():
         return redirect(new_url, code=http_status.HTTP_307_TEMPORARY_REDIRECT)
 
 
+def get_session_from_cookie(cookie):
+    """Return a Django ``SessionStore`` object if cookie is valid and session_key exists.
+    Raise ``InvalidCookieOrSessionError`` otherwise.
+    """
+    try:
+        session_key = ensure_str(itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie))
+        if not SessionStore().exists(session_key=session_key):
+            raise InvalidCookieOrSessionError
+        return SessionStore(session_key=session_key)
+    except itsdangerous.BadSignature:
+        raise InvalidCookieOrSessionError
+
+
 # TODO: rename to `get_existing_or_create_blank_session()`
 def get_session():
     """
-    Get existing session from request context or create a new blank Django Session.
-    Case 0: If cookie does not exist, return a new SessionStore().
-            Note: this SessionStore object is empty, it is not saved to the backend (DB or Cache),  and it doesn't
-            have a `session_key`. It is the caller that takes care of the `.save()` if the session is updated.
-    Case 1: If cookie exists but is not valid, return None
-    Case 2: If cookie exists and is valid but its session is not found, return None
-    Case 3: If cookie exists, is valid and its session is found, return the session
+    Get the existing session from the request context or create a new blank Django ``SessionStore`` object.
+    Case 0: If cookie does not exist, simply return a new ``SessionStore`` object. This SessionStore object is
+            empty, it is not saved to the Session backend (DB or Cache), and it doesn't have a ``session_key``.
+            It is the caller of ``get_session()`` that takes care of the ``.save()`` when needed.
+    Case 1: If cookie exists, return ``get_session_from_cookie(cookie)``
+    Case 2: Return None if ``InvalidCookieOrSessionError`` is raised during case 2.
     """
-    secret = settings.SECRET_KEY
     cookie = request.cookies.get(settings.COOKIE_NAME)
-    if not cookie:
-        return SessionStore()
     try:
-        session_key = ensure_str(itsdangerous.Signer(secret).unsign(cookie))
-        return SessionStore(session_key=session_key) if SessionStore().exists(session_key=session_key) else None
-    except itsdangerous.BadSignature:
+        return get_session_from_cookie(cookie) if cookie else SessionStore()
+    except InvalidCookieOrSessionError:
         return None
 
 
@@ -147,47 +157,55 @@ def before_request():
         return cas.make_response_from_ticket(ticket=ticket, service_url=service_url.url)
 
     # Request Type 2: Basic Auth with username and password in Authorization headers
+    # TODO: Does basic auth need session?
+    #       Does Basic Auth still makes sense for V1/Flask requests?
+    #       Should Basic Auth error on cookie existence?
     if request.authorization:
         user = get_user(
             email=request.authorization.username,
             password=request.authorization.password
         )
         # Create an empty session
-        # TODO: Shoudn't need to create a session for Basic Auth
-        # Temporary Notes: not sure why `get_session()` was used directly instead of `session`
         user_session = get_session()
-        UserSessionMap.objects.create(user=user, session_key=user_session.session_key, expire_date=user_session.get_expiry_date())
+        if not user_session:
+            return
 
-        if user:
-            user_addon = user.get_addon('twofactor')
-            if user_addon and user_addon.is_confirmed:
-                otp = request.headers.get('X-OSF-OTP')
-                if otp is None or not user_addon.verify_code(otp):
-                    user_session['auth_error_code'] = http_status.HTTP_401_UNAUTHORIZED
-                    return
-            user_session['auth_user_username'] = user.username
-            user_session['auth_user_fullname'] = user.fullname
-            if user_session.get('auth_user_id', None) != user._primary_key:
-                user_session['auth_user_id'] = user._primary_key
-        else:
-            # Invalid key: Not found in database
+        if not user:
             user_session['auth_error_code'] = http_status.HTTP_401_UNAUTHORIZED
+            user_session.save()
+            return
+
+        user_addon = user.get_addon('twofactor')
+        if user_addon and user_addon.is_confirmed:
+            otp = request.headers.get('X-OSF-OTP')
+            if otp is None or not user_addon.verify_code(otp):
+                user_session['auth_error_code'] = http_status.HTTP_401_UNAUTHORIZED
+                return
+        user_session['auth_user_username'] = user.username
+        user_session['auth_user_fullname'] = user.fullname
+        if user_session.get('auth_user_id', None) != user._primary_key:
+            user_session['auth_user_id'] = user._primary_key
         user_session.save()
+        UserSessionMap.objects.create(
+            user=user,
+            session_key=user_session.session_key,
+            expire_date=user_session.get_expiry_date()
+        )
         return
 
     # Request Type 3: Cookie Auth
     cookie = request.cookies.get(settings.COOKIE_NAME)
     if cookie:
         try:
-            session_key = ensure_str(itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie))
-            if not SessionStore().exists(session_key=session_key):
-                return None
-        except itsdangerous.BadData:
-            return None
+            user_session = get_session_from_cookie(cookie)
+        except InvalidCookieOrSessionError:
+            response = redirect(web_url_for('goodbye'))
+            response.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
+            return response
         # Update date last login when making non-api requests
         from framework.auth.tasks import update_user_from_activity
         try:
-            user_session_entry = UserSessionMap.objects.get(session_key=session_key)
+            user_session_entry = UserSessionMap.objects.get(session_key=user_session.session_key)
             enqueue_task(
                 update_user_from_activity.s(
                     user_session_entry.user._id,

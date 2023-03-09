@@ -283,3 +283,8 @@ class InvalidMetadataFormat(OSFError):
             f'Invalid format_key (got "{given_format_key}"; '
             f'expected one of {valid_formats})'
         )
+
+
+class InvalidCookieOrSessionError(OSFError):
+    """Raised when cookie is invalid or session key is not found."""
+    pass
