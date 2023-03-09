@@ -199,7 +199,7 @@ def before_request():
         try:
             user_session = get_session_from_cookie(cookie)
         except InvalidCookieOrSessionError:
-            response = redirect(web_url_for('goodbye'))
+            response = redirect(web_url_for('index'))
             response.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
             return response
         # Update date last login when making non-api requests
