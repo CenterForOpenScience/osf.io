@@ -1870,7 +1870,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             spam_check_fields = spam_check_fields.intersection(set(saved_fields.keys()))
         else:
             spam_check_source = {field: getattr(self, field) for field in spam_check_fields}
-        logger.warn(f'NORMALIZED SPAM CONTENT: {spam_check_source}')
 
         spam_check_contents = []
         for spam_field in spam_check_fields:

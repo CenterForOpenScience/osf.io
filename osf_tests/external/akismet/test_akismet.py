@@ -21,11 +21,11 @@ class TestUserSpamAkismet:
     def user(self):
         test_user = AuthUserFactory()
         test_user.schools = [
-            {'insitution': fake.company(), 'department': 'engineering', 'degree': fake.catch_phrase()}
+            {'institution': fake.company(), 'department': 'engineering', 'degree': fake.catch_phrase()}
             for _ in range(2)
         ]
         test_user.jobs = [
-            {'insitution': fake.company(), 'department': 'QA', 'title': fake.catch_phrase()}
+            {'institution': fake.company(), 'department': 'QA', 'title': fake.catch_phrase()}
             for _ in range(2)
         ]
         test_user.social['profileWebsites'] = ['osf.io', 'cos.io']
@@ -34,11 +34,11 @@ class TestUserSpamAkismet:
 
     def test_get_spam_content(self, user):
         expected_content = [
-            f'{entry["institution"]} {entry["department"]} {entry["degree"]}'
+            f'{entry["degree"]} {entry["institution"]} {entry["department"]}'
             for entry in user.schools
         ]
         expected_content.extend(
-            f'{entry["institution"]} {entry["deoartment"]} {entry["title"]}'
+            f'{entry["title"]} {entry["institution"]} {entry["department"]}'
             for entry in user.jobs
         )
         expected_content.extend(user.social['profileWebsites'])
@@ -81,7 +81,7 @@ class TestUserSpamAkismet:
         assert mock_do_check_spam.call_count == 0
 
         # test check spam for correct saved_fields
-        user.check_spam(saved_fields={'schools': ['one']}, request_headers=None)
+        user.check_spam(saved_fields={'schools': [{'institution': 'UVA'}]}, request_headers=None)
         assert mock_do_check_spam.call_count == 1
 
 

@@ -65,7 +65,7 @@ class TestUserSpamOOPSpam:
         assert mock_do_check_spam.call_count == 0
 
         # test check spam for correct saved_fields
-        user.check_spam(saved_fields={'schools': ['one']}, request_headers=None)
+        user.check_spam(saved_fields={'schools': [{'institution': 'UVA'}]}, request_headers=None)
         assert mock_do_check_spam.call_count == 1
 
 
