@@ -91,18 +91,20 @@ def get_session_from_cookie(cookie):
 
 
 # TODO: rename to `get_existing_or_create_blank_session()`
-def get_session():
+def get_session(ignore_cookie=False):
     """
     Get the existing session from the request context or create a new blank Django ``SessionStore`` object.
     Case 0: If cookie does not exist, simply return a new ``SessionStore`` object. This SessionStore object is
             empty, it is not saved to the Session backend (DB or Cache), and it doesn't have a ``session_key``.
             It is the caller of ``get_session()`` that takes care of the ``.save()`` when needed.
-    Case 1: If cookie exists, return ``get_session_from_cookie(cookie)``
-    Case 2: Return None if ``InvalidCookieOrSessionError`` is raised during case 2.
+    Case 1: If ``ignore_cookie`` is ``True``, no matter whether a cookie exists, returns a new blank Django
+            ``SessionStore`` object. This is used when V1/Flask request use Basic Authentication.
+    Case 2: If cookie exists and if ``ignore_cookie`` is ``False``, return ``get_session_from_cookie(cookie)``
+    Case 3: Return None if ``InvalidCookieOrSessionError`` is raised during case 3.
     """
     cookie = request.cookies.get(settings.COOKIE_NAME)
     try:
-        return get_session_from_cookie(cookie) if cookie else SessionStore()
+        return get_session_from_cookie(cookie) if (not ignore_cookie and cookie) else SessionStore()
     except InvalidCookieOrSessionError:
         return None
 
@@ -157,16 +159,17 @@ def before_request():
         return cas.make_response_from_ticket(ticket=ticket, service_url=service_url.url)
 
     # Request Type 2: Basic Auth with username and password in Authorization headers
-    # TODO: Does basic auth need session?
-    #       Does Basic Auth still makes sense for V1/Flask requests?
-    #       Should Basic Auth error on cookie existence?
+    # Note: As for flask/V1 request, many views rely on an ``auth`` object that comes from the ``session``
+    #       to identify the user. Thus, we still need to keep the session creation and usage here.
     if request.authorization:
         user = get_user(
             email=request.authorization.username,
             password=request.authorization.password
         )
         # Create an empty session
-        user_session = get_session()
+        user_session = get_session(ignore_cookie=True)
+        # Although the if check is not necessary based on current ``get_session()`` implementation. However, we
+        # keep it here in case ``get_session()`` was changed. It may be removed after we have unit tests for this.
         if not user_session:
             return
 
