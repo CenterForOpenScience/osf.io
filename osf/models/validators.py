@@ -416,7 +416,8 @@ class RegistrationResponsesValidator:
                                      'file-metadata-input', 'date-input',
                                      'file-capacity-input', 'file-creators-input',
                                      'file-url-input', 'file-institution-ja-input',
-                                     'file-institution-en-input'):
+                                     'file-institution-en-input',
+                                     'file-institution-id-input'):
             if self.required_fields and question.required:
                 return {
                     'type': 'string',

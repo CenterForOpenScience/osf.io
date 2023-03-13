@@ -786,6 +786,15 @@
           "space_normalization": true
         },
         {
+          "qid": "grdm-file:hosting-inst-id",
+          "nav": "データ管理機関コード",
+          "title": "データ管理機関コード|Hosting institution Identifier",
+          "type": "string",
+          "format": "file-institution-identifier",
+          "required": false,
+          "space_normalization": true
+        },
+        {
           "qid": "grdm-file:data-man-number",
           "nav": "データ管理者の e-Rad 研究者番号",
           "title": "データ管理者の e-Rad 研究者番号|Data manager identifier (e-Rad)",

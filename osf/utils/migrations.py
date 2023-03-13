@@ -57,6 +57,7 @@ FORMAT_TYPE_TO_TYPE_MAP = {
     ('file-url', 'string'): 'file-url-input',
     ('file-institution-ja', 'string'): 'file-institution-ja-input',
     ('file-institution-en', 'string'): 'file-institution-en-input',
+    ('file-institution-identifier', 'string'): 'file-institution-id-input',
 }
 
 def get_osf_models():
