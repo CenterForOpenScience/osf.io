@@ -250,3 +250,46 @@ class TestSpamCheckEmailDomain:
         is_spam = project.check_spam(user, saved_fields={'title'}, request_headers={})
         assert not is_spam
         assert not mock_do_check_spam.called
+
+    @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
+    @mock.patch.object(settings, 'OOPSPAM_ENABLED', True)
+    @mock.patch(
+        'osf.external.oopspam.client.OOPSpamClient.check_content',
+        return_value=(
+                # is_spam: True value (a false positive for a ham domain user)
+                True,
+                # spam_data (mocking for tests)
+                {
+                    'Details': {
+                        'isIPBlocked': False
+                    }
+                }
+        )
+    )
+    @pytest.mark.enable_enqueue_task
+    def test_trusted_domain_skips_checks(self, mock_check_content):
+        """
+        If the spam check registered a positive for a notable hammed user, ensure they/their nodes aren't spammed.
+        """
+        user = UserFactory()
+        project = ProjectFactory(
+            title='viagra123 This is a title that would be flagged as spam, but won\'t because of'
+                  ' it\'s hammed domains',
+            is_public=True,
+            creator=user
+        )
+        project.save()
+        email_address = user.emails.last().address
+        # get everything after the @
+        email_address = email_address.rpartition('@')[2].lower()
+        NotableDomain.objects.create(
+            domain=email_address,
+            note=NotableDomain.Note.ASSUME_HAM_UNTIL_REPORTED,
+        )
+
+        # Despite the mocked return value being true the spam check is skipped.
+        assert project.spam_status == SpamStatus.UNKNOWN
+        assert not mock_check_content.called
+        project.check_spam(user, saved_fields={'title'}, request_headers={'Host': 'testhost'})
+        project.refresh_from_db()
+        assert project.spam_status == SpamStatus.UNKNOWN

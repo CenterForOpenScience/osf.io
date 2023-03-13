@@ -211,6 +211,11 @@ class SpamMixin(models.Model):
             content,
         )
 
+        from osf.models import OSFUser
+        user = OSFUser.objects.get(username=author_email)
+        if user.is_assumed_ham:
+            return
+
         if settings.SPAM_SERVICES_ENABLED:
             for key, value in request_kwargs.items():
                 request_kwargs[key] = ensure_str(value)
