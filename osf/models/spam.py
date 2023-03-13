@@ -102,9 +102,7 @@ class SpamMixin(models.Model):
 
     @property
     def is_hammy(self):
-        return self.is_ham or (
-            self.spam_status == SpamStatus.UNKNOWN and self.is_assumed_ham
-        )
+        return self.is_assumed_ham or self.spam_status == SpamStatus.UNKNOWN
 
     @property
     def is_assumed_ham(self):
@@ -210,11 +208,6 @@ class SpamMixin(models.Model):
             self.guids.first()._id,
             content,
         )
-
-        from osf.models import OSFUser
-        user = OSFUser.objects.get(username=author_email)
-        if user.is_assumed_ham:
-            return
 
         if settings.SPAM_SERVICES_ENABLED:
             for key, value in request_kwargs.items():
