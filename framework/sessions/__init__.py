@@ -100,7 +100,7 @@ def get_session(ignore_cookie=False):
     Case 1: If ``ignore_cookie`` is ``True``, no matter whether a cookie exists, returns a new blank Django
             ``SessionStore`` object. This is used when V1/Flask request use Basic Authentication.
     Case 2: If cookie exists and if ``ignore_cookie`` is ``False``, return ``get_session_from_cookie(cookie)``
-    Case 3: Return None if ``InvalidCookieOrSessionError`` is raised during case 3.
+    Case 3: Return None if ``InvalidCookieOrSessionError`` is raised during case 2.
     """
     cookie = request.cookies.get(settings.COOKIE_NAME)
     try:
