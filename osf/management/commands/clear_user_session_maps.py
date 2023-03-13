@@ -1,15 +1,14 @@
 import logging
+
 import django
-django.setup()
+from django.core.management.base import BaseCommand
+from django.utils import timezone
 
 from framework.celery_tasks import app as celery_app
 from osf.models import UserSessionMap
-from django.utils import timezone
 
-logger = logging.getLogger(__name__)
 django.setup()
-
-from django.core.management.base import BaseCommand
+logger = logging.getLogger(__name__)
 
 
 @celery_app.task(name='osf.management.commands.clear_user_session_maps')
