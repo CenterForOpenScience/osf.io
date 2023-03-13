@@ -102,7 +102,7 @@ class SpamMixin(models.Model):
 
     @property
     def is_hammy(self):
-        return self.is_assumed_ham or self.spam_status == SpamStatus.UNKNOWN
+        return self.is_ham or self.is_assumed_ham or self.spam_status == SpamStatus.UNKNOWN
 
     @property
     def is_assumed_ham(self):
