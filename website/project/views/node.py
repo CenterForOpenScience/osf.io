@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import os
-import json
 import logging
 from rest_framework import status as http_status
 import math
@@ -840,7 +839,7 @@ def _view_project(node, auth, primary=False,
         'addon_widgets': widgets,
         'addon_widget_js': js,
         'addon_widget_css': css,
-        'google_dataset_tags': json.dumps(GoogleDatasetJsonLdSerializer().serialize(pls_gather_item_metadata(node))),
+        'google_dataset_tags': GoogleDatasetJsonLdSerializer().serialize(pls_gather_item_metadata(node)),
         'node_categories': [
             {'value': key, 'display_name': value}
             for key, value in list(settings.NODE_CATEGORY_MAP.items())
