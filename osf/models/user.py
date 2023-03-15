@@ -1884,11 +1884,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 spam_check_contents.extend(
                     spam_check_source.get('social', dict()).get('profileWebsites', list())
                 )
-        return ' '.join(spam_check_contents).strip()
+        return spam_check_contents
 
     def check_spam(self, saved_fields, request_headers):
         is_spam = False
-        content = self._get_spam_content(saved_fields)
+        content = ' '.join(self._get_spam_content(saved_fields)).strip()
         if content:
             is_spam = self.do_check_spam(
                 self.fullname,

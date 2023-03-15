@@ -33,18 +33,15 @@ class TestUserSpamAkismet:
         return test_user
 
     def test_get_spam_content(self, user):
-        expected_content = [
-            f'{entry["degree"]} {entry["institution"]} {entry["department"]}'
-            for entry in user.schools
-        ]
-        expected_content.extend(
-            f'{entry["title"]} {entry["institution"]} {entry["department"]}'
-            for entry in user.jobs
-        )
+        expected_content = []
+        for entry in user.schools:
+            expected_content.extend([entry['degree'], entry['institution'], entry['department']])
+        for entry in user.jobs:
+            expected_content.extend([entry['title'], entry['institution'], entry['department']])
         expected_content.extend(user.social['profileWebsites'])
-        expected_content = ' '.join(expected_content)
+        expected_content.sort()
 
-        assert user._get_spam_content() == expected_content.strip()
+        assert sorted(user._get_spam_content()) == expected_content
 
     @pytest.mark.enable_enqueue_task
     def test_do_check_spam(self, user, mock_akismet):
