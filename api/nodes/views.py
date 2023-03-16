@@ -762,6 +762,7 @@ class NodeChildrenList(BaseChildrenList, bulk_views.ListBulkCreateJSONAPIView, N
     required_read_scopes = [CoreScopes.NODE_CHILDREN_READ]
     required_write_scopes = [CoreScopes.NODE_CHILDREN_WRITE]
 
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
     serializer_class = NodeSerializer
     view_category = 'nodes'
     view_name = 'node-children'
