@@ -9,6 +9,9 @@ from osf.metrics.reports import SpamSummaryReport
 from ._base import MonthlyReporter
 from osf.models import PreprintLog, NodeLog
 from osf.models.spam import SpamStatus
+from django.db.models import Subquery, OuterRef
+
+
 
 
 class SpamCountReporter(MonthlyReporter):
@@ -16,6 +19,24 @@ class SpamCountReporter(MonthlyReporter):
     def report(self, report_yearmonth):
         target_month = report_yearmonth.target_month()
         next_month = report_yearmonth.next_month()
+
+        node_flagged_reversed = Node.objects.filter(
+            logs__id__in=Subquery(
+                NodeLog.objects.filter(
+                    node=OuterRef('id'),
+                    action=NodeLog.FLAG_SPAM
+                ).values('id')
+            )
+        ).filter(
+            logs__id__in=Subquery(
+                NodeLog.objects.filter(
+                    node=OuterRef('id'),
+                    created__gt=target_month,
+                    created__lt=next_month,
+                    action=NodeLog.CONFIRM_SPAM
+                ).values('id')
+            )
+        ).count()
 
         report = SpamSummaryReport(
             report_yearmonth=str(report_yearmonth),
@@ -38,13 +59,7 @@ class SpamCountReporter(MonthlyReporter):
                 created__lt=next_month,
                 node__type='osf.node',
             ).count(),
-            node_flagged_reversed=Node.objects.filter(
-                logs__action=NodeLog.FLAG_SPAM
-            ).filter(
-                logs__action=NodeLog.CONFIRM_HAM,
-                logs__created__gt=target_month,
-                logs__created__lt=next_month,
-            ).distinct().count(),
+            node_flagged_reversed=node_flagged_reversed,
             node_flagged_reversed_akismet=Node.objects.filter(
                 logs__action=NodeLog.FLAG_SPAM
             ).filter(
