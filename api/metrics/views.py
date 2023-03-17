@@ -43,7 +43,6 @@ from api.metrics.serializers import (
 from api.metrics.utils import (
     parse_datetimes,
     parse_date_range,
-    parse_yearmonth_range,
 )
 from api.nodes.permissions import MustBePublic
 
@@ -338,14 +337,12 @@ class RecentReportList(JSONAPIBaseView):
         if is_daily:
             serializer_class = DailyReportSerializer
             range_field_name = 'report_date'
-            range_parser = parse_date_range
         elif is_monthly:
             serializer_class = MonthlyReportSerializer
             range_field_name = 'report_yearmonth'
-            range_parser = parse_yearmonth_range
         else:
             raise ValueError(f'report class must subclass DailyReport or MonthlyReport: {report_class}')
-        range_filter = range_parser(request.GET)
+        range_filter = parse_date_range(request.GET)
         search_recent = (
             report_class.search()
             .filter('range', **{range_field_name: range_filter})
