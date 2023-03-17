@@ -186,7 +186,13 @@ def check_access(node, auth, action, cas_resp):
     """Verify that user can perform requested action on resource. Raise appropriate
     error code if action cannot proceed.
     """
+    logger.info(f'>>>>> check_access in views: {request.args}')
+    logger.info(f'>>>> node: {node}')
+    logger.info(f'>>>> auth: {auth}')
+    logger.info(f'>>>> action: {action}')
+    logger.info(f'>>> cas_resp:{cas_resp}')
     permission = permission_map.get(action, None)
+    logger.info(f'>>> permission:{permission}')
     if permission is None:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
@@ -200,16 +206,23 @@ def check_access(node, auth, action, cas_resp):
 
         if not cas_resp.authenticated \
            or required_scope not in oauth_scopes.normalize_scopes(cas_resp.attributes['accessTokenScope']):
+            logger.info('>>> Return result HTTP_403_FORBIDDEN when not cas_resp.authenticated')
+            logger.info(f'>>> cas_resp.authenticated: {cas_resp.authenticated}')
+            logger.info(f'>>> required_scope: {required_scope}')
             raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
     if permission == permissions.READ:
+        logger.info('>>> permission == permissions.READ')
         if node.can_view_files(auth):
+            logger.info('>>> node.can_view_files(auth)')
             return True
         # The user may have admin privileges on a parent node, in which
         # case they should have read permissions
         if getattr(node, 'is_registration', False) and node.registered_from.can_view(auth):
+            logger.info('>>> node.registered_from.can_view(auth)')
             return True
     if permission == permissions.WRITE and node.can_edit(auth):
+        logger.info('>>> permission == permissions.WRITE and node.can_edit(auth)')
         return True
 
     # Users attempting to register projects with components might not have
@@ -231,6 +244,7 @@ def check_access(node, auth, action, cas_resp):
                     return True
                 parent = parent.parent_node
 
+    logger.info('>>> Return HTTP_403_FORBIDDEN at the end of check_access')
     raise HTTPError(http_status.HTTP_403_FORBIDDEN if auth.user else http_status.HTTP_401_UNAUTHORIZED)
 
 def make_auth(user):
@@ -269,6 +283,7 @@ def get_metric_class_for_action(action, from_mfr):
 @collect_auth
 def get_auth(auth, **kwargs):
     logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+    logger.info(f'>>> auth in def get_auth: {auth}')
     cas_resp = None
     if not auth.user:
         # Central Authentication Server OAuth Bearer Token
@@ -287,14 +302,22 @@ def get_auth(auth, **kwargs):
 
     # get data payload
     try:
+        logger.info(f'>>>>> payload from request in get_auth: {request.args}')
+        logger.info(f'>>>> WATERBUTLER_JWE_KEY: {WATERBUTLER_JWE_KEY}')
+        logger.info(f'>>>> WATERBUTLER_JWT_SECRET: {settings.WATERBUTLER_JWT_SECRET}')
+        logger.info(f'>>>> WATERBUTLER_JWE_SALT: {settings.WATERBUTLER_JWE_SALT}')
+        logger.info(f'>>>> WATERBUTLER_JWE_SECRET: {settings.WATERBUTLER_JWE_SECRET}')
+        logger.info(f'>>>> WATERBUTLER_JWT_ALGORITHM: {settings.WATERBUTLER_JWT_ALGORITHM}')
         data = jwt.decode(
             jwe.decrypt(request.args.get('payload', '').encode('utf-8'), WATERBUTLER_JWE_KEY),
             settings.WATERBUTLER_JWT_SECRET,
             options={'require_exp': True},
             algorithm=settings.WATERBUTLER_JWT_ALGORITHM
         )['data']
+        logger.info(f'>>>> data in get_auth after decode by JWT:{data}')
     except (jwt.InvalidTokenError, KeyError) as err:
         sentry.log_message(str(err))
+        logger.info(f'>>>> Error when authen in get_auth after decode by JWT:{err}')
         raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
     cookie = data.get('cookie', '')
@@ -335,6 +358,7 @@ def get_auth(auth, **kwargs):
         elif not node:
             raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
+        logger.info('>>> is_node_process before call check_access')
         check_access(node, auth, action, cas_resp)
         provider_settings = None
         if hasattr(node, 'get_addon'):
