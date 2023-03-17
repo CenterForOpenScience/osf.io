@@ -33,15 +33,22 @@ class TestUserSpamAkismet:
         return test_user
 
     def test_get_spam_content(self, user):
+        returned_content_string = user._get_spam_content()
         expected_content = []
         for entry in user.schools:
             expected_content.extend([entry['degree'], entry['institution'], entry['department']])
         for entry in user.jobs:
             expected_content.extend([entry['title'], entry['institution'], entry['department']])
         expected_content.extend(user.social['profileWebsites'])
-        expected_content.sort()
+        expected_content_string = ' '.join(expected_content)
 
-        assert sorted(user._get_spam_content()) == expected_content
+        # Ordering is not guaranteed on the return value from `_get_spam_content`
+        # Split the strings back into individual tokens and sort for more reliable comparison
+        # TODO(ENG-XYZ): Refactor `_get_spam_content` uniersally to return the list of individual field
+        # contents instead of the concatenated list in order to enable easier, more accurate comparison
+        returned_content_elements = sorted(returned_content_string.split(' '))
+        expected_content_elements = sorted(expected_content_string.split(' '))
+        assert returned_content_elements == expected_content_elements
 
     @pytest.mark.enable_enqueue_task
     def test_do_check_spam(self, user, mock_akismet):
