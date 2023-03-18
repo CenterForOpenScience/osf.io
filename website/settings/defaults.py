@@ -378,7 +378,7 @@ STUCK_FILES_DELETE_TIMEOUT = timedelta(days=45) # Registration files stuck for x
 
 ENABLE_ARCHIVER = True
 
-JWT_SECRET = 'h..O.ci.OBA7UU/Rd9j0Zn+9korAyQ=='
+JWT_SECRET = b'h..O.ci.OBA7UU/Rd9j0Zn+9korAyQ=='
 JWT_ALGORITHM = 'HS256'
 
 ##### CELERY #####
