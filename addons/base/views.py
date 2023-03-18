@@ -276,7 +276,7 @@ def get_auth(auth, **kwargs):
         jwe.decrypt(ensure_bytes(request.args.get('payload', b'')), WATERBUTLER_JWE_KEY),
         settings.WATERBUTLER_JWT_SECRET,
         options={'require_exp': True},
-        algorithms=settings.WATERBUTLER_JWT_ALGORITHM
+        algorithms=[settings.WATERBUTLER_JWT_ALGORITHM]
     )['data']
 
     if not auth.user:

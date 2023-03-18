@@ -116,7 +116,7 @@ class InstitutionAuthentication(BaseAuthentication):
             jwe.decrypt(ensure_bytes(request.body), settings.JWE_SECRET),
             settings.JWT_SECRET,
             options={'verify_exp': False},
-            algorithm='HS256',
+            algorithms=['HS256'],
         )
 
         # Load institution and user data
