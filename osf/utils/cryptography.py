@@ -49,7 +49,7 @@ def encrypt(data, key):
 
     iv = os.urandom(16)
     segments.append(
-        base64_urlsafe_encode(iv)
+        iv
     )
 
     encryptor = Cipher(
