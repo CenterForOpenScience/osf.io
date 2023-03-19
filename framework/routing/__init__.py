@@ -364,7 +364,9 @@ class JSONRenderer(Renderer):
                     return obj.to_json()
                 except TypeError:  # BS4 objects have to_json that isn't callable
                     return str(obj)
-            return json.JSONEncoder.default(self, obj)
+            from osf.utils.fields import ensure_str
+
+            return json.JSONEncoder.default(self, ensure_str(obj))
 
     def handle_error(self, error):
         headers = {'Content-Type': self.CONTENT_TYPE}
