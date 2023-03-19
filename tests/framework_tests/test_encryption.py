@@ -2,7 +2,9 @@
 import unittest
 from nose.tools import *  # noqa
 
-from framework.encryption import encrypt, decrypt, ensure_bytes
+from osf.utils.cryptography import encrypt, decrypt
+from osf.utils.fields import ensure_bytes
+
 
 class EncryptionTestCase(unittest.TestCase):
 

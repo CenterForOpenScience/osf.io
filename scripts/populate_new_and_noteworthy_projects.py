@@ -15,7 +15,6 @@ from osf.models import Node, NodeLog
 from framework.auth.core import Auth
 from scripts import utils as script_utils
 from framework.celery_tasks import app as celery_app
-from framework.encryption import ensure_bytes
 from website.settings import \
     POPULAR_LINKS_NODE, NEW_AND_NOTEWORTHY_LINKS_NODE,\
     NEW_AND_NOTEWORTHY_CONTRIBUTOR_BLACKLIST

@@ -725,10 +725,10 @@ class CeleryConfig:
 
 WATERBUTLER_JWE_SALT = 'yusaltydough'
 # no encryption key wrapping
-WATERBUTLER_JWE_SECRET = 'h..O.ci.OBA7UU/Rd9j0Zn+9korAyQ=='
+WATERBUTLER_JWE_SECRET = b'h..O.ci.OBA7UU/Rd9j0Zn+9korAyQ=='
 
 # no encryption key wrapping
-WATERBUTLER_JWT_SECRET = 'h..O.ci.OBA7UU/Rd9j0Zn+9korAyQ=='
+WATERBUTLER_JWT_SECRET = b'h..O.ci.OBA7UU/Rd9j0Zn+9korAyQ=='
 WATERBUTLER_JWT_ALGORITHM = 'HS256'
 WATERBUTLER_JWT_EXPIRATION = 15
 

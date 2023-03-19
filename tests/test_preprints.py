@@ -2251,7 +2251,10 @@ class TestPreprintOsfStorage(OsfTestCase):
         self.session.save()
         self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id).decode()
         self.preprint = PreprintFactory(creator=self.user)
-        self.JWE_KEY = kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
+        self.JWE_KEY = kdf(
+            settings.WATERBUTLER_JWE_SECRET,
+            settings.WATERBUTLER_JWE_SALT
+        )
 
     def test_create_log(self):
         action = 'file_added'
