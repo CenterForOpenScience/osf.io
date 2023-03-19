@@ -19,7 +19,6 @@ from osf import features
 from osf.exceptions import InstitutionAffiliationStateError
 from osf.models import Institution
 from osf.models.institution import SharedSsoAffiliationFilterCriteriaAction
-from osf.utils.fields import ensure_bytes
 
 from website.mails import send_mail, WELCOME_OSF4I, DUPLICATE_ACCOUNTS_OSF4I, ADD_SSO_EMAIL_OSF4I
 from website.settings import OSF_SUPPORT_EMAIL, DOMAIN
