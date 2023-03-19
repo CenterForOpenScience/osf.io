@@ -9,7 +9,7 @@ from website.util.client import BaseClient
 
 class BitbucketClient(BaseClient):
 
-    def __init__(self, access_token=None):
+    def __init__(self, access_token=''):
         self.access_token = ensure_str(access_token)
 
     @property
