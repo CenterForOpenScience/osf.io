@@ -1,6 +1,5 @@
 import json
 
-import jwe
 import jwt
 import pytest
 
@@ -15,6 +14,7 @@ from framework.auth.core import get_user
 from framework.auth.views import send_confirm_email
 
 from osf.models import OSFUser, InstitutionAffiliation
+from osf.utils.cryptography import encrypt
 from osf.models.institution import SharedSsoAffiliationFilterCriteriaAction
 from osf_tests.factories import InstitutionFactory, ProjectFactory, UserFactory
 
@@ -59,7 +59,7 @@ def make_payload(
         }
     }
 
-    return jwe.encrypt(
+    return encrypt(
         jwt.encode(
             {
                 'sub': sso_email,

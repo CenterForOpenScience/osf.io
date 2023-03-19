@@ -2,13 +2,13 @@
 import string
 import random
 
-import jwe
 import pytest
 from django.db import connection
 from psycopg2._psycopg import AsIs
 
 from osf.models import ExternalAccount
 from osf.utils.fields import EncryptedTextField, SENSITIVE_DATA_KEY, ensure_bytes
+from osf.utils.cryptography import decrypt
 from .factories import ExternalAccountFactory
 
 @pytest.mark.django_db
@@ -39,7 +39,7 @@ class TestEncryptedExternalAccountFields(object):
             cursor.execute(sql, [AsIs(', '.join(self.encrypted_field_dict.keys())), ea.id])
             row = cursor.fetchone()
             for blicky in row:
-                assert jwe.decrypt(blicky[len(EncryptedTextField.prefix):].encode(), SENSITIVE_DATA_KEY).decode() == self.magic_string
+                assert decrypt(blicky[len(EncryptedTextField.prefix):].encode(), SENSITIVE_DATA_KEY).decode() == self.magic_string
 
 
 class TestEncryptedTextField:

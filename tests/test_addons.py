@@ -7,7 +7,6 @@ import logging
 
 import furl
 import itsdangerous
-import jwe
 import jwt
 import mock
 import pytest
@@ -36,6 +35,7 @@ from osf.models import Session
 from osf.models import files as file_models
 from osf.models.files import BaseFileNode, TrashedFileNode
 from osf.utils.permissions import WRITE, READ
+from osf.utils.cryptography import kdf, encrypt, decrypt
 from website.project import new_private_link
 from website.project.views.node import _view_project as serialize_node
 from website.project.views.node import serialize_addons, collect_node_config_js
@@ -45,8 +45,6 @@ from addons.osfstorage import settings as osfstorage_settings
 from api.caching.utils import storage_usage_cache
 from dateutil.parser import parse as parse_date
 from framework import sentry
-from api.base.settings.defaults import API_BASE
-from tests.json_api_test_app import JSONAPITestApp
 from website.settings import EXTERNAL_EMBER_APPS
 from waffle.testutils import override_flag
 
@@ -63,7 +61,7 @@ class TestAddonAuth(OsfTestCase):
         self.session.save()
         self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id).decode()
         self.configure_addon()
-        self.JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
+        self.JWE_KEY = kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
 
     def configure_addon(self):
         self.user.add_addon('github')
@@ -83,7 +81,7 @@ class TestAddonAuth(OsfTestCase):
         self.user_addon.save()
 
     def build_url(self, **kwargs):
-        options = {'payload': jwe.encrypt(jwt.encode({'data': dict(dict(
+        options = {'payload': encrypt(jwt.encode({'data': dict(dict(
             action='download',
             nid=self.node._id,
             metrics={'uri': settings.MFR_SERVER_URL},
@@ -95,7 +93,7 @@ class TestAddonAuth(OsfTestCase):
     def test_auth_download(self):
         url = self.build_url()
         res = self.app.get(url, auth=self.user.auth)
-        data = jwt.decode(jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY), settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)['data']
+        data = jwt.decode(decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY), settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)['data']
         assert_equal(data['auth'], views.make_auth(self.user))
         assert_equal(data['credentials'], self.node_addon.serialize_waterbutler_credentials())
         assert_equal(data['settings'], self.node_addon.serialize_waterbutler_settings())
@@ -134,7 +132,7 @@ class TestAddonAuth(OsfTestCase):
         url = self.build_url(cookie=self.cookie)
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 200)
-        data = jwt.decode(jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY), settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)['data']
+        data = jwt.decode(decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY), settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)['data']
         assert_equal(data['auth'], views.make_auth(self.user))
         assert_equal(data['credentials'], self.node_addon.serialize_waterbutler_credentials())
         assert_equal(data['settings'], self.node_addon.serialize_waterbutler_settings())
@@ -1827,7 +1825,7 @@ class TestViewUtils(OsfTestCase):
         self.session.save()
         self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id)
         self.configure_addon()
-        self.JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
+        self.JWE_KEY = kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
         self.mock_api_credentials_are_valid = mock.patch('addons.github.api.GitHubClient.check_authorization', return_value=True)
         self.mock_api_credentials_are_valid.start()
 

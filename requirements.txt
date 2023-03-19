@@ -59,7 +59,6 @@ hashids==1.2.0
 pyjwt
 django-celery-beat
 django-celery-results
-pyjwe==1.0.0
 # Required by pyjwe and ndg-httpsclient
 # Building wheel for cryptography >= 3.4.0 requires a Rust version incompatible with Docker base image.
 cryptography==39.0.1

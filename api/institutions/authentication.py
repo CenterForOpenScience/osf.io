@@ -2,7 +2,8 @@ import json
 import uuid
 import logging
 
-import jwe
+from osf.utils.cryptography import decrypt, MalformedData
+from osf.utils.fields import ensure_bytes
 import jwt
 import waffle
 
@@ -113,12 +114,12 @@ class InstitutionAuthentication(BaseAuthentication):
         try:
             # Verify / decrypt / decode the payload
             payload = jwt.decode(
-                jwe.decrypt(ensure_bytes(request.body), settings.JWE_SECRET),
+                decrypt(ensure_bytes(request.body), settings.JWE_SECRET),
                 settings.JWT_SECRET,
                 options={'verify_exp': False},
                 algorithms=['HS256'],
             )
-        except (jwt.InvalidTokenError, TypeError, jwe.exceptions.MalformedData):
+        except (jwt.InvalidTokenError, TypeError, MalformedData):
             raise AuthenticationFailed(detail='InstitutionSsoRequestNotAuthorized')
 
         # Load institution and user data

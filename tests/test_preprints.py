@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from nose.tools import *  # noqa: F403
-import jwe
 import jwt
 import mock
 import furl
@@ -32,6 +31,7 @@ from osf.exceptions import PreprintStateError, ValidationError, ValidationValueE
 
 from osf.utils.permissions import READ, WRITE, ADMIN
 from osf.utils.workflows import DefaultStates, RequestTypes
+from osf.utils.cryptography import encrypt, decrypt, kdf
 from tests.base import assert_datetime_equal, OsfTestCase
 from tests.utils import assert_preprint_logs
 
@@ -2251,7 +2251,7 @@ class TestPreprintOsfStorage(OsfTestCase):
         self.session.save()
         self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id).decode()
         self.preprint = PreprintFactory(creator=self.user)
-        self.JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
+        self.JWE_KEY = kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
 
     def test_create_log(self):
         action = 'file_added'
@@ -2274,7 +2274,7 @@ class TestPreprintOsfStorage(OsfTestCase):
         )
 
     def build_url(self, **kwargs):
-        options = {'payload': jwe.encrypt(jwt.encode({'data': dict(dict(
+        options = {'payload': encrypt(jwt.encode({'data': dict(dict(
             action='download',
             nid=self.preprint._id,
             provider='osfstorage'), **kwargs),
@@ -2285,7 +2285,7 @@ class TestPreprintOsfStorage(OsfTestCase):
     def test_auth_download(self):
         url = self.build_url(cookie=self.cookie)
         res = self.app.get(url, auth=Auth(user=self.user))
-        data = jwt.decode(jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY), settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)['data']
+        data = jwt.decode(decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY), settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)['data']
         assert_equal(data['credentials'], self.preprint.serialize_waterbutler_credentials())
         assert_equal(data['settings'], self.preprint.serialize_waterbutler_settings())
         expected_url = furl.furl(self.preprint.api_url_for('create_waterbutler_log', _absolute=True, _internal=True))

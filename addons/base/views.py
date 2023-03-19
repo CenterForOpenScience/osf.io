@@ -9,7 +9,7 @@ from django.utils import timezone
 from flask import make_response
 from flask import request
 import furl
-import jwe
+from osf.utils.cryptography import kdf, decrypt, encrypt
 import jwt
 import waffle
 from django.db import transaction
@@ -115,7 +115,10 @@ You may wish to verify this through {provider}'s website.
 <div class="alert alert-info" role="alert">
 This content has been removed."""}
 
-WATERBUTLER_JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
+WATERBUTLER_JWE_KEY = kdf(
+    settings.WATERBUTLER_JWE_SECRET.encode('utf-8'),
+    settings.WATERBUTLER_JWE_SALT.encode('utf-8')
+)
 
 
 @decorators.must_have_permission(permissions.WRITE)
@@ -274,7 +277,7 @@ def get_auth(auth, **kwargs):
 
     try:
         data = jwt.decode(
-            jwe.decrypt(ensure_bytes(request.args.get('payload', b'')), WATERBUTLER_JWE_KEY),
+            decrypt(ensure_bytes(request.args.get('payload', b'')), WATERBUTLER_JWE_KEY),
             settings.WATERBUTLER_JWT_SECRET,
             options={'require_exp': True},
             algorithms=[settings.WATERBUTLER_JWT_ALGORITHM]
@@ -364,19 +367,28 @@ def get_auth(auth, **kwargs):
     if isinstance(credentials.get('token'), bytes):
         credentials['token'] = credentials.get('token').decode()
 
-    return {'payload': jwe.encrypt(jwt.encode({
-        'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
-        'data': {
-            'auth': make_auth(auth.user),  # A waterbutler auth dict not an Auth object
-            'credentials': credentials,
-            'settings': waterbutler_settings,
-            'callback_url': node.api_url_for(
-                ('create_waterbutler_log' if not getattr(node, 'is_registration', False) else 'registration_callbacks'),
-                _absolute=True,
-                _internal=True
-            )
-        }
-    }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM).encode(), WATERBUTLER_JWE_KEY)}
+    return {
+        'payload': encrypt(
+            jwt.encode(
+                {
+                    'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
+                    'data': {
+                        'auth': make_auth(auth.user),  # A waterbutler auth dict not an Auth object
+                        'credentials': credentials,
+                        'settings': waterbutler_settings,
+                        'callback_url': node.api_url_for(
+                            ('create_waterbutler_log' if not getattr(node, 'is_registration', False) else 'registration_callbacks'),
+                            _absolute=True,
+                            _internal=True
+                        )
+                    }
+                },
+                settings.WATERBUTLER_JWT_SECRET,
+                algorithm=settings.WATERBUTLER_JWT_ALGORITHM
+            ).encode(),
+            WATERBUTLER_JWE_KEY
+        )
+    }
 
 
 LOG_ACTION_MAP = {

@@ -1,8 +1,10 @@
-import jwe
-
 from website import settings
+from osf.utils.cryptography import kdf, encrypt, decrypt
 
-SENSITIVE_DATA_KEY = jwe.kdf(settings.SENSITIVE_DATA_SECRET.encode('utf-8'), settings.SENSITIVE_DATA_SALT.encode('utf-8'))
+SENSITIVE_DATA_KEY = kdf(
+    settings.SENSITIVE_DATA_SECRET.encode('utf-8'),
+    settings.SENSITIVE_DATA_SALT.encode('utf-8')
+)
 
 
 def ensure_bytes(value):
@@ -15,12 +17,12 @@ def ensure_bytes(value):
 def encrypt(value):
     if value:
         value = ensure_bytes(value)
-        return jwe.encrypt(value, SENSITIVE_DATA_KEY)
+        return encrypt(value, SENSITIVE_DATA_KEY)
     return None
 
 
 def decrypt(value):
     if value:
         value = ensure_bytes(value)
-        return jwe.decrypt(value, SENSITIVE_DATA_KEY)
+        return decrypt(value, SENSITIVE_DATA_KEY)
     return None
