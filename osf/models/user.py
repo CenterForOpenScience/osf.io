@@ -166,8 +166,19 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     SPAM_USER_PROFILE_FIELDS = {
         'schools': ['degree', 'institution', 'department'],
-        'jobs': ['title', 'institution', 'department']
+        'jobs': ['title', 'institution', 'department'],
+        'social': ['profileWebsites'],
     }
+    # Normalized form of the SPAM_USER_PROFILE_FIELDS to match other SPAM_CHECK_FIELDS formats
+    SPAM_CHECK_FIELDS = [
+        'schools__degree',
+        'schools__institution',
+        'schools__department',
+        'jobs__title',
+        'jobs__institution',
+        'jobs__department',
+        'social__profileWebsites'
+    ]
 
     # The primary email address for the account.
     # This value is unique, but multiple "None" records exist for:
@@ -1845,31 +1856,41 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         default_timestamp = dt.datetime(1970, 1, 1, 12, 0, 0, tzinfo=pytz.utc)
         return self.comments_viewed_timestamp.get(target_id, default_timestamp)
 
-    def _get_spam_content(self, saved_fields):
-        content = []
-        for field, contents in saved_fields.items():
-            if field in self.SPAM_USER_PROFILE_FIELDS.keys():
-                for item in contents:
-                    for key, value in item.items():
-                        if key in self.SPAM_USER_PROFILE_FIELDS[field]:
-                            content.append(value)
+    def _get_spam_content(self, saved_fields=None):
+        spam_check_fields = set(self.SPAM_USER_PROFILE_FIELDS.keys())
+        spam_check_source = {}
+        if saved_fields:
+            spam_check_source = saved_fields
+            spam_check_fields = spam_check_fields.intersection(set(saved_fields.keys()))
+        else:
+            spam_check_source = {field: getattr(self, field) for field in spam_check_fields}
 
-        content = [item for item in content if item]
-        if content:
-            return ' '.join(content).strip()
+        spam_check_contents = []
+        for spam_field in spam_check_fields:
+            spam_field_content = spam_check_source[spam_field]
+            if not spam_field_content:
+                continue
+            if spam_field in ['schools', 'jobs']:
+                spam_check_contents.extend(
+                    _get_nested_spam_check_content(spam_check_source, spam_field)
+                )
+            else:  # Only other currently checked field is social['profileWebsites']
+                spam_check_contents.extend(
+                    spam_check_source.get('social', dict()).get('profileWebsites', list())
+                )
+        return ' '.join(spam_check_contents).strip()
 
     def check_spam(self, saved_fields, request_headers):
         is_spam = False
-        if set(self.SPAM_USER_PROFILE_FIELDS.keys()).intersection(set(saved_fields.keys())):
-            content = self._get_spam_content(saved_fields)
-            if content:
-                is_spam = self.do_check_spam(
-                    self.fullname,
-                    self.username,
-                    content,
-                    request_headers
-                )
-                self.save()
+        content = self._get_spam_content(saved_fields)
+        if content:
+            is_spam = self.do_check_spam(
+                self.fullname,
+                self.username,
+                content,
+                request_headers
+            )
+            self.save()
 
         return is_spam
 
@@ -2006,3 +2027,14 @@ def add_default_user_addons(sender, instance, created, **kwargs):
 def create_bookmark_collection(sender, instance, created, **kwargs):
     if created:
         new_bookmark_collection(instance)
+
+
+def _get_nested_spam_check_content(spam_check_source, field_name):
+    spam_check_data = spam_check_source[field_name]
+    spam_check_content = []
+    for entry in spam_check_data:
+        for spam_check_subfield in OSFUser.SPAM_USER_PROFILE_FIELDS[field_name]:
+            subfield_content = entry.get(spam_check_subfield)
+            if subfield_content:
+                spam_check_content.append(subfield_content)
+    return spam_check_content

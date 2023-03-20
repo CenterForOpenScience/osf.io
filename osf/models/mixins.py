@@ -1988,7 +1988,7 @@ class SpamOverrideMixin(SpamMixin):
     def log_params(self):
         return NotImplementedError()
 
-    def get_spam_fields(self):
+    def get_spam_fields(self, saved_fields=None):
         return NotImplementedError()
 
     def undelete(self, save=False):
@@ -2051,7 +2051,7 @@ class SpamOverrideMixin(SpamMixin):
         if save:
             self.save()
 
-    def _get_spam_content(self, saved_fields):
+    def _get_spam_content(self, saved_fields=None):
         """
         This function retrieves retrieves strings of potential spam from various DB fields. Also here we can follow
         django's typical ORM query structure for example we can grab the redirect link of a node by giving a saved
