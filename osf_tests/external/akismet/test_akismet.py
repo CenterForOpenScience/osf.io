@@ -19,24 +19,36 @@ class TestUserSpamAkismet:
 
     @pytest.fixture
     def user(self):
-        return AuthUserFactory()
+        test_user = AuthUserFactory()
+        test_user.schools = [
+            {'institution': fake.company(), 'department': 'engineering', 'degree': fake.catch_phrase()}
+            for _ in range(2)
+        ]
+        test_user.jobs = [
+            {'institution': fake.company(), 'department': 'QA', 'title': fake.catch_phrase()}
+            for _ in range(2)
+        ]
+        test_user.social['profileWebsites'] = ['osf.io', 'cos.io']
+        test_user.save()
+        return test_user
 
     def test_get_spam_content(self, user):
-        schools_list = []
-        expected_content = ''
+        returned_content_string = user._get_spam_content()
+        expected_content = []
+        for entry in user.schools:
+            expected_content.extend([entry['degree'], entry['institution'], entry['department']])
+        for entry in user.jobs:
+            expected_content.extend([entry['title'], entry['institution'], entry['department']])
+        expected_content.extend(user.social['profileWebsites'])
+        expected_content_string = ' '.join(expected_content)
 
-        for _ in range(2):
-            institution = fake.company()
-            degree = fake.catch_phrase()
-            schools_list.append({
-                'degree': degree,
-                'institution': institution
-            })
-            expected_content += '{} {} '.format(degree, institution)
-        saved_fields = {'schools': schools_list}
-
-        spam_content = user._get_spam_content(saved_fields)
-        assert spam_content == expected_content.strip()
+        # Ordering is not guaranteed on the return value from `_get_spam_content`
+        # Split the strings back into individual tokens and sort for more reliable comparison
+        # TODO(ENG-XYZ): Refactor `_get_spam_content` uniersally to return the list of individual field
+        # contents instead of the concatenated list in order to enable easier, more accurate comparison
+        returned_content_elements = sorted(returned_content_string.split(' '))
+        expected_content_elements = sorted(expected_content_string.split(' '))
+        assert returned_content_elements == expected_content_elements
 
     @pytest.mark.enable_enqueue_task
     def test_do_check_spam(self, user, mock_akismet):
@@ -69,14 +81,12 @@ class TestUserSpamAkismet:
     def test_check_spam(self, mock_do_check_spam, user):
 
         # test check_spam for other saved fields
-        with mock.patch('osf.models.OSFUser._get_spam_content', mock.Mock(return_value='some content!')):
-            assert user.check_spam(saved_fields={'fullname': 'Dusty Rhodes'}, request_headers=None) is False
-            assert mock_do_check_spam.call_count == 0
+        assert user.check_spam(saved_fields={'fullname': 'Dusty Rhodes'}, request_headers=None) is False
+        assert mock_do_check_spam.call_count == 0
 
         # test check spam for correct saved_fields
-        with mock.patch('osf.models.OSFUser._get_spam_content', mock.Mock(return_value='some content!')):
-            user.check_spam(saved_fields={'schools': ['one']}, request_headers=None)
-            assert mock_do_check_spam.call_count == 1
+        user.check_spam(saved_fields={'schools': [{'institution': 'UVA'}]}, request_headers=None)
+        assert mock_do_check_spam.call_count == 1
 
 
 @pytest.mark.django_db

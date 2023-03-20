@@ -6,8 +6,6 @@ from datetime import timedelta, datetime
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
-from osf.metrics.utils import YearMonth
-
 
 DATETIME_FORMAT = '%Y-%m-%dT%H:%M'
 DATE_FORMAT = '%Y-%m-%d'
@@ -72,14 +70,6 @@ def parse_date_param(param_value):
         raise ValidationError(f'Invalid date value: "{param_value}" (expected format "YYYY-MM-DD")')
 
 
-def parse_yearmonth_param(param_value):
-    try:
-        date = datetime.strptime(param_value, YEARMONTH_FORMAT).date()
-    except ValueError:
-        raise ValidationError(f'Invalid date value: "{param_value}" (expected format "YYYY-MM")')
-    return YearMonth(date.year, date.month)
-
-
 def parse_dates(query_params):
     start_date_param = query_params.get('start_date', None)
     end_date_param = query_params.get('end_date', None)
@@ -123,25 +113,3 @@ def parse_date_range(query_params):
         start_date, end_date = parse_dates(query_params)
         report_date_range = {'gte': str(start_date), 'lte': str(end_date)}
     return report_date_range
-
-
-def parse_yearmonth_range(query_params):
-    start_yearmonth_param = query_params.get('start_yearmonth', None)
-    end_yearmonth_param = query_params.get('end_yearmonth', None)
-
-    if end_yearmonth_param and not start_yearmonth_param:
-        raise ValidationError('You cannot provide a specific end_yearmonth with no start_yearmonth')
-    start_yearmonth = (
-        parse_yearmonth_param(start_yearmonth_param)
-        if start_yearmonth_param
-        else YearMonth.from_date(timezone.now() - timedelta(days=DEFAULT_DAYS_BACK))
-    )
-    end_yearmonth = (
-        parse_yearmonth_param(end_yearmonth_param)
-        if end_yearmonth_param
-        else YearMonth.from_date(timezone.now())
-    )
-
-    if start_yearmonth > end_yearmonth:
-        raise ValidationError('The end_yearmonth must be after the start_yearmonth')
-    return {'gte': str(start_yearmonth), 'lte': str(end_yearmonth)}
