@@ -273,6 +273,8 @@ VIEWABLE_REPORTS = {
     'user_summary': reports.UserSummaryReport,
     'spam_summary': reports.SpamSummaryReport,
     'new_user_domains': reports.NewUserDomainReport,
+    'monthly_sessionhours': reports.MonthlySessionhoursReport,
+    'monthly_route_use': reports.MonthlyRouteUseReport,
 }
 
 
@@ -344,7 +346,7 @@ class RecentReportList(JSONAPIBaseView):
             range_field_name = 'report_yearmonth'
             range_parser = parse_yearmonth_range
         else:
-            raise ValueError(f'report class must subclass DailyReport or MonthlyReport: {report_class}')
+            raise ValueError(f'VIEWABLE_REPORTS values should subclass DailyReport or MonthlyReport ("{report_name}": {report_class})')
         range_filter = range_parser(request.GET)
         search_recent = (
             report_class.search()
@@ -409,6 +411,7 @@ class CountedAuthUsageView(JSONAPIBaseView):
             session_id_parts = [
                 client_session_id,
                 current_date_str,
+                now.hour,
             ]
         elif user_is_authenticated:
             session_id_parts = [

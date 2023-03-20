@@ -8,6 +8,8 @@ from .osfstorage_file_count import OsfstorageFileCountReporter
 from .preprint_count import PreprintCountReporter
 from .user_count import UserCountReporter
 from .spam_count import SpamCountReporter
+from .monthly_sessionhours import MonthlySessionhoursReporter
+from .monthly_route_use import MonthlyRouteUseReporter
 
 
 DAILY_REPORTERS = (
@@ -24,4 +26,6 @@ DAILY_REPORTERS = (
 
 MONTHLY_REPORTERS = (
     SpamCountReporter,
+    MonthlySessionhoursReporter,
+    MonthlyRouteUseReporter,
 )

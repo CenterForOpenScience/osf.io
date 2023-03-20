@@ -3,22 +3,17 @@ import enum
 import logging
 from urllib.parse import urlsplit
 
-from elasticsearch_dsl import InnerDoc, analyzer, tokenizer
+from elasticsearch_dsl import InnerDoc
 from elasticsearch_metrics import metrics
 from elasticsearch_metrics.signals import pre_save
 from django.dispatch import receiver
 import pytz
 
-from osf.metrics.utils import stable_key
+from osf.metrics.utils import stable_key, route_prefix_analyzer
 from osf.models import Guid
 
 
 logger = logging.getLogger(__name__)
-
-route_prefix_analyzer = analyzer(
-    'route_prefix_analyzer',
-    tokenizer=tokenizer('route_prefix_tokenizer', 'path_hierarchy', delimiter='.'),
-)
 
 class PageviewInfo(InnerDoc):
     """PageviewInfo
@@ -31,7 +26,7 @@ class PageviewInfo(InnerDoc):
     page_title = metrics.Keyword()
     route_name = metrics.Keyword(
         fields={
-            'by_prefix': metrics.Text(analyzer=route_prefix_analyzer),
+            'by_prefix': metrics.Text(analyzer=route_prefix_analyzer, fielddata=True),
         },
     )
 
