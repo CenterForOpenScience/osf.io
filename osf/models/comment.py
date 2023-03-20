@@ -23,6 +23,7 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
     OVERVIEW = 'node'
     FILES = 'files'
     WIKI = 'wiki'
+    SPAM_CHECK_FIELDS = {'content'}
 
     user = models.ForeignKey('OSFUser', null=True, on_delete=models.CASCADE)
     # the node that the comment belongs to
@@ -253,3 +254,10 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
                 save=False,
             )
             self.node.save()
+
+    def _get_spam_content(self, *unused_args, **unused_kwargs):
+        '''For compatibility with the domain extraction management command.'''
+        content = [getattr(self, field, []) for field in self.SPAM_CHECK_FIELDS]
+        if not content:
+            return None
+        return ' '.join(content)
