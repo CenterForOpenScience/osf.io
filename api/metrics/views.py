@@ -342,7 +342,7 @@ class RecentReportList(JSONAPIBaseView):
             range_field_name = 'report_yearmonth'
         else:
             raise ValueError(f'report class must subclass DailyReport or MonthlyReport: {report_class}')
-        range_filter = parse_date_range(request.GET)
+        range_filter = parse_date_range(request.GET, is_monthly=is_monthly)
         search_recent = (
             report_class.search()
             .filter('range', **{range_field_name: range_filter})
