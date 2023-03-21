@@ -199,20 +199,24 @@ def before_request():
             response = redirect(web_url_for('index'))
             response.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
             return response
+        # Case 1: anonymous session that is used for first time external (e.g. ORCiD) login only
+        if user_session.get('auth_user_external_first_login', False) is True:
+            return
+        # Case 2 (Warning): non-anonymous session without autheticated user
+        if user_session.get('auth_user_id', None) is None:
+            # TODO: log warning and inform sentry
+            return
+        # Case 3: authenticated session with user
         # Update date last login when making non-api requests
         from framework.auth.tasks import update_user_from_activity
-        try:
-            user_session_entry = UserSessionMap.objects.get(session_key=user_session.session_key)
-            enqueue_task(
-                update_user_from_activity.s(
-                    user_session_entry.user._id,
-                    timezone.now().timestamp(),
-                    cas_login=False
-                )
+        user_session_entry = UserSessionMap.objects.get(session_key=user_session.session_key)
+        enqueue_task(
+            update_user_from_activity.s(
+                user_session_entry.user._id,
+                timezone.now().timestamp(),
+                cas_login=False
             )
-        except UserSessionMap.MultipleObjectsReturned or UserSessionMap.DoesNotExist:
-            # TODO: log an error message to sentry
-            return None
+        )
 
 
 def after_request(response):
