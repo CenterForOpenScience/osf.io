@@ -1862,7 +1862,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         default_timestamp = dt.datetime(1970, 1, 1, 12, 0, 0, tzinfo=pytz.utc)
         return self.comments_viewed_timestamp.get(target_id, default_timestamp)
 
-    def _get_spam_content(self, saved_fields=None):
+    def _get_spam_content(self, saved_fields=None, **unused_kwargs):
         spam_check_fields = set(self.SPAM_USER_PROFILE_FIELDS.keys())
         spam_check_source = {}
         if saved_fields:

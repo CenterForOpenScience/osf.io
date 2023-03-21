@@ -77,6 +77,17 @@ class TestBackfillDomainReferences:
         assert created_reference.domain == domain
 
     @pytest.mark.enable_enqueue_task
+    def test_backfill_project_domain_references__wiki__no_dupes_with_multiple_versions(self, test_wiki):
+        node = test_wiki.wiki_page.node
+        node.description = 'Blah blah blah http://www.google.com, blah blah blah https://www.osf.io'
+        WikiVersionFactory(wiki_page=test_wiki.wiki_page, content='Innocuous link: https://google.com')
+
+        with mock.patch.object(backfill_task.spam_tasks.requests, 'head'):
+            resource_count = backfill_task.backfill_domain_references(model_name='osf.Node')
+
+        assert resource_count == 1
+
+    @pytest.mark.enable_enqueue_task
     def test_backfill_preprint_domain_references(self, test_preprint, spam_domain):
         assert DomainReference.objects.count() == 0
         with mock.patch.object(backfill_task.spam_tasks.requests, 'head'):
