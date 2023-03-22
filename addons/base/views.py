@@ -548,7 +548,7 @@ def create_waterbutler_log(payload, **kwargs):
             file_node = BaseFileNode.resolve_class(
                 provider, BaseFileNode.FILE
             ).get_or_create(node, '/' + metadata.get('path').lstrip('/'))
-            if file_node:
+            if file_node and metadata.get('kind') == 'file':
                 func_hash = getattr(file_node, 'get_hash_for_timestamp', None)
                 if func_hash:
                     extras = {}
