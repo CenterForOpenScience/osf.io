@@ -615,6 +615,13 @@ def addon_delete_file_node(self, target, user, event_type, payload):
                 )
             except BaseFileNode.DoesNotExist:
                 file_node = None
+            except BaseFileNode.MultipleObjectsReturned:
+                file_node = None
+                for o in BaseFileNode.objects.filter(
+                        target_object_id=target.id,
+                        target_content_type=content_type,
+                        _materialized_path=materialized_path):
+                    o.delete(user=user)
 
             if file_node and not TrashedFileNode.load(file_node._id):
                 file_node.delete(user=user)
