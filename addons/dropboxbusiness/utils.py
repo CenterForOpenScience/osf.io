@@ -25,6 +25,7 @@ from osf.models import BaseFileNode, OSFUser
 from osf.models.external import ExternalAccount
 # from osf.models.nodelog import NodeLog
 from osf.models.rdm_addons import RdmAddonOption
+from osf.utils.fields import ensure_str
 from addons.dropboxbusiness import settings, lock
 from admin.rdm_addons.utils import get_rdm_addon_option
 from website.util import timestamp, waterbutler
@@ -969,7 +970,7 @@ class TeamInfo(object):
                     str(len(split_values))))
             for i, value in enumerate(split_values):
                 key = self._prop_split_key(name, i)
-                field = dropbox.file_properties.PropertyField(key, value)
+                field = dropbox.file_properties.PropertyField(key, ensure_str(value))
                 add_or_update_fields.append(field)
                 DEBUG('update property: key={}'.format(key))
 
