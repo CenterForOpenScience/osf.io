@@ -229,10 +229,20 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
     def rename_team_folder(self):
         try:
             fclient = DropboxTeam(self.fileaccess_token)
-            fclient.team_team_folder_rename(
-                self.team_folder_id,
-                self.team_folder_name
-            )
+            has_team_space = utils.is_has_team_space(fclient)
+            if has_team_space:
+                team_info = utils.TeamInfo(self.fileaccess_token, self.management_token, admin=True)
+                fclient_admin = team_info.fileaccess_client_admin
+                res = fclient_admin.users_get_current_account()
+                root_namespace_id = res.root_info.root_namespace_id
+                fclient_pathroot_admin = team_info.fileaccess_client_admin_with_path_root(root_namespace_id)
+                metadata = fclient_pathroot_admin.sharing_get_folder_metadata(self.team_folder_id)
+                fclient_pathroot_admin.files_move_v2('/{}'.format(metadata.name), '/{}'.format(self.team_folder_name))
+            else:
+                fclient.team_team_folder_rename(
+                    self.team_folder_id,
+                    self.team_folder_name
+                )
         except DropboxException:
             logger.exception(u'Team folder cannot be renamed: node={}, team_folder_id={}, name={}'.format(self.owner._id, self.team_folder_id, self.team_folder_name))
             # ignored
