@@ -1810,7 +1810,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         secret = secret or website_settings.SECRET_KEY
 
-        user_session_map = UserSessionMap.objects.filter(user__id=self.id).order_by('-expired_date').first()
+        user_session_map = UserSessionMap.objects.filter(user__id=self.id).order_by('-expire_date').first()
 
         if not SessionStore().exists(session_key=user_session_map.session_key):
             user_session = SessionStore()
