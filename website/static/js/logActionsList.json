@@ -28,6 +28,7 @@
     "custom_citation_removed" : "${user} removed a custom citation from ${node}",
     "contributor_added":    "${user} added ${contributors} as contributor(s) to ${node}",
     "contributor_removed":  "${user} removed ${contributors} as contributor(s) from ${node}",
+    "contributor_rejected":  "${contributors} cancelled invitation as contributor(s) from ${node}",
     "contributors_reordered":   "${user} reordered contributors for ${node}",
     "permissions_updated":   "${user} changed permissions for ${node}",
     "made_contributor_visible":     "${user} made non-bibliographic contributor ${contributors} a bibliographic contributor on ${node}",

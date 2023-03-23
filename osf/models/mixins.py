@@ -1684,9 +1684,11 @@ class ContributorMixin(models.Model):
             self.update_or_enqueue_on_resource_updated(user_id, first_save=False, saved_fields=['contributors'])
         return True
 
-    def cancel_invite(self, contributor):
+    def cancel_invite(self, contributor, log=True):
         """Cancel join the project
+        Reference from self.remove_contributor.
         :param contributor: User object, the contributor to be removed
+        :param log: flag to write activity logs
         """
 
         if isinstance(contributor, self.contributor_class):
@@ -1697,10 +1699,31 @@ class ContributorMixin(models.Model):
             del contributor.unclaimed_records[self._id]
             contributor.save()
 
+        # invitee is not the only visible contributor
+        # invitee is not a registered admin user
         contrib_obj = self.contributor_set.get(user=contributor)
         contrib_obj.delete()
 
+        self.clear_permissions(contributor)
+        # After remove callback
+        self.disconnect_addons(contributor, None)
+
+        if log:
+            params = self.log_params
+            params['contributors'] = [contributor._id]
+            self.add_log(
+                action=self.log_class.CONTRIB_REJECTED,
+                params=params,
+                auth=None,
+                save=False,
+            )
+
         self.save()
+        # send signal to remove this user from project subscriptions
+        project_signals.contributor_removed.send(self, user=contributor)
+        project_signals.contributors_updated.send(self)
+
+        # enqueue on_node_updated/on_preprint_updated to update DOI metadata when a contributor is removed
         if getattr(self, 'get_identifier_value', None) and self.get_identifier_value('doi'):
             request, user_id = get_request_and_user_id()
             self.update_or_enqueue_on_resource_updated(user_id, first_save=False, saved_fields=['contributors'])

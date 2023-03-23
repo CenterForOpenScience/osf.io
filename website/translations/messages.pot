@@ -1400,7 +1400,7 @@ msgid ""
 "<h4>We've updated our <a target=\"_blank\" "
 "href=\"https://support.rdm.nii.ac.jp/terms\">Terms"
 " of Use</a> and <a target=\"_blank\" "
-"href=\"https://support.rdm.nii.ac.jp/terms/privacy\">Privacy"
+"href=\"https://support.rdm.nii.ac.jp/terms/\">Privacy"
 " Policy</a>. Please read them carefully.</h4>"
 msgstr ""
 
@@ -3087,8 +3087,8 @@ msgstr ""
 #, python-format
 msgid ""
 "<b %(removedContributor)s></b> cannot be                        removed "
-"as a contributor.  You need at least one administrator, bibliographic "
-"contributor, and registered user."
+"as a contributor.  You need at least one administrator and bibliographic "
+"contributor."
 msgstr ""
 
 #: website/templates/project/modal_remove_contributor.mako:82

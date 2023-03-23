@@ -34,6 +34,18 @@
                            "bucketLocations": {
                              "sailingship": {"name": "sailingship", "host": "hssgws3.riken.jp:443"},
                              "": {"name": "sailingship"}},
+                           "serverSideEncryption": false},
+                          {"name": "SPring-8 Proto S3 Service",
+                           "host": "sp8-s3gw.spring8.or.jp:443",
+                           "bucketLocations": {
+                             "us-east-1": {"name": "us-east-1", "host": "sp8-s3gw.spring8.or.jp:443"},
+                             "": {"name": "us-east-1"}},
+                           "serverSideEncryption": false},
+                          {"name": "ONION-object @ CMC Osaka University",
+                           "host": "s3-osakau.oniongw.hpc.cmc.osaka-u.ac.jp:443",
+                           "bucketLocations": {
+                             "osakau": {"name": "osakau", "host": "s3-osakau.oniongw.hpc.cmc.osaka-u.ac.jp:443"},
+                             "": {"name": "osakau"}},
                            "serverSideEncryption": false}
                            ],
     "encryptUploads": true

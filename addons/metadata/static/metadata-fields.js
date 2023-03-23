@@ -34,11 +34,11 @@ function createField(erad, question, valueEntry, options, callback) {
   throw new Error('Unsupported type: ' + question.type);
 }
 
-function validateField(erad, question, value, fieldSetAndValues) {
+function validateField(erad, question, value, fieldSetAndValues, options) {
   if (question.qid == 'grdm-file:available-date') {
     return validateAvailableDateField(erad, question, value, fieldSetAndValues);
   }
-  if (!value) {
+  if (!value && !((options || {}).multiple)) {
     if (question.required) {
       throw new Error(_("This field can't be blank."))
     }
@@ -59,6 +59,7 @@ function createStringField(erad, question, value, options, callback) {
       createFormElement(function() {
         return $('<input></input>');
       }, options),
+      (options && options.multiple) ? createClearFormElement(question) : null,
       question,
       value,
       options,
@@ -69,6 +70,7 @@ function createStringField(erad, question, value, options, callback) {
       createFormElement(function() {
         return $('<textarea></textarea>');
       }, options),
+      (options && options.multiple) ? createClearFormElement(question) : null,
       question,
       value,
       options,
@@ -81,6 +83,7 @@ function createStringField(erad, question, value, options, callback) {
         datepicker.mount(elem, null);
         return elem;
       }, options),
+      (options && options.multiple) ? createClearFormElement(question) : null,
       question,
       value,
       options,
@@ -89,6 +92,7 @@ function createStringField(erad, question, value, options, callback) {
   } else if (question.format == 'file-creators') {
     return new SingleElementField(
       createFileCreatorsFieldElement(erad, options),
+      (options && options.multiple) ? createClearFormElement(question) : null,
       question,
       value,
       options,
@@ -97,6 +101,7 @@ function createStringField(erad, question, value, options, callback) {
   } else if (question.format == 'e-rad-researcher-number') {
     return new SingleElementField(
       createERadResearcherNumberFieldElement(erad, options),
+      (options && options.multiple) ? createClearFormElement(question) : null,
       question,
       value,
       options,
@@ -112,6 +117,7 @@ function createStringField(erad, question, value, options, callback) {
       createFormElement(function() {
         return $('<input></input>').addClass(question.format);
       }, options),
+      (options && options.multiple) ? createClearFormElement(question) : null,
       question,
       value,
       options,
@@ -122,6 +128,7 @@ function createStringField(erad, question, value, options, callback) {
       createFileCapacityFieldElement(function() {
         return $('<input></input>');
       }, options),
+      (options && options.multiple) ? createClearFormElement(question) : null,
       question,
       value,
       options,
@@ -132,6 +139,7 @@ function createStringField(erad, question, value, options, callback) {
       createFileURLFieldElement(function() {
         return $('<input></input>');
       }, options),
+      (options && options.multiple) ? createClearFormElement(question) : null,
       question,
       value,
       options,
@@ -142,6 +150,7 @@ function createStringField(erad, question, value, options, callback) {
     createFormElement(function() {
       return $('<input></input>');
     }, options),
+    (options && options.multiple) ? createClearFormElement(question) : null,
     question,
     value,
     options,
@@ -153,8 +162,9 @@ function createChooseField(erad, question, value, options, callback) {
   if (question.format == 'singleselect') {
     return new SingleElementField(
       createFormElement(function() {
-        return createChooser(question.options);
+        return createChooser(question, options);
       }, options),
+      null,
       question,
       value,
       options,
@@ -165,6 +175,7 @@ function createChooseField(erad, question, value, options, callback) {
     createFormElement(function() {
       return $('<input></input>');
     }, options),
+    null,
     question,
     value,
     options,
@@ -189,20 +200,36 @@ function validateAvailableDateField(erad, question, value, fieldSetAndValues) {
   }
 }
 
-function createChooser(options) {
+function createChooser(question, options) {
   const select = $('<select></select>');
-  select.append($('<option></option>').attr('value', '').text(_('Choose...')));
-  (options || []).forEach(function(opt) {
-    if (opt.text === undefined) {
-      const optElem = $('<option></option>').attr('value', opt).text(opt);
-      select.append(optElem);
-      return;
+  const defaultOption = $('<option></option>').attr('value', '');
+  if (options.multiple) {
+    defaultOption.text(_('(Not Modified)'));
+    defaultOption.attr('selected', true)
+  } else {
+    defaultOption.text(_('Choose...'));
+  }
+  select.append(defaultOption);
+  var groupElem = null;
+  (question.options || []).forEach(function(opt) {
+    if (opt.text && opt.text.startsWith('group:None:')) {
+      groupElem = null;
+    } else if (opt.text && opt.text.startsWith('group:')) {
+      groupElem = $('<optgroup></optgroup>').attr('label', getLocalizedText(opt.tooltip));
+      select.append(groupElem);
+    } else {
+      const optElem = $('<option></option>')
+        .attr('value', opt.text === undefined ? opt : opt.text)
+        .text(opt.text === undefined ? opt : getLocalizedText(opt.tooltip));
+      if (!options.multiple && opt.default) {
+        optElem.attr('selected', true);
+      }
+      if (groupElem) {
+        groupElem.append(optElem);
+      } else {
+        select.append(optElem);
+      }
     }
-    const optElem = $('<option></option>').attr('value', opt.text).text(getLocalizedText(opt.tooltip));
-    if (opt.default) {
-      optElem.attr('selected', true);
-    }
-    select.append(optElem);
   });
   return select;
 }
@@ -215,7 +242,9 @@ function createFormElement(createHandler, options) {
         elem.attr('readonly', true);
       }
       if (callback) {
-        elem.change(callback);
+        elem.change(function(event) {
+          callback(event, options);
+        });
       }
       elem.addClass('form-control');
       addToContainer(elem);
@@ -231,11 +260,44 @@ function createFormElement(createHandler, options) {
         input.val(value);
       }
     },
+    reset: function(input) {
+      input.val(null);
+    },
+    disable: function(input, disabled) {
+      input.attr('disabled', disabled);
+    },
+  };
+}
+
+function createClearFormElement(question) {
+  return {
+    create: function() {
+      const clearId = 'clear-' + question.qid.replace(':', '-');
+      const clearField = $('<input></input>')
+        .addClass('form-check-input')
+        .addClass('metadata-form-clear-checkbox')
+        .attr('type', 'checkbox')
+        .attr('id', clearId);
+      const clearLabel = $('<label></label>')
+        .addClass('form-check-label')
+        .attr('for', clearId)
+        .text(_('Clear'));
+      const clearForm = $('<div></div>')
+        .addClass('form-check')
+        .append(clearField)
+        .append(clearLabel);
+      return {
+        element: clearForm,
+        checked: function() {
+          return clearField.prop('checked');
+        }
+      };
+    }
   };
 }
 
 
-function SingleElementField(formField, question, defaultValue, options, callback) {
+function SingleElementField(formField, clearField, question, defaultValue, options, callback) {
   if (!question.qid) {
     throw new Error('No labels');
   }
@@ -244,9 +306,12 @@ function SingleElementField(formField, question, defaultValue, options, callback
   self.formField = formField;
   self.label = question.qid;
   self.title = question.title;
+  self.help = question.help;
   self.defaultValue = defaultValue;
+  self.clearField = null;
 
   self.createFormGroup = function(input, errorContainer) {
+    const header = $('<div></div>');
     const label = $('<label></label>').text(self.getDisplayText());
     if (question.required) {
       label.append($('<span></span>')
@@ -254,8 +319,47 @@ function SingleElementField(formField, question, defaultValue, options, callback
         .css('font-weight', 'bold')
         .text('*'));
     }
+    header.append(label);
+    if (clearField) {
+      self.clearField = clearField.create();
+      self.clearField.element.css('float', 'right');
+      self.clearField.element.on('change', function() {
+        if (self.clearField.checked()) {
+          self.formField.reset(input);
+          self.formField.disable(input, true);
+        } else {
+          self.formField.disable(input, false);
+        }
+      });
+      header.append(self.clearField.element);
+    }
     const group = $('<div></div>').addClass('form-group')
-      .append(label)
+      .append(header);
+    if (self.help) {
+      var isDisplayedHelp = false;
+      const helpLink = $('<a></a>')
+          .addClass('help-toggle-button')
+          .text(_('Show example'));
+      const helpLinkBlock = $('<p></p>').append(helpLink);
+      const help = $('<p></p>')
+        .addClass('help-block')
+        .text(self.getHelpText())
+        .hide();
+      helpLink.on('click', function(e) {
+        e.preventDefault();
+        if (isDisplayedHelp) {
+          helpLink.text(_('Show example'));
+          help.hide();
+          isDisplayedHelp = false;
+        } else {
+          helpLink.text(_('Hide example'));
+          help.show();
+          isDisplayedHelp = true;
+        }
+      });
+      group.append(helpLinkBlock).append(help);
+    }
+    group
       .append(input)
       .append(errorContainer);
     return group;
@@ -268,12 +372,20 @@ function SingleElementField(formField, question, defaultValue, options, callback
     return getLocalizedText(self.title);
   }
 
+  self.getHelpText = function() {
+    return getLocalizedText(self.help);
+  }
+
   self.getValue = function(input) {
     return formField.getValue(input);
   };
 
   self.setValue = function(input, value) {
     formField.setValue(input, value);
+  };
+
+  self.checkedClear = function() {
+    return self.clearField && self.clearField.checked();
   };
 
   self.addElementTo = function(parent, errorContainer) {
@@ -359,11 +471,14 @@ function createFileCapacityFieldElement(createHandler, options) {
         input.attr('readonly', true);
       }
       if (callback) {
-        input.change(callback);
+        input.change(function(event) {
+          callback(event, options);
+        });
       }
       input.addClass('form-control');
-      const container = $('<div>').css('display', 'flex').append(input);
-      if (!options || !options.readonly) {
+      const container = $('<div>').append(input);
+      if (!options || (!options.readonly && !options.multiple)) {
+        container.css('display', 'flex');
         const calcIndicator = $('<i class="fa fa-spinner fa-pulse">')
           .hide();
         const calcButton = $('<a class="btn btn-default btn-sm">')
@@ -401,6 +516,12 @@ function createFileCapacityFieldElement(createHandler, options) {
     setValue: function(container, value) {
       container.find('input').val(value);
     },
+    reset: function(container) {
+      container.find('input').val(null);
+    },
+    disable: function(container, disabled) {
+      container.find('input').attr('disabled', disabled);
+    },
   };
 }
 
@@ -412,11 +533,14 @@ function createFileURLFieldElement(createHandler, options) {
         input.attr('readonly', true);
       }
       if (callback) {
-        input.change(callback);
+        input.change(function(event) {
+          callback(event, options);
+        });
       }
       input.addClass('form-control');
-      const container = $('<div>').css('display', 'flex').append(input);
-      if (!options || !options.readonly) {
+      const container = $('<div>').append(input);
+      if (!options || (!options.readonly && !options.multiple)) {
+        container.css('display', 'flex');
         const fillButton = $('<a class="btn btn-default btn-sm">')
           .append($('<i class="fa fa-refresh"></i>'))
           .append($('<span></span>').text(_('Fill')));
@@ -437,6 +561,12 @@ function createFileURLFieldElement(createHandler, options) {
     },
     setValue: function(container, value) {
       container.find('input').val(value);
+    },
+    reset: function(container) {
+      container.find('input').val(null);
+    },
+    disable: function(container, disabled) {
+      container.find('input').attr('disabled', disabled);
     },
   };
 }
@@ -542,13 +672,13 @@ function createFileCreatorsFieldElement(erad, options) {
             emptyLine.show();
           }
           if (callback) {
-            callback();
+            callback(e, options);
           }
         });
       }
       tbody.on('change', '.input', function (e) {
         if (callback) {
-          callback();
+          callback(e, options);
         }
       });
       addToContainer(container);
@@ -574,7 +704,18 @@ function createFileCreatorsFieldElement(erad, options) {
       researchers.forEach(function (researcher) {
         addResearcher(container, researcher);
       });
-    }
+    },
+    reset: function(container) {
+      container.find('tbody').empty();
+    },
+    disable: function(container, disabled) {
+      const btn = container.find('.btn');
+      if (disabled) {
+        btn.addClass('disabled');
+      } else {
+        btn.removeClass('disabled');
+      }
+    },
   };
 }
 
@@ -630,7 +771,9 @@ function createERadResearcherNumberFieldElement(erad, options) {
       });
       container.find('.twitter-typeahead').css('width', '100%');
       if (callback) {
-        input.change(callback);
+        input.change(function(event) {
+          callback(event, options);
+        });
       }
       return container;
     },
@@ -639,6 +782,12 @@ function createERadResearcherNumberFieldElement(erad, options) {
     },
     setValue: function(container, value) {
       container.find('input').val(value);
+    },
+    reset: function(container) {
+      container.find('input').val(null);
+    },
+    disable: function(container, disabled) {
+      container.find('input').attr('disabled', disabled);
     },
   };
 }
