@@ -72,7 +72,7 @@ def _convert_metadata(metadata, questions):
 
 def _quote_csv(value):
     f = io.StringIO()
-    w = csv.writer(f)
+    w = csv.writer(f, quoting=csv.QUOTE_ALL)
     if isinstance(value, list):
         w.writerow(value)
     else:

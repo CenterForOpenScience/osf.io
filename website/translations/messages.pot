@@ -1868,15 +1868,24 @@ msgstr ""
 msgid "Body of Wiki"
 msgstr ""
 
-#: website/templates/search_grdm.mako:595
+#: website/templates/search_grdm.mako:553
+msgid "File Metadata"
+msgstr ""
+
+#: website/templates/search_grdm.mako:573
+#: website/templates/search_grdm.mako:576
+msgid "Project Metadata"
+msgstr ""
+
+#: website/templates/search_grdm.mako:618
 msgid "Modified by"
 msgstr ""
 
-#: website/templates/search_grdm.mako:598
+#: website/templates/search_grdm.mako:621
 msgid "Created by"
 msgstr ""
 
-#: website/templates/search_grdm.mako:604
+#: website/templates/search_grdm.mako:627
 msgid "Comment"
 msgstr ""
 

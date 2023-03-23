@@ -12,34 +12,120 @@
           "qid": "funder",
           "nav": "資金配分機関情報",
           "title": "資金配分機関情報|Funder",
+          "help": "資金配分機関情報を選択してください。一覧に無い場合は英語略称を記入してください。|Please select the funder. If not listed, please enter the English abbreviation.",
           "type": "choose",
           "format": "e-rad-award-funder",
           "options": [
-            {
-              "text": "JST",
-              "tooltip": "国立研究開発法人科学技術振興機構|Japan Science and Technology Agency|1020"
-            },
-            {
-              "text": "NEDO",
-              "tooltip": "国立研究開発法人新エネルギー・産業技術総合開発機構|New Energy and Industrial Technology Development Organization|1305"
-            },
             {
               "text": "AMED",
               "tooltip": "国立研究開発法人日本医療研究開発機構|Japan Agency for Medical Research and Development|303"
             },
             {
-              "text": "BRAIN",
-              "tooltip": "生物系特定産業技術研究支援センター|Bio-oriented Technology Research Advancement Institution|1205"
+              "text": "MOD",
+              "tooltip": "防衛省|Ministry of Defense|501"
+            },
+            {
+              "text": "NRA",
+              "tooltip": "原子力規制庁|Nuclear Regulation Authority|1503"
+            },
+            {
+              "text": "ERCA",
+              "tooltip": "独立行政法人環境再生保全機構|Environmental Restoration and Conservation Agency|1502"
+            },
+            {
+              "text": "CAO",
+              "tooltip": "内閣府|Cabinet Office|301"
+            },
+            {
+              "text": "SOUMU",
+              "tooltip": "総務省|Ministry of Internal Affairs and Communications|601"
+            },
+            {
+              "text": "FDMA",
+              "tooltip": "消防庁|Fire and Disaster Management Agenc|605"
+            },
+            {
+              "text": "NICT",
+              "tooltip": "国立研究開発法人情報通信研究機構|National Institute of Information and Communications Technology|615"
+            },
+            {
+              "text": "MEXT",
+              "tooltip": "文部科学省|Ministry of Education|1001"
+            },
+            {
+              "text": "JST",
+              "tooltip": "国立研究開発法人科学技術振興機構|Japan Science and Technology Agency|1020"
+            },
+            {
+              "text": "JSPS",
+              "tooltip": "独立行政法人日本学術振興会|Japan Society for the Promotion of Science|1025"
+            },
+            {
+              "text": "MHLW",
+              "tooltip": "厚生労働省|Ministry of Health|1101"
+            },
+            {
+              "text": "MAFF",
+              "tooltip": "農林水産省|Ministry of Agriculture|1201"
+            },
+            {
+              "text": "PRIMAFF",
+              "tooltip": "農林水産省農林水産政策研究所|Policy Research Institute|1203"
+            },
+            {
+              "text": "NARO",
+              "tooltip": "国立研究開発法人農業・食品産業技術総合研究機構|National Agriculture and Food Research Organization|1205"
+            },
+            {
+              "text": "METI",
+              "tooltip": "経済産業省|Ministry of Economy|1301"
+            },
+            {
+              "text": "NEDO",
+              "tooltip": "国立研究開発法人新エネルギー・産業技術総合開発機構|New Energy and Industrial Technology Development|1305 Organization"
+            },
+            {
+              "text": "MLIT",
+              "tooltip": "国土交通省|Ministry of Land|1401"
+            },
+            {
+              "text": "NILIM",
+              "tooltip": "国土技術政策総合研究所|Ministry of Land|1405"
+            },
+            {
+              "text": "ENV",
+              "tooltip": "環境省|Ministry of the Environment|1501"
+            },
+            {
+              "text": "BIBIOHN",
+              "tooltip": "国立研究開発法人医薬基盤・健康・栄養研究所|National Institutes of Biomedical Innovation|1106"
             }
           ],
-          "required": true
+          "required": true,
+          "pattern": "^[a-zA-Z0-9]+$"
         },
         {
-          "qid": "e-rad-project-id",
-          "nav": "e-Radの課題番号",
-          "title": "e-Radの課題番号|e-Rad project ID",
+          "qid": "program-name-ja",
+          "nav": "プログラム名 (日本語)",
+          "title": "プログラム名 (日本語)|Program name (Japanese)",
           "type": "string",
-          "format": "e-rad-award-number",
+          "format": "jgn-program-name-ja",
+          "required": false
+        },
+        {
+          "qid": "program-name-en",
+          "nav": "Program name (English)",
+          "title": "Program name (English)",
+          "type": "string",
+          "format": "jgn-program-name-en",
+          "required": false
+        },
+        {
+          "qid": "japan-grant-number",
+          "nav": "体系的番号",
+          "title": "体系的番号|Japan Grant Number",
+          "type": "string",
+          "format": "japan-grant-number",
           "required": true
         },
         {
@@ -48,7 +134,8 @@
           "title": "プロジェクト名 (日本語)|Project name (Japanese)",
           "type": "string",
           "format": "e-rad-award-title-ja",
-          "required": true
+          "required": true,
+          "space_normalization": true
         },
         {
           "qid": "project-name-en",
@@ -56,7 +143,8 @@
           "title": "Project name (English)",
           "type": "string",
           "format": "e-rad-award-title-en",
-          "required": true
+          "required": true,
+          "space_normalization": true
         },
         {
           "qid": "project-research-field",
@@ -133,7 +221,8 @@
           "title": "データ No.|Data No.",
           "type": "string",
           "format": "text",
-          "required": false
+          "required": false,
+          "space_normalization": true
         },
         {
           "qid": "grdm-file:title-ja",
@@ -141,7 +230,8 @@
           "title": "データの名称 (日本語)|Title (Japanese)",
           "type": "string",
           "format": "text",
-          "required": true
+          "required": true,
+          "space_normalization": true
         },
         {
           "qid": "grdm-file:title-en",
@@ -149,7 +239,8 @@
           "title": "Title (English)",
           "type": "string",
           "format": "text",
-          "required": true
+          "required": true,
+          "space_normalization": true
         },
         {
           "qid": "grdm-file:date-issued-updated",
@@ -157,7 +248,9 @@
           "title": "掲載日・掲載更新日|Date (Issued / Updated)",
           "type": "string",
           "format": "date",
-          "required": false
+          "required": false,
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "help": "例: 2010-01-01|E.g., 2010-01-01"
         },
         {
           "qid": "grdm-file:data-description-ja",
@@ -439,7 +532,9 @@
           "title": "概略データ量|File size",
           "type": "string",
           "format": "file-capacity",
-          "required": false
+          "required": false,
+          "pattern": "^[><]?([0-9]+(\\.[0-9]+)?-)?([0-9]+)(\\.[0-9]+)?([A-Za-z]*B)$",
+          "help": "例: >100GB, <10GB, 100-10MB|E.g., >100GB, <10GB, 100-10MB"
         },
         {
           "qid": "grdm-file:data-policy-free",
@@ -633,7 +728,9 @@
           "title": "公開予定日 (公開期間猶予の場合)|Publication date (for embargoed access)",
           "type": "string",
           "format": "date",
-          "required": false
+          "required": false,
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "help": "例: 2010-01-01|E.g., 2010-01-01"
         },
         {
           "qid": "grdm-file:repo-information-ja",
@@ -657,7 +754,9 @@
           "title": "リポジトリURL・DOIリンク|Repository URL/ DOI link",
           "type": "string",
           "format": "file-url",
-          "required": false
+          "required": false,
+          "pattern": "[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_\\+.~#?&//=]*)$",
+          "help": "例: https://example.com/example|E.g., https://example.com/example"
         },
         {
           "qid": "grdm-file:creators",
@@ -665,7 +764,8 @@
           "title": "データ作成者|Creator Name",
           "type": "string",
           "format": "file-creators",
-          "required": false
+          "required": false,
+          "help": "e-Rad 研究者番号(半角数字)|e-Rad Researcher Number(single-byte numeric characters)"
         },
         {
           "qid": "grdm-file:hosting-inst-ja",
@@ -673,7 +773,8 @@
           "title": "データ管理組織 (日本語)|Hosting institution (Japanese)",
           "type": "string",
           "format": "file-institution-ja",
-          "required": true
+          "required": true,
+          "space_normalization": true
         },
         {
           "qid": "grdm-file:hosting-inst-en",
@@ -681,7 +782,8 @@
           "title": "Hosting institution (English)",
           "type": "string",
           "format": "file-institution-en",
-          "required": true
+          "required": true,
+          "space_normalization": true
         },
         {
           "qid": "grdm-file:data-man-number",
@@ -689,7 +791,9 @@
           "title": "データ管理者の e-Rad 研究者番号|Data manager identifier (e-Rad)",
           "type": "string",
           "format": "e-rad-researcher-number",
-          "required": false
+          "required": false,
+          "pattern": "^[a-zA-Z0-9]+$",
+          "help": "e-Rad 研究者番号(半角数字)|e-Rad Researcher Number(single-byte numeric characters)"
         },
         {
           "qid": "grdm-file:data-man-name-ja",
@@ -697,7 +801,8 @@
           "title": "データ管理者 (日本語)|Data manager (Japanese)",
           "type": "string",
           "format": "e-rad-researcher-name-ja",
-          "required": false
+          "required": false,
+          "space_normalization": true
         },
         {
           "qid": "grdm-file:data-man-name-en",
@@ -705,7 +810,8 @@
           "title": "Data manager (English)",
           "type": "string",
           "format": "e-rad-researcher-name-en",
-          "required": false
+          "required": false,
+          "space_normalization": true
         },
         {
           "qid": "grdm-file:data-man-address-ja",
@@ -713,7 +819,8 @@
           "title": "データ管理者の所属機関の連絡先住所 (日本語)|Contact address of data manager (Japanese)",
           "type": "string",
           "format": "text",
-          "required": true
+          "required": true,
+          "space_normalization": true
         },
         {
           "qid": "grdm-file:data-man-address-en",
@@ -721,7 +828,8 @@
           "title": "Contact address of data manager (English)",
           "type": "string",
           "format": "text",
-          "required": true
+          "required": true,
+          "space_normalization": true
         },
         {
           "qid": "grdm-file:data-man-tel",
@@ -729,7 +837,8 @@
           "title": "データ管理者の所属機関の連絡先電話番号|Contact phone number of data manager",
           "type": "string",
           "format": "text",
-          "required": true
+          "required": true,
+          "space_normalization": true
         },
         {
           "qid": "grdm-file:data-man-email",
@@ -737,7 +846,8 @@
           "title": "データ管理者の所属機関の連絡先メールアドレス|Contact mail address of data manager",
           "type": "string",
           "format": "text",
-          "required": true
+          "required": true,
+          "space_normalization": true
         },
         {
           "qid": "grdm-file:remarks-ja",
