@@ -46,8 +46,8 @@ def webhook_post():
     if not signature:
         raise HTTPError(http_status.HTTP_403_FORBIDDEN)
     if not hmac.compare_digest(
-            signature.encode('utf-8'),
-            hmac.new(APP_SECRET, request.data, sha256).hexdigest()):
+            signature,
+            hmac.new(APP_SECRET.encode('utf-8'), request.data, sha256).hexdigest()):
         logger.error('invalid signature')
         raise HTTPError(http_status.HTTP_403_FORBIDDEN)
     data = json.loads(request.data)
