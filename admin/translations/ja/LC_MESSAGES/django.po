@@ -2842,7 +2842,7 @@ msgid "Enable Server Side Encryption"
 msgstr "サーバー側の暗号化を有効にする"
 
 #: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:34
-msgid "The storage API must support Server Side Encryption"
+msgid "*The storage API must support Server Side Encryption"
 msgstr "※ストレージのAPI側でサーバー側の暗号化に対応している必要があります。"
 
 #: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:37

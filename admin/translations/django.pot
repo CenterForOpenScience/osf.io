@@ -2791,7 +2791,7 @@ msgid "Enable Server Side Encryption"
 msgstr ""
 
 #: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:34
-msgid "The storage API must support Server Side Encryption"
+msgid "*The storage API must support Server Side Encryption"
 msgstr ""
 
 #: admin/templates/rdm_custom_storage_location/providers/s3compat_modal.html:37
