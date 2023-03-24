@@ -202,21 +202,14 @@ def before_request():
         # Case 1: anonymous session that is used for first time external (e.g. ORCiD) login only
         if user_session.get('auth_user_external_first_login', False) is True:
             return
-        # Case 2 (Warning): non-anonymous session without autheticated user
-        if user_session.get('auth_user_id', None) is None:
-            # TODO: log warning and inform sentry
+        # Case 2: session without authenticated user
+        user_id = user_session.get('auth_user_id', None)
+        if not user_id:
             return
         # Case 3: authenticated session with user
         # Update date last login when making non-api requests
         from framework.auth.tasks import update_user_from_activity
-        user_session_entry = UserSessionMap.objects.get(session_key=user_session.session_key)
-        enqueue_task(
-            update_user_from_activity.s(
-                user_session_entry.user._id,
-                timezone.now().timestamp(),
-                cas_login=False
-            )
-        )
+        enqueue_task(update_user_from_activity.s(user_id, timezone.now().timestamp(), cas_login=False))
 
 
 def after_request(response):
