@@ -144,7 +144,7 @@ def sync_members(management_token, group_id, member_email_list):
     :raises: dropbox.exceptions.DropboxException
     """
 
-    management_client = DropboxTeam(management_token)
+    management_client = DropboxTeam(management_token, timeout=120.0)
     group = group_selector(group_id)
 
     member_email_set = set(member_email_list)
@@ -241,8 +241,8 @@ def create_team_folder(
     :returns: (team folder id string, group id string)
     """
 
-    fclient = DropboxTeam(fileaccess_token)
-    mclient = DropboxTeam(management_token)
+    fclient = DropboxTeam(fileaccess_token, timeout=120.0)
+    mclient = DropboxTeam(management_token, timeout=120.0)
     jobs = []
 
     has_team_space = is_has_team_space(fclient)
@@ -695,13 +695,13 @@ class TeamInfo(object):
     def management_client(self):
         if self._management_client is None:
             self._management_client = DropboxTeam(
-                self.management_token, session=self.session)
+                self.management_token, session=self.session, timeout=120.0)
         return self._management_client
 
     def _fileaccess_client_check(self):
         if self._fileaccess_client is None:
             self._fileaccess_client = DropboxTeam(
-                self.fileaccess_token, session=self.session)
+                self.fileaccess_token, session=self.session, timeout=120.0)
 
     @property
     def fileaccess_client_team(self):

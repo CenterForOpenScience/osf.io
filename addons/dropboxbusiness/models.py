@@ -105,7 +105,7 @@ class DropboxBusinessFileaccessProvider(DropboxProvider):
 
     def handle_callback(self, response):
         access_token = response['access_token']
-        self.client = DropboxTeam(access_token)
+        self.client = DropboxTeam(access_token, timeout=120.0)
         info = self.client.team_get_info()
 
         return {
@@ -228,7 +228,7 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
 
     def rename_team_folder(self):
         try:
-            fclient = DropboxTeam(self.fileaccess_token)
+            fclient = DropboxTeam(self.fileaccess_token, timeout=120.0)
             has_team_space = utils.is_has_team_space(fclient)
             if has_team_space:
                 team_info = utils.TeamInfo(self.fileaccess_token, self.management_token, admin=True)
@@ -248,7 +248,7 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
             # ignored
 
         try:
-            mclient = DropboxTeam(self.management_token)
+            mclient = DropboxTeam(self.management_token, timeout=120.0)
             utils.rename_group(mclient, self.group_id, self.group_name)
         except DropboxException:
             logger.exception(u'Team group cannot be renamed: node={}, team_folder_id={}, group name={}'.format(self.owner._id, self.team_folder_id, self.group_name))
