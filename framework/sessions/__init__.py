@@ -9,7 +9,6 @@ from django.conf import settings as django_conf_settings
 import itsdangerous
 from flask import request
 import furl
-from werkzeug.local import LocalProxy
 
 from framework.celery_tasks.handlers import enqueue_task
 from framework.flask import redirect
@@ -51,7 +50,7 @@ def prepare_private_key():
     NOTE: In order to ensure the execution order of the before_request callbacks,
     this is attached in website.app.init_app rather than using @app.before_request.
     """
-
+    current_session = get_session()
     # Done if not GET request
     if request.method != 'GET':
         return
@@ -72,7 +71,7 @@ def prepare_private_key():
         key = None
 
     # Update URL and redirect
-    if key and not session.is_authenticated:
+    if key and not current_session.is_authenticated:
         new_url = add_key_to_url(request.url, scheme, key)
         return redirect(new_url, code=http_status.HTTP_307_TEMPORARY_REDIRECT)
 
@@ -135,11 +134,6 @@ def create_session(response, data=None):
         )
         return user_session, response
     return user_session, None
-
-
-# Note: Use `LocalProxy` to ensure Thread-safe for `werkzeug`.
-session = LocalProxy(get_session)
-
 
 # Request callbacks
 # NOTE: This gets attached in website.app.init_app to ensure correct callback order
