@@ -14,7 +14,7 @@ from requests.exceptions import HTTPError as RequestsHTTPError
 from requests_oauthlib import OAuth1Session, OAuth2Session
 
 from framework.exceptions import HTTPError, PermissionsError
-from framework.sessions import session
+from framework.sessions import get_session, session
 from osf.models import base
 from osf.utils.fields import EncryptedTextField, NonNaiveDateTimeField
 from website.oauth.utils import PROVIDER_LOOKUP
@@ -144,10 +144,10 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
         the correct user.  For OAuth1, it calls the provider to obtain
         temporary credentials to start the flow.
         """
-
+        current_session = get_session()
         # create a dict on the session object if it's not already there
-        if session.get('oauth_states', None) is None:
-            session['oauth_states'] = {}
+        if current_session.get('oauth_states', None) is None:
+            current_session['oauth_states'] = {}
 
         if self._oauth_version == OAUTH2:
             # Quirk: Some time between 2019/05/31 and 2019/06/04, Bitbucket's OAuth2 API no longer
@@ -173,7 +173,7 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
             url, state = oauth.authorization_url(self.auth_url_base)
 
             # save state token to the session for confirmation in the callback
-            session['oauth_states'][self.short_name] = {'state': state}
+            current_session['oauth_states'][self.short_name] = {'state': state}
 
         elif self._oauth_version == OAUTH1:
             # get a request token
@@ -186,14 +186,14 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
             response = oauth.fetch_request_token(self.request_token_url)
 
             # store them in the session for use in the callback
-            session['oauth_states'][self.short_name] = {
+            current_session['oauth_states'][self.short_name] = {
                 'token': response.get('oauth_token'),
                 'secret': response.get('oauth_token_secret'),
             }
 
             url = oauth.authorization_url(self.auth_url_base)
 
-        session.save()
+        current_session.save()
         return url
 
     @abc.abstractproperty
@@ -290,6 +290,7 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
         return self._set_external_account(user, info)
 
     def _set_external_account(self, user, info):
+        current_session = get_session()
         self.account, created = ExternalAccount.objects.get_or_create(
             provider=self.short_name,
             provider_id=info['provider_id'],
@@ -319,9 +320,9 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
             user.external_accounts.add(self.account)
             user.save()
 
-        if self.short_name in session.get('oauth_states', {}):
-            del session['oauth_states'][self.short_name]
-            session.save()
+        if self.short_name in current_session.get('oauth_states', {}):
+            del current_session['oauth_states'][self.short_name]
+            current_session.save()
 
         return True
 
