@@ -14,7 +14,7 @@ from requests.exceptions import HTTPError as RequestsHTTPError
 from requests_oauthlib import OAuth1Session, OAuth2Session
 
 from framework.exceptions import HTTPError, PermissionsError
-from framework.sessions import get_session, session
+from framework.sessions import get_session
 from osf.models import base
 from osf.utils.fields import EncryptedTextField, NonNaiveDateTimeField
 from website.oauth.utils import PROVIDER_LOOKUP
@@ -229,12 +229,13 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
         This is called in the view that handles the user once they are returned
         to the OSF after authenticating on the external service.
         """
+        current_session = get_session()
         if 'error' in request.args:
             return False
 
         # make sure the user has temporary credentials for this provider
         try:
-            cached_credentials = session['oauth_states'][self.short_name]
+            cached_credentials = current_session['oauth_states'][self.short_name]
         except KeyError:
             raise PermissionsError('OAuth flow not recognized.')
 
