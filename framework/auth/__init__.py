@@ -11,7 +11,7 @@ from framework.auth.exceptions import DuplicateEmailError
 from framework.auth.tasks import update_user_from_activity
 from framework.auth.utils import LogLevel, print_cas_log
 from framework.celery_tasks.handlers import enqueue_task
-from framework.sessions import session, create_session
+from framework.sessions import get_session, create_session
 from framework.sessions.utils import remove_session
 
 
@@ -81,7 +81,7 @@ def external_first_login_authenticate(user_dict, response):
 
 def logout():
     """Clear users' session(s) and log them out of OSF."""
-    remove_session(session)
+    remove_session(get_session())
 
 
 def register_unconfirmed(username, password, fullname, campaign=None, accepted_terms_of_service=None):
