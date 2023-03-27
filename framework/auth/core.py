@@ -10,7 +10,7 @@ from django.db.models import Subquery
 from django.core.validators import URLValidator
 from flask import request
 
-from framework.sessions import session
+from framework.sessions import get_session
 from osf.exceptions import ValidationValueError, ValidationError
 from osf.utils.requests import check_select_for_update
 from website import security, settings
@@ -75,7 +75,8 @@ def validate_social(value):
 
 
 def get_current_user_id():
-    return session.get('auth_user_id', None) if session._get_current_object() else None
+    current_session = get_session()
+    return current_session.get('auth_user_id', None) if current_session else None
 
 
 # TODO - rename to _get_current_user_from_session /HRYBACKI

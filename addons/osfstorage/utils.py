@@ -11,8 +11,8 @@ from framework.exceptions import HTTPError
 from framework.analytics import update_counter
 from framework.celery_tasks import app
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
-from framework.sessions import session
-from osf.models import BaseFileNode, Guid, Session
+from framework.sessions import get_session
+from osf.models import BaseFileNode, Guid
 
 from addons.osfstorage import settings
 
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 LOCATION_KEYS = ['service', settings.WATERBUTLER_RESOURCE, 'object']
 
 def enqueue_update_analytics(node, file, version_idx, action='download'):
-    enqueue_postcommit_task(update_analytics_async, (node._id, file._id, version_idx, session.session_key, action), {}, celery=True)
+    enqueue_postcommit_task(update_analytics_async, (node._id, file._id, version_idx, get_session().session_key, action), {}, celery=True)
 
 @app.task(max_retries=5, default_retry_delay=60)
 def update_analytics_async(node_id, file_id, version_idx, session_key=None, action='download'):
