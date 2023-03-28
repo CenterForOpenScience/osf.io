@@ -1,3 +1,4 @@
+import logging
 import mock
 import pytest
 from django.contrib.contenttypes.models import ContentType
@@ -11,9 +12,11 @@ from osf_tests.factories import (
     RegistrationFactory,
     UserFactory,
 )
+from osf.models import Node, Preprint, Registration
 from osf.models.notable_domain import DomainReference, NotableDomain
 from urllib.parse import urlparse
 
+logger = logging.getLogger(__name__)
 
 @pytest.mark.django_db
 class TestBackfillDomainReferences:
@@ -23,19 +26,19 @@ class TestBackfillDomainReferences:
         return urlparse('http://I-am-a-domain.io/with-a-path/?and=&query=parms')
 
     @pytest.fixture()
-    def test_node(self, spam_domain):
-        return NodeFactory(description=f'I am spam: {spam_domain.geturl()}', is_public=True)
+    def test_node(self, spam_domain, request):
+        return NodeFactory(is_public=True, description=f'I am spam: {spam_domain.geturl()}')
 
     @pytest.fixture()
-    def test_registration(self, spam_domain):
-        return RegistrationFactory(description=f'I am spam: {spam_domain.geturl()}', is_public=True)
+    def test_registration(self, spam_domain, request):
+        return RegistrationFactory(is_public=True, description=f'I am spam: {spam_domain.geturl()}')
 
     @pytest.fixture()
     def test_comment(self, spam_domain):
         return CommentFactory(content=f'I am spam: {spam_domain.geturl()}')
 
     @pytest.fixture()
-    def test_preprint(self, spam_domain):
+    def test_preprint(self, spam_domain, request):
         return PreprintFactory(description=f'I am spam: {spam_domain.geturl()}')
 
     @pytest.fixture()
@@ -50,7 +53,12 @@ class TestBackfillDomainReferences:
         return user
 
     @pytest.mark.enable_enqueue_task
-    def test_backfill_project_domain_references(self, test_node, spam_domain):
+    @pytest.mark.parametrize('spam_check_field', sorted(Node.SPAM_CHECK_FIELDS))
+    def test_backfill_project_domain_references(self, spam_check_field, spam_domain):
+        test_node = NodeFactory(is_public=True)
+        setattr(test_node, spam_check_field, f'I am spam: {spam_domain.geturl()}')
+        test_node.save()
+
         assert DomainReference.objects.count() == 0
         with mock.patch.object(backfill_task.spam_tasks.requests, 'head'):
             backfill_task.backfill_domain_references(model_name='osf.Node')
@@ -61,6 +69,24 @@ class TestBackfillDomainReferences:
             referrer_content_type=ContentType.objects.get_for_model(test_node),
         )
         assert created_reference.domain == domain
+
+    @pytest.mark.enable_enqueue_task
+    def test_backfill_project_domain_references__only_selected_once(self, test_node):
+        with mock.patch.object(backfill_task.spam_tasks.requests, 'head'):
+            initial_resource_count = backfill_task.backfill_domain_references(model_name='osf.Node')
+            subsequent_resource_count = backfill_task.backfill_domain_references(model_name='osf.Node')
+
+            assert initial_resource_count == 1
+            assert subsequent_resource_count == 0
+
+    @pytest.mark.enable_enqueue_task
+    def test_backfill_project_domain_references__resources_without_domains_ignored(self, test_node):
+        # Node without links
+        NodeFactory(is_public=True, description='No URIs here!')
+        with mock.patch.object(backfill_task.spam_tasks.requests, 'head'):
+            resource_count = backfill_task.backfill_domain_references(model_name='osf.Node')
+        # Just the test_node retrieved
+        assert resource_count == 1
 
     @pytest.mark.enable_enqueue_task
     def test_backfill_project_domain_references__wiki(self, test_wiki, spam_domain):
@@ -79,16 +105,29 @@ class TestBackfillDomainReferences:
     @pytest.mark.enable_enqueue_task
     def test_backfill_project_domain_references__wiki__no_dupes_with_multiple_versions(self, test_wiki):
         node = test_wiki.wiki_page.node
-        node.description = 'Blah blah blah http://www.google.com, blah blah blah https://www.osf.io'
-        WikiVersionFactory(wiki_page=test_wiki.wiki_page, content='Innocuous link: https://google.com')
+        node.description = 'Blah blah blah blah blah blah https://www.osf.io'
+        node.save()
+        WikiVersionFactory(
+            wiki_page=test_wiki.wiki_page,
+            content='Innocuous link: https://google.com repeated link: osf.io'
+        )
 
         with mock.patch.object(backfill_task.spam_tasks.requests, 'head'):
             resource_count = backfill_task.backfill_domain_references(model_name='osf.Node')
 
         assert resource_count == 1
+        assert DomainReference.objects.filter(
+            referrer_object_id=node.id,
+            referrer_content_type=ContentType.objects.get_for_model(Node),
+        ).count() == 3
 
     @pytest.mark.enable_enqueue_task
-    def test_backfill_preprint_domain_references(self, test_preprint, spam_domain):
+    @pytest.mark.parametrize('spam_check_field', sorted(Preprint.SPAM_CHECK_FIELDS))
+    def test_backfill_preprint_domain_references(self, spam_check_field, spam_domain):
+        test_preprint = PreprintFactory()
+        setattr(test_preprint, spam_check_field, f'I am spam: {spam_domain.geturl()}')
+        test_preprint.save()
+
         assert DomainReference.objects.count() == 0
         with mock.patch.object(backfill_task.spam_tasks.requests, 'head'):
             backfill_task.backfill_domain_references(model_name='osf.Preprint')
@@ -101,7 +140,29 @@ class TestBackfillDomainReferences:
         assert created_reference.domain == domain
 
     @pytest.mark.enable_enqueue_task
-    def test_backfill_registration_domain_references(self, test_registration, spam_domain):
+    def test_backfill_preprint_domain_references__only_selected_once(self, test_preprint):
+        with mock.patch.object(backfill_task.spam_tasks.requests, 'head'):
+            initial_resource_count = backfill_task.backfill_domain_references(model_name='osf.Preprint')
+            subsequent_resource_count = backfill_task.backfill_domain_references(model_name='osf.Preprint')
+        assert initial_resource_count == 1
+        assert subsequent_resource_count == 0
+
+    @pytest.mark.enable_enqueue_task
+    def test_backfill_preprint_domain_references__resources_without_domains_ignored(self, test_preprint):
+        # Preprint without links
+        PreprintFactory(is_public=True, description='No URIs here!')
+        with mock.patch.object(backfill_task.spam_tasks.requests, 'head'):
+            resource_count = backfill_task.backfill_domain_references(model_name='osf.Preprint')
+        # Just the test_preprint retrieved
+        assert resource_count == 1
+
+    @pytest.mark.enable_enqueue_task
+    @pytest.mark.parametrize('spam_check_field', sorted(Registration.SPAM_CHECK_FIELDS))
+    def test_backfill_registration_domain_references(self, spam_check_field, spam_domain):
+        test_registration = RegistrationFactory(is_public=True)
+        setattr(test_registration, spam_check_field, f'I am spam: {spam_domain.geturl()}')
+        test_registration.save()
+
         assert DomainReference.objects.count() == 0
         with mock.patch.object(backfill_task.spam_tasks.requests, 'head'):
             backfill_task.backfill_domain_references(model_name='osf.Registration')
@@ -112,6 +173,23 @@ class TestBackfillDomainReferences:
             referrer_content_type=ContentType.objects.get_for_model(test_registration)
         )
         assert created_reference.domain == domain
+
+    @pytest.mark.enable_enqueue_task
+    def test_backfill_registration_domain_references__only_selected_once(self, test_registration):
+        with mock.patch.object(backfill_task.spam_tasks.requests, 'head'):
+            initial_resource_count = backfill_task.backfill_domain_references(model_name='osf.Registration')
+            subsequent_resource_count = backfill_task.backfill_domain_references(model_name='osf.Registration')
+        assert initial_resource_count == 1
+        assert subsequent_resource_count == 0
+
+    @pytest.mark.enable_enqueue_task
+    def test_backfill_registration_domain_references__resources_without_domains_ignored(self, test_registration):
+        # Registration without links
+        RegistrationFactory(is_public=True, description='No URIs here!')
+        with mock.patch.object(backfill_task.spam_tasks.requests, 'head'):
+            resource_count = backfill_task.backfill_domain_references(model_name='osf.Registration')
+        # Just the test_registration retrieved
+        assert resource_count == 1
 
     @pytest.mark.enable_enqueue_task
     def test_backfill_comment_domain_references(self, test_comment, spam_domain):
@@ -127,6 +205,23 @@ class TestBackfillDomainReferences:
         assert created_reference.domain == domain
 
     @pytest.mark.enable_enqueue_task
+    def test_backfill_comment_domain_references__only_selected_once(self, test_comment):
+        with mock.patch.object(backfill_task.spam_tasks.requests, 'head'):
+            initial_resource_count = backfill_task.backfill_domain_references(model_name='osf.Comment')
+            subsequent_resource_count = backfill_task.backfill_domain_references(model_name='osf.Comment')
+        assert initial_resource_count == 1
+        assert subsequent_resource_count == 0
+
+    @pytest.mark.enable_enqueue_task
+    def test_backfill_comment_domain_references__resources_without_domains_ignored(self, test_comment):
+        # Comment without links
+        CommentFactory(content='No URIs here!')
+        with mock.patch.object(backfill_task.spam_tasks.requests, 'head'):
+            resource_count = backfill_task.backfill_domain_references(model_name='osf.Comment')
+        # Just the test_comment retrieved
+        assert resource_count == 1
+
+    @pytest.mark.enable_enqueue_task
     def test_backfill_user_domain_references(self, test_user, spam_domain):
         assert DomainReference.objects.count() == 0
         with mock.patch.object(backfill_task.spam_tasks.requests, 'head'):
@@ -138,3 +233,20 @@ class TestBackfillDomainReferences:
             referrer_content_type=ContentType.objects.get_for_model(test_user)
         )
         assert created_reference.domain == domain
+
+    @pytest.mark.enable_enqueue_task
+    def test_backfill_user_domain_references__only_selected_once(self, test_user):
+        with mock.patch.object(backfill_task.spam_tasks.requests, 'head'):
+            initial_resource_count = backfill_task.backfill_domain_references(model_name='osf.OSFUser')
+            subsequent_resource_count = backfill_task.backfill_domain_references(model_name='osf.OSFUser')
+        assert initial_resource_count == 1
+        assert subsequent_resource_count == 0
+
+    @pytest.mark.enable_enqueue_task
+    def test_backfill_user_domain_references__resources_without_domains_ignored(self, test_user):
+        # User without links
+        UserFactory()
+        with mock.patch.object(backfill_task.spam_tasks.requests, 'head'):
+            resource_count = backfill_task.backfill_domain_references(model_name='osf.OSFUser')
+        # Just the test_user retrieved
+        assert resource_count == 1
