@@ -1171,7 +1171,9 @@ def external_login_email_post():
 
 
 def clear_external_first_login_anonymous_session_data(session):
-    """Remove data that were created for external_first_login  from the session.
+    """Remove data that were created for external_first_login  from the session. In addition, add a new data
+    ``post_request_removal`` and set it to ``True`` so that Flask will remove the session and delete the cookie
+    once the session is no longer needed after response page is rendered.
     """
     if not session:
         return

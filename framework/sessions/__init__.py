@@ -216,7 +216,9 @@ def after_request(response):
     # Disallow embedding in frames
     response.headers['X-Frame-Options'] = 'SAMEORIGIN'
     session = get_session()
+    # Remove to-be-orphan session (and its cookie) if such session exists
     if session and session.get('post_request_removal', False) is True:
         from framework.sessions.utils import remove_session
         remove_session(session)
+        response.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
     return response
