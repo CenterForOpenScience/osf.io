@@ -63,36 +63,37 @@ def parse_datetimes(query_params):
     return start_datetime, end_datetime
 
 
-def parse_date_param(param_value):
-    try:
-        return datetime.strptime(param_value, DATE_FORMAT).date()
-    except ValueError:
-        raise ValidationError(f'Invalid date value: "{param_value}" (expected format "YYYY-MM-DD")')
+def parse_date_param(param_value, is_monthly=False):
+    if is_monthly:
+        date = datetime.strptime(param_value, DATE_FORMAT).date()
+        return f'{date.year}-{date.month:>02}'
+    return datetime.strptime(param_value, DATE_FORMAT).date()
 
 
-def parse_dates(query_params):
+def parse_dates(query_params, is_monthly=False):
     start_date_param = query_params.get('start_date', None)
     end_date_param = query_params.get('end_date', None)
 
     if end_date_param and not start_date_param:
         raise ValidationError('You cannot provide a specific end_date with no start_date')
     start_date = (
-        parse_date_param(start_date_param)
+        parse_date_param(start_date_param, is_monthly)
         if start_date_param
         else (timezone.now() - timedelta(days=DEFAULT_DAYS_BACK)).date()
     )
     end_date = (
-        parse_date_param(end_date_param)
+        parse_date_param(end_date_param, is_monthly)
         if end_date_param
         else timezone.now().date()
     )
 
     if start_date > end_date:
         raise ValidationError('The end_date must be after the start_date')
+
     return start_date, end_date
 
 
-def parse_date_range(query_params):
+def parse_date_range(query_params, is_monthly=False):
     if query_params.get('days_back', None):
         days_back = query_params.get('days_back', DEFAULT_DAYS_BACK)
         report_date_range = {'gte': f'now/d-{days_back}d'}
@@ -110,6 +111,6 @@ def parse_date_range(query_params):
         tsEnd = query_params.get('timeframeEnd')
         report_date_range = {'gte': tsStart, 'lt': tsEnd}
     else:
-        start_date, end_date = parse_dates(query_params)
+        start_date, end_date = parse_dates(query_params, is_monthly=is_monthly)
         report_date_range = {'gte': str(start_date), 'lte': str(end_date)}
     return report_date_range
