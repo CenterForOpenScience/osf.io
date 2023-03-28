@@ -23,7 +23,7 @@ from framework.auth.utils import ensure_external_identity_uniqueness, validate_r
 from framework.celery_tasks.handlers import enqueue_task
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
-from framework.sessions.utils import remove_sessions_for_user, remove_session
+from framework.sessions.utils import remove_sessions_for_user
 from framework.sessions import get_session
 from framework.utils import throttle_period_expired
 from osf.models import OSFUser
@@ -1035,11 +1035,14 @@ def external_login_email_get():
 
     form = ResendConfirmationForm(request.form)
     session = get_session()
-    if not session.is_external_first_login:
+    if session.get('auth_user_external_first_login', False) is not True:
         raise HTTPError(http_status.HTTP_401_UNAUTHORIZED)
 
-    external_id_provider = session.data['auth_user_external_id_provider']
-    auth_user_fullname = session.data.get('auth_user_fullname')
+    external_id_provider = session.get('auth_user_external_id_provider', None)
+    auth_user_fullname = session.get('auth_user_fullname', None)
+
+    if not external_id_provider:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     return {
         'form': form,
@@ -1056,13 +1059,13 @@ def external_login_email_post():
 
     form = ResendConfirmationForm(request.form)
     session = get_session()
-    if not session.is_external_first_login:
+    if session.get('auth_user_external_first_login', False) is not True:
         raise HTTPError(http_status.HTTP_401_UNAUTHORIZED)
 
-    external_id_provider = session.data['auth_user_external_id_provider']
-    external_id = session.data['auth_user_external_id']
-    fullname = session.data.get('auth_user_fullname') or form.name.data
-    service_url = session.data['service_url']
+    external_id_provider = session.get('auth_user_external_id_provider', None)
+    external_id = session.get('auth_user_external_id', None)
+    fullname = session.get('auth_user_fullname', None) or form.name.data
+    service_url = session.get('service_url', None)
 
     # TODO: @cslzchen use user tags instead of destination
     destination = 'dashboard'
@@ -1123,8 +1126,8 @@ def external_login_email_post():
                 email=user.username
             )
             kind = 'success'
-            # 4. remove session and osf cookie
-            remove_session(session)
+            # 4. Clear session data
+            clear_external_first_login_anonymous_session_data(session)
         else:
             # 1. create unconfirmed user with pending status
             external_identity[external_id_provider][external_id] = 'CREATE'
@@ -1153,8 +1156,8 @@ def external_login_email_post():
                 email=user.username
             )
             kind = 'success'
-            # 5. remove session
-            remove_session(session)
+            # 5. Clear session data
+            clear_external_first_login_anonymous_session_data(session)
         status.push_status_message(message, kind=kind, trust=False)
     else:
         forms.push_errors_to_status(form.errors)
@@ -1165,6 +1168,22 @@ def external_login_email_post():
         'external_id_provider': external_id_provider,
         'auth_user_fullname': fullname
     }
+
+
+def clear_external_first_login_anonymous_session_data(session):
+    """Remove data that were created for external_first_login  from the session. In addition, add a new data
+    ``post_request_removal`` and set it to ``True`` so that Flask will remove the session and delete the cookie
+    once the session is no longer needed after response page is rendered.
+    """
+    if not session:
+        return
+    session.pop('auth_user_external_first_login')
+    session.pop('auth_user_external_id_provider')
+    session.pop('auth_user_external_id')
+    session.pop('auth_user_fullname')
+    session.pop('service_url')
+    session['post_request_removal'] = True
+    session.save()
 
 
 def validate_campaign(campaign):

@@ -199,23 +199,26 @@ def before_request():
             response = redirect(web_url_for('index'))
             response.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
             return response
+        # Case 1: anonymous session that is used for first time external (e.g. ORCiD) login only
+        if user_session.get('auth_user_external_first_login', False) is True:
+            return
+        # Case 2: session without authenticated user
+        user_id = user_session.get('auth_user_id', None)
+        if not user_id:
+            return
+        # Case 3: authenticated session with user
         # Update date last login when making non-api requests
         from framework.auth.tasks import update_user_from_activity
-        try:
-            user_session_entry = UserSessionMap.objects.get(session_key=user_session.session_key)
-            enqueue_task(
-                update_user_from_activity.s(
-                    user_session_entry.user._id,
-                    timezone.now().timestamp(),
-                    cas_login=False
-                )
-            )
-        except UserSessionMap.MultipleObjectsReturned or UserSessionMap.DoesNotExist:
-            # TODO: log an error message to sentry
-            return None
+        enqueue_task(update_user_from_activity.s(user_id, timezone.now().timestamp(), cas_login=False))
 
 
 def after_request(response):
     # Disallow embedding in frames
     response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    session = get_session()
+    # Remove to-be-orphan session (and its cookie) if such session exists
+    if session and session.get('post_request_removal', False) is True:
+        from framework.sessions.utils import remove_session
+        remove_session(session)
+        response.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
     return response
