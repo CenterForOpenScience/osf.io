@@ -148,6 +148,7 @@ class GuidMetadataRecord(ObjectIDMixin, BaseModel):
             loggable_referent = loggable_referent.target
             log_action = loggable_referent.log_class.FILE_METADATA_UPDATED
         else:
+            log_params['title'] = loggable_referent.title
             log_action = loggable_referent.log_class.GUID_METADATA_UPDATED
 
         if isinstance(loggable_referent, Preprint):
