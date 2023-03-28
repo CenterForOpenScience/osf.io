@@ -215,4 +215,8 @@ def before_request():
 def after_request(response):
     # Disallow embedding in frames
     response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    session = get_session()
+    if session and session.get('post_request_removal', False) is True:
+        from framework.sessions.utils import remove_session
+        remove_session(session)
     return response
