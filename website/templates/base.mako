@@ -89,6 +89,14 @@
     <meta name="twitter:site" content="@OSFramework">
     <meta name="twitter:creator" content="@OSFramework">
 
+    <!-- Google Dataset -->
+    % if node and node.get('is_public'):
+        <script type="application/ld+json">
+            ${google_dataset_tags| unicode, n }
+        </script>
+    % endif
+
+
     ${includes_top()}
     ${self.stylesheets()}
     <script src="${"/static/public/js/base-page.js" | webpack_asset}"></script>
