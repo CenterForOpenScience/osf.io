@@ -7,7 +7,7 @@ from nose.tools import *  # noqa: F403
 from osf_tests import factories
 from tests.base import OsfTestCase
 from website.util import api_url_for
-from website.views import find_bookmark_collection
+import website.search.search as search
 
 
 @pytest.mark.enable_search
@@ -15,29 +15,43 @@ from website.views import find_bookmark_collection
 class TestSearchViews(OsfTestCase):
 
     def setUp(self):
-        super(TestSearchViews, self).setUp()
-        import website.search.search as search
+        super().setUp()
         search.delete_all()
 
         robbie = factories.UserFactory(fullname='Robbie Williams')
         self.project = factories.ProjectFactory(creator=robbie)
         self.contrib = factories.UserFactory(fullname='Brian May')
         for i in range(0, 12):
-            factories.UserFactory(fullname='Freddie Mercury{}'.format(i))
+            factories.UserFactory(fullname=f'Freddie Mercury{i}')
 
         self.user_one = factories.AuthUserFactory()
+        self.user_one.jobs = [{
+            'institution': 'Golden Fang LLC',
+            'department': 'a department',
+            'title': 'a title',
+            'startMonth': 'January',
+            'startYear': '2001',
+            'endMonth': 'March',
+            'endYear': '2001',
+            'ongoing': False,
+        }]
+        self.user_one.save()
         self.user_two = factories.AuthUserFactory()
+        self.user_two.schools = [{
+            'degree': 'English',
+            'institution': 'THE University of Narnia'
+        }]
+        self.user_two.save()
         self.project_private_user_one = factories.ProjectFactory(title='aaa', creator=self.user_one, is_public=False)
         self.project_private_user_two = factories.ProjectFactory(title='aaa', creator=self.user_two, is_public=False)
         self.project_public_user_one = factories.ProjectFactory(title='aaa', creator=self.user_one, is_public=True)
         self.project_public_user_two = factories.ProjectFactory(title='aaa', creator=self.user_two, is_public=True)
 
     def tearDown(self):
-        super(TestSearchViews, self).tearDown()
-        import website.search.search as search
+        super().tearDown()
         search.delete_all()
 
-    def test_search_views(self):
+    def test_search_contributor_fullname(self):
         #Test search contributor
         url = api_url_for('search_contributor')
         res = self.app.get(url, {'query': self.contrib.fullname})
@@ -59,6 +73,9 @@ class TestSearchViews(OsfTestCase):
         assert_equal(len(result), 5)
         assert_equal(pages, 3)
         assert_equal(page, 0)
+
+    def test_search_contributor_pagination(self):
+        url = api_url_for('search_contributor')
 
         #Test default page 1
         res = self.app.get(url, {'query': 'fr', 'page': 1})
@@ -87,7 +104,7 @@ class TestSearchViews(OsfTestCase):
         assert_equal(pages, 3)
 
         #Test smaller pages page 2
-        res = self.app.get(url, {'query': 'fr', 'page': 2, 'size': 5, })
+        res = self.app.get(url, {'query': 'fr', 'page': 2, 'size': 5})
         assert_equal(res.status_code, 200)
         result = res.json['users']
         pages = res.json['pages']

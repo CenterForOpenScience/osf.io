@@ -1075,7 +1075,7 @@ class TestAddContributor(OsfTestCase):
     def setUp(self):
         self.name1 = 'Roger1 Taylor1'
         self.name2 = 'John2 Deacon2'
-        self.name3 = u'j\xc3\xb3ebert3 Smith3'
+        self.name3 = u'jã3ebert Smith3'
         self.name4 = u'B\xc3\xb3bbert4 Jones4'
 
         with run_celery_tasks():

@@ -9,6 +9,7 @@ import math
 import re
 import unicodedata
 from framework import sentry
+from operator import __or__ as OR
 
 import six
 
@@ -37,7 +38,7 @@ from website import settings
 from website.filters import profile_image_url
 from osf.models.licenses import serialize_node_license_record
 from website.search import exceptions
-from website.search.util import build_query, clean_splitters
+from website.search.util import clean_splitters
 from website.views import validate_page_num
 
 logger = logging.getLogger(__name__)
@@ -961,14 +962,15 @@ def delete_group_doc(deleted_id, index=None):
     client().delete(index=index, doc_type='group', id=deleted_id, refresh=True, ignore=[404])
 
 @requires_search
-def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
-    """Search for contributors to add to a project using elastic search. Request must
-    include JSON data with a "query" field.
+def search_contributor(query, page=0, size=10, current_user=None):
+    """
+    This used to query Elasticsearch broadly, but was converted to an SQL endpoint to better support the overall search
+    architecture. This function should allow searches by fullname, username and orcid id and paginate in an ES friendly
+    way.
 
     :param query: The substring of the username to search for
     :param page: For pagination, the page number to use for results
     :param size: For pagination, the number of results per page
-    :param exclude: A list of User objects to exclude from the search
     :param current_user: A User object of the current user
 
     :return: List of dictionaries, each containing the ID, full name,
@@ -977,7 +979,6 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
     """
     start = (page * size)
     items = re.split(r'[\s-]+', query)
-    exclude = exclude or []
     normalized_items = []
     for item in items:
         try:
@@ -985,61 +986,50 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
         except TypeError:
             normalized_item = item
         normalized_item = unicodedata.normalize('NFKD', normalized_item)
-        normalized_items.append(normalized_item)
+        normalized_items.append(normalized_item.strip())
     items = normalized_items
 
-    query = '  AND '.join('{}*~'.format(re.escape(item)) for item in items) + \
-            ''.join(' NOT id:"{}"'.format(excluded._id) for excluded in exclude)
+    query = functools.reduce(OR, [Q(fullname__icontains=word) for word in items])
+    query |= functools.reduce(OR, [Q(social__orcid__icontains=word) for word in items])
+    query |= functools.reduce(OR, [Q(jobs__icontains=word) for word in items])
+    query |= functools.reduce(OR, [Q(schools__icontains=word) for word in items])
 
-    results = search(build_query(query, start=start, size=size), index=INDEX, doc_type='user')
-    docs = results['results']
-    pages = math.ceil(results['counts'].get('user', 0) / size)
+    users = OSFUser.objects.filter(
+        query,
+        is_active=True,
+    ).order_by(
+        'social__orcid', 'jobs', 'schools', 'fullname'
+    )  # order must be consistent those with more specific info come first on this legacy page
+
+    if current_user:
+        users = users.exclude(id=current_user.id)
+
+    pages = math.ceil(users.count() / size)
     validate_page_num(page, pages)
 
-    users = []
-    for doc in docs:
-        # TODO: use utils.serialize_user
-        user = OSFUser.load(doc['id'])
-
-        if current_user and current_user._id == user._id:
-            n_projects_in_common = -1
-        elif current_user:
-            n_projects_in_common = current_user.n_projects_in_common(user)
-        else:
-            n_projects_in_common = 0
-
-        if user is None:
-            logger.error('Could not load user {0}'.format(doc['id']))
-            continue
-        if user.is_active:  # exclude merged, unregistered, etc.
-            current_employment = None
-            education = None
-
-            if user.jobs:
-                current_employment = user.jobs[0]['institution']
-
-            if user.schools:
-                education = user.schools[0]['institution']
-
-            users.append({
-                'fullname': doc['user'],
-                'id': doc['id'],
-                'employment': current_employment,
-                'education': education,
-                'social': user.social_links,
-                'n_projects_in_common': n_projects_in_common,
-                'profile_image_url': profile_image_url(settings.PROFILE_IMAGE_PROVIDER,
-                                                       user,
-                                                       use_ssl=True,
-                                                       size=settings.PROFILE_IMAGE_MEDIUM),
-                'profile_url': user.profile_url,
-                'registered': user.is_registered,
-                'active': user.is_active
-            })
+    return_users = []
+    for user in users[start: start + size]:
+        return_users.append({
+            'fullname': user.fullname,
+            'id': user.id,
+            'employment': user.jobs[0].get('institution') if user.jobs else None,
+            'education': user.schools[0].get('institution') if user.schools else None,
+            'social': user.social_links,
+            'n_projects_in_common': current_user.n_projects_in_common(user) if current_user else 0,
+            'profile_image_url': profile_image_url(
+                settings.PROFILE_IMAGE_PROVIDER,
+                user,
+                use_ssl=True,
+                size=settings.PROFILE_IMAGE_MEDIUM
+            ),
+            'profile_url': user.profile_url,
+            'registered': user.is_registered,
+            'active': user.is_active
+        })
 
     return {
-        'users': users,
-        'total': results['counts']['total'],
+        'users': return_users,
+        'total': len(return_users),
         'pages': pages,
         'page': page,
     }
