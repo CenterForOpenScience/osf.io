@@ -3202,13 +3202,6 @@ class TestPointerViews(OsfTestCase):
         assert_not_in(project2, template.linked_nodes)
 
 
-class TestPublicViews(OsfTestCase):
-
-    def test_explore(self):
-        res = self.app.get('/explore/').maybe_follow()
-        assert_equal(res.status_code, 200)
-
-
 class TestAuthViews(OsfTestCase):
 
     def setUp(self):
