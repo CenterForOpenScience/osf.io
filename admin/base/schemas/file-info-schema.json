@@ -21,6 +21,38 @@
       ],
       "additionalProperties": true
     },
+    "folders": {
+      "type": "array",
+      "items": {
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "materialized_path": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "project": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ],
+            "additionalProperties": true
+          }
+        }
+      }
+    },
     "files": {
       "type": "array",
       "items": {

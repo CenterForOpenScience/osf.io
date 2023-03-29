@@ -89,7 +89,6 @@ class ExportData(base.BaseModel):
     def extract_file_information_json_from_source_storage(self):
         # Get region guid == institution guid
         source_storage_guid = self.source.guid
-
         # Get Institution by guid
         institution = Institution.load(source_storage_guid)
 
@@ -128,18 +127,39 @@ class ExportData(base.BaseModel):
         # get base_file_nodes__ids by file_versions__ids above via the BaseFileVersionsThrough model
         base_file_versions_set = BaseFileVersionsThrough.objects.filter(fileversion__in=file_versions)
         base_file_nodes__ids = base_file_versions_set.values_list('basefilenode_id', flat=True).distinct('basefilenode_id')
-
         # get project list, includes public/private/deleted projects
-        projects = institution.nodes.filter(type='osf.node')
+        projects = institution.nodes.filter(type='osf.node', is_deleted=False)
         projects__ids = projects.values_list('id', flat=True)
         source_project_ids = set()
+
+        # get folder nodes
+        base_folder_nodes = BaseFileNode.objects.filter(
+            # type='osf.{}folder'.format(self.source.provider_short_name),
+            type__endswith='folder',
+            target_object_id__in=projects__ids,
+            deleted=None)
+        folders = []
+        for folder in base_folder_nodes:
+            folder_info = {
+                'path': folder.path,
+                'materialized_path': folder.materialized_path,
+                'project': {}
+            }
+            # project
+            project = folder.target
+            source_project_ids.add(project.id)
+            project_info = {
+                'id': project._id,
+                'name': project.title,
+            }
+            folder_info['project'] = project_info
+            folders.append(folder_info)
 
         # get base_file_nodes
         base_file_nodes = BaseFileNode.objects.filter(
             id__in=base_file_nodes__ids,
             target_object_id__in=projects__ids,
             deleted=None)
-
         total_size = 0
         total_file = 0
         files = []
@@ -210,11 +230,12 @@ class ExportData(base.BaseModel):
             file_info['location'] = file_versions_info[-1]['location']
             files.append(file_info)
 
+        file_info_json['folders'] = folders
         file_info_json['files'] = files
 
         export_data_json['files_numb'] = total_file
         export_data_json['size'] = total_size
-        export_data_json['projects_numb'] = len(source_project_ids)
+        export_data_json['projects_numb'] = len(projects__ids)
 
         return export_data_json, file_info_json
 
