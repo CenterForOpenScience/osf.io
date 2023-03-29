@@ -96,7 +96,7 @@ def client():
             CLIENT.cluster.health(wait_for_status='yellow')
         except ConnectionError:
             message = (
-                'The SEARCH_ENGINE setting is set to "elastic", but there '
+                'There '
                 'was a problem starting the elasticsearch interface. Is '
                 'elasticsearch running?'
             )

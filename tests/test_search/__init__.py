@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 from tests.base import OsfTestCase
-from tests.test_features import requires_search
+from website.search.search import requires_search
 from website import settings
 from website.search import elastic_search
 import website.search.search as search

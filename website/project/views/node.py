@@ -2,14 +2,13 @@
 import os
 import logging
 from rest_framework import status as http_status
-import math
 from collections import defaultdict
 
 from flask import request
 from django.apps import apps
 from django.utils import timezone
 from django.core.exceptions import ValidationError
-from django.db.models import Q, OuterRef, Subquery
+from django.db.models import OuterRef, Subquery
 
 from framework import status
 from framework.utils import iso8601format
@@ -52,8 +51,11 @@ from osf.utils.sanitize import strip_html
 from osf.utils.permissions import ADMIN, READ, WRITE, CREATOR_PERMISSIONS, ADMIN_NODE
 from osf.utils.workflows import CollectionSubmissionStates
 from website import settings
-from website.views import find_bookmark_collection, validate_page_num
-from website.views import serialize_node_summary, get_storage_region_list
+from website.views import (
+    find_bookmark_collection,
+    serialize_node_summary,
+    get_storage_region_list
+)
 from website.profile import utils
 from addons.mendeley.provider import MendeleyCitationsProvider
 from addons.zotero.provider import ZoteroCitationsProvider
@@ -1210,54 +1212,6 @@ def _serialize_node_search(node):
     data['firstAuthor'] = first_author.family_name or first_author.given_name or first_author.fullname
 
     return data
-
-
-@must_be_logged_in
-def search_node(auth, **kwargs):
-    """
-
-    """
-    # Get arguments
-    node = AbstractNode.load(request.json.get('nodeId'))
-    include_public = request.json.get('includePublic')
-    size = float(request.json.get('size', '5').strip())
-    page = request.json.get('page', 0)
-    query = request.json.get('query', '').strip()
-
-    start = (page * size)
-    if not query:
-        return {'nodes': []}
-
-    # Exclude current node from query if provided
-    nin = [node.id] + list(node._nodes.values_list('pk', flat=True)) if node else []
-
-    can_view_query = Q(_contributors=auth.user)
-    if include_public:
-        can_view_query = can_view_query | Q(is_public=True)
-
-    nodes = (AbstractNode.objects
-        .filter(
-            can_view_query,
-            title__icontains=query,
-            is_deleted=False)
-        .exclude(id__in=nin)
-        .exclude(type='osf.collection')
-        .exclude(type='osf.quickfilesnode'))
-
-    count = nodes.count()
-    pages = math.ceil(count / size)
-    validate_page_num(page, pages)
-
-    return {
-        'nodes': [
-            _serialize_node_search(each)
-            for each in nodes[start: start + size]
-            if each.contributors
-        ],
-        'total': count,
-        'pages': pages,
-        'page': page
-    }
 
 
 def _add_pointers(node, pointers, auth):

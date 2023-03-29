@@ -1090,23 +1090,10 @@ def make_url_map(app):
             OsfWebRenderer('search.mako', trust=False)
         ),
         Rule(
-            '/share/registration/',
-            'get',
-            {'register': settings.SHARE_REGISTRATION_URL},
-            json_renderer
-        ),
-        Rule(
             '/api/v1/user/search/',
             'get', search_views.search_contributor,
             json_renderer
         ),
-        Rule(
-            '/api/v1/search/node/',
-            'post',
-            project_views.node.search_node,
-            json_renderer,
-        ),
-
     ])
 
     # API
@@ -1114,9 +1101,6 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule(['/search/', '/search/<type>/'], ['get', 'post'], search_views.search_search, json_renderer),
-        Rule('/search/projects/', 'get', search_views.search_projects_by_title, json_renderer),
-        Rule('/share/search/', 'get', website_views.legacy_share_v1_search, json_renderer),
-
     ], prefix='/api/v1')
 
     # Institution

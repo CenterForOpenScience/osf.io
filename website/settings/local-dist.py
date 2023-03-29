@@ -53,7 +53,6 @@ EXTERNAL_EMBER_APPS = {
     },
 }
 
-SEARCH_ENGINE = 'elastic'
 ELASTIC_TIMEOUT = 10
 
 # Email

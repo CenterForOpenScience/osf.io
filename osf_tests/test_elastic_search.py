@@ -31,7 +31,7 @@ from scripts.populate_institutions import main as populate_institutions
 
 from osf_tests import factories
 from tests.base import OsfTestCase
-from tests.test_features import requires_search
+from website.search.search import requires_search
 from tests.utils import run_celery_tasks
 from osf.utils.workflows import CollectionSubmissionStates
 
@@ -1308,15 +1308,13 @@ class TestSearchExceptions(OsfTestCase):
     def setUpClass(cls):
         logging.getLogger('website.project.model').setLevel(logging.CRITICAL)
         super(TestSearchExceptions, cls).setUpClass()
-        if settings.SEARCH_ENGINE == 'elastic':
-            cls._client = search.search_engine.CLIENT
-            search.search_engine.CLIENT = None
+        cls._client = search.search_engine.CLIENT
+        search.search_engine.CLIENT = None
 
     @classmethod
     def tearDownClass(cls):
         super(TestSearchExceptions, cls).tearDownClass()
-        if settings.SEARCH_ENGINE == 'elastic':
-            search.search_engine.CLIENT = cls._client
+        search.search_engine.CLIENT = cls._client
 
     @requires_search
     def test_connection_error(self):

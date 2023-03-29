@@ -104,7 +104,6 @@ TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
 CONFIRM_REGISTRATIONS_BY_EMAIL = True
 ALLOW_LOGIN = True
 
-SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
 ELASTIC_URI = '127.0.0.1:9200'
 ELASTIC_TIMEOUT = 10
 ELASTIC_INDEX = 'website'
