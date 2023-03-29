@@ -6,11 +6,7 @@ from website import settings
 
 logger = logging.getLogger(__name__)
 
-if settings.SEARCH_ENGINE == 'elastic':
-    import website.search.elastic_search as search_engine
-else:
-    search_engine = None
-    logger.warn('Elastic search is not set to load')
+import website.search.elastic_search as search_engine
 
 def requires_search(func):
     def wrapped(*args, **kwargs):
