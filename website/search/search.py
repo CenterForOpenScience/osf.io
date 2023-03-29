@@ -158,8 +158,11 @@ def create_index(index=None):
 
 
 @requires_search
-def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
-    exclude = exclude or []
-    result = search_engine.search_contributor(query=query, page=page, size=size,
-                                              exclude=exclude, current_user=current_user)
+def search_contributor(query, page=0, size=5, current_user=None):
+    result = search_engine.search_contributor(
+        query=query,
+        page=page,
+        size=size,
+        current_user=current_user
+    )
     return result

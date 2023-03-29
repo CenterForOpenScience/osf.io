@@ -1,22 +1,17 @@
-# -*- coding: utf-8 -*-
 import functools
 from rest_framework import status as http_status
 import logging
 import time
 
 import bleach
-from django.db.models import Q
 from flask import request
 
 from framework.auth.decorators import collect_auth
-from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 from framework import sentry
 from website import language
 from osf import features
-from osf.models import OSFUser, AbstractNode
 from website import settings
-from website.project.views.contributor import get_node_contributors_abbrev
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.search import exceptions
 import website.search.search as search
@@ -83,11 +78,27 @@ def search_view():
 @collect_auth
 def search_contributor(auth):
     user = auth.user if auth else None
-    nid = request.args.get('excludeNode')
-    exclude = AbstractNode.load(nid).contributors if nid else []
-    # TODO: Determine whether bleach is appropriate for ES payload. Also, inconsistent with website.sanitize.util.strip_html
-    query = bleach.clean(request.args.get('query', ''), tags=[], strip=True)
-    page = int(bleach.clean(request.args.get('page', '0'), tags=[], strip=True))
-    size = int(bleach.clean(request.args.get('size', '5'), tags=[], strip=True))
-    return search.search_contributor(query=query, page=page, size=size,
-                                     exclude=exclude, current_user=user)
+    query = bleach.clean(
+        request.args.get('query', ''),
+        tags=[],
+        strip=True
+    )
+    page = int(
+        bleach.clean(
+            request.args.get('page', '0'),
+            tags=[],
+            strip=True)
+    )
+    size = int(
+        bleach.clean(
+            request.args.get('size', '5'),
+            tags=[],
+            strip=True
+        )
+    )
+    return search.search_contributor(
+        query=query,
+        page=page,
+        size=size,
+        current_user=user
+    )
