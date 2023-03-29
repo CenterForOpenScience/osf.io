@@ -720,7 +720,7 @@ function MetadataButtons() {
           const item = file.item;
           return context.wbcache.computeHash({
             data: Object.assign({}, item.attributes, {
-              links: item.linsks,
+              links: item.links,
             }),
             kind: item.attributes.kind
           });
@@ -1579,6 +1579,60 @@ function MetadataButtons() {
                 }
                 return base;
               };
+            } else if (propname == 'onMoveComplete') {
+              return function (item, from) {
+                const context = self.findContextByNodeId(from.data.nodeId);
+                if (!context) {
+                  return;
+                }
+                const fromFilepath = from.data.provider + (from.data.materialized || '/');
+                const projectMetadata = context.projectMetadata;
+                const fromFilepaths = projectMetadata.files
+                  .map(function(f) { return f.path; })
+                  .filter(function(p) {
+                    return p.substring(0, fromFilepath.length) === fromFilepath;
+                  });
+                if (!fromFilepaths.length) {
+                  return;
+                }
+                const toFilepath = item.data.provider + (item.data.materialized || '/');
+                const toFilepaths = fromFilepaths
+                  .map(function(p) {
+                    return toFilepath + p.replace(fromFilepath, '');
+                  });
+                // try reload project metadata
+                const interval = 250;
+                const maxRetry = 10;
+                var retry = 0;
+                function tryLoadMetadata() {
+                  self.loadMetadata(context.nodeId, context.baseUrl, function() {
+                    const context2 = self.findContextByNodeId(context.nodeId);
+                    const matches = toFilepaths
+                      .map(function(p) {
+                        return context2.projectMetadata.files.find(function(f) { return f.path === p; });
+                      });
+                    const unmatchCount = matches.filter(function(m) { return !m; }).length;
+                    console.log(logPrefix, 'reloaded metadata: ', {
+                      context: context2,
+                      unmatchCount: unmatchCount,
+                      expectedFilepaths: toFilepaths
+                    });
+                    if (!unmatchCount) {
+                      context2.wbcache.clearCache();
+                      m.redraw();
+                      return;
+                    }
+                    retry += 1;
+                    if (retry >= maxRetry) {
+                      console.log(logPrefix, 'failed retry reloading metadata');
+                      return;
+                    }
+                    console.log(logPrefix, retry + 'th retry reload metadata after ' + interval + 'ms: ');
+                    setTimeout(tryLoadMetadata, interval);
+                  });
+                }
+                setTimeout(tryLoadMetadata, interval);
+              }
             } else {
               return target[propname];
             }

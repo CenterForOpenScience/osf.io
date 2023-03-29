@@ -570,11 +570,10 @@ function disconnectAccount(providerShortName, institutionId) {
             url: url,
             type: 'DELETE'
         });
-    }).then(
-        function () {
+        request2.then(function () {
             getAccount(providerShortName, institutionId);
-        }
-    );
+        });
+    });
 }
 
 function oauthOpener(url,providerShortName,institutionId){

@@ -38,6 +38,9 @@ FORMAT_TYPE_TO_TYPE_MAP = {
     ('textarea-lg', None): 'long-text-input',
     ('textarea-lg', 'string'): 'long-text-input',
     ('textarea-xl', 'string'): 'long-text-input',
+    ('japan-grant-number', 'string'): 'japan-grant-number-input',
+    ('jgn-program-name-ja', 'string'): 'jgn-program-name-ja-input',
+    ('jgn-program-name-en', 'string'): 'jgn-program-name-en-input',
     ('e-rad-award-funder', 'choose'): 'e-rad-award-funder-input',
     ('e-rad-award-number', 'string'): 'e-rad-award-number-input',
     ('e-rad-award-title-ja', 'string'): 'e-rad-award-title-ja-input',
@@ -210,47 +213,51 @@ def remove_schemas(*args):
 
 def create_schema_block(state, schema_id, block_type, display_text='', required=False, help_text='',
         registration_response_key=None, schema_block_group_key='', example_text='',
-        default=None):
+        default=False, pattern=None, space_normalization=False):
     """
     For mapping schemas to schema blocks: creates a given block from the specified parameters
     """
     RegistrationSchemaBlock = state.get_model('osf', 'registrationschemablock')
 
-    block = RegistrationSchemaBlock.objects.create(
-        schema_id=schema_id,
-        block_type=block_type,
-        required=required,
-        display_text=unescape_entities(
+    params = {
+        'schema_id': schema_id,
+        'block_type': block_type,
+        'required': required,
+        'display_text': unescape_entities(
             display_text,
             safe={
                 '&lt;': '<',
                 '&gt;': '>'
             }
         ),
-        help_text=unescape_entities(
+        'help_text': unescape_entities(
             help_text,
             safe={
                 '&lt;': '<',
                 '&gt;': '>'
             }
         ),
-        registration_response_key=registration_response_key,
-        schema_block_group_key=schema_block_group_key,
-        example_text=unescape_entities(
+        'registration_response_key': registration_response_key,
+        'schema_block_group_key': schema_block_group_key,
+        'example_text': unescape_entities(
             example_text,
             safe={
                 '&lt;': '<',
                 '&gt;': '>'
             }
-        )
-    )
+        ),
+    }
+    additional = {
+        'default': default,
+        'pattern': pattern,
+        'space_normalization': space_normalization,
+    }
 
-    if default is not None:
-        block.default = default
-        try:
-            block.save(update_fields=['default'])
-        except ValueError:
-            pass  # ignore for old migration
+    try:
+        RegistrationSchemaBlock.objects.create(**params, **additional)
+    except TypeError:
+        # for old migration
+        RegistrationSchemaBlock.objects.create(**params)
 
 # Split question multiple choice options into their own blocks
 def split_options_into_blocks(state, rs, question, schema_block_group_key):
@@ -261,7 +268,7 @@ def split_options_into_blocks(state, rs, question, schema_block_group_key):
     for option in question.get('options', []):
         answer_text = option if isinstance(option, basestring) else option.get('text')
         help_text = '' if isinstance(option, basestring) else option.get('tooltip', '')
-        default = None if isinstance(option, basestring) else option.get('default', None)
+        default = False if isinstance(option, basestring) else option.get('default', False)
 
         create_schema_block(
             state,
@@ -408,7 +415,9 @@ def create_schema_blocks_for_question(state, rs, question, sub=False):
             block_type,
             required=question.get('required', False),
             schema_block_group_key=schema_block_group_key,
-            registration_response_key=get_registration_response_key(question)
+            registration_response_key=get_registration_response_key(question),
+            pattern=question.get('pattern', None),
+            space_normalization=question.get('space_normalization', False),
         )
 
         # If there are multiple choice answers, create blocks for these as well.

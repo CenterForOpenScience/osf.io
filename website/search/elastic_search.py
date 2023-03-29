@@ -43,6 +43,9 @@ from website.search.util import (
     validate_email
 )
 from website.views import validate_page_num
+from addons.metadata import SHORT_NAME as METADATA_SHORT_NAME
+from addons.metadata import DISPLAY_NAME as METADATA_DISPLAY_NAME
+from addons.metadata.search import serialize_file_metadata
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +77,7 @@ ALIASES_BASE = {
 
 ALIASES_EXT = {
     'wiki': 'Wiki',
+    'metadata': METADATA_DISPLAY_NAME,
 }
 
 ALIASES_COMMENT = {
@@ -595,6 +599,11 @@ def format_result(result, parent_id=None):
         'highlight': result.get('highlight'),
         'comment': result.get('comment'),
     }
+    # for metadata addon: project metadata
+    if result.get('category') == 'registration':
+        formatted_result.update({
+            'metadata_url': result.get('metadata_url', result['url'])
+        })
 
     return formatted_result
 
@@ -707,6 +716,15 @@ def update_user_async(self, user_id, index=None):
     except Exception as exc:
         self.retry(exc)
 
+@celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
+def update_file_metadata_async(self, project_id, path, index=None, bulk=False):
+    FileMetadata = apps.get_model(f'addons_{METADATA_SHORT_NAME}.FileMetadata')
+    file_metadata = FileMetadata.load(project_id=project_id, path=path)
+    try:
+        update_file_metadata(file_metadata=file_metadata, index=index, bulk=bulk)
+    except Exception as exc:
+        self.retry(exc=exc)
+
 def serialize_node(node, category):
     elastic_document = {}
     parent_id = node.parent_id
@@ -776,6 +794,11 @@ def serialize_node(node, category):
         'extra_search_terms': clean_splitters(node.title),
         'comments': comments_to_doc(node._id),
     }
+    # for metadata addon: project metadata
+    if category == 'registration':
+        elastic_document.update({
+            'metadata_url': AbstractNode.objects.get(registrations__guids___id__in=[node._id]).url + 'metadata',
+        })
     if node_includes_wiki() and not node.is_retracted:
         wiki_names = []
         for wiki in WikiPage.objects.get_wiki_pages_latest(node):
@@ -1033,10 +1056,29 @@ def update_wiki(wiki_page, index=None, bulk=False):
         client().index(index=index, doc_type=category, id=wiki_page._id, body=elastic_document, refresh=True)
 
 @requires_search
+def update_file_metadata(file_metadata, index=None, bulk=False):
+    index = es_index(index)
+    category = 'metadata'
+
+    if file_metadata.deleted or node_is_ignored(file_metadata.project.owner):
+        delete_file_metadata_doc(file_metadata._id, index=index)
+        return None
+
+    elastic_document = serialize_file_metadata(file_metadata, category)
+    if bulk:
+        return elastic_document
+    else:
+        client().index(index=index, doc_type=category, id=file_metadata._id, body=elastic_document, refresh=True)
+
+@requires_search
 def update_node(node, index=None, bulk=False, async_update=False, wiki_page=None):
     if wiki_page:
         update_wiki(wiki_page, index=index)
         # NOTE: update_node() may be called twice after WikiPage.save()
+    metadata = node.get_addon(METADATA_SHORT_NAME)
+    if metadata is not None:
+        for file_metadata in metadata.file_metadata.all():
+            update_file_metadata(file_metadata, index=index)
 
     from addons.osfstorage.models import OsfStorageFile
     index = es_index(index)
@@ -1141,6 +1183,24 @@ def bulk_update_comments(comments, index=None):
                 '_op_type': 'update',
                 '_index': index,
                 '_id': comment._id,
+                '_type': category,
+                'doc': serialized,
+                'doc_as_upsert': True,
+            })
+    if actions:
+        return helpers.bulk(client(), actions)
+
+def bulk_update_file_metadata(file_metadata, index=None):
+    index = es_index(index)
+    category = 'metadata'
+    actions = []
+    for e in file_metadata:
+        serialized = update_file_metadata(e, index=index, bulk=True)
+        if serialized:
+            actions.append({
+                '_op_type': 'update',
+                '_index': index,
+                '_id': e._id,
                 '_type': category,
                 'doc': serialized,
                 'doc_as_upsert': True,
@@ -1742,6 +1802,11 @@ def delete_wiki_doc(deleted_id, index=None):
 def delete_comment_doc(deleted_id, index=None):
     index = es_index(index)
     client().delete(index=index, doc_type='comment', id=deleted_id, refresh=True, ignore=[404])
+
+@requires_search
+def delete_file_metadata_doc(deleted_id, index=None):
+    index = es_index(index)
+    client().delete(index=index, doc_type='metadata', id=deleted_id, refresh=True, ignore=[404])
 
 @requires_search
 def search_contributor(query, page=0, size=10, exclude=None, current_user=None):

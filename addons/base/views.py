@@ -25,6 +25,7 @@ from addons.base.models import BaseStorageAddon
 from addons.osfstorage.models import OsfStorageFile
 from addons.osfstorage.models import OsfStorageFileNode
 from addons.osfstorage.utils import update_analytics
+from addons.metadata.apps import AddonAppConfig as MetadataAppConfig
 
 from framework import sentry
 from framework.auth import Auth
@@ -583,6 +584,11 @@ def create_waterbutler_log(payload, **kwargs):
         else:
             node.create_waterbutler_log(auth, action, payload)
 
+        if hasattr(node, 'get_addon'):
+            metadata_addon = node.get_addon(MetadataAppConfig.short_name)
+            if metadata_addon:
+                metadata_addon.update_file_metadata_for(action, payload, auth)
+
         if not isinstance(node, Preprint):
             # Create/update timestamp record
             if action in (NodeLog.FILE_ADDED, NodeLog.FILE_UPDATED):
@@ -614,7 +620,7 @@ def create_waterbutler_log(payload, **kwargs):
             file_node = BaseFileNode.resolve_class(
                 provider, BaseFileNode.FILE
             ).get_or_create(node, '/' + metadata.get('path').lstrip('/'))
-            if file_node:
+            if file_node and metadata.get('kind') == 'file':
                 func_hash = getattr(file_node, 'get_hash_for_timestamp', None)
                 if func_hash:
                     extras = {}
@@ -681,6 +687,13 @@ def addon_delete_file_node(self, target, user, event_type, payload):
                 )
             except BaseFileNode.DoesNotExist:
                 file_node = None
+            except BaseFileNode.MultipleObjectsReturned:
+                file_node = None
+                for o in BaseFileNode.objects.filter(
+                        target_object_id=target.id,
+                        target_content_type=content_type,
+                        _materialized_path=materialized_path):
+                    o.delete(user=user)
 
             if file_node and not TrashedFileNode.load(file_node._id):
                 file_node.delete(user=user)

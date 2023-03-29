@@ -229,7 +229,12 @@ msgstr ""
 msgid "This field can't be blank."
 msgstr ""
 
-#: addons/metadata/static/metadata-fields.js:207
+#: addons/metadata/static/metadata-fields.js:191
+#: addons/metadata/static/metadata-fields.js:219
+msgid "Please enter the correct value. "
+msgstr ""
+
+#: addons/metadata/static/metadata-fields.js:227
 msgid "(Not Modified)"
 msgstr ""
 
@@ -4055,6 +4060,10 @@ msgstr ""
 
 #: website/static/js/js_messages.js:21
 msgid "Comments"
+msgstr ""
+
+#: website/static/js/js_messages.js:21
+msgid "Metadata"
 msgstr ""
 
 #: website/static/js/js_messages.js:23

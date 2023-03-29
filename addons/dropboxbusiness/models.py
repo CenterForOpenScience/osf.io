@@ -91,15 +91,33 @@ class DropboxBusinessFileaccessProvider(DropboxProvider):
     def auth_callback(self, user):
         # NOTE: "user" must be RdmAddonOption
 
-        access_token = self.auth_callback_common()
-        if access_token is None:
-            return False
-        self.client = DropboxTeam(access_token)
+        result = super().auth_callback(user)
+        if result:
+            team_id = self.account.provider_id
+            name = self.account.display_name
+            try:
+                utils.update_admin_dbmid(team_id)
+            except Exception:
+                logger.exception(
+                    u'admin_dbmid cannot be updated: team name={}'.format(name))
+                # ignored
+        return result
+
+    def handle_callback(self, response):
+        access_token = response['access_token']
+        self.client = DropboxTeam(access_token, timeout=120.0)
         info = self.client.team_get_info()
 
+        return {
+            'key': access_token,
+            'provider_id': info.team_id,
+            'display_name': u'({})'.format(info.name)
+        }
+
+    def check_duplicate_accounts(self, user, info):
         if user.external_accounts.filter(
                 provider=self.short_name,
-                provider_id=info.team_id).exists():
+                provider_id=info['provider_id']).exists():
             # use existing ExternalAccount and set it to the RdmAddonOption
             pass
         elif user.external_accounts.count() > 0:
@@ -107,24 +125,15 @@ class DropboxBusinessFileaccessProvider(DropboxProvider):
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
         # else: create ExternalAccount and set it to the RdmAddonOption
 
-        result = self._set_external_account(
-            user,  # RdmAddonOption
-            {
-                'key': access_token,
-                'provider_id': info.team_id,
-                'display_name': u'({})'.format(info.name)
-            }
-        )
-        if result:
-            try:
-                utils.update_admin_dbmid(info.team_id)
-            except Exception:
-                logger.exception(
-                    u'admin_dbmid cannot be updated: team name={}'.format(
-                        info.name))
-                # ignored
-        return result
+    def _set_external_account(self, user, info):
+        self.check_duplicate_accounts(user, info)
 
+        return super()._set_external_account(user, info)
+
+    def _set_external_account_temporary(self, user, info):
+        self.check_duplicate_accounts(user, info)
+
+        return super()._set_external_account_temporary(user, info)
 
 class DropboxBusinessManagementProvider(DropboxBusinessFileaccessProvider):
     name = 'Dropbox Business Team member management'
@@ -219,17 +228,27 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
 
     def rename_team_folder(self):
         try:
-            fclient = DropboxTeam(self.fileaccess_token)
-            fclient.team_team_folder_rename(
-                self.team_folder_id,
-                self.team_folder_name
-            )
+            fclient = DropboxTeam(self.fileaccess_token, timeout=120.0)
+            has_team_space = utils.is_has_team_space(fclient)
+            if has_team_space:
+                team_info = utils.TeamInfo(self.fileaccess_token, self.management_token, admin=True)
+                fclient_admin = team_info.fileaccess_client_admin
+                res = fclient_admin.users_get_current_account()
+                root_namespace_id = res.root_info.root_namespace_id
+                fclient_pathroot_admin = team_info.fileaccess_client_admin_with_path_root(root_namespace_id)
+                metadata = fclient_pathroot_admin.sharing_get_folder_metadata(self.team_folder_id)
+                fclient_pathroot_admin.files_move_v2('/{}'.format(metadata.name), '/{}'.format(self.team_folder_name))
+            else:
+                fclient.team_team_folder_rename(
+                    self.team_folder_id,
+                    self.team_folder_name
+                )
         except DropboxException:
             logger.exception(u'Team folder cannot be renamed: node={}, team_folder_id={}, name={}'.format(self.owner._id, self.team_folder_id, self.team_folder_name))
             # ignored
 
         try:
-            mclient = DropboxTeam(self.management_token)
+            mclient = DropboxTeam(self.management_token, timeout=120.0)
             utils.rename_group(mclient, self.group_id, self.group_name)
         except DropboxException:
             logger.exception(u'Team group cannot be renamed: node={}, team_folder_id={}, group name={}'.format(self.owner._id, self.team_folder_id, self.group_name))

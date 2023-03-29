@@ -1934,15 +1934,24 @@ msgstr "所属(学校)"
 msgid "Body of Wiki"
 msgstr "Wiki本文"
 
-#: website/templates/search_grdm.mako:595
+#: website/templates/search_grdm.mako:553
+msgid "File Metadata"
+msgstr "ファイルメタデータ"
+
+#: website/templates/search_grdm.mako:573
+#: website/templates/search_grdm.mako:576
+msgid "Project Metadata"
+msgstr "プロジェクトメタデータ"
+
+#: website/templates/search_grdm.mako:618
 msgid "Modified by"
 msgstr "更新者"
 
-#: website/templates/search_grdm.mako:598
+#: website/templates/search_grdm.mako:621
 msgid "Created by"
 msgstr "作成者"
 
-#: website/templates/search_grdm.mako:604
+#: website/templates/search_grdm.mako:627
 msgid "Comment"
 msgstr "コメント"
 
@@ -3182,11 +3191,11 @@ msgstr "<b %(removedContributor)s></b>は、以下のプロジェクトやコン
 #, python-format
 msgid ""
 "<b %(removedContributor)s></b> cannot be                        removed "
-"as a contributor.  You need at least one administrator, bibliographic "
-"contributor, and registered user."
+"as a contributor.  You need at least one administrator and bibliographic "
+"contributor."
 msgstr ""
 "<b "
-"%(removedContributor)s></b>はメンバーとして削除できません。少なくとも1人の管理者、目録表示メンバー、および登録ユーザーが必要です。"
+"%(removedContributor)s></b>はメンバーとして削除できません。少なくとも1人の管理者と目録表示メンバーが必要です。"
 
 #: website/templates/project/modal_remove_contributor.mako:82
 msgid ""
