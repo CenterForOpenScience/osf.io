@@ -18,7 +18,7 @@ var validationMessages = [_('This field is required.'),_('Please enter a value g
 
 var wikiTitle = [_('Project Wiki Pages'),_('Component Wiki Pages'),_('Home')];
 
-var searchDocTypes = [_('Projects'),_('Components'),_('Registrations'),_('Users'),_('All Results'),_('Files'),_('Institutions'),_('Preprints'),_('Groups'),_('Wiki'),_('Comments')];
+var searchDocTypes = [_('Projects'),_('Components'),_('Registrations'),_('Users'),_('All Results'),_('Files'),_('Institutions'),_('Preprints'),_('Groups'),_('Wiki'),_('Comments'),_('Metadata')];
 
 var subscriptionsTitlesAndHelps = [_('Default Notification Settings'),_('These are default settings for new projects you create or are added to. Modifying these settings will not modify settings on existing projects.'),_('Project Notifications'),_('These are settings for each of your projects. Modifying these settings will only modify the settings for the selected project.')];
 

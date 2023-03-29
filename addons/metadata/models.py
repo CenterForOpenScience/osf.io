@@ -8,10 +8,14 @@ from addons.base.models import BaseUserSettings, BaseNodeSettings
 from addons.osfstorage.models import OsfStorageFileNode
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
-from osf.models import DraftRegistration, BaseFileNode
+from django.utils import timezone
+from addons.metadata import SHORT_NAME
+from osf.models import DraftRegistration, BaseFileNode, NodeLog, AbstractNode
+from osf.models.user import OSFUser
 from osf.models.base import BaseModel
 from osf.models.metaschema import RegistrationSchema
-from osf.utils.fields import EncryptedTextField
+from osf.utils.fields import EncryptedTextField, NonNaiveDateTimeField
+from website import settings as website_settings
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +91,11 @@ class ERadRecord(BaseModel):
     bunya_cd = models.TextField(blank=True, null=True)
     bunya_mei = models.TextField(blank=True, null=True)
 
+    japan_grant_number = models.TextField(blank=True, null=True)
+    program_name_ja = models.TextField(blank=True, null=True)
+    program_name_en = models.TextField(blank=True, null=True)
+    funding_stream_code = models.TextField(blank=True, null=True)
+
     class Meta:
         indexes = [
             models.Index(fields=['kenkyusha_no', 'kadai_id', 'nendo'])
@@ -118,7 +127,7 @@ class NodeSettings(BaseNodeSettings):
 
     def get_file_metadatas(self):
         files = []
-        for m in self.file_metadata.all():
+        for m in self.file_metadata.filter(deleted__isnull=True):
             r = {
                 'generated': False,
                 'path': m.path,
@@ -131,7 +140,7 @@ class NodeSettings(BaseNodeSettings):
         return files
 
     def get_file_metadata_for_path(self, path):
-        q = self.file_metadata.filter(path=path)
+        q = self.file_metadata.filter(deleted__isnull=True, path=path)
         if not q.exists():
             parent, _ = os.path.split(path.strip('/'))
             if len(parent) == 0:
@@ -156,9 +165,11 @@ class NodeSettings(BaseNodeSettings):
 
     def set_file_metadata(self, filepath, file_metadata, auth=None):
         self._validate_file_metadata(file_metadata)
-        q = self.file_metadata.filter(path=filepath)
+        q = self.file_metadata.filter(deleted__isnull=True, path=filepath)
         if not q.exists():
             FileMetadata.objects.create(
+                creator=auth.user if auth is not None else None,
+                user=auth.user if auth is not None else None,
                 project=self,
                 path=filepath,
                 hash=file_metadata['hash'],
@@ -179,6 +190,7 @@ class NodeSettings(BaseNodeSettings):
         m = q.first()
         m.hash = file_metadata['hash']
         m.metadata = json.dumps({'items': file_metadata['items']})
+        m.user = auth.user if auth is not None else None
         for item in file_metadata['items']:
             if not item['active']:
                 continue
@@ -199,7 +211,7 @@ class NodeSettings(BaseNodeSettings):
             )
 
     def set_file_hash(self, filepath, hash):
-        q = self.file_metadata.filter(path=filepath)
+        q = self.file_metadata.filter(deleted__isnull=True, path=filepath)
         if not q.exists():
             return
         m = q.first()
@@ -207,13 +219,14 @@ class NodeSettings(BaseNodeSettings):
         m.save()
 
     def delete_file_metadata(self, filepath, auth=None):
-        q = self.file_metadata.filter(path=filepath)
+        q = self.file_metadata.filter(deleted__isnull=True, path=filepath)
         if not q.exists():
             return
         metadata = q.first()
         for schema in self._get_related_schemas(metadata.metadata):
             self._remove_draft_files(schema, filepath)
-        metadata.delete()
+        metadata.deleted = timezone.now()
+        metadata.save()
         if auth:
             self.owner.add_log(
                 action='metadata_file_deleted',
@@ -246,6 +259,49 @@ class NodeSettings(BaseNodeSettings):
         return {
             'formats': formats
         }
+
+    def update_file_metadata_for(self, action, payload, auth):
+        if action in [NodeLog.FILE_RENAMED, NodeLog.FILE_MOVED, NodeLog.FILE_COPIED]:
+            src = payload['source']
+            dest = payload['destination']
+        elif action in [NodeLog.FILE_REMOVED]:
+            src = payload['metadata']
+            dest = payload['metadata']
+        else:
+            return
+        if src['nid'] == dest['nid']:
+            source_addon = self
+        else:
+            source_node = AbstractNode.load(payload['source']['nid'])
+            if source_node is None:
+                return
+            source_addon = source_node.get_addon(SHORT_NAME)
+            if source_addon is None:
+                return
+        src_path = os.path.join(src['provider'], src['materialized'])
+        dest_path = os.path.join(dest['provider'], dest['materialized'])
+        if src_path.endswith('/'):
+            q = source_addon.file_metadata.filter(path__startswith=src_path)
+            path_suffixes = [fm.path[len(src_path):] for fm in q.all()]
+        else:
+            path_suffixes = ['']
+        for path_suffix in path_suffixes:
+            src_path_child = src_path + path_suffix
+            dest_path_child = dest_path + path_suffix
+            q = source_addon.file_metadata.filter(deleted__isnull=True, path=src_path_child)
+            if not q.exists():
+                continue
+            if action in [NodeLog.FILE_RENAMED, NodeLog.FILE_MOVED, NodeLog.FILE_COPIED]:
+                m = q.first()
+                file_metadata = {
+                    'path': dest_path_child,
+                    'folder': m.folder,
+                    'hash': m.hash,
+                    'items': self._get_file_metadata(m).get('items', [])
+                }
+                self.set_file_metadata(dest_path_child, file_metadata, auth)
+            if action in [NodeLog.FILE_RENAMED, NodeLog.FILE_MOVED, NodeLog.FILE_REMOVED]:
+                self.delete_file_metadata(src_path_child, auth)
 
     def _get_file_metadata(self, file_metadata):
         if file_metadata.metadata is None or file_metadata.metadata == '':
@@ -333,6 +389,8 @@ class FileMetadata(BaseModel):
                                 db_index=True, null=True, blank=True,
                                 on_delete=models.CASCADE)
 
+    deleted = NonNaiveDateTimeField(blank=True, null=True)
+
     folder = models.BooleanField()
 
     path = models.TextField()
@@ -340,6 +398,47 @@ class FileMetadata(BaseModel):
     hash = models.CharField(max_length=128, blank=True, null=True)
 
     metadata = models.TextField(blank=True, null=True)
+
+    creator = models.ForeignKey(
+        OSFUser,
+        related_name='file_metadata_created',
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+    )
+
+    user = models.ForeignKey(
+        OSFUser,
+        related_name='file_metadata_modified',
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+    )
+
+    @classmethod
+    def load(cls, project_id, path, select_for_update=False):
+        try:
+            return cls.objects.get(project__id=project_id, path=path) if not select_for_update else cls.objects.filter(project__id=project_id, path=path).select_for_update().get()
+        except cls.DoesNotExist:
+            return None
+
+    @property
+    def _id(self):
+        path_id = self.path.replace('/', '_')
+        return f'{self.project.owner._id}_{path_id}'
+
+    @property
+    def metadata_properties(self):
+        if not self.metadata:
+            return {}
+        m = json.loads(self.metadata)
+        return m
+
+    @property
+    def node(self):
+        if self.project is None:
+            return None
+        return self.project.owner
 
     def resolve_urlpath(self):
         node = self.project.owner
@@ -371,3 +470,16 @@ class FileMetadata(BaseModel):
             logger.info('No guid: ' + self.path + '(provider=' + provider + ')')
             return fileUrl
         return '/' + file_guids[0] + '/'
+
+    def update_search(self):
+        from website import search
+        try:
+            search.search.update_file_metadata(self, bulk=False, async_update=True)
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
+
+    def save(self, *args, **kwargs):
+        rv = super(FileMetadata, self).save(*args, **kwargs)
+        if self.node and (self.node.is_public or website_settings.ENABLE_PRIVATE_SEARCH):
+            self.update_search()
+        return rv

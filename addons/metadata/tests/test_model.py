@@ -30,18 +30,22 @@ class TestNodeSettings(unittest.TestCase):
         self.node.delete()
         self.user.delete()
 
-    def test_set_invalid_file_metadata(self):
+    @mock.patch('website.search.search.update_file_metadata')
+    def test_set_invalid_file_metadata(self, mock_update_file_metadata):
         with pytest.raises(ValueError):
             self.node_settings.set_file_metadata('osfstorage/', {})
+        assert_false(mock_update_file_metadata.called)
         with pytest.raises(ValueError):
             self.node_settings.set_file_metadata('osfstorage/', {
                 'path': 'osfstorage/',
             })
+        assert_false(mock_update_file_metadata.called)
         with pytest.raises(ValueError):
             self.node_settings.set_file_metadata('osfstorage/', {
                 'path': 'osfstorage/',
                 'items': [],
             })
+        assert_false(mock_update_file_metadata.called)
         with pytest.raises(ValueError):
             self.node_settings.set_file_metadata('osfstorage/', {
                 'path': 'osfstorage/',
@@ -50,6 +54,7 @@ class TestNodeSettings(unittest.TestCase):
                     {}
                 ],
             })
+        assert_false(mock_update_file_metadata.called)
         with pytest.raises(ValueError):
             self.node_settings.set_file_metadata('osfstorage/', {
                 'path': 'osfstorage/',
@@ -60,6 +65,7 @@ class TestNodeSettings(unittest.TestCase):
                     }
                 ],
             })
+        assert_false(mock_update_file_metadata.called)
         with pytest.raises(ValueError):
             self.node_settings.set_file_metadata('osfstorage/', {
                 'path': 'osfstorage/',
@@ -71,6 +77,7 @@ class TestNodeSettings(unittest.TestCase):
                     }
                 ],
             })
+        assert_false(mock_update_file_metadata.called)
         with pytest.raises(ValueError):
             self.node_settings.set_file_metadata('osfstorage/', {
                 'path': 'osfstorage/',
@@ -85,6 +92,7 @@ class TestNodeSettings(unittest.TestCase):
                     }
                 ],
             })
+        assert_false(mock_update_file_metadata.called)
         self.node_settings.set_file_metadata('osfstorage/', {
             'path': 'osfstorage/',
             'folder': True,
@@ -99,6 +107,7 @@ class TestNodeSettings(unittest.TestCase):
                     }
             ],
         })
+        assert_true(mock_update_file_metadata.called)
 
     def test_set_valid_folder_file_metadata(self):
         self.node_settings.set_file_metadata('osfstorage/', {
@@ -242,8 +251,8 @@ class TestNodeSettings(unittest.TestCase):
         last_log = self.node.logs.latest()
         assert_equal(last_log.action, 'metadata_file_updated')
 
-    @mock.patch.object(FileMetadata, 'resolve_urlpath')
-    def test_delete_file_metadata(self, mock_resolve_urlpath):
+    @mock.patch('website.search.search.update_file_metadata')
+    def test_delete_file_metadata(self, mock_update_file_metadata):
         self.node_settings.set_file_metadata('osfstorage/', {
             'path': 'osfstorage/',
             'folder': False,
@@ -272,3 +281,4 @@ class TestNodeSettings(unittest.TestCase):
         assert_equal(metadatas, [])
         last_log = self.node.logs.latest()
         assert_equal(last_log.action, 'metadata_file_deleted')
+        assert_true(mock_update_file_metadata.called)

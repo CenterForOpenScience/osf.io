@@ -94,6 +94,29 @@ def update_comment(comment, index=None, bulk=False, async_update=True, saved_fie
         return search_engine.update_comment(comment, **kwargs)
 
 @requires_search
+def update_file_metadata(file_metadata, index=None, bulk=False, async_update=True):
+    kwargs = {
+        'index': index,
+        'bulk': bulk,
+    }
+    if async_update:
+        # We need the transaction to be committed before trying to run celery tasks.
+        if settings.USE_CELERY:
+            enqueue_task(search_engine.update_file_metadata_async.s(
+                project_id=file_metadata.project.id,
+                path=file_metadata.path,
+                **kwargs,
+            ))
+        else:
+            search_engine.update_file_metadata_async(
+                project_id=file_metadata.project.id,
+                path=file_metadata.path,
+                **kwargs,
+            )
+    else:
+        return search_engine.update_file_metadata(file_metadata, **kwargs)
+
+@requires_search
 def bulk_update_wikis(wiki_pages, index=None):
     search_engine.bulk_update_wikis(wiki_pages, index=index)
 
@@ -104,6 +127,10 @@ def bulk_update_comments(comments, index=None):
 @requires_search
 def bulk_update_nodes(serialize, nodes, index=None, category=None):
     search_engine.bulk_update_nodes(serialize, nodes, index=index, category=category)
+
+@requires_search
+def bulk_update_file_metadata(file_metadata, index=None):
+    search_engine.bulk_update_file_metadata(file_metadata, index=index)
 
 @requires_search
 def delete_node(node, index=None):

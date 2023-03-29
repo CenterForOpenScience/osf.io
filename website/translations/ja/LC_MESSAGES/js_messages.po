@@ -232,7 +232,12 @@ msgstr ""
 msgid "This field can't be blank."
 msgstr "このフィールドは必須項目です。"
 
-#: addons/metadata/static/metadata-fields.js:207
+#: addons/metadata/static/metadata-fields.js:191
+#: addons/metadata/static/metadata-fields.js:219
+msgid "Please enter the correct value. "
+msgstr "正しい値を入力してください。 "
+
+#: addons/metadata/static/metadata-fields.js:227
 msgid "(Not Modified)"
 msgstr "(変更なし)"
 
@@ -4559,6 +4564,10 @@ msgstr "<i> 削除中...</i>"
 msgid "Delete failed."
 msgstr "削除に失敗しました。"
 
+# website/static/js/fangorn.js:1199
+msgid "Not enough quota to upload. The total size of the folder %1$s."
+msgstr "アップロードするための空き容量が足りません。フォルダのサイズは%1$sです。"
+
 #: website/static/js/fangorn.js:1202
 msgid ""
 "This folder and all of its contents will be deleted. This folder is "
@@ -4814,6 +4823,10 @@ msgstr "書き込みアクセス権を持つメンバーのみ。"
 #: website/static/js/fangorn.js:2287
 msgid "How to Use the File Browser"
 msgstr "ファイルブラウザの使用方法"
+
+#: website/static/js/fangorn.js:2289
+msgid "Upload Folder"
+msgstr "フォルダのアップロード"
 
 #: website/static/js/fangorn.js:2351
 msgid "Please wait for current action to complete"
@@ -5282,7 +5295,7 @@ msgstr "コンポーネント"
 
 #: website/static/js/js_messages.js:21
 msgid "Registrations"
-msgstr "登録"
+msgstr "プロジェクトメタデータ"
 
 #: website/static/js/js_messages.js:21
 msgid "Users"
@@ -5315,6 +5328,10 @@ msgstr "Wiki"
 #: website/static/js/js_messages.js:21
 msgid "Comments"
 msgstr "コメント"
+
+#: website/static/js/js_messages.js:21
+msgid "Metadata"
+msgstr "ファイルメタデータ"
 
 #: website/static/js/js_messages.js:23
 msgid "Default Notification Settings"

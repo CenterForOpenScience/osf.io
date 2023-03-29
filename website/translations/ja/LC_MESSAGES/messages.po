@@ -1934,15 +1934,24 @@ msgstr "所属(学校)"
 msgid "Body of Wiki"
 msgstr "Wiki本文"
 
-#: website/templates/search_grdm.mako:595
+#: website/templates/search_grdm.mako:553
+msgid "File Metadata"
+msgstr "ファイルメタデータ"
+
+#: website/templates/search_grdm.mako:573
+#: website/templates/search_grdm.mako:576
+msgid "Project Metadata"
+msgstr "プロジェクトメタデータ"
+
+#: website/templates/search_grdm.mako:618
 msgid "Modified by"
 msgstr "更新者"
 
-#: website/templates/search_grdm.mako:598
+#: website/templates/search_grdm.mako:621
 msgid "Created by"
 msgstr "作成者"
 
-#: website/templates/search_grdm.mako:604
+#: website/templates/search_grdm.mako:627
 msgid "Comment"
 msgstr "コメント"
 
