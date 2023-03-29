@@ -706,6 +706,7 @@ class DeprecatedView(JSONAPIBaseView):
     """ Mixin for deprecating old views
     Subclasses must define `max_version`
     """
+    deprecation_warning = 'This route is deprecated and will be unavailable after version {}'
 
     @property
     def max_version(self):
@@ -730,7 +731,7 @@ class DeprecatedView(JSONAPIBaseView):
         if response.status_code == 204:
             response.status_code = 200
             response.data = {}
-        deprecation_warning = 'This route is deprecated and will be unavailable after version {}'.format(self.max_version)
+        deprecation_warning = self.deprecation_warning.format(self.max_version)
         if response.data.get('meta', False):
             if response.data['meta'].get('warnings', False):
                 response.data['meta']['warnings'].append(deprecation_warning)

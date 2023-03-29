@@ -21,13 +21,15 @@ from api.collections.serializers import CollectionSubmissionSerializer
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import Institution, BaseFileNode, AbstractNode, OSFUser, CollectionSubmission
 
+from website import settings
 from website.search import search
 from website.search.exceptions import MalformedQueryError
 from website.search.util import build_query
 from api.base.filters import ElasticOSFOrderingFilter
+from api.base.views import DeprecatedView
 
 
-class BaseSearchView(JSONAPIBaseView, generics.ListCreateAPIView):
+class BaseSearchView(DeprecatedView, JSONAPIBaseView, generics.ListCreateAPIView):
 
     required_read_scopes = [CoreScopes.SEARCH]
     required_write_scopes = [CoreScopes.NULL]
@@ -39,6 +41,9 @@ class BaseSearchView(JSONAPIBaseView, generics.ListCreateAPIView):
 
     pagination_class = SearchPagination
     filter_backends = [ElasticOSFOrderingFilter, ]
+    max_version = '2.20'
+    deprecation_warning = f'This route is deprecated and will be unavailable after version {max_version} please make' \
+                          f' future search requests directly to {settings.SHARE_URL}.'
 
     @property
     def search_fields(self):
