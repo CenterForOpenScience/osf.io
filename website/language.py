@@ -98,12 +98,6 @@ EMAIL_NOT_FOUND = u"""
 {email} was not found in our records.
 """
 
-# Shown after an unregistered user claims an account and is redirected to the
-# settings page
-CLAIMED_CONTRIBUTOR = ('<strong>Welcome to the OSF!</strong> Edit your display name below and then check your '
-                       '<a href="/dashboard/">dashboard</a> to see projects to which you have been added as a '
-                       'contributor by someone else.')
-
 # Error Pages
 # ###########
 
