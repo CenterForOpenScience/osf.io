@@ -38,9 +38,7 @@ def reclassify_domain_references(notable_domain_id, current_note, previous_note)
             item.referrer.save()
 
 
-@run_postcommit(once_per_request=False, celery=True)
-@celery_app.task(ignore_results=False, max_retries=5, default_retry_delay=60)
-def check_resource_for_domains(guid, content):
+def _check_resource_for_domains(guid, content):
     from osf.models import Guid, NotableDomain, DomainReference
     guid = Guid.load(guid)
     if not guid:
@@ -60,6 +58,18 @@ def check_resource_for_domains(guid, content):
         )
     if spammy_domains:
         resource.confirm_spam(save=True, domains=list(spammy_domains))
+
+
+@run_postcommit(once_per_request=False, celery=True)
+@celery_app.task(ignore_results=False, max_retries=5, default_retry_delay=60)
+def check_resource_for_domains_postcommit(guid, content):
+    _check_resource_for_domains(guid, content)
+
+
+@celery_app.task(ignore_results=False, max_retries=5, default_retry_delay=60)
+def check_resource_for_domains_async(guid, content):
+    _check_resource_for_domains(guid, content)
+
 
 def _extract_domains(content):
     extracted_domains = set()
