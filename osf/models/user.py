@@ -171,12 +171,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     }
     # Normalized form of the SPAM_USER_PROFILE_FIELDS to match other SPAM_CHECK_FIELDS formats
     SPAM_CHECK_FIELDS = [
-        'schools__degree',
-        'schools__institution',
-        'schools__department',
-        'jobs__title',
-        'jobs__institution',
-        'jobs__department',
         'social__profileWebsites'
     ]
 
@@ -1421,9 +1415,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         return True
 
-    def confirm_spam(self, save=True, train_spam_services=False):
+    def confirm_spam(self, domains=None, save=True, train_spam_services=False):
         self.deactivate_account()
-        super().confirm_spam(save=save, train_spam_services=train_spam_services)
+        super().confirm_spam(domains=domains, save=save, train_spam_services=train_spam_services)
 
         # Don't train on resources merely associated with spam user
         for node in self.nodes.filter(is_public=True, is_deleted=False).exclude(type='osf.quickfilesnode'):
@@ -1862,7 +1856,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         default_timestamp = dt.datetime(1970, 1, 1, 12, 0, 0, tzinfo=pytz.utc)
         return self.comments_viewed_timestamp.get(target_id, default_timestamp)
 
-    def _get_spam_content(self, saved_fields=None):
+    def _get_spam_content(self, saved_fields=None, **unused_kwargs):
         spam_check_fields = set(self.SPAM_USER_PROFILE_FIELDS.keys())
         spam_check_source = {}
         if saved_fields:

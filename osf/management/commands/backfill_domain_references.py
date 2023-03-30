@@ -3,10 +3,13 @@ import logging
 import operator
 from functools import reduce
 
-from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q, OuterRef, Exists
+
 from django.apps import apps
+from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand
+from django.db.models import Exists, OuterRef, Q, Value
+
+from addons.wiki.models import WikiVersion
 from osf.external.spam import tasks as spam_tasks
 from osf.models import AbstractNode, DomainReference
 
@@ -21,13 +24,20 @@ def backfill_domain_references(model_name, dry_run=False, batch_size=None):
 
     spam_fields = list(model.SPAM_CHECK_FIELDS)
     if issubclass(model, AbstractNode):
-        spam_fields += ['wikis__versions__content']
+        has_spam_wikis_subquery = Exists(
+            WikiVersion.objects.filter(
+                wiki_page__node__id=OuterRef('id'),
+                content__regex=DOMAIN_SEARCH_REGEX
+            )
+        )
+    else:
+        has_spam_wikis_subquery = Value(False)
 
     spam_queries = (
         Q(**{f'{field}__regex': DOMAIN_SEARCH_REGEX})
         for field in spam_fields
     )
-    spam_content_query = reduce(operator.or_, spam_queries)
+    has_spam_content = reduce(operator.or_, spam_queries) | Q(has_spam_wikis=True)
 
     spam_check_items = model.objects.annotate(
         exclude=Exists(
@@ -35,18 +45,20 @@ def backfill_domain_references(model_name, dry_run=False, batch_size=None):
                 referrer_content_type=ContentType.objects.get_for_model(model),
                 referrer_object_id=OuterRef('id')
             )
-        )
-    ).filter(exclude=False).filter(spam_content_query)[:batch_size]
+        ),
+        has_spam_wikis=has_spam_wikis_subquery
+    ).filter(exclude=False).filter(has_spam_content)[:batch_size]
 
     spam_check_count = spam_check_items.count()
     logger.info(f'Queuing {spam_check_count} {model_name}s for domain extraction')
     for item in spam_check_items:
         logger.info(f'{item}, queued')
-        spam_content = item._get_spam_content()
+        spam_content = item._get_spam_content(include_tags=False)
         if not dry_run:
             spam_tasks.check_resource_for_domains.apply_async(
                 kwargs={'guid': item._id, 'content': spam_content}
             )
+    return spam_check_count
 
 
 class Command(BaseCommand):
@@ -63,7 +75,7 @@ class Command(BaseCommand):
             '--model_name',
             type=str,
             required=True,
-            choices=['osf.Node', 'osf.Registration', 'osf.Preprint', 'osf.Comment', 'osf.User'],
+            choices=['osf.Node', 'osf.Registration', 'osf.Preprint', 'osf.Comment', 'osf.OSFUser'],
             help='The name of the model to be searched for domains'
         )
         parser.add_argument(
