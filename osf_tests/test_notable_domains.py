@@ -176,7 +176,7 @@ class TestNotableDomain:
     def test_check_resource_for_domains_spam(self, spam_domain, marked_as_spam_domain, factory):
         obj = factory()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks.check_resource_for_domains(
+            spam_tasks._check_resource_for_domains(
                 guid=obj.guids.first()._id,
                 content=spam_domain.geturl(),
             )
