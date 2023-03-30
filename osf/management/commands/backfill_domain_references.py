@@ -55,7 +55,7 @@ def backfill_domain_references(model_name, dry_run=False, batch_size=None):
         logger.info(f'{item}, queued')
         spam_content = item._get_spam_content(include_tags=False)
         if not dry_run:
-            spam_tasks.check_resource_for_domains.apply_async(
+            spam_tasks.check_resource_for_domains_async.apply_async(
                 kwargs={'guid': item._id, 'content': spam_content}
             )
     return spam_check_count
