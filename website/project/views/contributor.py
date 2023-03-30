@@ -823,7 +823,6 @@ def claim_user_form(auth, **kwargs):
             user.verification_key = generate_verification_key()
             user.save()
             # Authenticate user and redirect to project page
-            status.push_status_message(language.CLAIMED_CONTRIBUTOR, kind='success', trust=True)
             # Redirect to CAS and authenticate the user with a verification key.
             provider = PreprintProvider.load(pid)
             redirect_url = None
