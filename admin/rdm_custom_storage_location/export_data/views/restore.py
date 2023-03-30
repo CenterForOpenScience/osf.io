@@ -20,7 +20,7 @@ from addons.osfstorage.models import Region
 from admin.rdm.utils import RdmPermissionMixin
 from admin.rdm_custom_storage_location import tasks
 from admin.rdm_custom_storage_location.export_data import utils
-from osf.models import ExportData, ExportDataRestore, BaseFileNode, Tag, RdmFileTimestamptokenVerifyResult
+from osf.models import ExportData, ExportDataRestore, BaseFileNode, Tag, RdmFileTimestamptokenVerifyResult, Institution
 from website.util import inspect_info  # noqa
 from framework.transactions.handlers import no_auto_transaction
 
@@ -61,17 +61,29 @@ class RestoreDataActionView(RdmPermissionMixin, APIView):
             if result.get('open_dialog'):
                 # If open_dialog is True, return HTTP 200 with empty response
                 return Response({}, status=status.HTTP_200_OK)
+            elif 'not_found' in result:
+                return Response({'message': result.get('message')}, status=status.HTTP_404_NOT_FOUND)
             elif result.get('message'):
                 # If there is error message, return HTTP 400
                 return Response({'message': result.get('message')}, status=status.HTTP_400_BAD_REQUEST)
 
         # Start restore data task and return task id
-        return prepare_for_restore_export_data_process(cookies, export_id, destination_id, cookie=cookie)
+        export_data = ExportData.objects.filter(id=export_id).first()
+        source_storage_guid = export_data.source.guid
+        institution = Institution.load(source_storage_guid)
+        projects = institution.nodes.filter(type='osf.node', is_deleted=False)
+        projects__ids = []
+        for project in projects:
+            projects__ids.append(project._id)
+        return prepare_for_restore_export_data_process(cookies, export_id, destination_id, projects__ids, cookie=cookie)
 
 
 def check_before_restore_export_data(cookies, export_id, destination_id, **kwargs):
-    export_data = ExportData.objects.filter(id=export_id, is_deleted=False)[0]
+    check_export_data = ExportData.objects.filter(id=export_id, is_deleted=False)
     # Check export file data: /export_{process_start}/export_data_{institution_guid}_{process_start}.json
+    if not check_export_data:
+        return {'open_dialog': False, 'message': f'Cannot be restored because export data does not exist', 'not_found': True}
+    export_data = check_export_data[0]
     try:
         is_export_data_file_valid = read_export_data_and_check_schema(export_data, cookies, **kwargs)
         if not is_export_data_file_valid:
@@ -119,7 +131,7 @@ def check_before_restore_export_data(cookies, export_id, destination_id, **kwarg
     return {'open_dialog': False}
 
 
-def prepare_for_restore_export_data_process(cookies, export_id, destination_id, **kwargs):
+def prepare_for_restore_export_data_process(cookies, export_id, destination_id, list_project_id, **kwargs):
     # Check the destination is available (not in restore process or checking restore data process)
     any_process_running = utils.check_for_any_running_restore_process(destination_id)
     if any_process_running:
@@ -130,11 +142,11 @@ def prepare_for_restore_export_data_process(cookies, export_id, destination_id, 
                                             status=ExportData.STATUS_RUNNING)
     export_data_restore.save()
     # If user clicked 'Restore' button in confirm dialog, start restore data task and return task id
-    process = tasks.run_restore_export_data_process.delay(cookies, export_id, export_data_restore.pk, **kwargs)
+    process = tasks.run_restore_export_data_process.delay(cookies, export_id, export_data_restore.pk, list_project_id, **kwargs)
     return Response({'task_id': process.task_id}, status=status.HTTP_200_OK)
 
 
-def restore_export_data_process(task, cookies, export_id, export_data_restore_id, **kwargs):
+def restore_export_data_process(task, cookies, export_id, export_data_restore_id, list_project_id, **kwargs):
     current_process_step = 0
     task.update_state(state=PENDING, meta={'current_restore_step': current_process_step})
     try:
@@ -151,14 +163,16 @@ def restore_export_data_process(task, cookies, export_id, export_data_restore_id
             export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
                                        status=ExportData.STATUS_COMPLETED)
             return {'message': 'Restore data successfully.'}
-        destination_first_project_id = export_data_files[0].get('project', {}).get('id')
+        # destination_first_project_id = export_data_files[0].get('project', {}).get('id')
 
         check_if_restore_process_stopped(task, current_process_step)
         current_process_step = 1
         task.update_state(state=PENDING, meta={'current_restore_step': current_process_step})
 
         # Move all existing files/folders in destination to backup_{process_start} folder
-        move_all_files_to_backup_folder(task, current_process_step, destination_first_project_id, export_data_restore, cookies, **kwargs)
+        for project_id in list_project_id:
+            # move_all_files_to_backup_folder(task, current_process_step, destination_first_project_id, export_data_restore, cookies, **kwargs)
+            move_all_files_to_backup_folder(task, current_process_step, project_id, export_data_restore, cookies, **kwargs)
 
         current_process_step = 2
         task.update_state(state=PENDING, meta={'current_restore_step': current_process_step})
@@ -476,6 +490,7 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
         file_project_id = file.get('project', {}).get('id')
         file_tags = file.get('tags')
         file_timestamp = file.get('timestamp', {})
+        file_checkout_id = file.get('checkout_id')
 
         # Sort file by version id
         file_versions.sort(key=lambda k: k.get('identifier', 0))
@@ -530,6 +545,9 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
                         node_set = BaseFileNode.objects.filter(_id=file_node_id)
                         if node_set.exists():
                             node = node_set.first()
+                            if file_checkout_id:
+                                node.checkout_id = file_checkout_id
+                                node.save()
                             list_created_file_nodes.append({
                                 'node': node,
                                 'file_tags': file_tags,

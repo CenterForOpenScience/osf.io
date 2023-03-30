@@ -440,7 +440,7 @@ def get_file_data(node_id, provider, file_path, cookies, base_url=WATERBUTLER_UR
         kwargs['revision'] = version
     if location_id:
         kwargs['location_id'] = location_id
-    file_url = waterbutler_api_url_for(node_id, provider, path=file_path, _internal=base_url == WATERBUTLER_URL, base_url=base_url, **kwargs)
+    file_url = waterbutler_api_url_for(node_id, provider, path=file_path, _internal=base_url == WATERBUTLER_URL, base_url=base_url, is_check_permission=False, **kwargs)
     return requests.get(file_url,
                         headers={'content-type': 'application/json'},
                         cookies=cookies)
@@ -450,7 +450,7 @@ def create_folder(node_id, provider, parent_path, folder_name, cookies, callback
     kwargs.setdefault('kind', 'folder')
     kwargs.setdefault('callback_log', callback_log)
     kwargs.setdefault('name', folder_name)
-    upload_url = waterbutler_api_url_for(node_id, provider, path=parent_path, _internal=base_url == WATERBUTLER_URL, base_url=base_url, **kwargs)
+    upload_url = waterbutler_api_url_for(node_id, provider, path=parent_path, _internal=base_url == WATERBUTLER_URL, base_url=base_url, is_check_permission=False, **kwargs)
     try:
         response = requests.put(upload_url,
                                 headers={'content-type': 'application/json'},
@@ -462,7 +462,7 @@ def create_folder(node_id, provider, parent_path, folder_name, cookies, callback
 
 def upload_file(node_id, provider, file_parent_path, file_data, file_name, cookies, base_url=WATERBUTLER_URL, **kwargs):
     upload_url = waterbutler_api_url_for(node_id, provider, path=file_parent_path, kind='file', name=file_name,
-                                         _internal=base_url == WATERBUTLER_URL, base_url=base_url, **kwargs)
+                                         _internal=base_url == WATERBUTLER_URL, base_url=base_url, is_check_permission=False, **kwargs)
     try:
         response = requests.put(upload_url,
                                 headers={'content-type': 'application/json'},
@@ -475,7 +475,7 @@ def upload_file(node_id, provider, file_parent_path, file_data, file_name, cooki
 
 def update_existing_file(node_id, provider, file_path, file_data, cookies, base_url=WATERBUTLER_URL, **kwargs):
     upload_url = waterbutler_api_url_for(node_id, provider, path=file_path, kind='file',
-                                         _internal=base_url == WATERBUTLER_URL, base_url=base_url, **kwargs)
+                                         _internal=base_url == WATERBUTLER_URL, base_url=base_url, is_check_permission=False, **kwargs)
     try:
         response = requests.put(upload_url,
                                 headers={'content-type': 'application/json'},
@@ -545,7 +545,7 @@ def move_file(node_id, provider, source_file_path, destination_file_path, cookie
               base_url=WATERBUTLER_URL, is_addon_storage=True, **kwargs):
     move_old_data_url = waterbutler_api_url_for(
         node_id, provider, path=source_file_path, _internal=base_url == WATERBUTLER_URL,
-        base_url=base_url, callback_log=callback_log, **kwargs)
+        base_url=base_url, callback_log=callback_log, is_check_permission=False, **kwargs)
     if is_addon_storage:
         # Add on storage: move whole source path to root and rename to destination path
         destination_file_path = destination_file_path[1:] if destination_file_path.startswith('/') \
@@ -838,7 +838,7 @@ def delete_file(node_id, provider, file_path, cookies, callback_log=False, base_
     destination_storage_backup_meta_api = waterbutler_api_url_for(
         node_id, provider, path=file_path,
         _internal=base_url == WATERBUTLER_URL, base_url=base_url,
-        callback_log=callback_log, **kwargs)
+        callback_log=callback_log, is_check_permission=False, **kwargs)
     return requests.delete(destination_storage_backup_meta_api,
                            headers={'content-type': 'application/json'},
                            cookies=cookies)

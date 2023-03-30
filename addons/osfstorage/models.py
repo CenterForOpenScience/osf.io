@@ -169,11 +169,11 @@ class OsfStorageFileNode(BaseFileNode):
     def update_region_from_latest_version(self, destination_parent):
         raise NotImplementedError
 
-    def move_under(self, destination_parent, name=None):
-        if self.is_preprint_primary:
+    def move_under(self, destination_parent, name=None, is_check_permission=True):
+        if self.is_preprint_primary and is_check_permission:
             if self.target != destination_parent.target or self.provider != destination_parent.provider:
                 raise exceptions.FileNodeIsPrimaryFile()
-        if self.is_checked_out:
+        if self.is_checked_out and is_check_permission:
             raise exceptions.FileNodeCheckedOutError()
         self.update_region_from_latest_version(destination_parent)
         return super(OsfStorageFileNode, self).move_under(destination_parent, name)

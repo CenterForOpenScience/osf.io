@@ -23,8 +23,6 @@ from .location import ExportStorageLocationViewBaseView
 
 logger = logging.getLogger(__name__)
 
-CURRENT_DATA_INFORMATION = []
-
 
 def get_export_data(institution_guid, selected_location_id=None, selected_source_id=None, deleted=False,
                     check_delete=True):
@@ -222,8 +220,6 @@ class ExportDataInformationView(ExportBaseView):
             raise SuspiciousOperation('The export data files are corrupted.')
 
         processed_list_file_info = process_data_information(file_info['files'])
-        global CURRENT_DATA_INFORMATION
-        CURRENT_DATA_INFORMATION = processed_list_file_info
         self.object_list = processed_list_file_info
         self.query_set = processed_list_file_info
 
@@ -295,7 +291,38 @@ class RevertExportDataView(ExportStorageLocationViewBaseView, View):
 
 class ExportDataFileCSVView(RdmPermissionMixin, View):
 
+    def get_object(self, **kwargs):
+        export_data = ExportData.objects.filter(id=self.kwargs.get('data_id')).first()
+        if export_data:
+            if not self.is_super_admin:
+                source_institution_guid = export_data.source.guid
+                source_institution_query = Institution.objects.filter(_id=source_institution_guid)
+                if not source_institution_query.exists():
+                    self.handle_no_permission()
+
+                source_institution_id = source_institution_query.first().id
+
+                if not self.is_affiliated_institution(source_institution_id):
+                    self.handle_no_permission()
+            return export_data
+        raise Http404(
+            'Export data with id {} not found.'.format(
+                self.kwargs.get('data_id')
+            ))
+
     def get(self, *args, **kwargs):
+        cookie = self.request.user.get_or_create_cookie().decode()
+        cookies = self.request.COOKIES
+
+        export_data = self.get_object()
+        # get file_info from location
+        response = export_data.read_file_info_from_location(cookies, cookie=cookie)
+        status_code = response.status_code
+        if status_code != 200:
+            raise SuspiciousOperation('Cannot connect to the export data storage location.')
+        # validate list_file_info
+        file_info = response.json()
+        processed_list_file_info = process_data_information(file_info['files'])
         guid = self.request.user.representative_affiliated_institution.guid
         current_datetime = str('{date:%Y-%m-%d-%H%M%S}'.format(date=datetime.datetime.now())).replace('-', '')
         response = HttpResponse(content_type='text/csv')
@@ -303,8 +330,7 @@ class ExportDataFileCSVView(RdmPermissionMixin, View):
         writer = csv.writer(response)
         writer.writerow(
             ['project_id', 'project_name', 'owner', 'file_id', 'file_path', 'filename', 'versions', 'size', 'stamper'])
-        global CURRENT_DATA_INFORMATION
-        for file in CURRENT_DATA_INFORMATION:
+        for file in processed_list_file_info:
             writer.writerow([
                 file['project']['id'],
                 file['project']['name'],
@@ -316,7 +342,6 @@ class ExportDataFileCSVView(RdmPermissionMixin, View):
                 str(file['size']) + ' Bytes',
                 file.get('timestamp', {}).get('verify_user')
             ])
-        CURRENT_DATA_INFORMATION = []
         return response
 
 

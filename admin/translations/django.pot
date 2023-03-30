@@ -3654,3 +3654,6 @@ msgstr ""
 
 msgid "Cannot abort this export process"
 msgstr ""
+
+msgid "Cannot be restored because export data does not exist"
+msgstr ""

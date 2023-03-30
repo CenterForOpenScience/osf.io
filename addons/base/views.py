@@ -308,6 +308,7 @@ def get_auth(auth, **kwargs):
         provider_name = data['provider']
         # only has location_id
         location_id = data.get('location_id')
+        is_check_permission = data['is_check_permission']
     except KeyError:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
@@ -336,7 +337,8 @@ def get_auth(auth, **kwargs):
         elif not node:
             raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
-        check_access(node, auth, action, cas_resp)
+        if is_check_permission:
+            check_access(node, auth, action, cas_resp)
         provider_settings = None
         if hasattr(node, 'get_addon'):
             provider_settings = node.get_addon(provider_name)
@@ -375,7 +377,7 @@ def get_auth(auth, **kwargs):
                 if auth.user:
                     # mark fileversion as seen
                     FileVersionUserMetadata.objects.get_or_create(user=auth.user, file_version=fileversion)
-                if not node.is_contributor_or_group_member(auth.user):
+                if not node.is_contributor_or_group_member(auth.user) and is_check_permission:
                     from_mfr = download_is_from_mfr(request, payload=data)
                     # version index is 0 based
                     version_index = version - 1

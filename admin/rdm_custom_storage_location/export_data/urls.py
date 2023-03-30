@@ -60,7 +60,7 @@ urlpatterns = [
     url(r'^revert/$',
         management.RevertExportDataView.as_view(),
         name='export_data_revert'),
-    url(r'^output_csv/$',
+    url(r'^(?P<data_id>[0-9]+)/output_csv/$',
         management.ExportDataFileCSVView.as_view(),
         name='export_data_output_csv'),
 

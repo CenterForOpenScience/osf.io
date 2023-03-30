@@ -3719,3 +3719,6 @@ msgstr "このエクスポート プロセスを停止できません。"
 
 msgid "Cannot abort this export process"
 msgstr "このエクスポート プロセスをアボートできません。"
+
+msgid "Cannot be restored because export data does not exist"
+msgstr "エクスポートデータが存在しないため、復元できません。"

@@ -24,6 +24,9 @@ from osf_tests.factories import (
     ExportDataRestoreFactory,
     addon_waterbutler_settings,
     bulkmount_waterbutler_settings,
+    UserFactory,
+    ProjectFactory,
+    InstitutionFactory
 )
 from tests.base import AdminTestCase
 
@@ -45,6 +48,12 @@ def test_init_process_error():
 class TestRestoreDataActionView(AdminTestCase):
     def setUp(self):
         self.view = restore.RestoreDataActionView()
+        self.export_data = ExportDataFactory()
+        self.user = UserFactory()
+        self.project = ProjectFactory(creator=self.user, is_public=False)
+        self.institution = InstitutionFactory()
+        self.user.affiliated_institutions.add(self.institution)
+        self.user.save()
         self.view.kwargs = {
             'export_id': 1,
         }
@@ -76,13 +85,17 @@ class TestRestoreDataActionView(AdminTestCase):
         nt.assert_equal(response.data, {})
         nt.assert_equal(response.status_code, status.HTTP_200_OK)
 
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.Institution.load')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.ExportData.objects')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.prepare_for_restore_export_data_process')
-    def test_post_after_confirm_dialog(self, mock_prepare_for_restore):
+    def test_post_after_confirm_dialog(self, mock_prepare_for_restore, mock_export_data, mock_institution):
         request = APIRequestFactory().post('restore_export_data', {
             'destination_id': 1,
             'is_from_confirm_dialog': True
         })
         request.user = AuthUserFactory()
+        mock_institution.return_value = self.institution
+        mock_export_data.filter.return_value.first.return_value = self.export_data
         mock_prepare_for_restore.return_value = Response(
             {'task_id': FAKE_TASK_ID}, status=status.HTTP_200_OK)
 
@@ -91,14 +104,19 @@ class TestRestoreDataActionView(AdminTestCase):
         nt.assert_equal(response.data, {'task_id': FAKE_TASK_ID})
         nt.assert_equal(response.status_code, status.HTTP_200_OK)
 
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.Institution.load')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.ExportData.objects')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.prepare_for_restore_export_data_process')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_before_restore_export_data')
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.check_for_any_running_restore_process')
-    def test_post_without_confirm_dialog(self, mock_check_for_running_restore, mock_check_before_restore, mock_prepare_for_restore):
+    def test_post_without_confirm_dialog(self, mock_check_for_running_restore, mock_check_before_restore, mock_prepare_for_restore, mock_export_data,
+                                         mock_institution):
         request = APIRequestFactory().post('restore_export_data', {
             'destination_id': 1,
         })
         request.user = AuthUserFactory()
+        mock_institution.return_value = self.institution
+        mock_export_data.filter.return_value.first.return_value = self.export_data
         mock_check_for_running_restore.return_value = False
         mock_check_before_restore.return_value = {}
         mock_prepare_for_restore.return_value = Response(
@@ -379,7 +397,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_utils.return_value = True
         with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.check_for_any_running_restore_process', mock_utils):
             response = self.view.prepare_for_restore_export_data_process(None, self.export_data.id,
-                                                                         self.export_data_restore.destination.id)
+                                                                         self.export_data_restore.destination.id, [])
             mock_utils.assert_called()
             nt.assert_equal(response.data, {'message': f'Cannot restore in this time.'})
             nt.assert_equal(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -392,7 +410,7 @@ class TestRestoreDataFunction(AdminTestCase):
         with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.check_for_any_running_restore_process', mock_utils):
             with mock.patch(f'{EXPORT_DATA_TASK_PATH}.run_restore_export_data_process.delay', mock_task):
                 response = self.view.prepare_for_restore_export_data_process(None, self.export_data.id,
-                                                                             self.export_data_restore.destination.id)
+                                                                             self.export_data_restore.destination.id, [])
                 mock_utils.assert_called()
                 mock_task.assert_called()
                 nt.assert_equal(response.data, {'task_id': FAKE_TASK_ID})
@@ -421,7 +439,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_add_tag_and_timestamp.return_value = None
 
         self.view.restore_export_data_process(task, {}, self.export_data_restore.export.id,
-                                              self.export_data_restore.id)
+                                              self.export_data_restore.id, ['vcu'])
         mock_read_file_info.assert_called()
         mock_check_process.assert_called()
         mock_move_to_backup.assert_called()
@@ -446,7 +464,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_add_tag_and_timestamp.return_value = None
 
         self.view.restore_export_data_process(task, {}, self.export_data_restore.export.id,
-                                              self.export_data_restore.id)
+                                              self.export_data_restore.id, [])
         mock_read_file_info.assert_called()
         mock_check_process.assert_not_called()
         mock_move_to_backup.assert_not_called()
@@ -481,7 +499,7 @@ class TestRestoreDataFunction(AdminTestCase):
 
         with nt.assert_raises(ProcessError):
             self.view.restore_export_data_process(task, {}, self.export_data_restore.export.id,
-                                                  self.export_data_restore.id)
+                                                  self.export_data_restore.id, [])
             mock_read_file_info.assert_called()
             mock_check_process.assert_called()
             mock_move_to_backup.assert_not_called()
@@ -515,7 +533,7 @@ class TestRestoreDataFunction(AdminTestCase):
                         mock_rollback_process):
             with nt.assert_raises(IntegrityError):
                 self.view.restore_export_data_process(task, {}, self.export_data_restore.export.id,
-                                                      self.export_data_restore.id)
+                                                      self.export_data_restore.id, [])
                 mock_read_file_info.assert_called()
                 mock_check_process.assert_called()
                 mock_move_to_backup.assert_called()

@@ -860,9 +860,14 @@ class TestExportDataFileCSVView(AdminTestCase):
         self.institution = InstitutionFactory()
         self.user.affiliated_institutions.add(self.institution)
         self.user.save()
+        self.export_data = ExportDataFactory()
         self.view = management.ExportDataFileCSVView()
 
-    def test_get(self):
+    @mock.patch('admin.rdm_custom_storage_location.export_data.views.management.ExportData.read_file_info_from_location')
+    @mock.patch('admin.rdm_custom_storage_location.export_data.views.management.ExportDataFileCSVView.get_object')
+    def test_get(self, mock_get_object, mock_read_file_info):
+        mock_get_object.return_value = self.export_data
+        mock_read_file_info.return_value = FakeRes(200)
         request = RequestFactory().get('/fake_path')
         request.user = self.user
         view = setup_view(self.view, request)

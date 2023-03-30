@@ -86,7 +86,7 @@ class ExportDataRestore(base.BaseModel):
         base_file_nodes__ids = base_file_versions_set.values_list('basefilenode_id', flat=True).distinct('basefilenode_id')
 
         # get project list, includes public/private/deleted projects
-        projects = institution.nodes.filter(type='osf.node')
+        projects = institution.nodes.filter(type='osf.node', is_deleted=False)
         projects__ids = projects.values_list('id', flat=True)
         destination_project_ids = set()
 
@@ -115,6 +115,7 @@ class ExportDataRestore(base.BaseModel):
                 'size': 0,
                 'location': {},
                 'timestamp': {},
+                'checkout_id': file.checkout_id or None,
             }
 
             # project
@@ -189,6 +190,7 @@ class ExportDataRestore(base.BaseModel):
             name=file_name,
             kind='file',
             _internal=True, location_id=self.destination.id,
+            is_check_permission=False,
             **kwargs
         )
         return requests.put(url, data=file_data, cookies=cookies)

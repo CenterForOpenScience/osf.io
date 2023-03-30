@@ -130,9 +130,9 @@ def osfstorage_copy_hook(source, destination, name=None, **kwargs):
 @decorators.waterbutler_opt_hook
 def osfstorage_move_hook(source, destination, name=None, **kwargs):
     source_target = source.target
-
+    is_check_permission = kwargs.get('is_check_permission')
     try:
-        ret = source.move_under(destination, name=name).serialize(), http_status.HTTP_200_OK
+        ret = source.move_under(destination, name=name, is_check_permission=is_check_permission).serialize(), http_status.HTTP_200_OK
     except exceptions.FileNodeCheckedOutError:
         raise HTTPError(http_status.HTTP_405_METHOD_NOT_ALLOWED, data={
             'message_long': 'Cannot move file as it is checked out.'
@@ -143,7 +143,7 @@ def osfstorage_move_hook(source, destination, name=None, **kwargs):
         })
 
     # once the move is complete recalculate storage for both targets if it's a inter-target move.
-    if source_target != destination.target:
+    if is_check_permission and source_target != destination.target:
         update_storage_usage(destination.target)
         update_storage_usage(source_target)
 

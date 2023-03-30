@@ -1213,6 +1213,7 @@ $('#checkExportData').on('click', function () {
         });
         $('.text-check-export-data').html(text_check_export);
         $('.table-ng').html(text_current);
+        $('.table-ng').css('word-break', 'break-word');
     }).fail(function (jqXHR) {
         $('#checkExportData').prop('disabled', false);
         var message = _(jqXHR.responseJSON.message);
@@ -1444,6 +1445,7 @@ $('#check_restore_button').on('click', function () {
         });
         $('.text-check-restore-data').html(text_check_export);
         $('.table-ng-restore').html(text_current);
+        $('.table-ng-restore').css('word-break', 'break-word');
     }).fail(function (jqXHR) {
         $('#check_restore_button').prop('disabled', false);
         var message = jqXHR.responseJSON.message;

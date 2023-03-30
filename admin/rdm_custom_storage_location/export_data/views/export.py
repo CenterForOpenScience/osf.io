@@ -126,7 +126,8 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
     file_versions = export_data.get_source_file_versions_min(file_info_json)
     for file in file_versions:
         project_id, provider, file_path, version, file_name = file
-        kwargs.setdefault('version', version)
+        kwargs.update({'version': version})
+        # kwargs.setdefault('version', version)
         if task.is_aborted():  # check before each steps
             return None
         # get content data file from source

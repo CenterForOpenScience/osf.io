@@ -92,11 +92,15 @@ def waterbutler_opt_hook(func):
             source = OsfStorageFileNode.get(payload['source'], kwargs['target'])
             dest_parent = OsfStorageFolder.get(payload['destination']['parent'], dest_target)
 
+            is_check_permission = True
+            if 'is_check_permission' in payload and payload['is_check_permission'] is False:
+                is_check_permission = False
             kwargs.update({
                 'user': user,
                 'source': source,
                 'destination': dest_parent,
                 'name': payload['destination']['name'],
+                'is_check_permission': is_check_permission
             })
         except KeyError:
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
