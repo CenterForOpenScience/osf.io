@@ -583,7 +583,7 @@ def validate_onedrivebusiness_connection(institution_id, folder_id_or_path):
         'message': 'Credentials are valid'
     }, http_status.HTTP_200_OK), folder_id
 
-def save_s3_credentials(institution_id, storage_name, access_key, secret_key, bucket):
+def save_s3_credentials(institution_id, storage_name, access_key, secret_key, bucket, server_side_encryption=False):
     test_connection_result = test_s3_connection(access_key, secret_key, bucket)
     if test_connection_result[1] != http_status.HTTP_200_OK:
         return test_connection_result
@@ -596,9 +596,8 @@ def save_s3_credentials(institution_id, storage_name, access_key, secret_key, bu
     }
     wb_settings = {
         'storage': {
-            'folder': {
-                'encrypt_uploads': True,
-            },
+            'folder': '',
+            'encrypt_uploads': server_side_encryption,
             'bucket': bucket,
             'provider': 's3',
         },
