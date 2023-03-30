@@ -233,6 +233,7 @@ class SaveCredentialsView(InstitutionalStorageBaseView, View):
                 data.get('s3compatinstitutions_access_key'),
                 data.get('s3compatinstitutions_secret_key'),
                 data.get('s3compatinstitutions_bucket'),
+                bool(strtobool(data.get('s3compatinstitutions_server_side_encryption'))),
                 provider_short_name,
             )
         elif provider_short_name == 'ociinstitutions':
