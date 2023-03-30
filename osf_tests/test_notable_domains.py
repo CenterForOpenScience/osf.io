@@ -155,16 +155,13 @@ class TestNotableDomain:
             note=NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT,
         )
 
-    @pytest.mark.enable_enqueue_task
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
     def test_check_resource_for_domains_moderation_queue(self, spam_domain, factory):
         obj = factory()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks.check_resource_for_domains.apply_async(
-                kwargs=dict(
-                    guid=obj.guids.first()._id,
-                    content=spam_domain.geturl(),
-                )
+            spam_tasks._check_resource_for_domains(
+                guid=obj.guids.first()._id,
+                content=spam_domain.geturl(),
             )
 
         obj.reload()
@@ -175,16 +172,13 @@ class TestNotableDomain:
         obj.reload()
         assert obj.spam_status == SpamStatus.UNKNOWN
 
-    @pytest.mark.enable_enqueue_task
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
     def test_check_resource_for_domains_spam(self, spam_domain, marked_as_spam_domain, factory):
         obj = factory()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks.check_resource_for_domains.apply_async(
-                kwargs=dict(
-                    guid=obj.guids.first()._id,
-                    content=spam_domain.geturl(),
-                )
+            spam_tasks.check_resource_for_domains(
+                guid=obj.guids.first()._id,
+                content=spam_domain.geturl(),
             )
 
         obj.reload()
@@ -241,18 +235,15 @@ class TestNotableDomain:
         obj.reload()
         assert obj.spam_status == SpamStatus.SPAM
 
-    @pytest.mark.enable_enqueue_task
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
     def test_check_resource_for_duplicate_spam_domains(self, factory, spam_domain, marked_as_spam_domain):
         obj = factory()
         obj.spam_data['domains'] = [spam_domain.netloc]
         obj.save()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks.check_resource_for_domains.apply_async(
-                kwargs=dict(
-                    guid=obj.guids.first()._id,
-                    content=f'{spam_domain.geturl()}',
-                )
+            spam_tasks._check_resource_for_domains(
+                guid=obj.guids.first()._id,
+                content=f'{spam_domain.geturl()}',
             )
 
         obj.reload()
@@ -343,11 +334,9 @@ class TestNotableDomainReclassification:
     def test_from_spam_to_unknown_one_spam_domain(self, factory, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
         obj_one = factory()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks.check_resource_for_domains.apply_async(
-                kwargs=dict(
-                    guid=obj_one.guids.first()._id,
-                    content=f'{self.spam_domain_one.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
-                )
+            spam_tasks._check_resource_for_domains(
+                guid=obj_one.guids.first()._id,
+                content=f'{self.spam_domain_one.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
             )
 
         obj_one.reload()
@@ -363,11 +352,9 @@ class TestNotableDomainReclassification:
     def test_from_spam_to_unknown_two_spam_domains(self, factory, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
         obj_two = factory()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks.check_resource_for_domains.apply_async(
-                kwargs=dict(
-                    guid=obj_two.guids.first()._id,
-                    content=f'{self.spam_domain_one.geturl()} {self.spam_domain_two.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
-                )
+            spam_tasks._check_resource_for_domains(
+                guid=obj_two.guids.first()._id,
+                content=f'{self.spam_domain_one.geturl()} {self.spam_domain_two.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
             )
 
         obj_two.reload()
@@ -385,11 +372,9 @@ class TestNotableDomainReclassification:
         obj_three.spam_data['who_flagged'] = 'some external spam checker'
         obj_three.save()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks.check_resource_for_domains.apply_async(
-                kwargs=dict(
-                    guid=obj_three.guids.first()._id,
-                    content=f'{self.spam_domain_one.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
-                )
+            spam_tasks._check_resource_for_domains(
+                guid=obj_three.guids.first()._id,
+                content=f'{self.spam_domain_one.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
             )
 
         obj_three.reload()
@@ -405,11 +390,9 @@ class TestNotableDomainReclassification:
     def test_from_spam_to_ignored_one_spam_domain(self, factory, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
         obj_one = factory()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks.check_resource_for_domains.apply_async(
-                kwargs=dict(
-                    guid=obj_one.guids.first()._id,
-                    content=f'{self.spam_domain_one.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
-                )
+            spam_tasks._check_resource_for_domains(
+                guid=obj_one.guids.first()._id,
+                content=f'{self.spam_domain_one.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
             )
 
         obj_one.reload()
@@ -425,11 +408,9 @@ class TestNotableDomainReclassification:
     def test_from_spam_to_ignored_two_spam_domains(self, factory, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
         obj_two = factory()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks.check_resource_for_domains.apply_async(
-                kwargs=dict(
-                    guid=obj_two.guids.first()._id,
-                    content=f'{self.spam_domain_one.geturl()} {self.spam_domain_two.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
-                )
+            spam_tasks._check_resource_for_domains(
+                guid=obj_two.guids.first()._id,
+                content=f'{self.spam_domain_one.geturl()} {self.spam_domain_two.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
             )
 
         obj_two.reload()
@@ -447,11 +428,9 @@ class TestNotableDomainReclassification:
         obj_three.spam_data['who_flagged'] = 'some external spam checker'
         obj_three.save()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks.check_resource_for_domains.apply_async(
-                kwargs=dict(
-                    guid=obj_three.guids.first()._id,
-                    content=f'{self.spam_domain_one.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
-                )
+            spam_tasks._check_resource_for_domains(
+                guid=obj_three.guids.first()._id,
+                content=f'{self.spam_domain_one.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
             )
 
         obj_three.reload()
@@ -467,11 +446,9 @@ class TestNotableDomainReclassification:
     def test_from_unknown_to_spam_unknown_plus_ignored(self, factory, unknown_notable_domain, ignored_notable_domain):
         obj_one = factory()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks.check_resource_for_domains.apply_async(
-                kwargs=dict(
-                    guid=obj_one.guids.first()._id,
-                    content=f'{self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
-                )
+            spam_tasks._check_resource_for_domains(
+                guid=obj_one.guids.first()._id,
+                content=f'{self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
             )
 
         obj_one.reload()
@@ -487,11 +464,9 @@ class TestNotableDomainReclassification:
     def test_from_unknown_to_spam_unknown_only(self, factory, unknown_notable_domain, ignored_notable_domain):
         obj_two = factory()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks.check_resource_for_domains.apply_async(
-                kwargs=dict(
-                    guid=obj_two.guids.first()._id,
-                    content=f'{self.unknown_domain.geturl()}',
-                )
+            spam_tasks._check_resource_for_domains(
+                guid=obj_two.guids.first()._id,
+                content=f'{self.unknown_domain.geturl()}',
             )
 
         obj_two.reload()
@@ -507,11 +482,9 @@ class TestNotableDomainReclassification:
     def test_from_ignored_to_spam_unknown_plus_ignored(self, factory, unknown_notable_domain, ignored_notable_domain):
         obj_one = factory()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks.check_resource_for_domains.apply_async(
-                kwargs=dict(
-                    guid=obj_one.guids.first()._id,
-                    content=f'{self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
-                )
+            spam_tasks._check_resource_for_domains(
+                guid=obj_one.guids.first()._id,
+                content=f'{self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
             )
 
         obj_one.reload()
@@ -527,11 +500,9 @@ class TestNotableDomainReclassification:
     def test_from_ignored_to_spam_ignored_only(self, factory, unknown_notable_domain, ignored_notable_domain):
         obj_two = factory()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks.check_resource_for_domains.apply_async(
-                kwargs=dict(
-                    guid=obj_two.guids.first()._id,
-                    content=f'{self.ignored_domain.geturl()}',
-                )
+            spam_tasks._check_resource_for_domains(
+                guid=obj_two.guids.first()._id,
+                content=f'{self.ignored_domain.geturl()}',
             )
 
         obj_two.reload()

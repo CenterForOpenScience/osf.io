@@ -5,14 +5,10 @@ from django.db import models
 from django.utils import timezone
 
 from osf.exceptions import ValidationValueError, ValidationTypeError
-from osf.external.spam.tasks import check_resource_for_domains
-from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.utils.fields import NonNaiveDateTimeField
-
-from osf.external.spam.tasks import check_resource_with_spam_services
 from osf.external.askismet import tasks as akismet_tasks
-from osf.utils.fields import ensure_str
-
+from osf.external.spam.tasks import check_resource_for_domains_postcommit, check_resource_with_spam_services
+from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.fields import ensure_str, NonNaiveDateTimeField
 from website import settings
 
 logger = logging.getLogger(__name__)
@@ -206,7 +202,7 @@ class SpamMixin(models.Model):
         }
         request_kwargs.update(request_headers)
 
-        check_resource_for_domains(
+        check_resource_for_domains_postcommit(
             self.guids.first()._id,
             content,
         )
