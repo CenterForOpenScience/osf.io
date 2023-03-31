@@ -33,12 +33,12 @@
     <ul>
       <li>Connect an <a href="https://help.osf.io/hc/en-us/sections/360003623833-Storage-add-ons">OSF storage add-on</a> to continue managing your research efficiently from OSF. OSF add-ons are an easy way to extend your storage space while also streamlining your data management workflow.</li>
       % if private_nodes:
-      <li><a href="https://help.osf.io/hc/en-us/articles/360018981414-Control-Your-Privacy-Settings#Make-your-project-or-components-public">Make your private project public</a> to increase storage capacity to 50 GB for files stored in OSF storage.</li>
+      <li><a href="https://help.osf.io/article/285-control-your-privacy-settings">Make your private project public</a> to increase storage capacity to 50 GB for files stored in OSF storage.</li>
       % endif
       <li><a href="https://help.osf.io/hc/en-us/articles/360019737614-Create-Components">Organize your project with components</a> to take advantage of the flexible structure and maximize storage options.</li>
     </ul>
     <br>
-    Learn more about OSF Storage capacity <a href="https://help.osf.io/hc/en-us/articles/360054528874-OSF-Storage-Caps">here</a>, or contact <a href="mailto:support@osf.io">support@osf.io</a> with any questions you may have.<br>
+    Learn more about OSF Storage capacity <a href="https://help.osf.io/article/137-osf-storage-caps">here</a>, or contact <a href="mailto:support@osf.io">support@osf.io</a> with any questions you may have.<br>
     <br>
     Thanks,<br>
     <br>
