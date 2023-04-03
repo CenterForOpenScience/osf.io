@@ -64,6 +64,7 @@ def attach_handlers(app, settings):
     # NOTE: This must be attached AFTER the TokuMX to avoid calling
     # a commitTransaction (in toku's after_request handler) when no transaction
     # has been created
+    add_handlers(app, {'before_request': framework.sessions.set_current_session})
     add_handlers(app, {'before_request': framework.sessions.prepare_private_key})
     # framework.session's before_request handler must go after
     # prepare_private_key, else view-only links won't work
