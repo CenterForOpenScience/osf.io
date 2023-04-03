@@ -771,8 +771,13 @@ var LogPieces = {
     guid: {
         view: function (ctrl, logObject) {
             var guid = logObject.attributes.params.guid;
+			var useTitle = false;
+			var title = logObject.attributes.params.title;
+			if(title){
+				useTitle = true;
+			}
             if (paramIsReturned(guid, logObject)){
-                return m('a', {href: '/' + guid}, guid);
+                return m('a', {href: '/' + guid}, useTitle ? title : guid);
             }
             return m('span', 'an object');
         }
