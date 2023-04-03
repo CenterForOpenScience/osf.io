@@ -7,7 +7,7 @@ from django.apps import apps
 from django.utils import timezone
 from django.conf import settings as django_conf_settings
 import itsdangerous
-from flask import request
+from flask import request, g
 import furl
 
 from framework.celery_tasks.handlers import enqueue_task
@@ -41,6 +41,8 @@ def add_key_to_url(url, scheme, key):
     parsed_redirect_url = parsed_url._replace(**replacements)
     return urlunparse(parsed_redirect_url)
 
+def set_current_session():
+    g.current_session = get_session()
 
 def prepare_private_key():
     """
@@ -103,7 +105,9 @@ def get_session(ignore_cookie=False):
     """
     cookie = request.cookies.get(settings.COOKIE_NAME)
     try:
-        return get_session_from_cookie(cookie) if (not ignore_cookie and cookie) else SessionStore()
+        if not g.current_session:
+            g.current_session = get_session_from_cookie(cookie) if (not ignore_cookie and cookie) else SessionStore()
+        return g.current_session
     except InvalidCookieOrSessionError:
         return None
 
@@ -138,7 +142,6 @@ def create_session(response, data=None):
 # Request callbacks
 # NOTE: This gets attached in website.app.init_app to ensure correct callback order
 def before_request():
-
     # TODO: Fix circular import
     from framework.auth.core import get_user
     from framework.auth import cas
