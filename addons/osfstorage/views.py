@@ -405,6 +405,7 @@ def osfstorage_download(file_node, payload, **kwargs):
         # Temporary Notes: not sure why `get_session()` was used directly instead of `session`
         user_session = get_session()
         user_session['auth_user_id'] = user_id
+        user_session['post_request_removal'] = True
         user_session.save()
 
     if not request.args.get('version'):
