@@ -42,6 +42,11 @@ def add_key_to_url(url, scheme, key):
     return urlunparse(parsed_redirect_url)
 
 def set_current_session():
+    """
+    Sets `current_session` on the Flask global context
+    This is to make sure that each invocation of `get_session`
+    returns the same SessionStore object within the context of the same request
+    """
     g.current_session = get_session()
 
 def prepare_private_key():
@@ -95,6 +100,7 @@ def get_session_from_cookie(cookie):
 def get_session(ignore_cookie=False):
     """
     Get the existing session from the request context or create a new blank Django ``SessionStore`` object.
+    if `g.current_session` is defined, simply returns the `g.current_session`. Otherwise:
     Case 0: If cookie does not exist, simply return a new ``SessionStore`` object. This SessionStore object is
             empty, it is not saved to the Session backend (DB or Cache), and it doesn't have a ``session_key``.
             It is the caller of ``get_session()`` that takes care of the ``.save()`` when needed.
@@ -105,7 +111,7 @@ def get_session(ignore_cookie=False):
     """
     cookie = request.cookies.get(settings.COOKIE_NAME)
     try:
-        if not g.current_session:
+        if not g.get('current_session', None):
             g.current_session = get_session_from_cookie(cookie) if (not ignore_cookie and cookie) else SessionStore()
         return g.current_session
     except InvalidCookieOrSessionError:
