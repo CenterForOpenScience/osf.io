@@ -88,6 +88,7 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
     tags = ser.CharField(read_only=True)
     target = NodeLogFileParamsSerializer(read_only=True)
     template_node = ser.DictField(read_only=True)
+    title = ser.CharField(read_only=True)
     title_new = ser.CharField(read_only=True)
     title_original = ser.CharField(read_only=True)
     updated_fields = ser.DictField(read_only=True)
