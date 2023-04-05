@@ -123,7 +123,6 @@ def get_globals():
         'allow_login': settings.ALLOW_LOGIN,
         'cookie_name': settings.COOKIE_NAME,
         'status': status.pop_status_messages(),
-        'prev_status': status.pop_previous_status_messages(),
         'domain': settings.DOMAIN,
         'api_domain': settings.API_DOMAIN,
         'disk_saving_mode': settings.DISK_SAVING_MODE,
