@@ -68,17 +68,7 @@ def pop_status_messages(level=0):
     for message in messages or []:
         if len(message) == 5:
             message += [None, None]  # Make sure all status's have enough arguments
-    current_session['status_prev'] = messages
     if 'status' in current_session:
         current_session.pop('status', None)
-        current_session.save()
-    return messages
-
-
-def pop_previous_status_messages(level=0):
-    current_session = get_session()
-    messages = current_session.get('status_prev', None)
-    if 'status_prev' in current_session:
-        current_session.pop('status_prev', None)
         current_session.save()
     return messages
