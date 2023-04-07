@@ -300,7 +300,7 @@ class ExportData(base.BaseModel):
         provider = self.location.provider_name
         path = self.export_data_folder_path
         file_name = kwargs.get('file_name', self.get_export_data_filename(self.location.institution_guid))
-        with open(file_path, 'r') as fp:
+        with open(file_path, 'rb') as fp:
             url = waterbutler_api_url_for(
                 node_id, provider, path=path,
                 name=file_name,
