@@ -124,8 +124,17 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
     # upload file versions
     logger.debug(f'uploading file versions')
     file_versions = export_data.get_source_file_versions_min(file_info_json)
-    for file in file_versions:
+    logger.debug(f'file_versions: {file_versions}')
+    _length = len(file_versions)
+    # cached the filename in hash value
+    created_filename_list = []
+    for index, file in enumerate(file_versions):
+        logger.debug(f'[{1 + index}/{_length}] file: {file}')
         project_id, provider, file_path, version, file_name = file
+        # prevent uploading duplicate file_name in hash value
+        if file_name in created_filename_list:
+            logger.debug(f'file created -> ignore')
+            continue
         kwargs.update({'version': version})
         # kwargs.setdefault('version', version)
         if task.is_aborted():  # check before each steps
@@ -139,9 +148,11 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
             return None
         # transfer content data file to location
         response = export_data.transfer_export_data_file_to_location(cookies, file_name, file_data, **kwargs)
-        # 409: file is existing (able diff in path)
-        # 201: created
-        if not task.is_aborted() and response.status_code != 201 and response.status_code not in (409,):
+        # 201: created -> update cache list
+        if response.status_code == 201:
+            created_filename_list.append(file_name)
+        # 409: file is existing (able diff in path) <- prevented
+        if not task.is_aborted() and response.status_code not in (201, ):
             return export_data_rollback_process(cookies, export_data_id, **kwargs)
     logger.debug(f'uploaded file versions')
 
