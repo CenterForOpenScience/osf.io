@@ -57,7 +57,7 @@ DEBUG = osf_settings.DEBUG_MODE
 DEBUG_PROPAGATE_EXCEPTIONS = True
 
 # session:
-SESSION_COOKIE_NAME = 'api'
+SESSION_COOKIE_NAME = osf_settings.COOKIE_NAME
 SESSION_COOKIE_SECURE = osf_settings.SECURE_MODE
 SESSION_COOKIE_HTTPONLY = osf_settings.SESSION_COOKIE_HTTPONLY
 SESSION_COOKIE_SAMESITE = osf_settings.SESSION_COOKIE_SAMESITE
@@ -234,7 +234,7 @@ MIDDLEWARE = (
     'api.base.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
+    'api.base.middleware.UnsignCookieSessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',

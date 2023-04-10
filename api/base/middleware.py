@@ -5,6 +5,7 @@ import pstats
 import threading
 
 from django.conf import settings
+from django.contrib.sessions.middleware import SessionMiddleware
 from django.utils.deprecation import MiddlewareMixin
 from raven.contrib.django.raven_compat.models import sentry_exception_handler
 import corsheaders.middleware
@@ -20,7 +21,7 @@ from framework.celery_tasks.handlers import (
 )
 from .api_globals import api_globals
 from api.base import settings as api_settings
-
+from api.base.authentication.drf import get_session_from_cookie
 
 class CeleryTaskMiddleware(MiddlewareMixin):
     """Celery Task middleware."""
@@ -139,3 +140,14 @@ class ProfileMiddleware(MiddlewareMixin):
             response.content = s.getvalue()
 
         return response
+
+
+class UnsignCookieSessionMiddleware(SessionMiddleware):
+    """
+    Overrides the process_request hook of SessionMiddleware
+    to retrieve the session key for finding the correct session
+    by unsigning the cookie value using server secret
+    """
+    def process_request(self, request):
+        cookie = request.COOKIES.get(settings.SESSION_COOKIE_NAME)
+        request.session = get_session_from_cookie(cookie)

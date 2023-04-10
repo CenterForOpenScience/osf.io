@@ -25,7 +25,6 @@ if DEBUG:
     # django-silk
     INSTALLED_APPS += ('silk',)
     MIDDLEWARE += (
-        'django.contrib.sessions.middleware.SessionMiddleware',
         'silk.middleware.SilkyMiddleware',
     )
 
