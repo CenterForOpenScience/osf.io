@@ -1,5 +1,3 @@
-from sqlite3 import IntegrityError
-
 import mock
 import pytest
 import requests
@@ -9,6 +7,8 @@ from django.http import JsonResponse
 from django.test import RequestFactory
 from nose import tools as nt
 from rest_framework import status
+from django.db import IntegrityError 
+
 
 from admin.rdm_custom_storage_location.export_data.views import export
 from framework.celery_tasks import app as celery_app
@@ -179,9 +179,9 @@ class TestExportDataActionView(AdminTestCase):
     def test_post_exception(self, mock_class):
         mock_class.return_value = self.institution, self.source, self.location
         self.request.COOKIES = 'abcd'
-        with pytest.raises(Exception) as raised:
-            self.view.post(self.request)
-            nt.assert_equal(IntegrityError, type(raised.exception))
+        with mock.patch('osf.models.ExportData.objects.create', side_effect=IntegrityError('mocked error')):
+            res = self.view.post(self.request)
+            nt.assert_equal(res.status_code, 400)
 
 
 @pytest.mark.feature_202210
@@ -217,6 +217,24 @@ def test_export_data_rollback_process_status_running():
         with mock.patch('admin.rdm_custom_storage_location.export_data.views.export.os.remove', mock_obj):
             with mock.patch('osf.models.export_data.requests', mock_obj):
                 export.export_data_rollback_process(cookies, export_data.id)
+
+
+@pytest.mark.django_db
+def test_export_data_rollback_process_raise_exception():
+    cookies = 'abcd'
+    export_data = ExportDataFactory()
+    export_data.status = ExportData.STATUS_RUNNING
+    mock_os = mock.MagicMock()
+    mock_os.return_value = True
+    mock_request = mock.MagicMock()
+    mock_request.delete.side_effect = Exception('mock error')
+    mock_obj = mock.MagicMock()
+    mock_obj.filter.return_value.first.return_value = export_data
+    with mock.patch('admin.rdm_custom_storage_location.export_data.views.export.ExportData.objects', mock_obj):
+        with mock.patch('admin.rdm_custom_storage_location.export_data.views.export.os.remove', mock_obj):
+            with mock.patch('osf.models.export_data.requests', mock_request):
+                with pytest.raises(Exception):
+                    export.export_data_rollback_process(cookies, export_data.id)
 
 
 @pytest.mark.feature_202210
@@ -277,6 +295,19 @@ def test_export_data_process_aborted_before_create_export_data_folder(mock_extra
     result = export.export_data_process(fake_task, None, export_data.pk)
     mock_extract_json.assert_called()
     nt.assert_is_none(result)
+
+
+@pytest.mark.django_db
+@mock.patch(f'{EXPORT_DATA_PATH}.ExportData.extract_file_information_json_from_source_storage')
+def test_export_data_process_aborted_before_create_export_data_folder_raise_exception(mock_extract_json):
+    export_data = ExportDataFactory()
+    fake_task = FakeTask(states.SUCCESS, {}, check_abort=True)
+
+    mock_extract_json.side_effect = Exception('mock error')
+
+    with pytest.raises(Exception):
+        result = export.export_data_process(fake_task, None, export_data.pk)
+        mock_extract_json.assert_called()
 
 
 @pytest.mark.feature_202210
@@ -519,6 +550,47 @@ def test_export_data_process_transfer_export_data_file_to_location_error(mock_ex
     mock_read_data_file_from_source.return_value = ok_response
     mock_transfer_export_data_file_to_location = mock.MagicMock()
     mock_transfer_export_data_file_to_location.return_value = error_response
+    mock_rollback_export_data = mock.MagicMock()
+    mock_rollback_export_data.return_value = None
+
+    with mock.patch(f'{EXPORT_DATA_PATH}.ExportData.read_data_file_from_source', mock_read_data_file_from_source):
+        with mock.patch(f'{EXPORT_DATA_PATH}.ExportData.transfer_export_data_file_to_location', mock_transfer_export_data_file_to_location):
+            with mock.patch(f'{EXPORT_DATA_PATH}.export_data_rollback_process', mock_rollback_export_data):
+                result = export.export_data_process(fake_task, None, export_data.pk)
+                mock_extract_json.assert_called()
+                mock_create_export_data_folder.assert_called()
+                mock_create_export_data_files_folder.assert_called()
+                mock_get_source_file_versions_min.assert_called()
+                mock_read_data_file_from_source.assert_called()
+                mock_transfer_export_data_file_to_location.assert_called()
+                mock_rollback_export_data.assert_called()
+                nt.assert_is_none(result)
+
+@pytest.mark.django_db
+@mock.patch(f'{EXPORT_DATA_PATH}.ExportData.get_source_file_versions_min')
+@mock.patch(f'{EXPORT_DATA_PATH}.ExportData.create_export_data_files_folder')
+@mock.patch(f'{EXPORT_DATA_PATH}.ExportData.create_export_data_folder')
+@mock.patch(f'{EXPORT_DATA_PATH}.ExportData.extract_file_information_json_from_source_storage')
+def test_export_data_process_transfer_export_data_file_to_location_201(mock_extract_json, mock_create_export_data_folder,
+                                                                         mock_create_export_data_files_folder, mock_get_source_file_versions_min):
+    export_data = ExportDataFactory()
+    fake_task = FakeTask(states.SUCCESS, {}, check_abort=False)
+
+    created_response = requests.Response()
+    created_response.status_code = status.HTTP_201_CREATED
+    ok_response = requests.Response()
+    ok_response.status_code = status.HTTP_200_OK
+    created_response = requests.Response()
+    created_response.status_code = status.HTTP_201_CREATED
+
+    mock_extract_json.return_value = {}, {}
+    mock_create_export_data_folder.return_value = created_response
+    mock_create_export_data_files_folder.return_value = created_response
+    mock_get_source_file_versions_min.return_value = [(None, None, None, None, 'duplicate'), (None, None, None, None, 'duplicate')]
+    mock_read_data_file_from_source = mock.MagicMock()
+    mock_read_data_file_from_source.return_value = ok_response
+    mock_transfer_export_data_file_to_location = mock.MagicMock()
+    mock_transfer_export_data_file_to_location.return_value = created_response
     mock_rollback_export_data = mock.MagicMock()
     mock_rollback_export_data.return_value = None
 
