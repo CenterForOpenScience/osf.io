@@ -150,4 +150,7 @@ class UnsignCookieSessionMiddleware(SessionMiddleware):
     """
     def process_request(self, request):
         cookie = request.COOKIES.get(settings.SESSION_COOKIE_NAME)
-        request.session = get_session_from_cookie(cookie)
+        if cookie:
+            request.session = get_session_from_cookie(cookie)
+        else:
+            request.session = None
