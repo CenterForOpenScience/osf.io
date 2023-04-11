@@ -118,10 +118,7 @@ class OSFSessionAuthentication(authentication.BaseAuthentication):
         :param request: the request
         :return: the user
         """
-        cookie_val = request.COOKIES.get(settings.COOKIE_NAME)
-        if not cookie_val:
-            return None
-        session = get_session_from_cookie(cookie_val)
+        session = request.session
         if not session:
             return None
         user_id = session.get('auth_user_id', None)
