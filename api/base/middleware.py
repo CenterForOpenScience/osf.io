@@ -152,3 +152,5 @@ class UnsignCookieSessionMiddleware(SessionMiddleware):
         cookie = request.COOKIES.get(settings.SESSION_COOKIE_NAME)
         if cookie:
             request.session = get_session_from_cookie(cookie)
+        else:
+            request.session = None
