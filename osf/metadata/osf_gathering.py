@@ -62,14 +62,15 @@ def pls_gather_item_metadata(osf_item) -> gather.Basket:
     @osf_item: the thing (osf model instance or 5-ish character guid string)
     '''
     focus = OsfFocus(osf_item)
-    if focus.rdftype == OSF.File:
-        predicate_map = OSF_FILE_METADATA
-    elif focus.rdftype in (OSF.Project, OSF.Component, OSF.Preprint, OSF.Registration, OSF.RegistrationComponent):
-        predicate_map = OSF_NODELIKE_METADATA
-    else:
-        predicate_map = OSF_COMMON_METADATA
     basket = gather.Basket(focus)
-    basket.pls_gather(predicate_map)
+    if focus.rdftype == OSF.File:
+        basket.pls_gather(OSF_FILE_METADATA)
+    elif focus.rdftype in (OSF.Project, OSF.Component, OSF.Preprint):
+        basket.pls_gather(OSF_NODELIKE_METADATA)
+    elif focus.rdftype == (OSF.Registration, OSF.RegistrationComponent):
+        basket.pls_gather(OSF_REGISTRATION_METADATA)
+    else:
+        basket.pls_gather(OSF_COMMON_METADATA)
     return basket
 
 
@@ -122,6 +123,11 @@ OSF_NODELIKE_METADATA = {
     **OSF_COMMON_METADATA,
     DCT.isPartOf: OSF_COMMON_METADATA,
     DCT.hasPart: OSF_COMMON_METADATA,
+}
+
+OSF_REGISTRATION_METADATA = {
+    **OSF_NODELIKE_METADATA,
+    OSF.archivedAt: None,
 }
 
 OSF_ARTIFACT_PREDICATES = {
@@ -543,3 +549,11 @@ def gather_user_basics(focus):
         orcid_iri = ORCID[orcid]
         yield (OWL.sameAs, orcid_iri)
         yield (DCT.identifier, str(orcid_iri))
+
+
+@gather.er(
+    OSF.archivedAt,
+    focustype_iris=[OSF.Registration]
+)
+def gather_ia_url(focus):
+    yield (OSF.archivedAt, focus.dbmodel.ia_url)

@@ -123,3 +123,8 @@ def primitivify_rdf(thing):
             for key, val in thing.items()
         }
     return thing  # end recursion with pass-thru
+
+
+def without_namespace(iri: rdflib.URIRef, namespace: rdflib.Namespace) -> str:
+    assert iri.startswith(namespace)
+    return iri[len(namespace):]
