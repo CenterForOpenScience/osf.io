@@ -108,10 +108,8 @@ class PageCounter(BaseModel):
         date = timezone.now()
         date_string = date.strftime('%Y/%m/%d')
 
-        if not SessionStore().exists(session_key=session_key):
-            # TODO: raise and/or handle exception?
-            return
         user_session = SessionStore(session_key=session_key)
+        auth_user_id = user_session.get('auth_user_id', None)
         visited_by_date = user_session.get('visited_by_date', {'date': date_string, 'pages': []})
         with transaction.atomic():
             # Temporary backwards compat - when creating new PageCounters, temporarily keep writing to _id field.
@@ -176,7 +174,10 @@ class PageCounter(BaseModel):
                 visited.append(page)
                 user_session['visited'] = visited
 
-            user_session.save()
+            # Only save when this is not an anonymous session
+            if auth_user_id:
+                user_session.save()
+
             model_instance.total += 1
 
             model_instance.save()
