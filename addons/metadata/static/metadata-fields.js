@@ -38,6 +38,9 @@ function validateField(erad, question, value, fieldSetAndValues, options) {
   if (question.qid == 'grdm-file:available-date') {
     return validateAvailableDateField(erad, question, value, fieldSetAndValues);
   }
+  if (question.qid == 'grdm-file:data-man-email') {
+    return validateContactManagerField(erad, question, value, fieldSetAndValues);
+  }
   if (!value && !((options || {}).multiple)) {
     if (question.required) {
       throw new Error(_("This field can't be blank."))
@@ -214,6 +217,27 @@ function validateAvailableDateField(erad, question, value, fieldSetAndValues) {
   const requiredDateAccessRights = ['embargoed access'];
   if (requiredDateAccessRights.includes(accessRightsPair.value) && !value) {
     throw new Error(_("This field can't be blank."));
+  }
+}
+
+function validateContactManagerField(erad, question, value, fieldSetAndValues) {
+  function getFieldValue(qid) {
+    const field = fieldSetAndValues.find(function(fieldSetAndValue) {
+      return fieldSetAndValue.fieldSet.question.qid === qid;
+    });
+    if (!field) return null;
+    return field.value;
+  }
+
+  const email = value;
+  const tel = getFieldValue('grdm-file:data-man-tel');
+  const address = getFieldValue('grdm-file:data-man-address-ja') ||
+    getFieldValue('grdm-file:data-man-address-en');
+  const org = getFieldValue('grdm-file:data-man-org-ja') ||
+    getFieldValue('grdm-file:data-man-org-en');
+
+  if (!email && !(tel && address && org)) {
+    throw new Error(_("Contacts of data manager can't be blank. Please fill mail address, or organization, address and phone number."));
   }
 }
 
