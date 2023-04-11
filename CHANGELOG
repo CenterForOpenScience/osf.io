@@ -2,6 +2,15 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+23.06.0 (2023-4-11)
+===================
+- Add new metadata support for Google Dataset discovery
+- Hide additional fields in Anonymous View Only Links
+- Fix broken help links
+- Surface more metadata around Collection submissions on the Project page
+- Remove dead code
+- Fix date parsing for getting monthly metrics reports in the API
+
 23.05.0 (2023-3-02)
 ===================
 -Make Spam checks with external services async
