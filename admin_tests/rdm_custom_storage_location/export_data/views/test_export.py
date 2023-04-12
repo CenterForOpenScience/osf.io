@@ -7,8 +7,7 @@ from django.http import JsonResponse
 from django.test import RequestFactory
 from nose import tools as nt
 from rest_framework import status
-from django.db import IntegrityError 
-
+from django.db import IntegrityError
 
 from admin.rdm_custom_storage_location.export_data.views import export
 from framework.celery_tasks import app as celery_app
@@ -306,7 +305,7 @@ def test_export_data_process_aborted_before_create_export_data_folder_raise_exce
     mock_extract_json.side_effect = Exception('mock error')
 
     with pytest.raises(Exception):
-        result = export.export_data_process(fake_task, None, export_data.pk)
+        export.export_data_process(fake_task, None, export_data.pk)
         mock_extract_json.assert_called()
 
 
@@ -566,13 +565,16 @@ def test_export_data_process_transfer_export_data_file_to_location_error(mock_ex
                 mock_rollback_export_data.assert_called()
                 nt.assert_is_none(result)
 
+
 @pytest.mark.django_db
+@mock.patch(f'{EXPORT_DATA_PATH}.ExportData.upload_export_data_file')
 @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.get_source_file_versions_min')
 @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.create_export_data_files_folder')
 @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.create_export_data_folder')
 @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.extract_file_information_json_from_source_storage')
 def test_export_data_process_transfer_export_data_file_to_location_201(mock_extract_json, mock_create_export_data_folder,
-                                                                         mock_create_export_data_files_folder, mock_get_source_file_versions_min):
+                                                                       mock_create_export_data_files_folder, mock_get_source_file_versions_min,
+                                                                       mock_upload_export_data_file):
     export_data = ExportDataFactory()
     fake_task = FakeTask(states.SUCCESS, {}, check_abort=False)
 
@@ -593,7 +595,7 @@ def test_export_data_process_transfer_export_data_file_to_location_201(mock_extr
     mock_transfer_export_data_file_to_location.return_value = created_response
     mock_rollback_export_data = mock.MagicMock()
     mock_rollback_export_data.return_value = None
-
+    mock_upload_export_data_file.return_value = created_response
     with mock.patch(f'{EXPORT_DATA_PATH}.ExportData.read_data_file_from_source', mock_read_data_file_from_source):
         with mock.patch(f'{EXPORT_DATA_PATH}.ExportData.transfer_export_data_file_to_location', mock_transfer_export_data_file_to_location):
             with mock.patch(f'{EXPORT_DATA_PATH}.export_data_rollback_process', mock_rollback_export_data):
@@ -604,7 +606,6 @@ def test_export_data_process_transfer_export_data_file_to_location_201(mock_extr
                 mock_get_source_file_versions_min.assert_called()
                 mock_read_data_file_from_source.assert_called()
                 mock_transfer_export_data_file_to_location.assert_called()
-                mock_rollback_export_data.assert_called()
                 nt.assert_is_none(result)
 
 
