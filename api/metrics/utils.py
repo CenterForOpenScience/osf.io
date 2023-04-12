@@ -12,6 +12,7 @@ DATE_FORMAT = '%Y-%m-%d'
 YEARMONTH_FORMAT = '%Y-%m'
 
 DEFAULT_DAYS_BACK = 5
+DEFAULT_MONTHS_BACK = 5 * 30  # days
 
 
 def parse_datetimes(query_params):
@@ -71,21 +72,20 @@ def parse_date_param(param_value, is_monthly=False):
 
 
 def parse_dates(query_params, is_monthly=False):
+    default_time_back = DEFAULT_MONTHS_BACK if is_monthly else DEFAULT_DAYS_BACK
     start_date_param = query_params.get('start_date', None)
     end_date_param = query_params.get('end_date', None)
 
     if end_date_param and not start_date_param:
         raise ValidationError('You cannot provide a specific end_date with no start_date')
-    start_date = (
-        parse_date_param(start_date_param, is_monthly)
-        if start_date_param
-        else (timezone.now() - timedelta(days=DEFAULT_DAYS_BACK)).date()
-    )
-    end_date = (
-        parse_date_param(end_date_param, is_monthly)
-        if end_date_param
-        else timezone.now().date()
-    )
+
+    if not start_date_param:
+        start_date_param = (timezone.now() - timedelta(days=default_time_back)).date()
+    if not end_date_param:
+        end_date_param = timezone.now().date()
+
+    start_date = parse_date_param(str(start_date_param), is_monthly)
+    end_date = parse_date_param(str(end_date_param), is_monthly)
 
     if start_date > end_date:
         raise ValidationError('The end_date must be after the start_date')
