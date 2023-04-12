@@ -162,10 +162,9 @@ class PageCounter(BaseModel):
             # if the user who is downloading isn't a contributor to the project
             page_type = cleaned_page.split(':')[0]
             if page_type in ('download', 'view') and node_info:
-                user_id = user_session.get('auth_user_id', None)
-                if user_id and node_info['contributors'].filter(guids___id__isnull=False, guids___id=user_id).exists():
+                if auth_user_id and node_info['contributors'].filter(guids___id__isnull=False, guids___id=auth_user_id).exists():
                     model_instance.save()
-                    # TODO: Need to understand why session is not saved here? `return` loses all existing updates
+                    user_session.save()
                     return
 
             visited = user_session.get('visited', [])
