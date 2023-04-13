@@ -486,6 +486,40 @@ def update_existing_file(node_id, provider, file_path, file_data, cookies, base_
         return None, None
 
 
+def create_folder_path(node_id, provider, folder_path, cookies, base_url=WATERBUTLER_URL, **kwargs):
+    if not folder_path.startswith('/') and not folder_path.endswith('/'):
+        # Invalid folder path, return immediately
+        return
+    paths = folder_path.split('/')[1:-1]
+    created_path = '/'
+    created_materialized_path = '/'
+    for index, path in enumerate(paths):
+        try:
+            response = get_file_data(node_id, provider, created_path, cookies, base_url, get_file_info=False, **kwargs)
+            if response.status_code != 200:
+                raise Exception('Cannot get folder info')
+            response_body = response.json()
+            new_path = f'{created_materialized_path}{path}/'
+            existing_path_info = next((item for item in response_body['data'] if
+                                       item['attributes']['materialized'] == new_path),
+                                      None)
+            if existing_path_info is None:
+                raise Exception('Folder not found')
+
+            created_path = existing_path_info['attributes']['path']
+            created_materialized_path = existing_path_info['attributes']['materialized']
+        except Exception:
+            # If currently at folder, create folder
+            response_body, status_code = create_folder(
+                node_id, provider, created_path, path, cookies,
+                callback_log=True, base_url=base_url, **kwargs)
+            if response_body is not None:
+                created_path = response_body['data']['attributes']['path']
+                created_materialized_path = response_body['data']['attributes']['materialized']
+            else:
+                return
+
+
 def upload_file_path(node_id, provider, file_path, file_data, cookies, base_url=WATERBUTLER_URL, **kwargs):
     if not file_path.startswith('/') or file_path.endswith('/'):
         # Invalid file path, return immediately

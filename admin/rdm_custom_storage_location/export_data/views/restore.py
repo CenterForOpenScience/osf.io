@@ -94,14 +94,15 @@ def check_before_restore_export_data(cookies, export_id, destination_id, **kwarg
 
     # Get file info file: /export_{process_start}/file_info_{institution_guid}_{process_start}.json
     try:
-        export_data_files = read_file_info_and_check_schema(export_data=export_data, cookies=cookies, **kwargs)
+        export_data_json = read_file_info_and_check_schema(export_data=export_data, cookies=cookies, **kwargs)
+        export_data_folders = export_data_json.get('folders', [])
     except Exception as e:
         logger.error(f'Exception: {e}')
         return {'open_dialog': False, 'message': str(e)}
 
-    if not len(export_data_files):
+    if not len(export_data_folders):
         return {'open_dialog': False, 'message': f'The export data files are corrupted'}
-    destination_first_project_id = export_data_files[0].get('project', {}).get('id')
+    destination_first_project_id = export_data_folders[0].get('project', {}).get('id')
 
     # Check whether the restore destination storage is not empty
     destination_region = Region.objects.filter(id=destination_id).first()
@@ -157,7 +158,9 @@ def restore_export_data_process(task, cookies, export_id, export_data_restore_id
 
         # Get file which have same information between export data and database
         # File info file: /export_{process_start}/file_info_{institution_guid}_{process_start}.json
-        export_data_files = read_file_info_and_check_schema(export_data=export_data, cookies=cookies, **kwargs)
+        export_data_json = read_file_info_and_check_schema(export_data=export_data, cookies=cookies, **kwargs)
+        export_data_files = export_data_json.get('files', [])
+        export_data_folders = export_data_json.get('folders', [])
 
         if len(export_data_files) == 0:
             export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
@@ -176,6 +179,8 @@ def restore_export_data_process(task, cookies, export_id, export_data_restore_id
 
         current_process_step = 2
         task.update_state(state=PENDING, meta={'current_restore_step': current_process_step})
+
+        create_folder_in_destination(task, current_process_step, export_data_folders, export_data_restore, cookies, **kwargs)
 
         # Download files from export data, then upload files to destination. Returns list of created file node in DB
         list_created_file_nodes = copy_files_from_export_data_to_destination(
@@ -293,9 +298,10 @@ def restore_export_data_rollback_process(task, cookies, export_id, export_data_r
         with transaction.atomic():
             export_data = ExportData.objects.filter(id=export_id, is_deleted=False)[0]
             # File info file: /export_{process_start}/file_info_{institution_guid}_{process_start}.json
-            file_info_files = read_file_info_and_check_schema(export_data, cookies, **kwargs)
-            if file_info_files is None:
+            file_info_json = read_file_info_and_check_schema(export_data, cookies, **kwargs)
+            if file_info_json is None:
                 raise ProcessError(f'Cannot get file information list')
+            file_info_files = file_info_json.get('files', [])
 
             if len(file_info_files) == 0:
                 export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
@@ -413,8 +419,7 @@ def read_file_info_and_check_schema(export_data, cookies, **kwargs):
     if not is_file_valid:
         raise ProcessError(f'The export data files are corrupted')
 
-    return response_file_json.get('files', [])
-
+    return response_file_json
 
 def generate_new_file_path(file_materialized_path, version_id, is_file_not_latest_version):
     new_file_materialized_path = file_materialized_path
@@ -470,6 +475,20 @@ def move_all_files_to_backup_folder(task, current_process_step, destination_firs
     except Exception as e:
         logger.error(f'Move all files to backup folder exception: {e}')
         raise ProcessError(f'Failed to move files to backup folder.')
+
+
+def create_folder_in_destination(task, current_process_step, export_data_folders,
+                                 export_data_restore, cookies, **kwargs):
+    destination_region = export_data_restore.destination
+    destination_provider = INSTITUTIONAL_STORAGE_PROVIDER_NAME
+    destination_base_url = destination_region.waterbutler_url
+    for folder in export_data_folders:
+        check_if_restore_process_stopped(task, current_process_step)
+        folder_materialized_path = folder.get('materialized_path')
+        folder_project_id = folder.get('project', {}).get('id')
+
+        utils.create_folder_path(folder_project_id, destination_provider, folder_materialized_path,
+                                 cookies, base_url=destination_base_url, **kwargs)
 
 
 def copy_files_from_export_data_to_destination(task, current_process_step, export_data_files, export_data_restore, cookies, **kwargs):
