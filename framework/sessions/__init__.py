@@ -78,7 +78,7 @@ def prepare_private_key():
         key = None
 
     # Update URL and redirect
-    if key and not current_session.is_authenticated:
+    if key and not current_session.get('auth_user_id', None):
         new_url = add_key_to_url(request.url, scheme, key)
         return redirect(new_url, code=http_status.HTTP_307_TEMPORARY_REDIRECT)
 
