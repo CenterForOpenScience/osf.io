@@ -19,8 +19,6 @@ DCTERMS = rdflib.Namespace('http://purl.org/dc/terms/')                 # "dubli
 FOAF = rdflib.Namespace('http://xmlns.com/foaf/0.1/')                   # "friend of a friend"
 OWL = rdflib.Namespace('http://www.w3.org/2002/07/owl#')                # "web ontology language"
 RDF = rdflib.Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#')   # "resource description framework"
-# datacite v4.4: https://schema.datacite.org/meta/kernel-4.4/metadata.xsd
-DATACITE = rdflib.Namespace('http://datacite.org/schema/kernel-4')
 
 
 # namespace prefixes that will be shortened by default
@@ -55,7 +53,7 @@ def checksum_iri(checksum_algorithm, checksum_hex) -> rdflib.URIRef:
     return rdflib.URIRef(urn)
 
 
-def format_dct_extent(number_of_bytes: int) -> str:
+def format_dcterms_extent(number_of_bytes: int) -> str:
     '''format filesize value for dcterms:extent
 
     following the dcterms:extent recommendation to specify in megabytes:

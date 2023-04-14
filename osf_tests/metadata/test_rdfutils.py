@@ -39,7 +39,7 @@ def test_checksum_iri():
         assert actual_iri == expected_iri
 
 
-def test_format_dct_extent():
+def test_format_dcterms_extent():
     extent_tests = {
         0: '0.000000 MB',
         1: '0.000001 MB',
@@ -50,7 +50,7 @@ def test_format_dct_extent():
         -9: None,
     }
     for number_of_bytes, expected_extent in extent_tests.items():
-        assert rdfutils.format_dct_extent(number_of_bytes) == expected_extent
+        assert rdfutils.format_dcterms_extent(number_of_bytes) == expected_extent
 
 
 def test_primitivify_rdf():

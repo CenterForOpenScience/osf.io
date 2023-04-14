@@ -1,44 +1,53 @@
-from osf.metadata import gather
 from osf.metadata.osf_gathering import osfmap_for_type
 from osf.metadata.serializers import _base
 
 
-TURTLEBLOCK_DELIMITER = b'\n\n'
-PREFIXBLOCK_START = b'@prefix'
+TURTLEBLOCK_DELIMITER = '\n\n'
+PREFIXBLOCK_START = '@prefix'
+
+def _stabilize_turtle(turtle: str, focus_iri: str):
+    # rdflib's turtle serializer:
+    #   sorts keys alphabetically (by unicode string comparison)
+    #   may emit blocks in any order
+    # this function sorts those blocks for a stable serialization.
+    turtleblocks = (
+        turtleblock
+        for turtleblock in turtle.split(TURTLEBLOCK_DELIMITER)
+        if turtleblock  # skip empty blocks
+    )
+    sorted_turtleblocks = sorted(
+        (turtleblock.strip() for turtleblock in turtleblocks),
+        key=_get_turtleblock_sortkey(focus_iri),
+    )
+    return TURTLEBLOCK_DELIMITER.join(sorted_turtleblocks)
+
+
+def _get_turtleblock_sortkey(focus_iri: str):
+    focusblock_start = f'<{focus_iri}> '
+
+    def turtleblock_sortkey(block):
+        return (
+            (not block.startswith(PREFIXBLOCK_START)),  # prefix block first,
+            (not block.startswith(focusblock_start)),   # then focus block,
+            -len(block),                                # then longest to shortest,
+            block,                                      # breaking ties by string comparison.
+        )
+    return turtleblock_sortkey
 
 
 class TurtleMetadataSerializer(_base.MetadataSerializer):
     mediatype = 'text/turtle'
 
-    def filename(self, osfguid: str):
-        return f'{osfguid}-metadata.ttl'
+    def filename_for_itemid(self, itemid: str):
+        return f'{itemid}-metadata.ttl'
 
-    def serialize(self, basket: gather.Basket):
-        basket.pls_gather(osfmap_for_type(basket.focus.rdftype))
-        # rdflib's turtle serializer:
-        #   sorts keys alphabetically (by unicode string comparison)
-        #   may emit blocks in any order
-        turtleblocks = (
-            turtleblock
-            for turtleblock in (
-                basket.gathered_metadata
+    def serialize(self) -> str:
+        self.basket.pls_gather(osfmap_for_type(self.basket.focus.rdftype))
+        return _stabilize_turtle(
+            turtle=(
+                self.basket.gathered_metadata
                 .serialize(format='turtle')
-                .split(TURTLEBLOCK_DELIMITER)
-            )
-            if turtleblock  # skip empty blocks
+                .decode()
+            ),
+            focus_iri=self.basket.focus.iri,
         )
-        focusblock_start = f'<{basket.focus.iri}> '.encode()
-
-        def turtleblock_sortkey(block):
-            return (
-                (not block.startswith(PREFIXBLOCK_START)),  # prefix block first,
-                (not block.startswith(focusblock_start)),   # then focus block,
-                -len(block),                                # then longest to shortest,
-                block,                                      # breaking ties by string comparison.
-            )
-
-        sorted_turtleblocks = sorted(
-            (turtleblock.strip() for turtleblock in turtleblocks),
-            key=turtleblock_sortkey,
-        )
-        return TURTLEBLOCK_DELIMITER.join(sorted_turtleblocks)

@@ -37,10 +37,11 @@ def _get_graph_and_focuses(triples):
 
 
 def _friendly_graph(rdfgraph) -> str:
-    return (
-        contextualized_graph(rdfgraph)
-        .serialize(format='turtle')
-        .decode()
+    graph_to_print = contextualized_graph(rdfgraph)
+    delim = '\n\t\t'
+    return delim + delim.join(
+        ' '.join(map(graph_to_print.namespace_manager.normalizeUri, triple))
+        for triple in graph_to_print
     )
 
 
@@ -51,8 +52,8 @@ def _assert_triples(actual_triples, expected_triples):
     assert not expected_but_absent and not unexpected_but_present, '\n\t'.join((
         'unequal triple-sets!',
         f'overlap size: {len(overlap)}',
-        f'expected (but absent): {expected_but_absent.serialize(format="turtle").decode()}',
-        f'unexpected (but present): {unexpected_but_present.serialize(format="turtle").decode()}',
+        f'expected (but absent): {_friendly_graph(expected_but_absent)}',
+        f'unexpected (but present): {_friendly_graph(unexpected_but_present)}',
     ))
     assert expected_focuses == actual_focuses
 
@@ -215,12 +216,14 @@ class TestOsfGathering(TestCase):
             year='1952-2001',
             copyright_holders=['foo', 'bar', 'baz baz'],
         )
+        license_bnode = rdflib.BNode()
         _assert_triples(osf_gathering.gather_licensing(self.projectfocus), {
             (self.projectfocus.iri, DCTERMS.dateCopyrighted, Literal('1952-2001')),
             (self.projectfocus.iri, DCTERMS.rightsHolder, Literal('foo')),
             (self.projectfocus.iri, DCTERMS.rightsHolder, Literal('bar')),
             (self.projectfocus.iri, DCTERMS.rightsHolder, Literal('baz baz')),
-            (self.projectfocus.iri, DCTERMS.rights, Literal('No license')),
+            (self.projectfocus.iri, DCTERMS.rights, license_bnode),
+            (license_bnode, FOAF.name, Literal('No license')),
         })
         # focus: registration
         _assert_triples(osf_gathering.gather_licensing(self.registrationfocus), set())
@@ -239,6 +242,7 @@ class TestOsfGathering(TestCase):
             (self.registrationfocus.iri, DCTERMS.rightsHolder, Literal('quux')),
             (self.registrationfocus.iri, DCTERMS.rights, expected_license_iri),
             (expected_license_iri, FOAF.name, Literal('CC-By Attribution 4.0 International')),
+            (expected_license_iri, DCTERMS.identifier, Literal(expected_license_iri)),
         })
         # focus: file
         _assert_triples(osf_gathering.gather_licensing(self.filefocus), set())
@@ -362,7 +366,7 @@ class TestOsfGathering(TestCase):
             f'{website_settings.API_DOMAIN}v2/files/{self.file._id}/versions/{fileversion.identifier}/',
         )
         _assert_triples(osf_gathering.gather_versions(self.filefocus), {
-            (self.filefocus.iri, DCTERMS.hasVersion, fileversion_iri),
+            (self.filefocus.iri, OSF.hasFileVersion, fileversion_iri),
             (fileversion_iri, RDF.type, OSF.FileVersion),
             (fileversion_iri, DCTERMS.creator, osf_gathering.OsfFocus(fileversion.creator)),
             (fileversion_iri, DCTERMS.created, Literal(str(fileversion.created.date()))),
@@ -425,8 +429,10 @@ class TestOsfGathering(TestCase):
             (self.registrationfocus.iri, DCTERMS.isVersionOf, self.projectfocus),
         })
         self.registration.article_doi = '10.blarg/blerg'
+        doi_iri = DOI[self.registration.article_doi]
         _assert_triples(osf_gathering.gather_registration_related_items(self.registrationfocus), {
-            (self.registrationfocus.iri, DCTERMS.relation, DOI[self.registration.article_doi]),
+            (self.registrationfocus.iri, DCTERMS.relation, doi_iri),
+            (doi_iri, DCTERMS.identifier, Literal(doi_iri)),
             (self.registrationfocus.iri, DCTERMS.isVersionOf, self.projectfocus),
         })
 

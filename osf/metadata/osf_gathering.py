@@ -1,5 +1,7 @@
 '''gatherers of metadata from the osf database, in particular
 '''
+import logging
+
 from django.contrib.contenttypes.models import ContentType
 from django import db
 import rdflib
@@ -15,11 +17,17 @@ from osf.metadata.rdfutils import (
     OSFIO,
     DOI,
     ORCID,
+    ROR,
     checksum_iri,
-    format_dct_extent,
+    format_dcterms_extent,
+    without_namespace,
 )
 from osf.utils import workflows as osfworkflows
 from osf.utils.outcomes import ArtifactTypes
+from website import settings as website_settings
+
+
+logger = logging.getLogger(__name__)
 
 
 ##### BEGIN "public" api #####
@@ -60,6 +68,7 @@ OSF_OBJECT_REFERENCE = {  # could reference non-osf objects too
     DCTERMS.identifier: None,
     DCTERMS.title: None,
     DCTERMS.type: None,
+    DCTERMS.publisher: None,
 }
 
 OSF_FILE_REFERENCE = {
@@ -148,12 +157,12 @@ OSFMAP = {
     OSF.File: {
         DCTERMS.created: None,
         DCTERMS.description: None,
-        DCTERMS.hasVersion: OSF_FILEVERSION,
         DCTERMS.identifier: None,
         DCTERMS.language: None,
         DCTERMS.modified: None,
         DCTERMS.title: None,
         DCTERMS.type: None,
+        OSF.hasFileVersion: OSF_FILEVERSION,
         OSF.isContainedBy: OSF_OBJECT_REFERENCE,
         OSF.fileName: None,
         OSF.filePath: None,
@@ -234,6 +243,13 @@ def osf_iri(guid_or_model):
     guid = osfdb.base.coerce_guid(guid_or_model)
     return OSFIO[guid._id]
 
+
+def osfguid_from_iri(iri):
+    if iri.startswith(OSFIO):
+        return without_namespace(iri, OSFIO)
+    raise ValueError(f'expected iri starting with "{OSFIO}" (got "{iri}")')
+
+
 ##### END osf-specific utils #####
 
 
@@ -249,7 +265,6 @@ def gather_identifiers(focus: gather.Focus):
             if osfguid_iri != focus.iri:
                 yield (OWL.sameAs, osfguid_iri)
             yield (DCTERMS.identifier, str(osfguid_iri))
-
     if hasattr(focus.dbmodel, 'get_identifier_value'):
         doi = focus.dbmodel.get_identifier_value('doi')
         if doi:
@@ -326,31 +341,45 @@ def gather_licensing(focus):
         license = license_record.node_license  # yes, it is node.node_license.node_license
         if license is not None:
             if license.url:
-                license_iri = rdflib.URIRef(license.url)
-                yield (DCTERMS.rights, license_iri)
-                yield (license_iri, FOAF.name, license.name)
-            elif license.name:
-                yield (DCTERMS.rights, license.name)
+                license_id = rdflib.URIRef(license.url)
+                yield (license_id, DCTERMS.identifier, str(license_id))
+            else:
+                license_id = rdflib.BNode()
+            yield (DCTERMS.rights, license_id)
+            yield (license_id, FOAF.name, license.name)
 
 
 @gather.er(DCTERMS.title)
 def gather_title(focus):
-    yield (DCTERMS.title, getattr(focus.dbmodel, 'title', None))
+    yield (DCTERMS.title, _language_text(focus, getattr(focus.dbmodel, 'title', None)))
     if hasattr(focus, 'guid_metadata_record'):
-        yield (DCTERMS.title, focus.guid_metadata_record.title)
+        yield (DCTERMS.title, _language_text(focus, focus.guid_metadata_record.title))
+
+
+def _language_text(focus, text):
+    if not text:
+        return None
+    return rdflib.Literal(text, lang=_get_language(focus))
+
+
+def _get_language(focus):
+    if hasattr(focus, 'guid_metadata_record'):
+        language = focus.guid_metadata_record.language
+        if language:
+            return language
+    return None
 
 
 @gather.er(DCTERMS.language)
 def gather_language(focus):
-    if hasattr(focus, 'guid_metadata_record'):
-        yield (DCTERMS.language, focus.guid_metadata_record.language)
+    yield (DCTERMS.language, _get_language(focus))
 
 
 @gather.er(DCTERMS.description)
 def gather_description(focus):
-    yield (DCTERMS.description, getattr(focus.dbmodel, 'description', None))
+    yield (DCTERMS.description, _language_text(focus, getattr(focus.dbmodel, 'description', None)))
     if hasattr(focus, 'guid_metadata_record'):
-        yield (DCTERMS.description, focus.guid_metadata_record.description)
+        yield (DCTERMS.description, _language_text(focus, focus.guid_metadata_record.description))
 
 
 @gather.er(OSF.keyword)
@@ -384,32 +413,31 @@ def gather_file_basics(focus):
 
 
 @gather.er(
-    DCTERMS.hasVersion,
+    OSF.hasFileVersion,
     focustype_iris=[OSF.File],
 )
 def gather_versions(focus):
     if hasattr(focus.dbmodel, 'versions'):  # quacks like BaseFileNode
-        fileversions = focus.dbmodel.versions.all()[:10]  # TODO: how many?
-        if fileversions.exists():  # quacks like OsfStorageFileNode
+        last_fileversion = focus.dbmodel.versions.last()  # just the last version, for now
+        if last_fileversion is not None:  # quacks like OsfStorageFileNode
             from api.base.utils import absolute_reverse as apiv2_absolute_reverse
-            for fileversion in fileversions:  # expecting version to quack like FileVersion
-                fileversion_iri = rdflib.URIRef(
-                    apiv2_absolute_reverse(
-                        'files:version-detail',
-                        kwargs={
-                            'version': 'v2',  # api version
-                            'file_id': focus.dbmodel._id,
-                            'version_id': fileversion.identifier,
-                        },
-                    ),
-                )
-                yield (DCTERMS.hasVersion, fileversion_iri)
-                yield from _gather_fileversion(fileversion, fileversion_iri)
+            fileversion_iri = rdflib.URIRef(
+                apiv2_absolute_reverse(
+                    'files:version-detail',
+                    kwargs={
+                        'version': 'v2',  # api version
+                        'file_id': focus.dbmodel._id,
+                        'version_id': last_fileversion.identifier,
+                    },
+                ),
+            )
+            yield (OSF.hasFileVersion, fileversion_iri)
+            yield from _gather_fileversion(last_fileversion, fileversion_iri)
         else:  # quacks like non-osfstorage BaseFileNode
             checksums = getattr(focus.dbmodel, '_hashes', {})
             if checksums:
                 blankversion = rdflib.BNode()
-                yield (DCTERMS.hasVersion, blankversion)
+                yield (OSF.hasFileVersion, blankversion)
                 for checksum_algorithm, checksum_value in checksums.items():
                     if ' ' not in checksum_algorithm:
                         yield (blankversion, DCTERMS.requires, checksum_iri(checksum_algorithm, checksum_value))
@@ -421,7 +449,7 @@ def _gather_fileversion(fileversion, fileversion_iri):
     yield (fileversion_iri, DCTERMS.created, fileversion.created)
     yield (fileversion_iri, DCTERMS.modified, fileversion.modified)
     yield (fileversion_iri, DCTERMS['format'], fileversion.content_type)
-    yield (fileversion_iri, DCTERMS.extent, format_dct_extent(fileversion.size))
+    yield (fileversion_iri, DCTERMS.extent, format_dcterms_extent(fileversion.size))
     yield (fileversion_iri, OSF.versionNumber, fileversion.identifier)
     version_sha256 = (fileversion.metadata or {}).get('sha256')
     if version_sha256:
@@ -549,8 +577,8 @@ def gather_registration_related_items(focus):
             artifact_iri = DOI[outcome_artifact.identifier.value]
             yield (OSF_ARTIFACT_PREDICATES[outcome_artifact.artifact_type], artifact_iri)
             yield (artifact_iri, DCTERMS.identifier, str(artifact_iri))
-            yield (artifact_iri, DCTERMS.title, outcome_artifact.title)
-            yield (artifact_iri, DCTERMS.description, outcome_artifact.description)
+            yield (artifact_iri, DCTERMS.title, _language_text(focus, outcome_artifact.title))
+            yield (artifact_iri, DCTERMS.description, _language_text(focus, outcome_artifact.description))
 
 
 @gather.er(DCTERMS.creator)
@@ -598,6 +626,29 @@ def gather_funding(focus):
             yield (funder_bnode, OSF.awardTitle, funding.get('award_title'))
 
 
+@gather.er(OSF.HostingInstitution)
+def gather_hosting_institution(focus):
+    name = website_settings.HOSTING_INSTITUTION_NAME
+    irl = website_settings.HOSTING_INSTITUTION_IRL
+    ror_id = website_settings.HOSTING_INSTITUTION_ROR_ID
+    if name and (irl or ror_id):
+        irl_iri = rdflib.URIRef(irl) if irl else ROR[ror_id]
+        yield (OSF.HostingInstitution, irl_iri)
+        yield (irl_iri, RDF.type, OSF.Agent)
+        yield (irl_iri, DCTERMS.type, FOAF.Organization)
+        yield (irl_iri, FOAF.name, name)
+        yield (irl_iri, DCTERMS.identifier, irl)
+        if ror_id:
+            yield (irl_iri, DCTERMS.identifier, ROR[ror_id])
+    else:
+        logger.warning(
+            'must set website.settings.HOSTING_INSTITUTION_NAME'
+            ' and either website.settings.HOSTING_INSTITUTION_IRL'
+            ' or website.settings.HOSTING_INSTITUTION_ROR_ID'
+            ' to include in metadata records'
+        )
+
+
 @gather.er(focustype_iris=[OSF.Agent])
 def gather_user_basics(focus):
     if isinstance(focus.dbmodel, osfdb.OSFUser):
@@ -627,9 +678,7 @@ def gather_ia_url(focus):
 @gather.er(DCTERMS.publisher)
 def gather_publisher(focus):
     provider = getattr(focus.dbmodel, 'provider', None)
-    if provider is None:
-        yield from _publisher_tripleset(iri=rdflib.URIRef(OSFIO), name='OSF')
-    else:
+    if isinstance(provider, osfdb.AbstractProvider):
         if isinstance(provider, osfdb.PreprintProvider):
             provider_path_prefix = 'preprints'
         elif isinstance(provider, osfdb.RegistrationProvider):
@@ -640,6 +689,12 @@ def gather_publisher(focus):
             raise ValueError(f'unknown provider type: {type(provider)} (for provider {provider})')
         provider_iri = OSFIO[f'{provider_path_prefix}/{provider._id}']
         yield from _publisher_tripleset(iri=provider_iri, name=provider.name, url=provider.domain)
+    else:
+        yield from _publisher_tripleset(
+            iri=rdflib.URIRef(OSFIO.rstrip('/')),
+            name='OSF',
+        )
+
 
 def _publisher_tripleset(iri, name, url=None):
     yield (DCTERMS.publisher, iri)
