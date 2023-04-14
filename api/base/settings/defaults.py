@@ -346,6 +346,9 @@ CACHES = {
         'LOCATION': os.environ.get('REDIS_HOST', 'redis://192.168.168.167:6379'),
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'CONNECTION_POOL_KWARGS': {
+                'max_connections': 100,
+            },
         },
     },
     STORAGE_USAGE_CACHE_NAME: {
