@@ -12,7 +12,6 @@ from rest_framework import fields
 from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
 
-from api.base.authentication.drf import get_session_from_cookie
 from api.base.exceptions import Gone, UserGone
 from api.base.settings import HASHIDS_SALT
 from framework.auth import Auth
@@ -184,7 +183,7 @@ def has_admin_scope(request):
     """
     cookie = request.COOKIES.get(website_settings.COOKIE_NAME)
     if cookie:
-        return bool(get_session_from_cookie(cookie))
+        return bool(request.session)
 
     token = request.auth
     if token is None or not isinstance(token, CasResponse):
