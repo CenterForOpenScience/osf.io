@@ -61,7 +61,7 @@ from addons.wiki.utils import serialize_wiki_widget
 from addons.wiki.models import WikiVersion
 from addons.dataverse.utils import serialize_dataverse_widget
 from addons.forward.utils import serialize_forward_widget
-from osf.metadata.tools import pls_gather_metadata_as_primitive
+from osf.metadata.tools import pls_gather_metadata_as_dict
 
 r_strip_html = lambda collection: rapply(collection, strip_html)
 logger = logging.getLogger(__name__)
@@ -837,7 +837,7 @@ def _view_project(node, auth, primary=False,
         'addon_widgets': widgets,
         'addon_widget_js': js,
         'addon_widget_css': css,
-        'google_dataset_tags': pls_gather_metadata_as_primitive(node, 'google-dataset-json-ld'),
+        'google_dataset_tags': pls_gather_metadata_as_dict(node, 'google-dataset-json-ld'),
         'node_categories': [
             {'value': key, 'display_name': value}
             for key, value in list(settings.NODE_CATEGORY_MAP.items())

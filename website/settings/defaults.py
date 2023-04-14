@@ -346,9 +346,11 @@ CROSSREF_DEPOSITOR_EMAIL = 'None'  # This email will receive confirmation/error 
 ECSARXIV_CROSSREF_USERNAME = None
 ECSARXIV_CROSSREF_PASSWORD = None
 
-# ror
-OSF_ROR_ID = '05d5mza29'
-OSF_GRID_ID = 'grid.466501.0'
+# for metadata records maintained by this instance of osf
+# TODO: remove defaults
+HOSTING_INSTITUTION_NAME = os.environ.get('HOSTING_INSTITUTION_NAME', 'Center for Open Science')
+HOSTING_INSTITUTION_IRL = os.environ.get('HOSTING_INSTITUTION_IRL', 'https://cos.io/')
+HOSTING_INSTITUTION_ROR_ID = os.environ.get('HOSTING_INSTITUTION_ROR_ID', '05d5mza29')
 
 # if our DOIs cannot be confirmed after X amount of days email the admin
 DAYS_CROSSREF_DOIS_MUST_BE_STUCK_BEFORE_EMAIL = 2

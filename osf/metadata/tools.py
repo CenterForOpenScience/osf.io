@@ -13,17 +13,17 @@ class SerializedMetadataFile(typing.NamedTuple):
     serialized_metadata: str
 
 
-def pls_gather_metadata_as_primitive(osf_item, format_key, serializer_config=None):
+def pls_gather_metadata_as_dict(osf_item, format_key, serializer_config=None):
     '''for when you want metadata made of python primitives (e.g. a dictionary)
 
     @osf_item: the thing (osf model instance or 5-ish character guid string)
     @format_key: str (must be known by osf.metadata.serializers)
     @serializer_config: optional dict (use only when you know the serializer will understand)
     '''
-    serializer = get_metadata_serializer(format_key, serializer_config)
     osfguid = coerce_guid(osf_item, create_if_needed=True)
     basket = pls_get_magic_metadata_basket(osfguid.referent)
-    return serializer.primitivize(basket)
+    serializer = get_metadata_serializer(format_key, basket, serializer_config)
+    return serializer.metadata_as_dict()
 
 
 def pls_gather_metadata_file(osf_item, format_key, serializer_config=None) -> SerializedMetadataFile:
@@ -33,11 +33,11 @@ def pls_gather_metadata_file(osf_item, format_key, serializer_config=None) -> Se
     @format_key: str (must be known by osf.metadata.serializers)
     @serializer_config: optional dict (use only when you know the serializer will understand)
     '''
-    serializer = get_metadata_serializer(format_key, serializer_config)
     osfguid = coerce_guid(osf_item, create_if_needed=True)
     basket = pls_get_magic_metadata_basket(osfguid.referent)
+    serializer = get_metadata_serializer(format_key, basket, serializer_config)
     return SerializedMetadataFile(
         serializer.mediatype,
-        serializer.filename(osfguid._id),
-        serializer.serialize(basket),
+        serializer.filename_for_itemid(osfguid._id),
+        serializer.serialize(),
     )

@@ -68,6 +68,10 @@ class Basket:
         self._maybe_gather_for_path(focus_iri, path)
         yield from self.gathered_metadata.objects(focus_iri, path)
 
+    def __contains__(self, item):
+        # implemented to prevent `x in basket` calling __getitem__ with every integer
+        return (item in self.gathered_metadata)
+
     ##### END public api #####
 
     def _do_gather(self, focus: Focus, predicate_map):
