@@ -7,6 +7,7 @@ ENABLE_ESI = False
 
 OSF_DB_PASSWORD = 'postgres'
 
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 
 REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
     'user': '1000000/second',
