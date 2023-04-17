@@ -29,6 +29,9 @@ class DataciteJsonMetadataSerializer(_base.MetadataSerializer):
         return f'{osfguid}-datacite.json'
 
     def serialize(self, basket: gather.Basket):
+        return json.dumps(self.primitivize(basket), indent=2, sort_keys=True)
+
+    def primitivize(self, basket: gather.Basket):
         metadata = {
             'schemaVersion': 'http://datacite.org/schema/kernel-4',
             'publisher': 'Open Science Framework',
@@ -67,9 +70,7 @@ class DataciteJsonMetadataSerializer(_base.MetadataSerializer):
         except Exception:
             sentry.log_exception()
             raise
-        if self.serializer_config.get('as_dict'):
-            return metadata
-        return json.dumps(metadata, indent=2, sort_keys=True)
+        return metadata
 
     def _focus_doi_value(self, basket):
         chosen_doi = self.serializer_config.get('doi_value')
