@@ -111,9 +111,6 @@ OSF_COMMON_METADATA = {
 
 OSF_FILE_METADATA = {
     **OSF_COMMON_METADATA,
-    DCT.hasVersion: {
-        DCT.creator: OSF_AGENT_REFERENCE,
-    },
     OSF.file_name: None,
     OSF.file_path: None,
     DCT.isPartOf: OSF_COMMON_METADATA,
