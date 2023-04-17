@@ -7,6 +7,8 @@ import pytest
 import pytz
 from django.utils import timezone
 from nose.tools import *  # noqa
+from importlib import import_module
+from django.conf import settings as django_conf_settings
 
 from framework.auth import Auth
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFileNode, OsfStorageFolder
@@ -27,6 +29,7 @@ from addons.osfstorage import utils
 from addons.osfstorage import settings
 from website.files.exceptions import FileNodeCheckedOutError, FileNodeIsPrimaryFile
 
+SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
 @pytest.mark.django_db
 class TestOsfstorageFileNode(StorageTestCase):
@@ -180,14 +183,14 @@ class TestOsfstorageFileNode(StorageTestCase):
         child = self.node_settings.get_root().append_file('Test')
         assert_equals(child.get_download_count(), 0)
 
-    @mock.patch('framework.sessions.session')
-    def test_download_count_file(self, mock_session):
-        mock_session.data = {}
+    def test_download_count_file(self):
+        s = SessionStore()
+        s.create()
         child = self.node_settings.get_root().append_file('Test')
 
-        utils.update_analytics(self.project, child, 0, mock_session)
-        utils.update_analytics(self.project, child, 1, mock_session)
-        utils.update_analytics(self.project, child, 2, mock_session)
+        utils.update_analytics(self.project, child, 0, s.session_key)
+        utils.update_analytics(self.project, child, 1, s.session_key)
+        utils.update_analytics(self.project, child, 2, s.session_key)
 
         assert_equals(child.get_download_count(), 3)
         assert_equals(child.get_download_count(0), 1)

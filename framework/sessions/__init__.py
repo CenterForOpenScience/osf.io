@@ -230,4 +230,8 @@ def after_request(response):
         from framework.sessions.utils import remove_session
         remove_session(session)
         response.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
+    # Usually, the flask app context "g" has the same lifetime of a request
+    # However this is not the case for unit tests
+    # Therefore, we need to clear g.current_session manually here for tests to run
+    g.current_session = None
     return response
