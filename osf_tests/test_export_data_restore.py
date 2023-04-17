@@ -152,12 +152,19 @@ class TestExportDataRestore(TestCase):
         # Add timestamp to file info JSON and test DB
         test_file_info_json = copy.deepcopy(self.file_info_json)
         timestamp = RdmFileTimestamptokenVerifyResultFactory(
-            project_id=self.file.target.id, file_id=self.file.id)
+            project_id=self.file.target._id, file_id=self.file._id)
         test_file_info_json['files'][0]['timestamp'] = {
-            'timestamp_token': timestamp.timestamp_token,
-            'verify_user': timestamp.verify_user,
-            'verify_date': timestamp.verify_date,
-            'updated_at': timestamp.verify_file_created_at,
+            'timestamp_id': timestamp.id,
+            'inspection_result_status': timestamp.inspection_result_status,
+            'provider': timestamp.provider,
+            'upload_file_modified_user': timestamp.upload_file_modified_user,
+            'project_id': timestamp.project_id,
+            'path': timestamp.path,
+            'key_file_name': timestamp.key_file_name,
+            'upload_file_created_user': timestamp.upload_file_created_user,
+            'upload_file_size': timestamp.upload_file_size,
+            'verify_file_size': timestamp.verify_file_size,
+            'verify_user': timestamp.verify_user
         }
 
         result = self.data_restore.extract_file_information_json_from_destination_storage()

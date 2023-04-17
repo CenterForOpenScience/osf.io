@@ -66,6 +66,7 @@ class ExportDataActionView(ExportDataBaseActionView):
                 source=source_storage,
                 location=location,
                 status=ExportData.STATUS_ERROR,
+                creator=request.user
             )
         except IntegrityError:
             return Response({'message': f'The equivalent process is running'}, status=status.HTTP_400_BAD_REQUEST)

@@ -108,7 +108,7 @@ class TestAddonAuth(OsfTestCase):
         return api_url_for('get_auth', **options)
 
     def test_auth_download(self):
-        url = self.build_url(is_check_permission=False)
+        url = self.build_url()
         res = self.app.get(url, auth=self.user.auth)
         data = jwt.decode(jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY), settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)['data']
         assert_equal(data['auth'], views.make_auth(self.user))
@@ -120,34 +120,34 @@ class TestAddonAuth(OsfTestCase):
         assert_equal(expected_url, observed_url)
 
     def test_auth_render_action_returns_200(self):
-        url = self.build_url(action='render', is_check_permission=False)
+        url = self.build_url(action='render')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
     def test_auth_render_action_requires_read_permission(self):
         node = ProjectFactory(is_public=False)
-        url = self.build_url(action='render', nid=node._id, is_check_permission=True)
+        url = self.build_url(action='render', nid=node._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_auth_export_action_returns_200(self):
-        url = self.build_url(action='export', is_check_permission=False)
+        url = self.build_url(action='export')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
     def test_auth_export_action_requires_read_permission(self):
         node = ProjectFactory(is_public=False)
-        url = self.build_url(action='export', nid=node._id, is_check_permission=True)
+        url = self.build_url(action='export', nid=node._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_auth_missing_args(self):
-        url = self.build_url(cookie=None, is_check_permission=True)
+        url = self.build_url(cookie=None)
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 401)
 
     def test_auth_bad_cookie(self):
-        url = self.build_url(cookie=self.cookie, is_check_permission=True)
+        url = self.build_url(cookie=self.cookie)
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 200)
         data = jwt.decode(jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY), settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)['data']
@@ -160,7 +160,7 @@ class TestAddonAuth(OsfTestCase):
         assert_equal(expected_url, observed_url)
 
     def test_auth_cookie(self):
-        url = self.build_url(cookie=self.cookie[::-1], is_check_permission=True)
+        url = self.build_url(cookie=self.cookie[::-1])
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 401)
 
@@ -183,7 +183,7 @@ class TestAddonAuth(OsfTestCase):
     @mock.patch('addons.base.views.cas.get_client')
     def test_auth_bad_bearer_token(self, mock_cas_client):
         mock_cas_client.return_value = mock.Mock(profile=mock.Mock(return_value=cas.CasResponse(authenticated=False)))
-        url = self.build_url(is_check_permission=True)
+        url = self.build_url()
         res = self.app.get(url, headers={'Authorization': 'Bearer invalid_access_token'}, expect_errors=True)
         assert_equal(res.status_code, 403)
 
@@ -191,7 +191,7 @@ class TestAddonAuth(OsfTestCase):
         noncontrib = AuthUserFactory()
         node = ProjectFactory(is_public=True)
         test_file = create_test_file(node, self.user)
-        url = self.build_url(nid=node._id, action='render', provider='osfstorage', path=test_file.path, is_check_permission=False)
+        url = self.build_url(nid=node._id, action='render', provider='osfstorage', path=test_file.path)
         res = self.app.get(url, auth=noncontrib.auth)
         assert_equal(res.status_code, 200)
 
@@ -206,7 +206,7 @@ class TestAddonAuth(OsfTestCase):
 
     def test_action_download_contrib(self):
         test_file = create_test_file(self.node, self.user)
-        url = self.build_url(action='download', provider='osfstorage', path=test_file.path, version=1, is_check_permission=False)
+        url = self.build_url(action='download', provider='osfstorage', path=test_file.path, version=1)
         nlogs = self.node.logs.count()
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -219,7 +219,7 @@ class TestAddonAuth(OsfTestCase):
         noncontrib = AuthUserFactory()
         node = ProjectFactory(is_public=True)
         test_file = create_test_file(node, self.user)
-        url = self.build_url(nid=node._id, action='download', provider='osfstorage', path=test_file.path, version=1, is_check_permission=True)
+        url = self.build_url(nid=node._id, action='download', provider='osfstorage', path=test_file.path, version=1)
         nlogs = node.logs.count()
         res = self.app.get(url, auth=noncontrib.auth)
         assert_equal(res.status_code, 200)
@@ -230,7 +230,7 @@ class TestAddonAuth(OsfTestCase):
 
     def test_action_download_mfr_views_contrib(self):
         test_file = create_test_file(self.node, self.user)
-        url = self.build_url(action='render', provider='osfstorage', path=test_file.path, version=1, is_check_permission=False)
+        url = self.build_url(action='render', provider='osfstorage', path=test_file.path, version=1)
         nlogs = self.node.logs.count()
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -243,7 +243,7 @@ class TestAddonAuth(OsfTestCase):
         noncontrib = AuthUserFactory()
         node = ProjectFactory(is_public=True)
         test_file = create_test_file(node, self.user)
-        url = self.build_url(nid=node._id, action='render', provider='osfstorage', path=test_file.path, version=1, is_check_permission=True)
+        url = self.build_url(nid=node._id, action='render', provider='osfstorage', path=test_file.path, version=1)
         nlogs = node.logs.count()
         res = self.app.get(url, auth=noncontrib.auth)
         assert_equal(res.status_code, 200)
@@ -265,7 +265,6 @@ class TestAddonAuth(OsfTestCase):
             cookie=self.cookie[::-1],
             nid=ExportData.EXPORT_DATA_FAKE_NODE_ID,
             location_id=1,
-            is_check_permission=True,
         )
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
@@ -279,7 +278,6 @@ class TestAddonAuth(OsfTestCase):
             nid=ExportData.EXPORT_DATA_FAKE_NODE_ID,
             location_id=location.id,
             metrics={'uri': settings.MFR_SERVER_URL+'?callback_log=False'},
-            is_check_permission=False
         )
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 200)

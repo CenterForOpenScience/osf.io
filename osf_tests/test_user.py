@@ -1152,6 +1152,14 @@ class TestOSFUser:
         user.affiliated_institutions.add(institution)
         assert user.is_allowed_storage_id(storage.id)
 
+    @pytest.mark.feature_202210
+    def test_user_is_allowed_to_use_institution(self):
+        user = UserFactory()
+        institution = InstitutionFactory()
+        user.affiliated_institutions.add(institution)
+        user.is_staff = True
+        assert user.is_allowed_to_use_institution(institution)
+
 
 class TestProjectsInCommon:
 

@@ -272,6 +272,7 @@ class TestRestoreDataFunction(AdminTestCase):
         bulkmount_region.waterbutler_settings = bulkmount_waterbutler_settings
         self.bulk_mount_data_restore = ExportDataRestoreFactory.build()
         self.bulk_mount_data_restore.destination = bulkmount_region
+        self.user = UserFactory()
 
     # check_before_restore_export_data
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
@@ -399,9 +400,10 @@ class TestRestoreDataFunction(AdminTestCase):
     def test_prepare_for_restore_export_data_process_with_other_process_running(self):
         mock_utils = mock.MagicMock()
         mock_utils.return_value = True
+        creator = self.user
         with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.check_for_any_running_restore_process', mock_utils):
             response = self.view.prepare_for_restore_export_data_process(None, self.export_data.id,
-                                                                         self.export_data_restore.destination.id, [])
+                                                                         self.export_data_restore.destination.id, [], creator)
             mock_utils.assert_called()
             nt.assert_equal(response.data, {'message': f'Cannot restore in this time.'})
             nt.assert_equal(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -411,10 +413,11 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_utils.return_value = False
         mock_task = mock.MagicMock()
         mock_task.return_value = AbortableAsyncResult(FAKE_TASK_ID)
+        creator = self.user
         with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.check_for_any_running_restore_process', mock_utils):
             with mock.patch(f'{EXPORT_DATA_TASK_PATH}.run_restore_export_data_process.delay', mock_task):
                 response = self.view.prepare_for_restore_export_data_process(None, self.export_data.id,
-                                                                             self.export_data_restore.destination.id, [])
+                                                                             self.export_data_restore.destination.id, [], creator)
                 mock_utils.assert_called()
                 mock_task.assert_called()
                 nt.assert_equal(response.data, {'task_id': FAKE_TASK_ID})

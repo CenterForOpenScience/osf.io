@@ -2419,7 +2419,7 @@ class TestPreprintOsfStorage(OsfTestCase):
         return self.preprint.api_url_for('get_auth', **options)
 
     def test_auth_download(self):
-        url = self.build_url(cookie=self.cookie, is_check_permission=True)
+        url = self.build_url(cookie=self.cookie)
         res = self.app.get(url, auth=Auth(user=self.user))
         data = jwt.decode(jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY), settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)['data']
         assert_equal(data['credentials'], self.preprint.serialize_waterbutler_credentials())

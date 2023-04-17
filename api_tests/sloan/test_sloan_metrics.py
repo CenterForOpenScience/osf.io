@@ -69,7 +69,7 @@ class TestSloanMetrics(OsfTestCase):
         self.app.set_cookie(f'dwf_{SLOAN_DATA_DISPLAY}', 'False')
         self.app.set_cookie(SLOAN_ID_COOKIE_NAME, sloan_cookie_value)
         with override_switch(ELASTICSEARCH_METRICS, active=True):
-            self.app.get(self.build_url(path=test_file.path, is_check_permission=True))
+            self.app.get(self.build_url(path=test_file.path))
 
         mock_record.assert_called_with(
             path=test_file.path,

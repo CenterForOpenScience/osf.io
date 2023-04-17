@@ -32,6 +32,7 @@ class ExportDataRestore(base.BaseModel):
     last_check = models.DateTimeField(auto_now=False, auto_now_add=False, null=True, blank=True)
     status = models.CharField(choices=ExportData.EXPORT_DATA_STATUS_CHOICES, max_length=255)
     task_id = models.CharField(max_length=255, null=True, blank=True)
+    creator = models.ForeignKey('OSFUser', on_delete=models.CASCADE)
 
     class Meta:
         db_table = 'osf_export_data_restore'
@@ -134,13 +135,20 @@ class ExportDataRestore(base.BaseModel):
 
             # timestamp by project_id and file_id
             timestamp = RdmFileTimestamptokenVerifyResult.objects.filter(
-                project_id=file.target.id, file_id=file.id).first()
+                project_id=file.target._id, file_id=file._id).first()
             if timestamp:
                 timestamp_info = {
-                    'timestamp_token': timestamp.timestamp_token,
+                    'timestamp_id': timestamp.id,
+                    'inspection_result_status': timestamp.inspection_result_status,
+                    'provider': timestamp.provider,
+                    'upload_file_modified_user': timestamp.upload_file_modified_user,
+                    'project_id': timestamp.project_id,
+                    'path': timestamp.path,
+                    'key_file_name': timestamp.key_file_name,
+                    'upload_file_created_user': timestamp.upload_file_created_user,
+                    'upload_file_size': timestamp.upload_file_size,
+                    'verify_file_size': timestamp.verify_file_size,
                     'verify_user': timestamp.verify_user,
-                    'verify_date': timestamp.verify_date,
-                    'updated_at': timestamp.verify_file_created_at,
                 }
                 file_info['timestamp'] = timestamp_info
 
@@ -190,7 +198,6 @@ class ExportDataRestore(base.BaseModel):
             name=file_name,
             kind='file',
             _internal=True, location_id=self.destination.id,
-            is_check_permission=False,
             **kwargs
         )
         return requests.put(url, data=file_data, cookies=cookies)

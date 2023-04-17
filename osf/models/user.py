@@ -1877,6 +1877,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """Return if this user is affiliated with ``institution``."""
         return self.affiliated_institutions.filter(id=institution.id).exists()
 
+    def is_allowed_to_use_institution(self, institution):
+        """Return if this user is supper or is admin affiliated with ``institution``."""
+        return self.is_super_admin or (self.is_admin and self.is_affiliated_with_institution(institution))
+
     def update_affiliated_institutions_by_email_domain(self):
         """
         Append affiliated_institutions by email domain.

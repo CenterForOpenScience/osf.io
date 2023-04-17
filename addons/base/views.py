@@ -4,6 +4,7 @@ from rest_framework import status as http_status
 import os
 import uuid
 import markupsafe
+import pytz
 from future.moves.urllib.parse import quote
 from django.utils import timezone
 
@@ -55,6 +56,7 @@ from osf.models import (
     FileVersion,
     ExportDataLocation,
     ExportData,
+    ExportDataRestore
 )
 from osf.metrics import PreprintView, PreprintDownload
 from osf.utils import permissions
@@ -71,6 +73,7 @@ from osf.features import (
     SLOAN_PREREG_DISPLAY
 )
 
+utc = pytz.UTC
 SLOAN_FLAGS = (
     SLOAN_COI_DISPLAY,
     SLOAN_DATA_DISPLAY,
@@ -191,6 +194,18 @@ def check_access(node, auth, action, cas_resp):
     if permission is None:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
+    # Check user has task running when executing export/restore
+    if auth.user:
+        user_info = auth.user
+        export_data_running = ExportData.objects.filter(creator=user_info, status=ExportData.STATUS_RUNNING).first()
+        if not export_data_running:
+            export_data_running = ExportDataRestore.objects.filter(creator=user_info, status=ExportData.STATUS_RUNNING).first()
+
+        if export_data_running:
+            institution = node.creator.affiliated_institutions.get()
+            if user_info.is_allowed_to_use_institution(institution):
+                return True
+
     if cas_resp:
         if permission == permissions.READ:
             if node.can_view_files(auth=None):
@@ -308,7 +323,6 @@ def get_auth(auth, **kwargs):
         provider_name = data['provider']
         # only has location_id
         location_id = data.get('location_id')
-        is_check_permission = data['is_check_permission']
     except KeyError:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
@@ -329,7 +343,6 @@ def get_auth(auth, **kwargs):
     is_node_process = True
     if node_id == ExportData.EXPORT_DATA_FAKE_NODE_ID:
         is_node_process = False
-
     if is_node_process:
         node = AbstractNode.load(node_id) or Preprint.load(node_id)
         if node and node.is_deleted:
@@ -337,8 +350,7 @@ def get_auth(auth, **kwargs):
         elif not node:
             raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
-        if is_check_permission:
-            check_access(node, auth, action, cas_resp)
+        check_access(node, auth, action, cas_resp)
         provider_settings = None
         if hasattr(node, 'get_addon'):
             provider_settings = node.get_addon(provider_name)
@@ -377,7 +389,7 @@ def get_auth(auth, **kwargs):
                 if auth.user:
                     # mark fileversion as seen
                     FileVersionUserMetadata.objects.get_or_create(user=auth.user, file_version=fileversion)
-                if not node.is_contributor_or_group_member(auth.user) and is_check_permission:
+                if not node.is_contributor_or_group_member(auth.user):
                     from_mfr = download_is_from_mfr(request, payload=data)
                     # version index is 0 based
                     version_index = version - 1
@@ -430,7 +442,7 @@ def get_auth(auth, **kwargs):
         'auth': make_auth(auth.user),  # A waterbutler auth dict not an Auth object
         'credentials': credentials,
         'settings': waterbutler_settings,
-        'callback_url': ''
+        'callback_url': '',
     }
 
     if callback_log and is_node_process:

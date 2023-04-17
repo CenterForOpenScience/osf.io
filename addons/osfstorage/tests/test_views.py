@@ -1059,8 +1059,7 @@ class TestMoveHook(HookTestCase):
                     'parent': folder._id,
                     'target': folder.target._id,
                     'name': folder.name,
-                },
-                'is_check_permission': False
+                }
             },
             target=self.node,
             method='post_json',)
@@ -1164,8 +1163,7 @@ class TestMoveHook(HookTestCase):
                     'parent': folder_two._id,
                     'target': folder_two.target._id,
                     'name': folder_two.name,
-                },
-                'is_check_permission': False
+                }
             },
             target=project,
             method='post_json',
@@ -1190,8 +1188,7 @@ class TestMoveHook(HookTestCase):
                     'parent': self.root_node._id,
                     'target': self.node._id,
                     'name': new_name,
-                },
-                'is_check_permission': False
+                }
             },
             target=self.node,
             method='post_json',
@@ -1220,8 +1217,7 @@ class TestMoveHook(HookTestCase):
                     'parent': dest_folder._id,
                     'target': self.project._id,
                     'name': dest_folder.name,
-                },
-                'is_check_permission': False
+                }
             },
             target=quickfiles_node,
             method='post_json',
@@ -1248,8 +1244,7 @@ class TestMoveHook(HookTestCase):
                     'parent': quickfiles_folder._id,
                     'target': quickfiles_node._id,
                     'name': new_name,
-                },
-                'is_check_permission': False
+                }
             },
             target=quickfiles_node,
             method='post_json',
@@ -1311,8 +1306,7 @@ class TestMoveHookPreprint(TestMoveHook):
                     'parent': self.root_node._id,
                     'target': self.node._id,
                     'name': new_name,
-                },
-                'is_check_permission': False
+                }
             },
             target=self.node,
             method='post_json',
@@ -1348,8 +1342,7 @@ class TestMoveHookProjectsOnly(TestMoveHook):
                         'parent': folder._id,
                         'target': folder.target._id,
                         'name': folder.name,
-                    },
-                    'is_check_permission': False
+                    }
                 },
                 target=self.node,
                 method='post_json',)
@@ -1386,18 +1379,17 @@ class TestMoveHookProjectsOnly(TestMoveHook):
                         'parent': folder._id,
                         'target': folder.target._id,
                         'name': folder.name,
-                    },
-                    'is_check_permission': False
+                    }
                 },
                 target=self.node,
                 method='post_json',)
 
         # both caches are updated
         source_key = STORAGE_USAGE_KEY.format(target_id=self.project._id)
-        assert storage_usage_cache.get(source_key) == 123
+        assert storage_usage_cache.get(source_key) == 0
 
         destination = STORAGE_USAGE_KEY.format(target_id=other_target._id)
-        assert storage_usage_cache.get(destination) == 0
+        assert storage_usage_cache.get(destination) == 123
 
         assert_equal(res.status_code, 200)
 

@@ -1162,6 +1162,7 @@ class ExportDataFactory(DjangoModelFactory):
     process_start = datetime.datetime.now()
     is_deleted = False
     status = models.ExportData.STATUS_COMPLETED
+    creator = factory.SubFactory(UserFactory)
 
 
 class ExportDataRestoreFactory(DjangoModelFactory):
@@ -1172,6 +1173,7 @@ class ExportDataRestoreFactory(DjangoModelFactory):
     destination = factory.SubFactory(RegionFactory)
     process_start = datetime.datetime.now()
     status = models.ExportData.STATUS_COMPLETED
+    creator = factory.SubFactory(UserFactory)
 
 
 class ContentTypeFactory(DjangoModelFactory):

@@ -76,6 +76,7 @@ class ExportData(base.BaseModel):
     total_size = models.PositiveIntegerField(default=0)
     is_deleted = models.BooleanField(default=False)
     task_id = models.CharField(max_length=255, null=True, blank=True)
+    creator = models.ForeignKey('OSFUser', on_delete=models.CASCADE)
 
     class Meta:
         db_table = 'osf_export_data'
@@ -198,13 +199,20 @@ class ExportData(base.BaseModel):
 
             # timestamp by project_id and file_id
             timestamp = RdmFileTimestamptokenVerifyResult.objects.filter(
-                project_id=file.target.id, file_id=file.id).first()
+                project_id=file.target._id, file_id=file._id).first()
             if timestamp:
                 timestamp_info = {
-                    'timestamp_token': timestamp.timestamp_token,
+                    'timestamp_id': timestamp.id,
+                    'inspection_result_status': timestamp.inspection_result_status,
+                    'provider': timestamp.provider,
+                    'upload_file_modified_user': timestamp.upload_file_modified_user,
+                    'project_id': timestamp.project_id,
+                    'path': timestamp.path,
+                    'key_file_name': timestamp.key_file_name,
+                    'upload_file_created_user': timestamp.upload_file_created_user,
+                    'upload_file_size': timestamp.upload_file_size,
+                    'verify_file_size': timestamp.verify_file_size,
                     'verify_user': timestamp.verify_user,
-                    'verify_date': timestamp.verify_date,
-                    'updated_at': timestamp.verify_file_created_at,
                 }
                 file_info['timestamp'] = timestamp_info
 
@@ -280,7 +288,6 @@ class ExportData(base.BaseModel):
             name=self.export_data_folder_name,
             kind='folder', meta='',
             _internal=True, location_id=self.location.id,
-            is_check_permission=False,
             **kwargs
         )
         return requests.put(url, cookies=cookies)
@@ -294,7 +301,6 @@ class ExportData(base.BaseModel):
             node_id, provider, path=path,
             confirm_delete=1,
             _internal=True, location_id=self.location.id,
-            is_check_permission=False,
             **kwargs
         )
         return requests.delete(url, cookies=cookies)
@@ -328,7 +334,6 @@ class ExportData(base.BaseModel):
                 name=file_name,
                 kind='file',
                 _internal=True, location_id=self.location.id,
-                is_check_permission=False,
                 **kwargs
             )
             return requests.put(url, data=fp, cookies=cookies)
@@ -348,7 +353,6 @@ class ExportData(base.BaseModel):
         url = waterbutler_api_url_for(
             node_id, provider, path=path,
             _internal=True, location_id=self.location.id,
-            is_check_permission=False,
             **kwargs
         )
         return requests.get(url, cookies=cookies, stream=True)
@@ -362,7 +366,6 @@ class ExportData(base.BaseModel):
         url = waterbutler_api_url_for(
             node_id, provider, path=path,
             _internal=True, location_id=self.location.id,
-            is_check_permission=False,
             **kwargs
         )
         return requests.delete(url, cookies=cookies)
@@ -395,7 +398,6 @@ class ExportData(base.BaseModel):
         url = waterbutler_api_url_for(
             node_id, provider, path=path,
             _internal=True, location_id=self.location.id,
-            is_check_permission=False,
             **kwargs
         )
         return requests.get(url, cookies=cookies, stream=True)
@@ -409,7 +411,6 @@ class ExportData(base.BaseModel):
         url = waterbutler_api_url_for(
             node_id, provider, path=path,
             _internal=True, location_id=self.location.id,
-            is_check_permission=False,
             **kwargs
         )
         return requests.delete(url, cookies=cookies)
@@ -429,7 +430,6 @@ class ExportData(base.BaseModel):
             name=self.EXPORT_DATA_FILES_FOLDER,
             kind='folder', meta='',
             _internal=True, location_id=self.location.id,
-            is_check_permission=False,
             **kwargs
         )
         return requests.put(url, cookies=cookies)
@@ -439,7 +439,6 @@ class ExportData(base.BaseModel):
         url = waterbutler_api_url_for(
             project_id, provider, path=file_path,
             _internal=True,
-            is_check_permission=False,
             **kwargs
         )
         return requests.get(url, cookies=cookies, stream=True)
@@ -454,7 +453,6 @@ class ExportData(base.BaseModel):
             name=file_name,
             kind='file',
             _internal=True, location_id=self.location.id,
-            is_check_permission=False,
             **kwargs
         )
         return requests.put(url, data=file_data, cookies=cookies)
@@ -471,7 +469,6 @@ class ExportData(base.BaseModel):
         url = waterbutler_api_url_for(
             node_id, provider, path=path,
             _internal=True, location_id=self.location.id,
-            is_check_permission=False,
             **kwargs
         )
         return requests.get(url, cookies=cookies, stream=True)

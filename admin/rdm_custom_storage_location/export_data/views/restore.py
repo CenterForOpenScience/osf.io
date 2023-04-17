@@ -47,6 +47,7 @@ class RestoreDataActionView(RdmPermissionMixin, APIView):
         cookie = request.user.get_or_create_cookie().decode()
         kwargs.setdefault('cookie', cookie)
         cookies = request.COOKIES
+        creator = request.user
         is_from_confirm_dialog = request.POST.get('is_from_confirm_dialog', default=False)
         if destination_id is None or export_id is None:
             return Response({'message': f'Missing required parameters.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -75,7 +76,7 @@ class RestoreDataActionView(RdmPermissionMixin, APIView):
         projects__ids = []
         for project in projects:
             projects__ids.append(project._id)
-        return prepare_for_restore_export_data_process(cookies, export_id, destination_id, projects__ids, cookie=cookie)
+        return prepare_for_restore_export_data_process(cookies, export_id, destination_id, projects__ids, creator, cookie=cookie)
 
 
 def check_before_restore_export_data(cookies, export_id, destination_id, **kwargs):
@@ -83,13 +84,23 @@ def check_before_restore_export_data(cookies, export_id, destination_id, **kwarg
     # Check export file data: /export_{process_start}/export_data_{institution_guid}_{process_start}.json
     if not check_export_data:
         return {'open_dialog': False, 'message': f'Cannot be restored because export data does not exist', 'not_found': True}
+    # Update status RUNNING for export data for checking connect to destination storage
     export_data = check_export_data[0]
+    pre_status = export_data.status
+    export_data.status = ExportData.STATUS_RUNNING
+    export_data.save()
     try:
         is_export_data_file_valid = read_export_data_and_check_schema(export_data, cookies, **kwargs)
         if not is_export_data_file_valid:
+            # Update status COMPLETED for export data if raise error
+            export_data.status = pre_status
+            export_data.save()
             return {'open_dialog': False, 'message': f'The export data files are corrupted'}
     except Exception as e:
         logger.error(f'Exception: {e}')
+        # Update status COMPLETED for export data if raise exception when reading export data and checking schema
+        export_data.status = pre_status
+        export_data.save()
         return {'open_dialog': False, 'message': f'Cannot connect to the export data storage location'}
 
     # Get file info file: /export_{process_start}/file_info_{institution_guid}_{process_start}.json
@@ -98,15 +109,21 @@ def check_before_restore_export_data(cookies, export_id, destination_id, **kwarg
         export_data_folders = export_data_json.get('folders', [])
     except Exception as e:
         logger.error(f'Exception: {e}')
+        export_data.status = pre_status
+        export_data.save()
         return {'open_dialog': False, 'message': str(e)}
 
     if not len(export_data_folders):
+        export_data.status = pre_status
+        export_data.save()
         return {'open_dialog': False, 'message': f'The export data files are corrupted'}
     destination_first_project_id = export_data_folders[0].get('project', {}).get('id')
 
     # Check whether the restore destination storage is not empty
     destination_region = Region.objects.filter(id=destination_id).first()
     if not destination_region:
+        export_data.status = pre_status
+        export_data.save()
         return {'open_dialog': False, 'message': f'Failed to get destination storage information'}
 
     destination_base_url = destination_region.waterbutler_url
@@ -117,22 +134,30 @@ def check_before_restore_export_data(cookies, export_id, destination_id, **kwarg
         if response.status_code != status.HTTP_200_OK:
             # Error
             logger.error(f'Return error with response: {response.content}')
+            export_data.status = pre_status
+            export_data.save()
             return {'open_dialog': False, 'message': f'Cannot connect to destination storage'}
 
         response_body = response.json()
         data = response_body.get('data')
         if len(data) != 0:
             # Destination storage is not empty, show confirm dialog
+            export_data.status = pre_status
+            export_data.save()
             return {'open_dialog': True}
     except Exception as e:
         logger.error(f'Exception: {e}')
+        export_data.status = pre_status
+        export_data.save()
         return {'open_dialog': False, 'message': f'Cannot connect to destination storage'}
 
+    export_data.status = pre_status
+    export_data.save()
     # Destination storage is empty, return False
     return {'open_dialog': False}
 
 
-def prepare_for_restore_export_data_process(cookies, export_id, destination_id, list_project_id, **kwargs):
+def prepare_for_restore_export_data_process(cookies, export_id, destination_id, list_project_id, creator, **kwargs):
     # Check the destination is available (not in restore process or checking restore data process)
     any_process_running = utils.check_for_any_running_restore_process(destination_id)
     if any_process_running:
@@ -140,7 +165,7 @@ def prepare_for_restore_export_data_process(cookies, export_id, destination_id, 
 
     # Try to add new process record to DB
     export_data_restore = ExportDataRestore(export_id=export_id, destination_id=destination_id,
-                                            status=ExportData.STATUS_RUNNING)
+                                            status=ExportData.STATUS_RUNNING, creator=creator)
     export_data_restore.save()
     # If user clicked 'Restore' button in confirm dialog, start restore data task and return task id
     process = tasks.run_restore_export_data_process.delay(cookies, export_id, export_data_restore.pk, list_project_id, **kwargs)
@@ -368,20 +393,32 @@ def add_tags_to_file_node(file_node, tags):
 def add_timestamp_to_file_node(file_node, project_id, timestamp):
     if not file_node or not project_id or not timestamp:
         return
-
+    verify_data = None
+    timestamp_obj = RdmFileTimestamptokenVerifyResult.objects.filter(id=timestamp.get('timestamp_id')).first()
     try:
         verify_data = RdmFileTimestamptokenVerifyResult.objects.get(
-            file_id=file_node.id)
+            file_id=file_node._id)
     except RdmFileTimestamptokenVerifyResult.DoesNotExist:
         verify_data = RdmFileTimestamptokenVerifyResult()
-        verify_data.file_id = file_node.id
-        verify_data.project_id = project_id
-        verify_data.provider = file_node.provider
-        verify_data.path = file_node.path
-        verify_data.inspection_result_status = timestamp.get('inspection_result_status', 0)
+        verify_data.file_id = file_node._id
+        verify_data.project_id = timestamp.get('project_id', project_id)
+        verify_data.provider = timestamp.get('provider', file_node.provider)
 
+    if timestamp_obj:
+        verify_data.timestamp_token = timestamp_obj.timestamp_token
+        verify_data.verify_date = timestamp_obj.verify_date
+        verify_data.verify_file_modified_at = timestamp_obj.verify_file_modified_at
+        verify_data.upload_file_created_at = timestamp_obj.upload_file_created_at
+        verify_data.upload_file_modified_at = timestamp_obj.upload_file_modified_at
+        verify_data.verify_file_created_at = timestamp_obj.verify_file_created_at
+    verify_data.path = timestamp.get('path', file_node.path)
+    verify_data.inspection_result_status = timestamp.get('inspection_result_status', 0)
     verify_data.key_file_name = timestamp.get('key_file_name', file_node.path)
-    verify_data.timestamp_token = timestamp.get('timestamp_token')
+    verify_data.upload_file_created_user = timestamp.get('upload_file_created_user', None)
+    verify_data.upload_file_modified_user = timestamp.get('upload_file_modified_user', None)
+    verify_data.upload_file_size = timestamp.get('upload_file_size', None)
+    verify_data.verify_file_size = timestamp.get('verify_file_size', None)
+    verify_data.verify_user = timestamp.get('verify_user', None)
     verify_data.save()
 
 

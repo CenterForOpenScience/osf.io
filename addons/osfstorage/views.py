@@ -17,7 +17,7 @@ from framework.auth.decorators import must_be_signed, must_be_logged_in
 
 from api.caching.tasks import update_storage_usage
 from osf.exceptions import InvalidTagError, TagNotFoundError
-from osf.models import FileVersion, OSFUser
+from osf.models import FileVersion, OSFUser, ExportDataRestore, ExportData
 from osf.utils.permissions import WRITE
 from osf.utils.requests import check_select_for_update
 from website.project.decorators import (
@@ -288,6 +288,16 @@ def osfstorage_create_child(file_node, payload, **kwargs):
     name = payload.get('name')
     user = OSFUser.load(payload.get('user'))
     is_folder = payload.get('kind') == 'folder'
+    # Add a check condition when moving the file to the backup folder in case the file is checked out
+    node = kwargs.get('target')
+    is_check_permission = True
+    export_data = ExportData.objects.filter(creator=user, status=ExportData.STATUS_RUNNING).first()
+    if not export_data:
+        export_data = ExportDataRestore.objects.filter(creator=user, status=ExportData.STATUS_RUNNING).first()
+    if export_data:
+        institution = node.creator.affiliated_institutions.get()
+        if user.is_allowed_to_use_institution(institution):
+            is_check_permission = False
 
     if getattr(file_node.target, 'is_registration', False) and not getattr(file_node.target, 'archiving', False):
         raise HTTPError(
@@ -323,7 +333,7 @@ def osfstorage_create_child(file_node, payload, **kwargs):
             )
         })
 
-    if file_node.checkout and file_node.checkout._id != user._id:
+    if file_node.checkout and file_node.checkout._id != user._id and is_check_permission:
         raise HTTPError(http_status.HTTP_403_FORBIDDEN, data={
             'message_long': 'File cannot be updated due to checkout status.'
         })
