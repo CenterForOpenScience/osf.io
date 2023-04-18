@@ -2,6 +2,8 @@
 # encoding: utf-8
 
 import mock
+from django.conf import settings as django_conf_settings
+from importlib import import_module
 
 from tests.base import OsfTestCase
 from osf_tests.factories import UserFactory
@@ -10,8 +12,8 @@ from nose.tools import assert_false
 import functools
 
 from framework import sentry
-from framework.sessions import set_session
-from osf.models import Session
+
+SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
 
 def set_sentry(status):
@@ -40,8 +42,9 @@ class TestSentry(OsfTestCase):
     @with_sentry
     @mock.patch('framework.sentry.sentry.captureException')
     def test_log_not_logged_in(self, mock_capture):
-        session_record = Session()
-        set_session(session_record)
+        s = SessionStore()
+        s.create()
+        self.context.g.current_session = s
         sentry.log_exception()
         mock_capture.assert_called_with(
             extra={
@@ -53,9 +56,11 @@ class TestSentry(OsfTestCase):
     @mock.patch('framework.sentry.sentry.captureException')
     def test_log_logged_in(self, mock_capture):
         user = UserFactory()
-        session_record = Session()
-        session_record.data['auth_user_id'] = user._id
-        set_session(session_record)
+        s = SessionStore()
+        s.create()
+        sessiondata['auth_user_id'] = user._id
+        s.save()
+        self.context.g.current_session = s
         sentry.log_exception()
         mock_capture.assert_called_with(
             extra={
