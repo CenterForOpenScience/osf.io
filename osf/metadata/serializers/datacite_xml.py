@@ -14,10 +14,9 @@ class DataciteXmlMetadataSerializer(_base.MetadataSerializer):
         json_serializer = datacite_json.DataciteJsonMetadataSerializer(
             serializer_config={
                 'doi_value': self.serializer_config.get('doi_value'),
-                'as_dict': True,
             }
         )
-        json_data = json_serializer.serialize(basket)
+        json_data = json_serializer.primitivize(basket)
 
         # Generate DataCite XML from dictionary.
         return schema43.tostring(json_data)
