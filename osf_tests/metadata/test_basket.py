@@ -34,31 +34,32 @@ def test_goodbasket():
     basket = gather.Basket(focus)
     assert basket.focus == focus
     assert isinstance(basket.gathered_metadata, rdflib.Graph)
-    assert len(basket.gathered_metadata) == 0
+    assert len(basket.gathered_metadata) == 1
     assert len(basket._gathertasks_done) == 0
+    assert len(basket._known_focus_dict) == 1
     # no repeat gathertasks:
     mock_gatherers[BLARG.zork].assert_not_called()
     mock_gatherers[BLARG.bork].assert_not_called()
     mock_gatherers[BLARG.hork].assert_not_called()
-    basket.pls_gather({BLARG.zork})
+    assert set(basket[BLARG.zork]) == {BLARG.zorked}  # lazy gather
     assert len(basket.gathered_metadata) == 2
     assert len(basket._gathertasks_done) == 1
     mock_gatherers[BLARG.zork].assert_called_once()
     mock_gatherers[BLARG.bork].assert_not_called()
     mock_gatherers[BLARG.hork].assert_not_called()
-    basket.pls_gather({BLARG.zork, BLARG.bork})
+    assert set(basket[BLARG.bork]) == {BLARG.borked}  # lazy gather
     assert len(basket.gathered_metadata) == 4
     assert len(basket._gathertasks_done) == 2
     mock_gatherers[BLARG.zork].assert_called_once()
     mock_gatherers[BLARG.bork].assert_called_once()
     mock_gatherers[BLARG.hork].assert_not_called()
-    basket.pls_gather({BLARG.bork})
+    assert set(basket[BLARG.bork]) == {BLARG.borked}  # skip repeat gather
     assert len(basket.gathered_metadata) == 4
     assert len(basket._gathertasks_done) == 2
     mock_gatherers[BLARG.zork].assert_called_once()
     mock_gatherers[BLARG.bork].assert_called_once()
     mock_gatherers[BLARG.hork].assert_not_called()
-    basket.pls_gather({BLARG.bork, BLARG.zork, BLARG.hork})
+    assert set(basket[BLARG.hork]) == {BLARG.horked}  # lazy gather
     assert len(basket.gathered_metadata) == 5
     assert len(basket._gathertasks_done) == 3
     mock_gatherers[BLARG.zork].assert_called_once()
@@ -66,9 +67,6 @@ def test_goodbasket():
     mock_gatherers[BLARG.hork].assert_called_once()
 
     # __getitem__
-    assert set(basket[BLARG.zork]) == {BLARG.zorked}
-    assert set(basket[BLARG.bork]) == {BLARG.borked}
-    assert set(basket[BLARG.hork]) == {BLARG.horked}
     assert set(basket[BLARG.somethin_else]) == set()
     # path:
     assert set(basket[BLARG.bork / BLARG.lork]) == {BLARG.borklorked}
@@ -80,5 +78,5 @@ def test_goodbasket():
 
     # reset
     basket.reset()
-    assert len(basket.gathered_metadata) == 0
+    assert len(basket.gathered_metadata) == 1
     assert len(basket._gathertasks_done) == 0

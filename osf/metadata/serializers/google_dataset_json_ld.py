@@ -5,7 +5,8 @@ from osf.metadata.rdfutils import (
     DCT,
     OSF,
     FOAF,
-    OSFIO
+    OSFIO,
+    primitivify_rdf,
 )
 
 from website import settings
@@ -16,7 +17,12 @@ class GoogleDatasetJsonLdSerializer(_base.MetadataSerializer):
     def filename(self, osfguid: str):
         return f'{osfguid}-metadata.json-ld'
 
-    def serialize(self, basket: gather.Basket):
+    def serialize(self, basket):
+        primitivized = self.primitivize(basket)
+        assert isinstance(primitivized, dict)
+        return json.dumps(primitivized, indent=2, sort_keys=True)
+
+    def primitivize(self, basket: gather.Basket) -> dict:
         metadata = {
             '@context': 'https://schema.org',
             '@type': 'Dataset',
@@ -57,8 +63,7 @@ class GoogleDatasetJsonLdSerializer(_base.MetadataSerializer):
                     }
                 )
             metadata.update(registration_metadata)
-
-        return json.dumps(metadata, indent=2, sort_keys=True)
+        return primitivify_rdf(metadata)
 
 
 def format_creators(basket):

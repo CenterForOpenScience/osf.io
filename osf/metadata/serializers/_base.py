@@ -18,5 +18,9 @@ class MetadataSerializer(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def serialize(self, basket: gather.Basket):
+    def serialize(self, basket: gather.Basket) -> str:
         raise NotImplementedError
+
+    # optional to implement in subclasses
+    def primitivize(self, basket: gather.Basket):
+        return self.serialize(basket)  # default str

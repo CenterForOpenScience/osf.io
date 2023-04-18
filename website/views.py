@@ -34,7 +34,7 @@ from website.ember_osf_web.views import use_ember_app
 from website.project.decorators import check_contributor_auth
 from website.project.model import has_anonymous_link
 from osf.utils import permissions
-from osf.metadata.osf_gathering import pls_gather_metadata_file
+from osf.metadata.tools import pls_gather_metadata_file
 
 from api.waffle.utils import storage_i18n_flag_active
 
