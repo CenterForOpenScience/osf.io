@@ -216,6 +216,7 @@ class ExportData(base.BaseModel):
                 version_info = {
                     'identifier': version.identifier,
                     'created_at': version.created.strftime('%Y-%m-%d %H:%M:%S'),
+                    'modified_at': version.modified.strftime('%Y-%m-%d %H:%M:%S'),
                     'size': version.size,
                     'version_name': file_version_thru.version_name if file_version_thru else file.name,
                     'contributor': version.creator.username,

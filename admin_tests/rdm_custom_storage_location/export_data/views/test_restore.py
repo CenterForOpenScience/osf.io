@@ -26,7 +26,8 @@ from osf_tests.factories import (
     bulkmount_waterbutler_settings,
     UserFactory,
     ProjectFactory,
-    InstitutionFactory
+    InstitutionFactory,
+    FileVersionFactory
 )
 from tests.base import AdminTestCase
 
@@ -247,12 +248,15 @@ class TestRestoreDataFunction(AdminTestCase):
                     'version': [
                         {
                             'identifier': '1',
+                            'created_at': '2023-04-18 04:40:25',
+                            'modified_at': '2023-04-18 04:40:25',
                             'metadata': {
                                 'md5': '8c42361841f16989e0bf62a3ae408f1c',
                                 'kind': 'file',
                                 'sha256': 'ea070092664567d32e4524c6034214a293e75d0a53cfe9118f41e4752e97987c',
                             },
-                            'location': {}
+                            'location': {},
+                            'contributor': 'fake_user',
                         }
                     ],
                     'location': {},
@@ -856,11 +860,17 @@ class TestRestoreDataFunction(AdminTestCase):
             mock_upload.assert_called()
             nt.assert_equal(result, [])
 
+    @mock.patch('osf.models.BaseFileNode')
+    @mock.patch('osf.models.BaseFileNode.objects')
+    @mock.patch('osf.models.FileVersion.objects')
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.upload_file_path')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.ExportData.read_data_file_from_location')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.generate_new_file_path')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped')
-    def test_copy_files_from_export_data_to_destination_osfstorage(self, mock_check_progress, mock_generate_new_file_path, mock_download, mock_upload):
+    def test_copy_files_from_export_data_to_destination_osfstorage(self, mock_check_progress,
+                                                                   mock_generate_new_file_path, mock_download,
+                                                                   mock_upload, mock_file_version, mock_file_node,
+                                                                   mock_base_file_node):
         def create_node(*args, **kwargs):
             OsfStorageFileFactory.create(_id='fake_id')
             return {
@@ -878,6 +888,12 @@ class TestRestoreDataFunction(AdminTestCase):
         task = AbortableTask()
         task.request_stack = LocalStack()
         task.request.id = FAKE_TASK_ID
+
+        user = AuthUserFactory.create(username='fake_user')
+        file_version = FileVersionFactory.create(creator=user, identifier='1')
+        mock_base_file_node.get_version.return_value = file_version
+        mock_file_node.filter.return_value.update.return_value = {}
+        mock_file_version.filter.return_value.update.return_value = {}
 
         mock_is_add_on = mock.MagicMock()
         mock_is_add_on.return_value = False

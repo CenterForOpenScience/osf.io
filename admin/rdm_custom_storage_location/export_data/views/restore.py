@@ -20,7 +20,7 @@ from addons.osfstorage.models import Region
 from admin.rdm.utils import RdmPermissionMixin
 from admin.rdm_custom_storage_location import tasks
 from admin.rdm_custom_storage_location.export_data import utils
-from osf.models import ExportData, ExportDataRestore, BaseFileNode, Tag, RdmFileTimestamptokenVerifyResult, Institution
+from osf.models import ExportData, ExportDataRestore, BaseFileNode, Tag, RdmFileTimestamptokenVerifyResult, Institution, OSFUser, FileVersion
 from website.util import inspect_info  # noqa
 from framework.transactions.handlers import no_auto_transaction
 
@@ -510,6 +510,8 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
         file_tags = file.get('tags')
         file_timestamp = file.get('timestamp', {})
         file_checkout_id = file.get('checkout_id')
+        file_created = file.get('created_at')
+        file_modified = file.get('modified_at')
 
         # Sort file by version id
         file_versions.sort(key=lambda k: k.get('identifier', 0))
@@ -564,9 +566,33 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
                         node_set = BaseFileNode.objects.filter(_id=file_node_id)
                         if node_set.exists():
                             node = node_set.first()
+
+                            # update creator, created, modified back to the file version
+                            file_version = node.get_version(version_id, required=False)
+
+                            if file_version is not None:
+                                contributor = version.get('contributor')
+                                user = OSFUser.objects.filter(username=contributor)
+                                file_version_created_at = version.get('created_at')
+                                file_version_modified = version.get('modified_at')
+                                if user.exists():
+                                    file_version.creator = user.first()
+                                file_version.created = file_version_created_at
+                                file_version.modified = file_version_modified
+                                file_version.save()
+                                FileVersion.objects.filter(id=file_version.id).update(created=file_version_created_at,
+                                                                                      modified=file_version_created_at)
+
                             if file_checkout_id:
                                 node.checkout_id = file_checkout_id
-                                node.save()
+
+                            # update created/modified date to basefilenode
+                            node.created = file_created
+                            node.modified = file_modified
+                            node.save()
+                            BaseFileNode.objects.filter(id=node.id).update(created=file_created,
+                                                                           modified=file_modified)
+
                             list_created_file_nodes.append({
                                 'node': node,
                                 'file_tags': file_tags,
