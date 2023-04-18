@@ -42,7 +42,7 @@
             },
             {
               "text": "FDMA",
-              "tooltip": "消防庁|Fire and Disaster Management Agenc|605"
+              "tooltip": "消防庁|Fire and Disaster Management Agency|605"
             },
             {
               "text": "NICT",
@@ -90,7 +90,7 @@
             },
             {
               "text": "NILIM",
-              "tooltip": "国土技術政策総合研究所|Ministry of Land|1405"
+              "tooltip": "国土技術政策総合研究所|National Institute for Land and Infrastructure Management|1405"
             },
             {
               "text": "ENV",
@@ -702,7 +702,8 @@
           "type": "string",
           "format": "text",
           "required": false,
-          "space_normalization": true
+          "space_normalization": true,
+          "help": "例: 〇〇研究所〇〇部門〇〇課, 〇〇大学〇〇研究室"
         },
         {
           "qid": "grdm-file:data-man-org-en",
