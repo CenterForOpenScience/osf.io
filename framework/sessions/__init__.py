@@ -125,6 +125,7 @@ def create_session(response, data=None):
     updated session and the set-cookie response as a tuple.
     """
     user_session = get_session()
+    user_session.create()
     if not user_session:
         response.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
         return None, response
@@ -171,6 +172,7 @@ def before_request():
         )
         # Create an empty session
         user_session = get_session(ignore_cookie=True)
+        user_session.create()
         # Although the if check is not necessary based on current ``get_session()`` implementation. However, we
         # keep it here in case ``get_session()`` was changed. It may be removed after we have unit tests for this.
         if not user_session:
