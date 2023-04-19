@@ -1802,23 +1802,20 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return analytics.get_total_activity_count(self._id)
 
     def get_or_create_cookie(self, secret=None):
-        """Find the cookie for the given user
-        Create a new session if no cookie is found
+        """Find the cookie from the most recent session for the given user. Create a new session, compute its
+        cookie value using the default or provide secret, and return the new cookie if no existing session is found.
 
         :param str secret: The key to sign the cookie with
         :returns: The signed cookie
         """
         secret = secret or website_settings.SECRET_KEY
-
         user_session_map = UserSessionMap.objects.filter(user__id=self.id).order_by('-expire_date').first()
-
-        if not SessionStore().exists(session_key=user_session_map.session_key):
+        if not user_session_map or not SessionStore().exists(session_key=user_session_map.session_key):
             user_session = SessionStore()
-            user_session.create()
             user_session['auth_user_id'] = self._id
             user_session['auth_user_username'] = self.username
             user_session['auth_user_fullname'] = self.fullname
-            user_session.save()
+            user_session.create()
             UserSessionMap.objects.create(
                 user=self,
                 session_key=user_session.session_key,
@@ -1826,7 +1823,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             )
         else:
             user_session = SessionStore(session_key=user_session_map.session_key)
-
         signer = itsdangerous.Signer(secret)
         return signer.sign(user_session.session_key)
 
