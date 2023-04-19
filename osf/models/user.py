@@ -1810,7 +1810,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         secret = secret or website_settings.SECRET_KEY
         user_session_map = UserSessionMap.objects.filter(user__id=self.id).order_by('-expire_date').first()
-        if not user_session_map or not SessionStore().exists(session_key=user_session_map.session_key):
+        if user_session_map and SessionStore().exists(session_key=user_session_map.session_key):
+            user_session = SessionStore(session_key=user_session_map.session_key)
+        else:
             user_session = SessionStore()
             user_session['auth_user_id'] = self._id
             user_session['auth_user_username'] = self.username
@@ -1821,8 +1823,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 session_key=user_session.session_key,
                 expire_date=user_session.get_expiry_date()
             )
-        else:
-            user_session = SessionStore(session_key=user_session_map.session_key)
         signer = itsdangerous.Signer(secret)
         return signer.sign(user_session.session_key)
 
