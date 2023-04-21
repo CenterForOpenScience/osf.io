@@ -384,7 +384,7 @@ class ShareSourcePreprintProvider(PermissionRequiredMixin, View):
         except ValidationError as e:
             messages.error(request, e.message)
 
-        return redirect(reverse_lazy('preprint_providers:share_source', kwargs={'preprint_provider_id': provider.id}))
+        return redirect(reverse_lazy('preprint_providers:detail', kwargs={'preprint_provider_id': provider.id}))
 
 class SubjectDynamicUpdateView(PermissionRequiredMixin, View):
     permission_required = 'osf.change_preprintprovider'
