@@ -2992,9 +2992,9 @@ class TestUtilsForRestoreData(AdminTestCase):
         nt.assert_is_none(utils.is_add_on_storage('osf_storage'))
 
         # both addon method and bulk-mount method
-        nt.assert_true(utils.is_add_on_storage('owncloud'))
-        nt.assert_true(utils.is_add_on_storage('s3compat'))
-        nt.assert_true(utils.is_add_on_storage('s3'))
+        nt.assert_false(utils.is_add_on_storage('owncloud'))
+        nt.assert_false(utils.is_add_on_storage('s3compat'))
+        nt.assert_false(utils.is_add_on_storage('s3'))
 
         # only addon method providers
         nt.assert_true(utils.is_add_on_storage('nextcloudinstitutions'))

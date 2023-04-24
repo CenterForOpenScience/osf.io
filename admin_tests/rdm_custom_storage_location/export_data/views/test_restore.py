@@ -15,7 +15,7 @@ from rest_framework.test import APIRequestFactory
 from admin.rdm_custom_storage_location.export_data.views import restore
 from admin.rdm_custom_storage_location.export_data.views.restore import ProcessError
 from framework.celery_tasks import app as celery_app
-from osf.models import RdmFileTimestamptokenVerifyResult, ExportData, ExportDataRestore
+from osf.models import RdmFileTimestamptokenVerifyResult, ExportData, ExportDataRestore, FileVersion
 from osf_tests.factories import (
     AuthUserFactory,
     ExportDataFactory,
@@ -240,6 +240,8 @@ class TestRestoreDataFunction(AdminTestCase):
                     'materialized_path': '/@ember-decorators/utils/collapse-proto.d.ts',
                     'name': 'collapse-proto.d.ts',
                     'provider': 'osfstorage',
+                    'created_at': '2023-04-18 04:40:25',
+                    'modified_at': '2023-04-18 04:40:25',
                     'project': {
                         'id': 'pmockt',
                         'name': 'Project Mock'
@@ -263,15 +265,11 @@ class TestRestoreDataFunction(AdminTestCase):
                     'timestamp': {}
                 },
             ]
-        addon_region = RegionFactory()
-        addon_region.waterbutler_settings = addon_waterbutler_settings
-        self.addon_data_restore = ExportDataRestoreFactory.build()
-        self.addon_data_restore.destination = addon_region
+        addon_region = RegionFactory(waterbutler_settings=addon_waterbutler_settings)
+        self.addon_data_restore = ExportDataRestoreFactory.create(destination=addon_region)
 
-        bulkmount_region = RegionFactory()
-        bulkmount_region.waterbutler_settings = bulkmount_waterbutler_settings
-        self.bulk_mount_data_restore = ExportDataRestoreFactory.build()
-        self.bulk_mount_data_restore.destination = bulkmount_region
+        bulkmount_region = RegionFactory(waterbutler_settings=bulkmount_waterbutler_settings)
+        self.bulk_mount_data_restore = ExportDataRestoreFactory.create(destination=bulkmount_region)
         self.user = UserFactory()
 
     # check_before_restore_export_data
@@ -288,10 +286,29 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_utils_get_file_data.return_value = test_response
 
         result = self.view.check_before_restore_export_data(None, self.export_data.id,
-                                                            self.export_data_restore.destination.id)
+                                                            self.addon_data_restore.destination.id)
         mock_read_export_data.assert_called()
         mock_read_file_info.assert_called()
         mock_utils_get_file_data.assert_called()
+        nt.assert_equal(result, {'open_dialog': False})
+
+    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_file_info_and_check_schema')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_export_data_and_check_schema')
+    def test_check_before_restore_export_data_bulk_mount_destination_storage(self, mock_read_export_data, mock_read_file_info, mock_utils_get_file_data):
+        test_response = requests.Response()
+        test_response.status_code = status.HTTP_200_OK
+        test_response._content = json.dumps({'data': []}).encode('utf-8')
+
+        mock_read_export_data.return_value = True
+        mock_read_file_info.return_value = {'folders': [{'project': {'id': self.project_id}}], 'files': [{'project': {'id': self.project_id}}]}
+        mock_utils_get_file_data.return_value = test_response
+
+        result = self.view.check_before_restore_export_data(None, self.export_data.id,
+                                                            self.bulk_mount_data_restore.destination.id)
+        mock_read_export_data.assert_called()
+        mock_read_file_info.assert_called()
+        mock_utils_get_file_data.assert_not_called()
         nt.assert_equal(result, {'open_dialog': False})
 
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_export_data_and_check_schema')
@@ -299,7 +316,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_read_export_data.return_value = False
 
         result = self.view.check_before_restore_export_data(None, self.export_data.id,
-                                                            self.export_data_restore.destination.id)
+                                                            self.addon_data_restore.destination.id)
         mock_read_export_data.assert_called()
         nt.assert_equal(result, {'open_dialog': False, 'message': f'The export data files are corrupted'})
 
@@ -308,7 +325,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_read_export_data.side_effect = Exception(f'Mock test exception at read export data file')
 
         result = self.view.check_before_restore_export_data(None, self.export_data.id,
-                                                            self.export_data_restore.destination.id)
+                                                            self.addon_data_restore.destination.id)
         mock_read_export_data.assert_called()
         nt.assert_equal(result,
                         {'open_dialog': False,
@@ -322,7 +339,7 @@ class TestRestoreDataFunction(AdminTestCase):
 
         with mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_file_info_and_check_schema', mock_read_file_info):
             result = self.view.check_before_restore_export_data(None, self.export_data.id,
-                                                                self.export_data_restore.destination.id)
+                                                                self.addon_data_restore.destination.id)
             mock_read_export_data.assert_called()
             mock_read_file_info.assert_called()
             nt.assert_equal(result, {'open_dialog': False, 'message': f'The export data files are corrupted'})
@@ -355,7 +372,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_utils_get_file_data.return_value = test_response
 
         result = self.view.check_before_restore_export_data(None, self.export_data.id,
-                                                            self.export_data_restore.destination.id)
+                                                            self.addon_data_restore.destination.id)
         mock_read_export_data.assert_called()
         mock_read_file_info.assert_called()
         mock_utils_get_file_data.assert_called()
@@ -374,7 +391,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_utils_get_file_data.return_value = test_response
 
         result = self.view.check_before_restore_export_data(None, self.export_data.id,
-                                                            self.export_data_restore.destination.id)
+                                                            self.addon_data_restore.destination.id)
         mock_read_export_data.assert_called()
         mock_read_file_info.assert_called()
         mock_utils_get_file_data.assert_called()
@@ -390,7 +407,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_utils_get_file_data.side_effect = Exception('Mock test exception at check destination storage')
 
         result = self.view.check_before_restore_export_data(None, self.export_data.id,
-                                                            self.export_data_restore.destination.id)
+                                                            self.addon_data_restore.destination.id)
         mock_read_export_data.assert_called()
         mock_read_file_info.assert_called()
         mock_utils_get_file_data.assert_called()
@@ -443,8 +460,8 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_add_tag_and_timestamp.return_value = None
         mock_create_folder_path.return_value = None
 
-        self.view.restore_export_data_process(task, {}, self.export_data_restore.export.id,
-                                              self.export_data_restore.id, ['vcu'])
+        self.view.restore_export_data_process(task, {}, self.addon_data_restore.export.id,
+                                              self.addon_data_restore.id, ['vcu'])
         mock_read_file_info.assert_called()
         mock_check_process.assert_called()
         mock_move_to_backup.assert_called()
@@ -477,6 +494,33 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_move_to_backup.assert_not_called()
         mock_copy_to_destination.assert_not_called()
         mock_add_tag_and_timestamp.assert_not_called()
+
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.create_folder_in_destination')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.add_tag_and_timestamp_to_database')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.copy_files_from_export_data_to_destination')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.move_all_files_to_backup_folder')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_file_info_and_check_schema')
+    def test_restore_export_data_process_bulk_mount_storage(self, mock_read_file_info, mock_check_process, mock_move_to_backup, mock_copy_to_destination,
+                                                            mock_add_tag_and_timestamp, mock_create_folder_path):
+        task = AbortableTask()
+        task.request_stack = LocalStack()
+        task.request.id = FAKE_TASK_ID
+
+        mock_read_file_info.return_value = {'folders': [{'project': {'id': 1}}], 'files': [{'project': {'id': 1}}]}
+        mock_check_process.return_value = None
+        mock_move_to_backup.return_value = None
+        mock_copy_to_destination.return_value = [{}]
+        mock_add_tag_and_timestamp.return_value = None
+        mock_create_folder_path.return_value = None
+
+        self.view.restore_export_data_process(task, {}, self.export_data_restore.export.id,
+                                              self.export_data_restore.id, ['vcu'])
+        mock_read_file_info.assert_called()
+        mock_check_process.assert_called()
+        mock_move_to_backup.assert_not_called()
+        mock_copy_to_destination.assert_called()
+        mock_add_tag_and_timestamp.assert_called()
 
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.create_folder_in_destination')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.add_tag_and_timestamp_to_database')
@@ -915,6 +959,63 @@ class TestRestoreDataFunction(AdminTestCase):
             mock_download.assert_called()
             mock_upload.assert_called()
             nt.assert_equal(len(result), 1)
+            nt.assert_equal(result[0].get('file_tags'), ['hello', 'world'])
+            nt.assert_equal(result[0].get('file_timestamp'), {})
+            nt.assert_equal(result[0].get('project_id'), 'pmockt')
+
+    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.upload_file_path')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.ExportData.read_data_file_from_location')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.generate_new_file_path')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped')
+    def test_copy_files_from_export_data_to_destination_osfstorage_not_add_new_version(self, mock_check_progress,
+                                                                                       mock_generate_new_file_path, mock_download,
+                                                                                       mock_upload):
+        def create_node(*args, **kwargs):
+            file = OsfStorageFileFactory.create(_id='fake_id')
+            user = AuthUserFactory.create(username='fake_user')
+            version_1 = FileVersionFactory(creator=user, identifier='1')
+            FileVersion.objects.filter(id=version_1.id).update(created='2023-04-18 04:40:25', modified='2023-04-18 04:40:25')
+            file.add_version(version_1)
+            file.add_version(FileVersionFactory(creator=user, identifier='2'))
+            return {
+                'data': {
+                    'id': 'osfstorage/fake_id',
+                    'attributes': {
+                        'extra': {
+                            'version': '2'
+                        }
+                    }
+                }
+            }
+
+        bulkmount_export_files = self.test_export_data_files
+
+        test_response = requests.Response()
+        test_response.status_code = status.HTTP_200_OK
+        test_response._content = json.dumps({}).encode('utf-8')
+
+        task = AbortableTask()
+        task.request_stack = LocalStack()
+        task.request.id = FAKE_TASK_ID
+
+        mock_is_add_on = mock.MagicMock()
+        mock_is_add_on.return_value = False
+        mock_check_progress.return_value = None
+        mock_generate_new_file_path.return_value = '/@ember-decorators/utils/collapse-proto.d.ts'
+        mock_download.return_value = test_response
+        mock_upload.side_effect = create_node
+
+        with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
+            result = self.view.copy_files_from_export_data_to_destination(task, 1, bulkmount_export_files,
+                                                                          self.bulk_mount_data_restore,
+                                                                          None)
+            mock_is_add_on.assert_called()
+            mock_check_progress.assert_called()
+            mock_generate_new_file_path.assert_not_called()
+            mock_download.assert_called()
+            mock_upload.assert_called()
+            nt.assert_equal(len(result), 1)
+            nt.assert_equal(len(result[0].get('node').versions.all()), 1)
             nt.assert_equal(result[0].get('file_tags'), ['hello', 'world'])
             nt.assert_equal(result[0].get('file_timestamp'), {})
             nt.assert_equal(result[0].get('project_id'), 'pmockt')

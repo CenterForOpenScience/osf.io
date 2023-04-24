@@ -9,6 +9,7 @@ from functools import partial
 from celery.states import PENDING
 from celery.contrib.abortable import AbortableAsyncResult, ABORTED
 from django.db import transaction
+from django.db.models.functions import Trunc
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from rest_framework import authentication as drf_authentication
@@ -126,30 +127,31 @@ def check_before_restore_export_data(cookies, export_id, destination_id, **kwarg
         export_data.save()
         return {'open_dialog': False, 'message': f'Failed to get destination storage information'}
 
-    destination_base_url = destination_region.waterbutler_url
-    destination_provider = INSTITUTIONAL_STORAGE_PROVIDER_NAME
-    try:
-        response = utils.get_file_data(destination_first_project_id, destination_provider, '/', cookies,
-                                       destination_base_url, get_file_info=True, **kwargs)
-        if response.status_code != status.HTTP_200_OK:
-            # Error
-            logger.error(f'Return error with response: {response.content}')
+    destination_provider = destination_region.provider_name
+    if utils.is_add_on_storage(destination_provider):
+        try:
+            destination_base_url = destination_region.waterbutler_url
+            response = utils.get_file_data(destination_first_project_id, destination_provider, '/', cookies,
+                                           destination_base_url, get_file_info=True, **kwargs)
+            if response.status_code != status.HTTP_200_OK:
+                # Error
+                logger.error(f'Return error with response: {response.content}')
+                export_data.status = pre_status
+                export_data.save()
+                return {'open_dialog': False, 'message': f'Cannot connect to destination storage'}
+
+            response_body = response.json()
+            data = response_body.get('data')
+            if len(data) != 0:
+                # Destination storage is not empty, show confirm dialog
+                export_data.status = pre_status
+                export_data.save()
+                return {'open_dialog': True}
+        except Exception as e:
+            logger.error(f'Exception: {e}')
             export_data.status = pre_status
             export_data.save()
             return {'open_dialog': False, 'message': f'Cannot connect to destination storage'}
-
-        response_body = response.json()
-        data = response_body.get('data')
-        if len(data) != 0:
-            # Destination storage is not empty, show confirm dialog
-            export_data.status = pre_status
-            export_data.save()
-            return {'open_dialog': True}
-    except Exception as e:
-        logger.error(f'Exception: {e}')
-        export_data.status = pre_status
-        export_data.save()
-        return {'open_dialog': False, 'message': f'Cannot connect to destination storage'}
 
     export_data.status = pre_status
     export_data.save()
@@ -197,10 +199,13 @@ def restore_export_data_process(task, cookies, export_id, export_data_restore_id
         current_process_step = 1
         task.update_state(state=PENDING, meta={'current_restore_step': current_process_step})
 
-        # Move all existing files/folders in destination to backup_{process_start} folder
-        for project_id in list_project_id:
-            # move_all_files_to_backup_folder(task, current_process_step, destination_first_project_id, export_data_restore, cookies, **kwargs)
-            move_all_files_to_backup_folder(task, current_process_step, project_id, export_data_restore, cookies, **kwargs)
+        destination_region = export_data_restore.destination
+        destination_provider = destination_region.provider_name
+        if utils.is_add_on_storage(destination_provider):
+            # Move all existing files/folders in destination to backup_{process_start} folder
+            for project_id in list_project_id:
+                # move_all_files_to_backup_folder(task, current_process_step, destination_first_project_id, export_data_restore, cookies, **kwargs)
+                move_all_files_to_backup_folder(task, current_process_step, project_id, export_data_restore, cookies, **kwargs)
 
         current_process_step = 2
         task.update_state(state=PENDING, meta={'current_restore_step': current_process_step})
@@ -594,6 +599,7 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
                     continue
 
                 response_id = response_body.get('data', {}).get('id')
+                response_file_version_id = response_body.get('data', {}).get('attributes', {}).get('extra', {}).get('version', version_id)
                 if response_id.startswith('osfstorage'):
                     # If id is osfstorage/[_id] then get _id
                     file_path_splits = response_id.split('/')
@@ -605,20 +611,33 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
                             node = node_set.first()
 
                             # update creator, created, modified back to the file version
-                            file_version = node.get_version(version_id, required=False)
+                            file_version = node.get_version(response_file_version_id, required=False)
 
                             if file_version is not None:
                                 contributor = version.get('contributor')
                                 user = OSFUser.objects.filter(username=contributor)
                                 file_version_created_at = version.get('created_at')
                                 file_version_modified = version.get('modified_at')
-                                if user.exists():
-                                    file_version.creator = user.first()
-                                file_version.created = file_version_created_at
-                                file_version.modified = file_version_modified
-                                file_version.save()
-                                FileVersion.objects.filter(id=file_version.id).update(created=file_version_created_at,
-                                                                                      modified=file_version_created_at)
+                                same_file_versions = node.versions.annotate(
+                                    created_trunc=Trunc('created', 'second'),
+                                    modified_trunc=Trunc('modified', 'second')
+                                ).exclude(
+                                    identifier=response_file_version_id
+                                ).filter(
+                                    created_trunc=file_version_created_at,
+                                    modified_trunc=file_version_modified
+                                )
+
+                                if same_file_versions.exists():
+                                    file_version.delete()
+                                else:
+                                    if user.exists():
+                                        file_version.creator = user.first()
+                                    file_version.created = file_version_created_at
+                                    file_version.modified = file_version_modified
+                                    file_version.save()
+                                    FileVersion.objects.filter(id=file_version.id).update(created=file_version_created_at,
+                                                                                          modified=file_version_created_at)
 
                             if file_checkout_id:
                                 node.checkout_id = file_checkout_id

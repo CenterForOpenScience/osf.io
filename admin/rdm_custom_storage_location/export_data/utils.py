@@ -921,13 +921,13 @@ def is_add_on_storage(provider):
     if not provider:
         return None
 
-    # If provider is institutional addon storages then return True
-    if provider in INSTITUTIONAL_STORAGE_ADD_ON_METHOD:
-        return True
-
     # If provider is institutional bulk-mount storages then return False
     if provider in INSTITUTIONAL_STORAGE_BULK_MOUNT_METHOD:
         return False
+
+    # If provider is institutional addon storages then return True
+    if provider in INSTITUTIONAL_STORAGE_ADD_ON_METHOD:
+        return True
 
     # Default value for unknown provider
     return None
