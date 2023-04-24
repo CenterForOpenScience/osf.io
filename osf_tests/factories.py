@@ -942,29 +942,6 @@ class ConferenceFactory(DjangoModelFactory):
         self.admins.add(*(extracted or [UserFactory()]))
 
 
-class SessionFactory(DjangoModelFactory):
-    class Meta:
-        model = models.Session
-
-    @classmethod
-    def _build(cls, target_class, *args, **kwargs):
-        user = kwargs.pop('user', None)
-        instance = target_class(*args, **kwargs)
-
-        if user:
-            instance.data['auth_user_username'] = user.username
-            instance.data['auth_user_id'] = user._primary_key
-            instance.data['auth_user_fullname'] = user.fullname
-
-        return instance
-
-    @classmethod
-    def _create(cls, target_class, *args, **kwargs):
-        instance = cls._build(target_class, *args, **kwargs)
-        instance.save()
-        return instance
-
-
 class ArchiveJobFactory(DjangoModelFactory):
     class Meta:
         model = models.ArchiveJob

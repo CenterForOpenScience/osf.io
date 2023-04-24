@@ -58,7 +58,7 @@ class TestSentry(OsfTestCase):
         user = UserFactory()
         s = SessionStore()
         s.create()
-        sessiondata['auth_user_id'] = user._id
+        s['auth_user_id'] = user._id
         s.save()
         self.context.g.current_session = s
         sentry.log_exception()

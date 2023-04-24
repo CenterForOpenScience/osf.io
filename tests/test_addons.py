@@ -4,6 +4,7 @@ import datetime
 import time
 import functools
 import logging
+from importlib import import_module
 
 import furl
 import itsdangerous
@@ -49,7 +50,9 @@ from api.base.settings.defaults import API_BASE
 from tests.json_api_test_app import JSONAPITestApp
 from website.settings import EXTERNAL_EMBER_APPS
 from waffle.testutils import override_flag
+from django.conf import settings as django_conf_settings
 
+SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
 
 class TestAddonAuth(OsfTestCase):
@@ -59,9 +62,10 @@ class TestAddonAuth(OsfTestCase):
         self.user = AuthUserFactory()
         self.auth_obj = Auth(user=self.user)
         self.node = ProjectFactory(creator=self.user)
-        self.session = Session(data={'auth_user_id': self.user._id})
-        self.session.save()
-        self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id).decode()
+        self.session = SessionStore()
+        self.session['auth_user_id'] = self.user._id
+        self.session.create()
+        self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session.session_key).decode()
         self.configure_addon()
         self.JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
 

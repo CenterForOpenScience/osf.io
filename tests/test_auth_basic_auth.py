@@ -9,13 +9,17 @@ from django.db import connection
 from django.utils import timezone
 from nose.tools import *  # noqa PEP8 asserts
 from datetime import timedelta
+from importlib import import_module
+from django.conf import settings as django_conf_settings
 
 from addons.twofactor.tests import _valid_code
 from website import settings
 
 from tests.base import OsfTestCase
-from osf_tests.factories import ProjectFactory, AuthUserFactory, SessionFactory
+from osf_tests.factories import ProjectFactory, AuthUserFactory
+from osf.models import UserSessionMap
 
+SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
 class TestAuthBasicAuthentication(OsfTestCase):
 
@@ -87,21 +91,18 @@ class TestAuthBasicAuthentication(OsfTestCase):
 
     @pytest.mark.enable_bookmark_creation
     def test_valid_cookie(self):
+        # self.context.g.current_session = None
         cookie = self.user1.get_or_create_cookie()
         self.app.set_cookie(settings.COOKIE_NAME, cookie.decode())
         res = self.app.get(self.reachable_url)
         assert_equal(res.status_code, 200)
 
     def test_expired_cookie(self):
-        self.session = SessionFactory(user=self.user1)
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                UPDATE osf_session
-                SET created = %s
-                WHERE id = %s
-            """, [(timezone.now() - timedelta(seconds=settings.OSF_SESSION_TIMEOUT)), self.session.id])
         cookie = self.user1.get_or_create_cookie()
+        session_key = UserSessionMap.objects.filter(user=self.user1)[0].session_key
+        session = SessionStore(session_key=session_key)
+        session.delete()
         self.app.set_cookie(settings.COOKIE_NAME, str(cookie))
         res = self.app.get(self.reachable_url)
         assert_equal(res.status_code, 302)
-        assert_in('login', res.location)
+        assert_equal('http://localhost/', res.location)
