@@ -1,4 +1,8 @@
+import typing
+
 import rdflib
+
+from osf.metadata import rdfutils
 
 
 class Focus:
@@ -28,3 +32,6 @@ class Focus:
 
     def __str__(self):
         return repr(self)
+
+    def reference_triples(self) -> typing.Iterable[tuple]:
+        yield (self.iri, rdfutils.RDF.type, self.rdftype)
