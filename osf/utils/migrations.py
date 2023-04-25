@@ -41,6 +41,7 @@ FORMAT_TYPE_TO_TYPE_MAP = {
     ('japan-grant-number', 'string'): 'japan-grant-number-input',
     ('jgn-program-name-ja', 'string'): 'jgn-program-name-ja-input',
     ('jgn-program-name-en', 'string'): 'jgn-program-name-en-input',
+    ('funding-stream-code', 'string'): 'funding-stream-code-input',
     ('e-rad-award-funder', 'choose'): 'e-rad-award-funder-input',
     ('e-rad-award-number', 'string'): 'e-rad-award-number-input',
     ('e-rad-award-title-ja', 'string'): 'e-rad-award-title-ja-input',

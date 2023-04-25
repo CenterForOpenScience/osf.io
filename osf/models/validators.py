@@ -406,6 +406,7 @@ class RegistrationResponsesValidator:
                                      'japan-grant-number-input',
                                      'jgn-program-name-ja-input',
                                      'jgn-program-name-en-input',
+                                     'funding-stream-code-input',
                                      'e-rad-award-number-input',
                                      'e-rad-award-title-ja-input',
                                      'e-rad-award-title-en-input',
