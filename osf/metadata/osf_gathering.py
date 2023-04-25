@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 def pls_get_magic_metadata_basket(osf_item) -> gather.Basket:
     '''for when you just want a basket of rdf metadata about a thing
 
-    @osf_item: the thing (osf model instance or 5-ish character guid string)
+    @osf_item: the thing (an instance of osf.models.base.GuidMixin or a 5-ish character osf:id string)
     '''
     focus = OsfFocus(osf_item)
     return gather.Basket(focus)
@@ -53,7 +53,7 @@ def osfmap_for_type(rdftype_iri: str):
 
 
 ##### BEGIN osfmap #####
-# TODO: replace these dictionaries with dctap tsv
+# TODO: replace these dictionaries with dctap tsv or rdf/shacl file
 
 OSF_AGENT_REFERENCE = {
     DCTERMS.identifier: None,
@@ -153,6 +153,10 @@ OSFMAP = {
     OSF.Preprint: {
         **OSF_OBJECT,
         OSF.isSupplementedBy: OSF_OBJECT_REFERENCE,
+        OSF.hasDataResource: None,
+        OSF.hasPreregisteredStudyDesign: None,
+        OSF.hasPreregisteredAnalysisPlan: None,
+        OSF.statedConflictOfInterest: None,
     },
     OSF.File: {
         DCTERMS.created: None,
@@ -333,7 +337,11 @@ def gather_moderation_dates(focus):
 
 @gather.er(DCTERMS.dateCopyrighted, DCTERMS.rightsHolder, DCTERMS.rights)
 def gather_licensing(focus):
-    license_record = getattr(focus.dbmodel, 'node_license', None)
+    license_record = (
+        focus.dbmodel.license
+        if focus.rdftype == OSF.Preprint
+        else getattr(focus.dbmodel, 'node_license', None)
+    )
     if license_record is not None:
         yield (DCTERMS.dateCopyrighted, license_record.year)
         for copyright_holder in license_record.copyright_holders:
@@ -359,6 +367,8 @@ def gather_title(focus):
 def _language_text(focus, text):
     if not text:
         return None
+    if getattr(text, 'language', None):
+        return text  # already has non-empty language tag
     return rdflib.Literal(text, lang=_get_language(focus))
 
 
@@ -499,19 +509,84 @@ def gather_parts(focus):
 
 
 @gather.er(
-    DCTERMS.hasVersion,
     OSF.isSupplementedBy,
     focustype_iris=[OSF.Preprint],
 )
-def gather_preprint_related_items(focus):
+def gather_preprint_supplement(focus):
+    supplemental_node = focus.dbmodel.node
+    if supplemental_node and supplemental_node.is_public:
+        yield (OSF.isSupplementedBy, OsfFocus(supplemental_node))
+
+
+@gather.er(
+    DCTERMS.hasVersion,
+    focustype_iris=[OSF.Preprint],
+)
+def gather_preprint_external_links(focus):
     published_article_doi = getattr(focus.dbmodel, 'article_doi', None)
     if published_article_doi:
         article_iri = DOI[published_article_doi]
         yield (DCTERMS.hasVersion, article_iri)
         yield (article_iri, DCTERMS.identifier, str(article_iri))
-    supplemental_node = focus.dbmodel.node
-    if supplemental_node and supplemental_node.is_public:
-        yield (OSF.isSupplementedBy, OsfFocus(supplemental_node))
+
+
+@gather.er(
+    OSF.hasDataResource,
+    focustype_iris=[OSF.Preprint],
+)
+def gather_preprint_data_links(focus):
+    preprint = focus.dbmodel
+    if preprint.has_data_links == 'no':
+        yield from _omitted_metadata(
+            focus=focus,
+            omitted_property_set=[OSF.hasDataResource],
+            description=preprint.why_no_data,
+        )
+    elif preprint.has_data_links == 'available':
+        for data_link in filter(None, preprint.data_links):
+            yield (OSF.hasDataResource, rdflib.URIRef(data_link))
+
+
+@gather.er(
+    OSF.hasPreregisteredStudyDesign,
+    OSF.hasPreregisteredAnalysisPlan,
+    focustype_iris=[OSF.Preprint],
+)
+def gather_preprint_prereg(focus):
+    preprint = focus.dbmodel
+    if preprint.has_prereg_links == 'no':
+        yield from _omitted_metadata(
+            focus=focus,
+            omitted_property_set=[
+                OSF.hasPreregisteredStudyDesign,
+                OSF.hasPreregisteredAnalysisPlan,
+            ],
+            description=preprint.why_no_prereg,
+        )
+    elif preprint.has_prereg_links == 'available':
+        try:
+            prereg_relations = {
+                'prereg_designs': [OSF.hasPreregisteredStudyDesign],
+                'prereg_analysis': [OSF.hasPreregisteredStudyDesign],
+                'prereg_both': [OSF.hasPreregisteredStudyDesign, OSF.hasPreregisteredAnalysisPlan],
+            }[preprint.prereg_link_info]
+        except KeyError:
+            pass
+        else:
+            for prereg_link in filter(None, preprint.prereg_links):
+                for prereg_relation in prereg_relations:
+                    yield (prereg_relation, rdflib.URIRef(prereg_link))
+
+
+@gather.er(
+    OSF.statedConflictOfInterest,
+    focustype_iris=[OSF.Preprint],
+)
+def gather_conflict_of_interest(focus):
+    if focus.dbmodel.has_coi:
+        yield (OSF.statedConflictOfInterest, _language_text(focus, focus.dbmodel.conflict_of_interest_statement))
+    else:
+        yield (OSF.statedConflictOfInterest, OSF['no-conflict-of-interest'])
 
 
 @gather.er(
@@ -703,3 +778,11 @@ def _publisher_tripleset(iri, name, url=None):
     yield (iri, FOAF.name, name)
     yield (iri, DCTERMS.identifier, str(iri))
     yield (iri, DCTERMS.identifier, url)
+
+
+def _omitted_metadata(focus, omitted_property_set, description):
+    bnode = rdflib.BNode()
+    yield (focus.iri, OSF.omits, bnode)
+    for property_iri in omitted_property_set:
+        yield (bnode, OSF.omittedMetadataProperty, property_iri)
+    yield (bnode, DCTERMS.description, _language_text(focus, description))

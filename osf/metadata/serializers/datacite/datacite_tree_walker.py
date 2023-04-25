@@ -39,6 +39,8 @@ RELATED_IDENTIFIER_TYPE_MAP = {
     OSF.hasAnalyticCodeResource: 'References',
     OSF.hasMaterialsResource: 'References',
     OSF.hasPapersResource: 'References',
+    OSF.hasPreregisteredAnalysisPlan: 'References',
+    OSF.hasPreregisteredStudyDesign: 'References',
     OSF.hasSupplementalResource: 'References',
 }
 DATE_TYPE_MAP = {
