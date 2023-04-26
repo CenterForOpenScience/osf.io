@@ -3491,7 +3491,7 @@ tbOptions = {
         clickable : '#treeGrid',
         addRemoveLinks : false,
         previewTemplate : '<div></div>',
-        parallelUploads : 5,
+        parallelUploads : 1,
         acceptDirectories : false,
         createImageThumbnails : false,
         fallback: function(){},

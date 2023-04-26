@@ -14,7 +14,7 @@ from dropbox.exceptions import ApiError
 from dropbox.sharing import MemberSelector, AccessLevel
 from dropbox.team import (GroupMembersAddError, GroupMembersRemoveError,
                           GroupSelector, UserSelectorArg, GroupAccessType,
-                          MemberAccess)
+                          MemberAccess, Feature)
 
 from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
@@ -25,6 +25,7 @@ from osf.models import BaseFileNode, OSFUser
 from osf.models.external import ExternalAccount
 # from osf.models.nodelog import NodeLog
 from osf.models.rdm_addons import RdmAddonOption
+from osf.utils.fields import ensure_str
 from addons.dropboxbusiness import settings, lock
 from admin.rdm_addons.utils import get_rdm_addon_option
 from website.util import timestamp, waterbutler
@@ -85,6 +86,26 @@ def poll_team_groups_job(management_client, job):
         interval *= 2
 
 
+def poll_share_job(fileaccess_client, job_id):
+    interval = 1
+    while True:
+        time.sleep(interval)
+        status = fileaccess_client.sharing_check_share_job_status(job_id)
+        if status.is_failed():
+            error = status.get_failed()
+            if error.is_no_permission():
+                logger.error('cannot share folder: no permission')
+            else:
+                logger.error('cannot share folder: other error')
+            raise Exception
+        elif status.is_complete():
+            metadata = status.get_complete()
+            break
+        else:
+            interval *= 2
+    return metadata
+
+
 def get_member_profile_list(management_client, group, chunk_size=1000):
     """
     :raises: dropbox.exceptions.DropboxException
@@ -123,7 +144,7 @@ def sync_members(management_token, group_id, member_email_list):
     :raises: dropbox.exceptions.DropboxException
     """
 
-    management_client = DropboxTeam(management_token)
+    management_client = DropboxTeam(management_token, timeout=120.0)
     group = group_selector(group_id)
 
     member_email_set = set(member_email_list)
@@ -192,6 +213,19 @@ def get_or_create_admin_group(f_token, m_token, team_info=None):
     raise Exception('Unexpected condition')
 
 
+def is_has_team_space(fileaccess_client):
+    has_team_space = False
+    try:
+        res = fileaccess_client.team_features_get_values([Feature.has_team_shared_dropbox])
+        for item in res.values:
+            if item.is_has_team_shared_dropbox():
+                has_team_space = item.get_has_team_shared_dropbox().get_has_team_shared_dropbox()
+    except Exception:
+        logger.exception('The team values cannot be collected.')
+        raise
+    return has_team_space
+
+
 def create_team_folder(
         fileaccess_token,
         management_token,
@@ -207,9 +241,17 @@ def create_team_folder(
     :returns: (team folder id string, group id string)
     """
 
-    fclient = DropboxTeam(fileaccess_token)
-    mclient = DropboxTeam(management_token)
+    fclient = DropboxTeam(fileaccess_token, timeout=120.0)
+    mclient = DropboxTeam(management_token, timeout=120.0)
     jobs = []
+
+    has_team_space = is_has_team_space(fclient)
+    if has_team_space:
+        team_info = TeamInfo(fileaccess_token, management_token, admin=True)
+        fclient_admin = team_info.fileaccess_client_admin
+        res = fclient_admin.users_get_current_account()
+        root_namespace_id = res.root_info.root_namespace_id
+        fclient_pathroot_admin = team_info.fileaccess_client_admin_with_path_root(root_namespace_id)
 
     # create a group for the team members.
     members = [member_access(email) for email in grdm_member_email_list]
@@ -231,35 +273,50 @@ def create_team_folder(
     for job in jobs:
         poll_team_groups_job(mclient, job)
 
+    folder_id = None
     try:
-        team_folder = fclient.team_team_folder_create(team_folder_name)
+        if has_team_space:
+            res = fclient_pathroot_admin.sharing_share_folder('/{}'.format(team_folder_name))
+            if res.is_complete():
+                metadata = res.get_complete()
+            elif res.is_async_job_id():
+                job_id = res.get_async_job_id()
+                metadata = poll_share_job(fclient_pathroot_admin, job_id)
+            folder_id = metadata.shared_folder_id
+        else:
+            team_folder = fclient.team_team_folder_create(team_folder_name)
+            folder_id = team_folder.team_folder_id
     except Exception:
         delete_unused_group()
         raise
 
     def delete_unused_team_folder():
         try:
-            fclient.team_team_folder_archive(
-                team_folder.team_folder_id, force_async_off=True)
-            fclient.team_team_folder_permanently_delete(
-                team_folder.team_folder_id)
+            if has_team_space:
+                metadata = fclient_pathroot_admin.sharing_get_folder_metadata(folder_id)
+                fclient_pathroot_admin.files_delete_v2('/{}'.format(metadata.name))
+            else:
+                fclient.team_team_folder_archive(
+                    folder_id, force_async_off=True)
+                fclient.team_team_folder_permanently_delete(
+                    folder_id)
         except Exception:
             logger.exception('The team Folder({}@{}) cannot be deleted.'.format(team_folder_name, team_name))
             # ignored
 
     try:
         fclient.as_admin(admin_dbmid).sharing_add_folder_member(
-            team_folder.team_folder_id,
+            folder_id,
             [file_owner(group.get_group_id()),
              file_owner(admin_group.get_group_id())],
         )
         fclient.as_admin(admin_dbmid).sharing_update_folder_member(
-            team_folder.team_folder_id,
+            folder_id,
             MemberSelector.dropbox_id(group.get_group_id()),
             AccessLevel.editor
         )
         fclient.as_admin(admin_dbmid).sharing_update_folder_member(
-            team_folder.team_folder_id,
+            folder_id,
             MemberSelector.dropbox_id(admin_group.get_group_id()),
             AccessLevel.editor
         )
@@ -267,7 +324,7 @@ def create_team_folder(
         delete_unused_team_folder()
         delete_unused_group()
         raise
-    return (team_folder.team_folder_id, group.get_group_id())
+    return (folder_id, group.get_group_id())
 
 
 def get_two_addon_options(institution_id, allowed_check=True):
@@ -291,11 +348,20 @@ def get_two_addon_options(institution_id, allowed_check=True):
 
 
 def addon_option_to_token(addon_option):
+    # avoid "ImportError: cannot import name"
+    from addons.dropboxbusiness.models import \
+        (DropboxBusinessFileaccessProvider,
+         DropboxBusinessManagementProvider)
     if not addon_option:
         return None
     if not addon_option.external_accounts.exists():
         return None
-    return addon_option.external_accounts.first().oauth_key
+    if addon_option.provider == 'dropboxbusiness':
+        return DropboxBusinessFileaccessProvider(addon_option.external_accounts.first()).fetch_access_token()
+    elif addon_option.provider == 'dropboxbusiness_manage':
+        return DropboxBusinessManagementProvider(addon_option.external_accounts.first()).fetch_access_token()
+    else:
+        return None
 
 
 # group_id to group_name
@@ -382,8 +448,8 @@ def update_admin_dbmid(team_id):
     if f_account is None or m_account is None:
         return
 
-    f_token = f_account.oauth_key
-    m_token = m_account.oauth_key
+    f_token = DropboxBusinessFileaccessProvider(f_account).fetch_access_token()
+    m_token = DropboxBusinessManagementProvider(m_account).fetch_access_token()
     if f_token is None or m_token is None:
         return
 
@@ -629,13 +695,13 @@ class TeamInfo(object):
     def management_client(self):
         if self._management_client is None:
             self._management_client = DropboxTeam(
-                self.management_token, session=self.session)
+                self.management_token, session=self.session, timeout=120.0)
         return self._management_client
 
     def _fileaccess_client_check(self):
         if self._fileaccess_client is None:
             self._fileaccess_client = DropboxTeam(
-                self.fileaccess_token, session=self.session)
+                self.fileaccess_token, session=self.session, timeout=120.0)
 
     @property
     def fileaccess_client_team(self):
@@ -904,7 +970,7 @@ class TeamInfo(object):
                     str(len(split_values))))
             for i, value in enumerate(split_values):
                 key = self._prop_split_key(name, i)
-                field = dropbox.file_properties.PropertyField(key, value)
+                field = dropbox.file_properties.PropertyField(key, ensure_str(value))
                 add_or_update_fields.append(field)
                 DEBUG('update property: key={}'.format(key))
 
