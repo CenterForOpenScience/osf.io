@@ -18,7 +18,7 @@ def ensure_registration_reports(*args):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0225_add_pattern_and_norm_to_registration_schema_block'),
+        ('osf', '0226_alter_filelog_path'),
     ]
 
     operations = [
