@@ -15,7 +15,7 @@ from framework.auth.core import get_user
 from framework.auth.views import send_confirm_email
 
 from osf.models import OSFUser, InstitutionAffiliation
-from osf.models.institution import SharedSsoAffiliationFilterCriteriaAction
+from osf.models.institution import SsoFilterCriteriaAction
 from osf_tests.factories import InstitutionFactory, ProjectFactory, UserFactory
 
 from tests.base import capture_signals
@@ -640,7 +640,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
         INSTITUTION_SHARED_SSO_MAP.update({
             'fsu': {
                 'attribute_name': 'userRoles',
-                'criteria_action': SharedSsoAffiliationFilterCriteriaAction.CONTAINS.value,
+                'criteria_action': SsoFilterCriteriaAction.CONTAINS.value,
                 'criteria_value': 'FSU_OSF_MAGLAB',
                 'institution_id': 'invalid_institution_id',
             },
@@ -672,7 +672,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
         INSTITUTION_SHARED_SSO_MAP.update({
             'fsu': {
                 'attribute_name': 'userRoles',
-                'criteria_action': SharedSsoAffiliationFilterCriteriaAction.CONTAINS.value,
+                'criteria_action': SsoFilterCriteriaAction.CONTAINS.value,
                 'criteria_value': 'FSU_OSF_MAGLAB',
                 'institution_id': 'nationalmaglab',
             },
@@ -885,7 +885,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
         INSTITUTION_SHARED_SSO_MAP.update({
             'brown': {
                 'attribute_name': 'isMemberOf',
-                'criteria_action': SharedSsoAffiliationFilterCriteriaAction.EQUALS_TO.value,
+                'criteria_action': SsoFilterCriteriaAction.EQUALS_TO.value,
                 'criteria_value': 'thepolicylab',
                 'institution_id': 'invalid_institution_id',
             },
@@ -917,7 +917,7 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
         INSTITUTION_SHARED_SSO_MAP.update({
             'brown': {
                 'attribute_name': 'isMemberOf',
-                'criteria_action': SharedSsoAffiliationFilterCriteriaAction.EQUALS_TO.value,
+                'criteria_action': SsoFilterCriteriaAction.EQUALS_TO.value,
                 'criteria_value': 'thepolicylab',
                 'institution_id': 'thepolicylab',
             },
