@@ -15,13 +15,13 @@
 
 ## QA Notes
 
-Please make verification statements inspired by your code and what your code touches.
-- Verify
-- Verify
 
-What are the areas of risk?
-
-Any concerns/considerations/questions that development raised?
+<!-- Please make verification statements inspired by your code and what your code touches.
+     - Verify
+     - Verify
+     What are the areas of risk?
+     Any concerns/considerations/questions that development raised?
+-->
 
 ## Documentation
 
