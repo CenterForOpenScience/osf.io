@@ -110,9 +110,17 @@ def institution_secondary_type_2():
 
 
 @pytest.fixture()
-def institution_selective():
+def institution_selective_type_1():
     institution = InstitutionFactory()
     institution._id = 'uom'
+    institution.save()
+    return institution
+
+
+@pytest.fixture()
+def institution_selective_type_2():
+    institution = InstitutionFactory()
+    institution._id = 'yalelaw'
     institution.save()
     return institution
 
@@ -945,15 +953,15 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
 
 
 @pytest.mark.django_db
-class TestInstitutionAuthnSelectiveSSO:
+class TestInstitutionAuthnSelectiveSSOCriteriaType1:
 
-    def test_selective_sso_allowed_new_user(self, app, url_auth_institution, institution_selective):
+    def test_selective_sso_allowed_new_user(self, app, url_auth_institution, institution_selective_type_1):
 
         username = 'user_created@osf.edu'
         assert OSFUser.objects.filter(username=username).count() == 0
 
         payload = make_payload(
-            institution_selective,
+            institution_selective_type_1,
             username,
             selective_sso_filter='http://directory.manchester.ac.uk/epe/3rdparty/osf'
         )
@@ -966,16 +974,16 @@ class TestInstitutionAuthnSelectiveSSO:
         assert user
         assert user.fullname == 'Fake User'
         assert user.accepted_terms_of_service is None
-        assert institution_selective in user.get_affiliated_institutions()
+        assert institution_selective_type_1 in user.get_affiliated_institutions()
 
-    def test_selective_sso_allowed_existing_user_not_affiliated(self, app, url_auth_institution, institution_selective):
+    def test_selective_sso_allowed_existing_user_not_affiliated(self, app, url_auth_institution, institution_selective_type_1):
 
         username = 'user_not_affiliated@osf.edu'
         user = make_user(username, 'Foo Bar')
         user.save()
 
         payload = make_payload(
-            institution_selective,
+            institution_selective_type_1,
             username,
             selective_sso_filter='http://directory.manchester.ac.uk/epe/3rdparty/osf'
         )
@@ -986,18 +994,18 @@ class TestInstitutionAuthnSelectiveSSO:
 
         user.reload()
         assert user.fullname == 'Foo Bar'
-        assert institution_selective in user.get_affiliated_institutions()
+        assert institution_selective_type_1 in user.get_affiliated_institutions()
 
-    def test_selective_sso_allowed_existing_user_affiliated(self, app, url_auth_institution, institution_selective):
+    def test_selective_sso_allowed_existing_user_affiliated(self, app, url_auth_institution, institution_selective_type_1):
 
         username = 'user_affiliated@osf.edu'
         user = make_user(username, 'Foo Bar')
-        user.add_or_update_affiliated_institution(institution_selective)
+        user.add_or_update_affiliated_institution(institution_selective_type_1)
         user.save()
         number_of_affiliations = user.get_affiliated_institutions().count()
 
         payload = make_payload(
-            institution_selective,
+            institution_selective_type_1,
             username,
             selective_sso_filter='http://directory.manchester.ac.uk/epe/3rdparty/osf'
         )
@@ -1008,25 +1016,113 @@ class TestInstitutionAuthnSelectiveSSO:
 
         user.reload()
         assert user.fullname == 'Foo Bar'
-        assert institution_selective in user.get_affiliated_institutions()
+        assert institution_selective_type_1 in user.get_affiliated_institutions()
         assert number_of_affiliations == user.get_affiliated_institutions().count()
 
-    def test_selective_sso_denied_empty_filter(self, app, url_auth_institution, institution_selective):
+    def test_selective_sso_denied_empty_filter(self, app, url_auth_institution, institution_selective_type_1):
 
         username = 'user_created@osf.edu'
         assert OSFUser.objects.filter(username=username).count() == 0
 
-        payload = make_payload(institution_selective, username, selective_sso_filter='')
+        payload = make_payload(institution_selective_type_1, username, selective_sso_filter='')
         res = app.post(url_auth_institution, payload, expect_errors=True)
         assert res.status_code == 403
         assert {'detail': 'InstitutionSsoSelectiveLoginDenied'} in res.json['errors']
 
-    def test_selective_sso_denied_invalid_filter(self, app, url_auth_institution, institution_selective):
+    def test_selective_sso_denied_invalid_filter(self, app, url_auth_institution, institution_selective_type_1):
 
         username = 'user_created@osf.edu'
         assert OSFUser.objects.filter(username=username).count() == 0
 
-        payload = make_payload(institution_selective, username, selective_sso_filter='invalid_non_empty_filter')
+        payload = make_payload(institution_selective_type_1, username, selective_sso_filter='invalid_non_empty_filter')
+        res = app.post(url_auth_institution, payload, expect_errors=True)
+        assert res.status_code == 403
+        assert {'detail': 'InstitutionSsoSelectiveLoginDenied'} in res.json['errors']
+
+
+@pytest.mark.django_db
+class TestInstitutionAuthnSelectiveSSOCriteriaType2:
+
+    def test_selective_sso_allowed_new_user(self, app, url_auth_institution, institution_selective_type_2):
+
+        username = 'user_created@osf.edu'
+        assert OSFUser.objects.filter(username=username).count() == 0
+
+        payload = make_payload(
+            institution_selective_type_2,
+            username,
+            selective_sso_filter='Yes'
+        )
+        with capture_signals() as mock_signals:
+            res = app.post(url_auth_institution, payload)
+        assert res.status_code == 204
+        assert mock_signals.signals_sent() == {signals.user_confirmed}
+
+        user = OSFUser.objects.filter(username=username).first()
+        assert user
+        assert user.fullname == 'Fake User'
+        assert user.accepted_terms_of_service is None
+        assert institution_selective_type_2 in user.get_affiliated_institutions()
+
+    def test_selective_sso_allowed_existing_user_not_affiliated(self, app, url_auth_institution, institution_selective_type_2):
+
+        username = 'user_not_affiliated@osf.edu'
+        user = make_user(username, 'Foo Bar')
+        user.save()
+
+        payload = make_payload(
+            institution_selective_type_2,
+            username,
+            selective_sso_filter='yes'
+        )
+        with capture_signals() as mock_signals:
+            res = app.post(url_auth_institution, payload)
+        assert res.status_code == 204
+        assert not mock_signals.signals_sent()
+
+        user.reload()
+        assert user.fullname == 'Foo Bar'
+        assert institution_selective_type_1 in user.get_affiliated_institutions()
+
+    def test_selective_sso_allowed_existing_user_affiliated(self, app, url_auth_institution, institution_selective_type_2):
+
+        username = 'user_affiliated@osf.edu'
+        user = make_user(username, 'Foo Bar')
+        user.add_or_update_affiliated_institution(institution_selective_type_2)
+        user.save()
+        number_of_affiliations = user.get_affiliated_institutions().count()
+
+        payload = make_payload(
+            institution_selective_type_2,
+            username,
+            selective_sso_filter='y'
+        )
+        with capture_signals() as mock_signals:
+            res = app.post(url_auth_institution, payload)
+        assert res.status_code == 204
+        assert not mock_signals.signals_sent()
+
+        user.reload()
+        assert user.fullname == 'Foo Bar'
+        assert institution_selective_type_2 in user.get_affiliated_institutions()
+        assert number_of_affiliations == user.get_affiliated_institutions().count()
+
+    def test_selective_sso_denied_empty_filter(self, app, url_auth_institution, institution_selective_type_2):
+
+        username = 'user_created@osf.edu'
+        assert OSFUser.objects.filter(username=username).count() == 0
+
+        payload = make_payload(institution_selective_type_2, username, selective_sso_filter='')
+        res = app.post(url_auth_institution, payload, expect_errors=True)
+        assert res.status_code == 403
+        assert {'detail': 'InstitutionSsoSelectiveLoginDenied'} in res.json['errors']
+
+    def test_selective_sso_denied_invalid_filter(self, app, url_auth_institution, institution_selective_type_2):
+
+        username = 'user_created@osf.edu'
+        assert OSFUser.objects.filter(username=username).count() == 0
+
+        payload = make_payload(institution_selective_type_2, username, selective_sso_filter='invalid_non_empty_filter')
         res = app.post(url_auth_institution, payload, expect_errors=True)
         assert res.status_code == 403
         assert {'detail': 'InstitutionSsoSelectiveLoginDenied'} in res.json['errors']
