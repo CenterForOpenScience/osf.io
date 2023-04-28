@@ -1082,7 +1082,7 @@ class TestInstitutionAuthnSelectiveSSOCriteriaType2:
 
         user.reload()
         assert user.fullname == 'Foo Bar'
-        assert institution_selective_type_1 in user.get_affiliated_institutions()
+        assert institution_selective_type_2 in user.get_affiliated_institutions()
 
     def test_selective_sso_allowed_existing_user_affiliated(self, app, url_auth_institution, institution_selective_type_2):
 
