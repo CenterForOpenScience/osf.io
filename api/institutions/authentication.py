@@ -62,7 +62,7 @@ INSTITUTION_SELECTIVE_SSO_MAP = {
         'criteria_value': 'http://directory.manchester.ac.uk/epe/3rdparty/osf',
     },
     'fsu': {
-        'criteria_action': SsoFilterCriteriaAction.CONTAINS.value,
+        'criteria_action': SsoFilterCriteriaAction.IN.value,
         'criteria_value': ['Yes', 'yes', 'y'],
     },
 }
@@ -159,7 +159,7 @@ class InstitutionAuthentication(BaseAuthentication):
             # Selective SSO: login not allowed
             if criteria_action == SsoFilterCriteriaAction.EQUALS_TO.value and selective_sso_filter == criteria_value:
                 allow_sso = True
-            if criteria_action == SsoFilterCriteriaAction.CONTAINS.value and selective_sso_filter in criteria_value:
+            if criteria_action == SsoFilterCriteriaAction.IN.value and selective_sso_filter in criteria_value:
                 allow_sso = True
             if not allow_sso:
                 message = f'Institution SSO Error: user is not allowed for institution SSO due to selective SSO ' \

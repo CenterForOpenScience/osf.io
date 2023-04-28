@@ -41,6 +41,7 @@ class SsoFilterCriteriaAction(Enum):
     """
     EQUALS_TO = 'equals_to'  # Type 1: SSO releases a single-value attribute with an exact value that matches
     CONTAINS = 'contains'  # Type 2: SSO releases a multi-value attribute, of which one value matches
+    IN = 'in'  # Type 3: SSO releases a single-value attribute that have multiple valid values
 
 
 class InstitutionManager(models.Manager):
