@@ -758,6 +758,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         user.email_verifications = {}
 
         self.copy_institution_affiliation_when_merging_user(user)
+        # Institution affiliations must be removed from the merged user to avoid duplicate identity during SSO
+        user.remove_all_affiliated_institutions()
 
         for service in user.external_identity:
             for service_id in user.external_identity[service].keys():
@@ -1794,6 +1796,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             group.user_set.remove(self)
             group.save()
         return True
+
+    def remove_all_affiliated_institutions(self):
+        """Remove all institution affiliations for the current user."""
+        for institution in self.get_affiliated_institutions():
+            self.remove_affiliated_institution(institution._id)
 
     def get_activity_points(self):
         return analytics.get_total_activity_count(self._id)
