@@ -1577,6 +1577,30 @@ class TestMergingUsers:
         with pytest.raises(ValueError):
             master.merge_user(master)
 
+    def test_merging_user_moves_all_institution_affiliations(self):
+        user_1 = UserFactory()
+        institution_1 = InstitutionFactory()
+        user_1.add_or_update_affiliated_institution(institution_1, sso_identity=user_1._id, sso_mail=user_1.username)
+        user_2 = UserFactory()
+        institution_2 = InstitutionFactory()
+        institution_3 = InstitutionFactory()
+        user_2.add_or_update_affiliated_institution(institution_2, sso_identity=user_2._id, sso_mail=user_2.username)
+        user_2.add_or_update_affiliated_institution(institution_3, sso_identity=user_2._id, sso_mail=user_2.username)
+        user_1.merge_user(user_2)
+        user_1.reload()
+        assert user_1.is_affiliated_with_institution(institution_2)
+        assert user_1.is_affiliated_with_institution(institution_3)
+        user_2.reload()
+        assert not user_2.is_affiliated_with_institution(institution_2)
+        assert not user_2.is_affiliated_with_institution(institution_3)
+        from osf.models.institution_affiliation import get_user_by_institution_identity
+        from osf.exceptions import InstitutionAffiliationStateError
+        try:
+            user = get_user_by_institution_identity(institution_2, user_2._id)
+            assert user == user_1
+        except InstitutionAffiliationStateError:
+            pytest.fail('get_user_by_institution_identity() failed with InstitutionAffiliationStateError')
+
 
 class TestDisablingUsers(OsfTestCase):
     def setUp(self):
