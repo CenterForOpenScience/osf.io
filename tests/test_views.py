@@ -2671,8 +2671,10 @@ class TestClaimViews(OsfTestCase):
         orcid_user.save()
 
         ticket = fake.md5()
+        self.app.set_cookie(settings.COOKIE_NAME, orcid_user.get_or_create_cookie().decode())
         url += '?ticket={}'.format(ticket)
-        res = self.app.get(url)
+        orcid_user.auth = (orcid_user.username, None)
+        res = self.app.get(url, auth=orcid_user.auth)
         res = res.follow()
         assert res.status_code == 302
         assert self.project.is_contributor(orcid_user)

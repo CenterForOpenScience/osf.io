@@ -464,23 +464,36 @@ class TestShortUrls(OsfTestCase):
             auth=self.auth,
         ).normal_body
 
+    # In the following tests, we need to patch `framework.csrf.handlers.get_current_user_id`
+    # because in `framework.csrf.handlers.after_request`, the call to `get_current_user_id`
+    # will always return None when we make requests with basic auth. That means csrf_token
+    # for every basic auth request will be different, which should be the correct behavior.
+    # But it breaks the assertions because the server-side rendered forms in the body carries different
+    # csrf tokens.
+    # The original tests are written without the patch, and they pass because
+    # `get_current_user_id` returned a truthy value even for basic auth requests
+    # because of some hack that we did, resulting in same csrf token across different basic auth requests.
+
     def test_project_url(self):
-        assert_equal(
-            self._url_to_body(self.project.deep_url),
-            self._url_to_body(self.project.url),
-        )
+        with mock.patch('framework.csrf.handlers.get_current_user_id', return_value=self.user._id):
+            assert_equal(
+                self._url_to_body(self.project.deep_url),
+                self._url_to_body(self.project.url),
+            )
 
     def test_component_url(self):
-        assert_equal(
-            self._url_to_body(self.component.deep_url),
-            self._url_to_body(self.component.url),
-        )
+        with mock.patch('framework.csrf.handlers.get_current_user_id', return_value=self.user._id):
+            assert_equal(
+                self._url_to_body(self.component.deep_url),
+                self._url_to_body(self.component.url),
+            )
 
     def test_wiki_url(self):
-        assert_equal(
-            self._url_to_body(self.wiki.deep_url),
-            self._url_to_body(self.wiki.url),
-        )
+        with mock.patch('framework.csrf.handlers.get_current_user_id', return_value=self.user._id):
+            assert_equal(
+                self._url_to_body(self.wiki.deep_url),
+                self._url_to_body(self.wiki.url),
+            )
 
 
 @pytest.mark.enable_bookmark_creation

@@ -42,9 +42,6 @@ class TestSentry(OsfTestCase):
     @with_sentry
     @mock.patch('framework.sentry.sentry.captureException')
     def test_log_not_logged_in(self, mock_capture):
-        s = SessionStore()
-        s.create()
-        self.context.g.current_session = s
         sentry.log_exception()
         mock_capture.assert_called_with(
             extra={
