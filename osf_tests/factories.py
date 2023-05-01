@@ -196,8 +196,8 @@ class BaseNodeFactory(DjangoModelFactory):
     def _create(cls, *args, **kwargs):
         if kwargs.get('is_deleted', None):
             kwargs['deleted'] = timezone.now()
-        return super(BaseNodeFactory, cls)._create(*args, **kwargs)
-
+        with patch('framework.sessions.get_session', return_value={'auth_user_id': None}):
+            return super(BaseNodeFactory, cls)._create(*args, **kwargs)
 
 class ProjectFactory(BaseNodeFactory):
     category = 'project'

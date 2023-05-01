@@ -2665,7 +2665,6 @@ class TestClaimViews(OsfTestCase):
         orcid_user, validated_credentials, cas_resp = generate_external_user_with_resp(url)
         mock_response_from_ticket.return_value = authenticate(
             orcid_user,
-            cas_resp.attributes.get('accessToken', ''),
             redirect(url)
         )
         orcid_user.set_unusable_password()

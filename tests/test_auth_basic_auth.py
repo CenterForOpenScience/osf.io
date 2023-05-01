@@ -27,6 +27,7 @@ class TestAuthBasicAuthentication(OsfTestCase):
 
     def setUp(self):
         super(TestAuthBasicAuthentication, self).setUp()
+
         self.user1 = AuthUserFactory()
         self.user2 = AuthUserFactory()
 
@@ -91,7 +92,6 @@ class TestAuthBasicAuthentication(OsfTestCase):
 
     @pytest.mark.enable_bookmark_creation
     def test_valid_cookie(self):
-        # self.context.g.current_session = None
         cookie = self.user1.get_or_create_cookie()
         self.app.set_cookie(settings.COOKIE_NAME, cookie.decode())
         res = self.app.get(self.reachable_url)
