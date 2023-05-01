@@ -1799,12 +1799,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     def remove_all_affiliated_institutions(self):
         """Remove all institution affiliations for the current user."""
-        for affiliation in self.get_institution_affiliations():
-            affiliation.delete()
-            if self.has_perm('view_institutional_metrics', affiliation.institution):
-                group = affiliation.institution.get_group('institutional_admins')
-                group.user_set.remove(self)
-                group.save()
+        for institution in self.get_affiliated_institutions():
+            self.remove_affiliated_institution(institution._id)
 
     def get_activity_points(self):
         return analytics.get_total_activity_count(self._id)
