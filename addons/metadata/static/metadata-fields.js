@@ -35,14 +35,15 @@ function createField(erad, question, valueEntry, options, onChange) {
 }
 
 function validateField(erad, question, value, fieldSetAndValues, options) {
-  if (question.qid == 'grdm-file:available-date') {
+  const multiple = (options || {}).multiple;
+  if (!multiple && question.qid == 'grdm-file:available-date') {
     return validateAvailableDateField(erad, question, value, fieldSetAndValues);
   }
-  if (question.qid == 'grdm-file:data-man-email') {
+  if (!multiple && question.qid == 'grdm-file:data-man-email') {
     return validateContactManagerField(erad, question, value, fieldSetAndValues);
   }
-  if (!value && !((options || {}).multiple)) {
-    if (question.required) {
+  if (!value) {
+    if (question.required && !multiple) {
       throw new Error(_("This field can't be blank."))
     }
     return;
