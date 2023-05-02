@@ -1414,8 +1414,9 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert project_private.category == new_category
         assert project_private.logs.count() == original_n_logs + 1
 
+    @mock.patch('osf.models.node.status.push_status_message')
     def test_public_project_with_publicly_editable_wiki_turns_private(
-            self, app, user, project_public, url_public, make_node_payload):
+            self, mock_push_status_message, app, user, project_public, url_public, make_node_payload):
         wiki = project_public.get_addon('wiki')
         wiki.set_editing(permissions=True, auth=Auth(user=user), log=True)
         res = app.patch_json_api(
