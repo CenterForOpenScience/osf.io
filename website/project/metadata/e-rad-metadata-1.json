@@ -359,7 +359,7 @@
                   "tooltip": "臨床試験データ|clinical trial data"
               },
               {
-                  "text": "clinical trial data",
+                  "text": "compiled data",
                   "tooltip": "編集データ|compiled data"
               },
               {
@@ -369,10 +369,6 @@
               {
                   "text": "experimental data",
                   "tooltip": "実験データ|experimental data"
-              },
-              {
-                  "text": "newspaper",
-                  "tooltip": "新聞|newspaper"
               },
               {
                   "text": "genomic data",
