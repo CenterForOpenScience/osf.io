@@ -8,7 +8,6 @@ import responses
 from django.utils import timezone
 from framework.celery_tasks import handlers
 from framework.exceptions import PermissionsError
-from framework.sessions import set_session
 from api.caching import settings as cache_settings
 from api.caching.utils import storage_usage_cache
 from website.project.model import has_anonymous_link
@@ -60,7 +59,6 @@ from osf_tests.factories import (
     PrivateLinkFactory,
     NodeRelationFactory,
     InstitutionFactory,
-    SessionFactory,
     SubjectFactory,
     TagFactory,
     OSFGroupFactory,
@@ -3782,9 +3780,8 @@ class TestOnNodeUpdate:
 
     @pytest.fixture(autouse=True)
     def session(self, user, request_context):
-        s = SessionFactory(user=user)
-        set_session(s)
-        return s
+        # s = SessionFactory(user=user)
+        return None
 
     @pytest.fixture()
     def collection(self):
