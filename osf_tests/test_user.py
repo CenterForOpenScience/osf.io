@@ -2044,7 +2044,7 @@ class TestUserMerging(OsfTestCase):
         # check fields set on merged user
         assert other_user.merged_by == self.user
 
-        assert not SessionStore.exists(session_key=other_user_session.session_key)
+        assert not SessionStore().exists(session_key=other_user_session.session_key)
 
     def test_merge_unconfirmed(self):
         self._add_unconfirmed_user()
