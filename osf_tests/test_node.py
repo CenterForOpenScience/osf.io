@@ -3778,11 +3778,6 @@ class TestNodeUpdate:
 @pytest.mark.enable_enqueue_task
 class TestOnNodeUpdate:
 
-    @pytest.fixture(autouse=True)
-    def session(self, user, request_context):
-        # s = SessionFactory(user=user)
-        return None
-
     @pytest.fixture()
     def collection(self):
         collection_provider = CollectionProviderFactory()
@@ -3802,10 +3797,13 @@ class TestOnNodeUpdate:
     def node(self):
         return ProjectFactory(is_public=True)
 
-    def test_on_node_updated_called(self, node, user):
+    def test_on_node_updated_called(self, node, user, request_context):
         node.title = 'A new title'
+        # Manually set the current_session with a fake session with auth_user_id=user._id
+        # Otherwise, `task.kwargs['user_id']` would be None because there is not a session
+        # in the current request context
+        request_context.g.current_session = {'auth_user_id': user._id}
         node.save()
-
         task = handlers.get_task_from_queue('website.project.tasks.on_node_updated', predicate=lambda task: task.kwargs['node_id'] == node._id)
 
         assert task.task == 'website.project.tasks.on_node_updated'
