@@ -9,6 +9,7 @@ from rest_framework import status as http_status
 import json
 import time
 import mock
+from http.cookies import SimpleCookie
 
 import unittest
 from future.moves.urllib.parse import quote
@@ -2670,12 +2671,37 @@ class TestClaimViews(OsfTestCase):
         orcid_user.set_unusable_password()
         orcid_user.save()
 
-        ticket = fake.md5()
-        self.app.set_cookie(settings.COOKIE_NAME, orcid_user.get_or_create_cookie().decode())
-        url += '?ticket={}'.format(ticket)
-        orcid_user.auth = (orcid_user.username, None)
-        res = self.app.get(url, auth=orcid_user.auth)
-        res = res.follow()
+        # The request to OSF with CAS service ticket must not have cookie and/or auth.
+        service_ticket = fake.md5()
+        url_with_service_ticket = f'{url}?ticket={service_ticket}'
+        res = self.app.get(url_with_service_ticket)
+        # The response of this request is expected to be a 302 with `Location`.
+        # And the redirect URL must equal to the originial service URL
+        assert res.status_code == 302
+        redirect_url = res.headers['Location']
+        assert redirect_url == service_url
+        # The response of this request is expected have the `Set-Cookie` header with OSF cookie.
+        # And the cookie must belong to the ORCiD user.
+        raw_set_cookie = res.headers['Set-Cookie']
+        assert raw_set_cookie
+        simple_cookie = SimpleCookie()
+        simple_cookie.load(raw_set_cookie)
+        cookie_dict = {key: value.value for key, value in simple_cookie.items()}
+        osf_cookie = cookie_dict.get(settings.COOKIE_NAME, None)
+        assert osf_cookie is not None
+        user = OSFUser.from_cookie(osf_cookie)
+        assert user._id == orcid_user._id
+        # The ORCiD user must be different from the unregistered user created when the contributor was added
+        assert user._id != self.user._id
+
+        # Must clear the Flask g context manual and set the OSF cookie to context
+        self.context.g.current_session = None
+        self.app.set_cookie(settings.COOKIE_NAME, osf_cookie)
+        res.follow()
+        assert res.status_code == 302
+        assert self.project.is_contributor(orcid_user)
+        assert self.project.url in res.headers.get('Location')
+
         assert res.status_code == 302
         assert self.project.is_contributor(orcid_user)
         assert self.project.url in res.headers.get('Location')
