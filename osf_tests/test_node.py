@@ -3812,11 +3812,12 @@ class TestOnNodeUpdate:
         assert task.kwargs['first_save'] is False
         assert 'title' in task.kwargs['saved_fields']
 
-    def test_queueing_on_node_updated(self, node, user):
+    def test_queueing_on_node_updated(self, node, user, request_context):
         node.set_identifier_value(category='doi', value=settings.DOI_FORMAT.format(prefix=settings.DATACITE_PREFIX, guid=node._id))
         node.title = 'Something New'
         node.save()
 
+        request_context.g.current_session = {'auth_user_id': user._id}
         # make sure on_node_updated is in the queue
         assert handlers.get_task_from_queue('website.project.tasks.on_node_updated', predicate=lambda task: task.kwargs['node_id'] == node._id)
 
