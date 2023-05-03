@@ -202,8 +202,9 @@ class TestNotableDomain:
         obj.machine_state = DefaultStates.PENDING.value
         obj.description = f'I\'m spam: {spam_domain.geturl()} me too: {spam_domain.geturl()}' \
                           f' iamNOTspam.org i-am-a-ham.io  https://stillNotspam.io'
-        # creator = getattr(obj, 'creator', None) or getattr(obj.node, 'creator')
+        creator = getattr(obj, 'creator', None) or getattr(obj.node, 'creator')
         with mock.patch.object(spam_tasks.requests, 'head'):
+            request_context.g.current_session = {'auth_user_id': creator._id}
             obj.save()
 
         assert NotableDomain.objects.filter(
@@ -266,6 +267,7 @@ class TestNotableDomain:
         project.save()
         wiki_version.content = 'This has a domain: https://cos.io'
 
+        request_context.g.current_session = {'auth_user_id': project.creator._id}
         with mock.patch.object(spam_tasks.requests, 'head'):
             wiki_version.save()
 
@@ -281,6 +283,7 @@ class TestNotableDomain:
         wiki_version.save()
 
         assert DomainReference.objects.count() == 0
+        request_context.g.current_session = {'auth_user_id': project.creator._id}
         with mock.patch.object(spam_tasks.requests, 'head'):
             project.set_privacy(permissions='public')
 
