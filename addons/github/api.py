@@ -173,7 +173,8 @@ class GitHubClient(object):
                 },
             )
 
-            return self.gh3._boolean(resp, 200, 404)
+            if resp and resp.status_code == 200:
+                return True
         return False
 
 
