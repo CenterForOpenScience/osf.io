@@ -54,9 +54,8 @@ class TestSentry(OsfTestCase):
     def test_log_logged_in(self, mock_capture):
         user = UserFactory()
         s = SessionStore()
-        s.create()
         s['auth_user_id'] = user._id
-        s.save()
+        s.create()
         self.context.g.current_session = s
         sentry.log_exception()
         mock_capture.assert_called_with(

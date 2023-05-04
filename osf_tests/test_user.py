@@ -1882,7 +1882,7 @@ class TestUserMerging(OsfTestCase):
         other_user = UserFactory()
         other_user.save()
 
-        #create session for other_user
+        # create session for other_user
         other_user_session = SessionStore()
         other_user_session.create()
         UserSessionMap.objects.create(user=other_user,
