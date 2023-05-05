@@ -84,7 +84,7 @@ def _extract_domains(content):
         constructed_url = f'{protocol}{www}{domain}{path}'
 
         try:
-            response = requests.head(constructed_url)
+            response = requests.head(constructed_url, timeout=settings.DOMAIN_EXTRACTION_TIMEOUT)
         except (requests.exceptions.ConnectionError, requests.exceptions.InvalidURL):
             continue
         except requests.exceptions.RequestException:
