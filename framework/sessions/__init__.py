@@ -125,10 +125,11 @@ def create_session(response, data=None):
     updated session and the set-cookie response as a tuple.
     """
     user_session = get_session()
-    user_session.create()
     if not user_session:
         response.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
         return None, response
+    if not user_session.session_key:
+        user_session.create()
     # TODO: check if session data changed and decide whether to save the session object
     for key, value in data.items() if data else {}:
         user_session[key] = value
