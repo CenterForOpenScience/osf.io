@@ -30,8 +30,8 @@ def push_status_message(message, kind='warning', dismissible=True, trust=True, j
     :param jumbotron: Should this be in a jumbotron element rather than an alert
     """
     # TODO: Change the default to trust=False once conversion to markupsafe rendering is complete
-    current_session = get_session()
     try:
+        current_session = get_session()
         statuses = current_session.get('status', None)
     except RuntimeError as e:
         exception_message = str(e)

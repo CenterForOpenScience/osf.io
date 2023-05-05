@@ -4,6 +4,8 @@ import mock
 from nose.tools import *  # noqa:
 import unittest
 from django.utils import timezone
+from importlib import import_module
+from django.conf import settings as django_conf_settings
 
 from tests.base import ApiTestCase
 from osf_tests.factories import (
@@ -15,8 +17,10 @@ from api.base.settings.defaults import API_BASE
 
 from framework.auth.cas import CasResponse
 from website import settings
-from osf.models import ApiOAuth2PersonalToken, Session
+from osf.models import ApiOAuth2PersonalToken
 from osf.utils.permissions import ADMIN
+
+SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
 class TestWelcomeToApi(ApiTestCase):
     def setUp(self):
@@ -67,9 +71,10 @@ class TestWelcomeToApi(ApiTestCase):
         assert_equal(res.location, '/v2/')
 
     def test_cookie_has_admin(self):
-        session = Session(data={'auth_user_id': self.user._id})
-        session.save()
-        cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(session._id).decode()
+        session = SessionStore()
+        session['auth_user_id'] = self.user._id
+        session.create()
+        cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(session.session_key).decode()
         self.app.set_cookie(settings.COOKIE_NAME, str(cookie))
 
         res = self.app.get(self.url)

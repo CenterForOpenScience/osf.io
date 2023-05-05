@@ -196,8 +196,8 @@ class BaseNodeFactory(DjangoModelFactory):
     def _create(cls, *args, **kwargs):
         if kwargs.get('is_deleted', None):
             kwargs['deleted'] = timezone.now()
-        return super(BaseNodeFactory, cls)._create(*args, **kwargs)
-
+        with patch('framework.sessions.get_session', return_value={'auth_user_id': None}):
+            return super(BaseNodeFactory, cls)._create(*args, **kwargs)
 
 class ProjectFactory(BaseNodeFactory):
     category = 'project'
@@ -940,29 +940,6 @@ class ConferenceFactory(DjangoModelFactory):
     @factory.post_generation
     def admins(self, create, extracted, **kwargs):
         self.admins.add(*(extracted or [UserFactory()]))
-
-
-class SessionFactory(DjangoModelFactory):
-    class Meta:
-        model = models.Session
-
-    @classmethod
-    def _build(cls, target_class, *args, **kwargs):
-        user = kwargs.pop('user', None)
-        instance = target_class(*args, **kwargs)
-
-        if user:
-            instance.data['auth_user_username'] = user.username
-            instance.data['auth_user_id'] = user._primary_key
-            instance.data['auth_user_fullname'] = user.fullname
-
-        return instance
-
-    @classmethod
-    def _create(cls, target_class, *args, **kwargs):
-        instance = cls._build(target_class, *args, **kwargs)
-        instance.save()
-        return instance
 
 
 class ArchiveJobFactory(DjangoModelFactory):
