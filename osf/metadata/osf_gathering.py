@@ -430,16 +430,8 @@ def gather_versions(focus):
     if hasattr(focus.dbmodel, 'versions'):  # quacks like BaseFileNode
         last_fileversion = focus.dbmodel.versions.last()  # just the last version, for now
         if last_fileversion is not None:  # quacks like OsfStorageFileNode
-            from api.base.utils import absolute_reverse as apiv2_absolute_reverse
             fileversion_iri = rdflib.URIRef(
-                apiv2_absolute_reverse(
-                    'files:version-detail',
-                    kwargs={
-                        'version': 'v2',  # api version
-                        'file_id': focus.dbmodel._id,
-                        'version_id': last_fileversion.identifier,
-                    },
-                ),
+                f'{focus.iri}?revision={last_fileversion.identifier}'
             )
             yield (OSF.hasFileVersion, fileversion_iri)
             yield from _gather_fileversion(last_fileversion, fileversion_iri)
@@ -661,6 +653,7 @@ def gather_agents(focus):
     # TODO: contributor roles
     for user in getattr(focus.dbmodel, 'visible_contributors', ()):
         yield (DCTERMS.creator, OsfFocus(user))
+    # TODO: preserve order via rdflib.Seq
 
 
 @gather.er(OSF.affiliatedInstitution)

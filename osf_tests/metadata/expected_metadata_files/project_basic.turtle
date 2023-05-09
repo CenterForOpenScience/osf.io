@@ -1,0 +1,66 @@
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix osf: <https://osf.io/vocab/2022/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+
+<http://localhost:5000/w2ibb> a osf:Project ;
+    dcterms:created "2123-05-04" ;
+    dcterms:creator <http://localhost:5000/w1ibb> ;
+    dcterms:dateCopyrighted "2252" ;
+    dcterms:description "this is a project description!" ;
+    dcterms:hasVersion <http://localhost:5000/w5ibb> ;
+    dcterms:identifier "http://localhost:5000/w2ibb",
+        "https://doi.org/10.70102/FK2osf.io/w2ibb" ;
+    dcterms:modified "2123-05-04" ;
+    dcterms:publisher <http://localhost:5000> ;
+    dcterms:rights [ foaf:name "No license" ] ;
+    dcterms:rightsHolder "Me",
+        "You" ;
+    dcterms:title "this is a project title!" ;
+    owl:sameAs <https://doi.org/10.70102/FK2osf.io/w2ibb> ;
+    osf:contains <http://localhost:5000/w3ibb> ;
+    osf:supplements <http://localhost:5000/w4ibb> .
+
+<http://localhost:5000/w4ibb> a osf:Preprint ;
+    dcterms:created "2123-05-04" ;
+    dcterms:creator <http://localhost:5000/w1ibb> ;
+    dcterms:identifier "http://localhost:5000/w4ibb",
+        "https://doi.org/11.pp/FK2osf.io/w4ibb" ;
+    dcterms:publisher <http://localhost:5000/preprints/preprovi> ;
+    dcterms:title "this is a preprint title!" ;
+    owl:sameAs <https://doi.org/11.pp/FK2osf.io/w4ibb> .
+
+<http://localhost:5000/w5ibb> a osf:Registration ;
+    dcterms:created "2123-05-04" ;
+    dcterms:creator <http://localhost:5000/w1ibb> ;
+    dcterms:identifier "http://localhost:5000/w5ibb" ;
+    dcterms:publisher <http://localhost:5000/registries/regiprovi> ;
+    dcterms:title "this is a project title!" .
+
+<http://localhost:5000/w3ibb> a osf:File ;
+    dcterms:created "2123-05-04" ;
+    dcterms:identifier "http://localhost:5000/w3ibb" ;
+    dcterms:modified "2123-05-04" ;
+    osf:fileName "my-file.blarg" ;
+    osf:filePath "/my-file.blarg" ;
+    osf:isContainedBy <http://localhost:5000/w2ibb> .
+
+<http://localhost:5000/registries/regiprovi> a osf:Agent ;
+    dcterms:identifier "http://localhost:5000/registries/regiprovi" ;
+    dcterms:type foaf:Organization ;
+    foaf:name "RegiProvi the Registration Provider" .
+
+<http://localhost:5000/preprints/preprovi> a osf:Agent ;
+    dcterms:identifier "http://localhost:5000/preprints/preprovi" ;
+    dcterms:type foaf:Organization ;
+    foaf:name "PP the Preprint Provider" .
+
+<http://localhost:5000/w1ibb> a osf:Agent ;
+    dcterms:identifier "http://localhost:5000/w1ibb" ;
+    dcterms:type foaf:Person ;
+    foaf:name "Person McNamington" .
+
+<http://localhost:5000> a osf:Agent ;
+    dcterms:identifier "http://localhost:5000" ;
+    dcterms:type foaf:Organization ;
+    foaf:name "OSF" .

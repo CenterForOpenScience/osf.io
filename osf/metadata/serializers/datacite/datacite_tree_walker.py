@@ -379,7 +379,7 @@ class DataciteTreeWalker:
                 relation_pairs.add((datacite_relation, related_iri))
         related_identifiers_el = self.visit(parent_el, 'relatedIdentifiers', is_list=True)
         related_items_el = self.visit(parent_el, 'relatedItems', is_list=True)
-        for datacite_relation, related_iri in relation_pairs:
+        for datacite_relation, related_iri in sorted(relation_pairs):
             self._visit_related_identifier_and_item(
                 related_identifiers_el,
                 related_items_el,
@@ -396,11 +396,11 @@ class DataciteTreeWalker:
 
     def _visit_subjects(self, parent_el):
         subjects_el = self.visit(parent_el, 'subjects', is_list=True)
-        for subject in self.basket[DCTERMS.subject]:
+        for subject in sorted(self.basket[DCTERMS.subject]):
             self.visit(subjects_el, 'subject', text=subject, attrib={
                 'subjectScheme': BEPRESS_SUBJECT_SCHEME,
             })
-        for keyword in self.basket[OSF.keyword]:
+        for keyword in sorted(self.basket[OSF.keyword]):
             self.visit(subjects_el, 'subject', text=keyword)
 
     def _visit_resource_type(self, parent_el):
@@ -417,6 +417,7 @@ class DataciteTreeWalker:
         })
 
     def _get_resource_type_general(self, focus_iri):
+        # return just the first recognized type, preferably from dcterms:type
         type_terms = itertools.chain(
             self.basket[focus_iri:DCTERMS.type],
             self.basket[focus_iri:RDF.type],

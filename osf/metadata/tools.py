@@ -37,7 +37,7 @@ def pls_gather_metadata_file(osf_item, format_key, serializer_config=None) -> Se
     basket = pls_get_magic_metadata_basket(osfguid.referent)
     serializer = get_metadata_serializer(format_key, basket, serializer_config)
     return SerializedMetadataFile(
-        serializer.mediatype,
-        serializer.filename_for_itemid(osfguid._id),
-        serializer.serialize(),
+        mediatype=serializer.mediatype,
+        filename=serializer.filename_for_itemid(osfguid._id),
+        serialized_metadata=serializer.serialize(),
     )

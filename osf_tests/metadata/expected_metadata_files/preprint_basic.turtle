@@ -1,0 +1,48 @@
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix osf: <https://osf.io/vocab/2022/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+
+<http://localhost:5000/w4ibb> a osf:Preprint ;
+    dcterms:created "2123-05-04" ;
+    dcterms:creator <http://localhost:5000/w1ibb> ;
+    dcterms:description "this is a preprint description!" ;
+    dcterms:hasVersion <https://doi.org/11.111/something-or-other> ;
+    dcterms:identifier "http://localhost:5000/w4ibb",
+        "https://doi.org/11.pp/FK2osf.io/w4ibb" ;
+    dcterms:modified "2123-05-04" ;
+    dcterms:publisher <http://localhost:5000/preprints/preprovi> ;
+    dcterms:subject "wibbble",
+        "wibble",
+        "wobbble",
+        "wobble" ;
+    dcterms:title "this is a preprint title!" ;
+    owl:sameAs <https://doi.org/11.pp/FK2osf.io/w4ibb> ;
+    osf:isSupplementedBy <http://localhost:5000/w2ibb> ;
+    osf:statedConflictOfInterest osf:no-conflict-of-interest .
+
+<http://localhost:5000/w2ibb> a osf:Project ;
+    dcterms:created "2123-05-04" ;
+    dcterms:creator <http://localhost:5000/w1ibb> ;
+    dcterms:identifier "http://localhost:5000/w2ibb",
+        "https://doi.org/10.70102/FK2osf.io/w2ibb" ;
+    dcterms:publisher <http://localhost:5000> ;
+    dcterms:title "this is a project title!" ;
+    owl:sameAs <https://doi.org/10.70102/FK2osf.io/w2ibb> .
+
+<http://localhost:5000/preprints/preprovi> a osf:Agent ;
+    dcterms:identifier "http://localhost:5000/preprints/preprovi" ;
+    dcterms:type foaf:Organization ;
+    foaf:name "PP the Preprint Provider" .
+
+<http://localhost:5000/w1ibb> a osf:Agent ;
+    dcterms:identifier "http://localhost:5000/w1ibb" ;
+    dcterms:type foaf:Person ;
+    foaf:name "Person McNamington" .
+
+<http://localhost:5000> a osf:Agent ;
+    dcterms:identifier "http://localhost:5000" ;
+    dcterms:type foaf:Organization ;
+    foaf:name "OSF" .
+
+<https://doi.org/11.111/something-or-other> dcterms:identifier "https://doi.org/11.111/something-or-other" .

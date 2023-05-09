@@ -21,7 +21,6 @@ from osf.metadata.rdfutils import (
 from osf import models as osfdb
 from osf.utils import permissions
 from osf_tests import factories
-from website import settings as website_settings
 
 
 def _get_graph_and_focuses(triples):
@@ -362,9 +361,7 @@ class TestOsfGathering(TestCase):
         _assert_triples(osf_gathering.gather_versions(self.registrationfocus), set())
         # focus: file
         fileversion = self.file.versions.first()
-        fileversion_iri = URIRef(
-            f'{website_settings.API_DOMAIN}v2/files/{self.file._id}/versions/{fileversion.identifier}/',
-        )
+        fileversion_iri = URIRef(f'{self.filefocus.iri}?revision={fileversion.identifier}')
         _assert_triples(osf_gathering.gather_versions(self.filefocus), {
             (self.filefocus.iri, OSF.hasFileVersion, fileversion_iri),
             (fileversion_iri, RDF.type, OSF.FileVersion),
