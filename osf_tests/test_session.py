@@ -7,13 +7,15 @@ from django.utils import timezone
 
 import pytest
 
-
+from osf.management.commands.clear_expired_sessions import clear_expired_sessions
 from osf_tests.factories import AuthUserFactory
 from osf.models import UserSessionMap
 
 from tests.base import fake
 
 SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
+SESSION_ENGINE_DB = 'django.contrib.sessions.backends.db'
+SKIP_NON_DB_BACKEND_TESTS = django_conf_settings.SESSION_ENGINE != SESSION_ENGINE_DB
 
 
 @pytest.fixture()
@@ -193,8 +195,48 @@ class TestUserSessionMap:
             duplicate.save()
 
     @pytest.mark.django_db
-    def test_clear_expired_sessions_remove_expired_maps(self, auth_user_session, auth_user, auth_user_session_alt, auth_user_alt):
-        pass
+    def test_clear_expired_sessions_remove_expired_user_session_maps(self, auth_user_session, auth_user,
+                                                                     auth_user_session_alt, auth_user_alt):
+        active_map = UserSessionMap.objects.create(user=auth_user, session_key=auth_user_session.session_key)
+        active_map_alt = UserSessionMap.objects.create(user=auth_user, session_key=auth_user_session_alt.session_key)
+        tweaked_expire_date = timezone.now() - timedelta(seconds=5)
+        expired_map = UserSessionMap.objects.create(
+            user=auth_user_alt,
+            session_key=auth_user_session.session_key,
+            expire_date=tweaked_expire_date,
+        )
+        expired_map_alt = UserSessionMap.objects.create(
+            user=auth_user_alt,
+            session_key=auth_user_session_alt.session_key,
+            expire_date=tweaked_expire_date,
+        )
+        before_clear = UserSessionMap.objects.count()
+        assert before_clear == 4
+        clear_expired_sessions()
+        after_clear = UserSessionMap.objects.count()
+        assert after_clear == 2
+        user_session_maps = UserSessionMap.objects.all()
+        assert active_map in user_session_maps
+        assert active_map_alt in user_session_maps
+        assert expired_map not in user_session_maps
+        assert expired_map_alt not in user_session_maps
+
+    @pytest.mark.django_db
+    @pytest.mark.skipif(SKIP_NON_DB_BACKEND_TESTS, reason='Django Session DB Backend Required for This Test')
+    def test_clear_expired_sessions_remove_expired_sessions(self, auth_user, auth_user_alt):
+        session = SessionStore()
+        session['auth_user_id'] = auth_user.id
+        session.create()
+        assert SessionStore().exists(session_key=session.session_key)
+        from django.contrib.sessions.models import Session
+        db_object = Session.objects.get(session_key=session.session_key)
+        db_object.expire_date = timezone.now()
+        db_object.save()
+        assert SessionStore().exists(session_key=session.session_key)
+        assert Session.objects.filter(session_key=session.session_key).count() == 1
+        clear_expired_sessions()
+        assert not SessionStore().exists(session_key=session.session_key)
+        assert Session.objects.filter(session_key=session.session_key) == 0
 
 
 class TestSessions:
