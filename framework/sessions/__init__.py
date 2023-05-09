@@ -41,6 +41,7 @@ def add_key_to_url(url, scheme, key):
     parsed_redirect_url = parsed_url._replace(**replacements)
     return urlunparse(parsed_redirect_url)
 
+
 def set_current_session():
     """
     Sets `current_session` on the Flask global context
@@ -48,6 +49,7 @@ def set_current_session():
     returns the same SessionStore object within the context of the same request
     """
     g.current_session = get_session()
+
 
 def prepare_private_key():
     """
@@ -195,11 +197,7 @@ def before_request():
         if user_session.get('auth_user_id', None) != user._primary_key:
             user_session['auth_user_id'] = user._primary_key
         user_session.save()
-        UserSessionMap.objects.create(
-            user=user,
-            session_key=user_session.session_key,
-            expire_date=user_session.get_expiry_date()
-        )
+        UserSessionMap.objects.create(user=user, session_key=user_session.session_key)
         return
 
     # Request Type 3: Cookie Auth

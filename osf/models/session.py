@@ -1,4 +1,9 @@
+from datetime import timedelta
+
 from django.db import models
+from django.utils import timezone
+
+from api.base import settings
 
 from osf.models.base import BaseModel
 from osf.utils.fields import NonNaiveDateTimeField
@@ -10,3 +15,8 @@ class UserSessionMap(BaseModel):
     user = models.ForeignKey('OSFUser', on_delete=models.CASCADE)
     session_key = models.CharField(max_length=255)
     expire_date = NonNaiveDateTimeField()
+
+    def save(self, *args, **kwargs):
+        kwargs.pop('expire_date', None)
+        self.expire_date = timezone.now() + timedelta(seconds=settings.SESSION_COOKIE_AGE)
+        super(UserSessionMap, self).save(*args, **kwargs)

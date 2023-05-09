@@ -43,7 +43,7 @@ def authenticate(user, response, user_updates=None):
     if not user_session:
         return response
     from osf.models import UserSessionMap
-    UserSessionMap.objects.create(user=user, session_key=user_session.session_key, expire_date=user_session.get_expiry_date())
+    UserSessionMap.objects.create(user=user, session_key=user_session.session_key)
     print_cas_log(f'Finalizing authentication - session created: user=[{user._id}]', LogLevel.INFO)
     return response
 

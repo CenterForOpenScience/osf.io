@@ -1818,11 +1818,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             user_session['auth_user_username'] = self.username
             user_session['auth_user_fullname'] = self.fullname
             user_session.create()
-            UserSessionMap.objects.create(
-                user=self,
-                session_key=user_session.session_key,
-                expire_date=user_session.get_expiry_date()
-            )
+            UserSessionMap.objects.create(user=self, session_key=user_session.session_key)
         signer = itsdangerous.Signer(secret)
         return signer.sign(user_session.session_key)
 
