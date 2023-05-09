@@ -5,10 +5,7 @@ from nose.tools import *  # noqa
 from importlib import import_module
 
 from django.conf import settings as django_conf_settings
-from framework import sessions
-from framework.flask import request
 
-from osf.models import Session
 from addons.osfstorage.tests import factories
 from addons.osfstorage import utils
 
