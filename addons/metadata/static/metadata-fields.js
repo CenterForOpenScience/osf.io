@@ -35,11 +35,15 @@ function createField(erad, question, valueEntry, options, onChange) {
 }
 
 function validateField(erad, question, value, fieldSetAndValues, options) {
-  if (question.qid == 'grdm-file:available-date') {
+  const multiple = (options || {}).multiple;
+  if (!multiple && question.qid == 'grdm-file:available-date') {
     return validateAvailableDateField(erad, question, value, fieldSetAndValues);
   }
-  if (!value && !((options || {}).multiple)) {
-    if (question.required) {
+  if (!multiple && question.qid == 'grdm-file:data-man-email') {
+    return validateContactManagerField(erad, question, value, fieldSetAndValues);
+  }
+  if (!value) {
+    if (question.required && !multiple) {
       throw new Error(_("This field can't be blank."))
     }
     return;
@@ -113,8 +117,7 @@ function createStringField(erad, question, value, options, onChange) {
   } else if (
     question.format == 'e-rad-researcher-name-ja' ||
     question.format == 'e-rad-researcher-name-en' ||
-    question.format == 'file-institution-ja' ||
-    question.format == 'file-institution-en'
+    question.format == 'file-institution-identifier'
   ) {
     return new SingleElementField(
       createFormElement(function() {
@@ -142,6 +145,18 @@ function createStringField(erad, question, value, options, onChange) {
       createFileURLFieldElement(function() {
         return $('<input></input>');
       }, options),
+      (options && options.multiple) ? createClearFormElement(question) : null,
+      question,
+      value,
+      options,
+      onChange
+    );
+  } else if (
+    question.format == 'file-institution-ja' ||
+    question.format == 'file-institution-en'
+  ) {
+    return new SingleElementField(
+      createFileInstitutionFieldElement(options, question.format),
       (options && options.multiple) ? createClearFormElement(question) : null,
       question,
       value,
@@ -203,6 +218,27 @@ function validateAvailableDateField(erad, question, value, fieldSetAndValues) {
   const requiredDateAccessRights = ['embargoed access'];
   if (requiredDateAccessRights.includes(accessRightsPair.value) && !value) {
     throw new Error(_("This field can't be blank."));
+  }
+}
+
+function validateContactManagerField(erad, question, value, fieldSetAndValues) {
+  function getFieldValue(qid) {
+    const field = fieldSetAndValues.find(function(fieldSetAndValue) {
+      return fieldSetAndValue.fieldSet.question.qid === qid;
+    });
+    if (!field) return null;
+    return field.value;
+  }
+
+  const email = value;
+  const tel = getFieldValue('grdm-file:data-man-tel');
+  const address = getFieldValue('grdm-file:data-man-address-ja') &&
+    getFieldValue('grdm-file:data-man-address-en');
+  const org = getFieldValue('grdm-file:data-man-org-ja') &&
+    getFieldValue('grdm-file:data-man-org-en');
+
+  if (!email && !(tel && address && org)) {
+    throw new Error(_("Contacts of data manager can't be blank. Please fill mail address, or organization name, address and phone number."));
   }
 }
 
@@ -802,9 +838,103 @@ function createERadResearcherNumberFieldElement(erad, options) {
           const names = data.kenkyukikan_mei.split('|');
           const jaNames = names.slice(0, Math.floor(names.length / 2))
           const enNames = names.slice(Math.floor(names.length / 2))
-          $('.file-institution-ja').val(jaNames.join('')).change();
-          $('.file-institution-en').val(enNames.join(' ')).change();
+          $('.file-institution-ja').typeahead('val', jaNames.join('')).change();
+          $('.file-institution-en').typeahead('val', enNames.join(' ')).change();
         }
+      });
+      container.find('.twitter-typeahead').css('width', '100%');
+      if (onChange) {
+        input.change(function(event) {
+          onChange(event, options);
+        });
+      }
+      return container;
+    },
+    getValue: function(container) {
+      return container.find('input').val();
+    },
+    setValue: function(container, value) {
+      container.find('input').val(value);
+    },
+    reset: function(container) {
+      container.find('input').val(null);
+    },
+    disable: function(container, disabled) {
+      container.find('input').attr('disabled', disabled);
+    },
+  };
+}
+
+
+function createFileInstitutionFieldElement(options, format) {
+  return {
+    create: function(addToContainer, onChange) {
+      const input = $('<input></input>').addClass(format);
+      if (options && options.readonly) {
+        input.attr('readonly', true);
+      }
+      const container = $('<div></div>')
+        .addClass('erad-file-institution')
+        .append(input.addClass('form-control'));
+      addToContainer(container);
+      function getJaName(data) {
+        if (data && data.labels && data.labels.length) {
+          const ja = data.labels.filter(function(label) {
+            return label.iso639 === 'ja';
+          });
+          if (ja.length) {
+            return ja[0].label;
+          }
+        }
+        return null;
+      }
+      input.typeahead(
+        {
+          hint: false,
+          highlight: true,
+          minLength: 0
+        },
+        {
+          display: function(data) {
+            const ja = getJaName(data);
+            if (format.endsWith('ja') && ja) {
+              return ja;
+            }
+            return data.name;
+          },
+          templates: {
+            suggestion: function(data) {
+              const ja = getJaName(data);
+              return '<div style="background-color: white;"><span>' + $osf.htmlEscape(data.name) + '</span> ' +
+                '<span><small class="m-l-md text-muted">'+
+                (ja ? $osf.htmlEscape(ja) : '')
+                + '</small></span></div>';
+            }
+          },
+          source: $osf.throttle(function (q, cb) {
+            $.ajax({
+              method: 'GET',
+              url: 'https://api.ror.org/organizations',
+              data: {
+                query: q
+              },
+              cache: true,
+            }).then(function(result) {
+              cb(result && result.items || []);
+            }).catch(function(error) {
+              console.error(error);
+              cb([]);
+            });
+          }, 500, {leading: false}),
+        }
+      );
+      input.bind('typeahead:selected', function(event, data) {
+        const en = data.name;
+        const ja = getJaName(data) || en;
+        const id = data.id;
+        $('.file-institution-en').typeahead('val', en).change();
+        $('.file-institution-ja').typeahead('val', ja).change();
+        $('.file-institution-identifier').val(id).change();
       });
       container.find('.twitter-typeahead').css('width', '100%');
       if (onChange) {

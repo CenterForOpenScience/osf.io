@@ -406,6 +406,7 @@ class RegistrationResponsesValidator:
                                      'japan-grant-number-input',
                                      'jgn-program-name-ja-input',
                                      'jgn-program-name-en-input',
+                                     'funding-stream-code-input',
                                      'e-rad-award-number-input',
                                      'e-rad-award-title-ja-input',
                                      'e-rad-award-title-en-input',
@@ -416,7 +417,8 @@ class RegistrationResponsesValidator:
                                      'file-metadata-input', 'date-input',
                                      'file-capacity-input', 'file-creators-input',
                                      'file-url-input', 'file-institution-ja-input',
-                                     'file-institution-en-input'):
+                                     'file-institution-en-input',
+                                     'file-institution-id-input'):
             if self.required_fields and question.required:
                 return {
                     'type': 'string',

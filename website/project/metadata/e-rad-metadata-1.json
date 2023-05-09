@@ -42,7 +42,7 @@
             },
             {
               "text": "FDMA",
-              "tooltip": "消防庁|Fire and Disaster Management Agenc|605"
+              "tooltip": "消防庁|Fire and Disaster Management Agency|605"
             },
             {
               "text": "NICT",
@@ -90,7 +90,7 @@
             },
             {
               "text": "NILIM",
-              "tooltip": "国土技術政策総合研究所|Ministry of Land|1405"
+              "tooltip": "国土技術政策総合研究所|National Institute for Land and Infrastructure Management|1405"
             },
             {
               "text": "ENV",
@@ -103,6 +103,16 @@
           ],
           "required": true,
           "pattern": "^[a-zA-Z0-9]+$"
+        },
+        {
+          "qid": "funding-stream-code",
+          "nav": "体系的番号におけるプログラム情報コード",
+          "title": "体系的番号におけるプログラム情報コード|Funding stream code in Japan Grant Number",
+          "type": "string",
+          "format": "funding-stream-code",
+          "required": false,
+          "pattern": "^[a-zA-Z0-9]{0,5}$",
+          "space_normalization": true
         },
         {
           "qid": "program-name-ja",
@@ -248,7 +258,7 @@
           "title": "掲載日・掲載更新日|Date (Issued / Updated)",
           "type": "string",
           "format": "date",
-          "required": false,
+          "required": true,
           "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
           "help": "例: 2010-01-01|E.g., 2010-01-01"
         },
@@ -258,7 +268,8 @@
           "title": "データの説明 (日本語)|Description (Japanese)",
           "type": "string",
           "format": "textarea",
-          "required": true
+          "required": true,
+          "help": "例: 〇〇実証においてセンサより撮像したデータであり、道路の画像データ, 〇〇のシミュレーションにおいて〇〇の条件のもとで得られたデータ, 〇〇への応用が期待できる、〇〇〇〇のゲノム解析と、その効率的な化合物生産に役立てるための発現プロファイル情報"
         },
         {
           "qid": "grdm-file:data-description-en",
@@ -340,188 +351,56 @@
                 "default": true
               },
               {
-                  "text": "conference paper",
-                  "tooltip": "会議発表論文|conference paper"
+                  "text": "aggregated data",
+                  "tooltip": "集計データ|aggregated data"
               },
               {
-                  "text": "data paper",
-                  "tooltip": "データ論文|data paper"
+                  "text": "clinical trial data",
+                  "tooltip": "臨床試験データ|clinical trial data"
               },
               {
-                  "text": "departmental bulletin paper",
-                  "tooltip": "紀要論文|departmental bulletin paper"
+                  "text": "compiled data",
+                  "tooltip": "編集データ|compiled data"
               },
               {
-                  "text": "editorial",
-                  "tooltip": "エディトリアル|editorial"
+                  "text": "encoded data",
+                  "tooltip": "符号化データ|encoded data"
               },
               {
-                  "text": "journal article",
-                  "tooltip": "学術雑誌論文|journal article"
+                  "text": "experimental data",
+                  "tooltip": "実験データ|experimental data"
               },
               {
-                  "text": "newspaper",
-                  "tooltip": "新聞|newspaper"
+                  "text": "genomic data",
+                  "tooltip": "ゲノムデータ|genomic data"
               },
               {
-                  "text": "periodical",
-                  "tooltip": "逐次刊行物|periodical"
+                  "text": "geospatial data",
+                  "tooltip": "地理空間データ|geospatial data"
               },
               {
-                  "text": "review article",
-                  "tooltip": "レビュー論文|review article"
+                  "text": "laboratory notebook",
+                  "tooltip": "実験ノート|laboratory notebook"
               },
               {
-                  "text": "software paper",
-                  "tooltip": "ソフトウェア論文|software paper"
+                  "text": "measurement and test data",
+                  "tooltip": "測定・評価データ|measurement and test data"
               },
               {
-                  "text": "article",
-                  "tooltip": "記事|article"
+                  "text": "observational data",
+                  "tooltip": "観測データ|observational data"
               },
               {
-                  "text": "book",
-                  "tooltip": "図書|book"
+                  "text": "recorded data",
+                  "tooltip": "記録データ|recorded data"
               },
               {
-                  "text": "book part",
-                  "tooltip": "図書（部分）|book part"
+                  "text": "simulation data",
+                  "tooltip": "シミュレーションデータ|simulation data"
               },
               {
-                  "text": "cartographic material",
-                  "tooltip": "地図資料|cartographic material"
-              },
-              {
-                  "text": "map",
-                  "tooltip": "地図|map"
-              },
-              {
-                  "text": "conference object",
-                  "tooltip": "会議発表資料|conference object"
-              },
-              {
-                  "text": "conference proceedings",
-                  "tooltip": "会議録|conference proceedings"
-              },
-              {
-                  "text": "conference poster",
-                  "tooltip": "会議発表ポスター|conference poster"
-              },
-              {
-                  "text": "interview",
-                  "tooltip": "インタビュー|interview"
-              },
-              {
-                  "text": "image",
-                  "tooltip": "イメージ|image"
-              },
-              {
-                  "text": "still image",
-                  "tooltip": "静止画|still image"
-              },
-              {
-                  "text": "moving image",
-                  "tooltip": "動画|moving image"
-              },
-              {
-                  "text": "video",
-                  "tooltip": "録画資料|video"
-              },
-              {
-                  "text": "lecture",
-                  "tooltip": "講演|lecture"
-              },
-              {
-                  "text": "patent",
-                  "tooltip": "特許|patent"
-              },
-              {
-                  "text": "internal report",
-                  "tooltip": "内部報告書|internal report"
-              },
-              {
-                  "text": "report",
-                  "tooltip": "報告書|report"
-              },
-              {
-                  "text": "research report",
-                  "tooltip": "研究報告書|research report"
-              },
-              {
-                  "text": "technical report",
-                  "tooltip": "テクニカルレポート|technical report"
-              },
-              {
-                  "text": "policy report",
-                  "tooltip": "ポリシーレポート|policy report"
-              },
-              {
-                  "text": "report part",
-                  "tooltip": "報告書（部分）|report part"
-              },
-              {
-                  "text": "working paper",
-                  "tooltip": "ワーキングペーパー|working paper"
-              },
-              {
-                  "text": "data management plan",
-                  "tooltip": "データ管理計画|data management plan"
-              },
-              {
-                  "text": "sound",
-                  "tooltip": "音声・音楽|sound"
-              },
-              {
-                  "text": "thesis",
-                  "tooltip": "学位論文|thesis"
-              },
-              {
-                  "text": "bachelor thesis",
-                  "tooltip": "学士論文|bachelor thesis"
-              },
-              {
-                  "text": "master thesis",
-                  "tooltip": "修士論文|master thesis"
-              },
-              {
-                  "text": "doctoral thesis",
-                  "tooltip": "博士論文|doctoral thesis"
-              },
-              {
-                  "text": "interactive resource",
-                  "tooltip": "インタラクティブリソース|interactive resource"
-              },
-              {
-                  "text": "learning object",
-                  "tooltip": "教材|learning object"
-              },
-              {
-                  "text": "manuscript",
-                  "tooltip": "手稿|manuscript"
-              },
-              {
-                  "text": "musical notation",
-                  "tooltip": "楽譜|musical notation"
-              },
-              {
-                  "text": "research proposal",
-                  "tooltip": "研究計画書|research proposal"
-              },
-              {
-                  "text": "software",
-                  "tooltip": "ソフトウェア|software"
-              },
-              {
-                  "text": "technical documentation",
-                  "tooltip": "技術文書|technical documentation"
-              },
-              {
-                  "text": "workflow",
-                  "tooltip": "ワークフロー|workflow"
-              },
-              {
-                  "text": "other",
-                  "tooltip": "その他|other"
+                  "text": "survey data",
+                  "tooltip": "調査データ|survey data"
               }
           ],
           "required": true
@@ -738,7 +617,7 @@
           "title": "リポジトリ情報 (日本語)|Repository information (Japanese)",
           "type": "string",
           "format": "text",
-          "required": false
+          "required": true
         },
         {
           "qid": "grdm-file:repo-information-en",
@@ -769,8 +648,8 @@
         },
         {
           "qid": "grdm-file:hosting-inst-ja",
-          "nav": "データ管理組織 (日本語)",
-          "title": "データ管理組織 (日本語)|Hosting institution (Japanese)",
+          "nav": "データ管理機関 (日本語)",
+          "title": "データ管理機関 (日本語)|Hosting institution (Japanese)",
           "type": "string",
           "format": "file-institution-ja",
           "required": true,
@@ -783,6 +662,15 @@
           "type": "string",
           "format": "file-institution-en",
           "required": true,
+          "space_normalization": true
+        },
+        {
+          "qid": "grdm-file:hosting-inst-id",
+          "nav": "データ管理機関コード",
+          "title": "データ管理機関コード|Hosting institution Identifier",
+          "type": "string",
+          "format": "file-institution-identifier",
+          "required": false,
           "space_normalization": true
         },
         {
@@ -801,7 +689,7 @@
           "title": "データ管理者 (日本語)|Data manager (Japanese)",
           "type": "string",
           "format": "e-rad-researcher-name-ja",
-          "required": false,
+          "required": true,
           "space_normalization": true
         },
         {
@@ -810,6 +698,25 @@
           "title": "Data manager (English)",
           "type": "string",
           "format": "e-rad-researcher-name-en",
+          "required": true,
+          "space_normalization": true
+        },
+        {
+          "qid": "grdm-file:data-man-org-ja",
+          "nav": "データ管理者の所属組織名 (日本語)",
+          "title": "データ管理者の所属組織名 (日本語)|Contact organization of data manager (Japanese)",
+          "type": "string",
+          "format": "text",
+          "required": false,
+          "space_normalization": true,
+          "help": "例: 〇〇研究所〇〇部門〇〇課, 〇〇大学〇〇研究室"
+        },
+        {
+          "qid": "grdm-file:data-man-org-en",
+          "nav": "Contact organization of data manager (English)",
+          "title": "Contact organization of data manager (English)",
+          "type": "string",
+          "format": "text",
           "required": false,
           "space_normalization": true
         },
@@ -819,7 +726,7 @@
           "title": "データ管理者の所属機関の連絡先住所 (日本語)|Contact address of data manager (Japanese)",
           "type": "string",
           "format": "text",
-          "required": true,
+          "required": false,
           "space_normalization": true
         },
         {
@@ -828,7 +735,7 @@
           "title": "Contact address of data manager (English)",
           "type": "string",
           "format": "text",
-          "required": true,
+          "required": false,
           "space_normalization": true
         },
         {
@@ -837,7 +744,7 @@
           "title": "データ管理者の所属機関の連絡先電話番号|Contact phone number of data manager",
           "type": "string",
           "format": "text",
-          "required": true,
+          "required": false,
           "space_normalization": true
         },
         {
@@ -846,7 +753,7 @@
           "title": "データ管理者の所属機関の連絡先メールアドレス|Contact mail address of data manager",
           "type": "string",
           "format": "text",
-          "required": true,
+          "required": false,
           "space_normalization": true
         },
         {
