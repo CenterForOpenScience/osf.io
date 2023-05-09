@@ -144,23 +144,46 @@ class TestUserSessionMap:
         assert user_session_map.expire_date
 
     @pytest.mark.django_db
-    def test_expire_date_auto_set_on_save(self, auth_user_session_alt, auth_user_alt):
+    def test_expire_date_auto_set_on_create(self, auth_user_session, auth_user):
         baseline = timezone.now() + timedelta(seconds=django_conf_settings.SESSION_COOKIE_AGE)
         user_session_map = UserSessionMap.objects.create(
-            user=auth_user_alt,
-            session_key=auth_user_session_alt.session_key,
+            user=auth_user,
+            session_key=auth_user_session.session_key,
         )
         assert user_session_map.expire_date > baseline
 
     @pytest.mark.django_db
-    def test_expire_date_input_ignored_on_save(self, auth_user_session_alt, auth_user_alt):
+    def test_expire_date_auto_set_on_save(self, auth_user_session_alt, auth_user_alt):
+        baseline = timezone.now() + timedelta(seconds=django_conf_settings.SESSION_COOKIE_AGE)
+        user_session_map = UserSessionMap(user=auth_user_alt, session_key=auth_user_session_alt.session_key)
+        user_session_map.save()
+        user_session_map.reload()
+        assert user_session_map.expire_date > baseline
+
+    @pytest.mark.django_db
+    def test_expire_date_manually_set_on_create(self, auth_user_session, auth_user):
         manual_expire_date = timezone.now() + timedelta(seconds=django_conf_settings.SESSION_COOKIE_AGE)
         user_session_map = UserSessionMap.objects.create(
+            user=auth_user,
+            session_key=auth_user_session.session_key,
+            expire_date=manual_expire_date,
+        )
+        assert user_session_map.expire_date == manual_expire_date
+
+    @pytest.mark.django_db
+    def test_expire_date_manually_set_on_save(self, auth_user_session_alt, auth_user_alt):
+        manual_expire_date = timezone.now() + timedelta(seconds=django_conf_settings.SESSION_COOKIE_AGE)
+        user_session_map = UserSessionMap(
             user=auth_user_alt,
             session_key=auth_user_session_alt.session_key,
             expire_date=manual_expire_date,
         )
-        assert user_session_map.expire_date != manual_expire_date
+        user_session_map.save()
+        assert user_session_map.expire_date == manual_expire_date
+        updated_expire_date = timezone.now() + timedelta(seconds=django_conf_settings.SESSION_COOKIE_AGE)
+        user_session_map.expire_date = updated_expire_date
+        user_session_map.save()
+        assert user_session_map.expire_date == updated_expire_date
 
     @pytest.mark.django_db
     def test_unique_constraint(self, auth_user_session, auth_user, auth_user_session_alt, auth_user_alt):

@@ -17,6 +17,6 @@ class UserSessionMap(BaseModel):
     expire_date = NonNaiveDateTimeField()
 
     def save(self, *args, **kwargs):
-        kwargs.pop('expire_date', None)
-        self.expire_date = timezone.now() + timedelta(seconds=settings.SESSION_COOKIE_AGE)
+        if not self.expire_date and 'expire_date' not in kwargs:
+            self.expire_date = timezone.now() + timedelta(seconds=settings.SESSION_COOKIE_AGE)
         super(UserSessionMap, self).save(*args, **kwargs)
