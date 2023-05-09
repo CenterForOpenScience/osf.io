@@ -237,7 +237,13 @@ msgstr "このフィールドは必須項目です。"
 msgid "Please enter the correct value. "
 msgstr "正しい値を入力してください。 "
 
-#: addons/metadata/static/metadata-fields.js:227
+#: addons/metadata/static/metadata-fields.js:240
+msgid ""
+"Contacts of data manager can't be blank. Please fill mail address, or "
+"organization name, address and phone number."
+msgstr "データ管理者は必須項目です。メールアドレスを入力するか、所属機関名・連絡先住所・連絡先電話番号を入力してください。"
+
+#: addons/metadata/static/metadata-fields.js:260
 msgid "(Not Modified)"
 msgstr "(変更なし)"
 
