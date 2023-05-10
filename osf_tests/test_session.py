@@ -132,6 +132,29 @@ class TestDjangoSessionStore:
         user_session = SessionStore(session_key=auth_user_session_alt.session_key)
         assert user_session['customized_field'] == auth_user_alt._id
 
+    @pytest.mark.django_db
+    @pytest.mark.skipif(SKIP_NON_DB_BACKEND_TESTS, reason='Django Session DB Backend Required for This Test')
+    def test_expired_session(self, auth_user):
+        session = SessionStore()
+        session['auth_user_id'] = auth_user.id
+        session['auth_user_username'] = auth_user.username
+        session['auth_user_fullname'] = auth_user.fullname
+        session.create()
+        assert SessionStore().exists(session_key=session.session_key)
+        from django.contrib.sessions.models import Session
+        db_object = Session.objects.get(session_key=session.session_key)
+        db_object.expire_date = timezone.now()
+        db_object.save()
+        # SessionStore().exists() does not check expiration
+        assert SessionStore().exists(session_key=session.session_key)
+        # However, when using an expired session_key, SessionStore() doesn't retrieve the session data
+        dupe_session = SessionStore(session_key=session.session_key)
+        assert dupe_session
+        assert dupe_session.session_key == session.session_key
+        assert dupe_session.get('auth_user_id', None) is None
+        assert dupe_session.get('auth_user_username', None) is None
+        assert dupe_session.get('auth_user_fullname', None) is None
+
 
 class TestUserSessionMap:
 
@@ -236,7 +259,7 @@ class TestUserSessionMap:
         assert Session.objects.filter(session_key=session.session_key).count() == 1
         clear_expired_sessions()
         assert not SessionStore().exists(session_key=session.session_key)
-        assert Session.objects.filter(session_key=session.session_key) == 0
+        assert Session.objects.filter(session_key=session.session_key).count() == 0
 
 
 class TestSessions:
