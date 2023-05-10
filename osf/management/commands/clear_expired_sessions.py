@@ -22,7 +22,7 @@ def clear_expired_sessions(dry_run=False):
     logger.info(f'Preparing to clear expired Django Sessions and remove {count} expired UserSessionMap objects.')
     if not dry_run:
         logger.info('Clearing expired Django Sessions ...')
-        SessionStore().clear_expired()
+        SessionStore.clear_expired()
         logger.info('Done!')
         logger.info('Clearing expired UserSessionMap objects ...')
         old_session_maps.delete()
