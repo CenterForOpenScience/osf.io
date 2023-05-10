@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
+from importlib import import_module
+
 import itsdangerous
+from django.conf import settings as django_conf_settings
 import mock
 import pytest
 import unittest
@@ -8,7 +11,7 @@ from uuid import UUID
 
 from api.base.settings.defaults import API_BASE
 from framework.auth.cas import CasResponse
-from osf.models import OSFUser, Session, ApiOAuth2PersonalToken
+from osf.models import OSFUser, ApiOAuth2PersonalToken
 from osf_tests.factories import (
     AuthUserFactory,
     UserFactory,
@@ -20,6 +23,9 @@ from osf_tests.factories import (
 )
 from osf.utils.permissions import CREATOR_PERMISSIONS
 from website import settings
+
+
+SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
 
 @pytest.mark.django_db
@@ -348,9 +354,11 @@ class TestUsersCreate:
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_cookied_requests_can_create_and_email(
             self, mock_mail, app, user, email_unconfirmed, data, url_base):
-        session = Session(data={'auth_user_id': user._id})
-        session.save()
-        cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(session._id)
+        # NOTE: skipped tests are not tested during session refactor, only updated to fix import
+        session = SessionStore()
+        session['auth_user_id'] = user._id
+        session.create()
+        cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(session.session_key)
         app.set_cookie(settings.COOKIE_NAME, str(cookie))
 
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
