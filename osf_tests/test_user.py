@@ -893,7 +893,7 @@ class TestCookieMethods:
         session['auth_user_username'] = user.username
         session['auth_user_fullname'] = user.fullname
         session.create()
-        UserSessionMap.objects.create(user=user, session_key=session.session_key, expire_date=session.get_expiry_date())
+        UserSessionMap.objects.create(user=user, session_key=session.session_key)
 
         assert signer.unsign(user.get_or_create_cookie(super_secret_key)).decode() == session.session_key
 
@@ -1631,11 +1631,11 @@ class TestDisablingUsers(OsfTestCase):
     def test_deactivate_account_and_remove_sessions(self, mock_mail):
         session1 = SessionStore()
         session1.create()
-        UserSessionMap.objects.create(user=self.user, session_key=session1.session_key, expire_date=session1.get_expiry_date())
+        UserSessionMap.objects.create(user=self.user, session_key=session1.session_key)
 
         session2 = SessionStore()
         session2.create()
-        UserSessionMap.objects.create(user=self.user, session_key=session2.session_key, expire_date=session2.get_expiry_date())
+        UserSessionMap.objects.create(user=self.user, session_key=session2.session_key)
 
         self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST] = True
         self.user.save()
@@ -1885,9 +1885,7 @@ class TestUserMerging(OsfTestCase):
         # create session for other_user
         other_user_session = SessionStore()
         other_user_session.create()
-        UserSessionMap.objects.create(user=other_user,
-                                      session_key=other_user_session.session_key,
-                                      expire_date=other_user_session.get_expiry_date())
+        UserSessionMap.objects.create(user=other_user, session_key=other_user_session.session_key)
 
         # define values for users' fields
         today = timezone.now()
