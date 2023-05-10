@@ -183,7 +183,7 @@ def has_admin_scope(request):
     """
     cookie = request.COOKIES.get(website_settings.COOKIE_NAME)
     if cookie:
-        return bool(request.session)
+        return bool(request.session) and request.session.get('auth_user_id', None)
 
     token = request.auth
     if token is None or not isinstance(token, CasResponse):

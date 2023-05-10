@@ -1809,7 +1809,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         :returns: The signed cookie
         """
         secret = secret or website_settings.SECRET_KEY
-        user_session_map = UserSessionMap.objects.filter(user__id=self.id).order_by('-expire_date').first()
+        user_session_map = UserSessionMap.objects.filter(user__id=self.id, expire_date__gt=timezone.now()).order_by('-expire_date').first()
         if user_session_map and SessionStore().exists(session_key=user_session_map.session_key):
             user_session = SessionStore(session_key=user_session_map.session_key)
         else:

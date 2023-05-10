@@ -21,7 +21,7 @@ from framework.celery_tasks.handlers import (
 )
 from .api_globals import api_globals
 from api.base import settings as api_settings
-from api.base.authentication.drf import get_session_from_cookie
+from api.base.authentication.drf import drf_get_session_from_cookie
 
 class CeleryTaskMiddleware(MiddlewareMixin):
     """Celery Task middleware."""
@@ -151,6 +151,6 @@ class UnsignCookieSessionMiddleware(SessionMiddleware):
     def process_request(self, request):
         cookie = request.COOKIES.get(settings.SESSION_COOKIE_NAME)
         if cookie:
-            request.session = get_session_from_cookie(cookie)
+            request.session = drf_get_session_from_cookie(cookie)
         else:
             request.session = None
