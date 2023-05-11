@@ -56,8 +56,9 @@ def main(dry_run=True):
                     transaction.savepoint_commit(sid)
                 except Exception as err:
                     logger.error(
-                        'Unexpected error raised when activating embargo for '
-                        'registration {}. Continuing...'.format(parent_registration))
+                        f'Unexpected error raised when activating embargo for '
+                        f'registration {parent_registration._id}. Continuing...'
+                    )
                     logger.exception(err)
                     transaction.savepoint_rollback(sid)
 
@@ -84,8 +85,9 @@ def main(dry_run=True):
                     transaction.savepoint_commit(sid)
                 except Exception as err:
                     logger.error(
-                        'Unexpected error raised when completing embargo for '
-                        'registration {}. Continuing...'.format(parent_registration))
+                        f'Unexpected error raised when completing embargo for '
+                        f'registration {parent_registration._id}. Continuing...'
+                    )
                     logger.exception(err)
                     transaction.savepoint_rollback(sid)
 

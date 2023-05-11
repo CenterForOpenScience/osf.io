@@ -32,8 +32,8 @@ def main(dry_run=True):
                 parent_registration = retraction.registrations.get()
                 transaction.savepoint_commit(sid)
             except Exception as err:
-                logger.exception('Could not find registration associated with retraction {}'.format(retraction))
-                logger.error('Skipping...'.format(retraction))
+                logger.exception(f'Could not find registration {parent_registration._id} associated with retraction {retraction}')
+                logger.error('Skipping...')
                 transaction.savepoint_rollback(sid)
                 continue
 
@@ -48,8 +48,9 @@ def main(dry_run=True):
                     transaction.savepoint_commit(sid)
                 except Exception as err:
                     logger.error(
-                        'Unexpected error raised when retracting '
-                        'registration {}. Continuing...'.format(parent_registration))
+                        f'Unexpected error raised when retracting '
+                        f'registration {parent_registration._id}. Continuing...'
+                    )
                     logger.exception(err)
                     transaction.savepoint_rollback(sid)
 

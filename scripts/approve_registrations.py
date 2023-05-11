@@ -61,8 +61,9 @@ def main(dry_run=True):
             except Exception as err:
                 transaction.savepoint_rollback(sid)
                 logger.error(
-                    'Unexpected error raised when approving registration for '
-                    'registration {}. Continuing...'.format(pending_registration))
+                    f'Unexpected error raised when approving registration for '
+                    f'registration {pending_registration._id}. Continuing...'
+                )
                 logger.exception(err)
 
 
