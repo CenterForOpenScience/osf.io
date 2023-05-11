@@ -27,12 +27,7 @@ def main(dry_run=True):
         if should_be_retracted(retraction):
             if dry_run:
                 logger.warn('Dry run mode')
-            try:
                 parent_registration = retraction.registrations.get()
-            except Exception as err:
-                logger.exception('Could not find registration associated with retraction {}'.format(retraction))
-                logger.error('Skipping...'.format(retraction))
-                continue
 
             logger.warn(
                 'Retraction {0} approved. Retracting registration {1}'
@@ -40,13 +35,7 @@ def main(dry_run=True):
             )
             if not dry_run:
                 with transaction.atomic():
-                    try:
-                        retraction.accept()
-                    except Exception as err:
-                        logger.error(
-                            'Unexpected error raised when retracting '
-                            'registration {}. Continuing...'.format(parent_registration))
-                        logger.exception(err)
+                    retraction.accept()
 
 
 def should_be_retracted(retraction):
