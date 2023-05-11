@@ -5,13 +5,11 @@ from django.conf import settings as django_conf_settings
 from django.contrib.sessions.models import Session
 from django.db import IntegrityError
 from django.utils import timezone
-from flask import redirect
 import itsdangerous
 import pytest
 from unittest import mock
-from werkzeug.wrappers import Response
 
-from framework.sessions import set_current_session, get_session_from_cookie_flask, get_session, create_session
+from framework.sessions import set_current_session, flask_get_session_from_cookie, get_session, create_session
 from framework.sessions.utils import remove_session, remove_sessions_for_user
 from osf.management.commands.clear_expired_sessions import clear_expired_sessions
 from osf_tests.factories import AuthUserFactory
@@ -311,21 +309,21 @@ class TestSessions(AppTestCase):
 
     def test_get_session_from_cookie_without_cookie(self):
         with pytest.raises(InvalidCookieOrSessionError):
-            get_session_from_cookie_flask(None)
+            flask_get_session_from_cookie(None)
         with pytest.raises(InvalidCookieOrSessionError):
-            get_session_from_cookie_flask('')
+            flask_get_session_from_cookie('')
 
     def test_get_session_from_cookie_with_invalid_cookie(self):
         with pytest.raises(InvalidCookieOrSessionError):
-            get_session_from_cookie_flask(self.cookie_invalid)
+            flask_get_session_from_cookie(self.cookie_invalid)
 
     def test_get_session_from_cookie_with_invalid_session(self):
         with pytest.raises(InvalidCookieOrSessionError):
-            get_session_from_cookie_flask(self.cookie_session_invalid)
+            flask_get_session_from_cookie(self.cookie_session_invalid)
 
     def test_get_session_from_cookie_with_session_gone(self):
         with pytest.raises(InvalidCookieOrSessionError):
-            get_session_from_cookie_flask(self.cookie_session_removed)
+            flask_get_session_from_cookie(self.cookie_session_removed)
 
     @pytest.mark.skipif(SKIP_NON_DB_BACKEND_TESTS, reason='Django Session DB Backend Required for This Test')
     def test_get_session_from_cookie_with_session_expired(self):
@@ -341,25 +339,25 @@ class TestSessions(AppTestCase):
         session_expired_db_object.save()
         cookie_session_expired = itsdangerous.Signer(osf_settings.SECRET_KEY).sign(session_expired.session_key)
         with pytest.raises(InvalidCookieOrSessionError):
-            get_session_from_cookie_flask(cookie_session_expired)
+            flask_get_session_from_cookie(cookie_session_expired)
 
     def test_get_session_from_cookie_with_authenticated_session(self):
-        session = get_session_from_cookie_flask(self.cookie)
+        session = flask_get_session_from_cookie(self.cookie)
         assert session is not None
         assert session.session_key == self.session.session_key
         assert session.get('auth_user_id', None) == self.user._primary_key
 
     def test_get_session_from_cookie_with_anonymous_session(self):
-        session = get_session_from_cookie_flask(self.cookie_session_anonymous)
+        session = flask_get_session_from_cookie(self.cookie_session_anonymous)
         assert session is not None
         assert session.session_key == self.session_anonymous.session_key
         assert session.get('auth_user_external_first_login', False)
 
-    @mock.patch('framework.sessions.get_session_from_cookie_flask')
+    @mock.patch('framework.sessions.flask_get_session_from_cookie')
     @mock.patch('flask.request.cookies.get')
-    def test_get_session_with_cookie_in_request(self, mock_get, mock_get_session_from_cookie_flask):
+    def test_get_session_with_cookie_in_request(self, mock_get, flask_mock_get_session_from_cookie):
         mock_get.return_value = self.cookie
-        mock_get_session_from_cookie_flask.return_value = self.session
+        flask_mock_get_session_from_cookie.return_value = self.session
         session = get_session()
         assert session is not None
         assert session.session_key == self.session.session_key
@@ -368,52 +366,54 @@ class TestSessions(AppTestCase):
         assert self.context.g.current_session.session_key == self.session.session_key
         assert self.context.g.current_session.get('auth_user_id', None) == self.user._primary_key
 
-    @mock.patch('framework.sessions.get_session_from_cookie_flask')
+    @mock.patch('framework.sessions.flask_get_session_from_cookie')
     @mock.patch('flask.request.cookies.get')
-    def test_get_session_without_cookie_in_request(self, mock_get, mock_get_session_from_cookie_flask):
+    def test_get_session_without_cookie_in_request(self, mock_get, flask_mock_get_session_from_cookie):
         mock_get.return_value = None
-        mock_get_session_from_cookie_flask.assert_not_called()
+        flask_mock_get_session_from_cookie.assert_not_called()
         session = get_session()
         assert session is not None
         assert session.session_key is None
         assert session.get('auth_user_id', None) is None
         assert self.context.g.current_session is not None
 
-    @mock.patch('framework.sessions.get_session_from_cookie_flask')
+    @mock.patch('framework.sessions.flask_get_session_from_cookie')
     @mock.patch('flask.request.cookies.get')
-    def test_get_session_with_cookie_in_request_but_ignored(self, mock_get, mock_get_session_from_cookie_flask):
+    def test_get_session_with_cookie_in_request_but_ignored(self, mock_get, flask_mock_get_session_from_cookie):
         mock_get.return_value = self.cookie
         session = get_session(ignore_cookie=True)
-        mock_get_session_from_cookie_flask.assert_not_called()
+        flask_mock_get_session_from_cookie.assert_not_called()
         assert session is not None
         assert session.session_key is None
         assert session.get('auth_user_id', None) is None
         assert self.context.g.current_session is not None
 
-    @mock.patch('framework.sessions.get_session_from_cookie_flask')
+    @mock.patch('framework.sessions.flask_get_session_from_cookie')
     @mock.patch('flask.request.cookies.get')
-    def test_get_session_with_valid_cookie_but_session_is_removed(self, mock_get, mock_get_session_from_cookie_flask):
+    def test_get_session_with_valid_cookie_but_session_is_removed(self, mock_get, flask_mock_get_session_from_cookie):
         mock_get.return_value = self.cookie_session_removed
-        mock_get_session_from_cookie_flask.side_effect = InvalidCookieOrSessionError()
+        flask_mock_get_session_from_cookie.side_effect = InvalidCookieOrSessionError()
         session = get_session()
         assert session is None
         assert self.context.g.current_session is None
 
-    @mock.patch('framework.sessions.get_session_from_cookie_flask')
+    @mock.patch('framework.sessions.flask_get_session_from_cookie')
     @mock.patch('flask.request.cookies.get')
-    def test_get_session_with_invalid_cookie(self, mock_get, mock_get_session_from_cookie_flask):
+    def test_get_session_with_invalid_cookie(self, mock_get, flask_mock_get_session_from_cookie):
         mock_get.return_value = self.cookie_invalid
-        mock_get_session_from_cookie_flask.side_effect = InvalidCookieOrSessionError()
+        flask_mock_get_session_from_cookie.side_effect = InvalidCookieOrSessionError()
         session = get_session()
         assert session is None
         assert self.context.g.current_session is None
 
     @mock.patch('framework.sessions.get_session')
-    @mock.patch('werkzeug.wrappers.Response.set_cookie')
-    @mock.patch('werkzeug.wrappers.Response.delete_cookie')
-    def test_create_session_with_response_when_session_is_invalid(self, mock_delete_cookie, mock_set_cookie, mock_get_session):
+    def test_create_session_with_response_when_session_is_invalid(self, mock_get_session):
         mock_get_session.return_value = None
-        response_in = redirect(self.fake_url, Response=Response)
+        response_in = mock.MagicMock()
+        mock_delete_cookie = mock.Mock()
+        response_in.attach_mock(mock_delete_cookie, 'delete_cookie')
+        mock_set_cookie = mock.Mock()
+        response_in.attach_mock(mock_set_cookie, 'set_cookie')
         session, response_out = create_session(response_in)
         mock_delete_cookie.assert_called()
         mock_set_cookie.assert_not_called()
@@ -421,23 +421,21 @@ class TestSessions(AppTestCase):
         assert response_out is not None
 
     @mock.patch('framework.sessions.get_session')
-    @mock.patch('werkzeug.wrappers.Response.set_cookie')
-    @mock.patch('werkzeug.wrappers.Response.delete_cookie')
-    def test_create_session_without_response_when_session_is_invalid(self, mock_delete_cookie, mock_set_cookie, mock_get_session):
+    def test_create_session_without_response_when_session_is_invalid(self, mock_get_session):
         mock_get_session.return_value = None
         response_in = None
         session, response_out = create_session(response_in)
-        mock_delete_cookie.assert_not_called()
-        mock_set_cookie.assert_not_called()
         assert session is None
         assert response_out is None
 
     @mock.patch('framework.sessions.get_session')
-    @mock.patch('werkzeug.wrappers.Response.set_cookie')
-    @mock.patch('werkzeug.wrappers.Response.delete_cookie')
-    def test_create_session_create_new_with_response(self, mock_delete_cookie, mock_set_cookie, mock_get_session):
+    def test_create_session_create_new_with_response(self, mock_get_session):
         mock_get_session.return_value = SessionStore()
-        response_in = redirect(self.fake_url, Response=Response)
+        response_in = mock.MagicMock()
+        mock_delete_cookie = mock.Mock()
+        response_in.attach_mock(mock_delete_cookie, 'delete_cookie')
+        mock_set_cookie = mock.Mock()
+        response_in.attach_mock(mock_set_cookie, 'set_cookie')
         data = {'auth_user_id': self.user._primary_key}
         session, response_out = create_session(response_in, data=data)
         mock_delete_cookie.assert_not_called()
@@ -447,25 +445,23 @@ class TestSessions(AppTestCase):
         assert response_out is not None
 
     @mock.patch('framework.sessions.get_session')
-    @mock.patch('werkzeug.wrappers.Response.set_cookie')
-    @mock.patch('werkzeug.wrappers.Response.delete_cookie')
-    def test_create_session_create_new_without_response(self, mock_delete_cookie, mock_set_cookie, mock_get_session):
+    def test_create_session_create_new_without_response(self, mock_get_session):
         mock_get_session.return_value = SessionStore()
         response_in = None
         data = {'auth_user_id': self.user._primary_key}
         session, response_out = create_session(response_in, data=data)
-        mock_delete_cookie.assert_not_called()
-        mock_set_cookie.assert_not_called()
         assert session is not None
         assert session.get('auth_user_id', None) == self.user._primary_key
         assert response_out is None
 
     @mock.patch('framework.sessions.get_session')
-    @mock.patch('werkzeug.wrappers.Response.set_cookie')
-    @mock.patch('werkzeug.wrappers.Response.delete_cookie')
-    def test_create_session_update_existing_with_response(self, mock_delete_cookie, mock_set_cookie, mock_get_session):
+    def test_create_session_update_existing_with_response(self, mock_get_session):
         mock_get_session.return_value = self.session
-        response_in = redirect(self.fake_url, Response=Response)
+        response_in = mock.MagicMock()
+        mock_delete_cookie = mock.Mock()
+        response_in.attach_mock(mock_delete_cookie, 'delete_cookie')
+        mock_set_cookie = mock.Mock()
+        response_in.attach_mock(mock_set_cookie, 'set_cookie')
         data = {'field_to_update': fake.text(), 'field_to_add': fake.text()}
         session, response_out = create_session(response_in, data=data)
         mock_delete_cookie.assert_not_called()
@@ -477,15 +473,11 @@ class TestSessions(AppTestCase):
         assert response_out is not None
 
     @mock.patch('framework.sessions.get_session')
-    @mock.patch('werkzeug.wrappers.Response.set_cookie')
-    @mock.patch('werkzeug.wrappers.Response.delete_cookie')
-    def test_create_session_update_existing_without_response(self, mock_delete_cookie, mock_set_cookie, mock_get_session):
+    def test_create_session_update_existing_without_response(self, mock_get_session):
         mock_get_session.return_value = self.session
         response_in = None
         data = {'field_to_update': fake.text(), 'field_to_add': fake.text()}
         session, response_out = create_session(response_in, data=data)
-        mock_delete_cookie.assert_not_called()
-        mock_set_cookie.assert_not_called()
         assert session is not None
         assert session.get('auth_user_id', None) == self.user._primary_key
         assert session.get('field_to_update', None) == data['field_to_update']
@@ -497,7 +489,7 @@ class TestSessions(AppTestCase):
         pass
 
     @pytest.mark.skip
-    def after_request(self):
+    def test_after_request(self):
         pass
 
 
@@ -515,19 +507,28 @@ class TestSessionUtils:
         remove_session(None)
         mock_flush.assert_not_called()
 
-    def test_remove_sessions_for_user(self, auth_user_session, auth_user, auth_user_session_alt):
-        UserSessionMap.objects.create(user=auth_user, session_key=auth_user_session.session_key)
+    @pytest.mark.skipif(SKIP_NON_DB_BACKEND_TESTS, reason='Django Session DB Backend Required for This Test')
+    def test_remove_sessions_for_user(self, auth_user_session, auth_user):
         tweaked_expire_date = timezone.now() - timedelta(seconds=5)
+        session_expired = SessionStore()
+        session_expired['auth_user_id'] = auth_user._primary_key
+        session_expired['auth_user_username'] = auth_user.username
+        session_expired['auth_user_fullname'] = auth_user.fullname
+        session_expired['customized_field'] = '13572468'
+        session_expired.create()
+        session_expired_db_object = Session.objects.get(session_key=session_expired.session_key)
+        session_expired_db_object.expire_date = tweaked_expire_date
+        session_expired_db_object.save()
         UserSessionMap.objects.create(
             user=auth_user,
-            session_key=auth_user_session_alt.session_key,
+            session_key=session_expired.session_key,
             expire_date=tweaked_expire_date,
         )
         assert SessionStore().exists(session_key=auth_user_session.session_key)
-        assert SessionStore().exists(session_key=auth_user_session_alt.session_key)
+        assert SessionStore().exists(session_key=session_expired.session_key)
         remove_sessions_for_user(auth_user)
         assert SessionStore().exists(session_key=auth_user_session.session_key)
-        # assert not SessionStore().exists(session_key=auth_user_session_alt.session_key)
+        assert not SessionStore().exists(session_key=session_expired.session_key)
 
     @mock.patch('osf.models.UserSessionMap.objects.filter')
     def test_remove_sessions_for_user_handles_none(self, mock_filter):
