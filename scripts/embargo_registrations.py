@@ -47,11 +47,19 @@ def main(dry_run=True):
                     embargo.save()
                     continue
 
-                with transaction.atomic():
+                sid = transaction.savepoint()
+                try:
                     # Call 'accept' trigger directly. This will terminate the embargo
                     # if the registration is unmoderated or push it into the moderation
                     # queue if it is part of a moderated registry.
                     embargo.accept()
+                    transaction.savepoint_commit(sid)
+                except Exception as err:
+                    logger.error(
+                        'Unexpected error raised when activating embargo for '
+                        'registration {}. Continuing...'.format(parent_registration))
+                    logger.exception(err)
+                    transaction.savepoint_rollback(sid)
 
     active_embargoes = Embargo.objects.filter(state=Embargo.APPROVED)
     for embargo in active_embargoes:
@@ -70,8 +78,16 @@ def main(dry_run=True):
                     embargo.save()
                     continue
 
-                with transaction.atomic():
+                sid = transaction.savepoint()
+                try:
                     parent_registration.terminate_embargo()
+                    transaction.savepoint_commit(sid)
+                except Exception as err:
+                    logger.error(
+                        'Unexpected error raised when completing embargo for '
+                        'registration {}. Continuing...'.format(parent_registration))
+                    logger.exception(err)
+                    transaction.savepoint_rollback(sid)
 
 
 def should_be_embargoed(embargo):

@@ -51,11 +51,19 @@ def main(dry_run=True):
             if pending_registration.archiving:
                 continue
 
-            with transaction.atomic():
+            sid = transaction.savepoint()
+            try:
                 # Call 'accept' trigger directly. This will terminate the embargo
                 # if the registration is unmoderated or push it into the moderation
                 # queue if it is part of a moderated registry.
                 registration_approval.accept()
+                transaction.savepoint_commit(sid)
+            except Exception as err:
+                transaction.savepoint_rollback(sid)
+                logger.error(
+                    'Unexpected error raised when approving registration for '
+                    'registration {}. Continuing...'.format(pending_registration))
+                logger.exception(err)
 
 
 @celery_app.task(name='scripts.approve_registrations')

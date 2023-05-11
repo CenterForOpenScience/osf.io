@@ -349,7 +349,8 @@ class Registration(AbstractNode):
         when `self == self.root`. Use when it's important to reflect unsaved
         state rather than database state.
         """
-        self.root.reload()
+        if self.id == self.root_id:
+            return self
         return self.root
 
     def date_withdrawn(self):
