@@ -2,16 +2,20 @@ from datetime import timedelta
 from importlib import import_module
 
 from django.conf import settings as django_conf_settings
+from django.contrib.sessions.models import Session
 from django.db import IntegrityError
 from django.utils import timezone
-
+from unittest import mock
+import itsdangerous
 import pytest
 
+from framework.sessions import set_current_session, get_session_from_cookie_flask, get_session
 from osf.management.commands.clear_expired_sessions import clear_expired_sessions
 from osf_tests.factories import AuthUserFactory
+from osf.exceptions import InvalidCookieOrSessionError
 from osf.models import UserSessionMap
-
-from tests.base import fake
+from tests.base import fake, AppTestCase
+from website import settings as osf_settings
 
 SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 SESSION_ENGINE_DB = 'django.contrib.sessions.backends.db'
@@ -59,16 +63,15 @@ def fake_session_key():
 # upgrade Django in the future, tests in the following class should pass. If not, we must revisit
 # how we understand and use SessionStore. Django's documentation is not great, we learned about
 # the true nature of SessionStore only after delving into the source code as well as trial & error.
+@pytest.mark.django_db
 class TestDjangoSessionStore:
 
-    @pytest.mark.django_db
     def test_construct_without_session_key(self):
         """Constructing a SessionStore() object neither generates a session_key nor save the session.
         """
         user_session = SessionStore()
         assert user_session.session_key is None
 
-    @pytest.mark.django_db
     def test_create_without_session_key(self, auth_user):
         """Calling ``.create()`` on a SessionStore() object both generates the session key and saves the session.
         """
@@ -80,7 +83,6 @@ class TestDjangoSessionStore:
         dupe_session = SessionStore(session_key=user_session.session_key)
         assert dupe_session['auth_user_id'] == auth_user._primary_key
 
-    @pytest.mark.django_db
     def test_construct_with_fake_session_key(self, fake_session_key):
         """Constructing a SessionStore() object with a non-existing key assigns that key to the session.
         However, it doesn't save the session.
@@ -90,7 +92,6 @@ class TestDjangoSessionStore:
         assert user_session.session_key == fake_session_key
         assert not SessionStore().exists(session_key=fake_session_key)
 
-    @pytest.mark.django_db
     def test_create_with_fake_session_key(self, auth_user, fake_session_key):
         """Calling ``.create()`` on a SessionStore() object with a non-existing key saves the session.
         However, it ignores the provided key and generates a new random one.
@@ -103,7 +104,6 @@ class TestDjangoSessionStore:
         assert user_session.session_key != fake_session_key
         assert user_session['auth_user_id'] == auth_user._primary_key
 
-    @pytest.mark.django_db
     def test_create_with_existing_session_key(self, auth_user_session):
         """Calling ``.create()`` on a SessionStore() object with an existing key creates a new session
         object. It has a different session key, has the same session data and is saved.
@@ -119,20 +119,17 @@ class TestDjangoSessionStore:
         assert SessionStore().exists(session_key=old_session_key)
         assert SessionStore().exists(session_key=user_session.session_key)
 
-    @pytest.mark.django_db
     def test_access_with_session_key(self, auth_user_session):
         assert SessionStore().exists(session_key=auth_user_session.session_key)
         user_session = SessionStore(session_key=auth_user_session.session_key)
         assert user_session.session_key == auth_user_session.session_key
 
-    @pytest.mark.django_db
     def test_update_and_save(self, auth_user_alt, auth_user_session_alt):
         auth_user_session_alt['customized_field'] = auth_user_alt._id
         auth_user_session_alt.save()
         user_session = SessionStore(session_key=auth_user_session_alt.session_key)
         assert user_session['customized_field'] == auth_user_alt._id
 
-    @pytest.mark.django_db
     @pytest.mark.skipif(SKIP_NON_DB_BACKEND_TESTS, reason='Django Session DB Backend Required for This Test')
     def test_expired_session(self, auth_user):
         session = SessionStore()
@@ -262,57 +259,191 @@ class TestUserSessionMap:
         assert Session.objects.filter(session_key=session.session_key).count() == 0
 
 
-class TestSessions:
+# In order to use AppTestCase to access `self.context.g`, we have to use unitest instead of pytest. There is an issue
+# with pytest fixtures in unit tests. Unfortunately, the solution provided in the following link doesn't work :(
+#   https://pytest.org/en/latest/how-to/unittest.html
+@pytest.mark.django_db
+class TestSessions(AppTestCase):
 
-    @pytest.mark.django_db
+    def setUp(self):
+        super(TestSessions, self).setUp()
+        self.context.g.current_session = None
+        self.user = AuthUserFactory()
+        # Authenticated Session
+        session = SessionStore()
+        session['auth_user_id'] = self.user._primary_key
+        session['auth_user_username'] = self.user.username
+        session['auth_user_fullname'] = self.user.fullname
+        session['customized_field'] = '13572468'
+        session.create()
+        self.session = session
+        self.cookie = itsdangerous.Signer(osf_settings.SECRET_KEY).sign(session.session_key)
+        # Expired Session (yet to be cleared)
+        session_expired = SessionStore()
+        session_expired['auth_user_id'] = self.user._primary_key
+        session_expired['auth_user_username'] = self.user.username
+        session_expired['auth_user_fullname'] = self.user.fullname
+        session_expired['customized_field'] = '24681357'
+        session_expired.create()
+        session_expired_db_object = Session.objects.get(session_key=session_expired.session_key)
+        session_expired_db_object.expire_date = timezone.now()
+        session_expired_db_object.save()
+        self.session_expired = session
+        self.cookie_session_expired = itsdangerous.Signer(osf_settings.SECRET_KEY).sign(session_expired.session_key)
+        # Anonymous Session (used for ORCiD SSO)
+        session_anonymous = SessionStore()
+        session_anonymous['auth_user_external_id_provider'] = 'ORCID'
+        session_anonymous['auth_user_external_id'] = fake.md5()
+        session_anonymous['auth_user_fullname'] = self.user.fullname
+        session_anonymous['auth_user_external_first_login'] = True
+        session_anonymous['customized_field'] = '12345678'
+        session_anonymous.create()
+        self.session_anonymous = session_anonymous
+        self.cookie_session_anonymous = itsdangerous.Signer(osf_settings.SECRET_KEY).sign(session_anonymous.session_key)
+        # Invalid Session
+        session_invalid = SessionStore()
+        session_invalid['customized_field'] = '87654321'
+        session_invalid.create()
+        self.session_invalid = session_invalid
+        self.cookie_session_invalid = itsdangerous.Signer(osf_settings.SECRET_KEY).sign(session_invalid.session_key)
+        # Others
+        self.cookie_session_removed = itsdangerous.Signer(osf_settings.SECRET_KEY).sign(fake.md5())
+        self.cookie_invalid = fake.md5()
+
+    def tearDown(self):
+        super(TestSessions, self).tearDown()
+
+    @mock.patch('framework.sessions.get_session')
+    def test_set_current_session(self, mock_get_session):
+        mock_get_session.return_value = self.session
+        set_current_session()
+        assert self.context.g.current_session is not None
+        assert self.context.g.current_session.get('auth_user_id', None) == self.user._primary_key
+
+    def test_get_session_from_cookie_without_cookie(self):
+        with pytest.raises(InvalidCookieOrSessionError):
+            get_session_from_cookie_flask(None)
+        with pytest.raises(InvalidCookieOrSessionError):
+            get_session_from_cookie_flask('')
+
+    def test_get_session_from_cookie_with_invalid_cookie(self):
+        with pytest.raises(InvalidCookieOrSessionError):
+            get_session_from_cookie_flask(self.cookie_invalid)
+
+    def test_get_session_from_cookie_with_invalid_session(self):
+        with pytest.raises(InvalidCookieOrSessionError):
+            get_session_from_cookie_flask(self.cookie_session_invalid)
+
+    def test_get_session_from_cookie_with_session_gone(self):
+        with pytest.raises(InvalidCookieOrSessionError):
+            get_session_from_cookie_flask(self.cookie_session_removed)
+
+    @pytest.mark.skipif(SKIP_NON_DB_BACKEND_TESTS, reason='Django Session DB Backend Required for This Test')
+    def test_get_session_from_cookie_with_session_expired(self):
+        with pytest.raises(InvalidCookieOrSessionError):
+            get_session_from_cookie_flask(self.cookie_session_expired)
+
+    def test_get_session_from_cookie_with_authenticated_session(self):
+        session = get_session_from_cookie_flask(self.cookie)
+        assert session is not None
+        assert session.session_key == self.session.session_key
+        assert session.get('auth_user_id', None) == self.user._primary_key
+
+    def test_get_session_from_cookie_with_anonymous_session(self):
+        session = get_session_from_cookie_flask(self.cookie_session_anonymous)
+        assert session is not None
+        assert session.session_key == self.session_anonymous.session_key
+        assert session.get('auth_user_external_first_login', False)
+
+    @mock.patch('framework.sessions.get_session_from_cookie_flask')
+    @mock.patch('flask.request.cookies.get')
+    def test_get_session_with_cookie_in_request(self, mock_get, mock_get_session_from_cookie_flask):
+        mock_get.return_value = self.cookie
+        mock_get_session_from_cookie_flask.return_value = self.session
+        session = get_session()
+        assert session is not None
+        assert session.session_key == self.session.session_key
+        assert session.get('auth_user_id', None) == self.user._primary_key
+        assert self.context.g.current_session is not None
+        assert self.context.g.current_session.session_key == self.session.session_key
+        assert self.context.g.current_session.get('auth_user_id', None) == self.user._primary_key
+
+    @mock.patch('framework.sessions.get_session_from_cookie_flask')
+    @mock.patch('flask.request.cookies.get')
+    def test_get_session_without_cookie_in_request(self, mock_get, mock_get_session_from_cookie_flask):
+        mock_get.return_value = None
+        mock_get_session_from_cookie_flask.assert_not_called()
+        session = get_session()
+        assert session is not None
+        assert session.session_key is None
+        assert session.get('auth_user_id', None) is None
+        assert self.context.g.current_session is not None
+
+    @mock.patch('framework.sessions.get_session_from_cookie_flask')
+    @mock.patch('flask.request.cookies.get')
+    def test_get_session_with_cookie_in_request_but_ignored(self, mock_get, mock_get_session_from_cookie_flask):
+        mock_get.return_value = self.cookie
+        session = get_session(ignore_cookie=True)
+        mock_get_session_from_cookie_flask.assert_not_called()
+        assert session is not None
+        assert session.session_key is None
+        assert session.get('auth_user_id', None) is None
+        assert self.context.g.current_session is not None
+
+    @mock.patch('framework.sessions.get_session_from_cookie_flask')
+    @mock.patch('flask.request.cookies.get')
+    def test_get_session_with_valid_cookie_but_session_is_removed(self, mock_get, mock_get_session_from_cookie_flask):
+        mock_get.return_value = self.cookie_session_removed
+        mock_get_session_from_cookie_flask.side_effect = InvalidCookieOrSessionError()
+        session = get_session()
+        assert session is None
+        assert self.context.g.current_session is None
+
+    @mock.patch('framework.sessions.get_session_from_cookie_flask')
+    @mock.patch('flask.request.cookies.get')
+    def test_get_session_with_invalid_cookie(self, mock_get, mock_get_session_from_cookie_flask):
+        mock_get.return_value = self.cookie_invalid
+        mock_get_session_from_cookie_flask.side_effect = InvalidCookieOrSessionError()
+        session = get_session()
+        assert session is None
+        assert self.context.g.current_session is None
+
     @pytest.mark.skip
-    def test_add_key_to_url(self):
+    def test_create_session_when_session_is_invalid(self):
         pass
 
-    @pytest.mark.django_db
     @pytest.mark.skip
-    def test_prepare_private_key(self):
+    def test_create_session_create_new_with_response(self):
         pass
 
-    @pytest.mark.django_db
     @pytest.mark.skip
-    def test_set_current_session(self):
+    def test_create_session_create_new_without_response(self):
         pass
 
-    @pytest.mark.django_db
     @pytest.mark.skip
-    def test_get_session_from_cookie(self):
+    def test_create_session_update_existing_with_response(self):
         pass
 
-    @pytest.mark.django_db
     @pytest.mark.skip
-    def test_get_session(self):
+    def test_create_session_update_existing_without_response(self):
         pass
 
-    @pytest.mark.django_db
-    @pytest.mark.skip
-    def test_create_session(self):
-        pass
-
-    @pytest.mark.django_db
     @pytest.mark.skip
     def test_before_request(self):
         pass
 
-    @pytest.mark.django_db
     @pytest.mark.skip
     def after_request(self):
         pass
 
 
+@pytest.mark.django_db
 class TestSessionUtils:
 
-    @pytest.mark.django_db
     @pytest.mark.skip
     def test_remove_session(self):
         pass
 
-    @pytest.mark.django_db
     @pytest.mark.skip
     def test_remove_sessions_for_user(self):
         pass

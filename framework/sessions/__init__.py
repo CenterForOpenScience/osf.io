@@ -101,7 +101,7 @@ def get_session_from_cookie_flask(cookie):
         if not SessionStore().exists(session_key=session_key) or not is_valid_session:
             raise InvalidCookieOrSessionError
         return session
-    except itsdangerous.BadSignature:
+    except (itsdangerous.BadSignature, TypeError):
         raise InvalidCookieOrSessionError
 
 
@@ -119,6 +119,7 @@ def get_session(ignore_cookie=False):
     Case 3: Return None if ``InvalidCookieOrSessionError`` is raised during case 2.
     """
     cookie = request.cookies.get(settings.COOKIE_NAME)
+    print(cookie)
     try:
         if not g.get('current_session', None):
             g.current_session = get_session_from_cookie_flask(cookie) if (not ignore_cookie and cookie) else SessionStore()
