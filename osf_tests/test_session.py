@@ -278,18 +278,6 @@ class TestSessions(AppTestCase):
         session.create()
         self.session = session
         self.cookie = itsdangerous.Signer(osf_settings.SECRET_KEY).sign(session.session_key)
-        # Expired Session (yet to be cleared)
-        session_expired = SessionStore()
-        session_expired['auth_user_id'] = self.user._primary_key
-        session_expired['auth_user_username'] = self.user.username
-        session_expired['auth_user_fullname'] = self.user.fullname
-        session_expired['customized_field'] = '24681357'
-        session_expired.create()
-        session_expired_db_object = Session.objects.get(session_key=session_expired.session_key)
-        session_expired_db_object.expire_date = timezone.now()
-        session_expired_db_object.save()
-        self.session_expired = session
-        self.cookie_session_expired = itsdangerous.Signer(osf_settings.SECRET_KEY).sign(session_expired.session_key)
         # Anonymous Session (used for ORCiD SSO)
         session_anonymous = SessionStore()
         session_anonymous['auth_user_external_id_provider'] = 'ORCID'
@@ -304,7 +292,6 @@ class TestSessions(AppTestCase):
         session_invalid = SessionStore()
         session_invalid['customized_field'] = '87654321'
         session_invalid.create()
-        self.session_invalid = session_invalid
         self.cookie_session_invalid = itsdangerous.Signer(osf_settings.SECRET_KEY).sign(session_invalid.session_key)
         # Others
         self.cookie_session_removed = itsdangerous.Signer(osf_settings.SECRET_KEY).sign(fake.md5())
@@ -340,8 +327,19 @@ class TestSessions(AppTestCase):
 
     @pytest.mark.skipif(SKIP_NON_DB_BACKEND_TESTS, reason='Django Session DB Backend Required for This Test')
     def test_get_session_from_cookie_with_session_expired(self):
+        # Expired Session (yet to be cleared)
+        session_expired = SessionStore()
+        session_expired['auth_user_id'] = self.user._primary_key
+        session_expired['auth_user_username'] = self.user.username
+        session_expired['auth_user_fullname'] = self.user.fullname
+        session_expired['customized_field'] = '24681357'
+        session_expired.create()
+        session_expired_db_object = Session.objects.get(session_key=session_expired.session_key)
+        session_expired_db_object.expire_date = timezone.now()
+        session_expired_db_object.save()
+        cookie_session_expired = itsdangerous.Signer(osf_settings.SECRET_KEY).sign(session_expired.session_key)
         with pytest.raises(InvalidCookieOrSessionError):
-            get_session_from_cookie_flask(self.cookie_session_expired)
+            get_session_from_cookie_flask(cookie_session_expired)
 
     def test_get_session_from_cookie_with_authenticated_session(self):
         session = get_session_from_cookie_flask(self.cookie)
