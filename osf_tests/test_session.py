@@ -5,11 +5,14 @@ from django.conf import settings as django_conf_settings
 from django.contrib.sessions.models import Session
 from django.db import IntegrityError
 from django.utils import timezone
-from unittest import mock
+from flask import redirect
 import itsdangerous
 import pytest
+from unittest import mock
+from werkzeug.wrappers import Response
 
-from framework.sessions import set_current_session, get_session_from_cookie_flask, get_session
+from framework.sessions import set_current_session, get_session_from_cookie_flask, get_session, create_session
+from framework.sessions.utils import remove_session, remove_sessions_for_user
 from osf.management.commands.clear_expired_sessions import clear_expired_sessions
 from osf_tests.factories import AuthUserFactory
 from osf.exceptions import InvalidCookieOrSessionError
@@ -269,12 +272,13 @@ class TestSessions(AppTestCase):
         super(TestSessions, self).setUp()
         self.context.g.current_session = None
         self.user = AuthUserFactory()
+        self.fake_url = 'http://fake.osf.io/fake'
         # Authenticated Session
         session = SessionStore()
         session['auth_user_id'] = self.user._primary_key
         session['auth_user_username'] = self.user.username
         session['auth_user_fullname'] = self.user.fullname
-        session['customized_field'] = '13572468'
+        session['field_to_update'] = fake.text()
         session.create()
         self.session = session
         self.cookie = itsdangerous.Signer(osf_settings.SECRET_KEY).sign(session.session_key)
@@ -284,13 +288,11 @@ class TestSessions(AppTestCase):
         session_anonymous['auth_user_external_id'] = fake.md5()
         session_anonymous['auth_user_fullname'] = self.user.fullname
         session_anonymous['auth_user_external_first_login'] = True
-        session_anonymous['customized_field'] = '12345678'
         session_anonymous.create()
         self.session_anonymous = session_anonymous
         self.cookie_session_anonymous = itsdangerous.Signer(osf_settings.SECRET_KEY).sign(session_anonymous.session_key)
         # Invalid Session
         session_invalid = SessionStore()
-        session_invalid['customized_field'] = '87654321'
         session_invalid.create()
         self.cookie_session_invalid = itsdangerous.Signer(osf_settings.SECRET_KEY).sign(session_invalid.session_key)
         # Others
@@ -406,25 +408,89 @@ class TestSessions(AppTestCase):
         assert session is None
         assert self.context.g.current_session is None
 
-    @pytest.mark.skip
-    def test_create_session_when_session_is_invalid(self):
-        pass
+    @mock.patch('framework.sessions.get_session')
+    @mock.patch('werkzeug.wrappers.Response.set_cookie')
+    @mock.patch('werkzeug.wrappers.Response.delete_cookie')
+    def test_create_session_with_response_when_session_is_invalid(self, mock_delete_cookie, mock_set_cookie, mock_get_session):
+        mock_get_session.return_value = None
+        response_in = redirect(self.fake_url, Response=Response)
+        session, response_out = create_session(response_in)
+        mock_delete_cookie.assert_called()
+        mock_set_cookie.assert_not_called()
+        assert session is None
+        assert response_out is not None
 
-    @pytest.mark.skip
-    def test_create_session_create_new_with_response(self):
-        pass
+    @mock.patch('framework.sessions.get_session')
+    @mock.patch('werkzeug.wrappers.Response.set_cookie')
+    @mock.patch('werkzeug.wrappers.Response.delete_cookie')
+    def test_create_session_without_response_when_session_is_invalid(self, mock_delete_cookie, mock_set_cookie, mock_get_session):
+        mock_get_session.return_value = None
+        response_in = None
+        session, response_out = create_session(response_in)
+        mock_delete_cookie.assert_not_called()
+        mock_set_cookie.assert_not_called()
+        assert session is None
+        assert response_out is None
 
-    @pytest.mark.skip
-    def test_create_session_create_new_without_response(self):
-        pass
+    @mock.patch('framework.sessions.get_session')
+    @mock.patch('werkzeug.wrappers.Response.set_cookie')
+    @mock.patch('werkzeug.wrappers.Response.delete_cookie')
+    def test_create_session_create_new_with_response(self, mock_delete_cookie, mock_set_cookie, mock_get_session):
+        mock_get_session.return_value = SessionStore()
+        response_in = redirect(self.fake_url, Response=Response)
+        data = {'auth_user_id': self.user._primary_key}
+        session, response_out = create_session(response_in, data=data)
+        mock_delete_cookie.assert_not_called()
+        mock_set_cookie.assert_called()
+        assert session is not None
+        assert session.get('auth_user_id', None) == self.user._primary_key
+        assert response_out is not None
 
-    @pytest.mark.skip
-    def test_create_session_update_existing_with_response(self):
-        pass
+    @mock.patch('framework.sessions.get_session')
+    @mock.patch('werkzeug.wrappers.Response.set_cookie')
+    @mock.patch('werkzeug.wrappers.Response.delete_cookie')
+    def test_create_session_create_new_without_response(self, mock_delete_cookie, mock_set_cookie, mock_get_session):
+        mock_get_session.return_value = SessionStore()
+        response_in = None
+        data = {'auth_user_id': self.user._primary_key}
+        session, response_out = create_session(response_in, data=data)
+        mock_delete_cookie.assert_not_called()
+        mock_set_cookie.assert_not_called()
+        assert session is not None
+        assert session.get('auth_user_id', None) == self.user._primary_key
+        assert response_out is None
 
-    @pytest.mark.skip
-    def test_create_session_update_existing_without_response(self):
-        pass
+    @mock.patch('framework.sessions.get_session')
+    @mock.patch('werkzeug.wrappers.Response.set_cookie')
+    @mock.patch('werkzeug.wrappers.Response.delete_cookie')
+    def test_create_session_update_existing_with_response(self, mock_delete_cookie, mock_set_cookie, mock_get_session):
+        mock_get_session.return_value = self.session
+        response_in = redirect(self.fake_url, Response=Response)
+        data = {'field_to_update': fake.text(), 'field_to_add': fake.text()}
+        session, response_out = create_session(response_in, data=data)
+        mock_delete_cookie.assert_not_called()
+        mock_set_cookie.assert_called()
+        assert session is not None
+        assert session.get('auth_user_id', None) == self.user._primary_key
+        assert session.get('field_to_update', None) == data['field_to_update']
+        assert session.get('field_to_add', None) == data['field_to_add']
+        assert response_out is not None
+
+    @mock.patch('framework.sessions.get_session')
+    @mock.patch('werkzeug.wrappers.Response.set_cookie')
+    @mock.patch('werkzeug.wrappers.Response.delete_cookie')
+    def test_create_session_update_existing_without_response(self, mock_delete_cookie, mock_set_cookie, mock_get_session):
+        mock_get_session.return_value = self.session
+        response_in = None
+        data = {'field_to_update': fake.text(), 'field_to_add': fake.text()}
+        session, response_out = create_session(response_in, data=data)
+        mock_delete_cookie.assert_not_called()
+        mock_set_cookie.assert_not_called()
+        assert session is not None
+        assert session.get('auth_user_id', None) == self.user._primary_key
+        assert session.get('field_to_update', None) == data['field_to_update']
+        assert session.get('field_to_add', None) == data['field_to_add']
+        assert response_out is None
 
     @pytest.mark.skip
     def test_before_request(self):
@@ -438,10 +504,32 @@ class TestSessions(AppTestCase):
 @pytest.mark.django_db
 class TestSessionUtils:
 
-    @pytest.mark.skip
-    def test_remove_session(self):
-        pass
+    def test_remove_session(self, auth_user_session):
+        assert SessionStore().exists(session_key=auth_user_session.session_key)
+        remove_session(auth_user_session)
+        assert not SessionStore().exists(session_key=auth_user_session.session_key)
 
-    @pytest.mark.skip
-    def test_remove_sessions_for_user(self):
-        pass
+    @pytest.mark.skipif(SKIP_NON_DB_BACKEND_TESTS, reason='Django Session DB Backend Required for This Test')
+    @mock.patch('django.contrib.sessions.backends.db.SessionStore.flush')
+    def test_remove_session_handles_none(self, mock_flush):
+        remove_session(None)
+        mock_flush.assert_not_called()
+
+    def test_remove_sessions_for_user(self, auth_user_session, auth_user, auth_user_session_alt):
+        UserSessionMap.objects.create(user=auth_user, session_key=auth_user_session.session_key)
+        tweaked_expire_date = timezone.now() - timedelta(seconds=5)
+        UserSessionMap.objects.create(
+            user=auth_user,
+            session_key=auth_user_session_alt.session_key,
+            expire_date=tweaked_expire_date,
+        )
+        assert SessionStore().exists(session_key=auth_user_session.session_key)
+        assert SessionStore().exists(session_key=auth_user_session_alt.session_key)
+        remove_sessions_for_user(auth_user)
+        assert SessionStore().exists(session_key=auth_user_session.session_key)
+        # assert not SessionStore().exists(session_key=auth_user_session_alt.session_key)
+
+    @mock.patch('osf.models.UserSessionMap.objects.filter')
+    def test_remove_sessions_for_user_handles_none(self, mock_filter):
+        remove_sessions_for_user(None)
+        mock_filter.assert_not_called()
