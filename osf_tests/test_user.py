@@ -40,13 +40,14 @@ from osf.models import (
     DraftRegistrationContributor,
     UserSessionMap,
 )
+from osf.models.institution_affiliation import get_user_by_institution_identity
 from addons.github.tests.factories import GitHubAccountFactory
 from addons.osfstorage.models import Region
 from addons.osfstorage.settings import DEFAULT_REGION_ID
 from framework.auth.core import Auth
 from osf.utils.names import impute_names_model
 from osf.utils import permissions
-from osf.exceptions import ValidationError, BlockedEmailError, UserStateError
+from osf.exceptions import ValidationError, BlockedEmailError, UserStateError, InstitutionAffiliationStateError
 
 from .utils import capture_signals
 from .factories import (
@@ -1584,6 +1585,36 @@ class TestMergingUsers:
         with pytest.raises(ValueError):
             master.merge_user(master)
 
+    def test_merging_user_moves_all_institution_affiliations(self):
+        user_1 = UserFactory()
+        institution_1 = InstitutionFactory()
+        user_1.add_or_update_affiliated_institution(institution_1, sso_identity=f'{user_1._id}@{institution_1._id}', sso_mail=user_1.username)
+        user_2 = UserFactory()
+        institution_2 = InstitutionFactory()
+        institution_3 = InstitutionFactory()
+        user_2.add_or_update_affiliated_institution(institution_2, sso_identity=f'{user_2._id}@{institution_2._id}', sso_mail=user_2.username)
+        user_2.add_or_update_affiliated_institution(institution_3, sso_identity=None, sso_mail=user_2.username)
+        user_1.merge_user(user_2)
+        user_1.reload()
+        # Verify that the main user has the dupe user's institution affiliations
+        assert user_1.is_affiliated_with_institution(institution_2)
+        assert user_1.is_affiliated_with_institution(institution_3)
+        user_2.reload()
+        # Verify that the dupe user no longer has any institution affiliations
+        assert not user_2.is_affiliated_with_institution(institution_2)
+        assert not user_2.is_affiliated_with_institution(institution_3)
+        # Verify that only one user is found when identity is present
+        try:
+            user_by_identity, is_identity_eligible = get_user_by_institution_identity(institution_2, f'{user_2._id}@{institution_2._id}')
+            assert user_by_identity == user_1
+            assert is_identity_eligible is True
+        except InstitutionAffiliationStateError:
+            pytest.fail('get_user_by_institution_identity() failed with InstitutionAffiliationStateError')
+        # Verify that user is not found when identity is empty
+        user_by_identity, is_identity_eligible = get_user_by_institution_identity(institution_2, None)
+        assert user_by_identity is None
+        assert is_identity_eligible is False
+
 
 class TestDisablingUsers(OsfTestCase):
     def setUp(self):
@@ -1842,6 +1873,15 @@ class TestUser(OsfTestCase):
         ProjectFactory(creator=self.user)
         projects_created_by_user = AbstractNode.objects.filter(creator=self.user)
         assert list(self.user.nodes_created.all()) == list(projects_created_by_user)
+
+    def test_remove_all_affiliated_institutions(self):
+        user = UserFactory()
+        for institution in [InstitutionFactory(), InstitutionFactory(), InstitutionFactory()]:
+            user.add_or_update_affiliated_institution(institution, sso_identity=f'{user._id}@{institution._id}', sso_mail=user.username)
+        assert user.get_affiliated_institutions().count() == 3
+        user.remove_all_affiliated_institutions()
+        user.reload()
+        assert user.get_affiliated_institutions().count() == 0
 
 
 # Copied from tests/models/test_user.py

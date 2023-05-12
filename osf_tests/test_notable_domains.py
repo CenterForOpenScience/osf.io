@@ -113,7 +113,7 @@ class TestDomainExtraction:
         sample_text = target_url
         with mock.patch.object(spam_tasks.requests, 'head', return_value=mock_response) as mock_object:
             domains = list(spam_tasks._extract_domains(sample_text))
-            mock_object.assert_called_once_with(f'https://{target_url}')
+            mock_object.assert_called_once_with(f'https://{target_url}', timeout=60)
         assert domains == ['osf.io']
 
     def test_extract_domains__redirect_with_full_url_and_protocol(self):
@@ -124,7 +124,7 @@ class TestDomainExtraction:
         sample_text = target_url
         with mock.patch.object(spam_tasks.requests, 'head', return_value=mock_response) as mock_object:
             domains = list(spam_tasks._extract_domains(sample_text))
-            mock_object.assert_called_once_with(target_url)
+            mock_object.assert_called_once_with(target_url, timeout=60)
         assert domains == ['osf.io']
 
     def test_extract_domains__deduplicates(self):

@@ -36,11 +36,12 @@ class IntegrationType(Enum):
     NONE = ''  # Institution affiliation is done via email domain whitelist w/o SSO
 
 
-class SharedSsoAffiliationFilterCriteriaAction(Enum):
-    """Defines 2 criteria that determines if the secondary institution is eligible for affiliation via shared SSO.
+class SsoFilterCriteriaAction(Enum):
+    """Defines 2 criteria that when comparing filter attributes for shared SSO and selective SSO.
     """
     EQUALS_TO = 'equals_to'  # Type 1: SSO releases a single-value attribute with an exact value that matches
     CONTAINS = 'contains'  # Type 2: SSO releases a multi-value attribute, of which one value matches
+    IN = 'in'  # Type 3: SSO releases a single-value attribute that have multiple valid values
 
 
 class InstitutionManager(models.Manager):

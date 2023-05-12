@@ -1,12 +1,9 @@
 '''gatherers of metadata from the osf database, in particular
 '''
-import typing
-
 from django.contrib.contenttypes.models import ContentType
 from django import db
 import rdflib
 
-from osf import exceptions
 from osf import models as osfdb
 from osf.metadata import gather
 from osf.metadata.rdfutils import (
@@ -21,57 +18,31 @@ from osf.metadata.rdfutils import (
     checksum_iri,
     format_dct_extent,
 )
-from osf.metadata.serializers import METADATA_SERIALIZERS
 from osf.utils import workflows as osfworkflows
 from osf.utils.outcomes import ArtifactTypes
 
 
 ##### BEGIN "public" api #####
 
-class SerializedMetadataFile(typing.NamedTuple):
-    mediatype: str
-    filename: str
-    serialized_metadata: str
 
-
-def pls_gather_metadata_file(osf_item, format_key, serializer_config=None) -> SerializedMetadataFile:
-    '''for when you don't care about rdf or gatherbaskets, just want metadata about a thing
-
-    @osf_item: the thing (osf model instance or 5-ish character guid string)
-    @format_key: str (must be in .serializers.METADATA_SERIALIZERS)
-    @serializer_config: optional dict (use only when you know the serializer will understand)
-    '''
-    try:
-        serializer_class = METADATA_SERIALIZERS[format_key]
-    except KeyError:
-        valid_formats = ', '.join(METADATA_SERIALIZERS.keys())
-        raise exceptions.InvalidMetadataFormat(format_key, valid_formats)
-    else:
-        serializer = serializer_class(serializer_config)
-        osfguid = osfdb.base.coerce_guid(osf_item, create_if_needed=True)
-        basket = pls_gather_item_metadata(osfguid.referent)
-        return SerializedMetadataFile(
-            serializer.mediatype,
-            serializer.filename(osfguid._id),
-            serializer.serialize(basket),
-        )
-
-def pls_gather_item_metadata(osf_item) -> gather.Basket:
+def pls_get_magic_metadata_basket(osf_item) -> gather.Basket:
     '''for when you just want a basket of rdf metadata about a thing
 
     @osf_item: the thing (osf model instance or 5-ish character guid string)
     '''
     focus = OsfFocus(osf_item)
-    basket = gather.Basket(focus)
-    if focus.rdftype == OSF.File:
-        basket.pls_gather(OSF_FILE_METADATA)
-    elif focus.rdftype in (OSF.Project, OSF.Component, OSF.Preprint):
-        basket.pls_gather(OSF_NODELIKE_METADATA)
-    elif focus.rdftype == (OSF.Registration, OSF.RegistrationComponent):
-        basket.pls_gather(OSF_REGISTRATION_METADATA)
+    return gather.Basket(focus)
+
+
+def osfmap_for_type(rdftype_iri: str):
+    if rdftype_iri == OSF.File:
+        return OSF_FILE_METADATA
+    elif rdftype_iri in (OSF.Project, OSF.Component, OSF.Preprint):
+        return OSF_NODELIKE_METADATA
+    elif rdftype_iri == (OSF.Registration, OSF.RegistrationComponent):
+        return OSF_REGISTRATION_METADATA
     else:
-        basket.pls_gather(OSF_COMMON_METADATA)
-    return basket
+        return OSF_COMMON_METADATA
 
 
 ##### END "public" api #####
@@ -439,7 +410,11 @@ def gather_parts(focus):
         yield (DCT.isPartOf, OsfFocus(container))
 
 
-@gather.er(DCT.relation)
+@gather.er(
+    DCT.relation,
+    OSF.is_supplement_to_article,
+    *OSF_ARTIFACT_PREDICATES.values(),
+)
 def gather_related_items(focus):
     related_article_doi = getattr(focus.dbmodel, 'article_doi', None)
     if related_article_doi:
@@ -463,12 +438,10 @@ def gather_related_items(focus):
             )
             if should_include_artifact:
                 artifact_iri = DOI[outcome_artifact.identifier.value]
-                yield (DCT.relation, artifact_iri)
-                artifact_bnode = rdflib.BNode()
-                yield (OSF_ARTIFACT_PREDICATES[outcome_artifact.artifact_type], artifact_bnode)
-                yield (artifact_bnode, DCT.identifier, str(artifact_iri))
-                yield (artifact_bnode, DCT.title, outcome_artifact.title)
-                yield (artifact_bnode, DCT.description, outcome_artifact.description)
+                yield (OSF_ARTIFACT_PREDICATES[outcome_artifact.artifact_type], artifact_iri)
+                yield (artifact_iri, DCT.identifier, str(artifact_iri))
+                yield (artifact_iri, DCT.title, outcome_artifact.title)
+                yield (artifact_iri, DCT.description, outcome_artifact.description)
 
 
 @gather.er(
