@@ -10,6 +10,7 @@ from django.utils import timezone
 from django.db import transaction
 django.setup()
 
+from framework import sentry
 from framework.celery_tasks import app as celery_app
 
 from website.app import init_app
@@ -60,6 +61,7 @@ def main(dry_run=True):
                         f'registration {parent_registration._id}. Continuing...'
                     )
                     logger.exception(err)
+                    sentry.log_message(str(err))
                     transaction.savepoint_rollback(sid)
 
     active_embargoes = Embargo.objects.filter(state=Embargo.APPROVED)
@@ -89,6 +91,7 @@ def main(dry_run=True):
                         f'registration {parent_registration._id}. Continuing...'
                     )
                     logger.exception(err)
+                    sentry.log_message(str(err))
                     transaction.savepoint_rollback(sid)
 
 

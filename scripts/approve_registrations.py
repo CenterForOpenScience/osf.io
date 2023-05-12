@@ -15,6 +15,8 @@ from osf import models
 from website.app import init_app
 from website import settings
 
+from framework import sentry
+
 from scripts import utils as scripts_utils
 
 
@@ -59,12 +61,13 @@ def main(dry_run=True):
                 registration_approval.accept()
                 transaction.savepoint_commit(sid)
             except Exception as err:
-                transaction.savepoint_rollback(sid)
                 logger.error(
                     f'Unexpected error raised when approving registration for '
                     f'registration {pending_registration._id}. Continuing...'
                 )
+                sentry.log_message(str(err))
                 logger.exception(err)
+                transaction.savepoint_rollback(sid)
 
 
 @celery_app.task(name='scripts.approve_registrations')
