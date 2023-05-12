@@ -33,7 +33,6 @@ from addons.github.tests.factories import GitHubAccountFactory
 from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder, OsfStorageFile
 from addons.osfstorage.tests.factories import FileVersionFactory
 from osf import features
-from osf.models import Session
 from osf.models import files as file_models
 from osf.models.files import BaseFileNode, TrashedFileNode
 from osf.utils.permissions import WRITE, READ

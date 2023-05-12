@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import time
+from importlib import import_module
 
 import datetime
 import mock
@@ -12,6 +13,7 @@ import pytz
 import factory.django
 from factory.django import DjangoModelFactory
 from django.apps import apps
+from django.conf import settings as django_conf_settings
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
@@ -43,6 +45,9 @@ fake_email = lambda: '{}+{}@{}'.format(FAKE_EMAIL_NAME, int(time.clock() * 10000
 
 # Do this out of a cls context to avoid setting "t" as a local
 PROVIDER_ASSET_NAME_CHOICES = tuple([t[0] for t in PROVIDER_ASSET_NAME_CHOICES])
+
+SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
+
 
 def get_default_metaschema():
     """This needs to be a method so it gets called after the test database is set up"""
@@ -196,7 +201,7 @@ class BaseNodeFactory(DjangoModelFactory):
     def _create(cls, *args, **kwargs):
         if kwargs.get('is_deleted', None):
             kwargs['deleted'] = timezone.now()
-        with patch('framework.sessions.get_session', return_value={'auth_user_id': None}):
+        with patch('framework.sessions.get_session', return_value=SessionStore()):
             return super(BaseNodeFactory, cls)._create(*args, **kwargs)
 
 class ProjectFactory(BaseNodeFactory):

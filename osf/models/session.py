@@ -1,21 +1,12 @@
+from datetime import timedelta
 
 from django.db import models
+from django.utils import timezone
 
-from osf.models.base import BaseModel, ObjectIDMixin
-from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from api.base import settings
+
+from osf.models.base import BaseModel
 from osf.utils.fields import NonNaiveDateTimeField
-
-
-class Session(ObjectIDMixin, BaseModel):
-    data = DateTimeAwareJSONField(default=dict, blank=True)
-
-    @property
-    def is_authenticated(self):
-        return 'auth_user_id' in self.data
-
-    @property
-    def is_external_first_login(self):
-        return 'auth_user_external_first_login' in self.data
 
 
 class UserSessionMap(BaseModel):
@@ -24,3 +15,8 @@ class UserSessionMap(BaseModel):
     user = models.ForeignKey('OSFUser', on_delete=models.CASCADE)
     session_key = models.CharField(max_length=255)
     expire_date = NonNaiveDateTimeField()
+
+    def save(self, *args, **kwargs):
+        if self._state.adding and not self.expire_date:
+            self.expire_date = timezone.now() + timedelta(seconds=settings.SESSION_COOKIE_AGE)
+        super(UserSessionMap, self).save(*args, **kwargs)

@@ -41,6 +41,7 @@ def add_key_to_url(url, scheme, key):
     parsed_redirect_url = parsed_url._replace(**replacements)
     return urlunparse(parsed_redirect_url)
 
+
 def set_current_session():
     """
     Sets `current_session` on the Flask global context
@@ -48,6 +49,7 @@ def set_current_session():
     returns the same SessionStore object within the context of the same request
     """
     g.current_session = get_session()
+
 
 def prepare_private_key():
     """
@@ -83,16 +85,23 @@ def prepare_private_key():
         return redirect(new_url, code=http_status.HTTP_307_TEMPORARY_REDIRECT)
 
 
-def get_session_from_cookie(cookie):
+def flask_get_session_from_cookie(cookie):
     """Return a Django ``SessionStore`` object if cookie is valid and session_key exists.
     Raise ``InvalidCookieOrSessionError`` otherwise.
+
+    When using DB backend, for expired sessions, SessionStore().exists(session_key=session_key) returns true while
+    SessionStore(session_key=session_key) doesn't load the session data. Thus, we need to check must-have keys in
+    session data to eliminate expired sessions. Currently, authenticated session must have key `auth_user_id` and
+    anonymous session for ORCiD SSO must have key 'auth_user_external_first_login'.
     """
     try:
         session_key = ensure_str(itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie))
-        if not SessionStore().exists(session_key=session_key):
+        session = SessionStore(session_key=session_key)
+        is_valid_session = session.get('auth_user_id', None) or session.get('auth_user_external_first_login', None)
+        if not SessionStore().exists(session_key=session_key) or not is_valid_session:
             raise InvalidCookieOrSessionError
-        return SessionStore(session_key=session_key)
-    except itsdangerous.BadSignature:
+        return session
+    except (itsdangerous.BadSignature, TypeError):
         raise InvalidCookieOrSessionError
 
 
@@ -112,7 +121,7 @@ def get_session(ignore_cookie=False):
     cookie = request.cookies.get(settings.COOKIE_NAME)
     try:
         if not g.get('current_session', None):
-            g.current_session = get_session_from_cookie(cookie) if (not ignore_cookie and cookie) else SessionStore()
+            g.current_session = flask_get_session_from_cookie(cookie) if (not ignore_cookie and cookie) else SessionStore()
         return g.current_session
     except InvalidCookieOrSessionError:
         return None
@@ -125,16 +134,18 @@ def create_session(response, data=None):
     updated session and the set-cookie response as a tuple.
     """
     user_session = get_session()
-    user_session.create()
     if not user_session:
-        response.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
+        if response is not None:
+            response.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
         return None, response
+    if not user_session.session_key:
+        user_session.create()
     # TODO: check if session data changed and decide whether to save the session object
     for key, value in data.items() if data else {}:
         user_session[key] = value
     user_session.save()
-    cookie_value = itsdangerous.Signer(settings.SECRET_KEY).sign(user_session.session_key)
     if response is not None:
+        cookie_value = itsdangerous.Signer(settings.SECRET_KEY).sign(user_session.session_key)
         response.set_cookie(
             settings.COOKIE_NAME,
             value=cookie_value,
@@ -194,18 +205,14 @@ def before_request():
         if user_session.get('auth_user_id', None) != user._primary_key:
             user_session['auth_user_id'] = user._primary_key
         user_session.save()
-        UserSessionMap.objects.create(
-            user=user,
-            session_key=user_session.session_key,
-            expire_date=user_session.get_expiry_date()
-        )
+        UserSessionMap.objects.create(user=user, session_key=user_session.session_key)
         return
 
     # Request Type 3: Cookie Auth
     cookie = request.cookies.get(settings.COOKIE_NAME)
     if cookie:
         try:
-            user_session = get_session_from_cookie(cookie)
+            user_session = flask_get_session_from_cookie(cookie)
         except InvalidCookieOrSessionError:
             response = redirect(web_url_for('index'))
             response.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)

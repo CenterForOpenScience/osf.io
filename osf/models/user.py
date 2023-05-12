@@ -1816,7 +1816,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         :returns: The signed cookie
         """
         secret = secret or website_settings.SECRET_KEY
-        user_session_map = UserSessionMap.objects.filter(user__id=self.id).order_by('-expire_date').first()
+        user_session_map = UserSessionMap.objects.filter(user__id=self.id, expire_date__gt=timezone.now()).order_by('-expire_date').first()
         if user_session_map and SessionStore().exists(session_key=user_session_map.session_key):
             user_session = SessionStore(session_key=user_session_map.session_key)
         else:
@@ -1825,11 +1825,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             user_session['auth_user_username'] = self.username
             user_session['auth_user_fullname'] = self.fullname
             user_session.create()
-            UserSessionMap.objects.create(
-                user=self,
-                session_key=user_session.session_key,
-                expire_date=user_session.get_expiry_date()
-            )
+            UserSessionMap.objects.create(user=self, session_key=user_session.session_key)
         signer = itsdangerous.Signer(secret)
         return signer.sign(user_session.session_key)
 
