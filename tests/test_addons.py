@@ -254,9 +254,10 @@ class TestAddonLogs(OsfTestCase):
         )
         self.file.save()
         self.file2.save()
-        self.session = Session(data={'auth_user_id': self.user._id})
-        self.session.save()
-        self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id)
+        self.session = SessionStore()
+        self.session['auth_user_id'] = self.user._id
+        self.session.create()
+        self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session.session_key)
         self.configure_addon()
 
     def configure_addon(self):
@@ -1826,9 +1827,10 @@ class TestViewUtils(OsfTestCase):
         self.user = AuthUserFactory()
         self.auth_obj = Auth(user=self.user)
         self.node = ProjectFactory(creator=self.user)
-        self.session = Session(data={'auth_user_id': self.user._id})
-        self.session.save()
-        self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id)
+        self.session = SessionStore()
+        self.session['auth_user_id'] = self.user._id
+        self.session.create()
+        self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session.session_key)
         self.configure_addon()
         self.JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
         self.mock_api_credentials_are_valid = mock.patch('addons.github.api.GitHubClient.check_authorization', return_value=True)
