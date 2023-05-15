@@ -24,12 +24,12 @@ function getLocalizedText(text) {
   return texts[1];
 }
 
-function createField(erad, question, valueEntry, options, onChange) {
+function createField(erad, fileMetadataSuggestion, question, valueEntry, options, onChange) {
   if (question.type == 'string') {
-    return createStringField(erad, question, (valueEntry || {}).value, options, onChange);
+    return createStringField(erad, fileMetadataSuggestion, question, (valueEntry || {}).value, options, onChange);
   }
   if (question.type == 'choose') {
-    return createChooseField(erad, question, (valueEntry || {}).value, options, onChange);
+    return createChooseField(erad, fileMetadataSuggestion, question, (valueEntry || {}).value, options, onChange);
   }
   throw new Error('Unsupported type: ' + question.type);
 }
@@ -60,7 +60,7 @@ function validateField(erad, question, value, fieldSetAndValues, options) {
   throw new Error('Unsupported type: ' + question.type);
 }
 
-function createStringField(erad, question, value, options, onChange) {
+function createStringField(erad, fileMetadataSuggestion, question, value, options, onChange) {
   if (question.format == 'text') {
     return new SingleElementField(
       createFormElement(function() {
@@ -140,6 +140,17 @@ function createStringField(erad, question, value, options, onChange) {
       options,
       onChange
     );
+  } else if (question.format == 'file-data-number') {
+    return new SingleElementField(
+      createDataNoFieldElement(function() {
+        return $('<input></input>');
+      }, fileMetadataSuggestion, question, options),
+      (options && options.multiple) ? createClearFormElement(question) : null,
+      question,
+      value,
+      options,
+      onChange
+    );
   } else if (question.format == 'file-url') {
     return new SingleElementField(
       createFileURLFieldElement(function() {
@@ -176,7 +187,7 @@ function createStringField(erad, question, value, options, onChange) {
   );
 }
 
-function createChooseField(erad, question, value, options, onChange) {
+function createChooseField(erad, fileMetadataSuggestion, question, value, options, onChange) {
   if (question.format == 'singleselect') {
     return new SingleElementField(
       createFormElement(function() {
@@ -637,6 +648,77 @@ function createFileURLFieldElement(createHandler, options) {
   };
 }
 
+function createDataNoFieldElement(createHandler, fileMetadataSuggestion, question, options) {
+  return {
+    create: function(addToContainer, onChange) {
+      const input = createHandler();
+      if (options && options.readonly) {
+        input.attr('readonly', true);
+      }
+      if (onChange) {
+        input.change(function(event) {
+          onChange(event, options);
+        });
+      }
+      input.addClass('form-control');
+      const container = $('<div>').append(input);
+      if (!options || (!options.readonly && !options.multiple)) {
+        container.css('display', 'flex');
+        const calcIndicator = $('<i class="fa fa-spinner fa-pulse">')
+          .hide();
+        const fillButton = $('<a class="btn btn-default btn-sm">')
+          .append($('<i class="fa fa-refresh"></i>'))
+          .append($('<span></span>').text(_('Fill')))
+          .append(calcIndicator);
+        const errorContainer = $('<span>')
+          .css('color', 'red').hide();
+        const fillContainer = $('<div>')
+          .css('margin', 'auto 0 auto 8px')
+          .append(fillButton)
+          .append(errorContainer);
+        var calculating = false;
+        fillButton.on('click', function (e) {
+          e.preventDefault();
+          if (!calculating) {
+            calculating = true;
+            fillButton.attr('disabled', true);
+            errorContainer.hide().text('');
+            calcIndicator.show();
+            generateDataNo(fileMetadataSuggestion, options.fileitem)
+              .then(function (value) {
+                input.val(value).change();
+              })
+              .catch(function (err) {
+                console.error(err);
+                errorContainer.text(_('Could not generate Data No.')).show();
+              })
+              .then(function () {
+                calculating = false;
+                fillButton.attr('disabled', false);
+                calcIndicator.hide();
+              });
+          }
+        });
+        container.append(fillContainer)
+      }
+      addToContainer(container);
+      return container;
+    },
+    getValue: function(container) {
+      return container.find('input').val();
+    },
+    setValue: function(container, value) {
+      container.find('input').val(value);
+    },
+    reset: function(container) {
+      container.find('input').val(null);
+    },
+    disable: function(container, disabled) {
+      container.find('input').attr('disabled', disabled);
+    },
+  };
+}
+
 function createFileCreatorsFieldElement(erad, options) {
   const emptyLine = $('<td></td>')
     .attr('colspan', '4')
@@ -971,6 +1053,16 @@ function substringMatcher(candidates) {
     });
     cb(matches);
   };
+}
+
+function generateDataNo(fileMetadataSuggestion, fileitem) {
+  const itemUrl = fangorn.getPersistentLinkFor(fileitem);
+  const filepath = itemUrl.substr(itemUrl.indexOf('files/'));
+  const format = 'data_format_number';
+  return fileMetadataSuggestion.suggest(filepath, format)
+    .then(function (suggestions) {
+      return (suggestions.find(function (s) { return s.format === format}) || {}).value;
+    });
 }
 
 module.exports = {
