@@ -3,6 +3,7 @@ from io import StringIO
 import cProfile
 import pstats
 import threading
+from importlib import import_module
 
 from django.conf import settings
 from django.contrib.sessions.middleware import SessionMiddleware
@@ -22,6 +23,8 @@ from framework.celery_tasks.handlers import (
 from .api_globals import api_globals
 from api.base import settings as api_settings
 from api.base.authentication.drf import drf_get_session_from_cookie
+
+SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
 
 class CeleryTaskMiddleware(MiddlewareMixin):
     """Celery Task middleware."""
@@ -153,4 +156,4 @@ class UnsignCookieSessionMiddleware(SessionMiddleware):
         if cookie:
             request.session = drf_get_session_from_cookie(cookie)
         else:
-            request.session = None
+            request.session = SessionStore()
