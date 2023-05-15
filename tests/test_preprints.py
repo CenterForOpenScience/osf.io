@@ -11,9 +11,11 @@ import datetime
 from django.utils import timezone
 import pytz
 import itsdangerous
+from importlib import import_module
 
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
+from django.conf import settings as django_conf_settings
 
 from api.share.utils import serialize_preprint, format_user
 from website import settings, mails
@@ -34,6 +36,8 @@ from osf.utils.permissions import READ, WRITE, ADMIN
 from osf.utils.workflows import DefaultStates, RequestTypes
 from tests.base import assert_datetime_equal, OsfTestCase
 from tests.utils import assert_preprint_logs
+
+SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
 from osf_tests.factories import (
     ProjectFactory,
@@ -2247,9 +2251,10 @@ class TestPreprintOsfStorage(OsfTestCase):
     def setUp(self):
         super(TestPreprintOsfStorage, self).setUp()
         self.user = UserFactory()
-        self.session = Session(data={'auth_user_id': self.user._id})
-        self.session.save()
-        self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id).decode()
+        self.session = SessionStore()
+        self.session['auth_user_id'] = self.user._id
+        self.session.create()
+        self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session.session_key).decode()
         self.preprint = PreprintFactory(creator=self.user)
         self.JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
 
@@ -2367,9 +2372,10 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
             materialized_path='/testfile'
         )
         self.file.save()
-        self.session = Session(data={'auth_user_id': self.user._id})
-        self.session.save()
-        self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id)
+        self.session = SessionStore()
+        self.session['auth_user_id'] = self.user._id
+        self.session.create()
+        self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session.session_key)
 
     def build_payload(self, metadata, **kwargs):
         options = dict(
