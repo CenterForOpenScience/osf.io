@@ -318,8 +318,9 @@ def restore_export_data_rollback_process(task, cookies, export_id, export_data_r
     export_data_restore = ExportDataRestore.objects.get(pk=export_data_restore_id)
     export_data_restore.update(task_id=task.request.id)
 
-    if process_step == 0:
-        # Restore process has not done anything related to files
+    destination_provider = export_data_restore.destination.provider_name
+    if process_step == 0 or not utils.is_add_on_storage(destination_provider):
+        # If storage is bulk-mount method or the restore process has not changed anything related to files, then do nothing
         export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
                                    status=ExportData.STATUS_STOPPED)
         return {'message': 'Stop restore data successfully.'}

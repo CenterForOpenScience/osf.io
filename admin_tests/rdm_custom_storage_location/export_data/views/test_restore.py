@@ -1344,6 +1344,25 @@ class TestRestoreDataFunction(AdminTestCase):
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.move_all_files_from_backup_folder_to_root')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.delete_all_files_except_backup_folder')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_file_info_and_check_schema')
+    def test_restore_export_data_rollback_process_bulk_mount_storage(self, mock_read_file_info,
+                                                                     mock_delete_all_files,
+                                                                     mock_move_all_files):
+        task = AbortableTask()
+        task.request_stack = LocalStack()
+        task.request.id = FAKE_TASK_ID
+
+        response = self.view.restore_export_data_rollback_process(task, None, self.export_data.id,
+                                                                  self.export_data_restore.id,
+                                                                  3)
+
+        mock_read_file_info.assert_not_called()
+        mock_delete_all_files.assert_not_called()
+        mock_move_all_files.assert_not_called()
+        nt.assert_equal(response, {'message': 'Stop restore data successfully.'})
+
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.move_all_files_from_backup_folder_to_root')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.delete_all_files_except_backup_folder')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_file_info_and_check_schema')
     def test_restore_export_data_rollback_process_nothing_to_rollback(self, mock_read_file_info,
                                                                       mock_delete_all_files,
                                                                       mock_move_all_files):
@@ -1352,7 +1371,7 @@ class TestRestoreDataFunction(AdminTestCase):
         task.request.id = FAKE_TASK_ID
 
         response = self.view.restore_export_data_rollback_process(task, None, self.export_data.id,
-                                                                  self.export_data_restore.id,
+                                                                  self.addon_data_restore.id,
                                                                   0)
 
         mock_read_file_info.assert_not_called()
@@ -1376,7 +1395,7 @@ class TestRestoreDataFunction(AdminTestCase):
 
         with nt.assert_raises(ProcessError):
             response = self.view.restore_export_data_rollback_process(task, None, self.export_data.id,
-                                                                      self.export_data_restore.id, 3)
+                                                                      self.addon_data_restore.id, 3)
 
             mock_read_file_info.assert_called()
             mock_delete_all_files.assert_called()
@@ -1398,7 +1417,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_move_all_files.return_value = None
 
         response = self.view.restore_export_data_rollback_process(task, None, self.export_data.id,
-                                                                  self.export_data_restore.id, 2)
+                                                                  self.addon_data_restore.id, 2)
 
         mock_read_file_info.assert_called()
         mock_delete_all_files.assert_not_called()
@@ -1420,7 +1439,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_move_all_files.return_value = None
 
         response = self.view.restore_export_data_rollback_process(task, None, self.export_data.id,
-                                                                  self.export_data_restore.id, 3)
+                                                                  self.addon_data_restore.id, 3)
 
         mock_read_file_info.assert_called()
         mock_delete_all_files.assert_called()
@@ -1442,7 +1461,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_move_all_files.return_value = None
 
         response = self.view.restore_export_data_rollback_process(task, None, self.export_data.id,
-                                                                  self.export_data_restore.id, 1)
+                                                                  self.addon_data_restore.id, 1)
 
         mock_read_file_info.assert_called()
         mock_delete_all_files.assert_not_called()
@@ -1464,7 +1483,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_move_all_files.return_value = None
 
         response = self.view.restore_export_data_rollback_process(task, None, self.export_data.id,
-                                                                  self.export_data_restore.id, 4)
+                                                                  self.addon_data_restore.id, 4)
 
         mock_read_file_info.assert_called()
         mock_delete_all_files.assert_not_called()
@@ -1487,7 +1506,7 @@ class TestRestoreDataFunction(AdminTestCase):
 
         with nt.assert_raises(ConnectionError):
             response = self.view.restore_export_data_rollback_process(task, None, self.export_data.id,
-                                                                      self.export_data_restore.id, 3)
+                                                                      self.addon_data_restore.id, 3)
 
             mock_read_file_info.assert_called()
             mock_delete_all_files.assert_called()
