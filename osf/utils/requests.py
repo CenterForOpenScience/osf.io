@@ -45,13 +45,14 @@ def get_request_and_user_id():
     Fetch a request and user id from either a Django or Flask request.
     """
     # TODO: This should be consolidated into framework
+    # Temporary Notes: not sure why `get_session()` was used directly instead of `session`
     from framework.sessions import get_session
 
     req = get_current_request()
     user_id = None
     if isinstance(req, FlaskRequest):
-        session = get_session()
-        user_id = session.data.get('auth_user_id')
+        user_session = get_session()
+        user_id = user_session.get('auth_user_id', None)
     elif hasattr(req, 'user'):
         # admin module can return a user w/o an id
         user_id = getattr(req.user, '_id', None)

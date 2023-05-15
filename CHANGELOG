@@ -2,6 +2,10 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+23.07.0 (2023-5-15)
+===================
+- Refactor Sessions to use Redis-based Django SessionStore
+
 23.06.0 (2023-4-11)
 ===================
 - Add new metadata support for Google Dataset discovery

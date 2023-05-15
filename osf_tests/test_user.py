@@ -9,10 +9,12 @@ from django.db import connection, transaction
 from django.contrib.auth.models import Group
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
+from django.conf import settings as django_conf_settings
 import mock
 import itsdangerous
 import pytest
 import pytz
+from importlib import import_module
 
 from framework.auth.exceptions import ExpiredTokenError, InvalidTokenError, ChangePasswordError
 from framework.auth.signals import user_merged
@@ -33,10 +35,10 @@ from osf.models import (
     OSFGroup,
     Tag,
     Contributor,
-    Session,
     NotableDomain,
     PreprintContributor,
     DraftRegistrationContributor,
+    UserSessionMap,
 )
 from osf.models.institution_affiliation import get_user_by_institution_identity
 from addons.github.tests.factories import GitHubAccountFactory
@@ -60,7 +62,6 @@ from .factories import (
     OSFGroupFactory,
     PreprintProviderFactory,
     ProjectFactory,
-    SessionFactory,
     TagFactory,
     UnconfirmedUserFactory,
     UnregUserFactory,
@@ -70,6 +71,8 @@ from .factories import (
 )
 from tests.base import OsfTestCase
 from tests.utils import run_celery_tasks
+
+SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
 
 pytestmark = pytest.mark.django_db
@@ -886,31 +889,32 @@ class TestCookieMethods:
         user = UserFactory()
         super_secret_key = 'children need maps'
         signer = itsdangerous.Signer(super_secret_key)
-        session = Session(data={
-            'auth_user_id': user._id,
-            'auth_user_username': user.username,
-            'auth_user_fullname': user.fullname,
-        })
-        session.save()
+        session = SessionStore()
+        session['auth_user_id'] = user._id
+        session['auth_user_username'] = user.username
+        session['auth_user_fullname'] = user.fullname
+        session.create()
+        UserSessionMap.objects.create(user=user, session_key=session.session_key)
 
-        assert signer.unsign(user.get_or_create_cookie(super_secret_key)).decode() == session._id
+        assert signer.unsign(user.get_or_create_cookie(super_secret_key)).decode() == session.session_key
 
     def test_user_get_cookie_no_session(self):
         user = UserFactory()
         super_secret_key = 'children need maps'
         signer = itsdangerous.Signer(super_secret_key)
         assert(
-            Session.objects.filter(data__auth_user_id=user._id).count() == 0
+            UserSessionMap.objects.filter(user=user).count() == 0
         )
 
         cookie = user.get_or_create_cookie(super_secret_key)
 
-        session = Session.objects.filter(data__auth_user_id=user._id).first()
+        session_map = UserSessionMap.objects.filter(user=user).first()
+        session = SessionStore(session_key=session_map.session_key)
 
-        assert session._id == signer.unsign(cookie).decode()
-        assert session.data['auth_user_id'] == user._id
-        assert session.data['auth_user_username'] == user.username
-        assert session.data['auth_user_fullname'] == user.fullname
+        assert session.session_key == signer.unsign(cookie).decode()
+        assert session['auth_user_id'] == user._id
+        assert session['auth_user_username'] == user.username
+        assert session['auth_user_fullname'] == user.fullname
 
     def test_get_user_by_cookie(self):
         user = UserFactory()
@@ -926,15 +930,18 @@ class TestCookieMethods:
     def test_get_user_by_cookie_no_user_id(self):
         user = UserFactory()
         cookie = user.get_or_create_cookie()
-        session = Session.objects.get(data__auth_user_id=user._id)
-        del session.data['auth_user_id']
+        session_map = UserSessionMap.objects.filter(user=user).first()
+        session = SessionStore(session_key=session_map.session_key)
+        del session['auth_user_id']
         session.save()
         assert OSFUser.from_cookie(cookie) is None
 
     def test_get_user_by_cookie_no_session(self):
         user = UserFactory()
         cookie = user.get_or_create_cookie()
-        Session.objects.all().delete()
+        session_map = UserSessionMap.objects.filter(user=user).first()
+        session = SessionStore(session_key=session_map.session_key)
+        session.flush()
         assert OSFUser.from_cookie(cookie) is None
 
 
@@ -1653,8 +1660,13 @@ class TestDisablingUsers(OsfTestCase):
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_deactivate_account_and_remove_sessions(self, mock_mail):
-        session1 = SessionFactory(user=self.user, created=(timezone.now() - dt.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
-        session2 = SessionFactory(user=self.user, created=(timezone.now() - dt.timedelta(seconds=settings.OSF_SESSION_TIMEOUT)))
+        session1 = SessionStore()
+        session1.create()
+        UserSessionMap.objects.create(user=self.user, session_key=session1.session_key)
+
+        session2 = SessionStore()
+        session2.create()
+        UserSessionMap.objects.create(user=self.user, session_key=session2.session_key)
 
         self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST] = True
         self.user.save()
@@ -1664,8 +1676,8 @@ class TestDisablingUsers(OsfTestCase):
         assert isinstance(self.user.date_disabled, dt.datetime)
         assert self.user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST] is False
 
-        assert not Session.load(session1._id)
-        assert not Session.load(session2._id)
+        assert not SessionStore().exists(session_key=session1.session_key)
+        assert not SessionStore().exists(session_key=session2.session_key)
 
     def test_deactivate_account_api(self):
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = True
@@ -1910,6 +1922,11 @@ class TestUserMerging(OsfTestCase):
         other_user = UserFactory()
         other_user.save()
 
+        # create session for other_user
+        other_user_session = SessionStore()
+        other_user_session.create()
+        UserSessionMap.objects.create(user=other_user, session_key=other_user_session.session_key)
+
         # define values for users' fields
         today = timezone.now()
         yesterday = today - dt.timedelta(days=1)
@@ -2065,7 +2082,7 @@ class TestUserMerging(OsfTestCase):
         # check fields set on merged user
         assert other_user.merged_by == self.user
 
-        assert not Session.objects.filter(data__auth_user_id=other_user._id).exists()
+        assert not SessionStore().exists(session_key=other_user_session.session_key)
 
     def test_merge_unconfirmed(self):
         self._add_unconfirmed_user()

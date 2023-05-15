@@ -5,7 +5,6 @@ from types import SimpleNamespace
 from urllib.parse import urlparse
 
 from addons.wiki.tests.factories import WikiVersionFactory
-from framework.sessions import set_session
 from osf.external.spam import tasks as spam_tasks
 from osf.models import (
     NotableDomain,
@@ -18,7 +17,6 @@ from osf_tests.factories import (
     NodeFactory,
     PreprintFactory,
     RegistrationFactory,
-    SessionFactory,
     UserFactory
 )
 
@@ -205,9 +203,8 @@ class TestNotableDomain:
         obj.description = f'I\'m spam: {spam_domain.geturl()} me too: {spam_domain.geturl()}' \
                           f' iamNOTspam.org i-am-a-ham.io  https://stillNotspam.io'
         creator = getattr(obj, 'creator', None) or getattr(obj.node, 'creator')
-        s = SessionFactory(user=creator)
-        set_session(s)
         with mock.patch.object(spam_tasks.requests, 'head'):
+            request_context.g.current_session = {'auth_user_id': creator._id}
             obj.save()
 
         assert NotableDomain.objects.filter(
@@ -270,7 +267,7 @@ class TestNotableDomain:
         project.save()
         wiki_version.content = 'This has a domain: https://cos.io'
 
-        set_session(SessionFactory(user=project.creator))
+        request_context.g.current_session = {'auth_user_id': project.creator._id}
         with mock.patch.object(spam_tasks.requests, 'head'):
             wiki_version.save()
 
@@ -285,8 +282,8 @@ class TestNotableDomain:
         wiki_version.content = 'This has a domain: https://cos.io'
         wiki_version.save()
 
-        set_session(SessionFactory(user=project.creator))
         assert DomainReference.objects.count() == 0
+        request_context.g.current_session = {'auth_user_id': project.creator._id}
         with mock.patch.object(spam_tasks.requests, 'head'):
             project.set_privacy(permissions='public')
 
