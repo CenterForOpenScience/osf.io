@@ -24,6 +24,7 @@ def test_attach_handlers():
         framework.postcommit_tasks.handlers.postcommit_before_request,
         framework.sessions.prepare_private_key,
         framework.sessions.before_request,
+        framework.sessions.set_current_session,
         framework.csrf.handlers.before_request,
     }
 

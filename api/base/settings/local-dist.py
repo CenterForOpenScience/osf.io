@@ -25,7 +25,6 @@ if DEBUG:
     # django-silk
     INSTALLED_APPS += ('silk',)
     MIDDLEWARE += (
-        'django.contrib.sessions.middleware.SessionMiddleware',
         'silk.middleware.SilkyMiddleware',
     )
 
@@ -43,3 +42,7 @@ REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {
     'files': '75/minute',
     'files-burst': '3/second',
 }
+
+# Can switch between using Redis and using postgres as session storage
+# SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'

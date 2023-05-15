@@ -137,8 +137,9 @@ class TestResolveGuid(OsfTestCase):
         self.node = NodeFactory()
 
     def test_resolve_guid(self):
-        res_guid = self.app.get(self.node.web_url_for('node_setting', _guid=True), auth=self.node.creator.auth)
-        res_full = self.app.get(self.node.web_url_for('node_setting'), auth=self.node.creator.auth)
+        with mock.patch('framework.csrf.handlers.get_current_user_id', return_value=self.node.creator_id):
+            res_guid = self.app.get(self.node.web_url_for('node_setting', _guid=True), auth=self.node.creator.auth)
+            res_full = self.app.get(self.node.web_url_for('node_setting'), auth=self.node.creator.auth)
         assert res_guid.text == res_full.text
 
     def test_resolve_guid_no_referent(self):

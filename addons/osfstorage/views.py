@@ -11,7 +11,6 @@ from django.db import transaction
 from flask import request
 
 from framework.auth import Auth
-from framework.sessions import get_session
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_signed, must_be_logged_in
 
@@ -398,14 +397,6 @@ def osfstorage_delete(file_node, payload, target, **kwargs):
 @must_be_signed
 @decorators.autoload_filenode(must_be='file')
 def osfstorage_download(file_node, payload, **kwargs):
-    # Set user ID in session data for checking if user is contributor
-    # to project.
-    user_id = payload.get('user')
-    if user_id:
-        current_session = get_session()
-        current_session.data['auth_user_id'] = user_id
-        current_session.save()
-
     if not request.args.get('version'):
         version_id = None
     else:

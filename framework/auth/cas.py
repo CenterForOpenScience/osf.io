@@ -314,14 +314,8 @@ def make_response_from_ticket(ticket, service_url):
                 )))
 
             # if user is authenticated by CAS
-            # TODO [CAS-27]: Remove Access Token From Service Validation
             print_cas_log(f'CAS response - finalizing authentication: user=[{user._id}]', LogLevel.INFO)
-            return authenticate(
-                user,
-                cas_resp.attributes.get('accessToken', ''),
-                redirect(service_furl.url),
-                user_updates
-            )
+            return authenticate(user, redirect(service_furl.url), user_updates)
         # first time login from external identity provider
         if not user and external_credential and action == 'external_first_login':
             print_cas_log(
@@ -332,12 +326,10 @@ def make_response_from_ticket(ticket, service_url):
             from website.util import web_url_for
             # orcid attributes can be marked private and not shared, default to orcid otherwise
             fullname = u'{} {}'.format(cas_resp.attributes.get('given-names', ''), cas_resp.attributes.get('family-name', '')).strip()
-            # TODO [CAS-27]: Remove Access Token From Service Validation
             user = {
                 'external_id_provider': external_credential['provider'],
                 'external_id': external_credential['id'],
                 'fullname': fullname,
-                'access_token': cas_resp.attributes.get('accessToken', ''),
                 'service_url': service_furl.url,
             }
             print_cas_log(f'CAS response - creating anonymous session: external=[{external_credential}]', LogLevel.INFO)

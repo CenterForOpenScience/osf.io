@@ -8,7 +8,6 @@ import responses
 from django.utils import timezone
 from framework.celery_tasks import handlers
 from framework.exceptions import PermissionsError
-from framework.sessions import set_session
 from api.caching import settings as cache_settings
 from api.caching.utils import storage_usage_cache
 from website.project.model import has_anonymous_link
@@ -60,7 +59,6 @@ from osf_tests.factories import (
     PrivateLinkFactory,
     NodeRelationFactory,
     InstitutionFactory,
-    SessionFactory,
     SubjectFactory,
     TagFactory,
     OSFGroupFactory,
@@ -3780,12 +3778,6 @@ class TestNodeUpdate:
 @pytest.mark.enable_enqueue_task
 class TestOnNodeUpdate:
 
-    @pytest.fixture(autouse=True)
-    def session(self, user, request_context):
-        s = SessionFactory(user=user)
-        set_session(s)
-        return s
-
     @pytest.fixture()
     def collection(self):
         collection_provider = CollectionProviderFactory()
@@ -3805,10 +3797,13 @@ class TestOnNodeUpdate:
     def node(self):
         return ProjectFactory(is_public=True)
 
-    def test_on_node_updated_called(self, node, user):
+    def test_on_node_updated_called(self, node, user, request_context):
         node.title = 'A new title'
+        # Manually set the current_session with a fake session with auth_user_id=user._id
+        # Otherwise, `task.kwargs['user_id']` would be None because there is not a session
+        # in the current request context
+        request_context.g.current_session = {'auth_user_id': user._id}
         node.save()
-
         task = handlers.get_task_from_queue('website.project.tasks.on_node_updated', predicate=lambda task: task.kwargs['node_id'] == node._id)
 
         assert task.task == 'website.project.tasks.on_node_updated'
@@ -3817,11 +3812,12 @@ class TestOnNodeUpdate:
         assert task.kwargs['first_save'] is False
         assert 'title' in task.kwargs['saved_fields']
 
-    def test_queueing_on_node_updated(self, node, user):
+    def test_queueing_on_node_updated(self, node, user, request_context):
         node.set_identifier_value(category='doi', value=settings.DOI_FORMAT.format(prefix=settings.DATACITE_PREFIX, guid=node._id))
         node.title = 'Something New'
         node.save()
 
+        request_context.g.current_session = {'auth_user_id': user._id}
         # make sure on_node_updated is in the queue
         assert handlers.get_task_from_queue('website.project.tasks.on_node_updated', predicate=lambda task: task.kwargs['node_id'] == node._id)
 

@@ -5,6 +5,8 @@ import mock
 import pytest
 import pytz
 from django.utils import timezone
+from importlib import import_module
+from django.conf import settings as django_conf_settings
 
 from addons.base.utils import get_mfr_url
 from addons.github.models import GithubFileNode
@@ -14,7 +16,7 @@ from addons.osfstorage.tests.factories import FileVersionFactory
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as api_utils
 from framework.auth.core import Auth
-from osf.models import NodeLog, Session, QuickFilesNode, Node, FileVersionUserMetadata
+from osf.models import NodeLog, QuickFilesNode, Node, FileVersionUserMetadata
 from osf.utils.permissions import WRITE, READ
 from osf.utils.workflows import DefaultStates
 from osf_tests.factories import (
@@ -27,6 +29,7 @@ from osf_tests.factories import (
 )
 from website import settings as website_settings
 
+SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
 # stolen from^W^Winspired by DRF
 # rest_framework.fields.DateTimeField.to_representation
@@ -127,11 +130,12 @@ class TestFileView:
     @mock.patch('api.base.throttling.CreateGuidThrottle.allow_request')
     def test_file_guid_created_with_cookie(
             self, mock_allow, app, user, file_url, file):
-        session = Session(data={'auth_user_id': user._id})
-        session.save()
+        session = SessionStore()
+        session['auth_user_id'] = user._id
+        session.create()
         cookie = itsdangerous.Signer(
             website_settings.SECRET_KEY
-        ).sign(session._id)
+        ).sign(session.session_key)
         app.set_cookie(website_settings.COOKIE_NAME, cookie.decode())
 
         res = app.get('{}?create_guid=1'.format(file_url), auth=user.auth)

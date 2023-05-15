@@ -11,7 +11,7 @@ from framework.auth.exceptions import DuplicateEmailError
 from framework.auth.tasks import update_user_from_activity
 from framework.auth.utils import LogLevel, print_cas_log
 from framework.celery_tasks.handlers import enqueue_task
-from framework.sessions import session, create_session
+from framework.sessions import get_session, create_session
 from framework.sessions.utils import remove_session
 
 
@@ -30,46 +30,48 @@ __all__ = [
 check_password = bcrypt.check_password_hash
 
 
-def authenticate(user, access_token, response, user_updates=None):
-    data = session.data if session._get_current_object() else {}
-    data.update({
+def authenticate(user, response, user_updates=None):
+    data = {
         'auth_user_username': user.username,
         'auth_user_id': user._primary_key,
         'auth_user_fullname': user.fullname,
-        'auth_user_access_token': access_token,
-    })
+    }
     print_cas_log(f'Finalizing authentication - data updated: user=[{user._id}]', LogLevel.INFO)
     enqueue_task(update_user_from_activity.s(user._id, timezone.now().timestamp(), cas_login=True, updates=user_updates))
     print_cas_log(f'Finalizing authentication - user update queued: user=[{user._id}]', LogLevel.INFO)
-    response = create_session(response, data=data)
+    user_session, response = create_session(response, data=data)
+    if not user_session:
+        return response
+    from osf.models import UserSessionMap
+    UserSessionMap.objects.create(user=user, session_key=user_session.session_key)
     print_cas_log(f'Finalizing authentication - session created: user=[{user._id}]', LogLevel.INFO)
     return response
 
 
-def external_first_login_authenticate(user, response):
+def external_first_login_authenticate(user_dict, response):
     """
     Create a special unauthenticated session for user login through external identity provider for the first time.
 
-    :param user: the user with external credential
+    :param user_dict: the user with external credential
     :param response: the response to return
     :return: the response
     """
-
-    data = session.data if session._get_current_object() else {}
-    data.update({
-        'auth_user_external_id_provider': user['external_id_provider'],
-        'auth_user_external_id': user['external_id'],
-        'auth_user_fullname': user['fullname'],
-        'auth_user_access_token': user['access_token'],
+    data = {
+        'auth_user_external_id_provider': user_dict['external_id_provider'],
+        'auth_user_external_id': user_dict['external_id'],
+        'auth_user_fullname': user_dict['fullname'],
         'auth_user_external_first_login': True,
-        'service_url': user['service_url'],
-    })
-    user_identity = '{}#{}'.format(user['external_id_provider'], user['external_id'])
+        'service_url': user_dict['service_url'],
+    }
+    user_identity = '{}#{}'.format(user_dict['external_id_provider'], user_dict['external_id'])
     print_cas_log(
         f'Finalizing first-time login from external IdP - data updated: user=[{user_identity}]',
         LogLevel.INFO,
     )
-    response = create_session(response, data=data)
+    # Note: we don't need to keep track of this anonymous session, and thus no entry is created in `UserSessionMap`
+    user_session, response = create_session(response, data=data)
+    if not user_session:
+        return response
     print_cas_log(
         f'Finalizing first-time login from external IdP - anonymous session created: user=[{user_identity}]',
         LogLevel.INFO,
@@ -79,14 +81,7 @@ def external_first_login_authenticate(user, response):
 
 def logout():
     """Clear users' session(s) and log them out of OSF."""
-
-    for key in ['auth_user_username', 'auth_user_id', 'auth_user_fullname', 'auth_user_access_token']:
-        try:
-            del session.data[key]
-        except KeyError:
-            pass
-    remove_session(session)
-    return True
+    remove_session(get_session())
 
 
 def register_unconfirmed(username, password, fullname, campaign=None, accepted_terms_of_service=None):

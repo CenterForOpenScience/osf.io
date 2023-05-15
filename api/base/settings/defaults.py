@@ -57,10 +57,13 @@ DEBUG = osf_settings.DEBUG_MODE
 DEBUG_PROPAGATE_EXCEPTIONS = True
 
 # session:
-SESSION_COOKIE_NAME = 'api'
+SESSION_COOKIE_NAME = osf_settings.COOKIE_NAME
 SESSION_COOKIE_SECURE = osf_settings.SECURE_MODE
 SESSION_COOKIE_HTTPONLY = osf_settings.SESSION_COOKIE_HTTPONLY
 SESSION_COOKIE_SAMESITE = osf_settings.SESSION_COOKIE_SAMESITE
+SESSION_COOKIE_AGE = 2592000  # 30 days in seconds
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_CACHE_ALIAS = 'redis'
 
 # csrf:
 CSRF_COOKIE_NAME = 'api-csrf'
@@ -231,7 +234,7 @@ MIDDLEWARE = (
     'api.base.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
+    'api.base.middleware.UnsignCookieSessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -337,6 +340,16 @@ STORAGE_USAGE_MAX_ENTRIES = 10000000
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    },
+    'redis': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': os.environ.get('REDIS_HOST', 'redis://192.168.168.167:6379'),
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'CONNECTION_POOL_KWARGS': {
+                'max_connections': 100,
+            },
+        },
     },
     STORAGE_USAGE_CACHE_NAME: {
         'BACKEND': 'django.core.cache.backends.db.DatabaseCache',

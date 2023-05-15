@@ -2,12 +2,17 @@
 from nose.tools import *  # noqa:
 import mock  # noqa
 import unittest
+import pytest
+from importlib import import_module
+from django.conf import settings as django_conf_settings
 
 from rest_framework import fields
 from rest_framework.exceptions import ValidationError
 from api.base import utils as api_utils
 
 from framework.status import push_status_message
+
+SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
 
 class TestTruthyFalsy:
@@ -48,14 +53,15 @@ class TestIsDeprecated(unittest.TestCase):
         )
         assert is_deprecated is True
 
-
+@pytest.mark.django_db
 class TestFlaskDjangoIntegration:
     def test_push_status_message_no_response(self):
         status_message = 'This is a message'
         statuses = ['info', 'warning', 'warn', 'success', 'danger', 'default']
         for status in statuses:
             try:
-                push_status_message(status_message, kind=status)
+                with mock.patch('framework.status.get_session', return_value=SessionStore()):
+                    push_status_message(status_message, kind=status)
             except BaseException:
                 assert_true(
                     False,
@@ -87,14 +93,13 @@ class TestFlaskDjangoIntegration:
                 'Exception from push_status_message when called from the v2 API with type "error"'
             )
 
-    @mock.patch('framework.status.session')
-    def test_push_status_message_unexpected_error(self, mock_sesh):
+    @mock.patch('framework.status.get_session')
+    def test_push_status_message_unexpected_error(self, mock_get_session):
         status_message = 'This is a message'
         exception_message = 'this is some very unexpected problem'
-        mock_get = mock.Mock(side_effect=RuntimeError(exception_message))
-        mock_data = mock.Mock()
-        mock_data.attach_mock(mock_get, 'get')
-        mock_sesh.attach_mock(mock_data, 'data')
+        mock_session = mock.Mock()
+        mock_session.attach_mock(mock.Mock(side_effect=RuntimeError(exception_message)), 'get')
+        mock_get_session.return_value = mock_session
         try:
             push_status_message(status_message, kind='error')
             assert_true(

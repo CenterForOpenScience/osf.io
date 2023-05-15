@@ -2,18 +2,17 @@
 # encoding: utf-8
 import pytest
 from nose.tools import *  # noqa
+from importlib import import_module
 
+from django.conf import settings as django_conf_settings
 
-from framework import sessions
-from framework.flask import request
-
-from osf.models import Session
 from addons.osfstorage.tests import factories
 from addons.osfstorage import utils
 
 from addons.osfstorage.tests.utils import StorageTestCase
 from website.files.utils import attach_versions
 
+SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
 @pytest.mark.django_db
 class TestSerializeRevision(StorageTestCase):
@@ -30,11 +29,11 @@ class TestSerializeRevision(StorageTestCase):
         self.record.save()
 
     def test_serialize_revision(self):
-        mock_session = Session()
-        sessions.sessions[request._get_current_object()] = mock_session
-        utils.update_analytics(self.project, self.record, 0, mock_session)
-        utils.update_analytics(self.project, self.record, 0, mock_session)
-        utils.update_analytics(self.project, self.record, 2, mock_session)
+        s = SessionStore()
+        s.create()
+        utils.update_analytics(self.project, self.record, 0, s.session_key)
+        utils.update_analytics(self.project, self.record, 0, s.session_key)
+        utils.update_analytics(self.project, self.record, 2, s.session_key)
         expected = {
             'index': 1,
             'user': {
@@ -58,11 +57,11 @@ class TestSerializeRevision(StorageTestCase):
         assert_equal(self.record.get_download_count(version=0), 2)
 
     def test_anon_revisions(self):
-        mock_session = Session()
-        sessions.sessions[request._get_current_object()] = mock_session
-        utils.update_analytics(self.project, self.record, 0, mock_session)
-        utils.update_analytics(self.project, self.record, 0, mock_session)
-        utils.update_analytics(self.project, self.record, 2, mock_session)
+        s = SessionStore()
+        s.create()
+        utils.update_analytics(self.project, self.record, 0, s.session_key)
+        utils.update_analytics(self.project, self.record, 0, s.session_key)
+        utils.update_analytics(self.project, self.record, 2, s.session_key)
         expected = {
             'index': 2,
             'user': None,
