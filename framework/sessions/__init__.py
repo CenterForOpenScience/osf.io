@@ -10,6 +10,7 @@ import itsdangerous
 from flask import request, g
 import furl
 
+from framework import sentry
 from framework.celery_tasks.handlers import enqueue_task
 from framework.flask import redirect
 from osf.utils.fields import ensure_str
@@ -138,7 +139,9 @@ def create_session(response, data=None):
         if response is not None:
             response.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
         return None, response
-    if not user_session.session_key:
+    if user_session.session_key:
+        sentry.log_message(f'create_session() encounters an existing session {user_session.session_key}')
+    else:
         user_session.create()
     # TODO: check if session data changed and decide whether to save the session object
     for key, value in data.items() if data else {}:
@@ -156,6 +159,7 @@ def create_session(response, data=None):
         )
         return user_session, response
     return user_session, None
+
 
 # Request callbacks
 # NOTE: This gets attached in website.app.init_app to ensure correct callback order

@@ -43,7 +43,7 @@ def authenticate(user, response, user_updates=None):
     if not user_session:
         return response
     from osf.models import UserSessionMap
-    UserSessionMap.objects.create(user=user, session_key=user_session.session_key)
+    UserSessionMap.objects.get_or_create(user=user, session_key=user_session.session_key)
     print_cas_log(f'Finalizing authentication - session created: user=[{user._id}]', LogLevel.INFO)
     return response
 
@@ -70,12 +70,11 @@ def external_first_login_authenticate(user_dict, response):
     )
     # Note: we don't need to keep track of this anonymous session, and thus no entry is created in `UserSessionMap`
     user_session, response = create_session(response, data=data)
-    if not user_session:
-        return response
-    print_cas_log(
-        f'Finalizing first-time login from external IdP - anonymous session created: user=[{user_identity}]',
-        LogLevel.INFO,
-    )
+    if user_session:
+        print_cas_log(
+            f'Finalizing first-time login from external IdP - anonymous session created: user=[{user_identity}]',
+            LogLevel.INFO,
+        )
     return response
 
 
