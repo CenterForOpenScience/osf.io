@@ -59,7 +59,6 @@ def prepare_private_key():
     NOTE: In order to ensure the execution order of the before_request callbacks,
     this is attached in website.app.init_app rather than using @app.before_request.
     """
-    current_session = get_session()
     # Done if not GET request
     if request.method != 'GET':
         return
@@ -80,7 +79,7 @@ def prepare_private_key():
         key = None
 
     # Update URL and redirect
-    if key and not current_session.get('auth_user_id', None):
+    if key:
         new_url = add_key_to_url(request.url, scheme, key)
         return redirect(new_url, code=http_status.HTTP_307_TEMPORARY_REDIRECT)
 

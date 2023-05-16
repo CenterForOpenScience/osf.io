@@ -66,8 +66,6 @@ def attach_handlers(app, settings):
     # has been created
     add_handlers(app, {'before_request': framework.sessions.set_current_session})
     add_handlers(app, {'before_request': framework.sessions.prepare_private_key})
-    # framework.session's before_request handler must go after
-    # prepare_private_key, else view-only links won't work
     add_handlers(app, {'before_request': framework.sessions.before_request,
                        'after_request': framework.sessions.after_request})
 
