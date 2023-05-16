@@ -10,7 +10,6 @@ import itsdangerous
 from flask import request, g
 import furl
 
-from framework import sentry
 from framework.celery_tasks.handlers import enqueue_task
 from framework.flask import redirect
 from osf.utils.fields import ensure_str
@@ -140,6 +139,7 @@ def create_session(response, data=None):
             response.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
         return None, response
     if user_session.session_key:
+        from framework import sentry
         sentry.log_message(f'create_session() encounters an existing session {user_session.session_key}')
     else:
         user_session.create()
