@@ -4,21 +4,22 @@ import logging
 
 from dirtyfields import DirtyFieldsMixin
 
-from django.conf import settings
+from django.conf import settings as django_conf_settings
 from django.contrib.postgres import fields
-from django.urls import reverse
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.urls import reverse
 from django.utils import timezone
 
 from framework import sentry
-from osf.utils.fields import NonNaiveDateTimeField
 from osf.models import base
 from osf.models.contributor import InstitutionalContributor
 from osf.models.institution_affiliation import InstitutionAffiliation
 from osf.models.mixins import Loggable, GuardianMixin
 from osf.models.storage import InstitutionAssetFile
+from osf.models.validators import validate_email
+from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
 from website import mails
 from website import settings as website_settings
 
@@ -86,9 +87,10 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
 
     domains = fields.ArrayField(models.CharField(max_length=255), db_index=True, null=True, blank=True)
     email_domains = fields.ArrayField(models.CharField(max_length=255), db_index=True, null=True, blank=True)
+    support_email = LowercaseEmailField(default='', blank=True, validators=[validate_email])
 
     contributors = models.ManyToManyField(
-        settings.AUTH_USER_MODEL,
+        django_conf_settings.AUTH_USER_MODEL,
         through=InstitutionalContributor,
         related_name='institutions'
     )

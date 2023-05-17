@@ -1,8 +1,7 @@
-import mock
-import pytest
-
 from django.utils import timezone
+import mock
 from past.builtins import basestring
+import pytest
 
 from osf.models import Institution
 from osf_tests.factories import InstitutionFactory, AuthUserFactory, UserFactory, InstitutionAssetFileFactory
@@ -62,6 +61,18 @@ def test_institution_banner_path():
     logo = InstitutionAssetFileFactory(institutions=[inst], name='banner')
     expected_banner_path = logo.file.url
     assert inst.banner_path == expected_banner_path
+
+
+@pytest.mark.django_db
+def test_institution_support_email_default_blank():
+    institution = InstitutionFactory()
+    assert institution.support_email == ''
+
+
+@pytest.mark.django_db
+def test_institution_support_email():
+    institution = InstitutionFactory(support_email='support@osf.edu')
+    assert institution.support_email == 'support@osf.edu'
 
 
 class TestInstitutionPermissions:
