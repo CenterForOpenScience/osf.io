@@ -27,11 +27,11 @@ SessionStore = import_module(api_settings.SESSION_ENGINE).SessionStore
 
 def drf_get_session_from_cookie(cookie_val):
     """
-    Given a cookie value, return the Django native `Session` object or `None`, using the SessionStore.
+    Given a cookie value, return the Django native `SessionStore` object.
 
-    When using DB backend, for expired sessions, SessionStore().exists(session_key=session_key) returns
-    true while SessionStore(session_key=session_key) doesn't load the session data. Thus, when using the
-    returned session object from this method, must check ``session.get('auth_user_id', None)``.
+    For expired/nonexistent sessions,
+    SessionStore(session_key=session_key) doesn't load the session data.
+    Thus, when using the returned session object from this method, must check ``session.get('auth_user_id', None)``.
 
     :param cookie_val: the cookie
     :return: the Django native `Session` object or None
@@ -40,7 +40,7 @@ def drf_get_session_from_cookie(cookie_val):
         session_key = ensure_str(itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie_val))
     except itsdangerous.BadSignature:
         return None
-    return SessionStore(session_key=session_key) if SessionStore().exists(session_key=session_key) else None
+    return SessionStore(session_key=session_key)
 
 
 def check_user(user):
