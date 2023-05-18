@@ -139,7 +139,7 @@ def create_session(response, data=None):
         return None, response
     if user_session.session_key:
         from framework import sentry
-        sentry.log_message(f'create_session() encounters an existing session {user_session.session_key}')
+        sentry.log_message('create_session() encounters an existing session')
     else:
         user_session.create()
     # TODO: check if session data changed and decide whether to save the session object
