@@ -340,7 +340,7 @@ class TestSessions(AppTestCase):
             flask_get_session_from_cookie(self.cookie_session_removed)
 
     @pytest.mark.skipif(SKIP_NON_DB_BACKEND_TESTS, reason='Django Session DB Backend Required for This Test')
-    def test_get_session_from_cookie_with_session_expired(self):
+    def test_flask_get_session_from_cookie_with_session_expired(self):
         # Expired Session (yet to be cleared)
         session_expired = SessionStore()
         session_expired['auth_user_id'] = self.user._primary_key
@@ -355,7 +355,7 @@ class TestSessions(AppTestCase):
         with pytest.raises(InvalidCookieOrSessionError):
             flask_get_session_from_cookie(cookie_session_expired)
 
-    def test_get_session_from_cookie_with_authenticated_session(self):
+    def test_flask_get_session_from_cookie_with_authenticated_session(self):
         session = flask_get_session_from_cookie(self.cookie)
         assert session is not None
         assert session.session_key == self.session.session_key
