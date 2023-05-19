@@ -73,7 +73,7 @@ class ExportData(base.BaseModel):
     export_file = models.CharField(max_length=255, null=True, blank=True)
     project_number = models.PositiveIntegerField(default=0)
     file_number = models.PositiveIntegerField(default=0)
-    total_size = models.PositiveIntegerField(default=0)
+    total_size = models.BigIntegerField(default=0)
     is_deleted = models.BooleanField(default=False)
     task_id = models.CharField(max_length=255, null=True, blank=True)
     creator = models.ForeignKey('OSFUser', on_delete=models.CASCADE)
