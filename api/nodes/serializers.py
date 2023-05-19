@@ -44,6 +44,7 @@ from website.project.model import NodeUpdateError
 from website.util import quota
 from osf.utils import permissions as osf_permissions
 from api.base import settings as api_settings
+from website import settings as website_settings
 
 
 class RegistrationProviderRelationshipField(RelationshipField):
@@ -1440,9 +1441,9 @@ class NodeStorageProviderSerializer(JSONAPISerializer):
 
     def get_for_institutions(self, obj):
         # GRDM-37149: Attribute value indicating whether it is an institutional storage
-        if obj.provider not in settings.ADDONS_AVAILABLE_DICT:
+        if obj.provider not in website_settings.ADDONS_AVAILABLE_DICT:
             return False
-        return settings.ADDONS_AVAILABLE_DICT[obj.provider].for_institutions
+        return website_settings.ADDONS_AVAILABLE_DICT[obj.provider].for_institutions
 
 class InstitutionRelated(JSONAPIRelationshipSerializer):
     id = ser.CharField(source='_id', required=False, allow_null=True)
