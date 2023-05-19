@@ -9,6 +9,7 @@ import itsdangerous
 import pytest
 from unittest import mock
 
+from api.base.authentication.drf import drf_get_session_from_cookie
 from framework.sessions import set_current_session, flask_get_session_from_cookie, get_session, create_session
 from framework.sessions.utils import remove_session, remove_sessions_for_user
 from osf.management.commands.clear_expired_sessions import clear_expired_sessions
@@ -307,26 +308,39 @@ class TestSessions(AppTestCase):
         assert self.context.g.current_session is not None
         assert self.context.g.current_session.get('auth_user_id', None) == self.user._primary_key
 
-    def test_get_session_from_cookie_without_cookie(self):
+    def test_drf_get_session_from_cookie_with_cookie_not_signed_by_server_secret(self):
+        ret_val = drf_get_session_from_cookie(self.cookie_invalid)
+        assert ret_val is None
+
+    def test_drf_get_session_from_cookie_with_session_removed(self):
+        ret_val = drf_get_session_from_cookie(self.cookie_session_removed)
+        assert ret_val.session_key == itsdangerous.Signer(osf_settings.SECRET_KEY).unsign(self.cookie_session_removed).decode()
+        assert ret_val.load() == {}
+
+    def test_drf_get_session_from_cookie_with_valid_session(self):
+        ret_val = drf_get_session_from_cookie(self.cookie)
+        assert ret_val.session_key == self.session.session_key
+
+    def test_flask_get_session_from_cookie_without_cookie(self):
         with pytest.raises(InvalidCookieOrSessionError):
             flask_get_session_from_cookie(None)
         with pytest.raises(InvalidCookieOrSessionError):
             flask_get_session_from_cookie('')
 
-    def test_get_session_from_cookie_with_invalid_cookie(self):
+    def test_flask_get_session_from_cookie_with_invalid_cookie(self):
         with pytest.raises(InvalidCookieOrSessionError):
             flask_get_session_from_cookie(self.cookie_invalid)
 
-    def test_get_session_from_cookie_with_invalid_session(self):
+    def test_flask_get_session_from_cookie_with_invalid_session(self):
         with pytest.raises(InvalidCookieOrSessionError):
             flask_get_session_from_cookie(self.cookie_session_invalid)
 
-    def test_get_session_from_cookie_with_session_gone(self):
+    def test_flask_get_session_from_cookie_with_session_gone(self):
         with pytest.raises(InvalidCookieOrSessionError):
             flask_get_session_from_cookie(self.cookie_session_removed)
 
     @pytest.mark.skipif(SKIP_NON_DB_BACKEND_TESTS, reason='Django Session DB Backend Required for This Test')
-    def test_get_session_from_cookie_with_session_expired(self):
+    def test_flask_get_session_from_cookie_with_session_expired(self):
         # Expired Session (yet to be cleared)
         session_expired = SessionStore()
         session_expired['auth_user_id'] = self.user._primary_key
@@ -341,7 +355,7 @@ class TestSessions(AppTestCase):
         with pytest.raises(InvalidCookieOrSessionError):
             flask_get_session_from_cookie(cookie_session_expired)
 
-    def test_get_session_from_cookie_with_authenticated_session(self):
+    def test_flask_get_session_from_cookie_with_authenticated_session(self):
         session = flask_get_session_from_cookie(self.cookie)
         assert session is not None
         assert session.session_key == self.session.session_key
