@@ -184,6 +184,9 @@ class BaseFileSerializer(JSONAPISerializer):
     current_version = ser.IntegerField(help_text='Latest file version', read_only=True, source='current_version_number')
     delete_allowed = ser.BooleanField(read_only=True, required=False)
 
+    # GRDM-37149: Attribute value indicating whether it is an institutional storage
+    for_institutions = ser.SerializerMethodField(read_only=True, help_text='Whether the addon is institutional storage')
+
     parent_folder = RelationshipField(
         related_view='files:file-detail',
         related_view_kwargs={'file_id': '<parent._id>'},
@@ -291,6 +294,12 @@ class BaseFileSerializer(JSONAPISerializer):
         if obj.provider == 'osfstorage' and obj.is_file:
             extras['downloads'] = obj.get_download_count()
         return extras
+
+    def get_for_institutions(self, obj):
+        # GRDM-37149: Attribute value indicating whether it is an institutional storage
+        if obj.provider not in settings.ADDONS_AVAILABLE_DICT:
+            return False
+        return settings.ADDONS_AVAILABLE_DICT[obj.provider].for_institutions
 
     def get_current_user_can_comment(self, obj):
         user = self.context['request'].user
