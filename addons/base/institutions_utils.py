@@ -51,7 +51,16 @@ class InstitutionsNodeSettings(BaseNodeSettings):
         return self.has_auth and self.folder_id
 
     @property
+    def _institutions_enabled(self):
+        if not self.config.for_institutions:
+            raise ValueError('_institution_enabled is only valid for institutional storage addons')
+        _, region_provider = get_region_provider(self.owner)
+        return region_provider == self.config.short_name
+
+    @property
     def has_auth(self):
+        if not self._institutions_enabled:
+            return False
         return self.addon_option
 
     @property
@@ -474,6 +483,20 @@ def check_existence_and_create(node, ns, op_name):
         logger.warning(u'{}: cannot create external storage folder: addon_name={}, project title={}, GUID={}: {}'.format(op_name, ns.SHORT_NAME, node.title, node._id, str(e)))
         return False
 
+def get_region_provider(node):
+    osfstorage = node.get_addon('osfstorage')
+    if not osfstorage:
+        return False, None
+    region_disabled = False
+    region_provider = None
+    region = osfstorage.region
+    if region and region.waterbutler_settings:
+        region_disabled = region.waterbutler_settings.get(
+            'disabled', False)
+        storage = region.waterbutler_settings.get('storage', None)
+        if storage:
+            region_provider = storage.get('provider', None)
+    return region_disabled, region_provider
 
 # sleep time (sec.) to limit API calls
 SYNC_WAIT = 1

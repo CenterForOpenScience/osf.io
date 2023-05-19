@@ -338,6 +338,8 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
 
     @property
     def has_auth(self):
+        if not self._institutions_enabled:
+            return False
         return self.fileaccess_token and self.management_token and \
             self.admin_dbmid
 
