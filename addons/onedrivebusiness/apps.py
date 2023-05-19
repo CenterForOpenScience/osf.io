@@ -29,7 +29,7 @@ class OneDriveBusinessAddonAppConfig(BaseAddonAppConfig):
     max_file_size = settings.MAX_UPLOAD_SIZE
 
     # No node setting views for Institution Storage
-    user_settings_template = os.path.join(TEMPLATE_PATH, 'user_settings.mako')
+    user_settings_template = os.path.join(TEMPLATE_PATH, 'onedrivebusiness_user_settings.mako')
 
     # default value for RdmAddonOption.is_allowed for GRDM Admin
     is_allowed_default = False

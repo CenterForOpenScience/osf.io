@@ -3,7 +3,7 @@
      data-addon-short-name="${ addon_short_name }"
      data-addon-name="${ addon_full_name }">
 
-    <%include file="credentials_modal.mako"/>
+    <%include file="onedrivebusiness_credentials_modal.mako"/>
 
     <h4 class="addon-title">
         <img class="addon-icon" src=${addon_icon_url}>
