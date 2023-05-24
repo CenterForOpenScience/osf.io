@@ -78,6 +78,9 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
         default=''
     )
 
+    # Default Storage Region
+    storage_regions = models.ManyToManyField('OSFUser')
+
     # Verified employment/education affiliation source for `via-orcid` institutions
     orcid_record_verified_source = models.CharField(max_length=255, blank=True, default='')
 

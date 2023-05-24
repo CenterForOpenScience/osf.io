@@ -9,6 +9,8 @@ import waffle
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
 
+from addons.osfstorage.models import UserSettings as OSFStorageUserSettings
+
 from api.base.authentication import drf
 from api.base import exceptions, settings
 
@@ -369,6 +371,7 @@ class InstitutionAuthentication(BaseAuthentication):
                 osf_support_email=OSF_SUPPORT_EMAIL,
             )
 
+        was_affiliated = user.is_affiliated_with_institution(institution)
         # Affiliate the user to the primary institution if not previously affiliated
         user.add_or_update_affiliated_institution(
             institution,
@@ -385,5 +388,15 @@ class InstitutionAuthentication(BaseAuthentication):
                 sso_mail=sso_email,
                 sso_department=department,
             )
+
+        # Storage region is only updated if user is created or was not affiliated
+        # Storage region is set using the primary institution's settings only
+        # The first region in the default region list is used
+        if is_created or not was_affiliated:
+            user_settings = OSFStorageUserSettings.objects.get(owner=user)
+            default_regions = institution.storage_regions
+            if default_regions and user_settings.default_region not in default_regions:
+                user_settings.default_region = default_regions.first()
+                user_settings.save()
 
         return user, None
