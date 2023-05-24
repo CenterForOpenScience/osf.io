@@ -1,4 +1,4 @@
-<%def name="nav(service_name, service_url, service_support_url)">
+<%def name="nav(service_name, service_url, service_support_url, service_support_target='_self')">
 <link rel="stylesheet" href='/static/css/nav.css'>
 <div class="osf-nav-wrapper">
 
@@ -56,7 +56,7 @@
             % endif
             % if nav_support:
             <li class="dropdown">
-            <a id="navbar-support" data-bind="click: trackClick.bind($data, '${service_name} Support')" href="${service_support_url}">${_("Support")}</a>
+            <a id="navbar-support" data-bind="click: trackClick.bind($data, '${service_name} Support')" href="${service_support_url}" target="${service_support_target}">${_("Support")}</a>
             </li>
             % endif
             % if nav_donate:
@@ -77,7 +77,7 @@
                 <ul class="dropdown-menu auth-dropdown" role="menu">
                     <li><a data-bind="click: trackClick.bind($data, 'MyProfile')" href="${domain}profile/"><i class="fa fa-user fa-lg p-r-xs"></i> ${_("My Profile")}</a></li>
                     <li><a data-bind="click: trackClick.bind($data, 'Settings')" href="${web_url_for('user_profile')}"><i class="fa fa-cog fa-lg p-r-xs"></i> ${_("Settings")}</a></li>
-                    % if nav_support or nav_global_support:
+                    % if nav_global_support:
                     <li><a data-bind="click: trackClick.bind($data, 'Support')" href="${global_support_url}" target="${global_support_target}"><i class="fa fa-life-ring fa-lg p-r-xs"></i> ${_("RDM Support")}</a></li>
                     % endif
                     <li><a data-bind="click: trackClick.bind($data, 'Logout')" href="${web_url_for('auth_logout')}"><i class="fa fa-sign-out fa-lg p-r-xs"></i> ${_("Log out")}</a></li>
