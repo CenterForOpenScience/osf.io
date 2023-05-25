@@ -371,7 +371,6 @@ class InstitutionAuthentication(BaseAuthentication):
                 osf_support_email=OSF_SUPPORT_EMAIL,
             )
 
-        was_affiliated = user.is_affiliated_with_institution(institution)
         # Affiliate the user to the primary institution if not previously affiliated
         user.add_or_update_affiliated_institution(
             institution,
@@ -389,11 +388,10 @@ class InstitutionAuthentication(BaseAuthentication):
                 sso_department=department,
             )
 
-        # Storage region is only updated if user is created or was not affiliated
-        # Storage region is set using the primary institution's settings only
+        # Storage region is only updated if user is created via institutional SSO
+        # Storage region is set using the primary institution's settings
         # The first region in the default region list is used
-        if is_created or not was_affiliated:
-            # user_settings = user.addons_osfstorage_user_settings
+        if is_created:
             user_settings = OSFStorageUserSettings.objects.get(owner=user)
             default_regions = institution.storage_regions.all()
             if default_regions and user_settings.default_region not in default_regions:
