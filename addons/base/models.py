@@ -383,13 +383,13 @@ class BaseNodeSettings(BaseAddonSettings):
         return False
 
     @property
-    def _institutions_enabled(self):
+    def _institutions_disabled(self):
         # GRDM-37149: Display only configured institutional providers
         from addons.base import institutions_utils
         if not self.config.for_institutions:
-            raise ValueError('institution_enabled is only valid for institutional storage addons')
+            raise ValueError('_institutions_disabled is only valid for institutional storage addons')
         _, region_provider = institutions_utils.get_region_provider(self.owner)
-        return region_provider == self.config.short_name
+        return region_provider != self.config.short_name
 
     def to_json(self, user):
         ret = super(BaseNodeSettings, self).to_json(user)
