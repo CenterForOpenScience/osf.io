@@ -256,12 +256,13 @@ class ExportData(base.BaseModel):
             provider = file.get('provider')
             file_path = file.get('path')
             versions = file.get('version', [])
+            file_id = file.get('id')
             for version in versions:
                 identifier = version.get('identifier')
                 metadata = version.get('metadata')
                 # get metadata.get('sha256', metadata.get('md5', metadata.get('sha512', metadata.get('sha1', metadata.get('name')))))
                 file_name = metadata.get('sha256', metadata.get('md5'))
-                file_versions.append((project_id, provider, file_path, identifier, file_name,))
+                file_versions.append((project_id, provider, file_path, identifier, file_name, file_id,))
 
         return file_versions
 

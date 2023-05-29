@@ -130,9 +130,13 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
         _length = len(file_versions)
         # cached the filename in hash value
         created_filename_list = []
+        list_file_id_not_found = []
+        institution_guid = ''
+        if export_data_json and 'institution' in export_data_json:
+            institution_guid = export_data_json.get('institution').get('guid')
         for index, file in enumerate(file_versions):
             logger.debug(f'[{1 + index}/{_length}] file: {file}')
-            project_id, provider, file_path, version, file_name = file
+            project_id, provider, file_path, version, file_name, file_id = file
             # prevent uploading duplicate file_name in hash value
             if file_name in created_filename_list:
                 logger.debug(f'file created -> ignore')
@@ -143,8 +147,9 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
                 return None
             # get content data file from source
             response = export_data.read_data_file_from_source(cookies, project_id, provider, file_path, **kwargs)
-            if not task.is_aborted() and response.status_code != 200:
-                return export_data_rollback_process(cookies, export_data_id, **kwargs)
+            if response.status_code != 200:
+                list_file_id_not_found.append(file_id)
+                continue
             file_data = response.content
             if task.is_aborted():  # check before each steps
                 return None
@@ -153,9 +158,19 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
             # 201: created -> update cache list
             if response.status_code == 201:
                 created_filename_list.append(file_name)
-            # 409: file is existing (able diff in path) <- prevented
-            if not task.is_aborted() and response.status_code not in (201, ):
-                return export_data_rollback_process(cookies, export_data_id, **kwargs)
+            else:
+                list_file_id_not_found.append(file_id)
+                continue
+        list_file_info_not_found = []
+        if len(list_file_id_not_found) > 0:
+            list_file_info = file_info_json.get('files', [])
+            for index_file, file_info in enumerate(list_file_info):
+                if file_info['id'] in list_file_id_not_found:
+                    list_file_info_not_found.append(file_info)
+                    export_data_json['size'] -= file_info.get('size')
+                    export_data_json['files_numb'] -= len(file_info.get('version'))
+                    list_file_info.pop(index_file)
+            file_info_json['files'] = list_file_info
         logger.debug(f'uploaded file versions')
 
         # temporary file
@@ -207,6 +222,8 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
                 total_size=export_data_json.get('size', 0),
             )
         logger.debug(f'completed process')
+        return {'list_file_info_export_not_found': list_file_info_not_found,
+                'file_name_export_fail': 'failed_files_export_{}_{}.csv'.format(institution_guid, export_data.process_start_timestamp)}
     except Exception as e:
         logger.debug(f'Exception {e}')
         # terminate process

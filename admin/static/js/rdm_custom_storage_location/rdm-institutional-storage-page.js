@@ -19,6 +19,10 @@ var preload_accounts_type2 = ['nextcloudinstitutions',
 // delay time to show growl box; in millisecond
 var growlBoxDelay = 5000;
 var intervalCheckStatus = 5000;
+var list_file_info_export_fail = [];
+var list_file_info_restore_fail = [];
+var file_name_export_fail = '';
+var file_name_restore_fail = '';
 
 function preload(provider, callback) {
     if (preload_accounts_type1.indexOf(provider) >= 0) {
@@ -1109,6 +1113,21 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
                         showViewExportDataButton($viewExportDataButton, location_id)
                     }
                     need_reload = 1;
+                    if (data.result.list_file_info_export_not_found.length > 0) {
+                        var data_res = data.result.list_file_info_export_not_found;
+                        var text_show_file = '';
+                        file_name_export_fail = data.result.file_name_export_fail;
+                        need_reload = 0;
+                        $('#showFileExportNotExistModal').modal('show');
+                        list_file_info_export_fail = [['File path', 'File name', 'Provider', 'Size']];
+                        data_res.forEach(function (file) {
+                            list_file_info_export_fail.push([file.path, file.name, file.provider, file.size]);
+                            text_show_file += "<tr><td>" + file.path + "</td><td>" + file.name + "</td><td>"
+                                                + file.provider + "</td><td>" + file.size + " Bytes</td>";
+                        });
+                        $('.table-ng-file-export-not-exist').html(text_show_file);
+                        $('.table-ng-file-export-not-exist').css('word-break', 'break-word');
+                    }
                 } else if (!window.contextVars[this.custom.key].stopExportInBackground) {
                     messageType = 'danger';
                     message = _('Export data failed.');
@@ -1353,6 +1372,20 @@ function checkTaskStatus(task_id, task_type) {
                 // Done restoring export data
                 enableCheckRestoreFunction();
                 $osf.growl(_('Restore Export Data'), _('Restore completed.'), 'success', growlBoxDelay);
+                if (result.list_file_restore_fail.length > 0) {
+                    var data_res = result.list_file_restore_fail;
+                    var text_show_file = '';
+                    $('#showFileRestoreNotExistModal').modal('show');
+                    file_name_restore_fail = result.file_name_restore_fail;
+                    list_file_info_restore_fail = [['File path', 'File name', 'Provider', 'Size']];
+                    data_res.forEach(function (file) {
+                        list_file_info_restore_fail.push([file.path, file.name, file.provider, file.size]);
+                        text_show_file += "<tr><td>" + file.path + "</td><td>" + file.name + "</td><td>"
+                                            + file.provider + "</td><td>" + file.size + " Bytes</td>";
+                    });
+                    $('.table-ng-file-restore-not-exist').html(text_show_file);
+                    $('.table-ng-file-restore-not-exist').css('word-break', 'break-word');
+                }
             } else if (result_task_type === 'Stop Restore') {
                 // Done stopping restore export data
                 enableRestoreFunction();
@@ -1459,4 +1492,66 @@ $('#cancelRestoreDataModal').on('click', function () {
 
 $('#checkRestoreDataModal').on('hidden.bs.modal', function () {
   $('#check_restore_button').prop('disabled', false);
+});
+
+function exportToCsv(filename, rows) {
+    var processRow = function (row) {
+        var finalVal = '';
+        for (var j = 0; j < row.length; j++) {
+            var innerValue = row[j] === null ? '' : row[j].toString();
+            if (row[j] instanceof Date) {
+                innerValue = row[j].toLocaleString();
+            };
+            var result = innerValue.replace(/"/g, '""');
+            if (result.search(/("|,|\n)/g) >= 0)
+                result = '"' + result + '"';
+            if (j > 0)
+                finalVal += ',';
+            finalVal += result;
+        }
+        return finalVal + '\n';
+    };
+
+    var csvFile = '';
+    for (var i = 0; i < rows.length; i++) {
+        csvFile += processRow(rows[i]);
+    }
+
+    var blob = new Blob([csvFile], { type: 'text/csv;charset=utf-8;' });
+    if (navigator.msSaveBlob) { // IE 10+
+        navigator.msSaveBlob(blob, filename);
+    } else {
+        var link = document.createElement("a");
+        if (link.download !== undefined) { // feature detection
+            // Browsers that support HTML5 download attribute
+            var url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    }
+}
+
+$('.cancel_modal_show_file_export_not_exist').on('click', function () {
+    list_file_info_export_fail = [];
+    file_name_export_fail = '';
+    setTimeout(function () {
+        window.location.reload();
+    }, 1000);
+});
+
+$('.download_file_export_not_exist').on('click', function () {
+    exportToCsv(file_name_export_fail, list_file_info_export_fail);
+});
+
+$('.cancel_modal_show_file_restore_not_exist').on('click', function () {
+    list_file_info_restore_fail = [];
+    file_name_restore_fail = '';
+});
+
+$('.download_file_restore_not_exist').on('click', function () {
+    exportToCsv(file_name_restore_fail, list_file_info_restore_fail);
 });

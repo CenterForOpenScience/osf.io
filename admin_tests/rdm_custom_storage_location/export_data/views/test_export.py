@@ -20,10 +20,28 @@ from osf_tests.factories import (
     ExportDataFactory,
 )
 from tests.base import AdminTestCase
+from admin_tests.rdm_custom_storage_location.export_data.test_utils import FAKE_DATA
 
 EXPORT_DATA_PATH = 'admin.rdm_custom_storage_location.export_data.views.export'
 EXPORT_DATA_TASK_PATH = 'admin.rdm_custom_storage_location.tasks'
 FAKE_TASK_ID = '00000000-0000-0000-0000-000000000000'
+FAKE_EXPORT_DATA_JSON = {
+    'institution': {
+        'id': 66,
+        'guid': 'wustl',
+        'name': 'Washington University in St. Louis [Test]'
+    },
+    'process_start': '2023-05-09 09:14:44',
+    'process_end': '2023-05-09 09:25:18',
+    'storage': {
+        'name': 'United States',
+        'type': 'NII Storage'
+    },
+    'projects_numb': 1,
+    'files_numb': 3,
+    'size': 1470,
+    'file_path': '/export_66_1683623684/file_info_wustl_1683623684.json'
+}
 
 
 class FakeTask:
@@ -279,7 +297,7 @@ def test_export_data_process_export_data_model_success(mock_extract_json, mock_c
         mock_get_source_file_versions_min.assert_called()
         mock_upload_file_info_file.assert_called()
         mock_upload_export_data_file.assert_called()
-        nt.assert_is_none(result)
+        nt.assert_is_not_none(result)
 
 
 @pytest.mark.feature_202210
@@ -432,7 +450,7 @@ def test_export_data_process_aborted_before_read_data_file_from_source(mock_extr
     def update_fake_task(*args, **kwargs):
         nonlocal fake_task
         fake_task.check_abort = True
-        return [(None, None, None, None, None)]
+        return [(None, None, None, None, None, None)]
 
     mock_extract_json.return_value = {}, {}
     mock_create_export_data_folder.return_value = created_response
@@ -449,12 +467,13 @@ def test_export_data_process_aborted_before_read_data_file_from_source(mock_extr
 
 @pytest.mark.feature_202210
 @pytest.mark.django_db
+@mock.patch(f'{EXPORT_DATA_PATH}.ExportData.upload_export_data_file')
 @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.get_source_file_versions_min')
 @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.create_export_data_files_folder')
 @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.create_export_data_folder')
 @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.extract_file_information_json_from_source_storage')
 def test_export_data_process_read_data_file_from_source_error(mock_extract_json, mock_create_export_data_folder, mock_create_export_data_files_folder,
-                                                              mock_get_source_file_versions_min):
+                                                              mock_get_source_file_versions_min, mock_upload_export_data_file):
     export_data = ExportDataFactory()
     fake_task = FakeTask(states.SUCCESS, {}, check_abort=False)
 
@@ -466,11 +485,12 @@ def test_export_data_process_read_data_file_from_source_error(mock_extract_json,
     mock_extract_json.return_value = {}, {}
     mock_create_export_data_folder.return_value = created_response
     mock_create_export_data_files_folder.return_value = created_response
-    mock_get_source_file_versions_min.return_value = [(None, None, None, None, None)]
+    mock_get_source_file_versions_min.return_value = [(None, None, None, None, None, None)]
     mock_read_data_file_from_source = mock.MagicMock()
     mock_read_data_file_from_source.return_value = error_response
     mock_rollback_export_data = mock.MagicMock()
     mock_rollback_export_data.return_value = None
+    mock_upload_export_data_file.return_value = created_response
 
     with mock.patch(f'{EXPORT_DATA_PATH}.ExportData.read_data_file_from_source', mock_read_data_file_from_source):
         with mock.patch(f'{EXPORT_DATA_PATH}.export_data_rollback_process', mock_rollback_export_data):
@@ -480,8 +500,50 @@ def test_export_data_process_read_data_file_from_source_error(mock_extract_json,
             mock_create_export_data_files_folder.assert_called()
             mock_get_source_file_versions_min.assert_called()
             mock_read_data_file_from_source.assert_called()
-            mock_rollback_export_data.assert_called()
-            nt.assert_is_none(result)
+            nt.assert_is_not_none(result)
+
+
+@pytest.mark.feature_202210
+@pytest.mark.django_db
+@mock.patch(f'{EXPORT_DATA_PATH}.ExportData.upload_export_data_file')
+@mock.patch(f'{EXPORT_DATA_PATH}.ExportData.get_source_file_versions_min')
+@mock.patch(f'{EXPORT_DATA_PATH}.ExportData.create_export_data_files_folder')
+@mock.patch(f'{EXPORT_DATA_PATH}.ExportData.create_export_data_folder')
+@mock.patch(f'{EXPORT_DATA_PATH}.ExportData.extract_file_information_json_from_source_storage')
+def test_export_data_process_continue_excuting_read_data_file_from_source_error(mock_extract_json, mock_create_export_data_folder,
+                                                                                mock_create_export_data_files_folder,
+                                                                                mock_get_source_file_versions_min, mock_upload_export_data_file):
+    export_data = ExportDataFactory()
+    fake_task = FakeTask(states.SUCCESS, {}, check_abort=False)
+
+    created_response = requests.Response()
+    created_response.status_code = status.HTTP_201_CREATED
+    error_response = requests.Response()
+    error_response.status_code = status.HTTP_400_BAD_REQUEST
+    fake_list_file_version = []
+    for item in FAKE_DATA.get('files', []):
+        fake_list_file_version.append(
+            [item.get('project', None), item.get('provider', None), item.get('path', None), 1, item.get('name', None), item.get('id', None)])
+
+    mock_extract_json.return_value = FAKE_EXPORT_DATA_JSON, FAKE_DATA
+    mock_create_export_data_folder.return_value = created_response
+    mock_create_export_data_files_folder.return_value = created_response
+    mock_get_source_file_versions_min.return_value = fake_list_file_version
+    mock_read_data_file_from_source = mock.MagicMock()
+    mock_read_data_file_from_source.return_value = error_response
+    mock_rollback_export_data = mock.MagicMock()
+    mock_rollback_export_data.return_value = None
+    mock_upload_export_data_file.return_value = created_response
+
+    with mock.patch(f'{EXPORT_DATA_PATH}.ExportData.read_data_file_from_source', mock_read_data_file_from_source):
+        with mock.patch(f'{EXPORT_DATA_PATH}.export_data_rollback_process', mock_rollback_export_data):
+            result = export.export_data_process(fake_task, None, export_data.pk)
+            mock_extract_json.assert_called()
+            mock_create_export_data_folder.assert_called()
+            mock_create_export_data_files_folder.assert_called()
+            mock_get_source_file_versions_min.assert_called()
+            mock_read_data_file_from_source.assert_called()
+            nt.assert_is_not_none(result)
 
 
 @pytest.mark.feature_202210
@@ -509,7 +571,7 @@ def test_export_data_process_aborted_before_transfer_export_data_file_to_locatio
     mock_extract_json.return_value = {}, {}
     mock_create_export_data_folder.return_value = created_response
     mock_create_export_data_files_folder.return_value = created_response
-    mock_get_source_file_versions_min.return_value = [(None, None, None, None, None)]
+    mock_get_source_file_versions_min.return_value = [(None, None, None, None, None, None)]
     mock_read_data_file_from_source = mock.MagicMock()
     mock_read_data_file_from_source.side_effect = update_fake_task
 
@@ -525,12 +587,13 @@ def test_export_data_process_aborted_before_transfer_export_data_file_to_locatio
 
 @pytest.mark.feature_202210
 @pytest.mark.django_db
+@mock.patch(f'{EXPORT_DATA_PATH}.ExportData.upload_export_data_file')
 @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.get_source_file_versions_min')
 @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.create_export_data_files_folder')
 @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.create_export_data_folder')
 @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.extract_file_information_json_from_source_storage')
 def test_export_data_process_transfer_export_data_file_to_location_error(mock_extract_json, mock_create_export_data_folder,
-                                                                         mock_create_export_data_files_folder, mock_get_source_file_versions_min):
+                                                                         mock_create_export_data_files_folder, mock_get_source_file_versions_min, mock_upload_export_data_file):
     export_data = ExportDataFactory()
     fake_task = FakeTask(states.SUCCESS, {}, check_abort=False)
 
@@ -544,13 +607,14 @@ def test_export_data_process_transfer_export_data_file_to_location_error(mock_ex
     mock_extract_json.return_value = {}, {}
     mock_create_export_data_folder.return_value = created_response
     mock_create_export_data_files_folder.return_value = created_response
-    mock_get_source_file_versions_min.return_value = [(None, None, None, None, None)]
+    mock_get_source_file_versions_min.return_value = [(None, None, None, None, None, None)]
     mock_read_data_file_from_source = mock.MagicMock()
     mock_read_data_file_from_source.return_value = ok_response
     mock_transfer_export_data_file_to_location = mock.MagicMock()
     mock_transfer_export_data_file_to_location.return_value = error_response
     mock_rollback_export_data = mock.MagicMock()
     mock_rollback_export_data.return_value = None
+    mock_upload_export_data_file.return_value = created_response
 
     with mock.patch(f'{EXPORT_DATA_PATH}.ExportData.read_data_file_from_source', mock_read_data_file_from_source):
         with mock.patch(f'{EXPORT_DATA_PATH}.ExportData.transfer_export_data_file_to_location', mock_transfer_export_data_file_to_location):
@@ -562,8 +626,7 @@ def test_export_data_process_transfer_export_data_file_to_location_error(mock_ex
                 mock_get_source_file_versions_min.assert_called()
                 mock_read_data_file_from_source.assert_called()
                 mock_transfer_export_data_file_to_location.assert_called()
-                mock_rollback_export_data.assert_called()
-                nt.assert_is_none(result)
+                nt.assert_is_not_none(result)
 
 
 @pytest.mark.django_db
@@ -588,7 +651,7 @@ def test_export_data_process_transfer_export_data_file_to_location_201(mock_extr
     mock_extract_json.return_value = {}, {}
     mock_create_export_data_folder.return_value = created_response
     mock_create_export_data_files_folder.return_value = created_response
-    mock_get_source_file_versions_min.return_value = [(None, None, None, None, 'duplicate'), (None, None, None, None, 'duplicate')]
+    mock_get_source_file_versions_min.return_value = [(None, None, None, None, 'duplicate', None), (None, None, None, None, 'duplicate', None)]
     mock_read_data_file_from_source = mock.MagicMock()
     mock_read_data_file_from_source.return_value = ok_response
     mock_transfer_export_data_file_to_location = mock.MagicMock()
@@ -606,7 +669,7 @@ def test_export_data_process_transfer_export_data_file_to_location_201(mock_extr
                 mock_get_source_file_versions_min.assert_called()
                 mock_read_data_file_from_source.assert_called()
                 mock_transfer_export_data_file_to_location.assert_called()
-                nt.assert_is_none(result)
+                nt.assert_is_not_none(result)
 
 
 @pytest.mark.feature_202210

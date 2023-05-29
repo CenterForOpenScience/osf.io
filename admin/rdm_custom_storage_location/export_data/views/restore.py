@@ -213,7 +213,7 @@ def restore_export_data_process(task, cookies, export_id, export_data_restore_id
         create_folder_in_destination(task, current_process_step, export_data_folders, export_data_restore, cookies, **kwargs)
 
         # Download files from export data, then upload files to destination. Returns list of created file node in DB
-        list_created_file_nodes = copy_files_from_export_data_to_destination(
+        list_created_file_nodes, list_file_restore_fail = copy_files_from_export_data_to_destination(
             task, current_process_step,
             export_data_files, export_data_restore,
             cookies, **kwargs)
@@ -232,7 +232,11 @@ def restore_export_data_process(task, cookies, export_id, export_data_restore_id
         check_if_restore_process_stopped(task, current_process_step)
         current_process_step = 4
         task.update_state(state=PENDING, meta={'current_restore_step': current_process_step})
-        return {'message': 'Restore data successfully.'}
+        institution_guid = ''
+        if export_data_json and 'institution' in export_data_json:
+            institution_guid = export_data_json.get('institution').get('guid')
+        return {'message': 'Restore data successfully.', 'list_file_restore_fail': list_file_restore_fail,
+                'file_name_restore_fail': 'failed_files_restore_{}_{}.csv'.format(institution_guid, export_data.process_start_timestamp)}
     except Exception as e:
         logger.error(f'Restore data process exception: {e}')
         if task.is_aborted():
@@ -544,6 +548,7 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
     is_destination_addon_storage = utils.is_add_on_storage(destination_provider)
 
     list_created_file_nodes = []
+    list_file_restore_fail = []
     for file in export_data_files:
         check_if_restore_process_stopped(task, current_process_step)
 
@@ -589,6 +594,7 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
                 response = export_data.read_data_file_from_location(cookies, file_hash_path,
                                                                     base_url=export_base_url, **kwargs)
                 if response.status_code != status.HTTP_200_OK:
+                    list_file_restore_fail.append(file)
                     logger.error(f'Download error: {response.content}')
                     continue
                 download_data = response.content
@@ -597,6 +603,7 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
                 response_body = utils.upload_file_path(file_project_id, destination_provider, new_file_path,
                                                        download_data, cookies, base_url=destination_base_url, **kwargs)
                 if response_body is None:
+                    list_file_restore_fail.append(file)
                     continue
 
                 response_id = response_body.get('data', {}).get('id')
@@ -661,7 +668,7 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
                 check_if_restore_process_stopped(task, current_process_step)
                 # Did not download or upload, pass this file
                 continue
-    return list_created_file_nodes
+    return list_created_file_nodes, list_file_restore_fail
 
 
 def add_tag_and_timestamp_to_database(task, current_process_step, list_created_file_nodes):

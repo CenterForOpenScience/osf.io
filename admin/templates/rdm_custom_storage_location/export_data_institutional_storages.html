@@ -88,6 +88,34 @@
     {% if not storages|length %}
         <h3>{% trans "No results found" %}</h3>
     {% endif %}
+
+    <div class="modal middle fade" id="showFileExportNotExistModal" tabindex="-1" aria-labelledby="showFileExportNotExistLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-body text-left">
+                    <h4 style="margin-bottom: 10px;">{% trans "File list does not exist on the storage" %}</h4>
+                    <table class="table table-striped table-hover table-bordered table-responsive">
+                        <thead>
+                        <tr>
+                            <th style="text-align: center;">{% trans "File path" %}</th>
+                            <th style="text-align: center;">{% trans "File name" %}</th>
+                            <th style="text-align: center; width: 120px">{% trans "Provider" %}</th>
+                            <th style="text-align: center; width: 100px">{% trans "Size" %}</th>
+                        </tr>
+                        </thead>
+                        <tbody class="list table-ng-file-export-not-exist">
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <a href="#" style="cursor: pointer; margin-right: 10px" class="download_file_export_not_exist">{% trans "Click to download" %}</a>
+                    <button type="button" class="btn btn-secondary cancel_modal_show_file_export_not_exist"
+                            data-dismiss="modal">{% trans "Cancel" %}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {% csrf_token %}
 {% endblock content %}
 

@@ -456,7 +456,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_read_file_info.return_value = {'folders': [{'project': {'id': 1}}], 'files': [{'project': {'id': 1}}]}
         mock_check_process.return_value = None
         mock_move_to_backup.return_value = None
-        mock_copy_to_destination.return_value = [{}]
+        mock_copy_to_destination.return_value = [{}, []]
         mock_add_tag_and_timestamp.return_value = None
         mock_create_folder_path.return_value = None
 
@@ -510,7 +510,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_read_file_info.return_value = {'folders': [{'project': {'id': 1}}], 'files': [{'project': {'id': 1}}]}
         mock_check_process.return_value = None
         mock_move_to_backup.return_value = None
-        mock_copy_to_destination.return_value = [{}]
+        mock_copy_to_destination.return_value = [{}, []]
         mock_add_tag_and_timestamp.return_value = None
         mock_create_folder_path.return_value = None
 
@@ -571,7 +571,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_check_process.return_value = None
         mock_move_to_backup.return_value = None
         mock_create_folder_path.return_value = None
-        mock_copy_to_destination.return_value = [{}]
+        mock_copy_to_destination.return_value = [{}, []]
         mock_add_tag_and_timestamp.side_effect = IntegrityError(f'Mock test for error when adding tag/timestamp')
         mock_rollback_process = mock.MagicMock()
         mock_rollback_process.return_value = None
@@ -905,7 +905,7 @@ class TestRestoreDataFunction(AdminTestCase):
             mock_generate_new_file_path.assert_called()
             mock_download.assert_called()
             mock_upload.assert_called()
-            nt.assert_equal(result, [])
+            nt.assert_equal(result[0], [])
 
     @mock.patch('osf.models.BaseFileNode')
     @mock.patch('osf.models.BaseFileNode.objects')
@@ -958,10 +958,10 @@ class TestRestoreDataFunction(AdminTestCase):
             mock_generate_new_file_path.assert_not_called()
             mock_download.assert_called()
             mock_upload.assert_called()
-            nt.assert_equal(len(result), 1)
-            nt.assert_equal(result[0].get('file_tags'), ['hello', 'world'])
-            nt.assert_equal(result[0].get('file_timestamp'), {})
-            nt.assert_equal(result[0].get('project_id'), 'pmockt')
+            nt.assert_equal(len(result), 2)
+            nt.assert_equal(result[0][0].get('file_tags'), ['hello', 'world'])
+            nt.assert_equal(result[0][0].get('file_timestamp'), {})
+            nt.assert_equal(result[0][0].get('project_id'), 'pmockt')
 
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.upload_file_path')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.ExportData.read_data_file_from_location')
@@ -1014,11 +1014,11 @@ class TestRestoreDataFunction(AdminTestCase):
             mock_generate_new_file_path.assert_not_called()
             mock_download.assert_called()
             mock_upload.assert_called()
-            nt.assert_equal(len(result), 1)
-            nt.assert_equal(len(result[0].get('node').versions.all()), 1)
-            nt.assert_equal(result[0].get('file_tags'), ['hello', 'world'])
-            nt.assert_equal(result[0].get('file_timestamp'), {})
-            nt.assert_equal(result[0].get('project_id'), 'pmockt')
+            nt.assert_equal(len(result), 2)
+            nt.assert_equal(len(result[0][0].get('node').versions.all()), 1)
+            nt.assert_equal(result[0][0].get('file_tags'), ['hello', 'world'])
+            nt.assert_equal(result[0][0].get('file_timestamp'), {})
+            nt.assert_equal(result[0][0].get('project_id'), 'pmockt')
 
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.upload_file_path')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.ExportData.read_data_file_from_location')
@@ -1063,7 +1063,7 @@ class TestRestoreDataFunction(AdminTestCase):
             mock_generate_new_file_path.assert_not_called()
             mock_download.assert_called()
             mock_upload.assert_called()
-            nt.assert_equal(result, [])
+            nt.assert_equal(result[0], [])
 
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.upload_file_path')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.ExportData.read_data_file_from_location')
@@ -1098,7 +1098,7 @@ class TestRestoreDataFunction(AdminTestCase):
             mock_generate_new_file_path.assert_not_called()
             mock_download.assert_not_called()
             mock_upload.assert_not_called()
-            nt.assert_equal(result, [])
+            nt.assert_equal(result[0], [])
 
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.upload_file_path')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.ExportData.read_data_file_from_location')
@@ -1136,7 +1136,7 @@ class TestRestoreDataFunction(AdminTestCase):
             mock_generate_new_file_path.assert_not_called()
             mock_download.assert_not_called()
             mock_upload.assert_not_called()
-            nt.assert_equal(result, [])
+            nt.assert_equal(result[0], [])
 
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.upload_file_path')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.ExportData.read_data_file_from_location')
@@ -1180,7 +1180,7 @@ class TestRestoreDataFunction(AdminTestCase):
             mock_generate_new_file_path.assert_not_called()
             mock_download.assert_not_called()
             mock_upload.assert_not_called()
-            nt.assert_equal(result, [])
+            nt.assert_equal(result[0], [])
 
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.ExportData.read_data_file_from_location')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.generate_new_file_path')
@@ -1209,7 +1209,7 @@ class TestRestoreDataFunction(AdminTestCase):
             mock_check_progress.assert_called()
             mock_generate_new_file_path.assert_not_called()
             mock_download.assert_called()
-            nt.assert_equal(result, [])
+            nt.assert_equal(result[0], [])
 
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.upload_file_path')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.ExportData.read_data_file_from_location')
@@ -1242,7 +1242,7 @@ class TestRestoreDataFunction(AdminTestCase):
             mock_generate_new_file_path.assert_not_called()
             mock_download.assert_called()
             mock_upload.assert_called()
-            nt.assert_equal(result, [])
+            nt.assert_equal(result[0], [])
 
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.ExportData.read_data_file_from_location')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.generate_new_file_path')
@@ -1271,7 +1271,7 @@ class TestRestoreDataFunction(AdminTestCase):
             mock_check_progress.assert_called()
             mock_generate_new_file_path.assert_not_called()
             mock_download.assert_called()
-            nt.assert_equal(result, [])
+            nt.assert_equal(result[0], [])
 
     def test_copy_files_from_export_data_to_destination_aborted(self):
         bulkmount_export_files = self.test_export_data_files
