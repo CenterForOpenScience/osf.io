@@ -519,7 +519,7 @@
             },
             "View / download file versions": {
                 "status": "partial",
-                "text": "The Oracle Cloud Infrastructure Object Storage add-on supports file versions if versioning is enabled for your Oracle Cloud Infrastructure Object Storage buckets."
+                "text": "The Oracle Cloud Infrastructure Object Storage add-on does not support file versions."
             },
             "Delete files": {
                 "status": "full",

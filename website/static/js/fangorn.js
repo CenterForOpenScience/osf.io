@@ -3252,6 +3252,9 @@ function fetchData(tree) {
                                 self.options.lazyLoadError.call(self, tree);
                             } else {
                                 if (self.options.lazyLoadPreprocess) {
+                                    if(!value.hasOwnProperty('next_token')){
+                                        tree.next_token = null;
+                                    }
                                     value = self.options.lazyLoadPreprocess.call(self, value);
                                 }
                                 if (!$.isArray(value)) {
