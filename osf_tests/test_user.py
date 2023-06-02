@@ -1419,7 +1419,7 @@ class TestCitationProperties:
                 }
             )
 
-    def test_unregistered_user_csl(self, unreg_user, project):
+    def test_unregistered_user_csl(self, unreg_user, project, referrer):
         # Tests the csl name for an unregistered user
         name = unreg_user.unclaimed_records[project._primary_key]['name'].split(' ')
         family_name = name[-1]
@@ -1429,6 +1429,21 @@ class TestCitationProperties:
             {
                 'given': given_name,
                 'family': family_name,
+            }
+        )
+        # Tests the csl name for a user with different names across unclaimed_records
+        project_2 = NodeFactory(creator=referrer)
+        unreg_user.add_unclaimed_record(
+            project_2,
+            given_name='Bob Bobson',
+            referrer=referrer,
+            email=unreg_user.username
+        )
+        assert bool(
+            unreg_user.csl_name(project_2._id) ==
+            {
+                'given': 'Bob',
+                'family': 'Bobson'
             }
         )
 
