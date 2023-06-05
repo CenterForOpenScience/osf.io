@@ -541,14 +541,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         else:
             name = self.get_unclaimed_record(node_id)['name']
 
-        if self.family_name and self.given_name:
-            """If the user has a family and given name, use those"""
+        # Unregistered contributors' names may vary across unclaimed records
+        if self.is_registered and self.family_name and self.given_name:
+            """If a registered user has a family and given name, use those"""
             return {
                 'family': self.family_name,
                 'given': self.csl_given_name,
             }
         else:
-            """ If the user doesn't autofill his family and given name """
+            """ If the user is unregistered or doesn't autofill his family and given name """
             parsed = utils.impute_names(name)
             given_name = parsed['given']
             middle_names = parsed['middle']
