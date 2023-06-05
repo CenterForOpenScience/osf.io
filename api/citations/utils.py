@@ -21,8 +21,8 @@ def clean_up_common_errors(cit):
     return cit
 
 def process_name(node, user):
-    # If the user has a family and given name, use those
-    if user.family_name and user.given_name:
+    # If a registered user has a family and given name, use those
+    if user.is_registered and user.family_name and user.given_name:
         return {
             'family_name': user.family_name,
             'suffix': user.suffix,
