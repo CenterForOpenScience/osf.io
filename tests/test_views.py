@@ -3,6 +3,7 @@
 """Views tests for the OSF."""
 
 from __future__ import absolute_import
+from hashlib import md5
 
 import datetime as dt
 from rest_framework import status as http_status
@@ -58,7 +59,7 @@ from website.project.views.contributor import (
     send_claim_email,
     send_claim_registered_email,
 )
-from website.settings import EXTERNAL_EMBER_APPS
+from website.settings import EXTERNAL_EMBER_APPS, MAILCHIMP_GENERAL_LIST
 from website.project.views.node import _should_show_wiki_widget, abbrev_authors
 from website.util import api_url_for, web_url_for
 from website.util import rubeus
@@ -1464,13 +1465,14 @@ class TestUserProfile(OsfTestCase):
     def test_update_user_mailing_lists(self, mock_get_mailchimp_api, send_mail):
         email = fake_email()
         self.user.emails.create(address=email)
-        list_name = 'foo'
+        list_name = MAILCHIMP_GENERAL_LIST
         self.user.mailchimp_mailing_lists[list_name] = True
         self.user.save()
+        user_hash = md5(self.user.username.lower().encode()).hexdigest()
 
         mock_client = mock.MagicMock()
         mock_get_mailchimp_api.return_value = mock_client
-        mock_client.lists.list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
+        mock_client.lists.get.return_value = {'id': 1, 'list_name': list_name}
         list_id = mailchimp_utils.get_list_id_from_name(list_name)
 
         url = api_url_for('update_user', uid=self.user._id)
@@ -1482,21 +1484,21 @@ class TestUserProfile(OsfTestCase):
         # the test app doesn't have celery handlers attached, so we need to call this manually.
         handlers.celery_teardown_request()
 
-        assert mock_client.lists.unsubscribe.called
-        mock_client.lists.unsubscribe.assert_called_with(
-            id=list_id,
-            email={'email': self.user.username},
-            send_goodbye=True
+        assert mock_client.lists.members.delete.called
+        mock_client.lists.members.delete.assert_called_with(
+            list_id=list_id,
+            subscriber_hash=user_hash
         )
-        mock_client.lists.subscribe.assert_called_with(
-            id=list_id,
-            email={'email': email},
-            merge_vars={
-                'fname': self.user.given_name,
-                'lname': self.user.family_name,
-            },
-            double_optin=False,
-            update_existing=True
+        mock_client.lists.members.create.assert_called_with(
+            list_id=list_id,
+            data={
+                'status': 'subscribed',
+                'email_address': email,
+                'merge_fields': {
+                    'FNAME': self.user.given_name,
+                    'LNAME': self.user.family_name
+                }
+            }
         )
         handlers.celery_teardown_request()
 
@@ -1505,13 +1507,13 @@ class TestUserProfile(OsfTestCase):
     def test_unsubscribe_mailchimp_not_called_if_user_not_subscribed(self, mock_get_mailchimp_api, send_mail):
         email = fake_email()
         self.user.emails.create(address=email)
-        list_name = 'foo'
+        list_name = MAILCHIMP_GENERAL_LIST
         self.user.mailchimp_mailing_lists[list_name] = False
         self.user.save()
 
         mock_client = mock.MagicMock()
         mock_get_mailchimp_api.return_value = mock_client
-        mock_client.lists.list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
+        mock_client.lists.get.return_value = {'id': 1, 'list_name': list_name}
 
         url = api_url_for('update_user', uid=self.user._id)
         emails = [
@@ -1520,8 +1522,8 @@ class TestUserProfile(OsfTestCase):
         payload = {'locale': '', 'id': self.user._id, 'emails': emails}
         self.app.put_json(url, payload, auth=self.user.auth)
 
-        assert_equal(mock_client.lists.unsubscribe.call_count, 0)
-        assert_equal(mock_client.lists.subscribe.call_count, 0)
+        assert_equal(mock_client.lists.members.delete.call_count, 0)
+        assert_equal(mock_client.lists.members.create.call_count, 0)
         handlers.celery_teardown_request()
 
     def test_user_update_region(self):
@@ -4269,10 +4271,10 @@ class TestConfigureMailingListViews(OsfTestCase):
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_user_choose_mailing_lists_updates_user_dict(self, mock_get_mailchimp_api):
         user = AuthUserFactory()
-        list_name = 'OSF General'
+        list_name = MAILCHIMP_GENERAL_LIST
         mock_client = mock.MagicMock()
         mock_get_mailchimp_api.return_value = mock_client
-        mock_client.lists.list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
+        mock_client.lists.get.return_value = {'id': 1, 'list_name': list_name}
         list_id = mailchimp_utils.get_list_id_from_name(list_name)
 
         payload = {settings.MAILCHIMP_GENERAL_LIST: True}
@@ -4290,14 +4292,7 @@ class TestConfigureMailingListViews(OsfTestCase):
         )
 
         # check that user is subscribed
-        mock_client.lists.subscribe.assert_called_with(id=list_id,
-                                                       email={'email': user.username},
-                                                       merge_vars={
-                                                           'fname': user.given_name,
-                                                           'lname': user.family_name,
-                                                       },
-                                                       double_optin=False,
-                                                       update_existing=True)
+        mock_client.lists.members.create_or_update.assert_called()
 
     def test_get_mailchimp_get_endpoint_returns_200(self):
         url = api_url_for('mailchimp_get_endpoint')
@@ -4310,14 +4305,14 @@ class TestConfigureMailingListViews(OsfTestCase):
             webhooks update the OSF database.
         """
         list_id = '12345'
-        list_name = 'OSF General'
+        list_name = MAILCHIMP_GENERAL_LIST
         mock_client = mock.MagicMock()
         mock_get_mailchimp_api.return_value = mock_client
-        mock_client.lists.list.return_value = {'data': [{'id': list_id, 'name': list_name}]}
+        mock_client.lists.get.return_value = {'id': list_id, 'name': list_name}
 
         # user is not subscribed to a list
         user = AuthUserFactory()
-        user.mailchimp_mailing_lists = {'OSF General': False}
+        user.mailchimp_mailing_lists = {MAILCHIMP_GENERAL_LIST: False}
         user.save()
 
         # user subscribes and webhook sends request to OSF
@@ -4375,7 +4370,7 @@ class TestConfigureMailingListViews(OsfTestCase):
         list_name = 'OSF General'
         mock_client = mock.MagicMock()
         mock_get_mailchimp_api.return_value = mock_client
-        mock_client.lists.list.return_value = {'data': [{'id': list_id, 'name': list_name}]}
+        mock_client.lists.get.return_value = {'id': list_id, 'name': list_name}
 
         # user is subscribed to a list
         user = AuthUserFactory()
