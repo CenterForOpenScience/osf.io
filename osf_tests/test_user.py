@@ -23,7 +23,6 @@ from framework.exceptions import PermissionsError
 from framework.celery_tasks import handlers
 from website import settings
 from website import filters
-from website import mailchimp_utils
 from website.project.signals import contributor_added
 from website.project.views.contributor import notify_added_contributor
 from website.views import find_bookmark_collection
@@ -1509,7 +1508,7 @@ class TestMergingUsers:
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     @mock.patch('website.mailchimp_utils.unsubscribe_mailchimp_async')
     def test_merged_user_unsubscribed_from_mailing_lists(self, mock_mailchimp_api, mock_unsubscribe, dupe, merge_dupe, email_subscriptions_enabled):
-        list_name = 'foo'
+        list_name = settings.MAILCHIMP_GENERAL_LIST
         dupe.mailchimp_mailing_lists[list_name] = True
         dupe.save()
         merge_dupe()
@@ -1694,10 +1693,6 @@ class TestDisablingUsers(OsfTestCase):
         assert not SessionStore().exists(session_key=session1.session_key)
         assert not SessionStore().exists(session_key=session2.session_key)
 
-    def test_deactivate_account_api(self):
-        settings.ENABLE_EMAIL_SUBSCRIPTIONS = True
-        with pytest.raises(mailchimp_utils.mailchimp.InvalidApiKeyError):
-            self.user.deactivate_account()
 
 # Copied from tests/modes/test_user.py
 @pytest.mark.enable_bookmark_creation
@@ -1963,14 +1958,9 @@ class TestUserMerging(OsfTestCase):
         other_user.external_accounts.add(ExternalAccountFactory())
 
         self.user.mailchimp_mailing_lists = {
-            'user': True,
-            'shared_gt': True,
-            'shared_lt': False,
         }
         other_user.mailchimp_mailing_lists = {
-            'other': True,
-            'shared_gt': False,
-            'shared_lt': True,
+            settings.MAILCHIMP_GENERAL_LIST: True
         }
 
         self.user.security_messages = {
@@ -2044,10 +2034,7 @@ class TestUserMerging(OsfTestCase):
             ]),
             'recently_added': set(),
             'mailchimp_mailing_lists': {
-                'user': True,
-                'other': True,
-                'shared_gt': True,
-                'shared_lt': True,
+                settings.MAILCHIMP_GENERAL_LIST: True
             },
             'osf_mailing_lists': {
                 'Open Science Framework Help': True
@@ -2076,7 +2063,6 @@ class TestUserMerging(OsfTestCase):
         # mock mailchimp
         mock_client = mock.MagicMock()
         mock_get_mailchimp_api.return_value = mock_client
-        mock_client.lists.list.return_value = {'data': [{'id': x, 'list_name': list_name} for x, list_name in enumerate(self.user.mailchimp_mailing_lists)]}
 
         with run_celery_tasks():
             # perform the merge

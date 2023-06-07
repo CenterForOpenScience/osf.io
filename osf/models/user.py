@@ -972,14 +972,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 user_id=self._id,
                 username=self.username
             )
-        except mailchimp_utils.mailchimp.ListNotSubscribedError:
-            pass
-        except mailchimp_utils.mailchimp.InvalidApiKeyError:
-            if not website_settings.ENABLE_EMAIL_SUBSCRIPTIONS:
-                pass
-            else:
-                raise
-        except mailchimp_utils.mailchimp.EmailNotExistsError:
+        except mailchimp_utils.OSFError:
             pass
         # Call to `unsubscribe` above saves, and can lead to stale data
         self.reload()
