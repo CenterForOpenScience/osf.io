@@ -19,7 +19,7 @@ def get_mailchimp_api():
         raise OSFError(
             'An API key is required to connect to Mailchimp.'
         )
-    return mailchimp3.Mailchimp(settings.MAILCHIMP_API_KEY)
+    return mailchimp3.MailChimp(settings.MAILCHIMP_API_KEY)
 
 
 def get_list_id_from_name(list_name):
