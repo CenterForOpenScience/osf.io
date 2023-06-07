@@ -43,6 +43,7 @@ def get_list_name_from_id(list_id):
 @transaction.atomic
 def subscribe_mailchimp(list_name, user_id):
     user = OSFUser.load(user_id)
+    user_hash = hashlib.md5(user.username.lower().encode()).hexdigest()
     m = get_mailchimp_api()
     list_id = get_list_id_from_name(list_name=list_name)
 
@@ -50,10 +51,12 @@ def subscribe_mailchimp(list_name, user_id):
         user.mailchimp_mailing_lists = {}
 
     try:
-        m.lists.members.create(
+        m.lists.members.create_or_update(
             list_id=list_id,
+            subscriber_hash=user_hash,
             data={
                 'status': 'subscribed',
+                'status_if_new': 'subscribed',
                 'email_address': user.username,
                 'merge_fields': {
                     'FNAME': user.given_name,

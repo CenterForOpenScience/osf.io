@@ -49,7 +49,7 @@ class TestMailChimpHelpers(OsfTestCase):
         assert list_name not in user.mailchimp_mailing_lists
         mock_client = mock.MagicMock()
         mock_get_mailchimp_api.return_value = mock_client
-        mock_client.lists.members.create.side_effect = MailChimpError
+        mock_client.lists.members.create_or_update.side_effect = MailChimpError
         mailchimp_utils.subscribe_mailchimp(list_name, user._id)
         handlers.celery_teardown_request()
         user.reload()

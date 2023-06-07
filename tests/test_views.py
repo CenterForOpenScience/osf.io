@@ -1464,6 +1464,7 @@ class TestUserProfile(OsfTestCase):
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_update_user_mailing_lists(self, mock_get_mailchimp_api, send_mail):
         email = fake_email()
+        email_hash = md5(email.lower().encode()).hexdigest()
         self.user.emails.create(address=email)
         list_name = MAILCHIMP_GENERAL_LIST
         self.user.mailchimp_mailing_lists[list_name] = True
@@ -1489,10 +1490,12 @@ class TestUserProfile(OsfTestCase):
             list_id=list_id,
             subscriber_hash=user_hash
         )
-        mock_client.lists.members.create.assert_called_with(
+        mock_client.lists.members.create_or_update.assert_called_with(
             list_id=list_id,
+            subscriber_hash=email_hash,
             data={
                 'status': 'subscribed',
+                'status_if_new': 'subscribed',
                 'email_address': email,
                 'merge_fields': {
                     'FNAME': self.user.given_name,
@@ -1523,7 +1526,7 @@ class TestUserProfile(OsfTestCase):
         self.app.put_json(url, payload, auth=self.user.auth)
 
         assert_equal(mock_client.lists.members.delete.call_count, 0)
-        assert_equal(mock_client.lists.members.create.call_count, 0)
+        assert_equal(mock_client.lists.members.create_or_update.call_count, 0)
         handlers.celery_teardown_request()
 
     def test_user_update_region(self):
