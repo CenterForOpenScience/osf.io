@@ -14,7 +14,7 @@ from framework.auth import signals, Auth
 from framework.auth.core import get_user
 from framework.auth.views import send_confirm_email
 
-from osf.models import OSFUser, InstitutionAffiliation
+from osf.models import OSFUser, InstitutionAffiliation, InstitutionStorageRegion
 from osf.models.institution import SsoFilterCriteriaAction
 from osf_tests.factories import InstitutionFactory, ProjectFactory, UserFactory, RegionFactory
 
@@ -83,10 +83,22 @@ def institution_region():
 
 
 @pytest.fixture()
-def institution_with_region(institution_region):
+def institution_region_preferred():
+    return RegionFactory()
+
+
+@pytest.fixture()
+def institution_with_region(institution_region, institution_region_preferred):
     institution = InstitutionFactory()
     institution.storage_regions.add(institution_region)
+    institution.storage_regions.add(institution_region_preferred)
     institution.save()
+    institution_storage_region = InstitutionStorageRegion.objects.get(
+        institution=institution,
+        storage_region=institution_region_preferred
+    )
+    institution_storage_region.is_preferred = True
+    institution_storage_region.save()
     return institution
 
 
@@ -465,15 +477,15 @@ class TestInstitutionAuth:
         assert accepted_terms_of_service == user.accepted_terms_of_service
         assert not user.has_usable_password()
 
-    def test_region_updated_for_new_user(self, app, institution_region, institution_with_region, url_auth_institution):
+    def test_region_updated_for_new_user(self, app, institution_region_preferred, institution_with_region, url_auth_institution):
         username = 'user_with_region_1@osf.edu'
         assert OSFUser.objects.filter(username=username).count() == 0
         res = app.post(url_auth_institution, make_payload(institution_with_region, username))
         assert res.status_code == 204
         user = OSFUser.objects.filter(username=username).first()
-        assert user.addons_osfstorage_user_settings.default_region == institution_region
+        assert user.addons_osfstorage_user_settings.default_region == institution_region_preferred
 
-    def test_region_not_updated_for_existing_user_affiliated(self, app, institution_region, institution_with_region, url_auth_institution):
+    def test_region_not_updated_for_existing_user_affiliated(self, app, institution_region, institution_region_preferred, institution_with_region, url_auth_institution):
         username = 'user_with_region_2@osf.edu'
         user = make_user(username, 'Foo Bar')
         user.save()
@@ -481,8 +493,9 @@ class TestInstitutionAuth:
         assert res.status_code == 204
         user.reload()
         assert user.addons_osfstorage_user_settings.default_region != institution_region
+        assert user.addons_osfstorage_user_settings.default_region != institution_region_preferred
 
-    def test_region_not_updated_for_existing_user_not_affiliated(self, app, institution_region, institution_with_region, url_auth_institution):
+    def test_region_not_updated_for_existing_user_not_affiliated(self, app, institution_region, institution_region_preferred, institution_with_region, url_auth_institution):
         username = 'user_with_region_3@osf.edu'
         user = make_user(username, 'Bar Foo')
         user.add_or_update_affiliated_institution(institution_with_region)
@@ -491,6 +504,7 @@ class TestInstitutionAuth:
         assert res.status_code == 204
         user.reload()
         assert user.addons_osfstorage_user_settings.default_region != institution_region
+        assert user.addons_osfstorage_user_settings.default_region != institution_region_preferred
 
 
 @pytest.mark.django_db

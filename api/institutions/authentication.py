@@ -393,7 +393,7 @@ class InstitutionAuthentication(BaseAuthentication):
         # The first region in the default region list is used
         if is_created:
             user_settings = OSFStorageUserSettings.objects.get(owner=user)
-            default_regions = institution.storage_regions.all()
+            default_regions = institution.storage_regions.filter(institutionstorageregion__is_preferred=True)
             if default_regions and user_settings.default_region not in default_regions:
                 user_settings.default_region = default_regions.first()
                 user_settings.save()
