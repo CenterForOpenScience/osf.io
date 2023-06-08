@@ -58,4 +58,5 @@ from osf.models.registration_bulk_upload_row import RegistrationBulkUploadRow  #
 from osf.models.outcomes import Outcome  # noqa
 from osf.models.outcome_artifacts import OutcomeArtifact  # noqa
 from osf.models.institution_affiliation import InstitutionAffiliation  # noqa
+from osf.models.institution_storage_region import InstitutionStorageRegion  # noqa
 from osf.models.metadata import GuidMetadataRecord  # noqa

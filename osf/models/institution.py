@@ -16,6 +16,7 @@ from framework import sentry
 from osf.models import base
 from osf.models.contributor import InstitutionalContributor
 from osf.models.institution_affiliation import InstitutionAffiliation
+from osf.models.institution_storage_region import InstitutionStorageRegion
 from osf.models.mixins import Loggable, GuardianMixin
 from osf.models.storage import InstitutionAssetFile
 from osf.models.validators import validate_email
@@ -79,7 +80,11 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
     )
 
     # Default Storage Region
-    storage_regions = models.ManyToManyField('addons_osfstorage.Region')
+    storage_regions = models.ManyToManyField(
+        'addons_osfstorage.Region',
+        through=InstitutionStorageRegion,
+        related_name='institutions'
+    )
 
     # Verified employment/education affiliation source for `via-orcid` institutions
     orcid_record_verified_source = models.CharField(max_length=255, blank=True, default='')
