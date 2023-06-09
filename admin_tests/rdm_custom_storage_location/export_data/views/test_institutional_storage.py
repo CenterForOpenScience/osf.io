@@ -81,18 +81,18 @@ class TestExportDataInstitutionalStorageListView(AdminTestCase):
 
     def test_get_queryset(self):
         mock_region = mock.MagicMock()
-        mock_region.filter.return_value.order_by.return_value = self.region
-        with mock.patch('admin.rdm_custom_storage_location.export_data.views.institutional_storage.Region.objects', mock_region):
+        mock_region.return_value = self.region
+        with mock.patch('admin.rdm_custom_storage_location.export_data.views.institutional_storage.Institution.get_institutional_storage', mock_region):
             res = self.view.get_queryset()
             nt.assert_equal(res.id, self.region.id)
 
     def test_get_context_data(self):
         view = institutional_storage.ExportDataInstitutionalStorageListView()
         view = setup_view(view, self.request)
-        view.object_list = view.get_queryset()
         mock_institution = mock.MagicMock()
         mock_institution.get.return_value = self.institution
         with mock.patch('admin.rdm_custom_storage_location.export_data.views.institutional_storage.Institution.objects', mock_institution):
+            view.object_list = view.get_queryset()
             view.get(self.request)
             res = view.get_context_data()
         nt.assert_is_not_none(res)
