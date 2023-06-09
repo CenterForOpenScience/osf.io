@@ -78,6 +78,7 @@ class TestExportDataRestore(TestCase):
                 'version': [{
                     'identifier': file_version.identifier,
                     'created_at': file_version.created.strftime('%Y-%m-%d %H:%M:%S'),
+                    'modified_at': file_version.created.strftime('%Y-%m-%d %H:%M:%S'),
                     'size': file_version.size,
                     'version_name': file_versions_through.version_name if file_versions_through else node.name,
                     'contributor': file_version.creator.username,
