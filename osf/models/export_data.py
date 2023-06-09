@@ -16,6 +16,7 @@ from osf.models import (
     ExportDataLocation,
     Institution,
     RdmFileTimestamptokenVerifyResult,
+    FileVersion,
 )
 from admin.base import settings as admin_settings
 
@@ -120,10 +121,16 @@ class ExportData(base.BaseModel):
             'institution': institution_json,
         }
 
-        # get list FileVersion linked to source storage
-        file_versions = self.source.fileversion_set.all()
-        # but the creator must be affiliated with current institution
-        file_versions = file_versions.filter(creator__affiliated_institutions___id=source_storage_guid)
+        # If source is NII storage, also get default storage
+        if self.source.provider_name == 'osfstorage' and self.source.id != 1:
+            # get list FileVersion linked to source storage, default storage
+            # but the creator must be affiliated with current institution
+            file_versions = FileVersion.objects.filter(region_id__in=[1, self.source.id], creator__affiliated_institutions___id=source_storage_guid)
+        else:
+            # get list FileVersion linked to source storage
+            file_versions = self.source.fileversion_set.all()
+            # but the creator must be affiliated with current institution
+            file_versions = file_versions.filter(creator__affiliated_institutions___id=source_storage_guid)
 
         # get base_file_nodes__ids by file_versions__ids above via the BaseFileVersionsThrough model
         base_file_versions_set = BaseFileVersionsThrough.objects.filter(fileversion__in=file_versions)
@@ -131,6 +138,9 @@ class ExportData(base.BaseModel):
         # get project list, includes public/private/deleted projects
         projects = institution.nodes.filter(type='osf.node', is_deleted=False)
         projects__ids = projects.values_list('id', flat=True)
+        # If source is not NII storage, only get projects that belongs to that source institutional storage
+        if self.source.provider_name != 'osfstorage' and self.source.id != 1:
+            projects__ids = projects.filter(addons_osfstorage_node_settings__region=self.source).values_list('id', flat=True)
         source_project_ids = set()
 
         # get folder nodes
