@@ -1,9 +1,11 @@
 import mock
 import pytest
+from datetime import datetime
 from django.http import JsonResponse
 from django.test import TestCase
 from nose import tools as nt
 
+from addons.osfstorage.models import Region
 from addons.osfstorage.tests.factories import FileVersionFactory
 from osf.models import AbstractNode
 from osf.models.export_data import DateTruncMixin
@@ -15,6 +17,8 @@ from osf_tests.factories import (
     RdmFileTimestamptokenVerifyResultFactory,
     BaseFileVersionsThroughFactory,
     ExportDataRestoreFactory,
+    RegionFactory,
+    bulkmount_waterbutler_settings,
 )
 
 FAKE_DATA = {
@@ -248,6 +252,28 @@ class TestExportData(TestCase):
             project_id=self.file.target.id, file_id=self.file.id)
         with mock.patch('osf.models.export_data.RdmFileTimestamptokenVerifyResult.objects', mock_obj):
             result = self.export_data.extract_file_information_json_from_source_storage()
+        nt.assert_is_not_none(result)
+
+    def test_extract_file_information_json_from_source_storage_with_default_storage_project(self):
+        region = RegionFactory(waterbutler_settings=bulkmount_waterbutler_settings)
+        export_data = ExportDataFactory(source=region)
+        project = ProjectFactory()
+        institution = InstitutionFactory.create(_id=export_data.source.guid)
+        institution.nodes.set([project])
+        default_region = Region.objects.first()
+        file_version = FileVersionFactory(region=default_region)
+        file_version.creator.affiliated_institutions.set([institution])
+        object_id = project.id
+        target = AbstractNode(id=object_id)
+        node = OsfStorageFileFactory.create(name='file2.txt', created=datetime.now(), target_content_type=self.file.target_content_type,
+                                            target_object_id=object_id, target=target)
+        BaseFileVersionsThroughFactory.create(version_name='file2.txt', basefilenode=node, fileversion=file_version)
+
+        mock_obj = mock.MagicMock()
+        mock_obj.filter.return_value.first.return_value = RdmFileTimestamptokenVerifyResultFactory(
+            project_id=self.file.target.id, file_id=self.file.id)
+        with mock.patch('osf.models.export_data.RdmFileTimestamptokenVerifyResult.objects', mock_obj):
+            result = export_data.extract_file_information_json_from_source_storage()
         nt.assert_is_not_none(result)
 
     def test_read_export_data_from_location(self):

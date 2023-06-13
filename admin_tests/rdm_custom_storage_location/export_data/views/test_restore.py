@@ -458,7 +458,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_move_to_backup.return_value = None
         mock_copy_to_destination.return_value = [{}, []]
         mock_add_tag_and_timestamp.return_value = None
-        mock_create_folder_path.return_value = None
+        mock_create_folder_path.return_value = [], []
 
         self.view.restore_export_data_process(task, {}, self.addon_data_restore.export.id,
                                               self.addon_data_restore.id, ['vcu'])
@@ -485,7 +485,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_move_to_backup.return_value = None
         mock_copy_to_destination.return_value = [{}]
         mock_add_tag_and_timestamp.return_value = None
-        mock_create_folder_path.return_value = None
+        mock_create_folder_path.return_value = [], []
 
         self.view.restore_export_data_process(task, {}, self.export_data_restore.export.id,
                                               self.export_data_restore.id, [])
@@ -512,7 +512,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_move_to_backup.return_value = None
         mock_copy_to_destination.return_value = [{}, []]
         mock_add_tag_and_timestamp.return_value = None
-        mock_create_folder_path.return_value = None
+        mock_create_folder_path.return_value = [], []
 
         self.view.restore_export_data_process(task, {}, self.export_data_restore.export.id,
                                               self.export_data_restore.id, ['vcu'])
@@ -544,7 +544,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_move_to_backup.return_value = None
         mock_copy_to_destination.return_value = [{}]
         mock_add_tag_and_timestamp.return_value = None
-        mock_create_folder_path.return_value = None
+        mock_create_folder_path.return_value = [], []
 
         with nt.assert_raises(ProcessError):
             self.view.restore_export_data_process(task, {}, self.export_data_restore.export.id,
@@ -570,7 +570,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_read_file_info.return_value = {'folders': [{'project': {'id': 1}}], 'files': [{'project': {'id': 1}}]}
         mock_check_process.return_value = None
         mock_move_to_backup.return_value = None
-        mock_create_folder_path.return_value = None
+        mock_create_folder_path.return_value = [], []
         mock_copy_to_destination.return_value = [{}, []]
         mock_add_tag_and_timestamp.side_effect = IntegrityError(f'Mock test for error when adding tag/timestamp')
         mock_rollback_process = mock.MagicMock()
@@ -587,6 +587,25 @@ class TestRestoreDataFunction(AdminTestCase):
                 mock_copy_to_destination.assert_called()
                 mock_add_tag_and_timestamp.assert_called()
                 mock_rollback_process.assert_called()
+
+    # update_restore_process_state
+    def test_update_restore_process_state(self):
+        task = AbortableTask()
+        task.request_stack = LocalStack()
+        task.request.id = FAKE_TASK_ID
+        self.view.update_restore_process_state(task, 1)
+        task_result = task.AsyncResult(FAKE_TASK_ID)
+        nt.assert_equal(task_result.result.get('current_restore_step'), 1)
+
+    def test_update_restore_process_state_full_data(self):
+        task = AbortableTask()
+        task.request_stack = LocalStack()
+        task.request.id = FAKE_TASK_ID
+        self.view.update_restore_process_state(task, 1, list_updated_projects=[1, 2], list_updated_file_versions=[100, 101, 102, 103])
+        task_result = task.AsyncResult(FAKE_TASK_ID)
+        nt.assert_equal(task_result.result.get('current_restore_step'), 1)
+        nt.assert_equal(task_result.result.get('list_updated_projects'), [1, 2])
+        nt.assert_equal(task_result.result.get('list_updated_file_versions'), [100, 101, 102, 103])
 
     # check_if_restore_process_stopped
     def test_check_if_restore_process_stopped_is_true(self):
@@ -750,6 +769,34 @@ class TestRestoreDataFunction(AdminTestCase):
                 result = self.view.read_file_info_and_check_schema(ExportData(), {})
                 nt.assert_equal(result, {})
 
+    # update_region_id
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.update_restore_process_state')
+    def test_update_region_id(self, mock_update_restore_process_state, mock_check_progress):
+        project = ProjectFactory()
+        project._id = self.project_id
+        project.add_addon('osfstorage', auth=AuthUserFactory())
+        project.save()
+        list_project_region_changed, list_file_version_region_changed = self.view.update_region_id(None, 1, self.export_data_restore.destination, self.project_id, [], [])
+        nt.assert_equal(list_project_region_changed, [project.id])
+        nt.assert_equal(list_file_version_region_changed, [])
+        mock_update_restore_process_state.assert_called()
+        mock_check_progress.assert_called()
+
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.update_restore_process_state')
+    def test_update_region_id_project_not_found(self, mock_update_restore_process_state, mock_check_progress):
+        list_project_region_changed, list_file_version_region_changed = self.view.update_region_id(None, 1, self.export_data_restore.destination, None, [], [])
+        nt.assert_equal(list_project_region_changed, [])
+        nt.assert_equal(list_file_version_region_changed, [])
+        mock_update_restore_process_state.assert_not_called()
+        mock_check_progress.assert_called()
+
+    # recalculate_user_quota
+    def test_recalculate_user_quota(self):
+        InstitutionFactory(_id=self.export_data_restore.destination._id)
+        self.view.recalculate_user_quota(self.export_data_restore.destination)
+
     # generate_new_file_path
     def test_generate_new_file_path_not_latest_version(self):
         path = '/mock_test.txt'
@@ -865,7 +912,7 @@ class TestRestoreDataFunction(AdminTestCase):
         result = self.view.create_folder_in_destination(task, 1, export_data_folder, self.addon_data_restore, None)
         mock_check_progress.assert_called()
         mock_create_folder.assert_called()
-        nt.assert_equal(result, None)
+        nt.assert_equal(result, ([], []))
 
     # copy_files_from_export_data_to_destination
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.upload_file_path')
@@ -1341,12 +1388,14 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_add_timestamp.assert_not_called()
 
     # restore_export_data_rollback_process
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.revert_region_id_changes')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.move_all_files_from_backup_folder_to_root')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.delete_all_files_except_backup_folder')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_file_info_and_check_schema')
     def test_restore_export_data_rollback_process_bulk_mount_storage(self, mock_read_file_info,
                                                                      mock_delete_all_files,
-                                                                     mock_move_all_files):
+                                                                     mock_move_all_files,
+                                                                     mock_revert_region_id_changes):
         task = AbortableTask()
         task.request_stack = LocalStack()
         task.request.id = FAKE_TASK_ID
@@ -1355,6 +1404,7 @@ class TestRestoreDataFunction(AdminTestCase):
                                                                   self.export_data_restore.id,
                                                                   3)
 
+        mock_revert_region_id_changes.assert_called()
         mock_read_file_info.assert_not_called()
         mock_delete_all_files.assert_not_called()
         mock_move_all_files.assert_not_called()
@@ -1534,6 +1584,19 @@ class TestRestoreDataFunction(AdminTestCase):
             mock_delete_all_files.assert_not_called()
             mock_move_all_files.assert_not_called()
             nt.assert_is_none(response)
+
+    # revert_region_id_changes
+    def test_revert_region_id_changes(self):
+        mock_recalculate_user_quota = mock.MagicMock()
+        with mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.recalculate_user_quota', mock_recalculate_user_quota):
+            self.view.revert_region_id_changes(self.export_data_restore, [1], [1, 2])
+            mock_recalculate_user_quota.assert_called()
+
+    def test_revert_region_id_changes_empty_project_list(self):
+        mock_recalculate_user_quota = mock.MagicMock()
+        with mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.recalculate_user_quota', mock_recalculate_user_quota):
+            self.view.revert_region_id_changes(self.export_data_restore, [], [])
+            mock_recalculate_user_quota.assert_not_called()
 
     # delete_all_files_except_backup_folder
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.delete_all_files_except_backup')

@@ -17,13 +17,15 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from addons.osfstorage.models import Region
+from addons.osfstorage.models import Region, NodeSettings
 from admin.rdm.utils import RdmPermissionMixin
 from admin.rdm_custom_storage_location import tasks
 from admin.rdm_custom_storage_location.export_data import utils
-from osf.models import ExportData, ExportDataRestore, BaseFileNode, Tag, RdmFileTimestamptokenVerifyResult, Institution, OSFUser, FileVersion
+from osf.models import ExportData, ExportDataRestore, BaseFileNode, Tag, RdmFileTimestamptokenVerifyResult, Institution, OSFUser, FileVersion, AbstractNode, \
+    ProjectStorageType, UserQuota
 from website.util import inspect_info  # noqa
 from framework.transactions.handlers import no_auto_transaction
+from website.util.quota import update_user_used_quota
 
 logger = logging.getLogger(__name__)
 INSTITUTIONAL_STORAGE_PROVIDER_NAME = 'osfstorage'
@@ -176,8 +178,8 @@ def prepare_for_restore_export_data_process(cookies, export_id, destination_id, 
 
 def restore_export_data_process(task, cookies, export_id, export_data_restore_id, list_project_id, **kwargs):
     current_process_step = 0
-    task.update_state(state=PENDING, meta={'current_restore_step': current_process_step})
     try:
+        update_restore_process_state(task, current_process_step, **kwargs)
         export_data_restore = ExportDataRestore.objects.get(pk=export_data_restore_id)
         export_data_restore.update(task_id=task.request.id)
 
@@ -197,7 +199,7 @@ def restore_export_data_process(task, cookies, export_id, export_data_restore_id
 
         check_if_restore_process_stopped(task, current_process_step)
         current_process_step = 1
-        task.update_state(state=PENDING, meta={'current_restore_step': current_process_step})
+        update_restore_process_state(task, current_process_step, **kwargs)
 
         destination_region = export_data_restore.destination
         destination_provider = destination_region.provider_name
@@ -207,10 +209,14 @@ def restore_export_data_process(task, cookies, export_id, export_data_restore_id
                 # move_all_files_to_backup_folder(task, current_process_step, destination_first_project_id, export_data_restore, cookies, **kwargs)
                 move_all_files_to_backup_folder(task, current_process_step, project_id, export_data_restore, cookies, **kwargs)
 
+        check_if_restore_process_stopped(task, current_process_step)
         current_process_step = 2
-        task.update_state(state=PENDING, meta={'current_restore_step': current_process_step})
+        update_restore_process_state(task, current_process_step, **kwargs)
 
-        create_folder_in_destination(task, current_process_step, export_data_folders, export_data_restore, cookies, **kwargs)
+        list_updated_projects, list_updated_file_versions = create_folder_in_destination(task, current_process_step, export_data_folders, export_data_restore,
+                                                                                         cookies, **kwargs)
+        kwargs['list_updated_projects'] = list_updated_projects
+        kwargs['list_updated_file_versions'] = list_updated_file_versions
 
         # Download files from export data, then upload files to destination. Returns list of created file node in DB
         list_created_file_nodes, list_file_restore_fail = copy_files_from_export_data_to_destination(
@@ -220,7 +226,7 @@ def restore_export_data_process(task, cookies, export_id, export_data_restore_id
 
         check_if_restore_process_stopped(task, current_process_step)
         current_process_step = 3
-        task.update_state(state=PENDING, meta={'current_restore_step': current_process_step})
+        update_restore_process_state(task, current_process_step, **kwargs)
 
         # Add tags, timestamp to created file nodes
         add_tag_and_timestamp_to_database(task, current_process_step, list_created_file_nodes)
@@ -231,7 +237,7 @@ def restore_export_data_process(task, cookies, export_id, export_data_restore_id
 
         check_if_restore_process_stopped(task, current_process_step)
         current_process_step = 4
-        task.update_state(state=PENDING, meta={'current_restore_step': current_process_step})
+        update_restore_process_state(task, current_process_step, **kwargs)
         institution_guid = ''
         if export_data_json and 'institution' in export_data_json:
             institution_guid = export_data_json.get('institution').get('guid')
@@ -243,8 +249,27 @@ def restore_export_data_process(task, cookies, export_id, export_data_restore_id
             task.update_state(state=ABORTED,
                               meta={'current_restore_step': current_process_step})
         else:
+            if 'list_updated_projects' not in kwargs or 'list_updated_file_versions' not in kwargs:
+                current_task_result = AbortableAsyncResult(task.request.id)
+                current_task_data = current_task_result.result
+                if isinstance(current_task_data, dict):
+                    kwargs['list_updated_projects'] = current_task_data.get('list_updated_projects', [])
+                    kwargs['list_updated_file_versions'] = current_task_data.get('list_updated_file_versions', [])
             restore_export_data_rollback_process(task, cookies, export_id, export_data_restore_id, process_step=current_process_step, **kwargs)
         raise e
+
+
+def update_restore_process_state(task, current_process_step, **kwargs):
+    list_updated_projects = kwargs.get('list_updated_projects', [])
+    list_updated_file_versions = kwargs.get('list_updated_file_versions', [])
+    new_meta = {
+        'current_restore_step': current_process_step,
+        'list_updated_projects': list_updated_projects,
+        'list_updated_file_versions': list_updated_file_versions,
+    }
+    current_result = AbortableAsyncResult(task.request.id)
+    # Update current data to task's result
+    task.update_state(state=current_result.state, meta=new_meta)
 
 
 def check_if_restore_process_stopped(task, current_process_step):
@@ -309,12 +334,20 @@ class StopRestoreDataActionView(RdmPermissionMixin, APIView):
             export_data_restore.update(status=ExportData.STATUS_ERROR)
             return Response({'message': f'Cannot stop restore process at this time.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Get list of project that has region_id changed
+        list_updated_projects = result.get('list_updated_projects', [])
+        list_updated_file_versions = result.get('list_updated_file_versions', [])
+
         # Start rollback restore export data process
         process = tasks.run_restore_export_data_rollback_process.delay(
             cookies,
             export_id,
             export_data_restore.pk,
-            current_progress_step, cookie=cookie)
+            current_progress_step,
+            cookie=cookie,
+            list_updated_projects=list_updated_projects,
+            list_updated_file_versions=list_updated_file_versions,
+        )
         return Response({'task_id': process.task_id}, status=status.HTTP_200_OK)
 
 
@@ -323,8 +356,20 @@ def restore_export_data_rollback_process(task, cookies, export_id, export_data_r
     export_data_restore.update(task_id=task.request.id)
 
     destination_provider = export_data_restore.destination.provider_name
-    if process_step == 0 or not utils.is_add_on_storage(destination_provider):
-        # If storage is bulk-mount method or the restore process has not changed anything related to files, then do nothing
+    if process_step == 0:
+        # If the restore process has not changed anything related to files, then do nothing
+        export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
+                                   status=ExportData.STATUS_STOPPED)
+        return {'message': 'Stop restore data successfully.'}
+
+    if not utils.is_add_on_storage(destination_provider):
+        # If storage is bulk-mount method
+        if 0 < process_step < 4:
+            # Rollback region_id to United States
+            list_updated_projects = kwargs.get('list_updated_projects', [])
+            list_updated_file_versions = kwargs.get('list_updated_file_versions', [])
+            revert_region_id_changes(export_data_restore, list_updated_projects, list_updated_file_versions)
+
         export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
                                    status=ExportData.STATUS_STOPPED)
         return {'message': 'Stop restore data successfully.'}
@@ -468,6 +513,51 @@ def read_file_info_and_check_schema(export_data, cookies, **kwargs):
 
     return response_file_json
 
+
+def update_region_id(task, current_process_step, destination_region, project_id, list_updated_projects, list_updated_file_versions):
+    # Update region_id for a United States project
+    check_if_restore_process_stopped(task, current_process_step)
+    project = AbstractNode.load(project_id, select_for_update=False)
+    if not project:
+        return list_updated_projects, list_updated_file_versions
+
+    project_region = project.osfstorage_region
+    if project_region and project_region.guid == Institution.INSTITUTION_DEFAULT:
+        # Update region of addons_osfstorage_nodesettings
+        node_settings = NodeSettings.objects.filter(region=project_region, owner=project)
+        node_settings.update(region=destination_region)
+        list_updated_projects.append(project.id)
+        update_restore_process_state(task,
+                                     current_process_step,
+                                     list_updated_projects=list_updated_projects,
+                                     list_updated_file_versions=list_updated_file_versions)
+        # Update storage type of project
+        project_storage_type = ProjectStorageType.objects.filter(node=project)
+        project_storage_type.update(storage_type=ProjectStorageType.CUSTOM_STORAGE)
+
+        # Update file versions' region_id of this project
+        file_ids = BaseFileNode.objects.filter(target_object_id=project.id).values_list('id', flat=True)
+        file_versions = FileVersion.objects.filter(basefilenode__id__in=file_ids, region___id=Institution.INSTITUTION_DEFAULT)
+        if file_versions.exists():
+            # Update region_id of file's old versions
+            list_updated_file_versions.extend(list(file_versions.values_list('id', flat=True)))
+            file_versions.update(region=destination_region)
+            update_restore_process_state(task,
+                                         current_process_step,
+                                         list_updated_projects=list_updated_projects,
+                                         list_updated_file_versions=list_updated_file_versions)
+
+    return list_updated_projects, list_updated_file_versions
+
+
+def recalculate_user_quota(destination_region):
+    # Recalculate quota of default storage and custom storage
+    institution = Institution.load(destination_region.guid)
+    for user in OSFUser.objects.filter(affiliated_institutions=institution.id):
+        update_user_used_quota(user)
+        update_user_used_quota(user, storage_type=UserQuota.CUSTOM_STORAGE)
+
+
 def generate_new_file_path(file_materialized_path, version_id, is_file_not_latest_version):
     new_file_materialized_path = file_materialized_path
     if len(file_materialized_path) > 0 and is_file_not_latest_version:
@@ -529,13 +619,25 @@ def create_folder_in_destination(task, current_process_step, export_data_folders
     destination_region = export_data_restore.destination
     destination_provider = INSTITUTIONAL_STORAGE_PROVIDER_NAME
     destination_base_url = destination_region.waterbutler_url
+    list_updated_projects = []
+    list_updated_file_versions = []
     for folder in export_data_folders:
         check_if_restore_process_stopped(task, current_process_step)
         folder_materialized_path = folder.get('materialized_path')
         folder_project_id = folder.get('project', {}).get('id')
 
+        # Update region_id for folder's project
+        list_updated_projects, list_updated_file_versions = update_region_id(task, current_process_step, destination_region, folder_project_id,
+                                                                             list_updated_projects, list_updated_file_versions)
+
         utils.create_folder_path(folder_project_id, destination_provider, folder_materialized_path,
                                  cookies, base_url=destination_base_url, **kwargs)
+
+    if list_updated_projects:
+        # recalculate user quota
+        recalculate_user_quota(destination_region)
+
+    return list_updated_projects, list_updated_file_versions
 
 
 def copy_files_from_export_data_to_destination(task, current_process_step, export_data_files, export_data_restore, cookies, **kwargs):
@@ -549,7 +651,13 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
 
     list_created_file_nodes = []
     list_file_restore_fail = []
+    list_updated_projects = kwargs.get('list_updated_projects', [])
+    list_updated_file_versions = kwargs.get('list_updated_file_versions', [])
     for file in export_data_files:
+        update_restore_process_state(task,
+                                     current_process_step,
+                                     list_updated_projects=list_updated_projects,
+                                     list_updated_file_versions=list_updated_file_versions)
         check_if_restore_process_stopped(task, current_process_step)
 
         file_materialized_path = file.get('materialized_path')
@@ -687,6 +795,27 @@ def add_tag_and_timestamp_to_database(task, current_process_step, list_created_f
             # Add timestamp to DB
             add_timestamp_to_file_node(node, project_id, file_timestamp)
         check_if_restore_process_stopped(task, current_process_step)
+
+
+def revert_region_id_changes(export_data_restore, list_updated_projects, list_updated_file_versions):
+    # Revert all region_id changes (projects and their file versions) in restore process
+    if not list_updated_projects:
+        return
+
+    default_region = Region.objects.first()
+
+    # Revert region for osf_fileversions
+    FileVersion.objects.filter(id__in=list_updated_file_versions).update(region=default_region)
+
+    # Revert region for node settings
+    node_settings = NodeSettings.objects.filter(owner__id__in=list_updated_projects)
+    node_settings.update(region=default_region)
+
+    project_storage_type = ProjectStorageType.objects.filter(node__id__in=list_updated_projects)
+    project_storage_type.update(storage_type=ProjectStorageType.NII_STORAGE)
+
+    # Recalculate user's quota
+    recalculate_user_quota(export_data_restore.destination)
 
 
 def delete_all_files_except_backup_folder(export_data_restore, location_id, destination_first_project_id, cookies, **kwargs):

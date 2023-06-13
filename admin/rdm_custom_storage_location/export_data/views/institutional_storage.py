@@ -58,7 +58,10 @@ class ExportDataInstitutionalStorageListView(ExportStorageLocationViewBaseView, 
         return super(ExportDataInstitutionalStorageListView, self).get(request, *args, **kwargs)
 
     def get_queryset(self):
-        storages = Region.objects.filter(_id=self.institution_guid).order_by(self.ordering)
+        if not self.institution:
+            institution_id = self.kwargs.get('institution_id')
+            self.institution = Institution.objects.get(pk=institution_id)
+        storages = self.institution.get_institutional_storage()
         return storages
 
     def get_context_data(self, **kwargs):
