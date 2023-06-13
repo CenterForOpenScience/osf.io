@@ -3614,6 +3614,9 @@ msgstr "恒久的に削除"
 msgid "Are you sure you want to revert these export data?"
 msgstr "本当にエクスポートデータを復帰しますか?"
 
+msgid "OK"
+msgstr "確認"
+
 # export_data_information.html
 msgid "Export Data Information"
 msgstr "エクスポートデータの情報"
@@ -3629,6 +3632,27 @@ msgstr "元機関ストレージのタイプ"
 
 msgid "Contributor"
 msgstr "メンバー"
+
+msgid "Project ID"
+msgstr "プロジェクトID"
+
+msgid "Project name"
+msgstr "プロジェクト名"
+
+msgid "Owner"
+msgstr "メンバー"
+
+msgid "File ID"
+msgstr "ファイルID"
+
+msgid "File path"
+msgstr "ファイルパス"
+
+msgid "File name"
+msgstr "ファイル名"
+
+msgid "Stamper"
+msgstr "スタンパー"
 
 msgid "Project"
 msgstr "プロジェクト"

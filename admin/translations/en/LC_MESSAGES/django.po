@@ -3564,6 +3564,9 @@ msgstr ""
 msgid "Permanently delete (Cannot be restored with the Revert button)"
 msgstr ""
 
+msgid "OK"
+msgstr ""
+
 # export_data_deleted_list.html
 msgid "Deleted Export Data List"
 msgstr ""
@@ -3591,6 +3594,27 @@ msgid "Source institution storage type"
 msgstr ""
 
 msgid "Contributor"
+msgstr ""
+
+msgid "Project ID"
+msgstr ""
+
+msgid "Project name"
+msgstr ""
+
+msgid "Owner"
+msgstr ""
+
+msgid "File ID"
+msgstr ""
+
+msgid "File path"
+msgstr ""
+
+msgid "File name"
+msgstr ""
+
+msgid "Stamper"
 msgstr ""
 
 msgid "Project"

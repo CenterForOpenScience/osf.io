@@ -1128,11 +1128,19 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
                         file_name_export_fail = data.result.file_name_export_fail;
                         need_reload = 0;
                         $('#showFileExportNotExistModal').modal('show');
-                        list_file_info_export_fail = [['File path', 'File name', 'Provider', 'Size']];
+                        list_file_info_export_fail = [['project_id', 'project_name', 'owner', 'file_id',
+                                                        'file_path', 'file_name', 'versions', 'size', 'stamper']];
                         data_res.forEach(function (file) {
-                            list_file_info_export_fail.push([file.path, file.name, file.provider, file.size]);
-                            text_show_file += "<tr><td>" + file.path + "</td><td>" + file.name + "</td><td>"
-                                                + file.provider + "</td><td>" + file.size + " Bytes</td>";
+                            file.version.forEach(function(version) {
+                                list_file_info_export_fail.push([file.project.id, file.project.name, version.contributor,
+                                                file.id, file.materialized_path, file.name, version.identifier,
+                                                file.size, file.timestamp.verify_user]);
+                                text_show_file += "<tr><td>" + file.project.id + "</td><td>" + file.project.name + "</td><td>"
+                                                + version.contributor + "</td><td>"+ file.id + "</td><td>"
+                                                + file.materialized_path + "</td><td>" + file.name + "</td><td>"
+                                                + version.identifier + "</td><td>"+ file.size + " Bytes</td><td>"
+                                                + file.timestamp.verify_user + "</td></tr>";
+                            });
                         });
                         $('.table-ng-file-export-not-exist').html(text_show_file);
                         $('.table-ng-file-export-not-exist').css('word-break', 'break-word');
@@ -1386,11 +1394,20 @@ function checkTaskStatus(task_id, task_type) {
                     var text_show_file = '';
                     $('#showFileRestoreNotExistModal').modal('show');
                     file_name_restore_fail = result.file_name_restore_fail;
-                    list_file_info_restore_fail = [['File path', 'File name', 'Provider', 'Size']];
-                    data_res.forEach(function (file) {
-                        list_file_info_restore_fail.push([file.path, file.name, file.provider, file.size]);
-                        text_show_file += "<tr><td>" + file.path + "</td><td>" + file.name + "</td><td>"
-                                            + file.provider + "</td><td>" + file.size + " Bytes</td>";
+                    list_file_info_restore_fail = [['project_id', 'project_name', 'owner', 'file_id',
+                                                    'file_path', 'file_name', 'versions', 'size', 'stamper']];
+                    const data_res_unique = [...new Map(data_res.map((d) => [d.id, d])).values()];
+                    data_res_unique.forEach(function (file) {
+                        file.version.forEach(function(version) {
+                            list_file_info_restore_fail.push([file.project.id, file.project.name, version.contributor,
+                                                file.id, file.materialized_path, file.name, version.identifier,
+                                                file.size, file.timestamp.verify_user]);
+                            text_show_file += "<tr><td>" + file.project.id + "</td><td>" + file.project.name + "</td><td>"
+                                                + version.contributor + "</td><td>"+ file.id + "</td><td>"
+                                                + file.materialized_path + "</td><td>" + file.name + "</td><td>"
+                                                + version.identifier + "</td><td>" + file.size + " Bytes</td><td>"
+                                                + file.timestamp.verify_user + "</td></tr>";
+                        });
                     });
                     $('.table-ng-file-restore-not-exist').html(text_show_file);
                     $('.table-ng-file-restore-not-exist').css('word-break', 'break-word');
@@ -1538,8 +1555,13 @@ function exportToCsv(filename, rows) {
             link.setAttribute("download", filename);
             link.style.visibility = 'hidden';
             document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            // setTimeOut to be downloaded on Safari
+            setTimeout(function () {
+                link.click();
+                document.body.removeChild(link);
+                // Release csv URL object
+                URL.revokeObjectURL(url);
+            }, 100);
         }
     }
 }

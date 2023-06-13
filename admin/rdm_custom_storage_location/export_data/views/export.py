@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 import inspect  # noqa
 import logging
 import os
@@ -169,7 +169,7 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
                     list_file_info_not_found.append(file_info)
                     export_data_json['size'] -= file_info.get('size')
                     export_data_json['files_numb'] -= len(file_info.get('version'))
-                    list_file_info.pop(index_file)
+            list_file_info = [d for d in list_file_info if d['id'] not in list_file_id_not_found]
             file_info_json['files'] = list_file_info
         logger.debug(f'uploaded file versions')
 
