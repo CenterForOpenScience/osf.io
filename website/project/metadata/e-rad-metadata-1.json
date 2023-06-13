@@ -230,7 +230,7 @@
           "nav": "データ No.",
           "title": "データ No.|Data No.",
           "type": "string",
-          "format": "text",
+          "format": "file-data-number",
           "required": false,
           "space_normalization": true
         },

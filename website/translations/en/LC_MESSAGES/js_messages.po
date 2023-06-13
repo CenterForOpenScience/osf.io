@@ -270,7 +270,11 @@ msgstr ""
 msgid "Fill"
 msgstr ""
 
-#: addons/metadata/static/metadata-fields.js:645
+#: addons/metadata/static/metadata-fields.js:693
+msgid "Could not generate Data No."
+msgstr ""
+
+#: addons/metadata/static/metadata-fields.js:727
 msgid "No members"
 msgstr ""
 

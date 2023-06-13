@@ -64,6 +64,33 @@ function ERad() {
   };
 }
 
+function FileMetadataSuggestion(baseUrl) {
+  var self = this;
+
+  self.suggest = function(filepath, format) {
+    var url = baseUrl + 'file_metadata/suggestions/' + encodeURI(filepath);
+    return $.ajax({
+      url: url,
+      type: 'GET',
+      dataType: 'json',
+      data: {
+        format: format
+      }
+    }).catch(function(xhr, status, error) {
+      Raven.captureMessage('Error while retrieving file metadata suggestions', {
+        extra: {
+          url: url,
+          status: status,
+          error: error
+        }
+      });
+      return Promise.reject({xhr: xhr, status: status, error: error});
+    }).then(function (data) {
+      console.log(logPrefix, 'suggestion: ', data);
+      return ((data.data || {}).attributes || {}).suggestions || [];
+    });
+  };
+}
 
 function MetadataButtons() {
   var self = this;
@@ -72,6 +99,7 @@ function MetadataButtons() {
   self.contexts = null;
   self.loadingMetadatas = {};
   self.erad = new ERad();
+  self.fileMetadataSuggestion = new FileMetadataSuggestion(self.baseUrl);
   self.currentItem = null;
   self.registrationSchemas = new RegistrationSchemas();
   self.draftRegistrations = new DraftRegistrations();
@@ -216,6 +244,7 @@ function MetadataButtons() {
         const value = itemData[question.qid];
         const field = metadataFields.createField(
           self.erad,
+          self.fileMetadataSuggestion,
           question,
           value,
           options,
