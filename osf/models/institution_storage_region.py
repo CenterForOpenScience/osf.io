@@ -10,7 +10,14 @@ class InstitutionStorageRegion(BaseModel):
     is_preferred = models.BooleanField(default=False)
 
     class Meta:
-        unique_together = ('institution', 'storage_region')
+        constraints = [
+            models.UniqueConstraint(fields=['institution', 'storage_region'], name='unique_institution_and_region'),
+            models.UniqueConstraint(
+                fields=['institution', 'is_preferred'],
+                condition=models.Q(is_preferred=True),
+                name='unique_institution_preferred_region'
+            ),
+        ]
 
     def __repr__(self):
         return f'<{self.__class__.__name__}(institution={self.institution._id}, ' \
