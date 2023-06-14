@@ -3571,6 +3571,9 @@ msgstr "エクスポート元ストレージ"
 msgid "Filter"
 msgstr "一覧更新"
 
+msgid "Back to list"
+msgstr "一覧に戻る"
+
 msgid "Recycle bin"
 msgstr "ゴミ箱"
 
@@ -3592,8 +3595,8 @@ msgstr "ファイル数"
 msgid "Total file size"
 msgstr "ファイルサイズ合計"
 
-msgid "Are you sure you want to delete these export data?"
-msgstr "本当にエクスポートデータを削除しますか?"
+msgid "Are you sure you want to move these export data to the recycle bin?"
+msgstr "エクスポートデータをゴミ箱に移動しますか?"
 
 msgid "Permanently delete (Cannot be restored with the Revert button)"
 msgstr "恒久的に削除（復帰ボタンで戻せません）"

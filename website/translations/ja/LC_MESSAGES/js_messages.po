@@ -753,6 +753,10 @@ msgid ""
 "account.<br><br>"
 msgstr "これにより、このアカウントを使用するすべてのプロジェクトの%1$sへのアクセスが取り消されます。"
 
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:752
+msgid "Are you sure you want to delete this export data storage location?"
+msgstr "エクスポートデータ保存場所を削除してよろしいですか？"
+
 #: admin/static/vendor/bower_components/admin-lte/plugins/jQueryUI/jquery-ui.min.js:8
 msgid "'"
 msgstr ""

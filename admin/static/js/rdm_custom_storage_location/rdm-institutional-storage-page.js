@@ -751,8 +751,17 @@ afterRequest.delete = {
 $('.delete-location').click(function () {
     var id = this.dataset.id;
     // var providerShortName = this.dataset.provide;
-
-    deleteLocation(id);
+      $osf.confirmDangerousAction({
+        title: _('Are you sure you want to delete this export data storage location?'),
+        callback: function() {
+            deleteLocation(id);
+        },
+        buttons: {
+            success: {
+                label: _('Delete')
+            }
+        }
+    });
 });
 
 function deleteLocation(id) {

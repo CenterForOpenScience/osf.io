@@ -191,7 +191,7 @@
                 {% csrf_token %}
                 <div class="modal-content">
                     <div class="modal-body text-left" id="bodydeleteExport">
-                        <p>{% trans "Are you sure you want to delete these export data?" %}</p>
+                        <p>{% trans "Are you sure you want to move these export data to the recycle bin?" %}</p>
                     </div>
                     <div class="modal-footer">
                         <button type="button"
@@ -199,7 +199,7 @@
                                 data-dismiss="modal">{% trans "Cancel" %}</button>
                         <button type="submit" id="submitDeleteButton"
                                 disabled
-                                class="btn btn-danger">{% trans "Delete" %}</button>
+                                class="btn btn-danger">{% trans "Move to recycle bin" %}</button>
                     </div>
                 </div>
             </form>

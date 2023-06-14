@@ -3506,6 +3506,9 @@ msgstr ""
 msgid "Filter"
 msgstr ""
 
+msgid "Back to list"
+msgstr ""
+
 msgid "Recycle bin"
 msgstr ""
 
@@ -3527,7 +3530,7 @@ msgstr ""
 msgid "Total file size"
 msgstr ""
 
-msgid "Are you sure you want to delete these export data?"
+msgid "Are you sure you want to move these export data to the recycle bin?"
 msgstr ""
 
 msgid "Permanently delete (Cannot be restored with the Revert button)"
