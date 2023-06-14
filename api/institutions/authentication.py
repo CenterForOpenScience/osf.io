@@ -388,14 +388,13 @@ class InstitutionAuthentication(BaseAuthentication):
                 sso_department=department,
             )
 
-        # Storage region is only updated if user is created via institutional SSO
-        # Storage region is set using the primary institution's settings
-        # The first region in the default region list is used
+        # Storage region is only updated if the user is created via institutional SSO; the region will be set to the
+        # institution's preferred one if the user's current region is not in the institution's default region list.
         if is_created:
             user_settings = OSFStorageUserSettings.objects.get(owner=user)
-            default_regions = institution.storage_regions.filter(institutionstorageregion__is_preferred=True)
-            if default_regions and user_settings.default_region not in default_regions:
-                user_settings.default_region = default_regions.first()
+            institution_region_list = institution.storage_regions.all()
+            if institution_region_list and user_settings.default_region not in institution_region_list:
+                user_settings.default_region = institution_region_list.get(institutionstorageregion__is_preferred=True)
                 user_settings.save()
 
         return user, None

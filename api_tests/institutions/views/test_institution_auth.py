@@ -88,10 +88,31 @@ def institution_region_preferred():
 
 
 @pytest.fixture()
-def institution_with_region(institution_region, institution_region_preferred):
+def user_default_region():
+    user = UserFactory()
+    return user.addons_osfstorage_user_settings.default_region
+
+
+@pytest.fixture()
+def institution_without_user_default_region(institution_region, institution_region_preferred):
     institution = InstitutionFactory()
     institution.storage_regions.add(institution_region)
     institution.storage_regions.add(institution_region_preferred)
+    institution.save()
+    institution_storage_region = InstitutionStorageRegion.objects.get(
+        institution=institution,
+        storage_region=institution_region_preferred
+    )
+    institution_storage_region.is_preferred = True
+    institution_storage_region.save()
+    return institution
+
+
+@pytest.fixture()
+def institution_with_default_user_region(user_default_region, institution_region_preferred):
+    institution = InstitutionFactory()
+    for region in [user_default_region, institution_region_preferred]:
+        institution.storage_regions.add(region)
     institution.save()
     institution_storage_region = InstitutionStorageRegion.objects.get(
         institution=institution,
@@ -477,30 +498,45 @@ class TestInstitutionAuth:
         assert accepted_terms_of_service == user.accepted_terms_of_service
         assert not user.has_usable_password()
 
-    def test_region_updated_for_new_user(self, app, institution_region_preferred, institution_with_region, url_auth_institution):
+
+@pytest.mark.django_db
+class TestInstitutionStorageRegion:
+
+    def test_region_updated_for_new_user(self, app, institution_region_preferred, institution_without_user_default_region, url_auth_institution):
         username = 'user_with_region_1@osf.edu'
         assert OSFUser.objects.filter(username=username).count() == 0
-        res = app.post(url_auth_institution, make_payload(institution_with_region, username))
+        res = app.post(url_auth_institution, make_payload(institution_without_user_default_region, username))
         assert res.status_code == 204
-        user = OSFUser.objects.filter(username=username).first()
+        user = OSFUser.objects.get(username=username)
         assert user.addons_osfstorage_user_settings.default_region == institution_region_preferred
 
-    def test_region_not_updated_for_existing_user_affiliated(self, app, institution_region, institution_region_preferred, institution_with_region, url_auth_institution):
+    def test_region_not_updated_for_new_user(self, app, user_default_region, institution_region_preferred, institution_with_default_user_region, url_auth_institution):
         username = 'user_with_region_2@osf.edu'
+        assert OSFUser.objects.filter(username=username).count() == 0
+        res = app.post(url_auth_institution, make_payload(institution_with_default_user_region, username))
+        assert res.status_code == 204
+        user = OSFUser.objects.filter(username=username).first()
+        assert user.addons_osfstorage_user_settings.default_region == user_default_region
+        assert user.addons_osfstorage_user_settings.default_region != institution_region_preferred
+
+    def test_region_not_updated_for_existing_user_affiliated(self, app, institution_region, institution_region_preferred,
+                                                             institution_without_user_default_region, url_auth_institution):
+        username = 'user_with_region_3@osf.edu'
         user = make_user(username, 'Foo Bar')
         user.save()
-        res = app.post(url_auth_institution, make_payload(institution_with_region, username))
+        res = app.post(url_auth_institution, make_payload(institution_without_user_default_region, username))
         assert res.status_code == 204
         user.reload()
         assert user.addons_osfstorage_user_settings.default_region != institution_region
         assert user.addons_osfstorage_user_settings.default_region != institution_region_preferred
 
-    def test_region_not_updated_for_existing_user_not_affiliated(self, app, institution_region, institution_region_preferred, institution_with_region, url_auth_institution):
-        username = 'user_with_region_3@osf.edu'
+    def test_region_not_updated_for_existing_user_not_affiliated(self, app, institution_region, institution_region_preferred,
+                                                                 institution_without_user_default_region, url_auth_institution):
+        username = 'user_with_region_4@osf.edu'
         user = make_user(username, 'Bar Foo')
-        user.add_or_update_affiliated_institution(institution_with_region)
+        user.add_or_update_affiliated_institution(institution_without_user_default_region)
         user.save()
-        res = app.post(url_auth_institution, make_payload(institution_with_region, username))
+        res = app.post(url_auth_institution, make_payload(institution_without_user_default_region, username))
         assert res.status_code == 204
         user.reload()
         assert user.addons_osfstorage_user_settings.default_region != institution_region
