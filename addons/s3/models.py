@@ -8,11 +8,19 @@ from osf.models.files import File, Folder, BaseFileNode
 from addons.base import exceptions
 from addons.s3.provider import S3Provider
 from addons.s3.serializer import S3Serializer
-from addons.s3.settings import (BUCKET_LOCATIONS,
-                                        ENCRYPT_UPLOADS_DEFAULT)
-from addons.s3.utils import (bucket_exists,
-                                     get_bucket_location_or_error,
-                                     get_bucket_names)
+from addons.s3.settings import (
+    BUCKET_LOCATIONS,
+    ENCRYPT_UPLOADS_DEFAULT
+)
+from addons.s3.utils import (
+    bucket_exists,
+    get_bucket_location_or_error,
+    to_hgrid,
+    get_bucket_names,
+    get_bucket_resources
+)
+from website.util import api_v2_url
+
 
 class S3FileNode(BaseFileNode):
     _provider = 's3'
@@ -81,26 +89,56 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         self.nodelogger.log(action='bucket_linked', extra={'bucket': str(folder_id)}, save=True)
 
     def get_folders(self, **kwargs):
-        # This really gets only buckets, not subfolders,
-        # as that's all we want to be linkable on a node.
-        try:
-            buckets = get_bucket_names(self)
-        except Exception:
-            raise exceptions.InvalidAuthError()
+        node = self.owner
+        # <bucket-name>/<path>
+        #  Defaults exist when called by the API, but are `None`
+        path = kwargs.get('path') or ''
+        folder_id = kwargs.get('folder_id') or 'root'
+        print('path', path)
+        print('folder_id', folder_id)
 
-        return [
-            {
-                'addon': 's3',
+        if not path:  # this is root, buckets below
+            buckets = get_bucket_names(self)
+
+            return [{
+                'addon': self.config.short_name,
+                'path': bucket,
                 'kind': 'folder',
                 'id': bucket,
                 'name': bucket,
-                'path': bucket,
                 'urls': {
-                    'folders': ''
+                    'folders': api_v2_url(
+                        f'nodes/{self.owner._id}/addons/s3/folders/',
+                        params={
+                            'path': bucket,
+                            'id': bucket
+                        }
+                    ),
                 }
-            }
-            for bucket in buckets
+            } for bucket in buckets]
+
+        try:
+            bucket_name = path.split('/')[1]
+        except IndexError:
+            bucket_name = path
+            # top-level, folders (Prefixes) and files below
+            contents = [
+                to_hgrid(item, node, path='', bucket_name=bucket_name)
+                for item in
+                get_bucket_resources(self.external_account.oauth_key, self.external_account.oauth_secret, path='',
+                                     bucket_name=bucket_name)
+            ]
+            return contents
+
+
+        print('bucket_name', bucket_name)
+        # under top-level, folders (Prefixes) and files below
+
+        contents = [
+            to_hgrid(item, node, path=path, bucket_name=bucket_name)
+            for item in get_bucket_resources(self.external_account.oauth_key, self.external_account.oauth_secret, path=path, bucket_name=bucket_name)
         ]
+        return contents
 
     @property
     def complete(self):

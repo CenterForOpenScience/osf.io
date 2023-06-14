@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from rest_framework import status as http_status
 
-from boto.exception import S3ResponseError
+from botocore.exceptions import ClientError
 import mock
 from nose.tools import (assert_equal, assert_equals,
     assert_true, assert_in, assert_false)
@@ -272,7 +272,7 @@ class TestCreateBucket(S3AddonTestCase, OsfTestCase):
 
     @mock.patch('addons.s3.views.utils.create_bucket')
     def test_create_bucket_fail(self, mock_make):
-        error = S3ResponseError(418, 'because Im a test')
+        error = ClientError(418, 'because Im a test')
         error.message = 'This should work'
         mock_make.side_effect = error
 
