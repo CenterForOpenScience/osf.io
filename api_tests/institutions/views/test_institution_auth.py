@@ -120,7 +120,7 @@ def institution_selective_type_1():
 @pytest.fixture()
 def institution_selective_type_2():
     institution = InstitutionFactory()
-    institution._id = 'yalelaw'
+    institution._id = 'yls'
     institution.save()
     return institution
 
