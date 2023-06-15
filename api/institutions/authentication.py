@@ -61,7 +61,7 @@ INSTITUTION_SELECTIVE_SSO_MAP = {
         'criteria_action': SsoFilterCriteriaAction.EQUALS_TO.value,
         'criteria_value': 'http://directory.manchester.ac.uk/epe/3rdparty/osf',
     },
-    'yalelaw': {
+    'yls': {
         'criteria_action': SsoFilterCriteriaAction.IN.value,
         'criteria_value': ['Yes', 'yes', 'y'],
     },
