@@ -103,10 +103,7 @@ def set_institution_storage_regions(institution_id, region_id, is_preferred=Fals
     # Case 2: do nothing and return if preferred region exists and if `is_preferred` is not set
     if not is_preferred:
         return
-    # Case 3: if `is_preferred` is set, clear existing preferred region(s) before set the new one;
-    #         use `filter()` instead of `get()` for two advantages: 1) `.update()` only works with
-    #         query set and 2) it clears extra preferred regions added unexpectedly without using
-    #         this command/script:
+    # Case 3: if `is_preferred` is set, clear the existing preferred region before setting the new one
     existing_preferred_institution_storage_region.is_preferred = False
     existing_preferred_institution_storage_region.save()
     logger.info(f'The old preferred region has been removed from Institution [{institution._id}]')
