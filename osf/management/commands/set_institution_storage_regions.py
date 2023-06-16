@@ -78,7 +78,7 @@ def set_institution_storage_regions(institution_id, region_id, is_preferred=Fals
             return
     else:
         if dry_run:
-            logger.warning(f'Dry-run: Region [{region._id}] has not been added to Institution [{institution._id}]')
+            logger.info(f'Dry-run: Region [{region._id}] has not been added to Institution [{institution._id}]')
             return
         else:
             institution_storage_region = InstitutionStorageRegion.objects.create(
@@ -88,10 +88,14 @@ def set_institution_storage_regions(institution_id, region_id, is_preferred=Fals
             logger.info(f'Region [{region._id}] has been added to Institution [{institution._id}]')
 
     # Make sure there is only one preferred region
-    preferred_regions = institution.storage_regions.filter(institutionstorageregion__is_preferred=True)
+    try:
+        existing_preferred_institution_storage_region = InstitutionStorageRegion.objects.get(
+            institution=institution,
+            is_preferred=True,
+        )
     # Case 1: always set the region as preferred if there is no preferred region for the institution;
     #         this executes even if the option `-p` / `--preferred` is not provided
-    if not preferred_regions:
+    except InstitutionStorageRegion.DoesNotExist:
         institution_storage_region.is_preferred = True
         institution_storage_region.save()
         logger.info(f'Region [{region._id}] has been set as preferred choice for Institution [{institution._id}]')
@@ -102,13 +106,10 @@ def set_institution_storage_regions(institution_id, region_id, is_preferred=Fals
     # Case 3: if `is_preferred` is set, clear existing preferred region(s) before set the new one;
     #         use `filter()` instead of `get()` for two advantages: 1) `.update()` only works with
     #         query set and 2) it clears extra preferred regions added unexpectedly without using
-    #         this command/script
-    for existing_preferred_region in preferred_regions:
-        InstitutionStorageRegion.objects.filter(
-            institution=institution,
-            storage_region=existing_preferred_region
-        ).update(is_preferred=False)
-    logger.info(f'Existing preferred regions have been cleared for Institution [{institution._id}]')
+    #         this command/script:
+    existing_preferred_institution_storage_region.is_preferred = False
+    existing_preferred_institution_storage_region.save()
+    logger.info(f'The old preferred region has been removed from Institution [{institution._id}]')
     institution_storage_region.is_preferred = True
     institution_storage_region.save()
-    logger.info(f'Region [{region._id}] has been set as preferred choice for Institution [{institution._id}]')
+    logger.info(f'Region [{region._id}] has been set as the preferred choice for Institution [{institution._id}]')
