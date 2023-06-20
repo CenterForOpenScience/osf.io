@@ -7,6 +7,7 @@ from botocore.exceptions import NoCredentialsError, ClientError
 from framework.exceptions import HTTPError
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
 from addons.s3.settings import BUCKET_LOCATIONS
+from website.util import api_v2_url
 
 
 def connect_s3(access_key=None, secret_key=None, node_settings=None):
@@ -69,11 +70,6 @@ def bucket_exists(access_key, secret_key, bucket_name):
 
     client = connect_s3(access_key, secret_key)
 
-    if bucket_name != bucket_name.lower():
-        # Must use ordinary calling format for mIxEdCaSe bucket names
-        # otherwise use the default as it handles buckets outside of the US
-        client.meta.client.meta.events.unregister('before-sign.s3', boto3._inject_normally_invalid_bucket_name_path)
-
     try:
         # Will raise an exception if bucket_name doesn't exist
         client.head_bucket(Bucket=bucket_name)
@@ -124,13 +120,64 @@ def get_bucket_location_or_error(access_key, secret_key, bucket_name):
     except Exception:
         raise InvalidAuthError()
 
-    if bucket_name != bucket_name.lower() or '.' in bucket_name:
-        # Must use ordinary calling format for mIxEdCaSe bucket names
-        # otherwise use the default as it handles buckets outside of the US
-        client.meta.client.meta.events.unregister('before-sign.s3', boto3._inject_normally_invalid_bucket_name_path)
-
     try:
         response = client.get_bucket_location(Bucket=bucket_name)
         return response['LocationConstraint']
     except ClientError:
         raise InvalidFolderError()
+
+
+
+
+def to_hgrid(item, node, bucket_name):
+    """
+    :return: results formatted as required for Hgrid display
+    """
+    path = item['path']
+    kind = 'folder' if path.endswith('/') else 'file'
+    serialized = {
+        'path': path,
+        'id': bucket_name + '/' + path,
+        'folder_id': path,
+        'kind': kind,
+        'bucket_name': bucket_name,
+        'name': path.split('/')[-1] if not path.endswith('/') else path,
+        'addon': 's3',
+        'children': api_v2_url(
+            f'nodes/{node._id}/addons/s3/folders/',
+            params={
+                'path': path,
+                'bucket_name': bucket_name,
+                'id': path,
+            }
+        ),
+        'folders': api_v2_url(
+            f'nodes/{node._id}/addons/s3/folders/',
+            params={
+                'path': path,
+                'bucket_name': bucket_name,
+                'id': path,
+            }
+        ),
+        }
+    return serialized
+
+
+def get_bucket_resources(access_key, secret_key, path=None, bucket_name=None):
+    # Create an S3 client
+    s3 = boto3.client(
+        's3',
+        aws_access_key_id=access_key,
+        aws_secret_access_key=secret_key
+    )
+    response = s3.list_objects_v2(Bucket=bucket_name, Prefix=path, Delimiter='/')
+    resources = []
+    # Retrieve the common prefixes (subfolders)
+    common_prefixes = response.get('CommonPrefixes', [])
+    for prefix in common_prefixes:
+        if prefix['Prefix'] != path:  # exclude parent
+            prefix['path'] = prefix['Prefix']
+            prefix['bucket_name'] = bucket_name
+            resources.append(prefix)
+
+    return resources

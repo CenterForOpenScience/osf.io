@@ -1454,13 +1454,14 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
 
         path = self.request.query_params.get('path')
         folder_id = self.request.query_params.get('id')
+        bucket_name = self.request.query_params.get('bucket_name')
 
         if not hasattr(node_addon, 'get_folders'):
             raise EndpointNotImplementedError('Endpoint not yet implemented for this addon')
 
         #  Convert v1 errors to v2 as much as possible.
         try:
-            return node_addon.get_folders(path=path, folder_id=folder_id)
+            return node_addon.get_folders(path=path, folder_id=folder_id, bucket_name=bucket_name)
         except InvalidAuthError:
             raise NotAuthenticated('This add-on could not be authenticated.')
         except HTTPError as exc:

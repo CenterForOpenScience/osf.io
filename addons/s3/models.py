@@ -52,6 +52,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     folder_id = models.TextField(blank=True, null=True)
     folder_name = models.TextField(blank=True, null=True)
+    bucket_name = models.TextField(blank=True, null=True)
     encrypt_uploads = models.BooleanField(default=ENCRYPT_UPLOADS_DEFAULT)
     user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
@@ -63,8 +64,8 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     def display_name(self):
         return u'{0}: {1}'.format(self.config.full_name, self.folder_id)
 
-    def set_folder(self, folder_id, auth):
-        if not bucket_exists(self.external_account.oauth_key, self.external_account.oauth_secret, folder_id):
+    def set_folder(self, folder_id, auth, bucket_name):
+        if not bucket_exists(self.external_account.oauth_key, self.external_account.oauth_secret, bucket_name):
             error_message = ('We are having trouble connecting to that bucket. '
                              'Try a different one.')
             raise exceptions.InvalidFolderError(error_message)
@@ -74,7 +75,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         bucket_location = get_bucket_location_or_error(
             self.external_account.oauth_key,
             self.external_account.oauth_secret,
-            folder_id
+            bucket_name
         )
         try:
             bucket_location = BUCKET_LOCATIONS[bucket_location]
@@ -90,55 +91,56 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     def get_folders(self, **kwargs):
         node = self.owner
-        # <bucket-name>/<path>
-        #  Defaults exist when called by the API, but are `None`
-        path = kwargs.get('path') or ''
-        folder_id = kwargs.get('folder_id') or 'root'
-        print('path', path)
-        print('folder_id', folder_id)
+        print('get_folders', kwargs)
+        path = kwargs.get('path')
+        folder_id = kwargs.get('id')
+        bucket_name = kwargs.get('bucket_name')
 
-        if not path:  # this is root, buckets below
+        # super top level this is root, buckets below
+        if not bucket_name:
             buckets = get_bucket_names(self)
 
             return [{
                 'addon': self.config.short_name,
-                'path': bucket,
+                'path': '/',
                 'kind': 'folder',
                 'id': bucket,
+                'bucket_name': bucket,
                 'name': bucket,
                 'urls': {
+                    'children': api_v2_url(
+                        f'nodes/{self.owner._id}/addons/s3/folders/',
+                        params={
+                            'path': '',
+                            'id': bucket,
+                            'bucket_name': bucket,
+                        }
+                    ),
                     'folders': api_v2_url(
                         f'nodes/{self.owner._id}/addons/s3/folders/',
                         params={
-                            'path': bucket,
-                            'id': bucket
+                            'path': '',
+                            'id': bucket,
+                            'bucket_name': bucket,
                         }
                     ),
                 }
             } for bucket in buckets]
-
-        try:
-            bucket_name = path.split('/')[1]
-        except IndexError:
-            bucket_name = path
-            # top-level, folders (Prefixes) and files below
-            contents = [
-                to_hgrid(item, node, path='', bucket_name=bucket_name)
-                for item in
-                get_bucket_resources(self.external_account.oauth_key, self.external_account.oauth_secret, path='',
-                                     bucket_name=bucket_name)
+        # # top-level, at the bucket, folders (Prefixes) and files (Keys) below
+        else:
+            return [
+                to_hgrid(
+                    item,
+                    node,
+                    bucket_name=bucket_name
+                )
+                for item in get_bucket_resources(
+                    self.external_account.oauth_key,
+                    self.external_account.oauth_secret,
+                    path=path.lstrip('/'),
+                    bucket_name=bucket_name
+                )
             ]
-            return contents
-
-
-        print('bucket_name', bucket_name)
-        # under top-level, folders (Prefixes) and files below
-
-        contents = [
-            to_hgrid(item, node, path=path, bucket_name=bucket_name)
-            for item in get_bucket_resources(self.external_account.oauth_key, self.external_account.oauth_secret, path=path, bucket_name=bucket_name)
-        ]
-        return contents
 
     @property
     def complete(self):
@@ -173,10 +175,13 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         }
 
     def serialize_waterbutler_settings(self):
+        bucket_name = self.folder_id.split('/')[0]
+        folder_id = '/'.join(self.folder_id.split('/')[1:])
         if not self.folder_id:
             raise exceptions.AddonError('Cannot serialize settings for S3 addon')
         return {
-            'bucket': self.folder_id,
+            'bucket': bucket_name,  # fool wb
+            'id': folder_id,
             'encrypt_uploads': self.encrypt_uploads
         }
 
@@ -190,7 +195,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
                 'path': metadata['materialized'],
-                'bucket': self.folder_id,
+                'bucket': self.bucket_name,
                 'urls': {
                     'view': url,
                     'download': url + '?action=download'

@@ -92,6 +92,7 @@ def set_config(addon_short_name, addon_full_name, Serializer, set_folder):
     def _set_config(node_addon, user_addon, auth, **kwargs):
         """View for changing a node's linked folder."""
         folder = request.json.get('selected')
+        print('set_config', request.json)
         set_folder(node_addon, folder, auth)
 
         path = node_addon.folder_path

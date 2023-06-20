@@ -1,9 +1,12 @@
 from website.util import web_url_for
 from addons.base.serializer import StorageAddonSerializer
 from addons.s3 import utils
+from rest_framework import serializers as ser
+
 
 class S3Serializer(StorageAddonSerializer):
     addon_short_name = 's3'
+    bucket_name = ser.CharField(read_only=True)
 
     REQUIRED_URLS = []
 
@@ -30,7 +33,8 @@ class S3Serializer(StorageAddonSerializer):
     def serialized_folder(self, node_settings):
         return {
             'path': node_settings.folder_id,
-            'name': node_settings.folder_name
+            'name': node_settings.folder_name,
+            'bucket_name': node_settings.bucket_name
         }
 
     def credentials_are_valid(self, user_settings, client=None):

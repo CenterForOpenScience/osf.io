@@ -15,6 +15,7 @@ class NodeAddonFolderSerializer(JSONAPISerializer):
     folder_id = ser.CharField(source='id', read_only=True)
     path = ser.CharField(read_only=True)
     provider = ser.CharField(source='addon', read_only=True)
+    bucket_name = ser.CharField(read_only=True)
 
     links = LinksField({
         'children': 'get_absolute_url',
@@ -27,6 +28,19 @@ class NodeAddonFolderSerializer(JSONAPISerializer):
             # than top-level objects.
             return
 
+        if obj['addon'] == 's3':
+            if obj['kind'] == 'folder':
+                return absolute_reverse(
+                    'nodes:node-addon-folders',
+                    kwargs=self.context['request'].parser_context['kwargs'],
+                    query_kwargs={
+                        'path': obj['path'],
+                        'id': obj['id'],
+                        'bucket_name': obj['bucket_name'],
+                    },
+                )
+            return
+
         return absolute_reverse(
             'nodes:node-addon-folders',
             kwargs=self.context['request'].parser_context['kwargs'],
@@ -37,6 +51,13 @@ class NodeAddonFolderSerializer(JSONAPISerializer):
         )
 
     def get_root_folder(self, obj):
+        if obj['addon'] == 's3':
+            if obj['kind'] == 'folder':
+                return absolute_reverse(
+                    'nodes:node-addon-folders',
+                    kwargs=self.context['request'].parser_context['kwargs'],
+                )
+            return
         return absolute_reverse(
             'nodes:node-addon-folders',
             kwargs=self.context['request'].parser_context['kwargs'],
