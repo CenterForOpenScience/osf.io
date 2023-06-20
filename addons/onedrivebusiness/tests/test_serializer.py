@@ -3,7 +3,10 @@
 import mock
 import pytest
 
+from osf_tests.factories import InstitutionFactory, RegionFactory
+
 from addons.base.tests.serializers import StorageAddonSerializerTestSuiteMixin
+from addons.onedrivebusiness import SHORT_NAME
 from addons.onedrivebusiness.tests.factories import OneDriveBusinessAccountFactory
 from addons.onedrivebusiness.serializer import OneDriveBusinessSerializer
 
@@ -43,6 +46,19 @@ class TestOneDriveBusinessSerializer(StorageAddonSerializerTestSuiteMixin, OsfTe
         self.mock_node_settings_oauth_provider_fetch_access_token.start()
         self.mock_node_settings_ensure_team_folder.start()
         super(TestOneDriveBusinessSerializer, self).setUp()
+        self.institution = InstitutionFactory()
+        self.osfstorage = self.node.get_addon('osfstorage')
+        new_region = RegionFactory(
+            _id=self.institution._id,
+            name='Institutional Storage',
+            waterbutler_settings={
+                'storage': {
+                    'provider': SHORT_NAME,
+                },
+            }
+        )
+        self.osfstorage.region = new_region
+        self.osfstorage.save()
 
     def tearDown(self):
         self.mock_node_settings_ensure_team_folder.stop()

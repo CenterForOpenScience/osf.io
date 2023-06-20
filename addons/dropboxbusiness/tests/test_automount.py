@@ -12,7 +12,8 @@ from osf_tests.factories import (
     InstitutionFactory,
     ExternalAccountFactory,
     UserFactory,
-    ProjectFactory
+    ProjectFactory,
+    RegionFactory
 )
 from addons.dropboxbusiness.models import NodeSettings
 from admin_tests.rdm_addons import factories as rdm_addon_factories
@@ -22,6 +23,7 @@ pytestmark = pytest.mark.django_db
 class DropboxBusinessAccountFactory(ExternalAccountFactory):
     provider = 'dropboxbusiness'
 
+SHORT_NAME = 'dropboxbusiness'
 FILEACCESS_NAME = 'dropboxbusiness'
 MANAGEMENT_NAME = 'dropboxbusiness_manage'
 DBXBIZ = 'addons.dropboxbusiness'
@@ -59,6 +61,19 @@ class TestDropboxBusiness(unittest.TestCase):
             mock3.return_value = 'dbmid:dummy'
             mock4.return_value = ('dbtid:dummy', 'g:dummy')
             self.project = ProjectFactory(creator=self.user)
+            self.osfstorage = self.project.get_addon('osfstorage')
+            new_region = RegionFactory(
+                _id=self.institution._id,
+                name='Institutional Storage',
+                waterbutler_settings={
+                    'storage': {
+                        'provider': SHORT_NAME,
+                    },
+                }
+            )
+            self.osfstorage.region = new_region
+            self.osfstorage.save()
+            self.project.save()
 
     def _allowed(self):
         self.f_option.is_allowed = True
