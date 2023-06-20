@@ -124,6 +124,8 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     @property
     def complete(self):
+        if self._institutions_disabled:
+            return False
         return self.has_auth and self.folder_id is not None
 
     @property

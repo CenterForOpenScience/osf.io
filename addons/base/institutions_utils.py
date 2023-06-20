@@ -8,6 +8,7 @@ from django.db import models
 from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 
+from osf.models import Institution
 from osf.models.node import Node
 from osf.models.rdm_addons import RdmAddonOption
 from website import settings as website_settings
@@ -48,7 +49,16 @@ class InstitutionsNodeSettings(BaseNodeSettings):
     ###
     @property
     def complete(self):
+        if self._institutions_disabled:
+            return False
         return self.has_auth and self.folder_id
+
+    @property
+    def _institutions_disabled(self):
+        if not self.config.for_institutions:
+            raise ValueError('_institutions_disabled is only valid for institutional storage addons')
+        _, region_provider = get_region_provider(self.owner)
+        return region_provider != self.config.short_name
 
     @property
     def has_auth(self):
@@ -474,6 +484,24 @@ def check_existence_and_create(node, ns, op_name):
         logger.warning(u'{}: cannot create external storage folder: addon_name={}, project title={}, GUID={}: {}'.format(op_name, ns.SHORT_NAME, node.title, node._id, str(e)))
         return False
 
+# get region_provider information ... in_institutions, region_disabled, region_provider
+def get_region_provider(node):
+    osfstorage = node.get_addon('osfstorage')
+    if not osfstorage:
+        return False, None
+    region = osfstorage.region
+    if not region or not region.waterbutler_settings:
+        return False, None  # No valid regions
+    region_id = region._id
+    if not Institution.objects.filter(_id=region_id).exists():
+        return False, None  # No regions for institutional storage
+    region_provider = None
+    region_disabled = region.waterbutler_settings.get(
+        'disabled', False)
+    storage = region.waterbutler_settings.get('storage', None)
+    if storage:
+        region_provider = storage.get('provider', None)
+    return region_disabled, region_provider
 
 # sleep time (sec.) to limit API calls
 SYNC_WAIT = 1

@@ -11,6 +11,9 @@ def osf_storage_root(addon_config, node_settings, auth, **kwargs):
     """Build HGrid JSON for root node. Note: include node URLs for client-side
     URL creation for uploaded files.
     """
+    # GRDM-37149: Hide osfstorage for institutional provider
+    if not node_settings.has_auth:
+        return None
     node = node_settings.owner
     root = rubeus.build_addon_root(
         node_settings=node_settings,

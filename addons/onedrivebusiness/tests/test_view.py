@@ -9,11 +9,12 @@ import pytest
 
 from framework.auth import Auth
 from tests.base import OsfTestCase, get_default_metaschema
-from osf_tests.factories import ProjectFactory, AuthUserFactory, DraftRegistrationFactory, InstitutionFactory
+from osf_tests.factories import ProjectFactory, AuthUserFactory, DraftRegistrationFactory, InstitutionFactory, RegionFactory
 
 from addons.base.tests.views import (
     OAuthAddonConfigViewsTestCaseMixin
 )
+from addons.onedrivebusiness import SHORT_NAME
 from addons.onedrivebusiness.tests.utils import OneDriveBusinessAddonTestCase
 import addons.onedrivebusiness.settings as onedrivebusiness_settings
 from website.util import api_url_for
@@ -45,6 +46,19 @@ class TestOneDriveBusinessViews(OneDriveBusinessAddonTestCase, OAuthAddonConfigV
         self.mock_node_settings_oauth_provider_fetch_access_token.start()
         self.mock_node_settings_ensure_team_folder.start()
         super(TestOneDriveBusinessViews, self).setUp()
+        self.institution = InstitutionFactory()
+        self.osfstorage = self.project.get_addon('osfstorage')
+        new_region = RegionFactory(
+            _id=self.institution._id,
+            name='Institutional Storage',
+            waterbutler_settings={
+                'storage': {
+                    'provider': SHORT_NAME,
+                },
+            }
+        )
+        self.osfstorage.region = new_region
+        self.osfstorage.save()
 
     def tearDown(self):
         self.mock_node_settings_ensure_team_folder.stop()

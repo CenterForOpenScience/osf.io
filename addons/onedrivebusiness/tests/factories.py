@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Factories for the My MinIO addon."""
+"""Factories for the OneDriveBusiness addon."""
 import factory
 from factory.django import DjangoModelFactory
 
@@ -16,7 +16,7 @@ class OneDriveBusinessAccountFactory(ExternalAccountFactory):
     provider_id = factory.Sequence(lambda n: 'id-{0}'.format(n))
     oauth_key = factory.Sequence(lambda n: 'key-{0}'.format(n))
     oauth_secret = factory.Sequence(lambda n: 'secret-{0}'.format(n))
-    display_name = 'My MinIO Fake User'
+    display_name = 'OneDriveBusiness Fake User'
 
 
 class OneDriveBusinessUserSettingsFactory(DjangoModelFactory):

@@ -330,6 +330,8 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
 
     @property
     def complete(self):
+        if self._institutions_disabled:
+            return False
         return self.has_auth and self.group_id and self.team_folder_id
 
     @property
