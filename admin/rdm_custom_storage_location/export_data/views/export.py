@@ -145,16 +145,8 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
             # kwargs.setdefault('version', version)
             if task.is_aborted():  # check before each steps
                 return None
-            # get content data file from source
-            response = export_data.read_data_file_from_source(cookies, project_id, provider, file_path, **kwargs)
-            if response.status_code != 200:
-                list_file_id_not_found.append(file_id)
-                continue
-            file_data = response.content
-            if task.is_aborted():  # check before each steps
-                return None
-            # transfer content data file to location
-            response = export_data.transfer_export_data_file_to_location(cookies, file_name, file_data, **kwargs)
+            # copy data file from source storage to location storage
+            response = export_data.copy_export_data_file_to_location(cookies, project_id, provider, file_path, file_name, **kwargs)
             # 201: created -> update cache list
             if response.status_code == 201:
                 created_filename_list.append(file_name)

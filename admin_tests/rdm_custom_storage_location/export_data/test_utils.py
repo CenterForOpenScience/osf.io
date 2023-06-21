@@ -2109,6 +2109,200 @@ class TestUtilsForRestoreData(AdminTestCase):
         mock_upload_file.assert_not_called()
         nt.assert_equal(response, {})
 
+    # copy_file_to_other_storage
+    def test_copy_file_to_other_storage(self):
+        test_response = requests.Response()
+        test_response.status_code = status.HTTP_201_CREATED
+        test_response._content = json.dumps({}).encode('utf-8')
+
+        mock_post = MagicMock()
+        mock_post.return_value = test_response
+        with patch('requests.post', mock_post):
+            response_body = utils.copy_file_to_other_storage(self.export_data, TEST_PROJECT_ID, TEST_PROVIDER, '/test.txt', '/', 'test.txt',
+                                                                          None)
+            nt.assert_equal(response_body, {})
+
+    def test_copy_file_to_other_storage_failed(self):
+        test_response = requests.Response()
+        test_response.status_code = status.HTTP_409_CONFLICT
+
+        mock_post = MagicMock()
+        mock_post.return_value = test_response
+        with patch('requests.post', mock_post):
+            response_body = utils.copy_file_to_other_storage(self.export_data, TEST_PROJECT_ID, TEST_PROVIDER, '/test.txt', '/', 'test.txt',
+                                                                          None)
+            nt.assert_is_none(response_body)
+
+    def test_copy_file_to_other_storage_exception(self):
+        mock_post = MagicMock()
+        mock_post.side_effect = ConnectionError('test_copy_file_to_other_storage_exception')
+
+        with patch('requests.post', mock_post):
+            response_body = utils.copy_file_to_other_storage(self.export_data, TEST_PROJECT_ID, TEST_PROVIDER, '/test.txt', '/', 'test.txt',
+                                                                          None)
+            nt.assert_is_none(response_body)
+
+    # copy_file_from_location_to_destination
+    def test_copy_file_from_location_to_destination_invalid_file_path(self):
+        response = utils.copy_file_from_location_to_destination(self.export_data, TEST_PROJECT_ID, TEST_PROVIDER, '/folder/', '/', None)
+        nt.assert_equal(response, None)
+
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_to_other_storage')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
+    def test_copy_file_from_location_to_destination_create_folders_and_file(self, mock_get_file_data, mock_create_folder, mock_copy_file):
+        create_folder_response_body = {
+            'data': {
+                'attributes': {
+                    'path': '/folder/',
+                    'materialized': '/folder/'
+                }
+            }
+        }
+        test_response = requests.Response()
+        test_response.status_code = status.HTTP_200_OK
+        test_response._content = json.dumps({}).encode('utf-8')
+
+        mock_get_file_data.return_value = test_response
+        mock_create_folder.return_value = (create_folder_response_body, status.HTTP_200_OK)
+        mock_copy_file.return_value = {}
+
+        response = utils.copy_file_from_location_to_destination(self.export_data, TEST_PROJECT_ID, TEST_PROVIDER, '/folder/file.txt',
+                                                                '/folder/file.txt', None)
+        mock_get_file_data.assert_called()
+        mock_create_folder.assert_called()
+        mock_copy_file.assert_called()
+        nt.assert_equal(response, {})
+
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_to_other_storage')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
+    def test_copy_file_from_location_to_destination_failed_to_get_folder_info(self, mock_get_file_data, mock_create_folder, mock_copy_file):
+        create_folder_response_body = {
+            'data': {
+                'attributes': {
+                    'path': '/folder/',
+                    'materialized': '/folder/'
+                }
+            }
+        }
+        test_not_found_response = requests.Response()
+        test_not_found_response.status_code = status.HTTP_404_NOT_FOUND
+
+        mock_get_file_data.return_value = test_not_found_response
+        mock_create_folder.return_value = (create_folder_response_body, status.HTTP_200_OK)
+        mock_copy_file.return_value = {}
+
+        response = utils.copy_file_from_location_to_destination(self.export_data, TEST_PROJECT_ID, TEST_PROVIDER, '/folder/file.txt', '/folder/file.txt',
+                                                                None)
+        mock_get_file_data.assert_called()
+        mock_create_folder.assert_called()
+        mock_copy_file.assert_called()
+        nt.assert_equal(response, {})
+
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_to_other_storage')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
+    def test_copy_file_from_location_to_destination_no_match_folder_info(self, mock_get_file_data, mock_create_folder, mock_copy_file):
+        def get_data_by_file_or_folder(*args, **kwargs):
+            test_response = requests.Response()
+            response_body = {
+                'data': [{
+                    'attributes': {
+                        'path': '/folder2/',
+                        'materialized': '/folder2/'
+                    }
+                }]
+            }
+            test_response.status_code = status.HTTP_200_OK
+            test_response._content = json.dumps(response_body).encode('utf-8')
+            return test_response
+
+        create_folder_response_body = {
+            'data': {
+                'attributes': {
+                    'path': '/folder/',
+                    'materialized': '/folder/'
+                }
+            }
+        }
+
+        mock_get_file_data.side_effect = get_data_by_file_or_folder
+        mock_create_folder.return_value = (create_folder_response_body, status.HTTP_200_OK)
+        mock_copy_file.return_value = {}
+
+        response = utils.copy_file_from_location_to_destination(self.export_data, TEST_PROJECT_ID, TEST_PROVIDER, '/folder/file.txt', '/folder/file.txt', None)
+        mock_get_file_data.assert_called()
+        mock_create_folder.assert_called()
+        mock_copy_file.assert_called()
+        nt.assert_equal(response, {})
+
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_to_other_storage')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
+    def test_copy_file_from_location_to_destination_success(self, mock_get_file_data, mock_create_folder, mock_copy_file):
+        def get_data_by_file_or_folder(*args, **kwargs):
+            test_response = requests.Response()
+            response_body = {
+                'data': [{
+                    'attributes': {
+                        'path': '/folder/',
+                        'materialized': '/folder/'
+                    }
+                }]
+            }
+            test_response.status_code = status.HTTP_200_OK
+            test_response._content = json.dumps(response_body).encode('utf-8')
+            return test_response
+
+        create_folder_response_body = {
+            'data': {
+                'attributes': {
+                    'path': '/folder/',
+                    'materialized': '/folder/'
+                }
+            }
+        }
+
+        copy_file_response_body = {
+            'data': {
+                'attributes': {
+                    'path': '/folder/file.txt',
+                    'materialized': '/folder/file.txt'
+                }
+            }
+        }
+
+        mock_get_file_data.side_effect = get_data_by_file_or_folder
+        mock_create_folder.return_value = (create_folder_response_body, status.HTTP_200_OK)
+        mock_copy_file.return_value = copy_file_response_body
+
+        response = utils.copy_file_from_location_to_destination(self.export_data, TEST_PROJECT_ID, TEST_PROVIDER, '/folder/file.txt', '/folder/file.txt',
+                                                                None)
+        mock_get_file_data.assert_called()
+        mock_create_folder.assert_not_called()
+        mock_copy_file.assert_called()
+        nt.assert_equal(response, copy_file_response_body)
+
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_to_other_storage')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
+    def test_copy_file_from_location_to_destination_failed_to_create_folder(self, mock_get_file_data, mock_create_folder, mock_copy_file):
+        test_response = requests.Response()
+        test_response.status_code = status.HTTP_200_OK
+        test_response._content = json.dumps({}).encode('utf-8')
+
+        mock_get_file_data.return_value = test_response
+        mock_create_folder.return_value = (None, status.HTTP_400_BAD_REQUEST)
+        mock_copy_file.return_value = {}
+
+        response = utils.copy_file_from_location_to_destination(self.export_data, TEST_PROJECT_ID, TEST_PROVIDER, '/folder/file.txt', '/folder/file.txt',
+                                                                None)
+        mock_get_file_data.assert_called()
+        mock_create_folder.assert_called()
+        mock_copy_file.assert_not_called()
+        nt.assert_equal(response, None)
+
     # move_file
     def test_move_file_in_addon_storage(self):
         test_response = requests.Response()

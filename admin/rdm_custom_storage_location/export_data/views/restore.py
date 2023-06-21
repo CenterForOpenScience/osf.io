@@ -598,7 +598,6 @@ def create_folder_in_destination(task, current_process_step, export_data_folders
 
 def copy_files_from_export_data_to_destination(task, current_process_step, export_data_files, export_data_restore, cookies, **kwargs):
     export_data = export_data_restore.export
-    export_base_url = export_data.location.waterbutler_url
 
     destination_region = export_data_restore.destination
     destination_provider = INSTITUTIONAL_STORAGE_PROVIDER_NAME
@@ -648,18 +647,9 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
                 else:
                     new_file_path = file_materialized_path
 
-                # Download file by version
-                response = export_data.read_data_file_from_location(cookies, file_hash_path,
-                                                                    base_url=export_base_url, **kwargs)
-                if response.status_code != status.HTTP_200_OK:
-                    list_file_restore_fail.append(file)
-                    logger.error(f'Download error: {response.content}')
-                    continue
-                download_data = response.content
-
-                # Upload downloaded file to new storage
-                response_body = utils.upload_file_path(file_project_id, destination_provider, new_file_path,
-                                                       download_data, cookies, base_url=destination_base_url, **kwargs)
+                # Copy file from location to destination storage
+                response_body = utils.copy_file_from_location_to_destination(export_data, file_project_id, destination_provider, file_hash_path, new_file_path,
+                                                                             cookies, base_url=destination_base_url, **kwargs)
                 if response_body is None:
                     list_file_restore_fail.append(file)
                     continue
