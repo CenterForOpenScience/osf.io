@@ -28,7 +28,7 @@ def on_preprint_updated(preprint_id, old_subjects=None, saved_fields=None):
         update_or_create_preprint_identifiers(preprint)
 
     if settings.SHARE_ENABLED:
-        update_share(preprint, old_subjects)
+        update_share(preprint)
 
 
 def should_update_preprint_identifiers(preprint, old_subjects, saved_fields):

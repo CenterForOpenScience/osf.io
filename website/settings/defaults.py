@@ -1982,8 +1982,6 @@ SPAM_AUTOBAN_IP_BLOCK = True
 SPAM_THROTTLE_AUTOBAN = True
 SPAM_CREATION_THROTTLE_LIMIT = 5
 
-SHARE_API_TOKEN = None
-
 # refresh campaign every 5 minutes
 CAMPAIGN_REFRESH_THRESHOLD = 5 * 60  # 5 minutes in seconds
 
