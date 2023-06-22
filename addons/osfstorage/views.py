@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+from django.db.models import IntegerField
+from django.db.models.functions import Cast
 from rest_framework import status as http_status
 import logging
 
@@ -107,7 +109,9 @@ def osfstorage_get_revisions(file_node, payload, target, **kwargs):
 
     version_count = file_node.versions.count()
     counts = dict(PageCounter.objects.filter(resource=file_node.target.guids.first().id, file=file_node, action='download').values_list('_id', 'total'))
-    qs = FileVersion.includable_objects.filter(basefilenode__id=file_node.id).include('creator__guids').order_by('-created')
+    qs = FileVersion.includable_objects.filter(basefilenode__id=file_node.id).include('creator__guids').annotate(
+        version_identifier=Cast('identifier', IntegerField())
+    ).order_by('-version_identifier')
 
     for i, version in enumerate(qs):
         version._download_count = counts.get('{}{}'.format(counter_prefix, version_count - i - 1), 0)

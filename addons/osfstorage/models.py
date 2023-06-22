@@ -3,6 +3,8 @@ from __future__ import unicode_literals
 import logging
 
 from django.apps import apps
+from django.db.models import IntegerField
+from django.db.models.functions import Cast
 from django.dispatch import receiver
 from django.db import models, connection
 from django.db.models.signals import post_save
@@ -235,7 +237,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
     @property
     def _hashes(self):
-        last_version = self.versions.last()
+        last_version = self.versions_sorted_by_identifier.last()
         if not last_version:
             return None
         return {
@@ -247,7 +249,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
     @property
     def last_known_metadata(self):
-        last_version = self.versions.last()
+        last_version = self.versions_sorted_by_identifier.last()
         if not last_version:
             size = None
         else:
@@ -261,9 +263,19 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
     def touch(self, bearer, version=None, revision=None, **kwargs):
         try:
+            if version is None and revision is None:
+                return self.versions_sorted_by_identifier.first()
+
             return self.get_version(revision or version)
         except ValueError:
             return None
+
+    @property
+    def versions_sorted_by_identifier(self):
+        versions_order_by_identifier = self.versions.annotate(version_identifier=Cast('identifier', IntegerField())).order_by('-version_identifier')
+        if versions_order_by_identifier.exists():
+            return versions_order_by_identifier
+        return self.versions
 
     @property
     def history(self):
