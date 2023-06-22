@@ -182,6 +182,7 @@
             <input type='hidden' value={{source_id}} id='source_id' class='buckinput' name='source_id' />
             <input type='hidden' value={{selected_source_id}} id='selected_source_id' class='buckinput' name='selected_source_id' />
             <input type='hidden' value={{selected_location_id}} id='selected_location_id' class='buckinput' name='selected_location_id' />
+            <input type='hidden' value={{institution.id}} id='institution_id' class='buckinput' name='institution_id' />
         </div>
     </form>
 
@@ -209,6 +210,7 @@
                 $('#bodyrevertmodal').append(`<input type='hidden' value=${list_export_id} id='input_export_data' class='buckinput' name='list_id_export_data' />`);
                 $('#bodyrevertmodal').append(`<input type='hidden' value={{selected_source_id}} id='selected_source_id' class='buckinput' name='selected_source_id' />`);
                 $('#bodyrevertmodal').append(`<input type='hidden' value={{selected_location_id}} id='selected_location_id' class='buckinput' name='selected_location_id' />`);
+                $('#bodyrevertmodal').append(`<input type='hidden' value={{institution.id}} id='institution_id' class='buckinput' name='institution_id' />`);
             });
             $('input[type=checkbox]').on('change', () => {
                 let count_checked = $('input[type=checkbox][name=check_revert_export]:checked').length;

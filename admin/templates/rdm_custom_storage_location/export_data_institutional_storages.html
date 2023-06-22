@@ -129,7 +129,12 @@
     <script>
         window.contextVars = $.extend(true, {}, window.contextVars, {
             'institution_id': {{ institution.id }},
-            'export_data_list_url': '{% url 'custom_storage_location:export_data:export_data_list' %}',
+            'export_data_list_url':
+                {% if user.is_superuser %}
+                    "{% url 'custom_storage_location:export_data:export_data_list_institution' institution.id %}"
+                {% else %}
+                    "{% url 'custom_storage_location:export_data:export_data_list' %}"
+                {% endif %},
         });
     </script>
 {% endblock %}

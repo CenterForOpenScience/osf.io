@@ -1176,8 +1176,8 @@ class TestExportDataInformationView(AdminTestCase):
         self.user = AuthUserFactory()
         self.user.is_superuser = True
         self.view = management.ExportDataInformationView()
-        self.institution = InstitutionFactory()
         self.export_data = ExportDataFactory()
+        self.institution = InstitutionFactory(_id=self.export_data.source.guid)
 
     def test_get_success(self):
         mock_render = mock.MagicMock()

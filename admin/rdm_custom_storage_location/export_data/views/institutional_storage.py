@@ -78,3 +78,28 @@ class ExportDataInstitutionalStorageListView(ExportStorageLocationViewBaseView, 
         kwargs.setdefault('page', page)
 
         return super(ExportDataInstitutionalStorageListView, self).get_context_data(**kwargs)
+
+class ExportDataListInstitutionListView(ExportStorageLocationViewBaseView, ListView):
+    template_name = 'rdm_custom_storage_location/export_data_list_institutions.html'
+    paginate_by = 10
+    ordering = 'name'
+    permission_required = 'osf.view_institution'
+    raise_exception = True
+    model = Institution
+
+    def test_func(self):
+        """ Check user permissions """
+        return self.is_super_admin
+
+    def get_queryset(self):
+        """ GET: set to self.object_list """
+        return Institution.objects.all().order_by(self.ordering)
+
+    def get_context_data(self, **kwargs):
+        query_set = kwargs.pop('object_list', self.object_list)
+        page_size = self.get_paginate_by(query_set)
+        paginator, page, query_set, is_paginated = self.paginate_queryset(query_set, page_size)
+        kwargs.setdefault('institutions', query_set)
+        kwargs.setdefault('page', page)
+        kwargs.setdefault('logohost', settings.OSF_URL)
+        return super(ExportDataListInstitutionListView, self).get_context_data(**kwargs)

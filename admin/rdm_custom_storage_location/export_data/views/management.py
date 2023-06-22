@@ -185,7 +185,13 @@ class ExportDataInformationView(ExportBaseView):
             ))
 
     def get(self, request, *args, **kwargs):
-        self.load_institution()
+        export_data = ExportData.objects.filter(id=self.kwargs.get('data_id')).first()
+        if not self.is_super_admin:
+            self.load_institution()
+        else:
+            if export_data:
+                self.institution_guid = export_data.source.guid
+                self.institution = Institution.objects.filter(_id=self.institution_guid).first()
 
         cookie = self.request.user.get_or_create_cookie().decode()
         cookies = self.request.COOKIES
@@ -258,18 +264,30 @@ class DeleteExportDataView(ExportStorageLocationViewBaseView, View):
             ExportData.objects.filter(id__in=list_export_data_delete).update(is_deleted=True)
         selected_source_id = request.POST.get('selected_source_id')
         selected_location_id = request.POST.get('selected_location_id')
+        institution_id = request.POST.get('institution_id')
+        is_super = self.is_super_admin
         if check_delete_permanently:
             if selected_source_id and selected_location_id:
-                return redirect(reverse(
-                    'custom_storage_location:export_data:export_data_deleted_list') + f'?storage_id={selected_source_id}&location_id={selected_location_id}')
+                if is_super:
+                    return redirect(reverse('custom_storage_location:export_data:export_data_deleted_list_institution', kwargs={'institution_id': institution_id}) + f'?storage_id={selected_source_id}&location_id={selected_location_id}')
+                else:
+                    return redirect(reverse('custom_storage_location:export_data:export_data_deleted_list') + f'?storage_id={selected_source_id}&location_id={selected_location_id}')
             else:
-                return redirect('custom_storage_location:export_data:export_data_deleted_list')
+                if is_super:
+                    return redirect(reverse('custom_storage_location:export_data:export_data_deleted_list_institution', kwargs={'institution_id': institution_id}))
+                else:
+                    return redirect('custom_storage_location:export_data:export_data_deleted_list')
         else:
             if selected_source_id and selected_location_id:
-                return redirect(reverse(
-                    'custom_storage_location:export_data:export_data_list') + f'?storage_id={selected_source_id}&location_id={selected_location_id}')
+                if is_super:
+                    return redirect(reverse('custom_storage_location:export_data:export_data_list_institution', kwargs={'institution_id': institution_id}) + f'?storage_id={selected_source_id}&location_id={selected_location_id}')
+                else:
+                    return redirect(reverse('custom_storage_location:export_data:export_data_list') + f'?storage_id={selected_source_id}&location_id={selected_location_id}')
             else:
-                return redirect('custom_storage_location:export_data:export_data_list')
+                if is_super:
+                    return redirect(reverse('custom_storage_location:export_data:export_data_list_institution', kwargs={'institution_id': institution_id}))
+                else:
+                    return redirect('custom_storage_location:export_data:export_data_list')
 
 
 class RevertExportDataView(ExportStorageLocationViewBaseView, View):
@@ -282,11 +300,20 @@ class RevertExportDataView(ExportStorageLocationViewBaseView, View):
             ExportData.objects.filter(id__in=list_export_data).update(is_deleted=False)
         selected_source_id = request.POST.get('selected_source_id')
         selected_location_id = request.POST.get('selected_location_id')
+        institution_id = request.POST.get('institution_id')
+        is_super = self.is_super_admin
         if len(selected_source_id) > 0 and len(selected_location_id) > 0:
-            return redirect(reverse(
-                'custom_storage_location:export_data:export_data_deleted_list') + f'?storage_id={selected_source_id}&location_id={selected_location_id}')
+            if is_super:
+                return redirect(reverse(
+                    'custom_storage_location:export_data:export_data_deleted_list_institution', kwargs={'institution_id': institution_id}) + f'?storage_id={selected_source_id}&location_id={selected_location_id}')
+            else:
+                return redirect(reverse(
+                    'custom_storage_location:export_data:export_data_deleted_list') + f'?storage_id={selected_source_id}&location_id={selected_location_id}')
         else:
-            return redirect('custom_storage_location:export_data:export_data_deleted_list')
+            if is_super:
+                return redirect(reverse('custom_storage_location:export_data:export_data_deleted_list_institution', kwargs={'institution_id': institution_id}))
+            else:
+                return redirect('custom_storage_location:export_data:export_data_deleted_list')
 
 
 class ExportDataFileCSVView(RdmPermissionMixin, View):

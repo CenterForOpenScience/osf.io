@@ -558,10 +558,32 @@ class TestExportDataInformationView(AdminTestCase):
         self.user = AuthUserFactory()
         self.user.is_superuser = True
         self.view = management.ExportDataInformationView()
-        self.institution = InstitutionFactory()
         self.export_data = ExportDataFactory()
+        self.institution = InstitutionFactory(_id=self.export_data.source.guid)
 
     def test_get_success(self):
+        mock_render = mock.MagicMock()
+        mock_render.return_value = None
+        mock_validate = mock.MagicMock()
+        mock_validate.return_value = True
+        mock_request = mock.MagicMock()
+        fake_res = FakeRes(200)
+        mock_request.get.return_value = fake_res
+        request = RequestFactory().get('/fake_path')
+        request.user = self.user
+        request.COOKIES = '213919sdasdn823193929'
+        view = management.ExportDataInformationView()
+        view = setup_view(view, request,
+                          institution_id=self.institution.id, data_id=self.export_data.id)
+        with mock.patch('admin.rdm_custom_storage_location.export_data.views.management.validate_exported_data', mock_validate):
+            with mock.patch('osf.models.export_data.requests', mock_request):
+                with mock.patch('admin.rdm_custom_storage_location.export_data.views.management.render', mock_render):
+                    res = view.get(request)
+                    nt.assert_equal(res, None)
+
+    def test_get_success_not_admin(self):
+        self.user.is_superuser = False
+        self.user.affiliated_institutions.add(self.institution)
         mock_render = mock.MagicMock()
         mock_render.return_value = None
         mock_validate = mock.MagicMock()
@@ -628,7 +650,6 @@ class TestExportDataInformationView(AdminTestCase):
         test_user = AuthUserFactory()
         test_institution_id = 2 if self.institution.id != 2 else 1
         test_institution = InstitutionFactory(id=test_institution_id)
-        InstitutionFactory(_id=self.export_data.source.guid)
         request = RequestFactory().get('/fake_path')
         request.user = test_user
         request.COOKIES = '213919sdasdn823193929'
@@ -899,6 +920,47 @@ class TestDeleteExportDataView(AdminTestCase):
 
     @mock.patch('admin.rdm_custom_storage_location.export_data.views.management.ExportData.objects')
     @mock.patch('osf.models.export_data.requests')
+    def test_delete_permanently_not_soure(self, mock_request, mock_export_data):
+        mock_export_data.filter.return_value = [self.export_data]
+        mock_request.delete.return_value = JsonResponse({'message': ''}, status=204)
+        request = RequestFactory().post('/fake_path')
+        request.user = self.user
+        request.COOKIES = '213919sdasdn823193929'
+        request.POST = {'list_id_export_data': '3#', 'delete_permanently': 'on'}
+        view = setup_view(self.view, request)
+        res = view.post(request)
+        nt.assert_equal(res.status_code, 302)
+
+    @mock.patch('admin.rdm_custom_storage_location.export_data.views.management.ExportData.objects')
+    @mock.patch('osf.models.export_data.requests')
+    def test_delete_permanently_with_super(self, mock_request, mock_export_data):
+        mock_export_data.filter.return_value = [self.export_data]
+        mock_request.delete.return_value = JsonResponse({'message': ''}, status=204)
+        request = RequestFactory().post('/fake_path')
+        self.user.is_superuser = True
+        request.user = self.user
+        request.COOKIES = '213919sdasdn823193929'
+        request.POST = {'list_id_export_data': '3#', 'delete_permanently': 'on', 'selected_source_id': ['100'], 'selected_location_id': ['100'], 'institution_id': self.institution.id}
+        view = setup_view(self.view, request)
+        res = view.post(request)
+        nt.assert_equal(res.status_code, 302)
+
+    @mock.patch('admin.rdm_custom_storage_location.export_data.views.management.ExportData.objects')
+    @mock.patch('osf.models.export_data.requests')
+    def test_delete_permanently_with_super_not_source(self, mock_request, mock_export_data):
+        mock_export_data.filter.return_value = [self.export_data]
+        mock_request.delete.return_value = JsonResponse({'message': ''}, status=204)
+        request = RequestFactory().post('/fake_path')
+        self.user.is_superuser = True
+        request.user = self.user
+        request.COOKIES = '213919sdasdn823193929'
+        request.POST = {'list_id_export_data': '3#', 'delete_permanently': 'on', 'institution_id': self.institution.id}
+        view = setup_view(self.view, request)
+        res = view.post(request)
+        nt.assert_equal(res.status_code, 302)
+
+    @mock.patch('admin.rdm_custom_storage_location.export_data.views.management.ExportData.objects')
+    @mock.patch('osf.models.export_data.requests')
     def test_delete_permanently_fail(self, mock_request, mock_export_data):
         mock_export_data.filter.return_value = [self.export_data]
         mock_request.delete.return_value = JsonResponse({'message': ''}, status=400)
@@ -919,6 +981,34 @@ class TestDeleteExportDataView(AdminTestCase):
         res = view.post(request)
         nt.assert_equal(res.status_code, 302)
 
+    def test_delete_not_permanently_not_source(self):
+        request = RequestFactory().post('/fake_path')
+        request.user = self.user
+        request.COOKIES = '213919sdasdn823193929'
+        request.POST = {'list_id_export_data': '4#', 'delete_permanently': 'off'}
+        view = setup_view(self.view, request)
+        res = view.post(request)
+        nt.assert_equal(res.status_code, 302)
+
+    def test_delete_not_permanently_super(self):
+        request = RequestFactory().post('/fake_path')
+        self.user.is_superuser = True
+        request.user = self.user
+        request.COOKIES = '213919sdasdn823193929'
+        request.POST = {'list_id_export_data': '4#', 'delete_permanently': 'off', 'selected_source_id': ['100'], 'selected_location_id': ['100'], 'institution_id': self.institution.id}
+        view = setup_view(self.view, request)
+        res = view.post(request)
+        nt.assert_equal(res.status_code, 302)
+
+    def test_delete_not_permanently_super_not_source(self):
+        request = RequestFactory().post('/fake_path')
+        self.user.is_superuser = True
+        request.user = self.user
+        request.COOKIES = '213919sdasdn823193929'
+        request.POST = {'list_id_export_data': '4#', 'delete_permanently': 'off', 'institution_id': self.institution.id}
+        view = setup_view(self.view, request)
+        res = view.post(request)
+        nt.assert_equal(res.status_code, 302)
 
 @pytest.mark.feature_202210
 class TestRevertExportData(AdminTestCase):
@@ -926,11 +1016,38 @@ class TestRevertExportData(AdminTestCase):
         super(TestRevertExportData, self).setUp()
         self.user = AuthUserFactory()
         self.view = management.RevertExportDataView()
+        self.institution = InstitutionFactory()
 
     def test_post(self):
         request = RequestFactory().post('/fake_path')
         request.user = self.user
         request.POST = {'list_id_export_data': '1000#', 'selected_source_id': ['100'], 'selected_location_id': ['100']}
+        view = setup_view(self.view, request)
+        res = view.post(request)
+        nt.assert_equal(res.status_code, 302)
+
+    def test_post_not_source(self):
+        request = RequestFactory().post('/fake_path')
+        request.user = self.user
+        request.POST = {'list_id_export_data': '1000#', 'selected_source_id': [], 'selected_location_id': []}
+        view = setup_view(self.view, request)
+        res = view.post(request)
+        nt.assert_equal(res.status_code, 302)
+
+    def test_post_super(self):
+        request = RequestFactory().post('/fake_path')
+        self.user.is_superuser = True
+        request.user = self.user
+        request.POST = {'list_id_export_data': '1000#', 'selected_source_id': ['100'], 'selected_location_id': ['100'], 'institution_id': self.institution.id}
+        view = setup_view(self.view, request)
+        res = view.post(request)
+        nt.assert_equal(res.status_code, 302)
+
+    def test_post_super_not_source(self):
+        request = RequestFactory().post('/fake_path')
+        self.user.is_superuser = True
+        request.user = self.user
+        request.POST = {'list_id_export_data': '1000#', 'selected_source_id': [], 'selected_location_id': [], 'institution_id': self.institution.id}
         view = setup_view(self.view, request)
         res = view.post(request)
         nt.assert_equal(res.status_code, 302)
