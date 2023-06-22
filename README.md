@@ -8,6 +8,10 @@ The code for [https://osf.io](https://osf.io).
 - Issues: https://github.com/CenterForOpenScience/osf.io/issues?state=open
 - COS Development Docs: http://cosdev.readthedocs.org/
 
+Selenium end-to-end automated tests
+- ![production_smoke_tests](https://github.com/cos-qa/osf-selenium-tests/actions/workflows/production_smoke_tests.yml/badge.svg)
+- ![nightly_core_functionality_tests](https://github.com/cos-qa/osf-selenium-tests/actions/workflows/nightly_core_functionality_tests.yml/badge.svg)
+- ![weekly_regression_tests](https://github.com/cos-qa/osf-selenium-tests/actions/workflows/weekly_regression_tests.yml/badge.svg)
 
 ## Running the OSF For Development
 
