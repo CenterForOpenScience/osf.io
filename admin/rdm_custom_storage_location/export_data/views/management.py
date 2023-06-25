@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_export_data(institution_guid, selected_location_id=None, selected_source_id=None, deleted=False,
-                    check_delete=True):
+                    check_delete=True, selected_source_name=None):
     institution = Institution.load(institution_guid)
     locations = institution.get_allowed_storage_location()
     list_location_id = locations.values_list('id', flat=True)
@@ -45,6 +45,8 @@ def get_export_data(institution_guid, selected_location_id=None, selected_source
         list_export_data = list_export_data.filter(location_id=selected_location_id)
     if selected_source_id:
         list_export_data = list_export_data.filter(source_id=selected_source_id)
+    if selected_source_name:
+        list_export_data = list_export_data.filter(source_name=selected_source_name)
     list_export_data = list_export_data.order_by('-id')
 
     list_data = []
@@ -53,7 +55,7 @@ def get_export_data(institution_guid, selected_location_id=None, selected_source
             'export_data': export_data,
             'location_name': export_data.location.name,
             'source_id': export_data.source.id,
-            'source_name': export_data.source.name
+            'source_name': export_data.source_name if export_data.source_name is not None else ''
         }
         list_data.append(data)
     return list_data
@@ -111,10 +113,18 @@ class ExportDataListView(ExportBaseView):
 
         source_storages = self.institution.get_institutional_storage()
         selected_source_id = self.kwargs.get('storage_id', request.GET.get('storage_id'))
+        selected_source_name = self.kwargs.get('storage_name', request.GET.get('storage_name'))
+
         if not selected_source_id and source_storages.exists():
             selected_source_id = source_storages.first().id
 
-        self.query_set = get_export_data(self.institution_guid, selected_location_id, selected_source_id)
+        source_storage_list = get_export_data(self.institution_guid)
+        source_name_list = [item['source_name'] for item in source_storage_list]
+        source_name_list = list(set(filter(None, source_name_list)))
+        source_name_list.sort()
+
+        self.query_set = get_export_data(self.institution_guid, selected_location_id, selected_source_id, selected_source_name=selected_source_name)
+
         self.page_size = self.get_paginate_by(self.query_set)
         _, self.page, self.query_set, _ = self.paginate_queryset(self.query_set, self.page_size)
         context = {
@@ -122,8 +132,9 @@ class ExportDataListView(ExportBaseView):
             'list_export_data': self.query_set,
             'locations': locations,
             'selected_location_id': int(selected_location_id) if selected_location_id else 0,
-            'source_storages': source_storages,
+            'source_name_list': source_name_list,
             'selected_source_id': int(selected_source_id) if selected_source_id else 0,
+            'selected_source_name': selected_source_name if selected_source_name else '',
             'source_id': self.query_set[0]['source_id'] if len(self.query_set) > 0 else 0,
             'page': self.page,
         }
@@ -138,6 +149,7 @@ class ExportDataDeletedListView(ExportBaseView):
 
         locations = self.institution.get_allowed_storage_location()
         selected_location_id = request.GET.get('location_id')
+        selected_source_name = self.kwargs.get('storage_name', request.GET.get('storage_name'))
         if not selected_location_id and locations.exists():
             selected_location_id = locations.first().id
 
@@ -146,7 +158,12 @@ class ExportDataDeletedListView(ExportBaseView):
         if not selected_source_id and source_storages.exists():
             selected_source_id = source_storages.first().id
 
-        self.query_set = get_export_data(self.institution_guid, selected_location_id, selected_source_id, deleted=True)
+        source_storage_list = get_export_data(self.institution_guid)
+        source_name_list = [item['source_name'] for item in source_storage_list]
+        source_name_list = list(set(filter(None, source_name_list)))
+        source_name_list.sort()
+
+        self.query_set = get_export_data(self.institution_guid, selected_location_id, selected_source_id, deleted=True, selected_source_name=selected_source_name)
         self.page_size = self.get_paginate_by(self.query_set)
         _, self.page, self.query_set, _ = self.paginate_queryset(self.query_set, self.page_size)
         context = {
@@ -154,8 +171,9 @@ class ExportDataDeletedListView(ExportBaseView):
             'list_export_data': self.query_set,
             'locations': locations,
             'selected_location_id': int(selected_location_id) if selected_location_id else 0,
-            'source_storages': source_storages,
+            'source_name_list': source_name_list,
             'selected_source_id': int(selected_source_id) if selected_source_id else 0,
+            'selected_source_name': selected_source_name if selected_source_name else '',
             'source_id': self.query_set[0]['source_id'] if len(self.query_set) > 0 else 0,
             'page': self.page,
         }

@@ -79,7 +79,7 @@
         </form>
     {% endif %}
 
-    <h2>{% blocktrans with storage_name=exported_info.storage.name institution_name=institution.name %}Export Data Information of {{ storage_name }}<br/><small>(for {{ institution_name }})</small>{% endblocktrans %}</h2>
+    <h2>{% blocktrans with storage_name=export_data.source_name institution_name=institution.name %}Export Data Information of {{ storage_name }}<br/><small>(for {{ institution_name }})</small>{% endblocktrans %}</h2>
 
     <table class="table table-striped" id="{{ export_data.id }}">
         <tbody>
@@ -97,7 +97,7 @@
         </tr>
         <tr>
             <td>{% trans "Export source storage" %}</td>
-            <td>{{ exported_info.storage.name }}</td>
+            <td>{{ export_data.source_name }}</td>
         </tr>
         <tr>
             <td>{% trans "Export data storage location" %}</td>

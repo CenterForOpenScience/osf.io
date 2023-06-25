@@ -59,6 +59,12 @@ class ExportDataActionView(ExportDataBaseActionView):
 
     def post(self, request, *args, **kwargs):
         institution, source_storage, location = self.extract_input(request)
+        storage_credentials = source_storage.waterbutler_credentials['storage']
+        source_waterbutler_credentials = None
+        if storage_credentials and 'host' in storage_credentials:
+            source_waterbutler_credentials = {
+                'host': storage_credentials['host'],
+            }
 
         # Create new process record
         try:
@@ -66,7 +72,10 @@ class ExportDataActionView(ExportDataBaseActionView):
                 source=source_storage,
                 location=location,
                 status=ExportData.STATUS_ERROR,
-                creator=request.user
+                creator=request.user,
+                source_name=f'{source_storage.name} ({source_storage.provider_full_name})',
+                source_waterbutler_credentials=source_waterbutler_credentials,
+                source_waterbutler_settings=source_storage.waterbutler_settings
             )
         except IntegrityError:
             return Response({'message': f'The equivalent process is running'}, status=status.HTTP_400_BAD_REQUEST)

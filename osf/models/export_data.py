@@ -19,6 +19,8 @@ from osf.models import (
     FileVersion,
 )
 from admin.base import settings as admin_settings
+from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
+from osf.utils.fields import EncryptedJSONField
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +80,9 @@ class ExportData(base.BaseModel):
     is_deleted = models.BooleanField(default=False)
     task_id = models.CharField(max_length=255, null=True, blank=True)
     creator = models.ForeignKey('OSFUser', on_delete=models.CASCADE)
-
+    source_name = models.CharField(max_length=200, null=True, blank=True)
+    source_waterbutler_credentials = EncryptedJSONField(default=dict, null=True, blank=True)
+    source_waterbutler_settings = DateTimeAwareJSONField(default=dict, null=True, blank=True)
     class Meta:
         db_table = 'osf_export_data'
         unique_together = ('source', 'location', 'process_start')
