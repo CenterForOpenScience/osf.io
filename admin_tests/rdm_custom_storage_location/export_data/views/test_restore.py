@@ -903,19 +903,13 @@ class TestRestoreDataFunction(AdminTestCase):
         nt.assert_equal(result, None)
 
     # copy_files_from_export_data_to_destination
-    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.upload_file_path')
-    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.ExportData.read_data_file_from_location')
+    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_from_location_to_destination')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.generate_new_file_path')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped')
-    def test_copy_files_from_export_data_to_destination_addon_storage(self, mock_check_progress, mock_generate_new_file_path, mock_download,
-                                                                      mock_upload):
+    def test_copy_files_from_export_data_to_destination_addon_storage(self, mock_check_progress, mock_generate_new_file_path, mock_copy):
         addon_export_file = self.test_export_data_files
         addon_export_file[0]['path'] = '/@ember-decorators/utils/collapse-proto.d.ts'
         addon_export_file[0]['provider'] = 'nextcloudinstitutions'
-
-        test_response = requests.Response()
-        test_response.status_code = status.HTTP_200_OK
-        test_response._content = json.dumps({}).encode('utf-8')
 
         task = AbortableTask()
         task.request_stack = LocalStack()
@@ -925,8 +919,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_is_add_on.return_value = True
         mock_check_progress.return_value = None
         mock_generate_new_file_path.return_value = '/@ember-decorators/utils/collapse-proto.d.ts'
-        mock_download.return_value = test_response
-        mock_upload.return_value = {
+        mock_copy.return_value = {
             'data': {
                 'id': 'nextcloudinstitutions/fake_id'
             }
@@ -938,20 +931,18 @@ class TestRestoreDataFunction(AdminTestCase):
             mock_is_add_on.assert_called()
             mock_check_progress.assert_called()
             mock_generate_new_file_path.assert_called()
-            mock_download.assert_called()
-            mock_upload.assert_called()
+            mock_copy.assert_called()
             nt.assert_equal(result[0], [])
 
     @mock.patch('osf.models.BaseFileNode')
     @mock.patch('osf.models.BaseFileNode.objects')
     @mock.patch('osf.models.FileVersion.objects')
-    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.upload_file_path')
-    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.ExportData.read_data_file_from_location')
+    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_from_location_to_destination')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.generate_new_file_path')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped')
     def test_copy_files_from_export_data_to_destination_osfstorage(self, mock_check_progress,
-                                                                   mock_generate_new_file_path, mock_download,
-                                                                   mock_upload, mock_file_version, mock_file_node,
+                                                                   mock_generate_new_file_path, mock_copy,
+                                                                   mock_file_version, mock_file_node,
                                                                    mock_base_file_node):
         def create_node(*args, **kwargs):
             OsfStorageFileFactory.create(_id='fake_id')
@@ -962,10 +953,6 @@ class TestRestoreDataFunction(AdminTestCase):
             }
 
         bulkmount_export_files = self.test_export_data_files
-
-        test_response = requests.Response()
-        test_response.status_code = status.HTTP_200_OK
-        test_response._content = json.dumps({}).encode('utf-8')
 
         task = AbortableTask()
         task.request_stack = LocalStack()
@@ -981,8 +968,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_is_add_on.return_value = False
         mock_check_progress.return_value = None
         mock_generate_new_file_path.return_value = '/@ember-decorators/utils/collapse-proto.d.ts'
-        mock_download.return_value = test_response
-        mock_upload.side_effect = create_node
+        mock_copy.side_effect = create_node
 
         with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
             result = self.view.copy_files_from_export_data_to_destination(task, 1, bulkmount_export_files,
@@ -991,20 +977,17 @@ class TestRestoreDataFunction(AdminTestCase):
             mock_is_add_on.assert_called()
             mock_check_progress.assert_called()
             mock_generate_new_file_path.assert_not_called()
-            mock_download.assert_called()
-            mock_upload.assert_called()
+            mock_copy.assert_called()
             nt.assert_equal(len(result), 2)
             nt.assert_equal(result[0][0].get('file_tags'), ['hello', 'world'])
             nt.assert_equal(result[0][0].get('file_timestamp'), {})
             nt.assert_equal(result[0][0].get('project_id'), 'pmockt')
 
-    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.upload_file_path')
-    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.ExportData.read_data_file_from_location')
+    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_from_location_to_destination')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.generate_new_file_path')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped')
     def test_copy_files_from_export_data_to_destination_osfstorage_not_add_new_version(self, mock_check_progress,
-                                                                                       mock_generate_new_file_path, mock_download,
-                                                                                       mock_upload):
+                                                                                       mock_generate_new_file_path, mock_copy):
         def create_node(*args, **kwargs):
             file = OsfStorageFileFactory.create(_id='fake_id')
             user = AuthUserFactory.create(username='fake_user')
@@ -1025,10 +1008,6 @@ class TestRestoreDataFunction(AdminTestCase):
 
         bulkmount_export_files = self.test_export_data_files
 
-        test_response = requests.Response()
-        test_response.status_code = status.HTTP_200_OK
-        test_response._content = json.dumps({}).encode('utf-8')
-
         task = AbortableTask()
         task.request_stack = LocalStack()
         task.request.id = FAKE_TASK_ID
@@ -1037,8 +1016,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_is_add_on.return_value = False
         mock_check_progress.return_value = None
         mock_generate_new_file_path.return_value = '/@ember-decorators/utils/collapse-proto.d.ts'
-        mock_download.return_value = test_response
-        mock_upload.side_effect = create_node
+        mock_copy.side_effect = create_node
 
         with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
             result = self.view.copy_files_from_export_data_to_destination(task, 1, bulkmount_export_files,
@@ -1047,20 +1025,17 @@ class TestRestoreDataFunction(AdminTestCase):
             mock_is_add_on.assert_called()
             mock_check_progress.assert_called()
             mock_generate_new_file_path.assert_not_called()
-            mock_download.assert_called()
-            mock_upload.assert_called()
+            mock_copy.assert_called()
             nt.assert_equal(len(result), 2)
             nt.assert_equal(len(result[0][0].get('node').versions.all()), 1)
             nt.assert_equal(result[0][0].get('file_tags'), ['hello', 'world'])
             nt.assert_equal(result[0][0].get('file_timestamp'), {})
             nt.assert_equal(result[0][0].get('project_id'), 'pmockt')
 
-    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.upload_file_path')
-    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.ExportData.read_data_file_from_location')
+    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_from_location_to_destination')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.generate_new_file_path')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped')
-    def test_copy_files_from_export_data_to_destination_other_bulk_mount_storage(self, mock_check_progress, mock_generate_new_file_path, mock_download,
-                                                                                 mock_upload):
+    def test_copy_files_from_export_data_to_destination_other_bulk_mount_storage(self, mock_check_progress, mock_generate_new_file_path, mock_copy):
         bulkmount_export_files = self.test_export_data_files
         bulkmount_export_files[0]['provider'] = 'box'
         other_bulk_mount_data_restore = self.bulk_mount_data_restore
@@ -1070,10 +1045,6 @@ class TestRestoreDataFunction(AdminTestCase):
             }
         }
 
-        test_response = requests.Response()
-        test_response.status_code = status.HTTP_200_OK
-        test_response._content = json.dumps({}).encode('utf-8')
-
         task = AbortableTask()
         task.request_stack = LocalStack()
         task.request.id = FAKE_TASK_ID
@@ -1082,8 +1053,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_is_add_on.return_value = False
         mock_check_progress.return_value = None
         mock_generate_new_file_path.return_value = '/@ember-decorators/utils/collapse-proto.d.ts'
-        mock_download.return_value = test_response
-        mock_upload.return_value = {
+        mock_copy.return_value = {
             'data': {
                 'id': 'box/fake_id'
             }
@@ -1096,20 +1066,13 @@ class TestRestoreDataFunction(AdminTestCase):
             mock_is_add_on.assert_called()
             mock_check_progress.assert_called()
             mock_generate_new_file_path.assert_not_called()
-            mock_download.assert_called()
-            mock_upload.assert_called()
+            mock_copy.assert_called()
             nt.assert_equal(result[0], [])
 
-    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.upload_file_path')
-    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.ExportData.read_data_file_from_location')
+    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_from_location_to_destination')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.generate_new_file_path')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped')
-    def test_copy_files_from_export_data_to_destination_empty_file_info_list(self, mock_check_progress, mock_generate_new_file_path, mock_download,
-                                                                             mock_upload):
-        test_response = requests.Response()
-        test_response.status_code = status.HTTP_200_OK
-        test_response._content = json.dumps({}).encode('utf-8')
-
+    def test_copy_files_from_export_data_to_destination_empty_file_info_list(self, mock_check_progress, mock_generate_new_file_path, mock_copy):
         task = AbortableTask()
         task.request_stack = LocalStack()
         task.request.id = FAKE_TASK_ID
@@ -1118,8 +1081,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_is_add_on.return_value = False
         mock_check_progress.return_value = None
         mock_generate_new_file_path.return_value = '/@ember-decorators/utils/collapse-proto.d.ts'
-        mock_download.return_value = test_response
-        mock_upload.return_value = {
+        mock_copy.return_value = {
             'data': {
                 'id': 'osfstorage/fake_id'
             }
@@ -1131,22 +1093,15 @@ class TestRestoreDataFunction(AdminTestCase):
             mock_is_add_on.assert_called()
             mock_check_progress.assert_not_called()
             mock_generate_new_file_path.assert_not_called()
-            mock_download.assert_not_called()
-            mock_upload.assert_not_called()
+            mock_copy.assert_not_called()
             nt.assert_equal(result[0], [])
 
-    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.upload_file_path')
-    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.ExportData.read_data_file_from_location')
+    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_from_location_to_destination')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.generate_new_file_path')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped')
-    def test_copy_files_from_export_data_to_destination_empty_version(self, mock_check_progress, mock_generate_new_file_path, mock_download,
-                                                                      mock_upload):
+    def test_copy_files_from_export_data_to_destination_empty_version(self, mock_check_progress, mock_generate_new_file_path, mock_copy):
         bulkmount_export_files = self.test_export_data_files
         bulkmount_export_files[0]['version'] = []
-
-        test_response = requests.Response()
-        test_response.status_code = status.HTTP_200_OK
-        test_response._content = json.dumps({}).encode('utf-8')
 
         task = AbortableTask()
         task.request_stack = LocalStack()
@@ -1156,8 +1111,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_is_add_on.return_value = False
         mock_check_progress.return_value = None
         mock_generate_new_file_path.return_value = '/@ember-decorators/utils/collapse-proto.d.ts'
-        mock_download.return_value = test_response
-        mock_upload.return_value = {
+        mock_copy.return_value = {
             'data': {
                 'id': 'osfstorage/fake_id'
             }
@@ -1169,16 +1123,13 @@ class TestRestoreDataFunction(AdminTestCase):
             mock_is_add_on.assert_called()
             mock_check_progress.assert_called()
             mock_generate_new_file_path.assert_not_called()
-            mock_download.assert_not_called()
-            mock_upload.assert_not_called()
+            mock_copy.assert_not_called()
             nt.assert_equal(result[0], [])
 
-    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.upload_file_path')
-    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.ExportData.read_data_file_from_location')
+    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_from_location_to_destination')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.generate_new_file_path')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped')
-    def test_copy_files_from_export_data_to_destination_no_file_hash(self, mock_check_progress, mock_generate_new_file_path, mock_download,
-                                                                     mock_upload):
+    def test_copy_files_from_export_data_to_destination_no_file_hash(self, mock_check_progress, mock_generate_new_file_path, mock_copy):
         bulkmount_export_files = self.test_export_data_files
         bulkmount_export_files[0]['version'] = [{
             'identifier': '',
@@ -1188,10 +1139,6 @@ class TestRestoreDataFunction(AdminTestCase):
             'location': {}
         }]
 
-        test_response = requests.Response()
-        test_response.status_code = status.HTTP_200_OK
-        test_response._content = json.dumps({}).encode('utf-8')
-
         task = AbortableTask()
         task.request_stack = LocalStack()
         task.request.id = FAKE_TASK_ID
@@ -1200,8 +1147,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_is_add_on.return_value = False
         mock_check_progress.return_value = None
         mock_generate_new_file_path.return_value = '/@ember-decorators/utils/collapse-proto.d.ts'
-        mock_download.return_value = test_response
-        mock_upload.return_value = {
+        mock_copy.return_value = {
             'data': {
                 'id': 'osfstorage/fake_id'
             }
@@ -1213,19 +1159,14 @@ class TestRestoreDataFunction(AdminTestCase):
             mock_is_add_on.assert_called()
             mock_check_progress.assert_called()
             mock_generate_new_file_path.assert_not_called()
-            mock_download.assert_not_called()
-            mock_upload.assert_not_called()
+            mock_copy.assert_not_called()
             nt.assert_equal(result[0], [])
 
-    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.ExportData.read_data_file_from_location')
+    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_from_location_to_destination')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.generate_new_file_path')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped')
-    def test_copy_files_from_export_data_to_destination_download_error(self, mock_check_progress, mock_generate_new_file_path, mock_download):
+    def test_copy_files_from_export_data_to_destination_copy_error(self, mock_check_progress, mock_generate_new_file_path, mock_copy):
         bulkmount_export_files = self.test_export_data_files
-
-        test_response = requests.Response()
-        test_response.status_code = status.HTTP_400_BAD_REQUEST
-        test_response._content = json.dumps({}).encode('utf-8')
 
         task = AbortableTask()
         task.request_stack = LocalStack()
@@ -1235,7 +1176,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_is_add_on.return_value = False
         mock_check_progress.return_value = None
         mock_generate_new_file_path.return_value = '/@ember-decorators/utils/collapse-proto.d.ts'
-        mock_download.return_value = test_response
+        mock_copy.return_value = None
 
         with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
             result = self.view.copy_files_from_export_data_to_destination(task, 1, bulkmount_export_files,
@@ -1243,15 +1184,13 @@ class TestRestoreDataFunction(AdminTestCase):
             mock_is_add_on.assert_called()
             mock_check_progress.assert_called()
             mock_generate_new_file_path.assert_not_called()
-            mock_download.assert_called()
+            mock_copy.assert_called()
             nt.assert_equal(result[0], [])
 
-    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.upload_file_path')
-    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.ExportData.read_data_file_from_location')
+    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_from_location_to_destination')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.generate_new_file_path')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped')
-    def test_copy_files_from_export_data_to_destination_upload_error(self, mock_check_progress, mock_generate_new_file_path, mock_download,
-                                                                     mock_upload):
+    def test_copy_files_from_export_data_to_destination_exception(self, mock_check_progress, mock_generate_new_file_path, mock_copy):
         bulkmount_export_files = self.test_export_data_files
 
         test_response = requests.Response()
@@ -1266,8 +1205,7 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_is_add_on.return_value = False
         mock_check_progress.return_value = None
         mock_generate_new_file_path.return_value = '/@ember-decorators/utils/collapse-proto.d.ts'
-        mock_download.return_value = test_response
-        mock_upload.return_value = None
+        mock_copy.side_effect = Exception('Mock test exception while downloading file from export data')
 
         with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
             result = self.view.copy_files_from_export_data_to_destination(task, 1, bulkmount_export_files,
@@ -1275,37 +1213,7 @@ class TestRestoreDataFunction(AdminTestCase):
             mock_is_add_on.assert_called()
             mock_check_progress.assert_called()
             mock_generate_new_file_path.assert_not_called()
-            mock_download.assert_called()
-            mock_upload.assert_called()
-            nt.assert_equal(result[0], [])
-
-    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.ExportData.read_data_file_from_location')
-    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.generate_new_file_path')
-    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped')
-    def test_copy_files_from_export_data_to_destination_exception(self, mock_check_progress, mock_generate_new_file_path, mock_download):
-        bulkmount_export_files = self.test_export_data_files
-
-        test_response = requests.Response()
-        test_response.status_code = status.HTTP_200_OK
-        test_response._content = json.dumps({}).encode('utf-8')
-
-        task = AbortableTask()
-        task.request_stack = LocalStack()
-        task.request.id = FAKE_TASK_ID
-
-        mock_is_add_on = mock.MagicMock()
-        mock_is_add_on.return_value = False
-        mock_check_progress.return_value = None
-        mock_generate_new_file_path.return_value = '/@ember-decorators/utils/collapse-proto.d.ts'
-        mock_download.side_effect = Exception('Mock test exception while downloading file from export data')
-
-        with mock.patch(f'{EXPORT_DATA_UTIL_PATH}.is_add_on_storage', mock_is_add_on):
-            result = self.view.copy_files_from_export_data_to_destination(task, 1, bulkmount_export_files,
-                                                                          self.addon_data_restore, None)
-            mock_is_add_on.assert_called()
-            mock_check_progress.assert_called()
-            mock_generate_new_file_path.assert_not_called()
-            mock_download.assert_called()
+            mock_copy.assert_called()
             nt.assert_equal(result[0], [])
 
     def test_copy_files_from_export_data_to_destination_aborted(self):

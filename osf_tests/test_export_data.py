@@ -328,6 +328,18 @@ class TestExportData(TestCase):
             res = self.export_data.transfer_export_data_file_to_location(cookie, provider, file_path)
         nt.assert_equal(res.status_code, 200)
 
+    def test_copy_export_data_file_to_location(self):
+        mock_request = mock.MagicMock()
+        mock_request.post.return_value = JsonResponse({'message': ''}, status=200)
+        cookie = 'fake_cookie'
+        project_id = 'project_id_1'
+        provider = 'osfstorage'
+        file_path = '/fake_path'
+        file_name = 'file_name'
+        with mock.patch('osf.models.export_data.requests', mock_request):
+            res = self.export_data.copy_export_data_file_to_location(cookie, project_id, provider, file_path, file_name)
+        nt.assert_equal(res.status_code, 200)
+
     def test_upload_file_info_file(self):
         mock_request = mock.MagicMock()
         mock_request.put.return_value = JsonResponse({'message': ''}, status=200)

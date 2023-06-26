@@ -577,6 +577,82 @@ def upload_file_path(node_id, provider, file_path, file_data, cookies, base_url=
                     return {}
 
 
+def copy_file_to_other_storage(export_data, destination_node_id, destination_provider, location_file_path, destination_parent_path, file_name, cookies, base_url=WATERBUTLER_URL, **kwargs):
+    location_node_id = export_data.EXPORT_DATA_FAKE_NODE_ID
+    location_provider = export_data.location.provider_name
+
+    copy_file_url = waterbutler_api_url_for(
+        location_node_id, location_provider, path=location_file_path,
+        _internal=True, base_url=base_url, callback_log=False,
+        location_id=export_data.location.id, **kwargs)
+
+    request_body = {
+        'action': 'copy',
+        'path': destination_parent_path,
+        'conflict': 'replace',
+        'rename': file_name,
+        'resource': destination_node_id,
+        'provider': destination_provider,
+    }
+
+    try:
+        response = requests.post(copy_file_url,
+                                 headers={'content-type': 'application/json'},
+                                 cookies=cookies,
+                                 json=request_body)
+        return response.json() if response.status_code in [200, 201] else None
+    except Exception:
+        return None
+
+
+def copy_file_from_location_to_destination(export_data, destination_node_id, destination_provider, location_file_path, destination_file_path, cookies, base_url=WATERBUTLER_URL, **kwargs):
+    if not destination_file_path.startswith('/') or destination_file_path.endswith('/'):
+        # Invalid file path, return immediately
+        return None
+
+    folder_paths = destination_file_path.split('/')[1:-1]
+    file_name = destination_file_path.split('/')[-1]
+    created_folder_path = '/'
+    created_folder_materialized_path = '/'
+
+    # Get file's parent folder path for copy API
+    for path in folder_paths:
+        try:
+            # Try to get path information
+            response = get_file_data(destination_node_id, destination_provider, created_folder_path,
+                                     cookies, base_url, get_file_info=True, **kwargs)
+            if response.status_code != 200:
+                raise Exception(f'Failed to get info of path "{created_folder_path}" on destination storage, create new folder on destination storage')
+
+            response_body = response.json()
+            new_folder_path = f'{created_folder_materialized_path}{path}/'
+
+            existing_path_info = next((item for item in response_body['data'] if
+                                       item['attributes']['materialized'] == new_folder_path),
+                                      None)
+
+            if existing_path_info is None:
+                raise Exception(f'Path "{new_folder_path}" is not found on destination storage, create new folder on destination storage')
+
+            created_folder_path = existing_path_info['attributes']['path']
+            created_folder_materialized_path = existing_path_info['attributes']['materialized']
+        except Exception:
+            # If currently at folder, create folder
+            response_body, status_code = create_folder(
+                destination_node_id, destination_provider, created_folder_path, path, cookies,
+                callback_log=True, base_url=base_url, **kwargs)
+            if response_body is not None:
+                created_folder_path = response_body['data']['attributes']['path']
+                created_folder_materialized_path = response_body['data']['attributes']['materialized']
+            else:
+                return None
+
+    # Call API to copy file from location storage to destination storage
+    copy_response_body = copy_file_to_other_storage(export_data, destination_node_id, destination_provider, location_file_path,
+                                                    created_folder_path, file_name, cookies, **kwargs)
+    return copy_response_body
+
+
 def move_file(node_id, provider, source_file_path, destination_file_path, cookies, callback_log=False,
               base_url=WATERBUTLER_URL, is_addon_storage=True, **kwargs):
     move_old_data_url = waterbutler_api_url_for(

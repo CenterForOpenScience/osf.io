@@ -468,6 +468,32 @@ class ExportData(base.BaseModel):
         )
         return requests.put(url, data=file_data, cookies=cookies)
 
+    def copy_export_data_file_to_location(self, cookies, source_project_id, source_provider, source_file_path, file_name, **kwargs):
+        """Copy data file from source storage to the storage location"""
+        node_id = self.EXPORT_DATA_FAKE_NODE_ID
+        location_provider = self.location.provider_name
+        path = self.export_data_files_folder_path
+
+        copy_file_url = waterbutler_api_url_for(
+            source_project_id, source_provider, path=source_file_path,
+            _internal=True, location_id=self.location.id,
+            **kwargs
+        )
+
+        request_body = {
+            'action': 'copy',
+            'path': path,
+            'conflict': 'warn',
+            'rename': file_name,
+            'resource': node_id,
+            'provider': location_provider
+        }
+
+        return requests.post(copy_file_url,
+                             headers={'content-type': 'application/json'},
+                             cookies=cookies,
+                             json=request_body)
+
     def get_data_file_file_path(self, file_name):
         """get /export_{source.id}_{process_start_timestamp}/files/{file_name} file path"""
         return os.path.join('/', self.export_data_files_folder_path, file_name)
