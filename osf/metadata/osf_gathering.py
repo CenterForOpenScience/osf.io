@@ -59,7 +59,7 @@ OSF_AGENT_REFERENCE = {
     DCTERMS.identifier: None,
     DCTERMS.type: None,
     FOAF.name: None,
-    OSF.affiliatedInstitution: None,
+    OSF.affiliation: None,
 }
 
 OSF_OBJECT_REFERENCE = {  # could reference non-osf objects too
@@ -105,7 +105,7 @@ OSF_OBJECT = {
     DCTERMS.subject: None,
     DCTERMS.title: None,
     DCTERMS.type: None,
-    OSF.affiliatedInstitution: None,
+    OSF.affiliation: None,
     OSF.funder: None,
     OSF.contains: OSF_FILE_REFERENCE,
     OSF.hasRoot: OSF_OBJECT_REFERENCE,
@@ -176,7 +176,7 @@ OSFMAP = {
     OSF.Agent: {
         DCTERMS.identifier: None,
         FOAF.name: None,
-        OSF.affiliatedInstitution: None,
+        OSF.affiliation: None,
         OWL.sameAs: None,
     },
 }
@@ -271,7 +271,7 @@ def gather_identifiers(focus: gather.Focus):
             yield (DCTERMS.identifier, str(osfguid_iri))
     if hasattr(focus.dbmodel, 'get_identifier_value'):
         doi = focus.dbmodel.get_identifier_value('doi')
-        if doi:
+        if doi and doi.startswith('10.'):  # HACK: skip malformed doi
             doi_iri = DOI[doi]
             yield (OWL.sameAs, doi_iri)
             yield (DCTERMS.identifier, str(doi_iri))
@@ -656,7 +656,7 @@ def gather_agents(focus):
     # TODO: preserve order via rdflib.Seq
 
 
-@gather.er(OSF.affiliatedInstitution)
+@gather.er(OSF.affiliation)
 def gather_affiliated_institutions(focus):
     if hasattr(focus.dbmodel, 'get_affiliated_institutions'):   # like OSFUser
         institution_qs = focus.dbmodel.get_affiliated_institutions()
@@ -671,7 +671,7 @@ def gather_affiliated_institutions(focus):
             institution_iri = rdflib.URIRef(osf_institution.identifier_domain)
         else:                                       # fallback to a blank node
             institution_iri = rdflib.BNode()
-        yield (OSF.affiliatedInstitution, institution_iri)
+        yield (OSF.affiliation, institution_iri)
         yield (institution_iri, RDF.type, OSF.Agent)
         yield (institution_iri, DCTERMS.type, FOAF.Organization)
         yield (institution_iri, FOAF.name, osf_institution.name)
