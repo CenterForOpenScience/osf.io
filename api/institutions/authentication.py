@@ -10,6 +10,7 @@ from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed, PermissionDenied
 
 from addons.osfstorage.models import UserSettings as OSFStorageUserSettings
+from addons.osfstorage.models import Region
 
 from api.base.authentication import drf
 from api.base import exceptions, settings
@@ -394,7 +395,12 @@ class InstitutionAuthentication(BaseAuthentication):
             user_settings = OSFStorageUserSettings.objects.get(owner=user)
             institution_region_list = institution.storage_regions.all()
             if institution_region_list and user_settings.default_region not in institution_region_list:
-                user_settings.default_region = institution_region_list.get(institutionstorageregion__is_preferred=True)
-                user_settings.save()
+                try:
+                    user_settings.default_region = institution_region_list.get(institutionstorageregion__is_preferred=True)
+                    user_settings.save()
+                except Region.DoesNotExist:
+                    message = f'Institution SSO Warning: Institution {institution._id} does not have a preferred default region'
+                    sentry.log_message(message)
+                    logger.error(message)
 
         return user, None

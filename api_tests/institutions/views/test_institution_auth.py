@@ -97,29 +97,23 @@ def user_default_region():
 def institution_without_user_default_region(institution_region, institution_region_preferred):
     institution = InstitutionFactory()
     institution.storage_regions.add(institution_region)
-    institution.storage_regions.add(institution_region_preferred)
-    institution.save()
-    institution_storage_region = InstitutionStorageRegion.objects.get(
+    InstitutionStorageRegion.objects.create(
         institution=institution,
-        storage_region=institution_region_preferred
+        storage_region=institution_region_preferred,
+        is_preferred=True
     )
-    institution_storage_region.is_preferred = True
-    institution_storage_region.save()
     return institution
 
 
 @pytest.fixture()
 def institution_with_default_user_region(user_default_region, institution_region_preferred):
     institution = InstitutionFactory()
-    for region in [user_default_region, institution_region_preferred]:
-        institution.storage_regions.add(region)
-    institution.save()
-    institution_storage_region = InstitutionStorageRegion.objects.get(
+    institution.storage_regions.add(user_default_region)
+    InstitutionStorageRegion.objects.create(
         institution=institution,
-        storage_region=institution_region_preferred
+        storage_region=institution_region_preferred,
+        is_preferred=True
     )
-    institution_storage_region.is_preferred = True
-    institution_storage_region.save()
     return institution
 
 

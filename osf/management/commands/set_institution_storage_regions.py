@@ -1,6 +1,7 @@
 import logging
 
 from django.core.management.base import BaseCommand
+from django.db import transaction
 
 from osf.models import Institution, InstitutionStorageRegion
 from addons.osfstorage.models import Region
@@ -50,12 +51,13 @@ class Command(BaseCommand):
         institution_id = options['institution']
         region_id = options['region']
         is_preferred = options.get('is_preferred', False)
-        set_institution_storage_regions(institution_id, region_id, is_preferred=is_preferred, dry_run=dry_run)
-        if dry_run:
-            logger.warning('Dry Run: End of the road!')
+        with transaction.atomic():
+            set_institution_storage_regions(institution_id, region_id, is_preferred=is_preferred)
+            if dry_run:
+                raise RuntimeError('Dry run -- transaction rolled back')
 
 
-def set_institution_storage_regions(institution_id, region_id, is_preferred=False, dry_run=True):
+def set_institution_storage_regions(institution_id, region_id, is_preferred=False):
 
     # Verify institution and region
     try:
@@ -74,18 +76,12 @@ def set_institution_storage_regions(institution_id, region_id, is_preferred=Fals
         if institution_storage_region.is_preferred:
             logger.warning(f'Region [{region._id}] already set as preferred for Institution [{institution._id}]')
             return
-        if dry_run:
-            return
     else:
-        if dry_run:
-            logger.info(f'Dry-run: Region [{region._id}] has not been added to Institution [{institution._id}]')
-            return
-        else:
-            institution_storage_region = InstitutionStorageRegion.objects.create(
-                institution=institution,
-                storage_region=region
-            )
-            logger.info(f'Region [{region._id}] has been added to Institution [{institution._id}]')
+        institution_storage_region = InstitutionStorageRegion.objects.create(
+            institution=institution,
+            storage_region=region
+        )
+        logger.info(f'Region [{region._id}] has been added to Institution [{institution._id}]')
 
     # Make sure there is only one preferred region
     try:
