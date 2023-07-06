@@ -212,7 +212,7 @@ INSTITUTIONS = {
                 'name': 'Carnegie Mellon University',
                 'description': 'A Project Management Tool for the CMU Community: <a href="https://l'
                                'ibrary.cmu.edu/OSF">Get Help at CMU</a> | <a href="https://cos.io/o'
-                               'ur-products/osf/">About OSF</a> | <a href="https://osf.io/support/"'
+                               'ur-products/osf/">About OSF</a> | <a href="https://help.osf.io/"'
                                '>OSF Support</a> | <a href="https://library.cmu.edu/OSF/terms-of-us'
                                'e">Terms of Use</a>',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://login.cmu.edu/idp/shibboleth')),
@@ -1151,7 +1151,7 @@ INSTITUTIONS = {
                 'name': 'Carnegie Mellon University [Test]',
                 'description': 'A Project Management Tool for the CMU Community: <a href="https://l'
                                'ibrary.cmu.edu/OSF">Get Help at CMU</a> | <a href="https://cos.io/o'
-                               'ur-products/osf/">About OSF</a> | <a href="https://osf.io/support/"'
+                               'ur-products/osf/">About OSF</a> | <a href="https://help.osf.io/"'
                                '>OSF Support</a> | <a href="https://library.cmu.edu/OSF/terms-of-us'
                                'e">Terms of Use</a>',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://login.cmu.edu/idp/shibboleth')),
