@@ -41,7 +41,12 @@ s3_get_config = generic_views.get_config(
 
 def _set_folder(node_addon, folder, auth):
     folder_id = folder['id']
-    node_addon.set_folder(folder_id, auth=auth)
+    if folder['path'] == '/':
+        node_addon.set_folder(folder_id, auth=auth, bucket_name=folder_id)
+    else:
+        bucket_name = folder_id.split('/')[0]
+        node_addon.set_folder(folder_id, auth=auth, bucket_name=bucket_name)
+
     node_addon.save()
 
 s3_set_config = generic_views.set_config(
@@ -56,7 +61,10 @@ s3_set_config = generic_views.set_config(
 def s3_folder_list(node_addon, **kwargs):
     """ Returns all the subsequent folders under the folder id passed.
     """
-    return node_addon.get_folders()
+    path = request.args.get('path', '')
+    id = request.args.get('id', '')
+    bucket_name = request.args.get('bucket_name', '')
+    return node_addon.get_folders(path=path, folder_id=id, bucket_name=bucket_name)
 
 @must_be_logged_in
 def s3_add_user_account(auth, **kwargs):
