@@ -122,3 +122,24 @@ def get_bucket_location_or_error(access_key, secret_key, bucket_name):
         return connect_s3(access_key, secret_key).get_bucket(bucket_name, validate=False).get_location()
     except exception.S3ResponseError:
         raise InvalidFolderError()
+
+
+def get_bucket_prefixes(access_key, secret_key, prefix=None, bucket_name=None):
+    bucket = connect_s3(access_key, secret_key).get_bucket(bucket_name)
+
+    folders = []
+    for key in bucket.list(delimiter='/', prefix=prefix):
+        if key.name.endswith('/') and key.name != prefix:
+            folders.append(
+                {
+                    'path': key.name,
+                    'id': f'{bucket_name}/{key.name}',
+                    'folder_id': key.name,
+                    'kind': 'folder',
+                    'bucket_name': bucket_name,
+                    'name': key.name.split('/')[-2],
+                    'addon': 's3',
+                }
+            )
+
+    return folders
