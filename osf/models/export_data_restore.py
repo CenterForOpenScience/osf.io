@@ -14,6 +14,7 @@ from osf.models import (
     ExportData,
     Institution,
     RdmFileTimestamptokenVerifyResult,
+    AbstractNode,
 )
 from osf.models.export_data import SecondDateTimeField
 
@@ -88,6 +89,10 @@ class ExportDataRestore(base.BaseModel):
 
         # get project list, includes public/private/deleted projects
         projects = institution.nodes.filter(type='osf.node', is_deleted=False)
+        institution_users = institution.osfuser_set.all()
+        institution_users_projects = AbstractNode.objects.filter(type='osf.node', is_deleted=False, affiliated_institutions=None, creator__in=institution_users)
+        # Combine two project lists and remove duplicates if have
+        projects = projects.union(institution_users_projects)
         projects__ids = projects.values_list('id', flat=True)
         destination_project_ids = set()
 

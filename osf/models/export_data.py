@@ -17,6 +17,7 @@ from osf.models import (
     Institution,
     RdmFileTimestamptokenVerifyResult,
     FileVersion,
+    AbstractNode,
 )
 from admin.base import settings as admin_settings
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
@@ -141,6 +142,10 @@ class ExportData(base.BaseModel):
         base_file_nodes__ids = base_file_versions_set.values_list('basefilenode_id', flat=True).distinct('basefilenode_id')
         # get project list, includes public/private/deleted projects
         projects = institution.nodes.filter(type='osf.node', is_deleted=False)
+        institution_users = institution.osfuser_set.all()
+        institution_users_projects = AbstractNode.objects.filter(type='osf.node', is_deleted=False, affiliated_institutions=None, creator__in=institution_users)
+        # Combine two project lists and remove duplicates if have
+        projects = projects.union(institution_users_projects)
         projects__ids = projects.values_list('id', flat=True)
         # If source is not NII storage, only get projects that belongs to that source institutional storage
         if self.source.provider_name != 'osfstorage' and self.source.id != 1:
