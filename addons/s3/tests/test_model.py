@@ -41,7 +41,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
     def _node_settings_class_kwargs(self, node, user_settings):
         return {
             'user_settings': self.user_settings,
-            'folder_id': 'bucket_name/path_goes_here/with_folder_id',
+            'folder_id': 'bucket_name:/path_goes_here/with_folder_id',
             'owner': self.node
         }
 
@@ -107,6 +107,6 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         expected = {
             'bucket': 'bucket_name',
             'encrypt_uploads': self.node_settings.encrypt_uploads,
-            'id': 'path_goes_here/with_folder_id'
+            'id': 'bucket_name:/path_goes_here/with_folder_id'
         }
         assert_equal(settings, expected)

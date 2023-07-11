@@ -1014,7 +1014,7 @@ class TestNodeS3Addon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):
         return {
             'name': 'a.bucket',
             'path': '/',
-            'id': 'a.bucket'
+            'id': 'a.bucket:/'
         }
 
     @mock.patch('addons.s3.models.get_bucket_names')
