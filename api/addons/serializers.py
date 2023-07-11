@@ -12,7 +12,7 @@ class NodeAddonFolderSerializer(JSONAPISerializer):
     id = ser.CharField(read_only=True)
     kind = ser.CharField(default='folder', read_only=True)
     name = ser.CharField(read_only=True)
-    folder_id = ser.CharField(source='id', read_only=True)
+    folder_id = ser.SerializerMethodField(read_only=True)
     path = ser.CharField(read_only=True)
     provider = ser.CharField(source='addon', read_only=True)
 
@@ -32,9 +32,6 @@ class NodeAddonFolderSerializer(JSONAPISerializer):
             'id': obj['id'],
         }
 
-        if obj['addon'] == 's3' and obj['kind'] == 'folder':  # Send S3 bucket name
-            query_kwargs['bucket_name'] = obj.get('bucket_name', '')
-
         return absolute_reverse(
             'nodes:node-addon-folders',
             kwargs=self.context['request'].parser_context['kwargs'],
@@ -46,6 +43,13 @@ class NodeAddonFolderSerializer(JSONAPISerializer):
             'nodes:node-addon-folders',
             kwargs=self.context['request'].parser_context['kwargs'],
         )
+
+    def get_folder_id(self, obj):
+        if obj['addon'] == 's3':
+            # Addons with special top level directories such as a bucket with subfolders get a `:` delineator.
+            return f'{obj["bucket_name"]}:{obj["path"]}'
+        else:
+            return obj['id']
 
 class AddonSerializer(JSONAPISerializer):
     filterable_fields = frozenset([

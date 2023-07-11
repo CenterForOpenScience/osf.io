@@ -62,7 +62,9 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     def display_name(self):
         return u'{0}: {1}'.format(self.config.full_name, self.folder_id)
 
-    def set_folder(self, folder_id, auth, bucket_name=None):
+    def set_folder(self, folder_id, auth):
+        bucket_name = folder_id.split(':')[0]
+
         if not bucket_exists(self.external_account.oauth_key, self.external_account.oauth_secret, bucket_name):
             error_message = ('We are having trouble connecting to that bucket. '
                              'Try a different one.')
@@ -87,21 +89,18 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
         self.nodelogger.log(action='bucket_linked', extra={'bucket': bucket_name, 'path': self.folder_id}, save=True)
 
-    def get_folders(self, **kwargs):
+    def get_folders(self, path, folder_id):
         """
         Our S3 implementation allows for folder_id to be a bucket's root, or a subfolder in that bucket.
         """
-        path = kwargs.get('path')
-        bucket_name = kwargs.get('bucket_name')
-
         # This is the root, so list all buckets.
-        if not bucket_name:
+        if not folder_id:
             buckets = get_bucket_names(self)
 
             return [{
                 'addon': 's3',
                 'kind': 'folder',
-                'id': bucket,
+                'id': f'{bucket}:/',
                 'name': bucket,
                 'bucket_name': bucket,
                 'path': '/',
@@ -118,6 +117,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         # This is for a directory for a specific bucket, folders (Prefixes), but not files (Keys) returned, because
         # these we can only set folders as our base folder_id
         else:
+            bucket_name, _, path = folder_id.partition(':/')
             return get_bucket_prefixes(
                 self.external_account.oauth_key,
                 self.external_account.oauth_secret,
@@ -164,10 +164,10 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         if not self.folder_id:
             raise exceptions.AddonError('Cannot serialize settings for S3 addon')
 
-        bucket_name, _, folder_id = self.folder_id.partition('/')
+        bucket_name = self.folder_id.split(':')[0]
         return {
-            'bucket': bucket_name,  # fool wb
-            'id': folder_id,
+            'bucket': bucket_name,
+            'id': self.folder_id,
             'encrypt_uploads': self.encrypt_uploads
         }
 
