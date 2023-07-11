@@ -1013,7 +1013,7 @@ class TestNodeS3Addon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):
     def _mock_folder_result(self):
         return {
             'name': 'a.bucket',
-            'path': 'a.bucket',
+            'path': '/',
             'id': 'a.bucket'
         }
 

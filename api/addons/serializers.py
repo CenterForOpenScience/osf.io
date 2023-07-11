@@ -22,18 +22,23 @@ class NodeAddonFolderSerializer(JSONAPISerializer):
     })
 
     def get_absolute_url(self, obj):
-        if obj['addon'] in ('s3', 'figshare', 'github', 'mendeley'):
+        if obj['addon'] in ('figshare', 'github', 'mendeley'):
             # These addons don't currently support linking anything other
             # than top-level objects.
             return
 
+        query_kwargs = {
+            'path': obj['path'],
+            'id': obj['id'],
+        }
+
+        if obj['addon'] == 's3' and obj['kind'] == 'folder':  # Send S3 bucket name
+            query_kwargs['bucket_name'] = obj.get('bucket_name', '')
+
         return absolute_reverse(
             'nodes:node-addon-folders',
             kwargs=self.context['request'].parser_context['kwargs'],
-            query_kwargs={
-                'path': obj['path'],
-                'id': obj['id'],
-            },
+            query_kwargs=query_kwargs,
         )
 
     def get_root_folder(self, obj):
