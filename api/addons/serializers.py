@@ -32,9 +32,6 @@ class NodeAddonFolderSerializer(JSONAPISerializer):
             'id': obj['id'],
         }
 
-        if obj['addon'] == 's3' and obj['kind'] == 'folder':  # Send S3 bucket name
-            query_kwargs['bucket_name'] = obj.get('bucket_name', '')
-
         return absolute_reverse(
             'nodes:node-addon-folders',
             kwargs=self.context['request'].parser_context['kwargs'],

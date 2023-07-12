@@ -124,7 +124,7 @@ def get_bucket_location_or_error(access_key, secret_key, bucket_name):
         raise InvalidFolderError()
 
 
-def get_bucket_prefixes(access_key, secret_key, prefix=None, bucket_name=None):
+def get_bucket_prefixes(access_key, secret_key, prefix, bucket_name):
     bucket = connect_s3(access_key, secret_key).get_bucket(bucket_name)
 
     folders = []
@@ -133,7 +133,7 @@ def get_bucket_prefixes(access_key, secret_key, prefix=None, bucket_name=None):
             folders.append(
                 {
                     'path': key.name,
-                    'id': f'{bucket_name}/{key.name}',
+                    'id': f'{bucket_name}:/{key.name}',
                     'folder_id': key.name,
                     'kind': 'folder',
                     'bucket_name': bucket_name,

@@ -805,7 +805,7 @@ class TestNodeZoteroAddon(
                 'fileEditing': 'members',
                 'libraryEditing': 'members',
                 'type': 'Private',
-                'id': 18497322,
+                'id': '18497322',
                 'name': 'Group Library I'
             },
             'version': 1,
@@ -1014,7 +1014,7 @@ class TestNodeS3Addon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):
         return {
             'name': 'a.bucket',
             'path': '/',
-            'id': 'a.bucket'
+            'id': 'a.bucket:/'
         }
 
     @mock.patch('addons.s3.models.get_bucket_names')
