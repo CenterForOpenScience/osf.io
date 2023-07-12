@@ -44,7 +44,6 @@ class NodeAddonFolderSerializer(JSONAPISerializer):
             kwargs=self.context['request'].parser_context['kwargs'],
         )
 
-
 class AddonSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'categories',
