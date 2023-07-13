@@ -12,6 +12,8 @@ from django.contrib.contenttypes.models import ContentType
 from psycopg2._psycopg import AsIs
 
 from addons.base.models import BaseNodeSettings, BaseStorageAddon, BaseUserSettings
+# GRDM-37149: Hide osfstorage for institutional provider
+from addons.base.exceptions import AddonError
 from osf.utils.fields import EncryptedJSONField
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError
@@ -575,8 +577,20 @@ class UserSettings(BaseUserSettings):
 
 class NodeSettings(BaseNodeSettings, BaseStorageAddon):
     # Required overrides
-    complete = True
-    has_auth = True
+    @property
+    def complete(self):
+        # GRDM-37149: Hide osfstorage for institutional provider
+        return self.has_auth
+
+    @property
+    def has_auth(self):
+        # GRDM-37149: Hide osfstorage for institutional provider
+        from addons.base import institutions_utils
+        region_disabled, _ = institutions_utils.get_region_provider(self.owner)
+        if region_disabled:
+            # hide osfstorage
+            return False
+        return True
 
     root_node = models.ForeignKey(OsfStorageFolder, null=True, blank=True, on_delete=models.CASCADE)
 
@@ -637,6 +651,10 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         return clone, None
 
     def serialize_waterbutler_settings(self):
+        # GRDM-37149: Hide osfstorage for institutional provider
+        if not self.has_auth:
+            raise AddonError('{} is not configured'.format(
+                self.config.short_name))
         return dict(Region.objects.get(id=self.region_id).waterbutler_settings, **{
             'nid': self.owner._id,
             'rootId': self.root_node._id,
@@ -649,6 +667,10 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         })
 
     def serialize_waterbutler_credentials(self):
+        # GRDM-37149: Hide osfstorage for institutional provider
+        if not self.has_auth:
+            raise AddonError('{} is not configured'.format(
+                self.config.short_name))
         return Region.objects.get(id=self.region_id).waterbutler_credentials
 
     def create_waterbutler_log(self, auth, action, metadata):

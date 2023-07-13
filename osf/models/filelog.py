@@ -46,7 +46,7 @@ class FileLog(ObjectIDMixin, BaseModel):
     # TODO build action choices on the fly with the addon stuff
     action = models.CharField(max_length=255, db_index=True)  # , choices=action_choices)
     user = models.ForeignKey('OSFUser', related_name='filelogs', db_index=True, null=True, blank=True)
-    path = models.CharField(max_length=255, db_index=True, null=True)
+    path = models.TextField(null=True)
 
     def __unicode__(self):
         return ('({self.action!r}, user={self.user!r},, file={self.file!r}, params={self.params!r}) '
