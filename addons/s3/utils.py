@@ -1,4 +1,5 @@
 import re
+import logging
 from rest_framework import status as http_status
 
 from boto import exception
@@ -8,8 +9,11 @@ from boto.s3.connection import OrdinaryCallingFormat
 from framework.exceptions import HTTPError
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
 from addons.s3.settings import BUCKET_LOCATIONS
+from django.apps import apps
 from django.db.models import F, Value
 from django.db.models.functions import Concat, Replace
+
+logger = logging.getLogger(__name__)
 
 
 def connect_s3(access_key=None, secret_key=None, node_settings=None):
@@ -147,7 +151,7 @@ def get_bucket_prefixes(access_key, secret_key, prefix, bucket_name):
     return folders
 
 
-def update_folder_names(apps, schema_editor=None):
+def update_folder_names():
     NodeSettings = apps.get_model('addons_s3', 'NodeSettings')
 
     # Update folder_id for all records
@@ -160,9 +164,10 @@ def update_folder_names(apps, schema_editor=None):
     NodeSettings.objects.exclude(folder_name__contains=' (').update(
         folder_name=Concat(F('folder_name'), Value(':/'))
     )
+    logger.info('Update Folder Names/IDs complete')
 
 
-def reverse_update_folder_names(apps, schema_editor=None):
+def reverse_update_folder_names():
     NodeSettings = apps.get_model('addons_s3', 'NodeSettings')
 
     # Reverse update folder_id for all records
@@ -175,3 +180,4 @@ def reverse_update_folder_names(apps, schema_editor=None):
     NodeSettings.objects.filter(folder_name__contains=':/').update(
         folder_name=Replace(F('folder_name'), Value(':/'), Value(''))
     )
+    logger.info('Reverse Update Folder Names/IDs complete')
