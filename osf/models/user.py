@@ -1,4 +1,5 @@
 import datetime as dt
+import inspect  # noqa
 import logging
 import re
 from urllib.parse import urlparse, parse_qs
@@ -58,6 +59,7 @@ from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, MANAGER, MEMBER, 
 from website import settings as website_settings
 from website import filters, mails
 from website.project import new_bookmark_collection
+from website.util import inspect_info  # noqa
 from website.util.metrics import OsfSourceTags
 
 logger = logging.getLogger(__name__)
@@ -1799,9 +1801,85 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return '{base_url}user/{uid}/{project_id}/claim/?token={token}'\
                     .format(**locals())
 
+    @property
+    def is_valid_user(self):
+        """determine whether the user is an valid user"""
+        return self.is_active and self.is_registered
+
+    @property
+    def is_admin(self):
+        """determine whether the user is an institution administrator"""
+        if not self.is_valid_user:
+            return False
+        return self.is_staff and not self.is_superuser
+
+    @property
+    def is_super_admin(self):
+        """determine whether the user is super admin or not"""
+        if not self.is_valid_user:
+            return False
+        return self.is_staff and self.is_superuser
+
+    @property
+    def is_affiliated_institution(self):
+        """determine whether the user has affiliated institutions"""
+        return self.affiliated_institutions.exists()
+
+    @property
+    def is_institutional_admin(self):
+        """determine whether the user is staff has affiliated institutions"""
+        return self.is_admin and self.is_affiliated_institution
+
+    @property
+    def representative_affiliated_institution(self):
+        """Return representative ``institution`` this user is affiliated with."""
+        return self.affiliated_institutions.first()
+
+    def is_affiliated_with_institution_id(self, institution_id):
+        """Return if this user is affiliated with ``institution_id``."""
+        return self.affiliated_institutions.filter(id=institution_id).exists()
+
+    def is_allowed_storage_location_id(self, location_id):
+        """Return if this user is allowed to access ``location_id``."""
+        from osf.models import ExportDataLocation
+
+        locations = ExportDataLocation.objects.filter(pk=location_id)
+        if not locations.exists():
+            return False
+        location = locations.first()
+        if location.institution_guid == Institution.INSTITUTION_DEFAULT:
+            return True
+        institutions = Institution.objects.filter(_id=location.institution_guid)
+        if not institutions.exists():
+            return False
+        institution = institutions.first()
+
+        return self.is_super_admin or self.is_affiliated_with_institution(institution)
+
+    def is_allowed_storage_id(self, storage_id):
+        """Return if this user is allowed to access ``storage_id``."""
+        from addons.osfstorage.models import Region
+
+        storages = Region.objects.filter(pk=storage_id)
+        if not storages.exists():
+            return False
+        storage = storages.first()
+        if storage.guid == Institution.INSTITUTION_DEFAULT:
+            return True
+        institutions = Institution.objects.filter(_id=storage.guid)
+        if not institutions.exists():
+            return False
+        institution = institutions.first()
+
+        return self.is_super_admin or self.is_affiliated_with_institution(institution)
+
     def is_affiliated_with_institution(self, institution):
         """Return if this user is affiliated with ``institution``."""
         return self.affiliated_institutions.filter(id=institution.id).exists()
+
+    def is_allowed_to_use_institution(self, institution):
+        """Return if this user is supper or is admin affiliated with ``institution``."""
+        return self.is_super_admin or (self.is_admin and self.is_affiliated_with_institution(institution))
 
     def update_affiliated_institutions_by_email_domain(self):
         """

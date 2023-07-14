@@ -1,0 +1,423 @@
+{
+  "type": "object",
+  "properties": {
+    "institution": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "guid": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "guid",
+        "name"
+      ],
+      "additionalProperties": true
+    },
+    "folders": {
+      "type": "array",
+      "items": {
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "materialized_path": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "project": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ],
+            "additionalProperties": true
+          }
+        }
+      }
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "path": {
+            "type": "string"
+          },
+          "materialized_path": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "size": {
+            "type": "integer"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "modified_at": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array"
+          },
+          "location": {
+            "type": "object",
+            "properties": {
+              "host": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "bucket": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "folder": {
+                "type": [
+                  "object",
+                  "string",
+                  "null"
+                ]
+              },
+              "object": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "address": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "service": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "version": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "provider": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "host",
+              "object",
+              "folder",
+              "address",
+              "service",
+              "version",
+              "provider"
+            ],
+            "additionalProperties": true
+          },
+          "project": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ],
+            "additionalProperties": true
+          },
+          "version": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "identifier": {
+                  "type": "string"
+                },
+                "created_at": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "size": {
+                  "type": "integer"
+                },
+                "version_name": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "contributor": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "location": {
+                  "type": "object",
+                  "properties": {
+                    "host": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "bucket": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "folder": {
+                      "type": [
+                        "object",
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "object": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "address": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "service": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "version": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "provider": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "host",
+                    "object",
+                    "folder",
+                    "address",
+                    "service",
+                    "version",
+                    "provider"
+                  ],
+                  "additionalProperties": true
+                },
+                "metadata": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "provider": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "name": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "path": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "etag": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "materialized": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "md5": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "sha1": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "sha256": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "sha512": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "size": {
+                      "type": [
+                        "string",
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "sizeInt": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "extra": {
+                      "type": "object"
+                    },
+                    "contentType": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "created_utc": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "modified": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "modified_utc": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "provider",
+                    "name",
+                    "path",
+                    "etag",
+                    "materialized",
+                    "md5",
+                    "sha1",
+                    "sha256",
+                    "sha512",
+                    "size",
+                    "sizeInt",
+                    "extra",
+                    "contentType",
+                    "created_utc",
+                    "modified",
+                    "modified_utc"
+                  ],
+                  "additionalProperties": true
+                }
+              },
+              "required": [
+                "identifier",
+                "created_at",
+                "size",
+                "version_name",
+                "contributor",
+                "metadata",
+                "location"
+              ],
+              "additionalProperties": true
+            }
+          },
+          "timestamp": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "path",
+          "materialized_path",
+          "name",
+          "size",
+          "created_at",
+          "modified_at",
+          "tags",
+          "location",
+          "project",
+          "version",
+          "timestamp"
+        ],
+        "additionalProperties": true
+      }
+    }
+  },
+  "required": [
+    "institution",
+    "files"
+  ],
+  "additionalProperties": true
+}

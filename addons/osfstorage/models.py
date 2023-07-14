@@ -3,6 +3,8 @@ from __future__ import unicode_literals
 import logging
 
 from django.apps import apps
+from django.db.models import IntegerField
+from django.db.models.functions import Cast
 from django.dispatch import receiver
 from django.db import models, connection
 from django.db.models.signals import post_save
@@ -171,11 +173,11 @@ class OsfStorageFileNode(BaseFileNode):
     def update_region_from_latest_version(self, destination_parent):
         raise NotImplementedError
 
-    def move_under(self, destination_parent, name=None):
-        if self.is_preprint_primary:
+    def move_under(self, destination_parent, name=None, is_check_permission=True):
+        if self.is_preprint_primary and is_check_permission:
             if self.target != destination_parent.target or self.provider != destination_parent.provider:
                 raise exceptions.FileNodeIsPrimaryFile()
-        if self.is_checked_out:
+        if self.is_checked_out and is_check_permission:
             raise exceptions.FileNodeCheckedOutError()
         self.update_region_from_latest_version(destination_parent)
         return super(OsfStorageFileNode, self).move_under(destination_parent, name)
@@ -237,7 +239,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
     @property
     def _hashes(self):
-        last_version = self.versions.last()
+        last_version = self.versions_sorted_by_identifier.last()
         if not last_version:
             return None
         return {
@@ -249,7 +251,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
     @property
     def last_known_metadata(self):
-        last_version = self.versions.last()
+        last_version = self.versions_sorted_by_identifier.last()
         if not last_version:
             size = None
         else:
@@ -263,9 +265,19 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
     def touch(self, bearer, version=None, revision=None, **kwargs):
         try:
+            if version is None and revision is None:
+                return self.versions_sorted_by_identifier.first()
+
             return self.get_version(revision or version)
         except ValueError:
             return None
+
+    @property
+    def versions_sorted_by_identifier(self):
+        versions_order_by_identifier = self.versions.annotate(version_identifier=Cast('identifier', IntegerField())).order_by('-version_identifier')
+        if versions_order_by_identifier.exists():
+            return versions_order_by_identifier
+        return self.versions
 
     @property
     def history(self):
@@ -493,6 +505,52 @@ class Region(models.Model):
 
     class Meta:
         unique_together = ('_id', 'name')
+
+    @property
+    def guid(self):
+        return self._id
+
+    @property
+    def provider_name(self):
+        waterbutler_settings = self.waterbutler_settings
+        provider_name = None
+        # json path storage/provider
+        if 'storage' in waterbutler_settings:
+            storage = waterbutler_settings['storage']
+            if 'provider' in storage:
+                provider_name = storage['provider']
+
+        return provider_name if provider_name != 'filesystem' else 'osfstorage'
+
+    @property
+    def addon(self):
+        for addon in website_settings.ADDONS_AVAILABLE:
+            if addon.short_name == self.provider_name:
+                return addon
+        return None
+
+    @property
+    def provider_short_name(self):
+        if hasattr(self.addon, 'short_name'):
+            return self.addon.short_name
+        return None
+
+    @property
+    def provider_full_name(self):
+        if hasattr(self.addon, 'full_name'):
+            return self.addon.full_name
+        return None
+
+    @property
+    def has_export_data(self):
+        from osf.models import ExportData
+        return self.exportdata_set.filter(status__in=ExportData.EXPORT_DATA_AVAILABLE).exists()
+
+    @property
+    def location_ids_has_exported_data(self):
+        from osf.models import ExportData
+        locations = self.exportdata_set.filter(status__in=ExportData.EXPORT_DATA_AVAILABLE)
+        return list(locations.values_list('location_id', flat=True).distinct('location_id'))
 
 
 class UserSettings(BaseUserSettings):

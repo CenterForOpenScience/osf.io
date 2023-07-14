@@ -15,6 +15,7 @@ import logging
 from addons.osfstorage.models import Region
 from admin.rdm.utils import RdmPermissionMixin
 from admin.rdm_custom_storage_location import utils
+from .export_data.views.location import ExportStorageLocationViewBaseView
 from osf.models import Institution, OSFUser
 from osf.models.external import ExternalAccountTemporary
 from scripts import refresh_addon_tokens
@@ -60,7 +61,7 @@ class InstitutionalStorageView(InstitutionalStorageBaseView, TemplateView):
         return kwargs
 
 
-class IconView(InstitutionalStorageBaseView, View):
+class IconView(ExportStorageLocationViewBaseView, View):
     """ View for each addon's icon """
     raise_exception = True
 
@@ -78,7 +79,7 @@ class IconView(InstitutionalStorageBaseView, View):
         raise Http404
 
 
-class TestConnectionView(InstitutionalStorageBaseView, View):
+class TestConnectionView(ExportStorageLocationViewBaseView, View):
     """ View for testing the credentials to connect to a provider.
     Called when clicking the 'Connect' Button.
     """

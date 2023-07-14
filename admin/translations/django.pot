@@ -3466,3 +3466,201 @@ msgid ""
 "you're trying to affiliate is not descended from the node that the View Only "
 "Link is attached to."
 msgstr ""
+
+# admin/templates/base.html
+msgid "Export data storage location"
+msgstr ""
+
+msgid "Institutional Storages Control"
+msgstr ""
+
+msgid "Export Data Management"
+msgstr ""
+
+# export_data_storage_location.html
+msgid "Configure Accounts for Export Data Storage Location"
+msgstr ""
+
+msgid "ID"
+msgstr ""
+
+# export_data_institutional_storages.html
+msgid "List of Institutional Storages"
+msgstr ""
+
+msgid "Export Data"
+msgstr ""
+
+msgid "Export"
+msgstr ""
+
+msgid "Stop exporting"
+msgstr ""
+
+msgid "View export data list"
+msgstr ""
+
+# export_data_list.html
+msgid "Export Data List"
+msgstr ""
+
+msgid "Export source storage"
+msgstr ""
+
+msgid "Filter"
+msgstr ""
+
+msgid "Back to list"
+msgstr ""
+
+msgid "Recycle bin"
+msgstr ""
+
+msgid "Move to recycle bin"
+msgstr ""
+
+msgid "Process start"
+msgstr ""
+
+msgid "Process end"
+msgstr ""
+
+msgid "Number of projects"
+msgstr ""
+
+msgid "Number of files"
+msgstr ""
+
+msgid "Total file size"
+msgstr ""
+
+msgid "Are you sure you want to move these export data to the recycle bin?"
+msgstr ""
+
+msgid "Permanently delete (Cannot be restored with the Revert button)"
+msgstr ""
+
+# export_data_deleted_list.html
+msgid "Deleted Export Data List"
+msgstr ""
+
+msgid "Revert"
+msgstr ""
+
+msgid "Delete Permanently"
+msgstr ""
+
+msgid "Are you sure you want to revert these export data?"
+msgstr ""
+
+# export_data_information.html
+msgid "Export Data Information"
+msgstr ""
+
+msgid "Export Data Information of %(storage_name)s<br/><small>(for %(institution_nam)s)</small>"
+msgstr ""
+
+msgid "Institutional information"
+msgstr ""
+
+msgid "Source institution storage type"
+msgstr ""
+
+msgid "Contributor"
+msgstr ""
+
+msgid "Project"
+msgstr ""
+
+msgid "Tags"
+msgstr ""
+
+msgid "Size"
+msgstr ""
+
+msgid "Version ID"
+msgstr ""
+
+msgid "Created at"
+msgstr ""
+
+msgid "Check export data"
+msgstr ""
+
+msgid "The result of checking export data"
+msgstr ""
+
+msgid "NG Reason"
+msgstr ""
+
+msgid "Export to CSV"
+msgstr ""
+
+msgid "Are you sure you want to delete this export data?"
+msgstr ""
+
+msgid "Are you sure you want to revert this export data?"
+msgstr ""
+
+msgid "Restore destination storage"
+msgstr ""
+
+msgid "Restore"
+msgstr ""
+
+msgid "The restore destination storage is not empty."
+msgstr ""
+
+msgid "This function assumes operation to empty storage."
+msgstr ""
+
+msgid "Do you want to run it as it is?"
+msgstr ""
+
+msgid "Stop restoring"
+msgstr ""
+
+msgid "Check restore data"
+msgstr ""
+
+msgid "The result of checking restore data"
+msgstr ""
+
+msgid "The equivalent process is running"
+msgstr ""
+
+msgid "The export data files are corrupted"
+msgstr ""
+
+msgid "Permission denied for this institution"
+msgstr ""
+
+msgid "Permission denied for this storage"
+msgstr ""
+
+msgid "Permission denied for this export storage location"
+msgstr ""
+
+msgid "Permission denied for this export process"
+msgstr ""
+
+msgid "Cannot connect to the export data storage location"
+msgstr ""
+
+msgid "Cannot connect to source storage"
+msgstr ""
+
+msgid "Cannot connect to destination storage"
+msgstr ""
+
+msgid "Cannot check in this time. The process is {status}."
+msgstr ""
+
+msgid "Cannot stop this export process"
+msgstr ""
+
+msgid "Cannot abort this export process"
+msgstr ""
+
+msgid "Cannot be restored because export data does not exist"
+msgstr ""

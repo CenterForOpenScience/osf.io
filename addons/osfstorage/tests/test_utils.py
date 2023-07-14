@@ -23,8 +23,8 @@ class TestSerializeRevision(StorageTestCase):
         self.path = 'kind-of-magic.webm'
         self.record = self.node_settings.get_root().append_file(self.path)
         self.versions = [
-            factories.FileVersionFactory(creator=self.user)
-            for __ in range(3)
+            factories.FileVersionFactory(creator=self.user, identifier=index + 1)
+            for index in range(3)
         ]
         attach_versions(self.record, self.versions)
         self.record.save()
@@ -35,7 +35,7 @@ class TestSerializeRevision(StorageTestCase):
         utils.update_analytics(self.project, self.record, 0)
         utils.update_analytics(self.project, self.record, 2)
         expected = {
-            'index': 1,
+            'index': '1',
             'user': {
                 'name': self.user.fullname,
                 'url': self.user.url,
@@ -63,7 +63,7 @@ class TestSerializeRevision(StorageTestCase):
         utils.update_analytics(self.project, self.record, 0)
         utils.update_analytics(self.project, self.record, 2)
         expected = {
-            'index': 2,
+            'index': '1',
             'user': None,
             'date': self.versions[0].created.isoformat(),
             'downloads': 0,
