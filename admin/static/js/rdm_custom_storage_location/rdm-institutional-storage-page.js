@@ -2,7 +2,6 @@
 
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
-var Cookie = require('js-cookie');
 var bootbox = require('bootbox');
 
 var _ = require('js/rdmGettext')._;
@@ -17,6 +16,13 @@ var preload_accounts_type1 = ['dropboxbusiness'];
 var preload_accounts_type2 = ['nextcloudinstitutions',
                 'ociinstitutions',
                 's3compatinstitutions']
+// delay time to show growl box; in millisecond
+var growlBoxDelay = 5000;
+var intervalCheckStatus = 5000;
+var list_file_info_export_fail = [];
+var list_file_info_restore_fail = [];
+var file_name_export_fail = '';
+var file_name_restore_fail = '';
 
 function preload(provider, callback) {
     if (preload_accounts_type1.indexOf(provider) >= 0) {
@@ -300,10 +306,11 @@ $.ajaxSetup({
 
 function ajaxCommon(type, params, providerShortName, route, callback) {
     if (type === 'POST') {
-      params = JSON.stringify(params);
+        params = JSON.stringify(params);
     }
+    var url = '../' + route + '/'
     $.ajax({
-        url: '../' + route + '/',
+        url: url,
         type: type,
         data: params,
         contentType: 'application/json; charset=utf-8',
@@ -316,9 +323,9 @@ function ajaxCommon(type, params, providerShortName, route, callback) {
             }
         },
         error: function (jqXHR) {
-            if(jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)){
+            if (jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)) {
                 afterRequest[route].fail(this.custom, jqXHR.responseJSON.message);
-            }else{
+            } else {
                 afterRequest[route].fail(this.custom, _('Some errors occurred'));
             }
             if (callback) {
@@ -366,8 +373,10 @@ var afterRequest = {
             $('.modal').modal('hide');
             $('#' + id + '_message').addClass('text-success');
             $('#' + id + '_message').removeClass('text-danger');
-            $osf.growl('Success', _('Institutional Storage set successfully'), 'success');
-            location.reload(true);
+            $osf.growl('Success', _('Institutional Storage set successfully'), 'success', growlBoxDelay);
+            setTimeout(function() {
+                location.reload(true);
+            }, growlBoxDelay);
         },
         'fail': function (id, message) {
             $('#' + id + '_message').html(message);
@@ -724,4 +733,858 @@ function usermapDownload(id, data) {
 
 function usermapDownloadFailed(id, message) {
     $('#csv_download_ng').html(message);
+}
+
+
+// Start - Storage location - Actions
+
+afterRequest.delete = {
+    'success': function (id) {
+        $('#location_' + id).remove();
+    },
+    'fail': function (id) {
+        var message = sprintf(_('Unable to delete location %1$s'), id)
+        $osf.growl('Error', message, 'success', growlBoxDelay);
+    }
+}
+
+$('.delete-location').click(function () {
+    var id = this.dataset.id;
+    // var providerShortName = this.dataset.provide;
+      $osf.confirmDangerousAction({
+        title: _('Are you sure you want to delete this export data storage location?'),
+        callback: function() {
+            deleteLocation(id);
+        },
+        buttons: {
+            success: {
+                label: _('Delete')
+            }
+        }
+    });
+});
+
+function deleteLocation(id) {
+    var route = 'delete';
+    var url = id + '/' + route + '/';
+    $.ajax({
+        url: url,
+        type: 'DELETE',
+        data: {},
+        contentType: 'application/json; charset=utf-8',
+        custom: id,
+        timeout: 120000,
+        success: function (data) {
+            afterRequest[route].success(this.custom, data);
+            var new_url = document.location.href;
+            var window_page = window.page;
+            var value = window_page.pageCount % window_page.perPage;
+            if(value - 1 === 0){
+              if(window_page.pageNumber <= 1){
+                window.history.pushState({}, '', new_url.split('?')[0]);
+              }
+              else if(window_page.pageNumber < window_page.pageNumPages){
+                window.location.reload();
+              }
+              else{
+                new_url= new URL(document.location.href);
+                new_url.searchParams.set('page', window_page.pageNumber - 1);
+                window.location.href = new_url.toString();
+              }
+            }
+            else{
+                window.location.reload();
+            }
+        },
+        error: function (jqXHR) {
+            if (jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)) {
+                afterRequest[route].fail(this.custom, jqXHR.responseJSON.message);
+            } else {
+                afterRequest[route].fail(this.custom, _('Some errors occurred'));
+            }
+        }
+    });
+}
+
+
+// Start - institutional storages screen - Actions
+
+function showViewExportDataButton(element, location_id) {
+    var $viewExportDataButton = $(element);
+    if ($viewExportDataButton.hasClass('hidden')) {
+        $viewExportDataButton.removeClass('hidden');
+    }
+    $viewExportDataButton.data('location', location_id);
+}
+
+function hiddenViewExportDataButton(element) {
+    var $viewExportDataButton = $(element);
+    if (!$viewExportDataButton.hasClass('hidden')) {
+        $viewExportDataButton.addClass('hidden');
+    }
+    $viewExportDataButton.removeData('location');
+}
+
+$('.row-storage select.location-select').change(function (event) {
+    event.preventDefault();
+    var institution_id = window.contextVars.institution_id;
+    var source_id = this.dataset.storage;
+    var location_id = $(this).val();
+    var $parent = $(this).parents('.row-storage');
+    var $viewExportDataButton = $parent.find('button.view-export-data');
+    var params = {
+        'institution_id': institution_id,
+        'source_id': source_id,
+        'location_id': location_id,
+    };
+    var route = 'check-data';
+    var url = '/custom_storage_location/export_data/' + route + '/';
+    $.ajax({
+        url: url,
+        type: 'POST',
+        data: JSON.stringify(params),
+        contentType: 'application/json; charset=utf-8',
+        custom: {'element': $viewExportDataButton, 'location_id': location_id},
+        timeout: 120000,
+        success: function (data) {
+            if (data.has_data === true) {
+                showViewExportDataButton(this.custom.element, this.custom.location_id);
+            } else {
+                hiddenViewExportDataButton(this.custom.element);
+            }
+        },
+        error: function () {
+            hiddenViewExportDataButton(this.custom.element);
+        }
+    });
+});
+
+$('.row-storage button.view-export-data').click(function (event) {
+    event.preventDefault();
+    var params = {'storage_id': $(this).data('storage'), 'location_id': $(this).data('location')}
+    var url = window.contextVars.export_data_list_url + '?' + $.param(params);
+    window.location.replace(url);
+});
+
+
+// Start - Export data - Actions
+
+function exportState(element) {
+    var $parent = $(element).parent();
+    var $exportButton = $parent.find('.export-button');
+    $exportButton.prop('disabled', false);
+    $exportButton.removeClass('disabled');
+
+    var $stopExportButton = $parent.find('.stop-export-button');
+    $stopExportButton.prop('disabled', true);
+    $stopExportButton.addClass('disabled');
+}
+
+function stopExportState(element) {
+    var $parent = $(element).parent();
+    var $exportButton = $parent.find('.export-button');
+    $exportButton.prop('disabled', true);
+    $exportButton.addClass('disabled');
+
+    var $stopExportButton = $parent.find('.stop-export-button');
+    $stopExportButton.prop('disabled', false);
+    $stopExportButton.removeClass('disabled');
+}
+
+$('.export-button').click(function (event) {
+    event.preventDefault();
+    $(this).prop('disabled', true);
+    $(this).addClass('disabled');
+    var institution_id = window.contextVars.institution_id;
+    var source_id = this.dataset.storage | $('#source-select').val();
+    var location_id = $('#location-select-' + source_id).val() | $('#location-select').val();
+
+    exportData(institution_id, source_id, location_id, this);
+});
+
+function exportData(institution_id, source_id, location_id, element) {
+    var params = {
+        'institution_id': institution_id,
+        'source_id': source_id,
+        'location_id': location_id,
+    };
+    var route = 'export';
+    var url = '/custom_storage_location/export_data/' + route + '/';
+    var task_id;
+    var key = source_id + '_' + location_id;
+    closeGrowl();
+    window.contextVars[key] = {};
+    $.ajax({
+        url: url,
+        type: 'POST',
+        data: JSON.stringify(params),
+        contentType: 'application/json; charset=utf-8',
+        custom: {'element': element, 'key': key},
+        timeout: 120000,
+        success: function (data) {
+            var message;
+            var messageType = 'success';
+            task_id = data.task_id;
+
+            if (data.task_state === 'SUCCESS') {
+                // task_state in (SUCCESS, )
+                exportState(this.custom.element);
+                message =  _('Export data successfully.');
+
+                var $parent = $(this.custom.element).parents('.row-storage');
+                if ($parent.length) {
+                    var $viewExportDataButton = $parent.find('button.view-export-data');
+                    showViewExportDataButton($viewExportDataButton, location_id)
+                }
+                $osf.growl(_('Export Data'), message, messageType, 0);
+            } else if (data.task_state === 'FAILURE') {
+                // task_state in (FAILURE, )
+                exportState(this.custom.element);
+                message = _('Error occurred while exporting data.');
+                messageType = 'danger';
+                $osf.growl(_('Export Data'), message, messageType, 0);
+            } else {
+                // task_state in (PENDING, STARTED, )
+                stopExportState(this.custom.element);
+                message = _('Export data in background.');
+                window.contextVars[this.custom.key].exportInBackground = true;
+
+                var $exportButton = $(this.custom.element);
+                var $stopExportButton = $exportButton.parent().find('.stop-export-button');
+                $stopExportButton.data('task_id', task_id);
+                $osf.growl(_('Export Data'), message, messageType, growlBoxDelay);
+            }
+
+            if (window.contextVars[this.custom.key].exportInBackground) {
+                // var x = 0;
+                window.contextVars[this.custom.key].intervalID = window.setInterval(function () {
+                    checkStatusExportData(institution_id, source_id, location_id, task_id, element);
+                    // ++x === 5 && window.clearInterval(window.contextVars[this.custom.key].intervalID);
+                }, intervalCheckStatus);
+            }
+        },
+        error: function (jqXHR) {
+            exportState(this.custom.element);
+            var message = _('Cannot export data.');
+            if (jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)) {
+                message = _(jqXHR.responseJSON.message);
+            }
+            $osf.growl(_('Export Data'), message, 'danger', growlBoxDelay);
+        }
+    });
+}
+
+$('.stop-export-button').click(function (event) {
+    event.preventDefault();
+    $(this).prop('disabled', true);
+    $(this).addClass('disabled');
+    var institution_id = window.contextVars.institution_id;
+    var source_id = this.dataset.storage | $('#source-select').val();
+    var location_id = $('#location-select-' + source_id).val() | $('#location-select').val();
+    var task_id = $(this).data('task_id');
+
+    stopExportData(institution_id, source_id, location_id, task_id, this);
+});
+
+function stopExportData(institution_id, source_id, location_id, task_id, element) {
+    var key = source_id + '_' + location_id;
+    var params = {
+        'institution_id': institution_id,
+        'source_id': source_id,
+        'location_id': location_id,
+        'task_id': task_id,
+    };
+    var route = 'stop-export';
+    var url = '/custom_storage_location/export_data/' + route + '/';
+    closeGrowl();
+    $.ajax({
+        url: url,
+        type: 'POST',
+        data: JSON.stringify(params),
+        contentType: 'application/json; charset=utf-8',
+        custom: {'element': element, 'key': key},
+        timeout: 120000,
+        success: function (data) {
+            window.contextVars[this.custom.key].exportInBackground && window.clearInterval(window.contextVars[this.custom.key].intervalID);
+            window.contextVars[this.custom.key].intervalID = undefined;
+            window.contextVars[this.custom.key].exportInBackground = false;
+            var message;
+            var messageType = 'success';
+            task_id = data.task_id;
+
+            if (data.task_state === 'SUCCESS') {
+                // task_state in (SUCCESS, )
+                // old task_state in (ABORTED, )
+                exportState(this.custom.element);
+                message = _('Stop exporting successfully.');
+                $osf.growl(_('Stop Export Data'), message, messageType, 0);
+            } else if (data.task_state === 'FAILURE') {
+                // task_state in (FAILURE, )
+                stopExportState(this.custom.element);
+                message = _('Error occurred while stopping export data.');
+                messageType = 'danger';
+                $osf.growl(_('Stop Export Data'), message, messageType, 0);
+            } else {
+                // task_state in (PENDING, STARTED, )
+                message = _('Stop exporting in background.');
+                window.contextVars[this.custom.key].stopExportInBackground = true;
+                $osf.growl(_('Stop Export Data'), message, messageType, growlBoxDelay);
+            }
+
+            if (window.contextVars[this.custom.key].stopExportInBackground) {
+                // var x = 0;
+                window.contextVars[this.custom.key].intervalID = window.setInterval(function () {
+                    checkStatusExportData(institution_id, source_id, location_id, task_id, element);
+                    // ++x === 5 && window.clearInterval(window.contextVars[this.custom.key].intervalID);
+                }, intervalCheckStatus);
+            }
+        },
+        error: function (jqXHR) {
+            stopExportState(this.custom.element);
+            var title = _('Stop Export Data');
+            var message = _('Cannot stop exporting data.');
+            var messageType = 'danger';
+            if (jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)) {
+                var data = jqXHR.responseJSON;
+                message = _(data.message);
+                if ('task_state' in data && 'status' in data) {
+                    if (data.task_state === 'SUCCESS') {
+                        // task_state in (SUCCESS)
+                        exportState(this.custom.element);
+                    }
+
+                    if (data.status === 'Completed') {
+                        var $parent = $(this.custom.element).parents('.row-storage');
+                        if ($parent.length) {
+                            var $viewExportDataButton = $parent.find('button.view-export-data');
+                            showViewExportDataButton($viewExportDataButton, location_id)
+                        }
+                        title = _('Export Data');
+                        message = _('Export data successfully.');
+                        messageType = 'success';
+                    } else if (data.status === 'Error') {
+                        title = _('Export Data');
+                        message = _('Export data failed.');
+                    }
+                }
+            }
+            $osf.growl(title, message, messageType, 0);
+        }
+    });
+}
+
+function checkStatusExportData(institution_id, source_id, location_id, task_id, element) {
+    var params = {
+        'institution_id': institution_id,
+        'source_id': source_id,
+        'location_id': location_id,
+        'task_id': task_id,
+    };
+    var route = 'check-export';
+    var url = '/custom_storage_location/export_data/' + route + '/';
+    var key = source_id + '_' + location_id;
+    closeGrowl();
+    $.ajax({
+        url: url,
+        type: 'POST',
+        data: JSON.stringify(params),
+        contentType: 'application/json; charset=utf-8',
+        custom: {'element': element, 'key': key},
+        timeout: 120000,
+        success: function (data) {
+            var title = window.contextVars[this.custom.key].stopExportInBackground ? _('Stop Export Data') : _('Export Data');
+            var message;
+            var messageType = 'success';
+
+            if (data.task_state === 'SUCCESS') {
+                // task_state in (SUCCESS, )
+                window.clearInterval(window.contextVars[this.custom.key].intervalID);
+                window.contextVars[this.custom.key].intervalID = undefined;
+
+                exportState(this.custom.element);
+                message = _('Export data successfully.');
+                if (window.contextVars[this.custom.key].stopExportInBackground) {
+                    message = _('Stop exporting successfully.');
+                }
+
+                if (data.status === 'Completed') {
+                    var $parent = $(this.custom.element).parents('.row-storage');
+                    if ($parent.length) {
+                        var $viewExportDataButton = $parent.find('button.view-export-data');
+                        showViewExportDataButton($viewExportDataButton, location_id)
+                    }
+                    if (data.result.list_file_info_export_not_found.length > 0) {
+                        var data_res = data.result.list_file_info_export_not_found;
+                        var text_show_file = '';
+                        file_name_export_fail = data.result.file_name_export_fail;
+                        need_reload = 0;
+                        $('#showFileExportNotExistModal').modal('show');
+                        list_file_info_export_fail = [['project_id', 'project_name', 'owner', 'file_id',
+                                                        'file_path', 'file_name', 'versions', 'size', 'stamper']];
+                        data_res.forEach(function (file) {
+                            file.version.forEach(function(version) {
+                                list_file_info_export_fail.push([file.project.id, file.project.name, version.contributor,
+                                                file.id, file.materialized_path, file.name, version.identifier,
+                                                file.size, file.timestamp.verify_user]);
+                                text_show_file += "<tr><td>" + file.project.id + "</td><td>" + file.project.name + "</td><td>"
+                                                + version.contributor + "</td><td>"+ file.id + "</td><td>"
+                                                + file.materialized_path + "</td><td>" + file.name + "</td><td>"
+                                                + version.identifier + "</td><td>"+ file.size + " Bytes</td><td>"
+                                                + file.timestamp.verify_user + "</td></tr>";
+                            });
+                        });
+                        $('.table-ng-file-export-not-exist').html(text_show_file);
+                        $('.table-ng-file-export-not-exist').css('word-break', 'break-word');
+                    }
+                } else if (!window.contextVars[this.custom.key].stopExportInBackground) {
+                    messageType = 'danger';
+                    message = _('Export data failed.');
+                }
+            } else if (data.task_state === 'FAILURE') {
+                // task_state in (FAILURE, )
+                window.clearInterval(window.contextVars[this.custom.key].intervalID);
+                window.contextVars[this.custom.key].intervalID = undefined;
+
+                messageType = 'danger';
+                if (window.contextVars[this.custom.key].stopExportInBackground) {
+                    stopExportState(this.custom.element);
+                    message = _('Error occurred while stopping export data.');
+                } else {
+                    exportState(this.custom.element);
+                    message = _('Error occurred while exporting data.');
+                }
+            }
+            if (!window.contextVars[this.custom.key].intervalID) {
+                $osf.growl(title, message, messageType, 0);
+                window.contextVars[this.custom.key].intervalID = undefined;
+                window.contextVars[this.custom.key].exportInBackground = false;
+                window.contextVars[this.custom.key].stopExportInBackground = false;
+            }
+        },
+        error: function (jqXHR) {
+            // keep for debug
+        }
+    });
+}
+
+
+// Start - Delete Export data - Actions
+
+$('#checkDelete').on('click', function() {
+    var list_export_delete_id = $("#checkDelete").val() + '#';
+    $('#bodydeletemodal').append(
+        "<input type='text' value='" + list_export_delete_id +
+        "' id='input_export_data' class='buckinput' name='list_id_export_data' style='display: none;' />");
+});
+
+$('#delete_permanently_button').on('click', function() {
+    var list_export_data = $('input[type=checkbox][name=check_revert_export]');
+    var list_export_id = '';
+    for (var i = 0; i < list_export_data.length; i++) {
+        if (list_export_data[i].checked) {
+            list_export_id += list_export_data[i].id + '#';
+        }
+    }
+    $('#bodyDeleteExport').append("<input type='hidden' value='"+ list_export_id +"' id='input_export_data' class='buckinput' name='list_id_export_data' />");
+    $osf.confirmDangerousAction({
+        title: _('Are you sure you want to permanently delete these export data?'),
+        callback: function() {
+            $('#deleteExportForm').submit();
+        },
+        buttons: {
+            success: {
+                label: _('Delete Permanently')
+            }
+        }
+    });
+});
+
+
+// Start - Revert Export data - Actions
+
+$('#revert_button').on('click', function () {
+    var list_export_revert_id = $("#revert_button").val() + '#';
+    $('#bodyrevertmodal').append(
+        "<input type='text' value='" + list_export_revert_id +
+        "' id='input_export_data' class='buckinput' name='list_id_export_data' style='display: none;' />");
+});
+
+$('.cancel_modal').on('click', function () {
+    $('#input_export_data').remove();
+});
+
+
+// Start - Check Export data - Actions
+
+$('#checkExportData').on('click', function () {
+    closeGrowl();
+    var url = './check_export_data/';
+    $('#checkExportData').prop('disabled', true);
+    $.ajax({
+        url: url,
+        type: 'GET',
+        contentType: 'application/json; charset=utf-8',
+    }).done(function (response) {
+        var data_res = response;
+        $('#checkExportDataModal').modal('show');
+        var text_check_export = "<p>OK: " + data_res.ok + "/" + data_res.total + " files<br/>" +
+            "NG: " + data_res.ng + "/" + data_res.total + " files</p>";
+        var text_current = '';
+        data_res.list_file_ng.forEach(function (file) {
+            text_current += "<tr><td>" + file.path + "</td><td>" + file.size + " Bytes</td>" +
+                "<td>" + file.version_id + "</td><td>" + file.reason + "</td></tr>";
+        });
+        $('.text-check-export-data').html(text_check_export);
+        $('.table-ng').html(text_current);
+        $('.table-ng').css('word-break', 'break-word');
+    }).fail(function (jqXHR) {
+        $('#checkExportData').prop('disabled', false);
+        var message = _(jqXHR.responseJSON.message);
+        $osf.growl('Error', message, 'error', growlBoxDelay);
+    });
+});
+
+$('#cancelExportDataModal').on('click', function () {
+    $('#checkExportData').prop('disabled', false);
+});
+
+$('#checkExportDataModal').on('hidden.bs.modal', function () {
+  $('#checkExportData').prop('disabled', false);
+});
+
+
+// Start - Restore Export data - Actions
+
+function disableRestoreButton() {
+    // Disable 'Restore' button
+    var $restore_button = $('#restore_button');
+    $restore_button.addClass('disabled');
+    $restore_button.attr('disabled', true);
+}
+
+function enableRestoreFunction() {
+    // Enable 'Restore' button, disable 'Stop restoring' button
+    var $restore_button = $('#restore_button');
+    $restore_button.removeClass('disabled');
+    $restore_button.attr('disabled', false);
+
+    var $stop_restore_button = $('#stop_restore_button');
+    $stop_restore_button.addClass('disabled');
+    $stop_restore_button.attr('disabled', true);
+}
+
+function enableStopRestoreFunction() {
+    // Enable 'Stop restoring' button, disable 'Restore' button
+    var $restore_button = $('#restore_button');
+    $restore_button.addClass('disabled');
+    $restore_button.attr('disabled', true);
+
+    var $stop_restore_button = $('#stop_restore_button');
+    $stop_restore_button.removeClass('disabled');
+    $stop_restore_button.attr('disabled', false);
+}
+
+function enableCheckRestoreFunction() {
+    // Enable 'Check export data' button, disable 'Stop restoring' button
+    var $check_restore_button = $('#check_restore_button');
+    $check_restore_button.removeClass('disabled');
+    $check_restore_button.attr('disabled', false);
+
+    var $stop_restore_button = $('#stop_restore_button');
+    $stop_restore_button.addClass('disabled');
+    $stop_restore_button.attr('disabled', true);
+}
+
+$('#cancel_restore_modal_button').on('click', function () {
+    enableRestoreFunction();
+});
+
+$('#restore').on('hidden.bs.modal', function () {
+    enableRestoreFunction();
+});
+
+$('#restore_button').on('click', function () {
+    var data = {};
+    data['destination_id'] = $('#destination_storage').val();
+    disableRestoreButton();
+    closeGrowl();
+    $.ajax({
+        url: 'restore_export_data/',
+        type: 'post',
+        data: data
+    }).done(function (response) {
+        if (response['message']) {
+            enableRestoreFunction();
+            // Show error message
+            $osf.growl(_('Restore Export Data'), result['message'], 'danger', 0);
+        } else if (response['task_id']) {
+            $osf.growl(_('Restore Export Data'), 'Started restoring data process.', 'success', growlBoxDelay);
+            enableStopRestoreFunction();
+            restore_task_id = response['task_id'];
+            setTimeout(function () {
+                checkTaskStatus(restore_task_id, 'Restore');
+            }, intervalCheckStatus);
+        } else {
+            $('#restore').modal('show');
+        }
+    }).fail(function (jqXHR) {
+        enableRestoreFunction();
+        var data = jqXHR.responseJSON;
+        if (data && data['message']) {
+            $osf.growl(_('Restore Export Data'), _(data['message']), 'danger', 0);
+        }
+    });
+});
+
+$('#stop_restore_button').on('click', function () {
+    var $stop_restore_button = $('#stop_restore_button');
+    $stop_restore_button.addClass('disabled');
+    $stop_restore_button.attr('disabled', true);
+    var data = {
+        task_id: restore_task_id,
+        destination_id: $('#destination_storage').val(),
+    };
+    closeGrowl();
+    $.ajax({
+        url: 'stop_restore_export_data/',
+        type: 'post',
+        data: data
+    }).done(function (response) {
+        stop_restore_task_id = response['task_id'];
+        $osf.growl(_('Stop Restore Export Data'), 'Stop restoring in background.', 'success', growlBoxDelay);
+        setTimeout(function () {
+            checkTaskStatus(stop_restore_task_id, 'Stop Restore');
+        }, intervalCheckStatus);
+    }).fail(function (jqXHR) {
+        enableStopRestoreFunction();
+        var data = jqXHR.responseJSON;
+        if (data && data['message']) {
+            $osf.growl(_('Stop Restore Export Data'), _(data['message']), 'danger', 0);
+        }
+    });
+});
+
+function checkTaskStatus(task_id, task_type) {
+    var data = {task_id: task_id, task_type: task_type};
+    closeGrowl();
+    $.ajax({
+        url: 'task_status/',
+        type: 'get',
+        data: data
+    }).done(function (response) {
+        var state = response['state'];
+        var result = response['result'];
+        var result_task_id = response['task_id'];
+        var result_task_type = response['task_type'];
+        if (state === 'SUCCESS') {
+            if (result_task_type === 'Restore') {
+                // Done restoring export data
+                enableCheckRestoreFunction();
+                $osf.growl(_('Restore Export Data'), _('Restore completed.'), 'success', 0);
+                if (result.list_file_restore_fail.length > 0) {
+                    var data_res = result.list_file_restore_fail;
+                    var text_show_file = '';
+                    $('#showFileRestoreNotExistModal').modal('show');
+                    file_name_restore_fail = result.file_name_restore_fail;
+                    list_file_info_restore_fail = [['project_id', 'project_name', 'owner', 'file_id',
+                                                    'file_path', 'file_name', 'versions', 'size', 'stamper']];
+                    var data_res_map = data_res.reduce(function(map, obj) {
+                        map[obj.id] = obj;
+                        return map;
+                    }, {});
+                    var data_res_unique = Object.values(data_res_map);
+                    data_res_unique.forEach(function (file) {
+                        file.version.forEach(function(version) {
+                            list_file_info_restore_fail.push([file.project.id, file.project.name, version.contributor,
+                                                file.id, file.materialized_path, file.name, version.identifier,
+                                                file.size, file.timestamp.verify_user]);
+                            text_show_file += "<tr><td>" + file.project.id + "</td><td>" + file.project.name + "</td><td>"
+                                                + version.contributor + "</td><td>"+ file.id + "</td><td>"
+                                                + file.materialized_path + "</td><td>" + file.name + "</td><td>"
+                                                + version.identifier + "</td><td>" + file.size + " Bytes</td><td>"
+                                                + file.timestamp.verify_user + "</td></tr>";
+                        });
+                    });
+                    $('.table-ng-file-restore-not-exist').html(text_show_file);
+                    $('.table-ng-file-restore-not-exist').css('word-break', 'break-word');
+                }
+            } else if (result_task_type === 'Stop Restore') {
+                // Done stopping restore export data
+                enableRestoreFunction();
+                $osf.growl(_('Stop Restore Export Data'), _('Stopped restoring data process.'), 'success', 0);
+            }
+        } else if (state === 'PENDING' || state === 'STARTED') {
+            // Redo check task status after 2 seconds
+            setTimeout(function () {
+                checkTaskStatus(task_id, task_type);
+            }, intervalCheckStatus);
+        } else {
+            if (state !== 'ABORTED') {
+                enableRestoreFunction();
+            }
+            if (result && result['message']) {
+                var title = '';
+                if (result_task_type === 'Restore'){
+                    title = _('Restore Export Data');
+                } else if (result_task_type === 'Stop Restore') {
+                    title = _('Stop Restore Export Data');
+                }
+                $osf.growl(title, _(result['message']), 'danger', 0);
+            }
+        }
+    }).fail(function (jqXHR) {
+        enableRestoreFunction();
+        var data = jqXHR.responseJSON;
+        if (data && data['result'] && data['result']!=='Restore process is stopped') {
+            var title = '';
+            if (task_type === 'Restore'){
+                title = _('Restore Export Data');
+            } else if (task_type === 'Stop Restore') {
+                title = _('Stop Restore Export Data');
+            }
+            $osf.growl(title, _(data['result']), 'danger', 0);
+        }
+    });
+}
+
+// Catch event when click Restore button in modal on the DataInformation screen
+$('#start_restore_modal_button').on('click', function () {
+    var data = {};
+    data['destination_id'] = $('#destination_storage').val();
+    data['is_from_confirm_dialog'] = true;
+    // Call enableStopRestoreFunction() when click Restore button
+    closeGrowl();
+    $.ajax({
+        url: 'restore_export_data/',
+        type: 'post',
+        data: data
+    }).done(function (response) {
+        // Get task_id when call ajax successful
+        restore_task_id = response['task_id'];
+        if (!restore_task_id) {
+            return;
+        }
+        enableStopRestoreFunction();
+        setTimeout(function () {
+            checkTaskStatus(restore_task_id, 'Restore');
+        }, intervalCheckStatus);
+    }).fail(function (jqXHR) {
+        // Call enableRestoreFunction() when fail
+        enableRestoreFunction();
+        var data = jqXHR.responseJSON;
+        if (data && data['message']) {
+            $osf.growl(_('Restore Export Data'), _(data['message']), 'danger', growlBoxDelay);
+        }
+    });
+});
+
+
+// Start - Check Restore exported data - Actions
+
+$('#check_restore_button').on('click', function () {
+    var destination_id = $('select#destination_storage').val();
+    var url = 'check_restore_data/?destination_id=' + destination_id;
+    closeGrowl();
+    $(this).prop('disabled', true);
+    $.ajax({
+        url: url,
+        type: 'GET',
+        contentType: 'application/json; charset=utf-8',
+    }).done(function (response) {
+        var data_res = response;
+        $('#checkRestoreDataModal').modal('show');
+        var text_check_export = "<p>OK: " + data_res.ok + "/" + data_res.total + " files<br/>" +
+            "NG: " + data_res.ng + "/" + data_res.total + " files</p>";
+        var text_current = '';
+        data_res.list_file_ng.forEach(function (file) {
+            text_current += "<tr><td>" + file.path + "</td><td>" + file.size + " Bytes</td>" +
+                "<td>" + file.version_id + "</td><td>" + file.reason + "</td></tr>";
+        });
+        $('.text-check-restore-data').html(text_check_export);
+        $('.table-ng-restore').html(text_current);
+        $('.table-ng-restore').css('word-break', 'break-word');
+    }).fail(function (jqXHR) {
+        $('#check_restore_button').prop('disabled', false);
+        var message = jqXHR.responseJSON.message;
+        $osf.growl('Error', _(message), 'error', growlBoxDelay);
+    });
+});
+
+$('#cancelRestoreDataModal').on('click', function () {
+    $('#check_restore_button').prop('disabled', false);
+});
+
+$('#checkRestoreDataModal').on('hidden.bs.modal', function () {
+  $('#check_restore_button').prop('disabled', false);
+});
+
+function exportToCsv(filename, rows) {
+    var processRow = function (row) {
+        var finalVal = '';
+        for (var j = 0; j < row.length; j++) {
+            var innerValue = row[j] === null ? '' : row[j].toString();
+            if (row[j] instanceof Date) {
+                innerValue = row[j].toLocaleString();
+            };
+            var result = innerValue.replace(/"/g, '""');
+            if (result.search(/("|,|\n)/g) >= 0)
+                result = '"' + result + '"';
+            if (j > 0)
+                finalVal += ',';
+            finalVal += result;
+        }
+        return finalVal + '\n';
+    };
+
+    var csvFile = '';
+    for (var i = 0; i < rows.length; i++) {
+        csvFile += processRow(rows[i]);
+    }
+
+    var blob = new Blob([csvFile], { type: 'text/csv;charset=utf-8;' });
+    if (navigator.msSaveBlob) { // IE 10+
+        navigator.msSaveBlob(blob, filename);
+    } else {
+        var link = document.createElement("a");
+        if (link.download !== undefined) { // feature detection
+            // Browsers that support HTML5 download attribute
+            var url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            // setTimeOut to be downloaded on Safari
+            setTimeout(function () {
+                link.click();
+                document.body.removeChild(link);
+                // Release csv URL object
+                URL.revokeObjectURL(url);
+            }, 100);
+        }
+    }
+}
+
+$('.cancel_modal_show_file_export_not_exist').on('click', function () {
+    list_file_info_export_fail = [];
+    file_name_export_fail = '';
+    setTimeout(function () {
+        window.location.reload();
+    }, 1000);
+});
+
+$('.download_file_export_not_exist').on('click', function () {
+    exportToCsv(file_name_export_fail, list_file_info_export_fail);
+});
+
+$('.cancel_modal_show_file_restore_not_exist').on('click', function () {
+    list_file_info_restore_fail = [];
+    file_name_restore_fail = '';
+});
+
+$('.download_file_restore_not_exist').on('click', function () {
+    exportToCsv(file_name_restore_fail, list_file_info_restore_fail);
+});
+
+function closeGrowl(){
+   $('[data-growl="container"]').find('[data-growl="dismiss"]').trigger('click');
 }

@@ -9,7 +9,7 @@ from framework.auth.decorators import must_be_signed
 from framework.exceptions import HTTPError
 
 from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
-from osf.models import OSFUser, Guid
+from osf.models import OSFUser, Guid, ExportData, ExportDataRestore
 from website.files import exceptions
 from website.project.decorators import (
     must_not_be_registration,
@@ -92,11 +92,20 @@ def waterbutler_opt_hook(func):
             source = OsfStorageFileNode.get(payload['source'], kwargs['target'])
             dest_parent = OsfStorageFolder.get(payload['destination']['parent'], dest_target)
 
+            is_check_permission = True
+            export_data = ExportData.objects.filter(creator=user, status=ExportData.STATUS_RUNNING).first()
+            if not export_data:
+                export_data = ExportDataRestore.objects.filter(creator=user, status=ExportData.STATUS_RUNNING).first()
+            if export_data:
+                institution = dest_target.creator.affiliated_institutions.get()
+                if user.is_allowed_to_use_institution(institution):
+                    is_check_permission = False
             kwargs.update({
                 'user': user,
                 'source': source,
                 'destination': dest_parent,
                 'name': payload['destination']['name'],
+                'is_check_permission': is_check_permission
             })
         except KeyError:
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST)

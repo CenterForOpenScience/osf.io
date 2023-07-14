@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import inspect
 import logging
 import re
 from future.moves.urllib.parse import urljoin
@@ -112,3 +113,8 @@ def is_json_request():
     """Return True if the current request is a JSON/AJAX request."""
     content_type = request.content_type
     return content_type and ('application/json' in content_type)
+
+
+def inspect_info(current_frame, stack_info):
+    frame_info, stack_first = inspect.getframeinfo(current_frame), stack_info[1]
+    return frame_info[0], frame_info[1], frame_info[2], stack_first[1], stack_first[2], stack_first[3]

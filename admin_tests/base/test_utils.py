@@ -10,7 +10,7 @@ from django.contrib.admin.sites import AdminSite
 from django.forms.models import model_to_dict
 from django.http import QueryDict
 
-
+from admin.base.schemas.utils import from_json
 from tests.base import AdminTestCase
 
 from osf_tests.factories import SubjectFactory, UserFactory, RegistrationFactory, PreprintFactory
@@ -244,3 +244,14 @@ class TestGroupCollectionsPreprints:
         assert(collections_group in user.groups.all())
 
         assert(preprint.get_group('admin') in user.groups.all())
+
+
+@pytest.mark.feature_202210
+class TestSchemaUtils:
+    def test_from_json(self):
+        schema = from_json('file-info-schema.json')
+        assert isinstance(schema, dict)
+
+    def test_from_json__file_not_found(self):
+        with pytest.raises(Exception):
+            from_json('file-info-schema2.json')

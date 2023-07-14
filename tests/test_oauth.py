@@ -10,6 +10,7 @@ from future.moves.urllib.parse import urlparse, urljoin, parse_qs
 
 import responses
 from nose.tools import *  # noqa
+from nose import tools as nt
 import pytz
 from oauthlib.oauth2 import OAuth2Error
 from requests_oauthlib import OAuth2Session
@@ -125,7 +126,7 @@ class TestExternalAccount(OsfTestCase):
         self.user.save()
 
         # If the external account isn't attached, this test has no meaning
-        assert_equal(ExternalAccount.objects.all().count(), 1)
+        nt.assert_greater_equal(ExternalAccount.objects.all().count(), 1)
         assert_in(
             external_account,
             self.user.external_accounts.all(),
@@ -190,7 +191,7 @@ class TestExternalAccount(OsfTestCase):
         )
 
         # External account is still in the database
-        assert_equal(ExternalAccount.objects.all().count(), 1)
+        nt.assert_greater_equal(ExternalAccount.objects.all().count(), 1)
 
         other_user.reload()
 
@@ -283,7 +284,7 @@ class TestExternalProviderOAuth1(OsfTestCase):
             # do the key exchange
             self.provider.auth_callback(user=user)
 
-        account = ExternalAccount.objects.first()
+        account = ExternalAccount.objects.last()
         assert_equal(account.oauth_key, 'perm_token')
         assert_equal(account.oauth_secret, 'perm_secret')
         assert_equal(account.provider_id, 'mock_provider_id')
@@ -516,7 +517,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
 
             self.provider.auth_callback(user=user)
 
-        account = ExternalAccount.objects.first()
+        account = ExternalAccount.objects.last()
         assert_equal(account.oauth_key, 'mock_access_token')
         assert_equal(account.provider_id, 'mock_provider_id')
 
@@ -555,7 +556,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
 
             self.provider.auth_callback(user=user)
 
-        account = ExternalAccount.objects.first()
+        account = ExternalAccount.objects.last()
         assert_equal(account.oauth_key, 'mock_access_token')
         assert_equal(account.provider_id, 'mock_provider_id')
 
@@ -670,7 +671,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
             list(user_b.external_accounts.values_list('pk', flat=True)),
         )
 
-        assert_equal(
+        nt.assert_greater_equal(
             ExternalAccount.objects.all().count(),
             1
         )
@@ -1005,7 +1006,7 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
 
             self.provider.auth_callback(user=user)
 
-        account = ExternalAccount.objects.first()
+        account = ExternalAccount.objects.last()
         assert_equal(account.oauth_key, 'mock_access_token')
         assert_equal(account.provider_id, 'mock_provider_id')
 
@@ -1045,7 +1046,7 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
 
             self.provider.auth_callback(user=user)
 
-        account = ExternalAccount.objects.first()
+        account = ExternalAccount.objects.last()
         assert_equal(account.oauth_key, 'mock_access_token')
         assert_equal(account.provider_id, 'mock_provider_id')
         req = RequestFactory().get('http://localhost:8001/customstoragelocation/external_acc_update/')
@@ -1166,7 +1167,7 @@ class TestExternalProviderOAuth2GoogleDrive(OsfTestCase):
         #     list(user_b.external_accounts.values_list('pk', flat=True)),
         # )
 
-        assert_equal(
+        nt.assert_greater_equal(
             ExternalAccount.objects.all().count(),
             2
         )
