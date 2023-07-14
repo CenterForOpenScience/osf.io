@@ -1380,6 +1380,7 @@ function checkTaskStatus(task_id, task_type) {
             if (result_task_type === 'Restore') {
                 // Done restoring export data
                 enableCheckRestoreFunction();
+                enableRestoreFunction();
                 $osf.growl(_('Restore Export Data'), _('Restore completed.'), 'success', 0);
                 if (result.list_file_restore_fail.length > 0) {
                     var data_res = result.list_file_restore_fail;
