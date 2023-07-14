@@ -1,5 +1,4 @@
 import pytest
-from django.apps import apps
 from addons.s3.utils import update_folder_names, reverse_update_folder_names
 
 @pytest.mark.django_db
