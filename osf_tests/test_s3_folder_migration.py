@@ -13,7 +13,7 @@ class TestUpdateFolderNamesMigration:
         S3NodeSettingsFactory(folder_name='Folder 2', folder_id='folder2')
         S3NodeSettingsFactory(folder_name='Folder 3 (Location 3)', folder_id='folder3')
 
-        update_folder_names(apps)
+        update_folder_names()
 
         # Verify updated folder names and IDs
         updated_folder_names_ids = NodeSettings.objects.values_list('folder_name', 'folder_id')
@@ -25,7 +25,7 @@ class TestUpdateFolderNamesMigration:
         assert set(updated_folder_names_ids) == expected_updated_folder_names_ids
 
         # Reverse the migration
-        reverse_update_folder_names(apps)
+        reverse_update_folder_names()
 
         # Verify the folder names and IDs after the reverse migration
         reverted_folder_names_ids = NodeSettings.objects.values_list('folder_name', 'folder_id')
