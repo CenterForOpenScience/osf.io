@@ -11,6 +11,7 @@ class TestUpdateFolderNamesMigration:
         S3NodeSettingsFactory(folder_name='Folder 1 (Location 1)', folder_id='folder1')
         S3NodeSettingsFactory(folder_name='Folder 2', folder_id='folder2')
         S3NodeSettingsFactory(folder_name='Folder 3 (Location 3)', folder_id='folder3')
+        S3NodeSettingsFactory(folder_name='Folder 4:/ (Location 4)', folder_id='folder4:/')
 
         update_folder_names()
 
@@ -20,6 +21,9 @@ class TestUpdateFolderNamesMigration:
             ('Folder 1:/ (Location 1)', 'folder1:/'),
             ('Folder 2:/', 'folder2:/'),
             ('Folder 3:/ (Location 3)', 'folder3:/'),
+            ('Folder 3:/ (Location 3)', 'folder3:/'),
+            ('Folder 4:/ (Location 4)', 'folder4:/'),
+
         }
         assert set(updated_folder_names_ids) == expected_updated_folder_names_ids
 
@@ -32,5 +36,6 @@ class TestUpdateFolderNamesMigration:
             ('Folder 1 (Location 1)', 'folder1'),
             ('Folder 2', 'folder2'),
             ('Folder 3 (Location 3)', 'folder3'),
+            ('Folder 4 (Location 4)', 'folder4'),
         }
         assert set(reverted_folder_names_ids) == expected_reverted_folder_names_ids

@@ -155,13 +155,25 @@ def update_folder_names():
     NodeSettings = apps.get_model('addons_s3', 'NodeSettings')
 
     # Update folder_id for all records
-    NodeSettings.objects.update(folder_id=Concat(F('folder_id'), Value(':/')))
+    NodeSettings.objects.exclude(
+        folder_name__contains=':/'
+    ).update(
+        folder_id=Concat(F('folder_id'), Value(':/'))
+    )
 
     # Update folder_name for records containing '('
-    NodeSettings.objects.filter(folder_name__contains=' (').update(
+    NodeSettings.objects.filter(
+        folder_name__contains=' ('
+    ).exclude(
+        folder_name__contains=':/'
+    ).update(
         folder_name=Replace(F('folder_name'), Value(' ('), Value(':/ ('))
     )
-    NodeSettings.objects.exclude(folder_name__contains=' (').update(
+    NodeSettings.objects.exclude(
+        folder_name__contains=':/'
+    ).exclude(
+        folder_name__contains=' ('
+    ).update(
         folder_name=Concat(F('folder_name'), Value(':/'))
     )
     logger.info('Update Folder Names/IDs complete')
