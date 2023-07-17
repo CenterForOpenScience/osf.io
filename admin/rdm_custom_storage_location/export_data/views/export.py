@@ -361,3 +361,21 @@ class CheckDataExportDataActionView(ExportDataBaseActionView):
         return Response({
             'has_data': has_data,
         }, status=status.HTTP_200_OK)
+
+
+class CheckRunningExportActionView(ExportDataBaseActionView):
+
+    def post(self, request, **kwargs):
+        institution, source_storage, location = self.extract_input(request)
+        running_export = ExportData.objects.filter(
+            location=location,
+            source=source_storage,
+            status=ExportData.STATUS_RUNNING,
+            is_deleted=False
+        )
+        task_id = None
+        if len(running_export) != 0:
+            task_id = running_export[0].task_id
+        return Response({
+            'task_id': task_id,
+        }, status=status.HTTP_200_OK)

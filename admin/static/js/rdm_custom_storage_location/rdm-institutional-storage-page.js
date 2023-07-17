@@ -857,6 +857,30 @@ $('.row-storage select.location-select').change(function (event) {
             hiddenViewExportDataButton(this.custom.element);
         }
     });
+
+    // Check if there is running export process on selected location
+    var check_running_route = 'check-running-export';
+    var check_running_url = '/custom_storage_location/export_data/' + check_running_route + '/';
+    $.ajax({
+        url: check_running_url,
+        type: 'POST',
+        data: JSON.stringify(params),
+        contentType: 'application/json; charset=utf-8',
+    }).done(function (response) {
+        var $stop_export_button = $('.stop-export-button');
+        // Get task_id when call ajax successful
+        if (response['task_id']) {
+            $stop_export_button.removeClass('disabled');
+            $stop_export_button.attr('disabled', false);
+            $stop_export_button.data('task_id', response['task_id']);
+            var key = source_id + '_' + location_id;
+            window.contextVars[key] = {};
+            window.contextVars[key].exportInBackground = true;
+        } else {
+            $stop_export_button.addClass('disabled');
+            $stop_export_button.attr('disabled', true);
+        }
+    })
 });
 
 $('.row-storage button.view-export-data').click(function (event) {
@@ -1162,7 +1186,22 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
             }
         },
         error: function (jqXHR) {
-            // keep for debug
+            var title = window.contextVars[this.custom.key].stopExportInBackground ? _('Stop Export Data') : _('Export Data');
+            var message;
+            // Remove interval
+            window.clearInterval(window.contextVars[this.custom.key].intervalID);
+            window.contextVars[this.custom.key].intervalID = undefined;
+            window.contextVars[this.custom.key].exportInBackground = false;
+            window.contextVars[this.custom.key].stopExportInBackground = false;
+            if (window.contextVars[this.custom.key].stopExportInBackground) {
+                stopExportState(this.custom.element);
+                message = _('Error occurred while stopping export data.');
+            } else {
+                exportState(this.custom.element);
+                message = _('Error occurred while exporting data.');
+            }
+            var messageType = 'danger';
+            $osf.growl(title, message, messageType, 0);
         }
     });
 }
@@ -1350,6 +1389,12 @@ $('#stop_restore_button').on('click', function () {
         type: 'post',
         data: data
     }).done(function (response) {
+        // If stop restore success without task_id, display message.
+        if (response && response['message'] === 'Stop restore data successfully.') {
+            enableRestoreFunction();
+            $osf.growl(_('Stop Restore Export Data'), _('Stopped restoring data process.'), 'success', growlBoxDelay);
+            return;
+        }
         stop_restore_task_id = response['task_id'];
         $osf.growl(_('Stop Restore Export Data'), 'Stop restoring in background.', 'success', growlBoxDelay);
         setTimeout(function () {
@@ -1422,6 +1467,13 @@ function checkTaskStatus(task_id, task_type) {
         } else {
             if (state !== 'ABORTED') {
                 enableRestoreFunction();
+            } else if (state === 'ABORTED') {
+                enableRestoreFunction();
+                var title = '';
+                if (result_task_type === 'Restore'){
+                    title = _('Restore Export Data');
+                }
+                $osf.growl(title, _('Stopped restoring data process.'), 'danger', 0);
             }
             if (result && result['message']) {
                 var title = '';
@@ -1436,7 +1488,7 @@ function checkTaskStatus(task_id, task_type) {
     }).fail(function (jqXHR) {
         enableRestoreFunction();
         var data = jqXHR.responseJSON;
-        if (data && data['result'] && data['result']!=='Restore process is stopped') {
+        if (data && data['result']) {
             var title = '';
             if (task_type === 'Restore'){
                 title = _('Restore Export Data');
