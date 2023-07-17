@@ -24,7 +24,7 @@ def connect_s3(access_key=None, secret_key=None, node_settings=None):
     if node_settings is not None:
         if node_settings.external_account is not None:
             access_key, secret_key = node_settings.external_account.oauth_key, node_settings.external_account.oauth_secret
-    connection = S3Connection(access_key, secret_key)
+    connection = S3Connection(access_key, secret_key, calling_format=OrdinaryCallingFormat())
     return connection
 
 
@@ -131,7 +131,7 @@ def get_bucket_location_or_error(access_key, secret_key, bucket_name):
 
 
 def get_bucket_prefixes(access_key, secret_key, prefix, bucket_name):
-    bucket = connect_s3(access_key, secret_key).get_bucket(bucket_name)
+    bucket = S3Connection(access_key, secret_key).get_bucket(bucket_name)  # Don't use OrdinaryCallingFormat
 
     folders = []
     for key in bucket.list(delimiter='/', prefix=prefix):
