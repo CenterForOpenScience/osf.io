@@ -131,7 +131,14 @@ def get_bucket_location_or_error(access_key, secret_key, bucket_name):
 
 
 def get_bucket_prefixes(access_key, secret_key, prefix, bucket_name):
-    bucket = S3Connection(access_key, secret_key).get_bucket(bucket_name)  # Don't use OrdinaryCallingFormat
+    connection = S3Connection(access_key, secret_key)
+
+    if bucket_name != bucket_name.lower() or '.' in bucket_name:
+        # Must use ordinary calling format for mIxEdCaSe or `.` containing bucket names
+        # otherwise use the default as it handles bucket outside of the US
+        connection.calling_format = OrdinaryCallingFormat()
+
+    bucket = connection.get_bucket(bucket_name)
 
     folders = []
     for key in bucket.list(delimiter='/', prefix=prefix):
