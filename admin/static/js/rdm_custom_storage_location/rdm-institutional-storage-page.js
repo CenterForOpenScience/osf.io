@@ -101,6 +101,33 @@ $('#institutional_storage_form').submit(function (e) {
     e.preventDefault();
 });
 
+$('#institutional_storage_export_form').submit(function (e) {
+    if ($('#institutional_storage_export_form')[0].checkValidity()) {
+        var provider = selectedProvider()
+        preload(provider, null);
+        var showModal = function () {
+            $('#' + provider + '_modal').modal('show');
+            $('body').css('overflow', 'hidden');
+            $('.modal').css('overflow', 'auto');
+            validateRequiredFields(provider);
+        };
+        if (provider === 'osfstorage' && $('[checked]').val() === 'osfstorage') {
+            showModal();
+        } else {
+            $osf.confirmDangerousAction({
+                title: _('Are you sure you want to add this Export Data Storage Location?'),
+                callback: showModal,
+                buttons: {
+                    success: {
+                        label: _('Change')
+                    }
+                }
+            });
+        }
+    }
+    e.preventDefault();
+});
+
 $('#s3_modal input').keyup(function () {
     validateRequiredFields('s3');
 });

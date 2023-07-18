@@ -18,7 +18,7 @@
     <h2>{% trans "Export data storage location" %}{% if user.is_institutional_admin %}<small>({{ institution.name }})</small>{% endif %}</h2>
 
     <div id="content-main">
-        <form role="form" id="institutional_storage_form">
+        <form role="form" id="institutional_storage_export_form">
             {% csrf_token %}
             <div id="addonSettings">
                 <div class="row form-inline storage-name">
