@@ -9,6 +9,16 @@ from api.share.utils import update_share
 logger = logging.getLogger(__name__)
 
 
+def recatalog(provided_model, providers, start_id, chunk_count, chunk_size):
+    _chunk_start_id = start_id
+    for _ in range(chunk_count):
+        _last_id = recatalog_chunk(provided_model, providers, _chunk_start_id, chunk_size)
+        if _last_id is None:
+            logger.info('All done!')
+            return
+        _chunk_start_id = _last_id + 1
+
+
 def recatalog_chunk(provided_model, providers, start_id, chunk_size):
     items = provided_model.objects.filter(
         id__gte=start_id,
@@ -51,6 +61,11 @@ class Command(BaseCommand):
 
         type_group = parser.add_mutually_exclusive_group(required=True)
         type_group.add_argument(
+            '--all-types',
+            action='store_true',
+            help='recatalog metadata for all catalogable types of items',
+        )
+        type_group.add_argument(
             '--preprints',
             action='store_true',
             help='recatalog metadata for preprints',
@@ -87,6 +102,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         pls_all_providers = options['all_providers']
+        pls_all_types = options['all_types']
         pls_recatalog_preprints = options['preprints']
         pls_recatalog_registrations = options['registrations']
         pls_recatalog_projects = options['projects']
@@ -100,17 +116,16 @@ class Command(BaseCommand):
             provider_ids = options['providers']
             providers = AbstractProvider.objects.filter(_id__in=provider_ids)
 
-        provided_model = None
-        if pls_recatalog_preprints:
-            provided_model = Preprint
-        if pls_recatalog_registrations:
-            provided_model = Registration
-        if pls_recatalog_projects:
-            provided_model = Node
+        if pls_all_types:
+            assert not start_id, 'choose a specific type to resume with --start-id'
+            provided_models = [Preprint, Registration, Node]
+        else:
+            if pls_recatalog_preprints:
+                provided_models = [Preprint]
+            if pls_recatalog_registrations:
+                provided_models = [Registration]
+            if pls_recatalog_projects:
+                provided_models = [Node]
 
-        for _ in range(chunk_count):
-            last_id = recatalog_chunk(provided_model, providers, start_id, chunk_size)
-            if last_id is None:
-                logger.info('All done!')
-                return
-            start_id = last_id + 1
+        for provided_model in provided_models:
+            recatalog(provided_model, providers, start_id, chunk_count, chunk_size)
