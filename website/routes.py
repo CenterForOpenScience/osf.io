@@ -499,13 +499,15 @@ def make_url_map(app):
 
         Rule(
             [
+                # Legacy routes
                 '/rr/',
                 '/registeredreports/',
                 '/registeredreport/',
+                '/prereg/',
             ],
             'get',
-            registries_views.registered_reports_landing,
-            OsfWebRenderer('registered_reports_landing.mako', trust=False)
+            website_views.redirect_to_registration_workflow,
+            notemplate
         ),
 
         Rule(
@@ -514,14 +516,6 @@ def make_url_map(app):
             closed_challenges_views.erpc_landing_page,
             OsfWebRenderer('erpc_landing_page.mako', trust=False)
         ),
-
-        Rule(
-            '/prereg/',
-            'get',
-            website_views.redirect_to_registration_workflow,
-            notemplate
-        ),
-
         Rule(
             '/preprints/',
             'get',
