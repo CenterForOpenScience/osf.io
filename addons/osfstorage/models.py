@@ -232,22 +232,22 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
     @property
     def _hashes(self):
-        last_version = self.versions.last()
-        if not last_version:
+        latest_version = self.versions.latest('identifier')
+        if not latest_version:
             return None
         return {
-            'sha1': last_version.metadata.get('sha1', ''),
-            'sha256': last_version.metadata.get('sha256', ''),
-            'md5': last_version.metadata.get('md5', ''),
+            'sha1': latest_version.metadata.get('sha1', ''),
+            'sha256': latest_version.metadata.get('sha256', ''),
+            'md5': latest_version.metadata.get('md5', ''),
         }
 
     @property
     def last_known_metadata(self):
-        last_version = self.versions.last()
-        if not last_version:
+        latest_version = self.versions.latest('identifier')
+        if not latest_version:
             size = None
         else:
-            size = last_version.size
+            size = latest_version.size
         return {
             'path': self.materialized_path,
             'hashes': self._hashes,
