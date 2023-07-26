@@ -2,6 +2,13 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+23.09.0 (2023-7-26)
+===================
+- Allow Institutions to specify a default storage region for institutional
+users
+- Serialize branding info for preprint providers
+- Remove out-of-date registered reports landing page
+
 23.08.0 (2023-5-25)
 ===================
 - Provide users with institution support email when SSO fails for expected
