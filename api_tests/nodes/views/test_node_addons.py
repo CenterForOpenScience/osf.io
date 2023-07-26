@@ -805,7 +805,7 @@ class TestNodeZoteroAddon(
                 'fileEditing': 'members',
                 'libraryEditing': 'members',
                 'type': 'Private',
-                'id': '18497322',
+                'id': 18497322,
                 'name': 'Group Library I'
             },
             'version': 1,
