@@ -170,7 +170,8 @@ class NodeSettings(InstitutionsNodeSettings, InstitutionsStorageAddon):
         return {
             'bucket': self.bucket,
             'prefix': self.root_prefix,
-            'encrypt_uploads': settings.ENCRYPT_UPLOADS
+            'encrypt_uploads': settings.ENCRYPT_UPLOADS,
+            'nid': self.owner._id,
         }
 
     def copy_folders(self, dest_addon):

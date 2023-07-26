@@ -14,7 +14,7 @@ from osf.models import (
 from django.utils import timezone
 
 
-PROVIDERS = ['s3', 's3compat']
+PROVIDERS = ['s3compatinstitutions']
 
 # import inspect
 logger = logging.getLogger(__name__)
