@@ -27,15 +27,13 @@ class NodeAddonFolderSerializer(JSONAPISerializer):
             # than top-level objects.
             return
 
-        query_kwargs = {
-            'path': obj['path'],
-            'id': obj['id'],
-        }
-
         return absolute_reverse(
             'nodes:node-addon-folders',
             kwargs=self.context['request'].parser_context['kwargs'],
-            query_kwargs=query_kwargs,
+            query_kwargs={
+                'path': obj['path'],
+                'id': obj['id'],
+            },
         )
 
     def get_root_folder(self, obj):
