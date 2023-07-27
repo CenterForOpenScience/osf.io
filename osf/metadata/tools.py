@@ -51,7 +51,6 @@ def pls_update_trove_indexcard(osf_item):
     if not _iri:
         raise ValueError(f'could not get iri for {osf_item}')
     _metadata_record = pls_gather_metadata_file(osf_item, 'turtle')
-
     return requests.post(
         _shtrove_ingest_url(),
         params={

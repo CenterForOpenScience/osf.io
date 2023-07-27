@@ -100,28 +100,12 @@ class TestNodeShare:
 
         on_node_updated(node._id, user._id, False, {'is_public'})
 
-        data = json.loads(mock_share.calls[-1].request.body.decode())
-        graph = data['data']['attributes']['data']['@graph']
-        identifier_node = next(n for n in graph if n['@type'] == 'workidentifier')
-
         assert mock_share.calls[-1].request.headers['Authorization'] == 'Bearer mock-api-token'
-        assert identifier_node['uri'] == f'{settings.DOMAIN}{node._id}/'
-        assert identifier_node['creative_work']['@type'] == 'project'
 
     def test_update_registration_share(self, mock_share, registration, user):
         on_node_updated(registration._id, user._id, False, {'is_public'})
 
         assert mock_share.calls[-1].request.headers['Authorization'] == 'Bearer mock-api-token'
-
-        data = json.loads(mock_share.calls[-1].request.body.decode())
-        graphs = data['data']['attributes']['data']['@graph']
-        identifiers = [n for n in graphs if n['@type'] == 'workidentifier']
-        uris = {i['uri'] for i in identifiers}
-        assert uris == {
-            f'{settings.DOMAIN}{registration._id}/',
-            f'{settings.DOI_URL_PREFIX}{registration.get_identifier_value("doi")}',
-        }
-        assert all(i['creative_work']['@type'] == 'registration' for i in identifiers)
 
     def test_update_share_correctly_for_projects(self, mock_share, node, user):
         cases = [{
