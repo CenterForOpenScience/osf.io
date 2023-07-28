@@ -2113,8 +2113,8 @@ class StorageLimits(enum.IntEnum):
             return cls.DEFAULT
 
 STORAGE_USAGE_CACHE_TIMEOUT = 3600 * 24  # seconds in hour times hour (one day)
-IA_ARCHIVE_ENABLED = True
 OSF_PIGEON_URL = os.environ.get('OSF_PIGEON_URL', None)
+IA_ARCHIVE_ENABLED = bool(OSF_PIGEON_URL)
 ID_VERSION = 'staging_v2'
 IA_ROOT_COLLECTION = 'cos-dev-sandbox'
 PIGEON_CALLBACK_BEARER_TOKEN = os.getenv('PIGEON_CALLBACK_BEARER_TOKEN')
