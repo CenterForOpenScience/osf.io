@@ -76,7 +76,7 @@ def pls_delete_trove_indexcard(osf_item):
 
 
 def _shtrove_ingest_url():
-    return f'{website_settings.SHARE_URL}trove/ingest'
+    return f'{website_settings.SHARE_URL}api/v3/ingest'
 
 
 def _shtrove_auth_headers(osf_item):
