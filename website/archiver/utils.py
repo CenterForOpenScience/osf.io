@@ -322,7 +322,7 @@ def _make_file_response(file_info, parent_guid):
     archived_file_id = file_info['path'].lstrip('/')
     return {
         'file_id': archived_file_id,
-        'file_name': bleach.clean(file_info['name']),
+        'file_name': bleach.clean(file_info['name']).replace('&amp;', '&'),
         'file_urls': {
             'html':
                 FILE_HTML_LINK_TEMPLATE.format(
