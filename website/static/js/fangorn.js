@@ -3453,7 +3453,7 @@ tbOptions = {
                     return false;
                 }
             }
-            if (item.data.provider === 'osfstorage') {
+            if (item.data.provider === 'osfstorage' || item.data.provider === 's3compatinstitutions') {
                 quota = $.ajax({
                     async: false,
                     method: 'GET',
