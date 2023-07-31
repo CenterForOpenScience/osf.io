@@ -7,6 +7,7 @@ from copy import deepcopy
 
 import jsonschema
 import requests
+from django.db import transaction
 from django.db.models import Q
 from rest_framework import status as http_status
 
@@ -29,6 +30,8 @@ from osf.models import (
     ExportDataRestore,
     ExportDataLocation,
     ExternalAccount,
+    BaseFileNode,
+    AbstractNode,
 )
 from website.settings import WATERBUTLER_URL, INSTITUTIONAL_STORAGE_ADD_ON_METHOD, INSTITUTIONAL_STORAGE_BULK_MOUNT_METHOD
 from website.util import inspect_info  # noqa
@@ -653,6 +656,25 @@ def copy_file_from_location_to_destination(export_data, destination_node_id, des
     return copy_response_body
 
 
+def prepare_file_node_for_add_on_storage(node_id, provider, file_path, **kwargs):
+    """ Add new file node record for add-on storage """
+    if not is_add_on_storage(provider):
+        # Bulk-mount storage already created file node from other functions, do nothing here
+        return
+
+    with transaction.atomic():
+        node = AbstractNode.load(node_id)
+        if node.type == 'osf.node':
+            # Only get or create file nodes that belongs to projects
+            file_node = BaseFileNode.resolve_class(provider, BaseFileNode.FILE).get_or_create(node, file_path)
+            extras = {'cookie': kwargs.get('cookie')}
+            file_node.touch(
+                auth_header=None,
+                **extras,
+            )
+        # signals.file_updated.send(target=node, user=user, event_type=NodeLog.FILE_COPIED, payload=payload)
+
+
 def move_file(node_id, provider, source_file_path, destination_file_path, cookies, callback_log=False,
               base_url=WATERBUTLER_URL, is_addon_storage=True, **kwargs):
     move_old_data_url = waterbutler_api_url_for(
@@ -697,6 +719,13 @@ def move_addon_folder_to_backup(
             paths = path.split('/')
             paths.insert(1, f'backup_{process_start}')
             new_path = '/'.join(paths)
+            if provider == 'nextcloudinstitutions' and len(paths) > 2:
+                # Nextcloud for Institutions: try to create new parent folders before moving files
+                result = create_parent_folders_for_nextcloud_for_institutions(node_id, provider, paths, cookies=cookies,
+                                                                              callback_log=callback_log, base_url=base_url, **kwargs)
+                if result is not None:
+                    return result
+
             response = move_file(node_id, provider, path, new_path, cookies,
                                  callback_log, base_url, is_addon_storage=True, **kwargs)
             if response.status_code != 200 and response.status_code != 201 and response.status_code != 202:
@@ -738,6 +767,13 @@ def move_addon_folder_from_backup(node_id, provider, process_start, cookies, cal
             else:
                 continue
             new_path = '/'.join(paths)
+            if provider == 'nextcloudinstitutions' and len(paths) > 2:
+                # Nextcloud for Institutions: try to create new parent folders before moving files
+                result = create_parent_folders_for_nextcloud_for_institutions(node_id, provider, paths, cookies=cookies,
+                                                                              callback_log=callback_log, base_url=base_url, **kwargs)
+                if result is not None:
+                    return result
+
             response = move_file(node_id, provider, path, new_path,
                                  cookies, callback_log, base_url, is_addon_storage=True, **kwargs)
             if response.status_code != 200 and response.status_code != 201 and response.status_code != 202:
@@ -801,7 +837,7 @@ def get_all_file_paths_in_addon_storage(node_id, provider, file_path, cookies, b
 
             return list_file_path, root_child_folders
         else:
-            return [file_path], []
+            return [], []
     except Exception:
         return [], []
 
@@ -1006,4 +1042,16 @@ def is_add_on_storage(provider):
         return True
 
     # Default value for unknown provider
+    return None
+
+
+def create_parent_folders_for_nextcloud_for_institutions(node_id, provider, paths, **kwargs):
+    """ Nextcloud for Institutions: create folders before moving files """
+    parent_path = '/'
+    for path in paths[1:len(paths) - 1]:
+        folder_path = f'{path}/'
+        _, status_code = create_folder(node_id, provider, parent_path, folder_path, **kwargs)
+        if status_code not in [201, 409]:
+            return {'error': 'Cannot create folder for Nextcloud for Institutions'}
+        parent_path += folder_path
     return None

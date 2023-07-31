@@ -14,6 +14,8 @@ import os
 import owncloud
 from django.core.exceptions import ValidationError
 
+from addons.dropboxbusiness.models import node_post_save as dropboxbusiness_post_save
+from addons.onedrivebusiness.models import node_post_save as onedrivebusiness_post_save
 from admin.rdm_addons.utils import get_rdm_addon_option
 from addons.googledrive.client import GoogleDriveClient
 from addons.osfstorage.models import Region
@@ -37,13 +39,16 @@ from addons.onedrivebusiness.client import OneDriveBusinessClient
 from addons.base.institutions_utils import (KEYNAME_BASE_FOLDER,
                                             KEYNAME_USERMAP,
                                             KEYNAME_USERMAP_TMP,
-                                            sync_all)
+                                            sync_all,
+                                            node_post_save)
 from framework.exceptions import HTTPError
+from osf.models import AbstractNode
 from website import settings as osf_settings
 from osf.models.external import ExternalAccountTemporary, ExternalAccount
 from osf.utils import external_util
 import datetime
 
+from website.settings import INSTITUTIONAL_STORAGE_ADD_ON_METHOD
 from website.util import inspect_info  # noqa
 
 logger = logging.getLogger(__name__)
@@ -1134,3 +1139,23 @@ def save_usermap_from_tmp(provider_name, institution):
         rdm_addon_option.extended[KEYNAME_USERMAP] = new_usermap
         del rdm_addon_option.extended[KEYNAME_USERMAP_TMP]
         rdm_addon_option.save()
+
+
+def add_node_settings_to_projects(institution, provider_name):
+    if provider_name not in INSTITUTIONAL_STORAGE_ADD_ON_METHOD:
+        # If storage is bulk-mount then do nothing
+        return
+
+    # Get projects that does not have provider's node settings
+    institution_users = institution.osfuser_set.all()
+    kwargs = {f'addons_{provider_name}_node_settings': None}
+    projects = AbstractNode.objects.filter(type='osf.node', is_deleted=False, creator__in=institution_users, **kwargs)
+
+    # Add node settings to above projects
+    for project in projects:
+        if provider_name == 'dropboxbusiness':
+            dropboxbusiness_post_save(None, project, True)
+        elif provider_name == 'onedrivebusiness':
+            onedrivebusiness_post_save(None, project, True)
+        else:
+            node_post_save(None, project, True)

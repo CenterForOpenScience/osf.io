@@ -723,7 +723,7 @@ class TestCheckExportData(AdminTestCase):
         request.user = self.user
         request.COOKIES = '213919sdasdn823193929'
 
-        def side_effect():
+        def side_effect(cookie):
             return '', FAKE_DATA_NEW
 
         mock_class.side_effect = side_effect
@@ -849,7 +849,7 @@ class TestCheckRestoreData(AdminTestCase):
         request.COOKIES = '213919sdasdn823193929'
         request.GET = {'destination_id': 100}
 
-        def side_effect_export_data():
+        def side_effect_export_data(cookie):
             return '', FAKE_DATA_NEW
 
         def side_effect_export_data_restore(destination_id=100):

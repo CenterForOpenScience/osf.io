@@ -17,15 +17,18 @@ from admin.rdm_custom_storage_location.export_data.views import management
 from admin.rdm_custom_storage_location.export_data.views.restore import ProcessError
 from admin_tests.utilities import setup_view
 from framework.celery_tasks import app as celery_app
-from osf.models import ExportData
+from osf.models import ExportData, BaseFileNode
 from osf_tests.factories import (
     AuthUserFactory,
     InstitutionFactory,
     ExportDataLocationFactory,
     ExportDataFactory,
     ExportDataRestoreFactory,
+    ProjectFactory,
+    DraftNodeFactory,
 )
 from tests.base import AdminTestCase
+from website.settings import INSTITUTIONAL_STORAGE_ADD_ON_METHOD
 
 FAKE_TASK_ID = '00000000-0000-0000-0000-000000000000'
 RESTORE_EXPORT_DATA_PATH = 'admin.rdm_custom_storage_location.export_data.views.restore'
@@ -2303,6 +2306,47 @@ class TestUtilsForRestoreData(AdminTestCase):
         mock_copy_file.assert_not_called()
         nt.assert_equal(response, None)
 
+    # prepare_file_node_for_add_on_storage
+    def test_prepare_file_node_for_add_on_storage(self):
+        file_path = '/folder/test_file.txt'
+        test_response_data = {
+            'data': {
+                'attributes': {
+                    'name': 'test_file.txt',
+                    'materialized': file_path,
+                    'modified': None
+                }
+            }
+        }
+        test_response = requests.Response()
+        test_response.status_code = status.HTTP_200_OK
+        test_response._content = json.dumps(test_response_data).encode('utf-8')
+        mock_get = MagicMock()
+        mock_get.return_value = test_response
+        project = ProjectFactory()
+        with patch('requests.get', mock_get):
+            for provider_name in INSTITUTIONAL_STORAGE_ADD_ON_METHOD:
+                # Test for each add-on storages
+                utils.prepare_file_node_for_add_on_storage(project._id, provider_name, file_path)
+                file_node_query_set = BaseFileNode.objects.filter(provider=provider_name, _path=file_path)
+                nt.assert_true(file_node_query_set.exists())
+                file_node = file_node_query_set.first()
+                nt.assert_true(file_node.name)
+                nt.assert_true(file_node.materialized_path)
+                nt.assert_true(file_node.last_touched)
+
+    def test_prepare_file_node_for_add_on_storage_bulk_mount_storage(self):
+        project = ProjectFactory()
+        utils.prepare_file_node_for_add_on_storage(project._id, 'osfstorage', '/text_file.txt')
+        file_node_query_set = BaseFileNode.objects.filter(provider='osfstorage', _path='/text_file.txt')
+        nt.assert_false(file_node_query_set.exists())
+
+    def test_prepare_file_node_for_add_on_storage_draft_node(self):
+        draft_node = DraftNodeFactory()
+        utils.prepare_file_node_for_add_on_storage(draft_node._id, 's3compatinstitutions', '/text_file.txt')
+        file_node_query_set = BaseFileNode.objects.filter(provider='s3compatinstitutions', _path='/text_file.txt')
+        nt.assert_false(file_node_query_set.exists())
+
     # move_file
     def test_move_file_in_addon_storage(self):
         test_response = requests.Response()
@@ -2359,6 +2403,46 @@ class TestUtilsForRestoreData(AdminTestCase):
         mock_move_file.assert_called()
         mock_delete_paths.assert_called()
         nt.assert_equal(result, {})
+
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.delete_paths')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.move_file')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_all_file_paths_in_addon_storage')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
+    def test_move_addon_folder_to_backup_nextcloudinstitutions(self, mock_create_folder, mock_get_all_paths, mock_move_file, mock_delete_paths):
+        test_response = requests.Response()
+        test_response.status_code = status.HTTP_200_OK
+
+        mock_get_all_paths.return_value = (['/a/b/c/folder/test1.txt'], [])
+        mock_move_file.return_value = test_response
+        mock_delete_paths.return_value = None
+        mock_create_folder.return_value = (None, 201)
+
+        result = utils.move_addon_folder_to_backup(TEST_PROJECT_ID, 'nextcloudinstitutions',
+                                                   self.export_data_restore.process_start_timestamp,
+                                                   None)
+        mock_get_all_paths.assert_called()
+        mock_move_file.assert_called()
+        mock_delete_paths.assert_called()
+        nt.assert_equal(result, {})
+
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.delete_paths')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.move_file')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_all_file_paths_in_addon_storage')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
+    def test_move_addon_folder_to_backup_nextcloudinstitutions_create_folder_fail(self, mock_create_folder, mock_get_all_paths, mock_move_file, mock_delete_paths):
+        test_response = requests.Response()
+        test_response.status_code = status.HTTP_200_OK
+
+        mock_get_all_paths.return_value = (['/a/b/c/folder/test1.txt'], [])
+        mock_move_file.return_value = test_response
+        mock_delete_paths.return_value = None
+        mock_create_folder.return_value = (None, 400)
+
+        result = utils.move_addon_folder_to_backup(TEST_PROJECT_ID, 'nextcloudinstitutions',
+                                                   self.export_data_restore.process_start_timestamp,
+                                                   None)
+
+        nt.assert_equal(result, {'error': 'Cannot create folder for Nextcloud for Institutions'})
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.delete_paths')
     @patch(f'{EXPORT_DATA_UTIL_PATH}.move_file')
@@ -2526,7 +2610,7 @@ class TestUtilsForRestoreData(AdminTestCase):
                                                                                            TEST_PROVIDER,
                                                                                            '/empty_path/', None)
             mock_get_file_data.assert_called()
-            nt.assert_equal(list_file_path, ['/empty_path/'])
+            nt.assert_equal(list_file_path, [])
             nt.assert_equal(root_child_folders, [])
 
     def test_get_all_file_paths_in_addon_storage_invalid_regex(self):
@@ -2888,6 +2972,39 @@ class TestUtilsForRestoreData(AdminTestCase):
     @patch(f'{EXPORT_DATA_UTIL_PATH}.delete_paths')
     @patch(f'{EXPORT_DATA_UTIL_PATH}.move_file')
     @patch(f'{EXPORT_DATA_UTIL_PATH}.get_all_file_paths_in_addon_storage')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
+    def test_move_addon_folder_from_backup_nextcloudinstitutions(self, mock_create_folder, mock_get_all_file_paths, mock_move_file, mock_delete_paths):
+        test_response = requests.Response()
+        test_response.status_code = status.HTTP_200_OK
+
+        mock_get_all_file_paths.return_value = (['/backup_2022101010/b/folder/file1.txt'], [])
+        mock_move_file.return_value = test_response
+        mock_create_folder.return_value = (None, 201)
+        result = utils.move_addon_folder_from_backup(TEST_PROJECT_ID, 'nextcloudinstitutions', '2022101010', None)
+
+        mock_get_all_file_paths.assert_called_once()
+        mock_move_file.assert_called_once()
+        mock_delete_paths.assert_called()
+        nt.assert_equal(result, {})
+
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.delete_paths')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.move_file')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_all_file_paths_in_addon_storage')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
+    def test_move_addon_folder_from_backup_nextcloudinstitutions_create_folder_fail(self, mock_create_folder, mock_get_all_file_paths, mock_move_file, mock_delete_paths):
+        test_response = requests.Response()
+        test_response.status_code = status.HTTP_200_OK
+
+        mock_get_all_file_paths.return_value = (['/backup_2022101010/b/folder/file1.txt'], [])
+        mock_move_file.return_value = test_response
+        mock_create_folder.return_value = (None, 400)
+        result = utils.move_addon_folder_from_backup(TEST_PROJECT_ID, 'nextcloudinstitutions', '2022101010', None)
+
+        nt.assert_equal(result, {'error': 'Cannot create folder for Nextcloud for Institutions'})
+
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.delete_paths')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.move_file')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_all_file_paths_in_addon_storage')
     def test_move_addon_folder_from_backup_empty_path_list(self, mock_get_all_file_paths, mock_move_file,
                                                            mock_delete_paths):
         test_response = requests.Response()
@@ -3185,22 +3302,20 @@ class TestUtilsForRestoreData(AdminTestCase):
         nt.assert_is_none(utils.is_add_on_storage(None))
         nt.assert_is_none(utils.is_add_on_storage('osf_storage'))
 
-        # both addon method and bulk-mount method
-        nt.assert_false(utils.is_add_on_storage('owncloud'))
-        nt.assert_false(utils.is_add_on_storage('s3compat'))
-        nt.assert_false(utils.is_add_on_storage('s3'))
-
         # only addon method providers
         nt.assert_true(utils.is_add_on_storage('nextcloudinstitutions'))
         nt.assert_true(utils.is_add_on_storage('s3compatinstitutions'))
         nt.assert_true(utils.is_add_on_storage('ociinstitutions'))
         nt.assert_true(utils.is_add_on_storage('dropboxbusiness'))
+        nt.assert_true(utils.is_add_on_storage('onedrivebusiness'))
 
         # only bulk-mount method providers
-        nt.assert_false(utils.is_add_on_storage('onedrivebusiness'))
         nt.assert_false(utils.is_add_on_storage('swift'))
         nt.assert_false(utils.is_add_on_storage('box'))
         nt.assert_false(utils.is_add_on_storage('nextcloud'))
         nt.assert_false(utils.is_add_on_storage('osfstorage'))
         nt.assert_false(utils.is_add_on_storage('onedrive'))
         nt.assert_false(utils.is_add_on_storage('googledrive'))
+        nt.assert_false(utils.is_add_on_storage('owncloud'))
+        nt.assert_false(utils.is_add_on_storage('s3compat'))
+        nt.assert_false(utils.is_add_on_storage('s3'))
