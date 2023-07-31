@@ -21,13 +21,7 @@
     dcterms:type "Dataset" ;
     owl:sameAs <https://doi.org/10.70102/FK2osf.io/w2ibb> ;
     osf:contains <http://localhost:5000/w3ibb> ;
-    osf:funder [ a osf:FundingReference ;
-            dcterms:identifier "https://doi.org/10.$$$$" ;
-            foaf:name "Mx. Moneypockets" ;
-            osf:awardNumber "10000000" ;
-            osf:awardTitle "because reasons" ;
-            osf:awardUri "https://moneypockets.example/millions" ;
-            osf:funderIdentifierType "Crossref Funder ID" ] ;
+    osf:hasFunding <https://moneypockets.example/millions> ;
     osf:supplements <http://localhost:5000/w4ibb> .
 
 <http://localhost:5000/w4ibb> a osf:Preprint ;
@@ -54,6 +48,12 @@
     osf:filePath "/my-file.blarg" ;
     osf:isContainedBy <http://localhost:5000/w2ibb> .
 
+<https://moneypockets.example/millions> a osf:FundingAward ;
+    dcterms:identifier "https://moneypockets.example/millions" ;
+    dcterms:title "because reasons" ;
+    osf:awardNumber "10000000" ;
+    osf:funder <https://doi.org/10.$$$$> .
+
 <https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode> dcterms:identifier "https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode" ;
     foaf:name "CC-By Attribution-NonCommercial-NoDerivatives 4.0 International" .
 
@@ -71,6 +71,10 @@
     dcterms:identifier "http://localhost:5000/w1ibb" ;
     dcterms:type foaf:Person ;
     foaf:name "Person McNamington" .
+
+<https://doi.org/10.$$$$> dcterms:identifier "https://doi.org/10.$$$$" ;
+    foaf:name "Mx. Moneypockets" ;
+    osf:funderIdentifierType "Crossref Funder ID" .
 
 <http://localhost:5000> a osf:Agent ;
     dcterms:identifier "http://localhost:5000" ;

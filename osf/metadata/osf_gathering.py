@@ -106,7 +106,7 @@ OSF_OBJECT = {
     DCTERMS.title: None,
     DCTERMS.type: None,
     OSF.affiliation: None,
-    OSF.funder: None,
+    OSF.hasFunding: None,
     OSF.contains: OSF_FILE_REFERENCE,
     OSF.hasRoot: OSF_OBJECT_REFERENCE,
     OSF.keyword: None,
@@ -135,6 +135,7 @@ OSFMAP = {
     OSF.Registration: {
         **OSF_OBJECT,
         OSF.archivedAt: None,
+        DCTERMS.conformsTo: None,
         OSF.hasAnalyticCodeResource: OSF_OBJECT_REFERENCE,
         OSF.hasDataResource: OSF_OBJECT_REFERENCE,
         OSF.hasMaterialsResource: OSF_OBJECT_REFERENCE,
@@ -170,7 +171,7 @@ OSFMAP = {
         OSF.isContainedBy: OSF_OBJECT_REFERENCE,
         OSF.fileName: None,
         OSF.filePath: None,
-        OSF.funder: None,
+        OSF.hasFunding: None,
         OWL.sameAs: None,
     },
     OSF.Agent: {
@@ -271,7 +272,7 @@ def gather_identifiers(focus: gather.Focus):
             yield (DCTERMS.identifier, str(osfguid_iri))
     if hasattr(focus.dbmodel, 'get_identifier_value'):
         doi = focus.dbmodel.get_identifier_value('doi')
-        if doi and doi.startswith('10.'):  # HACK: skip malformed doi
+        if doi:
             doi_iri = DOI[doi]
             yield (OWL.sameAs, doi_iri)
             yield (DCTERMS.identifier, str(doi_iri))
@@ -679,19 +680,32 @@ def gather_affiliated_institutions(focus):
         yield (institution_iri, DCTERMS.identifier, osf_institution.identifier_domain)
 
 
-@gather.er(OSF.funder)
+@gather.er(OSF.hasFunding)
 def gather_funding(focus):
     if hasattr(focus, 'guid_metadata_record'):
-        for funding in focus.guid_metadata_record.funding_info:
-            funder_bnode = rdflib.BNode()
-            yield (OSF.funder, funder_bnode)
-            yield (funder_bnode, RDF.type, OSF.FundingReference)
-            yield (funder_bnode, FOAF.name, funding.get('funder_name'))
-            yield (funder_bnode, DCTERMS.identifier, funding.get('funder_identifier'))
-            yield (funder_bnode, OSF.funderIdentifierType, funding.get('funder_identifier_type'))
-            yield (funder_bnode, OSF.awardNumber, funding.get('award_number'))
-            yield (funder_bnode, OSF.awardUri, funding.get('award_uri'))
-            yield (funder_bnode, OSF.awardTitle, funding.get('award_title'))
+        for _funding in focus.guid_metadata_record.funding_info:
+            _award_uri = _funding.get('award_uri')
+            _award_ref = (
+                rdflib.URIRef(_award_uri)
+                if _award_uri
+                else rdflib.BNode()
+            )
+            yield (OSF.hasFunding, _award_ref)
+            yield (_award_ref, RDF.type, OSF.FundingAward)
+            if _award_uri:
+                yield (_award_ref, DCTERMS.identifier, _award_uri)
+            yield (_award_ref, DCTERMS.title, _funding.get('award_title'))
+            yield (_award_ref, OSF.awardNumber, _funding.get('award_number'))
+            _funder_uri = _funding.get('funder_identifier')
+            _funder_ref = (
+                rdflib.URIRef(_funder_uri)
+                if _funder_uri
+                else rdflib.BNode()
+            )
+            yield (_award_ref, OSF.funder, _funder_ref)
+            yield (_funder_ref, FOAF.name, _funding.get('funder_name'))
+            yield (_funder_ref, DCTERMS.identifier, _funder_uri)
+            yield (_funder_ref, OSF.funderIdentifierType, _funding.get('funder_identifier_type'))
 
 
 @gather.er(OSF.HostingInstitution)
@@ -741,6 +755,19 @@ def gather_user_basics(focus):
 )
 def gather_ia_url(focus):
     yield (OSF.archivedAt, focus.dbmodel.ia_url)
+
+
+@gather.er(
+    DCTERMS.conformsTo,
+    focustype_iris=[OSF.Registration]
+)
+def gather_registration_type(focus):
+    _reg_schema = getattr(focus.dbmodel, 'registration_schema')
+    if _reg_schema:
+        _schema_url = rdflib.URIRef(_reg_schema.absolute_api_v2_url)
+        yield (DCTERMS.conformsTo, _schema_url)
+        yield (_schema_url, DCTERMS.title, _reg_schema.name)
+        yield (_schema_url, DCTERMS.description, _reg_schema.description)
 
 
 @gather.er(DCTERMS.publisher)
