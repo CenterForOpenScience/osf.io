@@ -1,0 +1,10 @@
+{
+    "boa_file_added" : "${user} added file ${path} to Boa in ${node}",
+    "boa_file_removed" : "${user} removed ${path_type} ${path} from Boa in ${node}",
+    "boa_file_updated" : "${user} updated file ${path} in Boa in ${node}",
+    "boa_folder_created" : "${user} created folder ${path} in Boa in ${node}",
+    "boa_folder_selected" : "${user} linked Boa folder ${folder} to ${node}",
+    "boa_node_authorized" : "${user} authorized the Boa addon for ${node}",
+    "boa_node_deauthorized" : "${user} deauthorized the Boa addon for ${node}",
+    "boa_node_deauthorized_no_user" : "Boa addon for ${node} deauthorized"
+}
