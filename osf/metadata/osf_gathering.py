@@ -12,12 +12,14 @@ from osf.metadata.rdfutils import (
     RDF,
     OWL,
     DCTERMS,
+    DCMITYPE,
     FOAF,
     OSF,
     OSFIO,
     DOI,
     ORCID,
     ROR,
+    SKOS,
     checksum_iri,
     format_dcterms_extent,
     without_namespace,
@@ -106,6 +108,7 @@ OSF_OBJECT = {
     DCTERMS.title: None,
     DCTERMS.type: None,
     OSF.affiliation: None,
+    OSF.isPartOfCollection: None,
     OSF.hasFunding: None,
     OSF.contains: OSF_FILE_REFERENCE,
     OSF.hasRoot: OSF_OBJECT_REFERENCE,
@@ -189,6 +192,9 @@ OSF_ARTIFACT_PREDICATES = {
     ArtifactTypes.PAPERS: OSF.hasPapersResource,
     ArtifactTypes.SUPPLEMENTS: OSF.hasSupplementalResource,
 }
+
+BEPRESS_SUBJECT_SCHEME_URI = 'https://bepress.com/reference_guide_dc/disciplines/'
+BEPRESS_SUBJECT_SCHEME_TITLE = 'bepress Digital Commons Three-Tiered Taxonomy'
 
 ##### END osfmap #####
 
@@ -408,11 +414,31 @@ def gather_keywords(focus):
 @gather.er(DCTERMS.subject)
 def gather_subjects(focus):
     if hasattr(focus.dbmodel, 'subjects'):
-        for subject in focus.dbmodel.subjects.all().select_related('bepress_subject'):
-            # TODO: subject iri, not just text
-            yield (DCTERMS.subject, subject.text)
-            if subject.bepress_subject:
-                yield (DCTERMS.subject, subject.bepress_subject.text)
+        for subject in focus.dbmodel.subjects.all().select_related('bepress_subject', 'parent__parent'):
+            yield from _subject_triples(subject)
+
+
+def _subject_triples(dbsubject):
+    _subject_ref = _subject_uriref(dbsubject)
+    yield (DCTERMS.subject, _subject_ref)
+    yield (_subject_ref, RDF.type, SKOS.Concept)
+    yield (_subject_ref, SKOS.prefLabel, dbsubject.bepress_text)
+    if dbsubject.text != dbsubject.bepress_text:
+        yield (_subject_ref, SKOS.altLabel, dbsubject.text)
+    _bepress_ref = rdflib.URIRef(BEPRESS_SUBJECT_SCHEME_URI)
+    yield (_bepress_ref, DCTERMS.title, BEPRESS_SUBJECT_SCHEME_TITLE)
+    yield (_subject_ref, SKOS.inScheme, _bepress_ref)
+    if dbsubject.parent:
+        yield (_subject_ref, SKOS.broader, _subject_uriref(dbsubject.parent))
+        yield from _subject_triples(dbsubject.parent)
+
+
+def _subject_uriref(dbsubject):
+    return rdflib.URIRef(
+        dbsubject.bepress_subject.absolute_api_v2_subject_url
+        if dbsubject.bepress_subject
+        else dbsubject.absolute_api_v2_subject_url
+    )
 
 
 @gather.er(focustype_iris=[OSF.File])
@@ -789,6 +815,31 @@ def gather_publisher(focus):
             iri=rdflib.URIRef(OSFIO.rstrip('/')),
             name='OSF',
         )
+
+
+@gather.er(OSF.isPartOfCollection)
+def gather_collection_membership(focus):
+    try:
+        _guids = focus.dbmodel.guids.all()
+    except AttributeError:
+        return  # no guids
+    _collection_submissions = (
+        osfdb.CollectionSubmission.objects
+        .filter(guid__in=_guids)
+        .filter(machine_state=osfworkflows.CollectionSubmissionStates.ACCEPTED)
+        .select_related('collection__provider')
+    )
+    for _submission in _collection_submissions:
+        # note: in current use, there's only one collection per provider and the
+        # provider name is used as collection title (while collection.title is
+        # auto-generated and ignored)
+        _provider = _submission.collection.provider
+        _collection_ref = rdflib.URIRef(
+            f'{website_settings.DOMAIN}collections/{_provider._id}',
+        )
+        yield (OSF.isPartOfCollection, _collection_ref)
+        yield (_collection_ref, DCTERMS.type, DCMITYPE.Collection)
+        yield (_collection_ref, DCTERMS.title, _provider.name)
 
 
 def _publisher_tripleset(iri, name, url=None):

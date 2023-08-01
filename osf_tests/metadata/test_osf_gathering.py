@@ -12,15 +12,18 @@ from osf.metadata.rdfutils import (
     OSF,
     OSFIO,
     DCTERMS,
+    DCMITYPE,
     DOI,
     OWL,
     RDF,
+    SKOS,
     checksum_iri,
     contextualized_graph,
 )
 from osf import models as osfdb
 from osf.utils import permissions
 from osf_tests import factories
+from website import settings as website_settings
 
 
 def _get_graph_and_focuses(triples):
@@ -321,23 +324,46 @@ class TestOsfGathering(TestCase):
     def test_gather_subjects(self):
         # focus: project
         _assert_triples(osf_gathering.gather_subjects(self.projectfocus), set())
-        subjects = [
-            factories.SubjectFactory(text='Bloomy'),
-        ]
-        self.project.set_subjects([[s._id] for s in subjects], auth=Auth(self.user__admin))
+        _bloo_subject = factories.SubjectFactory(text='Bloomy')
+        self.project.set_subjects([[_bloo_subject._id]], auth=Auth(self.user__admin))
+        _bloo_iri = URIRef(_bloo_subject.absolute_api_v2_subject_url)
+        _bepress_iri = rdflib.URIRef('https://bepress.com/reference_guide_dc/disciplines/')
         _assert_triples(osf_gathering.gather_subjects(self.projectfocus), {
-            (self.projectfocus.iri, DCTERMS.subject, Literal('Bloomy')),
+            (self.projectfocus.iri, DCTERMS.subject, _bloo_iri),
+            (_bloo_iri, RDF.type, SKOS.Concept),
+            (_bloo_iri, SKOS.inScheme, _bepress_iri),
+            (_bepress_iri, DCTERMS.title, Literal('bepress Digital Commons Three-Tiered Taxonomy')),
+            (_bloo_iri, SKOS.prefLabel, Literal('Bloomy')),
         })
         # focus: registration
         _assert_triples(osf_gathering.gather_subjects(self.registrationfocus), set())
-        subjects = [
-            factories.SubjectFactory(text='Other Teacher Education and Professional Development'),
-            factories.SubjectFactory(text='Applied Mechanics'),
-        ]
-        self.registration.set_subjects([[s._id] for s in subjects], auth=Auth(self.user__admin))
+        _parent_subj = factories.SubjectFactory(text='Parent')
+        _child_subj = factories.SubjectFactory(text='Child', parent=_parent_subj)
+        _altparent_subj = factories.SubjectFactory(text='Alt-parent', bepress_subject=_parent_subj)
+        _altchild_subj = factories.SubjectFactory(text='Alt-child', parent=_altparent_subj, bepress_subject=_child_subj)
+        self.registration.set_subjects([
+            [_altchild_subj._id, _altparent_subj._id],
+            [_bloo_subject._id],
+        ], auth=Auth(self.user__admin))
+        _parent_iri = URIRef(_parent_subj.absolute_api_v2_subject_url)
+        _child_iri = URIRef(_child_subj.absolute_api_v2_subject_url)
         _assert_triples(osf_gathering.gather_subjects(self.registrationfocus), {
-            (self.registrationfocus.iri, DCTERMS.subject, Literal('Other Teacher Education and Professional Development')),
-            (self.registrationfocus.iri, DCTERMS.subject, Literal('Applied Mechanics')),
+            (self.registrationfocus.iri, DCTERMS.subject, _bloo_iri),
+            (self.registrationfocus.iri, DCTERMS.subject, _parent_iri),
+            (self.registrationfocus.iri, DCTERMS.subject, _child_iri),
+            (_bloo_iri, RDF.type, SKOS.Concept),
+            (_parent_iri, RDF.type, SKOS.Concept),
+            (_child_iri, RDF.type, SKOS.Concept),
+            (_bloo_iri, SKOS.inScheme, _bepress_iri),
+            (_parent_iri, SKOS.inScheme, _bepress_iri),
+            (_child_iri, SKOS.inScheme, _bepress_iri),
+            (_bloo_iri, SKOS.prefLabel, Literal('Bloomy')),
+            (_parent_iri, SKOS.prefLabel, Literal('Parent')),
+            (_parent_iri, SKOS.altLabel, Literal('Alt-parent')),
+            (_child_iri, SKOS.prefLabel, Literal('Child')),
+            (_child_iri, SKOS.altLabel, Literal('Alt-child')),
+            (_child_iri, SKOS.broader, _parent_iri),
+            (_bepress_iri, DCTERMS.title, Literal('bepress Digital Commons Three-Tiered Taxonomy')),
         })
         # focus: file
         _assert_triples(osf_gathering.gather_subjects(self.filefocus), set())
@@ -562,4 +588,23 @@ class TestOsfGathering(TestCase):
             (self.userfocus__readonly.iri, DCTERMS.identifier, Literal('http://mysite.example')),
             (self.userfocus__readonly.iri, DCTERMS.identifier, Literal('http://myothersite.example/foo')),
             (self.userfocus__readonly.iri, DCTERMS.identifier, Literal('http://xueshu.baidu.com/scholarID/blarg')),
+        })
+
+    def test_gather_collection_membership(self):
+        _collection_provider = factories.CollectionProviderFactory(
+            reviews_workflow='post-moderation',
+        )
+        _collection = factories.CollectionFactory(provider=_collection_provider)
+        osfdb.CollectionSubmission.objects.create(
+            guid=self.project.guids.first(),
+            collection=_collection,
+            creator=self.project.creator,
+        )
+        _collection_ref = rdflib.URIRef(
+            f'{website_settings.DOMAIN}collections/{_collection_provider._id}',
+        )
+        _assert_triples(osf_gathering.gather_collection_membership(self.projectfocus), {
+            (self.projectfocus.iri, OSF.isPartOfCollection, _collection_ref),
+            (_collection_ref, DCTERMS.type, DCMITYPE.Collection),
+            (_collection_ref, DCTERMS.title, Literal(_collection_provider.name)),
         })

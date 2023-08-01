@@ -165,15 +165,19 @@ class TestSerializers(OsfTestCase):
             ),
             subjects=[
                 [factories.SubjectFactory(
+                    _id='subjwibb',
                     text='wibble',
                     bepress_subject=factories.SubjectFactory(
+                        _id='subjwibbb',
                         text='wibbble',
                         provider=osf_preprint_provider,
                     ),
                 )._id],
                 [factories.SubjectFactory(
+                    _id='subjwobb',
                     text='wobble',
                     bepress_subject=factories.SubjectFactory(
+                        _id='subjwobbb',
                         text='wobbble',
                         provider=osf_preprint_provider,
                     ),

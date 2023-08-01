@@ -16,6 +16,7 @@ from osf.metadata.rdfutils import (
     ORCID,
     OSF,
     ROR,
+    SKOS,
     without_namespace,
 )
 
@@ -63,7 +64,6 @@ CONTRIBUTOR_TYPE_MAP = {
     # DCTERMS.contributor: 'ProjectMember',
     OSF.HostingInstitution: 'HostingInstitution',
 }
-BEPRESS_SUBJECT_SCHEME = 'bepress Digital Commons Three-Tiered Taxonomy'
 RESOURCE_TYPES_GENERAL = {
     'Audiovisual',
     'Book',
@@ -402,9 +402,16 @@ class DataciteTreeWalker:
     def _visit_subjects(self, parent_el):
         subjects_el = self.visit(parent_el, 'subjects', is_list=True)
         for subject in sorted(self.basket[DCTERMS.subject]):
-            self.visit(subjects_el, 'subject', text=subject, attrib={
-                'subjectScheme': BEPRESS_SUBJECT_SCHEME,
-            })
+            if isinstance(subject, rdflib.URIRef):
+                _subject_label = next(self.basket[subject:SKOS.prefLabel])
+                _subject_scheme_title = next(self.basket[subject:SKOS.inScheme / DCTERMS.title])
+                self.visit(subjects_el, 'subject', text=_subject_label, attrib={
+                    'subjectScheme': _subject_scheme_title,
+                })
+                for _alt_subject_label in self.basket[subject:SKOS.altLabel]:
+                    self.visit(subjects_el, 'subject', text=_alt_subject_label)
+            else:
+                self.visit(subjects_el, 'subject', text=subject)
         for keyword in sorted(self.basket[OSF.keyword]):
             self.visit(subjects_el, 'subject', text=keyword)
 

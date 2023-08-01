@@ -14,9 +14,9 @@
   <publicationYear>2123</publicationYear>
   <subjects>
     <subject subjectScheme="bepress Digital Commons Three-Tiered Taxonomy">wibbble</subject>
-    <subject subjectScheme="bepress Digital Commons Three-Tiered Taxonomy">wibble</subject>
+    <subject>wibble</subject>
     <subject subjectScheme="bepress Digital Commons Three-Tiered Taxonomy">wobbble</subject>
-    <subject subjectScheme="bepress Digital Commons Three-Tiered Taxonomy">wobble</subject>
+    <subject>wobble</subject>
   </subjects>
   <contributors>
     <contributor contributorType="HostingInstitution">

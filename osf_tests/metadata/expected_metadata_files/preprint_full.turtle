@@ -2,6 +2,7 @@
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 @prefix osf: <https://osf.io/vocab/2022/> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 
 <http://localhost:5000/w4ibb> a osf:Preprint ;
     dcterms:created "2123-05-04" ;
@@ -12,10 +13,8 @@
         "https://doi.org/11.pp/FK2osf.io/w4ibb" ;
     dcterms:modified "2123-05-04" ;
     dcterms:publisher <http://localhost:5000/preprints/preprovi> ;
-    dcterms:subject "wibbble",
-        "wibble",
-        "wobbble",
-        "wobble" ;
+    dcterms:subject <http://localhost:8000/v2/subjects/subjwibbb/>,
+        <http://localhost:8000/v2/subjects/subjwobbb/> ;
     dcterms:title "this is a preprint title!" ;
     owl:sameAs <https://doi.org/11.pp/FK2osf.io/w4ibb> ;
     osf:isSupplementedBy <http://localhost:5000/w2ibb> ;
@@ -36,6 +35,16 @@
     dcterms:type foaf:Organization ;
     foaf:name "PP the Preprint Provider" .
 
+<http://localhost:8000/v2/subjects/subjwibbb/> a skos:Concept ;
+    skos:altLabel "wibble" ;
+    skos:inScheme <https://bepress.com/reference_guide_dc/disciplines/> ;
+    skos:prefLabel "wibbble" .
+
+<http://localhost:8000/v2/subjects/subjwobbb/> a skos:Concept ;
+    skos:altLabel "wobble" ;
+    skos:inScheme <https://bepress.com/reference_guide_dc/disciplines/> ;
+    skos:prefLabel "wobbble" .
+
 <http://localhost:5000/w1ibb> a osf:Agent ;
     dcterms:identifier "http://localhost:5000/w1ibb" ;
     dcterms:type foaf:Person ;
@@ -45,5 +54,7 @@
     dcterms:identifier "http://localhost:5000" ;
     dcterms:type foaf:Organization ;
     foaf:name "OSF" .
+
+<https://bepress.com/reference_guide_dc/disciplines/> dcterms:title "bepress Digital Commons Three-Tiered Taxonomy" .
 
 <https://doi.org/11.111/something-or-other> dcterms:identifier "https://doi.org/11.111/something-or-other" .

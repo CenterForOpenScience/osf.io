@@ -16,9 +16,11 @@ ORCID = rdflib.Namespace('https://orcid.org/')
 ROR = rdflib.Namespace('https://ror.org/')
 # external terminology namespaces:
 DCTERMS = rdflib.Namespace('http://purl.org/dc/terms/')                 # "dublin core terms"
+DCMITYPE = rdflib.Namespace('http://purl.org/dc/dcmitype/')             # "dublin core metadata initiative type"
 FOAF = rdflib.Namespace('http://xmlns.com/foaf/0.1/')                   # "friend of a friend"
 OWL = rdflib.Namespace('http://www.w3.org/2002/07/owl#')                # "web ontology language"
 RDF = rdflib.Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#')   # "resource description framework"
+SKOS = rdflib.Namespace('http://www.w3.org/2004/02/skos/core#')         # "simple knowledge organization system"
 
 
 # namespace prefixes that will be shortened by default
@@ -29,6 +31,8 @@ OSF_CONTEXT = {
     'dcterms': DCTERMS,
     'foaf': FOAF,
     'owl': OWL,
+    'skos': SKOS,
+    'dcmitype': DCMITYPE,
 }
 
 
