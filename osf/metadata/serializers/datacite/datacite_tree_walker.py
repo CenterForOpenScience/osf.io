@@ -284,31 +284,32 @@ class DataciteTreeWalker:
 
     def _visit_funding_references(self, parent_el):
         fundrefs_el = self.visit(parent_el, 'fundingReferences', is_list=True)
-        for _funding_award in self.basket[OSF.hasFunding]:
-            for _funder in self.basket[_funding_award:OSF.funder]:
-                fundref_el = self.visit(fundrefs_el, 'fundingReference')
-                self.visit(fundref_el, 'funderName', text=next(self.basket[_funder:FOAF.name], ''))
-                self.visit(
-                    fundref_el,
-                    'funderIdentifier',
-                    text=next(self.basket[_funder:DCTERMS.identifier], ''),
-                    attrib={
-                        'funderIdentifierType': next(self.basket[_funder:OSF.funderIdentifierType], ''),
-                    },
-                )
-                self.visit(
-                    fundref_el,
-                    'awardNumber',
-                    text=next(self.basket[_funding_award:OSF.awardNumber], ''),
-                    attrib={
-                        'awardURI': (
-                            str(_funding_award)
-                            if isinstance(_funding_award, rdflib.URIRef)
-                            else ''
-                        )
-                    },
-                )
-                self.visit(fundref_el, 'awardTitle', text=next(self.basket[_funding_award:DCTERMS.title], ''))
+        for _funder in self.basket[OSF.funder]:
+            fundref_el = self.visit(fundrefs_el, 'fundingReference')
+            self.visit(fundref_el, 'funderName', text=next(self.basket[_funder:FOAF.name], ''))
+            self.visit(
+                fundref_el,
+                'funderIdentifier',
+                text=next(self.basket[_funder:DCTERMS.identifier], ''),
+                attrib={
+                    'funderIdentifierType': next(self.basket[_funder:OSF.funderIdentifierType], ''),
+                },
+            )
+            for _funding_award in self.basket[OSF.hasFunding]:
+                if _funder in self.basket[_funding_award:DCTERMS.contributor]:
+                    self.visit(
+                        fundref_el,
+                        'awardNumber',
+                        text=next(self.basket[_funding_award:OSF.awardNumber], ''),
+                        attrib={
+                            'awardURI': (
+                                str(_funding_award)
+                                if isinstance(_funding_award, rdflib.URIRef)
+                                else ''
+                            )
+                        },
+                    )
+                    self.visit(fundref_el, 'awardTitle', text=next(self.basket[_funding_award:DCTERMS.title], ''))
 
     def _visit_publication_year(self, parent_el, focus_iri):
         year_copyrighted = next(self.basket[focus_iri:DCTERMS.dateCopyrighted], None)

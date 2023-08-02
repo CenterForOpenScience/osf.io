@@ -3,7 +3,7 @@ import pathlib
 from unittest import mock
 
 from osf import models as osfdb
-from osf.metadata.rdfutils import OSF
+from osf.metadata.rdfutils import OSF, DCTERMS
 from osf.metadata.tools import pls_gather_metadata_file
 from osf.models.licenses import NodeLicense
 from api_tests.utils import create_test_file
@@ -38,7 +38,7 @@ BASIC_METADATA_SCENARIO = {
         'datacite-xml': 'file_basic.datacite.xml',
         'datacite-json': 'file_basic.datacite.json',
     },
-    OSF.Agent: {
+    DCTERMS.Agent: {
         'turtle': 'user_basic.turtle',
     },
 }
@@ -64,7 +64,7 @@ FULL_METADATA_SCENARIO = {
         'datacite-xml': 'file_full.datacite.xml',
         'datacite-json': 'file_full.datacite.json',
     },
-    OSF.Agent: {
+    DCTERMS.Agent: {
         'turtle': 'user_full.turtle',
     },
 }
@@ -199,7 +199,7 @@ class TestSerializers(OsfTestCase):
             OSF.Preprint: self.preprint._id,
             OSF.Registration: self.registration._id,
             OSF.File: self.file.get_guid()._id,
-            OSF.Agent: self.user._id,
+            DCTERMS.Agent: self.user._id,
         }
 
     def _setUp_full(self):

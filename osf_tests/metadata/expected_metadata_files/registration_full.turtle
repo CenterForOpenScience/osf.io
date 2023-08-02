@@ -31,19 +31,19 @@
 <https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode> dcterms:identifier "https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode" ;
     foaf:name "CC-By Attribution-NonCommercial-NoDerivatives 4.0 International" .
 
-<http://localhost:5000/registries/regiprovi> a osf:Agent ;
+<http://localhost:5000/registries/regiprovi> a dcterms:Agent,
+        foaf:Organization ;
     dcterms:identifier "http://localhost:5000/registries/regiprovi" ;
-    dcterms:type foaf:Organization ;
     foaf:name "RegiProvi the Registration Provider" .
 
-<http://localhost:5000/w1ibb> a osf:Agent ;
+<http://localhost:5000/w1ibb> a dcterms:Agent,
+        foaf:Person ;
     dcterms:identifier "http://localhost:5000/w1ibb" ;
-    dcterms:type foaf:Person ;
     foaf:name "Person McNamington" .
 
-<http://localhost:5000> a osf:Agent ;
+<http://localhost:5000> a dcterms:Agent,
+        foaf:Organization ;
     dcterms:identifier "http://localhost:5000" ;
-    dcterms:type foaf:Organization ;
     foaf:name "OSF" .
 
 <http://localhost:8000/v2/schemas/registrations/63d3f6c7dcb7b30226be52a9/> dcterms:title "Open-Ended Registration" .

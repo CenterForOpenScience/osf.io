@@ -45,22 +45,22 @@
     osf:filePath "/my-file.blarg" ;
     osf:isContainedBy <http://localhost:5000/w2ibb> .
 
-<http://localhost:5000/registries/regiprovi> a osf:Agent ;
+<http://localhost:5000/registries/regiprovi> a dcterms:Agent,
+        foaf:Organization ;
     dcterms:identifier "http://localhost:5000/registries/regiprovi" ;
-    dcterms:type foaf:Organization ;
     foaf:name "RegiProvi the Registration Provider" .
 
-<http://localhost:5000/preprints/preprovi> a osf:Agent ;
+<http://localhost:5000/preprints/preprovi> a dcterms:Agent,
+        foaf:Organization ;
     dcterms:identifier "http://localhost:5000/preprints/preprovi" ;
-    dcterms:type foaf:Organization ;
     foaf:name "PP the Preprint Provider" .
 
-<http://localhost:5000/w1ibb> a osf:Agent ;
+<http://localhost:5000/w1ibb> a dcterms:Agent,
+        foaf:Person ;
     dcterms:identifier "http://localhost:5000/w1ibb" ;
-    dcterms:type foaf:Person ;
     foaf:name "Person McNamington" .
 
-<http://localhost:5000> a osf:Agent ;
+<http://localhost:5000> a dcterms:Agent,
+        foaf:Organization ;
     dcterms:identifier "http://localhost:5000" ;
-    dcterms:type foaf:Organization ;
     foaf:name "OSF" .

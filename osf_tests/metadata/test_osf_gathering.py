@@ -483,7 +483,7 @@ class TestOsfGathering(TestCase):
         self.project.add_affiliated_institution(institution, self.user__admin)
         _assert_triples(osf_gathering.gather_affiliated_institutions(self.projectfocus), {
             (self.projectfocus.iri, OSF.affiliation, institution_iri),
-            (institution_iri, RDF.type, OSF.Agent),
+            (institution_iri, RDF.type, DCTERMS.Agent),
             (institution_iri, RDF.type, FOAF.Organization),
             (institution_iri, FOAF.name, Literal(institution.name)),
             (institution_iri, DCTERMS.identifier, Literal(institution.identifier_domain)),
@@ -491,7 +491,7 @@ class TestOsfGathering(TestCase):
         # focus: user
         _assert_triples(osf_gathering.gather_affiliated_institutions(self.userfocus__admin), {
             (self.userfocus__admin.iri, OSF.affiliation, institution_iri),
-            (institution_iri, RDF.type, OSF.Agent),
+            (institution_iri, RDF.type, DCTERMS.Agent),
             (institution_iri, RDF.type, FOAF.Organization),
             (institution_iri, FOAF.name, Literal(institution.name)),
             (institution_iri, DCTERMS.identifier, Literal(institution.identifier_domain)),
@@ -516,23 +516,23 @@ class TestOsfGathering(TestCase):
             },
         ]
         _bnode1 = rdflib.BNode()
-        _bnode2 = rdflib.BNode()
         _award_uri = URIRef('https://nih.example/award')
         _funder_uri = URIRef('https://doi.org/10.fake/NIH')
         _assert_triples(osf_gathering.gather_funding(self.projectfocus), {
-            (self.projectfocus.iri, OSF.hasFunding, _bnode1),
-            (_bnode1, RDF.type, OSF.FundingAward),
-            (_bnode1, OSF.funder, _bnode2),
-            (_bnode2, FOAF.name, Literal('hooray')),
+            (self.projectfocus.iri, OSF.funder, _bnode1),
+            (_bnode1, RDF.type, DCTERMS.Agent),
+            (_bnode1, FOAF.name, Literal('hooray')),
+            (self.projectfocus.iri, OSF.funder, _funder_uri),
+            (_funder_uri, RDF.type, DCTERMS.Agent),
+            (_funder_uri, DCTERMS.identifier, Literal(_funder_uri)),
+            (_funder_uri, FOAF.name, Literal('NIH')),
+            (_funder_uri, OSF.funderIdentifierType, Literal('Crossref Funder ID')),
             (self.projectfocus.iri, OSF.hasFunding, _award_uri),
             (_award_uri, RDF.type, OSF.FundingAward),
             (_award_uri, DCTERMS.identifier, Literal(_award_uri)),
             (_award_uri, DCTERMS.title, Literal('big fun')),
             (_award_uri, OSF.awardNumber, Literal('27')),
-            (_award_uri, OSF.funder, _funder_uri),
-            (_funder_uri, FOAF.name, Literal('NIH')),
-            (_funder_uri, DCTERMS.identifier, Literal(_funder_uri)),
-            (_funder_uri, OSF.funderIdentifierType, Literal('Crossref Funder ID')),
+            (_award_uri, DCTERMS.contributor, _funder_uri),
         })
         # focus: registration
         _assert_triples(osf_gathering.gather_funding(self.registrationfocus), set())
@@ -540,15 +540,19 @@ class TestOsfGathering(TestCase):
             {
                 'funder_name': 'blooray',
                 'funder_identifier': 'https://doi.org/11.bloo',
+                'award_title': 'blaward',
             },
         ]
         _funder_uri = rdflib.URIRef('https://doi.org/11.bloo')
         _assert_triples(osf_gathering.gather_funding(self.registrationfocus), {
-            (self.registrationfocus.iri, OSF.hasFunding, _bnode1),
-            (_bnode1, RDF.type, OSF.FundingAward),
-            (_bnode1, OSF.funder, _funder_uri),
+            (self.registrationfocus.iri, OSF.funder, _funder_uri),
+            (_funder_uri, RDF.type, DCTERMS.Agent),
             (_funder_uri, DCTERMS.identifier, Literal(_funder_uri)),
             (_funder_uri, FOAF.name, Literal('blooray')),
+            (self.registrationfocus.iri, OSF.hasFunding, _bnode1),
+            (_bnode1, RDF.type, OSF.FundingAward),
+            (_bnode1, DCTERMS.title, Literal('blaward')),
+            (_bnode1, DCTERMS.contributor, _funder_uri),
         })
         # focus: file
         _assert_triples(osf_gathering.gather_funding(self.filefocus), set())
@@ -560,9 +564,8 @@ class TestOsfGathering(TestCase):
         ]
         _funder_uri = rdflib.URIRef('https://doi.org/11.ex')
         _assert_triples(osf_gathering.gather_funding(self.filefocus), {
-            (self.filefocus.iri, OSF.hasFunding, _bnode1),
-            (_bnode1, RDF.type, OSF.FundingAward),
-            (_bnode1, OSF.funder, _funder_uri),
+            (self.filefocus.iri, OSF.funder, _funder_uri),
+            (_funder_uri, RDF.type, DCTERMS.Agent),
             (_funder_uri, DCTERMS.identifier, Literal(_funder_uri)),
             (_funder_uri, FOAF.name, Literal('exray')),
         })

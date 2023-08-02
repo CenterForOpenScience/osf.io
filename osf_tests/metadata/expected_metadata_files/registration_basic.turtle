@@ -27,19 +27,19 @@
     dcterms:title "this is a project title!" ;
     owl:sameAs <https://doi.org/10.70102/FK2osf.io/w2ibb> .
 
-<http://localhost:5000/registries/regiprovi> a osf:Agent ;
+<http://localhost:5000/registries/regiprovi> a dcterms:Agent,
+        foaf:Organization ;
     dcterms:identifier "http://localhost:5000/registries/regiprovi" ;
-    dcterms:type foaf:Organization ;
     foaf:name "RegiProvi the Registration Provider" .
 
-<http://localhost:5000/w1ibb> a osf:Agent ;
+<http://localhost:5000/w1ibb> a dcterms:Agent,
+        foaf:Person ;
     dcterms:identifier "http://localhost:5000/w1ibb" ;
-    dcterms:type foaf:Person ;
     foaf:name "Person McNamington" .
 
-<http://localhost:5000> a osf:Agent ;
+<http://localhost:5000> a dcterms:Agent,
+        foaf:Organization ;
     dcterms:identifier "http://localhost:5000" ;
-    dcterms:type foaf:Organization ;
     foaf:name "OSF" .
 
 <http://localhost:8000/v2/schemas/registrations/63d3f6c7dcb7b30226be52a9/> dcterms:title "Open-Ended Registration" .

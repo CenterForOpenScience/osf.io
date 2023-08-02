@@ -109,6 +109,7 @@ OSF_OBJECT = {
     DCTERMS.type: None,
     OSF.affiliation: None,
     OSF.isPartOfCollection: None,
+    OSF.funder: None,
     OSF.hasFunding: None,
     OSF.contains: OSF_FILE_REFERENCE,
     OSF.hasRoot: OSF_OBJECT_REFERENCE,
@@ -174,10 +175,11 @@ OSFMAP = {
         OSF.isContainedBy: OSF_OBJECT_REFERENCE,
         OSF.fileName: None,
         OSF.filePath: None,
+        OSF.funding: None,
         OSF.hasFunding: None,
         OWL.sameAs: None,
     },
-    OSF.Agent: {
+    DCTERMS.Agent: {
         DCTERMS.identifier: None,
         FOAF.name: None,
         OSF.affiliation: None,
@@ -225,7 +227,7 @@ def get_rdf_type(osfguid_referent):
         osfguid_referent = osfguid_referent.referent
 
     if isinstance(osfguid_referent, osfdb.OSFUser):
-        return OSF.Agent
+        return DCTERMS.Agent
     if isinstance(osfguid_referent, osfdb.BaseFileNode):
         return OSF.File
     if isinstance(osfguid_referent, osfdb.Preprint):
@@ -699,39 +701,47 @@ def gather_affiliated_institutions(focus):
         else:                                       # fallback to a blank node
             institution_iri = rdflib.BNode()
         yield (OSF.affiliation, institution_iri)
-        yield (institution_iri, RDF.type, OSF.Agent)
+        yield (institution_iri, RDF.type, DCTERMS.Agent)
         yield (institution_iri, RDF.type, FOAF.Organization)
         yield (institution_iri, FOAF.name, osf_institution.name)
         yield (institution_iri, DCTERMS.identifier, osf_institution.ror_uri)
         yield (institution_iri, DCTERMS.identifier, osf_institution.identifier_domain)
 
 
-@gather.er(OSF.hasFunding)
+@gather.er(OSF.funder, OSF.hasFunding)
 def gather_funding(focus):
     if hasattr(focus, 'guid_metadata_record'):
         for _funding in focus.guid_metadata_record.funding_info:
-            _award_uri = _funding.get('award_uri')
-            _award_ref = (
-                rdflib.URIRef(_award_uri)
-                if _award_uri
-                else rdflib.BNode()
-            )
-            yield (OSF.hasFunding, _award_ref)
-            yield (_award_ref, RDF.type, OSF.FundingAward)
-            if _award_uri:
-                yield (_award_ref, DCTERMS.identifier, _award_uri)
-            yield (_award_ref, DCTERMS.title, _funding.get('award_title'))
-            yield (_award_ref, OSF.awardNumber, _funding.get('award_number'))
             _funder_uri = _funding.get('funder_identifier')
-            _funder_ref = (
-                rdflib.URIRef(_funder_uri)
-                if _funder_uri
-                else rdflib.BNode()
-            )
-            yield (_award_ref, OSF.funder, _funder_ref)
-            yield (_funder_ref, FOAF.name, _funding.get('funder_name'))
-            yield (_funder_ref, DCTERMS.identifier, _funder_uri)
-            yield (_funder_ref, OSF.funderIdentifierType, _funding.get('funder_identifier_type'))
+            _funder_name = _funding.get('funder_name')
+            _funder_ref = None
+            if _funder_uri or _funder_name:
+                _funder_ref = (
+                    rdflib.URIRef(_funder_uri)
+                    if _funder_uri
+                    else rdflib.BNode()
+                )
+                yield (OSF.funder, _funder_ref)
+                yield (_funder_ref, RDF.type, DCTERMS.Agent)
+                yield (_funder_ref, DCTERMS.identifier, _funder_uri)
+                yield (_funder_ref, FOAF.name, _funder_name)
+                yield (_funder_ref, OSF.funderIdentifierType, _funding.get('funder_identifier_type'))
+            _award_uri = _funding.get('award_uri')
+            _award_title = _funding.get('award_title')
+            _award_number = _funding.get('award_number')
+            if _award_uri or _award_title or _award_number:
+                _award_ref = (
+                    rdflib.URIRef(_award_uri)
+                    if _award_uri
+                    else rdflib.BNode()
+                )
+                yield (OSF.hasFunding, _award_ref)
+                yield (_award_ref, RDF.type, OSF.FundingAward)
+                yield (_award_ref, DCTERMS.identifier, _award_uri)
+                yield (_award_ref, DCTERMS.title, _award_title)
+                yield (_award_ref, OSF.awardNumber, _award_number)
+                if _funder_ref:
+                    yield (_award_ref, DCTERMS.contributor, _funder_ref)
 
 
 @gather.er(OSF.HostingInstitution)
@@ -742,7 +752,7 @@ def gather_hosting_institution(focus):
     if name and (irl or ror_id):
         irl_iri = rdflib.URIRef(irl) if irl else ROR[ror_id]
         yield (OSF.HostingInstitution, irl_iri)
-        yield (irl_iri, RDF.type, OSF.Agent)
+        yield (irl_iri, RDF.type, DCTERMS.Agent)
         yield (irl_iri, RDF.type, FOAF.Organization)
         yield (irl_iri, FOAF.name, name)
         yield (irl_iri, DCTERMS.identifier, irl)
@@ -757,7 +767,7 @@ def gather_hosting_institution(focus):
         )
 
 
-@gather.er(focustype_iris=[OSF.Agent])
+@gather.er(focustype_iris=[DCTERMS.Agent])
 def gather_user_basics(focus):
     if isinstance(focus.dbmodel, osfdb.OSFUser):
         yield (RDF.type, FOAF.Person)  # note: assumes osf user accounts represent people
@@ -844,7 +854,7 @@ def gather_collection_membership(focus):
 
 def _publisher_tripleset(iri, name, url=None):
     yield (DCTERMS.publisher, iri)
-    yield (iri, RDF.type, OSF.Agent)
+    yield (iri, RDF.type, DCTERMS.Agent)
     yield (iri, RDF.type, FOAF.Organization)
     yield (iri, FOAF.name, name)
     yield (iri, DCTERMS.identifier, str(iri))

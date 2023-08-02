@@ -30,9 +30,9 @@
     dcterms:type "Dataset" ;
     owl:sameAs <https://doi.org/10.70102/FK2osf.io/w2ibb> .
 
-<http://localhost:5000/preprints/preprovi> a osf:Agent ;
+<http://localhost:5000/preprints/preprovi> a dcterms:Agent,
+        foaf:Organization ;
     dcterms:identifier "http://localhost:5000/preprints/preprovi" ;
-    dcterms:type foaf:Organization ;
     foaf:name "PP the Preprint Provider" .
 
 <http://localhost:8000/v2/subjects/subjwibbb/> a skos:Concept ;
@@ -45,14 +45,14 @@
     skos:inScheme <https://bepress.com/reference_guide_dc/disciplines/> ;
     skos:prefLabel "wobbble" .
 
-<http://localhost:5000/w1ibb> a osf:Agent ;
+<http://localhost:5000/w1ibb> a dcterms:Agent,
+        foaf:Person ;
     dcterms:identifier "http://localhost:5000/w1ibb" ;
-    dcterms:type foaf:Person ;
     foaf:name "Person McNamington" .
 
-<http://localhost:5000> a osf:Agent ;
+<http://localhost:5000> a dcterms:Agent,
+        foaf:Organization ;
     dcterms:identifier "http://localhost:5000" ;
-    dcterms:type foaf:Organization ;
     foaf:name "OSF" .
 
 <https://bepress.com/reference_guide_dc/disciplines/> dcterms:title "bepress Digital Commons Three-Tiered Taxonomy" .
