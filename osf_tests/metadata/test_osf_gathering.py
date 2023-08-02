@@ -484,7 +484,7 @@ class TestOsfGathering(TestCase):
         _assert_triples(osf_gathering.gather_affiliated_institutions(self.projectfocus), {
             (self.projectfocus.iri, OSF.affiliation, institution_iri),
             (institution_iri, RDF.type, OSF.Agent),
-            (institution_iri, DCTERMS.type, FOAF.Organization),
+            (institution_iri, RDF.type, FOAF.Organization),
             (institution_iri, FOAF.name, Literal(institution.name)),
             (institution_iri, DCTERMS.identifier, Literal(institution.identifier_domain)),
         })
@@ -492,7 +492,7 @@ class TestOsfGathering(TestCase):
         _assert_triples(osf_gathering.gather_affiliated_institutions(self.userfocus__admin), {
             (self.userfocus__admin.iri, OSF.affiliation, institution_iri),
             (institution_iri, RDF.type, OSF.Agent),
-            (institution_iri, DCTERMS.type, FOAF.Organization),
+            (institution_iri, RDF.type, FOAF.Organization),
             (institution_iri, FOAF.name, Literal(institution.name)),
             (institution_iri, DCTERMS.identifier, Literal(institution.identifier_domain)),
         })
@@ -570,19 +570,19 @@ class TestOsfGathering(TestCase):
     def test_gather_user_basics(self):
         # focus: admin user
         _assert_triples(osf_gathering.gather_user_basics(self.userfocus__admin), {
-            (self.userfocus__admin.iri, DCTERMS.type, FOAF.Person),
+            (self.userfocus__admin.iri, RDF.type, FOAF.Person),
             (self.userfocus__admin.iri, FOAF.name, Literal(self.user__admin.fullname)),
         })
         # focus: readwrite user
         _assert_triples(osf_gathering.gather_user_basics(self.userfocus__readwrite), {
-            (self.userfocus__readwrite.iri, DCTERMS.type, FOAF.Person),
+            (self.userfocus__readwrite.iri, RDF.type, FOAF.Person),
             (self.userfocus__readwrite.iri, FOAF.name, Literal(self.user__readwrite.fullname)),
             (self.userfocus__readwrite.iri, DCTERMS.identifier, Literal('https://orcid.org/1234-4321-5678-8765')),
             (self.userfocus__readwrite.iri, OWL.sameAs, URIRef('https://orcid.org/1234-4321-5678-8765')),
         })
         # focus: readonly user
         _assert_triples(osf_gathering.gather_user_basics(self.userfocus__readonly), {
-            (self.userfocus__readonly.iri, DCTERMS.type, FOAF.Person),
+            (self.userfocus__readonly.iri, RDF.type, FOAF.Person),
             (self.userfocus__readonly.iri, FOAF.name, Literal(self.user__readonly.fullname)),
             # orcid not verified, should be excluded
             (self.userfocus__readonly.iri, DCTERMS.identifier, Literal('http://mysite.example')),

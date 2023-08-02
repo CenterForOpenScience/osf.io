@@ -700,7 +700,7 @@ def gather_affiliated_institutions(focus):
             institution_iri = rdflib.BNode()
         yield (OSF.affiliation, institution_iri)
         yield (institution_iri, RDF.type, OSF.Agent)
-        yield (institution_iri, DCTERMS.type, FOAF.Organization)
+        yield (institution_iri, RDF.type, FOAF.Organization)
         yield (institution_iri, FOAF.name, osf_institution.name)
         yield (institution_iri, DCTERMS.identifier, osf_institution.ror_uri)
         yield (institution_iri, DCTERMS.identifier, osf_institution.identifier_domain)
@@ -743,7 +743,7 @@ def gather_hosting_institution(focus):
         irl_iri = rdflib.URIRef(irl) if irl else ROR[ror_id]
         yield (OSF.HostingInstitution, irl_iri)
         yield (irl_iri, RDF.type, OSF.Agent)
-        yield (irl_iri, DCTERMS.type, FOAF.Organization)
+        yield (irl_iri, RDF.type, FOAF.Organization)
         yield (irl_iri, FOAF.name, name)
         yield (irl_iri, DCTERMS.identifier, irl)
         if ror_id:
@@ -760,7 +760,7 @@ def gather_hosting_institution(focus):
 @gather.er(focustype_iris=[OSF.Agent])
 def gather_user_basics(focus):
     if isinstance(focus.dbmodel, osfdb.OSFUser):
-        yield (DCTERMS.type, FOAF.Person)
+        yield (RDF.type, FOAF.Person)  # note: assumes osf user accounts represent people
         yield (FOAF.name, focus.dbmodel.fullname)
         for social_link in focus.dbmodel.social_links.values():
             if isinstance(social_link, str):
@@ -845,7 +845,7 @@ def gather_collection_membership(focus):
 def _publisher_tripleset(iri, name, url=None):
     yield (DCTERMS.publisher, iri)
     yield (iri, RDF.type, OSF.Agent)
-    yield (iri, DCTERMS.type, FOAF.Organization)
+    yield (iri, RDF.type, FOAF.Organization)
     yield (iri, FOAF.name, name)
     yield (iri, DCTERMS.identifier, str(iri))
     yield (iri, DCTERMS.identifier, url)

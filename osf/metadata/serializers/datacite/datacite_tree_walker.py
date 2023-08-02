@@ -190,9 +190,9 @@ class DataciteTreeWalker:
         raise ValueError(f'only IRI-shaped identifiers are supported (got "{identifier}")')
 
     def _get_name_type(self, agent_iri):
-        if (agent_iri, DCTERMS.type, FOAF.Person) in self.basket:
+        if (agent_iri, RDF.type, FOAF.Person) in self.basket:
             return 'Personal'
-        if (agent_iri, DCTERMS.type, FOAF.Organization) in self.basket:
+        if (agent_iri, RDF.type, FOAF.Organization) in self.basket:
             return 'Organizational'
         raise MetadataSerializationError(f'could not determine nameType for {agent_iri}')
 
@@ -224,7 +224,7 @@ class DataciteTreeWalker:
         self.visit(parent_el, 'publisher', text=publisher_name)
 
     def _agent_name_type(self, agent_iri):
-        agent_types = set(self.basket[agent_iri:DCTERMS.type])
+        agent_types = set(self.basket[agent_iri:RDF.type])
         if FOAF.Person in agent_types:
             return 'Personal'
         if FOAF.Organization in agent_types:
