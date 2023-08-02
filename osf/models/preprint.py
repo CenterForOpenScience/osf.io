@@ -52,6 +52,7 @@ from osf.exceptions import (
     TagNotFoundError
 )
 from django.contrib.postgres.fields import ArrayField
+from api.share.utils import update_share
 
 logger = logging.getLogger(__name__)
 
@@ -901,6 +902,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
     @classmethod
     def bulk_update_search(cls, preprints, index=None):
+        for _preprint in preprints:
+            update_share(_preprint)
         from website import search
         try:
             serialize = functools.partial(search.search.update_preprint, index=index, bulk=True, async_update=False)
@@ -910,6 +913,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             log_exception()
 
     def update_search(self):
+        update_share(self)
         from website import search
         try:
             search.search.update_preprint(self, bulk=False, async_update=True)

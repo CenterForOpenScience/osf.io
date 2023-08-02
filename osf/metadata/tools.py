@@ -46,7 +46,7 @@ def pls_gather_metadata_file(osf_item, format_key, serializer_config=None) -> Se
     )
 
 
-def pls_update_trove_indexcard(osf_item):
+def pls_send_trove_indexcard(osf_item):
     _iri = osf_iri(osf_item)
     if not _iri:
         raise ValueError(f'could not get iri for {osf_item}')

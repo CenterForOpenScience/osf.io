@@ -80,6 +80,11 @@ class Command(BaseCommand):
             action='store_true',
             help='recatalog metadata for non-registration projects (and components)',
         )
+        # type_group.add_argument(
+        #     '--files',
+        #     action='store_true',
+        #     help='recatalog metadata for files',
+        # )
 
         parser.add_argument(
             '--start-id',

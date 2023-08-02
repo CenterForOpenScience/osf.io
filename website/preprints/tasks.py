@@ -5,8 +5,6 @@ from framework.exceptions import HTTPError
 from framework.celery_tasks import app as celery_app
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task, get_task_from_postcommit_queue
 
-from website import settings
-from api.share.utils import update_share
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +24,6 @@ def on_preprint_updated(preprint_id, old_subjects=None, saved_fields=None):
 
     if should_update_preprint_identifiers(preprint, old_subjects, saved_fields):
         update_or_create_preprint_identifiers(preprint)
-
-    if settings.SHARE_ENABLED:
-        update_share(preprint)
 
 
 def should_update_preprint_identifiers(preprint, old_subjects, saved_fields):

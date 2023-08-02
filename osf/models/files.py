@@ -23,6 +23,7 @@ from osf.models.validators import validate_location
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 from api.base.utils import waterbutler_api_url_for
+from api.share.utils import update_share
 from website.files import utils
 from website.files.exceptions import VersionNotFoundError
 from website.util import api_v2_url, web_url_for, api_url_for
@@ -443,6 +444,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         return self
 
     def update_search(self):
+        update_share(self)
         from website import search
         try:
             search.search.update_file(self)

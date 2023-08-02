@@ -4,13 +4,13 @@ SHARE/Trove accepts metadata records as "indexcards" in turtle format: https://w
 """
 from django.apps import apps
 import random
-import requests
 from framework.celery_tasks import app as celery_app
+from framework.celery_tasks.handlers import enqueue_task
 from framework.sentry import log_exception
 
 from website import settings
 from celery.exceptions import Retry
-from osf.metadata.tools import pls_update_trove_indexcard, pls_delete_trove_indexcard
+from osf.metadata.tools import pls_send_trove_indexcard, pls_delete_trove_indexcard
 
 def is_qa_resource(resource):
     """
@@ -28,22 +28,13 @@ def is_qa_resource(resource):
 
 
 def update_share(resource):
-    if _should_delete_indexcard(resource):
-        resp = pls_delete_trove_indexcard(resource)
-    else:
-        resp = pls_update_trove_indexcard(resource)
-    status_code = resp.status_code
-    try:
-        resp.raise_for_status()
-    except requests.HTTPError:
-        if status_code >= 500:
-            async_update_resource_share.delay(resource._id)
-        else:
-            log_exception()
+    if not settings.SHARE_ENABLED:
+        return
+    enqueue_task(task__update_share.s(resource._id))
 
 
 @celery_app.task(bind=True, max_retries=4, acks_late=True)
-def async_update_resource_share(self, guid, **kwargs):
+def task__update_share(self, guid: str, **kwargs):
     """
     This function updates share  takes Preprints, Projects and Registrations.
     :param self:
@@ -51,13 +42,17 @@ def async_update_resource_share(self, guid, **kwargs):
     :return:
     """
     resource = apps.get_model('osf.Guid').load(guid).referent
-    resp = pls_update_trove_indexcard(resource)
+    resp = (
+        pls_delete_trove_indexcard(resource)
+        if _should_delete_indexcard(resource)
+        else pls_send_trove_indexcard(resource)
+    )
     try:
         resp.raise_for_status()
     except Exception as e:
         if self.request.retries == self.max_retries:
             log_exception()
-        elif resp.status_code >= 500:
+        elif resp.status_code >= 500 and settings.USE_CELERY:
             try:
                 self.retry(
                     exc=e,

@@ -313,5 +313,4 @@ def archive_success(dst_pk, job_pk):
         job.save()
         dst.sanction.ask(dst.get_active_contributors_recursive(unique_users=True))
 
-    if settings.SHARE_ENABLED:
-        update_share(dst)
+    update_share(dst)
