@@ -5,7 +5,6 @@ from admin_tests.rdm_addons.factories import RdmAddonOptionFactory
 
 from nose.tools import assert_equal
 from addons.s3compatinstitutions import settings
-from osf.models.rdm_addons import RdmAddonOption
 from addons.osfstorage.tests import factories
 from addons.osfstorage.tests.utils import StorageTestCase
 from addons.s3compatinstitutions.apps import SHORT_NAME
@@ -91,8 +90,10 @@ class TestNonTargetInstitutionalNodeSettings(StorageTestCase):
 
     def test_serialize_settings(self):
         wb_settings = self.node_settings.serialize_waterbutler_settings()
-        expected = {'bucket': self.node_settings.bucket,
-                    'prefix': self.node_settings.root_prefix,
-                    'encrypt_uploads': settings.ENCRYPT_UPLOADS,
-                    'nid': self.node_settings.owner._id}
+        expected = {
+            'nid': self.node_settings.owner._id,
+            'bucket': self.node_settings.bucket,
+            'prefix': self.node_settings.root_prefix,
+            'encrypt_uploads': settings.ENCRYPT_UPLOADS,
+        }
         assert_equal(wb_settings, expected)

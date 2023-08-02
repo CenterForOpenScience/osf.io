@@ -168,10 +168,10 @@ class NodeSettings(InstitutionsNodeSettings, InstitutionsStorageAddon):
 
     def serialize_waterbutler_settings(self):
         return {
+            'nid': self.owner._id,
             'bucket': self.bucket,
             'prefix': self.root_prefix,
-            'encrypt_uploads': settings.ENCRYPT_UPLOADS,
-            'nid': self.owner._id,
+            'encrypt_uploads': settings.ENCRYPT_UPLOADS
         }
 
     def copy_folders(self, dest_addon):

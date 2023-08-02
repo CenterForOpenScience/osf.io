@@ -369,10 +369,22 @@ class TestSaveUsedQuota(OsfTestCase):
             materialized_path='/testfile'
         )
         self.file.save()
-        self.base_file_node = BaseFileNode(type='osf.s3compatinstitutionsfile', provider='s3compatinstitutions', _path='/testfile',
-                _materialized_path='/testfile', target_object_id=self.node.id, target_content_type_id=2)
-        self.base_folder_node = BaseFileNode(type='osf.s3compatinstitutionsfolder', provider='s3compatinstitutions', _path='/testfolder',
-                _materialized_path='/testfolder', target_object_id=self.node.id, target_content_type_id=2)
+        self.base_file_node = BaseFileNode(
+            type='osf.s3compatinstitutionsfile',
+            provider='s3compatinstitutions',
+            _path='/testfile',
+            _materialized_path='/testfile',
+            target_object_id=self.node.id,
+            target_content_type_id=2
+        )
+        self.base_folder_node = BaseFileNode(
+            type='osf.s3compatinstitutionsfolder',
+            provider='s3compatinstitutions',
+            _path='/testfolder',
+            _materialized_path='/testfolder',
+            target_object_id=self.node.id,
+            target_content_type_id=2
+        )
 
     def test_add_first_file(self):
         assert_false(UserQuota.objects.filter(user=self.project_creator).exists())
@@ -1138,11 +1150,24 @@ class TestSaveUsedQuota(OsfTestCase):
     def test_rename_folder_with_Amazon_S3_Compatible_Storage_for_Institution(self):
         mock_base_file_node = mock.MagicMock()
         mock_base_file_node_orderby = mock.MagicMock()
-        mock_base_file_node.objects.filter.return_value = [BaseFileNode(type='osf.s3compatinstitutionsfolder', provider='s3compatinstitutions', _path='/newfoldername',
-                _materialized_path='/newfoldername', target_object_id=self.node.id, target_content_type_id=2)]
+        mock_base_file_node.objects.filter.return_value = [
+            BaseFileNode(
+                type='osf.s3compatinstitutionsfolder',
+                provider='s3compatinstitutions',
+                _path='/newfoldername',
+                _materialized_path='/newfoldername',
+                target_object_id=self.node.id,
+                target_content_type_id=2
+            )
+        ]
         mock_base_file_node_orderby.filter.return_value.order_by.return_value.first.return_value = BaseFileNode(
-            type='osf.s3compatinstitutionsfolder', provider='s3compatinstitutions', _path='/newfoldername',
-            _materialized_path='/newfoldername', target_object_id=self.node.id, target_content_type_id=2)
+            type='osf.s3compatinstitutionsfolder',
+            provider='s3compatinstitutions',
+            _path='/newfoldername',
+            _materialized_path='/newfoldername',
+            target_object_id=self.node.id,
+            target_content_type_id=2
+        )
 
         with mock.patch('website.util.quota.BaseFileNode', mock_base_file_node):
             with mock.patch('website.util.quota.BaseFileNode', mock_base_file_node_orderby):
@@ -1168,11 +1193,24 @@ class TestSaveUsedQuota(OsfTestCase):
     def test_rename_file_with_Amazon_S3_Compatible_Storage_for_Institution(self):
         mock_base_file_node = mock.MagicMock()
         mock_base_file_node_orderby = mock.MagicMock()
-        mock_base_file_node.objects.filter.return_value = [BaseFileNode(type='osf.s3compatinstitutionsfile', provider='s3compatinstitutions', _path='/newfilename',
-                _materialized_path='/newfilename', target_object_id=self.node.id, target_content_type_id=2)]
+        mock_base_file_node.objects.filter.return_value = [
+            BaseFileNode(
+                type='osf.s3compatinstitutionsfile',
+                provider='s3compatinstitutions',
+                _path='/newfilename',
+                _materialized_path='/newfilename',
+                target_object_id=self.node.id,
+                target_content_type_id=2
+            )
+        ]
         mock_base_file_node_orderby.filter.return_value.order_by.return_value.first.return_value = BaseFileNode(
-            type='osf.s3compatinstitutionsfile', provider='s3compatinstitutions', _path='/newfilename',
-            _materialized_path='/newfilename', target_object_id=self.node.id, target_content_type_id=2)
+            type='osf.s3compatinstitutionsfile',
+            provider='s3compatinstitutions',
+            _path='/newfilename',
+            _materialized_path='/newfilename',
+            target_object_id=self.node.id,
+            target_content_type_id=2
+        )
 
         with mock.patch('website.util.quota.BaseFileNode', mock_base_file_node):
             with mock.patch('website.util.quota.BaseFileNode', mock_base_file_node_orderby):
@@ -1195,7 +1233,7 @@ class TestSaveUsedQuota(OsfTestCase):
                     }
                 )
 
-    def test_upload_file_with_Amazon_S3(self):
+    def test_upload_file_with_Amazon_S3_Compatible_Storage_for_Institution(self):
         UserQuota.objects.create(
             user=self.project_creator,
             storage_type=UserQuota.CUSTOM_STORAGE,
@@ -1212,8 +1250,14 @@ class TestSaveUsedQuota(OsfTestCase):
         mock_base_file_node = mock.MagicMock()
         mock_file_info = mock.MagicMock()
         mock_base_file_node.objects.filter.return_value.order_by.return_value.first.return_value = BaseFileNode(
-            type='osf.s3compatinstitutionsfile', provider='s3compatinstitutions', _path='/testfile',
-            _materialized_path='/testfile', parent_id=self.node.id, target_object_id=self.node.id, target_content_type_id=2)
+            type='osf.s3compatinstitutionsfile',
+            provider='s3compatinstitutions',
+            _path='/testfile',
+            _materialized_path='/testfile',
+            parent_id=self.node.id,
+            target_object_id=self.node.id,
+            target_content_type_id=2
+        )
         mock_file_info.objects.create.return_value = None
 
         with mock.patch('website.util.quota.BaseFileNode', mock_base_file_node):
@@ -1260,11 +1304,21 @@ class TestSaveUsedQuota(OsfTestCase):
         mock_base_file_node = mock.MagicMock()
         mock_file_info = mock.MagicMock()
         mock_base_file_node.return_value = BaseFileNode(
-            type='osf.s3compatinstitutionsfolder', provider='s3compatinstitutions', _path='/testfolder',
-            _materialized_path='/testfolder', target_object_id=self.node.id, target_content_type_id=2)
+            type='osf.s3compatinstitutionsfolder',
+            provider='s3compatinstitutions',
+            _path='/testfolder',
+            _materialized_path='/testfolder',
+            target_object_id=self.node.id,
+            target_content_type_id=2
+        )
         mock_base_file_node.objects.filter.return_value.order_by.return_value.first.return_value = BaseFileNode(
-            type='osf.s3compatinstitutionsfolder', provider='s3compatinstitutions', _path='/testfolder',
-            _materialized_path='/testfolder', target_object_id=self.node.id, target_content_type_id=2)
+            type='osf.s3compatinstitutionsfolder',
+            provider='s3compatinstitutions',
+            _path='/testfolder',
+            _materialized_path='/testfolder',
+            target_object_id=self.node.id,
+            target_content_type_id=2
+        )
         mock_file_info.objects.create.return_value = None
 
         with mock.patch('website.util.quota.BaseFileNode', mock_base_file_node):
@@ -1339,8 +1393,13 @@ class TestSaveUsedQuota(OsfTestCase):
         mock_user_quota = mock.MagicMock()
         mock_base_file_node.objects.filter.return_value.order_by.return_value.first.return_value = self.base_folder_node
         folder_element = BaseFileNode(
-            type='osf.s3compatinstitutionsfolder', provider='s3compatinstitutions', _path='/testfolder/foldername',
-            _materialized_path='/testfolder/foldername', target_object_id=self.node.id, target_content_type_id=2)
+            type='osf.s3compatinstitutionsfolder',
+            provider='s3compatinstitutions',
+            _path='/testfolder/foldername',
+            _materialized_path='/testfolder/foldername',
+            target_object_id=self.node.id,
+            target_content_type_id=2
+        )
         mock_base_file_node.objects.filter.return_value.all.return_value = [self.base_file_node, folder_element]
         mock_file_info.objects.get.return_value = FileInfo(file=self.base_file_node, file_size=1500)
         mock_user_quota.objects.filter.return_value.first.return_value = UserQuota(
