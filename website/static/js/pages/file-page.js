@@ -114,7 +114,7 @@ $(function() {
     }
 
     $.ajax({
-        url: window.contextVars.node.urls.api + 'files/timestamp/' + window.contextVars.file.provider + window.contextVars.file.path,
+        url: window.contextVars.node.urls.api + 'files/timestamp/' + window.contextVars.file.provider + '/' + window.contextVars.file.path.replace(/^\/+/g, ''),
         timeout: 0,
         method: 'GET'
     }).done(function (result) {

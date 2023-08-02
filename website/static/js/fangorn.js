@@ -1341,7 +1341,7 @@ function _uploadFolderEvent(event, item, mode, col) {
                 var next_folder_index = ++index;
                 return next(node_parent, next_folder_index, list_paths, file, file_index, next);
             }, function (data) {
-                if (data && data.code === 409) {
+                if (data && (data.code === 409 || data.code === 406)) {
                     $osf.growl(data.message);
                     m.redraw();
                 } else {
