@@ -363,7 +363,11 @@ def get_auth(auth, **kwargs):
             logger.debug(f'Missing location_id')
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
-        if location_id and auth.user and not auth.user.is_allowed_storage_location_id(location_id):
+        if auth.user is None:
+            logger.debug(f'This user is not authenticated')
+            raise HTTPError(http_status.HTTP_401_UNAUTHORIZED)
+
+        if location_id and not auth.user.is_allowed_storage_location_id(location_id):
             logger.debug(f'Authenticated user do not have permission on storage location id {location_id}')
             raise HTTPError(http_status.HTTP_403_FORBIDDEN)
 
