@@ -126,9 +126,9 @@ class ExportDataRestore(base.BaseModel):
                 target_object_id__in=projects__ids,
                 deleted=None)
         else:
-            # Add-on storage
+            # Add-on storage: get base_file_nodes based on type, provider name and project ids
             base_file_nodes = BaseFileNode.objects.filter(
-                type='osf.{}file'.format(self.destination.provider_name),
+                type=f'osf.{self.destination.provider_name}file',
                 provider=self.destination.provider_name,
                 target_object_id__in=projects__ids,
                 deleted=None)

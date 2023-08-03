@@ -23,7 +23,7 @@ from admin.rdm.utils import RdmPermissionMixin
 from admin.rdm_custom_storage_location import tasks
 from admin.rdm_custom_storage_location.export_data import utils
 from osf.models import ExportData, ExportDataRestore, BaseFileNode, Tag, RdmFileTimestamptokenVerifyResult, Institution, OSFUser, FileVersion, AbstractNode, \
-    ProjectStorageType, UserQuota, Guid
+    ProjectStorageType, UserQuota
 from website.util import inspect_info  # noqa
 from framework.transactions.handlers import no_auto_transaction
 from website.util.quota import update_user_used_quota
@@ -228,6 +228,10 @@ def restore_export_data_process(task, cookies, export_id, export_data_restore_id
 
         # Add tags, timestamp to created file nodes
         add_tag_and_timestamp_to_database(task, current_process_step, list_created_file_nodes)
+
+        # Update metadata of folders
+        institution = Institution.load(destination_region.guid)
+        utils.update_all_folders_metadata(institution, destination_provider)
 
         # Update process data with process_end timestamp and 'Completed' status
         export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
@@ -646,6 +650,9 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
                     # Create file node if not have for add-on storage
                     utils.prepare_file_node_for_add_on_storage(file_project_id, destination_provider, file_materialized_path, **kwargs)
 
+                # update file metadata
+                utils.update_file_metadata(file_project_id, file_provider, destination_provider, file_materialized_path)
+
                 response_id = response_body.get('data', {}).get('id')
                 response_file_version_id = response_body.get('data', {}).get('attributes', {}).get('extra', {}).get('version', version_id)
                 if response_id.startswith('osfstorage'):
@@ -706,16 +713,16 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
                 else:
                     # If id is provider_name/[path] then get path
                     file_path_splits = response_id.split('/')
-                    if len(file_path_splits) >= 2:
+                    if len(file_path_splits) > 1:
                         file_path_splits[0] = ''
                         file_node_path = '/'.join(file_path_splits)
-                        project_id = Guid.objects.filter(_id=file_project_id).values_list('id', flat=True).first()
-                        if project_id is None:
+                        project = AbstractNode.load(file_project_id)
+                        if not project:
                             continue
                         node_set = BaseFileNode.objects.filter(
                             type='osf.{}file'.format(destination_provider),
                             _path=file_node_path,
-                            target_object_id=project_id,
+                            target_object_id=project.id,
                             deleted=None)
                         if node_set.exists():
                             node = node_set.first()

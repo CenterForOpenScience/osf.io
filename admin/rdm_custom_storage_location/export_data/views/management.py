@@ -17,6 +17,7 @@ from admin.rdm_custom_storage_location.export_data.utils import (
     validate_exported_data,
     count_files_ng_ok,
     is_add_on_storage,
+    check_file_metadata,
 )
 from osf.models import ExportData, Institution
 from website.util import inspect_info  # noqa
@@ -483,6 +484,9 @@ class CheckRestoreData(RdmPermissionMixin, View):
                             # metadata/
                             'etag', 'extra']
         data = count_files_ng_ok(exported_file_versions, storage_file_versions, exclude_keys=exclude_keys)
+
+        # Check addons_metadata_filemetadata
+        data = check_file_metadata(data, restore_data, storage_file_info)
 
         # end check
         restore_data.status = ExportData.STATUS_COMPLETED

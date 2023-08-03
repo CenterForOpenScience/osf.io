@@ -13,6 +13,7 @@ from rest_framework import status as http_status
 
 from addons.base.institutions_utils import KEYNAME_BASE_FOLDER
 from addons.dropboxbusiness import utils as dropboxbusiness_utils
+from addons.metadata.models import FileMetadata
 from addons.nextcloudinstitutions import KEYNAME_NOTIFICATION_SECRET
 from addons.nextcloudinstitutions.models import NextcloudInstitutionsProvider
 from addons.osfstorage.models import Region
@@ -50,6 +51,8 @@ __all__ = [
     'write_json_file',
     'check_diff_between_version',
     'count_files_ng_ok',
+    'is_add_on_storage',
+    'check_file_metadata',
 ]
 ANY_BACKUP_FOLDER_REGEX = '^\\/backup_\\d{8,13}\\/.*$'
 
@@ -425,6 +428,44 @@ def count_files_ng_ok(exported_file_versions, storage_file_versions, exclude_key
             list_file_ng.append(ng_content)
             count_files += 1
     data['total'] = count_files
+    data['list_file_ng'] = list_file_ng if len(list_file_ng) <= 10 else list_file_ng[:10]
+    return data
+
+
+def check_file_metadata(data, restore_data, storage_file_info):
+    destination_region = restore_data.destination
+    destination_provider = destination_region.provider_name
+    if not is_add_on_storage(destination_provider):
+        destination_provider = 'osfstorage'
+    storage_files = storage_file_info.get('files', [])
+    list_file_ng = data.get('list_file_ng', [])
+    for file in storage_files:
+        file_materialized_path = file.get('materialized_path')
+        file_project_guid = file.get('project', {}).get('id')
+        file_provider = file.get('provider')
+        if not is_add_on_storage(file_provider):
+            file_provider = 'osfstorage'
+        project = AbstractNode.load(file_project_guid)
+        old_file_metadata_queryset = FileMetadata.objects.filter(project__owner=project, path=f'{file_provider}{file_materialized_path}', deleted=None)
+        restored_file_metadata_queryset = FileMetadata.objects.filter(project__owner=project, path=f'{destination_provider}{file_materialized_path}', deleted=None)
+        if not restored_file_metadata_queryset.exists() and old_file_metadata_queryset.exists():
+            # Metadata path does not change, add to NG list
+            file_is_ng = False
+            for item in data.get('list_file_ng', []):
+                if item.get('path') == file_materialized_path:
+                    # If file already has NG, add reason
+                    file_is_ng = True
+                    item['reason'] += '\nFile metadata is not updated'
+            if not file_is_ng:
+                # If file is not NG then add new record
+                data['ok'] -= 1
+                data['ng'] += 1
+                list_file_ng.append({
+                    'path': file_materialized_path,
+                    'size': file.get('size'),
+                    'version_id': None,
+                    'reason': 'File metadata is not updated',
+                })
     data['list_file_ng'] = list_file_ng if len(list_file_ng) <= 10 else list_file_ng[:10]
     return data
 
@@ -1055,3 +1096,37 @@ def create_parent_folders_for_nextcloud_for_institutions(node_id, provider, path
             return {'error': 'Cannot create folder for Nextcloud for Institutions'}
         parent_path += folder_path
     return None
+
+
+def update_file_metadata(project_guid, source_provider, destination_provider, file_path):
+    """ Update restored file path of addons_metadata_filemetadata """
+    project = AbstractNode.load(project_guid)
+    if not project:
+        return
+
+    old_metadata_path = f'{source_provider}{file_path}'
+    new_metadata_path = f'{destination_provider}{file_path}'
+    file_metadata_queryset = FileMetadata.objects.filter(project__owner=project, path=old_metadata_path, deleted=None)
+    if file_metadata_queryset.exists():
+        file_metadata = file_metadata_queryset.first()
+        file_metadata.path = new_metadata_path
+        file_metadata.save()
+
+
+def update_all_folders_metadata(institution, destination_provider):
+    """ Update folder path of addons_metadata_filemetadata """
+    if not institution or is_add_on_storage(destination_provider) is None:
+        # If input is invalid then do nothing
+        return
+
+    with transaction.atomic():
+        institution_users = institution.osfuser_set.all()
+        project_queryset = AbstractNode.objects.filter(type='osf.node', is_deleted=False, creator__in=institution_users)
+        file_metadata_list = FileMetadata.objects.filter(folder=True, project__owner__in=project_queryset, deleted=None)
+        for file_metadata in file_metadata_list:
+            path = file_metadata.path
+            path_parts = path.split('/')
+            if len(path_parts) > 1:
+                path_parts[0] = destination_provider
+                file_metadata.path = '/'.join(path_parts)
+                file_metadata.save()
