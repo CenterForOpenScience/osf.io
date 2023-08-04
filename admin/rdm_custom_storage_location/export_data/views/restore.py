@@ -519,6 +519,7 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
         file_created = file.get('created_at')
         file_modified = file.get('modified_at')
         file_provider = file.get('provider')
+        file_id = file.get('id')
 
         if is_destination_addon_storage:
             # Sort file by version modify date
@@ -600,19 +601,19 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
                                 else:
                                     if user.exists():
                                         file_version.creator = user.first()
-                                    file_version.created = file_version_created_at
-                                    file_version.modified = file_version_modified
-                                    file_version.save()
-                                    FileVersion.objects.filter(id=file_version.id).update(created=file_version_created_at,
-                                                                                          modified=file_version_created_at)
+                                        file_version.save()
+                                    update_kwargs = {}
+                                    if file_version_created_at is not None:
+                                        update_kwargs['created'] = file_version_created_at
+                                    if file_version_modified is not None:
+                                        update_kwargs['modified'] = file_version_modified
+                                    if update_kwargs:
+                                        FileVersion.objects.filter(id=file_version.id).update(**update_kwargs)
 
                             if file_checkout_id:
                                 node.checkout_id = file_checkout_id
+                                node.save()
 
-                            # update created/modified date to basefilenode
-                            node.created = file_created
-                            node.modified = file_modified
-                            node.save()
                             BaseFileNode.objects.filter(id=node.id).update(created=file_created,
                                                                            modified=file_modified)
 
@@ -622,6 +623,14 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
                                 'file_timestamp': file_timestamp,
                                 'project_id': file_project_id
                             })
+                            # Update guid for base file node.
+                            old_file_node = BaseFileNode.objects.get(id=file_id)
+                            file_guid_set = old_file_node.guids
+                            if file_guid_set.exists():
+                                file_guid = file_guid_set.first()
+                                if file_guid.object_id != node.id:
+                                    file_guid.object_id = node.id
+                                    file_guid.save()
                 else:
                     # If id is provider_name/[path] then get path
                     file_path_splits = response_id.split('/')
@@ -644,6 +653,14 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
                                 'file_timestamp': file_timestamp,
                                 'project_id': file_project_id
                             })
+                            # Update guid for base file node.
+                            old_file_node = BaseFileNode.objects.get(id=file_id)
+                            file_guid_set = old_file_node.guids
+                            if file_guid_set.exists():
+                                file_guid = file_guid_set.first()
+                                if file_guid.object_id != node.id:
+                                    file_guid.object_id = node.id
+                                    file_guid.save()
             except Exception as e:
                 logger.error(f'Download or upload exception: {e}')
                 check_if_restore_process_stopped(task, current_process_step)
