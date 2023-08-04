@@ -118,7 +118,8 @@ class TestSerializers(OsfTestCase):
         for patcher in (
             mock.patch('osf.models.base.generate_guid', new=osfguid_sequence),
             mock.patch('osf.models.base.Guid.objects.get_or_create', new=osfguid_sequence.get_or_create),
-            mock.patch('django.utils.timezone.now', new=forever_now)
+            mock.patch('django.utils.timezone.now', new=forever_now),
+            mock.patch('osf.models.metaschema.RegistrationSchema.absolute_api_v2_url', new='http://fake.example/schema/for/test'),
         ):
             patcher.start()
             self.addCleanup(patcher.stop)

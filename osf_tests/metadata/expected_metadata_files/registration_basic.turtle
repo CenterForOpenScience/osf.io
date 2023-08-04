@@ -4,7 +4,7 @@
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 
 <http://localhost:5000/w5ibb> a osf:Registration ;
-    dcterms:conformsTo <http://localhost:8000/v2/schemas/registrations/63d3f6c7dcb7b30226be52a9/> ;
+    dcterms:conformsTo <http://fake.example/schema/for/test> ;
     dcterms:created "2123-05-04" ;
     dcterms:creator <http://localhost:5000/w1ibb> ;
     dcterms:dateCopyrighted "2252" ;
@@ -42,4 +42,4 @@
     dcterms:identifier "http://localhost:5000" ;
     foaf:name "OSF" .
 
-<http://localhost:8000/v2/schemas/registrations/63d3f6c7dcb7b30226be52a9/> dcterms:title "Open-Ended Registration" .
+<http://fake.example/schema/for/test> dcterms:title "Open-Ended Registration" .
