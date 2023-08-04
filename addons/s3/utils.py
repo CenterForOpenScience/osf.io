@@ -2,6 +2,7 @@ import re
 import logging
 from rest_framework import status as http_status
 
+import boto3
 from boto import exception
 from boto.s3.connection import S3Connection
 from boto.s3.connection import OrdinaryCallingFormat
@@ -131,26 +132,25 @@ def get_bucket_location_or_error(access_key, secret_key, bucket_name):
 
 
 def get_bucket_prefixes(access_key, secret_key, prefix, bucket_name):
-    connection = S3Connection(access_key, secret_key)
+    s3 = boto3.client(
+        's3',
+        aws_access_key_id=access_key,
+        aws_secret_access_key=secret_key
+    )
 
-    if bucket_name != bucket_name.lower() or '.' in bucket_name:
-        # Must use ordinary calling format for mIxEdCaSe or `.` containing bucket names
-        # otherwise use the default as it handles bucket outside of the US
-        connection.calling_format = OrdinaryCallingFormat()
-
-    bucket = connection.get_bucket(bucket_name)
-
+    result = s3.list_objects(Bucket=bucket_name, Prefix=prefix, Delimiter='/')
     folders = []
-    for key in bucket.list(delimiter='/', prefix=prefix):
-        if key.name.endswith('/') and key.name != prefix:
+    for common_prefixes in result.get('CommonPrefixes', []):
+        key_name = common_prefixes.get('Prefix')
+        if key_name != prefix:
             folders.append(
                 {
-                    'path': key.name,
-                    'id': f'{bucket_name}:/{key.name}',
-                    'folder_id': key.name,
+                    'path': key_name,
+                    'id': f'{bucket_name}:/{key_name}',
+                    'folder_id': key_name,
                     'kind': 'folder',
                     'bucket_name': bucket_name,
-                    'name': key.name.split('/')[-2],
+                    'name': key_name.split('/')[-2],
                     'addon': 's3',
                 }
             )
