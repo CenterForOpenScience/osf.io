@@ -2,15 +2,21 @@
 
 SHARE/Trove accepts metadata records as "indexcards" in turtle format: https://www.w3.org/TR/turtle/
 """
-from django.apps import apps
+import logging
 import random
+
+from celery.exceptions import Retry
+from django.apps import apps
+
 from framework.celery_tasks import app as celery_app
 from framework.celery_tasks.handlers import enqueue_task
 from framework.sentry import log_exception
-
-from website import settings
-from celery.exceptions import Retry
 from osf.metadata.tools import pls_send_trove_indexcard, pls_delete_trove_indexcard
+from website import settings
+
+
+logger = logging.getLogger(__name__)
+
 
 def is_qa_resource(resource):
     """
@@ -30,7 +36,14 @@ def is_qa_resource(resource):
 def update_share(resource):
     if not settings.SHARE_ENABLED:
         return
-    enqueue_task(task__update_share.s(resource._id))
+    if not hasattr(resource, 'guids'):
+        logger.error(f'update_share called on non-guid resource: {resource}')
+        return
+    _osfguid_value = resource.guids.values_list('_id', flat=True).first()
+    if not _osfguid_value:
+        logger.warning(f'update_share skipping resource that has no guids: {resource}')
+        return
+    enqueue_task(task__update_share.s(_osfguid_value))
 
 
 @celery_app.task(bind=True, max_retries=4, acks_late=True)
@@ -41,7 +54,10 @@ def task__update_share(self, guid: str, **kwargs):
     :param guid:
     :return:
     """
-    resource = apps.get_model('osf.Guid').load(guid).referent
+    _guid_instance = apps.get_model('osf.Guid').load(guid)
+    if _guid_instance is None:
+        raise ValueError(f'unknown osfguid "{guid}"')
+    resource = _guid_instance.referent
     resp = (
         pls_delete_trove_indexcard(resource)
         if _should_delete_indexcard(resource)
@@ -67,16 +83,16 @@ def task__update_share(self, guid: str, **kwargs):
 
 
 def _should_delete_indexcard(osf_item):
+    # if it quacks like BaseFileNode, look at .target instead
+    _possibly_private_item = getattr(osf_item, 'target', None) or osf_item
     return (
-        not _is_item_public(osf_item)
-        or getattr(osf_item, 'is_spam', False)
-        or is_qa_resource(osf_item)
+        not _is_item_public(_possibly_private_item)
+        or getattr(_possibly_private_item, 'is_spam', False)
+        or is_qa_resource(_possibly_private_item)
     )
 
 
 def _is_item_public(guid_referent) -> bool:
-    # if it quacks like BaseFileNode, look at .target instead
-    _maybe_public = getattr(guid_referent, 'target', None) or guid_referent
-    if hasattr(_maybe_public, 'verified_publishable'):
-        return _maybe_public.verified_publishable        # quacks like Preprint
-    return getattr(_maybe_public, 'is_public', None)     # quacks like AbstractNode
+    if hasattr(guid_referent, 'verified_publishable'):
+        return guid_referent.verified_publishable        # quacks like Preprint
+    return getattr(guid_referent, 'is_public', False)    # quacks like AbstractNode

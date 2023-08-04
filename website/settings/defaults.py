@@ -461,7 +461,8 @@ class CeleryConfig:
         'website.archiver.tasks',
         'scripts.add_missing_identifiers_to_preprints',
         'osf.management.commands.approve_pending_schema_response',
-        'osf.management.commands.fix_quickfiles_waterbutler_logs'
+        'osf.management.commands.fix_quickfiles_waterbutler_logs',
+        'api.share.utils',
     }
 
     try:
@@ -536,6 +537,7 @@ class CeleryConfig:
         'osf.management.commands.daily_reporters_go',
         'osf.management.commands.monthly_reporters_go',
         'osf.external.spam.tasks',
+        'api.share.utils',
     )
 
     # Modules that need metrics and release requirements

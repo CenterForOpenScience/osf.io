@@ -55,7 +55,7 @@ def pls_send_trove_indexcard(osf_item):
         _shtrove_ingest_url(),
         params={
             'focus_iri': _iri,
-            'record_identifier': osf_item._id,
+            'record_identifier': _shtrove_record_identifier(osf_item),
         },
         headers={
             'Content-Type': _metadata_record.mediatype,
@@ -69,10 +69,14 @@ def pls_delete_trove_indexcard(osf_item):
     return requests.delete(
         _shtrove_ingest_url(),
         params={
-            'record_identifier': osf_item._id,
+            'record_identifier': _shtrove_record_identifier(osf_item),
         },
         headers=_shtrove_auth_headers(osf_item),
     )
+
+
+def _shtrove_record_identifier(osf_item):
+    return osf_item.guids.values_list('_id', flat=True).first()
 
 
 def _shtrove_ingest_url():
@@ -80,9 +84,14 @@ def _shtrove_ingest_url():
 
 
 def _shtrove_auth_headers(osf_item):
+    _nonfile_item = (
+        osf_item.target
+        if hasattr(osf_item, 'target')
+        else osf_item
+    )
     _access_token = (
-        osf_item.provider.access_token
-        if getattr(osf_item, 'provider') and osf_item.provider.access_token
+        _nonfile_item.provider.access_token
+        if _nonfile_item.provider and _nonfile_item.provider.access_token
         else website_settings.SHARE_API_TOKEN
     )
     return {'Authorization': f'Bearer {_access_token}'}
