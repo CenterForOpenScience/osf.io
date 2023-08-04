@@ -210,6 +210,7 @@ class ExportData(base.BaseModel):
                 type=f'osf.{self.source.provider_name}file',
                 provider=self.source.provider_name,
                 target_object_id__in=projects__ids,
+                _materialized_path__isnull=False,
                 deleted=None)
 
         total_size = 0

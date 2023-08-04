@@ -131,6 +131,7 @@ class ExportDataRestore(base.BaseModel):
                 type=f'osf.{self.destination.provider_name}file',
                 provider=self.destination.provider_name,
                 target_object_id__in=projects__ids,
+                _materialized_path__isnull=False,
                 deleted=None)
 
         total_size = 0
