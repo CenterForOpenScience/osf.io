@@ -588,7 +588,7 @@ def gather_preprint_prereg(focus):
         try:
             prereg_relations = {
                 'prereg_designs': [OSF.hasPreregisteredStudyDesign],
-                'prereg_analysis': [OSF.hasPreregisteredStudyDesign],
+                'prereg_analysis': [OSF.hasPreregisteredAnalysisPlan],
                 'prereg_both': [OSF.hasPreregisteredStudyDesign, OSF.hasPreregisteredAnalysisPlan],
             }[preprint.prereg_link_info]
         except KeyError:
