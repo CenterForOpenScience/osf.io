@@ -19,6 +19,8 @@ class TestNodeSettings(unittest.TestCase):
 
     def setUp(self):
         super(TestNodeSettings, self).setUp()
+        self.mock_fetch_metadata_asset_files = mock.patch('addons.metadata.models.fetch_metadata_asset_files')
+        self.mock_fetch_metadata_asset_files.start()
         self.node = ProjectFactory()
         self.user = self.node.creator
 
@@ -29,6 +31,7 @@ class TestNodeSettings(unittest.TestCase):
         super(TestNodeSettings, self).tearDown()
         self.node.delete()
         self.user.delete()
+        self.mock_fetch_metadata_asset_files.stop()
 
     @mock.patch('website.search.search.update_file_metadata')
     def test_set_invalid_file_metadata(self, mock_update_file_metadata):

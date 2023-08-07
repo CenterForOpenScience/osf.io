@@ -13,9 +13,19 @@ from .. import SHORT_NAME
 from .. import settings
 from .utils import BaseAddonTestCase
 from website.util import api_url_for
+from addons.metadata.models import NodeSettings
 
 
 class TestViews(BaseAddonTestCase, OsfTestCase):
+
+    def setUp(self):
+        self.mock_fetch_metadata_asset_files = mock.patch('addons.metadata.models.fetch_metadata_asset_files')
+        self.mock_fetch_metadata_asset_files.start()
+        super().setUp()
+
+    def tearDown(self):
+        super().tearDown()
+        self.mock_fetch_metadata_asset_files.stop()
 
     def test_no_file_metadata(self):
         url = self.project.api_url_for('{}_get_project'.format(SHORT_NAME))
@@ -71,16 +81,33 @@ class TestViews(BaseAddonTestCase, OsfTestCase):
 
 class TestSuggestionsViews(BaseAddonTestCase, OsfTestCase):
 
-    def test_invalid_filepath(self):
-        url = self.project.api_url_for('{}_file_metadata_suggestions'.format(SHORT_NAME),
-                                       filepath='invalid')
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equals(res.status_code, http_status.HTTP_404_NOT_FOUND)
+    fake_metadata_asset_pool = [
+        {'title': 'apple'},
+        {'title': 'pine'},
+        {'title': 'pineapple'},
+    ]
 
-    def test_dir(self):
+    def setUp(self):
+        self.mock_fetch_metadata_asset_files = mock.patch('addons.metadata.models.fetch_metadata_asset_files')
+        self.mock_fetch_metadata_asset_files.start()
+        super().setUp()
+
+    def tearDown(self):
+        super().tearDown()
+        self.mock_fetch_metadata_asset_files.stop()
+
+    def test_no_key(self):
+        url = self.project.api_url_for('{}_file_metadata_suggestions'.format(SHORT_NAME),
+                                       filepath='fake')
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equals(res.status_code, http_status.HTTP_400_BAD_REQUEST)
+
+    @mock.patch.object(NodeSettings, 'get_metadata_assets')
+    def test_dir_with_multiple_keys(self, mock_get_metadata_assets):
+        mock_get_metadata_assets.return_value = self.fake_metadata_asset_pool
         url = self.project.api_url_for('{}_file_metadata_suggestions'.format(SHORT_NAME),
                                        filepath='dir/osfstorage/dir1/')
-        res = self.app.get(url, auth=self.user.auth)
+        res = self.app.get(url, auth=self.user.auth, params={'key[]': ['file-data-number', 'asset:title']})
         assert_equals(res.status_code, http_status.HTTP_200_OK)
         assert_equals(res.json, {
             'data': {
@@ -90,15 +117,35 @@ class TestSuggestionsViews(BaseAddonTestCase, OsfTestCase):
                     'filepath': 'dir/osfstorage/dir1/',
                     'suggestions': [
                         {
-                            'format': 'data_format_number',
+                            'key': 'file-data-number',
                             'value': 'files/dir/osfstorage/dir1/',
-                        }
+                        },
+                        {
+                            'key': 'asset:title',
+                            'value': {
+                                'title': 'apple'
+                            }
+                        },
+                        {
+                            'key': 'asset:title',
+                            'value': {
+                                'title': 'pine'
+                            }
+                        },
+                        {
+                            'key': 'asset:title',
+                            'value': {
+                                'title': 'pineapple'
+                            }
+                        },
                     ]
                 }
             }
         })
 
-    def test_file(self):
+    @mock.patch.object(NodeSettings, 'get_metadata_assets')
+    def test_file_with_multiple_keys(self, mock_get_metadata_assets):
+        mock_get_metadata_assets.return_value = self.fake_metadata_asset_pool
         filepath = 'osfstorage/file.txt'
         filepath_guid = 'abcde'
         mock_node = mock.Mock()
@@ -108,7 +155,7 @@ class TestSuggestionsViews(BaseAddonTestCase, OsfTestCase):
         with mock.patch.object(BaseFileNode, 'resolve_class', return_value=mock_resolved_class):
             url = self.project.api_url_for('{}_file_metadata_suggestions'.format(SHORT_NAME),
                                            filepath=filepath)
-            res = self.app.get(url, auth=self.user.auth)
+            res = self.app.get(url, auth=self.user.auth, params={'key[]': ['file-data-number', 'asset:title']})
             assert_equals(res.status_code, http_status.HTTP_200_OK)
             assert_equals(res.json, {
                 'data': {
@@ -118,20 +165,39 @@ class TestSuggestionsViews(BaseAddonTestCase, OsfTestCase):
                         'filepath': filepath,
                         'suggestions': [
                             {
-                                'format': 'data_format_number',
+                                'key': 'file-data-number',
                                 'value': filepath_guid,
-                            }
+                            },
+                            {
+                                'key': 'asset:title',
+                                'value': {
+                                    'title': 'apple'
+                                }
+                            },
+                            {
+                                'key': 'asset:title',
+                                'value': {
+                                    'title': 'pine'
+                                }
+                            },
+                            {
+                                'key': 'asset:title',
+                                'value': {
+                                    'title': 'pineapple'
+                                }
+                            },
                         ]
                     }
                 }
             })
 
-    def test_data_format_number(self):
+    @mock.patch.object(NodeSettings, 'get_metadata_assets')
+    def test_asset_title_with_keyword(self, mock_get_metadata_assets):
+        mock_get_metadata_assets.return_value = self.fake_metadata_asset_pool
         filepath = 'dir/osfstorage/dir1/'
-        format = 'data_format_number'
         url = self.project.api_url_for('{}_file_metadata_suggestions'.format(SHORT_NAME),
                                        filepath=filepath)
-        res = self.app.get(url, params={'format': format}, auth=self.user.auth)
+        res = self.app.get(url, params={'key': 'asset:title', 'keyword': 'app'}, auth=self.user.auth)
         assert_equals(res.status_code, http_status.HTTP_200_OK)
         assert_equals(res.json, {
             'data': {
@@ -141,16 +207,24 @@ class TestSuggestionsViews(BaseAddonTestCase, OsfTestCase):
                     'filepath': filepath,
                     'suggestions': [
                         {
-                            'format': format,
-                            'value': 'files/{}'.format(filepath),
-                        }
+                            'key': 'asset:title',
+                            'value': {
+                                'title': 'apple'
+                            }
+                        },
+                        {
+                            'key': 'asset:title',
+                            'value': {
+                                'title': 'pineapple'
+                            }
+                        },
                     ]
                 }
             }
         })
 
-    def test_invalid_format(self):
+    def test_invalid_key(self):
         url = self.project.api_url_for('{}_file_metadata_suggestions'.format(SHORT_NAME),
                                        filepath='dir/osfstorage/dir1/')
-        res = self.app.get(url, params={'format': 'invalid'}, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, params={'key': 'invalid'}, auth=self.user.auth, expect_errors=True)
         assert_equals(res.status_code, http_status.HTTP_400_BAD_REQUEST)

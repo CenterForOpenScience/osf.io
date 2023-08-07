@@ -65,6 +65,7 @@
     "pretty-data": "^0.40.0",
     "raw-loader": "^0.5.1",
     "select2": "3.5.1",
+    "sift": "^17.0.1",
     "style-loader": "^0.8.3",
     "treebeard": "https://github.com/CenterForOpenScience/treebeard.git#d2bb8f6f8104fcac040402727f431c26722b269e",
     "typeahead.js": "^0.10.5",

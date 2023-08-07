@@ -53,13 +53,15 @@ FORMAT_TYPE_TO_TYPE_MAP = {
     ('e-rad-bunnya', 'string'): 'e-rad-bunnya-input',
     ('file-metadata', 'string'): 'file-metadata-input',
     ('date', 'string'): 'date-input',
-    ('file-capacity', 'string'): 'file-capacity-input',
-    ('file-creators', 'string'): 'file-creators-input',
-    ('file-data-number', 'string'): 'file-data-number-input',
-    ('file-url', 'string'): 'file-url-input',
-    ('file-institution-ja', 'string'): 'file-institution-ja-input',
-    ('file-institution-en', 'string'): 'file-institution-en-input',
-    ('file-institution-identifier', 'string'): 'file-institution-id-input',
+    # deprecated format types are mapped to the simple text type
+    ('file-capacity', 'string'): 'short-text-input',
+    ('file-creators', 'string'): 'long-text-input',
+    ('file-data-number', 'string'): 'short-text-input',
+    ('file-title', 'string'): 'short-text-input',
+    ('file-url', 'string'): 'short-text-input',
+    ('file-institution-ja', 'string'): 'short-text-input',
+    ('file-institution-en', 'string'): 'short-text-input',
+    ('file-institution-identifier', 'string'): 'short-text-input',
 }
 
 def get_osf_models():
@@ -216,7 +218,8 @@ def remove_schemas(*args):
 
 def create_schema_block(state, schema_id, block_type, display_text='', required=False, help_text='',
         registration_response_key=None, schema_block_group_key='', example_text='',
-        default=False, pattern=None, space_normalization=False):
+        default=False, pattern=None, space_normalization=False, required_if=None,
+        message_required_if=None, enabled_if=None, suggestion=None):
     """
     For mapping schemas to schema blocks: creates a given block from the specified parameters
     """
@@ -254,6 +257,10 @@ def create_schema_block(state, schema_id, block_type, display_text='', required=
         'default': default,
         'pattern': pattern,
         'space_normalization': space_normalization,
+        'required_if': required_if,
+        'message_required_if': message_required_if,
+        'enabled_if': enabled_if,
+        'suggestion': suggestion,
     }
 
     try:
@@ -421,6 +428,10 @@ def create_schema_blocks_for_question(state, rs, question, sub=False):
             registration_response_key=get_registration_response_key(question),
             pattern=question.get('pattern', None),
             space_normalization=question.get('space_normalization', False),
+            required_if=question.get('required_if', None),
+            message_required_if=question.get('message_required_if', None),
+            enabled_if=question.get('enabled_if', None),
+            suggestion=question.get('suggestion', None),
         )
 
         # If there are multiple choice answers, create blocks for these as well.
