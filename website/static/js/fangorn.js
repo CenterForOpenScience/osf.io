@@ -3470,7 +3470,7 @@ tbOptions = {
                     if (quota.used + file.size > quota.max * window.contextVars.threshold) {
                         $osf.growl(
                             gettext('Quota usage alert'),
-                            sprintf(gettext('You have used more than %1$s% of your quota.'),(window.contextVars.threshold * 100)),
+                            sprintf(gettext('You have used more than %1$s%% of your quota.'),(window.contextVars.threshold * 100)),
                             'warning'
                         );
                     }
