@@ -50,11 +50,21 @@ api_routes = {
             views.boa_import_auth,
             json_renderer
         ),
+        # NOTE: not for Boa
+        # Rule(
+        #     ['/project/<pid>/boa/folders/',
+        #      '/project/<pid>/node/<nid>/boa/folders/'],
+        #     'get',
+        #     views.boa_folder_list,
+        #     json_renderer
+        # ),
         Rule(
-            ['/project/<pid>/boa/folders/',
-             '/project/<pid>/node/<nid>/boa/folders/'],
-            'get',
-            views.boa_folder_list,
+            [
+                '/project/<pid>/boa/submit-job/',
+                '/project/<pid>/node/<nid>/boa/submit-job/',
+            ],
+            'post',
+            views.boa_submit_job,
             json_renderer
         ),
     ],

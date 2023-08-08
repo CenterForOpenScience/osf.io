@@ -36,6 +36,7 @@ WORKDIR /code
 COPY ./requirements.txt ./
 COPY ./requirements/ ./requirements/
 COPY ./addons/bitbucket/requirements.txt ./addons/bitbucket/
+COPY ./addons/boa/requirements.txt ./addons/boa/
 COPY ./addons/box/requirements.txt ./addons/box/
 #COPY ./addons/citations/requirements.txt ./addons/citations/
 COPY ./addons/dataverse/requirements.txt ./addons/dataverse/

@@ -1,5 +1,8 @@
 """Views for the node settings page."""
 # -*- coding: utf-8 -*-
+import re
+import time
+
 from rest_framework import status as http_status
 
 from django.core.exceptions import ValidationError
@@ -13,10 +16,17 @@ from osf.models import ExternalAccount
 from website.project.decorators import (
     must_have_addon)
 
-import boa
+from boaapi.boa_client import BoaClient, BOA_API_ENDPOINT
+from boaapi.status import CompilerStatus, ExecutionStatus
+from boaapi.util import BoaException
+
 from addons.boa.models import BoaProvider
 from addons.boa.serializer import BoaSerializer
 from addons.boa import settings
+
+import logging
+logger = logging.getLogger(__name__)
+
 
 SHORT_NAME = 'boa'
 FULL_NAME = 'Boa'
@@ -42,47 +52,37 @@ def boa_add_user_account(auth, **kwargs):
     """
         Verifies new external account credentials and adds to user's list
 
-        This view expects `host`, `username` and `password` fields in the JSON
+        This view expects `username` and `password` fields in the JSON
         body of the request.
     """
 
-    # Ensure that boa uses https
-    host_url = request.json.get('host')
-    host = furl()
-    host.host = host_url.rstrip('/').replace('https://', '').replace('http://', '')
-    host.scheme = 'https'
-
     username = request.json.get('username')
     password = request.json.get('password')
-
     try:
-        b = boa.Client(host.url, verify_certs=settings.USE_SSL)
+        b = BoaClient(endpoint=BOA_API_ENDPOINT)
         b.login(username, password)
-        b.logout()
-    except requests.exceptions.ConnectionError:
-        return {
-            'message': 'Invalid Boa server.'
-        }, http_status.HTTP_400_BAD_REQUEST
-    except boa.boa.HTTPResponseError:
+        b.close()
+    except BoaException:
         return {
             'message': 'Boa Login failed.'
         }, http_status.HTTP_401_UNAUTHORIZED
 
     provider = BoaProvider(
-        account=None, host=host.url,
-        username=username, password=password
+        account=None, host=BOA_API_ENDPOINT, username=username, password=password
     )
     try:
         provider.account.save()
-    except ValidationError:
+    except ValidationError as vexc:
         # ... or get the old one
         provider.account = ExternalAccount.objects.get(
             provider=provider.short_name,
-            provider_id='{}:{}'.format(host.url, username).lower()
+            provider_id='{}:{}'.format(BOA_API_ENDPOINT, username).lower()
         )
         if provider.account.oauth_key != password:
             provider.account.oauth_key = password
             provider.account.save()
+    except Exception as exc:
+        return {}
 
     user = auth.user
     if not user.external_accounts.filter(id=provider.account.id).exists():
@@ -93,14 +93,14 @@ def boa_add_user_account(auth, **kwargs):
 
     return {}
 
-@must_have_addon(SHORT_NAME, 'user')
-@must_have_addon(SHORT_NAME, 'node')
-def boa_folder_list(node_addon, user_addon, **kwargs):
-    """ Returns all the subsequent folders under the folder id passed.
-        Not easily generalizable due to `path` kwarg.
-    """
-    path = request.args.get('path')
-    return node_addon.get_folders(path=path)
+# @must_have_addon(SHORT_NAME, 'user')
+# @must_have_addon(SHORT_NAME, 'node')
+# def boa_folder_list(node_addon, user_addon, **kwargs):
+#     """ Returns all the subsequent folders under the folder id passed.
+#         Not easily generalizable due to `path` kwarg.
+#     """
+#     path = request.args.get('path')
+#     return node_addon.get_folders(path=path)
 
 def _set_folder(node_addon, folder, auth):
     node_addon.set_folder(folder['path'], auth=auth)
@@ -117,3 +117,52 @@ boa_get_config = generic_views.get_config(
     SHORT_NAME,
     BoaSerializer
 )
+
+@must_have_addon(SHORT_NAME, 'user')
+@must_have_addon(SHORT_NAME, 'node')
+def boa_submit_job(node_addon, user_addon, **kwargs):
+    params = request.json
+
+    boa = BoaClient(endpoint=BOA_API_ENDPOINT)
+    provid = node_addon.external_account.provider_id
+    parts = provid.rsplit(':', 1)
+    host, username = parts[0], parts[1]
+    password = node_addon.external_account.oauth_key
+    boa = BoaClient(endpoint=host)
+    boa.login(username, password)
+
+    cookies = dict(osf=request.cookies.get('osf'))
+
+    attrs = params['data']
+    links = attrs['links']
+    download_url = links['download']
+    download_url = download_url.replace('localhost', '192.168.168.167')
+    resp = requests.get(download_url, cookies=cookies)
+    query = resp.text
+
+    job = boa.query(query, boa.get_dataset('2019 October/GitHub'))
+    check = 1
+    while job.is_running():
+        job.refresh()
+        logger.info('≥≥≥≥ boa_submit_job  {}: job ({}) still running, '
+                    'waiting 10s...'.format(check, str(job.id)))
+        check += 1
+        time.sleep(10)
+
+    output = None
+    if job.compiler_status is CompilerStatus.ERROR:
+        logger.info('≥≥≥≥ boa_submit_job    job ' + str(job.id) + ' had compile error')
+    elif job.exec_status is ExecutionStatus.ERROR:
+        logger.info('≥≥≥≥ boa_submit_job    job ' + str(job.id) + ' had exec error')
+    else:
+        output = job.output()
+
+    upload_url = links['upload']
+    upload_url = re.sub(r'\/[0123456789abcdef]+\?', '/?', upload_url)
+    results_name = attrs['name'].replace('.boa', '_results.txt')
+    upload_url = upload_url.replace('localhost', '192.168.168.167') + '&name=' + results_name
+    up_resp = requests.put(upload_url, data=output, cookies=cookies)
+
+    boa.close()
+
+    return

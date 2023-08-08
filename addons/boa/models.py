@@ -5,11 +5,10 @@ from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
 from django.db import models
 from framework.auth import Auth
-from osf.models.files import File, Folder, BaseFileNode
-from boa import Client as BoaClient
+from boaapi.boa_client import BoaClient
 from addons.base import exceptions
 from addons.boa import settings
-from addons.boa.serializer import BpaSerializer
+from addons.boa.serializer import BoaSerializer
 from addons.boa.settings import DEFAULT_HOSTS, USE_SSL
 from osf.models.external import BasicAuthProviderMixin
 from website.util import api_v2_url
@@ -71,12 +70,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     def folder_name(self):
         return self.folder_id
 
-    def set_folder(self, folder, auth=None):
-        if folder == '/ (Full Boa)':
-            folder = '/'
-        self.folder_id = folder
-        self.save()
-        self.nodelogger.log(action='folder_selected', save=True)
+    # def set_folder(self, folder, auth=None):  # NOTE: no for Boa
 
     def fetch_folder_name(self):
         if self.folder_id == '/':
@@ -94,40 +88,16 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         self.clear_auth()  # Also performs a .save()
 
     def serialize_waterbutler_credentials(self):
-        if not self.has_auth:
-            raise exceptions.AddonError('Addon is not authorized')
-        provider = BoaProvider(self.external_account)
-        return {
-            'host': provider.host,
-            'username': provider.username,
-            'password': provider.password
-        }
+        # required by superclass, not actually used
+        pass
 
     def serialize_waterbutler_settings(self):
-        if not self.folder_id:
-            raise exceptions.AddonError('Boa is not configured')
-        return {
-            'folder': self.folder_id,
-            'verify_ssl': USE_SSL
-        }
+        # required by superclass, not actually used
+        pass
 
-    def create_waterbutler_log(self, auth, action, metadata):
-        url = self.owner.web_url_for('addon_view_or_download_file',
-                                     path=metadata['path'], provider='boa')
-        self.owner.add_log(
-            'boa_{0}'.format(action),
-            auth=auth,
-            params={
-                'project': self.owner.parent_id,
-                'node': self.owner._id,
-                'folder': self.folder_id,
-                'path': metadata['materialized'].lstrip('/'),
-                'urls': {
-                    'view': url,
-                    'download': url + '?action=download'
-                },
-            },
-        )
+    def create_waterbutler_log(self, *args, **kwargs):
+         # required by superclass, not actually used
+        pass
 
     def after_delete(self, user):
         self.deauthorize(Auth(user=user), add_log=True)
@@ -137,44 +107,4 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         self.deauthorize(add_log=False)
         self.save()
 
-    def get_folders(self, **kwargs):
-        path = kwargs.get('path')
-        if path is None:
-            return [{
-                'addon': 'boa',
-                'path': '/',
-                'kind': 'folder',
-                'id': '/',
-                'name': '/ (Full Boa)',
-                'urls': {
-                    'folders': api_v2_url('nodes/{}/addons/boa/folders/'.format(self.owner._id),
-                        params={
-                            'path': '/',
-                    })
-                }
-            }]
-
-        provider = BoaProvider(account=self.external_account)
-
-        b = BoaClient(provider.host, verify_certs=settings.USE_SSL)
-        b.login(provider.username, provider.password)
-
-        ret = []
-        for item in b.list(path):
-            if item.file_type is 'dir':
-                ret.append({
-                    'addon': 'boa',
-                    'path': item.path,
-                    'kind': 'folder',
-                    'id': item.path,
-                    'name': item.path.strip('/').split('/')[-1],
-                    'urls': {
-                        'folders': api_v2_url('nodes/{}/addons/boa/folders/'.format(self.owner._id),
-                            params={
-                                'path': item.path,
-                        })
-
-                    }
-                })
-
-        return ret
+    # def get_folders(self, **kwargs):  # NOTE: no for boa

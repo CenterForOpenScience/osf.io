@@ -103,6 +103,7 @@ INSTALLED_APPS = (
     # Addons
     'addons.osfstorage',
     'addons.bitbucket',
+    'addons.boa',
     'addons.box',
     'addons.dataverse',
     'addons.dropbox',

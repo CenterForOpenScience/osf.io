@@ -41,7 +41,7 @@ You can monitor traffic to your public projects and downloads of your public fil
 <br>
 
 <h4>Connect services that you use</h4>
-OSF integrates with GitHub, Dropbox, Google Drive, Box, Dataverse, figshare, Amazon S3, ownCloud, Bitbucket, GitLab, OneDrive, Mendeley, and Zotero. Link the services that you use to your OSF projects so that all parts of your research are in one place <a href="https://help.osf.io/article/377-add-ons-api-home-page">Learn about add-ons.</a><br>
+OSF integrates with GitHub, Dropbox, Google Drive, Box, Dataverse, figshare, Amazon S3, ownCloud, Bitbucket, GitLab, OneDrive, Boa, Mendeley, and Zotero. Link the services that you use to your OSF projects so that all parts of your research are in one place <a href="https://help.osf.io/article/377-add-ons-api-home-page">Learn about add-ons.</a><br>
 <br>
 
 <h4>Collaborate</h4>

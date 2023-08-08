@@ -270,6 +270,36 @@
                 "text": "Box content will be registered, but version history will not be copied to the registration."
             }
         },
+        "Boa": {
+            "Permissions": {
+                "status": "partial",
+                "text": "©©©©©©"
+            },
+            "View / download file versions": {
+                "status": "full",
+                "text": "©©©©©©"
+            },
+            "Add / update files": {
+                "status": "full",
+                "text": "©©©©©©"
+            },
+            "Delete files": {
+                "status": "full",
+                "text": "©©©©©©"
+            },
+            "Logs": {
+                "status": "partial",
+                "text": "©©©©©©"
+            },
+            "Forking": {
+                "status": "partial",
+                "text": "©©©©©©"
+            },
+            "Registering": {
+                "status": "partial",
+                "text": "©©©©©©"
+            }
+        },
         "Mendeley": {
             "Permissions": {
                 "status": "partial",

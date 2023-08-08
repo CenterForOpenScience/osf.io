@@ -10,35 +10,16 @@ var oop = require('js/oop');
 var $modal = $('#boaCredentialsModal');
 
 var ViewModel = oop.extend(OAuthAddonSettingsViewModel,{
-    constructor: function(url){
+    constructor: function(){
         var self = this;
         self.super.constructor.call(self, 'boa', 'boa');
 
+        self.url = '/api/v1/settings/boa/accounts/';
         var otherString = 'Other (Please Specify)';
 
-        self.url = url;
         self.username = ko.observable();
         self.password = ko.observable();
-        self.hosts = ko.observableArray([]);
-        self.selectedHost = ko.observable();
-        self.customHost = ko.observable();
         self.loaded = ko.observable(false);
-
-        self.host = ko.pureComputed(function() {
-            return self.useCustomHost() ? self.customHost() : self.selectedHost();
-        });
-        self.visibleHosts = ko.pureComputed(function() {
-            return self.hosts().concat([otherString]);
-        });
-        self.useCustomHost = ko.pureComputed(function() {
-            return (self.selectedHost() === otherString || !self.hasDefaultHosts());
-        });
-        self.showCredentialInput = ko.pureComputed(function() {
-            return true;
-        });
-        self.hasDefaultHosts = ko.pureComputed(function() {
-            return Boolean(self.hosts().length);
-        });
     },
     fetch :function(){
         var self = this;
@@ -47,7 +28,6 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel,{
             type: 'GET',
             dataType: 'json'
         }).done(function (response) {
-            self.hosts(response.hosts);
             self.loaded(true);
             self.updateAccounts();
         }).fail(function (xhr, textStatus, error) {
@@ -61,32 +41,17 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel,{
     },
     clearModal : function() {
         var self = this;
-        self.selectedHost(null);
-        self.customHost(null);
     },
     connectAccount : function() {
         var self = this;
-        // Selection should not be empty
-        if( self.hasDefaultHosts() && !self.selectedHost() ){
-            if (self.useCustomHost()){
-                self.setMessage('Please enter an boa server.', 'text-danger');
-            } else {
-                self.setMessage('Please select an boa server.', 'text-danger');
-            }
-            return;
-        }
-        if ( !self.useCustomHost() && !self.username() && !self.password() ){
+        if ( !self.username() && !self.password() ){
             self.setMessage('Please enter a username and password.', 'text-danger');
             return;
         }
-        if ( self.useCustomHost() && ( !self.customHost() || !self.username() || !self.password() ) )  {
-            self.setMessage('Please enter an boa host and credentials.', 'text-danger');
-            return;
-        }
-        return osfHelpers.postJSON(
+
+        osfHelpers.postJSON(
             self.url,
             ko.toJS({
-                host: self.host,
                 password: self.password,
                 username: self.username
             })
@@ -94,14 +59,12 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel,{
             self.clearModal();
             $modal.modal('hide');
             self.updateAccounts();
-
         }).fail(function(xhr, textStatus, error) {
             var errorMessage = (xhr.status === 401) ? language.authInvalid : language.authError;
             self.setMessage(errorMessage, 'text-danger');
             Raven.captureMessage('Could not authenticate with boa', {
-                url: self.url,
                 textStatus: textStatus,
-                error: error
+                error: error,
             });
         });
     },
@@ -110,8 +73,7 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel,{
 function BoaUserConfig(selector, url) {
     var self = this;
     self.selector = selector;
-    self.url = url;
-    self.viewModel = new ViewModel(url);
+    self.viewModel = new ViewModel();
     osfHelpers.applyBindings(self.viewModel, self.selector);
 }
 

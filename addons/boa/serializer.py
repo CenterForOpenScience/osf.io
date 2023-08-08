@@ -2,17 +2,17 @@ from addons.base.serializer import StorageAddonSerializer
 from addons.boa.settings import DEFAULT_HOSTS, USE_SSL
 from website.util import web_url_for
 
-from boa import Client as BoaClient
+from boaapi.boa_client import BoaClient, BOA_API_ENDPOINT
+from boaapi.util import BoaException
+
 
 class BoaSerializer(StorageAddonSerializer):
 
     addon_short_name = 'boa'
 
     def serialized_folder(self, node_settings):
-        return {
-            'name': node_settings.fetch_folder_name(),
-            'path': node_settings.folder_id
-        }
+        # required by superclass, not actually used
+        return None
 
     def credentials_are_valid(self, user_settings, client=None):
         node = self.node_settings
@@ -20,11 +20,11 @@ class BoaSerializer(StorageAddonSerializer):
         provider = self.node_settings.oauth_provider(external_account)
 
         try:
-            oc = BoaClient(provider.host, verify_certs=USE_SSL)
-            oc.login(provider.username, provider.password)
-            oc.logout()
+            boa = BoaClient(endpoint=provider.host)
+            boa.login(provider.username, provider.password)
+            boa.close()
             return True
-        except Exception:
+        except BoaException:
             return False
 
     @property
@@ -37,13 +37,15 @@ class BoaSerializer(StorageAddonSerializer):
             'accounts': node.api_url_for('boa_account_list'),
             'importAuth': node.api_url_for('boa_import_auth'),
             'deauthorize': node.api_url_for('boa_deauthorize_node'),
-            'folders': node.api_url_for('boa_folder_list'),
-            'files': node.web_url_for('collect_file_trees'),
+            # 'folders': node.api_url_for('boa_folder_list'),
+            'folders': None,
+            # 'files': node.web_url_for('collect_file_trees'),
+            'files': None,
             'config': node.api_url_for('boa_set_config'),
         }
         if user_settings:
             result['owner'] = web_url_for('profile_view_id',
-                uid=user_settings.owner._id)
+                                          uid=user_settings.owner._id)
         return result
 
     @property
