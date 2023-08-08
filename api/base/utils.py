@@ -5,7 +5,6 @@ from future.moves.urllib.parse import urlunsplit, urlsplit, parse_qs, urlencode
 from distutils.version import StrictVersion
 from hashids import Hashids
 
-from django.utils.http import urlquote
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import QuerySet, F
 from rest_framework.exceptions import NotFound

@@ -94,9 +94,6 @@ def get_project_storage_type(node):
 
 @file_signals.file_updated.connect
 def update_used_quota(self, target, user, event_type, payload):
-    if event_type == FileLog.FILE_RENAMED:
-        destination = dict(payload).get('destination')
-        source = dict(payload).get('source')
     data = dict(payload.get('metadata')) if payload.get('metadata') else None
     metadata_provider = data.get('provider') if payload.get('metadata') else None
     if metadata_provider == 'osfstorage' or metadata_provider in PROVIDERS:
