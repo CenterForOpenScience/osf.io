@@ -1,9 +1,8 @@
-import json
-import pytest
-import responses
 from unittest.mock import patch
 
-from api.share.utils import serialize_registration
+import pytest
+import responses
+
 from osf.models import CollectionSubmission, SpamStatus, Outcome
 from osf.utils.outcomes import ArtifactTypes
 
@@ -21,6 +20,8 @@ from website import settings
 from website.project.tasks import on_node_updated
 
 from framework.auth.core import Auth
+from api.share.utils import shtrove_ingest_url
+from ._utils import expect_ingest_request
 
 
 @pytest.mark.django_db
@@ -28,9 +29,10 @@ from framework.auth.core import Auth
 class TestNodeShare:
 
     @pytest.fixture(scope='class', autouse=True)
-    def mock_request_identifier_update(self):
+    def _patches(self):
         with patch('osf.models.identifiers.IdentifierMixin.request_identifier_update'):
-            yield
+            with patch.object(settings, 'USE_CELERY', False):
+                yield
 
     @pytest.fixture()
     def user(self):
@@ -97,15 +99,12 @@ class TestNodeShare:
         return o
 
     def test_update_node_share(self, mock_share, node, user):
-
-        on_node_updated(node._id, user._id, False, {'is_public'})
-
-        assert mock_share.calls[-1].request.headers['Authorization'] == 'Bearer mock-api-token'
+        with expect_ingest_request(mock_share, node._id):
+            on_node_updated(node._id, user._id, False, {'is_public'})
 
     def test_update_registration_share(self, mock_share, registration, user):
-        on_node_updated(registration._id, user._id, False, {'is_public'})
-
-        assert mock_share.calls[-1].request.headers['Authorization'] == 'Bearer mock-api-token'
+        with expect_ingest_request(mock_share, registration._id):
+            on_node_updated(registration._id, user._id, False, {'is_public'})
 
     def test_update_share_correctly_for_projects(self, mock_share, node, user):
         cases = [{
@@ -126,12 +125,8 @@ class TestNodeShare:
         for i, case in enumerate(cases):
             for attr, value in case['attrs'].items():
                 setattr(node, attr, value)
-            node.save()
-
-            data = json.loads(mock_share.calls[i].request.body.decode())
-            graph = data['data']['attributes']['data']['@graph']
-            work_node = next(n for n in graph if n['@type'] == 'project')
-            assert work_node['is_deleted'] == case['is_deleted']
+            with expect_ingest_request(mock_share, node._id, delete=case['is_deleted']):
+                node.save()
 
     def test_update_share_correctly_for_registrations(self, mock_share, registration, user):
         cases = [{
@@ -149,135 +144,40 @@ class TestNodeShare:
         for i, case in enumerate(cases):
             for attr, value in case['attrs'].items():
                 setattr(registration, attr, value)
-            registration.save()
-
+            with expect_ingest_request(mock_share, registration._id, delete=case['is_deleted']):
+                registration.save()
             assert registration.is_registration
-            data = json.loads(mock_share.calls[i].request.body.decode())
-            graph = data['data']['attributes']['data']['@graph']
-            payload = next((item for item in graph if 'is_deleted' in item.keys()))
-            assert payload['is_deleted'] == case['is_deleted']
-
-    def test_serialize_registration_gets_parent_hierarchy_for_component_registrations(self, project, grandchild_registration):
-        res = serialize_registration(grandchild_registration)
-
-        graph = res['@graph']
-
-        # all three registrations are present...
-        registration_graph_nodes = [n for n in graph if n['@type'] == 'registration']
-        assert len(registration_graph_nodes) == 3
-        root = next(n for n in registration_graph_nodes if n['title'] == 'Root')
-        child = next(n for n in registration_graph_nodes if n['title'] == 'Child')
-        grandchild = next(n for n in registration_graph_nodes if n['title'] == 'Grandchild')
-
-        # ...with the correct 'ispartof' relationships among them (grandchild => child => root)
-        expected_ispartofs = [
-            {
-                '@type': 'ispartof',
-                'subject': {'@id': grandchild['@id'], '@type': 'registration'},
-                'related': {'@id': child['@id'], '@type': 'registration'},
-            }, {
-                '@type': 'ispartof',
-                'subject': {'@id': child['@id'], '@type': 'registration'},
-                'related': {'@id': root['@id'], '@type': 'registration'},
-            },
-        ]
-        actual_ispartofs = [n for n in graph if n['@type'] == 'ispartof']
-        assert len(actual_ispartofs) == 2
-        for expected_ispartof in expected_ispartofs:
-            actual_ispartof = [
-                n for n in actual_ispartofs
-                if expected_ispartof.items() <= n.items()
-            ]
-            assert len(actual_ispartof) == 1
-
-        # ...and each has an identifier
-        for registration_graph_node in registration_graph_nodes:
-            workidentifier_graph_nodes = [
-                n for n in graph
-                if n['@type'] == 'workidentifier'
-                and n['creative_work']['@id'] == registration_graph_node['@id']
-            ]
-            assert len(workidentifier_graph_nodes) == 1
-
-    def test_serialize_registration_sets_osf_related_resource_types(
-        self, mock_share, registration, registration_outcome, user
-    ):
-        graph = serialize_registration(registration)['@graph']
-        registration_graph_node = [n for n in graph if n['@type'] == 'registration'][0]
-
-        expected_resource_types = {
-            'data': True, 'papers': True, 'analytic_code': False, 'materials': False, 'supplements': False
-        }
-
-        assert registration_graph_node['extra']['osf_related_resource_types'] == expected_resource_types
 
     def test_update_share_correctly_for_projects_with_qa_tags(self, mock_share, node, user):
-        node.add_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user))
-        on_node_updated(node._id, user._id, False, {'is_public'})
-        data = json.loads(mock_share.calls[-1].request.body.decode())
-        graph = data['data']['attributes']['data']['@graph']
-        payload = next((item for item in graph if 'is_deleted' in item.keys()))
-        assert payload['is_deleted'] is True
-
-        node.remove_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user), save=True)
-
-        data = json.loads(mock_share.calls[-1].request.body.decode())
-        graph = data['data']['attributes']['data']['@graph']
-        payload = next((item for item in graph if 'is_deleted' in item.keys()))
-        assert payload['is_deleted'] is False
+        with expect_ingest_request(mock_share, node._id, delete=True):
+            node.add_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user))
+        with expect_ingest_request(mock_share, node._id, delete=False):
+            node.remove_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user), save=True)
 
     def test_update_share_correctly_for_registrations_with_qa_tags(self, mock_share, registration, user):
-        registration.add_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user))
-        on_node_updated(registration._id, user._id, False, {'is_public'})
-        data = json.loads(mock_share.calls[-1].request.body.decode())
-
-        graph = data['data']['attributes']['data']['@graph']
-        payload = next((item for item in graph if 'is_deleted' in item.keys()))
-        assert payload['is_deleted'] is True
-
-        registration.remove_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user), save=True)
-
-        data = json.loads(mock_share.calls[-1].request.body.decode())
-        graph = data['data']['attributes']['data']['@graph']
-        payload = next((item for item in graph if 'is_deleted' in item.keys()))
-        assert payload['is_deleted'] is False
+        with expect_ingest_request(mock_share, registration._id, delete=True):
+            registration.add_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user))
+        with expect_ingest_request(mock_share, registration._id):
+            registration.remove_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user), save=True)
 
     def test_update_share_correctly_for_projects_with_qa_titles(self, mock_share, node, user):
         node.title = settings.DO_NOT_INDEX_LIST['titles'][0] + ' arbitary text for test title.'
         node.save()
-        on_node_updated(node._id, user._id, False, {'is_public'})
-        data = json.loads(mock_share.calls[-1].request.body.decode())
-
-        graph = data['data']['attributes']['data']['@graph']
-        payload = next((item for item in graph if 'is_deleted' in item.keys()))
-        assert payload['is_deleted'] is True
-
+        with expect_ingest_request(mock_share, node._id, delete=True):
+            on_node_updated(node._id, user._id, False, {'is_public'})
         node.title = 'Not a qa title'
-        node.save()
+        with expect_ingest_request(mock_share, node._id):
+            node.save()
         assert node.title not in settings.DO_NOT_INDEX_LIST['titles']
-
-        data = json.loads(mock_share.calls[-1].request.body.decode())
-        graph = data['data']['attributes']['data']['@graph']
-        payload = next((item for item in graph if 'is_deleted' in item.keys()))
-        assert payload['is_deleted'] is False
 
     def test_update_share_correctly_for_registrations_with_qa_titles(self, mock_share, registration, user):
         registration.title = settings.DO_NOT_INDEX_LIST['titles'][0] + ' arbitary text for test title.'
-        registration.save()
-
-        data = json.loads(mock_share.calls[-1].request.body.decode())
-        graph = data['data']['attributes']['data']['@graph']
-        payload = next((item for item in graph if 'is_deleted' in item.keys()))
-        assert payload['is_deleted'] is True
-
+        with expect_ingest_request(mock_share, registration._id, delete=True):
+            registration.save()
         registration.title = 'Not a qa title'
-        registration.save()
+        with expect_ingest_request(mock_share, registration._id):
+            registration.save()
         assert registration.title not in settings.DO_NOT_INDEX_LIST['titles']
-
-        data = json.loads(mock_share.calls[-1].request.body.decode())
-        graph = data['data']['attributes']['data']['@graph']
-        payload = next((item for item in graph if 'is_deleted' in item.keys()))
-        assert payload['is_deleted'] is False
 
     @responses.activate
     def test_skips_no_settings(self, node, user):
@@ -286,48 +186,19 @@ class TestNodeShare:
 
     def test_call_async_update_on_500_retry(self, mock_share, node, user):
         """This is meant to simulate a temporary outage, so the retry mechanism should kick in and complete it."""
-        mock_share.replace(responses.POST, f'{settings.SHARE_URL}api/v2/normalizeddata/', status=500)
-        mock_share.add(responses.POST, f'{settings.SHARE_URL}api/v2/normalizeddata/', status=200)
-
-        mock_share._calls.reset()  # reset after factory calls
-        on_node_updated(node._id, user._id, False, {'is_public'})
-        assert len(mock_share.calls) == 2
-
-        data = json.loads(mock_share.calls[0].request.body.decode())
-        graph = data['data']['attributes']['data']['@graph']
-        identifier_node = next(n for n in graph if n['@type'] == 'workidentifier')
-        assert identifier_node['uri'] == f'{settings.DOMAIN}{node._id}/'
-
-        data = json.loads(mock_share.calls[1].request.body.decode())
-        graph = data['data']['attributes']['data']['@graph']
-        identifier_node = next(n for n in graph if n['@type'] == 'workidentifier')
-        assert identifier_node['uri'] == f'{settings.DOMAIN}{node._id}/'
+        mock_share.replace(responses.POST, shtrove_ingest_url(), status=500)
+        mock_share.add(responses.POST, shtrove_ingest_url(), status=200)
+        with expect_ingest_request(mock_share, node._id, count=2):
+            on_node_updated(node._id, user._id, False, {'is_public'})
 
     def test_call_async_update_on_500_failure(self, mock_share, node, user):
         """This is meant to simulate a total outage, so the retry mechanism should try X number of times and quit."""
         mock_share.assert_all_requests_are_fired = False  # allows it to retry indefinitely
-        mock_share.replace(responses.POST, f'{settings.SHARE_URL}api/v2/normalizeddata/', status=500)
-
-        mock_share._calls.reset()  # reset after factory calls
-        on_node_updated(node._id, user._id, False, {'is_public'})
-
-        assert len(mock_share.calls) == 6  # first request and five retries
-        data = json.loads(mock_share.calls[0].request.body.decode())
-        graph = data['data']['attributes']['data']['@graph']
-        identifier_node = next(n for n in graph if n['@type'] == 'workidentifier')
-        assert identifier_node['uri'] == f'{settings.DOMAIN}{node._id}/'
-
-        data = json.loads(mock_share.calls[-1].request.body.decode())
-        graph = data['data']['attributes']['data']['@graph']
-        identifier_node = next(n for n in graph if n['@type'] == 'workidentifier')
-        assert identifier_node['uri'] == f'{settings.DOMAIN}{node._id}/'
+        mock_share.replace(responses.POST, shtrove_ingest_url(), status=500)
+        with expect_ingest_request(mock_share, node._id, count=5):  # tries five times
+            on_node_updated(node._id, user._id, False, {'is_public'})
 
     def test_no_call_async_update_on_400_failure(self, mock_share, node, user):
-        mock_share.replace(responses.POST, f'{settings.SHARE_URL}api/v2/normalizeddata/', status=400)
-
-        on_node_updated(node._id, user._id, False, {'is_public'})
-
-        data = json.loads(mock_share.calls[-1].request.body.decode())
-        graph = data['data']['attributes']['data']['@graph']
-        identifier_node = next(n for n in graph if n['@type'] == 'workidentifier')
-        assert identifier_node['uri'] == f'{settings.DOMAIN}{node._id}/'
+        mock_share.replace(responses.POST, shtrove_ingest_url(), status=400)
+        with expect_ingest_request(mock_share, node._id):
+            on_node_updated(node._id, user._id, False, {'is_public'})

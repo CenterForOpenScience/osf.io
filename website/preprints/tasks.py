@@ -15,6 +15,8 @@ def on_preprint_updated(preprint_id, saved_fields=None, **kwargs):
     # transactions are implemented in View and Task application layers.
     from osf.models import Preprint
     preprint = Preprint.load(preprint_id)
+    if not preprint:
+        return
     need_update = bool(preprint.SEARCH_UPDATE_FIELDS.intersection(saved_fields or {}))
 
     if need_update:

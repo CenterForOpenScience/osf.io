@@ -12,6 +12,7 @@ import pytest
 import responses
 import xml.etree.ElementTree as ET
 
+from api.share.utils import shtrove_ingest_url
 from framework.celery_tasks import app as celery_app
 from website import settings as website_settings
 
@@ -153,8 +154,10 @@ def _es_marker(request):
 def mock_share():
     with mock.patch('api.share.utils.settings.SHARE_ENABLED', True):
         with mock.patch('api.share.utils.settings.SHARE_API_TOKEN', 'mock-api-token'):
-            with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
-                rsps.add(responses.POST, f'{website_settings.SHARE_URL}api/v2/normalizeddata/', status=200)
+            with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
+                _ingest_url = shtrove_ingest_url()
+                rsps.add(responses.POST, _ingest_url, status=200)
+                rsps.add(responses.DELETE, _ingest_url, status=200)
                 yield rsps
 
 

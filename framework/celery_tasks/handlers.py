@@ -39,7 +39,7 @@ def celery_teardown_request(error=None):
             group(queue()).apply_async()
         else:
             for task in queue():
-                task()
+                task.apply()
 
 
 def get_task_from_queue(name, predicate):
@@ -66,7 +66,7 @@ def _enqueue_task(signature):
         context_stack.top is None and
         getattr(api_globals, 'request', None) is None
     ):  # Not in a request context
-        signature()
+        signature.apply()
     else:
         if signature not in queue():
             queue().append(signature)

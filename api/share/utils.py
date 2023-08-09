@@ -7,15 +7,21 @@ import random
 
 from celery.exceptions import Retry
 from django.apps import apps
+import requests
 
 from framework.celery_tasks import app as celery_app
 from framework.celery_tasks.handlers import enqueue_task
 from framework.sentry import log_exception
-from osf.metadata.tools import pls_send_trove_indexcard, pls_delete_trove_indexcard
+from osf.metadata.osf_gathering import osf_iri
+from osf.metadata.tools import pls_gather_metadata_file
 from website import settings
 
 
 logger = logging.getLogger(__name__)
+
+
+def shtrove_ingest_url():
+    return f'{settings.SHARE_URL}api/v3/ingest'
 
 
 def is_qa_resource(resource):
@@ -46,29 +52,35 @@ def update_share(resource):
     enqueue_task(task__update_share.s(_osfguid_value))
 
 
+def do_update_share(osfguid: str):
+    logger.debug('%s.do_update_share("%s")', __name__, osfguid)
+    _guid_instance = apps.get_model('osf.Guid').load(osfguid)
+    if _guid_instance is None:
+        raise ValueError(f'unknown osfguid "{osfguid}"')
+    _resource = _guid_instance.referent
+    _response = (
+        pls_delete_trove_indexcard(_resource)
+        if _should_delete_indexcard(_resource)
+        else pls_send_trove_indexcard(_resource)
+    )
+    return _response
+
+
 @celery_app.task(bind=True, max_retries=4, acks_late=True)
-def task__update_share(self, guid: str, **kwargs):
+def task__update_share(self, guid: str):
     """
     This function updates share  takes Preprints, Projects and Registrations.
     :param self:
     :param guid:
     :return:
     """
-    _guid_instance = apps.get_model('osf.Guid').load(guid)
-    if _guid_instance is None:
-        raise ValueError(f'unknown osfguid "{guid}"')
-    resource = _guid_instance.referent
-    resp = (
-        pls_delete_trove_indexcard(resource)
-        if _should_delete_indexcard(resource)
-        else pls_send_trove_indexcard(resource)
-    )
+    resp = do_update_share(guid)
     try:
         resp.raise_for_status()
     except Exception as e:
         if self.request.retries == self.max_retries:
             log_exception()
-        elif resp.status_code >= 500 and settings.USE_CELERY:
+        elif resp.status_code >= 500:
             try:
                 self.retry(
                     exc=e,
@@ -82,13 +94,64 @@ def task__update_share(self, guid: str, **kwargs):
     return resp
 
 
+def pls_send_trove_indexcard(osf_item):
+    _iri = osf_iri(osf_item)
+    if not _iri:
+        raise ValueError(f'could not get iri for {osf_item}')
+    _metadata_record = pls_gather_metadata_file(osf_item, 'turtle')
+    return requests.post(
+        shtrove_ingest_url(),
+        params={
+            'focus_iri': _iri,
+            'record_identifier': _shtrove_record_identifier(osf_item),
+        },
+        headers={
+            'Content-Type': _metadata_record.mediatype,
+            **_shtrove_auth_headers(osf_item),
+        },
+        data=_metadata_record.serialized_metadata,
+    )
+
+
+def pls_delete_trove_indexcard(osf_item):
+    return requests.delete(
+        shtrove_ingest_url(),
+        params={
+            'record_identifier': _shtrove_record_identifier(osf_item),
+        },
+        headers=_shtrove_auth_headers(osf_item),
+    )
+
+
+def _shtrove_record_identifier(osf_item):
+    return osf_item.guids.values_list('_id', flat=True).first()
+
+
+def _shtrove_auth_headers(osf_item):
+    _nonfile_item = (
+        osf_item.target
+        if hasattr(osf_item, 'target')
+        else osf_item
+    )
+    _access_token = (
+        _nonfile_item.provider.access_token
+        if getattr(_nonfile_item, 'provider', None) and _nonfile_item.provider.access_token
+        else settings.SHARE_API_TOKEN
+    )
+    return {'Authorization': f'Bearer {_access_token}'}
+
+
 def _should_delete_indexcard(osf_item):
+    if getattr(osf_item, 'is_deleted', False) or getattr(osf_item, 'deleted', None):
+        return True
     # if it quacks like BaseFileNode, look at .target instead
-    _possibly_private_item = getattr(osf_item, 'target', None) or osf_item
+    _containing_item = getattr(osf_item, 'target', None)
+    if _containing_item:
+        return _should_delete_indexcard(_containing_item)
     return (
-        not _is_item_public(_possibly_private_item)
-        or getattr(_possibly_private_item, 'is_spam', False)
-        or is_qa_resource(_possibly_private_item)
+        not _is_item_public(osf_item)
+        or getattr(osf_item, 'is_spam', False)
+        or is_qa_resource(osf_item)
     )
 
 
