@@ -631,7 +631,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     def save(self, *args, **kwargs):
         first_save = not bool(self.pk)
         saved_fields = self.get_dirty_fields() or []
-        old_subjects = kwargs.pop('old_subjects', [])
 
         if not first_save and ('ever_public' in saved_fields and saved_fields['ever_public']):
             raise ValidationError('Cannot set "ever_public" to False')
@@ -653,7 +652,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             self._add_creator_as_contributor()
 
         if (not first_save and 'is_published' in saved_fields) or self.is_published:
-            update_or_enqueue_on_preprint_updated(preprint_id=self._id, old_subjects=old_subjects, saved_fields=saved_fields)
+            update_or_enqueue_on_preprint_updated(preprint_id=self._id, saved_fields=saved_fields)
         return ret
 
     def update_or_enqueue_on_resource_updated(self, user_id, first_save, saved_fields):

@@ -1417,11 +1417,6 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         # Therefore we don't add any source tags to it
         pass
 
-    def save(self, *args, **kwargs):
-        if 'old_subjects' in kwargs.keys():
-            kwargs.pop('old_subjects')
-        return super(DraftRegistration, self).save(*args, **kwargs)
-
     def update(self, fields, auth=None, save=True):
         """Update the draft registration with the given fields.
         :param dict fields: Dictionary of field_name:value pairs.

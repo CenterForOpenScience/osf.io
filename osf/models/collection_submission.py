@@ -388,7 +388,6 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
             logger.exception(e)
 
     def save(self, *args, **kwargs):
-        kwargs.pop('old_subjects', None)  # Not indexing this, trash it
         ret = super(CollectionSubmission, self).save(*args, **kwargs)
         self.update_index()
         return ret

@@ -1955,13 +1955,11 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         # we can test that the queue is modified properly.
         first_subjects = [15]
         args = ()
-        kwargs = {'preprint_id': self.preprint._id, 'old_subjects': first_subjects, 'update_share': False, 'saved_fields': ['contributors']}
+        kwargs = {'preprint_id': self.preprint._id, 'saved_fields': ['contributors']}
         postcommit_celery_queue().update({'asdfasd': on_preprint_updated.si(*args, **kwargs)})
 
-        second_subjects = [16, 17]
         update_or_enqueue_on_preprint_updated(
             self.preprint._id,
-            old_subjects=second_subjects,
             saved_fields={'title': 'Hello'}
         )
 
@@ -1971,7 +1969,6 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         )
         assert 'title' in updated_task.kwargs['saved_fields']
         assert 'contributors' in  updated_task.kwargs['saved_fields']
-        assert set(first_subjects + second_subjects).issubset(updated_task.kwargs['old_subjects'])
 
 
 class TestPreprintConfirmationEmails(OsfTestCase):

@@ -1914,9 +1914,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def save(self, *args, **kwargs):
         from osf.models import Registration
         first_save = not bool(self.pk)
-        if 'old_subjects' in kwargs.keys():
-            # TODO: send this data to SHARE
-            kwargs.pop('old_subjects')
         if 'suppress_log' in kwargs.keys():
             self._suppress_log = kwargs['suppress_log']
             del kwargs['suppress_log']

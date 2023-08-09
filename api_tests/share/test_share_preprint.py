@@ -96,8 +96,6 @@ class TestPreprintShare:
         preprint.set_subjects([[subject_two._id]], auth=auth)
         assert mock_on_preprint_updated.called
         call_args, call_kwargs = mock_on_preprint_updated.call_args
-        assert 'old_subjects' in mock_on_preprint_updated.call_args[1]
-        assert call_kwargs.get('old_subjects') == [subject.id]
         assert [subject.id] in mock_on_preprint_updated.call_args[1].values()
 
     @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
