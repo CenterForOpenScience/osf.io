@@ -42,7 +42,7 @@ from osf.models.admin_log_entry import (
     UNFLAG_SPAM,
 )
 
-from website import search, settings
+from website import search
 
 
 class PreprintMixin(PermissionRequiredMixin):
