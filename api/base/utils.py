@@ -207,7 +207,8 @@ def waterbutler_api_url_for(node_id, provider, path='/', _internal=False, base_u
     url = furl.furl(website_settings.WATERBUTLER_INTERNAL_URL if _internal else (base_url or website_settings.WATERBUTLER_URL))
     segments = ['v1', 'resources', node_id, 'providers', provider] + path.split('/')[1:]
     # furl auto encoding, so urlquote is not necessary as `[urlquote(x) for x in segments]`
-    url.path.segments.extend(segments)
+    # try to convert segment items to string for furl check
+    url.path.segments.extend([str(x) for x in segments])
     url.args.update(kwargs)
     return url.url
 
