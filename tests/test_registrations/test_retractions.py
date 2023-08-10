@@ -11,6 +11,7 @@ from nose.tools import *  # noqa
 
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
+from api_tests.share._utils import mock_update_share
 from tests.base import fake, OsfTestCase
 from osf_tests.factories import (
     AuthUserFactory, NodeFactory, ProjectFactory,
@@ -427,7 +428,7 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
         # Reload the registration; else tests won't catch failures to svae
         self.registration.reload()
 
-    def test_approval_retracts_descendant_nodes(self, mock_update_share):
+    def test_approval_retracts_descendant_nodes(self):
         # Initiate retraction for parent registration
         self.registration.retract_registration(self.user)
         self.registration.save()
@@ -441,15 +442,18 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
 
         # Approve parent registration's retraction
         approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
-        self.registration.retraction.approve_retraction(self.user, approval_token)
+        with mock_update_share() as _shmock:
+            self.registration.retraction.approve_retraction(self.user, approval_token)
+            assert _shmock.call_args_list == [
+                mock.call(_reg._id)
+                for _reg in self.registration.node_and_primary_descendants()
+            ]
         assert_true(self.registration.is_retracted)
 
         # Ensure descendant nodes are retracted
         descendants = self.registration.get_descendants_recursive()
         for node in descendants:
             assert_true(node.is_retracted)
-
-        assert mock_update_share.called
 
     def test_disapproval_cancels_retraction_on_descendant_nodes(self):
         # Initiate retraction for parent registration
@@ -476,7 +480,7 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
             assert_false(node.is_pending_retraction)
             assert_false(node.is_retracted)
 
-    def test_approval_cancels_pending_embargoes_on_descendant_nodes(self, mock_update_share):
+    def test_approval_cancels_pending_embargoes_on_descendant_nodes(self):
         # Initiate embargo for registration
         self.registration.embargo_registration(
             self.user,
@@ -499,7 +503,12 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
 
         # Approve parent registration's retraction
         approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
-        self.registration.retraction.approve_retraction(self.user, approval_token)
+        with mock_update_share() as _shmock:
+            self.registration.retraction.approve_retraction(self.user, approval_token)
+            assert _shmock.call_args_list == [
+                mock.call(_reg._id)
+                for _reg in self.registration.node_and_primary_descendants()
+            ]
         assert_true(self.registration.is_retracted)
         self.registration.embargo.reload()
         assert_false(self.registration.is_pending_embargo)
@@ -510,9 +519,7 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
             assert_true(node.is_retracted)
             assert_false(node.is_pending_embargo)
 
-        assert mock_update_share.called
-
-    def test_approval_cancels_active_embargoes_on_descendant_nodes(self, mock_update_share):
+    def test_approval_cancels_active_embargoes_on_descendant_nodes(self):
         # Initiate embargo for registration
         self.registration.embargo_registration(
             self.user,
@@ -541,7 +548,12 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
 
         # Approve parent registration's retraction
         approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
-        self.registration.retraction.approve_retraction(self.user, approval_token)
+        with mock_update_share() as _shmock:
+            self.registration.retraction.approve_retraction(self.user, approval_token)
+            assert _shmock.call_args_list == [
+                mock.call(_reg._id)
+                for _reg in self.registration.node_and_primary_descendants()
+            ]
         assert_true(self.registration.is_retracted)
 
         # Ensure descendant nodes are not pending embargo
@@ -549,7 +561,6 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
         for node in descendants:
             assert_true(node.is_retracted)
 
-        assert mock_update_share.called
 
 @pytest.mark.enable_bookmark_creation
 class RegistrationRetractionShareHook(OsfTestCase):
@@ -564,26 +575,31 @@ class RegistrationRetractionShareHook(OsfTestCase):
         # Reload the registration; else tests won't catch failures to svae
         self.registration.reload()
 
-    def test_approval_calls_share_hook(self, mock_update_share):
+    def test_approval_calls_share_hook(self):
         # Initiate retraction for parent registration
         self.registration.retract_registration(self.user)
         self.registration.save()
 
         # Approve parent registration's retraction
         approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
-        self.registration.retraction.approve_retraction(self.user, approval_token)
+        with mock_update_share() as _shmock:
+            self.registration.retraction.approve_retraction(self.user, approval_token)
+            assert _shmock.call_args_list == [
+                mock.call(_reg._id)
+                for _reg in self.registration.node_and_primary_descendants()
+            ]
         assert_true(self.registration.is_retracted)
-        assert mock_update_share.called
 
-    def test_disapproval_does_not_call_share_hook(self, mock_update_share):
+    def test_disapproval_does_not_call_share_hook(self):
         # Initiate retraction for parent registration
         self.registration.retract_registration(self.user)
         self.registration.save()
 
         rejection_token = self.registration.retraction.approval_state[self.user._id]['rejection_token']
-        self.registration.retraction.disapprove_retraction(self.user, rejection_token)
+        with mock_update_share() as _shmock:
+            self.registration.retraction.disapprove_retraction(self.user, rejection_token)
+            assert not _shmock.called
         assert_false(self.registration.is_retracted)
-        assert not mock_update_share.called
 
 
 @pytest.mark.enable_bookmark_creation
