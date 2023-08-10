@@ -49,21 +49,11 @@ def update_share(resource):
     if not _osfguid_value:
         logger.warning(f'update_share skipping resource that has no guids: {resource}')
         return
-    enqueue_task(task__update_share.s(_osfguid_value))
+    _enqueue_update_share(_osfguid_value)
 
 
-def do_update_share(osfguid: str):
-    logger.debug('%s.do_update_share("%s")', __name__, osfguid)
-    _guid_instance = apps.get_model('osf.Guid').load(osfguid)
-    if _guid_instance is None:
-        raise ValueError(f'unknown osfguid "{osfguid}"')
-    _resource = _guid_instance.referent
-    _response = (
-        pls_delete_trove_indexcard(_resource)
-        if _should_delete_indexcard(_resource)
-        else pls_send_trove_indexcard(_resource)
-    )
-    return _response
+def _enqueue_update_share(osfguid_value: str):
+    enqueue_task(task__update_share.s(osfguid_value))
 
 
 @celery_app.task(bind=True, max_retries=4, acks_late=True)
@@ -74,7 +64,7 @@ def task__update_share(self, guid: str):
     :param guid:
     :return:
     """
-    resp = do_update_share(guid)
+    resp = _do_update_share(guid)
     try:
         resp.raise_for_status()
     except Exception as e:
@@ -121,6 +111,20 @@ def pls_delete_trove_indexcard(osf_item):
         },
         headers=_shtrove_auth_headers(osf_item),
     )
+
+
+def _do_update_share(osfguid: str):
+    logger.warning('%s._do_update_share("%s")', __name__, osfguid)
+    _guid_instance = apps.get_model('osf.Guid').load(osfguid)
+    if _guid_instance is None:
+        raise ValueError(f'unknown osfguid "{osfguid}"')
+    _resource = _guid_instance.referent
+    _response = (
+        pls_delete_trove_indexcard(_resource)
+        if _should_delete_indexcard(_resource)
+        else pls_send_trove_indexcard(_resource)
+    )
+    return _response
 
 
 def _shtrove_record_identifier(osf_item):

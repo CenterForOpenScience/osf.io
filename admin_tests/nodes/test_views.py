@@ -22,6 +22,8 @@ from admin.nodes.views import (
     RemoveStuckRegistrationsView
 )
 from admin_tests.utilities import setup_log_view, setup_view
+from api.share.utils import shtrove_ingest_url
+from api_tests.share._utils import assert_ingest_request
 from website import settings
 from nose import tools as nt
 from django.utils import timezone
@@ -268,13 +270,9 @@ class TestNodeReindex(AdminTestCase):
         with mock.patch('api.share.utils.settings.SHARE_ENABLED', True):
             with mock.patch('api.share.utils.settings.SHARE_API_TOKEN', 'mock-api-token'):
                 with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
-                    rsps.add(responses.POST, 'https://share.osf.io/api/v2/normalizeddata/')
+                    rsps.add(responses.POST, shtrove_ingest_url())
                     view.post(self.request)
-                    data = json.loads(rsps.calls[-1].request.body.decode())
-
-                    share_graph = data['data']['attributes']['data']['@graph']
-                    identifier_node = next(n for n in share_graph if n['@type'] == 'workidentifier')
-                    assert identifier_node['creative_work']['@type'] == 'project'
+                    assert_ingest_request(rsps.calls[-1].request, self.node._id, token='mock-api-token')
                     nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
     def test_reindex_registration_share(self):

@@ -7,11 +7,11 @@ from website import settings as website_settings
 
 
 @contextlib.contextmanager
-def expect_ingest_request(mock_share, osfguid, *, token=None, delete=False, count=1):
-    mock_share._calls.reset()
+def expect_ingest_request(mock_share_responses, osfguid, *, token=None, delete=False, count=1):
+    mock_share_responses._calls.reset()
     yield
-    assert len(mock_share.calls) == count
-    for _call in mock_share.calls:
+    assert len(mock_share_responses.calls) == count
+    for _call in mock_share_responses.calls:
         assert_ingest_request(_call.request, osfguid, token=token, delete=delete)
 
 

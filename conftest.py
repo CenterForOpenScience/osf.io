@@ -151,14 +151,23 @@ def _es_marker(request):
 
 
 @pytest.fixture
-def mock_share():
-    with mock.patch('api.share.utils.settings.SHARE_ENABLED', True):
-        with mock.patch('api.share.utils.settings.SHARE_API_TOKEN', 'mock-api-token'):
-            with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
-                _ingest_url = shtrove_ingest_url()
-                rsps.add(responses.POST, _ingest_url, status=200)
-                rsps.add(responses.DELETE, _ingest_url, status=200)
-                yield rsps
+def mock_share_responses():
+    with mock.patch.object(website_settings, 'SHARE_ENABLED', True):
+        with mock.patch.object(website_settings, 'SHARE_API_TOKEN', 'mock-api-token'):
+            # run "on_update" tasks synchronously:
+            with mock.patch.object(website_settings, 'USE_CELERY', False):
+                with responses.RequestsMock(assert_all_requests_are_fired=False) as _rsps:
+                    _ingest_url = shtrove_ingest_url()
+                    _rsps.add(responses.POST, _ingest_url, status=200)
+                    _rsps.add(responses.DELETE, _ingest_url, status=200)
+                    yield _rsps
+
+
+@pytest.fixture
+def mock_update_share():
+    with mock.patch.object(website_settings, 'SHARE_ENABLED', True):
+        with mock.patch('api.share.utils._enqueue_update_share') as _mock_update_share:
+            yield _mock_update_share
 
 
 @pytest.fixture
