@@ -799,6 +799,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             validated_data.pop('creator')
             changed_data = {template_from: validated_data}
             node = template_node.use_as_template(auth=get_user_auth(request), changes=changed_data)
+            node._parent = validated_data.pop('parent', None)
         else:
             node = Node(**validated_data)
         try:
