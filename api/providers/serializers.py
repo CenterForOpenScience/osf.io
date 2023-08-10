@@ -237,6 +237,11 @@ class PreprintProviderSerializer(MetricsSerializerMixin, ProviderSerializer):
         related_view_kwargs={'provider_id': '<_id>'},
     )
 
+    brand = RelationshipField(
+        related_view='brands:brand-detail',
+        related_view_kwargs={'brand_id': '<brand.id>'},
+    )
+
     def get_preprints_url(self, obj):
         return absolute_reverse(
             'providers:preprint-providers:preprints-list', kwargs={
