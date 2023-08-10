@@ -1,7 +1,8 @@
 from rest_framework import serializers as ser
-
 from api.base.serializers import ShowIfVersion
 from api.providers.serializers import PreprintProviderSerializer
+from osf.models import PreprintProvider
+
 
 class DeprecatedPreprintProviderSerializer(PreprintProviderSerializer):
     class Meta:
@@ -40,3 +41,20 @@ class DeprecatedPreprintProviderSerializer(PreprintProviderSerializer):
         ser.ListField(read_only=True, default=[]),
         min_version='2.0', max_version='2.4',
     )
+
+class PreprintProviderCitationStylesSerializer(ser.ModelSerializer):
+    """
+    Serializer for citation styles associated with a PreprintProvider.
+
+    This serializer fetches and formats the citation styles supported by a specific PreprintProvider.
+    """
+    supported_citation_styles = ser.StringRelatedField(many=True)
+
+    class Meta:
+        """
+        Meta class for PreprintProviderCitationStylesSerializer.
+
+        Specifies the model and fields to be serialized.
+        """
+        model = PreprintProvider
+        fields = ['id', 'citation_styles']

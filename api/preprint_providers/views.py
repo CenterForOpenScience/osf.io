@@ -1,6 +1,11 @@
+from rest_framework import generics
 from api.base.views import DeprecatedView
-from api.preprint_providers.serializers import DeprecatedPreprintProviderSerializer
+from api.preprint_providers.serializers import (
+    DeprecatedPreprintProviderSerializer,
+    PreprintProviderCitationStylesSerializer,
+)
 from api.providers import views
+from osf.models import PreprintProvider
 
 
 class DeprecatedPreprintProviderList(DeprecatedView, views.PreprintProviderList):
@@ -36,3 +41,12 @@ class DeprecatedPreprintProviderModeratorsList(DeprecatedView, views.PreprintPro
 
 class DeprecatedPreprintProviderModeratorsDetail(DeprecatedView, views.PreprintProviderModeratorsDetail):
     max_version = '2.7'
+
+class PreprintProviderCitationStylesView(generics.RetrieveAPIView):
+    """
+    API view to retrieve citation styles associated with a specific PreprintProvider.
+
+    This view uses the PreprintProviderCitationStylesSerializer to format the response.
+    """
+    serializer_class = PreprintProviderCitationStylesSerializer
+    queryset = PreprintProvider.objects.all()
