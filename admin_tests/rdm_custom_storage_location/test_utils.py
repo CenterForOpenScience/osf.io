@@ -76,6 +76,8 @@ class TestUtils:
     def test_add_node_settings_to_projects_onedrivebusiness(self):
         user = AuthUserFactory()
         project = ProjectFactory(creator=user)
+        project.add_addon('onedrivebusiness', None)
+        project.save()
         region = RegionFactory(waterbutler_settings=addon_waterbutler_settings)
         institution = InstitutionFactory.create(_id=region.guid)
         institution.nodes.set([project])

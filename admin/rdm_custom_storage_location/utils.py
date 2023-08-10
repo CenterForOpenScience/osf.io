@@ -1146,16 +1146,22 @@ def add_node_settings_to_projects(institution, provider_name):
         # If storage is bulk-mount then do nothing
         return
 
-    # Get projects that does not have provider's node settings
+    # Get projects created by institution users
     institution_users = institution.osfuser_set.all()
-    kwargs = {f'addons_{provider_name}_node_settings': None}
-    projects = AbstractNode.objects.filter(type='osf.node', is_deleted=False, creator__in=institution_users, **kwargs)
+    projects = AbstractNode.objects.filter(type='osf.node', is_deleted=False, creator__in=institution_users)
 
-    # Add node settings to above projects
+    # Add or update node settings to projects
     for project in projects:
+        node_settings = getattr(project, f'addons_{provider_name}_node_settings', None)
+        project_has_no_node_settings = node_settings is None
+
         if provider_name == 'dropboxbusiness':
-            dropboxbusiness_post_save(None, project, True)
+            dropboxbusiness_post_save(None, project, created=project_has_no_node_settings)
         elif provider_name == 'onedrivebusiness':
-            onedrivebusiness_post_save(None, project, True)
+            if not project_has_no_node_settings:
+                # Reset OneDrive Business folder id before update node settings
+                node_settings.folder_id = None
+                node_settings.save()
+            onedrivebusiness_post_save(None, project, created=project_has_no_node_settings)
         else:
-            node_post_save(None, project, True)
+            node_post_save(None, project, created=project_has_no_node_settings)
