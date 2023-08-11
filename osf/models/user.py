@@ -455,6 +455,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return self.merged_by is not None
 
     @property
+    def is_public(self):
+        return self.is_active
+
+    @property
     def unconfirmed_emails(self):
         # Handle when email_verifications field is None
         email_verifications = self.email_verifications or {}
