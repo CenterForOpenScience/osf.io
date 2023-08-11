@@ -78,7 +78,7 @@
     % if not reviewable.provider or reviewable.provider._id != 'gfs':
         The OSF Team<br>
     % else:
-	    COS and Global Flourishing Study<br>
+        COS and Global Flourishing Study<br>
     % endif
 </tr>
 </%def>
