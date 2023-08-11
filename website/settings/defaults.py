@@ -349,9 +349,11 @@ CROSSREF_DEPOSITOR_EMAIL = 'None'  # This email will receive confirmation/error 
 ECSARXIV_CROSSREF_USERNAME = None
 ECSARXIV_CROSSREF_PASSWORD = None
 
-# ror
-OSF_ROR_ID = '05d5mza29'
-OSF_GRID_ID = 'grid.466501.0'
+# for metadata records maintained by this instance of osf
+# TODO: remove defaults
+HOSTING_INSTITUTION_NAME = os.environ.get('HOSTING_INSTITUTION_NAME', 'Center for Open Science')
+HOSTING_INSTITUTION_IRL = os.environ.get('HOSTING_INSTITUTION_IRL', 'https://cos.io/')
+HOSTING_INSTITUTION_ROR_ID = os.environ.get('HOSTING_INSTITUTION_ROR_ID', '05d5mza29')
 
 # if our DOIs cannot be confirmed after X amount of days email the admin
 DAYS_CROSSREF_DOIS_MUST_BE_STUCK_BEFORE_EMAIL = 2
@@ -459,7 +461,8 @@ class CeleryConfig:
         'website.archiver.tasks',
         'scripts.add_missing_identifiers_to_preprints',
         'osf.management.commands.approve_pending_schema_response',
-        'osf.management.commands.fix_quickfiles_waterbutler_logs'
+        'osf.management.commands.fix_quickfiles_waterbutler_logs',
+        'api.share.utils',
     }
 
     try:
@@ -534,6 +537,7 @@ class CeleryConfig:
         'osf.management.commands.daily_reporters_go',
         'osf.management.commands.monthly_reporters_go',
         'osf.external.spam.tasks',
+        'api.share.utils',
     )
 
     # Modules that need metrics and release requirements
@@ -1980,8 +1984,6 @@ SPAM_AUTOBAN_IP_BLOCK = True
 SPAM_THROTTLE_AUTOBAN = True
 SPAM_CREATION_THROTTLE_LIMIT = 5
 
-SHARE_API_TOKEN = None
-
 # refresh campaign every 5 minutes
 CAMPAIGN_REFRESH_THRESHOLD = 5 * 60  # 5 minutes in seconds
 
@@ -2113,8 +2115,8 @@ class StorageLimits(enum.IntEnum):
             return cls.DEFAULT
 
 STORAGE_USAGE_CACHE_TIMEOUT = 3600 * 24  # seconds in hour times hour (one day)
-IA_ARCHIVE_ENABLED = True
 OSF_PIGEON_URL = os.environ.get('OSF_PIGEON_URL', None)
+IA_ARCHIVE_ENABLED = bool(OSF_PIGEON_URL)
 ID_VERSION = 'staging_v2'
 IA_ROOT_COLLECTION = 'cos-dev-sandbox'
 PIGEON_CALLBACK_BEARER_TOKEN = os.getenv('PIGEON_CALLBACK_BEARER_TOKEN')

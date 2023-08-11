@@ -710,6 +710,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @classmethod
     def bulk_update_search(cls, nodes, index=None):
+        for _node in nodes:
+            update_share(_node)
         from website import search
         try:
             serialize = functools.partial(search.search.update_node, index=index, bulk=True, async_update=False)
@@ -719,8 +721,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             log_exception()
 
     def update_search(self):
+        update_share(self)
         from website import search
-
         try:
             search.search.update_node(self, bulk=False, async_update=True)
             if self.collection_submissions.exists() and self.is_public:
@@ -1038,8 +1040,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     # Override Taggable
     def on_tag_added(self, tag):
         self.update_search()
-        if settings.SHARE_ENABLED:
-            update_share(self)
 
     def remove_tag(self, tag, auth, save=True):
         if not tag:
@@ -1062,9 +1062,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if save:
                 self.save()
             self.update_search()
-            if settings.SHARE_ENABLED:
-                update_share(self)
-
             return True
 
     def remove_tags(self, tags, auth, save=True):
@@ -1074,9 +1071,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """
         super(AbstractNode, self).remove_tags(tags, auth, save)
         self.update_search()
-        if settings.SHARE_ENABLED:
-            update_share(self)
-
         return True
 
     def set_visible(self, user, visible, log=True, auth=None, save=False):
@@ -1920,9 +1914,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def save(self, *args, **kwargs):
         from osf.models import Registration
         first_save = not bool(self.pk)
-        if 'old_subjects' in kwargs.keys():
-            # TODO: send this data to SHARE
-            kwargs.pop('old_subjects')
         if 'suppress_log' in kwargs.keys():
             self._suppress_log = kwargs['suppress_log']
             del kwargs['suppress_log']

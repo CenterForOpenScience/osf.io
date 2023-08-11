@@ -262,11 +262,7 @@ services:
 
   ember_osf_web:
     image: quay.io/centerforopenscience/osf-web:develop-local
-    command:
-      - /bin/bash
-      - -c
-      - yarn --frozen-lockfile &&
-        yarn start --host 0.0.0.0 --port 4200 --live-reload-port 41953
+    command: yarn run start --path dist --host 0.0.0.0 --port 4200 --live-reload-port 41953
     restart: unless-stopped
     depends_on:
       - api
@@ -275,6 +271,9 @@ services:
       # Uncomment below to enable collections on ember
       # - COLLECTIONS_ENABLED=true
       - BACKEND=local
+      - SHARE_BASE_URL=http://localhost:8003/
+      - SHARE_API_URL=http://localhost:8003/api/v2
+      - SHARE_SEARCH_URL=http://localhost:8003/api/v2/search/creativeworks/_search
     expose:
       - 4200
       - 41953
@@ -302,7 +301,18 @@ services:
       - api
       - web
     environment:
-      - BACKEND=local
+      - BACKEND=env
+      - OSF_URL=http://localhost:5000/
+      - OSF_API_URL=http://localhost:8000
+      - OSF_MFR_URL=http://localhost:7778/
+      - OSF_RENDER_URL=http://localhost:7778/render
+      - OSF_FILE_URL=http://localhost:7777/
+      - OSF_HELP_URL=http://localhost:5000/help
+      - OSF_COOKIE_LOGIN_URL=http://localhost:8080/login
+      - OSF_OAUTH_URL=http://localhost:8080/oauth2/profile
+      - SHARE_BASE_URL=http://localhost:8003/
+      - SHARE_API_URL=http://localhost:8003/api/v2/
+      - SHARE_SEARCH_URL=http://localhost:8003/api/v2/search/creativeworks/_search
     expose:
       - 4201
       - 41954
