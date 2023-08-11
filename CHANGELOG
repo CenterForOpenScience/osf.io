@@ -2,6 +2,10 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+23.10.0 (2023-8-11)
+===================
+- Update Registration emails for GFS
+
 23.09.0 (2023-7-26)
 ===================
 - Allow Institutions to specify a default storage region for institutional
