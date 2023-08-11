@@ -73,6 +73,10 @@
     % endif
     <p>
     Sincerely yours,<br>
-    The OSF Robots<br>
+    % if not reviewable.provider or reviewable.provider._id != 'gfs':
+        The OSF Team<br>
+    % else:
+        COS and Global Flourishing Study<br>
+    % endif
 </tr>
 </%def>
