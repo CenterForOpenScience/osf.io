@@ -1117,7 +1117,6 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
                         var data_res = data.result.list_file_info_export_not_found;
                         var text_show_file = '';
                         file_name_export_fail = data.result.file_name_export_fail;
-                        need_reload = 0;
                         $('#showFileExportNotExistModal').modal('show');
                         list_file_info_export_fail = [['project_id', 'project_name', 'owner', 'file_id',
                                                         'file_path', 'file_name', 'versions', 'size', 'stamper']];
