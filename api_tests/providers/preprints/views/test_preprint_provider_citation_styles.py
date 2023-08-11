@@ -36,8 +36,17 @@ def test_admin_form_with_valid_citation_styles(self):
     citation_styles = CitationStyle.objects.all()[:3]  # Assuming you want to test with three styles
     data = {
         'citation_styles': citation_styles,
-        # TODO: Other fields required for the form
     }
+    # TODO: Other fields required for the form in above data object
+    """
+    toplevel_subjects = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple(), required=False)
+    subjects_chosen = forms.CharField(widget=forms.HiddenInput(), required=False)
+    _id = forms.SlugField(
+        required=True,
+        help_text='URL Slug',
+        validators=[validate_slug]
+    )
+    """
 
     # Action
     form = PreprintProviderForm(data)
@@ -52,8 +61,17 @@ def test_admin_form_with_invalid_citation_styles(self):
     citation_styles = ['invalid_style']  # Invalid citation styles
     data = {
         'citation_styles': citation_styles,
-        # TODO: Other fields required for the form
     }
+    # TODO: Other fields required for the form in above data object
+    """
+    toplevel_subjects = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple(), required=False)
+    subjects_chosen = forms.CharField(widget=forms.HiddenInput(), required=False)
+    _id = forms.SlugField(
+        required=True,
+        help_text='URL Slug',
+        validators=[validate_slug]
+    )
+    """
 
     # Action
     form = PreprintProviderForm(data)
