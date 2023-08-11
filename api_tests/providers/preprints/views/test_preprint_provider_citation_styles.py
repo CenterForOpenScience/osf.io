@@ -5,8 +5,9 @@ from osf.admin.preprint_providers.forms import PreprintProviderForm
 
 def test_retrieval_of_citation_styles_for_specific_preprint_provider(self):
     # Setup
-    preprint_provider = PreprintProviderFactory()  # Assuming you have a factory for PreprintProvider
-    expected_citation_styles = [...]  # Define the expected citation styles
+    preprint_provider = PreprintProviderFactory()
+    # Define the expected citation styles
+    expected_citation_styles = ['apa', 'chicago-author-date', 'modern-language-association']
 
     # Action
     response = self.client.get(reverse('preprintprovidercitationstyles-view', args=[preprint_provider.id]))
@@ -33,7 +34,7 @@ def test_admin_form_with_valid_citation_styles(self):
     citation_styles = CitationStyle.objects.all()[:3]  # Assuming you want to test with three styles
     data = {
         'citation_styles': citation_styles,
-        # Other fields required for the form
+        # TODO: Other fields required for the form
     }
 
     # Action
@@ -49,7 +50,7 @@ def test_admin_form_with_invalid_citation_styles(self):
     citation_styles = ['invalid_style']  # Invalid citation styles
     data = {
         'citation_styles': citation_styles,
-        # Other fields required for the form
+        # TODO: Other fields required for the form
     }
 
     # Action
