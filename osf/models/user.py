@@ -143,6 +143,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         'jobs',
         'schools',
         'social',
+        'allow_indexing',
     }
 
     # Overrides DirtyFieldsMixin, Foreign Keys checked by '<attribute_name>_id' rather than typical name.
@@ -398,6 +399,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     chronos_user_id = models.TextField(null=True, blank=True, db_index=True)
 
+    allow_indexing = models.BooleanField(null=True, blank=True, default=None)
+
     objects = OSFUserManager()
 
     is_active = models.BooleanField(default=False)
@@ -456,7 +459,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     @property
     def is_public(self):
-        return self.is_active
+        return self.is_active and self.allow_indexing is not False
 
     @property
     def unconfirmed_emails(self):

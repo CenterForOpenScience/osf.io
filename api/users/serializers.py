@@ -87,6 +87,7 @@ class UserSerializer(JSONAPISerializer):
     social = SocialField(required=False, min_version='2.10')
     employment = JSONAPIListField(required=False, source='jobs')
     education = JSONAPIListField(required=False, source='schools')
+    allow_indexing = ShowIfCurrentUser(ser.BooleanField(required=False, allow_null=True))
     can_view_reviews = ShowIfCurrentUser(ser.SerializerMethodField(help_text='Whether the current user has the `view_submissions` permission to ANY reviews provider.'))
     accepted_terms_of_service = ShowIfCurrentUser(ser.SerializerMethodField())
 
