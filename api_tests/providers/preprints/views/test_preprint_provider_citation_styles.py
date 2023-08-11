@@ -3,10 +3,12 @@ from osf.models import CitationStyle
 from osf_tests.factories import PreprintProviderFactory
 from osf.admin.preprint_providers.forms import PreprintProviderForm
 
+
 def test_retrieval_of_citation_styles_for_specific_preprint_provider(self):
     # Setup
     preprint_provider = PreprintProviderFactory()
     # Define the expected citation styles
+    # TODO: Must be a better way to do this
     expected_citation_styles = ['apa', 'chicago-author-date', 'modern-language-association']
 
     # Action
