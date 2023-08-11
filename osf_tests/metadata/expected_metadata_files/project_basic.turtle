@@ -21,6 +21,17 @@
     osf:contains <http://localhost:5000/w3ibb> ;
     osf:supplements <http://localhost:5000/w4ibb> .
 
+<http://localhost:5000/w5ibb> a osf:Registration ;
+    dcterms:created "2123-05-04" ;
+    dcterms:creator <http://localhost:5000/w1ibb> ;
+    dcterms:dateCopyrighted "2252" ;
+    dcterms:identifier "http://localhost:5000/w5ibb" ;
+    dcterms:publisher <http://localhost:5000/registries/regiprovi> ;
+    dcterms:rights [ foaf:name "No license" ] ;
+    dcterms:rightsHolder "Me",
+        "You" ;
+    dcterms:title "this is a project title!" .
+
 <http://localhost:5000/w4ibb> a osf:Preprint ;
     dcterms:created "2123-05-04" ;
     dcterms:creator <http://localhost:5000/w1ibb> ;
@@ -29,13 +40,6 @@
     dcterms:publisher <http://localhost:5000/preprints/preprovi> ;
     dcterms:title "this is a preprint title!" ;
     owl:sameAs <https://doi.org/11.pp/FK2osf.io/w4ibb> .
-
-<http://localhost:5000/w5ibb> a osf:Registration ;
-    dcterms:created "2123-05-04" ;
-    dcterms:creator <http://localhost:5000/w1ibb> ;
-    dcterms:identifier "http://localhost:5000/w5ibb" ;
-    dcterms:publisher <http://localhost:5000/registries/regiprovi> ;
-    dcterms:title "this is a project title!" .
 
 <http://localhost:5000/w3ibb> a osf:File ;
     dcterms:created "2123-05-04" ;

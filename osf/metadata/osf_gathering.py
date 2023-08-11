@@ -71,6 +71,9 @@ OSF_OBJECT_REFERENCE = {  # could reference non-osf objects too
     DCTERMS.title: None,
     DCTERMS.type: None,
     DCTERMS.publisher: None,
+    DCTERMS.rights: None,
+    OSF.funder: None,
+    OSF.hasFunding: None,
 }
 
 OSF_FILE_REFERENCE = {

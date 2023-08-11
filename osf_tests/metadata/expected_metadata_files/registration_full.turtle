@@ -21,12 +21,24 @@
 <http://localhost:5000/w2ibb> a osf:Project ;
     dcterms:created "2123-05-04" ;
     dcterms:creator <http://localhost:5000/w1ibb> ;
+    dcterms:dateCopyrighted "2250-2254" ;
     dcterms:identifier "http://localhost:5000/w2ibb",
         "https://doi.org/10.70102/FK2osf.io/w2ibb" ;
     dcterms:publisher <http://localhost:5000> ;
+    dcterms:rights <https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode> ;
+    dcterms:rightsHolder "Me",
+        "You" ;
     dcterms:title "this is a project title!"@en ;
     dcterms:type "Dataset" ;
-    owl:sameAs <https://doi.org/10.70102/FK2osf.io/w2ibb> .
+    owl:sameAs <https://doi.org/10.70102/FK2osf.io/w2ibb> ;
+    osf:funder <https://doi.org/10.$$$$> ;
+    osf:hasFunding <https://moneypockets.example/millions> .
+
+<https://moneypockets.example/millions> a osf:FundingAward ;
+    dcterms:contributor <https://doi.org/10.$$$$> ;
+    dcterms:identifier "https://moneypockets.example/millions" ;
+    dcterms:title "because reasons" ;
+    osf:awardNumber "10000000" .
 
 <https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode> dcterms:identifier "https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode" ;
     foaf:name "CC-By Attribution-NonCommercial-NoDerivatives 4.0 International" .
@@ -35,6 +47,11 @@
         foaf:Organization ;
     dcterms:identifier "http://localhost:5000/registries/regiprovi" ;
     foaf:name "RegiProvi the Registration Provider" .
+
+<https://doi.org/10.$$$$> a dcterms:Agent ;
+    dcterms:identifier "https://doi.org/10.$$$$" ;
+    foaf:name "Mx. Moneypockets" ;
+    osf:funderIdentifierType "Crossref Funder ID" .
 
 <http://localhost:5000/w1ibb> a dcterms:Agent,
         foaf:Person ;

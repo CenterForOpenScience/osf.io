@@ -15,9 +15,13 @@
 <http://localhost:5000/w2ibb> a osf:Project ;
     dcterms:created "2123-05-04" ;
     dcterms:creator <http://localhost:5000/w1ibb> ;
+    dcterms:dateCopyrighted "2252" ;
     dcterms:identifier "http://localhost:5000/w2ibb",
         "https://doi.org/10.70102/FK2osf.io/w2ibb" ;
     dcterms:publisher <http://localhost:5000> ;
+    dcterms:rights [ foaf:name "No license" ] ;
+    dcterms:rightsHolder "Me",
+        "You" ;
     dcterms:title "this is a project title!" ;
     owl:sameAs <https://doi.org/10.70102/FK2osf.io/w2ibb> .
 
