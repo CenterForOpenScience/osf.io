@@ -44,8 +44,8 @@
                 pending registration will be reverted to draft state to revise and resubmit. This operation is irreversible.
             </li>
             <li>
-                You are an administrator on a registration submitted to the GFS registry, by approving this registration submission
-                (or allowing 48 hours to pass) you agree to receive communications from COS staff about the registration, study data,
+                You are an administrator on a registration submitted to the GFS registry, <b>by approving this registration submission</b>
+                (or allowing 48 hours to pass) <b>you agree to receive communications from COS staff</b> about the registration, study data,
                 and your experience with the GFS project. Your personal information will not be shared beyond COS staff with
                 the explicit purpose of communication regarding access to GFS study data.
             </li>
