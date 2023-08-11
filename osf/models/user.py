@@ -35,6 +35,7 @@ from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
                                        MergeConflictError)
 from framework.exceptions import PermissionsError
 from framework.sessions.utils import remove_sessions_for_user
+from api.share.utils import update_share
 from osf.utils.requests import get_current_request
 from osf.exceptions import reraise_django_validation_errors, UserStateError
 from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
@@ -1444,6 +1445,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return user_has_trusted_email
 
     def update_search(self):
+        update_share(self)
         from website.search.search import update_user
         update_user(self)
 

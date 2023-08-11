@@ -55,9 +55,8 @@ class TestRecatalogMetadata:
             for registration in registrations
         ])
 
-    @mock.patch('api.share.utils.update_share')
     def test_recatalog_metadata(self, mock_update_share, preprint_provider, preprints, registration_provider, registrations, projects):
-
+        mock_update_share.reset_mock()
         # test preprints
         call_command(
             'recatalog_metadata',
@@ -66,7 +65,7 @@ class TestRecatalogMetadata:
             preprint_provider._id,
         )
         expected_update_share_calls = [
-            mock.call(preprint)
+            mock.call(preprint._id)
             for preprint in preprints
         ]
         assert mock_update_share.mock_calls == expected_update_share_calls
@@ -81,7 +80,7 @@ class TestRecatalogMetadata:
             registration_provider._id,
         )
         expected_update_share_calls = [
-            mock.call(registration)
+            mock.call(registration._id)
             for registration in registrations
         ]
         assert mock_update_share.mock_calls == expected_update_share_calls
@@ -95,7 +94,7 @@ class TestRecatalogMetadata:
             '--all-providers',
         )
         expected_update_share_calls = [
-            mock.call(project)
+            mock.call(project._id)
             for project in projects  # already ordered by id
         ]
         assert mock_update_share.mock_calls == expected_update_share_calls
@@ -112,7 +111,7 @@ class TestRecatalogMetadata:
             '--chunk-count=1',
         )
         expected_update_share_calls = [
-            mock.call(registration)
+            mock.call(registration._id)
             for registration in registrations[1:4]
         ]
         assert mock_update_share.mock_calls == expected_update_share_calls
@@ -121,7 +120,7 @@ class TestRecatalogMetadata:
 
         # slightly different chunking
         expected_update_share_calls = [
-            mock.call(registration)
+            mock.call(registration._id)
             for registration in registrations[2:6]  # already ordered by id
         ]
         call_command(

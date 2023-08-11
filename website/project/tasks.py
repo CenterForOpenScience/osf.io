@@ -3,8 +3,6 @@ import logging
 from django.apps import apps
 from framework.celery_tasks import app as celery_app
 
-from website import settings
-from api.share.utils import update_share
 from osf.utils.workflows import CollectionSubmissionStates
 
 logger = logging.getLogger(__name__)
@@ -29,8 +27,6 @@ def on_node_updated(node_id, user_id, first_save, saved_fields, request_headers=
 
     if need_update:
         node.update_search()
-        if settings.SHARE_ENABLED and node.type != 'osf.draftregistration':
-            update_share(node)
         update_collection_submissions(node, saved_fields)
 
     if node.get_identifier_value('doi') and bool(node.IDENTIFIER_UPDATE_FIELDS.intersection(saved_fields)):

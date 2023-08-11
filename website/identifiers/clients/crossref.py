@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import furl
 import lxml
+import lxml.builder
 import time
 import logging
 

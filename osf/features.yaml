@@ -95,7 +95,7 @@ flags:
   - flag_name: EMBER_SEARCH_PAGE
     name: ember_search_page
     note: This flag controls wheter the `Search Page` view routes to the Ember app
-    everyone: false
+    everyone: true
 
   - flag_name: EMBER_USER_PROFILE
     name: ember_user_profile_page
