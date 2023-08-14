@@ -117,6 +117,13 @@ OSF_OBJECT = {
     OSF.contains: OSF_FILE_REFERENCE,
     OSF.hasRoot: OSF_OBJECT_REFERENCE,
     OSF.keyword: None,
+    OSF.dateWithdrawn: None,
+    OSF.withdrawal: {
+        DCTERMS.created: None,
+        DCTERMS.dateAccepted: None,
+        DCTERMS.description: None,
+        DCTERMS.creator: OSF_AGENT_REFERENCE,
+    },
     OWL.sameAs: None,
 }
 
@@ -344,7 +351,41 @@ def gather_moderation_dates(focus):
         )
         yield (DCTERMS.dateSubmitted, action_dates.get('date_submitted'))
         yield (DCTERMS.dateAccepted, action_dates.get('date_accepted'))
-        # TODO: withdrawn?
+
+
+@gather.er(
+    OSF.dateWithdrawn,
+    OSF.withdrawal,
+    focustype_iris=(OSF.Registration,)
+)
+def gather_registration_withdrawal(focus):
+    _retraction = focus.dbmodel.root.retraction
+    if _retraction and _retraction.is_approved:
+        yield (OSF.dateWithdrawn, _retraction.date_retracted)
+        _withdrawal_ref = rdflib.BNode()
+        yield (OSF.withdrawal, _withdrawal_ref)
+        yield (_withdrawal_ref, RDF.type, OSF.Withdrawal)
+        yield (_withdrawal_ref, DCTERMS.created, _retraction.initiation_date)
+        yield (_withdrawal_ref, DCTERMS.dateAccepted, _retraction.date_retracted)
+        yield (_withdrawal_ref, DCTERMS.description, _retraction.justification)
+        yield (_withdrawal_ref, DCTERMS.creator, OsfFocus(_retraction.initiated_by))
+
+
+@gather.er(
+    OSF.dateWithdrawn,
+    OSF.withdrawal,
+    focustype_iris=(OSF.Preprint,)
+)
+def gather_preprint_withdrawal(focus):
+    _preprint = focus.dbmodel
+    yield (OSF.dateWithdrawn, _preprint.date_withdrawn)
+    if _preprint.withdrawal_justification:
+        _withdrawal_ref = rdflib.BNode()
+        yield (OSF.withdrawal, _withdrawal_ref)
+        yield (_withdrawal_ref, RDF.type, OSF.Withdrawal)
+        yield (_withdrawal_ref, DCTERMS.created, _preprint.date_withdrawn)
+        yield (_withdrawal_ref, DCTERMS.description, _preprint.withdrawal_justification)
+        # TODO: query PreprintRequest and PreprintRequestAction for dateAccepted and creator
 
 
 @gather.er(DCTERMS.dateCopyrighted, DCTERMS.rightsHolder, DCTERMS.rights)
