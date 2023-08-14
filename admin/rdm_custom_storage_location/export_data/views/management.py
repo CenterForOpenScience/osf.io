@@ -476,11 +476,13 @@ class CheckRestoreData(RdmPermissionMixin, View):
         destination_provider_name = restore_data.destination.provider_name
         if is_add_on_storage(exported_provider_name) or is_add_on_storage(destination_provider_name):
             # If either source or destination is add-on storage then exclude the following keys
-            exclude_keys = ['id', 'path', 'created_at', 'modified_at', 'timestamp_id',
+            exclude_keys = ['id', 'provider', 'path', 'created_at', 'modified_at', 'timestamp_id',
                             # location/
                             'location',
                             # metadata/
-                            'metadata']
+                            'metadata',
+                            # timestamp/
+                            'timestamp_id', 'verify_user']
         else:
             # If source and destination are bulk-mount storages then exclude the following keys
             exclude_keys = ['host', 'bucket', 'folder', 'service', 'provider', 'verify_ssl', 'address', 'version',
