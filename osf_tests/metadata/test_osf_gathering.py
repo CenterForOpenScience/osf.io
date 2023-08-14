@@ -324,7 +324,10 @@ class TestOsfGathering(TestCase):
     def test_gather_subjects(self):
         # because osf:Subject, as implemented, is inextricable from osf:Provider
         # (a "bepress subject" must belong to a provider with _id == "osf")
-        _osf_provider = osfdb.PreprintProvider.objects.get(_id='osf')
+        try:
+            _osf_provider = osfdb.PreprintProvider.objects.get(_id='osf')
+        except osfdb.PreprintProvider.DoesNotExist:
+            _osf_provider = factories.PreprintProviderFactory(_id='osf')
         # focus: project
         _assert_triples(osf_gathering.gather_subjects(self.projectfocus), set())
         _bloo_subject = factories.SubjectFactory(text='Bloomy', provider=_osf_provider)
