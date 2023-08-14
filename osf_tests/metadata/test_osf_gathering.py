@@ -322,9 +322,12 @@ class TestOsfGathering(TestCase):
         _assert_triples(osf_gathering.gather_keywords(self.filefocus), set())
 
     def test_gather_subjects(self):
+        # because osf:Subject, as implemented, is inextricable from osf:Provider
+        # (a "bepress subject" must belong to a provider with _id == "osf")
+        _osf_provider = osfdb.PreprintProvider.objects.get(_id='osf')
         # focus: project
         _assert_triples(osf_gathering.gather_subjects(self.projectfocus), set())
-        _bloo_subject = factories.SubjectFactory(text='Bloomy')
+        _bloo_subject = factories.SubjectFactory(text='Bloomy', provider=_osf_provider)
         self.project.set_subjects([[_bloo_subject._id]], auth=Auth(self.user__admin))
         _bloo_iri = URIRef(_bloo_subject.absolute_api_v2_subject_url)
         _bepress_iri = rdflib.URIRef('https://bepress.com/reference_guide_dc/disciplines/')
@@ -337,8 +340,8 @@ class TestOsfGathering(TestCase):
         })
         # focus: registration
         _assert_triples(osf_gathering.gather_subjects(self.registrationfocus), set())
-        _parent_subj = factories.SubjectFactory(text='Parent')
-        _child_subj = factories.SubjectFactory(text='Child', parent=_parent_subj)
+        _parent_subj = factories.SubjectFactory(text='Parent', provider=_osf_provider)
+        _child_subj = factories.SubjectFactory(text='Child', parent=_parent_subj, provider=_osf_provider)
         _altparent_subj = factories.SubjectFactory(text='Alt-parent', bepress_subject=_parent_subj)
         _altchild_subj = factories.SubjectFactory(text='Alt-child', parent=_altparent_subj, bepress_subject=_child_subj)
         self.registration.set_subjects([
