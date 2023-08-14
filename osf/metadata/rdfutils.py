@@ -21,6 +21,8 @@ FOAF = rdflib.Namespace('http://xmlns.com/foaf/0.1/')                   # "frien
 OWL = rdflib.Namespace('http://www.w3.org/2002/07/owl#')                # "web ontology language"
 RDF = rdflib.Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#')   # "resource description framework"
 SKOS = rdflib.Namespace('http://www.w3.org/2004/02/skos/core#')         # "simple knowledge organization system"
+# non-standard namespace for datacite terms (resolves to datacite docs)
+DATACITE = rdflib.Namespace('https://schema.datacite.org/meta/kernel-4.4/#')
 
 
 # namespace prefixes that will be shortened by default

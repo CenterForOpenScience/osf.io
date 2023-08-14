@@ -20,6 +20,7 @@ from osf.metadata.rdfutils import (
     ORCID,
     ROR,
     SKOS,
+    DATACITE,
     checksum_iri,
     format_dcterms_extent,
     without_namespace,
@@ -201,6 +202,41 @@ OSF_ARTIFACT_PREDICATES = {
 BEPRESS_SUBJECT_SCHEME_URI = 'https://bepress.com/reference_guide_dc/disciplines/'
 BEPRESS_SUBJECT_SCHEME_TITLE = 'bepress Digital Commons Three-Tiered Taxonomy'
 
+DATACITE_RESOURCE_TYPES_GENERAL = {
+    'Audiovisual',
+    'Book',
+    'BookChapter',
+    'Collection',
+    'ComputationalNotebook',
+    'ConferencePaper',
+    'ConferenceProceeding',
+    'DataPaper',
+    'Dataset',
+    'Dissertation',
+    'Event',
+    'Image',
+    'InteractiveResource',
+    'Journal',
+    'JournalArticle',
+    'Model',
+    'OutputManagementPlan',
+    'PeerReview',
+    'PhysicalObject',
+    'Preprint',
+    'Report',
+    'Service',
+    'Software',
+    'Sound',
+    'Standard',
+    'Text',
+    'Workflow',
+    'Other',
+}
+DATACITE_RESOURCE_TYPE_BY_OSF_TYPE = {
+    OSF.Preprint: 'Preprint',
+    # TODO (datacite 4.5): OSF.Registration: DATACITE.StudyRegistration,
+}
+
 ##### END osfmap #####
 
 
@@ -291,8 +327,17 @@ def gather_identifiers(focus: gather.Focus):
 
 @gather.er(DCTERMS.type)
 def gather_flexible_types(focus):
-    if hasattr(focus, 'guid_metadata_record'):
-        yield (DCTERMS.type, focus.guid_metadata_record.resource_type_general)
+    _type_label = None
+    try:
+        _type_label = focus.guid_metadata_record.resource_type_general
+    except AttributeError:
+        pass
+    if not _type_label:
+        _type_label = DATACITE_RESOURCE_TYPE_BY_OSF_TYPE.get(focus.rdftype)
+    if _type_label in DATACITE_RESOURCE_TYPES_GENERAL:
+        _type_ref = DATACITE[_type_label]
+        yield (DCTERMS.type, _type_ref)
+        yield (_type_ref, rdflib.RDFS.label, rdflib.Literal(_type_label, lang='en'))
 
 
 @gather.er(DCTERMS.created)
