@@ -154,7 +154,7 @@ def _should_delete_indexcard(osf_item):
     # if it quacks like BaseFileNode, look at .target instead
     _containing_item = getattr(osf_item, 'target', None)
     if _containing_item:
-        return _should_delete_indexcard(_containing_item)
+        return not osf_item.should_update_search or _should_delete_indexcard(_containing_item)
     return (
         not _is_item_public(osf_item)
         or getattr(osf_item, 'is_spam', False)
