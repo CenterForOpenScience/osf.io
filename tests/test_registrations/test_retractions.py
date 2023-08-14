@@ -445,7 +445,7 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
         with mock_update_share() as _shmock:
             self.registration.retraction.approve_retraction(self.user, approval_token)
             assert _shmock.call_args_list == [
-                mock.call(_reg._id)
+                mock.call(_reg)
                 for _reg in self.registration.node_and_primary_descendants()
             ]
         assert_true(self.registration.is_retracted)
@@ -506,7 +506,7 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
         with mock_update_share() as _shmock:
             self.registration.retraction.approve_retraction(self.user, approval_token)
             assert _shmock.call_args_list == [
-                mock.call(_reg._id)
+                mock.call(_reg)
                 for _reg in self.registration.node_and_primary_descendants()
             ]
         assert_true(self.registration.is_retracted)
@@ -551,7 +551,7 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
         with mock_update_share() as _shmock:
             self.registration.retraction.approve_retraction(self.user, approval_token)
             assert _shmock.call_args_list == [
-                mock.call(_reg._id)
+                mock.call(_reg)
                 for _reg in self.registration.node_and_primary_descendants()
             ]
         assert_true(self.registration.is_retracted)
@@ -585,7 +585,7 @@ class RegistrationRetractionShareHook(OsfTestCase):
         with mock_update_share() as _shmock:
             self.registration.retraction.approve_retraction(self.user, approval_token)
             assert _shmock.call_args_list == [
-                mock.call(_reg._id)
+                mock.call(_reg)
                 for _reg in self.registration.node_and_primary_descendants()
             ]
         assert_true(self.registration.is_retracted)

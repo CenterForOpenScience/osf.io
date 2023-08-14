@@ -333,7 +333,7 @@ class TestPreprintView:
 @pytest.mark.enable_implicit_clean
 class TestPreprintReindex:
 
-    def test_reindex_preprint_share(self, preprint, req, mock_share_requests):
+    def test_reindex_preprint_share(self, preprint, req, mock_share_responses):
         preprint.provider.access_token = 'totally real access token I bought from a guy wearing a trenchcoat in the summer'
         preprint.provider.save()
 
@@ -341,7 +341,7 @@ class TestPreprintReindex:
         view = views.PreprintReindexShare()
         view = setup_log_view(view, req, guid=preprint._id)
 
-        with expect_ingest_request(mock_share_requests, preprint._id, token=preprint.provider.access_token):
+        with expect_ingest_request(mock_share_responses, preprint._id, token=preprint.provider.access_token):
             view.post(req)
         assert AdminLogEntry.objects.count() == count + 1
 

@@ -45,15 +45,15 @@ def update_share(resource):
     if not hasattr(resource, 'guids'):
         logger.error(f'update_share called on non-guid resource: {resource}')
         return
-    _osfguid_value = resource.guids.values_list('_id', flat=True).first()
+    _enqueue_update_share(resource)
+
+
+def _enqueue_update_share(osfresource):
+    _osfguid_value = osfresource.guids.values_list('_id', flat=True).first()
     if not _osfguid_value:
-        logger.warning(f'update_share skipping resource that has no guids: {resource}')
+        logger.warning(f'update_share skipping resource that has no guids: {osfresource}')
         return
-    _enqueue_update_share(_osfguid_value)
-
-
-def _enqueue_update_share(osfguid_value: str):
-    enqueue_task(task__update_share.s(osfguid_value))
+    enqueue_task(task__update_share.s(_osfguid_value))
 
 
 @celery_app.task(bind=True, max_retries=4, acks_late=True)
@@ -114,7 +114,7 @@ def pls_delete_trove_indexcard(osf_item):
 
 
 def _do_update_share(osfguid: str):
-    logger.warning('%s._do_update_share("%s")', __name__, osfguid)
+    logger.debug('%s._do_update_share("%s")', __name__, osfguid)
     _guid_instance = apps.get_model('osf.Guid').load(osfguid)
     if _guid_instance is None:
         raise ValueError(f'unknown osfguid "{osfguid}"')

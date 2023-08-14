@@ -55,7 +55,7 @@ class TestTags:
         project.add_tag('scientific', auth=auth)
         assert 'scientific' in list(project.tags.values_list('name', flat=True))
         assert project.logs.latest().action == 'tag_added'
-        mock_update_share.assert_called_once_with(project._id)
+        mock_update_share.assert_called_once_with(project)
 
     @pytest.mark.skip('TODO: 128 is no longer max length, consider shortening')
     def test_add_tag_too_long(self, project, auth):
@@ -68,10 +68,10 @@ class TestTags:
 
     def test_remove_tag(self, mock_update_share, project, auth):
         project.add_tag('scientific', auth=auth)
-        mock_update_share.assert_called_once_with(project._id)
+        mock_update_share.assert_called_once_with(project)
         mock_update_share.reset()
         project.remove_tag('scientific', auth=auth)
-        mock_update_share.assert_called_once_with(project._id)
+        mock_update_share.assert_called_once_with(project)
         assert 'scientific' not in list(project.tags.values_list('name', flat=True))
         assert project.logs.latest().action == 'tag_removed'
 

@@ -65,7 +65,7 @@ class TestRecatalogMetadata:
             preprint_provider._id,
         )
         expected_update_share_calls = [
-            mock.call(preprint._id)
+            mock.call(preprint)
             for preprint in preprints
         ]
         assert mock_update_share.mock_calls == expected_update_share_calls
@@ -80,7 +80,7 @@ class TestRecatalogMetadata:
             registration_provider._id,
         )
         expected_update_share_calls = [
-            mock.call(registration._id)
+            mock.call(registration)
             for registration in registrations
         ]
         assert mock_update_share.mock_calls == expected_update_share_calls
@@ -94,7 +94,7 @@ class TestRecatalogMetadata:
             '--all-providers',
         )
         expected_update_share_calls = [
-            mock.call(project._id)
+            mock.call(project)
             for project in projects  # already ordered by id
         ]
         assert mock_update_share.mock_calls == expected_update_share_calls
@@ -111,7 +111,7 @@ class TestRecatalogMetadata:
             '--chunk-count=1',
         )
         expected_update_share_calls = [
-            mock.call(registration._id)
+            mock.call(registration)
             for registration in registrations[1:4]
         ]
         assert mock_update_share.mock_calls == expected_update_share_calls
@@ -120,7 +120,7 @@ class TestRecatalogMetadata:
 
         # slightly different chunking
         expected_update_share_calls = [
-            mock.call(registration._id)
+            mock.call(registration)
             for registration in registrations[2:6]  # already ordered by id
         ]
         call_command(
