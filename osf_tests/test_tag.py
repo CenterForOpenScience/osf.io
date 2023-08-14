@@ -52,6 +52,7 @@ class TestTags:
         return Auth(project.creator)
 
     def test_add_tag(self, mock_update_share, project, auth):
+        mock_update_share.reset_mock()
         project.add_tag('scientific', auth=auth)
         assert 'scientific' in list(project.tags.values_list('name', flat=True))
         assert project.logs.latest().action == 'tag_added'
@@ -67,9 +68,10 @@ class TestTags:
             project.add_tag('asdf' * 257, auth=auth)
 
     def test_remove_tag(self, mock_update_share, project, auth):
+        mock_update_share.reset_mock()
         project.add_tag('scientific', auth=auth)
         mock_update_share.assert_called_once_with(project)
-        mock_update_share.reset()
+        mock_update_share.reset_mock()
         project.remove_tag('scientific', auth=auth)
         mock_update_share.assert_called_once_with(project)
         assert 'scientific' not in list(project.tags.values_list('name', flat=True))
