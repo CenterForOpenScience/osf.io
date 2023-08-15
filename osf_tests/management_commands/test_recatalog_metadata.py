@@ -55,7 +55,27 @@ class TestRecatalogMetadata:
             for registration in registrations
         ])
 
-    def test_recatalog_metadata(self, mock_update_share, preprint_provider, preprints, registration_provider, registrations, projects):
+    @pytest.fixture
+    def files(self, preprints):
+        return sorted_by_id([
+            preprint.primary_file
+            for preprint in preprints
+        ])
+
+    @pytest.fixture
+    def users(self, preprints, registrations, projects):
+        return sorted_by_id(list(set([
+            project.creator
+            for project in projects
+        ] + [
+            registration.creator
+            for registration in registrations
+        ] + [
+            preprint.creator
+            for preprint in preprints
+        ])))
+
+    def test_recatalog_metadata(self, mock_update_share, preprint_provider, preprints, registration_provider, registrations, projects, files, users):
         mock_update_share.reset_mock()
         # test preprints
         call_command(
@@ -96,6 +116,34 @@ class TestRecatalogMetadata:
         expected_update_share_calls = [
             mock.call(project)
             for project in projects  # already ordered by id
+        ]
+        assert mock_update_share.mock_calls == expected_update_share_calls
+
+        mock_update_share.reset_mock()
+
+        # test files
+        call_command(
+            'recatalog_metadata',
+            '--files',
+            '--all-providers',
+        )
+        expected_update_share_calls = [
+            mock.call(file)
+            for file in files  # already ordered by id
+        ]
+        assert mock_update_share.mock_calls == expected_update_share_calls
+
+        mock_update_share.reset_mock()
+
+        # test users
+        call_command(
+            'recatalog_metadata',
+            '--users',
+            '--all-providers',
+        )
+        expected_update_share_calls = [
+            mock.call(user)
+            for user in users  # already ordered by id
         ]
         assert mock_update_share.mock_calls == expected_update_share_calls
 
