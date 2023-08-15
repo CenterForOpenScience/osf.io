@@ -22,7 +22,6 @@ from osf.models.admin_log_entry import AdminLogEntry
 from osf.models.spam import SpamStatus
 from osf.utils.workflows import DefaultStates, RequestTypes
 
-from api_tests.share._utils import expect_preprint_ingest_request
 from admin_tests.utilities import setup_view, setup_log_view
 
 from admin.preprints import views
@@ -333,16 +332,16 @@ class TestPreprintView:
 @pytest.mark.enable_implicit_clean
 class TestPreprintReindex:
 
-    def test_reindex_preprint_share(self, preprint, req, mock_share_responses):
+    def test_reindex_preprint_share(self, preprint, req, mock_update_share):
         preprint.provider.access_token = 'totally real access token I bought from a guy wearing a trenchcoat in the summer'
         preprint.provider.save()
 
         count = AdminLogEntry.objects.count()
         view = views.PreprintReindexShare()
         view = setup_log_view(view, req, guid=preprint._id)
-
-        with expect_preprint_ingest_request(mock_share_responses, preprint):
-            view.post(req)
+        mock_update_share.reset_mock()
+        view.post(req)
+        mock_update_share.assert_called_once_with(preprint)
         assert AdminLogEntry.objects.count() == count + 1
 
     @mock.patch('website.search.search.update_preprint')
