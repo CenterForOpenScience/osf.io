@@ -2,6 +2,7 @@
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 @prefix osf: <https://osf.io/vocab/2022/> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 
 <http://localhost:5000/w4ibb> a osf:Preprint ;
@@ -16,6 +17,7 @@
     dcterms:subject <http://localhost:8000/v2/subjects/subjwibbb/>,
         <http://localhost:8000/v2/subjects/subjwobbb/> ;
     dcterms:title "this is a preprint title!" ;
+    dcterms:type <https://schema.datacite.org/meta/kernel-4.4/#Preprint> ;
     owl:sameAs <https://doi.org/11.pp/FK2osf.io/w4ibb> ;
     osf:isSupplementedBy <http://localhost:5000/w2ibb> ;
     osf:statedConflictOfInterest osf:no-conflict-of-interest .
@@ -61,3 +63,5 @@
 <https://bepress.com/reference_guide_dc/disciplines/> dcterms:title "bepress Digital Commons Three-Tiered Taxonomy" .
 
 <https://doi.org/11.111/something-or-other> dcterms:identifier "https://doi.org/11.111/something-or-other" .
+
+<https://schema.datacite.org/meta/kernel-4.4/#Preprint> rdfs:label "Preprint"@en .
