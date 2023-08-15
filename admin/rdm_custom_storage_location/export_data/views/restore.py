@@ -22,8 +22,9 @@ from addons.osfstorage.models import Region, NodeSettings
 from admin.rdm.utils import RdmPermissionMixin
 from admin.rdm_custom_storage_location import tasks
 from admin.rdm_custom_storage_location.export_data import utils
-from osf.models import ExportData, ExportDataRestore, BaseFileNode, Tag, RdmFileTimestamptokenVerifyResult, Institution, OSFUser, FileVersion, AbstractNode, \
-    ProjectStorageType, UserQuota
+from osf.models import ExportData, ExportDataRestore, BaseFileNode, Tag, RdmFileTimestamptokenVerifyResult, Institution, \
+    OSFUser, FileVersion, AbstractNode, \
+    ProjectStorageType, UserQuota, Guid
 from website.util import inspect_info  # noqa
 from framework.transactions.handlers import no_auto_transaction
 from website.util.quota import update_user_used_quota
@@ -519,7 +520,7 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
         file_created = file.get('created_at')
         file_modified = file.get('modified_at')
         file_provider = file.get('provider')
-        file_id = file.get('id')
+        file_guid = file.get('guid')
 
         if is_destination_addon_storage:
             # Sort file by version modify date
@@ -624,13 +625,11 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
                                 'project_id': file_project_id
                             })
                             # Update guid for base file node.
-                            old_file_node = BaseFileNode.objects.get(id=file_id)
-                            file_guid_set = old_file_node.guids
-                            if file_guid_set.exists():
-                                file_guid = file_guid_set.first()
-                                if file_guid.object_id != node.id:
-                                    file_guid.object_id = node.id
-                                    file_guid.save()
+                            if file_guid is not None:
+                                file_guid_oj = Guid.objects.get(_id=file_guid)
+                                if file_guid_oj.object_id != node.id:
+                                    file_guid_oj.object_id = node.id
+                                    file_guid_oj.save()
                 else:
                     # If id is provider_name/[path] then get path
                     file_path_splits = response_id.split('/')
@@ -654,13 +653,11 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
                                 'project_id': file_project_id
                             })
                             # Update guid for base file node.
-                            old_file_node = BaseFileNode.objects.get(id=file_id)
-                            file_guid_set = old_file_node.guids
-                            if file_guid_set.exists():
-                                file_guid = file_guid_set.first()
-                                if file_guid.object_id != node.id:
-                                    file_guid.object_id = node.id
-                                    file_guid.save()
+                            if file_guid is not None:
+                                file_guid_oj = Guid.objects.get(_id=file_guid)
+                                if file_guid_oj.object_id != node.id:
+                                    file_guid_oj.object_id = node.id
+                                    file_guid_oj.save()
             except Exception as e:
                 logger.error(f'Download or upload exception: {e}')
                 check_if_restore_process_stopped(task, current_process_step)

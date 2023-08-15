@@ -248,6 +248,7 @@ class ExportData(base.BaseModel):
             file_provider = file.provider
             file_info = {
                 'id': file.id,
+                'guid': file.get_guid()._id if file.get_guid() is not None else None,
                 'path': file.path,
                 'materialized_path': file.materialized_path,
                 'name': file.name,
