@@ -63,6 +63,7 @@ def _assert_triples(actual_triples, expected_triples):
 class TestOsfGathering(TestCase):
     @classmethod
     def setUpTestData(cls):
+        # users:
         cls.user__admin = factories.UserFactory()
         cls.user__readwrite = factories.UserFactory(
             external_identity={'ORCID': {'1234-4321-5678-8765': 'VERIFIED'}},
@@ -74,9 +75,11 @@ class TestOsfGathering(TestCase):
                 'baiduScholar': 'blarg',
             },
         )
+        # project:
         cls.project = factories.ProjectFactory(creator=cls.user__admin, is_public=True)
         cls.project.add_contributor(cls.user__readwrite, permissions=permissions.WRITE)
         cls.project.add_contributor(cls.user__readonly, permissions=permissions.READ, visible=False)
+        # file:
         cls.file_sha256 = '876b99ba1225de6b7f55ef52b068d0da3aa2ec4271875954c3b87b6659ae3823'
         cls.file = create_test_file(
             cls.project,
@@ -85,6 +88,7 @@ class TestOsfGathering(TestCase):
             filename='blarg.txt',
             sha256=cls.file_sha256,
         )
+        # registration:
         cls.registration = factories.RegistrationFactory(
             project=cls.project,
             creator=cls.user__admin,
@@ -92,9 +96,18 @@ class TestOsfGathering(TestCase):
         )
         cls.registration.registered_date = datetime.datetime(2121, 2, 1, tzinfo=datetime.timezone.utc)
         cls.registration.save()
+        # preprint:
+        cls.preprint = factories.PreprintFactory(
+            creator=cls.user__admin,
+            is_public=True,
+        )
+        cls.preprint.add_contributor(cls.user__readwrite, permissions=permissions.WRITE)
+        cls.preprint.add_contributor(cls.user__readonly, permissions=permissions.READ, visible=False)
+        # "focus" objects:
         cls.projectfocus = osf_gathering.OsfFocus(cls.project)
         cls.filefocus = osf_gathering.OsfFocus(cls.file)
         cls.registrationfocus = osf_gathering.OsfFocus(cls.registration)
+        cls.preprintfocus = osf_gathering.OsfFocus(cls.preprint)
         cls.userfocus__admin = osf_gathering.OsfFocus(cls.user__admin)
         cls.userfocus__readwrite = osf_gathering.OsfFocus(cls.user__readwrite)
         cls.userfocus__readonly = osf_gathering.OsfFocus(cls.user__readonly)
@@ -106,6 +119,9 @@ class TestOsfGathering(TestCase):
         assert self.registrationfocus.iri == OSFIO[self.registration._id]
         assert self.registrationfocus.rdftype == OSF.Registration
         assert self.registrationfocus.dbmodel is self.registration
+        assert self.preprintfocus.iri == OSFIO[self.preprint._id]
+        assert self.preprintfocus.rdftype == OSF.Preprint
+        assert self.preprintfocus.dbmodel is self.preprint
         assert self.filefocus.iri == OSFIO[self.file.get_guid()._id]
         assert self.filefocus.rdftype == OSF.File
         assert self.filefocus.dbmodel is self.file
@@ -622,4 +638,37 @@ class TestOsfGathering(TestCase):
             (self.projectfocus.iri, OSF.isPartOfCollection, _collection_ref),
             (_collection_ref, DCTERMS.type, DCMITYPE.Collection),
             (_collection_ref, DCTERMS.title, Literal(_collection_provider.name)),
+        })
+
+    def test_gather_registration_withdrawal(self):
+        # focus: registration
+        _assert_triples(osf_gathering.gather_registration_withdrawal(self.registrationfocus), set())
+        _retraction = factories.WithdrawnRegistrationFactory(
+            registration=self.registration,
+            justification='did bad. oopsie.',
+        )
+        self.registration.refresh_from_db()
+        _withdrawal_bnode = rdflib.BNode()
+        _assert_triples(osf_gathering.gather_registration_withdrawal(self.registrationfocus), {
+            (self.registrationfocus.iri, OSF.dateWithdrawn, Literal(str(_retraction.date_retracted.date()))),
+            (self.registrationfocus.iri, OSF.withdrawal, _withdrawal_bnode),
+            (_withdrawal_bnode, RDF.type, OSF.Withdrawal),
+            (_withdrawal_bnode, DCTERMS.description, Literal('did bad. oopsie.')),
+            (_withdrawal_bnode, DCTERMS.created, Literal(str(_retraction.initiation_date.date()))),
+            (_withdrawal_bnode, DCTERMS.dateAccepted, Literal(str(_retraction.date_retracted.date()))),
+            (_withdrawal_bnode, DCTERMS.creator, osf_gathering.OsfFocus(_retraction.initiated_by)),
+        })
+
+    def test_gather_preprint_withdrawal(self):
+        # focus: preprint
+        _assert_triples(osf_gathering.gather_preprint_withdrawal(self.preprintfocus), set())
+        self.preprint.date_withdrawn = datetime.datetime.now(tz=datetime.timezone.utc)
+        self.preprint.withdrawal_justification = 'postprint unprint'
+        _withdrawal_bnode = rdflib.BNode()
+        _assert_triples(osf_gathering.gather_preprint_withdrawal(self.preprintfocus), {
+            (self.preprintfocus.iri, OSF.dateWithdrawn, Literal(str(self.preprint.date_withdrawn.date()))),
+            (self.preprintfocus.iri, OSF.withdrawal, _withdrawal_bnode),
+            (_withdrawal_bnode, RDF.type, OSF.Withdrawal),
+            (_withdrawal_bnode, DCTERMS.description, Literal('postprint unprint')),
+            (_withdrawal_bnode, DCTERMS.created, Literal(str(self.preprint.date_withdrawn.date()))),
         })
