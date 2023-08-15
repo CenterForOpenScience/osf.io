@@ -584,7 +584,7 @@ def bulk_update_nodes(serialize, nodes, index=None, category=None):
                 'doc_as_upsert': True,
             })
     if actions:
-        return helpers.bulk(client(), actions)
+        return helpers.bulk(client(), actions, refresh=True)
 
 
 def serialize_collection_submission_contributor(contrib):

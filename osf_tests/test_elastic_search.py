@@ -294,7 +294,7 @@ class TestCollectionsSearch(OsfTestCase):
         assert_equal(len(docs['results']), 1)
         self.provider._id = 'new_id'
         self.provider.save()
-        docs = query(f'provider:new_id', raw=True)['results']
+        docs = query('provider:new_id', raw=True)['results']
         assert_equal(len(docs), 1)
 
 

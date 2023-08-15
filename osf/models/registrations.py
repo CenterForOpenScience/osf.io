@@ -826,7 +826,7 @@ class Registration(AbstractNode):
         # to disapprove the retraction by this point)
         for node in self.node_and_primary_descendants():
             node.set_privacy('public', auth=None, log=False)
-        AbstractNode.bulk_update_search(self.node_and_primary_descendants())
+        AbstractNode.bulk_update_search(list(self.node_and_primary_descendants()))
 
     def copy_registration_responses_into_schema_response(self, draft_registration=None, save=True):
         """Copies registration metadata into schema responses"""
