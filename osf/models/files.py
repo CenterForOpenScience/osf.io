@@ -14,6 +14,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from typedmodels.models import TypedModel, TypedModelManager
 
+from api.share.utils import update_share
 from framework.analytics import get_basic_counters
 from framework import sentry
 from osf.models.base import BaseModel, OptionalGuidMixin, ObjectIDMixin
@@ -23,7 +24,6 @@ from osf.models.validators import validate_location
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 from api.base.utils import waterbutler_api_url_for
-from api.share.utils import update_share
 from website.files import utils
 from website.files.exceptions import VersionNotFoundError
 from website.util import api_v2_url, web_url_for, api_url_for
@@ -442,6 +442,11 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
             self.save()
 
         return self
+
+    @property
+    def should_update_search(self):
+        # Only OsfStorageFile expected to actually update_search
+        return False
 
     def update_search(self):
         update_share(self)
