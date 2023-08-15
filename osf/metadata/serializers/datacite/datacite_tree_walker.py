@@ -17,6 +17,7 @@ from osf.metadata.rdfutils import (
     OSF,
     ROR,
     SKOS,
+    DATACITE,
     without_namespace,
 )
 
@@ -63,36 +64,6 @@ CONTRIBUTOR_TYPE_MAP = {
     # TODO: contributor roles
     # DCTERMS.contributor: 'ProjectMember',
     OSF.HostingInstitution: 'HostingInstitution',
-}
-RESOURCE_TYPES_GENERAL = {
-    'Audiovisual',
-    'Book',
-    'BookChapter',
-    'Collection',
-    'ComputationalNotebook',
-    'ConferencePaper',
-    'ConferenceProceeding',
-    'DataPaper',
-    'Dataset',
-    'Dissertation',
-    'Event',
-    'Image',
-    'InteractiveResource',
-    'Journal',
-    'JournalArticle',
-    'Model',
-    'OutputManagementPlan',
-    'PeerReview',
-    'PhysicalObject',
-    'Preprint',
-    'Report',
-    'Service',
-    'Software',
-    'Sound',
-    'Standard',
-    'Text',
-    'Workflow',
-    'Other',
 }
 
 
@@ -436,12 +407,6 @@ class DataciteTreeWalker:
             self.basket[focus_iri:RDF.type],
         )
         for type_term in type_terms:
-            if isinstance(type_term, rdflib.Literal):
-                general_type = type_term.toPython()
-                if general_type in RESOURCE_TYPES_GENERAL:
-                    return general_type
-            elif isinstance(type_term, rdflib.URIRef) and type_term.startswith(OSF):
-                general_type = without_namespace(type_term, OSF)
-                if general_type in RESOURCE_TYPES_GENERAL:
-                    return general_type
+            if isinstance(type_term, rdflib.URIRef) and type_term.startswith(DATACITE):
+                return without_namespace(type_term, DATACITE)
         return 'Text'

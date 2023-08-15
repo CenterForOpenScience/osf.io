@@ -141,21 +141,27 @@ class TestOsfGathering(TestCase):
         _assert_triples(osf_gathering.gather_flexible_types(self.projectfocus), {
         })
         self.projectfocus.guid_metadata_record.resource_type_general = 'Book'
+        _datacite_book_ref = URIRef('https://schema.datacite.org/meta/kernel-4.4/#Book')
         _assert_triples(osf_gathering.gather_flexible_types(self.projectfocus), {
-            (self.projectfocus.iri, DCTERMS.type, Literal('Book')),
+            (self.projectfocus.iri, DCTERMS.type, _datacite_book_ref),
+            (_datacite_book_ref, rdflib.RDFS.label, Literal('Book', lang='en')),
         })
         # focus: registration
         _assert_triples(osf_gathering.gather_flexible_types(self.registrationfocus), {
         })
         self.registrationfocus.guid_metadata_record.resource_type_general = 'Preprint'
+        _datacite_preprint_ref = URIRef('https://schema.datacite.org/meta/kernel-4.4/#Preprint')
         _assert_triples(osf_gathering.gather_flexible_types(self.registrationfocus), {
-            (self.registrationfocus.iri, DCTERMS.type, Literal('Preprint')),
+            (self.registrationfocus.iri, DCTERMS.type, _datacite_preprint_ref),
+            (_datacite_preprint_ref, rdflib.RDFS.label, Literal('Preprint', lang='en')),
         })
         # focus: file
         _assert_triples(osf_gathering.gather_flexible_types(self.filefocus), set())
         self.filefocus.guid_metadata_record.resource_type_general = 'Dataset'
+        _datacite_dataset_ref = URIRef('https://schema.datacite.org/meta/kernel-4.4/#Dataset')
         _assert_triples(osf_gathering.gather_flexible_types(self.filefocus), {
-            (self.filefocus.iri, DCTERMS.type, Literal('Dataset')),
+            (self.filefocus.iri, DCTERMS.type, _datacite_dataset_ref),
+            (_datacite_dataset_ref, rdflib.RDFS.label, Literal('Dataset', lang='en')),
         })
 
     def test_gather_created(self):
