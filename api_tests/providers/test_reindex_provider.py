@@ -1,5 +1,3 @@
-from unittest import mock
-
 import pytest
 
 from django.core.management import call_command
@@ -35,11 +33,6 @@ class TestReindexProvider:
     @pytest.fixture()
     def user(self):
         return AuthUserFactory()
-
-    @pytest.fixture()
-    def mock_update_share(self):
-        with mock.patch('osf.management.commands.reindex_provider.update_share') as _mock_update_share:
-            yield _mock_update_share
 
     def test_reindex_provider_preprint(self, mock_update_share, preprint_provider, preprint):
         call_command('reindex_provider', f'--providers={preprint_provider._id}')

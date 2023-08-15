@@ -41,7 +41,9 @@ def mock_update_share():
 def expect_ingest_request(mock_share_responses, osfguid, *, token=None, delete=False, count=1):
     mock_share_responses._calls.reset()
     yield
-    assert len(mock_share_responses.calls) == count
+    assert len(mock_share_responses.calls) == count, (
+        f'expected {count} call(s), got {len(mock_share_responses.calls)}: {list(mock_share_responses.calls)}'
+    )
     for _call in mock_share_responses.calls:
         assert_ingest_request(_call.request, osfguid, token=token, delete=delete)
 
