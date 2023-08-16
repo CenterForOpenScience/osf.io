@@ -1,5 +1,5 @@
 import pytest
-from addons.s3.utils import update_folder_names, reverse_update_folder_names
+from osf.management.commands.add_colon_delim_to_s3_buckets import update_folder_names, reverse_update_folder_names
 
 @pytest.mark.django_db
 class TestUpdateFolderNamesMigration:

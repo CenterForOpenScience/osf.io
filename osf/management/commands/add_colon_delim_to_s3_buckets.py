@@ -2,7 +2,9 @@
 import logging
 
 from django.core.management.base import BaseCommand
-from addons.s3.utils import update_folder_names, reverse_update_folder_names
+from django.apps import apps
+from django.db.models import F, Value
+from django.db.models.functions import Concat, Replace
 
 logger = logging.getLogger(__name__)
 
@@ -29,3 +31,47 @@ class Command(BaseCommand):
             reverse_update_folder_names()
         else:
             update_folder_names()
+
+
+def update_folder_names():
+    NodeSettings = apps.get_model('addons_s3', 'NodeSettings')
+
+    # Update folder_id for all records
+    NodeSettings.objects.exclude(
+        folder_name__contains=':/'
+    ).update(
+        folder_id=Concat(F('folder_id'), Value(':/'))
+    )
+
+    # Update folder_name for records containing '('
+    NodeSettings.objects.filter(
+        folder_name__contains=' ('
+    ).exclude(
+        folder_name__contains=':/'
+    ).update(
+        folder_name=Replace(F('folder_name'), Value(' ('), Value(':/ ('))
+    )
+    NodeSettings.objects.exclude(
+        folder_name__contains=':/'
+    ).exclude(
+        folder_name__contains=' ('
+    ).update(
+        folder_name=Concat(F('folder_name'), Value(':/'))
+    )
+    logger.info('Update Folder Names/IDs complete')
+
+
+def reverse_update_folder_names():
+    NodeSettings = apps.get_model('addons_s3', 'NodeSettings')
+
+    # Reverse update folder_id for all records
+    NodeSettings.objects.update(folder_id=Replace(F('folder_id'), Value(':/'), Value('')))
+
+    # Reverse update folder_name for records containing ':/ ('
+    NodeSettings.objects.filter(folder_name__contains=':/ (').update(
+        folder_name=Replace(F('folder_name'), Value(':/ ('), Value(' ('))
+    )
+    NodeSettings.objects.filter(folder_name__contains=':/').update(
+        folder_name=Replace(F('folder_name'), Value(':/'), Value(''))
+    )
+    logger.info('Reverse Update Folder Names/IDs complete')
