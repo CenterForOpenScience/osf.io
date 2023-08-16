@@ -5,7 +5,7 @@ import logging
 from django.core.management.base import BaseCommand
 from addons.osfstorage.models import OsfStorageFile
 from osf.models import AbstractProvider, Registration, Preprint, Node, OSFUser
-from api.share.utils import update_share
+from api.share.utils import task__update_share
 
 logger = logging.getLogger(__name__)
 
@@ -35,9 +35,13 @@ def recatalog_chunk(provided_model, providers, start_id, chunk_size):
         last_id = item_chunk[-1].id
 
         for item in item_chunk:
-            update_share(item)
+            guid = item.guids.values_list('_id', flat=True).first()
+            if guid:
+                task__update_share.apply_async(kwargs={'guid': guid})
+            else:
+                logger.debug('skipping item without guid: %s', item)
 
-        logger.info(f'Recatalogued metadata for {len(item_chunk)} {provided_model.__name__}ses (ids in range [{first_id},{last_id}])')
+        logger.info(f'Queued metadata recataloguing for {len(item_chunk)} {provided_model.__name__}ses (ids in range [{first_id},{last_id}])')
     else:
         logger.info(f'Done recataloguing metadata for {provided_model.__name__}ses!')
 
