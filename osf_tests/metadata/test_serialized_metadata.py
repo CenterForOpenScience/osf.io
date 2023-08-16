@@ -70,7 +70,7 @@ FULL_METADATA_SCENARIO = {
 }
 
 EXPECTED_MEDIATYPE = {
-    'turtle': 'text/turtle',
+    'turtle': 'text/turtle; charset=utf-8',
     'datacite-xml': 'application/xml',
     'datacite-json': 'application/json',
 }
@@ -246,7 +246,7 @@ class TestSerializers(OsfTestCase):
                     resp = self.app.get(f'/{osfguid}/metadata/?format={format_key}')
                     assert resp.status_code == 200
                     self.assertEqual(resp.status_code, 200)
-                    self.assertEqual(resp.content_type, EXPECTED_MEDIATYPE[format_key])
+                    self.assertEqual(resp.headers['Content-Type'], EXPECTED_MEDIATYPE[format_key])
                     self.assertEqual(
                         resp.content_disposition,
                         f'attachment; filename={gathered_file.filename}',

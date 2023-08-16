@@ -63,7 +63,7 @@ class TestNodeShare:
 
     @pytest.fixture()
     def registration(self, node):
-        reg = RegistrationFactory(is_public=True)
+        reg = RegistrationFactory(is_public=True, title='〠')
         IdentifierFactory(referent=reg, category='doi')
         reg.archive_jobs.clear()  # if reg.archiving is True it will skip updating SHARE
         return reg

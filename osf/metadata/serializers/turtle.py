@@ -36,7 +36,7 @@ def _get_turtleblock_sortkey(focus_iri: str):
 
 
 class TurtleMetadataSerializer(_base.MetadataSerializer):
-    mediatype = 'text/turtle'
+    mediatype = 'text/turtle; charset=utf-8'
 
     def filename_for_itemid(self, itemid: str):
         return f'{itemid}-metadata.ttl'
