@@ -11,6 +11,7 @@ import requests
 
 from framework.celery_tasks import app as celery_app
 from framework.celery_tasks.handlers import enqueue_task
+from framework.encryption import ensure_bytes
 from framework.sentry import log_exception
 from osf.metadata.osf_gathering import osf_iri
 from osf.metadata.tools import pls_gather_metadata_file
@@ -102,7 +103,7 @@ def pls_send_trove_indexcard(osf_item):
             'Content-Type': _metadata_record.mediatype,
             **_shtrove_auth_headers(osf_item),
         },
-        data=_metadata_record.serialized_metadata,
+        data=ensure_bytes(_metadata_record.serialized_metadata),
     )
 
 

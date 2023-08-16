@@ -55,7 +55,9 @@ def assert_ingest_request(request, expected_osfguid, *, token=None, delete=False
         assert request.method == 'DELETE'
     else:
         assert request.method == 'POST'
-        assert _querydict['focus_iri'] == f'{website_settings.DOMAIN}{expected_osfguid}'
+        _focus_iri = _querydict['focus_iri']
+        assert _focus_iri == f'{website_settings.DOMAIN}{expected_osfguid}'
+        assert _focus_iri in request.body.decode('utf-8')
     _token = token or website_settings.SHARE_API_TOKEN
     assert request.headers['Authorization'] == f'Bearer {_token}'
 
