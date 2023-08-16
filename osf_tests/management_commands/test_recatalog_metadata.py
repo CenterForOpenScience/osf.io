@@ -13,15 +13,13 @@ from osf_tests.factories import (
 )
 
 
-def sorted_by_id(things_with_ids):
-    return sorted(
-        things_with_ids,
-        key=attrgetter('id')
-    )
-
-
 @pytest.mark.django_db
 class TestRecatalogMetadata:
+
+    @pytest.fixture
+    def mock_update_share_task(self):
+        with mock.patch('osf.management.commands.recatalog_metadata.task__update_share') as _shmock:
+            yield _shmock
 
     @pytest.fixture
     def preprint_provider(self):
@@ -57,10 +55,13 @@ class TestRecatalogMetadata:
 
     @pytest.fixture
     def files(self, preprints):
-        return sorted_by_id([
+        _files = sorted_by_id([
             preprint.primary_file
             for preprint in preprints
         ])
+        for _file in _files:
+            _file.get_guid(create=True)
+        return _files
 
     @pytest.fixture
     def users(self, preprints, registrations, projects):
@@ -75,8 +76,7 @@ class TestRecatalogMetadata:
             for preprint in preprints
         ])))
 
-    def test_recatalog_metadata(self, mock_update_share, preprint_provider, preprints, registration_provider, registrations, projects, files, users):
-        mock_update_share.reset_mock()
+    def test_recatalog_metadata(self, mock_update_share_task, preprint_provider, preprints, registration_provider, registrations, projects, files, users):
         # test preprints
         call_command(
             'recatalog_metadata',
@@ -84,13 +84,9 @@ class TestRecatalogMetadata:
             '--providers',
             preprint_provider._id,
         )
-        expected_update_share_calls = [
-            mock.call(preprint)
-            for preprint in preprints
-        ]
-        assert mock_update_share.mock_calls == expected_update_share_calls
+        assert mock_update_share_task.apply_async.mock_calls == expected_apply_async_calls(preprints)
 
-        mock_update_share.reset_mock()
+        mock_update_share_task.reset_mock()
 
         # test registrations
         call_command(
@@ -99,13 +95,9 @@ class TestRecatalogMetadata:
             '--providers',
             registration_provider._id,
         )
-        expected_update_share_calls = [
-            mock.call(registration)
-            for registration in registrations
-        ]
-        assert mock_update_share.mock_calls == expected_update_share_calls
+        assert mock_update_share_task.apply_async.mock_calls == expected_apply_async_calls(registrations)
 
-        mock_update_share.reset_mock()
+        mock_update_share_task.reset_mock()
 
         # test projects
         call_command(
@@ -113,13 +105,9 @@ class TestRecatalogMetadata:
             '--projects',
             '--all-providers',
         )
-        expected_update_share_calls = [
-            mock.call(project)
-            for project in projects  # already ordered by id
-        ]
-        assert mock_update_share.mock_calls == expected_update_share_calls
+        assert mock_update_share_task.apply_async.mock_calls == expected_apply_async_calls(projects)
 
-        mock_update_share.reset_mock()
+        mock_update_share_task.reset_mock()
 
         # test files
         call_command(
@@ -127,13 +115,9 @@ class TestRecatalogMetadata:
             '--files',
             '--all-providers',
         )
-        expected_update_share_calls = [
-            mock.call(file)
-            for file in files  # already ordered by id
-        ]
-        assert mock_update_share.mock_calls == expected_update_share_calls
+        assert mock_update_share_task.apply_async.mock_calls == expected_apply_async_calls(files)
 
-        mock_update_share.reset_mock()
+        mock_update_share_task.reset_mock()
 
         # test users
         call_command(
@@ -141,13 +125,9 @@ class TestRecatalogMetadata:
             '--users',
             '--all-providers',
         )
-        expected_update_share_calls = [
-            mock.call(user)
-            for user in users  # already ordered by id
-        ]
-        assert mock_update_share.mock_calls == expected_update_share_calls
+        assert mock_update_share_task.apply_async.mock_calls == expected_apply_async_calls(users)
 
-        mock_update_share.reset_mock()
+        mock_update_share_task.reset_mock()
 
         # test chunking
         call_command(
@@ -158,19 +138,11 @@ class TestRecatalogMetadata:
             '--chunk-size=3',
             '--chunk-count=1',
         )
-        expected_update_share_calls = [
-            mock.call(registration)
-            for registration in registrations[1:4]
-        ]
-        assert mock_update_share.mock_calls == expected_update_share_calls
+        assert mock_update_share_task.apply_async.mock_calls == expected_apply_async_calls(registrations[1:4])
 
-        mock_update_share.reset_mock()
+        mock_update_share_task.reset_mock()
 
         # slightly different chunking
-        expected_update_share_calls = [
-            mock.call(registration)
-            for registration in registrations[2:6]  # already ordered by id
-        ]
         call_command(
             'recatalog_metadata',
             '--registrations',
@@ -179,4 +151,21 @@ class TestRecatalogMetadata:
             '--chunk-size=2',
             '--chunk-count=2',
         )
-        assert mock_update_share.mock_calls == expected_update_share_calls
+        assert mock_update_share_task.apply_async.mock_calls == expected_apply_async_calls(registrations[2:6])
+
+
+###
+# local utils
+
+def expected_apply_async_calls(items):
+    return [
+        mock.call(kwargs={'guid': _item.guids.values_list('_id', flat=True).first()})
+        for _item in items
+    ]
+
+
+def sorted_by_id(things_with_ids):
+    return sorted(
+        things_with_ids,
+        key=attrgetter('id')
+    )
