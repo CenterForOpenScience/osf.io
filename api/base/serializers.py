@@ -911,6 +911,10 @@ class RelationshipField(ser.Field):
                     elif related_class.view_name == 'node-storage':
                         related_id = resolved_url.kwargs['node_id']
                         related_type = 'node-storage'
+                    elif related_class.view_name == 'node-citation' \
+                            or related_class.view_name == 'registration-citation':
+                        related_id = resolved_url.kwargs['node_id']
+                        related_type = 'citation'
                     elif related_type in ('preprint_providers', 'preprint-providers', 'registration-providers'):
                         related_id = resolved_url.kwargs['provider_id']
                     elif related_type in ('registrations', 'draft_nodes'):
