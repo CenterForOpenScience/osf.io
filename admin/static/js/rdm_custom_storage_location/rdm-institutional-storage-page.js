@@ -1621,10 +1621,8 @@ $('#stop_restore_button').on('click', function () {
             return;
         }
         stop_restore_task_id = response['task_id'];
-        $osf.growl(_('Stop Restore Export Data'), 'Stop restoring in background.', 'success', growlBoxDelay);
-        setTimeout(function () {
-            checkTaskStatus(stop_restore_task_id, 'Stop Restore');
-        }, intervalCheckStatus);
+        enableRestoreFunction();
+        $osf.growl(_('Stop Restore Export Data'), _('Stopped restoring data process.'), 'success', 0);
     }).fail(function (jqXHR) {
         enableStopRestoreFunction();
         var data = jqXHR.responseJSON;
@@ -1679,10 +1677,6 @@ function checkTaskStatus(task_id, task_type) {
                     $('.table-ng-file-restore-not-exist').html(text_show_file);
                     $('.table-ng-file-restore-not-exist').css('word-break', 'break-word');
                 }
-            } else if (result_task_type === 'Stop Restore') {
-                // Done stopping restore export data
-                enableRestoreFunction();
-                $osf.growl(_('Stop Restore Export Data'), _('Stopped restoring data process.'), 'success', 0);
             }
         } else if (state === 'PENDING' || state === 'STARTED') {
             // Redo check task status after 2 seconds
@@ -1701,12 +1695,7 @@ function checkTaskStatus(task_id, task_type) {
                 $osf.growl(title, _('Stopped restoring data process.'), 'danger', 0);
             }
             if (result && result['message']) {
-                var title = '';
-                if (result_task_type === 'Restore'){
-                    title = _('Restore Export Data');
-                } else if (result_task_type === 'Stop Restore') {
-                    title = _('Stop Restore Export Data');
-                }
+                var title = _('Restore Export Data');
                 $osf.growl(title, _(result['message']), 'danger', 0);
             }
         }
@@ -1714,48 +1703,11 @@ function checkTaskStatus(task_id, task_type) {
         enableRestoreFunction();
         var data = jqXHR.responseJSON;
         if (data && data['result']) {
-            var title = '';
-            if (task_type === 'Restore'){
-                title = _('Restore Export Data');
-            } else if (task_type === 'Stop Restore') {
-                title = _('Stop Restore Export Data');
-            }
+            var title = _('Restore Export Data');
             $osf.growl(title, _(data['result']), 'danger', 0);
         }
     });
 }
-
-// Catch event when click Restore button in modal on the DataInformation screen
-$('#start_restore_modal_button').on('click', function () {
-    var data = {};
-    data['destination_id'] = $('#destination_storage').val();
-    data['is_from_confirm_dialog'] = true;
-    // Call enableStopRestoreFunction() when click Restore button
-    closeGrowl();
-    $.ajax({
-        url: 'restore_export_data/',
-        type: 'post',
-        data: data
-    }).done(function (response) {
-        // Get task_id when call ajax successful
-        restore_task_id = response['task_id'];
-        if (!restore_task_id) {
-            return;
-        }
-        enableStopRestoreFunction();
-        setTimeout(function () {
-            checkTaskStatus(restore_task_id, 'Restore');
-        }, intervalCheckStatus);
-    }).fail(function (jqXHR) {
-        // Call enableRestoreFunction() when fail
-        enableRestoreFunction();
-        var data = jqXHR.responseJSON;
-        if (data && data['message']) {
-            $osf.growl(_('Restore Export Data'), _(data['message']), 'danger', growlBoxDelay);
-        }
-    });
-});
-
 
 // Start - Check Restore exported data - Actions
 

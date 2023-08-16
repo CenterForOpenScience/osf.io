@@ -323,31 +323,6 @@
             </div>
         </div>
 
-        <div class="modal middle fade" id="restore" tabindex="-1" aria-labelledby="restoreLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <!--<div class="modal-header">-->
-                    <!--    <h4 class="modal-title" id="restoreLabel">Confirm to restore</h4>-->
-                    <!--</div>-->
-                    <div class="modal-body text-left">
-                        <p>
-                            {% trans "The restore destination storage is not empty." %}<br/>
-                            {% trans "This function assumes operation to empty storage." %}<br/>
-                            {% trans "Do you want to run it as it is?" %}
-                        </p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" id="cancel_restore_modal_button"
-                                class="btn btn-secondary"
-                                data-dismiss="modal">{% trans "Close" %}</button>
-                        <button type="button" id="start_restore_modal_button"
-                                class="btn btn-primary"
-                                data-dismiss="modal">{% trans "Restore" %}</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <div class="modal middle fade" id="checkRestoreDataModal" tabindex="-1" aria-labelledby="checkRestoreDataLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
