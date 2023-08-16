@@ -24,6 +24,7 @@ from osf import models as osfdb
 from osf.utils import permissions
 from osf_tests import factories
 from website import settings as website_settings
+from website.project import new_bookmark_collection
 
 
 def _get_graph_and_focuses(triples):
@@ -622,6 +623,8 @@ class TestOsfGathering(TestCase):
         })
 
     def test_gather_collection_membership(self):
+        # add bookmark-collection membership that should be ignored
+        new_bookmark_collection(self.user__readonly).collect_object(self.project, self.user__readonly)
         _collection_provider = factories.CollectionProviderFactory(
             reviews_workflow='post-moderation',
         )

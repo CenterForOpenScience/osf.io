@@ -924,8 +924,13 @@ def gather_collection_membership(focus):
         return  # no guids
     _collection_submissions = (
         osfdb.CollectionSubmission.objects
-        .filter(guid__in=_guids)
-        .filter(machine_state=osfworkflows.CollectionSubmissionStates.ACCEPTED)
+        .filter(
+            guid__in=_guids,
+            machine_state=osfworkflows.CollectionSubmissionStates.ACCEPTED,
+            collection__provider__isnull=False,
+            collection__deleted__isnull=True,
+            collection__is_bookmark_collection=False,
+        )
         .select_related('collection__provider')
     )
     for _submission in _collection_submissions:
