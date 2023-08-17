@@ -1612,8 +1612,8 @@ class TestStopRestoreDataActionView(AdminTestCase):
 
         response = self.view.post(request)
         mock_rollback_process.assert_not_called()
-        nt.assert_equal(response.data, {'message': f'Cannot stop restore process at this time.'})
-        nt.assert_equal(response.status_code, status.HTTP_400_BAD_REQUEST)
+        nt.assert_equal(response.data, {'message': f'Stop restore data successfully.'})
+        nt.assert_equal(response.status_code, status.HTTP_200_OK)
 
     @mock.patch(f'{EXPORT_DATA_TASK_PATH}.run_restore_export_data_rollback_process.delay')
     def test_post_task_is_not_running(self, mock_rollback_process):
@@ -1628,8 +1628,8 @@ class TestStopRestoreDataActionView(AdminTestCase):
 
         response = self.view.post(request)
         mock_rollback_process.assert_not_called()
-        nt.assert_equal(response.data, {'message': f'Cannot stop restore process at this time.'})
-        nt.assert_equal(response.status_code, status.HTTP_400_BAD_REQUEST)
+        nt.assert_equal(response.data, {'message': f'Stop restore data successfully.'})
+        nt.assert_equal(response.status_code, status.HTTP_200_OK)
 
     @mock.patch(f'{EXPORT_DATA_TASK_PATH}.run_restore_export_data_rollback_process.delay')
     def test_post_task_done_moving_files(self, mock_rollback_process):
@@ -1664,3 +1664,28 @@ class TestStopRestoreDataActionView(AdminTestCase):
         mock_rollback_process.assert_not_called()
         nt.assert_equal(response.data, {'message': f'Cannot stop restore process at this time.'})
         nt.assert_equal(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+# Test cases for CheckRunningRestoreActionView
+@pytest.mark.feature_202210
+class TestCheckRunningRestoreActionView(AdminTestCase):
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.export_data_restore = ExportDataRestoreFactory.create(task_id=FAKE_TASK_ID,
+                                                                  status=ExportData.STATUS_RUNNING)
+    def setUp(self):
+        self.view = restore.CheckRunningRestoreActionView()
+
+    def test_init(self):
+        nt.assert_is_not_none(self.view.get)
+
+    def test_get_success(self):
+        request = APIRequestFactory().get('check_running_restore', {
+            'destination_id': self.export_data_restore.destination.id,
+        })
+        response = self.view.get(request)
+        nt.assert_equal(response.data, {
+            'task_id': FAKE_TASK_ID,
+        })
+        nt.assert_equal(response.status_code, status.HTTP_200_OK)
