@@ -2,6 +2,11 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+23.11.0 (2023-8-17)
+===================
+- Allow folder-level connections with S3
+- Fix Type for citation relationships
+
 23.10.0 (2023-8-11)
 ===================
 - Update Registration emails for GFS

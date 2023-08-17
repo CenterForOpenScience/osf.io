@@ -38,6 +38,14 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
     NodeSettingsClass = NodeSettings
     UserSettingsFactory = S3UserSettingsFactory
 
+    def _node_settings_class_kwargs(self, node, user_settings):
+        return {
+            'user_settings': self.user_settings,
+            'folder_id': 'bucket_name:/path_goes_here/with_folder_id',
+            'owner': self.node
+        }
+
+
     def test_registration_settings(self):
         registration = ProjectFactory()
         clone, message = self.node_settings.after_register(
@@ -96,6 +104,9 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
 
     def test_serialize_settings(self):
         settings = self.node_settings.serialize_waterbutler_settings()
-        expected = {'bucket': self.node_settings.folder_id,
-                    'encrypt_uploads': self.node_settings.encrypt_uploads}
+        expected = {
+            'bucket': 'bucket_name',
+            'encrypt_uploads': self.node_settings.encrypt_uploads,
+            'id': 'bucket_name:/path_goes_here/with_folder_id'
+        }
         assert_equal(settings, expected)

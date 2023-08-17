@@ -56,7 +56,9 @@ s3_set_config = generic_views.set_config(
 def s3_folder_list(node_addon, **kwargs):
     """ Returns all the subsequent folders under the folder id passed.
     """
-    return node_addon.get_folders()
+    path = request.args.get('path', '')
+    folder_id = request.args.get('id', '')
+    return node_addon.get_folders(path=path, folder_id=folder_id)
 
 @must_be_logged_in
 def s3_add_user_account(auth, **kwargs):
