@@ -50,7 +50,7 @@ from osf.models.action import NodeRequestAction, PreprintRequestAction, ReviewAc
 from osf.models.storage import ProviderAssetFile, InstitutionAssetFile # noqa
 from osf.models.chronos import ChronosJournal, ChronosSubmission  # noqa
 from osf.models.notable_domain import NotableDomain, DomainReference  # noqa
-from osf.models.brand import Brand  # noqa
+from .brand import Brand  # noqa
 from osf.models.schema_response import SchemaResponse  # noqa
 from osf.models.schema_response_block import SchemaResponseBlock  # noqa
 from osf.models.registration_bulk_upload_job import RegistrationBulkUploadJob  # noqa
