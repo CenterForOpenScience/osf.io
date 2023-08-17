@@ -1,3 +1,4 @@
+# flake8: noqa
 from osf.models.metaschema import RegistrationSchemaBlock, RegistrationSchema, FileMetadataSchema  # noqa
 from osf.models.base import Guid, BlackListGuid  # noqa
 from osf.models.user import OSFUser, Email  # noqa
@@ -9,7 +10,11 @@ from osf.models.collection_submission import CollectionSubmission  # noqa
 from osf.models.draft_node import DraftNode  # noqa
 from osf.models.node import AbstractNode, Node  # noqa
 from osf.models.sanctions import Sanction, Embargo, Retraction, RegistrationApproval, EmbargoTerminationApproval  # noqa
-from osf.models.registrations import Registration, DraftRegistrationLog, DraftRegistration  # noqa
+from .registrations import (
+    DraftRegistration,
+    DraftRegistrationLog,
+    Registration,
+)
 from osf.models.nodelog import NodeLog  # noqa
 from osf.models.preprintlog import PreprintLog  # noqa
 from osf.models.tag import Tag  # noqa
