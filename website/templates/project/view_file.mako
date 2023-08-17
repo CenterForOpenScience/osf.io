@@ -238,6 +238,9 @@
         },
       });
       window.contextVars.file.urls.external = window.contextVars.file.extra.webView;
+      if (window.contextVars.file.path && !window.contextVars.file.path.startsWith('/')) {
+        window.contextVars.file.path = '/' + window.contextVars.file.path;
+      }
     </script>
 
     <link href="/static/css/pages/file-view-page.css" rel="stylesheet" />

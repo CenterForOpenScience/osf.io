@@ -9,6 +9,7 @@ from functools import partial
 from celery.states import PENDING
 from celery.contrib.abortable import AbortableAsyncResult, ABORTED
 from django.db import transaction
+from django.db.models import Q
 from django.db.models.functions import Trunc
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -286,23 +287,27 @@ class StopRestoreDataActionView(RdmPermissionMixin, APIView):
             return Response({'message': f'Missing required parameters.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Get corresponding export data restore record
-        export_data_restore_set = ExportDataRestore.objects.filter(task_id=task_id, export_id=export_id, destination_id=destination_id)
+        export_data_restore_set = ExportDataRestore.objects.filter(task_id=task_id, destination_id=destination_id)
         if not export_data_restore_set.exists():
-            return Response({'message': f'Permission denied for this restore process'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'message': f'Permission denied for this restore process'},
+                            status=status.HTTP_400_BAD_REQUEST)
         export_data_restore = export_data_restore_set.first()
 
         # Get current task's result
         task = AbortableAsyncResult(task_id)
         result = task.result
 
-        # If result is None then return error message
+        # If result is None then update status to Stopped
         if not result:
-            return Response({'message': f'Cannot stop restore process at this time.'}, status=status.HTTP_400_BAD_REQUEST)
+            export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
+                                       status=ExportData.STATUS_STOPPED)
+            return Response({'message': f'Stop restore data successfully.'}, status=status.HTTP_200_OK)
 
-        # If process state is not STARTED and not PENDING then return error message
+        # If process state is not STARTED and not PENDING then update status to Stopped
         if task.state != 'STARTED' and task.state != PENDING:
-            export_data_restore.update(status=ExportData.STATUS_ERROR)
-            return Response({'message': f'Cannot stop restore process at this time.'}, status=status.HTTP_400_BAD_REQUEST)
+            export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
+                                       status=ExportData.STATUS_STOPPED)
+            return Response({'message': f'Stop restore data successfully.'}, status=status.HTTP_200_OK)
 
         # Get current restore progress step
         current_progress_step = result.get('current_restore_step')
@@ -778,3 +783,23 @@ def move_all_files_from_backup_folder_to_root(export_data_restore, destination_f
     except Exception as e:
         logger.error(f'Move all files from back up exception: {e}')
         raise ProcessError(f'Failed to move backup folder to root')
+
+
+class CheckRunningRestoreActionView(RdmPermissionMixin, APIView):
+    raise_exception = True
+    authentication_classes = (
+        drf_authentication.SessionAuthentication,
+    )
+
+    def get(self, request, **kwargs):
+        destination_id = request.GET.get('destination_id')
+        running_restore = ExportDataRestore.objects.filter(destination_id=destination_id).exclude(
+            Q(status=ExportData.STATUS_STOPPED) | Q(status=ExportData.STATUS_COMPLETED) | Q(
+                status=ExportData.STATUS_ERROR))
+        task_id = None
+        if len(running_restore) != 0:
+            task_id = running_restore[0].task_id
+        response = {
+            'task_id': task_id
+        }
+        return Response(response, status=status.HTTP_200_OK)

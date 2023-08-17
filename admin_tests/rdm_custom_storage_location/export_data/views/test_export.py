@@ -820,3 +820,30 @@ class TestCheckDataExportDataActionView(AdminTestCase):
             with mock.patch('admin.rdm_custom_storage_location.export_data.views.export.ExportData.objects', mock_obj):
                 response = self.view.post(self.request)
         nt.assert_equal(response.status_code, 200)
+
+
+@pytest.mark.feature_202210
+class TestCheckRunningExportActionView(AdminTestCase):
+    def setUp(self):
+        super(TestCheckRunningExportActionView, self).setUp()
+        self.user = AuthUserFactory()
+        self.request = RequestFactory().get('/fake_path')
+        self.institution = InstitutionFactory()
+        self.source = RegionFactory()
+        self.location = ExportDataLocationFactory()
+        self.request.user = self.user
+        self.view = export.CheckRunningExportActionView()
+        self.view.request = self.request
+        self.export_data = [ExportDataFactory()]
+
+    def test_post(self):
+        mock_obj = mock.MagicMock()
+        mock_class = mock.mock.MagicMock()
+        mock_obj.filter.return_value = self.export_data
+        mock_class.return_value = self.institution.id, self.source.id, self.location.id
+        with mock.patch(
+                'admin.rdm_custom_storage_location.export_data.views.export.ExportDataBaseActionView.extract_input',
+                mock_class):
+            with mock.patch('admin.rdm_custom_storage_location.export_data.views.export.ExportData.objects', mock_obj):
+                response = self.view.post(self.request)
+        nt.assert_equal(response.status_code, 200)

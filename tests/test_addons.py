@@ -291,6 +291,20 @@ class TestAddonAuth(OsfTestCase):
         assert_equal(data['settings'], {})
         assert_equal(data['callback_url'], '')
 
+    def test_auth__user_is_None(self):
+        none_auth = Auth()
+        # default location
+        location = ExportDataLocationFactory(institution_guid=Institution.INSTITUTION_DEFAULT)
+
+        url = self.build_url(
+            cookie=self.cookie[::-1],
+            nid=ExportData.EXPORT_DATA_FAKE_NODE_ID,
+            location_id=location.id,
+            metrics={'uri': settings.MFR_SERVER_URL + '?callback_log=False'},
+        )
+        res = self.app.get(url, auth=none_auth, expect_errors=True)
+        assert_equal(res.status_code, 401)
+
 
 class TestAddonLogs(OsfTestCase):
 
