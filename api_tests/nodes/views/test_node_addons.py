@@ -1013,8 +1013,8 @@ class TestNodeS3Addon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):
     def _mock_folder_result(self):
         return {
             'name': 'a.bucket',
-            'path': 'a.bucket',
-            'id': 'a.bucket'
+            'path': '/',
+            'id': 'a.bucket:/'
         }
 
     @mock.patch('addons.s3.models.get_bucket_names')
