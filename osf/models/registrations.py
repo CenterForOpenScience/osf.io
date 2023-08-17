@@ -22,7 +22,7 @@ from osf.utils.permissions import ADMIN, READ, WRITE
 from osf.exceptions import NodeStateError, DraftRegistrationStateError
 from osf.external.internet_archive.tasks import archive_to_ia, update_ia_metadata
 from osf.metrics import RegistriesModerationMetrics
-from osf.models import (
+from . import (
     Embargo,
     EmbargoTerminationApproval,
     DraftRegistrationContributor,
