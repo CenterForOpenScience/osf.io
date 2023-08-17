@@ -16,8 +16,8 @@ from osf.exceptions import (
     NoPIDError,
     UnsupportedArtifactTypeError,
 )
-from osf.models.base import BaseModel, ObjectIDMixin
-from osf.models.identifiers import Identifier
+from .base import BaseModel, ObjectIDMixin
+from .identifiers import Identifier
 from osf.utils import outcomes as outcome_utils
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.identifiers import normalize_identifier

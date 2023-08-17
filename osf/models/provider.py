@@ -15,17 +15,14 @@ from dirtyfields import DirtyFieldsMixin
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 
 from framework import sentry
-from osf.models.base import BaseModel, TypedObjectIDMixin
-from osf.models.mixins import ReviewProviderMixin
-from osf.models import (
-    Brand,
-    CitationStyle,
-    NodeLicense,
-    NotificationSubscription,
-    ProviderAssetFile,
-    Subject,
-)
-
+from .base import BaseModel, TypedObjectIDMixin
+from .mixins import ReviewProviderMixin
+from .brand import Brand
+from .citation import CitationStyle
+from .licenses import NodeLicense
+from .notifications import NotificationSubscription
+from .provider import ProviderAssetFile
+from .subject import Subject
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.workflows import RegistrationModerationStates
 from osf.utils.fields import EncryptedTextField
@@ -273,7 +270,7 @@ class CollectionProvider(AbstractProvider):
         ret = super().save(*args, **kwargs)
         if '_id' in saved_fields:
             # avoid circular import
-            from osf.models.collection import Collection
+            from .collection import Collection
             if self.primary_collection:
                 Collection.bulk_update_search(self.primary_collection.collectionsubmission_set.all())
         return ret

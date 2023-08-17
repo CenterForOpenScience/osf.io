@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 from django.db import models
 
-from osf.models.base import BaseModel, ObjectIDMixin
+from .base import BaseModel, ObjectIDMixin
 from osf.utils.workflows import (
     ApprovalStates,
     DefaultStates,

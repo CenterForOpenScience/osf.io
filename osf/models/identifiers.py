@@ -7,7 +7,7 @@ from osf.exceptions import (
     IdentifierHasReferencesError,
     NoSuchPIDValidatorError,
 )
-from osf.models.base import BaseModel, ObjectIDMixin
+from .base import BaseModel, ObjectIDMixin
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils import identifiers as identifier_utils
 

@@ -2,12 +2,12 @@ from __future__ import unicode_literals
 
 import logging
 
-from osf.models.node import (
+from .node import (
     AbstractNode,
     AbstractNodeManager,
     Node
 )
-from osf.models.nodelog import NodeLog
+from .nodelog import NodeLog
 
 from osf.exceptions import NodeStateError
 

@@ -3,7 +3,7 @@ import uuid
 from website.util import api_v2_url
 
 from django.db import models
-from osf.models import base
+from .base import base
 from website.security import random_string
 
 from framework.auth import cas

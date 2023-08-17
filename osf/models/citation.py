@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils import timezone
-from osf.models.base import BaseModel
+from .base import BaseModel
 from osf.utils.fields import NonNaiveDateTimeField
 
 

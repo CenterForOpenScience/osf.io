@@ -5,8 +5,8 @@ from django.db import models
 from django.utils.functional import cached_property
 from framework.exceptions import PermissionsError
 
-from osf.models.base import BaseModel
-from osf.models.mixins import TaxonomizableMixin
+from .base import BaseModel
+from .mixins import TaxonomizableMixin
 from osf.utils.permissions import ADMIN
 from website.util import api_v2_url
 from website.search.exceptions import SearchUnavailableError
@@ -121,7 +121,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
             'allow_submissions': True,
         }
 
-        from osf.models import NotificationSubscription
+        from .notifications import NotificationSubscription
         from website.notifications.emails import store_emails
 
         provider_subscription, created = NotificationSubscription.objects.get_or_create(

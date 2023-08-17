@@ -13,13 +13,13 @@ from django.urls import reverse
 from django.utils import timezone
 
 from framework import sentry
-from osf.models import base
-from osf.models.contributor import InstitutionalContributor
-from osf.models.institution_affiliation import InstitutionAffiliation
-from osf.models.institution_storage_region import InstitutionStorageRegion
-from osf.models.mixins import Loggable, GuardianMixin
-from osf.models.storage import InstitutionAssetFile
-from osf.models.validators import validate_email
+from .base import base
+from .contributor import InstitutionalContributor
+from .institution_affiliation import InstitutionAffiliation
+from .institution_storage_region import InstitutionStorageRegion
+from .mixins import Loggable, GuardianMixin
+from .storage import InstitutionAssetFile
+from .validators import validate_email
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
 from website import mails
 from website import settings as website_settings
@@ -259,7 +259,7 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
             sentry.log_message(message)
 
     def get_institution_users(self):
-        from osf.models.user import OSFUser
+        from .user import OSFUser
         qs = InstitutionAffiliation.objects.filter(institution__id=self.id).values_list('user', flat=True)
         return OSFUser.objects.filter(pk__in=qs)
 

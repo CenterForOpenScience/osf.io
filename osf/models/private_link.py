@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 
 from framework.utils import iso8601format
 
-from osf.models.base import BaseModel, ObjectIDMixin
+from .base import BaseModel, ObjectIDMixin
 from osf.utils.sanitize import unescape_entities
 from osf.utils.fields import NonNaiveDateTimeField
 
@@ -48,7 +48,7 @@ class PrivateLink(ObjectIDMixin, BaseModel):
 ##### Signal listeners #####
 @receiver(models.signals.m2m_changed, sender=PrivateLink.nodes.through)
 def check_if_private_link_is_to_quickfiles(sender, instance, action, reverse, model, pk_set, **kwargs):
-    from osf.models.node import AbstractNode
+    from .node import AbstractNode
 
     if action == 'pre_add' and pk_set:
         if model == AbstractNode and model.objects.get(id=list(pk_set)[0]).is_quickfiles:
