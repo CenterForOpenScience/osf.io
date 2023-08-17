@@ -13,7 +13,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from framework import sentry
-from .base import base
+from .base import BaseModel, ObjectIDMixin
 from .contributor import InstitutionalContributor
 from .institution_affiliation import InstitutionAffiliation
 from .institution_storage_region import InstitutionStorageRegion
@@ -55,7 +55,7 @@ class InstitutionManager(models.Manager):
         return super().get_queryset()
 
 
-class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel, GuardianMixin):
+class Institution(DirtyFieldsMixin, Loggable, ObjectIDMixin, BaseModel, GuardianMixin):
 
     objects = InstitutionManager()
 
