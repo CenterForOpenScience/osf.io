@@ -31,6 +31,7 @@ from .contributor import (
 from .draft_node import DraftNode
 from .dismissed_alerts import DismissedAlert
 from .external import ExternalAccount, ExternalProvider
+from .files import FileVersion
 from .identifiers import Identifier
 from .institution_affiliation import InstitutionAffiliation
 from .institution_storage_region import InstitutionStorageRegion
@@ -61,7 +62,7 @@ from .quickfiles import QuickFilesNode
 from .registrations import (
     DraftRegistration,
     DraftRegistrationLog,
-    Registration,
+    Registration
 )
 from .registration_bulk_upload_job import RegistrationBulkUploadJob
 from .registration_bulk_upload_row import RegistrationBulkUploadRow
