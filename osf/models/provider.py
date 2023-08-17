@@ -21,7 +21,7 @@ from .brand import Brand
 from .citation import CitationStyle
 from .licenses import NodeLicense
 from .notifications import NotificationSubscription
-from .provider import ProviderAssetFile
+from .storage import ProviderAssetFile
 from .subject import Subject
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.workflows import RegistrationModerationStates
