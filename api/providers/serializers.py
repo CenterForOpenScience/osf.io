@@ -10,6 +10,7 @@ from api.collections_providers.fields import CollectionProviderRelationshipField
 from api.preprints.serializers import PreprintProviderRelationshipField
 from api.providers.workflows import Workflows
 from api.base.metrics import MetricsSerializerMixin
+from osf.models import PreprintProvider
 from osf.models.user import Email, OSFUser
 from osf.models.validators import validate_email
 from osf.utils.permissions import REVIEW_GROUPS, ADMIN
@@ -427,3 +428,19 @@ class CollectionsModeratorSerializer(ModeratorSerializer):
                 'version': self.context['request'].parser_context['kwargs']['version'],
             },
         )
+
+class PreprintProviderCitationStylesSerializer(ser.ModelSerializer):
+    """
+    Serializer for citation styles associated with a PreprintProvider.
+
+    This serializer fetches and formats the citation styles supported by a specific PreprintProvider.
+    """
+    citation_styles = RelationshipField(
+        read_only=True,
+        related_view='preprint-providers:citation-styles-list',
+        related_view_kwargs={'provider_id': '<id>'},
+    )
+
+    class Meta:
+        model = PreprintProvider
+        fields = ['id', 'citation_styles']

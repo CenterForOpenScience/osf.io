@@ -1,7 +1,7 @@
 from django.urls import reverse
+from osf.admin.preprint_providers.forms import PreprintProviderForm
 from osf.models import CitationStyle
 from osf_tests.factories import PreprintProviderFactory
-from osf.admin.preprint_providers.forms import PreprintProviderForm
 
 
 def test_retrieval_of_citation_styles_for_specific_preprint_provider(self):
@@ -37,16 +37,6 @@ def test_admin_form_with_valid_citation_styles(self):
     data = {
         'citation_styles': citation_styles,
     }
-    # TODO: Other fields required for the form in above data object
-    """
-    toplevel_subjects = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple(), required=False)
-    subjects_chosen = forms.CharField(widget=forms.HiddenInput(), required=False)
-    _id = forms.SlugField(
-        required=True,
-        help_text='URL Slug',
-        validators=[validate_slug]
-    )
-    """
 
     # Action
     form = PreprintProviderForm(data)
@@ -62,16 +52,6 @@ def test_admin_form_with_invalid_citation_styles(self):
     data = {
         'citation_styles': citation_styles,
     }
-    # TODO: Other fields required for the form in above data object
-    """
-    toplevel_subjects = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple(), required=False)
-    subjects_chosen = forms.CharField(widget=forms.HiddenInput(), required=False)
-    _id = forms.SlugField(
-        required=True,
-        help_text='URL Slug',
-        validators=[validate_slug]
-    )
-    """
 
     # Action
     form = PreprintProviderForm(data)
