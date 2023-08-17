@@ -20,6 +20,7 @@ from .base import (
 from .brand import Brand
 from .chronos import ChronosJournal, ChronosSubmission
 from .citation import CitationStyle
+from .collection import Collection
 from .comment import Comment
 from .conference import Conference, MailRecord
 from .contributor import (
