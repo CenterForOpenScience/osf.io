@@ -18,7 +18,6 @@ from api.base.settings import HASHIDS_SALT
 from framework.auth import Auth
 from framework.auth.cas import CasResponse
 from framework.auth.oauth_scopes import ComposedScopes, normalize_scopes
-from osf.models import Node
 from osf.models.base import GuidMixin
 from osf.utils.requests import check_select_for_update
 from website import settings as website_settings
@@ -144,6 +143,7 @@ def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_nam
     return obj
 
 def default_node_list_queryset(model_cls):
+    Node = apps.get_model('osf', 'Node')
     Registration = apps.get_model('osf', 'Registration')
     assert model_cls in {Node, Registration}
     return model_cls.objects.filter(is_deleted=False)
@@ -153,6 +153,7 @@ def default_node_permission_queryset(user, model_cls):
     Return nodes that are either public or you have perms because you're a contributor.
     Implicit admin permissions not included here (NodeList, UserNodes, for example, don't factor this in.)
     """
+    Node = apps.get_model('osf', 'Node')
     Registration = apps.get_model('osf', 'Registration')
     assert model_cls in {Node, Registration}
     return model_cls.objects.get_nodes_for_user(user, include_public=True)
