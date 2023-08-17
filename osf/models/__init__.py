@@ -31,7 +31,7 @@ from .contributor import (
 from .draft_node import DraftNode
 from .dismissed_alerts import DismissedAlert
 from .external import ExternalAccount, ExternalProvider
-from .files import FileVersion
+from .files import BaseFileNode, FileVersion
 from .identifiers import Identifier
 from .institution_affiliation import InstitutionAffiliation
 from .institution_storage_region import InstitutionStorageRegion
