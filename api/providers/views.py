@@ -38,7 +38,7 @@ from api.providers.permissions import (
     CanDeleteModerator,
     CanSetUpProvider,
     CanUpdateModerator,
-    MustBeModerator
+    MustBeModerator,
 )
 from api.providers.serializers import (
     CollectionsModeratorSerializer,
