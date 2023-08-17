@@ -23,7 +23,7 @@ from framework.auth import oauth_scopes
 from .subject import Subject
 from .tag import Tag
 from .user import OSFUser
-from .preprint import PreprintProvider
+from .provider import PreprintProvider
 from .preprintlog import PreprintLog
 from .contributor import PreprintContributor
 from .mixins import ReviewableMixin, Taggable, Loggable, GuardianMixin
