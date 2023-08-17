@@ -5,6 +5,7 @@ from future.moves.urllib.parse import urlunsplit, urlsplit, parse_qs, urlencode
 from distutils.version import StrictVersion
 from hashids import Hashids
 
+from django.apps import apps
 from django.utils.http import urlquote
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import QuerySet
@@ -17,7 +18,7 @@ from api.base.settings import HASHIDS_SALT
 from framework.auth import Auth
 from framework.auth.cas import CasResponse
 from framework.auth.oauth_scopes import ComposedScopes, normalize_scopes
-from osf.models import OSFUser, Node, Registration
+from osf.models import Node, Registration
 from osf.models.base import GuidMixin
 from osf.utils.requests import check_select_for_update
 from website import settings as website_settings
@@ -80,6 +81,7 @@ def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
 
 
 def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_name=None, check_deleted=True):
+    OSFUser = apps.get_model('osf', 'OSFUser')
     if not request:
         # for backwards compat with existing get_object_or_error usages
         raise TypeError('request is a required argument')
