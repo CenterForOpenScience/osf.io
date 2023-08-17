@@ -33,6 +33,7 @@ from .dismissed_alerts import DismissedAlert
 from .external import ExternalAccount, ExternalProvider
 from .files import BaseFileNode, FileVersion
 from .identifiers import Identifier
+from .institution import Institution
 from .institution_affiliation import InstitutionAffiliation
 from .institution_storage_region import InstitutionStorageRegion
 from .licenses import NodeLicense, NodeLicenseRecord
