@@ -22,18 +22,18 @@ from osf.utils.permissions import ADMIN, READ, WRITE
 from osf.exceptions import NodeStateError, DraftRegistrationStateError
 from osf.external.internet_archive.tasks import archive_to_ia, update_ia_metadata
 from osf.metrics import RegistriesModerationMetrics
-from . import (
-    Embargo,
-    EmbargoTerminationApproval,
-    DraftRegistrationContributor,
-    Node,
-    OSFUser,
-    RegistrationApproval,
-    RegistrationSchema,
-    Retraction,
-)
 from .action import RegistrationAction
 from .archive import ArchiveJob
+from .contributor import DraftRegistrationContributor
+from .metaschema import RegistrationSchema
+from .node import Node
+from .sanctions import (
+    Embargo,
+    EmbargoTerminationApproval,
+    RegistrationApproval,
+    Retraction,
+)
+from .user import OSFUser
 from .base import BaseModel, ObjectIDMixin
 from .draft_node import DraftNode
 from .licenses import NodeLicenseRecord
