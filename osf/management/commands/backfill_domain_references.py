@@ -12,6 +12,7 @@ from django.db.models import Exists, OuterRef, Q, Value
 from addons.wiki.models import WikiVersion
 from osf.external.spam import tasks as spam_tasks
 from osf.models import AbstractNode, DomainReference
+from website.settings import DO_NOT_INDEX_LIST
 
 
 logger = logging.getLogger(__name__)
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 DOMAIN_SEARCH_REGEX = r'(\w+\.\w+\w+\.\w+)|\w+\.\w+\w+'
 
 
-def backfill_domain_references(model_name, dry_run=False, batch_size=None):
+def backfill_domain_references(model_name, dry_run=False, batch_size=None, ignore_spam=False):
     model = apps.get_model(model_name)
 
     spam_fields = list(model.SPAM_CHECK_FIELDS)
@@ -30,8 +31,18 @@ def backfill_domain_references(model_name, dry_run=False, batch_size=None):
                 content__regex=DOMAIN_SEARCH_REGEX
             )
         )
+        qa_queries = (
+            Q(**{'title__contains': qa_substr})
+            for qa_substr in DO_NOT_INDEX_LIST['titles']
+        )
+        is_qa_node = reduce(operator.or_, qa_queries)
     else:
         has_spam_wikis_subquery = Value(False)
+        is_qa_node = Q()
+    if ignore_spam:
+        ignore_q = Q(spam_status__in=[1, 2])
+    else:
+        ignore_q = Q()
 
     spam_queries = (
         Q(**{f'{field}__regex': DOMAIN_SEARCH_REGEX})
@@ -47,7 +58,7 @@ def backfill_domain_references(model_name, dry_run=False, batch_size=None):
             )
         ),
         has_spam_wikis=has_spam_wikis_subquery
-    ).filter(exclude=False).filter(has_spam_content)[:batch_size]
+    ).filter(exclude=False).filter(has_spam_content).exclude(is_qa_node).exclude(ignore_q).order_by('?')[:batch_size]
 
     spam_check_count = spam_check_items.count()
     logger.info(f'Queuing {spam_check_count} {model_name}s for domain extraction')
@@ -67,7 +78,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             '--dry_run',
-            type=bool,
+            action='store_true',
             default=False,
             help='Run queries but do not create instances',
         )
@@ -85,9 +96,17 @@ class Command(BaseCommand):
             required=False,
             help='The number of instances of the model to be searched for domains',
         )
+        parser.add_argument(
+            '--ignore_known_spam',
+            '-i',
+            action='store_true',
+            default=False,
+            help='Ignore items already flagged or marked spam'
+        )
 
     def handle(self, *args, **options):
         dry_run = options.get('dry_run', None)
         model_name = options.get('model_name', None)
         batch_size = options.get('batch_size', None)
-        backfill_domain_references(model_name, dry_run, batch_size)
+        ignore = options.get('ignore_known_spam', None)
+        backfill_domain_references(model_name, dry_run, batch_size, ignore)
