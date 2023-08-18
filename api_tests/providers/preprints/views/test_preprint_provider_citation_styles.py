@@ -1,5 +1,5 @@
 from django.urls import reverse
-from osf.admin.preprint_providers.forms import PreprintProviderForm
+from admin.preprint_providers.forms import PreprintProviderForm
 from osf.models import CitationStyle
 from osf_tests.factories import PreprintProviderFactory
 
