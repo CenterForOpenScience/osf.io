@@ -41,12 +41,3 @@ class DeprecatedPreprintProviderModeratorsList(DeprecatedView, views.PreprintPro
 
 class DeprecatedPreprintProviderModeratorsDetail(DeprecatedView, views.PreprintProviderModeratorsDetail):
     max_version = '2.7'
-
-class PreprintProviderCitationStylesView(generics.RetrieveAPIView):
-    """
-    API view to retrieve citation styles associated with a specific PreprintProvider.
-
-    This view uses the PreprintProviderCitationStylesSerializer to format the response.
-    """
-    serializer_class = PreprintProviderCitationStylesSerializer
-    queryset = PreprintProvider.objects.all()
