@@ -12,6 +12,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='preprintprovider',
             name='citation_styles',
-            field=models.ManyToManyField(to='your_app_name.CitationStyle', related_name='supported_styles'),
+            field=models.ManyToManyField(to='osf.CitationStyle', related_name='supported_styles'),
         ),
     ]
