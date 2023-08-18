@@ -646,15 +646,19 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
                     list_file_restore_fail.append(file)
                     continue
 
+                response_body_data = response_body.get('data', {})
+
                 if is_destination_addon_storage:
+                    # Fix for OneDrive Business because its path is different from other add-on storages
+                    response_file_path = response_body_data.get('attributes', {}).get('path', file_materialized_path)
                     # Create file node if not have for add-on storage
-                    utils.prepare_file_node_for_add_on_storage(file_project_id, destination_provider, file_materialized_path, **kwargs)
+                    utils.prepare_file_node_for_add_on_storage(file_project_id, destination_provider, response_file_path, **kwargs)
 
                 # update file metadata
                 utils.update_file_metadata(file_project_id, file_provider, destination_provider, file_materialized_path)
 
-                response_id = response_body.get('data', {}).get('id')
-                response_file_version_id = response_body.get('data', {}).get('attributes', {}).get('extra', {}).get('version', version_id)
+                response_id = response_body_data.get('id')
+                response_file_version_id = response_body_data.get('attributes', {}).get('extra', {}).get('version', version_id)
                 if response_id.startswith('osfstorage'):
                     # If id is osfstorage/[_id] then get _id
                     file_path_splits = response_id.split('/')
