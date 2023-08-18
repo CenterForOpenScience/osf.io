@@ -1,11 +1,8 @@
-from rest_framework import generics
 from api.base.views import DeprecatedView
 from api.preprint_providers.serializers import (
     DeprecatedPreprintProviderSerializer,
-    PreprintProviderCitationStylesSerializer,
 )
 from api.providers import views
-from osf.models import PreprintProvider
 
 
 class DeprecatedPreprintProviderList(DeprecatedView, views.PreprintProviderList):
