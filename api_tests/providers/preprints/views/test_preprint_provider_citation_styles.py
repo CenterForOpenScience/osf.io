@@ -8,13 +8,13 @@ class TestPreprintProviderCitationStyles(TestCase):
     def test_retrieval_of_citation_styles_for_specific_preprint_provider(self):
         preprint_provider = PreprintProviderFactory()
         expected_citation_styles = ['apa', 'chicago-author-date', 'modern-language-association']
-        response = self.client.get(reverse('preprintprovidercitationstyles-view', args=[preprint_provider.id]))
+        response = self.client.get(reverse('preprint-provider-citation-styles', args=[preprint_provider.id]))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data, expected_citation_styles)
 
     def test_retrieval_of_no_preferred_citation_styles(self):
         preprint_provider = PreprintProviderFactory()  # Assuming no preferred citation styles
-        response = self.client.get(reverse('preprintprovidercitationstyles-view', args=[preprint_provider.id]))
+        response = self.client.get(reverse('preprint-provider-citation-styles', args=[preprint_provider.id]))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data, [])  # Expecting an empty list if no preferred styles
 
