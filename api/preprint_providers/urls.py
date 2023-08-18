@@ -39,7 +39,4 @@ urlpatterns = [
     # Detail view for a specific moderator of a preprint provider.
     # Note: This endpoint is deprecated.
     re_path(r'^(?P<provider_id>\w+)/moderators/(?P<moderator_id>\w+)/$', views.DeprecatedPreprintProviderModeratorsDetail.as_view(), name=views.DeprecatedPreprintProviderModeratorsDetail.view_name),
-
-    # Retrieve citation styles associated with a specific preprint provider.
-    re_path(r'^preprint_providers/(?P<pk>\d+)/citation_styles/$', views.PreprintProviderCitationStylesView.as_view(), name='preprint-provider-citation-styles'),
 ]
