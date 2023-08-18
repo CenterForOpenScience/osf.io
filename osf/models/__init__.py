@@ -33,7 +33,15 @@ from .contributor import (
 from .draft_node import DraftNode
 from .dismissed_alerts import DismissedAlert
 from .external import ExternalAccount, ExternalProvider
-from .files import BaseFileNode, BaseFileVersionsThrough, FileVersion, FileVersionUserMetadata, TrashedFileNode
+from .files import (
+    BaseFileNode,
+    BaseFileVersionsThrough,
+    File,
+    FileVersion,
+    FileVersionUserMetadata,
+    Folder,
+    TrashedFileNode,
+)
 from .identifiers import Identifier
 from .institution import Institution
 from .institution_affiliation import InstitutionAffiliation

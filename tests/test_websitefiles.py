@@ -7,9 +7,7 @@ from nose.tools import *  # noqa
 
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder, OsfStorageFileNode
 from addons.s3.models import S3File
-from osf.models import File
-from osf.models import Folder
-from osf.models.files import BaseFileNode
+from osf.models import BaseFileNode, File, Folder
 from tests.base import OsfTestCase
 from osf_tests.factories import AuthUserFactory, ProjectFactory
 from website.files import exceptions
