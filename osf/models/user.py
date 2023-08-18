@@ -824,7 +824,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # Skip bookmark collections
         user.collection_set.exclude(is_bookmark_collection=True).update(creator=self)
 
-        from .files import BaseFileNode, QuickFilesNode
+        from .files import BaseFileNode
+        from .quickfiles import QuickFilesNode
 
         # - projects where the user was the creator
         user.nodes_created.exclude(type=QuickFilesNode._typedmodels_type).update(creator=self)
