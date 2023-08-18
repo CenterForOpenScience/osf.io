@@ -976,7 +976,6 @@ class PreprintProviderCitationStylesView(generics.RetrieveAPIView):
 
     This view uses the PreprintProviderCitationStylesSerializer to format the response.
     """
-   
     permission_classes = [TokenHasScope, AllowAny]
 
     serializer_class = PreprintProviderCitationStylesSerializer
