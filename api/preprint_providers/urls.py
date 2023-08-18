@@ -1,4 +1,4 @@
-from django.conf.urls import path, re_path
+from django.conf.urls import re_path
 from api.preprint_providers import views
 
 app_name = 'osf'
@@ -41,5 +41,5 @@ urlpatterns = [
     re_path(r'^(?P<provider_id>\w+)/moderators/(?P<moderator_id>\w+)/$', views.DeprecatedPreprintProviderModeratorsDetail.as_view(), name=views.DeprecatedPreprintProviderModeratorsDetail.view_name),
 
     # Retrieve citation styles associated with a specific preprint provider.
-    path('preprint_providers/<int:pk>/citation_styles/', views.PreprintProviderCitationStylesView.as_view(), name='preprint-provider-citation-styles'),
+    re_path(r'^preprint_providers/(?P<pk>\d+)/citation_styles/$', views.PreprintProviderCitationStylesView.as_view(), name='preprint-provider-citation-styles'),
 ]

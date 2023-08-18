@@ -59,7 +59,11 @@ from .node_relation import NodeRelation
 from .nodelog import NodeLog
 from .notable_domain import NotableDomain, DomainReference
 from .notifications import NotificationDigest, NotificationSubscription
-from .oauth import ApiOAuth2Application, ApiOAuth2PersonalToken, ApiOAuth2Scope
+from .oauth import (
+    ApiOAuth2Application,
+    ApiOAuth2PersonalToken,
+    ApiOAuth2Scope,
+)
 from .osf_group import OSFGroup
 from .osf_grouplog import OSFGroupLog
 from .outcome_artifacts import OutcomeArtifact
@@ -67,13 +71,19 @@ from .outcomes import Outcome
 from .preprint import Preprint
 from .preprintlog import PreprintLog
 from .private_link import PrivateLink
-from .provider import AbstractProvider, CollectionProvider, PreprintProvider, WhitelistedSHAREPreprintProvider, RegistrationProvider
+from .provider import (
+    AbstractProvider,
+    CollectionProvider,
+    PreprintProvider,
+    RegistrationProvider,
+    WhitelistedSHAREPreprintProvider,
+)
 from .queued_mail import QueuedMail
 from .quickfiles import QuickFilesNode
 from .registrations import (
     DraftRegistration,
     DraftRegistrationLog,
-    Registration
+    Registration,
 )
 from .registration_bulk_upload_job import RegistrationBulkUploadJob
 from .registration_bulk_upload_row import RegistrationBulkUploadRow
@@ -95,4 +105,4 @@ from .tag import Tag
 from .user import (
     Email,
     OSFUser,
- )
+)
