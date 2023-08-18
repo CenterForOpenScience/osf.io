@@ -7411,9 +7411,6 @@ msgstr ""
 msgid "Cannot connect to source storage"
 msgstr ""
 
-msgid "Cannot connect to destination storage"
-msgstr ""
-
 msgid "Cannot check in this time. The process is {status}."
 msgstr ""
 

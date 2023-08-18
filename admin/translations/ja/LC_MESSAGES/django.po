@@ -3697,15 +3697,6 @@ msgstr "リストア先ストレージ"
 msgid "Restore"
 msgstr "リストア"
 
-msgid "The restore destination storage is not empty."
-msgstr "リストア先のストレージが空ではありません。"
-
-msgid "This function assumes operation to empty storage."
-msgstr "本機能は空のストレージへの操作を想定しています。"
-
-msgid "Do you want to run it as it is?"
-msgstr "そのまま実行しますか？"
-
 msgid "Stop restoring"
 msgstr "リストア処理停止"
 
@@ -3738,9 +3729,6 @@ msgstr "エクスポート先のストレージに接続できません。"
 
 msgid "Cannot connect to source storage"
 msgstr "エクスポート元のストレージに接続できません。"
-
-msgid "Cannot connect to destination storage"
-msgstr "エクスポート先のストレージに接続できません。"
 
 msgid "Cannot check in this time. The process is {status}."
 msgstr "エクスポート処理は現在「{status}」のためデータをチェックできません。"
