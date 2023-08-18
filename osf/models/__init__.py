@@ -40,6 +40,7 @@ from .files import (
     FileVersion,
     FileVersionUserMetadata,
     Folder,
+    TrashedFile,
     TrashedFileNode,
 )
 from .identifiers import Identifier
