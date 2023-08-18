@@ -21,6 +21,7 @@ from .brand import Brand
 from .chronos import ChronosJournal, ChronosSubmission
 from .citation import CitationStyle
 from .collection import Collection
+from .collection_submission import CollectionSubmission
 from .comment import Comment
 from .conference import Conference, MailRecord
 from .contributor import (
