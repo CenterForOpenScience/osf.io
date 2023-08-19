@@ -26,15 +26,3 @@ class TestPreprintProviderCitationStyles(TestCase):
         form = PreprintProviderForm(data)
         self.assertTrue(form.is_valid())
         self.assertEqual(form.cleaned_data['citation_styles'], list(citation_styles))
-
-    """
-    def test_admin_form_with_invalid_citation_styles(self):
-        citation_styles = ['invalid_style']  # Invalid citation styles
-        data = {
-            'citation_styles': citation_styles,
-            'subjects_chosen': '',  #empty string since the field is expected/not required
-        }
-        form = PreprintProviderForm(data)
-        self.assertFalse(form.is_valid())
-        self.assertIn('citation_styles', form.errors)
-    """
