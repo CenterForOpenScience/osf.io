@@ -981,6 +981,9 @@ class PreprintProviderCitationStylesView(generics.RetrieveAPIView):
     serializer_class = PreprintProviderCitationStylesSerializer
     queryset = PreprintProvider.objects.all()
 
+    view_category = 'preprint-providers'
+    view_name = 'preprint-provider-citation-styles'
+
     def get_object(self):
-        provider_id = self.kwargs.get('pk')
+        provider_id = self.kwargs.get('provider_id')
         return get_object_or_404(PreprintProvider, id=provider_id)

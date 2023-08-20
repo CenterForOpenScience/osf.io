@@ -252,7 +252,7 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, all=Fa
         base = True
         addons = True
         dev = True
-    if not(addons or dev):
+    if not (addons or dev):
         base = True
     if release or addons:
         addon_requirements(ctx)
