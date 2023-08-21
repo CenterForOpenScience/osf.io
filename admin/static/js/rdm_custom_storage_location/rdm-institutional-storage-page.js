@@ -1709,6 +1709,38 @@ function checkTaskStatus(task_id, task_type) {
     });
 }
 
+// Catch event when click Restore button in modal on the DataInformation screen
+$('#start_restore_modal_button').on('click', function () {
+    var data = {};
+    data['destination_id'] = $('#destination_storage').val();
+    data['is_from_confirm_dialog'] = true;
+    // Call enableStopRestoreFunction() when click Restore button
+    closeGrowl();
+    $.ajax({
+        url: 'restore_export_data/',
+        type: 'post',
+        data: data
+    }).done(function (response) {
+        // Get task_id when call ajax successful
+        restore_task_id = response['task_id'];
+        if (!restore_task_id) {
+            return;
+        }
+        enableStopRestoreFunction();
+        setTimeout(function () {
+            checkTaskStatus(restore_task_id, 'Restore');
+        }, intervalCheckStatus);
+    }).fail(function (jqXHR) {
+        // Call enableRestoreFunction() when fail
+        enableRestoreFunction();
+        var data = jqXHR.responseJSON;
+        if (data && data['message']) {
+            $osf.growl(_('Restore Export Data'), _(data['message']), 'danger', growlBoxDelay);
+        }
+    });
+});
+
+
 // Start - Check Restore exported data - Actions
 
 $('#check_restore_button').on('click', function () {

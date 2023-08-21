@@ -8712,6 +8712,9 @@ msgstr "エクスポート先のストレージに接続できません。"
 msgid "Cannot connect to source storage"
 msgstr "エクスポート元のストレージに接続できません。"
 
+msgid "Cannot connect to destination storage"
+msgstr "エクスポート先のストレージに接続できません。"
+
 msgid "Cannot check in this time. The process is {status}."
 msgstr "エクスポート処理は現在「{status}」のためデータをチェックできません。"
 

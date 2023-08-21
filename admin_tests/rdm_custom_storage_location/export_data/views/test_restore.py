@@ -71,12 +71,48 @@ class TestRestoreDataActionView(AdminTestCase):
         nt.assert_equal(response.data, {'message': f'Missing required parameters.'})
         nt.assert_equal(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_before_restore_export_data')
+    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.check_for_any_running_restore_process')
+    def test_post(self, mock_check_for_running_restore, mock_check_before_restore):
+        request = APIRequestFactory().post('restore_export_data', {
+            'destination_id': 1,
+        })
+        request.user = AuthUserFactory()
+        mock_check_for_running_restore.return_value = False
+        mock_check_before_restore.return_value = {'open_dialog': True}
+
+        response = self.view.post(request)
+        mock_check_for_running_restore.assert_called()
+        mock_check_before_restore.assert_called()
+        nt.assert_equal(response.data, {})
+        nt.assert_equal(response.status_code, status.HTTP_200_OK)
+
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.Institution.load')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.ExportData.objects')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.prepare_for_restore_export_data_process')
+    def test_post_after_confirm_dialog(self, mock_prepare_for_restore, mock_export_data, mock_institution):
+        request = APIRequestFactory().post('restore_export_data', {
+            'destination_id': 1,
+            'is_from_confirm_dialog': True
+        })
+        request.user = AuthUserFactory()
+        mock_institution.return_value = self.institution
+        mock_export_data.filter.return_value.first.return_value = self.export_data
+        mock_prepare_for_restore.return_value = Response(
+            {'task_id': FAKE_TASK_ID}, status=status.HTTP_200_OK)
+
+        response = self.view.post(request)
+        mock_prepare_for_restore.assert_called()
+        nt.assert_equal(response.data, {'task_id': FAKE_TASK_ID})
+        nt.assert_equal(response.status_code, status.HTTP_200_OK)
+
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.Institution.load')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.ExportData.objects')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.prepare_for_restore_export_data_process')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_before_restore_export_data')
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.check_for_any_running_restore_process')
-    def test_post(self, mock_check_for_running_restore, mock_check_before_restore, mock_prepare_for_restore, mock_export_data, mock_institution):
+    def test_post_without_confirm_dialog(self, mock_check_for_running_restore, mock_check_before_restore, mock_prepare_for_restore, mock_export_data,
+                                         mock_institution):
         request = APIRequestFactory().post('restore_export_data', {
             'destination_id': 1,
         })
@@ -116,7 +152,7 @@ class TestRestoreDataActionView(AdminTestCase):
         })
         request.user = AuthUserFactory()
         mock_check_for_running_restore.return_value = False
-        mock_check_before_restore.return_value = {'message': f'Mock test error message.'}
+        mock_check_before_restore.return_value = {'open_dialog': False, 'message': f'Mock test error message.'}
 
         response = self.view.post(request)
         mock_check_for_running_restore.assert_called()
@@ -238,17 +274,43 @@ class TestRestoreDataFunction(AdminTestCase):
         self.user = UserFactory()
 
     # check_before_restore_export_data
+    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_file_info_and_check_schema')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_export_data_and_check_schema')
-    def test_check_before_restore_export_data(self, mock_read_export_data, mock_read_file_info):
+    def test_check_before_restore_export_data_empty_destination_storage(self, mock_read_export_data, mock_read_file_info, mock_utils_get_file_data):
+        test_response = requests.Response()
+        test_response.status_code = status.HTTP_200_OK
+        test_response._content = json.dumps({'data': []}).encode('utf-8')
+
         mock_read_export_data.return_value = True
         mock_read_file_info.return_value = {'folders': [{'project': {'id': self.project_id}}]}
+        mock_utils_get_file_data.return_value = test_response
 
         result = self.view.check_before_restore_export_data(None, self.export_data.id,
                                                             self.addon_data_restore.destination.id)
         mock_read_export_data.assert_called()
         mock_read_file_info.assert_called()
-        nt.assert_equal(result, {})
+        mock_utils_get_file_data.assert_called()
+        nt.assert_equal(result, {'open_dialog': False})
+
+    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_file_info_and_check_schema')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_export_data_and_check_schema')
+    def test_check_before_restore_export_data_bulk_mount_destination_storage(self, mock_read_export_data, mock_read_file_info, mock_utils_get_file_data):
+        test_response = requests.Response()
+        test_response.status_code = status.HTTP_200_OK
+        test_response._content = json.dumps({'data': []}).encode('utf-8')
+
+        mock_read_export_data.return_value = True
+        mock_read_file_info.return_value = {'folders': [{'project': {'id': self.project_id}}], 'files': [{'project': {'id': self.project_id}}]}
+        mock_utils_get_file_data.return_value = test_response
+
+        result = self.view.check_before_restore_export_data(None, self.export_data.id,
+                                                            self.bulk_mount_data_restore.destination.id)
+        mock_read_export_data.assert_called()
+        mock_read_file_info.assert_called()
+        mock_utils_get_file_data.assert_not_called()
+        nt.assert_equal(result, {'open_dialog': False})
 
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_export_data_and_check_schema')
     def test_check_before_restore_export_data_error_at_export_file(self, mock_read_export_data):
@@ -257,7 +319,7 @@ class TestRestoreDataFunction(AdminTestCase):
         result = self.view.check_before_restore_export_data(None, self.export_data.id,
                                                             self.addon_data_restore.destination.id)
         mock_read_export_data.assert_called()
-        nt.assert_equal(result, {'message': f'The export data files are corrupted'})
+        nt.assert_equal(result, {'open_dialog': False, 'message': f'The export data files are corrupted'})
 
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_export_data_and_check_schema')
     def test_check_before_restore_export_data_exception_at_export_file(self, mock_read_export_data):
@@ -267,7 +329,8 @@ class TestRestoreDataFunction(AdminTestCase):
                                                             self.addon_data_restore.destination.id)
         mock_read_export_data.assert_called()
         nt.assert_equal(result,
-                        {'message': f'Cannot connect to the export data storage location'})
+                        {'open_dialog': False,
+                         'message': f'Cannot connect to the export data storage location'})
 
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_export_data_and_check_schema')
     def test_check_before_restore_export_data_error_at_file_info(self, mock_read_export_data):
@@ -280,7 +343,7 @@ class TestRestoreDataFunction(AdminTestCase):
                                                                 self.addon_data_restore.destination.id)
             mock_read_export_data.assert_called()
             mock_read_file_info.assert_called()
-            nt.assert_equal(result, {'message': f'The export data files are corrupted'})
+            nt.assert_equal(result, {'open_dialog': False, 'message': f'The export data files are corrupted'})
 
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_export_data_and_check_schema')
     def test_check_before_restore_export_data_no_destination_region_found(self, mock_read_export_data):
@@ -293,7 +356,63 @@ class TestRestoreDataFunction(AdminTestCase):
             mock_read_export_data.assert_called()
             mock_read_file_info.assert_called()
             nt.assert_equal(result,
-                            {'message': f'Failed to get destination storage information'})
+                            {'open_dialog': False, 'message': f'Failed to get destination storage information'})
+
+    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_file_info_and_check_schema')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_export_data_and_check_schema')
+    def test_check_before_restore_export_data_error_at_check_destination_storage(self, mock_read_export_data, mock_read_file_info,
+                                                                                 mock_utils_get_file_data):
+        test_response = requests.Response()
+        test_response.status_code = status.HTTP_400_BAD_REQUEST
+        test_response._content = json.dumps(
+            {'message': f'Mock test bad request when check destination storage'}).encode('utf-8')
+
+        mock_read_export_data.return_value = True
+        mock_read_file_info.return_value = {'folders': [{'project': {'id': self.project_id}}]}
+        mock_utils_get_file_data.return_value = test_response
+
+        result = self.view.check_before_restore_export_data(None, self.export_data.id,
+                                                            self.addon_data_restore.destination.id)
+        mock_read_export_data.assert_called()
+        mock_read_file_info.assert_called()
+        mock_utils_get_file_data.assert_called()
+        nt.assert_equal(result, {'open_dialog': False, 'message': f'Cannot connect to destination storage'})
+
+    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_file_info_and_check_schema')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_export_data_and_check_schema')
+    def test_check_before_restore_export_data_not_empty_destination_storage(self, mock_read_export_data, mock_read_file_info, mock_utils_get_file_data):
+        test_response = requests.Response()
+        test_response.status_code = status.HTTP_200_OK
+        test_response._content = json.dumps({'data': [{}]}).encode('utf-8')
+
+        mock_read_export_data.return_value = True
+        mock_read_file_info.return_value = {'folders': [{'project': {'id': self.project_id}}]}
+        mock_utils_get_file_data.return_value = test_response
+
+        result = self.view.check_before_restore_export_data(None, self.export_data.id,
+                                                            self.addon_data_restore.destination.id)
+        mock_read_export_data.assert_called()
+        mock_read_file_info.assert_called()
+        mock_utils_get_file_data.assert_called()
+        nt.assert_equal(result, {'open_dialog': True})
+
+    @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_file_info_and_check_schema')
+    @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_export_data_and_check_schema')
+    def test_check_before_restore_export_data_exception_at_check_destination_storage(self, mock_read_export_data, mock_read_file_info,
+                                                                                     mock_utils_get_file_data):
+        mock_read_export_data.return_value = True
+        mock_read_file_info.return_value = {'folders': [{'project': {'id': self.project_id}}]}
+        mock_utils_get_file_data.side_effect = Exception('Mock test exception at check destination storage')
+
+        result = self.view.check_before_restore_export_data(None, self.export_data.id,
+                                                            self.addon_data_restore.destination.id)
+        mock_read_export_data.assert_called()
+        mock_read_file_info.assert_called()
+        mock_utils_get_file_data.assert_called()
+        nt.assert_equal(result, {'open_dialog': False, 'message': f'Cannot connect to destination storage'})
 
     # prepare_for_restore_export_data_process
     def test_prepare_for_restore_export_data_process_with_other_process_running(self):

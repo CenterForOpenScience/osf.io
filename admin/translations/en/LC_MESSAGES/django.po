@@ -3660,6 +3660,15 @@ msgstr ""
 msgid "Restore"
 msgstr ""
 
+msgid "The restore destination storage is not empty."
+msgstr ""
+
+msgid "This function assumes operation to empty storage."
+msgstr ""
+
+msgid "Do you want to run it as it is?"
+msgstr ""
+
 msgid "Stop restoring"
 msgstr ""
 
@@ -3691,6 +3700,9 @@ msgid "Cannot connect to the export data storage location"
 msgstr ""
 
 msgid "Cannot connect to source storage"
+msgstr ""
+
+msgid "Cannot connect to destination storage"
 msgstr ""
 
 msgid "Cannot check in this time. The process is {status}."

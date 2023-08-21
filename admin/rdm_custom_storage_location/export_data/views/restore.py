@@ -52,21 +52,25 @@ class RestoreDataActionView(RdmPermissionMixin, APIView):
         kwargs.setdefault('cookie', cookie)
         cookies = request.COOKIES
         creator = request.user
+        is_from_confirm_dialog = request.POST.get('is_from_confirm_dialog', default=False)
         if destination_id is None or export_id is None:
             return Response({'message': f'Missing required parameters.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Check the destination is available (not in restore process or checking restore data process)
-        any_process_running = utils.check_for_any_running_restore_process(destination_id)
-        if any_process_running:
-            return Response({'message': f'Cannot restore in this time.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not is_from_confirm_dialog:
+            # Check the destination is available (not in restore process or checking restore data process)
+            any_process_running = utils.check_for_any_running_restore_process(destination_id)
+            if any_process_running:
+                return Response({'message': f'Cannot restore in this time.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        result = check_before_restore_export_data(cookies, export_id, destination_id, cookie=cookie)
-        response_body = {'message': result.get('message')}
-        if 'not_found' in result:
-            return Response(response_body, status=status.HTTP_404_NOT_FOUND)
-        elif result.get('message'):
-            # If there is error message, return HTTP 400
-            return Response(response_body, status=status.HTTP_400_BAD_REQUEST)
+            result = check_before_restore_export_data(cookies, export_id, destination_id, cookie=cookie)
+            if result.get('open_dialog'):
+                # If open_dialog is True, return HTTP 200 with empty response
+                return Response({}, status=status.HTTP_200_OK)
+            elif 'not_found' in result:
+                return Response({'message': result.get('message')}, status=status.HTTP_404_NOT_FOUND)
+            elif result.get('message'):
+                # If there is error message, return HTTP 400
+                return Response({'message': result.get('message')}, status=status.HTTP_400_BAD_REQUEST)
 
         # Start restore data task and return task id
         export_data = ExportData.objects.filter(id=export_id).first()
@@ -83,7 +87,7 @@ def check_before_restore_export_data(cookies, export_id, destination_id, **kwarg
     check_export_data = ExportData.objects.filter(id=export_id, is_deleted=False)
     # Check export file data: /export_{process_start}/export_data_{institution_guid}_{process_start}.json
     if not check_export_data:
-        return {'message': f'Cannot be restored because export data does not exist', 'not_found': True}
+        return {'open_dialog': False, 'message': f'Cannot be restored because export data does not exist', 'not_found': True}
     # Update status RUNNING for export data for checking connect to destination storage
     export_data = check_export_data[0]
     pre_status = export_data.status
@@ -95,13 +99,13 @@ def check_before_restore_export_data(cookies, export_id, destination_id, **kwarg
             # Update status COMPLETED for export data if raise error
             export_data.status = pre_status
             export_data.save()
-            return {'message': f'The export data files are corrupted'}
+            return {'open_dialog': False, 'message': f'The export data files are corrupted'}
     except Exception as e:
         logger.error(f'Exception: {e}')
         # Update status COMPLETED for export data if raise exception when reading export data and checking schema
         export_data.status = pre_status
         export_data.save()
-        return {'message': f'Cannot connect to the export data storage location'}
+        return {'open_dialog': False, 'message': f'Cannot connect to the export data storage location'}
 
     # Get file info file: /export_{process_start}/file_info_{institution_guid}_{process_start}.json
     try:
@@ -111,24 +115,52 @@ def check_before_restore_export_data(cookies, export_id, destination_id, **kwarg
         logger.error(f'Exception: {e}')
         export_data.status = pre_status
         export_data.save()
-        return {'message': str(e)}
+        return {'open_dialog': False, 'message': str(e)}
 
     if not len(export_data_folders):
         export_data.status = pre_status
         export_data.save()
-        return {'message': f'The export data files are corrupted'}
+        return {'open_dialog': False, 'message': f'The export data files are corrupted'}
 
-    # Check whether the restore destination storage exists
+    # Check whether the restore destination storage is not empty
     destination_region = Region.objects.filter(id=destination_id).first()
     if not destination_region:
         export_data.status = pre_status
         export_data.save()
-        return {'message': f'Failed to get destination storage information'}
+        return {'open_dialog': False, 'message': f'Failed to get destination storage information'}
+
+    destination_provider = destination_region.provider_name
+    if utils.is_add_on_storage(destination_provider):
+        try:
+            project_ids = {item.get('project', {}).get('id') for item in export_data_folders}
+            for project_id in project_ids:
+                destination_base_url = destination_region.waterbutler_url
+                response = utils.get_file_data(project_id, destination_provider, '/', cookies,
+                                               destination_base_url, get_file_info=True, **kwargs)
+                if response.status_code != status.HTTP_200_OK:
+                    # Error
+                    logger.error(f'Return error with response: {response.content}')
+                    export_data.status = pre_status
+                    export_data.save()
+                    return {'open_dialog': False, 'message': f'Cannot connect to destination storage'}
+
+                response_body = response.json()
+                data = response_body.get('data')
+                if len(data) != 0:
+                    # Destination storage is not empty, show confirm dialog
+                    export_data.status = pre_status
+                    export_data.save()
+                    return {'open_dialog': True}
+        except Exception as e:
+            logger.error(f'Exception: {e}')
+            export_data.status = pre_status
+            export_data.save()
+            return {'open_dialog': False, 'message': f'Cannot connect to destination storage'}
 
     export_data.status = pre_status
     export_data.save()
-    # Return empty dict
-    return {}
+    # Destination storage is empty, return False
+    return {'open_dialog': False}
 
 
 def prepare_for_restore_export_data_process(cookies, export_id, destination_id, list_project_id, creator, **kwargs):
