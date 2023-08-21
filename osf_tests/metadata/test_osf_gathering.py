@@ -6,7 +6,7 @@ from rdflib import Literal, URIRef
 
 from api_tests.utils import create_test_file
 from framework.auth import Auth
-from osf.metadata import gather, osf_gathering
+from osf.metadata import osf_gathering
 from osf.metadata.rdfutils import (
     FOAF,
     OSF,
@@ -18,47 +18,13 @@ from osf.metadata.rdfutils import (
     RDF,
     SKOS,
     checksum_iri,
-    contextualized_graph,
 )
 from osf import models as osfdb
 from osf.utils import permissions
 from osf_tests import factories
 from website import settings as website_settings
 from website.project import new_bookmark_collection
-
-
-def _get_graph_and_focuses(triples):
-    graph = rdflib.Graph()
-    focuses = set()
-    for (subj, pred, obj) in triples:
-        if isinstance(obj, gather.Focus):
-            graph.add((subj, pred, obj.iri))
-            focuses.add(obj)
-        else:
-            graph.add((subj, pred, obj))
-    return graph, focuses
-
-
-def _friendly_graph(rdfgraph) -> str:
-    graph_to_print = contextualized_graph(rdfgraph)
-    delim = '\n\t\t'
-    return delim + delim.join(
-        ' '.join(map(graph_to_print.namespace_manager.normalizeUri, triple))
-        for triple in graph_to_print
-    )
-
-
-def _assert_triples(actual_triples, expected_triples):
-    expected_graph, expected_focuses = _get_graph_and_focuses(expected_triples)
-    actual_graph, actual_focuses = _get_graph_and_focuses(actual_triples)
-    (overlap, expected_but_absent, unexpected_but_present) = rdflib.compare.graph_diff(expected_graph, actual_graph)
-    assert not expected_but_absent and not unexpected_but_present, '\n\t'.join((
-        'unequal triple-sets!',
-        f'overlap size: {len(overlap)}',
-        f'expected (but absent): {_friendly_graph(expected_but_absent)}',
-        f'unexpected (but present): {_friendly_graph(unexpected_but_present)}',
-    ))
-    assert expected_focuses == actual_focuses
+from osf_tests.metadata._utils import assert_triples
 
 
 class TestOsfGathering(TestCase):
@@ -129,120 +95,120 @@ class TestOsfGathering(TestCase):
 
     def test_gather_identifiers(self):
         # focus: project
-        _assert_triples(osf_gathering.gather_identifiers(self.projectfocus), {
+        assert_triples(osf_gathering.gather_identifiers(self.projectfocus), {
             (self.projectfocus.iri, DCTERMS.identifier, Literal(self.projectfocus.iri)),
         })
         self.project.set_identifier_value('doi', '10.dot.ten/mydoi')
-        _assert_triples(osf_gathering.gather_identifiers(self.projectfocus), {
+        assert_triples(osf_gathering.gather_identifiers(self.projectfocus), {
             (self.projectfocus.iri, DCTERMS.identifier, Literal(self.projectfocus.iri)),
             (self.projectfocus.iri, DCTERMS.identifier, Literal('https://doi.org/10.dot.ten/mydoi')),
             (self.projectfocus.iri, OWL.sameAs, URIRef('https://doi.org/10.dot.ten/mydoi')),
         })
         # focus: registration
-        _assert_triples(osf_gathering.gather_identifiers(self.registrationfocus), {
+        assert_triples(osf_gathering.gather_identifiers(self.registrationfocus), {
             (self.registrationfocus.iri, DCTERMS.identifier, Literal(self.registrationfocus.iri)),
         })
         self.registration.set_identifier_value('doi', '10.dot.ten/myreg')
-        _assert_triples(osf_gathering.gather_identifiers(self.registrationfocus), {
+        assert_triples(osf_gathering.gather_identifiers(self.registrationfocus), {
             (self.registrationfocus.iri, DCTERMS.identifier, Literal(self.registrationfocus.iri)),
             (self.registrationfocus.iri, DCTERMS.identifier, Literal('https://doi.org/10.dot.ten/myreg')),
             (self.registrationfocus.iri, OWL.sameAs, URIRef('https://doi.org/10.dot.ten/myreg')),
         })
         # focus: file
-        _assert_triples(osf_gathering.gather_identifiers(self.filefocus), {
+        assert_triples(osf_gathering.gather_identifiers(self.filefocus), {
             (self.filefocus.iri, DCTERMS.identifier, Literal(self.filefocus.iri)),
         })
 
     def test_gather_flexible_types(self):
         # focus: project
-        _assert_triples(osf_gathering.gather_flexible_types(self.projectfocus), {
+        assert_triples(osf_gathering.gather_flexible_types(self.projectfocus), {
         })
         self.projectfocus.guid_metadata_record.resource_type_general = 'Book'
         _datacite_book_ref = URIRef('https://schema.datacite.org/meta/kernel-4.4/#Book')
-        _assert_triples(osf_gathering.gather_flexible_types(self.projectfocus), {
+        assert_triples(osf_gathering.gather_flexible_types(self.projectfocus), {
             (self.projectfocus.iri, DCTERMS.type, _datacite_book_ref),
             (_datacite_book_ref, rdflib.RDFS.label, Literal('Book', lang='en')),
         })
         # focus: registration
-        _assert_triples(osf_gathering.gather_flexible_types(self.registrationfocus), {
+        assert_triples(osf_gathering.gather_flexible_types(self.registrationfocus), {
         })
         self.registrationfocus.guid_metadata_record.resource_type_general = 'Preprint'
         _datacite_preprint_ref = URIRef('https://schema.datacite.org/meta/kernel-4.4/#Preprint')
-        _assert_triples(osf_gathering.gather_flexible_types(self.registrationfocus), {
+        assert_triples(osf_gathering.gather_flexible_types(self.registrationfocus), {
             (self.registrationfocus.iri, DCTERMS.type, _datacite_preprint_ref),
             (_datacite_preprint_ref, rdflib.RDFS.label, Literal('Preprint', lang='en')),
         })
         # focus: file
-        _assert_triples(osf_gathering.gather_flexible_types(self.filefocus), set())
+        assert_triples(osf_gathering.gather_flexible_types(self.filefocus), set())
         self.filefocus.guid_metadata_record.resource_type_general = 'Dataset'
         _datacite_dataset_ref = URIRef('https://schema.datacite.org/meta/kernel-4.4/#Dataset')
-        _assert_triples(osf_gathering.gather_flexible_types(self.filefocus), {
+        assert_triples(osf_gathering.gather_flexible_types(self.filefocus), {
             (self.filefocus.iri, DCTERMS.type, _datacite_dataset_ref),
             (_datacite_dataset_ref, rdflib.RDFS.label, Literal('Dataset', lang='en')),
         })
 
     def test_gather_created(self):
         # focus: project
-        _assert_triples(osf_gathering.gather_created(self.projectfocus), {
+        assert_triples(osf_gathering.gather_created(self.projectfocus), {
             (self.projectfocus.iri, DCTERMS.created, Literal(str(self.project.created.date()))),
         })
         # focus: registration
-        _assert_triples(osf_gathering.gather_created(self.registrationfocus), {
+        assert_triples(osf_gathering.gather_created(self.registrationfocus), {
             (self.registrationfocus.iri, DCTERMS.created, Literal('2121-02-01')),
         })
         # focus: file
-        _assert_triples(osf_gathering.gather_created(self.filefocus), {
+        assert_triples(osf_gathering.gather_created(self.filefocus), {
             (self.filefocus.iri, DCTERMS.created, Literal(str(self.file.created.date()))),
         })
 
     def test_gather_available(self):
         # focus: project
-        _assert_triples(osf_gathering.gather_available(self.projectfocus), set())
+        assert_triples(osf_gathering.gather_available(self.projectfocus), set())
         # focus: registration
-        _assert_triples(osf_gathering.gather_available(self.registrationfocus), set())
+        assert_triples(osf_gathering.gather_available(self.registrationfocus), set())
         factories.EmbargoFactory(
             target_item=self.registration,
             user=self.user__admin,
             end_date=datetime.datetime(1973, 7, 3, tzinfo=datetime.timezone.utc),
         )
-        _assert_triples(osf_gathering.gather_available(self.registrationfocus), {
+        assert_triples(osf_gathering.gather_available(self.registrationfocus), {
             (self.registrationfocus.iri, DCTERMS.available, Literal('1973-07-03')),
         })
         # focus: file
-        _assert_triples(osf_gathering.gather_available(self.filefocus), set())
+        assert_triples(osf_gathering.gather_available(self.filefocus), set())
 
     def test_gather_modified(self):
         # focus: project
-        _assert_triples(osf_gathering.gather_modified(self.projectfocus), {
+        assert_triples(osf_gathering.gather_modified(self.projectfocus), {
             (self.projectfocus.iri, DCTERMS.modified, Literal(str(self.project.last_logged.date()))),
         })
         # focus: registration
-        _assert_triples(osf_gathering.gather_modified(self.registrationfocus), {
+        assert_triples(osf_gathering.gather_modified(self.registrationfocus), {
             (self.registrationfocus.iri, DCTERMS.modified, Literal(str(self.registration.last_logged.date()))),
         })
         # focus: file
-        _assert_triples(osf_gathering.gather_modified(self.filefocus), {
+        assert_triples(osf_gathering.gather_modified(self.filefocus), {
             (self.filefocus.iri, DCTERMS.modified, Literal(str(self.file.modified.date()))),
         })
 
     def test_gather_moderation_dates(self):
         # focus: project
-        _assert_triples(osf_gathering.gather_moderation_dates(self.projectfocus), set())
+        assert_triples(osf_gathering.gather_moderation_dates(self.projectfocus), set())
         # focus: registration
-        _assert_triples(osf_gathering.gather_moderation_dates(self.registrationfocus), set())
+        assert_triples(osf_gathering.gather_moderation_dates(self.registrationfocus), set())
         # focus: file
-        _assert_triples(osf_gathering.gather_moderation_dates(self.filefocus), set())
+        assert_triples(osf_gathering.gather_moderation_dates(self.filefocus), set())
         # TODO: put registration thru moderation
 
     def test_gather_licensing(self):
         # focus: project
-        _assert_triples(osf_gathering.gather_licensing(self.projectfocus), set())
+        assert_triples(osf_gathering.gather_licensing(self.projectfocus), set())
         self.project.node_license = factories.NodeLicenseRecordFactory(
             year='1952-2001',
             copyright_holders=['foo', 'bar', 'baz baz'],
         )
         license_bnode = rdflib.BNode()
-        _assert_triples(osf_gathering.gather_licensing(self.projectfocus), {
+        assert_triples(osf_gathering.gather_licensing(self.projectfocus), {
             (self.projectfocus.iri, DCTERMS.dateCopyrighted, Literal('1952-2001')),
             (self.projectfocus.iri, DCTERMS.rightsHolder, Literal('foo')),
             (self.projectfocus.iri, DCTERMS.rightsHolder, Literal('bar')),
@@ -251,7 +217,7 @@ class TestOsfGathering(TestCase):
             (license_bnode, FOAF.name, Literal('No license')),
         })
         # focus: registration
-        _assert_triples(osf_gathering.gather_licensing(self.registrationfocus), set())
+        assert_triples(osf_gathering.gather_licensing(self.registrationfocus), set())
         self.registration.node_license = factories.NodeLicenseRecordFactory(
             year='1957-2008',
             copyright_holders=['bar bar', 'baz baz', 'quux'],
@@ -260,7 +226,7 @@ class TestOsfGathering(TestCase):
             ),
         )
         expected_license_iri = URIRef('https://creativecommons.org/licenses/by/4.0/legalcode')
-        _assert_triples(osf_gathering.gather_licensing(self.registrationfocus), {
+        assert_triples(osf_gathering.gather_licensing(self.registrationfocus), {
             (self.registrationfocus.iri, DCTERMS.dateCopyrighted, Literal('1957-2008')),
             (self.registrationfocus.iri, DCTERMS.rightsHolder, Literal('bar bar')),
             (self.registrationfocus.iri, DCTERMS.rightsHolder, Literal('baz baz')),
@@ -270,79 +236,79 @@ class TestOsfGathering(TestCase):
             (expected_license_iri, DCTERMS.identifier, Literal(expected_license_iri)),
         })
         # focus: file
-        _assert_triples(osf_gathering.gather_licensing(self.filefocus), set())
+        assert_triples(osf_gathering.gather_licensing(self.filefocus), set())
 
     def test_gather_title(self):
         # focus: project
-        _assert_triples(osf_gathering.gather_title(self.projectfocus), {
+        assert_triples(osf_gathering.gather_title(self.projectfocus), {
             (self.projectfocus.iri, DCTERMS.title, Literal(self.project.title)),
         })
         # focus: registration
-        _assert_triples(osf_gathering.gather_title(self.registrationfocus), {
+        assert_triples(osf_gathering.gather_title(self.registrationfocus), {
             (self.registrationfocus.iri, DCTERMS.title, Literal(self.registration.title)),
         })
         # focus: file
-        _assert_triples(osf_gathering.gather_title(self.filefocus), set())
+        assert_triples(osf_gathering.gather_title(self.filefocus), set())
         self.filefocus.guid_metadata_record.title = 'my title!'
-        _assert_triples(osf_gathering.gather_title(self.filefocus), {
+        assert_triples(osf_gathering.gather_title(self.filefocus), {
             (self.filefocus.iri, DCTERMS.title, Literal('my title!')),
         })
 
     def test_gather_language(self):
         # focus: project
-        _assert_triples(osf_gathering.gather_language(self.projectfocus), set())
+        assert_triples(osf_gathering.gather_language(self.projectfocus), set())
         self.projectfocus.guid_metadata_record.language = 'es'
-        _assert_triples(osf_gathering.gather_language(self.projectfocus), {
+        assert_triples(osf_gathering.gather_language(self.projectfocus), {
             (self.projectfocus.iri, DCTERMS.language, Literal('es')),
         })
         # focus: registration
-        _assert_triples(osf_gathering.gather_language(self.registrationfocus), set())
+        assert_triples(osf_gathering.gather_language(self.registrationfocus), set())
         self.registrationfocus.guid_metadata_record.language = 'es'
-        _assert_triples(osf_gathering.gather_language(self.registrationfocus), {
+        assert_triples(osf_gathering.gather_language(self.registrationfocus), {
             (self.registrationfocus.iri, DCTERMS.language, Literal('es')),
         })
         # focus: file
-        _assert_triples(osf_gathering.gather_language(self.filefocus), set())
+        assert_triples(osf_gathering.gather_language(self.filefocus), set())
         self.filefocus.guid_metadata_record.language = 'es'
-        _assert_triples(osf_gathering.gather_language(self.filefocus), {
+        assert_triples(osf_gathering.gather_language(self.filefocus), {
             (self.filefocus.iri, DCTERMS.language, Literal('es')),
         })
 
     def test_gather_description(self):
         # focus: project
-        _assert_triples(osf_gathering.gather_description(self.projectfocus), {
+        assert_triples(osf_gathering.gather_description(self.projectfocus), {
             (self.projectfocus.iri, DCTERMS.description, Literal(self.project.description)),
         })
         # focus: registration
-        _assert_triples(osf_gathering.gather_description(self.registrationfocus), {
+        assert_triples(osf_gathering.gather_description(self.registrationfocus), {
             (self.registrationfocus.iri, DCTERMS.description, Literal(self.registration.description)),
         })
         # focus: file
-        _assert_triples(osf_gathering.gather_description(self.filefocus), set())
+        assert_triples(osf_gathering.gather_description(self.filefocus), set())
         self.filefocus.guid_metadata_record.description = 'woop a doo'
-        _assert_triples(osf_gathering.gather_description(self.filefocus), {
+        assert_triples(osf_gathering.gather_description(self.filefocus), {
             (self.filefocus.iri, DCTERMS.description, Literal('woop a doo')),
         })
 
     def test_gather_keywords(self):
         # focus: project
-        _assert_triples(osf_gathering.gather_keywords(self.projectfocus), set())
+        assert_triples(osf_gathering.gather_keywords(self.projectfocus), set())
         self.project.update_tags(['woop', 'a', 'doo'], auth=Auth(self.user__admin))
-        _assert_triples(osf_gathering.gather_keywords(self.projectfocus), {
+        assert_triples(osf_gathering.gather_keywords(self.projectfocus), {
             (self.projectfocus.iri, OSF.keyword, Literal('woop')),
             (self.projectfocus.iri, OSF.keyword, Literal('a')),
             (self.projectfocus.iri, OSF.keyword, Literal('doo')),
         })
         # focus: registration
-        _assert_triples(osf_gathering.gather_keywords(self.registrationfocus), set())
+        assert_triples(osf_gathering.gather_keywords(self.registrationfocus), set())
         self.registration.update_tags(['boop', 'a', 'doop'], auth=Auth(self.user__admin))
-        _assert_triples(osf_gathering.gather_keywords(self.registrationfocus), {
+        assert_triples(osf_gathering.gather_keywords(self.registrationfocus), {
             (self.registrationfocus.iri, OSF.keyword, Literal('boop')),
             (self.registrationfocus.iri, OSF.keyword, Literal('a')),
             (self.registrationfocus.iri, OSF.keyword, Literal('doop')),
         })
         # focus: file
-        _assert_triples(osf_gathering.gather_keywords(self.filefocus), set())
+        assert_triples(osf_gathering.gather_keywords(self.filefocus), set())
 
     def test_gather_subjects(self):
         # because osf:Subject, as implemented, is inextricable from osf:Provider
@@ -352,12 +318,12 @@ class TestOsfGathering(TestCase):
         except osfdb.PreprintProvider.DoesNotExist:
             _osf_provider = factories.PreprintProviderFactory(_id='osf')
         # focus: project
-        _assert_triples(osf_gathering.gather_subjects(self.projectfocus), set())
+        assert_triples(osf_gathering.gather_subjects(self.projectfocus), set())
         _bloo_subject = factories.SubjectFactory(text='Bloomy', provider=_osf_provider)
         self.project.set_subjects([[_bloo_subject._id]], auth=Auth(self.user__admin))
         _bloo_iri = URIRef(_bloo_subject.absolute_api_v2_subject_url)
         _bepress_iri = rdflib.URIRef('https://bepress.com/reference_guide_dc/disciplines/')
-        _assert_triples(osf_gathering.gather_subjects(self.projectfocus), {
+        assert_triples(osf_gathering.gather_subjects(self.projectfocus), {
             (self.projectfocus.iri, DCTERMS.subject, _bloo_iri),
             (_bloo_iri, RDF.type, SKOS.Concept),
             (_bloo_iri, SKOS.inScheme, _bepress_iri),
@@ -365,7 +331,7 @@ class TestOsfGathering(TestCase):
             (_bloo_iri, SKOS.prefLabel, Literal('Bloomy')),
         })
         # focus: registration
-        _assert_triples(osf_gathering.gather_subjects(self.registrationfocus), set())
+        assert_triples(osf_gathering.gather_subjects(self.registrationfocus), set())
         _parent_subj = factories.SubjectFactory(text='Parent', provider=_osf_provider)
         _child_subj = factories.SubjectFactory(text='Child', parent=_parent_subj, provider=_osf_provider)
         _altparent_subj = factories.SubjectFactory(text='Alt-parent', bepress_subject=_parent_subj)
@@ -376,7 +342,7 @@ class TestOsfGathering(TestCase):
         ], auth=Auth(self.user__admin))
         _parent_iri = URIRef(_parent_subj.absolute_api_v2_subject_url)
         _child_iri = URIRef(_child_subj.absolute_api_v2_subject_url)
-        _assert_triples(osf_gathering.gather_subjects(self.registrationfocus), {
+        assert_triples(osf_gathering.gather_subjects(self.registrationfocus), {
             (self.registrationfocus.iri, DCTERMS.subject, _bloo_iri),
             (self.registrationfocus.iri, DCTERMS.subject, _parent_iri),
             (self.registrationfocus.iri, DCTERMS.subject, _child_iri),
@@ -395,15 +361,15 @@ class TestOsfGathering(TestCase):
             (_bepress_iri, DCTERMS.title, Literal('bepress Digital Commons Three-Tiered Taxonomy')),
         })
         # focus: file
-        _assert_triples(osf_gathering.gather_subjects(self.filefocus), set())
+        assert_triples(osf_gathering.gather_subjects(self.filefocus), set())
 
     def test_gather_file_basics(self):
         # focus: project
-        _assert_triples(osf_gathering.gather_file_basics(self.projectfocus), set())
+        assert_triples(osf_gathering.gather_file_basics(self.projectfocus), set())
         # focus: registration
-        _assert_triples(osf_gathering.gather_file_basics(self.registrationfocus), set())
+        assert_triples(osf_gathering.gather_file_basics(self.registrationfocus), set())
         # focus: file
-        _assert_triples(osf_gathering.gather_file_basics(self.filefocus), {
+        assert_triples(osf_gathering.gather_file_basics(self.filefocus), {
             (self.filefocus.iri, OSF.isContainedBy, osf_gathering.OsfFocus(self.file.target)),
             (self.filefocus.iri, OSF.fileName, Literal(self.file.name)),
             (self.filefocus.iri, OSF.filePath, Literal(self.file.materialized_path)),
@@ -411,13 +377,13 @@ class TestOsfGathering(TestCase):
 
     def test_gather_versions(self):
         # focus: project
-        _assert_triples(osf_gathering.gather_versions(self.projectfocus), set())
+        assert_triples(osf_gathering.gather_versions(self.projectfocus), set())
         # focus: registration
-        _assert_triples(osf_gathering.gather_versions(self.registrationfocus), set())
+        assert_triples(osf_gathering.gather_versions(self.registrationfocus), set())
         # focus: file
         fileversion = self.file.versions.first()
         fileversion_iri = URIRef(f'{self.filefocus.iri}?revision={fileversion.identifier}')
-        _assert_triples(osf_gathering.gather_versions(self.filefocus), {
+        assert_triples(osf_gathering.gather_versions(self.filefocus), {
             (self.filefocus.iri, OSF.hasFileVersion, fileversion_iri),
             (fileversion_iri, RDF.type, OSF.FileVersion),
             (fileversion_iri, DCTERMS.creator, osf_gathering.OsfFocus(fileversion.creator)),
@@ -431,17 +397,17 @@ class TestOsfGathering(TestCase):
 
     def test_gather_files(self):
         # focus: project
-        _assert_triples(osf_gathering.gather_files(self.projectfocus), {
+        assert_triples(osf_gathering.gather_files(self.projectfocus), {
             (self.projectfocus.iri, OSF.contains, self.filefocus),
         })
         # focus: registration
-        _assert_triples(osf_gathering.gather_files(self.registrationfocus), set())
+        assert_triples(osf_gathering.gather_files(self.registrationfocus), set())
         # focus: file
-        _assert_triples(osf_gathering.gather_files(self.filefocus), set())
+        assert_triples(osf_gathering.gather_files(self.filefocus), set())
 
     def test_gather_parts(self):
         # focus: project
-        _assert_triples(osf_gathering.gather_parts(self.projectfocus), set())
+        assert_triples(osf_gathering.gather_parts(self.projectfocus), set())
         # ...with components:
         component = factories.ProjectFactory(parent=self.project, creator=self.user__admin, is_public=True)
         sibcomponent = factories.ProjectFactory(parent=self.project, creator=self.user__admin, is_public=True)
@@ -449,40 +415,40 @@ class TestOsfGathering(TestCase):
         componentfocus = osf_gathering.OsfFocus(component)
         sibcomponentfocus = osf_gathering.OsfFocus(sibcomponent)
         subcomponentfocus = osf_gathering.OsfFocus(subcomponent)
-        _assert_triples(osf_gathering.gather_parts(self.projectfocus), {
+        assert_triples(osf_gathering.gather_parts(self.projectfocus), {
             (self.projectfocus.iri, DCTERMS.hasPart, componentfocus),
             (self.projectfocus.iri, DCTERMS.hasPart, sibcomponentfocus),
         })
-        _assert_triples(osf_gathering.gather_parts(componentfocus), {
+        assert_triples(osf_gathering.gather_parts(componentfocus), {
             (componentfocus.iri, OSF.hasRoot, self.projectfocus),
             (componentfocus.iri, DCTERMS.isPartOf, self.projectfocus),
             (componentfocus.iri, DCTERMS.hasPart, subcomponentfocus),
         })
-        _assert_triples(osf_gathering.gather_parts(sibcomponentfocus), {
+        assert_triples(osf_gathering.gather_parts(sibcomponentfocus), {
             (sibcomponentfocus.iri, OSF.hasRoot, self.projectfocus),
             (sibcomponentfocus.iri, DCTERMS.isPartOf, self.projectfocus),
         })
-        _assert_triples(osf_gathering.gather_parts(subcomponentfocus), {
+        assert_triples(osf_gathering.gather_parts(subcomponentfocus), {
             (subcomponentfocus.iri, OSF.hasRoot, self.projectfocus),
             (subcomponentfocus.iri, DCTERMS.isPartOf, componentfocus),
         })
         # focus: registration
-        _assert_triples(osf_gathering.gather_parts(self.registrationfocus), set())
+        assert_triples(osf_gathering.gather_parts(self.registrationfocus), set())
         # focus: file
-        _assert_triples(osf_gathering.gather_parts(self.filefocus), set())
+        assert_triples(osf_gathering.gather_parts(self.filefocus), set())
 
     def test_gather_related_items(self):
         # focus: project
-        _assert_triples(osf_gathering.gather_project_related_items(self.projectfocus), {
+        assert_triples(osf_gathering.gather_project_related_items(self.projectfocus), {
             (self.projectfocus.iri, DCTERMS.hasVersion, self.registrationfocus),
         })
         # focus: registration
-        _assert_triples(osf_gathering.gather_registration_related_items(self.registrationfocus), {
+        assert_triples(osf_gathering.gather_registration_related_items(self.registrationfocus), {
             (self.registrationfocus.iri, DCTERMS.isVersionOf, self.projectfocus),
         })
         self.registration.article_doi = '10.blarg/blerg'
         doi_iri = DOI[self.registration.article_doi]
-        _assert_triples(osf_gathering.gather_registration_related_items(self.registrationfocus), {
+        assert_triples(osf_gathering.gather_registration_related_items(self.registrationfocus), {
             (self.registrationfocus.iri, DCTERMS.relation, doi_iri),
             (doi_iri, DCTERMS.identifier, Literal(doi_iri)),
             (self.registrationfocus.iri, DCTERMS.isVersionOf, self.projectfocus),
@@ -490,27 +456,27 @@ class TestOsfGathering(TestCase):
 
     def test_gather_agents(self):
         # focus: project
-        _assert_triples(osf_gathering.gather_agents(self.projectfocus), {
+        assert_triples(osf_gathering.gather_agents(self.projectfocus), {
             (self.projectfocus.iri, DCTERMS.creator, self.userfocus__admin),
             (self.projectfocus.iri, DCTERMS.creator, self.userfocus__readwrite),
         })
         # focus: registration
-        _assert_triples(osf_gathering.gather_agents(self.registrationfocus), {
+        assert_triples(osf_gathering.gather_agents(self.registrationfocus), {
             (self.registrationfocus.iri, DCTERMS.creator, self.userfocus__admin),
             (self.registrationfocus.iri, DCTERMS.creator, self.userfocus__readwrite),
         })
         # focus: file
-        _assert_triples(osf_gathering.gather_agents(self.filefocus), set())
+        assert_triples(osf_gathering.gather_agents(self.filefocus), set())
 
     def test_gather_affiliated_institutions(self):
         # focus: project
-        _assert_triples(osf_gathering.gather_affiliated_institutions(self.projectfocus), set())
-        _assert_triples(osf_gathering.gather_affiliated_institutions(self.userfocus__admin), set())
+        assert_triples(osf_gathering.gather_affiliated_institutions(self.projectfocus), set())
+        assert_triples(osf_gathering.gather_affiliated_institutions(self.userfocus__admin), set())
         institution = factories.InstitutionFactory()
         institution_iri = URIRef(institution.identifier_domain)
         self.user__admin.add_or_update_affiliated_institution(institution)
         self.project.add_affiliated_institution(institution, self.user__admin)
-        _assert_triples(osf_gathering.gather_affiliated_institutions(self.projectfocus), {
+        assert_triples(osf_gathering.gather_affiliated_institutions(self.projectfocus), {
             (self.projectfocus.iri, OSF.affiliation, institution_iri),
             (institution_iri, RDF.type, DCTERMS.Agent),
             (institution_iri, RDF.type, FOAF.Organization),
@@ -518,7 +484,7 @@ class TestOsfGathering(TestCase):
             (institution_iri, DCTERMS.identifier, Literal(institution.identifier_domain)),
         })
         # focus: user
-        _assert_triples(osf_gathering.gather_affiliated_institutions(self.userfocus__admin), {
+        assert_triples(osf_gathering.gather_affiliated_institutions(self.userfocus__admin), {
             (self.userfocus__admin.iri, OSF.affiliation, institution_iri),
             (institution_iri, RDF.type, DCTERMS.Agent),
             (institution_iri, RDF.type, FOAF.Organization),
@@ -526,13 +492,13 @@ class TestOsfGathering(TestCase):
             (institution_iri, DCTERMS.identifier, Literal(institution.identifier_domain)),
         })
         # focus: registration
-        _assert_triples(osf_gathering.gather_affiliated_institutions(self.registrationfocus), set())
+        assert_triples(osf_gathering.gather_affiliated_institutions(self.registrationfocus), set())
         # focus: file
-        _assert_triples(osf_gathering.gather_affiliated_institutions(self.filefocus), set())
+        assert_triples(osf_gathering.gather_affiliated_institutions(self.filefocus), set())
 
     def test_gather_funding(self):
         # focus: project
-        _assert_triples(osf_gathering.gather_funding(self.projectfocus), set())
+        assert_triples(osf_gathering.gather_funding(self.projectfocus), set())
         self.projectfocus.guid_metadata_record.funding_info = [
             {'funder_name': 'hooray'},
             {
@@ -547,7 +513,7 @@ class TestOsfGathering(TestCase):
         _bnode1 = rdflib.BNode()
         _award_uri = URIRef('https://nih.example/award')
         _funder_uri = URIRef('https://doi.org/10.fake/NIH')
-        _assert_triples(osf_gathering.gather_funding(self.projectfocus), {
+        assert_triples(osf_gathering.gather_funding(self.projectfocus), {
             (self.projectfocus.iri, OSF.funder, _bnode1),
             (_bnode1, RDF.type, DCTERMS.Agent),
             (_bnode1, FOAF.name, Literal('hooray')),
@@ -564,7 +530,7 @@ class TestOsfGathering(TestCase):
             (_award_uri, DCTERMS.contributor, _funder_uri),
         })
         # focus: registration
-        _assert_triples(osf_gathering.gather_funding(self.registrationfocus), set())
+        assert_triples(osf_gathering.gather_funding(self.registrationfocus), set())
         self.registrationfocus.guid_metadata_record.funding_info = [
             {
                 'funder_name': 'blooray',
@@ -573,7 +539,7 @@ class TestOsfGathering(TestCase):
             },
         ]
         _funder_uri = rdflib.URIRef('https://doi.org/11.bloo')
-        _assert_triples(osf_gathering.gather_funding(self.registrationfocus), {
+        assert_triples(osf_gathering.gather_funding(self.registrationfocus), {
             (self.registrationfocus.iri, OSF.funder, _funder_uri),
             (_funder_uri, RDF.type, DCTERMS.Agent),
             (_funder_uri, DCTERMS.identifier, Literal(_funder_uri)),
@@ -584,7 +550,7 @@ class TestOsfGathering(TestCase):
             (_bnode1, DCTERMS.contributor, _funder_uri),
         })
         # focus: file
-        _assert_triples(osf_gathering.gather_funding(self.filefocus), set())
+        assert_triples(osf_gathering.gather_funding(self.filefocus), set())
         self.filefocus.guid_metadata_record.funding_info = [
             {
                 'funder_name': 'exray',
@@ -592,7 +558,7 @@ class TestOsfGathering(TestCase):
             },
         ]
         _funder_uri = rdflib.URIRef('https://doi.org/11.ex')
-        _assert_triples(osf_gathering.gather_funding(self.filefocus), {
+        assert_triples(osf_gathering.gather_funding(self.filefocus), {
             (self.filefocus.iri, OSF.funder, _funder_uri),
             (_funder_uri, RDF.type, DCTERMS.Agent),
             (_funder_uri, DCTERMS.identifier, Literal(_funder_uri)),
@@ -601,19 +567,19 @@ class TestOsfGathering(TestCase):
 
     def test_gather_user_basics(self):
         # focus: admin user
-        _assert_triples(osf_gathering.gather_user_basics(self.userfocus__admin), {
+        assert_triples(osf_gathering.gather_user_basics(self.userfocus__admin), {
             (self.userfocus__admin.iri, RDF.type, FOAF.Person),
             (self.userfocus__admin.iri, FOAF.name, Literal(self.user__admin.fullname)),
         })
         # focus: readwrite user
-        _assert_triples(osf_gathering.gather_user_basics(self.userfocus__readwrite), {
+        assert_triples(osf_gathering.gather_user_basics(self.userfocus__readwrite), {
             (self.userfocus__readwrite.iri, RDF.type, FOAF.Person),
             (self.userfocus__readwrite.iri, FOAF.name, Literal(self.user__readwrite.fullname)),
             (self.userfocus__readwrite.iri, DCTERMS.identifier, Literal('https://orcid.org/1234-4321-5678-8765')),
             (self.userfocus__readwrite.iri, OWL.sameAs, URIRef('https://orcid.org/1234-4321-5678-8765')),
         })
         # focus: readonly user
-        _assert_triples(osf_gathering.gather_user_basics(self.userfocus__readonly), {
+        assert_triples(osf_gathering.gather_user_basics(self.userfocus__readonly), {
             (self.userfocus__readonly.iri, RDF.type, FOAF.Person),
             (self.userfocus__readonly.iri, FOAF.name, Literal(self.user__readonly.fullname)),
             # orcid not verified, should be excluded
@@ -637,7 +603,7 @@ class TestOsfGathering(TestCase):
         _collection_ref = rdflib.URIRef(
             f'{website_settings.DOMAIN}collections/{_collection_provider._id}',
         )
-        _assert_triples(osf_gathering.gather_collection_membership(self.projectfocus), {
+        assert_triples(osf_gathering.gather_collection_membership(self.projectfocus), {
             (self.projectfocus.iri, OSF.isPartOfCollection, _collection_ref),
             (_collection_ref, DCTERMS.type, DCMITYPE.Collection),
             (_collection_ref, DCTERMS.title, Literal(_collection_provider.name)),
@@ -645,14 +611,14 @@ class TestOsfGathering(TestCase):
 
     def test_gather_registration_withdrawal(self):
         # focus: registration
-        _assert_triples(osf_gathering.gather_registration_withdrawal(self.registrationfocus), set())
+        assert_triples(osf_gathering.gather_registration_withdrawal(self.registrationfocus), set())
         _retraction = factories.WithdrawnRegistrationFactory(
             registration=self.registration,
             justification='did bad. oopsie.',
         )
         self.registration.refresh_from_db()
         _withdrawal_bnode = rdflib.BNode()
-        _assert_triples(osf_gathering.gather_registration_withdrawal(self.registrationfocus), {
+        assert_triples(osf_gathering.gather_registration_withdrawal(self.registrationfocus), {
             (self.registrationfocus.iri, OSF.dateWithdrawn, Literal(str(_retraction.date_retracted.date()))),
             (self.registrationfocus.iri, OSF.withdrawal, _withdrawal_bnode),
             (_withdrawal_bnode, RDF.type, OSF.Withdrawal),
@@ -664,11 +630,11 @@ class TestOsfGathering(TestCase):
 
     def test_gather_preprint_withdrawal(self):
         # focus: preprint
-        _assert_triples(osf_gathering.gather_preprint_withdrawal(self.preprintfocus), set())
+        assert_triples(osf_gathering.gather_preprint_withdrawal(self.preprintfocus), set())
         self.preprint.date_withdrawn = datetime.datetime.now(tz=datetime.timezone.utc)
         self.preprint.withdrawal_justification = 'postprint unprint'
         _withdrawal_bnode = rdflib.BNode()
-        _assert_triples(osf_gathering.gather_preprint_withdrawal(self.preprintfocus), {
+        assert_triples(osf_gathering.gather_preprint_withdrawal(self.preprintfocus), {
             (self.preprintfocus.iri, OSF.dateWithdrawn, Literal(str(self.preprint.date_withdrawn.date()))),
             (self.preprintfocus.iri, OSF.withdrawal, _withdrawal_bnode),
             (_withdrawal_bnode, RDF.type, OSF.Withdrawal),

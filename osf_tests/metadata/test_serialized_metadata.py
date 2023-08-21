@@ -2,12 +2,15 @@ import datetime
 import pathlib
 from unittest import mock
 
+import rdflib
+
 from osf import models as osfdb
 from osf.metadata.rdfutils import OSF, DCTERMS
 from osf.metadata.tools import pls_gather_metadata_file
 from osf.models.licenses import NodeLicense
 from api_tests.utils import create_test_file
 from osf_tests import factories
+from osf_tests.metadata._utils import assert_graphs_equal
 from tests.base import OsfTestCase
 
 
@@ -257,7 +260,19 @@ class TestSerializers(OsfTestCase):
         _open_mode = ('rb' if isinstance(actual_metadata, bytes) else 'r')
         with open(METADATA_SCENARIO_DIR / filename, _open_mode) as _file:
             _expected_metadata = _file.read()  # small files; read all at once
-        self.assertEqual(actual_metadata, _expected_metadata)
+        if filename.endswith('.turtle'):
+            # HACK: because the turtle serializer may output things in different order
+            # TODO: stable turtle serializer (or another primitive rdf serialization)
+            self._assert_equivalent_turtle(actual_metadata, _expected_metadata)
+        else:
+            self.assertEqual(actual_metadata, _expected_metadata)
+
+    def _assert_equivalent_turtle(self, actual_turtle, expected_turtle):
+        _actual = rdflib.Graph()
+        _actual.parse(data=actual_turtle, format='turtle')
+        _expected = rdflib.Graph()
+        _expected.parse(data=expected_turtle, format='turtle')
+        assert_graphs_equal(_actual, _expected)
 
     # def _write_expected_file(self, filename, expected_metadata):
     #     '''for updating expected metadata files from current serializers
