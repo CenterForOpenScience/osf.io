@@ -29,6 +29,10 @@ def shtrove_ingest_url():
     return f'{settings.SHARE_URL}api/v3/ingest'
 
 
+def sharev2_push_url():
+    return f'{settings.SHARE_URL}api/v2/normalizeddata/'
+
+
 def is_qa_resource(resource):
     """
     QA puts tags and special titles on their project to stop them from appearing in the search results. This function
@@ -350,7 +354,7 @@ def send_share_json(resource, data):
         access_token = settings.SHARE_API_TOKEN
 
     return requests.post(
-        f'{settings.SHARE_URL}api/v2/normalizeddata/',
+        sharev2_push_url(),
         json=data,
         headers={
             'Authorization': f'Bearer {access_token}',

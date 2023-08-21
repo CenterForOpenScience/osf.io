@@ -11,7 +11,7 @@ from framework.postcommit_tasks.handlers import (
     postcommit_queue,
 )
 from website import settings as website_settings
-from api.share.utils import shtrove_ingest_url
+from api.share.utils import shtrove_ingest_url, sharev2_push_url
 
 
 @contextlib.contextmanager
@@ -27,6 +27,8 @@ def mock_share_responses():
                     _ingest_url = shtrove_ingest_url()
                     _rsps.add(responses.POST, _ingest_url, status=200)
                     _rsps.add(responses.DELETE, _ingest_url, status=200)
+                    # for legacy sharev2 support:
+                    _rsps.add(responses.POST, sharev2_push_url(), status=200)
                     yield _rsps
 
 
@@ -41,11 +43,15 @@ def mock_update_share():
 def expect_ingest_request(mock_share_responses, osfguid, *, token=None, delete=False, count=1):
     mock_share_responses._calls.reset()
     yield
-    assert len(mock_share_responses.calls) == count, (
-        f'expected {count} call(s), got {len(mock_share_responses.calls)}: {list(mock_share_responses.calls)}'
+    _double_count = count * 2  # pushing to share two ways
+    assert len(mock_share_responses.calls) == _double_count, (
+        f'expected {_double_count} call(s), got {len(mock_share_responses.calls)}: {list(mock_share_responses.calls)}'
     )
     for _call in mock_share_responses.calls:
-        assert_ingest_request(_call.request, osfguid, token=token, delete=delete)
+        if _call.request.url.startswith(shtrove_ingest_url()):
+            assert_ingest_request(_call.request, osfguid, token=token, delete=delete)
+        else:
+            assert _call.request.url.startswith(sharev2_push_url())
 
 
 def assert_ingest_request(request, expected_osfguid, *, token=None, delete=False):
