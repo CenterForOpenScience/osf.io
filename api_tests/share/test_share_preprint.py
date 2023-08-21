@@ -4,7 +4,7 @@ from unittest import mock
 import pytest
 import responses
 
-from api.share.utils import shtrove_ingest_url
+from api.share.utils import shtrove_ingest_url, sharev2_push_url
 from framework.auth.core import Auth
 from osf.models.spam import SpamStatus
 from osf.utils.permissions import READ, WRITE, ADMIN
@@ -123,12 +123,14 @@ class TestPreprintShare:
 
     def test_call_async_update_on_500_failure(self, mock_share_responses, preprint, auth):
         mock_share_responses.replace(responses.POST, shtrove_ingest_url(), status=500)
+        mock_share_responses.replace(responses.POST, sharev2_push_url(), status=500)
         preprint.set_published(True, auth=auth, save=True)
         with expect_preprint_ingest_request(mock_share_responses, preprint, count=5):
             preprint.update_search()
 
     def test_no_call_async_update_on_400_failure(self, mock_share_responses, preprint, auth):
         mock_share_responses.replace(responses.POST, shtrove_ingest_url(), status=400)
+        mock_share_responses.replace(responses.POST, sharev2_push_url(), status=400)
         preprint.set_published(True, auth=auth, save=True)
         with expect_preprint_ingest_request(mock_share_responses, preprint, count=1):
             preprint.update_search()

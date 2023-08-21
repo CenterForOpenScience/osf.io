@@ -787,8 +787,8 @@ def gather_affiliated_institutions(focus):
             institution_iri = rdflib.URIRef(osf_institution.ror_uri)
         elif osf_institution.identifier_domain:     # if not ROR, at least URI
             institution_iri = rdflib.URIRef(osf_institution.identifier_domain)
-        else:                                       # fallback to a blank node
-            institution_iri = rdflib.BNode()
+        else:                                       # fallback to a url on osf
+            institution_iri = rdflib.URIRef(osf_institution.absolute_url)
         yield (OSF.affiliation, institution_iri)
         yield (institution_iri, RDF.type, DCTERMS.Agent)
         yield (institution_iri, RDF.type, FOAF.Organization)
