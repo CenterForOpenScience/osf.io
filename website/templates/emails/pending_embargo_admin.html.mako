@@ -35,23 +35,50 @@
     To cancel this embargoed registration: <a href="${disapproval_link}">Click here</a>.
     </p>
     <p>
-    Note: If any admin clicks their cancel link, the submission will be cancelled immediately, and the
-    pending registration will be reverted to draft state to revise and resubmit. This operation is irreversible.
+    % if not reviewable.provider or reviewable.provider._id != 'gfs':
+        Note: If any admin clicks their cancel link, the submission will be canceled immediately, and the
+        pending registration will be reverted to draft state to revise and resubmit. This operation is irreversible.
+    % else:
+        Please note:
+        <ul>
+            <li>
+                If any admin clicks their cancel link, the submission will be cancelled immediately, and the
+                pending registration will be reverted to draft state to revise and resubmit. This operation is irreversible.
+            </li>
+            <li>
+                You are an administrator on a registration submitted to the GFS registry, <b>by approving this registration submission</b>
+                (or allowing 48 hours to pass) <b>you agree to receive communications from COS staff</b> about the registration, study data,
+                and your experience with the GFS project. Your personal information will not be shared beyond COS staff with
+                the explicit purpose of communication regarding access to GFS study data.
+            </li>
+            <li>
+                By rejecting this registration submission you are thereby not agreeing to receive communications about the
+                registration, study data, and your experience with the GFS project.
+            </li>
+            <li>
+                If you do not feel comfortable agreeing to these terms to gain access to the GFS study data, you may contact
+                <a href= "mailto: globalflourishing@cos.io">globalflourishing@cos.io</a> to discuss your concerns.
+            </li>
+    % endif
     </p>
     % if not reviewable.branched_from_node:
       <p>
       An <a href="${reviewable.registered_from.absolute_url}">OSF Project</a> was created from
-	  this registration to support continued collaboration and sharing of your research.
+      this registration to support continued collaboration and sharing of your research.
       This project will remain available even if your registration is rejected.
       </p>
       <p>
       You will be automatically subscribed to notification emails for this project. To change your email notification
       preferences, visit your project or your user settings:
-	  <a href="${settings.DOMAIN + "settings/notifications/"}">${settings.DOMAIN}settings/notifications</a>
+      <a href="${settings.DOMAIN + "settings/notifications/"}">${settings.DOMAIN}settings/notifications</a>
       </p>
     % endif
     <p>
     Sincerely yours,<br>
-    The OSF Robots<br>
+    % if not reviewable.provider or reviewable.provider._id != 'gfs':
+        The OSF Team<br>
+    % else:
+        COS and Global Flourishing Study<br>
+    % endif
 </tr>
 </%def>

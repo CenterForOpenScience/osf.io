@@ -1,6 +1,8 @@
 import re
+import logging
 from rest_framework import status as http_status
 
+import boto3
 from boto import exception
 from boto.s3.connection import S3Connection
 from boto.s3.connection import OrdinaryCallingFormat
@@ -8,6 +10,8 @@ from boto.s3.connection import OrdinaryCallingFormat
 from framework.exceptions import HTTPError
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
 from addons.s3.settings import BUCKET_LOCATIONS
+
+logger = logging.getLogger(__name__)
 
 
 def connect_s3(access_key=None, secret_key=None, node_settings=None):
@@ -122,3 +126,30 @@ def get_bucket_location_or_error(access_key, secret_key, bucket_name):
         return connect_s3(access_key, secret_key).get_bucket(bucket_name, validate=False).get_location()
     except exception.S3ResponseError:
         raise InvalidFolderError()
+
+
+def get_bucket_prefixes(access_key, secret_key, prefix, bucket_name):
+    s3 = boto3.client(
+        's3',
+        aws_access_key_id=access_key,
+        aws_secret_access_key=secret_key
+    )
+
+    result = s3.list_objects(Bucket=bucket_name, Prefix=prefix, Delimiter='/')
+    folders = []
+    for common_prefixes in result.get('CommonPrefixes', []):
+        key_name = common_prefixes.get('Prefix')
+        if key_name != prefix:
+            folders.append(
+                {
+                    'path': key_name,
+                    'id': f'{bucket_name}:/{key_name}',
+                    'folder_id': key_name,
+                    'kind': 'folder',
+                    'bucket_name': bucket_name,
+                    'name': key_name.split('/')[-2],
+                    'addon': 's3',
+                }
+            )
+
+    return folders
