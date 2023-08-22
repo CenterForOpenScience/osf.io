@@ -5,10 +5,10 @@ to add a new serializer, implement a new subclass of
 and add it to METADATA_SERIALIZER_REGISTRY with a unique key
 '''
 from osf import exceptions
-from .datacite_json import DataciteJsonMetadataSerializer
-from .datacite_xml import DataciteXmlMetadataSerializer
-from .turtle import TurtleMetadataSerializer
+from osf.metadata import gather
+from .datacite import DataciteJsonMetadataSerializer, DataciteXmlMetadataSerializer
 from .google_dataset_json_ld import GoogleDatasetJsonLdSerializer
+from .turtle import TurtleMetadataSerializer
 
 
 METADATA_SERIALIZER_REGISTRY = {
@@ -19,11 +19,11 @@ METADATA_SERIALIZER_REGISTRY = {
 }
 
 
-def get_metadata_serializer(format_key, serializer_config=None):
+def get_metadata_serializer(format_key: str, basket: gather.Basket, serializer_config=None):
     try:
         serializer_class = METADATA_SERIALIZER_REGISTRY[format_key]
     except KeyError:
         valid_formats = ', '.join(METADATA_SERIALIZER_REGISTRY.keys())
         raise exceptions.InvalidMetadataFormat(format_key, valid_formats)
     else:
-        return serializer_class(serializer_config)
+        return serializer_class(basket, serializer_config)

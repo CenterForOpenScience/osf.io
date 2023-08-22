@@ -31,7 +31,7 @@ def migrate(dry=True):
         logger.info('{}/{} - {}'.format(count, target_count, preprint_id))
         try:
             if not dry:
-                on_preprint_updated(preprint_id, update_share=True)
+                on_preprint_updated(preprint_id)
                 # Sleep in order to be nice to EZID
                 time.sleep(1)
         except Exception as e:

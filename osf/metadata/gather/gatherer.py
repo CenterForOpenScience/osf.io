@@ -31,9 +31,9 @@ def gatherer(*predicate_iris, focustype_iris=None):
         ```
         from osf.metadata import gather
 
-        @gather.er(DCT.language, focustype_iris=[OSF.MyType])
+        @gather.er(DCTERMS.language, focustype_iris=[OSF.MyType])
         def gather_language(focus: gather.Focus):
-            yield (DCT.language, getattr(focus.dbmodel, 'language'))
+            yield (DCTERMS.language, getattr(focus.dbmodel, 'language'))
         ```
     """
     def _decorator(gatherer: Gatherer):

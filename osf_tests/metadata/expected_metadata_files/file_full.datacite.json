@@ -1,0 +1,87 @@
+{
+  "alternateIdentifiers": [
+    {
+      "alternateIdentifier": "http://localhost:5000/w3ibb",
+      "alternateIdentifierType": "URL"
+    }
+  ],
+  "contributors": [
+    {
+      "contributorName": {
+        "contributorName": "Center for Open Science",
+        "nameType": "Organizational"
+      },
+      "contributorType": "HostingInstitution",
+      "nameIdentifier": {
+        "nameIdentifier": "https://ror.org/05d5mza29",
+        "nameIdentifierScheme": "ROR"
+      }
+    }
+  ],
+  "creators": [
+    {
+      "creatorName": {
+        "creatorName": "Person McNamington",
+        "nameType": "Personal"
+      },
+      "nameIdentifier": {
+        "nameIdentifier": "http://localhost:5000/w1ibb",
+        "nameIdentifierScheme": "URL"
+      }
+    }
+  ],
+  "dates": [
+    {
+      "date": "2123-05-04",
+      "dateType": "Created"
+    },
+    {
+      "date": "2123-05-04",
+      "dateType": "Updated"
+    }
+  ],
+  "descriptions": [],
+  "fundingReferences": [],
+  "identifier": {
+    "identifier": "http://localhost:5000/w3ibb",
+    "identifierType": "URL"
+  },
+  "publicationYear": "2123",
+  "publisher": "OSF",
+  "relatedIdentifiers": [
+    {
+      "relatedIdentifier": "10.70102/FK2osf.io/w2ibb",
+      "relatedIdentifierType": "DOI",
+      "relationType": "IsPartOf"
+    }
+  ],
+  "relatedItems": [
+    {
+      "publicationYear": "2123",
+      "publisher": "OSF",
+      "relatedItemIdentifier": {
+        "relatedItemIdentifier": "10.70102/FK2osf.io/w2ibb",
+        "relatedItemIdentifierType": "DOI"
+      },
+      "relatedItemType": "Dataset",
+      "relationType": "IsPartOf",
+      "titles": [
+        {
+          "lang": "en",
+          "title": "this is a project title!"
+        }
+      ]
+    }
+  ],
+  "resourceType": {
+    "resourceType": "File",
+    "resourceTypeGeneral": "Text"
+  },
+  "rightsList": [],
+  "subjects": [],
+  "titles": [
+    {
+      "title": "my-file.blarg"
+    }
+  ]
+}

@@ -2,6 +2,11 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+23.12.0 (2023-8-22)
+===================
+- Search Improvements
+- Serialize IRI-centric metadata for SHARE
+
 23.11.0 (2023-8-17)
 ===================
 - Allow folder-level connections with S3
