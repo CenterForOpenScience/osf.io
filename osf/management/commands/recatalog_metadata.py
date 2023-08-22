@@ -37,7 +37,7 @@ def recatalog_chunk(provided_model, providers, start_id, chunk_size):
         for item in item_chunk:
             guid = item.guids.values_list('_id', flat=True).first()
             if guid:
-                task__update_share.apply_async(kwargs={'guid': guid})
+                task__update_share.apply_async(kwargs={'guid': guid, 'is_backfill': True})
             else:
                 logger.debug('skipping item without guid: %s', item)
 

@@ -71,14 +71,14 @@ def _enqueue_update_share(osfresource):
 
 
 @celery_app.task(bind=True, max_retries=4, acks_late=True)
-def task__update_share(self, guid: str):
+def task__update_share(self, guid: str, is_backfill=False):
     """
     This function updates share  takes Preprints, Projects and Registrations.
     :param self:
     :param guid:
     :return:
     """
-    resp = _do_update_share(guid)
+    resp = _do_update_share(guid, is_backfill=is_backfill)
     try:
         resp.raise_for_status()
     except Exception as e:
@@ -98,17 +98,20 @@ def task__update_share(self, guid: str):
     return resp
 
 
-def pls_send_trove_indexcard(osf_item):
+def pls_send_trove_indexcard(osf_item, *, is_backfill=False):
     _iri = osf_iri(osf_item)
     if not _iri:
         raise ValueError(f'could not get iri for {osf_item}')
     _metadata_record = pls_gather_metadata_file(osf_item, 'turtle')
+    _queryparams = {
+        'focus_iri': _iri,
+        'record_identifier': _shtrove_record_identifier(osf_item),
+    }
+    if is_backfill:
+        _queryparams['nonurgent'] = True
     return requests.post(
         shtrove_ingest_url(),
-        params={
-            'focus_iri': _iri,
-            'record_identifier': _shtrove_record_identifier(osf_item),
-        },
+        params=_queryparams,
         headers={
             'Content-Type': _metadata_record.mediatype,
             **_shtrove_auth_headers(osf_item),
@@ -127,8 +130,8 @@ def pls_delete_trove_indexcard(osf_item):
     )
 
 
-def _do_update_share(osfguid: str):
-    logger.debug('%s._do_update_share("%s")', __name__, osfguid)
+def _do_update_share(osfguid: str, *, is_backfill=False):
+    logger.debug('%s._do_update_share("%s", is_backfill=%s)', __name__, osfguid, is_backfill)
     _guid_instance = apps.get_model('osf.Guid').load(osfguid)
     if _guid_instance is None:
         raise ValueError(f'unknown osfguid "{osfguid}"')
@@ -136,7 +139,7 @@ def _do_update_share(osfguid: str):
     _response = (
         pls_delete_trove_indexcard(_resource)
         if _should_delete_indexcard(_resource)
-        else pls_send_trove_indexcard(_resource)
+        else pls_send_trove_indexcard(_resource, is_backfill=is_backfill)
     )
     return _response
 
