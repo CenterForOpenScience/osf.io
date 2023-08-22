@@ -435,12 +435,20 @@ def gather_preprint_withdrawal(focus):
 
 @gather.er(DCTERMS.dateCopyrighted, DCTERMS.rightsHolder, DCTERMS.rights)
 def gather_licensing(focus):
+    yield from _rights_for_item(focus.dbmodel)
+
+
+def _rights_for_item(item):
     license_record = (
-        focus.dbmodel.license
-        if focus.rdftype == OSF.Preprint
-        else getattr(focus.dbmodel, 'node_license', None)
+        item.license
+        if isinstance(item, osfdb.Preprint)
+        else getattr(item, 'node_license', None)
     )
-    if license_record is not None:
+    if license_record is None:
+        _parent = getattr(item, 'parent_node', None)
+        if _parent:
+            yield from _rights_for_item(_parent)
+    else:
         yield (DCTERMS.dateCopyrighted, license_record.year)
         for copyright_holder in license_record.copyright_holders:
             yield (DCTERMS.rightsHolder, copyright_holder)
@@ -884,10 +892,10 @@ def gather_ia_url(focus):
 
 @gather.er(
     DCTERMS.conformsTo,
-    focustype_iris=[OSF.Registration]
+    focustype_iris=[OSF.Registration, OSF.RegistrationComponent]
 )
 def gather_registration_type(focus):
-    _reg_schema = getattr(focus.dbmodel, 'registration_schema')
+    _reg_schema = getattr(focus.dbmodel.root, 'registration_schema')
     if _reg_schema:
         _schema_url = rdflib.URIRef(_reg_schema.absolute_api_v2_url)
         yield (DCTERMS.conformsTo, _schema_url)
