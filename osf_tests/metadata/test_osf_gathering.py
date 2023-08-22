@@ -42,10 +42,13 @@ class TestOsfGathering(TestCase):
                 'baiduScholar': 'blarg',
             },
         )
-        # project:
+        # project (with components):
         cls.project = factories.ProjectFactory(creator=cls.user__admin, is_public=True)
         cls.project.add_contributor(cls.user__readwrite, permissions=permissions.WRITE)
         cls.project.add_contributor(cls.user__readonly, permissions=permissions.READ, visible=False)
+        cls.component = factories.ProjectFactory(parent=cls.project, creator=cls.user__admin, is_public=True)
+        cls.sibcomponent = factories.ProjectFactory(parent=cls.project, creator=cls.user__admin, is_public=True)
+        cls.subcomponent = factories.ProjectFactory(parent=cls.component, creator=cls.user__admin, is_public=True)
         # file:
         cls.file_sha256 = '876b99ba1225de6b7f55ef52b068d0da3aa2ec4271875954c3b87b6659ae3823'
         cls.file = create_test_file(
@@ -72,6 +75,9 @@ class TestOsfGathering(TestCase):
         cls.preprint.add_contributor(cls.user__readonly, permissions=permissions.READ, visible=False)
         # "focus" objects:
         cls.projectfocus = osf_gathering.OsfFocus(cls.project)
+        cls.componentfocus = osf_gathering.OsfFocus(cls.component)
+        cls.sibcomponentfocus = osf_gathering.OsfFocus(cls.sibcomponent)
+        cls.subcomponentfocus = osf_gathering.OsfFocus(cls.subcomponent)
         cls.filefocus = osf_gathering.OsfFocus(cls.file)
         cls.registrationfocus = osf_gathering.OsfFocus(cls.registration)
         cls.preprintfocus = osf_gathering.OsfFocus(cls.preprint)
@@ -203,10 +209,15 @@ class TestOsfGathering(TestCase):
     def test_gather_licensing(self):
         # focus: project
         assert_triples(osf_gathering.gather_licensing(self.projectfocus), set())
+        assert_triples(osf_gathering.gather_licensing(self.componentfocus), set())
+        assert_triples(osf_gathering.gather_licensing(self.subcomponentfocus), set())
         self.project.node_license = factories.NodeLicenseRecordFactory(
             year='1952-2001',
             copyright_holders=['foo', 'bar', 'baz baz'],
         )
+        self.project.save()
+        del self.component.parent_node  # force refresh
+        del self.subcomponent.parent_node  # force refresh
         license_bnode = rdflib.BNode()
         assert_triples(osf_gathering.gather_licensing(self.projectfocus), {
             (self.projectfocus.iri, DCTERMS.dateCopyrighted, Literal('1952-2001')),
@@ -214,6 +225,22 @@ class TestOsfGathering(TestCase):
             (self.projectfocus.iri, DCTERMS.rightsHolder, Literal('bar')),
             (self.projectfocus.iri, DCTERMS.rightsHolder, Literal('baz baz')),
             (self.projectfocus.iri, DCTERMS.rights, license_bnode),
+            (license_bnode, FOAF.name, Literal('No license')),
+        })
+        assert_triples(osf_gathering.gather_licensing(self.componentfocus), {
+            (self.componentfocus.iri, DCTERMS.dateCopyrighted, Literal('1952-2001')),
+            (self.componentfocus.iri, DCTERMS.rightsHolder, Literal('foo')),
+            (self.componentfocus.iri, DCTERMS.rightsHolder, Literal('bar')),
+            (self.componentfocus.iri, DCTERMS.rightsHolder, Literal('baz baz')),
+            (self.componentfocus.iri, DCTERMS.rights, license_bnode),
+            (license_bnode, FOAF.name, Literal('No license')),
+        })
+        assert_triples(osf_gathering.gather_licensing(self.subcomponentfocus), {
+            (self.subcomponentfocus.iri, DCTERMS.dateCopyrighted, Literal('1952-2001')),
+            (self.subcomponentfocus.iri, DCTERMS.rightsHolder, Literal('foo')),
+            (self.subcomponentfocus.iri, DCTERMS.rightsHolder, Literal('bar')),
+            (self.subcomponentfocus.iri, DCTERMS.rightsHolder, Literal('baz baz')),
+            (self.subcomponentfocus.iri, DCTERMS.rights, license_bnode),
             (license_bnode, FOAF.name, Literal('No license')),
         })
         # focus: registration
@@ -407,30 +434,22 @@ class TestOsfGathering(TestCase):
 
     def test_gather_parts(self):
         # focus: project
-        assert_triples(osf_gathering.gather_parts(self.projectfocus), set())
-        # ...with components:
-        component = factories.ProjectFactory(parent=self.project, creator=self.user__admin, is_public=True)
-        sibcomponent = factories.ProjectFactory(parent=self.project, creator=self.user__admin, is_public=True)
-        subcomponent = factories.ProjectFactory(parent=component, creator=self.user__admin, is_public=True)
-        componentfocus = osf_gathering.OsfFocus(component)
-        sibcomponentfocus = osf_gathering.OsfFocus(sibcomponent)
-        subcomponentfocus = osf_gathering.OsfFocus(subcomponent)
         assert_triples(osf_gathering.gather_parts(self.projectfocus), {
-            (self.projectfocus.iri, DCTERMS.hasPart, componentfocus),
-            (self.projectfocus.iri, DCTERMS.hasPart, sibcomponentfocus),
+            (self.projectfocus.iri, DCTERMS.hasPart, self.componentfocus),
+            (self.projectfocus.iri, DCTERMS.hasPart, self.sibcomponentfocus),
         })
-        assert_triples(osf_gathering.gather_parts(componentfocus), {
-            (componentfocus.iri, OSF.hasRoot, self.projectfocus),
-            (componentfocus.iri, DCTERMS.isPartOf, self.projectfocus),
-            (componentfocus.iri, DCTERMS.hasPart, subcomponentfocus),
+        assert_triples(osf_gathering.gather_parts(self.componentfocus), {
+            (self.componentfocus.iri, OSF.hasRoot, self.projectfocus),
+            (self.componentfocus.iri, DCTERMS.isPartOf, self.projectfocus),
+            (self.componentfocus.iri, DCTERMS.hasPart, self.subcomponentfocus),
         })
-        assert_triples(osf_gathering.gather_parts(sibcomponentfocus), {
-            (sibcomponentfocus.iri, OSF.hasRoot, self.projectfocus),
-            (sibcomponentfocus.iri, DCTERMS.isPartOf, self.projectfocus),
+        assert_triples(osf_gathering.gather_parts(self.sibcomponentfocus), {
+            (self.sibcomponentfocus.iri, OSF.hasRoot, self.projectfocus),
+            (self.sibcomponentfocus.iri, DCTERMS.isPartOf, self.projectfocus),
         })
-        assert_triples(osf_gathering.gather_parts(subcomponentfocus), {
-            (subcomponentfocus.iri, OSF.hasRoot, self.projectfocus),
-            (subcomponentfocus.iri, DCTERMS.isPartOf, componentfocus),
+        assert_triples(osf_gathering.gather_parts(self.subcomponentfocus), {
+            (self.subcomponentfocus.iri, OSF.hasRoot, self.projectfocus),
+            (self.subcomponentfocus.iri, DCTERMS.isPartOf, self.componentfocus),
         })
         # focus: registration
         assert_triples(osf_gathering.gather_parts(self.registrationfocus), set())
