@@ -163,6 +163,7 @@ OSFMAP = {
     OSF.RegistrationComponent: {
         **OSF_OBJECT,
         OSF.archivedAt: None,
+        DCTERMS.conformsTo: None,
         OSF.hasAnalyticCodeResource: OSF_OBJECT_REFERENCE,
         OSF.hasDataResource: OSF_OBJECT_REFERENCE,
         OSF.hasMaterialsResource: OSF_OBJECT_REFERENCE,
