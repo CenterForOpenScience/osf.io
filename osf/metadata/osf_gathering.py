@@ -9,18 +9,19 @@ import rdflib
 from osf import models as osfdb
 from osf.metadata import gather
 from osf.metadata.rdfutils import (
-    RDF,
-    OWL,
-    DCTERMS,
+    DATACITE,
+    DCAT,
     DCMITYPE,
+    DCTERMS,
+    DOI,
     FOAF,
+    ORCID,
     OSF,
     OSFIO,
-    DOI,
-    ORCID,
+    OWL,
+    RDF,
     ROR,
     SKOS,
-    DATACITE,
     checksum_iri,
     format_dcterms_extent,
     without_namespace,
@@ -111,6 +112,8 @@ OSF_OBJECT = {
     DCTERMS.subject: None,
     DCTERMS.title: None,
     DCTERMS.type: None,
+    OSF.hostingInstitution: None,
+    DCAT.accessService: None,
     OSF.affiliation: None,
     OSF.isPartOfCollection: None,
     OSF.funder: None,
@@ -841,20 +844,28 @@ def gather_funding(focus):
                     yield (_award_ref, DCTERMS.contributor, _funder_ref)
 
 
-@gather.er(OSF.HostingInstitution)
+@gather.er(DCAT.accessService)
+def gather_access_service(focus):
+    yield (DCAT.accessService, rdflib.URIRef(website_settings.DOMAIN))
+
+
+@gather.er(OSF.hostingInstitution)
 def gather_hosting_institution(focus):
     name = website_settings.HOSTING_INSTITUTION_NAME
     irl = website_settings.HOSTING_INSTITUTION_IRL
     ror_id = website_settings.HOSTING_INSTITUTION_ROR_ID
     if name and (irl or ror_id):
         irl_iri = rdflib.URIRef(irl) if irl else ROR[ror_id]
-        yield (OSF.HostingInstitution, irl_iri)
+        yield (OSF.hostingInstitution, irl_iri)
         yield (irl_iri, RDF.type, DCTERMS.Agent)
         yield (irl_iri, RDF.type, FOAF.Organization)
         yield (irl_iri, FOAF.name, name)
         yield (irl_iri, DCTERMS.identifier, irl)
         if ror_id:
-            yield (irl_iri, DCTERMS.identifier, ROR[ror_id])
+            ror_iri = ROR[ror_id]
+            yield (irl_iri, DCTERMS.identifier, str(ror_iri))
+            if ror_iri != irl_iri:
+                yield (irl_iri, OWL.sameAs, ror_iri)
     else:
         logger.warning(
             'must set website.settings.HOSTING_INSTITUTION_NAME'

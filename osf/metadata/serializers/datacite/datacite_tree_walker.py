@@ -63,7 +63,7 @@ PUBLICATION_YEAR_FALLBACK_ORDER = (
 CONTRIBUTOR_TYPE_MAP = {
     # TODO: contributor roles
     # DCTERMS.contributor: 'ProjectMember',
-    OSF.HostingInstitution: 'HostingInstitution',
+    OSF.hostingInstitution: 'HostingInstitution',
 }
 
 
