@@ -1,3 +1,4 @@
+@prefix dcat: <http://www.w3.org/ns/dcat#> .
 @prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 @prefix osf: <https://osf.io/vocab/2022/> .
@@ -19,7 +20,9 @@
         "You" ;
     dcterms:title "this is a project title!" ;
     owl:sameAs <https://doi.org/10.70102/FK2osf.io/w2ibb> ;
+    dcat:accessService <http://localhost:5000/> ;
     osf:contains <http://localhost:5000/w3ibb> ;
+    osf:hostingInstitution <https://cos.io/> ;
     osf:supplements <http://localhost:5000/w4ibb> .
 
 <http://localhost:5000/w4ibb> a osf:Preprint ;
@@ -50,6 +53,13 @@
     osf:fileName "my-file.blarg" ;
     osf:filePath "/my-file.blarg" ;
     osf:isContainedBy <http://localhost:5000/w2ibb> .
+
+<https://cos.io/> a dcterms:Agent,
+        foaf:Organization ;
+    dcterms:identifier "https://cos.io/",
+        "https://ror.org/05d5mza29" ;
+    owl:sameAs <https://ror.org/05d5mza29> ;
+    foaf:name "Center for Open Science" .
 
 <http://localhost:5000/registries/regiprovi> a dcterms:Agent,
         foaf:Organization ;
