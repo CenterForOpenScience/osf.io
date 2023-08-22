@@ -489,8 +489,8 @@ class WithdrawnRegistrationFactory(BaseNodeFactory):
         registration = kwargs.pop('registration', RegistrationFactory())
         registration.is_public = True
         user = kwargs.pop('user', registration.creator)
-
-        registration.retract_registration(user)
+        justification = kwargs.pop('justification', None)
+        registration.retract_registration(user, justification)
         withdrawal = registration.retraction
         token = list(withdrawal.approval_state.values())[0]['approval_token']
         with patch('osf.models.AbstractNode.update_search'):

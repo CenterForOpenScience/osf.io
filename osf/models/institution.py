@@ -188,7 +188,7 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
             return '/static/img/institutions/banners/placeholder-banner.png'
 
     def update_search(self):
-        from website.search.search import update_institution, update_node
+        from website.search.search import update_institution
         from website.search.exceptions import SearchUnavailableError
 
         try:
@@ -197,10 +197,7 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
             logger.exception(e)
 
         for node in self.nodes.filter(is_deleted=False):
-            try:
-                update_node(node, async_update=False)
-            except SearchUnavailableError as e:
-                logger.exception(e)
+            node.update_search()
 
     def save(self, *args, **kwargs):
         saved_fields = self.get_dirty_fields()

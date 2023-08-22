@@ -35,6 +35,7 @@ from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
                                        MergeConflictError)
 from framework.exceptions import PermissionsError
 from framework.sessions.utils import remove_sessions_for_user
+from api.share.utils import update_share
 from osf.utils.requests import get_current_request
 from osf.exceptions import reraise_django_validation_errors, UserStateError
 from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
@@ -142,6 +143,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         'jobs',
         'schools',
         'social',
+        'allow_indexing',
     }
 
     # Overrides DirtyFieldsMixin, Foreign Keys checked by '<attribute_name>_id' rather than typical name.
@@ -397,6 +399,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     chronos_user_id = models.TextField(null=True, blank=True, db_index=True)
 
+    allow_indexing = models.BooleanField(null=True, blank=True, default=None)
+
     objects = OSFUserManager()
 
     is_active = models.BooleanField(default=False)
@@ -452,6 +456,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """Whether or not this account has been merged into another account.
         """
         return self.merged_by is not None
+
+    @property
+    def is_public(self):
+        return self.is_active and self.allow_indexing is not False
 
     @property
     def unconfirmed_emails(self):
@@ -1444,6 +1452,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return user_has_trusted_email
 
     def update_search(self):
+        update_share(self)
         from website.search.search import update_user
         update_user(self)
 

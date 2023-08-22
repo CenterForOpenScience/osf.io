@@ -42,7 +42,7 @@ from osf.models.admin_log_entry import (
     UNFLAG_SPAM,
 )
 
-from website import search, settings
+from website import search
 
 
 class PreprintMixin(PermissionRequiredMixin):
@@ -141,8 +141,7 @@ class PreprintReindexShare(PreprintMixin, View):
 
     def post(self, request, *args, **kwargs):
         preprint = self.get_object()
-        if settings.SHARE_ENABLED:
-            update_share(preprint)
+        update_share(preprint)
         update_admin_log(
             user_id=self.request.user.id,
             object_id=preprint._id,

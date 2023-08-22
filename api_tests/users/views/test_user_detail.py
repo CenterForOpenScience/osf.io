@@ -1126,6 +1126,43 @@ class TestUserUpdate:
         assert res.status_code == 200
         assert user_one.accepted_terms_of_service is None
 
+    def test_update_allow_indexing_sets_field(
+            self, app, user_one, url_user_one):
+        assert user_one.allow_indexing is None
+        res = app.patch_json_api(
+            url_user_one,
+            {
+                'data': {
+                    'id': user_one._id,
+                    'type': 'users',
+                    'attributes': {
+                        'allow_indexing': True,
+                    }
+                }
+            },
+            auth=user_one.auth
+        )
+        user_one.reload()
+        assert res.status_code == 200
+        assert user_one.allow_indexing is True
+        res = app.patch_json_api(
+            url_user_one,
+            {
+                'data': {
+                    'id': user_one._id,
+                    'type': 'users',
+                    'attributes': {
+                        'allow_indexing': False,
+                    }
+                }
+            },
+            auth=user_one.auth
+        )
+        user_one.reload()
+        assert res.status_code == 200
+        assert user_one.allow_indexing is False
+
+
 @pytest.mark.django_db
 class TestDeactivatedUser:
 

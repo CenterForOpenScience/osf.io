@@ -12,6 +12,7 @@ import pytest
 import responses
 import xml.etree.ElementTree as ET
 
+from api_tests.share import _utils as shtrove_test_utils
 from framework.celery_tasks import app as celery_app
 from website import settings as website_settings
 
@@ -56,6 +57,8 @@ def override_settings():
     website_settings.BCRYPT_LOG_ROUNDS = 1
     # Make sure we don't accidentally send any emails
     website_settings.SENDGRID_API_KEY = None
+    # or try to contact a SHARE
+    website_settings.SHARE_ENABLED = False
     # Set this here instead of in SILENT_LOGGERS, in case developers
     # call setLevel in local.py
     logging.getLogger('website.mails.mails').setLevel(logging.CRITICAL)
@@ -148,12 +151,15 @@ def _es_marker(request):
 
 
 @pytest.fixture
-def mock_share():
-    with mock.patch('api.share.utils.settings.SHARE_ENABLED', True):
-        with mock.patch('api.share.utils.settings.SHARE_API_TOKEN', 'mock-api-token'):
-            with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
-                rsps.add(responses.POST, f'{website_settings.SHARE_URL}api/v2/normalizeddata/', status=200)
-                yield rsps
+def mock_share_responses():
+    with shtrove_test_utils.mock_share_responses() as _shmock_responses:
+        yield _shmock_responses
+
+
+@pytest.fixture
+def mock_update_share():
+    with shtrove_test_utils.mock_update_share() as _shmock_update:
+        yield _shmock_update
 
 
 @pytest.fixture

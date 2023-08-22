@@ -517,7 +517,7 @@ def update_node(node, index=None, bulk=False, async_update=False):
     from addons.osfstorage.models import OsfStorageFile
     index = index or INDEX
     for file_ in paginated(OsfStorageFile, Q(target_content_type=ContentType.objects.get_for_model(type(node)), target_object_id=node.id)):
-        update_file(file_, index=index)
+        file_.update_search()
 
     is_qa_node = bool(set(settings.DO_NOT_INDEX_LIST['tags']).intersection(node.tags.all().values_list('name', flat=True))) or any(substring in node.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
     if node.is_deleted or not node.is_public or node.archiving or node.is_spam or (node.spam_status == SpamStatus.FLAGGED and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH) or node.is_quickfiles or is_qa_node:
@@ -535,7 +535,7 @@ def update_preprint(preprint, index=None, bulk=False, async_update=False):
     from addons.osfstorage.models import OsfStorageFile
     index = index or INDEX
     for file_ in paginated(OsfStorageFile, Q(target_content_type=ContentType.objects.get_for_model(type(preprint)), target_object_id=preprint.id)):
-        update_file(file_, index=index)
+        file_.update_search()
 
     is_qa_preprint = bool(set(settings.DO_NOT_INDEX_LIST['tags']).intersection(preprint.tags.all().values_list('name', flat=True))) or any(substring in preprint.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
     if not preprint.verified_publishable or preprint.is_spam or (preprint.spam_status == SpamStatus.FLAGGED and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH) or is_qa_preprint:
@@ -584,7 +584,7 @@ def bulk_update_nodes(serialize, nodes, index=None, category=None):
                 'doc_as_upsert': True,
             })
     if actions:
-        return helpers.bulk(client(), actions)
+        return helpers.bulk(client(), actions, refresh=True)
 
 
 def serialize_collection_submission_contributor(contrib):
@@ -732,14 +732,7 @@ def update_file(file_, index=None, delete=False):
     index = index or INDEX
     target = file_.target
 
-    # TODO: Can remove 'not file_.name' if we remove all base file nodes with name=None
-    file_node_is_qa = bool(
-        set(settings.DO_NOT_INDEX_LIST['tags']).intersection(file_.tags.all().values_list('name', flat=True))
-    ) or bool(
-        set(settings.DO_NOT_INDEX_LIST['tags']).intersection(target.tags.all().values_list('name', flat=True))
-    ) or any(substring in target.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
-    if not file_.name or not target.is_public or delete or file_node_is_qa or getattr(target, 'is_deleted', False) or getattr(target, 'archiving', False) or target.is_spam or (
-            target.spam_status == SpamStatus.FLAGGED and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH):
+    if not file_.should_update_search or delete:
         client().delete(
             index=index,
             doc_type='file',
@@ -748,18 +741,6 @@ def update_file(file_, index=None, delete=False):
             ignore=[404]
         )
         return
-
-    if isinstance(target, Preprint):
-        if not getattr(target, 'verified_publishable', False) or target.primary_file != file_ or target.is_spam or (
-                target.spam_status == SpamStatus.FLAGGED and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH):
-            client().delete(
-                index=index,
-                doc_type='file',
-                id=file_._id,
-                refresh=True,
-                ignore=[404]
-            )
-            return
 
     # We build URLs manually here so that this function can be
     # run outside of a Flask request context (e.g. in a celery task)
