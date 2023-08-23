@@ -25,6 +25,7 @@ from osf.metadata.rdfutils import (
     checksum_iri,
     format_dcterms_extent,
     without_namespace,
+    smells_like_iri,
 )
 from osf.utils import workflows as osfworkflows
 from osf.utils.outcomes import ArtifactTypes
@@ -881,12 +882,22 @@ def gather_user_basics(focus):
     if isinstance(focus.dbmodel, osfdb.OSFUser):
         yield (RDF.type, FOAF.Person)  # note: assumes osf user accounts represent people
         yield (FOAF.name, focus.dbmodel.fullname)
-        for social_link in focus.dbmodel.social_links.values():
-            if isinstance(social_link, str):
-                yield (DCTERMS.identifier, social_link)
-            elif isinstance(social_link, list):
-                for link in social_link:
-                    yield (DCTERMS.identifier, link)
+        _social_links = focus.dbmodel.social_links
+        # special cases abound! do these one-by-one (based on OSFUser.SOCIAL_FIELDS)
+        yield (DCTERMS.identifier, _social_links.get('github'))
+        yield (DCTERMS.identifier, _social_links.get('scholar'))
+        yield (DCTERMS.identifier, _social_links.get('linkedIn'))
+        yield (DCTERMS.identifier, _social_links.get('impactStory'))
+        yield (DCTERMS.identifier, _social_links.get('researcherId'))
+        yield (DCTERMS.identifier, _social_links.get('researchGate'))
+        yield (DCTERMS.identifier, _social_links.get('baiduScholar'))
+        yield (DCTERMS.identifier, _social_links.get('ssrn'))
+        for _url in _social_links.get('profileWebsites', ()):
+            yield (DCTERMS.identifier, _url)
+        _academia_institution = _social_links.get('academiaInstitution')
+        _academia_profile_id = _social_links.get('academiaProfileID')
+        if _academia_institution and _academia_profile_id:
+            yield (DCTERMS.identifier, ''.join((_academia_institution, _academia_profile_id)))
         orcid = focus.dbmodel.get_verified_external_id('ORCID', verified_only=True)
         if orcid:
             orcid_iri = ORCID[orcid]
@@ -899,7 +910,8 @@ def gather_user_basics(focus):
     focustype_iris=[OSF.Registration]
 )
 def gather_ia_url(focus):
-    yield (OSF.archivedAt, focus.dbmodel.ia_url)
+    if smells_like_iri(focus.dbmodel.ia_url):
+        yield (OSF.archivedAt, rdflib.URIRef(focus.dbmodel.ia_url))
 
 
 @gather.er(
