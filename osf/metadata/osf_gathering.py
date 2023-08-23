@@ -25,6 +25,7 @@ from osf.metadata.rdfutils import (
     checksum_iri,
     format_dcterms_extent,
     without_namespace,
+    smells_like_iri,
 )
 from osf.utils import workflows as osfworkflows
 from osf.utils.outcomes import ArtifactTypes
@@ -909,7 +910,8 @@ def gather_user_basics(focus):
     focustype_iris=[OSF.Registration]
 )
 def gather_ia_url(focus):
-    yield (OSF.archivedAt, focus.dbmodel.ia_url)
+    if smells_like_iri(focus.dbmodel.ia_url):
+        yield (OSF.archivedAt, rdflib.URIRef(focus.dbmodel.ia_url))
 
 
 @gather.er(
