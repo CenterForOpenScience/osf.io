@@ -560,8 +560,6 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_create_folder_path.return_value = None
         mock_copy_to_destination.return_value = [{}, []]
         mock_add_tag_and_timestamp.side_effect = IntegrityError(f'Mock test for error when adding tag/timestamp')
-        mock_rollback_process = mock.MagicMock()
-        mock_rollback_process.return_value = None
 
         with nt.assert_raises(IntegrityError):
             self.view.restore_export_data_process(task, {}, self.export_data_restore.export.id,

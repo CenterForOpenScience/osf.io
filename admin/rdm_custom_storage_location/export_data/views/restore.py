@@ -245,6 +245,10 @@ def restore_export_data_process(task, cookies, export_id, export_data_restore_id
         if task.is_aborted():
             task.update_state(state=ABORTED,
                               meta={'current_restore_step': current_process_step})
+        else:
+            export_data_restore = ExportDataRestore.objects.get(pk=export_data_restore_id)
+            export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
+                                       status=ExportData.STATUS_STOPPED)
         raise e
 
 

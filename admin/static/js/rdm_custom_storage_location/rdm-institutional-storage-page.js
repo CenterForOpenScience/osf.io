@@ -1564,7 +1564,11 @@ $('#cancel_restore_modal_button').on('click', function () {
 });
 
 $('#restore').on('hidden.bs.modal', function () {
-    enableRestoreFunction();
+    if (no_hidden_modal_event) {
+        no_hidden_modal_event = false;
+    } else {
+        enableRestoreFunction();
+    }
 });
 
 $('#restore_button').on('click', function () {
@@ -1714,6 +1718,8 @@ $('#start_restore_modal_button').on('click', function () {
     var data = {};
     data['destination_id'] = $('#destination_storage').val();
     data['is_from_confirm_dialog'] = true;
+    // Prevent hidden modal event trigger
+    no_hidden_modal_event = true;
     // Call enableStopRestoreFunction() when click Restore button
     closeGrowl();
     $.ajax({
