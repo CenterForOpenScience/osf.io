@@ -18,6 +18,7 @@ from osf.metadata.rdfutils import (
     ROR,
     SKOS,
     DATACITE,
+    smells_like_iri,
     without_namespace,
 )
 
@@ -119,9 +120,10 @@ class DataciteTreeWalker:
             identifier_type, identifier_value = self._identifier_type_and_value(identifier)
         else:
             identifier_type, identifier_value = ('DOI', doi_override)
-        self.visit(parent_el, 'identifier', text=identifier_value, attrib={
-            'identifierType': identifier_type,
-        })
+        if identifier_value:
+            self.visit(parent_el, 'identifier', text=identifier_value, attrib={
+                'identifierType': identifier_type,
+            })
 
     def _visit_creators(self, parent_el, focus_iri):
         creator_iris = set(self.basket[focus_iri:DCTERMS.creator])
@@ -156,9 +158,9 @@ class DataciteTreeWalker:
             return ('ROR', identifier)  # ROR keeps the full IRI
         elif identifier.startswith(ORCID):
             return ('ORCID', without_namespace(identifier, ORCID))
-        elif '://' in identifier:
+        elif smells_like_iri(identifier):
             return ('URL', identifier)
-        raise ValueError(f'only IRI-shaped identifiers are supported (got "{identifier}")')
+        logger.warning('skipping non-IRI-shaped identifier "%s"', identifier)
 
     def _get_name_type(self, agent_iri):
         if (agent_iri, RDF.type, FOAF.Person) in self.basket:
@@ -171,7 +173,7 @@ class DataciteTreeWalker:
         alt_ids_el = self.visit(parent_el, 'alternateIdentifiers', is_list=True)
         for identifier in sorted(self.basket[DCTERMS.identifier]):
             identifier_type, identifier_value = self._identifier_type_and_value(identifier)
-            if identifier_type != 'DOI':
+            if identifier_value and (identifier_type != 'DOI'):
                 self.visit(alt_ids_el, 'alternateIdentifier', text=identifier_value, attrib={
                     'alternateIdentifierType': identifier_type,
                 })
@@ -241,8 +243,9 @@ class DataciteTreeWalker:
                 pass  # don't need affiliationIdentifier
             else:
                 identifier_type, identifier_value = self._identifier_type_and_value(identifier)
-                affiliation_attrib['affiliationIdentifier'] = identifier_value
-                affiliation_attrib['affiliationIdentifierScheme'] = identifier_type
+                if identifier_value:
+                    affiliation_attrib['affiliationIdentifier'] = identifier_value
+                    affiliation_attrib['affiliationIdentifierScheme'] = identifier_type
             self.visit(parent_el, 'affiliation', text=name, attrib=affiliation_attrib, is_list=True)
 
     def _visit_dates(self, parent_el):
@@ -338,13 +341,14 @@ class DataciteTreeWalker:
         })
         if identifier is not None:
             identifier_type, identifier_value = self._identifier_type_and_value(identifier)
-            self.visit(related_item_el, 'relatedItemIdentifier', text=identifier_value, attrib={
-                'relatedItemIdentifierType': identifier_type,
-            })
-            self.visit(identifier_parent_el, 'relatedIdentifier', text=identifier_value, attrib={
-                'relatedIdentifierType': identifier_type,
-                'relationType': datacite_relation_type,
-            })
+            if identifier_value:
+                self.visit(related_item_el, 'relatedItemIdentifier', text=identifier_value, attrib={
+                    'relatedItemIdentifierType': identifier_type,
+                })
+                self.visit(identifier_parent_el, 'relatedIdentifier', text=identifier_value, attrib={
+                    'relatedIdentifierType': identifier_type,
+                    'relationType': datacite_relation_type,
+                })
         self._visit_titles(related_item_el, related_iri)
         self._visit_publication_year(related_item_el, related_iri)
         self._visit_publisher(related_item_el, related_iri)
@@ -367,9 +371,10 @@ class DataciteTreeWalker:
     def _visit_name_identifiers(self, parent_el, agent_iri):
         for identifier in sorted(self.basket[agent_iri:DCTERMS.identifier]):
             identifier_type, identifier_value = self._identifier_type_and_value(identifier)
-            self.visit(parent_el, 'nameIdentifier', text=identifier_value, attrib={
-                'nameIdentifierScheme': identifier_type,
-            })
+            if identifier_value:
+                self.visit(parent_el, 'nameIdentifier', text=identifier_value, attrib={
+                    'nameIdentifierScheme': identifier_type,
+                })
 
     def _visit_subjects(self, parent_el):
         subjects_el = self.visit(parent_el, 'subjects', is_list=True)
