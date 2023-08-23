@@ -137,3 +137,10 @@ def primitivify_rdf(thing):
 def without_namespace(iri: rdflib.URIRef, namespace: rdflib.Namespace) -> str:
     assert iri.startswith(namespace)
     return iri[len(namespace):]
+
+
+def smells_like_iri(maybe_iri: str) -> bool:
+    return (
+        isinstance(maybe_iri, str)
+        and '://' in maybe_iri
+    )
