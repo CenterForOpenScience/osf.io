@@ -578,7 +578,8 @@ def gather_versions(focus):
 
 def _gather_fileversion(fileversion, fileversion_iri):
     yield (fileversion_iri, RDF.type, OSF.FileVersion)
-    yield (fileversion_iri, DCTERMS.creator, OsfFocus(fileversion.creator))
+    if fileversion.creator is not None:
+        yield (fileversion_iri, DCTERMS.creator, OsfFocus(fileversion.creator))
     yield (fileversion_iri, DCTERMS.created, fileversion.created)
     yield (fileversion_iri, DCTERMS.modified, fileversion.modified)
     yield (fileversion_iri, DCTERMS['format'], fileversion.content_type)
