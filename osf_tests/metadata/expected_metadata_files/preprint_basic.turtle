@@ -51,7 +51,6 @@
     owl:sameAs <https://doi.org/10.70102/FK2osf.io/w2ibb> .
 
 <http://localhost:8000/v2/subjects/subjwobb/> a skos:Concept ;
-    skos:altLabel "wobbble" ;
     skos:broader <http://localhost:8000/v2/subjects/subjwibb/> ;
     skos:inScheme <http://localhost:8000/v2/providers/preprints/preprovi/subjects/> ;
     skos:prefLabel "wobble" ;
@@ -77,7 +76,6 @@
     dcterms:title "preprovi" .
 
 <http://localhost:8000/v2/subjects/subjwibb/> a skos:Concept ;
-    skos:altLabel "wibbble" ;
     skos:inScheme <http://localhost:8000/v2/providers/preprints/preprovi/subjects/> ;
     skos:prefLabel "wibble" ;
     skos:related <http://localhost:8000/v2/subjects/subjwibbb/> .
