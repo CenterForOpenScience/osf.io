@@ -523,21 +523,24 @@ def gather_subjects(focus):
 
 
 def _subject_triples(dbsubject, *, child_ref=None, related_ref=None):
-    _subject_ref = rdflib.URIRef(dbsubject.absolute_api_v2_subject_url)
-    yield (DCTERMS.subject, _subject_ref)
-    yield (_subject_ref, RDF.type, SKOS.Concept)
-    yield (_subject_ref, SKOS.prefLabel, dbsubject.text)
-    yield from _subject_scheme_triples(dbsubject, _subject_ref)
-    if dbsubject.text != dbsubject.bepress_text:
-        yield (_subject_ref, SKOS.altLabel, dbsubject.bepress_text)
-    if child_ref is not None:
-        yield (child_ref, SKOS.broader, _subject_ref)
-    if related_ref is not None:
-        yield (related_ref, SKOS.related, _subject_ref)
-    if dbsubject.bepress_subject and (dbsubject != dbsubject.bepress_subject):
-        yield from _subject_triples(dbsubject.bepress_subject, related_ref=_subject_ref)
-    if dbsubject.parent and (dbsubject != dbsubject.parent):
-        yield from _subject_triples(dbsubject.parent, child_ref=_subject_ref)
+    _is_bepress = (not dbsubject.bepress_subject)
+    _is_distinct_from_bepress = (dbsubject.text != dbsubject.bepress_text)
+    if _is_bepress or _is_distinct_from_bepress:
+        _subject_ref = rdflib.URIRef(dbsubject.absolute_api_v2_subject_url)
+        yield (DCTERMS.subject, _subject_ref)
+        yield (_subject_ref, RDF.type, SKOS.Concept)
+        yield (_subject_ref, SKOS.prefLabel, dbsubject.text)
+        yield from _subject_scheme_triples(dbsubject, _subject_ref)
+        if _is_distinct_from_bepress:
+            yield from _subject_triples(dbsubject.bepress_subject, related_ref=_subject_ref)
+        if child_ref is not None:
+            yield (child_ref, SKOS.broader, _subject_ref)
+        if related_ref is not None:
+            yield (related_ref, SKOS.related, _subject_ref)
+        if dbsubject.parent and (dbsubject != dbsubject.parent):
+            yield from _subject_triples(dbsubject.parent, child_ref=_subject_ref)
+    else:  # if the custom subject adds nothing of value, just include the bepress subject
+        yield from _subject_triples(dbsubject.bepress_subject, child_ref=child_ref, related_ref=related_ref)
 
 
 def _subject_scheme_triples(dbsubject, subject_ref):
