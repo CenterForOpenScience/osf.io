@@ -100,18 +100,20 @@
   "rightsList": [],
   "subjects": [
     {
+      "subject": "wibble",
+      "subjectScheme": "preprovi"
+    },
+    {
       "subject": "wibbble",
       "subjectScheme": "bepress Digital Commons Three-Tiered Taxonomy"
     },
     {
-      "subject": "wibble"
+      "subject": "wobble",
+      "subjectScheme": "preprovi"
     },
     {
       "subject": "wobbble",
       "subjectScheme": "bepress Digital Commons Three-Tiered Taxonomy"
-    },
-    {
-      "subject": "wobble"
     }
   ],
   "titles": [

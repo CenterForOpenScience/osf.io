@@ -39,6 +39,6 @@ def _friendly_graph(rdfgraph) -> str:
     _graph_to_print = contextualized_graph(rdfgraph)
     _delim = '\n\t\t'
     return _delim + _delim.join(
-        ' '.join(map(_graph_to_print.n3, triple))
+        ' '.join(_term.n3() for _term in triple)
         for triple in _graph_to_print
     )
