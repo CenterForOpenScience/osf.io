@@ -379,16 +379,13 @@ class DataciteTreeWalker:
     def _visit_subjects(self, parent_el):
         subjects_el = self.visit(parent_el, 'subjects', is_list=True)
         for subject in sorted(self.basket[DCTERMS.subject]):
-            if isinstance(subject, rdflib.URIRef):
-                _subject_label = next(self.basket[subject:SKOS.prefLabel])
-                _subject_scheme_title = next(self.basket[subject:SKOS.inScheme / DCTERMS.title])
-                self.visit(subjects_el, 'subject', text=_subject_label, attrib={
-                    'subjectScheme': _subject_scheme_title,
-                })
-                for _alt_subject_label in self.basket[subject:SKOS.altLabel]:
-                    self.visit(subjects_el, 'subject', text=_alt_subject_label)
-            else:
-                self.visit(subjects_el, 'subject', text=subject)
+            _subject_label = next(self.basket[subject:SKOS.prefLabel], None)
+            if _subject_label:
+                _attrib = {}
+                _subject_scheme_title = next(self.basket[subject:SKOS.inScheme / DCTERMS.title], None)
+                if _subject_scheme_title:
+                    _attrib['subjectScheme'] = _subject_scheme_title
+                self.visit(subjects_el, 'subject', text=_subject_label, attrib=_attrib)
         for keyword in sorted(self.basket[OSF.keyword]):
             self.visit(subjects_el, 'subject', text=keyword)
 

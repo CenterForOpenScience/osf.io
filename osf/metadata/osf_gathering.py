@@ -522,27 +522,35 @@ def gather_subjects(focus):
             yield from _subject_triples(subject)
 
 
-def _subject_triples(dbsubject):
-    _subject_ref = _subject_uriref(dbsubject)
+def _subject_triples(dbsubject, *, child_ref=None, related_ref=None):
+    _subject_ref = rdflib.URIRef(dbsubject.absolute_api_v2_subject_url)
     yield (DCTERMS.subject, _subject_ref)
     yield (_subject_ref, RDF.type, SKOS.Concept)
-    yield (_subject_ref, SKOS.prefLabel, dbsubject.bepress_text)
+    yield (_subject_ref, SKOS.prefLabel, dbsubject.text)
+    yield from _subject_scheme_triples(dbsubject, _subject_ref)
     if dbsubject.text != dbsubject.bepress_text:
-        yield (_subject_ref, SKOS.altLabel, dbsubject.text)
-    _bepress_ref = rdflib.URIRef(BEPRESS_SUBJECT_SCHEME_URI)
-    yield (_bepress_ref, DCTERMS.title, BEPRESS_SUBJECT_SCHEME_TITLE)
-    yield (_subject_ref, SKOS.inScheme, _bepress_ref)
-    if dbsubject.parent:
-        yield (_subject_ref, SKOS.broader, _subject_uriref(dbsubject.parent))
-        yield from _subject_triples(dbsubject.parent)
+        yield (_subject_ref, SKOS.altLabel, dbsubject.bepress_text)
+    if child_ref is not None:
+        yield (child_ref, SKOS.broader, _subject_ref)
+    if related_ref is not None:
+        yield (related_ref, SKOS.related, _subject_ref)
+    if dbsubject.bepress_subject and (dbsubject != dbsubject.bepress_subject):
+        yield from _subject_triples(dbsubject.bepress_subject, related_ref=_subject_ref)
+    if dbsubject.parent and (dbsubject != dbsubject.parent):
+        yield from _subject_triples(dbsubject.parent, child_ref=_subject_ref)
 
 
-def _subject_uriref(dbsubject):
-    return rdflib.URIRef(
-        dbsubject.bepress_subject.absolute_api_v2_subject_url
-        if dbsubject.bepress_subject
-        else dbsubject.absolute_api_v2_subject_url
-    )
+def _subject_scheme_triples(dbsubject, subject_ref):
+    # if it has a bepress subject, it is not a bepress subject
+    if dbsubject.bepress_subject:
+        _scheme_title = dbsubject.provider.share_title or dbsubject.provider.name
+        _scheme_ref = rdflib.URIRef(f'{dbsubject.provider.absolute_api_v2_url}subjects/')
+    else:
+        _scheme_title = BEPRESS_SUBJECT_SCHEME_TITLE
+        _scheme_ref = rdflib.URIRef(BEPRESS_SUBJECT_SCHEME_URI)
+    yield (subject_ref, SKOS.inScheme, _scheme_ref)
+    yield (_scheme_ref, RDF.type, SKOS.ConceptScheme)
+    yield (_scheme_ref, DCTERMS.title, _scheme_title)
 
 
 @gather.er(focustype_iris=[OSF.File])

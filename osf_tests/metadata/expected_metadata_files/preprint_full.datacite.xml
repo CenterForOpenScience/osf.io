@@ -13,10 +13,10 @@
   <publisher>PP the Preprint Provider</publisher>
   <publicationYear>2123</publicationYear>
   <subjects>
+    <subject subjectScheme="preprovi">wibble</subject>
     <subject subjectScheme="bepress Digital Commons Three-Tiered Taxonomy">wibbble</subject>
-    <subject>wibble</subject>
+    <subject subjectScheme="preprovi">wobble</subject>
     <subject subjectScheme="bepress Digital Commons Three-Tiered Taxonomy">wobbble</subject>
-    <subject>wobble</subject>
   </subjects>
   <contributors>
     <contributor contributorType="HostingInstitution">

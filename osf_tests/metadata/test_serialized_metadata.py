@@ -154,7 +154,38 @@ class TestSerializers(OsfTestCase):
             size=7,
             sha256='6ac3c336e4094835293a3fed8a4b5fedde1b5e2626d9838fed50693bba00af0e',
         )
-        osf_preprint_provider = osfdb.PreprintProvider.load('osf')
+        osf_preprint_provider = factories.PreprintProviderFactory(_id='osf')
+        another_provider = factories.PreprintProviderFactory(
+            _id='preprovi',
+            name='PP the Preprint Provider',
+            doi_prefix='11.pp',
+        )
+        parent_subject = factories.SubjectFactory(
+            _id='subjwibb',
+            text='wibble',
+            provider=another_provider,
+            parent=None,
+            bepress_subject=factories.SubjectFactory(
+                _id='subjwibbb',
+                text='wibbble',
+                parent=None,
+                provider=osf_preprint_provider,
+                bepress_subject=None,
+            ),
+        )
+        child_subject = factories.SubjectFactory(
+            _id='subjwobb',
+            text='wobble',
+            provider=another_provider,
+            parent=parent_subject,
+            bepress_subject=factories.SubjectFactory(
+                _id='subjwobbb',
+                text='wobbble',
+                parent=parent_subject.bepress_subject,
+                provider=osf_preprint_provider,
+                bepress_subject=None,
+            ),
+        )
         self.preprint = factories.PreprintFactory(
             is_public=True,
             title='this is a preprint title!',
@@ -162,30 +193,9 @@ class TestSerializers(OsfTestCase):
             project=self.project,
             creator=self.user,
             doi='11.111/something-or-other',
-            provider=factories.PreprintProviderFactory(
-                _id='preprovi',
-                name='PP the Preprint Provider',
-                doi_prefix='11.pp',
-            ),
+            provider=another_provider,
             subjects=[
-                [factories.SubjectFactory(
-                    _id='subjwibb',
-                    text='wibble',
-                    bepress_subject=factories.SubjectFactory(
-                        _id='subjwibbb',
-                        text='wibbble',
-                        provider=osf_preprint_provider,
-                    ),
-                )._id],
-                [factories.SubjectFactory(
-                    _id='subjwobb',
-                    text='wobble',
-                    bepress_subject=factories.SubjectFactory(
-                        _id='subjwobbb',
-                        text='wobbble',
-                        provider=osf_preprint_provider,
-                    ),
-                )._id],
+                [parent_subject._id, child_subject._id],
             ],
         )
         self.registration = factories.RegistrationFactory(

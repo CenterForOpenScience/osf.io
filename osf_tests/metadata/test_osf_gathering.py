@@ -354,6 +354,7 @@ class TestOsfGathering(TestCase):
             (self.projectfocus.iri, DCTERMS.subject, _bloo_iri),
             (_bloo_iri, RDF.type, SKOS.Concept),
             (_bloo_iri, SKOS.inScheme, _bepress_iri),
+            (_bepress_iri, RDF.type, SKOS.ConceptScheme),
             (_bepress_iri, DCTERMS.title, Literal('bepress Digital Commons Three-Tiered Taxonomy')),
             (_bloo_iri, SKOS.prefLabel, Literal('Bloomy')),
         })
@@ -361,31 +362,51 @@ class TestOsfGathering(TestCase):
         assert_triples(osf_gathering.gather_subjects(self.registrationfocus), set())
         _parent_subj = factories.SubjectFactory(text='Parent', provider=_osf_provider)
         _child_subj = factories.SubjectFactory(text='Child', parent=_parent_subj, provider=_osf_provider)
-        _altparent_subj = factories.SubjectFactory(text='Alt-parent', bepress_subject=_parent_subj)
-        _altchild_subj = factories.SubjectFactory(text='Alt-child', parent=_altparent_subj, bepress_subject=_child_subj)
+        _customparent_subj = factories.SubjectFactory(text='Custom-parent', bepress_subject=_parent_subj, provider=self.registration.provider)
+        _customchild_subj = factories.SubjectFactory(text='Custom-child', parent=_customparent_subj, bepress_subject=_child_subj, provider=self.registration.provider)
         self.registration.set_subjects([
-            [_altchild_subj._id, _altparent_subj._id],
+            [_customchild_subj._id, _customparent_subj._id],
             [_bloo_subject._id],
         ], auth=Auth(self.user__admin))
         _parent_iri = URIRef(_parent_subj.absolute_api_v2_subject_url)
         _child_iri = URIRef(_child_subj.absolute_api_v2_subject_url)
+        _customparent_iri = URIRef(_customparent_subj.absolute_api_v2_subject_url)
+        _customchild_iri = URIRef(_customchild_subj.absolute_api_v2_subject_url)
+        _customtax_iri = URIRef(f'{self.registration.provider.absolute_api_v2_url}subjects/')
         assert_triples(osf_gathering.gather_subjects(self.registrationfocus), {
             (self.registrationfocus.iri, DCTERMS.subject, _bloo_iri),
             (self.registrationfocus.iri, DCTERMS.subject, _parent_iri),
             (self.registrationfocus.iri, DCTERMS.subject, _child_iri),
+            (self.registrationfocus.iri, DCTERMS.subject, _customparent_iri),
+            (self.registrationfocus.iri, DCTERMS.subject, _customchild_iri),
             (_bloo_iri, RDF.type, SKOS.Concept),
             (_parent_iri, RDF.type, SKOS.Concept),
             (_child_iri, RDF.type, SKOS.Concept),
+            (_customparent_iri, RDF.type, SKOS.Concept),
+            (_customchild_iri, RDF.type, SKOS.Concept),
             (_bloo_iri, SKOS.inScheme, _bepress_iri),
             (_parent_iri, SKOS.inScheme, _bepress_iri),
             (_child_iri, SKOS.inScheme, _bepress_iri),
+            (_customparent_iri, SKOS.inScheme, _customtax_iri),
+            (_customchild_iri, SKOS.inScheme, _customtax_iri),
             (_bloo_iri, SKOS.prefLabel, Literal('Bloomy')),
             (_parent_iri, SKOS.prefLabel, Literal('Parent')),
-            (_parent_iri, SKOS.altLabel, Literal('Alt-parent')),
             (_child_iri, SKOS.prefLabel, Literal('Child')),
-            (_child_iri, SKOS.altLabel, Literal('Alt-child')),
+            (_customparent_iri, SKOS.prefLabel, Literal('Custom-parent')),
+            (_customchild_iri, SKOS.prefLabel, Literal('Custom-child')),
+            (_customparent_iri, SKOS.altLabel, Literal('Parent')),
+            (_customchild_iri, SKOS.altLabel, Literal('Child')),
             (_child_iri, SKOS.broader, _parent_iri),
+            (_customchild_iri, SKOS.broader, _customparent_iri),
+            (_customchild_iri, SKOS.related, _child_iri),
+            (_customparent_iri, SKOS.related, _parent_iri),
+            (_bepress_iri, RDF.type, SKOS.ConceptScheme),
+            (_customtax_iri, RDF.type, SKOS.ConceptScheme),
             (_bepress_iri, DCTERMS.title, Literal('bepress Digital Commons Three-Tiered Taxonomy')),
+            (_customtax_iri, DCTERMS.title, Literal(
+                self.registration.provider.share_title
+                or self.registration.provider.name
+            )),
         })
         # focus: file
         assert_triples(osf_gathering.gather_subjects(self.filefocus), set())
