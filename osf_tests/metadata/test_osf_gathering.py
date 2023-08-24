@@ -394,8 +394,6 @@ class TestOsfGathering(TestCase):
             (_child_iri, SKOS.prefLabel, Literal('Child')),
             (_customparent_iri, SKOS.prefLabel, Literal('Custom-parent')),
             (_customchild_iri, SKOS.prefLabel, Literal('Custom-child')),
-            (_customparent_iri, SKOS.altLabel, Literal('Parent')),
-            (_customchild_iri, SKOS.altLabel, Literal('Child')),
             (_child_iri, SKOS.broader, _parent_iri),
             (_customchild_iri, SKOS.broader, _customparent_iri),
             (_customchild_iri, SKOS.related, _child_iri),
