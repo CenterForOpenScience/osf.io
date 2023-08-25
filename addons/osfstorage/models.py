@@ -232,8 +232,9 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
     @property
     def _hashes(self):
-        latest_version = self.versions.latest('identifier')
-        if not latest_version:
+        try:
+            latest_version = self.versions.latest('identifier')
+        except FileVersion.DoesNotExist:
             return None
         return {
             'sha1': latest_version.metadata.get('sha1', ''),
@@ -243,8 +244,9 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
     @property
     def last_known_metadata(self):
-        latest_version = self.versions.latest('identifier')
-        if not latest_version:
+        try:
+            latest_version = self.versions.latest('identifier')
+        except FileVersion.DoesNotExist:
             size = None
         else:
             size = latest_version.size
@@ -265,10 +267,10 @@ class OsfStorageFile(OsfStorageFileNode, File):
             return False
         if any(qa_substring in target.title for qa_substring in website_settings.DO_NOT_INDEX_LIST['titles']):
             return False
-
         if not self.name or self.is_deleted:
             return False
-
+        if not self.versions.exists():
+            return False
         spam_check_field = (
             'is_spammy'
             if website_settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH
