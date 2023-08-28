@@ -338,14 +338,14 @@
           {% if not user.is_superuser and user.is_staff %}
             <li><a href="{% url 'custom_storage_location:institutional_storage' %}"><i class='fa fa-link'></i> <span>{% trans "Institutional Storage" %}</span></a></li>
           {% endif %}
-          {% if user.is_superuser %}
+          {% if False and user.is_superuser %}
             <li class="{% if request.resolver_match.url_name == 'export_data_institutions' or request.resolver_match.url_name == 'export_data_institutional_storage' %}active{% endif %}">
                 <a href="{% url 'custom_storage_location:export_data:export_data_institutions' %}">
                     <i class="fa fa-link"></i> <span>{% trans "Institutional Storages Control" %}</span>
                 </a>
             </li>
           {% endif %}
-          {% if not user.is_superuser and user.is_institutional_admin %}
+          {% if False and not user.is_superuser and user.is_institutional_admin %}
             <li class="{% if request.resolver_match.url_name == 'export_data_institutional_storage' %}active{% endif %}">
                 <a href="{% url 'custom_storage_location:export_data:export_data_institutional_storage' institution_id=user.representative_affiliated_institution.id %}">
                     <i class="fa fa-link"></i> <span>{% trans "Institutional Storages Control" %}</span>
@@ -358,7 +358,7 @@
           {% if user.is_superuser or user.is_staff %}
             <li><a href="{% url 'institutional_storage_quota_control:list_institution_storage' %}"><i class='fa fa-link'></i> <span>{% trans "Inst. Storage Quota Control" %}</span></a></li>
           {% endif %}
-          {% if user.is_superuser or user.is_institutional_admin %}
+          {% if False and user.is_superuser or False and user.is_institutional_admin %}
             <li class="{% if request.resolver_match.url_name == 'export_data_storage_location'  %}active{% endif %}">
                 <a href="{% url 'custom_storage_location:export_data:export_data_storage_location' %}">
                     <i class="fa fa-link"></i> <span>{% trans "Export data storage location" %}</span>

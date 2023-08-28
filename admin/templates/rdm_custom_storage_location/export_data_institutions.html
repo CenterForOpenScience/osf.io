@@ -13,6 +13,7 @@
 {% endblock title %}
 
 {% block content %}
+    <h2><small style="color: red;">本画面内の機能はベータ版であり、不用な操作はお控え頂きたく存じます。操作される方は <a href="mailto:rdm_support@nii.ac.jp">rdm_support@nii.ac.jp</a> への連絡をお願い致します。</small></h2>
     <h2>{% trans "List of Institutions" %}</h2>
 
     {% include "util/pagination.html" with items=page status=status %}
