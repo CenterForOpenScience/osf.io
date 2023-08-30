@@ -23,9 +23,7 @@ from api.base.permissions import TokenHasScope
 from api.base.settings import BULK_SETTINGS
 from api.base.utils import get_object_or_error, get_user_auth, is_truthy
 from api.base.views import JSONAPIBaseView, DeprecatedView
-from api.citations.serializers import (
-    CitationSerializer
-)
+from api.citations.serializers import CitationSerializer
 from api.collection_submission_actions.serializers import CollectionSubmissionActionSerializer
 from api.collections.permissions import CanSubmitToCollectionOrPublic
 from api.collections.serializers import (
