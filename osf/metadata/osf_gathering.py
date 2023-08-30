@@ -933,7 +933,10 @@ def gather_ia_url(focus):
 def gather_registration_type(focus):
     _reg_schema = getattr(focus.dbmodel.root, 'registration_schema')
     if _reg_schema:
-        _schema_url = rdflib.URIRef(_reg_schema.absolute_api_v2_url)
+        # using iri for the earliest schema version, so later versions are recognized as the same
+        # (TODO-someday: commit to a web-friendly schema url that resolves to something helpful)
+        _earliest_schema_version = osfdb.RegistrationSchema.objects.get_earliest_version(_reg_schema.name)
+        _schema_url = rdflib.URIRef(_earliest_schema_version.absolute_api_v2_url)
         yield (DCTERMS.conformsTo, _schema_url)
         yield (_schema_url, DCTERMS.title, _reg_schema.name)
         yield (_schema_url, DCTERMS.description, _reg_schema.description)
