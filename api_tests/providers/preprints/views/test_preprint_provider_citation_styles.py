@@ -11,7 +11,7 @@ class TestPreprintProviderCitationStyles:
 
     @pytest.fixture()
     def url(self, provider):
-        return f'/{API_BASE}{provider._id}/citation_styles/'
+        return f'/{API_BASE}providers/preprints/{provider._id}/citation_styles/'
 
     def test_retrieve_citation_styles_with_valid_provider_id(self, app, provider, url):
         res = app.get(url)
@@ -19,7 +19,7 @@ class TestPreprintProviderCitationStyles:
         assert res.status_code == 200
 
     def test_retrieve_citation_styles_with_invalid_provider_id(self, app):
-        invalid_url = f'/{API_BASE}invalid_id/citation_styles/'
+        invalid_url = f'/{API_BASE}providers/preprints/invalid_id/citation_styles/'
         res = app.get(invalid_url, expect_errors=True)
 
         assert res.status_code == 404
