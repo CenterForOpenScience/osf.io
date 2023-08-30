@@ -26,6 +26,7 @@ from osf.models import (
 )
 from addons.wiki.models import WikiPage
 from addons.osfstorage.models import OsfStorageFile
+from addons.osfstorage import settings as osfstorage_settings
 
 from scripts.populate_institutions import main as populate_institutions
 
@@ -74,6 +75,16 @@ def retry_assertion(interval=0.3, retries=3):
                     raise e
         return wrapped
     return test_wrapper
+
+def create_file_version(file, user):
+    file.create_version(user, {
+        'object': '06d80e',
+        'service': 'cloud',
+        osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+    }, {
+        'size': 7,
+        'contentType': 'img/png'
+    }).save()
 
 @pytest.mark.enable_search
 @pytest.mark.enable_enqueue_task
@@ -294,7 +305,7 @@ class TestCollectionsSearch(OsfTestCase):
         assert_equal(len(docs['results']), 1)
         self.provider._id = 'new_id'
         self.provider.save()
-        docs = query(f'provider:new_id', raw=True)['results']
+        docs = query('provider:new_id', raw=True)['results']
         assert_equal(len(docs), 1)
 
 
@@ -531,6 +542,7 @@ class TestPreprint(OsfTestCase):
                 name='panda.txt',
                 materialized_path='/panda.txt')
             self.file.save()
+            create_file_version(self.file, self.user)
             self.published_preprint = factories.PreprintFactory(
                 creator=self.user,
                 title='My Fairy King',
@@ -607,6 +619,7 @@ class TestPreprint(OsfTestCase):
             name='panda.txt',
             materialized_path='/panda.txt')
         self.file.save()
+        create_file_version(self.file, self.user)
         self.published_preprint.set_primary_file(self.file, auth=Auth(self.user), save=True)
         docs = query(self.published_preprint.title)['results']
         assert_equal(len(docs), 2)
@@ -1445,22 +1458,26 @@ class TestSearchFiles(OsfTestCase):
 
     def setUp(self):
         super(TestSearchFiles, self).setUp()
-        self.node = factories.ProjectFactory(is_public=True, title='Otis')
+        self.user = factories.UserFactory(fullname='David Bowie')
+        self.node = factories.ProjectFactory(is_public=True, title='Otis', creator=self.user)
         self.osf_storage = self.node.get_addon('osfstorage')
         self.root = self.osf_storage.get_root()
 
     def test_search_file(self):
-        self.root.append_file('Shake.wav')
+        file_ = self.root.append_file('Shake.wav')
+        create_file_version(file_, self.user)
         find = query_file('Shake.wav')['results']
         assert_equal(len(find), 1)
 
     def test_search_file_name_without_separator(self):
-        self.root.append_file('Shake.wav')
+        file_ = self.root.append_file('Shake.wav')
+        create_file_version(file_, self.user)
         find = query_file('Shake')['results']
         assert_equal(len(find), 1)
 
     def test_delete_file(self):
         file_ = self.root.append_file('I\'ve Got Dreams To Remember.wav')
+        create_file_version(file_, self.user)
         find = query_file('I\'ve Got Dreams To Remember.wav')['results']
         assert_equal(len(find), 1)
         file_.delete()
@@ -1469,6 +1486,7 @@ class TestSearchFiles(OsfTestCase):
 
     def test_add_tag(self):
         file_ = self.root.append_file('That\'s How Strong My Love Is.mp3')
+        create_file_version(file_, self.user)
         tag = Tag(name='Redding')
         tag.save()
         file_.tags.add(tag)
@@ -1478,6 +1496,7 @@ class TestSearchFiles(OsfTestCase):
 
     def test_remove_tag(self):
         file_ = self.root.append_file('I\'ve Been Loving You Too Long.mp3')
+        create_file_version(file_, self.user)
         tag = Tag(name='Blue')
         tag.save()
         file_.tags.add(tag)
@@ -1490,7 +1509,8 @@ class TestSearchFiles(OsfTestCase):
         assert_equal(len(find), 0)
 
     def test_make_node_private(self):
-        self.root.append_file('Change_Gonna_Come.wav')
+        file_ = self.root.append_file('Change_Gonna_Come.wav')
+        create_file_version(file_, self.user)
         find = query_file('Change_Gonna_Come.wav')['results']
         assert_equal(len(find), 1)
         self.node.is_public = False
@@ -1502,7 +1522,8 @@ class TestSearchFiles(OsfTestCase):
     def test_make_private_node_public(self):
         self.node.is_public = False
         self.node.save()
-        self.root.append_file('Try a Little Tenderness.flac')
+        file_ = self.root.append_file('Try a Little Tenderness.flac')
+        create_file_version(file_, self.user)
         find = query_file('Try a Little Tenderness.flac')['results']
         assert_equal(len(find), 0)
         self.node.is_public = True
@@ -1515,7 +1536,8 @@ class TestSearchFiles(OsfTestCase):
         node = factories.ProjectFactory(is_public=True, title='The Soul Album')
         osf_storage = node.get_addon('osfstorage')
         root = osf_storage.get_root()
-        root.append_file('The Dock of the Bay.mp3')
+        file_ = root.append_file('The Dock of the Bay.mp3')
+        create_file_version(file_, self.user)
         find = query_file('The Dock of the Bay.mp3')['results']
         assert_equal(len(find), 1)
         node.is_deleted = True
@@ -1526,6 +1548,7 @@ class TestSearchFiles(OsfTestCase):
 
     def test_file_download_url_guid(self):
         file_ = self.root.append_file('Timber.mp3')
+        create_file_version(file_, self.user)
         file_guid = file_.get_guid(create=True)
         file_.save()
         find = query_file('Timber.mp3')['results']
@@ -1533,6 +1556,7 @@ class TestSearchFiles(OsfTestCase):
 
     def test_file_download_url_no_guid(self):
         file_ = self.root.append_file('Timber.mp3')
+        create_file_version(file_, self.user)
         path = file_.path
         deep_url = '/' + file_.target._id + '/files/osfstorage' + path + '/'
         find = query_file('Timber.mp3')['results']

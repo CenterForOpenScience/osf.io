@@ -55,6 +55,7 @@ from osf.exceptions import (
     TagNotFoundError
 )
 from django.contrib.postgres.fields import ArrayField
+from api.share.utils import update_share
 
 logger = logging.getLogger(__name__)
 
@@ -633,7 +634,6 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     def save(self, *args, **kwargs):
         first_save = not bool(self.pk)
         saved_fields = self.get_dirty_fields() or []
-        old_subjects = kwargs.pop('old_subjects', [])
 
         if not first_save and ('ever_public' in saved_fields and saved_fields['ever_public']):
             raise ValidationError('Cannot set "ever_public" to False')
@@ -655,7 +655,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             self._add_creator_as_contributor()
 
         if (not first_save and 'is_published' in saved_fields) or self.is_published:
-            update_or_enqueue_on_preprint_updated(preprint_id=self._id, old_subjects=old_subjects, saved_fields=saved_fields)
+            update_or_enqueue_on_preprint_updated(preprint_id=self._id, saved_fields=saved_fields)
         return ret
 
     def update_or_enqueue_on_resource_updated(self, user_id, first_save, saved_fields):
@@ -904,6 +904,8 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
     @classmethod
     def bulk_update_search(cls, preprints, index=None):
+        for _preprint in preprints:
+            update_share(_preprint)
         from website import search
         try:
             serialize = functools.partial(search.search.update_preprint, index=index, bulk=True, async_update=False)
@@ -913,6 +915,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             log_exception()
 
     def update_search(self):
+        update_share(self)
         from website import search
         try:
             search.search.update_preprint(self, bulk=False, async_update=True)

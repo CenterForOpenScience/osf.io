@@ -1,10 +1,8 @@
 import datetime as dt
 import pytest
-import json
 import mock
 import pytz
 import datetime
-import responses
 
 from osf.models import AdminLogEntry, NodeLog, AbstractNode
 from admin.nodes.views import (
@@ -22,6 +20,7 @@ from admin.nodes.views import (
     RemoveStuckRegistrationsView
 )
 from admin_tests.utilities import setup_log_view, setup_view
+from api_tests.share._utils import mock_update_share
 from website import settings
 from nose import tools as nt
 from django.utils import timezone
@@ -265,32 +264,19 @@ class TestNodeReindex(AdminTestCase):
         count = AdminLogEntry.objects.count()
         view = NodeReindexShare()
         view = setup_log_view(view, self.request, guid=self.node._id)
-        with mock.patch('api.share.utils.settings.SHARE_ENABLED', True):
-            with mock.patch('api.share.utils.settings.SHARE_API_TOKEN', 'mock-api-token'):
-                with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
-                    rsps.add(responses.POST, 'https://share.osf.io/api/v2/normalizeddata/')
-                    view.post(self.request)
-                    data = json.loads(rsps.calls[-1].request.body.decode())
-
-                    share_graph = data['data']['attributes']['data']['@graph']
-                    identifier_node = next(n for n in share_graph if n['@type'] == 'workidentifier')
-                    assert identifier_node['creative_work']['@type'] == 'project'
-                    nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+        with mock_update_share() as _shmock:
+            view.post(self.request)
+            assert _shmock.called_once_with(self.node)
+        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
     def test_reindex_registration_share(self):
         count = AdminLogEntry.objects.count()
         view = NodeReindexShare()
         view = setup_log_view(view, self.request, guid=self.registration._id)
-        with mock.patch('api.share.utils.settings.SHARE_ENABLED', True):
-            with mock.patch('api.share.utils.settings.SHARE_API_TOKEN', 'mock-api-token'):
-                with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
-                    rsps.add(responses.POST, 'https://share.osf.io/api/v2/normalizeddata/')
-                    view.post(self.request)
-                    data = json.loads(rsps.calls[-1].request.body.decode())
-
-                    assert any(graph for graph in data['data']['attributes']['data']['@graph']
-                               if graph['@type'] == self.registration.provider.share_publish_type.lower())
-                    nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
+        with mock_update_share() as _shmock:
+            view.post(self.request)
+            assert _shmock.called_once_with(self.registration)
+        nt.assert_equal(AdminLogEntry.objects.count(), count + 1)
 
     @mock.patch('website.search.search.update_node')
     def test_reindex_node_elastic(self, mock_update_node):

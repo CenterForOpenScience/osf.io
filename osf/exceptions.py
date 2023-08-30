@@ -285,6 +285,10 @@ class InvalidMetadataFormat(OSFError):
         )
 
 
+class MetadataSerializationError(OSFError):
+    pass
+
+
 class InvalidCookieOrSessionError(OSFError):
     """Raised when cookie is invalid or session key is not found."""
     pass

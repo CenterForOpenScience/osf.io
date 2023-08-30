@@ -14,7 +14,6 @@ from guardian.models import (
 )
 from dirtyfields import DirtyFieldsMixin
 
-from api.share.utils import update_share
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from osf.utils.fields import NonNaiveDateTimeField
@@ -825,17 +824,9 @@ class Registration(AbstractNode):
         # Pass auth=None because the registration initiator may not be
         # an admin on components (component admins had the opportunity
         # to disapprove the retraction by this point)
-        for node in self.get_descendants_recursive(primary_only=True):
+        for node in self.node_and_primary_descendants():
             node.set_privacy('public', auth=None, log=False)
-            node.update_search()
-
-        # force a save before sending data to share or retraction will not be updated
-        self.set_privacy('public', auth=None, log=False)
-        self.update_search()
-        self.save()
-
-        if settings.SHARE_ENABLED:
-            update_share(self)
+        AbstractNode.bulk_update_search(list(self.node_and_primary_descendants()))
 
     def copy_registration_responses_into_schema_response(self, draft_registration=None, save=True):
         """Copies registration metadata into schema responses"""
@@ -862,8 +853,7 @@ class Registration(AbstractNode):
             archive_to_ia(children)
 
     def related_resource_updated(self, log_action=None, api_request=None, **log_params):
-        if settings.SHARE_ENABLED:
-            update_share(self)
+        self.update_search()
         if not log_action:
             return
 
@@ -1426,11 +1416,6 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         # The related source tag behavior for draft registration is currently undefined
         # Therefore we don't add any source tags to it
         pass
-
-    def save(self, *args, **kwargs):
-        if 'old_subjects' in kwargs.keys():
-            kwargs.pop('old_subjects')
-        return super(DraftRegistration, self).save(*args, **kwargs)
 
     def update(self, fields, auth=None, save=True):
         """Update the draft registration with the given fields.

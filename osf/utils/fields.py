@@ -23,21 +23,21 @@ def ensure_str(value):
     return value
 
 
-def encrypt_string(value, prefix='jwe:::'):
+def encrypt_string(value, prefix='jwe:::') -> str:
     prefix = ensure_bytes(prefix)
     if value:
-        value = ensure_bytes(value)
-        if value and not value.startswith(prefix):
-            value = (prefix + jwe.encrypt(value, SENSITIVE_DATA_KEY)).decode()
+        _value_bytes = ensure_bytes(value)
+        if _value_bytes and not _value_bytes.startswith(prefix):
+            value = (prefix + jwe.encrypt(_value_bytes, SENSITIVE_DATA_KEY)).decode()
     return value
 
 
-def decrypt_string(value, prefix='jwe:::'):
+def decrypt_string(value, prefix='jwe:::') -> str:
     prefix = ensure_bytes(prefix)
     if value:
-        value = ensure_bytes(value)
-        if value.startswith(prefix):
-            value = jwe.decrypt(value[len(prefix):], SENSITIVE_DATA_KEY).decode()
+        _value_bytes = ensure_bytes(value)
+        if _value_bytes.startswith(prefix):
+            value = jwe.decrypt(_value_bytes[len(prefix):], SENSITIVE_DATA_KEY).decode()
     return value
 
 

@@ -10,7 +10,7 @@ def match_by_module(task_path):
         if task_subpath in CeleryConfig.med_pri_modules:
             return CeleryConfig.task_med_queue
         if task_subpath in CeleryConfig.high_pri_modules:
-            return CeleryConfig.task_low_queue
+            return CeleryConfig.task_high_queue
     return CeleryConfig.task_default_queue
 
 
