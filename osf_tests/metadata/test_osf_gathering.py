@@ -559,7 +559,6 @@ class TestOsfGathering(TestCase):
             (_funder_uri, RDF.type, DCTERMS.Agent),
             (_funder_uri, DCTERMS.identifier, Literal(_funder_uri)),
             (_funder_uri, FOAF.name, Literal('NIH')),
-            (_funder_uri, OSF.funderIdentifierType, Literal('Crossref Funder ID')),
             (self.projectfocus.iri, OSF.hasFunding, _award_uri),
             (_award_uri, RDF.type, OSF.FundingAward),
             (_award_uri, DCTERMS.identifier, Literal(_award_uri)),

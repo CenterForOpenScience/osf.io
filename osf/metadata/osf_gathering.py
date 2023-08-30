@@ -839,7 +839,6 @@ def gather_funding(focus):
                 yield (_funder_ref, RDF.type, DCTERMS.Agent)
                 yield (_funder_ref, DCTERMS.identifier, _funder_uri)
                 yield (_funder_ref, FOAF.name, _funder_name)
-                yield (_funder_ref, OSF.funderIdentifierType, _funding.get('funder_identifier_type'))
             _award_uri = _funding.get('award_uri')
             _award_title = _funding.get('award_title')
             _award_number = _funding.get('award_number')

@@ -104,8 +104,7 @@
 
 <https://doi.org/10.$$$$> a dcterms:Agent ;
     dcterms:identifier "https://doi.org/10.$$$$" ;
-    foaf:name "Mx. Moneypockets" ;
-    osf:funderIdentifierType "Crossref Funder ID" .
+    foaf:name "Mx. Moneypockets" .
 
 <http://localhost:8000/v2/subjects/subjwibbb/> a skos:Concept ;
     skos:inScheme <https://bepress.com/reference_guide_dc/disciplines/> ;
