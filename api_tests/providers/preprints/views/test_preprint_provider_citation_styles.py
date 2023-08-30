@@ -5,6 +5,12 @@ from osf_tests.factories import (
     PreprintProviderFactory,
 )
 
+
+@pytest.fixture()
+def user():
+    return AuthUserFactory()
+
+
 @pytest.mark.django_db
 class TestPreprintProviderCitationStyles:
 
@@ -16,17 +22,11 @@ class TestPreprintProviderCitationStyles:
     def url(self, provider):
         return f'/{API_BASE}providers/preprints/{provider._id}/citation_styles/'
 
-    @pytest.fixture()
-    def user():
-        return AuthUserFactory()
-
     def test_retrieve_citation_styles_with_valid_provider_id(self, app, provider, url, user):
         # Test length and auth
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 2
-
-        assert res.status_code == 200
 
     def test_retrieve_citation_styles_with_invalid_provider_id(self, app, user):
         invalid_url = f'/{API_BASE}providers/preprints/invalid_id/citation_styles/'
