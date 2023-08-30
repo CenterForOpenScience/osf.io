@@ -1,5 +1,4 @@
 import hashlib
-from rest_framework.permissions import AllowAny
 from django.db.models import Case, CharField, Q, Value, When, IntegerField
 from django.http import JsonResponse
 from rest_framework.exceptions import ValidationError
@@ -19,7 +18,6 @@ from api.base.exceptions import (
 from api.base.filters import PreprintFilterMixin, ListFilterMixin
 from api.base.metrics import PreprintMetricsViewMixin
 from api.base.pagination import MaxSizePagination, IncreasedPageSizePagination
-from api.base.permissions import TokenHasScope
 from api.base.settings import BULK_SETTINGS
 from api.base.utils import get_object_or_error, get_user_auth, is_truthy
 from api.base.views import JSONAPIBaseView, DeprecatedView
