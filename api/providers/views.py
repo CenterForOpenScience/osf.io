@@ -2,7 +2,6 @@ import hashlib
 from rest_framework.permissions import AllowAny
 from django.db.models import Case, CharField, Q, Value, When, IntegerField
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
@@ -24,6 +23,9 @@ from api.base.permissions import TokenHasScope
 from api.base.settings import BULK_SETTINGS
 from api.base.utils import get_object_or_error, get_user_auth, is_truthy
 from api.base.views import JSONAPIBaseView, DeprecatedView
+from api.citations.serializers import (
+    CitationSerializer
+)
 from api.collection_submission_actions.serializers import CollectionSubmissionActionSerializer
 from api.collections.permissions import CanSubmitToCollectionOrPublic
 from api.collections.serializers import (
@@ -46,7 +48,6 @@ from api.providers.serializers import (
     CollectionsModeratorSerializer,
     CollectionProviderSerializer,
     PreprintModeratorSerializer,
-    PreprintProviderCitationStylesSerializer,
     PreprintProviderSerializer,
     RegistrationModeratorSerializer,
     RegistrationProviderSerializer,
@@ -970,20 +971,21 @@ class RegistrationBulkCreate(APIView, ProviderMixin):
         enqueue_task(prepare_for_registration_bulk_creation.s(file_md5, user_id, provider_id, parsed, dry_run=False))
         return Response(status=204)
 
-class PreprintProviderCitationStylesView(generics.RetrieveAPIView):
-    """
-    API view to retrieve citation styles associated with a specific PreprintProvider.
 
-    This view uses the PreprintProviderCitationStylesSerializer to format the response.
+class PreprintProviderCitationStylesView(JSONAPIBaseView, generics.ListAPIView, ProviderMixin):
+    """
+    View to list all citation styles for a specific PreprintProvider.
     """
     permission_classes = [TokenHasScope, AllowAny]
-
-    serializer_class = PreprintProviderCitationStylesSerializer
-    queryset = PreprintProvider.objects.all()
+    serializer_class = CitationSerializer
 
     view_category = 'preprint-providers'
     view_name = 'preprint-provider-citation-styles'
 
-    def get_object(self):
-        provider_id = self.kwargs.get('provider_id')
-        return get_object_or_404(PreprintProvider, id=provider_id)
+    def get_queryset(self):
+        """
+        Retrieve the citation styles related to the PreprintProvider specified by provider_id.
+        """
+        provider_id = self.kwargs['provider_id']
+        provider = PreprintProvider.objects.get(_id=provider_id)
+        return provider.citation_styles.all()

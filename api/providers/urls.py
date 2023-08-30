@@ -42,9 +42,9 @@ urlpatterns = [
                     ),
                     # Retrieve citation styles associated with a specific preprint provider.
                     re_path(
-                        r'^(?P<pk>\d+)/citation_styles/$',
+                        r'^(?P<provider_id>\w+)/citation_styles/$',
                         views.PreprintProviderCitationStylesView.as_view(),
-                        name='preprint-provider-citation-styles',
+                        name=views.PreprintProviderCitationStylesView.view_name,
                     ),
                 ], 'preprints',
             ),

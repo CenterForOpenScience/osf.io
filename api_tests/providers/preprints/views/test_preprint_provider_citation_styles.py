@@ -17,7 +17,6 @@ class TestPreprintProviderCitationStyles:
         res = app.get(url)
 
         assert res.status_code == 200
-        
 
     def test_retrieve_citation_styles_with_invalid_provider_id(self, app):
         invalid_url = f'/{API_BASE}invalid_id/citation_styles/'

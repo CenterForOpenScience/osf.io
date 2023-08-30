@@ -359,6 +359,7 @@ class PreprintProvider(AbstractProvider):
     REVIEWABLE_RELATION_NAME = 'preprints'
 
     additional_providers = fields.ArrayField(models.CharField(max_length=200), default=list, blank=True)
+    # citation_styles classes with Abstract Provider
     citation_styles = models.ManyToManyField(CitationStyle, related_name='supported_styles')
 
     PREPRINT_WORD_CHOICES = (

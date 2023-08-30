@@ -388,6 +388,7 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
             if val['id'] in current_pointers:
                 collection.rm_pointer(current_pointers[val['id']], auth)
             else:
+                # flake8: noqa
                 raise NotFound(detail='Pointer with id "{}" not found in pointers list'.format(val['id'], collection))
 
     def create(self, *args, **kwargs):
