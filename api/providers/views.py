@@ -973,9 +973,8 @@ class PreprintProviderCitationStylesView(JSONAPIBaseView, generics.ListAPIView, 
     View to list all citation styles for a specific PreprintProvider.
     """
     permission_classes = (
-        drf_permissions.IsAuthenticated,
+        drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        CanUpdateModerator,
     )
     serializer_class = CitationSerializer
 
