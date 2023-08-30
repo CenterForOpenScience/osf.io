@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0014_institution_storage_regions'),
+        ('osf', '0015_osfuser_allow_indexing'),
     ]
 
     operations = [
