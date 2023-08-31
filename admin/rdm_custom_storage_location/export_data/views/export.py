@@ -28,6 +28,7 @@ MSG_EXPORT_DENY_PERM_INST = f'Permission denied for this institution'
 MSG_EXPORT_DENY_PERM_STORAGE = f'Permission denied for this storage'
 MSG_EXPORT_DENY_PERM_LOCATION = f'Permission denied for this export storage location'
 MSG_EXPORT_DUP_IN_SECOND = f'The equivalent process is running'
+MSG_EXPORT_ABORTED = f'The export data process is aborted'
 MSG_EXPORT_REMOVED = f'The export data process is removed'
 MSG_EXPORT_DENY_PERM = f'Permission denied for this export process'
 
@@ -167,7 +168,7 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
         export_data_json, file_info_json = export_data.extract_file_information_json_from_source_storage()
 
         if task.is_aborted():  # check before each steps
-            return None
+            raise ExportDataTaskException(MSG_EXPORT_ABORTED)
         # create export data process folder
         logger.debug(f'creating export data process folder')
         response = export_data.create_export_data_folder(cookies, **kwargs)
@@ -177,7 +178,7 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
 
         # export target file and accompanying data
         if task.is_aborted():  # check before each steps
-            return None
+            raise ExportDataTaskException(MSG_EXPORT_ABORTED)
         # create 'files' folder
         logger.debug(f'creating files folder')
         response = export_data.create_export_data_files_folder(cookies, **kwargs)
@@ -186,7 +187,7 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
         logger.debug(f'created files folder')
 
         if task.is_aborted():  # check before each steps
-            return None
+            raise ExportDataTaskException(MSG_EXPORT_ABORTED)
         # upload file versions
         logger.debug(f'uploading file versions')
         file_versions = export_data.get_source_file_versions_min(file_info_json)
@@ -208,9 +209,10 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
             kwargs.update({'version': version})
             # kwargs.setdefault('version', version)
             if task.is_aborted():  # check before each steps
-                return None
+                raise ExportDataTaskException(MSG_EXPORT_ABORTED)
             # copy data file from source storage to location storage
-            response = export_data.copy_export_data_file_to_location(cookies, project_id, provider, file_path, file_name, **kwargs)
+            response = export_data.copy_export_data_file_to_location(
+                cookies, project_id, provider, file_path, file_name, **kwargs)
             # 201: created -> update cache list
             if response.status_code == 201:
                 created_filename_list.append(file_name)
@@ -234,7 +236,7 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
         temp_file_path = export_data.export_data_temp_file_path
 
         if task.is_aborted():  # check before each steps
-            return None
+            raise ExportDataTaskException(MSG_EXPORT_ABORTED)
         # create files' information file
         logger.debug(f'creating files information file')
         write_json_file(file_info_json, temp_file_path)
@@ -246,7 +248,7 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
         process_end = timezone.make_naive(timezone.now(), timezone.utc)
 
         if task.is_aborted():  # check before each steps
-            return None
+            raise ExportDataTaskException(MSG_EXPORT_ABORTED)
         # create export data file
         logger.debug(f'creating export data file')
         export_data_json['process_end'] = process_end.strftime('%Y-%m-%d %H:%M:%S')
@@ -262,7 +264,7 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
         logger.debug(f'removed temporary file')
 
         if task.is_aborted():  # check before each steps
-            return None
+            raise ExportDataTaskException(MSG_EXPORT_ABORTED)
         # re-check status to ensure that it is not in stopping process
         export_data_set = ExportData.objects.filter(pk=export_data_id)
         export_data = export_data_set.first()
