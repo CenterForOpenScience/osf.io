@@ -12,6 +12,7 @@ from django.utils.decorators import method_decorator
 from rest_framework import authentication as drf_authentication
 from rest_framework import status
 from rest_framework.parsers import JSONParser
+from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -23,6 +24,9 @@ from .location import ExportStorageLocationViewBaseView
 from ..utils import write_json_file
 
 logger = logging.getLogger(__name__)
+MSG_EXPORT_DENY_PERM_INST = f'Permission denied for this institution'
+MSG_EXPORT_DENY_PERM_STORAGE = f'Permission denied for this storage'
+MSG_EXPORT_DENY_PERM_LOCATION = f'Permission denied for this export storage location'
 MSG_EXPORT_DUP_IN_SECOND = f'The equivalent process is running'
 MSG_EXPORT_REMOVED = f'The export data process is removed'
 
@@ -43,32 +47,59 @@ class ExportDataBaseActionView(ExportStorageLocationViewBaseView, APIView):
         source_id = request.data.get('source_id')
         location_id = request.data.get('location_id')
 
-        # admin not affiliated with this institution
-        if not institution_id or (not request.user.is_super_admin and not request.user.is_affiliated_with_institution_id(institution_id)):
-            return Response({'message': f'Permission denied for this institution'}, status=status.HTTP_400_BAD_REQUEST)
+        # admin isn't affiliated with this institution
+        if (not institution_id
+                or not Institution.objects.filter(pk=institution_id).exists()
+                or (not request.user.is_super_admin
+                    and not request.user.is_affiliated_with_institution_id(institution_id))):
+            return self.response_render({
+                'message': MSG_EXPORT_DENY_PERM_INST
+            }, status_code=status.HTTP_400_BAD_REQUEST)
 
         institution = Institution.objects.get(pk=institution_id)
 
         # this institutional storage is not allowed
-        if not source_id or not institution.is_allowed_institutional_storage_id(source_id):
-            return Response({'message': f'Permission denied for this storage'}, status=status.HTTP_400_BAD_REQUEST)
+        if (not source_id
+                or not Region.objects.filter(pk=source_id).exists()
+                or not institution.is_allowed_institutional_storage_id(source_id)):
+            return self.response_render({
+                'message': MSG_EXPORT_DENY_PERM_STORAGE
+            }, status_code=status.HTTP_400_BAD_REQUEST)
 
         source_storage = Region.objects.get(pk=source_id)
 
         # this storage location is not allowed
-        if not location_id or not institution.have_allowed_storage_location_id(location_id):
-            return Response({'message': f'Permission denied for this export storage location'}, status=status.HTTP_400_BAD_REQUEST)
+        if (not location_id
+                or not ExportDataLocation.objects.filter(pk=location_id).exists()
+                or not institution.have_allowed_storage_location_id(location_id)):
+            return self.response_render({
+                'message': MSG_EXPORT_DENY_PERM_LOCATION
+            }, status_code=status.HTTP_400_BAD_REQUEST)
 
         location = ExportDataLocation.objects.get(pk=location_id)
 
         return institution, source_storage, location
+
+    def response_render(self, data, status_code):
+        """render json response instance of rest framework"""
+        response = Response(data=data, status=status_code)
+        response.accepted_renderer = JSONRenderer()
+        response.accepted_media_type = "application/json"
+        response.renderer_context = {}
+        response.render()
+
+        return response
 
 
 @method_decorator(transaction.non_atomic_requests, name='dispatch')
 class ExportDataActionView(ExportDataBaseActionView):
 
     def post(self, request, *args, **kwargs):
-        institution, source_storage, location = self.extract_input(request)
+        input_set = self.extract_input(request)
+        if isinstance(input_set, Response):
+            return input_set
+        institution, source_storage, location = input_set
+
         storage_credentials = source_storage.waterbutler_credentials['storage']
         source_waterbutler_credentials = None
         if storage_credentials and 'host' in storage_credentials:
@@ -269,7 +300,11 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
 class StopExportDataActionView(ExportDataBaseActionView):
 
     def post(self, request, **kwargs):
-        institution, source_storage, location = self.extract_input(request)
+        input_set = self.extract_input(request)
+        if isinstance(input_set, Response):
+            return input_set
+        institution, source_storage, location = input_set
+
         task_id = request.data.get('task_id')
 
         # get corresponding export data record
@@ -378,7 +413,11 @@ def export_data_rollback_process(task, cookies, export_data_id, **kwargs):
 class CheckStateExportDataActionView(ExportDataBaseActionView):
 
     def post(self, request, **kwargs):
-        institution, source_storage, location = self.extract_input(request)
+        input_set = self.extract_input(request)
+        if isinstance(input_set, Response):
+            return input_set
+        institution, source_storage, location = input_set
+
         task_id = request.data.get('task_id')
 
         # get corresponding export data record
@@ -400,7 +439,10 @@ class CheckStateExportDataActionView(ExportDataBaseActionView):
 class CheckDataExportDataActionView(ExportDataBaseActionView):
 
     def post(self, request, **kwargs):
-        institution, source_storage, location = self.extract_input(request)
+        input_set = self.extract_input(request)
+        if isinstance(input_set, Response):
+            return input_set
+        institution, source_storage, location = input_set
 
         has_data = ExportData.objects.filter(
             location=location,
@@ -417,7 +459,11 @@ class CheckDataExportDataActionView(ExportDataBaseActionView):
 class CheckRunningExportActionView(ExportDataBaseActionView):
 
     def post(self, request, **kwargs):
-        institution, source_storage, location = self.extract_input(request)
+        input_set = self.extract_input(request)
+        if isinstance(input_set, Response):
+            return input_set
+        institution, source_storage, location = input_set
+
         running_export = ExportData.objects.filter(
             location=location,
             source=source_storage,
@@ -427,6 +473,7 @@ class CheckRunningExportActionView(ExportDataBaseActionView):
         task_id = None
         if len(running_export) != 0:
             task_id = running_export[0].task_id
+
         return Response({
             'task_id': task_id,
         }, status=status.HTTP_200_OK)
