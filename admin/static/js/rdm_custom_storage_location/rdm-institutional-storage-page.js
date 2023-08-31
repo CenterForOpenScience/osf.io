@@ -919,6 +919,23 @@ $('.row-storage button.view-export-data').click(function (event) {
 
 
 // Start - Export data - Actions
+const TASK_STATE_SUCCESS = 'SUCCESS';
+const TASK_STATE_FAILURE = 'FAILURE';
+const EXPORT_STATUS_COMPLETED = 'Completed';
+const EXPORT_STATUS_ERROR = 'Error';
+const TITLE_EXPORT = _('Export Data');
+const TITLE_STOP_EXPORT = _('Stop Export Data');
+const MSG_TYPE_SUCCESS = 'success';
+const MSG_TYPE_DANGER = 'danger';
+const MSG_EXPORT_SUCCESS = _('Export data successfully.');
+const MSG_EXPORT_ERROR_0 = _('Cannot export data.');
+const MSG_EXPORT_ERROR_1 = _('Error occurred while exporting data.');
+const MSG_EXPORT_FAILED = _('Export data failed.');
+const MSG_EXPORT_BACKGROUND = _('Export data in background.');
+const MSG_STOP_EXPORT_SUCCESS = _('Stop exporting successfully.');
+const MSG_STOP_EXPORT_ERROR_0 = _('Cannot stop exporting data.');
+const MSG_STOP_EXPORT_ERROR_1 = _('Error occurred while stopping export data.');
+const MSG_STOP_EXPORT_BACKGROUND = _('Stop exporting in background.');
 
 function exportState(element) {
     // enabled $exportButton and disabled $stopExportButton
@@ -1008,11 +1025,9 @@ function exportData(institution_id, source_id, location_id, element) {
         custom: {'element': element, 'key': key},
         timeout: 120000,
         success: function (data) {
-            var message;
-            var messageType = 'success';
             task_id = data.task_id;
 
-            if (data.task_state === 'SUCCESS') {
+            if (data.task_state === TASK_STATE_SUCCESS) {
                 // task_state in (SUCCESS, )
                 // prepare for export
                 exportState(this.custom.element);
@@ -1020,16 +1035,13 @@ function exportData(institution_id, source_id, location_id, element) {
                 // show `View Export Data` button
                 haveExportDataState(this.custom.element, location_id);
 
-                message =  _('Export data successfully.');
-                $osf.growl(_('Export Data'), message, messageType, 0);
-            } else if (data.task_state === 'FAILURE') {
+                $osf.growl(TITLE_EXPORT, MSG_EXPORT_SUCCESS, MSG_TYPE_SUCCESS, 0);
+            } else if (data.task_state === TASK_STATE_FAILURE) {
                 // task_state in (FAILURE, )
                 // prepare for export
                 exportState(this.custom.element);
 
-                message = _('Error occurred while exporting data.');
-                messageType = 'danger';
-                $osf.growl(_('Export Data'), message, messageType, 0);
+                $osf.growl(TITLE_EXPORT, MSG_EXPORT_ERROR_1, MSG_TYPE_DANGER, 0);
             } else {
                 // task_state in (PENDING, STARTED, )
                 // in the process of exporting
@@ -1043,8 +1055,7 @@ function exportData(institution_id, source_id, location_id, element) {
                 var $stopExportButton = $exportButton.parent().find('.stop-export-button');
                 $stopExportButton.data('task_id', task_id);
 
-                message = _('Export data in background.');
-                $osf.growl(_('Export Data'), message, messageType, growlBoxDelay);
+                $osf.growl(TITLE_EXPORT, MSG_EXPORT_BACKGROUND, MSG_TYPE_SUCCESS, 0);
             }
 
             // start and set interval for status check request
@@ -1062,12 +1073,13 @@ function exportData(institution_id, source_id, location_id, element) {
             // prepare for export
             exportState(this.custom.element);
 
-            var message = _('Cannot export data.');
+            var message = MSG_EXPORT_ERROR_0;
             if (jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)) {
-                message = _(jqXHR.responseJSON.message);
+                var data = jqXHR.responseJSON;
+                message = _(data.message);
             }
 
-            $osf.growl(_('Export Data'), message, 'danger', growlBoxDelay);
+            $osf.growl(TITLE_EXPORT, message, MSG_TYPE_DANGER, 0);
         }
     });
 }
@@ -1108,34 +1120,28 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
             window.contextVars[this.custom.key].intervalID = undefined;
             window.contextVars[this.custom.key].exportInBackground = false;
 
-            var message;
-            var messageType = 'success';
             task_id = data.task_id;
 
-            if (data.task_state === 'SUCCESS') {
+            if (data.task_state === TASK_STATE_SUCCESS) {
                 // task_state in (SUCCESS, )
                 // old task_state in (ABORTED, )
                 // prepare for export
                 exportState(this.custom.element);
 
-                message = _('Stop exporting successfully.');
-                $osf.growl(_('Stop Export Data'), message, messageType, 0);
-            } else if (data.task_state === 'FAILURE') {
+                $osf.growl(TITLE_STOP_EXPORT, MSG_STOP_EXPORT_SUCCESS, MSG_TYPE_SUCCESS, 0);
+            } else if (data.task_state === TASK_STATE_FAILURE) {
                 // task_state in (FAILURE, )
                 // prepare to stop exporting
                 stopExportState(this.custom.element);
 
-                message = _('Error occurred while stopping export data.');
-                messageType = 'danger';
-                $osf.growl(_('Stop Export Data'), message, messageType, 0);
+                $osf.growl(TITLE_STOP_EXPORT, MSG_STOP_EXPORT_ERROR_1, MSG_TYPE_DANGER, 0);
             } else {
                 // task_state in (PENDING, STARTED, )
                 // in the process of stopping export
                 // to reset the interval
                 window.contextVars[this.custom.key].stopExportInBackground = true;
 
-                message = _('Stop exporting in background.');
-                $osf.growl(_('Stop Export Data'), message, messageType, growlBoxDelay);
+                $osf.growl(TITLE_STOP_EXPORT, MSG_STOP_EXPORT_BACKGROUND, MSG_TYPE_SUCCESS, 0);
             }
 
             // start and set interval for status check request
@@ -1154,29 +1160,29 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
             // prepare for stopping export
             stopExportState(this.custom.element);
 
-            var title = _('Stop Export Data');
-            var message = _('Cannot stop exporting data.');
-            var messageType = 'danger';
+            var title = TITLE_STOP_EXPORT;
+            var message = MSG_STOP_EXPORT_ERROR_0;
+            var messageType = MSG_TYPE_DANGER;
 
             if (jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)) {
                 var data = jqXHR.responseJSON;
                 message = _(data.message);
 
                 if ('task_state' in data && 'status' in data) {
-                    if (data.task_state === 'SUCCESS') {
+                    if (data.task_state === TASK_STATE_SUCCESS) {
                         // task_state in (SUCCESS)
                         exportState(this.custom.element);
                     }
 
-                    if (data.status === 'Completed') {
+                    if (data.status === EXPORT_STATUS_COMPLETED) {
                         // show `View Export Data` button
                         haveExportDataState(this.custom.element, location_id);
-                        title = _('Export Data');
-                        message = _('Export data successfully.');
-                        messageType = 'success';
-                    } else if (data.status === 'Error') {
-                        title = _('Export Data');
-                        message = _('Export data failed.');
+                        title = TITLE_EXPORT;
+                        message = MSG_EXPORT_SUCCESS;
+                        messageType = MSG_TYPE_SUCCESS;
+                    } else if (data.status === EXPORT_STATUS_ERROR) {
+                        title = TITLE_EXPORT;
+                        message = MSG_EXPORT_FAILED;
                     }
                 }
             }
@@ -1205,11 +1211,11 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
         custom: {'element': element, 'key': key},
         timeout: 120000,
         success: function (data) {
-            var title = window.contextVars[this.custom.key].stopExportInBackground ? _('Stop Export Data') : _('Export Data');
-            var message;
-            var messageType = 'success';
+            var title = window.contextVars[this.custom.key].stopExportInBackground ? TITLE_STOP_EXPORT : TITLE_EXPORT;
+            var message = window.contextVars[this.custom.key].stopExportInBackground ? MSG_STOP_EXPORT_SUCCESS : MSG_EXPORT_SUCCESS;
+            var messageType = MSG_TYPE_SUCCESS;
 
-            if (data.task_state === 'SUCCESS') {
+            if (data.task_state === TASK_STATE_SUCCESS) {
                 // task_state in (SUCCESS, )
                 // to reset the interval
                 window.clearInterval(window.contextVars[this.custom.key].intervalID);
@@ -1218,34 +1224,28 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
                 // prepare for export
                 exportState(this.custom.element);
 
-                message = _('Export data successfully.');
-                if (window.contextVars[this.custom.key].stopExportInBackground) {
-                    message = _('Stop exporting successfully.');
-                }
-
-                if (data.status === 'Completed') {
+                if (data.status === EXPORT_STATUS_COMPLETED) {
                     // show `View Export Data` button
                     haveExportDataState(this.custom.element);
                     showExportFilesNotFound(data);
                 } else if (!window.contextVars[this.custom.key].stopExportInBackground) {
-                    messageType = 'danger';
-                    message = _('Export data failed.');
+                    messageType = MSG_TYPE_DANGER;
+                    message = MSG_EXPORT_FAILED;
                 }
-            } else if (data.task_state === 'FAILURE') {
+            } else if (data.task_state === TASK_STATE_FAILURE) {
                 // task_state in (FAILURE, )
                 // to reset the interval
                 window.clearInterval(window.contextVars[this.custom.key].intervalID);
                 window.contextVars[this.custom.key].intervalID = undefined;
 
-                messageType = 'danger';
+                messageType = MSG_TYPE_DANGER;
+                message = window.contextVars[this.custom.key].stopExportInBackground ? MSG_STOP_EXPORT_ERROR_1 : MSG_EXPORT_ERROR_1;
                 if (window.contextVars[this.custom.key].stopExportInBackground) {
                     // prepare to stop exporting
                     stopExportState(this.custom.element);
-                    message = _('Error occurred while stopping export data.');
                 } else {
                     // prepare for export
                     exportState(this.custom.element);
-                    message = _('Error occurred while exporting data.');
                 }
             } else {
                 // task_state in (PENDING, STARTED, )
@@ -1263,9 +1263,8 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
         error: function (jqXHR) {
             // Permission denied...: wrong institution_id, wrong source_id, wrong location_id, wrong task_id
             // export data record is deleted
-            var title = window.contextVars[this.custom.key].stopExportInBackground ? _('Stop Export Data') : _('Export Data');
-            var message;
-            var messageType = 'danger';
+            var title = window.contextVars[this.custom.key].stopExportInBackground ? TITLE_STOP_EXPORT : TITLE_EXPORT;
+            var message = window.contextVars[this.custom.key].stopExportInBackground ? MSG_STOP_EXPORT_ERROR_1 : MSG_EXPORT_ERROR_1;
 
             // reset interval
             window.clearInterval(window.contextVars[this.custom.key].intervalID);
@@ -1276,14 +1275,12 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
             if (window.contextVars[this.custom.key].stopExportInBackground) {
                 // prepare to stop exporting
                 stopExportState(this.custom.element);
-                message = _('Error occurred while stopping export data.');
             } else {
                 // prepare for export
                 exportState(this.custom.element);
-                message = _('Error occurred while exporting data.');
             }
 
-            $osf.growl(title, message, messageType, 0);
+            $osf.growl(title, message, MSG_TYPE_DANGER, 0);
         }
     });
 }
