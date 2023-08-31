@@ -173,6 +173,7 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
         logger.debug(f'creating export data process folder')
         response = export_data.create_export_data_folder(cookies, **kwargs)
         if not task.is_aborted() and response.status_code != 201:
+            kwargs['is_rollback'] = True
             return export_data_rollback_process(task, cookies, export_data_id, **kwargs)
         logger.debug(f'created export data process folder')
 
@@ -183,6 +184,7 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
         logger.debug(f'creating files folder')
         response = export_data.create_export_data_files_folder(cookies, **kwargs)
         if not task.is_aborted() and response.status_code != 201:
+            kwargs['is_rollback'] = True
             return export_data_rollback_process(task, cookies, export_data_id, **kwargs)
         logger.debug(f'created files folder')
 
@@ -242,6 +244,7 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
         write_json_file(file_info_json, temp_file_path)
         response = export_data.upload_file_info_file(cookies, temp_file_path, **kwargs)
         if not task.is_aborted() and response.status_code != 201:
+            kwargs['is_rollback'] = True
             return export_data_rollback_process(task, cookies, export_data_id, **kwargs)
         logger.debug(f'created files information file')
 
@@ -255,6 +258,7 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
         write_json_file(export_data_json, temp_file_path)
         response = export_data.upload_export_data_file(cookies, temp_file_path, **kwargs)
         if not task.is_aborted() and response.status_code != 201:
+            kwargs['is_rollback'] = True
             return export_data_rollback_process(task, cookies, export_data_id, **kwargs)
         logger.debug(f'created export data file')
 
@@ -361,6 +365,7 @@ class StopExportDataActionView(ExportDataBaseActionView):
 
 def export_data_rollback_process(task, cookies, export_data_id, **kwargs):
     logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+    is_rollback = kwargs.get('is_rollback', False)
     try:
         # get corresponding export data record
         export_data_set = ExportData.objects.filter(pk=export_data_id)
@@ -405,6 +410,14 @@ def export_data_rollback_process(task, cookies, export_data_id, **kwargs):
             export_file=None,
         )
         logger.debug(f'stopped process')
+
+        _msg = f'The export data process is {export_data_status.lower()}'
+        if export_data_status == ExportData.STATUS_ERROR:
+            _msg = (f'The export data process is {export_data_status.lower()}'
+                    f' without completely deleting the export data file')
+
+        if is_rollback:
+            raise ExportDataTaskException(_msg)
     except Exception as e:
         logger.debug(f'Exception {e}')
         # terminate process
