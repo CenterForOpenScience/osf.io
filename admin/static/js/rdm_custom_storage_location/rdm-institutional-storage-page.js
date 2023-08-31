@@ -961,6 +961,18 @@ function stopExportState(element) {
     $stopExportButton.removeClass('disabled');
 }
 
+function stoppingExportState(element) {
+    // disabled $stopExportButton and disabled $exportButton
+    var $parent = $(element).parent();
+    var $exportButton = $parent.find('.export-button');
+    $exportButton.prop('disabled', true);
+    $exportButton.addClass('disabled');
+
+    var $stopExportButton = $parent.find('.stop-export-button');
+    $stopExportButton.prop('disabled', true);
+    $stopExportButton.addClass('disabled');
+}
+
 function haveExportDataState(element, location_id) {
     var $parent = $(element).parents('.row-storage');
     if ($parent.length) {
@@ -1138,6 +1150,8 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
             } else {
                 // task_state in (PENDING, STARTED, )
                 // in the process of stopping export
+                stoppingExportState(element)
+
                 // to reset the interval
                 window.contextVars[this.custom.key].stopExportInBackground = true;
 
@@ -1171,6 +1185,7 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
                 if ('task_state' in data && 'status' in data) {
                     if (data.task_state === TASK_STATE_SUCCESS) {
                         // task_state in (SUCCESS)
+                        // prepare for export
                         exportState(this.custom.element);
                     }
 
