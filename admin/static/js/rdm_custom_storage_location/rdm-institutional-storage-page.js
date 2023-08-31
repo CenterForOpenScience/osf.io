@@ -834,7 +834,7 @@ function deleteLocation(id) {
 }
 
 
-// Start - institutional storages screen - Actions
+// Start - institutional storages control screen - Actions
 
 function showViewExportDataButton(element, location_id) {
     var $viewExportDataButton = $(element);
@@ -921,6 +921,7 @@ $('.row-storage button.view-export-data').click(function (event) {
 // Start - Export data - Actions
 
 function exportState(element) {
+    // enabled $exportButton and disabled $stopExportButton
     var $parent = $(element).parent();
     var $exportButton = $parent.find('.export-button');
     $exportButton.prop('disabled', false);
@@ -932,6 +933,7 @@ function exportState(element) {
 }
 
 function stopExportState(element) {
+    // enabled $stopExportButton and disabled $exportButton
     var $parent = $(element).parent();
     var $exportButton = $parent.find('.export-button');
     $exportButton.prop('disabled', true);
@@ -940,6 +942,39 @@ function stopExportState(element) {
     var $stopExportButton = $parent.find('.stop-export-button');
     $stopExportButton.prop('disabled', false);
     $stopExportButton.removeClass('disabled');
+}
+
+function haveExportDataState(element, location_id) {
+    var $parent = $(element).parents('.row-storage');
+    if ($parent.length) {
+        var $viewExportDataButton = $parent.find('button.view-export-data');
+        showViewExportDataButton($viewExportDataButton, location_id);
+    }
+}
+
+function showExportFilesNotFound(data) {
+    if (data.result.list_file_info_export_not_found.length > 0) {
+        var data_res = data.result.list_file_info_export_not_found;
+        var text_show_file = '';
+        file_name_export_fail = data.result.file_name_export_fail;
+        $('#showFileExportNotExistModal').modal('show');
+        list_file_info_export_fail = [['project_id', 'project_name', 'owner', 'file_id',
+            'file_path', 'file_name', 'versions', 'size', 'stamper']];
+        data_res.forEach(function (file) {
+            file.version.forEach(function (version) {
+                list_file_info_export_fail.push([file.project.id, file.project.name, version.contributor,
+                    file.id, file.materialized_path, file.name, version.identifier,
+                    file.size, file.timestamp.verify_user]);
+                text_show_file += "<tr><td>" + file.project.id + "</td><td>" + file.project.name + "</td><td>"
+                    + version.contributor + "</td><td>" + file.id + "</td><td>"
+                    + file.materialized_path + "</td><td>" + file.name + "</td><td>"
+                    + version.identifier + "</td><td>" + file.size + " Bytes</td><td>"
+                    + file.timestamp.verify_user + "</td></tr>";
+            });
+        });
+        $('.table-ng-file-export-not-exist').html(text_show_file);
+        $('.table-ng-file-export-not-exist').css('word-break', 'break-word');
+    }
 }
 
 $('.export-button').click(function (event) {
@@ -979,33 +1014,40 @@ function exportData(institution_id, source_id, location_id, element) {
 
             if (data.task_state === 'SUCCESS') {
                 // task_state in (SUCCESS, )
+                // prepare for export
                 exportState(this.custom.element);
-                message =  _('Export data successfully.');
 
-                var $parent = $(this.custom.element).parents('.row-storage');
-                if ($parent.length) {
-                    var $viewExportDataButton = $parent.find('button.view-export-data');
-                    showViewExportDataButton($viewExportDataButton, location_id)
-                }
+                // show `View Export Data` button
+                haveExportDataState(this.custom.element, location_id);
+
+                message =  _('Export data successfully.');
                 $osf.growl(_('Export Data'), message, messageType, 0);
             } else if (data.task_state === 'FAILURE') {
                 // task_state in (FAILURE, )
+                // prepare for export
                 exportState(this.custom.element);
+
                 message = _('Error occurred while exporting data.');
                 messageType = 'danger';
                 $osf.growl(_('Export Data'), message, messageType, 0);
             } else {
                 // task_state in (PENDING, STARTED, )
+                // in the process of exporting
                 stopExportState(this.custom.element);
-                message = _('Export data in background.');
+
+                // to reset the interval
                 window.contextVars[this.custom.key].exportInBackground = true;
 
+                // set task_id to stop button
                 var $exportButton = $(this.custom.element);
                 var $stopExportButton = $exportButton.parent().find('.stop-export-button');
                 $stopExportButton.data('task_id', task_id);
+
+                message = _('Export data in background.');
                 $osf.growl(_('Export Data'), message, messageType, growlBoxDelay);
             }
 
+            // start and set interval for status check request
             if (window.contextVars[this.custom.key].exportInBackground) {
                 // var x = 0;
                 window.contextVars[this.custom.key].intervalID = window.setInterval(function () {
@@ -1015,11 +1057,16 @@ function exportData(institution_id, source_id, location_id, element) {
             }
         },
         error: function (jqXHR) {
+            // Permission denied...: wrong institution_id, wrong source_id, wrong location_id
+            // duplicate process in the seconds
+            // prepare for export
             exportState(this.custom.element);
+
             var message = _('Cannot export data.');
             if (jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)) {
                 message = _(jqXHR.responseJSON.message);
             }
+
             $osf.growl(_('Export Data'), message, 'danger', growlBoxDelay);
         }
     });
@@ -1056,9 +1103,11 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
         custom: {'element': element, 'key': key},
         timeout: 120000,
         success: function (data) {
+            // reset interval
             window.contextVars[this.custom.key].exportInBackground && window.clearInterval(window.contextVars[this.custom.key].intervalID);
             window.contextVars[this.custom.key].intervalID = undefined;
             window.contextVars[this.custom.key].exportInBackground = false;
+
             var message;
             var messageType = 'success';
             task_id = data.task_id;
@@ -1066,22 +1115,30 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
             if (data.task_state === 'SUCCESS') {
                 // task_state in (SUCCESS, )
                 // old task_state in (ABORTED, )
+                // prepare for export
                 exportState(this.custom.element);
+
                 message = _('Stop exporting successfully.');
                 $osf.growl(_('Stop Export Data'), message, messageType, 0);
             } else if (data.task_state === 'FAILURE') {
                 // task_state in (FAILURE, )
+                // prepare to stop exporting
                 stopExportState(this.custom.element);
+
                 message = _('Error occurred while stopping export data.');
                 messageType = 'danger';
                 $osf.growl(_('Stop Export Data'), message, messageType, 0);
             } else {
                 // task_state in (PENDING, STARTED, )
-                message = _('Stop exporting in background.');
+                // in the process of stopping export
+                // to reset the interval
                 window.contextVars[this.custom.key].stopExportInBackground = true;
+
+                message = _('Stop exporting in background.');
                 $osf.growl(_('Stop Export Data'), message, messageType, growlBoxDelay);
             }
 
+            // start and set interval for status check request
             if (window.contextVars[this.custom.key].stopExportInBackground) {
                 // var x = 0;
                 window.contextVars[this.custom.key].intervalID = window.setInterval(function () {
@@ -1091,13 +1148,20 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
             }
         },
         error: function (jqXHR) {
+            // Permission denied...: wrong institution_id, wrong source_id, wrong location_id, wrong task_id
+            // export data record is deleted
+            // task is done or cannot abort
+            // prepare for stopping export
             stopExportState(this.custom.element);
+
             var title = _('Stop Export Data');
             var message = _('Cannot stop exporting data.');
             var messageType = 'danger';
+
             if (jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)) {
                 var data = jqXHR.responseJSON;
                 message = _(data.message);
+
                 if ('task_state' in data && 'status' in data) {
                     if (data.task_state === 'SUCCESS') {
                         // task_state in (SUCCESS)
@@ -1105,11 +1169,8 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
                     }
 
                     if (data.status === 'Completed') {
-                        var $parent = $(this.custom.element).parents('.row-storage');
-                        if ($parent.length) {
-                            var $viewExportDataButton = $parent.find('button.view-export-data');
-                            showViewExportDataButton($viewExportDataButton, location_id)
-                        }
+                        // show `View Export Data` button
+                        haveExportDataState(this.custom.element, location_id);
                         title = _('Export Data');
                         message = _('Export data successfully.');
                         messageType = 'success';
@@ -1119,6 +1180,7 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
                     }
                 }
             }
+
             $osf.growl(title, message, messageType, 0);
         }
     });
@@ -1149,84 +1211,78 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
 
             if (data.task_state === 'SUCCESS') {
                 // task_state in (SUCCESS, )
+                // to reset the interval
                 window.clearInterval(window.contextVars[this.custom.key].intervalID);
                 window.contextVars[this.custom.key].intervalID = undefined;
 
+                // prepare for export
                 exportState(this.custom.element);
+
                 message = _('Export data successfully.');
                 if (window.contextVars[this.custom.key].stopExportInBackground) {
                     message = _('Stop exporting successfully.');
                 }
 
                 if (data.status === 'Completed') {
-                    var $parent = $(this.custom.element).parents('.row-storage');
-                    if ($parent.length) {
-                        var $viewExportDataButton = $parent.find('button.view-export-data');
-                        showViewExportDataButton($viewExportDataButton, location_id)
-                    }
-                    if (data.result.list_file_info_export_not_found.length > 0) {
-                        var data_res = data.result.list_file_info_export_not_found;
-                        var text_show_file = '';
-                        file_name_export_fail = data.result.file_name_export_fail;
-                        $('#showFileExportNotExistModal').modal('show');
-                        list_file_info_export_fail = [['project_id', 'project_name', 'owner', 'file_id',
-                                                        'file_path', 'file_name', 'versions', 'size', 'stamper']];
-                        data_res.forEach(function (file) {
-                            file.version.forEach(function(version) {
-                                list_file_info_export_fail.push([file.project.id, file.project.name, version.contributor,
-                                                file.id, file.materialized_path, file.name, version.identifier,
-                                                file.size, file.timestamp.verify_user]);
-                                text_show_file += "<tr><td>" + file.project.id + "</td><td>" + file.project.name + "</td><td>"
-                                                + version.contributor + "</td><td>"+ file.id + "</td><td>"
-                                                + file.materialized_path + "</td><td>" + file.name + "</td><td>"
-                                                + version.identifier + "</td><td>"+ file.size + " Bytes</td><td>"
-                                                + file.timestamp.verify_user + "</td></tr>";
-                            });
-                        });
-                        $('.table-ng-file-export-not-exist').html(text_show_file);
-                        $('.table-ng-file-export-not-exist').css('word-break', 'break-word');
-                    }
+                    // show `View Export Data` button
+                    haveExportDataState(this.custom.element);
+                    showExportFilesNotFound(data);
                 } else if (!window.contextVars[this.custom.key].stopExportInBackground) {
                     messageType = 'danger';
                     message = _('Export data failed.');
                 }
             } else if (data.task_state === 'FAILURE') {
                 // task_state in (FAILURE, )
+                // to reset the interval
                 window.clearInterval(window.contextVars[this.custom.key].intervalID);
                 window.contextVars[this.custom.key].intervalID = undefined;
 
                 messageType = 'danger';
                 if (window.contextVars[this.custom.key].stopExportInBackground) {
+                    // prepare to stop exporting
                     stopExportState(this.custom.element);
                     message = _('Error occurred while stopping export data.');
                 } else {
+                    // prepare for export
                     exportState(this.custom.element);
                     message = _('Error occurred while exporting data.');
                 }
+            } else {
+                // task_state in (PENDING, STARTED, )
+                // keep this state, no alert
             }
+
             if (!window.contextVars[this.custom.key].intervalID) {
                 $osf.growl(title, message, messageType, 0);
+                // reset interval
                 window.contextVars[this.custom.key].intervalID = undefined;
                 window.contextVars[this.custom.key].exportInBackground = false;
                 window.contextVars[this.custom.key].stopExportInBackground = false;
             }
         },
         error: function (jqXHR) {
+            // Permission denied...: wrong institution_id, wrong source_id, wrong location_id, wrong task_id
+            // export data record is deleted
             var title = window.contextVars[this.custom.key].stopExportInBackground ? _('Stop Export Data') : _('Export Data');
             var message;
-            // Remove interval
+            var messageType = 'danger';
+
+            // reset interval
             window.clearInterval(window.contextVars[this.custom.key].intervalID);
             window.contextVars[this.custom.key].intervalID = undefined;
             window.contextVars[this.custom.key].exportInBackground = false;
             window.contextVars[this.custom.key].stopExportInBackground = false;
+
             if (window.contextVars[this.custom.key].stopExportInBackground) {
+                // prepare to stop exporting
                 stopExportState(this.custom.element);
                 message = _('Error occurred while stopping export data.');
             } else {
+                // prepare for export
                 exportState(this.custom.element);
                 message = _('Error occurred while exporting data.');
             }
-            var messageType = 'danger';
+
             $osf.growl(title, message, messageType, 0);
         }
     });
