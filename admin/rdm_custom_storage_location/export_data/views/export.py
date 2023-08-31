@@ -4,6 +4,7 @@ import logging
 import os
 
 from celery.contrib.abortable import AbortableAsyncResult, ABORTED
+from celery.exceptions import CeleryError
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -22,6 +23,11 @@ from ..utils import write_json_file
 
 logger = logging.getLogger(__name__)
 MSG_EXPORT_DUP_IN_SECOND = f'The equivalent process is running'
+MSG_EXPORT_REMOVED = f'The export data process is removed'
+
+
+class ExportDataTaskException(CeleryError):
+    pass
 
 
 class ExportDataBaseActionView(ExportStorageLocationViewBaseView, APIView):
@@ -98,19 +104,20 @@ class ExportDataActionView(ExportDataBaseActionView):
 
 def export_data_process(task, cookies, export_data_id, **kwargs):
     logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
-    # get corresponding export data record
-    export_data = None
-    while export_data is None:
+    try:
+        # get corresponding export data record
         export_data_set = ExportData.objects.filter(pk=export_data_id)
         export_data = export_data_set.first()
-    assert export_data
 
-    # start process
-    export_data.task_id = task.request.id
-    export_data.status = ExportData.STATUS_RUNNING
-    export_data.save()
+        if export_data is None:
+            # missing info to create a new process
+            raise ExportDataTaskException(MSG_EXPORT_REMOVED)
 
-    try:
+        # start process
+        export_data.task_id = task.request.id
+        export_data.status = ExportData.STATUS_RUNNING
+        export_data.save()
+
         # extract file information
         export_data_json, file_info_json = export_data.extract_file_information_json_from_source_storage()
 
@@ -138,7 +145,7 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
         # upload file versions
         logger.debug(f'uploading file versions')
         file_versions = export_data.get_source_file_versions_min(file_info_json)
-        logger.debug(f'file_versions: {file_versions}')
+        # logger.debug(f'file_versions: {file_versions}')
         _length = len(file_versions)
         # cached the filename in hash value
         created_filename_list = []
@@ -165,6 +172,7 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
             else:
                 list_file_id_not_found.append(file_id)
                 continue
+
         list_file_info_not_found = []
         if len(list_file_id_not_found) > 0:
             list_file_info = file_info_json.get('files', [])
@@ -213,7 +221,9 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
         # re-check status to ensure that it is not in stopping process
         export_data_set = ExportData.objects.filter(pk=export_data_id)
         export_data = export_data_set.first()
-        assert export_data
+
+        if export_data is None:
+            raise ExportDataTaskException(MSG_EXPORT_REMOVED)
 
         if export_data.status == ExportData.STATUS_RUNNING:
             # complete process
@@ -226,13 +236,22 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
                 total_size=export_data_json.get('size', 0),
             )
         logger.debug(f'completed process')
-        return {'list_file_info_export_not_found': list_file_info_not_found,
-                'file_name_export_fail': 'failed_files_export_{}_{}.csv'.format(institution_guid, export_data.process_start_timestamp)}
+        return {
+            'list_file_info_export_not_found': list_file_info_not_found,
+            'file_name_export_fail': 'failed_files_export_{}_{}.csv'.format(
+                institution_guid, export_data.process_start_timestamp
+            ),
+        }
     except Exception as e:
         logger.debug(f'Exception {e}')
         # terminate process
-        export_data.status = ExportData.STATUS_ERROR
-        export_data.save()
+
+        export_data_set = ExportData.objects.filter(pk=export_data_id)
+        if export_data_set.exists():
+            export_data = export_data_set.first()
+            export_data.status = ExportData.STATUS_ERROR
+            export_data.save()
+
         raise e
 
 
@@ -276,19 +295,19 @@ class StopExportDataActionView(ExportDataBaseActionView):
 
 def export_data_rollback_process(task, cookies, export_data_id, **kwargs):
     logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
-    # get corresponding export data record
-    export_data_set = export_data = None
-    while export_data is None:
+    try:
+        # get corresponding export data record
         export_data_set = ExportData.objects.filter(pk=export_data_id)
         export_data = export_data_set.first()
-    assert export_data
 
-    # when exception
-    if export_data.status in [ExportData.STATUS_STOPPING, ExportData.STATUS_STOPPED]:
-        logger.debug(f'stop-processing')
-        return None
+        if export_data is None:
+            raise ExportDataTaskException(MSG_EXPORT_REMOVED)
 
-    try:
+        # when exception
+        if export_data.status in [ExportData.STATUS_STOPPING, ExportData.STATUS_STOPPED]:
+            logger.debug(f'stop-processing')
+            return None
+
         if export_data.status == ExportData.STATUS_RUNNING:
             # stop it
             export_data_set.update(
@@ -297,18 +316,21 @@ def export_data_rollback_process(task, cookies, export_data_id, **kwargs):
             )
         logger.debug(f'stopping process')
 
+        export_data = export_data_set.first()
         file_path = export_data.export_data_temp_file_path
         if os.path.exists(file_path):
             os.remove(file_path)
         logger.debug(f'removed temporary file')
 
-        export_data_status = ExportData.STATUS_STOPPED
         # delete export data file
         logger.debug(f'deleting export data file')
         response = export_data.delete_export_data_folder(cookies, **kwargs)
         if response.status_code != 204:
             export_data_status = ExportData.STATUS_ERROR
-        logger.debug(f'deleted export data file')
+            logger.debug(f'can not delete export data file')
+        else:
+            export_data_status = ExportData.STATUS_STOPPED
+            logger.debug(f'deleted export data file')
 
         # stop it
         export_data_set.update(
@@ -320,8 +342,13 @@ def export_data_rollback_process(task, cookies, export_data_id, **kwargs):
     except Exception as e:
         logger.debug(f'Exception {e}')
         # terminate process
-        export_data.status = ExportData.STATUS_ERROR
-        export_data.save()
+
+        export_data_set = ExportData.objects.filter(pk=export_data_id)
+        if export_data_set.exists():
+            export_data = export_data_set.first()
+            export_data.status = ExportData.STATUS_ERROR
+            export_data.save()
+
         raise e
 
 
