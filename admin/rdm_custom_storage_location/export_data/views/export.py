@@ -2,9 +2,10 @@
 import inspect  # noqa
 import logging
 import os
-
+import traceback
+from celery import states
 from celery.contrib.abortable import AbortableAsyncResult, ABORTED
-from celery.exceptions import CeleryError
+from celery.exceptions import Ignore, CeleryError
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -246,13 +247,23 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
         logger.debug(f'Exception {e}')
         # terminate process
 
+        task_meta = {
+                'exc_type': type(e).__name__,
+                'exc_message': str(e),
+                'export_data_id': export_data_id,
+            }
+        if not isinstance(e, ExportDataTaskException):
+            task_meta['exc_traceback'] = traceback.format_exc().split('\n')
+
         export_data_set = ExportData.objects.filter(pk=export_data_id)
         if export_data_set.exists():
             export_data = export_data_set.first()
             export_data.status = ExportData.STATUS_ERROR
             export_data.save()
+            task_meta['export_data_status'] = export_data.status
 
-        raise e
+        task.update_state(state=states.FAILURE, meta=task_meta)
+        raise Ignore()
 
 
 class StopExportDataActionView(ExportDataBaseActionView):
@@ -282,10 +293,11 @@ class StopExportDataActionView(ExportDataBaseActionView):
         if task.state != ABORTED:
             return Response({'message': f'Cannot abort this export process'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Delete export data file which created on export process
+        # Delete export data file which created on the export process
         cookie = request.user.get_or_create_cookie().decode()
         cookies = request.COOKIES
-        task = tasks.run_export_data_rollback_process.delay(cookies, export_data.id, cookie=cookie)
+        task = tasks.run_export_data_rollback_process.delay(
+            cookies, export_data.id, cookie=cookie, export_data_task=task_id)
 
         return Response({
             'task_id': task.task_id,
@@ -343,13 +355,24 @@ def export_data_rollback_process(task, cookies, export_data_id, **kwargs):
         logger.debug(f'Exception {e}')
         # terminate process
 
+        task_meta = {
+            'exc_type': type(e).__name__,
+            'exc_message': str(e),
+            'export_data_id': export_data_id,
+            'export_data_task_id': kwargs.get('export_data_task'),
+        }
+        if not isinstance(e, ExportDataTaskException):
+            task_meta['exc_traceback'] = traceback.format_exc().split('\n')
+
         export_data_set = ExportData.objects.filter(pk=export_data_id)
         if export_data_set.exists():
             export_data = export_data_set.first()
             export_data.status = ExportData.STATUS_ERROR
             export_data.save()
+            task_meta['export_data_status'] = export_data.status
 
-        raise e
+        task.update_state(state=states.FAILURE, meta=task_meta)
+        raise Ignore()
 
 
 class CheckStateExportDataActionView(ExportDataBaseActionView):
