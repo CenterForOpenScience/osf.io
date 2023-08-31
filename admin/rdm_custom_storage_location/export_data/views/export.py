@@ -29,10 +29,21 @@ MSG_EXPORT_DENY_PERM_STORAGE = f'Permission denied for this storage'
 MSG_EXPORT_DENY_PERM_LOCATION = f'Permission denied for this export storage location'
 MSG_EXPORT_DUP_IN_SECOND = f'The equivalent process is running'
 MSG_EXPORT_REMOVED = f'The export data process is removed'
+MSG_EXPORT_DENY_PERM = f'Permission denied for this export process'
 
 
 class ExportDataTaskException(CeleryError):
     pass
+
+
+def get_task_result(result):
+    task_result = {}
+    if isinstance(result, dict):
+        task_result = result
+    elif isinstance(result, str) or isinstance(result, Exception):
+        task_result = {'message': str(result)}
+
+    return task_result
 
 
 class ExportDataBaseActionView(ExportStorageLocationViewBaseView, APIView):
@@ -131,6 +142,8 @@ class ExportDataActionView(ExportDataBaseActionView):
         return Response({
             'task_id': task.task_id,
             'task_state': task.state,
+            'result': get_task_result(task.result),
+            'status': export_data.status,
         }, status=status.HTTP_200_OK)
 
 
@@ -310,7 +323,9 @@ class StopExportDataActionView(ExportDataBaseActionView):
         # get corresponding export data record
         export_data_set = ExportData.objects.filter(source=source_storage, location=location, task_id=task_id)
         if not task_id or not export_data_set.exists():
-            return Response({'message': f'Permission denied for this export process'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                'message': MSG_EXPORT_DENY_PERM
+            }, status=status.HTTP_400_BAD_REQUEST)
 
         export_data = export_data_set.first()
         task = AbortableAsyncResult(task_id)
@@ -337,6 +352,8 @@ class StopExportDataActionView(ExportDataBaseActionView):
         return Response({
             'task_id': task.task_id,
             'task_state': task.state,
+            'result': get_task_result(task.result),
+            'status': export_data.status,
         }, status=status.HTTP_200_OK)
 
 
@@ -423,7 +440,9 @@ class CheckStateExportDataActionView(ExportDataBaseActionView):
         # get corresponding export data record
         export_data_set = ExportData.objects.filter(source=source_storage, location=location, task_id=task_id)
         if not task_id or not export_data_set.exists():
-            return Response({'message': f'Permission denied for this export process'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                'message': MSG_EXPORT_DENY_PERM
+            }, status=status.HTTP_400_BAD_REQUEST)
 
         export_data = export_data_set.first()
         task = AbortableAsyncResult(task_id)
@@ -431,7 +450,7 @@ class CheckStateExportDataActionView(ExportDataBaseActionView):
         return Response({
             'task_id': task_id,
             'task_state': task.state,
-            'result': task.result if isinstance(task.result, str) or isinstance(task.result, dict) else {},
+            'result': get_task_result(task.result),
             'status': export_data.status,
         }, status=status.HTTP_200_OK)
 
