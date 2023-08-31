@@ -49,22 +49,33 @@ class SecondDateTimeField(DateTruncMixin, DateTimeField):
 
 
 class ExportData(base.BaseModel):
+    # status workflow:
+    # 'Pending' -> 'Running' -> 'Completed' -> 'Checking' -> 'Completed'
+    # 'Pending' -> 'Running' -> 'Error'
+    # 'Pending' -> 'Running' -> 'Stopping' -> 'Stopped'
+    # 'Pending' -> 'Running' -> 'Stopping' -> 'Error'
+    # 'Pending' -> 'Stopping' -> 'Stopped'
+    # 'Pending' -> 'Stopping' -> 'Error'
+    STATUS_PENDING = 'Pending'
     STATUS_RUNNING = 'Running'
     STATUS_STOPPING = 'Stopping'
+    STATUS_COMPLETED = 'Completed'
     STATUS_CHECKING = 'Checking'
     STATUS_STOPPED = 'Stopped'
-    STATUS_COMPLETED = 'Completed'
     STATUS_ERROR = 'Error'
 
     EXPORT_DATA_STATUS_CHOICES = (
+        (STATUS_PENDING, STATUS_PENDING.title()),
         (STATUS_RUNNING, STATUS_RUNNING.title()),
         (STATUS_STOPPING, STATUS_STOPPING.title()),
+        (STATUS_COMPLETED, STATUS_COMPLETED.title()),
         (STATUS_CHECKING, STATUS_CHECKING.title()),
         (STATUS_STOPPED, STATUS_STOPPED.title()),
-        (STATUS_COMPLETED, STATUS_COMPLETED.title()),
         (STATUS_ERROR, STATUS_ERROR.title()),
     )
+    EXPORT_DATA_STOPPABLE = [STATUS_PENDING, STATUS_RUNNING]
     EXPORT_DATA_AVAILABLE = [STATUS_COMPLETED, STATUS_CHECKING]
+    EXPORT_DATA_UNAVAILABLE = [STATUS_ERROR, STATUS_STOPPED]
     EXPORT_DATA_FILES_FOLDER = 'files'
     EXPORT_DATA_FAKE_NODE_ID = 'export_location'
 
@@ -84,6 +95,7 @@ class ExportData(base.BaseModel):
     source_name = models.CharField(max_length=200, null=True, blank=True)
     source_waterbutler_credentials = EncryptedJSONField(default=dict, null=True, blank=True)
     source_waterbutler_settings = DateTimeAwareJSONField(default=dict, null=True, blank=True)
+
     class Meta:
         db_table = 'osf_export_data'
         unique_together = ('source', 'location', 'process_start')

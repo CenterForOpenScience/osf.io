@@ -24,13 +24,26 @@ from .location import ExportStorageLocationViewBaseView
 from ..utils import write_json_file
 
 logger = logging.getLogger(__name__)
+TASK_NO_WORKING_STATES = [
+    states.SUCCESS,
+    states.FAILURE,
+    states.REVOKED,
+    states.IGNORED,
+    states.REJECTED,
+]
 MSG_EXPORT_DENY_PERM_INST = f'Permission denied for this institution'
 MSG_EXPORT_DENY_PERM_STORAGE = f'Permission denied for this storage'
 MSG_EXPORT_DENY_PERM_LOCATION = f'Permission denied for this export storage location'
 MSG_EXPORT_DUP_IN_SECOND = f'The equivalent process is running'
 MSG_EXPORT_ABORTED = f'The export data process is aborted'
 MSG_EXPORT_REMOVED = f'The export data process is removed'
+MSG_EXPORT_UNSTOPPABLE = f'Cannot stop this export process'
+MSG_EXPORT_UNABORTABLE = f'Cannot abort this export process'
 MSG_EXPORT_DENY_PERM = f'Permission denied for this export process'
+MSG_EXPORT_COMPLETED = f'The data export process is successfully completed'
+MSG_EXPORT_STOPPED = f'The data export process is successfully stopped'
+MSG_EXPORT_FORCE_STOPPED = (f'The export data process is stopped'
+                            f' without completely deleting the export data file')
 
 
 class ExportDataTaskException(CeleryError):
@@ -124,7 +137,7 @@ class ExportDataActionView(ExportDataBaseActionView):
             export_data = ExportData.objects.create(
                 source=source_storage,
                 location=location,
-                status=ExportData.STATUS_ERROR,
+                status=ExportData.STATUS_PENDING,
                 creator=request.user,
                 source_name=f'{source_storage.name} ({source_storage.provider_full_name})',
                 source_waterbutler_credentials=source_waterbutler_credentials,
@@ -287,7 +300,11 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
                 total_size=export_data_json.get('size', 0),
             )
         logger.debug(f'completed process')
+        export_data = export_data_set.first()
         return {
+            'message': MSG_EXPORT_COMPLETED,
+            'export_data_id': export_data.id,
+            'export_data_status': export_data.status,
             'list_file_info_export_not_found': list_file_info_not_found,
             'file_name_export_fail': 'failed_files_export_{}_{}.csv'.format(
                 institution_guid, export_data.process_start_timestamp
@@ -330,24 +347,31 @@ class StopExportDataActionView(ExportDataBaseActionView):
         export_data_set = ExportData.objects.filter(source=source_storage, location=location, task_id=task_id)
         if not task_id or not export_data_set.exists():
             return Response({
+                'task_id': task_id,
                 'message': MSG_EXPORT_DENY_PERM
             }, status=status.HTTP_400_BAD_REQUEST)
 
         export_data = export_data_set.first()
         task = AbortableAsyncResult(task_id)
-        if export_data.status != ExportData.STATUS_RUNNING:
+        # if tasks are finished
+        if task.state in TASK_NO_WORKING_STATES:
             return Response({
                 'task_id': task_id,
                 'task_state': task.state,
                 'status': export_data.status,
-                'message': f'Cannot stop this export process'
+                'message': MSG_EXPORT_UNSTOPPABLE
             }, status=status.HTTP_400_BAD_REQUEST)
 
         # Abort the corresponding task_id
         task.abort()
         # task.revoke(terminate=True)
         if task.state != ABORTED:
-            return Response({'message': f'Cannot abort this export process'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                'task_id': task_id,
+                'task_state': task.state,
+                'status': export_data.status,
+                'message': MSG_EXPORT_UNABORTABLE
+            }, status=status.HTTP_400_BAD_REQUEST)
 
         # Delete export data file which created on the export process
         cookie = request.user.get_or_create_cookie().decode()
@@ -374,17 +398,16 @@ def export_data_rollback_process(task, cookies, export_data_id, **kwargs):
         if export_data is None:
             raise ExportDataTaskException(MSG_EXPORT_REMOVED)
 
-        # when exception
-        if export_data.status in [ExportData.STATUS_STOPPING, ExportData.STATUS_STOPPED]:
-            logger.debug(f'stop-processing')
-            return None
+        # if export processes can not be stopped
+        if export_data.status not in ExportData.EXPORT_DATA_STOPPABLE:
+            logger.debug(MSG_EXPORT_UNSTOPPABLE)
+            raise ExportDataTaskException(MSG_EXPORT_UNSTOPPABLE)
 
-        if export_data.status == ExportData.STATUS_RUNNING:
-            # stop it
-            export_data_set.update(
-                task_id=task.request.id,
-                status=ExportData.STATUS_STOPPING,
-            )
+        # start stopping it
+        export_data_set.update(
+            task_id=task.request.id,
+            status=ExportData.STATUS_STOPPING,
+        )
         logger.debug(f'stopping process')
 
         export_data = export_data_set.first()
@@ -405,19 +428,23 @@ def export_data_rollback_process(task, cookies, export_data_id, **kwargs):
 
         # stop it
         export_data_set.update(
-            status=export_data_status,
+            status=ExportData.STATUS_STOPPED,
             process_end=timezone.make_naive(timezone.now(), timezone.utc),
             export_file=None,
         )
         logger.debug(f'stopped process')
 
-        _msg = f'The export data process is {export_data_status.lower()}'
-        if export_data_status == ExportData.STATUS_ERROR:
-            _msg = (f'The export data process is {export_data_status.lower()}'
-                    f' without completely deleting the export data file')
+        _msg = MSG_EXPORT_FORCE_STOPPED if export_data_status == ExportData.STATUS_ERROR else MSG_EXPORT_STOPPED
 
         if is_rollback:
             raise ExportDataTaskException(_msg)
+
+        return {
+            'message': _msg,
+            'export_data_id': export_data_id,
+            'export_data_task_id': kwargs.get('export_data_task'),
+            'export_data_status': export_data_status,
+        }
     except Exception as e:
         logger.debug(f'Exception {e}')
         # terminate process
