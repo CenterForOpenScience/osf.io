@@ -4,8 +4,9 @@ import logging
 import os
 
 from celery.contrib.abortable import AbortableAsyncResult, ABORTED
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.utils import timezone
+from django.utils.decorators import method_decorator
 from rest_framework import authentication as drf_authentication
 from rest_framework import status
 from rest_framework.parsers import JSONParser
@@ -20,6 +21,7 @@ from .location import ExportStorageLocationViewBaseView
 from ..utils import write_json_file
 
 logger = logging.getLogger(__name__)
+MSG_EXPORT_DUP_IN_SECOND = f'The equivalent process is running'
 
 
 class ExportDataBaseActionView(ExportStorageLocationViewBaseView, APIView):
@@ -55,6 +57,7 @@ class ExportDataBaseActionView(ExportStorageLocationViewBaseView, APIView):
         return institution, source_storage, location
 
 
+@method_decorator(transaction.non_atomic_requests, name='dispatch')
 class ExportDataActionView(ExportDataBaseActionView):
 
     def post(self, request, *args, **kwargs):
@@ -78,18 +81,17 @@ class ExportDataActionView(ExportDataBaseActionView):
                 source_waterbutler_settings=source_storage.waterbutler_settings
             )
         except IntegrityError:
-            return Response({'message': f'The equivalent process is running'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                'message': MSG_EXPORT_DUP_IN_SECOND
+            }, status=status.HTTP_400_BAD_REQUEST)
 
-        # create new task
+        # create a new task
         cookies = request.COOKIES
         cookie = request.user.get_or_create_cookie().decode()
         task = tasks.run_export_data_process.delay(cookies, export_data.id, cookie=cookie)
-        task_id = task.task_id
-        export_data.task_id = task_id
-        export_data.save()
 
         return Response({
-            'task_id': task_id,
+            'task_id': task.task_id,
             'task_state': task.state,
         }, status=status.HTTP_200_OK)
 
@@ -104,6 +106,7 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
     assert export_data
 
     # start process
+    export_data.task_id = task.request.id
     export_data.status = ExportData.STATUS_RUNNING
     export_data.save()
 
@@ -117,7 +120,7 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
         logger.debug(f'creating export data process folder')
         response = export_data.create_export_data_folder(cookies, **kwargs)
         if not task.is_aborted() and response.status_code != 201:
-            return export_data_rollback_process(cookies, export_data_id, **kwargs)
+            return export_data_rollback_process(task, cookies, export_data_id, **kwargs)
         logger.debug(f'created export data process folder')
 
         # export target file and accompanying data
@@ -127,7 +130,7 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
         logger.debug(f'creating files folder')
         response = export_data.create_export_data_files_folder(cookies, **kwargs)
         if not task.is_aborted() and response.status_code != 201:
-            return export_data_rollback_process(cookies, export_data_id, **kwargs)
+            return export_data_rollback_process(task, cookies, export_data_id, **kwargs)
         logger.debug(f'created files folder')
 
         if task.is_aborted():  # check before each steps
@@ -184,7 +187,7 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
         write_json_file(file_info_json, temp_file_path)
         response = export_data.upload_file_info_file(cookies, temp_file_path, **kwargs)
         if not task.is_aborted() and response.status_code != 201:
-            return export_data_rollback_process(cookies, export_data_id, **kwargs)
+            return export_data_rollback_process(task, cookies, export_data_id, **kwargs)
         logger.debug(f'created files information file')
 
         process_end = timezone.make_naive(timezone.now(), timezone.utc)
@@ -197,7 +200,7 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
         write_json_file(export_data_json, temp_file_path)
         response = export_data.upload_export_data_file(cookies, temp_file_path, **kwargs)
         if not task.is_aborted() and response.status_code != 201:
-            return export_data_rollback_process(cookies, export_data_id, **kwargs)
+            return export_data_rollback_process(task, cookies, export_data_id, **kwargs)
         logger.debug(f'created export data file')
 
         # remove temporary file
@@ -264,17 +267,14 @@ class StopExportDataActionView(ExportDataBaseActionView):
         cookie = request.user.get_or_create_cookie().decode()
         cookies = request.COOKIES
         task = tasks.run_export_data_rollback_process.delay(cookies, export_data.id, cookie=cookie)
-        task_id = task.task_id
-        export_data.task_id = task_id
-        export_data.save()
 
         return Response({
-            'task_id': task_id,
+            'task_id': task.task_id,
             'task_state': task.state,
         }, status=status.HTTP_200_OK)
 
 
-def export_data_rollback_process(cookies, export_data_id, **kwargs):
+def export_data_rollback_process(task, cookies, export_data_id, **kwargs):
     logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
     # get corresponding export data record
     export_data_set = export_data = None
@@ -292,6 +292,7 @@ def export_data_rollback_process(cookies, export_data_id, **kwargs):
         if export_data.status == ExportData.STATUS_RUNNING:
             # stop it
             export_data_set.update(
+                task_id=task.request.id,
                 status=ExportData.STATUS_STOPPING,
             )
         logger.debug(f'stopping process')
