@@ -15,6 +15,11 @@ class Migration(migrations.Migration):
             name='citation_styles',
             field=models.ManyToManyField(related_name='supported_styles', to='osf.CitationStyle'),
         ),
+        migrations.AddField(
+            model_name='abstractprovider',
+            name='assertions_enabled',
+            field=models.BooleanField(default=True),
+        ),
         migrations.AlterField(
             model_name='abstractnode',
             name='type',

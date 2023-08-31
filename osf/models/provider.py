@@ -369,6 +369,7 @@ class PreprintProvider(AbstractProvider):
         ('work', 'Work'),
         ('none', 'None')
     )
+    assertions_enabled = models.BooleanField(default=True)
     preprint_word = models.CharField(max_length=10, choices=PREPRINT_WORD_CHOICES, default='preprint')
     subjects_acceptable = DateTimeAwareJSONField(blank=True, default=list)
 
