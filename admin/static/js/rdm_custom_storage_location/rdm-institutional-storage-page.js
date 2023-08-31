@@ -937,6 +937,70 @@ const MSG_STOP_EXPORT_ERROR_0 = _('Cannot stop exporting data.');
 const MSG_STOP_EXPORT_ERROR_1 = _('Error occurred while stopping export data.');
 const MSG_STOP_EXPORT_BACKGROUND = _('Stop exporting in background.');
 
+function initExportProcess(key) {
+    window.contextVars[key] = {
+        'exportInBackground': false,
+        'stopExportInBackground': false,
+        'intervalID': undefined
+    };
+}
+
+function clearIntervalExportProcess(key) {
+    var intervalID = window.contextVars[key].intervalID;
+    if (intervalID) {
+        window.clearInterval(intervalID);
+        initExportProcess(key);
+    }
+}
+
+function isIntervalExportProcess(key) {
+    var intervalID = window.contextVars[key].intervalID;
+    if (intervalID) {
+        return !!window.contextVars[key].exportInBackground;
+    }
+}
+
+function isIntervalStopExportProcess(key) {
+    var intervalID = window.contextVars[key].intervalID;
+    if (intervalID) {
+        return !!window.contextVars[key].stopExportInBackground;
+    }
+}
+
+function setIntervalToCheckExportStatus(key, institution_id, source_id, location_id, task_id, element) {
+    if (window.contextVars[key].intervalID && window.contextVars[key].exportInBackground){
+        return;
+    }
+
+    // reset interval
+    clearIntervalExportProcess(key);
+    // var n = 0;
+    // var maxN = 5;
+    window.contextVars[key].exportInBackground = true;
+    window.contextVars[key].stopExportInBackground = false;
+    window.contextVars[key].intervalID = window.setInterval(function () {
+        checkStatusExportData(institution_id, source_id, location_id, task_id, element);
+        // ++n === maxN && clearIntervalExportProcess(key);
+    }, intervalCheckStatus);
+}
+
+function setIntervalToCheckStopExportingStatus(key, institution_id, source_id, location_id, task_id, element) {
+    if (window.contextVars[key].intervalID && window.contextVars[key].stopExportInBackground){
+        return;
+    }
+
+    // reset interval
+    clearIntervalExportProcess(key);
+    // var n = 0;
+    // var maxN = 5;
+    window.contextVars[key].exportInBackground = false;
+    window.contextVars[key].stopExportInBackground = true;
+    window.contextVars[key].intervalID = window.setInterval(function () {
+        checkStatusExportData(institution_id, source_id, location_id, task_id, element);
+        // ++n === maxN && clearIntervalExportProcess(key);
+    }, intervalCheckStatus);
+}
+
 function exportState(element) {
     // enabled $exportButton and disabled $stopExportButton
     var $parent = $(element).parent();
@@ -1028,7 +1092,6 @@ function exportData(institution_id, source_id, location_id, element) {
     var task_id;
     var key = source_id + '_' + location_id;
     closeGrowl();
-    window.contextVars[key] = {};
     $.ajax({
         url: url,
         type: 'POST',
@@ -1047,36 +1110,32 @@ function exportData(institution_id, source_id, location_id, element) {
                 // show `View Export Data` button
                 haveExportDataState(this.custom.element, location_id);
 
+                // reset interval
+                clearIntervalExportProcess(this.custom.key);
+
                 $osf.growl(TITLE_EXPORT, MSG_EXPORT_SUCCESS, MSG_TYPE_SUCCESS, 0);
             } else if (data.task_state === TASK_STATE_FAILURE) {
                 // task_state in (FAILURE, )
                 // prepare for export
                 exportState(this.custom.element);
 
+                // reset interval
+                clearIntervalExportProcess(this.custom.key);
+
                 $osf.growl(TITLE_EXPORT, MSG_EXPORT_ERROR_1, MSG_TYPE_DANGER, 0);
             } else {
                 // task_state in (PENDING, STARTED, )
                 // in the process of exporting
                 stopExportState(this.custom.element);
-
-                // to reset the interval
-                window.contextVars[this.custom.key].exportInBackground = true;
-
                 // set task_id to stop button
                 var $exportButton = $(this.custom.element);
                 var $stopExportButton = $exportButton.parent().find('.stop-export-button');
                 $stopExportButton.data('task_id', task_id);
 
-                $osf.growl(TITLE_EXPORT, MSG_EXPORT_BACKGROUND, MSG_TYPE_SUCCESS, 0);
-            }
+                // start and set interval for status check request
+                setIntervalToCheckExportStatus(this.custom.key, institution_id, source_id, location_id, task_id, element)
 
-            // start and set interval for status check request
-            if (window.contextVars[this.custom.key].exportInBackground) {
-                // var x = 0;
-                window.contextVars[this.custom.key].intervalID = window.setInterval(function () {
-                    checkStatusExportData(institution_id, source_id, location_id, task_id, element);
-                    // ++x === 5 && window.clearInterval(window.contextVars[this.custom.key].intervalID);
-                }, intervalCheckStatus);
+                $osf.growl(TITLE_EXPORT, MSG_EXPORT_BACKGROUND, MSG_TYPE_SUCCESS, 0);
             }
         },
         error: function (jqXHR) {
@@ -1127,11 +1186,6 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
         custom: {'element': element, 'key': key},
         timeout: 120000,
         success: function (data) {
-            // reset interval
-            window.contextVars[this.custom.key].exportInBackground && window.clearInterval(window.contextVars[this.custom.key].intervalID);
-            window.contextVars[this.custom.key].intervalID = undefined;
-            window.contextVars[this.custom.key].exportInBackground = false;
-
             task_id = data.task_id;
 
             if (data.task_state === TASK_STATE_SUCCESS) {
@@ -1140,11 +1194,16 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
                 // prepare for export
                 exportState(this.custom.element);
 
+                // reset interval
+                clearIntervalExportProcess(key);
+
                 $osf.growl(TITLE_STOP_EXPORT, MSG_STOP_EXPORT_SUCCESS, MSG_TYPE_SUCCESS, 0);
             } else if (data.task_state === TASK_STATE_FAILURE) {
                 // task_state in (FAILURE, )
                 // prepare to stop exporting
                 stopExportState(this.custom.element);
+
+                // continue status check request in interval loop
 
                 $osf.growl(TITLE_STOP_EXPORT, MSG_STOP_EXPORT_ERROR_1, MSG_TYPE_DANGER, 0);
             } else {
@@ -1152,19 +1211,10 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
                 // in the process of stopping export
                 stoppingExportState(element)
 
-                // to reset the interval
-                window.contextVars[this.custom.key].stopExportInBackground = true;
+                // start and set interval for status check request
+                setIntervalToCheckStopExportingStatus(this.custom.key, institution_id, source_id, location_id, task_id, element)
 
                 $osf.growl(TITLE_STOP_EXPORT, MSG_STOP_EXPORT_BACKGROUND, MSG_TYPE_SUCCESS, 0);
-            }
-
-            // start and set interval for status check request
-            if (window.contextVars[this.custom.key].stopExportInBackground) {
-                // var x = 0;
-                window.contextVars[this.custom.key].intervalID = window.setInterval(function () {
-                    checkStatusExportData(institution_id, source_id, location_id, task_id, element);
-                    // ++x === 5 && window.clearInterval(window.contextVars[this.custom.key].intervalID);
-                }, intervalCheckStatus);
             }
         },
         error: function (jqXHR) {
@@ -1226,16 +1276,12 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
         custom: {'element': element, 'key': key},
         timeout: 120000,
         success: function (data) {
-            var title = window.contextVars[this.custom.key].stopExportInBackground ? TITLE_STOP_EXPORT : TITLE_EXPORT;
-            var message = window.contextVars[this.custom.key].stopExportInBackground ? MSG_STOP_EXPORT_SUCCESS : MSG_EXPORT_SUCCESS;
+            var title = isIntervalStopExportProcess(this.custom.key) ? TITLE_STOP_EXPORT : TITLE_EXPORT;
+            var message = isIntervalStopExportProcess(this.custom.key) ? MSG_STOP_EXPORT_SUCCESS : MSG_EXPORT_SUCCESS;
             var messageType = MSG_TYPE_SUCCESS;
 
             if (data.task_state === TASK_STATE_SUCCESS) {
                 // task_state in (SUCCESS, )
-                // to reset the interval
-                window.clearInterval(window.contextVars[this.custom.key].intervalID);
-                window.contextVars[this.custom.key].intervalID = undefined;
-
                 // prepare for export
                 exportState(this.custom.element);
 
@@ -1243,57 +1289,57 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
                     // show `View Export Data` button
                     haveExportDataState(this.custom.element);
                     showExportFilesNotFound(data);
-                } else if (!window.contextVars[this.custom.key].stopExportInBackground) {
+                } else if (!isIntervalStopExportProcess(this.custom.key)) {
                     messageType = MSG_TYPE_DANGER;
                     message = MSG_EXPORT_FAILED;
                 }
+
+                // reset interval
+                clearIntervalExportProcess(this.custom.key);
+
+                $osf.growl(title, message, messageType, 0);
             } else if (data.task_state === TASK_STATE_FAILURE) {
                 // task_state in (FAILURE, )
-                // to reset the interval
-                window.clearInterval(window.contextVars[this.custom.key].intervalID);
-                window.contextVars[this.custom.key].intervalID = undefined;
+                message = isIntervalStopExportProcess(this.custom.key) ? MSG_STOP_EXPORT_ERROR_1 : MSG_EXPORT_ERROR_1;
 
-                messageType = MSG_TYPE_DANGER;
-                message = window.contextVars[this.custom.key].stopExportInBackground ? MSG_STOP_EXPORT_ERROR_1 : MSG_EXPORT_ERROR_1;
-                if (window.contextVars[this.custom.key].stopExportInBackground) {
+                if (isIntervalStopExportProcess(this.custom.key)) {
                     // prepare to stop exporting
                     stopExportState(this.custom.element);
                 } else {
                     // prepare for export
                     exportState(this.custom.element);
                 }
+
+                // reset interval
+                clearIntervalExportProcess(this.custom.key);
+
+                $osf.growl(title, message, MSG_TYPE_DANGER, 0);
             } else {
                 // task_state in (PENDING, STARTED, )
                 // keep this state, no alert
-            }
-
-            if (!window.contextVars[this.custom.key].intervalID) {
-                $osf.growl(title, message, messageType, 0);
-                // reset interval
-                window.contextVars[this.custom.key].intervalID = undefined;
-                window.contextVars[this.custom.key].exportInBackground = false;
-                window.contextVars[this.custom.key].stopExportInBackground = false;
             }
         },
         error: function (jqXHR) {
             // Permission denied...: wrong institution_id, wrong source_id, wrong location_id, wrong task_id
             // export data record is deleted
-            var title = window.contextVars[this.custom.key].stopExportInBackground ? TITLE_STOP_EXPORT : TITLE_EXPORT;
-            var message = window.contextVars[this.custom.key].stopExportInBackground ? MSG_STOP_EXPORT_ERROR_1 : MSG_EXPORT_ERROR_1;
+            var title = isIntervalStopExportProcess(this.custom.key) ? TITLE_STOP_EXPORT : TITLE_EXPORT;
+            var message = isIntervalStopExportProcess(this.custom.key) ? MSG_STOP_EXPORT_ERROR_1 : MSG_EXPORT_ERROR_1;
 
-            // reset interval
-            window.clearInterval(window.contextVars[this.custom.key].intervalID);
-            window.contextVars[this.custom.key].intervalID = undefined;
-            window.contextVars[this.custom.key].exportInBackground = false;
-            window.contextVars[this.custom.key].stopExportInBackground = false;
-
-            if (window.contextVars[this.custom.key].stopExportInBackground) {
+            if (isIntervalStopExportProcess(this.custom.key)) {
                 // prepare to stop exporting
                 stopExportState(this.custom.element);
             } else {
                 // prepare for export
                 exportState(this.custom.element);
             }
+
+            // reset interval
+            clearIntervalExportProcess(this.custom.key);
+
+            if (jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)) {
+                var data = jqXHR.responseJSON;
+                message = _(data.message);
+           }
 
             $osf.growl(title, message, MSG_TYPE_DANGER, 0);
         }
