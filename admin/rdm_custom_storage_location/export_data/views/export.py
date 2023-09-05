@@ -333,6 +333,7 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
         raise Ignore()
 
 
+@method_decorator(transaction.non_atomic_requests, name='dispatch')
 class StopExportDataActionView(ExportDataBaseActionView):
 
     def post(self, request, **kwargs):
