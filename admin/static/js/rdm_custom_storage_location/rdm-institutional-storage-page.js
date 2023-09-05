@@ -1224,35 +1224,32 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
             // prepare for stopping export
             stopExportState(this.custom.element);
 
-            var title = TITLE_STOP_EXPORT;
             var message = MSG_STOP_EXPORT_ERROR_0;
-            var messageType = MSG_TYPE_DANGER;
-
             if (jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)) {
                 var data = jqXHR.responseJSON;
                 message = _(data.message);
 
-                if ('task_state' in data && 'status' in data) {
-                    if (data.task_state === TASK_STATE_SUCCESS) {
-                        // task_state in (SUCCESS)
-                        // prepare for export
-                        exportState(this.custom.element);
-                    }
-
-                    if (data.status === EXPORT_STATUS_COMPLETED) {
-                        // show `View Export Data` button
-                        haveExportDataState(this.custom.element, location_id);
-                        title = TITLE_EXPORT;
-                        message = MSG_EXPORT_SUCCESS;
-                        messageType = MSG_TYPE_SUCCESS;
-                    } else if (data.status === EXPORT_STATUS_ERROR) {
-                        title = TITLE_EXPORT;
-                        message = MSG_EXPORT_FAILED;
-                    }
-                }
+                // if ('task_state' in data && 'status' in data) {
+                //     if (data.task_state === TASK_STATE_SUCCESS) {
+                //         // task_state in (SUCCESS)
+                //         // prepare for export
+                //         exportState(this.custom.element);
+                //     }
+                //
+                //     if (data.status === EXPORT_STATUS_COMPLETED) {
+                //         // show `View Export Data` button
+                //         haveExportDataState(this.custom.element, location_id);
+                //         title = TITLE_EXPORT;
+                //         message = MSG_EXPORT_SUCCESS;
+                //         messageType = MSG_TYPE_SUCCESS;
+                //     } else if (data.status === EXPORT_STATUS_ERROR) {
+                //         title = TITLE_EXPORT;
+                //         message = MSG_EXPORT_FAILED;
+                //     }
+                // }
             }
 
-            $osf.growl(title, message, messageType, 0);
+            $osf.growl(TITLE_STOP_EXPORT, message, MSG_TYPE_DANGER, 0);
         }
     });
 }
@@ -1289,9 +1286,9 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
                     // show `View Export Data` button
                     haveExportDataState(this.custom.element);
                     showExportFilesNotFound(data);
-                } else if (!isIntervalStopExportProcess(this.custom.key)) {
-                    messageType = MSG_TYPE_DANGER;
-                    message = MSG_EXPORT_FAILED;
+                // } else if (!isIntervalStopExportProcess(this.custom.key)) {
+                //     messageType = MSG_TYPE_DANGER;
+                //     message = MSG_EXPORT_FAILED;
                 }
 
                 // reset interval
