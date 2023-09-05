@@ -946,6 +946,11 @@ function initExportProcess(key) {
 }
 
 function clearIntervalExportProcess(key) {
+    if (!window.contextVars[key]) {
+        initExportProcess(key);
+        return;
+    }
+
     var intervalID = window.contextVars[key].intervalID;
     if (intervalID) {
         window.clearInterval(intervalID);
@@ -954,6 +959,10 @@ function clearIntervalExportProcess(key) {
 }
 
 function isIntervalExportProcess(key) {
+    if (!window.contextVars[key]) {
+        initExportProcess(key);
+        return false;
+    }
     var intervalID = window.contextVars[key].intervalID;
     if (intervalID) {
         return !!window.contextVars[key].exportInBackground;
@@ -961,6 +970,11 @@ function isIntervalExportProcess(key) {
 }
 
 function isIntervalStopExportProcess(key) {
+    if (!window.contextVars[key]) {
+        initExportProcess(key);
+        return false;
+    }
+
     var intervalID = window.contextVars[key].intervalID;
     if (intervalID) {
         return !!window.contextVars[key].stopExportInBackground;
@@ -968,7 +982,7 @@ function isIntervalStopExportProcess(key) {
 }
 
 function setIntervalToCheckExportStatus(key, institution_id, source_id, location_id, task_id, element) {
-    if (window.contextVars[key].intervalID && window.contextVars[key].exportInBackground){
+    if (window.contextVars[key] && window.contextVars[key].intervalID && window.contextVars[key].exportInBackground){
         return;
     }
 
@@ -985,7 +999,7 @@ function setIntervalToCheckExportStatus(key, institution_id, source_id, location
 }
 
 function setIntervalToCheckStopExportingStatus(key, institution_id, source_id, location_id, task_id, element) {
-    if (window.contextVars[key].intervalID && window.contextVars[key].stopExportInBackground){
+    if (window.contextVars[key] && window.contextVars[key].intervalID && window.contextVars[key].stopExportInBackground){
         return;
     }
 
@@ -1275,7 +1289,6 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
         success: function (data) {
             var title = isIntervalStopExportProcess(this.custom.key) ? TITLE_STOP_EXPORT : TITLE_EXPORT;
             var message = isIntervalStopExportProcess(this.custom.key) ? MSG_STOP_EXPORT_SUCCESS : MSG_EXPORT_SUCCESS;
-            var messageType = MSG_TYPE_SUCCESS;
 
             if (data.task_state === TASK_STATE_SUCCESS) {
                 // task_state in (SUCCESS, )
@@ -1294,7 +1307,7 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
                 // reset interval
                 clearIntervalExportProcess(this.custom.key);
 
-                $osf.growl(title, message, messageType, 0);
+                $osf.growl(title, message, MSG_TYPE_SUCCESS, 0);
             } else if (data.task_state === TASK_STATE_FAILURE) {
                 // task_state in (FAILURE, )
                 message = isIntervalStopExportProcess(this.custom.key) ? MSG_STOP_EXPORT_ERROR_1 : MSG_EXPORT_ERROR_1;
