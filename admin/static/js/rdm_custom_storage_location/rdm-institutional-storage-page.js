@@ -894,18 +894,49 @@ $('.row-storage select.location-select').change(function (event) {
         data: JSON.stringify(params),
         contentType: 'application/json; charset=utf-8',
     }).done(function (response) {
+        var key = source_id + '_' + location_id;
         var $stop_export_button = $('.stop-export-button');
         // Get task_id when call ajax successful
-        if (response['task_id']) {
-            $stop_export_button.removeClass('disabled');
-            $stop_export_button.attr('disabled', false);
-            $stop_export_button.data('task_id', response['task_id']);
-            var key = source_id + '_' + location_id;
-            window.contextVars[key] = {};
-            window.contextVars[key].exportInBackground = true;
+        var task_id = response['task_id'];
+        if (task_id) {
+            stopExportState($stop_export_button);
+            $stop_export_button.data('task_id', task_id);
+            setIntervalToCheckExportStatus(key, institution_id, source_id, location_id, task_id, $stop_export_button);
         } else {
-            $stop_export_button.addClass('disabled');
-            $stop_export_button.attr('disabled', true);
+            exportState($stop_export_button);
+            clearIntervalExportProcess(key);
+        }
+    })
+});
+
+$(document).ready(function () {
+    var institution_id = window.contextVars.institution_id;
+    var source_id = window.contextVars.source_id;
+    var location_id = $('#location-select-' + source_id).val() | $('#location-select').val();
+    var params = {
+        'institution_id': institution_id,
+        'source_id': source_id,
+        'location_id': location_id,
+    };
+    var route = 'check-running-export';
+    var url = '/custom_storage_location/export_data/' + route + '/';
+    $.ajax({
+        url: url,
+        type: 'POST',
+        data: JSON.stringify(params),
+        contentType: 'application/json; charset=utf-8',
+    }).done(function (response) {
+        var key = source_id + '_' + location_id;
+        var $stop_export_button = $('.stop-export-button');
+        // Get task_id when call ajax successful
+        var task_id = response['task_id'];
+        if (task_id) {
+            stopExportState($stop_export_button);
+            $stop_export_button.data('task_id', task_id);
+            setIntervalToCheckExportStatus(key, institution_id, source_id, location_id, task_id, $stop_export_button);
+        } else {
+            exportState($stop_export_button);
+            clearIntervalExportProcess(key);
         }
     })
 });
@@ -922,6 +953,7 @@ $('.row-storage button.view-export-data').click(function (event) {
 const TASK_STATE_SUCCESS = 'SUCCESS';
 const TASK_STATE_FAILURE = 'FAILURE';
 const EXPORT_STATUS_COMPLETED = 'Completed';
+const EXPORT_STATUS_STOPPED = 'Stopped';
 const EXPORT_STATUS_ERROR = 'Error';
 const TITLE_EXPORT = _('Export Data');
 const TITLE_STOP_EXPORT = _('Stop Export Data');
@@ -1161,7 +1193,7 @@ function exportData(institution_id, source_id, location_id, element) {
             var message = MSG_EXPORT_ERROR_0;
             if (jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)) {
                 var data = jqXHR.responseJSON;
-                message = _(data.message);
+                message = message + '<br/>' + _(data.message);
             }
 
             $osf.growl(TITLE_EXPORT, message, MSG_TYPE_DANGER, 0);
@@ -1241,25 +1273,27 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
             var message = MSG_STOP_EXPORT_ERROR_0;
             if (jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)) {
                 var data = jqXHR.responseJSON;
-                message = _(data.message);
+                message = message + '<br/>' + _(data.message);
 
-                // if ('task_state' in data && 'status' in data) {
-                //     if (data.task_state === TASK_STATE_SUCCESS) {
-                //         // task_state in (SUCCESS)
-                //         // prepare for export
-                //         exportState(this.custom.element);
-                //     }
+                if (data.task_state === TASK_STATE_FAILURE && data.status === EXPORT_STATUS_STOPPED) {
+                    message = message + '<br/>' + _('This export data process is ' + EXPORT_STATUS_STOPPED.toLowerCase());
+                }
+
+                // if (data.task_state === TASK_STATE_SUCCESS) {
+                //     // task_state in (SUCCESS)
+                //     // prepare for export
+                //     exportState(this.custom.element);
+                // }
                 //
-                //     if (data.status === EXPORT_STATUS_COMPLETED) {
-                //         // show `View Export Data` button
-                //         haveExportDataState(this.custom.element, location_id);
-                //         title = TITLE_EXPORT;
-                //         message = MSG_EXPORT_SUCCESS;
-                //         messageType = MSG_TYPE_SUCCESS;
-                //     } else if (data.status === EXPORT_STATUS_ERROR) {
-                //         title = TITLE_EXPORT;
-                //         message = MSG_EXPORT_FAILED;
-                //     }
+                // if (data.status === EXPORT_STATUS_COMPLETED) {
+                //     // show `View Export Data` button
+                //     haveExportDataState(this.custom.element, location_id);
+                //     title = TITLE_EXPORT;
+                //     message = MSG_EXPORT_SUCCESS;
+                //     messageType = MSG_TYPE_SUCCESS;
+                // } else if (data.status === EXPORT_STATUS_ERROR) {
+                //     title = TITLE_EXPORT;
+                //     message = MSG_EXPORT_FAILED;
                 // }
             }
 
@@ -1323,6 +1357,11 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
                 // reset interval
                 clearIntervalExportProcess(this.custom.key);
 
+                // join an error message
+                if (data.result && data.result.message){
+                    message = message + '<br/>' + _(data.result.message);
+                }
+
                 $osf.growl(title, message, MSG_TYPE_DANGER, 0);
             } else {
                 // task_state in (PENDING, STARTED, )
@@ -1348,7 +1387,7 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
 
             if (jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)) {
                 var data = jqXHR.responseJSON;
-                message = _(data.message);
+                message = message + '<br/>' + _(data.message);
            }
 
             $osf.growl(title, message, MSG_TYPE_DANGER, 0);
