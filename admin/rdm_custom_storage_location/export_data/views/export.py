@@ -6,6 +6,7 @@ import traceback
 from celery import states
 from celery.contrib.abortable import AbortableAsyncResult, ABORTED
 from celery.exceptions import Ignore, CeleryError
+from celery.result import AsyncResult
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -152,6 +153,10 @@ class ExportDataActionView(ExportDataBaseActionView):
         cookies = request.COOKIES
         cookie = request.user.get_or_create_cookie().decode()
         task = tasks.run_export_data_process.delay(cookies, export_data.id, cookie=cookie)
+        # try to replace by the exporting task
+        task_id = task.task_id
+        export_data.task_id = task_id
+        export_data.save()
 
         return Response({
             'task_id': task.task_id,
@@ -320,7 +325,7 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
                 'export_data_id': export_data_id,
             }
         if not isinstance(e, ExportDataTaskException):
-            task_meta['exc_traceback'] = traceback.format_exc().split('\n')
+            task_meta['traceback'] = traceback.format_exc().split('\n')
 
         export_data_set = ExportData.objects.filter(pk=export_data_id)
         if export_data_set.exists():
@@ -330,7 +335,7 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
             task_meta['export_data_status'] = export_data.status
 
         task.update_state(state=states.FAILURE, meta=task_meta)
-        raise Ignore()
+        raise Ignore(str(e))
 
 
 @method_decorator(transaction.non_atomic_requests, name='dispatch')
@@ -379,6 +384,10 @@ class StopExportDataActionView(ExportDataBaseActionView):
         cookies = request.COOKIES
         task = tasks.run_export_data_rollback_process.delay(
             cookies, export_data.id, cookie=cookie, export_data_task=task_id)
+        # try to replace by the stopping task
+        task_id = task.task_id
+        export_data.task_id = task_id
+        export_data.save()
 
         return Response({
             'task_id': task.task_id,
@@ -440,11 +449,14 @@ def export_data_rollback_process(task, cookies, export_data_id, **kwargs):
         if is_rollback:
             raise ExportDataTaskException(_msg)
 
+        export_data_task_id = kwargs.get('export_data_task')
+        export_data_task = AsyncResult(export_data_task_id)
         return {
             'message': _msg,
             'export_data_id': export_data_id,
-            'export_data_task_id': kwargs.get('export_data_task'),
+            'export_data_task_id': export_data_task_id,
             'export_data_status': export_data_status,
+            'export_data_task_result': get_task_result(export_data_task.result),
         }
     except Exception as e:
         logger.debug(f'Exception {e}')
@@ -457,7 +469,7 @@ def export_data_rollback_process(task, cookies, export_data_id, **kwargs):
             'export_data_task_id': kwargs.get('export_data_task'),
         }
         if not isinstance(e, ExportDataTaskException):
-            task_meta['exc_traceback'] = traceback.format_exc().split('\n')
+            task_meta['traceback'] = traceback.format_exc().split('\n')
 
         export_data_set = ExportData.objects.filter(pk=export_data_id)
         if export_data_set.exists():
@@ -467,7 +479,7 @@ def export_data_rollback_process(task, cookies, export_data_id, **kwargs):
             task_meta['export_data_status'] = export_data.status
 
         task.update_state(state=states.FAILURE, meta=task_meta)
-        raise Ignore()
+        raise Ignore(str(e))
 
 
 class CheckStateExportDataActionView(ExportDataBaseActionView):

@@ -1013,6 +1013,18 @@ function isIntervalStopExportProcess(key) {
     }
 }
 
+function isIntervalProcess(key) {
+    if (!window.contextVars[key]) {
+        initExportProcess(key);
+        return false;
+    }
+
+    var intervalID = window.contextVars[key].intervalID;
+    if (intervalID) {
+        return !!window.contextVars[key].exportInBackground || !!window.contextVars[key].stopExportInBackground;
+    }
+}
+
 function setIntervalToCheckExportStatus(key, institution_id, source_id, location_id, task_id, element) {
     if (window.contextVars[key] && window.contextVars[key].intervalID && window.contextVars[key].exportInBackground){
         return;
@@ -1128,6 +1140,10 @@ $('.export-button').click(function (event) {
 });
 
 function exportData(institution_id, source_id, location_id, element) {
+    var key = source_id + '_' + location_id;
+    if (isIntervalExportProcess(key)) {
+        return;
+    }
     var params = {
         'institution_id': institution_id,
         'source_id': source_id,
@@ -1136,7 +1152,6 @@ function exportData(institution_id, source_id, location_id, element) {
     var route = 'export';
     var url = '/custom_storage_location/export_data/' + route + '/';
     var task_id;
-    var key = source_id + '_' + location_id;
     closeGrowl();
     $.ajax({
         url: url,
@@ -1188,12 +1203,14 @@ function exportData(institution_id, source_id, location_id, element) {
             // Permission denied...: wrong institution_id, wrong source_id, wrong location_id
             // duplicate process in the seconds
             // prepare for export
-            exportState(this.custom.element);
+            if (!isIntervalProcess(key)) {
+                exportState(this.custom.element);
+            }
 
             var message = MSG_EXPORT_ERROR_0;
             if (jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)) {
                 var data = jqXHR.responseJSON;
-                message = message + '<br/>' + _(data.message);
+                message = _(data.message);
             }
 
             $osf.growl(TITLE_EXPORT, message, MSG_TYPE_DANGER, 0);
@@ -1215,6 +1232,9 @@ $('.stop-export-button').click(function (event) {
 
 function stopExportData(institution_id, source_id, location_id, task_id, element) {
     var key = source_id + '_' + location_id;
+    if (isIntervalStopExportProcess(key)) {
+        return;
+    }
     var params = {
         'institution_id': institution_id,
         'source_id': source_id,
@@ -1268,33 +1288,18 @@ function stopExportData(institution_id, source_id, location_id, task_id, element
             // export data record is deleted
             // task is done or cannot abort
             // prepare for stopping export
-            stopExportState(this.custom.element);
+            if (!isIntervalProcess(key)) {
+                stopExportState(this.custom.element);
+            }
 
             var message = MSG_STOP_EXPORT_ERROR_0;
             if (jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)) {
                 var data = jqXHR.responseJSON;
-                message = message + '<br/>' + _(data.message);
+                message = _(data.message);
 
                 if (data.task_state === TASK_STATE_FAILURE && data.status === EXPORT_STATUS_STOPPED) {
-                    message = message + '<br/>' + _('This export data process is ' + EXPORT_STATUS_STOPPED.toLowerCase());
+                    console.log('This export data process is ' + EXPORT_STATUS_STOPPED.toLowerCase());
                 }
-
-                // if (data.task_state === TASK_STATE_SUCCESS) {
-                //     // task_state in (SUCCESS)
-                //     // prepare for export
-                //     exportState(this.custom.element);
-                // }
-                //
-                // if (data.status === EXPORT_STATUS_COMPLETED) {
-                //     // show `View Export Data` button
-                //     haveExportDataState(this.custom.element, location_id);
-                //     title = TITLE_EXPORT;
-                //     message = MSG_EXPORT_SUCCESS;
-                //     messageType = MSG_TYPE_SUCCESS;
-                // } else if (data.status === EXPORT_STATUS_ERROR) {
-                //     title = TITLE_EXPORT;
-                //     message = MSG_EXPORT_FAILED;
-                // }
             }
 
             $osf.growl(TITLE_STOP_EXPORT, message, MSG_TYPE_DANGER, 0);
@@ -1333,14 +1338,15 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
                     // show `View Export Data` button
                     haveExportDataState(this.custom.element);
                     showExportFilesNotFound(data);
-                // } else if (!isIntervalStopExportProcess(this.custom.key)) {
-                //     messageType = MSG_TYPE_DANGER;
-                //     message = MSG_EXPORT_FAILED;
                 }
 
                 // reset interval
                 clearIntervalExportProcess(this.custom.key);
 
+                // result message
+                if (data.result && data.result.message){
+                    console.log(data.result.message);
+                }
                 $osf.growl(title, message, MSG_TYPE_SUCCESS, 0);
             } else if (data.task_state === TASK_STATE_FAILURE) {
                 // task_state in (FAILURE, )
@@ -1357,11 +1363,10 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
                 // reset interval
                 clearIntervalExportProcess(this.custom.key);
 
-                // join an error message
+                // error message
                 if (data.result && data.result.message){
-                    message = message + '<br/>' + _(data.result.message);
+                    console.log(data.result.message);
                 }
-
                 $osf.growl(title, message, MSG_TYPE_DANGER, 0);
             } else {
                 // task_state in (PENDING, STARTED, )
@@ -1387,7 +1392,7 @@ function checkStatusExportData(institution_id, source_id, location_id, task_id, 
 
             if (jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)) {
                 var data = jqXHR.responseJSON;
-                message = message + '<br/>' + _(data.message);
+                message = _(data.message);
            }
 
             $osf.growl(title, message, MSG_TYPE_DANGER, 0);
