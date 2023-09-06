@@ -20,7 +20,7 @@ from osf.metadata.rdfutils import (
     checksum_iri,
 )
 from osf import models as osfdb
-from osf.utils import permissions
+from osf.utils import permissions, workflows
 from osf_tests import factories
 from website import settings as website_settings
 from website.project import new_bookmark_collection
@@ -666,8 +666,9 @@ class TestOsfGathering(TestCase):
         })
 
     def test_gather_preprint_withdrawal(self):
-        # focus: preprint
+        # non-withdrawn
         assert_triples(osf_gathering.gather_preprint_withdrawal(self.preprintfocus), set())
+        # withdrawn (but not via PreprintRequest)
         self.preprint.date_withdrawn = datetime.datetime.now(tz=datetime.timezone.utc)
         self.preprint.withdrawal_justification = 'postprint unprint'
         _withdrawal_bnode = rdflib.BNode()
@@ -677,4 +678,24 @@ class TestOsfGathering(TestCase):
             (_withdrawal_bnode, RDF.type, OSF.Withdrawal),
             (_withdrawal_bnode, DCTERMS.description, Literal('postprint unprint')),
             (_withdrawal_bnode, DCTERMS.created, Literal(str(self.preprint.date_withdrawn.date()))),
+            (_withdrawal_bnode, DCTERMS.dateAccepted, Literal(str(self.preprint.date_withdrawn.date()))),
+        })
+        # withdrawn via PreprintRequest
+        _withdrawal_request = factories.PreprintRequestFactory(
+            target=self.preprint,
+            machine_state=workflows.ReviewStates.ACCEPTED.value,
+            request_type=workflows.RequestTypes.WITHDRAWAL.value,
+            creator=self.user__admin,
+            comment='request unprint',
+            created=datetime.datetime(2121, 2, 1, tzinfo=datetime.timezone.utc),
+            date_last_transitioned=datetime.datetime(2121, 2, 2, tzinfo=datetime.timezone.utc),
+        )
+        assert_triples(osf_gathering.gather_preprint_withdrawal(self.preprintfocus), {
+            (self.preprintfocus.iri, OSF.dateWithdrawn, Literal(str(self.preprint.date_withdrawn.date()))),
+            (self.preprintfocus.iri, OSF.withdrawal, _withdrawal_bnode),
+            (_withdrawal_bnode, RDF.type, OSF.Withdrawal),
+            (_withdrawal_bnode, DCTERMS.description, Literal('request unprint')),
+            (_withdrawal_bnode, DCTERMS.created, Literal(str(_withdrawal_request.created.date()))),
+            (_withdrawal_bnode, DCTERMS.dateAccepted, Literal(str(_withdrawal_request.date_last_transitioned.date()))),
+            (_withdrawal_bnode, DCTERMS.creator, osf_gathering.OsfFocus(_withdrawal_request.creator)),
         })

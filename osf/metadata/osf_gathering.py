@@ -429,13 +429,26 @@ def gather_registration_withdrawal(focus):
 def gather_preprint_withdrawal(focus):
     _preprint = focus.dbmodel
     yield (OSF.dateWithdrawn, _preprint.date_withdrawn)
-    if _preprint.withdrawal_justification:
+    _withdrawal_request = _preprint.requests.filter(
+        machine_state=osfworkflows.ReviewStates.ACCEPTED.value,
+        request_type=osfworkflows.RequestTypes.WITHDRAWAL.value,
+    ).last()
+    if _withdrawal_request:
+        _withdrawal_ref = rdflib.BNode()
+        yield (OSF.withdrawal, _withdrawal_ref)
+        yield (_withdrawal_ref, RDF.type, OSF.Withdrawal)
+        yield (_withdrawal_ref, DCTERMS.created, _withdrawal_request.created)
+        yield (_withdrawal_ref, DCTERMS.dateAccepted, _withdrawal_request.date_last_transitioned)
+        yield (_withdrawal_ref, DCTERMS.description, _withdrawal_request.comment)
+        yield (_withdrawal_ref, DCTERMS.creator, OsfFocus(_withdrawal_request.creator))
+    elif _preprint.date_withdrawn and _preprint.withdrawal_justification:
+        # no withdrawal request, but is still withdrawn
         _withdrawal_ref = rdflib.BNode()
         yield (OSF.withdrawal, _withdrawal_ref)
         yield (_withdrawal_ref, RDF.type, OSF.Withdrawal)
         yield (_withdrawal_ref, DCTERMS.created, _preprint.date_withdrawn)
+        yield (_withdrawal_ref, DCTERMS.dateAccepted, _preprint.date_withdrawn)
         yield (_withdrawal_ref, DCTERMS.description, _preprint.withdrawal_justification)
-        # TODO: query PreprintRequest and PreprintRequestAction for dateAccepted and creator
 
 
 @gather.er(DCTERMS.dateCopyrighted, DCTERMS.rightsHolder, DCTERMS.rights)
