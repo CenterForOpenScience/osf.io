@@ -2,6 +2,8 @@ import mock
 import pytest
 from nose import tools as nt
 
+from addons.osfstorage.models import Region
+from addons.osfstorage.settings import DEFAULT_REGION_ID
 from framework.auth import Auth
 from addons.osfstorage.apps import OSFStorageAddonAppConfig
 from osf.models import (
@@ -163,3 +165,14 @@ class TestRegion:
         export_data_1 = ExportDataFactory(source=region, status=ExportData.STATUS_COMPLETED)
         export_data_2 = ExportDataFactory(source=region, status=ExportData.STATUS_CHECKING)
         nt.assert_list_equal(list(region.location_ids_has_exported_data), [export_data_1.location.id, export_data_2.location.id])
+
+    def test_has_same_settings_as_default_region_true(self):
+        default_region = Region.objects.get(_id=DEFAULT_REGION_ID)
+        region = RegionFactory(name=default_region.name,
+                               waterbutler_credentials=default_region.waterbutler_credentials,
+                               waterbutler_settings=default_region.waterbutler_settings)
+        nt.assert_true(region.has_same_settings_as_default_region)
+
+    def test_has_same_settings_as_default_region_false(self):
+        region = RegionFactory()
+        nt.assert_false(region.has_same_settings_as_default_region)

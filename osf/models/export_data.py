@@ -138,8 +138,8 @@ class ExportData(base.BaseModel):
             'institution': institution_json,
         }
 
-        # If source is NII storage, also get default storage
-        if self.source.provider_name == 'osfstorage' and self.source.id != 1:
+        # If source institutional storage is the same as default storage, also get default storage for export
+        if self.source.has_same_settings_as_default_region and self.source.id != 1:
             # get list FileVersion linked to source storage, default storage
             # but the creator must be affiliated with current institution
             file_versions = FileVersion.objects.filter(region_id__in=[1, self.source.id], creator__affiliated_institutions___id=source_storage_guid)
@@ -156,12 +156,13 @@ class ExportData(base.BaseModel):
         projects = institution.nodes.filter(type='osf.node', is_deleted=False)
         institution_users = institution.osfuser_set.all()
         institution_users_projects = AbstractNode.objects.filter(type='osf.node', is_deleted=False, affiliated_institutions=None, creator__in=institution_users)
+        # If source institutional storage is not the same as default storage, get projects that belongs to that source institutional storage
+        if not self.source.has_same_settings_as_default_region:
+            projects = projects.filter(addons_osfstorage_node_settings__region=self.source)
+            institution_users_projects = institution_users_projects.filter(addons_osfstorage_node_settings__region=self.source)
         # Combine two project lists and remove duplicates if have
         projects = projects.union(institution_users_projects)
         projects__ids = projects.values_list('id', flat=True)
-        # If source is not NII storage, only get projects that belongs to that source institutional storage
-        if self.source.provider_name != 'osfstorage' and self.source.id != 1:
-            projects__ids = projects.filter(addons_osfstorage_node_settings__region=self.source).values_list('id', flat=True)
         source_project_ids = set()
 
         # get folder nodes
