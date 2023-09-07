@@ -110,7 +110,7 @@ class ExportDataBaseActionView(ExportStorageLocationViewBaseView, APIView):
         """render json response instance of rest framework"""
         response = Response(data=data, status=status_code)
         response.accepted_renderer = JSONRenderer()
-        response.accepted_media_type = "application/json"
+        response.accepted_media_type = 'application/json'
         response.renderer_context = {}
         response.render()
 
@@ -322,10 +322,10 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
         # terminate process
 
         task_meta = {
-                'exc_type': type(e).__name__,
-                'exc_message': str(e),
-                'export_data_id': export_data_id,
-            }
+            'exc_type': type(e).__name__,
+            'exc_message': str(e),
+            'export_data_id': export_data_id,
+        }
         if not isinstance(e, ExportDataTaskException):
             task_meta['traceback'] = traceback.format_exc().split('\n')
 
