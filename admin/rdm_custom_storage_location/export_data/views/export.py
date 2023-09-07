@@ -154,9 +154,11 @@ class ExportDataActionView(ExportDataBaseActionView):
         cookie = request.user.get_or_create_cookie().decode()
         task = tasks.run_export_data_process.delay(cookies, export_data.id, cookie=cookie)
         # try to replace by the exporting task
-        task_id = task.task_id
-        export_data.task_id = task_id
-        export_data.save()
+        export_data_set = ExportData.objects.filter(pk=export_data.id)
+        export_data_set.update(
+            task_id=task.task_id
+        )
+        export_data = export_data_set.first()
 
         return Response({
             'task_id': task.task_id,
@@ -385,9 +387,11 @@ class StopExportDataActionView(ExportDataBaseActionView):
         task = tasks.run_export_data_rollback_process.delay(
             cookies, export_data.id, cookie=cookie, export_data_task=task_id)
         # try to replace by the stopping task
-        task_id = task.task_id
-        export_data.task_id = task_id
-        export_data.save()
+        export_data_set = ExportData.objects.filter(pk=export_data.id)
+        export_data_set.update(
+            task_id=task.task_id
+        )
+        export_data = export_data_set.first()
 
         return Response({
             'task_id': task.task_id,
