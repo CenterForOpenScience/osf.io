@@ -59,7 +59,6 @@ from website.conferences import views as conference_views
 from website.preprints import views as preprint_views
 from website.registries import views as registries_views
 from website.reviews import views as reviews_views
-from website.institutions import views as institution_views
 from website.notifications import views as notification_views
 from website.ember_osf_web import views as ember_osf_web_views
 from website.closed_challenges import views as closed_challenges_views
@@ -1115,7 +1114,7 @@ def make_url_map(app):
     # Institution
 
     process_rules(app, [
-        Rule('/institutions/<inst_id>/', 'get', institution_views.view_institution, OsfWebRenderer('institution.mako', trust=False))
+        Rule('/institutions/<inst_id>/', 'get', ember_osf_web_views.use_ember_app, notemplate)
     ])
 
     process_rules(app, [
@@ -1123,7 +1122,7 @@ def make_url_map(app):
             '/institutions/<inst_id>/dashboard/',
         ],
             'get',
-            institution_views.view_institution_dashboard,
+            ember_osf_web_views.use_ember_app,
             notemplate)
     ])
 
@@ -1132,7 +1131,7 @@ def make_url_map(app):
     # Web
 
     process_rules(app, [
-        Rule('/', 'get', website_views.index, OsfWebRenderer('institution.mako', trust=False)),
+        Rule('/', 'get', ember_osf_web_views.use_ember_app, notemplate),
 
         Rule('/goodbye/', 'get', goodbye, notemplate),
 
