@@ -265,6 +265,8 @@
     {% render_bundle 'rdm-institutional-storage-page' %}
     <script>
         window.contextVars = $.extend(true, {}, window.contextVars, {
+            'export_control': false,
+            'restore_control': false,
             'institution_id': {{ institution.id }},
             'export_data_deleted_list_url':
                 {% if user.is_superuser %}

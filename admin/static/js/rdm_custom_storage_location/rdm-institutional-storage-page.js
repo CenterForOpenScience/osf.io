@@ -836,6 +836,15 @@ function deleteLocation(id) {
 
 // Start - institutional storages control screen - Actions
 
+$(document).ready(function () {
+    if (window.contextVars && !!window.contextVars.export_control) {
+        on_ready_check_running_export();
+    }
+    if (window.contextVars && !!window.contextVars.restore_control) {
+        on_ready_check_running_restore();
+    }
+});
+
 function showViewExportDataButton(element, location_id) {
     var $viewExportDataButton = $(element);
     if ($viewExportDataButton.hasClass('hidden')) {
@@ -885,7 +894,7 @@ $('.row-storage select.location-select').change(function (event) {
         }
     });
 
-    // Check if there is running export process on selected location
+    // Check if there is a running export process on selected location
     var check_running_route = 'check-running-export';
     var check_running_url = '/custom_storage_location/export_data/' + check_running_route + '/';
     $.ajax({
@@ -909,7 +918,7 @@ $('.row-storage select.location-select').change(function (event) {
     })
 });
 
-$(document).ready(function () {
+function on_ready_check_running_export(){
     var institution_id = window.contextVars.institution_id;
     var source_id = window.contextVars.source_id;
     var location_id = $('#location-select-' + source_id).val() | $('#location-select').val();
@@ -939,7 +948,7 @@ $(document).ready(function () {
             clearIntervalExportProcess(key);
         }
     })
-});
+}
 
 $('.row-storage button.view-export-data').click(function (event) {
     event.preventDefault();
@@ -950,6 +959,7 @@ $('.row-storage button.view-export-data').click(function (event) {
 
 
 // Start - Export data - Actions
+
 const TASK_STATE_SUCCESS = 'SUCCESS';
 const TASK_STATE_FAILURE = 'FAILURE';
 const EXPORT_STATUS_COMPLETED = 'Completed';
@@ -1526,6 +1536,27 @@ function enableCheckRestoreFunction() {
     var $stop_restore_button = $('#stop_restore_button');
     $stop_restore_button.addClass('disabled');
     $stop_restore_button.attr('disabled', true);
+}
+
+function on_ready_check_running_restore() {
+    !!data && (data = {});
+    data['destination_id'] = $('#destination_storage').val();
+    $.ajax({
+        url: 'check_running_restore/',
+        type: 'get',
+        data: data
+    }).done(function (response) {
+        var $stop_restore_button = $('#stop_restore_button');
+        // Get task_id when call ajax successful
+        var task_id = response['task_id'];
+        if (task_id) {
+            enableStopRestoreFunction();
+            restore_task_id = response['task_id'];
+            setTimeout(function () {
+                checkTaskStatus(restore_task_id, 'Restore');
+            }, intervalCheckStatus);
+        }
+    })
 }
 
 $('#cancel_restore_modal_button').on('click', function () {
