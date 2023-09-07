@@ -429,13 +429,26 @@ def gather_registration_withdrawal(focus):
 def gather_preprint_withdrawal(focus):
     _preprint = focus.dbmodel
     yield (OSF.dateWithdrawn, _preprint.date_withdrawn)
-    if _preprint.withdrawal_justification:
+    _withdrawal_request = _preprint.requests.filter(
+        machine_state=osfworkflows.ReviewStates.ACCEPTED.value,
+        request_type=osfworkflows.RequestTypes.WITHDRAWAL.value,
+    ).last()
+    if _withdrawal_request:
+        _withdrawal_ref = rdflib.BNode()
+        yield (OSF.withdrawal, _withdrawal_ref)
+        yield (_withdrawal_ref, RDF.type, OSF.Withdrawal)
+        yield (_withdrawal_ref, DCTERMS.created, _withdrawal_request.created)
+        yield (_withdrawal_ref, DCTERMS.dateAccepted, _withdrawal_request.date_last_transitioned)
+        yield (_withdrawal_ref, DCTERMS.description, _withdrawal_request.comment)
+        yield (_withdrawal_ref, DCTERMS.creator, OsfFocus(_withdrawal_request.creator))
+    elif _preprint.date_withdrawn and _preprint.withdrawal_justification:
+        # no withdrawal request, but is still withdrawn
         _withdrawal_ref = rdflib.BNode()
         yield (OSF.withdrawal, _withdrawal_ref)
         yield (_withdrawal_ref, RDF.type, OSF.Withdrawal)
         yield (_withdrawal_ref, DCTERMS.created, _preprint.date_withdrawn)
+        yield (_withdrawal_ref, DCTERMS.dateAccepted, _preprint.date_withdrawn)
         yield (_withdrawal_ref, DCTERMS.description, _preprint.withdrawal_justification)
-        # TODO: query PreprintRequest and PreprintRequestAction for dateAccepted and creator
 
 
 @gather.er(DCTERMS.dateCopyrighted, DCTERMS.rightsHolder, DCTERMS.rights)
@@ -839,7 +852,6 @@ def gather_funding(focus):
                 yield (_funder_ref, RDF.type, DCTERMS.Agent)
                 yield (_funder_ref, DCTERMS.identifier, _funder_uri)
                 yield (_funder_ref, FOAF.name, _funder_name)
-                yield (_funder_ref, OSF.funderIdentifierType, _funding.get('funder_identifier_type'))
             _award_uri = _funding.get('award_uri')
             _award_title = _funding.get('award_title')
             _award_number = _funding.get('award_number')
@@ -933,7 +945,10 @@ def gather_ia_url(focus):
 def gather_registration_type(focus):
     _reg_schema = getattr(focus.dbmodel.root, 'registration_schema')
     if _reg_schema:
-        _schema_url = rdflib.URIRef(_reg_schema.absolute_api_v2_url)
+        # using iri for the earliest schema version, so later versions are recognized as the same
+        # (TODO-someday: commit to a web-friendly schema url that resolves to something helpful)
+        _earliest_schema_version = osfdb.RegistrationSchema.objects.get_earliest_version(_reg_schema.name)
+        _schema_url = rdflib.URIRef(_earliest_schema_version.absolute_api_v2_url)
         yield (DCTERMS.conformsTo, _schema_url)
         yield (_schema_url, DCTERMS.title, _reg_schema.name)
         yield (_schema_url, DCTERMS.description, _reg_schema.description)
