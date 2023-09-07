@@ -188,26 +188,33 @@ class ExportData(base.BaseModel):
         projects__ids = projects.values_list('id', flat=True)
 
         # get folder nodes
-        base_folder_nodes = BaseFileNode.objects.filter(
-            # type='osf.{}folder'.format(self.source.provider_short_name),
-            type__endswith='folder',
-            target_object_id__in=projects__ids,
-            deleted=None)
         folders = []
-        for folder in base_folder_nodes:
-            folder_info = {
-                'path': folder.path,
-                'materialized_path': folder.materialized_path,
-                'project': {}
-            }
-            # project
-            project = folder.target
-            project_info = {
-                'id': project._id,
-                'name': project.title,
-            }
-            folder_info['project'] = project_info
-            folders.append(folder_info)
+        if self.source.provider_name in INSTITUTIONAL_STORAGE_BULK_MOUNT_METHOD:
+            # Bulk-mount storage
+            base_folder_nodes = BaseFileNode.objects.filter(
+                # type='osf.{}folder'.format(self.source.provider_short_name),
+                type__endswith='folder',
+                target_object_id__in=projects__ids,
+                deleted=None)
+            for folder in base_folder_nodes:
+                folder_info = {
+                    'path': folder.path,
+                    'materialized_path': folder.materialized_path,
+                    'project': {}
+                }
+                # project
+                project = folder.target
+                project_info = {
+                    'id': project._id,
+                    'name': project.title,
+                }
+                folder_info['project'] = project_info
+                folders.append(folder_info)
+        else:
+            # Addon storage
+            project_list = institution.nodes.filter(id__in=projects__ids)
+            for project in project_list:
+                self.process_directory(project, '/', folders, **kwargs)
 
         if self.source.provider_name in INSTITUTIONAL_STORAGE_BULK_MOUNT_METHOD:
             # Bulk-mount storage
@@ -397,6 +404,32 @@ class ExportData(base.BaseModel):
         export_data_json['projects_numb'] = len(projects__ids)
 
         return export_data_json, file_info_json
+
+    def process_directory(self, project, directory, visited_directories, **kwargs):
+        data_url = waterbutler_api_url_for(
+            project._id, self.source.provider_name, directory, _internal=True, meta='', **kwargs
+        )
+        storage_data_list = requests.get(data_url)
+        if storage_data_list.status_code != 200:
+            return
+        data_list = storage_data_list.json().get('data', [])
+        folder_list = []
+        for data in data_list:
+            attributes = data.get('attributes', {})
+            kind = attributes.get('kind')
+            if kind == 'folder':
+                folder_info = {
+                    'path': attributes.get('path'),
+                    'materialized_path': attributes.get('materialized'),
+                    'project': {
+                        'id': project._id,
+                        'name': project.title,
+                    }
+                }
+                folder_list.append(attributes.get('path'))
+                visited_directories.append(folder_info)
+        for sub_folder in folder_list:
+            self.process_directory(project, sub_folder, visited_directories, **kwargs)
 
     def get_source_file_versions_min(self, file_info_json):
         file_versions = []

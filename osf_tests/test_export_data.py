@@ -1,5 +1,7 @@
 import mock
 import pytest
+import requests
+import json
 from datetime import datetime
 from django.http import JsonResponse
 from django.test import TestCase
@@ -458,6 +460,19 @@ class TestExportDataInstitutionAddon(TestCase):
         with mock.patch('osf.models.export_data.requests', mock_request):
             result = self.export_data.extract_file_information_json_from_source_storage()
             nt.assert_is_not_none(result)
+
+    def test_process_directory(self):
+        test_response = requests.Response()
+        test_response.status_code = 200
+        test_response._content = json.dumps({'data': []}).encode('utf-8')
+
+        mock_request = mock.MagicMock()
+        mock_request.get.return_value = test_response
+        project = ProjectFactory()
+        project_list = []
+        with mock.patch('osf.models.export_data.requests', mock_request):
+            res = self.export_data.process_directory(project, '/', project_list)
+        nt.assert_equal(project_list, [])
 
 
 @pytest.mark.feature_202210
