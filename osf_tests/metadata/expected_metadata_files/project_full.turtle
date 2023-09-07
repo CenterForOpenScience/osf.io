@@ -86,8 +86,7 @@
 
 <https://doi.org/10.$$$$> a dcterms:Agent ;
     dcterms:identifier "https://doi.org/10.$$$$" ;
-    foaf:name "Mx. Moneypockets" ;
-    osf:funderIdentifierType "Crossref Funder ID" .
+    foaf:name "Mx. Moneypockets" .
 
 <http://localhost:5000/w1ibb> a dcterms:Agent,
         foaf:Person ;

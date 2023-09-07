@@ -12,6 +12,7 @@ OSF = rdflib.Namespace('https://osf.io/vocab/2022/')  # TODO: publish something 
 OSFIO = rdflib.Namespace(website_settings.DOMAIN)
 # external pid namespaces:
 DOI = rdflib.Namespace('https://doi.org/')
+DxDOI = rdflib.Namespace('http://dx.doi.org/')  # "earlier but no longer preferred" DOI namespace
 ORCID = rdflib.Namespace('https://orcid.org/')
 ROR = rdflib.Namespace('https://ror.org/')
 # external terminology namespaces:
