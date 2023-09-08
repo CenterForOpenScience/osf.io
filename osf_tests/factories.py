@@ -255,6 +255,7 @@ class InstitutionFactory(DjangoModelFactory):
     login_url = factory.Faker('url')
     logout_url = factory.Faker('url')
     identifier_domain = factory.Faker('url')
+    ror_uri = factory.Faker('url')
     domains = FakeList('url', n=3)
     email_domains = FakeList('domain_name', n=1)
     orcid_record_verified_source = ''

@@ -264,6 +264,9 @@ class CollectionProvider(AbstractProvider):
         path = '/providers/collections/{}/'.format(self._id)
         return api_v2_url(path)
 
+    def get_semantic_iri(self):
+        return f'{settings.DOMAIN}collections/{self._id}'
+
     def save(self, *args, **kwargs):
         saved_fields = self.get_dirty_fields() or []
         ret = super().save(*args, **kwargs)
@@ -330,6 +333,9 @@ class RegistrationProvider(AbstractProvider):
     def absolute_api_v2_url(self):
         path = '/providers/registrations/{}/'.format(self._id)
         return api_v2_url(path)
+
+    def get_semantic_iri(self):
+        return f'{settings.DOMAIN}registries/{self._id}'
 
     def validate_schema(self, schema):
         if not self.schemas.filter(id=schema.id).exists():
@@ -401,7 +407,7 @@ class PreprintProvider(AbstractProvider):
 
     @property
     def landing_url(self):
-        return self.domain if self.domain else '{}preprints/{}'.format(settings.DOMAIN, self._id)
+        return self.domain or self.get_semantic_iri()
 
     def get_absolute_url(self):
         return '{}preprint_providers/{}'.format(self.absolute_api_v2_url, self._id)
@@ -410,6 +416,10 @@ class PreprintProvider(AbstractProvider):
     def absolute_api_v2_url(self):
         path = '/providers/preprints/{}/'.format(self._id)
         return api_v2_url(path)
+
+    def get_semantic_iri(self):
+        return f'{settings.DOMAIN}preprints/{self._id}'
+
 
 def rules_to_subjects(rules):
     if not rules:
