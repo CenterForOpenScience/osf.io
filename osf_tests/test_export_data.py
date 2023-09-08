@@ -256,8 +256,11 @@ class TestExportData(TestCase):
         mock_obj = mock.MagicMock()
         mock_obj.filter.return_value.first.return_value = RdmFileTimestamptokenVerifyResultFactory(
             project_id=self.file.target.id, file_id=self.file.id)
+        mock_process_directory = mock.MagicMock()
+        mock_process_directory.return_value = None
         with mock.patch('osf.models.export_data.RdmFileTimestamptokenVerifyResult.objects', mock_obj):
-            result = self.export_data.extract_file_information_json_from_source_storage()
+            with mock.patch('osf.models.export_data.ExportData.process_directory', mock_process_directory):
+                result = self.export_data.extract_file_information_json_from_source_storage()
         nt.assert_is_not_none(result)
 
     def test_extract_file_information_json_from_source_storage_with_default_storage_project(self):
@@ -278,8 +281,11 @@ class TestExportData(TestCase):
         mock_obj = mock.MagicMock()
         mock_obj.filter.return_value.first.return_value = RdmFileTimestamptokenVerifyResultFactory(
             project_id=self.file.target.id, file_id=self.file.id)
+        mock_process_directory = mock.MagicMock()
+        mock_process_directory.return_value = None
         with mock.patch('osf.models.export_data.RdmFileTimestamptokenVerifyResult.objects', mock_obj):
-            result = export_data.extract_file_information_json_from_source_storage()
+            with mock.patch('osf.models.export_data.ExportData.process_directory', mock_process_directory):
+                result = export_data.extract_file_information_json_from_source_storage()
         nt.assert_is_not_none(result)
 
     def test_read_export_data_from_location(self):
@@ -434,9 +440,12 @@ class TestExportDataInstitutionAddon(TestCase):
                                               {'data': {'attributes': {'sizeInt': 1, 'name': 'test', 'extra': {'hashes': {'sha256': 'test'}}}}}]
         mock_request.get.return_value = mock_request_json
 
+        mock_process_directory = mock.MagicMock()
+        mock_process_directory.return_value = None
         with mock.patch('osf.models.export_data.requests', mock_request):
-            result = self.export_data.extract_file_information_json_from_source_storage()
-            nt.assert_is_not_none(result)
+            with mock.patch('osf.models.export_data.ExportData.process_directory', mock_process_directory):
+                result = self.export_data.extract_file_information_json_from_source_storage()
+                nt.assert_is_not_none(result)
 
     def test_extract_file_information_json_from_source_institutional_addon_storage_onedrivebusiness(self):
         mock_request = mock.MagicMock()
@@ -446,20 +455,25 @@ class TestExportDataInstitutionAddon(TestCase):
                                               {'data': {'attributes': {'sizeInt': 1, 'name': 'test', 'etag': 'test', 'extra': {'hashes': {}}}}},
                                               {'content': 'test'}]
         mock_request.get.return_value = mock_request_json
-
+        mock_process_directory = mock.MagicMock()
+        mock_process_directory.return_value = None
         with mock.patch('osf.models.export_data.requests', mock_request):
-            result = self.export_data.extract_file_information_json_from_source_storage()
-            nt.assert_is_not_none(result)
+            with mock.patch('osf.models.export_data.ExportData.process_directory', mock_process_directory):
+                result = self.export_data.extract_file_information_json_from_source_storage()
+                nt.assert_is_not_none(result)
 
     def test_extract_file_information_json_from_source_institutional_addon_storage_get_file_version_error(self):
         mock_request = mock.MagicMock()
         mock_request_json = mock.MagicMock()
         mock_request_json.status_code = 404
         mock_request.get.return_value = mock_request_json
+        mock_process_directory = mock.MagicMock()
+        mock_process_directory.return_value = None
 
         with mock.patch('osf.models.export_data.requests', mock_request):
-            result = self.export_data.extract_file_information_json_from_source_storage()
-            nt.assert_is_not_none(result)
+            with mock.patch('osf.models.export_data.ExportData.process_directory', mock_process_directory):
+                result = self.export_data.extract_file_information_json_from_source_storage()
+                nt.assert_is_not_none(result)
 
     def test_process_directory(self):
         test_response = requests.Response()
@@ -471,7 +485,7 @@ class TestExportDataInstitutionAddon(TestCase):
         project = ProjectFactory()
         project_list = []
         with mock.patch('osf.models.export_data.requests', mock_request):
-            res = self.export_data.process_directory(project, '/', project_list)
+            self.export_data.process_directory(project, '/', project_list)
         nt.assert_equal(project_list, [])
 
 
