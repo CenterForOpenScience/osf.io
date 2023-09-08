@@ -494,7 +494,7 @@ class TestExportDataRollbackProcess(unittest.TestCase):
 
     @pytest.mark.django_db
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
-    def test_export_data_rollback_process__rollback_raise_stopped(
+    def test_export_data_rollback_process__rollback_raise_stopped_with_warning(
             self, mock_export_data):
         mock_export_data.filter.return_value.first.return_value = self.export_data
         mock_export_data.filter.return_value.update.side_effect = self.update_fake
