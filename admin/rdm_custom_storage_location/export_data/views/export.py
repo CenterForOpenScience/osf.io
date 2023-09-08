@@ -76,8 +76,9 @@ class ExportDataBaseActionView(ExportStorageLocationViewBaseView, APIView):
         # admin isn't affiliated with this institution
         if (not institution_id
                 or not Institution.objects.filter(pk=institution_id).exists()
-                or (not request.user.is_super_admin
-                    and not request.user.is_affiliated_with_institution_id(institution_id))):
+                or not (request.user.is_super_admin
+                        or (request.user.is_staff and request.user.is_affiliated_with_institution_id(institution_id)))
+        ):
             return self.response_render({
                 'message': MSG_EXPORT_DENY_PERM_INST
             }, status_code=status.HTTP_400_BAD_REQUEST)
