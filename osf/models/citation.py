@@ -42,3 +42,6 @@ class CitationStyle(BaseModel):
     @property
     def has_parent_style(self):
         return self.parent_style is not None
+
+    def __str__(self):
+        return self.title
