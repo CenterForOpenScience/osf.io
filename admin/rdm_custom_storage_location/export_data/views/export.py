@@ -18,11 +18,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from addons.osfstorage.models import Region
+from admin.rdm_addons.utils import get_rdm_addon_option
 from admin.rdm_custom_storage_location import tasks
-from osf.models import Institution, ExportDataLocation, ExportData
+from osf.models import Institution, ExportDataLocation, ExportData, RegionExternalAccount
 from website.util import inspect_info  # noqa
 from .location import ExportStorageLocationViewBaseView
 from ..utils import write_json_file
+from website.settings import INSTITUTIONAL_STORAGE_BULK_MOUNT_METHOD
 
 logger = logging.getLogger(__name__)
 TASK_NO_WORKING_STATES = [
@@ -129,10 +131,26 @@ class ExportDataActionView(ExportDataBaseActionView):
 
         storage_credentials = source_storage.waterbutler_credentials['storage']
         source_waterbutler_credentials = None
-        if storage_credentials and 'host' in storage_credentials:
-            source_waterbutler_credentials = {
-                'host': storage_credentials['host'],
-            }
+        if source_storage.provider_name in INSTITUTIONAL_STORAGE_BULK_MOUNT_METHOD:
+            if storage_credentials and 'host' in storage_credentials:
+                source_waterbutler_credentials = {
+                    'host': storage_credentials['host'],
+                }
+        else:
+            external_account = None
+            if source_storage.provider_name == 'onedrivebusiness':
+                region_external_account = RegionExternalAccount.objects.filter(region=source_storage).first()
+                if region_external_account is not None:
+                    external_account = region_external_account.external_account
+            else:
+                addon_option = get_rdm_addon_option(institution.id, source_storage.provider_name, create=False)
+                if addon_option is not None:
+                    external_account = addon_option.external_accounts.first()
+            if external_account is not None:
+                provider_id = external_account.provider_id
+                source_waterbutler_credentials = {
+                    'host': provider_id,
+                }
 
         # Create new process record
         try:
