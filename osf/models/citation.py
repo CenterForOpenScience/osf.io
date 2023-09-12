@@ -45,3 +45,6 @@ class CitationStyle(BaseModel):
 
     def __str__(self):
         return self.title
+
+    def __repr__ (self):
+        return '<style %s>' % self.title
