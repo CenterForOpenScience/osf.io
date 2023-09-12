@@ -44,7 +44,7 @@ class CitationStyle(BaseModel):
         return self.parent_style is not None
 
     def __str__(self):
-        return self.title
+        return f'{self.title} ({self._id})'
 
     def __repr__(self):
-        return '<style %s>' % self.title
+        return f'{self.title} ({self._id})'
