@@ -180,6 +180,7 @@ OSFMAP = {
         OSF.statedConflictOfInterest: None,
     },
     OSF.File: {
+        DCAT.accessService: None,
         DCTERMS.created: None,
         DCTERMS.description: None,
         DCTERMS.identifier: None,
@@ -196,6 +197,7 @@ OSFMAP = {
         OWL.sameAs: None,
     },
     DCTERMS.Agent: {
+        DCAT.accessService: None,
         DCTERMS.identifier: None,
         FOAF.name: None,
         OSF.affiliation: None,
@@ -864,7 +866,7 @@ def gather_funding(focus):
 
 @gather.er(DCAT.accessService)
 def gather_access_service(focus):
-    yield (DCAT.accessService, rdflib.URIRef(website_settings.DOMAIN))
+    yield (DCAT.accessService, rdflib.URIRef(website_settings.DOMAIN.rstrip('/')))
 
 
 @gather.er(OSF.hostingInstitution)
