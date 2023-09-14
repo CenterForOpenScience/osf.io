@@ -603,9 +603,16 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
                                     if user.exists():
                                         file_version.creator = user.first()
                                         file_version.save()
+                                    else:
+                                        project = AbstractNode.load(file_project_id)
+                                        creator = project.creator
+                                        file_version.creator = creator
+                                        file_version.save()
                                     update_kwargs = {}
                                     if file_version_created_at is not None:
                                         update_kwargs['created'] = file_version_created_at
+                                    else:
+                                        update_kwargs['created'] = file_created
                                     if file_version_modified is not None:
                                         update_kwargs['modified'] = file_version_modified
                                     if update_kwargs:
