@@ -60,6 +60,12 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
             NodeLicense.objects.get(license_id=license_id) for license_id in
             provider_data.pop('licenses_acceptable', [])
         ]
+
+        citation_styles = [
+            CitationStyle.objects.get(_id=citation_id) for citation_id in
+            provider_data.pop('citation_styles_acceptable', [])
+        ]
+
         default_license = provider_data.pop('default_license', False)
         provider_data.pop('additional_providers', False)
         subject_data = provider_data.pop('subjects', False)
@@ -86,6 +92,8 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
             provider.brand = brand
         if licenses:
             provider.licenses_acceptable.set(licenses)
+        if citation_styles:
+            provider.citation_styles_acceptable.set(citation_styles)
         if default_license:
             provider.default_license = NodeLicense.objects.get(license_id=default_license)
 
