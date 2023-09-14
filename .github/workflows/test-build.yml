@@ -65,10 +65,10 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: 3.6
-    - name: Install lxml
+    - name: Install dev dependencies
       run: |
         sudo apt update
-        sudo apt-get install libxml2-dev libxslt-dev python-dev
+        sudo apt-get install libxml2-dev libxslt-dev python-dev nodejs
     - uses: ./.github/actions/start-build
     - name: Run tests
       run: invoke test_travis_addons -n 1
