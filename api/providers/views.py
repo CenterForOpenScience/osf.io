@@ -978,6 +978,9 @@ class PreprintProviderCitationStylesView(JSONAPIBaseView, generics.ListAPIView, 
     )
     serializer_class = CitationSerializer
 
+    required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
+    required_write_scopes = [CoreScopes.NULL]
+
     view_category = 'preprint-providers'
     view_name = 'preprint-provider-citation-styles'
 
