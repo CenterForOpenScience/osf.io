@@ -63,7 +63,7 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
 
         citation_styles = [
             CitationStyle.objects.get(_id=citation_id) for citation_id in
-            provider_data.pop('citation_styles_acceptable', [])
+            provider_data.pop('citation_styles', [])
         ]
 
         default_license = provider_data.pop('default_license', False)
