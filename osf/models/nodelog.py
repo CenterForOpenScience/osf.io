@@ -1,7 +1,7 @@
 from django.apps import apps
 from django.db import models
 from django.utils import timezone
-from osf.models.base import BaseModel, ObjectIDMixin
+from .base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 from website.util import api_v2_url

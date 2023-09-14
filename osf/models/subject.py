@@ -7,8 +7,8 @@ from django.utils.functional import cached_property
 
 from website.util import api_v2_url
 
-from osf.models.base import BaseModel, ObjectIDMixin
-from osf.models.validators import validate_subject_hierarchy_length, validate_subject_highlighted_count
+from .base import BaseModel, ObjectIDMixin
+from .validators import validate_subject_hierarchy_length, validate_subject_highlighted_count
 
 class SubjectQuerySet(QuerySet):
     def include_children(self):

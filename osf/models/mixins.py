@@ -24,14 +24,14 @@ from osf.exceptions import (
     InvalidTagError,
     BlockedEmailError,
 )
-from osf.models.node_relation import NodeRelation
-from osf.models.nodelog import NodeLog
-from osf.models.subject import Subject
-from osf.models.spam import SpamMixin, SpamStatus
-from osf.models.validators import validate_title
-from osf.models.tag import Tag
+from .node_relation import NodeRelation
+from .nodelog import NodeLog
+from .subject import Subject
+from .spam import SpamMixin, SpamStatus
+from .validators import validate_title
+from .tag import Tag
 from osf.utils import sanitize
-from osf.models.validators import validate_subject_hierarchy, validate_email, expand_subject_hierarchy
+from .validators import validate_subject_hierarchy, validate_email, expand_subject_hierarchy
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.machines import (
@@ -999,7 +999,7 @@ class ReviewProviderMixin(GuardianMixin):
 
     def get_request_state_counts(self):
         # import stuff here to get around circular imports
-        from osf.models import PreprintRequest
+        from .preprint import PreprintRequest
         qs = PreprintRequest.objects.filter(
             target__provider__id=self.id,
             target__is_public=True,

@@ -3,12 +3,12 @@ import pytz
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
-from osf.models import Node
-from osf.models import NodeLog
-from osf.models.base import GuidMixin, Guid, BaseModel
-from osf.models.mixins import CommentableMixin
-from osf.models.spam import SpamMixin
-from osf.models import validators
+from .node import Node
+from .nodelog import NodeLog
+from .base import GuidMixin, Guid, BaseModel
+from .mixins import CommentableMixin
+from .spam import SpamMixin
+from .validators import CommentMaxLength, string_required
 from osf.utils.fields import NonNaiveDateTimeField
 
 from framework.exceptions import PermissionsError
@@ -45,8 +45,10 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
     # The type of root_target: node/files
     page = models.CharField(max_length=255, blank=True)
     content = models.TextField(
-        validators=[validators.CommentMaxLength(settings.COMMENT_MAXLENGTH),
-                    validators.string_required]
+        validators=[
+            CommentMaxLength(settings.COMMENT_MAXLENGTH),
+            string_required,
+        ]
     )
 
     # The mentioned users

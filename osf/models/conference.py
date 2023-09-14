@@ -2,7 +2,7 @@
 from future.moves.urllib.parse import urljoin
 
 from django.db import models
-from osf.models.base import BaseModel, ObjectIDMixin
+from .base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 

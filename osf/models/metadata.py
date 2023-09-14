@@ -2,13 +2,13 @@
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, transaction
 
-from osf.models.base import (
+from .base import (
     BaseModel,
     InvalidGuid,
     ObjectIDMixin,
     coerce_guid,
 )
-from osf.models.validators import JsonschemaValidator
+from .validators import JsonschemaValidator
 
 
 class MetadataRecordCopyConflict(Exception):
@@ -106,7 +106,7 @@ class GuidMetadataRecord(ObjectIDMixin, BaseModel):
         return f'{self.__class__.__name__}(guid={self.guid._id})'
 
     def get_editable_fields(self):
-        from osf.models.files import BaseFileNode
+        from .files import BaseFileNode
         editable_fields = {
             'language',
             'resource_type_general',
@@ -135,8 +135,8 @@ class GuidMetadataRecord(ObjectIDMixin, BaseModel):
             self.guid.referent.request_identifier_update('doi')
 
     def _log_update(self, auth, updated_fields):
-        from osf.models.files import BaseFileNode
-        from osf.models.preprint import Preprint
+        from .files import BaseFileNode
+        from .preprint import Preprint
         loggable_referent = self.guid.referent
         log_params = {
             'updated_fields': updated_fields,

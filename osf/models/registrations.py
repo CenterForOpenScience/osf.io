@@ -21,32 +21,32 @@ from osf.utils.permissions import ADMIN, READ, WRITE
 from osf.exceptions import NodeStateError, DraftRegistrationStateError
 from osf.external.internet_archive.tasks import archive_to_ia, update_ia_metadata
 from osf.metrics import RegistriesModerationMetrics
-from osf.models import (
+from .action import RegistrationAction
+from .archive import ArchiveJob
+from .contributor import DraftRegistrationContributor
+from .metaschema import RegistrationSchema
+from .node import Node
+from .sanctions import (
     Embargo,
     EmbargoTerminationApproval,
-    DraftRegistrationContributor,
-    Node,
-    OSFUser,
     RegistrationApproval,
-    RegistrationSchema,
     Retraction,
 )
-from osf.models.action import RegistrationAction
-from osf.models.archive import ArchiveJob
-from osf.models.base import BaseModel, ObjectIDMixin
-from osf.models.draft_node import DraftNode
-from osf.models.licenses import NodeLicenseRecord
-from osf.models.mixins import (
+from .user import OSFUser
+from .base import BaseModel, ObjectIDMixin
+from .draft_node import DraftNode
+from .licenses import NodeLicenseRecord
+from .mixins import (
     EditableFieldsMixin,
     Loggable,
     GuardianMixin,
     RegistrationResponseMixin,
 )
-from osf.models.node import AbstractNode
-from osf.models.nodelog import NodeLog
-from osf.models.provider import RegistrationProvider
-from osf.models.tag import Tag
-from osf.models.validators import validate_title
+from .node import AbstractNode
+from .nodelog import NodeLog
+from .provider import RegistrationProvider
+from .tag import Tag
+from .validators import validate_title
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils import notifications as notify
 from osf.utils.workflows import (
@@ -830,7 +830,7 @@ class Registration(AbstractNode):
 
     def copy_registration_responses_into_schema_response(self, draft_registration=None, save=True):
         """Copies registration metadata into schema responses"""
-        from osf.models.schema_response import SchemaResponse
+        from .schema_response import SchemaResponse
         # TODO: stop populating registration_responses once all registrations
         #       have had initial responses backfilled
         if draft_registration:

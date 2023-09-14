@@ -10,6 +10,7 @@ from api.collections_providers.fields import CollectionProviderRelationshipField
 from api.preprints.serializers import PreprintProviderRelationshipField
 from api.providers.workflows import Workflows
 from api.base.metrics import MetricsSerializerMixin
+from osf.models import CitationStyle
 from osf.models.user import Email, OSFUser
 from osf.models.validators import validate_email
 from osf.utils.permissions import REVIEW_GROUPS, ADMIN
@@ -210,6 +211,7 @@ class PreprintProviderSerializer(MetricsSerializerMixin, ProviderSerializer):
 
     preprint_word = ser.CharField(read_only=True, allow_null=True)
     additional_providers = ser.ListField(read_only=True, child=ser.CharField())
+    assertions_enabled = ser.BooleanField()
 
     # Reviews settings are the only writable fields
     reviews_workflow = ser.ChoiceField(choices=Workflows.choices())
@@ -224,6 +226,11 @@ class PreprintProviderSerializer(MetricsSerializerMixin, ProviderSerializer):
 
     preprints = ReviewableCountsRelationshipField(
         related_view='providers:preprint-providers:preprints-list',
+        related_view_kwargs={'provider_id': '<_id>'},
+    )
+
+    citation_styles = RelationshipField(
+        related_view='providers:preprint-providers:preprint-provider-citation-styles',
         related_view_kwargs={'provider_id': '<_id>'},
     )
 
@@ -427,3 +434,13 @@ class CollectionsModeratorSerializer(ModeratorSerializer):
                 'version': self.context['request'].parser_context['kwargs']['version'],
             },
         )
+
+
+class CitationStyleSerializer(ser.ModelSerializer):
+    """
+    Serializer for CitationStyle model.
+    """
+
+    class Meta:
+        model = CitationStyle
+        fields = '__all__'  # Or specify the fields you want to serialize

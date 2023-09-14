@@ -3,7 +3,7 @@ import functools
 
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
-from osf.models.base import BaseModel, ObjectIDMixin
+from .base import BaseModel, ObjectIDMixin
 
 
 def _serialize(fields, instance):

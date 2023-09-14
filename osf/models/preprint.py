@@ -20,11 +20,14 @@ from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from framework.auth import oauth_scopes
 
-from osf.models import Subject, Tag, OSFUser, PreprintProvider
-from osf.models.preprintlog import PreprintLog
-from osf.models.contributor import PreprintContributor
-from osf.models.mixins import ReviewableMixin, Taggable, Loggable, GuardianMixin
-from osf.models.validators import validate_doi
+from .subject import Subject
+from .tag import Tag
+from .user import OSFUser
+from .provider import PreprintProvider
+from .preprintlog import PreprintLog
+from .contributor import PreprintContributor
+from .mixins import ReviewableMixin, Taggable, Loggable, GuardianMixin
+from .validators import validate_doi
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.workflows import DefaultStates, ReviewStates
 from osf.utils import sanitize
@@ -40,9 +43,9 @@ from website.citations.utils import datetime_to_csl
 from website import settings, mails
 from website.preprints.tasks import update_or_enqueue_on_preprint_updated
 
-from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
-from osf.models.identifiers import IdentifierMixin, Identifier
-from osf.models.mixins import TaxonomizableMixin, ContributorMixin, SpamOverrideMixin, TitleMixin, DescriptionMixin
+from .base import BaseModel, GuidMixin, GuidMixinQuerySet
+from .identifiers import IdentifierMixin, Identifier
+from .mixins import TaxonomizableMixin, ContributorMixin, SpamOverrideMixin, TitleMixin, DescriptionMixin
 from addons.osfstorage.models import OsfStorageFolder, Region, BaseFileNode, OsfStorageFile
 
 from framework.sentry import log_exception

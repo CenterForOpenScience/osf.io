@@ -38,16 +38,16 @@ from framework.sessions.utils import remove_sessions_for_user
 from api.share.utils import update_share
 from osf.utils.requests import get_current_request
 from osf.exceptions import reraise_django_validation_errors, UserStateError
-from osf.models.base import BaseModel, GuidMixin, GuidMixinQuerySet
-from osf.models.notable_domain import NotableDomain
-from osf.models.contributor import Contributor, RecentlyAddedContributor
-from osf.models.institution import Institution
-from osf.models.institution_affiliation import InstitutionAffiliation
-from osf.models.mixins import AddonModelMixin
-from osf.models.spam import SpamMixin
-from osf.models.session import UserSessionMap
-from osf.models.tag import Tag
-from osf.models.validators import validate_email, validate_social, validate_history_item
+from .base import BaseModel, GuidMixin, GuidMixinQuerySet
+from .notable_domain import NotableDomain
+from .contributor import Contributor, RecentlyAddedContributor
+from .institution import Institution
+from .institution_affiliation import InstitutionAffiliation
+from .mixins import AddonModelMixin
+from .spam import SpamMixin
+from .session import UserSessionMap
+from .tag import Tag
+from .validators import validate_email, validate_social, validate_history_item
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField, ensure_str
 from osf.utils.names import impute_names
@@ -832,8 +832,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # Skip bookmark collections
         user.collection_set.exclude(is_bookmark_collection=True).update(creator=self)
 
-        from osf.models import QuickFilesNode
-        from osf.models import BaseFileNode
+        from .files import BaseFileNode
+        from .quickfiles import QuickFilesNode
 
         # - projects where the user was the creator
         user.nodes_created.exclude(type=QuickFilesNode._typedmodels_type).update(creator=self)
@@ -878,7 +878,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         Permissions are stored on guardian tables.  PreprintContributor information needs to be transferred
         from user -> self, and preprint permissions need to be transferred from user -> self.
         """
-        from osf.models.preprint import PreprintContributor
+        from .preprint import PreprintContributor
 
         # Loop through `user`'s preprints
         for preprint in user.preprints.all():
@@ -1031,7 +1031,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             self.update_search()
             self.update_search_nodes_contributors()
         if 'fullname' in dirty_fields:
-            from osf.models.quickfiles import get_quickfiles_project_title, QuickFilesNode
+            from .quickfiles import get_quickfiles_project_title, QuickFilesNode
 
             quickfiles = QuickFilesNode.objects.filter(creator=self).first()
             if quickfiles:
@@ -1622,8 +1622,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         :returns: The added record
         """
 
-        from osf.models.provider import AbstractProvider
-        from osf.models.osf_group import OSFGroup
+        from .provider import AbstractProvider
+        from .osf_group import OSFGroup
 
         if isinstance(claim_origin, AbstractProvider):
             if not bool(get_perms(referrer, claim_origin)):

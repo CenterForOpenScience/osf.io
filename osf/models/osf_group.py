@@ -12,11 +12,13 @@ from framework.exceptions import PermissionsError
 from framework.auth.core import get_user, Auth
 from framework.sentry import log_exception
 from osf.exceptions import BlockedEmailError
-from osf.models import base
-from osf.models.mixins import GuardianMixin, Loggable
-from osf.models import Node, OSFUser, NodeLog
-from osf.models.osf_grouplog import OSFGroupLog
-from osf.models.validators import validate_email
+from .base import BaseModel, ObjectIDMixin
+from .mixins import GuardianMixin, Loggable
+from .node import Node
+from .nodelog import NodeLog
+from .user import OSFUser
+from .osf_grouplog import OSFGroupLog
+from .validators import validate_email
 from osf.utils.permissions import ADMIN, READ_NODE, WRITE, MANAGER, MEMBER, MANAGE, reduce_permissions
 from osf.utils import sanitize
 from website.project import signals as project_signals
@@ -26,7 +28,7 @@ from website.util import api_v2_url
 logger = logging.getLogger(__name__)
 
 
-class OSFGroup(GuardianMixin, Loggable, base.ObjectIDMixin, base.BaseModel):
+class OSFGroup(GuardianMixin, Loggable, ObjectIDMixin, BaseModel):
     """
     OSFGroup model.  When an OSFGroup is created, a manager and member Django group are created.
     Managers belong to both manager and member groups.  Members belong to the member group only.

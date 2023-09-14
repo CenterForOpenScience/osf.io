@@ -2,7 +2,7 @@ import hashlib
 from django.db import models
 
 from osf.exceptions import RegistrationBulkCreationContributorError
-from osf.models.base import BaseModel
+from .base import BaseModel
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import ensure_bytes
 from osf.utils.permissions import READ, WRITE, ADMIN
