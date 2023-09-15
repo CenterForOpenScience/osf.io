@@ -9,7 +9,7 @@ future==0.18.2
 invoke==0.15.0
 Werkzeug==1.0.0
 Flask==1.0
-gevent==21.8.0
+gevent==1.2.2
 Mako==1.0.7
 Markdown==3.3.7
 WTForms==1.0.4
@@ -17,8 +17,7 @@ WTForms==1.0.4
 # which fixes a bug that was causing stuck registrations
 # Need to pin to 4.1.1 due to https://github.com/celery/celery/issues/4355
 # TODO: Remove usage of this fork when celery/celery#4355 is resolved
-# git+https://github.com/cos-forks/celery@v4.1.1+cos0
-celery==4.1.1
+git+https://github.com/cos-forks/celery@v4.1.1+cos0
 kombu==4.2.0
 itsdangerous==1.1.0
 lxml==4.6.5
@@ -83,8 +82,7 @@ django-storages==1.6.6
 google-cloud-storage==0.22.0  # dependency of django-storages, hard-pin to version
 django-dirtyfields==1.3.1
 django-extensions==3.2.0
-#psycopg2==2.7.3 --no-binary psycopg2
-psycopg2-binary==2.9.7
+psycopg2==2.7.3 --no-binary psycopg2
 django-bulk-update==2.2.0
 
 # Reviews requirements
@@ -95,7 +93,7 @@ datacite==1.1.2
 
 # metadata
 rdflib==5.0.0
-rdflib-jsonld==0.6.2
+rdflib-jsonld==0.5.0
 
 
 # Metrics
@@ -103,4 +101,3 @@ git+https://github.com/CenterForOpenScience/django-elasticsearch-metrics@2022.0.
 
 # Impact Metrics CSV Export
 djangorestframework-csv==2.1.0
-
