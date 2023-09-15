@@ -259,6 +259,9 @@ def ember_app(path=None):
     for k in EXTERNAL_EMBER_APPS.keys():
         if request.path.strip('/').startswith(k):
             ember_app = EXTERNAL_EMBER_APPS[k]
+            if k == 'preprints' and request.path.rstrip('/').endswith('discover'):
+                # Route preprint discover pages to new search page in EOW
+                ember_app = EXTERNAL_EMBER_APPS.get('ember_osf_web', False) or ember_app
             break
 
     if not ember_app:
