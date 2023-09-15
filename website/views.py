@@ -152,6 +152,9 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
 
     return summary
 
+def index():
+    return use_ember_app()
+
 def find_bookmark_collection(user):
     Collection = apps.get_model('osf.Collection')
     return Collection.objects.get(creator=user, deleted__isnull=True, is_bookmark_collection=True)
