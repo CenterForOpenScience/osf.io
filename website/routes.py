@@ -260,6 +260,9 @@ def ember_app(path=None):
     for k in EXTERNAL_EMBER_APPS.keys():
         if request.path.strip('/').startswith(k):
             ember_app = EXTERNAL_EMBER_APPS[k]
+            if k == 'preprints' and request.path.rstrip('/').endswith('discover'):
+                # Route preprint discover pages to new search page in EOW
+                ember_app = EXTERNAL_EMBER_APPS.get('ember_osf_web', False) or ember_app
             break
 
     if not ember_app:
@@ -1115,7 +1118,7 @@ def make_url_map(app):
     # Institution
 
     process_rules(app, [
-        Rule('/institutions/<inst_id>/', 'get', institution_views.view_institution, OsfWebRenderer('institution.mako', trust=False))
+        Rule('/institutions/<inst_id>/', 'get', institution_views.view_institution, notemplate)
     ])
 
     process_rules(app, [
@@ -1132,7 +1135,7 @@ def make_url_map(app):
     # Web
 
     process_rules(app, [
-        Rule('/', 'get', website_views.index, OsfWebRenderer('institution.mako', trust=False)),
+        Rule('/', 'get', website_views.index, notemplate),
 
         Rule('/goodbye/', 'get', goodbye, notemplate),
 
