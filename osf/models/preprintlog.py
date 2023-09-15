@@ -1,6 +1,6 @@
 from django.apps import apps
 from django.db import models
-from osf.models.base import BaseModel, ObjectIDMixin
+from .base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from website.util import api_v2_url
 

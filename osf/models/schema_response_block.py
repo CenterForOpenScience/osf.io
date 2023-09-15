@@ -3,7 +3,7 @@ from django.utils.functional import cached_property
 
 from osf.exceptions import SchemaResponseUpdateError
 from osf.models import RegistrationSchemaBlock
-from osf.models.base import BaseModel, ObjectIDMixin
+from .base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils import sanitize
 

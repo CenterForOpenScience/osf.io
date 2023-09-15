@@ -17,10 +17,10 @@ from typedmodels.models import TypedModel, TypedModelManager
 from api.share.utils import update_share
 from framework.analytics import get_basic_counters
 from framework import sentry
-from osf.models.base import BaseModel, OptionalGuidMixin, ObjectIDMixin
-from osf.models.comment import CommentableMixin
-from osf.models.mixins import Taggable
-from osf.models.validators import validate_location
+from .base import BaseModel, OptionalGuidMixin, ObjectIDMixin
+from .comment import CommentableMixin
+from .mixins import Taggable
+from .validators import validate_location
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
 from api.base.utils import waterbutler_api_url_for
@@ -157,7 +157,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         """
         # Files are inaccessible if a node is retracted, so just show
         # the retraction detail page for files on retractions
-        from osf.models import AbstractNode
+        from .node import AbstractNode
         if isinstance(self.target, AbstractNode):
             if self.target.is_registration and self.target.is_retracted:
                 return self.target.web_url_for('view_project')

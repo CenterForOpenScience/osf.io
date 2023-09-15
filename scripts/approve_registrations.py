@@ -15,6 +15,8 @@ from osf import models
 from website.app import init_app
 from website import settings
 
+from framework import sentry
+
 from scripts import utils as scripts_utils
 
 
@@ -51,17 +53,21 @@ def main(dry_run=True):
             if pending_registration.archiving:
                 continue
 
-            with transaction.atomic():
-                try:
-                    # Call 'accept' trigger directly. This will terminate the embargo
-                    # if the registration is unmoderated or push it into the moderation
-                    # queue if it is part of a moderated registry.
-                    registration_approval.accept()
-                except Exception as err:
-                    logger.error(
-                        'Unexpected error raised when approving registration for '
-                        'registration {}. Continuing...'.format(pending_registration))
-                    logger.exception(err)
+            sid = transaction.savepoint()
+            try:
+                # Call 'accept' trigger directly. This will terminate the embargo
+                # if the registration is unmoderated or push it into the moderation
+                # queue if it is part of a moderated registry.
+                registration_approval.accept()
+                transaction.savepoint_commit(sid)
+            except Exception as err:
+                logger.error(
+                    f'Unexpected error raised when approving registration for '
+                    f'registration {pending_registration._id}. Continuing...'
+                )
+                sentry.log_message(str(err))
+                logger.exception(err)
+                transaction.savepoint_rollback(sid)
 
 
 @celery_app.task(name='scripts.approve_registrations')

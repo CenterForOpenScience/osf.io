@@ -15,12 +15,14 @@ from dirtyfields import DirtyFieldsMixin
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 
 from framework import sentry
-from osf.models.base import BaseModel, TypedObjectIDMixin
-from osf.models.licenses import NodeLicense
-from osf.models.mixins import ReviewProviderMixin
-from osf.models.storage import ProviderAssetFile
-from osf.models.subject import Subject
-from osf.models.brand import Brand
+from .base import BaseModel, TypedObjectIDMixin
+from .mixins import ReviewProviderMixin
+from .brand import Brand
+from .citation import CitationStyle
+from .licenses import NodeLicense
+from .notifications import NotificationSubscription
+from .storage import ProviderAssetFile
+from .subject import Subject
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.workflows import RegistrationModerationStates
 from osf.utils.fields import EncryptedTextField
@@ -28,7 +30,6 @@ from osf.utils.permissions import REVIEW_PERMISSIONS
 from website import settings
 from website.util import api_v2_url
 from functools import reduce
-from osf.models.notifications import NotificationSubscription
 
 
 class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, DirtyFieldsMixin, BaseModel):
@@ -59,6 +60,12 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
             NodeLicense.objects.get(license_id=license_id) for license_id in
             provider_data.pop('licenses_acceptable', [])
         ]
+
+        citation_styles = [
+            CitationStyle.objects.get(_id=citation_id) for citation_id in
+            provider_data.pop('citation_styles', [])
+        ]
+
         default_license = provider_data.pop('default_license', False)
         provider_data.pop('additional_providers', False)
         subject_data = provider_data.pop('subjects', False)
@@ -85,6 +92,8 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
             provider.brand = brand
         if licenses:
             provider.licenses_acceptable.set(licenses)
+        if citation_styles:
+            provider.citation_styles_acceptable.set(citation_styles)
         if default_license:
             provider.default_license = NodeLicense.objects.get(license_id=default_license)
 
@@ -268,7 +277,8 @@ class CollectionProvider(AbstractProvider):
         saved_fields = self.get_dirty_fields() or []
         ret = super().save(*args, **kwargs)
         if '_id' in saved_fields:
-            from osf.models.collection import Collection
+            # avoid circular import
+            from .collection import Collection
             if self.primary_collection:
                 Collection.bulk_update_search(self.primary_collection.collectionsubmission_set.all())
         return ret
@@ -337,8 +347,18 @@ class RegistrationProvider(AbstractProvider):
 
 
 class PreprintProvider(AbstractProvider):
+    """
+    Model representing a provider of preprints.
+
+    This model stores details about a specific provider of preprints, including supported citation styles,
+    custom wording, and associated subjects.
+    """
 
     def __init__(self, *args, **kwargs):
+        """
+        Initialize the PreprintProvider instance, setting the default for 'share_publish_type' to 'Preprint'.
+        """
+
         self._meta.get_field('share_publish_type').default = 'Preprint'
         super().__init__(*args, **kwargs)
 
@@ -347,6 +367,8 @@ class PreprintProvider(AbstractProvider):
     REVIEWABLE_RELATION_NAME = 'preprints'
 
     additional_providers = fields.ArrayField(models.CharField(max_length=200), default=list, blank=True)
+    # citation_styles classes with Abstract Provider
+    citation_styles = models.ManyToManyField(CitationStyle, related_name='supported_styles')
 
     PREPRINT_WORD_CHOICES = (
         ('preprint', 'Preprint'),
@@ -355,6 +377,7 @@ class PreprintProvider(AbstractProvider):
         ('work', 'Work'),
         ('none', 'None')
     )
+    assertions_enabled = models.BooleanField(default=True)
     preprint_word = models.CharField(max_length=10, choices=PREPRINT_WORD_CHOICES, default='preprint')
     subjects_acceptable = DateTimeAwareJSONField(blank=True, default=list)
 

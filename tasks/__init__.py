@@ -234,7 +234,7 @@ def syntax(ctx):
 
 
 @task(aliases=['req'])
-def requirements(ctx, base=False, addons=False, release=False, dev=False, all=False):
+def requirements(ctx, base=False, addons=False, release=False, dev=True, all=True):
     """Install python dependencies.
 
     Examples:
@@ -248,11 +248,12 @@ def requirements(ctx, base=False, addons=False, release=False, dev=False, all=Fa
     will have to be mentioned explicitly in order to run. This is to remain compatible with previous usages. Release
     requirements will prevent dev, and base from running.
     """
+    all = True
     if all:
         base = True
         addons = True
         dev = True
-    if not(addons or dev):
+    if not (addons or dev):
         base = True
     if release or addons:
         addon_requirements(ctx)

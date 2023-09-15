@@ -2,9 +2,9 @@
 import logging
 import re
 
+from django.apps import apps
 from django.core.exceptions import ValidationError
 
-from osf.models import OSFUser
 from osf.utils import sanitize
 
 logger = logging.getLogger(__name__)
@@ -29,6 +29,8 @@ def get_valid_mentioned_users_guids(comment, contributors):
     :param list contributors: List of contributors or group members on the node
     :return list new_mentions: List of valid contributors or group members mentioned in the comment content
     """
+    OSFUser = apps.get_model('osf', 'OSFUser')
+
     mentions = set(re.findall(r'\[[@|\+].*?\]\(htt[ps]{1,2}:\/\/[a-z\d:.]+?\/([a-z\d]{5,})\/\)', comment.content))
     if not mentions:
         return []

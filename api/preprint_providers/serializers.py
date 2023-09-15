@@ -1,7 +1,7 @@
 from rest_framework import serializers as ser
-
 from api.base.serializers import ShowIfVersion
 from api.providers.serializers import PreprintProviderSerializer
+
 
 class DeprecatedPreprintProviderSerializer(PreprintProviderSerializer):
     class Meta:

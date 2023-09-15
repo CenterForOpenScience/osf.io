@@ -5,7 +5,7 @@ import logging
 from framework.auth.core import Auth
 from django.utils import timezone
 
-from osf.models.node import AbstractNode, Node, NodeLog
+from .node import AbstractNode, Node, NodeLog
 from osf.exceptions import NodeStateError
 
 

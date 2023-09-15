@@ -237,7 +237,7 @@ class ProcessCustomTaxonomy(PermissionRequiredMixin, View):
         for subject in subjects_from_parent:
             subject_html += '<li><label><input type="checkbox" name="{}" value="{}" parent={}>{}</label>'.format(new_level, subject.id, parent_id, subject.text)
             if subject.children.count():
-                    subject_html += '<i class="subject-icon glyphicon glyphicon-menu-right"></i>'
+                subject_html += '<i class="subject-icon glyphicon glyphicon-menu-right"></i>'
             subject_html += '</li>'
         subject_html += '</ul>'
 
@@ -404,7 +404,7 @@ class SubjectDynamicUpdateView(PermissionRequiredMixin, View):
         for subject in subjects_from_parent:
             subject_html += '<li><label><input type="checkbox" name="{}" value="{}" parent={}>{}</label>'.format(new_level, subject.id, parent_id, subject.text)
             if subject.children.count():
-                    subject_html += '<i class="subject-icon glyphicon glyphicon-menu-right"></i>'
+                subject_html += '<i class="subject-icon glyphicon glyphicon-menu-right"></i>'
             subject_html += '</li>'
         subject_html += '</ul>'
 
