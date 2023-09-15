@@ -999,7 +999,7 @@ class ReviewProviderMixin(GuardianMixin):
 
     def get_request_state_counts(self):
         # import stuff here to get around circular imports
-        from .preprint import PreprintRequest
+        from . import PreprintRequest
         qs = PreprintRequest.objects.filter(
             target__provider__id=self.id,
             target__is_public=True,
