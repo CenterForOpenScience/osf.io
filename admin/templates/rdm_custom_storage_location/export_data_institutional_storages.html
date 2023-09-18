@@ -129,43 +129,16 @@
     {% render_bundle 'rdm-institutional-storage-page' %}
     <script>
         window.contextVars = $.extend(true, {}, window.contextVars, {
+            'export_control': true,
+            'restore_control': false,
             'institution_id': {{ institution.id }},
+            'source_id': {{ storages.0.id }},
             'export_data_list_url':
                 {% if user.is_superuser %}
                     "{% url 'custom_storage_location:export_data:export_data_list_institution' institution.id %}"
                 {% else %}
                     "{% url 'custom_storage_location:export_data:export_data_list' %}"
                 {% endif %},
-        });
-        $(document).ready(function() {
-            var institution_id = window.contextVars.institution_id;
-            var source_id = {{ storages.0.id }};
-            var location_id = $('#location-select-' + source_id).val() | $('#location-select').val();
-            var params = {
-                'institution_id': institution_id,
-                'source_id': source_id,
-                'location_id': location_id,
-            };
-            var route = 'check-running-export';
-            var url = '/custom_storage_location/export_data/' + route + '/';
-            $.ajax({
-                url: url,
-                type: 'POST',
-                data: JSON.stringify(params),
-                contentType: 'application/json; charset=utf-8',
-            }).done(function (response) {
-                // Get task_id when call ajax successful
-                if (response['task_id']) {
-                    console.log('task_id:' + response['task_id'])
-                    var $stop_export_button = $('.stop-export-button');
-                    $stop_export_button.removeClass('disabled');
-                    $stop_export_button.attr('disabled', false);
-                    $stop_export_button.data('task_id', response['task_id']);
-                    var key = source_id + '_' + location_id;
-                    window.contextVars[key] = {};
-                    window.contextVars[key].exportInBackground = true;
-                }
-            })
         });
     </script>
 {% endblock %}

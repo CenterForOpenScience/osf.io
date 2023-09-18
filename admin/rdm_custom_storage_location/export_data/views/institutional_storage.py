@@ -71,13 +71,14 @@ class ExportDataInstitutionalStorageListView(ExportStorageLocationViewBaseView, 
 
         kwargs.setdefault('institution', self.institution)
         kwargs.setdefault('storages', query_set)
-        locations = self.institution.get_allowed_storage_location_order_by_instutional_storage_and_default_storage()
+        locations = self.institution.get_allowed_storage_location_order_by()
         kwargs.setdefault('locations', locations)
         location_id = locations[0].id if locations else None
         kwargs.setdefault('location_id', location_id)
         kwargs.setdefault('page', page)
 
         return super(ExportDataInstitutionalStorageListView, self).get_context_data(**kwargs)
+
 
 class ExportDataListInstitutionListView(ExportStorageLocationViewBaseView, ListView):
     template_name = 'rdm_custom_storage_location/export_data_list_institutions.html'
