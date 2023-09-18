@@ -380,29 +380,18 @@
             </div>
         </div>
     {% endif %}
-    <script type="text/javascript">
-        var restore_task_id = null;
-        var stop_restore_task_id = null;
-        var data = {};
-        data['destination_id'] = $('#destination_storage').val();
-        $(document).ready(function () {
-            $.ajax({
-                url: 'check_running_restore/',
-                type: 'get',
-                data: data
-            }).done(function (response) {
-                // Get task_id when call ajax successful
-                if (response['task_id']) {
-                    var $stop_restore_button = $('#stop_restore_button');
-                    $stop_restore_button.removeClass('disabled');
-                    $stop_restore_button.attr('disabled', false);
-                    restore_task_id = response['task_id'];
-                }
-            })
-        });
-    </script>
 {% endblock content %}
 
 {% block bottom_js %}
     {% render_bundle 'rdm-institutional-storage-page' %}
+     <script>
+        var restore_task_id = null;
+        var stop_restore_task_id = null;
+        var data = {};
+        data['destination_id'] = $('#destination_storage').val();
+        window.contextVars = $.extend(true, {}, window.contextVars, {
+            'export_control': false,
+            'restore_control': true,
+        });
+    </script>
 {% endblock %}

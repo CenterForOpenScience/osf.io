@@ -5,8 +5,10 @@ import inspect  # noqa
 import logging
 
 from django.core.exceptions import SuspiciousOperation
+from django.db import transaction
 from django.http import HttpResponse, Http404, JsonResponse
 from django.shortcuts import render, redirect
+from django.utils.decorators import method_decorator
 from django.views import View
 from django.urls import reverse
 from django.views.generic import ListView
@@ -180,6 +182,7 @@ class ExportDataDeletedListView(ExportBaseView):
         return render(request, self.template_name, context)
 
 
+@method_decorator(transaction.non_atomic_requests, name='dispatch')
 class ExportDataInformationView(ExportBaseView):
     template_name = 'rdm_custom_storage_location/export_data_information.html'
 
@@ -261,6 +264,7 @@ class ExportDataInformationView(ExportBaseView):
         return render(request, self.template_name, context)
 
 
+@method_decorator(transaction.non_atomic_requests, name='dispatch')
 class DeleteExportDataView(ExportStorageLocationViewBaseView, View):
     raise_exception = True
 
@@ -334,6 +338,7 @@ class RevertExportDataView(ExportStorageLocationViewBaseView, View):
                 return redirect('custom_storage_location:export_data:export_data_deleted_list')
 
 
+@method_decorator(transaction.non_atomic_requests, name='dispatch')
 class ExportDataFileCSVView(RdmPermissionMixin, View):
 
     def get_object(self, **kwargs):
@@ -390,6 +395,7 @@ class ExportDataFileCSVView(RdmPermissionMixin, View):
         return response
 
 
+@method_decorator(transaction.non_atomic_requests, name='dispatch')
 class CheckExportData(RdmPermissionMixin, View):
 
     def get(self, request, data_id):
@@ -432,6 +438,7 @@ class CheckExportData(RdmPermissionMixin, View):
         return JsonResponse(data, status=200)
 
 
+@method_decorator(transaction.non_atomic_requests, name='dispatch')
 class CheckRestoreData(RdmPermissionMixin, View):
 
     def get(self, request, data_id):

@@ -80,5 +80,11 @@
 {% endblock content %}
 
 {% block bottom_js %}
-{% render_bundle 'rdm-institutional-storage-page' %}
+    {% render_bundle 'rdm-institutional-storage-page' %}
+    <script>
+        window.contextVars = $.extend(true, {}, window.contextVars, {
+            'export_control': false,
+            'restore_control': false,
+        });
+    </script>
 {% endblock %}

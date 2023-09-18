@@ -49,22 +49,33 @@ class SecondDateTimeField(DateTruncMixin, DateTimeField):
 
 
 class ExportData(base.BaseModel):
+    # status workflow:
+    # 'Pending' -> 'Running' -> 'Completed' -> 'Checking' -> 'Completed'
+    # 'Pending' -> 'Running' -> 'Error'
+    # 'Pending' -> 'Running' -> 'Stopping' -> 'Stopped'
+    # 'Pending' -> 'Running' -> 'Stopping' -> 'Error'
+    # 'Pending' -> 'Stopping' -> 'Stopped'
+    # 'Pending' -> 'Stopping' -> 'Error'
+    STATUS_PENDING = 'Pending'
     STATUS_RUNNING = 'Running'
     STATUS_STOPPING = 'Stopping'
+    STATUS_COMPLETED = 'Completed'
     STATUS_CHECKING = 'Checking'
     STATUS_STOPPED = 'Stopped'
-    STATUS_COMPLETED = 'Completed'
     STATUS_ERROR = 'Error'
 
     EXPORT_DATA_STATUS_CHOICES = (
+        (STATUS_PENDING, STATUS_PENDING.title()),
         (STATUS_RUNNING, STATUS_RUNNING.title()),
         (STATUS_STOPPING, STATUS_STOPPING.title()),
+        (STATUS_COMPLETED, STATUS_COMPLETED.title()),
         (STATUS_CHECKING, STATUS_CHECKING.title()),
         (STATUS_STOPPED, STATUS_STOPPED.title()),
-        (STATUS_COMPLETED, STATUS_COMPLETED.title()),
         (STATUS_ERROR, STATUS_ERROR.title()),
     )
+    EXPORT_DATA_STOPPABLE = [STATUS_PENDING, STATUS_RUNNING]
     EXPORT_DATA_AVAILABLE = [STATUS_COMPLETED, STATUS_CHECKING]
+    EXPORT_DATA_UNAVAILABLE = [STATUS_ERROR, STATUS_STOPPED]
     EXPORT_DATA_FILES_FOLDER = 'files'
     EXPORT_DATA_FAKE_NODE_ID = 'export_location'
 
@@ -84,6 +95,7 @@ class ExportData(base.BaseModel):
     source_name = models.CharField(max_length=200, null=True, blank=True)
     source_waterbutler_credentials = EncryptedJSONField(default=dict, null=True, blank=True)
     source_waterbutler_settings = DateTimeAwareJSONField(default=dict, null=True, blank=True)
+
     class Meta:
         db_table = 'osf_export_data'
         unique_together = ('source', 'location', 'process_start')
@@ -126,8 +138,8 @@ class ExportData(base.BaseModel):
             'institution': institution_json,
         }
 
-        # If source is NII storage, also get default storage
-        if self.source.provider_name == 'osfstorage' and self.source.id != 1:
+        # If source institutional storage is the same as default storage, also get default storage for export
+        if self.source.has_same_settings_as_default_region and self.source.id != 1:
             # get list FileVersion linked to source storage, default storage
             # but the creator must be affiliated with current institution
             file_versions = FileVersion.objects.filter(region_id__in=[1, self.source.id], creator__affiliated_institutions___id=source_storage_guid)
@@ -144,12 +156,13 @@ class ExportData(base.BaseModel):
         projects = institution.nodes.filter(type='osf.node', is_deleted=False)
         institution_users = institution.osfuser_set.all()
         institution_users_projects = AbstractNode.objects.filter(type='osf.node', is_deleted=False, affiliated_institutions=None, creator__in=institution_users)
+        # If source institutional storage is not the same as default storage, get projects that belongs to that source institutional storage
+        if not self.source.has_same_settings_as_default_region:
+            projects = projects.filter(addons_osfstorage_node_settings__region=self.source)
+            institution_users_projects = institution_users_projects.filter(addons_osfstorage_node_settings__region=self.source)
         # Combine two project lists and remove duplicates if have
         projects = projects.union(institution_users_projects)
         projects__ids = projects.values_list('id', flat=True)
-        # If source is not NII storage, only get projects that belongs to that source institutional storage
-        if self.source.provider_name != 'osfstorage' and self.source.id != 1:
-            projects__ids = projects.filter(addons_osfstorage_node_settings__region=self.source).values_list('id', flat=True)
         source_project_ids = set()
 
         # get folder nodes
