@@ -24,3 +24,8 @@ BOA_DATASETS = [
     '2013 February/SF',
     '2012 July/SF',
 ]
+
+user_settings = {
+    'username': '',
+    'password': '',
+}
