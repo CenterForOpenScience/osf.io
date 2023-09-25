@@ -1263,7 +1263,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
 
         if not node:
             # If no node provided, a DraftNode is created for you
-            node = DraftNode.objects.create(creator=user, title='Untitled')
+            node = DraftNode.objects.create(creator=user, title=settings.DEFAULT_DRAFT_NODE_TITLE)
 
         if not (isinstance(node, Node) or isinstance(node, DraftNode)):
             raise DraftRegistrationStateError()
@@ -1276,7 +1276,11 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
             provider=provider,
         )
         draft.save()
-        draft.copy_editable_fields(node, Auth(user), save=True)
+        draft.copy_editable_fields(
+            node,
+            save=True,
+            excluded_attributes=['title']  # Force the user to add their own title for no-project
+        )
         draft.update(data, auth=Auth(user))
 
         if node.type == 'osf.draftnode':
