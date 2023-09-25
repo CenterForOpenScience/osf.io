@@ -10,7 +10,6 @@ import os
 
 from celery.canvas import Signature
 from celery.local import PromiseProxy
-from gevent.pool import Pool
 from flask import _app_ctx_stack as context_stack
 
 from website import settings
@@ -38,13 +37,6 @@ def postcommit_after_request(response, base_status_error_code=500):
         _local.postcommit_celery_queue = OrderedDict()
         return response
     try:
-        if postcommit_queue():
-            number_of_threads = 30  # one db connection per greenlet, let's share
-            pool = Pool(number_of_threads)
-            for func in postcommit_queue().values():
-                pool.spawn(func)
-            pool.join(timeout=5.0, raise_error=True)  # 5 second timeout and reraise exceptions
-
         if postcommit_celery_queue():
             if settings.USE_CELERY:
                 for task_dict in postcommit_celery_queue().values():
