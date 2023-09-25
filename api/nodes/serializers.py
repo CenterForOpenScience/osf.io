@@ -581,7 +581,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             user_perms = obj.get_permissions(user)[::-1]
 
         user_perms = user_perms or default_perm
-        if not user_perms and user in obj.parent_admin_users:
+        if not user_perms and user in getattr(obj, 'parent_admin_users', []):
             user_perms = [osf_permissions.READ]
         return user_perms
 
