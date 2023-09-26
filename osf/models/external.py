@@ -15,7 +15,7 @@ from requests_oauthlib import OAuth1Session, OAuth2Session
 
 from framework.exceptions import HTTPError, PermissionsError
 from framework.sessions import get_session
-from osf.models import base
+from .base import BaseModel, ObjectIDMixin
 from osf.utils.fields import EncryptedTextField, NonNaiveDateTimeField
 from website.oauth.utils import PROVIDER_LOOKUP
 from website.security import random_string
@@ -30,7 +30,7 @@ OAUTH2 = 2
 
 generate_client_secret = functools.partial(random_string, length=40)
 
-class ExternalAccount(base.ObjectIDMixin, base.BaseModel):
+class ExternalAccount(ObjectIDMixin, BaseModel):
     """An account on an external service.
 
     Note that this object is not and should not be aware of what other objects

@@ -7,7 +7,7 @@ from django.db.models.expressions import RawSQL
 from django.utils import timezone
 from api.base import settings
 
-from osf.models.base import BaseModel, Guid
+from .base import BaseModel, Guid
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
 

@@ -9,10 +9,10 @@ from django.utils import timezone
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 from framework.celery_tasks.handlers import enqueue_task
 
-from osf.models.base import BaseModel, GuidMixin
-from osf.models.collection_submission import CollectionSubmission
-from osf.models.mixins import GuardianMixin
-from osf.models.validators import validate_title
+from .base import BaseModel, GuidMixin
+from .collection_submission import CollectionSubmission
+from .mixins import GuardianMixin
+from .validators import validate_title
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.permissions import ADMIN
 from osf.utils.workflows import CollectionSubmissionStates

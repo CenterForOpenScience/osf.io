@@ -38,21 +38,21 @@ from framework.exceptions import PermissionsError, HTTPError
 from framework.sentry import log_exception
 from osf.exceptions import (InvalidTagError, NodeStateError,
                             TagNotFoundError)
-from osf.models.contributor import Contributor
-from osf.models.collection_submission import CollectionSubmission
+from .contributor import Contributor
+from .collection_submission import CollectionSubmission
 
-from osf.models.identifiers import Identifier, IdentifierMixin
-from osf.models.licenses import NodeLicenseRecord
-from osf.models.metadata import GuidMetadataRecord
-from osf.models.mixins import (AddonModelMixin, CommentableMixin, Loggable, GuardianMixin,
+from .identifiers import Identifier, IdentifierMixin
+from .licenses import NodeLicenseRecord
+from .metadata import GuidMetadataRecord
+from .mixins import (AddonModelMixin, CommentableMixin, Loggable, GuardianMixin,
                                NodeLinkMixin, SpamOverrideMixin, RegistrationResponseMixin,
                                EditableFieldsMixin)
-from osf.models.node_relation import NodeRelation
-from osf.models.nodelog import NodeLog
-from osf.models.private_link import PrivateLink
-from osf.models.tag import Tag
-from osf.models.user import OSFUser
-from osf.models.validators import validate_title, validate_doi
+from .node_relation import NodeRelation
+from .nodelog import NodeLog
+from .private_link import PrivateLink
+from .tag import Tag
+from .user import OSFUser
+from .validators import validate_title, validate_doi
 from framework.auth.core import Auth
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, ensure_str
@@ -802,7 +802,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def osf_groups(self):
         """Returns a queryset of OSF Groups whose members have some permission to the node
         """
-        from osf.models.osf_group import OSFGroupGroupObjectPermission, OSFGroup
+        from .osf_group import OSFGroupGroupObjectPermission, OSFGroup
 
         member_groups = get_groups_with_perms(self).filter(name__icontains='osfgroup')
         return OSFGroup.objects.filter(id__in=OSFGroupGroupObjectPermission.objects.filter(group_id__in=member_groups).values_list('content_object_id'))
@@ -810,8 +810,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def get_osf_groups_with_perms(self, permission):
         """Returns a queryset of OSF Groups whose members have the specified permission to the node
         """
-        from osf.models.osf_group import OSFGroup
-        from osf.models.node import NodeGroupObjectPermission
+        from .osf_group import OSFGroup
+        from .node import NodeGroupObjectPermission
         try:
             perm_id = Permission.objects.get(codename=permission + '_node').id
         except Permission.DoesNotExist:
@@ -1912,7 +1912,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.save()
 
     def save(self, *args, **kwargs):
-        from osf.models import Registration
+        from .registrations import Registration
         first_save = not bool(self.pk)
         if 'suppress_log' in kwargs.keys():
             self._suppress_log = kwargs['suppress_log']

@@ -1,6 +1,6 @@
 from django.db import models
 
-from osf.models.base import BaseModel
+from .base import BaseModel
 
 
 class InstitutionStorageRegion(BaseModel):

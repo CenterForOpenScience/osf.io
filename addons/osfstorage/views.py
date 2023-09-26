@@ -379,7 +379,7 @@ def osfstorage_delete(file_node, payload, target, **kwargs):
     if not auth:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
     if file_node == OsfStorageFolder.objects.get_root(target=target):
-            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     try:
         file_node.delete(user=user)

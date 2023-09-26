@@ -5,8 +5,8 @@ import jsonschema
 
 from website.util import api_v2_url
 
-from osf.models.base import BaseModel, ObjectIDMixin
-from osf.models.validators import RegistrationResponsesValidator
+from .base import BaseModel, ObjectIDMixin
+from .validators import RegistrationResponsesValidator
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.exceptions import ValidationValueError, ValidationError
 

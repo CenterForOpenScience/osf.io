@@ -3,7 +3,7 @@ import uuid
 from website.util import api_v2_url
 
 from django.db import models
-from osf.models import base
+from .base import BaseModel, ObjectIDMixin
 from website.security import random_string
 
 from framework.auth import cas
@@ -16,7 +16,7 @@ def generate_client_secret():
     return random_string(length=40)
 
 
-class ApiOAuth2Scope(base.ObjectIDMixin, base.BaseModel):
+class ApiOAuth2Scope(ObjectIDMixin, BaseModel):
     """
     Store information about recognized OAuth2 scopes. Only scopes registered under this database model can
         be requested by third parties.
@@ -34,7 +34,7 @@ def generate_client_id():
     return uuid.uuid4().hex
 
 
-class ApiOAuth2Application(base.ObjectIDMixin, base.BaseModel):
+class ApiOAuth2Application(ObjectIDMixin, BaseModel):
     """Registration and key for user-created OAuth API applications
 
     This collection is also used by CAS to create the master list of available applications.
@@ -116,7 +116,7 @@ def generate_token_id():
     return random_string(length=70)
 
 
-class ApiOAuth2PersonalToken(base.ObjectIDMixin, base.BaseModel):
+class ApiOAuth2PersonalToken(ObjectIDMixin, BaseModel):
     """Information for user-created personal access tokens
 
     This collection is also used by CAS to create the master list of available tokens.

@@ -1,6 +1,8 @@
+from django.apps import apps
+
 from babel import dates, core, Locale
 
-from osf.models import AbstractNode, OSFUser, NotificationDigest, NotificationSubscription
+from osf.models import AbstractNode, NotificationDigest, NotificationSubscription
 from osf.utils.permissions import ADMIN, READ
 from website import mails
 from website.notifications import constants
@@ -52,6 +54,7 @@ def notify(event, user, node, timestamp, **context):
     return sent_users
 
 def notify_mentions(event, user, node, timestamp, **context):
+    OSFUser = apps.get_model('osf', 'OSFUser')
     recipient_ids = context.get('new_mentions', [])
     recipients = OSFUser.objects.filter(guids___id__in=recipient_ids)
     sent_users = notify_global_event(event, user, node, timestamp, recipients, context=context)
@@ -89,6 +92,8 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
     :param context:
     :return: --
     """
+    OSFUser = apps.get_model('osf', 'OSFUser')
+
     if notification_type == 'none':
         return
 

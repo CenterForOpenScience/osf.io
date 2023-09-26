@@ -8,7 +8,7 @@ from osf.exceptions import (
     NoSuchPIDValidatorError,
 )
 from osf.metadata.rdfutils import DOI
-from osf.models.base import BaseModel, ObjectIDMixin
+from .base import BaseModel, ObjectIDMixin
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils import identifiers as identifier_utils
 

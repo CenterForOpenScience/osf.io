@@ -7,12 +7,12 @@ from django.db import transaction
 from django.utils import timezone
 django.setup()
 
-from framework.auth import Auth
+from framework import sentry
 from framework.celery_tasks import app as celery_app
 
 from website.app import init_app
 from website import settings
-from osf.models import NodeLog, Retraction, Registration
+from osf.models import Retraction
 
 from scripts import utils as scripts_utils
 
@@ -32,6 +32,7 @@ def main(dry_run=True):
             except Exception as err:
                 logger.exception('Could not find registration associated with retraction {}'.format(retraction))
                 logger.error('Skipping...'.format(retraction))
+                sentry.log_message(str(err))
                 continue
 
             logger.warn(
@@ -39,14 +40,18 @@ def main(dry_run=True):
                 .format(retraction._id, parent_registration._id)
             )
             if not dry_run:
-                with transaction.atomic():
-                    try:
-                        retraction.accept()
-                    except Exception as err:
-                        logger.error(
-                            'Unexpected error raised when retracting '
-                            'registration {}. Continuing...'.format(parent_registration))
-                        logger.exception(err)
+                sid = transaction.savepoint()
+                try:
+                    retraction.accept()
+                    transaction.savepoint_commit(sid)
+                except Exception as err:
+                    logger.error(
+                        f'Unexpected error raised when retracting '
+                        f'registration {parent_registration._id}. Continuing...'
+                    )
+                    logger.exception(err)
+                    sentry.log_message(str(err))
+                    transaction.savepoint_rollback(sid)
 
 
 def should_be_retracted(retraction):

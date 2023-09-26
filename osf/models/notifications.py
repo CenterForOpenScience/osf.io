@@ -1,9 +1,9 @@
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
-from osf.models import Node
-from osf.models import OSFUser
-from osf.models.base import BaseModel, ObjectIDMixin
-from osf.models.validators import validate_subscription_type
+from .node import Node
+from .user import OSFUser
+from .base import BaseModel, ObjectIDMixin
+from .validators import validate_subscription_type
 from osf.utils.fields import NonNaiveDateTimeField
 from website.notifications.constants import NOTIFICATION_TYPES
 from website.util import api_v2_url

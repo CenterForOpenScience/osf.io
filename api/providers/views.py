@@ -1,28 +1,28 @@
-from framework.celery_tasks.handlers import enqueue_task
 import hashlib
-from api.providers.tasks import prepare_for_registration_bulk_creation
 from django.db.models import Case, CharField, Q, Value, When, IntegerField
 from django.http import JsonResponse
-from guardian.shortcuts import get_objects_for_user
 from rest_framework.exceptions import ValidationError
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 from rest_framework.exceptions import NotAuthenticated, NotFound
-from rest_framework.views import APIView
 from rest_framework.parsers import FileUploadParser
 from rest_framework.response import Response
-
+from rest_framework.views import APIView
 from api.actions.serializers import RegistrationActionSerializer
-from api.collection_submission_actions.serializers import CollectionSubmissionActionSerializer
 from api.base import permissions as base_permissions
-from osf.models.action import RegistrationAction, CollectionSubmissionAction
-from api.base.exceptions import InvalidFilterValue, InvalidFilterOperator, Conflict
+from api.base.exceptions import (
+    Conflict,
+    InvalidFilterOperator,
+    InvalidFilterValue,
+)
 from api.base.filters import PreprintFilterMixin, ListFilterMixin
-from api.base.views import JSONAPIBaseView, DeprecatedView
 from api.base.metrics import PreprintMetricsViewMixin
 from api.base.pagination import MaxSizePagination, IncreasedPageSizePagination
+from api.base.settings import BULK_SETTINGS
 from api.base.utils import get_object_or_error, get_user_auth, is_truthy
-from api.licenses.views import LicenseList
+from api.base.views import JSONAPIBaseView, DeprecatedView
+from api.citations.serializers import CitationSerializer
+from api.collection_submission_actions.serializers import CollectionSubmissionActionSerializer
 from api.collections.permissions import CanSubmitToCollectionOrPublic
 from api.collections.serializers import (
     CollectionSubmissionSerializer,
@@ -30,54 +30,62 @@ from api.collections.serializers import (
     LegacyCollectionSubmissionSerializer,
     LegacyCollectionSubmissionCreateSerializer,
 )
+from api.licenses.views import LicenseList
 from api.preprints.permissions import PreprintPublishedOrAdmin
 from api.preprints.serializers import PreprintSerializer
-from api.providers.permissions import CanAddModerator, CanDeleteModerator, CanUpdateModerator, CanSetUpProvider, MustBeModerator
-from api.providers.serializers import (
-    CollectionProviderSerializer,
-    PreprintProviderSerializer,
-    PreprintModeratorSerializer,
-    RegistrationProviderSerializer,
-    RegistrationModeratorSerializer,
-    CollectionsModeratorSerializer,
+from api.providers.permissions import (
+    CanAddModerator,
+    CanDeleteModerator,
+    CanSetUpProvider,
+    CanUpdateModerator,
+    MustBeModerator,
 )
+from api.providers.serializers import (
+    CollectionsModeratorSerializer,
+    CollectionProviderSerializer,
+    PreprintModeratorSerializer,
+    PreprintProviderSerializer,
+    RegistrationModeratorSerializer,
+    RegistrationProviderSerializer,
+)
+from api.providers.tasks import prepare_for_registration_bulk_creation
 from api.registrations import annotations as registration_annotations
 from api.registrations.serializers import RegistrationSerializer
 from api.requests.serializers import PreprintRequestSerializer, RegistrationRequestSerializer
 from api.resources import annotations as resource_annotations
 from api.schemas.serializers import RegistrationSchemaSerializer
-from api.subjects.views import SubjectList
 from api.subjects.serializers import SubjectSerializer
+from api.subjects.views import SubjectList
 from api.taxonomies.serializers import TaxonomySerializer
 from api.taxonomies.utils import optimize_subject_query
 from framework.auth.oauth_scopes import CoreScopes
-from api.base.settings import BULK_SETTINGS
-
+from framework.celery_tasks.handlers import enqueue_task
+from guardian.shortcuts import get_objects_for_user
+from osf.metrics import PreprintDownload, PreprintView
 from osf.models import (
     AbstractNode,
     CollectionProvider,
     CollectionSubmission,
     NodeLicense,
-    OSFUser,
-    RegistrationProvider,
-    Subject,
-    PreprintRequest,
-    PreprintProvider,
-    WhitelistedSHAREPreprintProvider,
     NodeRequest,
+    OSFUser,
+    PreprintProvider,
+    PreprintRequest,
     Registration,
     RegistrationBulkUploadJob,
+    RegistrationProvider,
+    Subject,
+    WhitelistedSHAREPreprintProvider,
 )
-from osf.utils.permissions import REVIEW_PERMISSIONS, ADMIN
-from osf.utils.workflows import RequestTypes
-from osf.metrics import PreprintDownload, PreprintView
-
+from osf.models.action import RegistrationAction, CollectionSubmissionAction
 from osf.registrations.utils import (
     BulkRegistrationUpload,
     InvalidHeadersError,
     FileUploadNotSupportedError,
     DuplicateHeadersError,
 )
+from osf.utils.permissions import REVIEW_PERMISSIONS, ADMIN
+from osf.utils.workflows import RequestTypes
 
 
 class ProviderMixin:
@@ -958,3 +966,28 @@ class RegistrationBulkCreate(APIView, ProviderMixin):
         parsed = upload.get_parsed()
         enqueue_task(prepare_for_registration_bulk_creation.s(file_md5, user_id, provider_id, parsed, dry_run=False))
         return Response(status=204)
+
+
+class PreprintProviderCitationStylesView(JSONAPIBaseView, generics.ListAPIView, ProviderMixin):
+    """
+    View to list all citation styles for a specific PreprintProvider.
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+    serializer_class = CitationSerializer
+
+    required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
+    required_write_scopes = [CoreScopes.NULL]
+
+    view_category = 'preprint-providers'
+    view_name = 'preprint-provider-citation-styles'
+
+    def get_queryset(self):
+        """
+        Retrieve the citation styles related to the PreprintProvider specified by provider_id.
+        """
+        provider_id = self.kwargs['provider_id']
+        provider = PreprintProvider.objects.get(_id=provider_id)
+        return provider.citation_styles.all()
