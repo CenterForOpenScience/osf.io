@@ -31,6 +31,8 @@ class InstitutionSerializer(JSONAPISerializer):
     id = ser.CharField(read_only=True, source='_id')
     description = ser.CharField(read_only=True)
     auth_url = ser.CharField(read_only=True)
+    iri = ser.CharField(read_only=True, source='identifier_domain')
+    ror_iri = ser.CharField(read_only=True, source='ror_uri')
     assets = ser.SerializerMethodField(read_only=True)
     links = LinksField({
         'self': 'get_api_url',

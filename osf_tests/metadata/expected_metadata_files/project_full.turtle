@@ -22,7 +22,7 @@
     dcterms:title "this is a project title!"@en ;
     dcterms:type <https://schema.datacite.org/meta/kernel-4.4/#Dataset> ;
     owl:sameAs <https://doi.org/10.70102/FK2osf.io/w2ibb> ;
-    dcat:accessService <http://localhost:5000/> ;
+    dcat:accessService <http://localhost:5000> ;
     osf:contains <http://localhost:5000/w3ibb> ;
     osf:funder <https://doi.org/10.$$$$> ;
     osf:hasFunding <https://moneypockets.example/millions> ;

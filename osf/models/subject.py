@@ -54,6 +54,14 @@ class Subject(ObjectIDMixin, BaseModel, DirtyFieldsMixin):
     def get_absolute_url(self):
         return self.absolute_api_v2_url
 
+    def get_semantic_iri(self) -> str:
+        _identified_subject = (
+            self.bepress_subject
+            if self.bepress_subject and (self.text != self.bepress_subject.text)
+            else self
+        )
+        return _identified_subject.absolute_api_v2_subject_url.rstrip('/')
+
     @cached_property
     def path(self):
         return '{}|{}'.format(self.provider.share_title, '|'.join([s.text for s in self.object_hierarchy]))

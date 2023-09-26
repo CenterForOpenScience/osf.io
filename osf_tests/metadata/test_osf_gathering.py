@@ -511,7 +511,7 @@ class TestOsfGathering(TestCase):
         assert_triples(osf_gathering.gather_affiliated_institutions(self.projectfocus), set())
         assert_triples(osf_gathering.gather_affiliated_institutions(self.userfocus__admin), set())
         institution = factories.InstitutionFactory()
-        institution_iri = URIRef(institution.identifier_domain)
+        institution_iri = URIRef(institution.ror_uri)
         self.user__admin.add_or_update_affiliated_institution(institution)
         self.project.add_affiliated_institution(institution, self.user__admin)
         assert_triples(osf_gathering.gather_affiliated_institutions(self.projectfocus), {
@@ -520,6 +520,7 @@ class TestOsfGathering(TestCase):
             (institution_iri, RDF.type, FOAF.Organization),
             (institution_iri, FOAF.name, Literal(institution.name)),
             (institution_iri, DCTERMS.identifier, Literal(institution.identifier_domain)),
+            (institution_iri, DCTERMS.identifier, Literal(institution.ror_uri)),
         })
         # focus: user
         assert_triples(osf_gathering.gather_affiliated_institutions(self.userfocus__admin), {
@@ -528,6 +529,7 @@ class TestOsfGathering(TestCase):
             (institution_iri, RDF.type, FOAF.Organization),
             (institution_iri, FOAF.name, Literal(institution.name)),
             (institution_iri, DCTERMS.identifier, Literal(institution.identifier_domain)),
+            (institution_iri, DCTERMS.identifier, Literal(institution.ror_uri)),
         })
         # focus: registration
         assert_triples(osf_gathering.gather_affiliated_institutions(self.registrationfocus), set())

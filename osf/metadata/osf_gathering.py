@@ -75,6 +75,7 @@ OSF_OBJECT_REFERENCE = {  # could reference non-osf objects too
     DCTERMS.type: None,
     DCTERMS.publisher: None,
     DCTERMS.rights: None,
+    OSF.affiliation: None,
     OSF.funder: None,
     OSF.hasFunding: None,
 }
@@ -180,6 +181,7 @@ OSFMAP = {
         OSF.statedConflictOfInterest: None,
     },
     OSF.File: {
+        DCAT.accessService: None,
         DCTERMS.created: None,
         DCTERMS.description: None,
         DCTERMS.identifier: None,
@@ -196,6 +198,7 @@ OSFMAP = {
         OWL.sameAs: None,
     },
     DCTERMS.Agent: {
+        DCAT.accessService: None,
         DCTERMS.identifier: None,
         FOAF.name: None,
         OSF.affiliation: None,
@@ -322,19 +325,15 @@ def osfguid_from_iri(iri):
 
 @gather.er(DCTERMS.identifier, rdflib.OWL.sameAs)
 def gather_identifiers(focus: gather.Focus):
-    guids_qs = getattr(focus.dbmodel, 'guids', None)
-    if guids_qs is not None:
-        for osfguid in guids_qs.values_list('_id', flat=True):
-            osfguid_iri = osf_iri(osfguid)
-            if osfguid_iri != focus.iri:
-                yield (OWL.sameAs, osfguid_iri)
-            yield (DCTERMS.identifier, str(osfguid_iri))
-    if hasattr(focus.dbmodel, 'get_identifier_value'):
-        doi = focus.dbmodel.get_identifier_value('doi')
-        if doi:
-            doi_iri = DOI[doi]
-            yield (OWL.sameAs, doi_iri)
-            yield (DCTERMS.identifier, str(doi_iri))
+    try:
+        _iris = focus.dbmodel.get_semantic_iris()
+    except AttributeError:
+        pass
+    else:
+        for _iri in _iris:
+            if _iri != str(focus.iri):
+                yield (OWL.sameAs, rdflib.URIRef(_iri))
+            yield (DCTERMS.identifier, rdflib.Literal(_iri))
 
 
 @gather.er(DCTERMS.type)
@@ -536,6 +535,7 @@ def gather_subjects(focus):
 
 
 def _subject_triples(dbsubject, *, child_ref=None, related_ref=None):
+    # agrees with osf.models.subject.Subject.get_semantic_iri
     _is_bepress = (not dbsubject.bepress_subject)
     _is_distinct_from_bepress = (dbsubject.text != dbsubject.bepress_text)
     if _is_bepress or _is_distinct_from_bepress:
@@ -821,12 +821,7 @@ def gather_affiliated_institutions(focus):
     else:
         institution_qs = ()
     for osf_institution in institution_qs:
-        if osf_institution.ror_uri:                 # prefer ROR if we have it
-            institution_iri = rdflib.URIRef(osf_institution.ror_uri)
-        elif osf_institution.identifier_domain:     # if not ROR, at least URI
-            institution_iri = rdflib.URIRef(osf_institution.identifier_domain)
-        else:                                       # fallback to a url on osf
-            institution_iri = rdflib.URIRef(osf_institution.absolute_url)
+        institution_iri = rdflib.URIRef(osf_institution.get_semantic_iri())
         yield (OSF.affiliation, institution_iri)
         yield (institution_iri, RDF.type, DCTERMS.Agent)
         yield (institution_iri, RDF.type, FOAF.Organization)
@@ -872,7 +867,7 @@ def gather_funding(focus):
 
 @gather.er(DCAT.accessService)
 def gather_access_service(focus):
-    yield (DCAT.accessService, rdflib.URIRef(website_settings.DOMAIN))
+    yield (DCAT.accessService, rdflib.URIRef(website_settings.DOMAIN.rstrip('/')))
 
 
 @gather.er(OSF.hostingInstitution)
@@ -958,16 +953,11 @@ def gather_registration_type(focus):
 def gather_publisher(focus):
     provider = getattr(focus.dbmodel, 'provider', None)
     if isinstance(provider, osfdb.AbstractProvider):
-        if isinstance(provider, osfdb.PreprintProvider):
-            provider_path_prefix = 'preprints'
-        elif isinstance(provider, osfdb.RegistrationProvider):
-            provider_path_prefix = 'registries'
-        elif isinstance(provider, osfdb.CollectionProvider):
-            provider_path_prefix = 'collections'
-        else:
-            raise ValueError(f'unknown provider type: {type(provider)} (for provider {provider})')
-        provider_iri = OSFIO[f'{provider_path_prefix}/{provider._id}']
-        yield from _publisher_tripleset(iri=provider_iri, name=provider.name, url=provider.domain)
+        yield from _publisher_tripleset(
+            iri=rdflib.URIRef(provider.get_semantic_iri()),
+            name=provider.name,
+            url=provider.domain,
+        )
     else:
         yield from _publisher_tripleset(
             iri=rdflib.URIRef(OSFIO.rstrip('/')),
