@@ -1261,9 +1261,12 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         else:
             provider.validate_schema(schema)
 
+        excluded_attributes = []
         if not node:
             # If no node provided, a DraftNode is created for you
             node = DraftNode.objects.create(creator=user, title=settings.DEFAULT_DRAFT_NODE_TITLE)
+            # Force the user to add their own title for no-project
+            excluded_attributes.append('title')
 
         if not (isinstance(node, Node) or isinstance(node, DraftNode)):
             raise DraftRegistrationStateError()
@@ -1279,7 +1282,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         draft.copy_editable_fields(
             node,
             save=True,
-            excluded_attributes=['title']  # Force the user to add their own title for no-project
+            excluded_attributes=excluded_attributes
         )
         draft.update(data, auth=Auth(user))
 
