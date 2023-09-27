@@ -159,10 +159,13 @@ class TestRecatalogMetadata:
 
 def expected_apply_async_calls(items):
     return [
-        mock.call(kwargs={
-            'guid': _item.guids.values_list('_id', flat=True).first(),
-            'is_backfill': True,
-        })
+        mock.call(
+            kwargs={
+                'guid': _item.guids.values_list('_id', flat=True).first(),
+                'is_backfill': True,
+            },
+            queue='low',
+        )
         for _item in items
     ]
 
