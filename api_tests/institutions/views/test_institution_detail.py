@@ -44,9 +44,7 @@ class TestInstitutionDetail:
             institution.absolute_url,
         }
         assert 'logo_path' in attrs
-        assert 'assets' in attrs
-        assert 'logo' in attrs['assets']
-        assert 'logo_rounded' in attrs['assets']
+        assert set(attrs['assets'].keys()) == {'logo', 'logo_rounded', 'banner'}
         assert res.json['data']['links']['self'].endswith(url)
 
         relationships = res.json['data']['relationships']

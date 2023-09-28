@@ -83,6 +83,7 @@ class InstitutionSerializer(JSONAPISerializer):
         return {
             'logo': obj.logo_path,
             'logo_rounded': obj.logo_path_rounded_corners,
+            'banner': obj.banner_path,
         }
 
     class Meta:
