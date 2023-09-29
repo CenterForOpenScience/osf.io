@@ -167,8 +167,9 @@ def boa_submit_job(node_addon, user_addon, **kwargs):
     upload_url = re.sub(r'\/[0123456789abcdef]+\?', '/?', upload_url)
     results_name = attrs['name'].replace('.boa', '_results.txt')
     upload_url = upload_url.replace('localhost', '192.168.168.167') + '&name=' + results_name
-    upload_url += '&cookie=' + cookie # request.cookies.get('osf')
-    up_resp = requests.put(upload_url, data=output) # , headers={'cookie': 'osf={}'.format(request.cookies.get('osf'))}) # , cookies=cookies)
+    upload_url += '&cookie=' + cookie
+    up_resp = requests.put(upload_url, data=output, cookies={})
+    # , headers={'cookie': 'osf={}'.format(request.cookies.get('osf'))}) # , cookies=cookies)
 
     boa.close()
 
