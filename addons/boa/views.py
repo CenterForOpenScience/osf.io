@@ -140,7 +140,7 @@ def boa_submit_job(node_addon, user_addon, **kwargs):
     resp = requests.get(download_url, cookies=cookies)
     query = resp.text
 
-    job = boa.query(query, boa.get_dataset('2019 October/GitHub'))
+    job = boa.query(query, boa.get_dataset(params['dataset']))
     check = 1
     while job.is_running():
         job.refresh()

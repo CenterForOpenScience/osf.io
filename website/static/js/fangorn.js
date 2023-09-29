@@ -1364,8 +1364,7 @@ function _submitToBoaEvent (event, item, col) {
     function runSubmitToBoa(item, dataset) {
         console.error('@@@ Submitting item to Boa!', item);
         return $osf.postJSON(
-            //window.contextVars.apiV2Prefix + 'files' + item.data.path + '/',
-            '/api/v1/project/7gxtc/boa/submit-job/',
+            item.data.nodeApiUrl + 'boa/submit-job/',
             {
                 data: item.data,
                 dataset: dataset,
@@ -1407,7 +1406,7 @@ function _submitToBoaEvent (event, item, col) {
 
     var datasetSelect = m('div', [
         m(
-            'select',
+            'select.form-control',
             {
                 // config: Select2Template.config(options),
                 onchange: function(ev){
