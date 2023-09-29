@@ -20,7 +20,7 @@ class BoaSerializer(StorageAddonSerializer):
         provider = self.node_settings.oauth_provider(external_account)
 
         try:
-            boa = BoaClient(endpoint=provider.host)
+            boa = BoaClient(endpoint=BOA_API_ENDPOINT)
             boa.login(provider.username, provider.password)
             boa.close()
             return True
