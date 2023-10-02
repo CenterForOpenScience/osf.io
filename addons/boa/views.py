@@ -131,13 +131,16 @@ def boa_submit_job(node_addon, user_addon, **kwargs):
     boa = BoaClient(endpoint=host)
     boa.login(username, password)
 
-    cookies = dict(osf=request.cookies.get('osf'))
+    auth = kwargs['auth']
+    user = auth.user
+    cookie = user.get_or_create_cookie().decode()
 
     attrs = params['data']
     links = attrs['links']
     download_url = links['download']
     download_url = download_url.replace('localhost', '192.168.168.167')
-    resp = requests.get(download_url, cookies=cookies)
+    download_url += '&cookie=' + cookie
+    resp = requests.get(download_url, cookies={})
     query = resp.text
 
     job = boa.query(query, boa.get_dataset(params['dataset']))
@@ -157,12 +160,6 @@ def boa_submit_job(node_addon, user_addon, **kwargs):
     else:
         output = job.output()
 
-    auth = kwargs['auth']
-    user = auth.user
-    cookie = user.get_or_create_cookie().decode()
-    # params = {'cookie': cookie}
-    logger.error('>>>>cookie:({})'.format(cookie))
-    logger.error('>>>>cookies:({})'.format(cookies))
     logger.error('>>>>output:({}) isa:({})'.format(output, type(output)))
     upload_url = links['upload']
     upload_url = re.sub(r'\/[0123456789abcdef]+\?', '/?', upload_url)
