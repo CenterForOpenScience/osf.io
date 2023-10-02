@@ -6,6 +6,8 @@ from django.core.management.base import BaseCommand
 from addons.osfstorage.models import OsfStorageFile
 from osf.models import AbstractProvider, Registration, Preprint, Node, OSFUser
 from api.share.utils import task__update_share
+from website.settings import CeleryConfig
+
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +39,10 @@ def recatalog_chunk(provided_model, providers, start_id, chunk_size):
         for item in item_chunk:
             guid = item.guids.values_list('_id', flat=True).first()
             if guid:
-                task__update_share.apply_async(kwargs={'guid': guid, 'is_backfill': True})
+                task__update_share.apply_async(
+                    kwargs={'guid': guid, 'is_backfill': True},
+                    queue=CeleryConfig.task_low_queue,  # "low priority" queue
+                )
             else:
                 logger.debug('skipping item without guid: %s', item)
 
