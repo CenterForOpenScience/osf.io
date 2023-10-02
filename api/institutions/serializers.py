@@ -33,6 +33,7 @@ class InstitutionSerializer(JSONAPISerializer):
     auth_url = ser.CharField(read_only=True)
     iri = ser.CharField(read_only=True, source='identifier_domain')
     ror_iri = ser.CharField(read_only=True, source='ror_uri')
+    iris = ser.SerializerMethodField(read_only=True)
     assets = ser.SerializerMethodField(read_only=True)
     links = LinksField({
         'self': 'get_api_url',
@@ -75,10 +76,14 @@ class InstitutionSerializer(JSONAPISerializer):
     def get_absolute_url(self, obj):
         return obj.absolute_api_v2_url
 
+    def get_iris(self, obj):
+        return list(obj.get_semantic_iris())
+
     def get_assets(self, obj):
         return {
             'logo': obj.logo_path,
             'logo_rounded': obj.logo_path_rounded_corners,
+            'banner': obj.banner_path,
         }
 
     class Meta:
