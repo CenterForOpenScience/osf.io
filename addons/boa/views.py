@@ -121,9 +121,7 @@ boa_get_config = generic_views.get_config(
 @must_have_addon(SHORT_NAME, 'user')
 @must_have_addon(SHORT_NAME, 'node')
 def boa_submit_job(node_addon, user_addon, **kwargs):
-    params = request.json
 
-    boa = BoaClient(endpoint=BOA_API_ENDPOINT)
     provid = node_addon.external_account.provider_id
     parts = provid.rsplit(':', 1)
     host, username = parts[0], parts[1]
@@ -135,6 +133,7 @@ def boa_submit_job(node_addon, user_addon, **kwargs):
     user = auth.user
     cookie = user.get_or_create_cookie().decode()
 
+    params = request.json
     attrs = params['data']
     links = attrs['links']
     download_url = links['download']
@@ -167,7 +166,6 @@ def boa_submit_job(node_addon, user_addon, **kwargs):
     upload_url = upload_url.replace('localhost', '192.168.168.167') + '&name=' + results_name
     upload_url += '&cookie=' + cookie
     up_resp = requests.put(upload_url, data=output, cookies={})
-    # , headers={'cookie': 'osf={}'.format(request.cookies.get('osf'))}) # , cookies=cookies)
     logger.error('>>>>Up-resp:({})'.format(up_resp.status_code))
 
     boa.close()
