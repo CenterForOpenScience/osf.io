@@ -138,8 +138,16 @@ def boa_submit_job(node_addon, user_addon, **kwargs):
     links = attrs['links']
     download_url = links['download']
     download_url = download_url.replace('localhost', '192.168.168.167')
-    download_url += '&cookie=' + cookie
-    resp = requests.get(download_url)
+    # download_url += '?cookie=' + cookie
+    resp = requests.get(download_url, params={'cookie': cookie})
+    if resp.status_code != 200:
+        logger.info('≥≥≥≥ boa_submit_job    failed to download from wb. resp:({}) '
+                    'url:({})'.format(resp.status_code, download_url))
+        boa.close()
+        return {
+            'message': 'Could not download source code from WaterButler',
+        }, http_status.HTTP_400_BAD_REQUEST
+
     query = resp.text
 
     job = boa.query(query, boa.get_dataset(params['dataset']))
@@ -154,20 +162,35 @@ def boa_submit_job(node_addon, user_addon, **kwargs):
     output = None
     if job.compiler_status is CompilerStatus.ERROR:
         logger.info('≥≥≥≥ boa_submit_job    job ' + str(job.id) + ' had compile error')
+        boa.close()
+        return {
+            'message': 'Boa job failed to compile.'
+        }, http_status.HTTP_400_BAD_REQUEST
     elif job.exec_status is ExecutionStatus.ERROR:
         logger.info('≥≥≥≥ boa_submit_job    job ' + str(job.id) + ' had exec error')
-    else:
-        output = job.output()
+        boa.close()
+        return {
+            'message': 'Boa job failed to compile.'
+        }, http_status.HTTP_400_BAD_REQUEST
 
+    output = job.output()
     logger.error('>>>>output:({}) isa:({})'.format(output, type(output)))
     upload_url = links['upload']
     upload_url = re.sub(r'\/[0123456789abcdef]+\?', '/?', upload_url)
     results_name = attrs['name'].replace('.boa', '_results.txt')
-    upload_url = upload_url.replace('localhost', '192.168.168.167') + '&name=' + results_name
-    upload_url += '&cookie=' + cookie
-    up_resp = requests.put(upload_url, data=output)
-    logger.error('>>>>Up-resp:({})'.format(up_resp.status_code))
-
+    # upload_url = upload_url.replace('localhost', '192.168.168.167') + '&name=' + results_name
+    upload_url = upload_url.replace('localhost', '192.168.168.167')
+    # upload_url += '&cookie=' + cookie
+    up_resp = requests.put(upload_url, data=output,
+                           params={'name': results_name, 'cookie': cookie})
+    logger.error('@@@ upload_url:({})'.format(upload_url))
     boa.close()
+
+    if up_resp.status_code != 200:
+        logger.info('≥≥≥≥ boa_submit_job    failed to upload results to wb. resp:({}) '
+                    'url:({})'.format(up_resp.status_code, upload_url))
+        return {
+            'message': 'Could not upload results to WaterButler',
+        }, http_status.HTTP_400_BAD_REQUEST
 
     return {}
