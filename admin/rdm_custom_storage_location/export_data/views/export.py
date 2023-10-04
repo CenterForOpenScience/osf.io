@@ -1,4 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
+import copy
 import inspect  # noqa
 import logging
 import os
@@ -218,7 +219,7 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
         _length = len(file_versions)
         # cached the filename in hash value
         created_filename_list = []
-        list_file_id_not_found = []
+        files_versions_not_found = {}
         institution_guid = ''
         if export_data_json and 'institution' in export_data_json:
             institution_guid = export_data_json.get('institution').get('guid')
@@ -240,19 +241,16 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
             if response.status_code == 201:
                 created_filename_list.append(file_name)
             else:
-                list_file_id_not_found.append(file_id)
+                if file_id not in files_versions_not_found:
+                    files_versions_not_found[file_id] = [version]
+                else:
+                    files_versions_not_found[file_id].append(version)
                 continue
 
-        list_file_info_not_found = []
-        if len(list_file_id_not_found) > 0:
-            list_file_info = file_info_json.get('files', [])
-            for index_file, file_info in enumerate(list_file_info):
-                if file_info['id'] in list_file_id_not_found:
-                    list_file_info_not_found.append(file_info)
-                    export_data_json['size'] -= file_info.get('size')
-                    export_data_json['files_numb'] -= len(file_info.get('version'))
-            list_file_info = [d for d in list_file_info if d['id'] not in list_file_id_not_found]
-            file_info_json['files'] = list_file_info
+        # Separate the failed file list from the file_info_json
+        files_not_found, sub_size, sub_files_numb = separate_failed_files(file_info_json, files_versions_not_found)
+        export_data_json['size'] -= sub_size
+        export_data_json['files_numb'] -= sub_files_numb
         logger.debug(f'uploaded file versions')
 
         # temporary file
@@ -313,7 +311,7 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
             'message': MSG_EXPORT_COMPLETED,
             'export_data_id': export_data.id,
             'export_data_status': export_data.status,
-            'list_file_info_export_not_found': list_file_info_not_found,
+            'list_file_info_export_not_found': files_not_found,
             'file_name_export_fail': 'failed_files_export_{}_{}.csv'.format(
                 institution_guid, export_data.process_start_timestamp
             ),
@@ -339,6 +337,50 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
 
         task.update_state(state=states.FAILURE, meta=task_meta)
         raise Ignore(str(e))
+
+
+def separate_failed_files(file_info_json, files_versions_not_found):
+    files = file_info_json.get('files', [])
+    files_not_found = []
+    for file_id, ver_ids in files_versions_not_found.items():
+        # empty ver_ids
+        is_no_ver_ids = not ver_ids
+        if is_no_ver_ids:
+            continue
+
+        idx, file = next(
+            ((idx, _file) for idx, _file in enumerate(files) if file_id == _file['id']),
+            (None, None)  # default
+        )
+        # file isn't found
+        if file is None:
+            continue
+
+        # move all file versions
+        versions = file.get('version', [])
+        is_no_versions = not versions
+        versions_ids_set = set([_ver['identifier'] for _ver in versions])
+        is_same_ver_ids = versions_ids_set == set(ver_ids)
+        if is_no_versions or is_same_ver_ids:
+            files_not_found.append(files.pop(idx))
+            continue
+
+        # move some versions
+        file_cop = copy.copy(file)
+        file_cop['version'] = [_ver for _ver in file_cop['version'] if _ver['identifier'] in ver_ids]
+        # not match any file versions
+        if not file_cop['version']:
+            continue
+        files_not_found.append(file_cop)
+        file['version'] = [_ver for _ver in versions if _ver['identifier'] not in ver_ids]
+
+    # size and number of files are subtracted
+    sub_size = sub_files_numb = 0
+    for file in files_not_found:
+        sub_size += sum([ver.get('size') for ver in file['version']])
+        sub_files_numb += len(file.get('version', []))
+
+    return files_not_found, sub_size, sub_files_numb
 
 
 @method_decorator(transaction.non_atomic_requests, name='dispatch')
