@@ -139,7 +139,7 @@ def boa_submit_job(node_addon, user_addon, **kwargs):
     download_url = links['download']
     download_url = download_url.replace('localhost', '192.168.168.167')
     download_url += '&cookie=' + cookie
-    resp = requests.get(download_url, cookies={})
+    resp = requests.get(download_url)
     query = resp.text
 
     job = boa.query(query, boa.get_dataset(params['dataset']))
@@ -165,9 +165,9 @@ def boa_submit_job(node_addon, user_addon, **kwargs):
     results_name = attrs['name'].replace('.boa', '_results.txt')
     upload_url = upload_url.replace('localhost', '192.168.168.167') + '&name=' + results_name
     upload_url += '&cookie=' + cookie
-    up_resp = requests.put(upload_url, data=output, cookies={})
+    up_resp = requests.put(upload_url, data=output)
     logger.error('>>>>Up-resp:({})'.format(up_resp.status_code))
 
     boa.close()
 
-    return
+    return {}
