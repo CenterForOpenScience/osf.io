@@ -12,6 +12,7 @@ from osf.metadata.rdfutils import (
     RDF,
     DCTERMS,
     DOI,
+    DxDOI,
     FOAF,
     ORCID,
     OSF,
@@ -154,6 +155,8 @@ class DataciteTreeWalker:
     def _identifier_type_and_value(self, identifier: str):
         if identifier.startswith(DOI):
             return ('DOI', without_namespace(identifier, DOI))
+        elif identifier.startswith(DxDOI):
+            return ('DOI', without_namespace(identifier, DxDOI))
         elif identifier.startswith(ROR):
             return ('ROR', identifier)  # ROR keeps the full IRI
         elif identifier.startswith(ORCID):
@@ -161,6 +164,13 @@ class DataciteTreeWalker:
         elif smells_like_iri(identifier):
             return ('URL', identifier)
         logger.warning('skipping non-IRI-shaped identifier "%s"', identifier)
+
+    def _funder_identifier_type(self, identifier: str):
+        if identifier.startswith(DxDOI) or identifier.startswith(DOI):
+            return 'Crossref Funder ID'
+        if identifier.startswith(ROR):
+            return 'ROR'
+        return 'Other'
 
     def _get_name_type(self, agent_iri):
         if (agent_iri, RDF.type, FOAF.Person) in self.basket:
@@ -261,12 +271,13 @@ class DataciteTreeWalker:
         for _funder in self.basket[OSF.funder]:
             fundref_el = self.visit(fundrefs_el, 'fundingReference')
             self.visit(fundref_el, 'funderName', text=next(self.basket[_funder:FOAF.name], ''))
+            funder_identifier = next(self.basket[_funder:DCTERMS.identifier], '')
             self.visit(
                 fundref_el,
                 'funderIdentifier',
-                text=next(self.basket[_funder:DCTERMS.identifier], ''),
+                text=funder_identifier,
                 attrib={
-                    'funderIdentifierType': next(self.basket[_funder:OSF.funderIdentifierType], ''),
+                    'funderIdentifierType': self._funder_identifier_type(funder_identifier),
                 },
             )
             for _funding_award in self.basket[OSF.hasFunding]:

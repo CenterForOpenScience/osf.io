@@ -1,5 +1,6 @@
 import logging
 import random
+from typing import Iterable
 
 import bson
 from django.contrib.contenttypes.fields import (GenericForeignKey,
@@ -15,6 +16,7 @@ from django.dispatch import receiver
 from django_extensions.db.models import TimeStampedModel
 from past.builtins import basestring
 
+from website import settings as website_settings
 from osf.utils.caching import cached_property
 from osf.exceptions import ValidationError
 from osf.utils.fields import LowercaseCharField, NonNaiveDateTimeField
@@ -61,6 +63,10 @@ def coerce_guid(maybe_guid, create_if_needed=False):
         except Guid.DoesNotExist:
             raise InvalidGuid(f'guid does not exist ({maybe_guid})')
     raise InvalidGuid(f'cannot coerce {type(maybe_guid)} ({maybe_guid}) into Guid')
+
+
+def osfid_iri(osfid: str) -> str:
+    return ''.join((website_settings.DOMAIN.rstrip('/'), '/', osfid))
 
 
 class QuerySetExplainMixin:
@@ -165,6 +171,16 @@ class BaseModel(TimeStampedModel, QuerySetExplainMixin):
             except DjangoValidationError as err:
                 raise ValidationError(*err.args)
         return super(BaseModel, self).save(*args, **kwargs)
+
+    def get_semantic_iri(self) -> str:
+        '''return the iri that should be consistently used to identify this item
+        '''
+        raise ValueError(f'no semantic iri for {self} (perhaps implement get_semantic_iri on {self.__class__}?)')
+
+    def get_semantic_iris(self) -> Iterable[str]:
+        '''yield iri values that all identify this item (in no particular order)
+        '''
+        yield from ()  # no semantic iris unless implemented in a subclass
 
 
 # TODO: Rename to Identifier?
@@ -304,6 +320,23 @@ class OptionalGuidMixin(BaseIDMixin):
                 return guid
         return self.guids.first()
 
+    def get_semantic_iri(self) -> str:
+        _osfid = self.get_guid()
+        if not _osfid:
+            raise ValueError(f'no osfid for {self} (cannot build semantic iri)')
+        return osfid_iri(_osfid._id)
+
+    def get_semantic_iris(self) -> Iterable[str]:
+        try:  # since this is a mixin, don't assume osf.models.BaseModel
+            _get_super_iris = super().get_semantic_iris
+        except AttributeError:
+            pass
+        else:
+            yield from _get_super_iris()
+        # yield iri for each guid
+        for _osfid in self.guids.all():
+            yield osfid_iri(_osfid._id)
+
     class Meta:
         abstract = True
 
@@ -378,6 +411,23 @@ class GuidMixin(BaseIDMixin):
     @property
     def deep_url(self):
         return None
+
+    def get_semantic_iri(self) -> str:
+        _osfid = self._id
+        if not _osfid:
+            raise ValueError(f'no osfid for {self} (cannot build semantic iri)')
+        return osfid_iri(_osfid)
+
+    def get_semantic_iris(self) -> Iterable[str]:
+        try:  # since this is a mixin, don't assume osf.models.BaseModel
+            _get_super_iris = super().get_semantic_iris
+        except AttributeError:
+            pass
+        else:
+            yield from _get_super_iris()
+        # yield iri for each guid
+        for _osfid in self.guids.all():
+            yield osfid_iri(_osfid._id)
 
     class Meta:
         abstract = True

@@ -19,7 +19,7 @@
     dcterms:rightsHolder "Me",
         "You" ;
     dcterms:title "this is a project title!" ;
-    dcat:accessService <http://localhost:5000/> ;
+    dcat:accessService <http://localhost:5000> ;
     osf:hostingInstitution <https://cos.io/> .
 
 <http://localhost:5000/w2ibb> a osf:Project ;
@@ -61,8 +61,7 @@
 
 <https://doi.org/10.$$$$> a dcterms:Agent ;
     dcterms:identifier "https://doi.org/10.$$$$" ;
-    foaf:name "Mx. Moneypockets" ;
-    osf:funderIdentifierType "Crossref Funder ID" .
+    foaf:name "Mx. Moneypockets" .
 
 <http://localhost:5000/w1ibb> a dcterms:Agent,
         foaf:Person ;

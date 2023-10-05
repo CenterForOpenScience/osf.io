@@ -17,7 +17,6 @@ from framework.celery_tasks.handlers import enqueue_task
 from framework.encryption import ensure_bytes
 from framework.sentry import log_exception
 from osf import models as osf_db
-from osf.metadata.osf_gathering import osf_iri
 from osf.metadata.tools import pls_gather_metadata_file
 from website import settings
 
@@ -99,8 +98,9 @@ def task__update_share(self, guid: str, is_backfill=False):
 
 
 def pls_send_trove_indexcard(osf_item, *, is_backfill=False):
-    _iri = osf_iri(osf_item)
-    if not _iri:
+    try:
+        _iri = osf_item.get_semantic_iri()
+    except (AttributeError, ValueError):
         raise ValueError(f'could not get iri for {osf_item}')
     _metadata_record = pls_gather_metadata_file(osf_item, 'turtle')
     _queryparams = {

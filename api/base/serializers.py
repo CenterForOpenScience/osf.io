@@ -1136,6 +1136,12 @@ class LinksField(ser.Field):
         if 'self' not in ret and hasattr(obj, 'get_absolute_url'):
             ret['self'] = self._extend_url_with_vol_key(obj.get_absolute_url())
 
+        if 'iri' not in ret:
+            try:
+                ret['iri'] = obj.get_semantic_iri()
+            except (AttributeError, ValueError):
+                pass
+
         if 'info' in ret:
             if hasattr(obj, 'get_absolute_info_url'):
                 ret['info'] = self._extend_url_with_vol_key(obj.get_absolute_info_url())

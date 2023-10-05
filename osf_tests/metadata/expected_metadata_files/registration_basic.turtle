@@ -18,7 +18,7 @@
     dcterms:rightsHolder "Me",
         "You" ;
     dcterms:title "this is a project title!" ;
-    dcat:accessService <http://localhost:5000/> ;
+    dcat:accessService <http://localhost:5000> ;
     osf:hostingInstitution <https://cos.io/> .
 
 <http://localhost:5000/w2ibb> a osf:Project ;

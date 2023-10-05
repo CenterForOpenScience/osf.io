@@ -1,9 +1,11 @@
+@prefix dcat: <http://www.w3.org/ns/dcat#> .
 @prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 @prefix osf: <https://osf.io/vocab/2022/> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 
 <http://localhost:5000/w3ibb> a osf:File ;
+    dcat:accessService <http://localhost:5000> ;
     dcterms:created "2123-05-04" ;
     dcterms:identifier "http://localhost:5000/w3ibb" ;
     dcterms:modified "2123-05-04" ;
