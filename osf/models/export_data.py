@@ -268,8 +268,8 @@ class ExportData(base.BaseModel):
                 total_size += version.size
 
             file_info['version'] = file_versions_info
-            file_info['size'] = file_versions_info[-1]['size']
-            file_info['location'] = file_versions_info[-1]['location']
+            file_info['size'] = file_versions_info[0]['size']
+            file_info['location'] = file_versions_info[0]['location']
             files.append(file_info)
 
         file_info_json['folders'] = folders
