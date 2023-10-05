@@ -1,6 +1,7 @@
 from enum import Enum
 from future.moves.urllib.parse import urljoin
 import logging
+from typing import Iterable
 
 from dirtyfields import DirtyFieldsMixin
 
@@ -259,6 +260,22 @@ class Institution(DirtyFieldsMixin, Loggable, ObjectIDMixin, BaseModel, Guardian
         from .user import OSFUser
         qs = InstitutionAffiliation.objects.filter(institution__id=self.id).values_list('user', flat=True)
         return OSFUser.objects.filter(pk__in=qs)
+
+    def get_semantic_iri(self) -> str:
+        if self.ror_uri:  # prefer ROR if we have it
+            return self.ror_uri
+        if self.identifier_domain:  # if not ROR, at least URI
+            return self.identifier_domain
+        # fallback to a url on osf
+        return self.absolute_url
+
+    def get_semantic_iris(self) -> Iterable[str]:
+        yield from super().get_semantic_iris()
+        yield from filter(bool, [
+            self.ror_uri,
+            self.identifier_domain,
+            self.absolute_url,
+        ])
 
 
 @receiver(post_save, sender=Institution)

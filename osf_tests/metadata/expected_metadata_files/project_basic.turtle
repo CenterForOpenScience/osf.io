@@ -20,7 +20,7 @@
         "You" ;
     dcterms:title "this is a project title!" ;
     owl:sameAs <https://doi.org/10.70102/FK2osf.io/w2ibb> ;
-    dcat:accessService <http://localhost:5000/> ;
+    dcat:accessService <http://localhost:5000> ;
     osf:contains <http://localhost:5000/w3ibb> ;
     osf:hostingInstitution <https://cos.io/> ;
     osf:supplements <http://localhost:5000/w4ibb> .

@@ -22,7 +22,7 @@
     dcterms:title "this is a preprint title!" ;
     dcterms:type <https://schema.datacite.org/meta/kernel-4.4/#Preprint> ;
     owl:sameAs <https://doi.org/11.pp/FK2osf.io/w4ibb> ;
-    dcat:accessService <http://localhost:5000/> ;
+    dcat:accessService <http://localhost:5000> ;
     osf:hostingInstitution <https://cos.io/> ;
     osf:isSupplementedBy <http://localhost:5000/w2ibb> ;
     osf:statedConflictOfInterest osf:no-conflict-of-interest .
