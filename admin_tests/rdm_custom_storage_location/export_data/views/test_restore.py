@@ -232,39 +232,44 @@ class TestRestoreDataFunction(AdminTestCase):
         self.region = RegionFactory()
         self.project_id = 'project_id'
         self.view = restore
-        self.test_export_data_files = \
-            [
-                {
-                    'id': 995,
-                    'path': '/630de9f5b71d8f06d918fbd7',
-                    'materialized_path': '/@ember-decorators/utils/collapse-proto.d.ts',
-                    'name': 'collapse-proto.d.ts',
-                    'provider': 'osfstorage',
-                    'created_at': '2023-04-18 04:40:25',
-                    'modified_at': '2023-04-18 04:40:25',
-                    'project': {
-                        'id': 'pmockt',
-                        'name': 'Project Mock'
-                    },
-                    'tags': ['hello', 'world'],
-                    'version': [
-                        {
-                            'identifier': '1',
-                            'created_at': '2023-04-18 04:40:25',
-                            'modified_at': '2023-04-18 04:40:25',
-                            'metadata': {
-                                'md5': '8c42361841f16989e0bf62a3ae408f1c',
-                                'kind': 'file',
-                                'sha256': 'ea070092664567d32e4524c6034214a293e75d0a53cfe9118f41e4752e97987c',
-                            },
-                            'location': {},
-                            'contributor': 'fake_user',
-                        }
-                    ],
-                    'location': {},
-                    'timestamp': {}
+        self.test_export_data_files = [
+            {
+                'id': 995,
+                'path': '/630de9f5b71d8f06d918fbd7',
+                'materialized_path': '/@ember-decorators/utils/collapse-proto.d.ts',
+                'name': 'collapse-proto.d.ts',
+                'provider': 'osfstorage',
+                'created_at': '2023-04-18 04:40:25',
+                'modified_at': '2023-04-18 04:40:25',
+                'project': {
+                    'id': 'pmockt',
+                    'name': 'Project Mock'
                 },
-            ]
+                'tags': ['hello', 'world'],
+                'version': [
+                    {
+                        'identifier': '1',
+                        'created_at': '2023-04-18 04:40:25',
+                        'modified_at': '2023-04-18 04:40:25',
+                        'size': 6000,
+                        'version_name': 'collapse-proto.d.ts',
+                        'metadata': {
+                            'md5': '8c42361841f16989e0bf62a3ae408f1c',
+                            'kind': 'file',
+                            'sha256': 'ea070092664567d32e4524c6034214a293e75d0a53cfe9118f41e4752e97987c',
+                        },
+                        'location': {
+                            'object': '64charsversion164charsversion164charsversion164charsversion164ch',
+                            'provider': 's3compat'
+                        },
+                        'contributor': 'fake_user',
+                    }
+                ],
+                'location': {},
+                'timestamp': {},
+                'checkout_id': None
+            },
+        ]
         addon_region = RegionFactory(waterbutler_settings=addon_waterbutler_settings)
         self.addon_data_restore = ExportDataRestoreFactory.create(destination=addon_region)
 
