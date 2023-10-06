@@ -72,216 +72,216 @@ class TestGetTaskResult(unittest.TestCase):
 class TestSeparateFailedFiles(unittest.TestCase):
     def setUp(self):
         self.file_info_json = {
-            "institution": {
-                "id": 2,
-                "guid": "inst002",
-                "name": "inst002",
+            'institution': {
+                'id': 2,
+                'guid': 'inst002',
+                'name': 'inst002',
             },
-            "folders": [],
-            "files": [
+            'folders': [],
+            'files': [
                 {
-                    "id": 3000,
-                    "path": "/24chars24chars24chars24c",
-                    "materialized_path": "/folder_path/file_name.ext",
-                    "name": "file_name.ext",
-                    "provider": "osfstorage",
-                    "project": {
-                        "id": "prjid",
-                        "name": "PRJ 20231005 001"
+                    'id': 3000,
+                    'path': '/24chars24chars24chars24c',
+                    'materialized_path': '/folder_path/file_name.ext',
+                    'name': 'file_name.ext',
+                    'provider': 'osfstorage',
+                    'project': {
+                        'id': 'prjid',
+                        'name': 'PRJ 20231005 001'
                     },
-                    "tags": [],
-                    "version": [
+                    'tags': [],
+                    'version': [
                     ],
-                    "size": 3000,
-                    "location": {
-                        "object": "64chars64chars64chars64chars64chars64chars64chars64chars64chars6",
-                        "provider": "s3compat"
+                    'size': 3000,
+                    'location': {
+                        'object': '64chars64chars64chars64chars64chars64chars64chars64chars64chars6',
+                        'provider': 's3compat'
                     },
-                    "timestamp": {},
-                    "checkout_id": None
+                    'timestamp': {},
+                    'checkout_id': None
                 },
                 {
-                    "id": 4000,
-                    "path": "/24chars24chars24chars24c",
-                    "materialized_path": "/folder_path/file_name.ext",
-                    "name": "file_name.ext",
-                    "provider": "osfstorage",
-                    "project": {
-                        "id": "prjid",
-                        "name": "PRJ 20231005 001"
+                    'id': 4000,
+                    'path': '/24chars24chars24chars24c',
+                    'materialized_path': '/folder_path/file_name.ext',
+                    'name': 'file_name.ext',
+                    'provider': 'osfstorage',
+                    'project': {
+                        'id': 'prjid',
+                        'name': 'PRJ 20231005 001'
                     },
-                    "tags": [],
-                    "version": [
+                    'tags': [],
+                    'version': [
                         {
-                            "identifier": "2",
-                            "size": 4001,
-                            "version_name": "file_name.ext",
-                            "metadata": {
-                                "kind": "file",
+                            'identifier': '2',
+                            'size': 4001,
+                            'version_name': 'file_name.ext',
+                            'metadata': {
+                                'kind': 'file',
                             },
-                            "location": {
-                                "object": "64charsversion264charsversion264charsversion264charsversion264ch",
-                                "provider": "s3compat"
+                            'location': {
+                                'object': '64charsversion264charsversion264charsversion264charsversion264ch',
+                                'provider': 's3compat'
                             }
                         },
                         {
-                            "identifier": "1",
-                            "size": 4000,
-                            "version_name": "file_name.ext",
-                            "metadata": {
-                                "kind": "file",
+                            'identifier': '1',
+                            'size': 4000,
+                            'version_name': 'file_name.ext',
+                            'metadata': {
+                                'kind': 'file',
                             },
-                            "location": {
-                                "object": "64charsversion164charsversion164charsversion164charsversion164ch",
-                                "provider": "s3compat"
+                            'location': {
+                                'object': '64charsversion164charsversion164charsversion164charsversion164ch',
+                                'provider': 's3compat'
                             }
                         }
                     ],
-                    "size": 4001,
-                    "location": {
-                        "object": "64charsversion264charsversion264charsversion264charsversion264ch",
-                        "provider": "s3compat"
+                    'size': 4001,
+                    'location': {
+                        'object': '64charsversion264charsversion264charsversion264charsversion264ch',
+                        'provider': 's3compat'
                     },
-                    "timestamp": {},
-                    "checkout_id": None
+                    'timestamp': {},
+                    'checkout_id': None
                 },
                 {
-                    "id": 5000,
-                    "path": "/24chars24chars24chars24c",
-                    "materialized_path": "/folder_path/file_name.ext",
-                    "name": "file_name.ext",
-                    "provider": "osfstorage",
-                    "project": {
-                        "id": "prjid",
-                        "name": "PRJ 20231005 001"
+                    'id': 5000,
+                    'path': '/24chars24chars24chars24c',
+                    'materialized_path': '/folder_path/file_name.ext',
+                    'name': 'file_name.ext',
+                    'provider': 'osfstorage',
+                    'project': {
+                        'id': 'prjid',
+                        'name': 'PRJ 20231005 001'
                     },
-                    "tags": [],
-                    "version": [
+                    'tags': [],
+                    'version': [
                         {
-                            "identifier": "2",
-                            "size": 5001,
-                            "version_name": "file_name.ext",
-                            "metadata": {
-                                "kind": "file",
+                            'identifier': '2',
+                            'size': 5001,
+                            'version_name': 'file_name.ext',
+                            'metadata': {
+                                'kind': 'file',
                             },
-                            "location": {
-                                "object": "64charsversion264charsversion264charsversion264charsversion264ch",
-                                "provider": "s3compat"
+                            'location': {
+                                'object': '64charsversion264charsversion264charsversion264charsversion264ch',
+                                'provider': 's3compat'
                             }
                         },
                         {
-                            "identifier": "1",
-                            "size": 5000,
-                            "version_name": "file_name.ext",
-                            "metadata": {
-                                "kind": "file",
+                            'identifier': '1',
+                            'size': 5000,
+                            'version_name': 'file_name.ext',
+                            'metadata': {
+                                'kind': 'file',
                             },
-                            "location": {
-                                "object": "64charsversion164charsversion164charsversion164charsversion164ch",
-                                "provider": "s3compat"
+                            'location': {
+                                'object': '64charsversion164charsversion164charsversion164charsversion164ch',
+                                'provider': 's3compat'
                             }
                         }
                     ],
-                    "size": 5001,
-                    "location": {
-                        "object": "64charsversion264charsversion264charsversion264charsversion264ch",
-                        "provider": "s3compat"
+                    'size': 5001,
+                    'location': {
+                        'object': '64charsversion264charsversion264charsversion264charsversion264ch',
+                        'provider': 's3compat'
                     },
-                    "timestamp": {},
-                    "checkout_id": None
+                    'timestamp': {},
+                    'checkout_id': None
                 },
                 {
-                    "id": 6000,
-                    "path": "/24chars24chars24chars24c",
-                    "materialized_path": "/folder_path/file_name.ext",
-                    "name": "file_name.ext",
-                    "provider": "osfstorage",
-                    "project": {
-                        "id": "prjid",
-                        "name": "PRJ 20231005 001"
+                    'id': 6000,
+                    'path': '/24chars24chars24chars24c',
+                    'materialized_path': '/folder_path/file_name.ext',
+                    'name': 'file_name.ext',
+                    'provider': 'osfstorage',
+                    'project': {
+                        'id': 'prjid',
+                        'name': 'PRJ 20231005 001'
                     },
-                    "tags": [],
-                    "version": [
+                    'tags': [],
+                    'version': [
                         {
-                            "identifier": "6",
-                            "size": 6005,
-                            "version_name": "file_name.ext",
-                            "metadata": {
-                                "kind": "file",
+                            'identifier': '6',
+                            'size': 6005,
+                            'version_name': 'file_name.ext',
+                            'metadata': {
+                                'kind': 'file',
                             },
-                            "location": {
-                                "object": "64charsversion664charsversion664charsversion664charsversion664ch",
-                                "provider": "s3compat"
+                            'location': {
+                                'object': '64charsversion664charsversion664charsversion664charsversion664ch',
+                                'provider': 's3compat'
                             }
                         },
                         {
-                            "identifier": "5",
-                            "size": 6004,
-                            "version_name": "file_name.ext",
-                            "metadata": {
-                                "kind": "file",
+                            'identifier': '5',
+                            'size': 6004,
+                            'version_name': 'file_name.ext',
+                            'metadata': {
+                                'kind': 'file',
                             },
-                            "location": {
-                                "object": "64charsversion564charsversion564charsversion564charsversion564ch",
-                                "provider": "s3compat"
+                            'location': {
+                                'object': '64charsversion564charsversion564charsversion564charsversion564ch',
+                                'provider': 's3compat'
                             }
                         },
                         {
-                            "identifier": "4",
-                            "size": 6003,
-                            "version_name": "file_name.ext",
-                            "metadata": {
-                                "kind": "file",
+                            'identifier': '4',
+                            'size': 6003,
+                            'version_name': 'file_name.ext',
+                            'metadata': {
+                                'kind': 'file',
                             },
-                            "location": {
-                                "object": "64charsversion464charsversion464charsversion464charsversion464ch",
-                                "provider": "s3compat"
+                            'location': {
+                                'object': '64charsversion464charsversion464charsversion464charsversion464ch',
+                                'provider': 's3compat'
                             }
                         },
                         {
-                            "identifier": "3",
-                            "size": 6002,
-                            "version_name": "file_name.ext",
-                            "metadata": {
-                                "kind": "file",
+                            'identifier': '3',
+                            'size': 6002,
+                            'version_name': 'file_name.ext',
+                            'metadata': {
+                                'kind': 'file',
                             },
-                            "location": {
-                                "object": "64charsversion364charsversion364charsversion364charsversion364ch",
-                                "provider": "s3compat"
+                            'location': {
+                                'object': '64charsversion364charsversion364charsversion364charsversion364ch',
+                                'provider': 's3compat'
                             }
                         },
                         {
-                            "identifier": "2",
-                            "size": 6001,
-                            "version_name": "file_name.ext",
-                            "metadata": {
-                                "kind": "file",
+                            'identifier': '2',
+                            'size': 6001,
+                            'version_name': 'file_name.ext',
+                            'metadata': {
+                                'kind': 'file',
                             },
-                            "location": {
-                                "object": "64charsversion264charsversion264charsversion264charsversion264ch",
-                                "provider": "s3compat"
+                            'location': {
+                                'object': '64charsversion264charsversion264charsversion264charsversion264ch',
+                                'provider': 's3compat'
                             }
                         },
                         {
-                            "identifier": "1",
-                            "size": 6000,
-                            "version_name": "file_name.ext",
-                            "metadata": {
-                                "kind": "file",
+                            'identifier': '1',
+                            'size': 6000,
+                            'version_name': 'file_name.ext',
+                            'metadata': {
+                                'kind': 'file',
                             },
-                            "location": {
-                                "object": "64charsversion164charsversion164charsversion164charsversion164ch",
-                                "provider": "s3compat"
+                            'location': {
+                                'object': '64charsversion164charsversion164charsversion164charsversion164ch',
+                                'provider': 's3compat'
                             }
                         }
                     ],
-                    "size": 6005,
-                    "location": {
-                        "object": "64charsversion664charsversion664charsversion664charsversion664ch",
-                        "provider": "s3compat"
+                    'size': 6005,
+                    'location': {
+                        'object': '64charsversion664charsversion664charsversion664charsversion664ch',
+                        'provider': 's3compat'
                     },
-                    "timestamp": {},
-                    "checkout_id": None
+                    'timestamp': {},
+                    'checkout_id': None
                 },
             ],
         }
