@@ -22,6 +22,7 @@ from addons.osfstorage.models import Region, NodeSettings
 from admin.rdm.utils import RdmPermissionMixin
 from admin.rdm_custom_storage_location import tasks
 from admin.rdm_custom_storage_location.export_data import utils
+from admin.rdm_custom_storage_location.export_data.views import export
 from osf.models import ExportData, ExportDataRestore, BaseFileNode, Tag, RdmFileTimestamptokenVerifyResult, Institution, OSFUser, FileVersion, AbstractNode, \
     ProjectStorageType, UserQuota
 from website.util import inspect_info  # noqa
@@ -610,10 +611,11 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
     is_destination_addon_storage = utils.is_add_on_storage(destination_provider)
 
     list_created_file_nodes = []
-    list_file_restore_fail = []
+    files_versions_restore_fail = {}
     for file in export_data_files:
         check_if_restore_process_stopped(task, current_process_step)
 
+        file_id = file.get('id')
         file_materialized_path = file.get('materialized_path')
         file_versions = file.get('version')
         file_project_id = file.get('project', {}).get('id')
@@ -653,10 +655,14 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
                     new_file_path = file_materialized_path
 
                 # Copy file from location to destination storage
-                response_body = utils.copy_file_from_location_to_destination(export_data, file_project_id, destination_provider, file_hash_path, new_file_path,
-                                                                             cookies, base_url=destination_base_url, **kwargs)
+                response_body = utils.copy_file_from_location_to_destination(
+                    export_data, file_project_id, destination_provider, file_hash_path, new_file_path,
+                    cookies, base_url=destination_base_url, **kwargs)
                 if response_body is None:
-                    list_file_restore_fail.append(file)
+                    if file_id not in files_versions_restore_fail:
+                        files_versions_restore_fail[file_id] = [version]
+                    else:
+                        files_versions_restore_fail[file_id].append(version)
                     continue
 
                 response_id = response_body.get('data', {}).get('id')
@@ -721,6 +727,9 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
                 check_if_restore_process_stopped(task, current_process_step)
                 # Did not download or upload, pass this file
                 continue
+
+    # Separate the failed file list from the file_info_json
+    list_file_restore_fail, _, _ = export.separate_failed_files(export_data_files, files_versions_restore_fail)
     return list_created_file_nodes, list_file_restore_fail
 
 

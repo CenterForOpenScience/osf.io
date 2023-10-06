@@ -248,7 +248,8 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
                 continue
 
         # Separate the failed file list from the file_info_json
-        files_not_found, sub_size, sub_files_numb = separate_failed_files(file_info_json, files_versions_not_found)
+        files = file_info_json.get('files', [])
+        files_not_found, sub_size, sub_files_numb = separate_failed_files(files, files_versions_not_found)
         export_data_json['size'] -= sub_size
         export_data_json['files_numb'] -= sub_files_numb
         logger.debug(f'uploaded file versions')
@@ -339,8 +340,7 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
         raise Ignore(str(e))
 
 
-def separate_failed_files(file_info_json, files_versions_not_found):
-    files = file_info_json.get('files', [])
+def separate_failed_files(files, files_versions_not_found):
     files_not_found = []
     for file_id, ver_ids in files_versions_not_found.items():
         # empty ver_ids

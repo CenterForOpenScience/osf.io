@@ -71,14 +71,7 @@ class TestGetTaskResult(unittest.TestCase):
 
 class TestSeparateFailedFiles(unittest.TestCase):
     def setUp(self):
-        self.file_info_json = {
-            'institution': {
-                'id': 2,
-                'guid': 'inst002',
-                'name': 'inst002',
-            },
-            'folders': [],
-            'files': [
+        self.files = [
                 {
                     'id': 3000,
                     'path': '/24chars24chars24chars24c',
@@ -283,8 +276,7 @@ class TestSeparateFailedFiles(unittest.TestCase):
                     'timestamp': {},
                     'checkout_id': None
                 },
-            ],
-        }
+            ]
 
     def test_separate_failed_files__c1_empty_version_ids(self):
         files_versions_not_found = {
@@ -294,7 +286,7 @@ class TestSeparateFailedFiles(unittest.TestCase):
         expected_sub_files_numb = 0
 
         _files_not_found, _sub_size, _sub_files_numb = export.separate_failed_files(
-            self.file_info_json,
+            self.files,
             files_versions_not_found
         )
 
@@ -310,7 +302,7 @@ class TestSeparateFailedFiles(unittest.TestCase):
         expected_sub_files_numb = 0
 
         _files_not_found, _sub_size, _sub_files_numb = export.separate_failed_files(
-            self.file_info_json,
+            self.files,
             files_versions_not_found
         )
 
@@ -327,13 +319,12 @@ class TestSeparateFailedFiles(unittest.TestCase):
         expected_sub_files_numb = 0
 
         _files_not_found, _sub_size, _sub_files_numb = export.separate_failed_files(
-            self.file_info_json,
+            self.files,
             files_versions_not_found
         )
 
-        files = self.file_info_json.get('files', [])
         file = next(
-            (_file for idx, _file in enumerate(files) if file_id == _file['id']),
+            (_file for idx, _file in enumerate(self.files) if file_id == _file['id']),
             None  # default
         )
         self.assertEqual(file, None)
@@ -352,13 +343,12 @@ class TestSeparateFailedFiles(unittest.TestCase):
         file_id = 4000
 
         _files_not_found, _sub_size, _sub_files_numb = export.separate_failed_files(
-            self.file_info_json,
+            self.files,
             files_versions_not_found
         )
 
-        files = self.file_info_json.get('files', [])
         file = next(
-            (_file for idx, _file in enumerate(files) if file_id == _file['id']),
+            (_file for idx, _file in enumerate(self.files) if file_id == _file['id']),
             None  # default
         )
         self.assertEqual(file, None)
@@ -381,13 +371,12 @@ class TestSeparateFailedFiles(unittest.TestCase):
         expected_sub_files_numb = 0
 
         _files_not_found, _sub_size, _sub_files_numb = export.separate_failed_files(
-            self.file_info_json,
+            self.files,
             files_versions_not_found
         )
 
-        files = self.file_info_json.get('files', [])
         file = next(
-            (_file for idx, _file in enumerate(files) if file_id == _file['id']),
+            (_file for idx, _file in enumerate(self.files) if file_id == _file['id']),
             None  # default
         )
         self.assertEqual(file['id'], file_id)
@@ -402,13 +391,12 @@ class TestSeparateFailedFiles(unittest.TestCase):
         file_id = 6000
 
         _files_not_found, _sub_size, _sub_files_numb = export.separate_failed_files(
-            self.file_info_json,
+            self.files,
             files_versions_not_found
         )
 
-        files = self.file_info_json.get('files', [])
         file = next(
-            (_file for idx, _file in enumerate(files) if file_id == _file['id']),
+            (_file for idx, _file in enumerate(self.files) if file_id == _file['id']),
             None  # default
         )
         self.assertEqual(file['id'], file_id)
