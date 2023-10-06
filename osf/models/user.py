@@ -1905,7 +1905,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         https://openscience.atlassian.net/wiki/spaces/PRODUC/pages/482803755/GDPR-Related+protocols
 
         """
-        from osf.models import Preprint, AbstractNode
+        from osf.models import (
+            Preprint,
+            AbstractNode,
+            DraftRegistration,
+            DraftNode
+        )
 
         user_nodes = self.nodes.exclude(is_deleted=True)
         #  Validates the user isn't trying to delete things they deliberately made public.
@@ -1924,7 +1929,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         )
         shared_nodes = user_nodes.exclude(id__in=personal_nodes.values_list('id'))
 
-        for node in shared_nodes.exclude(type__in=['osf.quickfilesnode', 'osf.draftnode']):
+        for node in shared_nodes:
             alternate_admins = OSFUser.objects.filter(groups__name=node.format_group(ADMIN)).filter(is_active=True).exclude(id=self.id)
             if not alternate_admins:
                 raise UserStateError(
@@ -1937,21 +1942,63 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                                          'have an external account for {} attached to Node {}, '
                                          'which has other contributors.'.format(addon.short_name, node._id))
 
+        # Validates that the user isn't trying to delete things DraftRegistration they are the only admin on.
+        personal_draft_registrations = (
+            DraftRegistration.objects.annotate(contrib_count=Count('_contributors'))
+            .filter(contrib_count__lte=1)
+            .filter(_contributors=self)
+            .filter(deleted__isnull=True)
+        )
+        shared_draft_registrations = self.draft_registrations.exclude(id__in=personal_draft_registrations.values_list('id'))
+        for node in shared_draft_registrations:
+            alternate_admins = OSFUser.objects.filter(
+                groups__name=node.format_group(ADMIN)
+            ).filter(
+                is_active=True
+            ).exclude(
+                id=self.id
+            )
+            if not alternate_admins:
+                raise UserStateError(
+                    f'You cannot delete DraftRegistration {node._id} because it would be a node with contributors, but with no '
+                    f'admin.'
+                )
+            for addon in node.get_addons():
+                if addon.short_name not in ('osfstorage', 'wiki') and \
+                        addon.user_settings and \
+                        addon.user_settings.owner.id == self.id:
+                    raise UserStateError(
+                        f'You cannot delete this user because they have an external account for {addon.short_name}'
+                        f' attached to DraftRegistration {node._id}, which has other contributors.'
+                    )
+
         for group in self.osf_groups:
             if not group.managers.exclude(id=self.id).filter(is_registered=True).exists() and group.members.exclude(id=self.id).exists():
                 raise UserStateError('You cannot delete this user because they are the only registered manager of OSFGroup {} that contains other members.'.format(group._id))
 
         for node in shared_nodes.all():
-            logger.info('Removing {self._id} as a contributor to node (pk:{node_id})...'.format(self=self, node_id=node.pk))
+            logger.info(f'Removing {self._id} as a contributor to node (pk:{node.pk})...')
             node.remove_contributor(self, auth=Auth(self), log=False)
+
+        for draft_registration in shared_draft_registrations.all():
+            logger.info(f'Removing {self._id} as a contributor to node (pk:{node.pk})...')
+            draft_registration.remove_contributor(self, auth=Auth(self), log=False)
 
         # This is doesn't to remove identifying info, but ensures other users can't see the deleted user's profile etc.
         self.deactivate_account()
 
         # delete all personal nodes (one contributor), bookmarks, quickfiles etc.
         for node in personal_nodes.all():
-            logger.info('Soft-deleting node (pk: {node_id})...'.format(node_id=node.pk))
-            node.remove_node(auth=Auth(self))
+            if isinstance(node, DraftNode):
+                logger.info(f'Hard-deleting draftnode (pk: {node.pk})...')
+                node.delete()
+            else:
+                logger.info(f'Soft-deleting node (pk: {node.pk})...')
+                node.remove_node(auth=Auth(self))
+
+        for draft_registration in personal_draft_registrations.all():
+            logger.info(f'Hard-deleting draft registrations (pk: {draft_registration.pk})...')
+            draft_registration.delete()
 
         for group in self.osf_groups:
             if len(group.managers) == 1 and group.managers[0] == self:

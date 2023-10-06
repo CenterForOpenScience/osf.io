@@ -37,6 +37,8 @@ from osf.models import (
     NotableDomain,
     PreprintContributor,
     DraftRegistrationContributor,
+    DraftRegistration,
+    DraftNode,
     UserSessionMap,
 )
 from osf.models.institution_affiliation import get_user_by_institution_identity
@@ -66,7 +68,8 @@ from .factories import (
     UnregUserFactory,
     UserFactory,
     RegistrationFactory,
-    PreprintFactory
+    PreprintFactory,
+    DraftNodeFactory
 )
 from tests.base import OsfTestCase
 from tests.utils import run_celery_tasks
@@ -2388,6 +2391,12 @@ class TestUserGdprDelete:
         return registration
 
     @pytest.fixture()
+    def registration_with_draft_node(self, user, registration):
+        registration.branched_from = DraftNodeFactory(creator=user)
+        registration.save()
+        return registration
+
+    @pytest.fixture()
     def project(self, user):
         project = ProjectFactory(creator=user)
         project.save()
@@ -2433,10 +2442,41 @@ class TestUserGdprDelete:
         user.gdpr_delete()
         assert user.nodes.exclude(is_deleted=True).count() == 0
 
+    def test_can_gdpr_delete_personal_registrations(self, user, registration_with_draft_node):
+        assert DraftRegistration.objects.all().count() == 1
+        assert DraftNode.objects.all().count() == 1
+
+        with pytest.raises(UserStateError) as exc_info:
+            user.gdpr_delete()
+
+        assert exc_info.value.args[0] == 'You cannot delete this user because they have one or more registrations.'
+        assert DraftRegistration.objects.all().count() == 1
+        assert DraftNode.objects.all().count() == 1
+
+        registration_with_draft_node.remove_node(Auth(user))
+        assert DraftRegistration.objects.all().count() == 1
+        assert DraftNode.objects.all().count() == 1
+        user.gdpr_delete()
+
+        assert user.nodes.exclude(is_deleted=True).count() == 0
+        assert DraftRegistration.objects.all().count() == 0
+        assert DraftNode.objects.all().count() == 0
+
     def test_can_gdpr_delete_shared_nodes_with_multiple_admins(self, user, project_with_two_admins):
 
         user.gdpr_delete()
         assert user.nodes.all().count() == 0
+
+    def test_can_gdpr_delete_shared_draft_registration_with_multiple_admins(self, user, registration):
+        other_admin = AuthUserFactory()
+        draft_registrations = user.draft_registrations.get()
+        draft_registrations.add_contributor(other_admin, permissions='admin')
+        assert draft_registrations.contributors.all().count() == 2
+        registration.delete_registration_tree(save=True)
+
+        user.gdpr_delete()
+        assert draft_registrations.contributors.get() == other_admin
+        assert user.nodes.filter(deleted__isnull=True).count() == 0
 
     def test_cant_gdpr_delete_registrations(self, user, registration):
 
