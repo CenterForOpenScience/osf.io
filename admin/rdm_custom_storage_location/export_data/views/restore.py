@@ -660,9 +660,9 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
                     cookies, base_url=destination_base_url, **kwargs)
                 if response_body is None:
                     if file_id not in files_versions_restore_fail:
-                        files_versions_restore_fail[file_id] = [version]
+                        files_versions_restore_fail[file_id] = [version_id]
                     else:
-                        files_versions_restore_fail[file_id].append(version)
+                        files_versions_restore_fail[file_id].append(version_id)
                     continue
 
                 response_id = response_body.get('data', {}).get('id')
