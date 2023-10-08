@@ -8,14 +8,10 @@ from addons.boa.serializer import BoaSerializer
 
 pytestmark = pytest.mark.django_db
 
-class TestBoaSerializer(StorageAddonSerializerTestSuiteMixin, OsfTestCase):
+class TestBoaSerializer(AddonSerializerTestSuiteMixin, OsfTestCase):
     addon_short_name = 'boa'
     Serializer = BoaSerializer
     ExternalAccountFactory = BoaAccountFactory
-    client = None
-
-    def set_provider_id(self, pid):
-        self.node_settings.folder_id = pid
 
     def setUp(self):
         self.mock_credentials = mock.patch('addons.boa.serializer.BoaSerializer.credentials_are_valid')

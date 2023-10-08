@@ -15,8 +15,8 @@ class BoaAddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
     NodeSettingsFactory = BoaNodeSettingsFactory
     NodeSettingsClass = NodeSettings
     UserSettingsFactory = BoaUserSettingsFactory
-    folder = {
-        'path': '/Documents/',
-        'name': '/Documents',
-        'id': '/Documents/'
-    }
+    # folder = {
+    #     'path': '/Documents/',
+    #     'name': '/Documents',
+    #     'id': '/Documents/'
+    # }

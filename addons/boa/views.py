@@ -6,15 +6,14 @@ import time
 from rest_framework import status as http_status
 
 from django.core.exceptions import ValidationError
-from furl import furl
+# from furl import furl
 import requests
 from flask import request
 from framework.auth.decorators import must_be_logged_in
 
 from addons.base import generic_views
 from osf.models import ExternalAccount
-from website.project.decorators import (
-    must_have_addon)
+from website.project.decorators import must_have_addon
 
 from boaapi.boa_client import BoaClient, BOA_API_ENDPOINT
 from boaapi.status import CompilerStatus, ExecutionStatus
@@ -22,7 +21,7 @@ from boaapi.util import BoaException
 
 from addons.boa.models import BoaProvider
 from addons.boa.serializer import BoaSerializer
-from addons.boa import settings
+#from addons.boa import settings
 
 import logging
 logger = logging.getLogger(__name__)
@@ -72,7 +71,7 @@ def boa_add_user_account(auth, **kwargs):
     )
     try:
         provider.account.save()
-    except ValidationError as vexc:
+    except ValidationError:  # as vexc:
         # ... or get the old one
         provider.account = ExternalAccount.objects.get(
             provider=provider.short_name,
@@ -81,7 +80,7 @@ def boa_add_user_account(auth, **kwargs):
         if provider.account.oauth_key != password:
             provider.account.oauth_key = password
             provider.account.save()
-    except Exception as exc:
+    except Exception:  # as exc:
         return {}
 
     user = auth.user

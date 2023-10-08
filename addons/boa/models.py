@@ -5,13 +5,10 @@ from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
 from django.db import models
 from framework.auth import Auth
-from boaapi.boa_client import BoaClient
-from addons.base import exceptions
-from addons.boa import settings
 from addons.boa.serializer import BoaSerializer
-from addons.boa.settings import DEFAULT_HOSTS, USE_SSL
+from addons.boa.settings import DEFAULT_HOSTS
 from osf.models.external import BasicAuthProviderMixin
-from website.util import api_v2_url
+# from website.util import api_v2_url
 logger = logging.getLogger(__name__)
 
 
@@ -96,7 +93,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         pass
 
     def create_waterbutler_log(self, *args, **kwargs):
-         # required by superclass, not actually used
+        # required by superclass, not actually used
         pass
 
     def after_delete(self, user):

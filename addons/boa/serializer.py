@@ -1,5 +1,5 @@
 from addons.base.serializer import StorageAddonSerializer
-from addons.boa.settings import DEFAULT_HOSTS, USE_SSL
+from addons.boa.settings import DEFAULT_HOSTS
 from website.util import web_url_for
 
 from boaapi.boa_client import BoaClient, BOA_API_ENDPOINT

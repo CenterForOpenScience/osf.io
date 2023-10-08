@@ -1411,7 +1411,7 @@ function _submitToBoaEvent (event, item, col) {
                 // config: Select2Template.config(options),
                 onchange: function(ev){
                     console.error('∑∑∑ debuggin');
-                    updateDataset(ev.target.value)
+                    updateDataset(ev.target.value);
                 }
             },
             [
@@ -2177,16 +2177,14 @@ var FGItemButtons = {
 
             // submit to boa: item must be boa file, provider must be osfstorage, user must be admin or write
             if (
-                (item.data.name.match(/\.boa$/i))
-                &&
-                (item.data.provider && item.data.provider === 'osfstorage')
-                &&
+                (item.data.name.match(/\.boa$/i)) &&
+                (item.data.provider && item.data.provider === 'osfstorage') &&
                 (item.data.permissions && item.data.permissions.edit)
             ) {
                 rowButtons.push(
                     m.component(Fangorn.Components.button, {
                         onclick: function (event) {
-                            _submitToBoaEvent.call(tb, event, item)
+                            _submitToBoaEvent.call(tb, event, item);
                         },
                         icon: 'fa fa-pencil',
                         className: 'text-info'
