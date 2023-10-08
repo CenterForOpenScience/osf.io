@@ -5,12 +5,9 @@ var ko = require('knockout');
 var Raven = require('raven-js');
 var $osf = require('js/osfHelpers');
 var bootbox = require('bootbox');
+var $modal = $('#boaCredentialsModal');
+var language = require('js/osfLanguage').Addons.boa;
 
-// var $modal = $('#boaCredentialsModal');
-// var oop = require('js/oop');
-// var osfHelpers = require('js/osfHelpers');
-// var OauthAddonFolderPicker = require('js/oauthAddonNodeConfig')._OauthAddonNodeConfigViewModel;
-// var language = require('js/osfLanguage').Addons.boa;
 
 function ViewModel(url) {
     var self = this;
@@ -163,18 +160,55 @@ ViewModel.prototype.onImportError = function(xhr, status, error) {
     });
 };
 
+
+ViewModel.prototype.clearModal = function() {
+    var self = this;
+};
+
 /**
  * Allows a user to create an access token from the nodeSettings page
  */
 ViewModel.prototype.connectAccount = function() {
     var self = this;
 
-    window.oauthComplete = function(res) {
-        // Update view model based on response
-        self.changeMessage(self.messages.connectAccountSuccess(), 'text-success', 3000);
-        self.importAuth.call(self);
-    };
-    window.open(self.urls().auth);
+    if ( !self.username() && !self.password() ){
+        self.changeMessage('Please enter a username and password.', 'text-danger');
+        return;
+    }
+
+    var url = self.urls().auth;
+    $osf.postJSON(
+        url,
+        ko.toJS({
+            password: self.password,
+            username: self.username
+        })
+    ).done(function() {
+        self.clearModal();
+        $modal.modal('hide');
+        self.updateAccounts().then(function() {
+            try{
+                $osf.putJSON(
+                    self.urls().importAuth, {
+                        external_account_id: self.accounts()[0].id
+                    }
+                ).done(self.onImportSuccess.bind(self)
+                      ).fail(self.onImportError.bind(self));
+                self.changeMessage(self.messages.connectAccountSuccess(), 'text-success', 3000);
+            }
+            catch(err){
+                self.changeMessage(self.messages.connectAccountDenied(), 'text-danger', 6000);
+            }
+        });
+    }).fail(function(xhr, textStatus, error) {
+        var errorMessage = (xhr.status === 401) ? language.authInvalid : language.authError;
+        self.changeMessage(errorMessage, 'text-danger');
+        Raven.captureMessage('Could not authenticate with boa', {
+            url: url,
+            textStatus: textStatus,
+            error: error
+        });
+    });
 };
 
 ViewModel.prototype.connectExistingAccount = function(account_id) {
@@ -306,75 +340,6 @@ ViewModel.prototype.changeMessage = function(text, css, timeout) {
     }
 };
 
-
-// var ViewModel = oop.extend(OauthAddonFolderPicker,{
-//     constructor: function(addonName, url, selector, folderPicker, opts, tbOpts) {
-//         var self = this;
-//         // TODO: [OSF-7069]
-//         self.super.super.constructor.call(self, addonName, url, selector, folderPicker, tbOpts);
-//         self.super.construct.call(self, addonName, url, selector, folderPicker, opts, tbOpts);
-
-//         // Non-Oauth fields:
-//         self.username = ko.observable('');
-//         self.password = ko.observable('');
-
-//         self.credentialsChanged = ko.pureComputed(function() {
-//             return self.nodeHasAuth() && !self.validCredentials();
-//         });
-//     },
-//     clearModal : function() {
-//         var self = this;
-//     },
-//     connectAccount : function() {
-//         var self = this;
-
-//         if ( !self.username() && !self.password() ){
-//             self.changeMessage('Please enter a username and password.', 'text-danger');
-//             return;
-//         }
-
-//         var url = self.urls().auth;
-//         osfHelpers.postJSON(
-//             url,
-//             ko.toJS({
-//                 password: self.password,
-//                 username: self.username
-//             })
-//         ).done(function() {
-//             self.clearModal();
-//             $modal.modal('hide');
-//             self.updateAccounts().then(function() {
-//                 try{
-//                     $osf.putJSON(
-//                         self.urls().importAuth, {
-//                             external_account_id: self.accounts()[0].id
-//                         }
-//                     ).done(self.onImportSuccess.bind(self)
-//                           ).fail(self.onImportError.bind(self));
-//                     self.changeMessage(self.messages.connectAccountSuccess(), 'text-success', 3000);
-//                 }
-//                 catch(err){
-//                     self.changeMessage(self.messages.connectAccountDenied(), 'text-danger', 6000);
-//                 }
-//             });
-//         }).fail(function(xhr, textStatus, error) {
-//             var errorMessage = (xhr.status === 401) ? language.authInvalid : language.authError;
-//             self.changeMessage(errorMessage, 'text-danger');
-//             Raven.captureMessage('Could not authenticate with boa', {
-//                 url: url,
-//                 textStatus: textStatus,
-//                 error: error
-//             });
-//         });
-//     },
-//     formatExternalName: function(item) {
-//         return {
-//             text: $osf.htmlEscape(item.name) + ' - ' + $osf.htmlEscape(item.profile),
-//             value: item.id
-//         };
-//     }
-// });
-
 function BoaNodeConfig(selector, url) {
     var self = this;
     self.selector = selector;
@@ -382,9 +347,6 @@ function BoaNodeConfig(selector, url) {
     // On success, instantiate and bind the ViewModel
     self.viewModel = new ViewModel(url);
     $osf.applyBindings(self.viewModel, '#boaScope');
-    // self.viewModel = new ViewModel('boa', url, selector, null, {});
-    // self.viewModel.updateFromData();
-    // $osf.applyBindings(self.viewModel, selector);
 }
 
 module.exports = BoaNodeConfig;
