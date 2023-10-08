@@ -2,13 +2,13 @@ import mock
 import pytest
 
 from tests.base import OsfTestCase
-from addons.base.tests.serializers import StorageAddonSerializerTestSuiteMixin
+from addons.base.tests.serializers import OAuthAddonSerializerTestSuiteMixin
 from addons.boa.tests.factories import BoaAccountFactory
 from addons.boa.serializer import BoaSerializer
 
 pytestmark = pytest.mark.django_db
 
-class TestBoaSerializer(AddonSerializerTestSuiteMixin, OsfTestCase):
+class TestBoaSerializer(OAuthAddonSerializerTestSuiteMixin, OsfTestCase):
     addon_short_name = 'boa'
     Serializer = BoaSerializer
     ExternalAccountFactory = BoaAccountFactory
