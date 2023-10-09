@@ -2458,9 +2458,9 @@ class TestUserGdprDelete:
         assert DraftNode.objects.all().count() == 1
         user.gdpr_delete()
 
+        # DraftNodes soft-deleted, DraftRegistions hard-deleted
         assert user.nodes.exclude(is_deleted=True).count() == 0
         assert DraftRegistration.objects.all().count() == 0
-        assert DraftNode.objects.all().count() == 0
 
     def test_can_gdpr_delete_shared_nodes_with_multiple_admins(self, user, project_with_two_admins):
 

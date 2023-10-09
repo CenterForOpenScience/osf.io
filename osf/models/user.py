@@ -1909,7 +1909,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             Preprint,
             AbstractNode,
             DraftRegistration,
-            DraftNode
         )
 
         user_nodes = self.nodes.exclude(is_deleted=True)
@@ -1987,14 +1986,10 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # This is doesn't to remove identifying info, but ensures other users can't see the deleted user's profile etc.
         self.deactivate_account()
 
-        # delete all personal nodes (one contributor), bookmarks, quickfiles etc.
+        # delete all personal nodes (one contributor), bookmarks, draftnodes etc.
         for node in personal_nodes.all():
-            if isinstance(node, DraftNode):
-                logger.info(f'Hard-deleting draftnode (pk: {node.pk})...')
-                node.delete()
-            else:
-                logger.info(f'Soft-deleting node (pk: {node.pk})...')
-                node.remove_node(auth=Auth(self))
+            logger.info(f'Soft-deleting node (pk: {node.pk})...')
+            node.remove_node(auth=Auth(self))
 
         for draft_registration in personal_draft_registrations.all():
             logger.info(f'Hard-deleting draft registrations (pk: {draft_registration.pk})...')
