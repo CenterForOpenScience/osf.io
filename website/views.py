@@ -21,12 +21,11 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.forms import utils as form_utils
 from framework.routing import proxy_url
 from website import settings
-from website.institutions.views import serialize_institution
 
 from addons.osfstorage.models import Region, OsfStorageFile
 
 from osf import features, exceptions
-from osf.models import Guid, Institution, Preprint, AbstractNode, Node, DraftNode, Registration, BaseFileNode
+from osf.models import Guid, Preprint, AbstractNode, Node, DraftNode, Registration, BaseFileNode
 
 from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, DOMAIN
 from website.ember_osf_web.decorators import ember_flag_is_active
@@ -154,17 +153,7 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
     return summary
 
 def index():
-    # Check if we're on an institution landing page
-    institution = Institution.objects.filter(domains__icontains=request.host, is_deleted=False)
-    if institution.exists():
-        institution = institution.get()
-        inst_dict = serialize_institution(institution)
-        inst_dict.update({
-            'redirect_url': '{}institutions/{}/'.format(DOMAIN, institution._id),
-        })
-        return inst_dict
-    else:
-        return use_ember_app()
+    return use_ember_app()
 
 def find_bookmark_collection(user):
     Collection = apps.get_model('osf.Collection')
@@ -173,7 +162,6 @@ def find_bookmark_collection(user):
 @must_be_logged_in
 def dashboard(auth):
     return use_ember_app()
-
 
 @must_be_logged_in
 @ember_flag_is_active(features.EMBER_MY_PROJECTS)
