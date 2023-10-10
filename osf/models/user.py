@@ -1896,110 +1896,137 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         return is_spam
 
+    def _validate_admin_status_for_gdpr_delete(self, resource):
+        """
+        Ensure that deleting the user won't leave the node without an admin.
+
+        Args:
+        - resource: An instance of a resource, probably AbstractNode or DraftRegistration.
+        """
+        alternate_admins = OSFUser.objects.filter(
+            groups__name=resource.format_group(ADMIN),
+            is_active=True
+        ).exclude(id=self.id)
+
+        if not alternate_admins:
+            raise UserStateError(
+                f'You cannot delete {resource.__class__.__name__} {resource._id} because it would be '
+                f'a {resource.__class__.__name__} with contributors, but with no admin.'
+            )
+
+    def _validate_addons_for_gdpr_delete(self, resource):
+        """
+        Ensure that the user's external accounts on the node won't cause issues upon deletion.
+
+        Args:
+        - resource: An instance of a resource, probably AbstractNode or DraftRegistration.
+        """
+        for addon in resource.get_addons():
+            if addon.short_name not in ('osfstorage', 'wiki') and \
+                    addon.user_settings and addon.user_settings.owner.id == self.id:
+                raise UserStateError(
+                    f'You cannot delete this user because they have an external account for {addon.short_name} '
+                    f'attached to {resource.__class__.__name__} {resource._id}, which has other contributors.'
+                )
+
     def gdpr_delete(self):
         """
-        This function does not remove the user object reference from our database, but it does disable the account and
-        remove identifying in a manner compliant with GDPR guidelines.
-
-        Follows the protocol described in
-        https://openscience.atlassian.net/wiki/spaces/PRODUC/pages/482803755/GDPR-Related+protocols
-
+        Complies with GDPR guidelines by disabling the account and removing identifying information.
         """
-        from osf.models import (
-            Preprint,
-            AbstractNode,
-            DraftRegistration,
+
+        # Check if user has something intentionally public, like preprints or registrations
+        self._validate_no_public_entities()
+
+        # Check if user has any non-registration AbstractNodes or DraftRegistrations that they might still share with
+        # other contributors
+        self._validate_and_remove_resource_for_gdpr_delete(
+            self.nodes.exclude(type='osf.registration'),  # Includes DraftNodes and other typed nodes
+            hard_delete=False
+        )
+        self._validate_and_remove_resource_for_gdpr_delete(
+            self.draft_registrations.all(),
+            hard_delete=True
         )
 
-        user_nodes = self.nodes.exclude(is_deleted=True)
-        #  Validates the user isn't trying to delete things they deliberately made public.
-        if user_nodes.filter(type='osf.registration').exists():
+        # A Potentially out of date check that user isn't a member of a OSFGroup
+        self._validate_osf_groups()
+
+        # Finally delete the user's info.
+        self._clear_identifying_information()
+
+    def _validate_no_public_entities(self):
+        """
+        Ensure that the user doesn't have any public facing resources like Registrations or Preprints
+        """
+        from osf.models import Preprint
+
+        if self.nodes.exclude(is_deleted=True).filter(type='osf.registration').exists():
             raise UserStateError('You cannot delete this user because they have one or more registrations.')
 
         if Preprint.objects.filter(_contributors=self, ever_public=True, deleted__isnull=True).exists():
             raise UserStateError('You cannot delete this user because they have one or more preprints.')
 
-        # Validates that the user isn't trying to delete things nodes they are the only admin on.
-        personal_nodes = (
-            AbstractNode.objects.annotate(contrib_count=Count('_contributors'))
-            .filter(contrib_count__lte=1)
-            .filter(contributor__user=self)
-            .exclude(is_deleted=True)
+    def _validate_and_remove_resource_for_gdpr_delete(self, resources, hard_delete):
+        """
+        This method ensures a user's resources are properly deleted of using during GDPR delete request.
+
+        Args:
+        - resources: A queryset of resources probably of AbstractNode or DraftRegistration.
+        - hard_delete: A boolean indicating whether the resource should be permentently deleted or just marked as such.
+        """
+        model = resources.query.model
+
+        filter_deleted = {}
+        if not hard_delete:
+            filter_deleted = {'deleted__isnull': True}
+
+        personal_resources = model.objects.annotate(
+            contrib_count=Count('_contributors')
+        ).filter(
+            contrib_count__lte=1,
+            _contributors=self
+        ).filter(
+            **filter_deleted
         )
-        shared_nodes = user_nodes.exclude(id__in=personal_nodes.values_list('id'))
 
-        for node in shared_nodes:
-            alternate_admins = OSFUser.objects.filter(groups__name=node.format_group(ADMIN)).filter(is_active=True).exclude(id=self.id)
-            if not alternate_admins:
-                raise UserStateError(
-                    'You cannot delete node {} because it would be a node with contributors, but with no admin.'.format(
-                        node._id))
+        shared_resources = resources.exclude(id__in=personal_resources.values_list('id'))
+        for node in shared_resources:
+            self._validate_admin_status_for_gdpr_delete(node)
+            self._validate_addons_for_gdpr_delete(node)
 
-            for addon in node.get_addons():
-                if addon.short_name not in ('osfstorage', 'wiki') and addon.user_settings and addon.user_settings.owner.id == self.id:
-                    raise UserStateError('You cannot delete this user because they '
-                                         'have an external account for {} attached to Node {}, '
-                                         'which has other contributors.'.format(addon.short_name, node._id))
+        for resource in shared_resources.all():
+            logger.info(f'Removing {self._id} as a contributor to {resource.__class__.__name__} (pk:{resource.pk})...')
+            resource.remove_contributor(self, auth=Auth(self), log=False)
 
-        # Validates that the user isn't trying to delete things DraftRegistration they are the only admin on.
-        personal_draft_registrations = (
-            DraftRegistration.objects.annotate(contrib_count=Count('_contributors'))
-            .filter(contrib_count__lte=1)
-            .filter(_contributors=self)
-            .filter(deleted__isnull=True)
-        )
-        shared_draft_registrations = self.draft_registrations.exclude(id__in=personal_draft_registrations.values_list('id'))
-        for node in shared_draft_registrations:
-            alternate_admins = OSFUser.objects.filter(
-                groups__name=node.format_group(ADMIN)
-            ).filter(
-                is_active=True
-            ).exclude(
-                id=self.id
-            )
-            if not alternate_admins:
-                raise UserStateError(
-                    f'You cannot delete DraftRegistration {node._id} because it would be a node with contributors, but with no '
-                    f'admin.'
-                )
-            for addon in node.get_addons():
-                if addon.short_name not in ('osfstorage', 'wiki') and \
-                        addon.user_settings and \
-                        addon.user_settings.owner.id == self.id:
-                    raise UserStateError(
-                        f'You cannot delete this user because they have an external account for {addon.short_name}'
-                        f' attached to DraftRegistration {node._id}, which has other contributors.'
-                    )
+        # Delete all personal entities
+        for entity in personal_resources.all():
+            if hard_delete:
+                logger.info(f'Hard-deleting {entity.__class__.__name__} (pk: {entity.pk})...')
+                entity.delete()
+            else:
+                logger.info(f'Soft-deleting {entity.__class__.__name__} (pk: {entity.pk})...')
+                entity.remove_node(auth=Auth(self))
 
+    def _validate_osf_groups(self):
+        """
+        This method ensures a user isn't in an OSFGroup before deleting them..
+        """
         for group in self.osf_groups:
-            if not group.managers.exclude(id=self.id).filter(is_registered=True).exists() and group.members.exclude(id=self.id).exists():
-                raise UserStateError('You cannot delete this user because they are the only registered manager of OSFGroup {} that contains other members.'.format(group._id))
-
-        for node in shared_nodes.all():
-            logger.info(f'Removing {self._id} as a contributor to node (pk:{node.pk})...')
-            node.remove_contributor(self, auth=Auth(self), log=False)
-
-        for draft_registration in shared_draft_registrations.all():
-            logger.info(f'Removing {self._id} as a contributor to node (pk:{node.pk})...')
-            draft_registration.remove_contributor(self, auth=Auth(self), log=False)
-
-        # This is doesn't to remove identifying info, but ensures other users can't see the deleted user's profile etc.
-        self.deactivate_account()
-
-        # delete all personal nodes (one contributor), bookmarks, draftnodes etc.
-        for node in personal_nodes.all():
-            logger.info(f'Soft-deleting node (pk: {node.pk})...')
-            node.remove_node(auth=Auth(self))
-
-        for draft_registration in personal_draft_registrations.all():
-            logger.info(f'Hard-deleting draft registrations (pk: {draft_registration.pk})...')
-            draft_registration.delete()
-
-        for group in self.osf_groups:
-            if len(group.managers) == 1 and group.managers[0] == self:
+            if not group.managers.exclude(id=self.id).filter(is_registered=True).exists() and group.members.exclude(
+                    id=self.id).exists():
+                raise UserStateError(
+                    f'You cannot delete this user because they are the only registered manager of OSFGroup {group._id} that contains other members.')
+            elif len(group.managers) == 1 and group.managers[0] == self:
                 group.remove_group()
             else:
                 group.remove_member(self)
+
+    def _clear_identifying_information(self):
+        '''
+        This method ensures a user's info is deleted during a GDPR delete
+        '''
+        # This doesn't remove identifying info, but ensures other users can't see the deleted user's profile etc.
+        self.deactivate_account()
 
         logger.info('Clearing identifying information...')
         # This removes identifying info

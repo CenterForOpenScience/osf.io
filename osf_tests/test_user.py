@@ -2497,8 +2497,8 @@ class TestUserGdprDelete:
         with pytest.raises(UserStateError) as exc_info:
             user.gdpr_delete()
 
-        assert exc_info.value.args[0] == 'You cannot delete node {} because it would' \
-                                         ' be a node with contributors, but with no admin.'.format(project_user_is_only_admin._id)
+        assert exc_info.value.args[0] == 'You cannot delete Node {} because it would' \
+                                         ' be a Node with contributors, but with no admin.'.format(project_user_is_only_admin._id)
 
     def test_cant_gdpr_delete_osf_group_if_only_manager(self, user):
         group = OSFGroupFactory(name='My Group', creator=user)
