@@ -2,6 +2,11 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+23.15.0 (2023-10-10)
+====================
+- Update routing for Institutions, Preprints Discover pages
+- Fix tag-based search navigation
+
 23.14.0 (2023-10-5)
 ===================
 - Update metadata gathering for improved deduplication, type inference, withdrawal metadata
