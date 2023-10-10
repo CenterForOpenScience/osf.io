@@ -2263,12 +2263,17 @@ class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, Contribut
 
     def copy_editable_fields(self, resource, alternative_resource=None, include_contributors=True, save=True, excluded_attributes=None):
         """
-        Copy various editable fields from the 'resource' object to the current object.
-        Includes, title, description, category, contributors, node_license, tags, subjects, and affiliated_institutions
-        The field on the resource will always supersede the field on the alternative_resource. For example,
-        copying fields from the draft_registration to the registration.  resource will be a DraftRegistration object,
-        but the alternative_resource will be a Node.  DraftRegistration fields will trump Node fields.
-        TODO, add optional logging parameter
+        This method copies various editable fields from the 'resource' object to the current object. Includes, title,
+        description, category, contributors, node_license, tags, subjects, and affiliated_institutions.
+        The field on the resource will always supersede the field on the alternative_resource. For example, copying
+        fields from the draft_registration to the registration.  resource will be a DraftRegistration object, but the
+        alternative_resource will be a Node. DraftRegistration fields will trump Node fields.
+
+        :param Object resource: Primary resource where you want to copy attributes
+        :param Object alternative_resource: Backup resource for copying attributes
+        :param Boolean include_contributors: represents whether to also copy the resource's contributors
+        :param Boolean save: represents whether to save the resources changes immediately
+        :param List: a list of strings representing attributes to exclude from copying
         """
         if not excluded_attributes:
             excluded_attributes = []
