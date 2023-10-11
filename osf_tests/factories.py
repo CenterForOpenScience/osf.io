@@ -1041,6 +1041,7 @@ generic_waterbutler_credentials = {
         'fileaccess_token': 'file_abc',
     }
 }
+
 addon_waterbutler_settings = {
     'storage': {
         'provider': 'nextcloudinstitutions',
@@ -1062,6 +1063,28 @@ class RegionFactory(DjangoModelFactory):
     _id = factory.Sequence(lambda n: 'us_east_{0}'.format(n))
     waterbutler_credentials = generic_waterbutler_credentials
     waterbutler_settings = generic_waterbutler_settings
+    waterbutler_url = 'http://123.456.test.woo'
+
+
+class RegionFactoryInstitutionalAddon(DjangoModelFactory):
+    class Meta:
+        model = Region
+
+    name = factory.Sequence(lambda n: 'Region2 {0}'.format(n))
+    _id = factory.Sequence(lambda n: 'us_east2_{0}'.format(n))
+    waterbutler_credentials = generic_waterbutler_credentials
+    waterbutler_settings = addon_waterbutler_settings
+    waterbutler_url = 'http://123.456.test.woo'
+
+
+class RegionFactoryInstitutionalBulkMount(DjangoModelFactory):
+    class Meta:
+        model = Region
+
+    name = factory.Sequence(lambda n: 'Region3 {0}'.format(n))
+    _id = factory.Sequence(lambda n: 'us_east3_{0}'.format(n))
+    waterbutler_credentials = generic_waterbutler_credentials
+    waterbutler_settings = bulkmount_waterbutler_settings
     waterbutler_url = 'http://123.456.test.woo'
 
 
@@ -1165,12 +1188,46 @@ class ExportDataFactory(DjangoModelFactory):
     creator = factory.SubFactory(UserFactory)
 
 
+class ExportDataFactoryAddon(DjangoModelFactory):
+    class Meta:
+        model = models.ExportData
+
+    location = factory.SubFactory(ExportDataLocationFactory)
+    source = factory.SubFactory(RegionFactoryInstitutionalAddon)
+    process_start = datetime.datetime.now()
+    is_deleted = False
+    status = models.ExportData.STATUS_COMPLETED
+    creator = factory.SubFactory(UserFactory)
+
+
 class ExportDataRestoreFactory(DjangoModelFactory):
     class Meta:
         model = models.ExportDataRestore
 
     export = factory.SubFactory(ExportDataFactory)
     destination = factory.SubFactory(RegionFactory)
+    process_start = datetime.datetime.now()
+    status = models.ExportData.STATUS_COMPLETED
+    creator = factory.SubFactory(UserFactory)
+
+
+class ExportDataRestoreBulkMountFactory(DjangoModelFactory):
+    class Meta:
+        model = models.ExportDataRestore
+
+    export = factory.SubFactory(ExportDataFactory)
+    destination = factory.SubFactory(RegionFactoryInstitutionalBulkMount)
+    process_start = datetime.datetime.now()
+    status = models.ExportData.STATUS_COMPLETED
+    creator = factory.SubFactory(UserFactory)
+
+
+class ExportDataRestoreAddonFactory(DjangoModelFactory):
+    class Meta:
+        model = models.ExportDataRestore
+
+    export = factory.SubFactory(ExportDataFactory)
+    destination = factory.SubFactory(RegionFactoryInstitutionalAddon)
     process_start = datetime.datetime.now()
     status = models.ExportData.STATUS_COMPLETED
     creator = factory.SubFactory(UserFactory)
@@ -1212,9 +1269,9 @@ class BaseFileNodeFactory(DjangoModelFactory):
 
     id = 1
     provider = 'osfstorage'
-    path = 'fake_path'
+    path = '/fake_path'
     name = factory.Faker('company')
-
+    type = 'osf.osfstoragefile'
 
 class BaseFileVersionsThroughFactory(DjangoModelFactory):
     class Meta:

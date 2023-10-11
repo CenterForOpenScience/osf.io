@@ -18,6 +18,8 @@ from admin.rdm_custom_storage_location.export_data.utils import (
     process_data_information,
     validate_exported_data,
     count_files_ng_ok,
+    is_add_on_storage,
+    check_file_metadata,
 )
 from osf.models import ExportData, Institution
 from website.util import inspect_info  # noqa
@@ -425,7 +427,7 @@ class CheckExportData(RdmPermissionMixin, View):
             return JsonResponse({'message': message}, status=400)
 
         # Get data from current source storage
-        _, storage_file_info = export_data.extract_file_information_json_from_source_storage()
+        _, storage_file_info = export_data.extract_file_information_json_from_source_storage(cookie=cookie)
         exported_file_versions = process_data_information(exported_file_info['files'])
         storage_file_versions = process_data_information(storage_file_info['files'])
         exclude_keys = []
@@ -474,11 +476,29 @@ class CheckRestoreData(RdmPermissionMixin, View):
             return JsonResponse({'message': message}, status=400)
 
         # Get data from current destination storage
-        _, storage_file_info = restore_data.extract_file_information_json_from_destination_storage()
+        _, storage_file_info = restore_data.extract_file_information_json_from_destination_storage(cookie=cookie)
         exported_file_versions = process_data_information(exported_file_info['files'])
         storage_file_versions = process_data_information(storage_file_info['files'])
-        exclude_keys = []
+        exported_provider_name = export_data.source_waterbutler_settings.get('storage', {}).get('provider')
+        destination_provider_name = restore_data.destination.provider_name
+        if is_add_on_storage(exported_provider_name) or is_add_on_storage(destination_provider_name):
+            # If either source or destination is add-on storage then exclude the following keys
+            exclude_keys = ['id', 'provider', 'path', 'created_at', 'modified_at', 'timestamp_id',
+                            # location/
+                            'location',
+                            # metadata/
+                            'metadata',
+                            # timestamp/
+                            'timestamp_id', 'verify_user']
+        else:
+            # If source and destination are bulk-mount storages then exclude the following keys
+            exclude_keys = ['host', 'bucket', 'folder', 'service', 'provider', 'verify_ssl', 'address', 'version',
+                            # metadata/
+                            'etag', 'extra']
         data = count_files_ng_ok(exported_file_versions, storage_file_versions, exclude_keys=exclude_keys)
+
+        # Check addons_metadata_filemetadata
+        data = check_file_metadata(data, restore_data, storage_file_info)
 
         # end check
         restore_data.status = ExportData.STATUS_COMPLETED

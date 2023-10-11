@@ -186,7 +186,7 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
         export_data.save()
 
         # extract file information
-        export_data_json, file_info_json = export_data.extract_file_information_json_from_source_storage()
+        export_data_json, file_info_json = export_data.extract_file_information_json_from_source_storage(**kwargs)
 
         if task.is_aborted():  # check before each steps
             raise ExportDataTaskException(MSG_EXPORT_ABORTED)

@@ -11,21 +11,25 @@ from nose import tools as nt
 from requests import ConnectionError
 from rest_framework import status
 
+from addons.metadata.models import NodeSettings as MetadataNodeSettings, FileMetadata
 from addons.nextcloudinstitutions.models import NextcloudInstitutionsProvider
 from admin.rdm_custom_storage_location.export_data import utils
 from admin.rdm_custom_storage_location.export_data.views import management
 from admin.rdm_custom_storage_location.export_data.views.restore import ProcessError
 from admin_tests.utilities import setup_view
 from framework.celery_tasks import app as celery_app
-from osf.models import ExportData
+from osf.models import ExportData, BaseFileNode
 from osf_tests.factories import (
     AuthUserFactory,
     InstitutionFactory,
     ExportDataLocationFactory,
     ExportDataFactory,
     ExportDataRestoreFactory,
+    ProjectFactory,
+    DraftNodeFactory, RegionFactory, bulkmount_waterbutler_settings,
 )
 from tests.base import AdminTestCase
+from website.settings import INSTITUTIONAL_STORAGE_ADD_ON_METHOD
 
 FAKE_TASK_ID = '00000000-0000-0000-0000-000000000000'
 RESTORE_EXPORT_DATA_PATH = 'admin.rdm_custom_storage_location.export_data.views.restore'
@@ -1390,6 +1394,9 @@ class TestCheckRestoreData(AdminTestCase):
         self.export_data = ExportDataFactory()
         self.export_data_restore = ExportDataRestoreFactory()
         self.export_data_restore.export = self.export_data
+        self.project = ProjectFactory(creator=self.user)
+        self.metadata_node_settings = MetadataNodeSettings(owner=self.project)
+        self.metadata_node_settings.save()
 
     def test_count_file_ng_ok(self):
         data_old = utils.process_data_information(FAKE_DATA['files'])
@@ -1507,6 +1514,150 @@ class TestCheckRestoreData(AdminTestCase):
         }
         res = utils.deep_diff(a_new, a_standard, exclude_keys=['section1', 'section2'])
         nt.assert_not_equal(res, None)
+
+    # check_file_metadata
+    def test_check_file_metadata_not_set(self):
+        region = RegionFactory(waterbutler_settings=bulkmount_waterbutler_settings)
+        export_data_restore = ExportDataRestoreFactory(destination=region)
+        storage_file_info = {
+            'files': [
+                {
+                    'provider': 'dropboxbusiness',
+                    'materialized_path': '/test_file.txt',
+                    'project': {
+                        'id': self.project._id,
+                    }
+                }
+            ]
+        }
+        data = {
+            'ng': 0,
+            'ok': 1,
+            'total': 1,
+            'list_file_ng': [],
+        }
+        result = utils.check_file_metadata(data, export_data_restore, storage_file_info)
+        nt.assert_equal(result.get('ng'), 0)
+        nt.assert_equal(result.get('ok'), 1)
+        nt.assert_equal(result.get('total'), 1)
+        nt.assert_equal(len(result.get('list_file_ng', [])), 0)
+
+    def test_check_file_metadata_add_new_ng(self):
+        region = RegionFactory(waterbutler_settings=bulkmount_waterbutler_settings)
+        export_data_restore = ExportDataRestoreFactory(destination=region)
+        file_materialized_path = '/test_file.txt'
+        storage_file_info = {
+            'files': [
+                {
+                    'provider': 'dropboxbusiness',
+                    'materialized_path': file_materialized_path,
+                    'project': {
+                        'id': self.project._id,
+                    }
+                }
+            ]
+        }
+        data = {
+            'ng': 0,
+            'ok': 1,
+            'total': 1,
+            'list_file_ng': [],
+        }
+        FileMetadata.objects.create(
+            creator=self.user,
+            user=self.user,
+            project=self.metadata_node_settings,
+            path=f'dropboxbusiness{file_materialized_path}',
+            hash='test_hash',
+            folder=False,
+            metadata={'items': []},
+        )
+        result = utils.check_file_metadata(data, export_data_restore, storage_file_info)
+        nt.assert_equal(result.get('ng'), 1)
+        nt.assert_equal(result.get('ok'), 0)
+        nt.assert_equal(result.get('total'), 1)
+        list_file_ng = result.get('list_file_ng', [])
+        nt.assert_equal(len(list_file_ng), 1)
+        nt.assert_equal(list_file_ng[0].get('reason'), 'File metadata is not updated')
+
+    def test_check_file_metadata_update_ng(self):
+        region = RegionFactory(waterbutler_settings=bulkmount_waterbutler_settings)
+        export_data_restore = ExportDataRestoreFactory(destination=region)
+        file_materialized_path = '/test_file.txt'
+        storage_file_info = {
+            'files': [
+                {
+                    'provider': 'dropboxbusiness',
+                    'materialized_path': file_materialized_path,
+                    'project': {
+                        'id': self.project._id,
+                    }
+                }
+            ]
+        }
+        data = {
+            'ng': 1,
+            'ok': 0,
+            'total': 1,
+            'list_file_ng': [{
+                'path': file_materialized_path,
+                'size': 0,
+                'version_id': 1,
+                'reason': '"timestamp" not match',
+            }],
+        }
+        FileMetadata.objects.create(
+            creator=self.user,
+            user=self.user,
+            project=self.metadata_node_settings,
+            path=f'dropboxbusiness{file_materialized_path}',
+            hash='test_hash',
+            folder=False,
+            metadata={'items': []},
+        )
+        result = utils.check_file_metadata(data, export_data_restore, storage_file_info)
+        nt.assert_equal(result.get('ng'), 1)
+        nt.assert_equal(result.get('ok'), 0)
+        nt.assert_equal(result.get('total'), 1)
+        list_file_ng = result.get('list_file_ng', [])
+        nt.assert_equal(len(list_file_ng), 1)
+        nt.assert_equal(list_file_ng[0].get('reason'), '"timestamp" not match\nFile metadata is not updated')
+
+    def test_check_file_metadata_ok(self):
+        region = RegionFactory(waterbutler_settings=bulkmount_waterbutler_settings)
+        export_data_restore = ExportDataRestoreFactory(destination=region)
+        file_materialized_path = '/test_file.txt'
+        storage_file_info = {
+            'files': [
+                {
+                    'provider': 'dropboxbusiness',
+                    'materialized_path': file_materialized_path,
+                    'project': {
+                        'id': self.project._id,
+                    }
+                }
+            ]
+        }
+        data = {
+            'ng': 0,
+            'ok': 1,
+            'total': 1,
+            'list_file_ng': [],
+        }
+        FileMetadata.objects.create(
+            creator=self.user,
+            user=self.user,
+            project=self.metadata_node_settings,
+            path=f'osfstorage{file_materialized_path}',
+            hash='test_hash',
+            folder=False,
+            metadata={'items': []},
+        )
+        result = utils.check_file_metadata(data, export_data_restore, storage_file_info)
+        nt.assert_equal(result.get('ng'), 0)
+        nt.assert_equal(result.get('ok'), 1)
+        nt.assert_equal(result.get('total'), 1)
+        nt.assert_equal(len(result.get('list_file_ng', [])), 0)
 
 
 @pytest.mark.feature_202210
@@ -2303,6 +2454,47 @@ class TestUtilsForRestoreData(AdminTestCase):
         mock_copy_file.assert_not_called()
         nt.assert_equal(response, None)
 
+    # prepare_file_node_for_add_on_storage
+    def test_prepare_file_node_for_add_on_storage(self):
+        file_path = '/folder/test_file.txt'
+        test_response_data = {
+            'data': {
+                'attributes': {
+                    'name': 'test_file.txt',
+                    'materialized': file_path,
+                    'modified': None
+                }
+            }
+        }
+        test_response = requests.Response()
+        test_response.status_code = status.HTTP_200_OK
+        test_response._content = json.dumps(test_response_data).encode('utf-8')
+        mock_get = MagicMock()
+        mock_get.return_value = test_response
+        project = ProjectFactory()
+        with patch('requests.get', mock_get):
+            for provider_name in INSTITUTIONAL_STORAGE_ADD_ON_METHOD:
+                # Test for each add-on storages
+                utils.prepare_file_node_for_add_on_storage(project._id, provider_name, file_path)
+                file_node_query_set = BaseFileNode.objects.filter(provider=provider_name, _path=file_path)
+                nt.assert_true(file_node_query_set.exists())
+                file_node = file_node_query_set.first()
+                nt.assert_true(file_node.name)
+                nt.assert_true(file_node.materialized_path)
+                nt.assert_true(file_node.last_touched)
+
+    def test_prepare_file_node_for_add_on_storage_bulk_mount_storage(self):
+        project = ProjectFactory()
+        utils.prepare_file_node_for_add_on_storage(project._id, 'osfstorage', '/text_file.txt')
+        file_node_query_set = BaseFileNode.objects.filter(provider='osfstorage', _path='/text_file.txt')
+        nt.assert_false(file_node_query_set.exists())
+
+    def test_prepare_file_node_for_add_on_storage_draft_node(self):
+        draft_node = DraftNodeFactory()
+        utils.prepare_file_node_for_add_on_storage(draft_node._id, 's3compatinstitutions', '/text_file.txt')
+        file_node_query_set = BaseFileNode.objects.filter(provider='s3compatinstitutions', _path='/text_file.txt')
+        nt.assert_false(file_node_query_set.exists())
+
     # move_file
     def test_move_file_in_addon_storage(self):
         test_response = requests.Response()
@@ -2359,6 +2551,46 @@ class TestUtilsForRestoreData(AdminTestCase):
         mock_move_file.assert_called()
         mock_delete_paths.assert_called()
         nt.assert_equal(result, {})
+
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.delete_paths')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.move_file')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_all_file_paths_in_addon_storage')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
+    def test_move_addon_folder_to_backup_nextcloudinstitutions(self, mock_create_folder, mock_get_all_paths, mock_move_file, mock_delete_paths):
+        test_response = requests.Response()
+        test_response.status_code = status.HTTP_200_OK
+
+        mock_get_all_paths.return_value = (['/a/b/c/folder/test1.txt'], [])
+        mock_move_file.return_value = test_response
+        mock_delete_paths.return_value = None
+        mock_create_folder.return_value = (None, 201)
+
+        result = utils.move_addon_folder_to_backup(TEST_PROJECT_ID, 'nextcloudinstitutions',
+                                                   self.export_data_restore.process_start_timestamp,
+                                                   None)
+        mock_get_all_paths.assert_called()
+        mock_move_file.assert_called()
+        mock_delete_paths.assert_called()
+        nt.assert_equal(result, {})
+
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.delete_paths')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.move_file')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_all_file_paths_in_addon_storage')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
+    def test_move_addon_folder_to_backup_nextcloudinstitutions_create_folder_fail(self, mock_create_folder, mock_get_all_paths, mock_move_file, mock_delete_paths):
+        test_response = requests.Response()
+        test_response.status_code = status.HTTP_200_OK
+
+        mock_get_all_paths.return_value = (['/a/b/c/folder/test1.txt'], [])
+        mock_move_file.return_value = test_response
+        mock_delete_paths.return_value = None
+        mock_create_folder.return_value = (None, 400)
+
+        result = utils.move_addon_folder_to_backup(TEST_PROJECT_ID, 'nextcloudinstitutions',
+                                                   self.export_data_restore.process_start_timestamp,
+                                                   None)
+
+        nt.assert_equal(result, {'error': 'Cannot create folder for Nextcloud for Institutions'})
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.delete_paths')
     @patch(f'{EXPORT_DATA_UTIL_PATH}.move_file')
@@ -2526,7 +2758,7 @@ class TestUtilsForRestoreData(AdminTestCase):
                                                                                            TEST_PROVIDER,
                                                                                            '/empty_path/', None)
             mock_get_file_data.assert_called()
-            nt.assert_equal(list_file_path, ['/empty_path/'])
+            nt.assert_equal(list_file_path, [])
             nt.assert_equal(root_child_folders, [])
 
     def test_get_all_file_paths_in_addon_storage_invalid_regex(self):
@@ -2888,6 +3120,39 @@ class TestUtilsForRestoreData(AdminTestCase):
     @patch(f'{EXPORT_DATA_UTIL_PATH}.delete_paths')
     @patch(f'{EXPORT_DATA_UTIL_PATH}.move_file')
     @patch(f'{EXPORT_DATA_UTIL_PATH}.get_all_file_paths_in_addon_storage')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
+    def test_move_addon_folder_from_backup_nextcloudinstitutions(self, mock_create_folder, mock_get_all_file_paths, mock_move_file, mock_delete_paths):
+        test_response = requests.Response()
+        test_response.status_code = status.HTTP_200_OK
+
+        mock_get_all_file_paths.return_value = (['/backup_2022101010/b/folder/file1.txt'], [])
+        mock_move_file.return_value = test_response
+        mock_create_folder.return_value = (None, 201)
+        result = utils.move_addon_folder_from_backup(TEST_PROJECT_ID, 'nextcloudinstitutions', '2022101010', None)
+
+        mock_get_all_file_paths.assert_called_once()
+        mock_move_file.assert_called_once()
+        mock_delete_paths.assert_called()
+        nt.assert_equal(result, {})
+
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.delete_paths')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.move_file')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_all_file_paths_in_addon_storage')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
+    def test_move_addon_folder_from_backup_nextcloudinstitutions_create_folder_fail(self, mock_create_folder, mock_get_all_file_paths, mock_move_file, mock_delete_paths):
+        test_response = requests.Response()
+        test_response.status_code = status.HTTP_200_OK
+
+        mock_get_all_file_paths.return_value = (['/backup_2022101010/b/folder/file1.txt'], [])
+        mock_move_file.return_value = test_response
+        mock_create_folder.return_value = (None, 400)
+        result = utils.move_addon_folder_from_backup(TEST_PROJECT_ID, 'nextcloudinstitutions', '2022101010', None)
+
+        nt.assert_equal(result, {'error': 'Cannot create folder for Nextcloud for Institutions'})
+
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.delete_paths')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.move_file')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_all_file_paths_in_addon_storage')
     def test_move_addon_folder_from_backup_empty_path_list(self, mock_get_all_file_paths, mock_move_file,
                                                            mock_delete_paths):
         test_response = requests.Response()
@@ -3185,22 +3450,131 @@ class TestUtilsForRestoreData(AdminTestCase):
         nt.assert_is_none(utils.is_add_on_storage(None))
         nt.assert_is_none(utils.is_add_on_storage('osf_storage'))
 
-        # both addon method and bulk-mount method
-        nt.assert_false(utils.is_add_on_storage('owncloud'))
-        nt.assert_false(utils.is_add_on_storage('s3compat'))
-        nt.assert_false(utils.is_add_on_storage('s3'))
-
         # only addon method providers
         nt.assert_true(utils.is_add_on_storage('nextcloudinstitutions'))
         nt.assert_true(utils.is_add_on_storage('s3compatinstitutions'))
         nt.assert_true(utils.is_add_on_storage('ociinstitutions'))
         nt.assert_true(utils.is_add_on_storage('dropboxbusiness'))
+        nt.assert_true(utils.is_add_on_storage('onedrivebusiness'))
 
         # only bulk-mount method providers
-        nt.assert_false(utils.is_add_on_storage('onedrivebusiness'))
         nt.assert_false(utils.is_add_on_storage('swift'))
         nt.assert_false(utils.is_add_on_storage('box'))
         nt.assert_false(utils.is_add_on_storage('nextcloud'))
         nt.assert_false(utils.is_add_on_storage('osfstorage'))
         nt.assert_false(utils.is_add_on_storage('onedrive'))
         nt.assert_false(utils.is_add_on_storage('googledrive'))
+        nt.assert_false(utils.is_add_on_storage('owncloud'))
+        nt.assert_false(utils.is_add_on_storage('s3compat'))
+        nt.assert_false(utils.is_add_on_storage('s3'))
+
+    # update_file_metadata
+    def test_update_file_metadata_project_not_found(self):
+        user = AuthUserFactory()
+        project = ProjectFactory()
+        metadata_node_settings = MetadataNodeSettings(owner=project)
+        metadata_node_settings.save()
+        source_provider = 'osfstorage'
+        destination_provider = 's3compatinstitutions'
+        file_path = '/test_file.txt'
+        FileMetadata.objects.create(
+            creator=user,
+            user=user,
+            project=metadata_node_settings,
+            path=f'{source_provider}{file_path}',
+            hash='test_hash',
+            folder=False,
+            metadata={'items': []}
+        )
+        utils.update_file_metadata(None, source_provider, destination_provider, file_path)
+        new_metadata = FileMetadata.objects.filter(project=metadata_node_settings, path=f'{destination_provider}{file_path}')
+        nt.assert_false(new_metadata.exists())
+
+    def test_update_file_metadata_no_update(self):
+        user = AuthUserFactory()
+        project = ProjectFactory()
+        metadata_node_settings = MetadataNodeSettings(owner=project)
+        metadata_node_settings.save()
+        source_provider = 'dropboxbusiness'
+        destination_provider = 's3compatinstitutions'
+        file_path = '/test_file.txt'
+        FileMetadata.objects.create(
+            creator=user,
+            user=user,
+            project=metadata_node_settings,
+            path=f'{source_provider}{file_path}',
+            hash='test_hash',
+            folder=False,
+            metadata={'items': []}
+        )
+        utils.update_file_metadata(None, 'osfstorage', destination_provider, file_path)
+        new_metadata = FileMetadata.objects.filter(project=metadata_node_settings, path=f'{destination_provider}{file_path}')
+        nt.assert_false(new_metadata.exists())
+
+    def test_update_file_metadata(self):
+        user = AuthUserFactory()
+        project = ProjectFactory()
+        metadata_node_settings = MetadataNodeSettings(owner=project)
+        metadata_node_settings.save()
+        source_provider = 'osfstorage'
+        destination_provider = 's3compatinstitutions'
+        file_path = '/test_file.txt'
+        FileMetadata.objects.create(
+            creator=user,
+            user=user,
+            project=metadata_node_settings,
+            path=f'{source_provider}{file_path}',
+            hash='test_hash',
+            folder=False,
+            metadata={'items': []},
+        )
+        utils.update_file_metadata(project._id, source_provider, destination_provider, file_path)
+        new_metadata = FileMetadata.objects.filter(project=metadata_node_settings, path=f'{destination_provider}{file_path}')
+        nt.assert_true(new_metadata.exists())
+
+    # update_all_folders_metadata
+    def test_update_all_folders_metadata_invalid_input(self):
+        user = AuthUserFactory()
+        project = ProjectFactory()
+        metadata_node_settings = MetadataNodeSettings(owner=project)
+        metadata_node_settings.save()
+        source_provider = 'osfstorage'
+        destination_provider = 's3compatinstitutions'
+        folder_path = '/test_folder/'
+        FileMetadata.objects.create(
+            creator=user,
+            user=user,
+            project=metadata_node_settings,
+            path=f'{source_provider}{folder_path}',
+            hash='test_hash',
+            folder=True,
+            metadata={'items': []},
+        )
+        utils.update_all_folders_metadata(None, destination_provider)
+        new_metadata = FileMetadata.objects.filter(project=metadata_node_settings, folder=True, path=f'{destination_provider}{folder_path}')
+        nt.assert_false(new_metadata.exists())
+
+    def test_update_all_folders_metadata(self):
+        user = AuthUserFactory()
+        project = ProjectFactory(creator=user)
+        metadata_node_settings = MetadataNodeSettings(owner=project)
+        metadata_node_settings.save()
+        source_provider = 'osfstorage'
+        destination_provider = 's3compatinstitutions'
+        folder_path = '/test_folder/'
+        FileMetadata.objects.create(
+            creator=user,
+            user=user,
+            project=metadata_node_settings,
+            path=f'{source_provider}{folder_path}',
+            hash='test_hash',
+            folder=True,
+            metadata={'items': []},
+        )
+        institution = InstitutionFactory()
+        institution.nodes.set([project])
+        institution.osfuser_set.add(user)
+        institution.save()
+        utils.update_all_folders_metadata(institution, destination_provider)
+        new_metadata = FileMetadata.objects.filter(project=metadata_node_settings, folder=True, path=f'{destination_provider}{folder_path}')
+        nt.assert_true(new_metadata.exists())

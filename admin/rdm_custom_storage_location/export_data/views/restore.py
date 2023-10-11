@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 
+import hashlib
 import inspect  # noqa
 import json
 import logging
@@ -121,7 +122,6 @@ def check_before_restore_export_data(cookies, export_id, destination_id, **kwarg
         export_data.status = pre_status
         export_data.save()
         return {'open_dialog': False, 'message': f'The export data files are corrupted'}
-    destination_first_project_id = export_data_folders[0].get('project', {}).get('id')
 
     # Check whether the restore destination storage is not empty
     destination_region = Region.objects.filter(id=destination_id).first()
@@ -133,23 +133,25 @@ def check_before_restore_export_data(cookies, export_id, destination_id, **kwarg
     destination_provider = destination_region.provider_name
     if utils.is_add_on_storage(destination_provider):
         try:
-            destination_base_url = destination_region.waterbutler_url
-            response = utils.get_file_data(destination_first_project_id, destination_provider, '/', cookies,
-                                           destination_base_url, get_file_info=True, **kwargs)
-            if response.status_code != status.HTTP_200_OK:
-                # Error
-                logger.error(f'Return error with response: {response.content}')
-                export_data.status = pre_status
-                export_data.save()
-                return {'open_dialog': False, 'message': f'Cannot connect to destination storage'}
+            project_ids = {item.get('project', {}).get('id') for item in export_data_folders}
+            for project_id in project_ids:
+                destination_base_url = destination_region.waterbutler_url
+                response = utils.get_file_data(project_id, destination_provider, '/', cookies,
+                                               destination_base_url, get_file_info=True, **kwargs)
+                if response.status_code != status.HTTP_200_OK:
+                    # Error
+                    logger.error(f'Return error with response: {response.content}')
+                    export_data.status = pre_status
+                    export_data.save()
+                    return {'open_dialog': False, 'message': f'Cannot connect to destination storage'}
 
-            response_body = response.json()
-            data = response_body.get('data')
-            if len(data) != 0:
-                # Destination storage is not empty, show confirm dialog
-                export_data.status = pre_status
-                export_data.save()
-                return {'open_dialog': True}
+                response_body = response.json()
+                data = response_body.get('data')
+                if len(data) != 0:
+                    # Destination storage is not empty, show confirm dialog
+                    export_data.status = pre_status
+                    export_data.save()
+                    return {'open_dialog': True}
         except Exception as e:
             logger.error(f'Exception: {e}')
             export_data.status = pre_status
@@ -196,7 +198,6 @@ def restore_export_data_process(task, cookies, export_id, export_data_restore_id
             export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
                                        status=ExportData.STATUS_COMPLETED)
             return {'message': 'Restore data successfully.'}
-        # destination_first_project_id = export_data_files[0].get('project', {}).get('id')
 
         check_if_restore_process_stopped(task, current_process_step)
         current_process_step = 1
@@ -206,8 +207,8 @@ def restore_export_data_process(task, cookies, export_id, export_data_restore_id
         destination_provider = destination_region.provider_name
         if utils.is_add_on_storage(destination_provider):
             # Move all existing files/folders in destination to backup_{process_start} folder
-            for project_id in list_project_id:
-                # move_all_files_to_backup_folder(task, current_process_step, destination_first_project_id, export_data_restore, cookies, **kwargs)
+            project_ids = {item.get('project', {}).get('id') for item in export_data_folders}
+            for project_id in project_ids:
                 move_all_files_to_backup_folder(task, current_process_step, project_id, export_data_restore, cookies, **kwargs)
 
         check_if_restore_process_stopped(task, current_process_step)
@@ -228,6 +229,10 @@ def restore_export_data_process(task, cookies, export_id, export_data_restore_id
 
         # Add tags, timestamp to created file nodes
         add_tag_and_timestamp_to_database(task, current_process_step, list_created_file_nodes)
+
+        # Update metadata of folders
+        institution = Institution.load(destination_region.guid)
+        utils.update_all_folders_metadata(institution, destination_provider)
 
         # Update process data with process_end timestamp and 'Completed' status
         export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
@@ -325,6 +330,9 @@ class StopRestoreDataActionView(RdmPermissionMixin, APIView):
         if task.state != ABORTED:
             export_data_restore.update(status=ExportData.STATUS_ERROR)
             return Response({'message': f'Cannot stop restore process at this time.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
+                                   status=ExportData.STATUS_STOPPED)
 
         # Start rollback restore export data process
         process = tasks.run_restore_export_data_rollback_process.delay(
@@ -523,31 +531,13 @@ def recalculate_user_quota(destination_region):
         update_user_used_quota(user, storage_type=UserQuota.CUSTOM_STORAGE)
 
 
-def generate_new_file_path(file_materialized_path, version_id, is_file_not_latest_version):
-    new_file_materialized_path = file_materialized_path
-    if len(file_materialized_path) > 0 and is_file_not_latest_version:
-        # for past version files, rename and save each version as filename_{version} in '_version_files' folder
-        path_splits = new_file_materialized_path.split('/')
-
-        # add _{version} to file name
-        file_name = path_splits[len(path_splits) - 1]
-        file_splits = file_name.split('.')
-        file_splits[0] = f'{file_splits[0]}_{version_id}'
-        versioned_file_name = '.'.join(file_splits)
-
-        # add _version_files to folder path
-        path_splits.insert(len(path_splits) - 1, '_version_files')
-        path_splits[len(path_splits) - 1] = versioned_file_name
-        new_file_materialized_path = '/'.join(path_splits)
-    return new_file_materialized_path
-
-
 def move_all_files_to_backup_folder(task, current_process_step, destination_first_project_id, export_data_restore, cookies, **kwargs):
     try:
         destination_region = export_data_restore.destination
-        destination_provider = INSTITUTIONAL_STORAGE_PROVIDER_NAME
+        destination_provider = destination_region.provider_name
         destination_base_url = destination_region.waterbutler_url
         is_destination_addon_storage = utils.is_add_on_storage(destination_provider)
+        destination_provider = destination_provider if is_destination_addon_storage else INSTITUTIONAL_STORAGE_PROVIDER_NAME
         with transaction.atomic():
             # Preload params to function
             check_task_aborted_function = partial(
@@ -556,7 +546,7 @@ def move_all_files_to_backup_folder(task, current_process_step, destination_firs
                 current_process_step=current_process_step)
 
             # move all old data in restore destination storage to a folder to back up folder
-            if is_destination_addon_storage:
+            if is_destination_addon_storage and destination_provider != 'onedrivebusiness':
                 move_folder_to_backup = partial(utils.move_addon_folder_to_backup)
             else:
                 move_folder_to_backup = partial(utils.move_bulk_mount_folder_to_backup)
@@ -582,8 +572,10 @@ def move_all_files_to_backup_folder(task, current_process_step, destination_firs
 def create_folder_in_destination(task, current_process_step, export_data_folders,
                                  export_data_restore, cookies, **kwargs):
     destination_region = export_data_restore.destination
-    destination_provider = INSTITUTIONAL_STORAGE_PROVIDER_NAME
+    destination_provider = destination_region.provider_name
     destination_base_url = destination_region.waterbutler_url
+    is_destination_addon_storage = utils.is_add_on_storage(destination_provider)
+    destination_provider = destination_provider if is_destination_addon_storage else INSTITUTIONAL_STORAGE_PROVIDER_NAME
     list_updated_projects = []
     for folder in export_data_folders:
         check_if_restore_process_stopped(task, current_process_step)
@@ -605,9 +597,10 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
     export_data = export_data_restore.export
 
     destination_region = export_data_restore.destination
-    destination_provider = INSTITUTIONAL_STORAGE_PROVIDER_NAME
+    destination_provider = destination_region.provider_name
     destination_base_url = destination_region.waterbutler_url
     is_destination_addon_storage = utils.is_add_on_storage(destination_provider)
+    destination_provider = destination_provider if is_destination_addon_storage else INSTITUTIONAL_STORAGE_PROVIDER_NAME
 
     list_created_file_nodes = []
     list_file_restore_fail = []
@@ -622,9 +615,14 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
         file_checkout_id = file.get('checkout_id')
         file_created = file.get('created_at')
         file_modified = file.get('modified_at')
+        file_provider = file.get('provider')
 
-        # Sort file by version id
-        file_versions.sort(key=lambda k: k.get('identifier', 0))
+        if is_destination_addon_storage:
+            # Sort file by version modify date
+            file_versions.sort(key=lambda k: k.get('modified_at'))
+        else:
+            # Sort file by version id
+            file_versions.sort(key=lambda k: k.get('identifier', 0))
 
         for index, version in enumerate(file_versions):
             try:
@@ -632,7 +630,13 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
 
                 # Prepare file name and file path for uploading
                 metadata = version.get('metadata', {})
-                file_hash = metadata.get('sha256', metadata.get('md5'))
+                file_hash = metadata.get('sha256', metadata.get('md5', metadata.get('sha512', metadata.get('sha1'))))
+                if file_provider == 'onedrivebusiness':
+                    # OneDrive Business: get hash file name based on quickXorHash and file version modified time
+                    quick_xor_hash = metadata.get('quickXorHash')
+                    file_version_modified = version.get('modified_at')
+                    new_string_to_hash = f'{quick_xor_hash}{file_version_modified}'
+                    file_hash = hashlib.sha256(new_string_to_hash.encode('utf-8')).hexdigest()
                 version_id = version.get('identifier')
                 if file_hash is None or version_id is None:
                     # Cannot get path in export data storage, pass this file
@@ -640,27 +644,26 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
 
                 file_hash_path = f'/{export_data.export_data_folder_name}/{ExportData.EXPORT_DATA_FILES_FOLDER}/{file_hash}'
 
-                # If the destination storage is add-on institutional storage:
-                # - for past version files, rename and save each version as filename_{version} in '_version_files' folder
-                # - the latest version is saved as the original
-                if is_destination_addon_storage:
-                    is_file_not_latest_version = index < len(file_versions) - 1
-                    new_file_path = generate_new_file_path(
-                        file_materialized_path=file_materialized_path,
-                        version_id=version_id,
-                        is_file_not_latest_version=is_file_not_latest_version)
-                else:
-                    new_file_path = file_materialized_path
-
                 # Copy file from location to destination storage
-                response_body = utils.copy_file_from_location_to_destination(export_data, file_project_id, destination_provider, file_hash_path, new_file_path,
-                                                                             cookies, base_url=destination_base_url, **kwargs)
+                response_body = utils.copy_file_from_location_to_destination(export_data, file_project_id, destination_provider, file_hash_path,
+                                                                             file_materialized_path, cookies, base_url=destination_base_url, **kwargs)
                 if response_body is None:
                     list_file_restore_fail.append(file)
                     continue
 
-                response_id = response_body.get('data', {}).get('id')
-                response_file_version_id = response_body.get('data', {}).get('attributes', {}).get('extra', {}).get('version', version_id)
+                response_body_data = response_body.get('data', {})
+
+                if is_destination_addon_storage:
+                    # Fix for OneDrive Business because its path is different from other add-on storages
+                    response_file_path = response_body_data.get('attributes', {}).get('path', file_materialized_path)
+                    # Create file node if not have for add-on storage
+                    utils.prepare_file_node_for_add_on_storage(file_project_id, destination_provider, response_file_path, **kwargs)
+
+                # update file metadata
+                utils.update_file_metadata(file_project_id, file_provider, destination_provider, file_materialized_path)
+
+                response_id = response_body_data.get('id')
+                response_file_version_id = response_body_data.get('attributes', {}).get('extra', {}).get('version', version_id)
                 if response_id.startswith('osfstorage'):
                     # If id is osfstorage/[_id] then get _id
                     file_path_splits = response_id.split('/')
@@ -716,6 +719,28 @@ def copy_files_from_export_data_to_destination(task, current_process_step, expor
                                 'file_timestamp': file_timestamp,
                                 'project_id': file_project_id
                             })
+                else:
+                    # If id is provider_name/[path] then get path
+                    file_path_splits = response_id.split('/')
+                    if len(file_path_splits) > 1:
+                        file_path_splits[0] = ''
+                        file_node_path = '/'.join(file_path_splits)
+                        project = AbstractNode.load(file_project_id)
+                        if not project:
+                            continue
+                        node_set = BaseFileNode.objects.filter(
+                            type='osf.{}file'.format(destination_provider),
+                            _path=file_node_path,
+                            target_object_id=project.id,
+                            deleted=None)
+                        if node_set.exists():
+                            node = node_set.first()
+                            list_created_file_nodes.append({
+                                'node': node,
+                                'file_tags': file_tags,
+                                'file_timestamp': file_timestamp,
+                                'project_id': file_project_id
+                            })
             except Exception as e:
                 logger.error(f'Download or upload exception: {e}')
                 check_if_restore_process_stopped(task, current_process_step)
@@ -745,7 +770,8 @@ def add_tag_and_timestamp_to_database(task, current_process_step, list_created_f
 def delete_all_files_except_backup_folder(export_data_restore, location_id, destination_first_project_id, cookies, **kwargs):
     destination_region = export_data_restore.destination
     destination_base_url = destination_region.waterbutler_url
-    destination_provider = INSTITUTIONAL_STORAGE_PROVIDER_NAME
+    destination_provider = destination_region.provider_name if utils.is_add_on_storage(
+        destination_region.provider_name) else INSTITUTIONAL_STORAGE_PROVIDER_NAME
 
     try:
         utils.delete_all_files_except_backup(
@@ -758,12 +784,13 @@ def delete_all_files_except_backup_folder(export_data_restore, location_id, dest
 
 def move_all_files_from_backup_folder_to_root(export_data_restore, destination_first_project_id, cookies, **kwargs):
     destination_region = export_data_restore.destination
-    destination_provider = INSTITUTIONAL_STORAGE_PROVIDER_NAME
+    destination_provider = destination_region.provider_name
     destination_base_url = destination_region.waterbutler_url
     is_destination_addon_storage = utils.is_add_on_storage(destination_provider)
+    destination_provider = destination_provider if is_destination_addon_storage else INSTITUTIONAL_STORAGE_PROVIDER_NAME
 
     try:
-        if is_destination_addon_storage:
+        if is_destination_addon_storage and destination_provider != 'onedrivebusiness':
             move_folder_from_backup = partial(utils.move_addon_folder_from_backup)
         else:
             move_folder_from_backup = partial(utils.move_bulk_mount_folder_from_backup)

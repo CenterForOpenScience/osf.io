@@ -1,6 +1,7 @@
 import copy
 from datetime import datetime
 
+import mock
 import pytest
 import requests
 from django.test import TestCase
@@ -15,9 +16,11 @@ from osf_tests.factories import (
     ProjectFactory,
     InstitutionFactory,
     OsfStorageFileFactory,
-    ExportDataRestoreFactory,
+    ExportDataRestoreBulkMountFactory,
+    ExportDataRestoreAddonFactory,
     BaseFileVersionsThroughFactory,
     RdmFileTimestamptokenVerifyResultFactory,
+    BaseFileNodeFactory
 )
 
 
@@ -26,7 +29,7 @@ from osf_tests.factories import (
 class TestExportDataRestore(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.data_restore = ExportDataRestoreFactory()
+        cls.data_restore = ExportDataRestoreBulkMountFactory()
         project = ProjectFactory()
         cls.institution = InstitutionFactory.create(_id=cls.data_restore.destination.guid)
         cls.institution.nodes.set([project])
@@ -78,7 +81,7 @@ class TestExportDataRestore(TestCase):
                 'version': [{
                     'identifier': file_version.identifier,
                     'created_at': file_version.created.strftime('%Y-%m-%d %H:%M:%S'),
-                    'modified_at': file_version.created.strftime('%Y-%m-%d %H:%M:%S'),
+                    'modified_at': file_version.modified.strftime('%Y-%m-%d %H:%M:%S'),
                     'size': file_version.size,
                     'version_name': file_versions_through.version_name if file_versions_through else node.name,
                     'contributor': file_version.creator.username,
@@ -122,7 +125,7 @@ class TestExportDataRestore(TestCase):
         nt.assert_equal(file_info_first_file.get('timestamp'), test_file_info_file.get('timestamp'))
 
     def test_extract_file_information_json_from_destination_storage_institution_not_found(self):
-        export_data_restore_without_institution = ExportDataRestoreFactory.build()
+        export_data_restore_without_institution = ExportDataRestoreBulkMountFactory.build()
         result = export_data_restore_without_institution.extract_file_information_json_from_destination_storage()
         nt.assert_is_none(result)
 
@@ -202,3 +205,75 @@ class TestExportDataRestore(TestCase):
         current_datetime = datetime.now()
         self.data_restore.update(process_end=current_datetime)
         nt.assert_equal(self.data_restore.process_end, current_datetime)
+
+
+@pytest.mark.django_db
+class TestExportDataRestoreInstitutionAddon(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.data_restore = ExportDataRestoreAddonFactory()
+        project = ProjectFactory()
+        cls.institution = InstitutionFactory.create(_id=cls.data_restore.destination.guid)
+        cls.institution.nodes.set([project])
+        cls.institution_json = {
+            'id': cls.institution.id,
+            'guid': cls.institution.guid,
+            'name': cls.institution.name
+        }
+        cls.export_data_json = {
+            'institution': cls.institution_json,
+            'process_start': cls.data_restore.process_start.strftime('%Y-%m-%d %H:%M:%S'),
+            'process_end': cls.data_restore.process_end.strftime(
+                '%Y-%m-%d %H:%M:%S') if cls.data_restore.process_end else None,
+            'storage': {
+                'name': cls.data_restore.destination.name,
+                'type': cls.data_restore.destination.provider_full_name
+            },
+            'projects_numb': 1,
+            'files_numb': 1,
+            'size': -1,
+            'file_path': None
+        }
+
+        projects = cls.institution.nodes.filter(type='osf.node')
+        projects__ids = projects.values_list('id', flat=True)
+        object_id = projects__ids[0]
+        target = AbstractNode(id=object_id)
+        node = BaseFileNodeFactory.create(provider=cls.data_restore.destination.provider_name, target_object_id=object_id, target=target)
+        cls.file = node
+
+    def test_extract_file_information_json_from_destination_institutional_addon_storage(self):
+        mock_request = mock.MagicMock()
+        mock_request_json = mock.MagicMock()
+        mock_request_json.status_code = 200
+        mock_request_json.json.side_effect = [{'data': [{'attributes': {'version': 1}}, {'attributes': {'version': 2}}]},
+                                              {'data': {'attributes': {'sizeInt': 1, 'name': 'test', 'extra': {'hashes': {'md5': 'test'}}}}},
+                                              {'data': {'attributes': {'sizeInt': 1, 'name': 'test', 'etag': 'test', 'extra': {'hashes': {}}}}}]
+        mock_request.get.return_value = mock_request_json
+
+        with mock.patch('osf.models.export_data_restore.requests', mock_request):
+            result = self.data_restore.extract_file_information_json_from_destination_storage()
+            nt.assert_is_not_none(result)
+
+    def test_extract_file_information_json_from_destination_institutional_onedrivebusiness(self):
+        mock_request = mock.MagicMock()
+        mock_request_json = mock.MagicMock()
+        mock_request_json.status_code = 200
+        mock_request_json.json.side_effect = [{'data': [{'attributes': {'version': 1}}]},
+                                              {'data': {'attributes': {'sizeInt': 1, 'name': 'test', 'etag': 'test', 'extra': {'hashes': {}}}}},
+                                              {'content': 'test'}]
+        mock_request.get.return_value = mock_request_json
+
+        with mock.patch('osf.models.export_data_restore.requests', mock_request):
+            result = self.data_restore.extract_file_information_json_from_destination_storage()
+            nt.assert_is_not_none(result)
+
+    def test_extract_file_information_json_from_destination_institutional_addon_storage_get_file_version_error(self):
+        mock_request = mock.MagicMock()
+        mock_request_json = mock.MagicMock()
+        mock_request_json.status_code = 404
+        mock_request.get.return_value = mock_request_json
+
+        with mock.patch('osf.models.export_data_restore.requests', mock_request):
+            result = self.data_restore.extract_file_information_json_from_destination_storage()
+            nt.assert_is_not_none(result)
