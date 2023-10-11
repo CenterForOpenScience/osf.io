@@ -689,3 +689,23 @@ def add_tag_and_timestamp_to_database(task, current_process_step, list_created_f
             # Add timestamp to DB
             add_timestamp_to_file_node(node, project_id, file_timestamp)
         check_if_restore_process_stopped(task, current_process_step)
+
+
+class CheckRunningRestoreActionView(RdmPermissionMixin, APIView):
+    raise_exception = True
+    authentication_classes = (
+        drf_authentication.SessionAuthentication,
+    )
+
+    def get(self, request, **kwargs):
+        destination_id = request.GET.get('destination_id')
+        running_restore = ExportDataRestore.objects.filter(destination_id=destination_id).exclude(
+            Q(status=ExportData.STATUS_STOPPED) | Q(status=ExportData.STATUS_COMPLETED) | Q(
+                status=ExportData.STATUS_ERROR))
+        task_id = None
+        if len(running_restore) != 0:
+            task_id = running_restore[0].task_id
+        response = {
+            'task_id': task_id
+        }
+        return Response(response, status=status.HTTP_200_OK)
