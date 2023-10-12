@@ -161,20 +161,6 @@ class ExportData(base.BaseModel):
             'institution': institution_json,
         }
 
-        # If source institutional storage is the same as default storage, also get default storage for export
-        if self.source.has_same_settings_as_default_region and self.source.id != 1:
-            # get list FileVersion linked to source storage, default storage
-            # but the creator must be affiliated with current institution
-            file_versions = FileVersion.objects.filter(region_id__in=[1, self.source.id], creator__affiliated_institutions___id=source_storage_guid)
-        else:
-            # get list FileVersion linked to source storage
-            file_versions = self.source.fileversion_set.all()
-            # but the creator must be affiliated with current institution
-            file_versions = file_versions.filter(creator__affiliated_institutions___id=source_storage_guid)
-
-        # get base_file_nodes__ids by file_versions__ids above via the BaseFileVersionsThrough model
-        base_file_versions_set = BaseFileVersionsThrough.objects.filter(fileversion__in=file_versions)
-        base_file_nodes__ids = base_file_versions_set.values_list('basefilenode_id', flat=True).distinct('basefilenode_id')
         # get project list, includes public/private/deleted projects
         projects = institution.nodes.filter(type='osf.node', is_deleted=False)
         institution_users = institution.osfuser_set.all()
