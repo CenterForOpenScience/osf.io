@@ -1,1 +1,2 @@
+# Requirements for the boa add-on
 boa-api==0.1.14
