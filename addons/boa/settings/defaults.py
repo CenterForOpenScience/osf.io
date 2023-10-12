@@ -4,6 +4,9 @@ USE_SSL = True
 # Max file size permitted by frontend in megabytes
 MAX_UPLOAD_SIZE = 512
 
+# Suffix to replace '.boa' for the output file
+OUTPUT_FILE_SUFFIX = '_results.txt'
+
 BOA_DATASETS = [
     '2022 Jan/Java',
     '2022 Feb/Python',
@@ -24,8 +27,3 @@ BOA_DATASETS = [
     '2013 February/SF',
     '2012 July/SF',
 ]
-
-user_settings = {
-    'username': '',
-    'password': '',
-}
