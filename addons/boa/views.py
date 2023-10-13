@@ -1,29 +1,21 @@
-"""Views for the node settings page."""
-# -*- coding: utf-8 -*-
+import logging
 import re
-import time
 
+from boaapi.boa_client import BoaClient, BoaException, BOA_API_ENDPOINT
+from django.core.exceptions import ValidationError
+from flask import request
 from rest_framework import status as http_status
 
-from django.core.exceptions import ValidationError
-# from furl import furl
-import requests
-from flask import request
-from framework.auth.decorators import must_be_logged_in
-
 from addons.base import generic_views
-from osf.models import ExternalAccount
-from website.project.decorators import must_have_addon
-
-from boaapi.boa_client import BoaClient, BOA_API_ENDPOINT
-from boaapi.status import CompilerStatus, ExecutionStatus
-from boaapi.util import BoaException
-
 from addons.boa.models import BoaProvider
 from addons.boa.serializer import BoaSerializer
-#from addons.boa import settings
+from addons.boa.tasks import submit_to_boa
+from framework.auth.decorators import must_be_logged_in
+from framework.celery_tasks.handlers import enqueue_task
+from osf.models import ExternalAccount
+from website import settings as osf_settings
+from website.project.decorators import must_have_addon
 
-import logging
 logger = logging.getLogger(__name__)
 
 
@@ -44,7 +36,6 @@ boa_deauthorize_node = generic_views.deauthorize_node(
     SHORT_NAME
 )
 
-## Config ##
 
 @must_be_logged_in
 def boa_add_user_account(auth, **kwargs):
@@ -101,9 +92,11 @@ def boa_add_user_account(auth, **kwargs):
 #     path = request.args.get('path')
 #     return node_addon.get_folders(path=path)
 
+
 def _set_folder(node_addon, folder, auth):
     node_addon.set_folder(folder['path'], auth=auth)
     node_addon.save()
+
 
 boa_set_config = generic_views.set_config(
     SHORT_NAME,
@@ -117,76 +110,26 @@ boa_get_config = generic_views.get_config(
     BoaSerializer
 )
 
+
+@must_be_logged_in
 @must_have_addon(SHORT_NAME, 'user')
 @must_have_addon(SHORT_NAME, 'node')
 def boa_submit_job(node_addon, user_addon, **kwargs):
 
-    provid = node_addon.external_account.provider_id
-    parts = provid.rsplit(':', 1)
+    provider = node_addon.external_account.provider_id
+    parts = provider.rsplit(':', 1)
     host, username = parts[0], parts[1]
     password = node_addon.external_account.oauth_key
-    boa = BoaClient(endpoint=host)
-    boa.login(username, password)
-
-    auth = kwargs['auth']
-    user = auth.user
-    cookie = user.get_or_create_cookie().decode()
-
+    user_guid = kwargs['auth'].user._id
     params = request.json
+    dataset = params['dataset']
     attrs = params['data']
+    file_name = attrs['name']
     links = attrs['links']
     download_url = links['download']
-    download_url = download_url.replace('localhost', '192.168.168.167')
-    # download_url += '?cookie=' + cookie
-    resp = requests.get(download_url, params={'cookie': cookie})
-    if resp.status_code != 200:
-        logger.info('≥≥≥≥ boa_submit_job    failed to download from wb. resp:({}) '
-                    'url:({})'.format(resp.status_code, download_url))
-        boa.close()
-        return {
-            'message': 'Could not download source code from WaterButler, response:({})'.format(resp.status_code),
-        }, http_status.HTTP_400_BAD_REQUEST
-
-    query = resp.text
-
-    job = boa.query(query, boa.get_dataset(params['dataset']))
-    check = 1
-    while job.is_running():
-        job.refresh()
-        logger.info('≥≥≥≥ boa_submit_job  {}: job ({}) still running, '
-                    'waiting 10s...'.format(check, str(job.id)))
-        check += 1
-        time.sleep(10)
-
-    output = None
-    if job.compiler_status is CompilerStatus.ERROR:
-        logger.info('≥≥≥≥ boa_submit_job    job ' + str(job.id) + ' had compile error')
-        boa.close()
-        return {
-            'message': 'Boa job failed to compile.'
-        }, http_status.HTTP_400_BAD_REQUEST
-    elif job.exec_status is ExecutionStatus.ERROR:
-        logger.info('≥≥≥≥ boa_submit_job    job ' + str(job.id) + ' had exec error')
-        boa.close()
-        return {
-            'message': 'Boa job failed to compile.'
-        }, http_status.HTTP_400_BAD_REQUEST
-
-    output = job.output()
-    logger.error('>>>>output:({}) isa:({})'.format(output, type(output)))
+    download_url = download_url.replace(osf_settings.WATERBUTLER_URL, osf_settings.WATERBUTLER_INTERNAL_URL)
     upload_url = links['upload']
     upload_url = re.sub(r'\/[0123456789abcdef]+\?', '/?', upload_url)
-    results_name = attrs['name'].replace('.boa', '_results.txt')
-    upload_url = upload_url.replace('localhost', '192.168.168.167')
-    up_resp = requests.put(upload_url, data=output,
-                           params={'name': results_name, 'cookie': cookie})
-    boa.close()
-
-    if up_resp.status_code != 201:
-        logger.info('≥≥≥≥ boa_submit_job    failed to upload results to wb. resp:({}) '
-                    'url:({})'.format(up_resp.status_code, upload_url))
-        return {
-            'message': 'Could not upload results to WaterButler, response:({})'.format(up_resp.status_code),
-        }, http_status.HTTP_400_BAD_REQUEST
-
-    return {}
+    upload_url = upload_url.replace(osf_settings.WATERBUTLER_URL, osf_settings.WATERBUTLER_INTERNAL_URL)
+    logger.info(attrs)
+    enqueue_task(submit_to_boa.s(host, username, password, user_guid, dataset, file_name, download_url, upload_url))
