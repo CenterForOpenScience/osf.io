@@ -91,7 +91,7 @@ def submit_to_boa(host, username, password, user_guid, query_dataset,
     logger.info(f'Uploading Boa query output to {output_upload_url} with name {output_file_name} ...')
 
     try:
-        upload_request = request.Request(f'{output_upload_url}?kind=file&name={output_file_name}')
+        upload_request = request.Request(f'{output_upload_url}&name={output_file_name}')
         upload_request.method = 'PUT'
         upload_request.data = ensure_bytes(boa_job_output)
         upload_request.add_header('Cookie', f'{osf_settings.COOKIE_NAME}={cookie_value}')
