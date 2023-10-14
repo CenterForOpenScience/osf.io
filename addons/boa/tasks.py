@@ -2,13 +2,13 @@ import asyncio
 import logging
 from urllib import request
 
-from asgiref.sync import async_to_sync
+from asgiref.sync import async_to_sync, sync_to_async
 from boaapi.boa_client import BoaClient, BoaException
 from boaapi.status import CompilerStatus, ExecutionStatus
 
 from addons.boa import settings as boa_settings
 from framework.celery_tasks import app as celery_app
-# from osf.models import OSFUser
+from osf.models import OSFUser
 from osf.utils.fields import ensure_str, ensure_bytes
 from website import settings as osf_settings
 
@@ -16,29 +16,31 @@ logger = logging.getLogger(__name__)
 
 
 @celery_app.task(name='addons.boa.tasks.submit_to_boa')
-def submit_to_boa(host, username, password, cookie_value, query_dataset,
+def submit_to_boa(host, username, password, user_guid, query_dataset,
                   query_file_name, query_download_url, output_upload_url):
     """
     Note:
-    * Running asyncio in celery is tricky. See the following link for details:
+    * All the parameters must be verified by the caller.
+    * Both the ``query_download_url`` and ``output_upload_url`` must be WB URL since it generates
+      fewer requests between OSF and WB and has authentication passed via the headers.
+    * Running asyncio in celery is tricky. See the following link for the solution we've chosen:
       * https://stackoverflow.com/questions/39815771/how-to-combine-celery-with-asyncio
     """
-    async_to_sync(submit_to_boa_async)(host, username, password, cookie_value, query_dataset,
+    async_to_sync(submit_to_boa_async)(host, username, password, user_guid, query_dataset,
                                        query_file_name, query_download_url, output_upload_url)
 
 
-async def submit_to_boa_async(host, username, password, cookie_value, query_dataset,
+async def submit_to_boa_async(host, username, password, user_guid, query_dataset,
                               query_file_name, query_download_url, output_upload_url):
     """
     Note:
-    * Do not use Django models in this method due incompatibility with ``asgiref`` and ``asyncio``
-    * All the parameters must be verified by the caller.
-    * Both the download and upload URL must be WB URL.
+    * Due to django's incompatibility issue with asyncio, must use ``sync_to_async()`` when necessary
+    * See notes in ``submit_to_boa()``
     * TODO: should we add ``node_guid`` to be included in emails to users?
     """
 
-    # user = OSFUser.objects.get(guids___id=user_guid)
-    # cookie_value = user.get_or_create_cookie().decode()
+    user = await sync_to_async(OSFUser.objects.get)(guids___id=user_guid)
+    cookie_value = (await sync_to_async(user.get_or_create_cookie)()).decode()
 
     logger.info(f'Downloading Boa query file {query_file_name} from {query_download_url} ...')
     download_request = request.Request(query_download_url)
