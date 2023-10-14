@@ -14,7 +14,7 @@ from website import settings as osf_settings
 logger = logging.getLogger(__name__)
 
 
-@celery_app.task()
+@celery_app.task(name='addons.boa.tasks.submit_to_boa')
 def submit_to_boa(host, username, password, user_guid, query_dataset,
                   query_file_name, query_download_url, output_upload_url, ):
     """
