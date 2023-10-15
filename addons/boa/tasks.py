@@ -115,7 +115,7 @@ async def submit_to_boa_async(host, username, password, user_guid, query_dataset
         client.close()
         # TODO: send error email
         return
-    elif boa_job.compiler_status is ExecutionStatus.ERROR:
+    elif boa_job.exec_status is ExecutionStatus.ERROR:
         message = f'Boa job failed with execution error: job_id = [{str(boa_job.id)}]!'
         logger.error(message)
         sentry.log_message(message)
