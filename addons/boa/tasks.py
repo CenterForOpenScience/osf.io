@@ -124,7 +124,16 @@ async def submit_to_boa_async(host, username, password, user_guid, query_dataset
         # TODO: send error email
         return
     else:
-        boa_job_output = boa_job.output()
+        try:
+            boa_job_output = boa_job.output()
+        except BoaException:
+            message = f'Boa job output is not available: job_id = [{str(boa_job.id)}]!'
+            logger.error(message)
+            sentry.log_message(message)
+            sentry.log_exception()
+            client.close()
+            # TODO: send error email
+            return
         logger.info('Boa job finished.')
         logger.debug(f'Boa job output: job_id = [{str(boa_job.id)}]\n########\n{boa_job_output}\n########')
         client.close()
@@ -133,7 +142,8 @@ async def submit_to_boa_async(host, username, password, user_guid, query_dataset
     output_file_name = query_file_name.replace('.boa', boa_settings.OUTPUT_FILE_SUFFIX)
     logger.debug(f'Uploading Boa query output to OSF: name=[{output_file_name}], upload_url=[{output_upload_url}] ...')
     try:
-        # TODO: let the caller v1 view provide the base upload URL without query params (e.g. ``?kind=file``)
+        # TODO: either let the caller v1 view provide the base upload URL without query params (e.g. ``?kind=file``) or
+        #       let it provide the full upload URL with all query params (e.g. ``?kind=file&name=[...]``.
         upload_request = request.Request(f'{output_upload_url}&name={output_file_name}')
         upload_request.method = 'PUT'
         upload_request.data = ensure_bytes(boa_job_output)
