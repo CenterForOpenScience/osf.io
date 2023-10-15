@@ -573,3 +573,13 @@ QUICKFILES_MIGRATED = Mail(
     'quickfiles_migrated',
     subject='Your Quick Files have moved'
 )
+
+ADDONS_BOA_JOB_COMPLETE = Mail(
+    'addons_boa_job_complete',
+    subject='Your Boa job has completed'
+)
+
+ADDONS_BOA_JOB_FAILURE = Mail(
+    'addons_boa_job_failure',
+    subject='Your Boa job has failed'
+)
