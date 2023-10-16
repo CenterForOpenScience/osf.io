@@ -99,12 +99,16 @@ async def submit_to_boa_async(host, username, password, user_guid, query_dataset
     if boa_job.compiler_status is CompilerStatus.ERROR:
         client.close()
         message = f'Boa job failed with compile error: job_id = [{str(boa_job.id)}]!'
-        await sync_to_async(handle_error)(message, user.username, user.fullname, query_file_name, query_error=True)
+        await sync_to_async(handle_error)(
+            message, user.username, user.fullname, query_file_name, boa_job.id, query_error=True
+        )
         return
     elif boa_job.exec_status is ExecutionStatus.ERROR:
         client.close()
         message = f'Boa job failed with execution error: job_id = [{str(boa_job.id)}]!'
-        await sync_to_async(handle_error)(message, user.username, user.fullname, query_file_name, query_error=True)
+        await sync_to_async(handle_error)(
+            message, user.username, user.fullname, query_file_name, boa_job.id, query_error=True
+        )
         return
     else:
         try:
@@ -132,7 +136,9 @@ async def submit_to_boa_async(host, username, password, user_guid, query_dataset
     except (ValueError, HTTPError, URLError):
         message = f'Failed to upload query output file to OSF: ' \
                   f'name=[{output_file_name}], user=[{user_guid}], url=[{output_upload_url}]!'
-        await sync_to_async(handle_error)(message, user.username, user.fullname, query_file_name, is_complete=True)
+        await sync_to_async(handle_error)(
+            message, user.username, user.fullname, query_file_name, boa_job.id, is_complete=True
+        )
         return
 
     logger.info('Successfully uploaded query output to OSF.')

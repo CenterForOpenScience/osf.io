@@ -13,6 +13,7 @@
         &emsp;${message} <br>
         % if query_error:
             Please fix your query file and try again. <br>
+            For details, visit Boa's job list page (${boa_job_list_url}). The Boa job ID for this submission is [${job_id}]. <br>
         % elif is_complete:
             Your query has completed on Boa and the job ID is [${job_id}]. Visit Boa's job list page (${boa_job_list_url}) to retrieve the results. <br>
         % elif needs_config:
