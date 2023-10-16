@@ -80,8 +80,6 @@ class ExportDataRestore(base.BaseModel):
 
         # get list FileVersion linked to destination storage
         file_versions = self.destination.fileversion_set.all()
-        # but the creator must be affiliated with current institution
-        file_versions = file_versions.filter(creator__affiliated_institutions___id=destination_storage_guid)
 
         # get base_file_nodes__ids by file_versions__ids above via the BaseFileVersionsThrough model
         base_file_versions_set = BaseFileVersionsThrough.objects.filter(fileversion__in=file_versions)
@@ -177,8 +175,8 @@ class ExportDataRestore(base.BaseModel):
                 total_size += version.size
 
             file_info['version'] = file_versions_info
-            file_info['size'] = file_versions_info[-1]['size']
-            file_info['location'] = file_versions_info[-1]['location']
+            file_info['size'] = file_versions_info[0]['size']
+            file_info['location'] = file_versions_info[0]['location']
             files.append(file_info)
 
         file_info_json['files'] = files

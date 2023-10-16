@@ -141,13 +141,10 @@ class ExportData(base.BaseModel):
         # If source institutional storage is the same as default storage, also get default storage for export
         if self.source.has_same_settings_as_default_region and self.source.id != 1:
             # get list FileVersion linked to source storage, default storage
-            # but the creator must be affiliated with current institution
-            file_versions = FileVersion.objects.filter(region_id__in=[1, self.source.id], creator__affiliated_institutions___id=source_storage_guid)
+            file_versions = FileVersion.objects.filter(region_id__in=[1, self.source.id])
         else:
             # get list FileVersion linked to source storage
             file_versions = self.source.fileversion_set.all()
-            # but the creator must be affiliated with current institution
-            file_versions = file_versions.filter(creator__affiliated_institutions___id=source_storage_guid)
 
         # get base_file_nodes__ids by file_versions__ids above via the BaseFileVersionsThrough model
         base_file_versions_set = BaseFileVersionsThrough.objects.filter(fileversion__in=file_versions)
@@ -268,8 +265,8 @@ class ExportData(base.BaseModel):
                 total_size += version.size
 
             file_info['version'] = file_versions_info
-            file_info['size'] = file_versions_info[-1]['size']
-            file_info['location'] = file_versions_info[-1]['location']
+            file_info['size'] = file_versions_info[0]['size']
+            file_info['location'] = file_versions_info[0]['location']
             files.append(file_info)
 
         file_info_json['folders'] = folders

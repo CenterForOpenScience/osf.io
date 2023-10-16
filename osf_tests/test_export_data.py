@@ -131,7 +131,6 @@ class TestExportData(TestCase):
         target = AbstractNode(id=object_id)
         node = OsfStorageFileFactory.create(target_object_id=object_id, target=target)
         file_version = FileVersionFactory(region=cls.export_data.source)
-        file_version.creator.affiliated_institutions.set([cls.institution])
 
         file_versions_through = BaseFileVersionsThroughFactory.create(version_name='file.txt', basefilenode=node,
                                                                       fileversion=file_version)
@@ -263,7 +262,6 @@ class TestExportData(TestCase):
         institution.nodes.set([project])
         default_region = Region.objects.get(_id=DEFAULT_REGION_ID)
         file_version = FileVersionFactory(region=default_region)
-        file_version.creator.affiliated_institutions.set([institution])
         object_id = project.id
         target = AbstractNode(id=object_id)
         node = OsfStorageFileFactory.create(name='file2.txt', created=datetime.now(), target_content_type=self.file.target_content_type,
