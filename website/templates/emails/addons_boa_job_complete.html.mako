@@ -2,14 +2,18 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    <h3 class="text-center" style="padding: 0;margin: 0;border: none;list-style: none;font-weight: 300;text-align: center;">Registrations Successfully Bulk Uploaded to your Community's Registry</h3>
+    <h3 class="text-center" style="padding: 0;margin: 0;border: none;list-style: none;font-weight: 300;text-align: center;">Your submission of file [${query_file_name}] to Boa is successful</h3>
   </td>
 </tr>
 <tr>
   <td style="border-collapse: collapse;">
       Hello ${fullname},<br>
       <br>
-      Your Boa job [${job_id}] has completed. The result has been uploaded and stored in file [${output_file_name}].
+      Your submission of file [${query_file_name}] to Boa is successful.
+      The result has been uploaded to OSF and stored in file [${output_file_name}]. <br>
+      <br>
+      The Boa job ID for this submission is [${job_id}].
+      Visit Boa's job list page [${boa_job_list_url}] for more information. <br>
       <br>
       Sincerely,<br>
       <br>
