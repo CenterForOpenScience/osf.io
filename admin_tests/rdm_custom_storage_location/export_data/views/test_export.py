@@ -69,6 +69,351 @@ class TestGetTaskResult(unittest.TestCase):
         self.assertEqual(export.get_task_result(result), expected_result)
 
 
+class TestSeparateFailedFiles(unittest.TestCase):
+    def setUp(self):
+        self.files = [
+            {
+                'id': 3000,
+                'path': '/24chars24chars24chars24c',
+                'materialized_path': '/folder_path/file_name.ext',
+                'name': 'file_name.ext',
+                'provider': 'osfstorage',
+                'project': {
+                    'id': 'prjid',
+                    'name': 'PRJ 20231005 001'
+                },
+                'tags': [],
+                'version': [
+                ],
+                'size': 3000,
+                'location': {
+                    'object': '64chars64chars64chars64chars64chars64chars64chars64chars64chars6',
+                    'provider': 's3compat'
+                },
+                'timestamp': {},
+                'checkout_id': None
+            },
+            {
+                'id': 4000,
+                'path': '/24chars24chars24chars24c',
+                'materialized_path': '/folder_path/file_name.ext',
+                'name': 'file_name.ext',
+                'provider': 'osfstorage',
+                'project': {
+                    'id': 'prjid',
+                    'name': 'PRJ 20231005 001'
+                },
+                'tags': [],
+                'version': [
+                    {
+                        'identifier': '2',
+                        'size': 4001,
+                        'version_name': 'file_name.ext',
+                        'metadata': {
+                            'kind': 'file',
+                        },
+                        'location': {
+                            'object': '64charsversion264charsversion264charsversion264charsversion264ch',
+                            'provider': 's3compat'
+                        }
+                    },
+                    {
+                        'identifier': '1',
+                        'size': 4000,
+                        'version_name': 'file_name.ext',
+                        'metadata': {
+                            'kind': 'file',
+                        },
+                        'location': {
+                            'object': '64charsversion164charsversion164charsversion164charsversion164ch',
+                            'provider': 's3compat'
+                        }
+                    }
+                ],
+                'size': 4001,
+                'location': {
+                    'object': '64charsversion264charsversion264charsversion264charsversion264ch',
+                    'provider': 's3compat'
+                },
+                'timestamp': {},
+                'checkout_id': None
+            },
+            {
+                'id': 5000,
+                'path': '/24chars24chars24chars24c',
+                'materialized_path': '/folder_path/file_name.ext',
+                'name': 'file_name.ext',
+                'provider': 'osfstorage',
+                'project': {
+                    'id': 'prjid',
+                    'name': 'PRJ 20231005 001'
+                },
+                'tags': [],
+                'version': [
+                    {
+                        'identifier': '2',
+                        'size': 5001,
+                        'version_name': 'file_name.ext',
+                        'metadata': {
+                            'kind': 'file',
+                        },
+                        'location': {
+                            'object': '64charsversion264charsversion264charsversion264charsversion264ch',
+                            'provider': 's3compat'
+                        }
+                    },
+                    {
+                        'identifier': '1',
+                        'size': 5000,
+                        'version_name': 'file_name.ext',
+                        'metadata': {
+                            'kind': 'file',
+                        },
+                        'location': {
+                            'object': '64charsversion164charsversion164charsversion164charsversion164ch',
+                            'provider': 's3compat'
+                        }
+                    }
+                ],
+                'size': 5001,
+                'location': {
+                    'object': '64charsversion264charsversion264charsversion264charsversion264ch',
+                    'provider': 's3compat'
+                },
+                'timestamp': {},
+                'checkout_id': None
+            },
+            {
+                'id': 6000,
+                'path': '/24chars24chars24chars24c',
+                'materialized_path': '/folder_path/file_name.ext',
+                'name': 'file_name.ext',
+                'provider': 'osfstorage',
+                'project': {
+                    'id': 'prjid',
+                    'name': 'PRJ 20231005 001'
+                },
+                'tags': [],
+                'version': [
+                    {
+                        'identifier': '6',
+                        'size': 6005,
+                        'version_name': 'file_name.ext',
+                        'metadata': {
+                            'kind': 'file',
+                        },
+                        'location': {
+                            'object': '64charsversion664charsversion664charsversion664charsversion664ch',
+                            'provider': 's3compat'
+                        }
+                    },
+                    {
+                        'identifier': '5',
+                        'size': 6004,
+                        'version_name': 'file_name.ext',
+                        'metadata': {
+                            'kind': 'file',
+                        },
+                        'location': {
+                            'object': '64charsversion564charsversion564charsversion564charsversion564ch',
+                            'provider': 's3compat'
+                        }
+                    },
+                    {
+                        'identifier': '4',
+                        'size': 6003,
+                        'version_name': 'file_name.ext',
+                        'metadata': {
+                            'kind': 'file',
+                        },
+                        'location': {
+                            'object': '64charsversion464charsversion464charsversion464charsversion464ch',
+                            'provider': 's3compat'
+                        }
+                    },
+                    {
+                        'identifier': '3',
+                        'size': 6002,
+                        'version_name': 'file_name.ext',
+                        'metadata': {
+                            'kind': 'file',
+                        },
+                        'location': {
+                            'object': '64charsversion364charsversion364charsversion364charsversion364ch',
+                            'provider': 's3compat'
+                        }
+                    },
+                    {
+                        'identifier': '2',
+                        'size': 6001,
+                        'version_name': 'file_name.ext',
+                        'metadata': {
+                            'kind': 'file',
+                        },
+                        'location': {
+                            'object': '64charsversion264charsversion264charsversion264charsversion264ch',
+                            'provider': 's3compat'
+                        }
+                    },
+                    {
+                        'identifier': '1',
+                        'size': 6000,
+                        'version_name': 'file_name.ext',
+                        'metadata': {
+                            'kind': 'file',
+                        },
+                        'location': {
+                            'object': '64charsversion164charsversion164charsversion164charsversion164ch',
+                            'provider': 's3compat'
+                        }
+                    }
+                ],
+                'size': 6005,
+                'location': {
+                    'object': '64charsversion664charsversion664charsversion664charsversion664ch',
+                    'provider': 's3compat'
+                },
+                'timestamp': {},
+                'checkout_id': None
+            },
+        ]
+
+    def test_separate_failed_files__c1_empty_version_ids(self):
+        files_versions_not_found = {
+            1000: [],
+        }
+        expected_sub_size = 0
+        expected_sub_files_numb = 0
+
+        _files_not_found, _sub_size, _sub_files_numb = export.separate_failed_files(
+            self.files,
+            files_versions_not_found
+        )
+
+        self.assertEqual(_files_not_found, [])
+        self.assertEqual(_sub_size, expected_sub_size)
+        self.assertEqual(_sub_files_numb, expected_sub_files_numb)
+
+    def test_separate_failed_files__c2_not_found_in_files(self):
+        files_versions_not_found = {
+            2000: ['1'],
+        }
+        expected_sub_size = 0
+        expected_sub_files_numb = 0
+
+        _files_not_found, _sub_size, _sub_files_numb = export.separate_failed_files(
+            self.files,
+            files_versions_not_found
+        )
+
+        self.assertEqual(_files_not_found, [])
+        self.assertEqual(_sub_size, expected_sub_size)
+        self.assertEqual(_sub_files_numb, expected_sub_files_numb)
+
+    def test_separate_failed_files__c3_file_no_versions(self):
+        files_versions_not_found = {
+            3000: ['1'],
+        }
+        file_id = 3000
+        expected_sub_size = 0
+        expected_sub_files_numb = 0
+
+        _files_not_found, _sub_size, _sub_files_numb = export.separate_failed_files(
+            self.files,
+            files_versions_not_found
+        )
+
+        file = next(
+            (_file for idx, _file in enumerate(self.files) if file_id == _file['id']),
+            None  # default
+        )
+        self.assertEqual(file, None)
+        self.assertEqual(len(_files_not_found), 1)
+        file = _files_not_found[0]
+        versions = file.get('version', [])
+        self.assertEqual(file['id'], file_id)
+        self.assertEqual(versions, [])
+        self.assertEqual(_sub_size, expected_sub_size)
+        self.assertEqual(_sub_files_numb, expected_sub_files_numb)
+
+    def test_separate_failed_files__c4_match_all_versions(self):
+        files_versions_not_found = {
+            4000: ['1', '2'],
+        }
+        file_id = 4000
+
+        _files_not_found, _sub_size, _sub_files_numb = export.separate_failed_files(
+            self.files,
+            files_versions_not_found
+        )
+
+        file = next(
+            (_file for idx, _file in enumerate(self.files) if file_id == _file['id']),
+            None  # default
+        )
+        self.assertEqual(file, None)
+        self.assertEqual(len(_files_not_found), 1)
+        file = _files_not_found[0]
+        self.assertEqual(file['id'], file_id)
+        versions = file.get('version', [])
+        not_found_ver_ids_set = set(files_versions_not_found[file_id])
+        found_ver_ids_set = set([_ver['identifier'] for _ver in versions])
+        self.assertEqual(found_ver_ids_set, not_found_ver_ids_set)
+        self.assertEqual(_sub_size, sum([ver.get('size') for ver in versions]))
+        self.assertEqual(_sub_files_numb, len(versions))
+
+    def test_separate_failed_files__c5_match_no_versions(self):
+        files_versions_not_found = {
+            5000: ['10'],
+        }
+        file_id = 5000
+        expected_sub_size = 0
+        expected_sub_files_numb = 0
+
+        _files_not_found, _sub_size, _sub_files_numb = export.separate_failed_files(
+            self.files,
+            files_versions_not_found
+        )
+
+        file = next(
+            (_file for idx, _file in enumerate(self.files) if file_id == _file['id']),
+            None  # default
+        )
+        self.assertEqual(file['id'], file_id)
+        self.assertEqual(len(_files_not_found), 0)
+        self.assertEqual(_sub_size, expected_sub_size)
+        self.assertEqual(_sub_files_numb, expected_sub_files_numb)
+
+    def test_separate_failed_files__c6_match_some_versions(self):
+        files_versions_not_found = {
+            6000: ['3', '5'],
+        }
+        file_id = 6000
+
+        _files_not_found, _sub_size, _sub_files_numb = export.separate_failed_files(
+            self.files,
+            files_versions_not_found
+        )
+
+        file = next(
+            (_file for idx, _file in enumerate(self.files) if file_id == _file['id']),
+            None  # default
+        )
+        self.assertEqual(file['id'], file_id)
+        versions = file.get('version', [])
+        found_ver_ids_set = set([_ver['identifier'] for _ver in versions])
+        self.assertEqual(len(_files_not_found), 1)
+        file = _files_not_found[0]
+        self.assertEqual(file['id'], file_id)
+        versions = file.get('version', [])
+        _not_found_ver_ids_set = set(files_versions_not_found[file_id])
+        not_found_ver_ids_set = set([_ver['identifier'] for _ver in versions])
+        self.assertEqual(not_found_ver_ids_set, _not_found_ver_ids_set)
+        self.assertEqual(not_found_ver_ids_set - found_ver_ids_set, _not_found_ver_ids_set)
+        self.assertEqual(_sub_size, sum([ver.get('size') for ver in versions]))
+        self.assertEqual(_sub_files_numb, len(versions))
+
+
 class TestExportDataProcess(unittest.TestCase):
     def setUp(self):
         celery_app.conf.update({
