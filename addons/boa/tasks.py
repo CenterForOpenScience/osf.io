@@ -13,6 +13,7 @@ from framework.celery_tasks import app as celery_app
 from osf.models import OSFUser
 from osf.utils.fields import ensure_str, ensure_bytes
 from website import settings as osf_settings
+from website.mails import send_mail, ADDONS_BOA_JOB_COMPLETE, ADDONS_BOA_JOB_FAILURE
 
 logger = logging.getLogger(__name__)
 
@@ -54,10 +55,7 @@ async def submit_to_boa_async(host, username, password, user_guid, query_dataset
     except (ValueError, HTTPError, URLError):
         message = f'Failed to download Boa query file: ' \
                   f'name=[{query_file_name}], user=[{user_guid}], url=[{query_download_url}]!'
-        logger.error(message)
-        sentry.log_message(message)
-        sentry.log_exception()
-        # TODO: send error email
+        await sync_to_async(handle_error)(message, user.username, user.fullname, query_file_name)
         return
     logger.info('Boa query successfully downloaded.')
     logger.debug(f'Boa query:\n########\n{boa_query}\n########')
@@ -68,12 +66,9 @@ async def submit_to_boa_async(host, username, password, user_guid, query_dataset
     try:
         client.login(username, password)
     except BoaException:
-        message = f'Boa login failed: boa_username=[{username}], boa_host=[{host}]!'
-        logger.error(message)
-        sentry.log_message(message)
-        sentry.log_exception()
         client.close()
-        # TODO: send error email
+        message = f'Boa login failed: boa_username=[{username}], boa_host=[{host}]!'
+        await sync_to_async(handle_error)(message, user.username, user.fullname, query_file_name, needs_config=True)
         return
     logger.info('Boa login completed.')
 
@@ -81,12 +76,9 @@ async def submit_to_boa_async(host, username, password, user_guid, query_dataset
     try:
         dataset = client.get_dataset(query_dataset)
     except BoaException:
-        message = f'Failed to retrieve or verify the target Boa dataset: dataset=[{query_dataset}]!'
-        logger.error(message)
-        sentry.log_message(message)
-        sentry.log_exception()
         client.close()
-        # TODO: send error email
+        message = f'Failed to retrieve or verify the target Boa dataset: dataset=[{query_dataset}]!'
+        await sync_to_async(handle_error)(message, user.username, user.fullname, query_file_name)
         return
     logger.info('Boa dataset retrieved.')
 
@@ -94,12 +86,9 @@ async def submit_to_boa_async(host, username, password, user_guid, query_dataset
     try:
         boa_job = client.query(boa_query, dataset)
     except BoaException:
-        message = f'Failed to submit the query to Boa API: : boa_host=[{host}], dataset=[{query_dataset}]!'
-        logger.error(message)
-        sentry.log_message(message)
-        sentry.log_exception()
         client.close()
-        # TODO: send error email
+        message = f'Failed to submit the query to Boa API: : boa_host=[{host}], dataset=[{query_dataset}]!'
+        await sync_to_async(handle_error)(message, user.username, user.fullname, query_file_name)
         return
     logger.info('Query successfully submitted.')
     logger.debug(f'Waiting for job to finish: job_id = [{str(boa_job.id)}] ...')
@@ -108,31 +97,26 @@ async def submit_to_boa_async(host, username, password, user_guid, query_dataset
         boa_job.refresh()
         await asyncio.sleep(10)
     if boa_job.compiler_status is CompilerStatus.ERROR:
-        message = f'Boa job failed with compile error: job_id = [{str(boa_job.id)}]!'
-        logger.error(message)
-        sentry.log_message(message)
-        sentry.log_exception()
         client.close()
-        # TODO: send error email
+        message = f'Boa job failed with compile error: job_id = [{str(boa_job.id)}]!'
+        await sync_to_async(handle_error)(
+            message, user.username, user.fullname, query_file_name, boa_job.id, query_error=True
+        )
         return
     elif boa_job.exec_status is ExecutionStatus.ERROR:
-        message = f'Boa job failed with execution error: job_id = [{str(boa_job.id)}]!'
-        logger.error(message)
-        sentry.log_message(message)
-        sentry.log_exception()
         client.close()
-        # TODO: send error email
+        message = f'Boa job failed with execution error: job_id = [{str(boa_job.id)}]!'
+        await sync_to_async(handle_error)(
+            message, user.username, user.fullname, query_file_name, boa_job.id, query_error=True
+        )
         return
     else:
         try:
             boa_job_output = boa_job.output()
         except BoaException:
-            message = f'Boa job output is not available: job_id = [{str(boa_job.id)}]!'
-            logger.error(message)
-            sentry.log_message(message)
-            sentry.log_exception()
             client.close()
-            # TODO: send error email
+            message = f'Boa job output is not available: job_id = [{str(boa_job.id)}]!'
+            await sync_to_async(handle_error)(message, user.username, user.fullname, query_file_name)
             return
         logger.info('Boa job finished.')
         logger.debug(f'Boa job output: job_id = [{str(boa_job.id)}]\n########\n{boa_job_output}\n########')
@@ -152,13 +136,43 @@ async def submit_to_boa_async(host, username, password, user_guid, query_dataset
     except (ValueError, HTTPError, URLError):
         message = f'Failed to upload query output file to OSF: ' \
                   f'name=[{output_file_name}], user=[{user_guid}], url=[{output_upload_url}]!'
-        logger.error(message)
-        sentry.log_message(message)
-        sentry.log_exception()
-        # TODO: send error email
+        await sync_to_async(handle_error)(
+            message, user.username, user.fullname, query_file_name, boa_job.id, is_complete=True
+        )
         return
 
     logger.info('Successfully uploaded query output to OSF.')
     logger.debug('Task ends <<<<<<<<')
-    # TODO: send success email
+    await sync_to_async(send_mail)(
+        mail=ADDONS_BOA_JOB_COMPLETE,
+        to_addr=user.username,
+        fullname=user.fullname,
+        query_file_name=query_file_name,
+        output_file_name=output_file_name,
+        job_id=boa_job.id,
+        boa_job_list_url=boa_settings.BOA_JOB_LIST_URL,
+        osf_support_email=osf_settings.OSF_SUPPORT_EMAIL,
+    )
     return
+
+
+def handle_error(message, username, fullname, query_file_name,
+                 job_id=None, query_error=False, is_complete=False, needs_config=False):
+    """Handle Boa and WB API errors and send emails.
+    """
+    logger.error(message)
+    sentry.log_message(message)
+    sentry.log_exception()
+    send_mail(
+        mail=ADDONS_BOA_JOB_FAILURE,
+        to_addr=username,
+        fullname=fullname,
+        query_file_name=query_file_name,
+        message=message,
+        job_id=job_id,
+        query_error=query_error,
+        is_complete=is_complete,
+        needs_config=needs_config,
+        boa_job_list_url=boa_settings.BOA_JOB_LIST_URL,
+        osf_support_email=osf_settings.OSF_SUPPORT_EMAIL,
+    )

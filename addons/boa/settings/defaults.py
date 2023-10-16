@@ -27,3 +27,5 @@ BOA_DATASETS = [
     '2013 February/SF',
     '2012 July/SF',
 ]
+
+BOA_JOB_LIST_URL = 'https://boa.cs.iastate.edu/boa/index.php?q=boa/jobs'
