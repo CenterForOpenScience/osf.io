@@ -269,8 +269,7 @@ var AddProject = {
                                 m('p',
                                     m('i', _(' This component will inherit the same license as '),
                                         m('b', options.parentTitle),
-                                        '. ',
-                                        m('a[target="_blank"][href="https://openscience.zendesk.com/hc/en-us/articles/360019737854"]', _('Learn more.') )
+                                        '. '
                                     )
                                 )
                         ]): '',
