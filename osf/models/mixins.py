@@ -2261,33 +2261,44 @@ class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, Contribut
         else:
             return []
 
-    def copy_editable_fields(self, resource, auth=None, alternative_resource=None, include_contributors=True, save=True):
+    def copy_editable_fields(
+            self, resource, alternative_resource=None, include_contributors=True, save=True, excluded_attributes=None
+    ):
         """
-        Copy various editable fields from the 'resource' object to the current object.
-        Includes, title, description, category, contributors, node_license, tags, subjects, and affiliated_institutions
-        The field on the resource will always supersede the field on the alternative_resource. For example,
-        copying fields from the draft_registration to the registration.  resource will be a DraftRegistration object,
-        but the alternative_resource will be a Node.  DraftRegistration fields will trump Node fields.
-        TODO, add optional logging parameter
+        Copy editable fields from 'resource' to the current object.
+
+        :param Object resource: Primary resource to copy attributes from
+        :param Object alternative_resource: Backup resource for copying attributes
+        :param bool include_contributors: Whether to also copy contributors
+        :param bool save: Whether to save the changes immediately
+        :param List excluded_attributes: List of attributes to exclude from copying
         """
-        self.set_editable_attribute('title', resource, alternative_resource)
-        self.set_editable_attribute('description', resource, alternative_resource)
-        self.set_editable_attribute('category', resource, alternative_resource)
-        self.set_editable_attribute('node_license', resource, alternative_resource)
+        if not excluded_attributes:
+            excluded_attributes = []
+
+        self._copy_basic_attributes(resource, alternative_resource, excluded_attributes)
 
         if include_contributors:
-            # Contributors will always come from "resource", as contributor constraints
-            # will require contributors to be present on the resource
             self.copy_contributors_from(resource)
-            # Copy unclaimed records for unregistered users
             self.copy_unclaimed_records(resource)
 
-        self.tags.add(*self.stage_m2m_values('all_tags', resource, alternative_resource))
-        self.subjects.add(*self.stage_m2m_values('subjects', resource, alternative_resource))
-        self.affiliated_institutions.add(*self.stage_m2m_values('affiliated_institutions', resource, alternative_resource))
+        self._copy_m2m_fields(resource, alternative_resource, excluded_attributes)
 
         if save:
             self.save()
+
+    def _copy_basic_attributes(self, resource, alternative_resource, excluded_attributes):
+        # Copy basic attributes such as title, description, category, and node_license
+        for attribute in ['title', 'description', 'category', 'node_license']:
+            if attribute not in excluded_attributes:
+                self.set_editable_attribute(attribute, resource, alternative_resource)
+
+    def _copy_m2m_fields(self, resource, alternative_resource, excluded_attributes):
+        # Copy m2m fields like tags, subjects, and affiliated_institutions
+        m2m_fields = ['tags', 'subjects', 'affiliated_institutions']
+        for field in m2m_fields:
+            if field not in excluded_attributes:
+                getattr(self, field).add(*self.stage_m2m_values(field, resource, alternative_resource))
 
     class Meta:
         abstract = True
