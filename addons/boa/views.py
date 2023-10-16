@@ -131,7 +131,6 @@ def boa_submit_job(node_addon, user_addon, **kwargs):
     upload_url = links['upload']
     upload_url = re.sub(r'\/[0123456789abcdef]+\?', '/?', upload_url)
     upload_url = upload_url.replace(osf_settings.WATERBUTLER_URL, osf_settings.WATERBUTLER_INTERNAL_URL)
-    logger.info(attrs)
     enqueue_task(submit_to_boa.s(
         host, username, password, user_guid, dataset, file_name, download_url, upload_url
     ))
