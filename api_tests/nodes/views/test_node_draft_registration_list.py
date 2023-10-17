@@ -28,10 +28,14 @@ def invisible_and_inactive_schema():
 
 
 @pytest.mark.django_db
-class DraftRegistrationTestCase:
+class AbstractDraftRegistrationTestCase:
 
     @pytest.fixture()
     def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def user_admin_contrib(self, user):
         return AuthUserFactory()
 
     @pytest.fixture()
@@ -55,7 +59,7 @@ class DraftRegistrationTestCase:
         return OSFGroupFactory(creator=group_mem)
 
     @pytest.fixture()
-    def project_public(self, user, user_write_contrib, user_read_contrib, group, group_mem):
+    def project_public(self, user, user_admin_contrib, user_write_contrib, user_read_contrib, group, group_mem):
         project_public = ProjectFactory(is_public=True, creator=user)
         project_public.add_contributor(
             user_write_contrib,
@@ -63,10 +67,21 @@ class DraftRegistrationTestCase:
         project_public.add_contributor(
             user_read_contrib,
             permissions=permissions.READ)
+        project_public.add_contributor(
+            user_admin_contrib,
+            permissions=permissions.ADMIN)
         project_public.save()
         project_public.add_osf_group(group, permissions.ADMIN)
         project_public.add_tag('hello', Auth(user), save=True)
         return project_public
+
+    @pytest.fixture()
+    def draft_registration(self, user, project_public, schema):
+        return DraftRegistrationFactory(
+            initiator=user,
+            registration_schema=schema,
+            branched_from=project_public
+        )
 
     @pytest.fixture()
     def metadata(self):
@@ -90,15 +105,96 @@ class DraftRegistrationTestCase:
             return test_metadata
         return metadata
 
+    @pytest.fixture()
+    def schema(self):
+        return RegistrationSchema.objects.get(
+            name='OSF-Standard Pre-Data Collection Registration',
+            schema_version=SCHEMA_VERSION
+        )
+
+    @pytest.fixture()
+    def metaschema_open_ended(self):
+        return RegistrationSchema.objects.get(
+            name='Open-Ended Registration',
+            schema_version=OPEN_ENDED_SCHEMA_VERSION
+        )
+
+    @pytest.fixture()
+    def project_other(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def payload(self, metaschema_open_ended, provider):
+        return {
+            'data': {
+                'type': 'draft_registrations',
+                'attributes': {},
+                'relationships': {
+                    'registration_schema': {
+                        'data': {
+                            'type': 'registration_schema',
+                            'id': metaschema_open_ended._id
+                        }
+                    },
+                    'provider': {
+                        'data': {
+                            'type': 'registration-providers',
+                            'id': provider._id,
+                        }
+                    }
+                }
+            }
+        }
+
+    @pytest.fixture()
+    def provider(self):
+        return RegistrationProvider.get_default()
+
+    @pytest.fixture()
+    def non_default_provider(self, metaschema_open_ended):
+        non_default_provider = RegistrationProviderFactory()
+        non_default_provider.schemas.add(metaschema_open_ended)
+        non_default_provider.save()
+        return non_default_provider
+
+    @pytest.fixture()
+    def payload_with_non_default_provider(self, metaschema_open_ended, non_default_provider):
+        return {
+            'data': {
+                'type': 'draft_registrations',
+                'attributes': {},
+                'relationships': {
+                    'registration_schema': {
+                        'data': {
+                            'type': 'registration_schema',
+                            'id': metaschema_open_ended._id
+                        }
+                    },
+                    'provider': {
+                        'data': {
+                            'type': 'registration-providers',
+                            'id': non_default_provider._id,
+                        }
+                    }
+                }
+            }
+        }
+
 
 @pytest.mark.django_db
-class TestDraftRegistrationList(DraftRegistrationTestCase):
+class TestDraftRegistrationList(AbstractDraftRegistrationTestCase):
+
+    @pytest.fixture()
+    def url_draft_registrations(self, project_public):
+        # Specifies version to test functionality when using DraftRegistrationLegacySerializer
+        return f'/{API_BASE}nodes/{project_public._id}/draft_registrations/?version=2.19'
 
     @pytest.fixture()
     def schema(self):
         return RegistrationSchema.objects.get(
             name='Open-Ended Registration',
-            schema_version=OPEN_ENDED_SCHEMA_VERSION)
+            schema_version=OPEN_ENDED_SCHEMA_VERSION
+        )
 
     @pytest.fixture()
     def draft_registration(self, user, project_public, schema):
@@ -108,15 +204,9 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
             branched_from=project_public
         )
 
-    @pytest.fixture()
-    def url_draft_registrations(self, project_public):
-        # Specifies version to test functionality when using DraftRegistrationLegacySerializer
-        return '/{}nodes/{}/draft_registrations/?{}'.format(
-            API_BASE, project_public._id, 'version=2.19')
-
-    def test_admin_can_view_draft_list(
-            self, app, user, draft_registration, project_public,
-            schema, url_draft_registrations):
+    def test_draft_admin_can_view_draft_list(
+            self, app, user, draft_registration, project_public, schema, url_draft_registrations
+    ):
         res = app.get(url_draft_registrations, auth=user.auth)
         assert res.status_code == 200
         data = res.json['data']
@@ -126,49 +216,56 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
         assert data[0]['id'] == draft_registration._id
         assert data[0]['attributes']['registration_metadata'] == {}
 
+    def test_node_admin_can_view_draft_list(
+            self, app, user, draft_registration, project_public, user_admin_contrib, schema, url_draft_registrations
+    ):
+        """
+        Project Admins should be implicitly granted READ permissions on Drafts even if not explicitly a contributor.
+        """
+        draft_registration.remove_contributor(user_admin_contrib, Auth(user_admin_contrib), _force=True)
+        assert user_admin_contrib not in draft_registration.contributors.all()
+        assert project_public.has_permission(user_admin_contrib, permissions.ADMIN)
+
+        res = app.get(url_draft_registrations, auth=user_admin_contrib.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+        assert len(data) == 1
+
+    @pytest.mark.skip('Old OSF Groups code')
     def test_osf_group_with_admin_permissions_can_view(
-            self, app, user, draft_registration, project_public,
-            schema, url_draft_registrations):
+            self, app, user, draft_registration, project_public, schema, url_draft_registrations
+    ):
         group_mem = AuthUserFactory()
         group = OSFGroupFactory(creator=group_mem)
         project_public.add_osf_group(group, permissions.ADMIN)
-        res = app.get(url_draft_registrations, auth=group_mem.auth, expect_errors=True)
+        res = app.get(url_draft_registrations, auth=group_mem.auth)
         assert res.status_code == 200
         data = res.json['data']
         assert len(data) == 1
         assert schema._id in data[0]['relationships']['registration_schema']['links']['related']['href']
 
-    def test_cannot_view_draft_list(
-            self, app, user_write_contrib, project_public,
-            user_read_contrib, user_non_contrib,
-            url_draft_registrations, group, group_mem):
+    def test_read_only_contributor_can_view_draft_list(self, app, user_read_contrib, url_draft_registrations):
+        res = app.get(url_draft_registrations, auth=user_read_contrib.auth)
+        assert res.status_code == 200
 
-        # test_read_only_contributor_cannot_view_draft_list
-        res = app.get(
-            url_draft_registrations,
-            auth=user_read_contrib.auth,
-            expect_errors=True)
+    def test_read_write_contributor_can_view_draft_list(self, app, user_write_contrib, url_draft_registrations):
+        res = app.get(url_draft_registrations, auth=user_write_contrib.auth)
+        assert res.status_code == 200
+
+    def test_logged_in_non_contributor_cannot_view_draft_list(self, app, user_non_contrib, url_draft_registrations):
+        res = app.get(url_draft_registrations, auth=user_non_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
-    #   test_read_write_contributor_cannot_view_draft_list
-        res = app.get(
-            url_draft_registrations,
-            auth=user_write_contrib.auth,
-            expect_errors=True)
-        assert res.status_code == 403
-
-    #   test_logged_in_non_contributor_cannot_view_draft_list
-        res = app.get(
-            url_draft_registrations,
-            auth=user_non_contrib.auth,
-            expect_errors=True)
-        assert res.status_code == 403
-
-    #   test_unauthenticated_user_cannot_view_draft_list
+    def test_unauthenticated_user_cannot_view_draft_list(self, app, url_draft_registrations):
         res = app.get(url_draft_registrations, expect_errors=True)
         assert res.status_code == 401
 
-    #   test_osf_group_with_read_permissions
+    @pytest.mark.skip("Don't support OSF Groups anymore")
+    def test_osf_group_with_read_permissions(
+        self, app, user_write_contrib, project_public,
+        user_read_contrib, user_non_contrib, url_draft_registrations, group, group_mem
+    ):
+
         project_public.remove_osf_group(group)
         project_public.add_osf_group(group, permissions.READ)
         res = app.get(url_draft_registrations, auth=group_mem.auth, expect_errors=True)
@@ -227,24 +324,11 @@ class TestDraftRegistrationList(DraftRegistrationTestCase):
 
 
 @pytest.mark.django_db
-class TestDraftRegistrationCreate(DraftRegistrationTestCase):
+class TestDraftRegistrationCreate(AbstractDraftRegistrationTestCase):
 
     @pytest.fixture()
-    def provider(self):
-        return RegistrationProvider.get_default()
-
-    @pytest.fixture()
-    def non_default_provider(self, metaschema_open_ended):
-        non_default_provider = RegistrationProviderFactory()
-        non_default_provider.schemas.add(metaschema_open_ended)
-        non_default_provider.save()
-        return non_default_provider
-
-    @pytest.fixture()
-    def metaschema_open_ended(self):
-        return RegistrationSchema.objects.get(
-            name='Open-Ended Registration',
-            schema_version=OPEN_ENDED_SCHEMA_VERSION)
+    def url_draft_registrations(self, project_public):
+        return f'/{API_BASE}nodes/{project_public._id}/draft_registrations/?version=2.19'
 
     @pytest.fixture()
     def payload(self, metaschema_open_ended, provider):
@@ -269,37 +353,7 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             }
         }
 
-    @pytest.fixture()
-    def payload_with_non_default_provider(self, metaschema_open_ended, non_default_provider):
-        return {
-            'data': {
-                'type': 'draft_registrations',
-                'attributes': {},
-                'relationships': {
-                    'registration_schema': {
-                        'data': {
-                            'type': 'registration_schema',
-                            'id': metaschema_open_ended._id
-                        }
-                    },
-                    'provider': {
-                        'data': {
-                            'type': 'registration-providers',
-                            'id': non_default_provider._id,
-                        }
-                    }
-                }
-            }
-        }
-
-    @pytest.fixture()
-    def url_draft_registrations(self, project_public):
-        return '/{}nodes/{}/draft_registrations/?{}'.format(
-            API_BASE, project_public._id, 'version=2.19')
-
-    def test_type_is_draft_registrations(
-            self, app, user, metaschema_open_ended,
-            url_draft_registrations):
+    def test_type_is_draft_registrations(self, app, user, metaschema_open_ended, url_draft_registrations):
         draft_data = {
             'data': {
                 'type': 'nodes',
@@ -322,10 +376,13 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert res.status_code == 409
 
     def test_admin_can_create_draft(
-            self, app, user, project_public, url_draft_registrations,
-            payload, metaschema_open_ended):
-        url = '{}&embed=branched_from&embed=initiator'.format(url_draft_registrations)
-        res = app.post_json_api(url, payload, auth=user.auth)
+            self, app, user, project_public, url_draft_registrations, payload, metaschema_open_ended
+    ):
+        res = app.post_json_api(
+            f'{url_draft_registrations}&embed=branched_from&embed=initiator',
+            payload,
+            auth=user.auth
+        )
         assert res.status_code == 201
         data = res.json['data']
         assert metaschema_open_ended._id in data['relationships']['registration_schema']['links']['related']['href']
@@ -335,13 +392,10 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
         assert data['embeds']['branched_from']['data']['id'] == project_public._id
         assert data['embeds']['initiator']['data']['id'] == user._id
 
-    def test_cannot_create_draft(
-            self, app, user_write_contrib,
-            user_read_contrib, user_non_contrib,
-            project_public, payload, group,
-            url_draft_registrations, group_mem):
+    def test_write_only_contributor_cannot_create_draft(
+            self, app, user_write_contrib, project_public, payload, url_draft_registrations
+    ):
 
-        #   test_write_only_contributor_cannot_create_draft
         assert user_write_contrib in project_public.contributors.all()
         res = app.post_json_api(
             url_draft_registrations,
@@ -350,7 +404,9 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         assert res.status_code == 403
 
-    #   test_read_only_contributor_cannot_create_draft
+    def test_read_only_contributor_cannot_create_draft(
+            self, app, user_read_contrib, project_public, payload, url_draft_registrations
+    ):
         assert user_read_contrib in project_public.contributors.all()
         res = app.post_json_api(
             url_draft_registrations,
@@ -359,13 +415,17 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         assert res.status_code == 403
 
-    #   test_non_authenticated_user_cannot_create_draft
+    def test_non_authenticated_user_cannot_create_draft(self, app, user_read_contrib, payload, url_draft_registrations):
         res = app.post_json_api(
             url_draft_registrations,
-            payload, expect_errors=True)
+            payload,
+            expect_errors=True
+        )
         assert res.status_code == 401
 
-    #   test_logged_in_non_contributor_cannot_create_draft
+    def test_logged_in_non_contributor_cannot_create_draft(
+            self, app, user_non_contrib, payload, url_draft_registrations
+    ):
         res = app.post_json_api(
             url_draft_registrations,
             payload,
@@ -373,15 +433,22 @@ class TestDraftRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         assert res.status_code == 403
 
-    #   test_group_admin_cannot_create_draft
+    @pytest.mark.skip('Old OSF Groups code')
+    def test_group_admin_cannot_create_draft(
+            self, app, group_mem, payload, url_draft_registrations
+    ):
         res = app.post_json_api(
             url_draft_registrations,
             payload,
             auth=group_mem.auth,
-            expect_errors=True)
+            expect_errors=True
+        )
         assert res.status_code == 403
 
-    #   test_group_write_contrib_cannot_create_draft
+    @pytest.mark.skip('Old OSF Groups code')
+    def test_group_write_contrib_cannot_create_draft(
+            self, app, group, group_mem, payload, url_draft_registrations, project_public
+    ):
         project_public.remove_osf_group(group)
         project_public.add_osf_group(group, permissions.WRITE)
         res = app.post_json_api(

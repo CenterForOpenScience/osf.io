@@ -8,7 +8,7 @@ from future.moves.urllib.parse import urljoin, urlparse
 
 from api.base.settings.defaults import API_BASE
 from api.base.versioning import CREATE_REGISTRATION_FIELD_CHANGE_VERSION
-from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistrationTestCase
+from api_tests.nodes.views.test_node_draft_registration_list import AbstractDraftRegistrationTestCase
 from api_tests.subjects.mixins import SubjectsFilterMixin
 from api_tests.registrations.filters.test_filters import RegistrationListFilteringMixin
 from api_tests.utils import create_test_file
@@ -605,7 +605,7 @@ class TestRegistrationSubjectFiltering(SubjectsFilterMixin):
         return '/{}registrations/'.format(API_BASE)
 
 
-class TestNodeRegistrationCreate(DraftRegistrationTestCase):
+class TestNodeRegistrationCreate(AbstractDraftRegistrationTestCase):
     """
     Tests for creating registration through old workflow -
     POST NodeRegistrationList
@@ -1570,6 +1570,9 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
         payload_ver['data']['attributes']['draft_registration_id'] = draft_registration._id
         assert draft_registration.branched_from.is_admin_contributor(user) is False
         assert draft_registration.has_permission(user, permissions.ADMIN) is True
+        assert draft_registration.title is ''
+        draft_registration.title = 'test user generated title required'
+        draft_registration.save()
         res = app.post_json_api(url_registrations_ver, payload_ver, auth=user.auth)
         assert res.status_code == 201
 
@@ -1578,6 +1581,9 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
         assert draft_registration.branched_from.is_admin_contributor(user) is True
         assert draft_registration.has_permission(user, permissions.ADMIN) is True
         payload_ver['data']['attributes']['draft_registration_id'] = draft_registration._id
+        assert draft_registration.title is ''
+        draft_registration.title = 'test user generated title required'
+        draft_registration.save()
         res = app.post_json_api(url_registrations_ver, payload_ver, auth=user.auth)
         assert res.status_code == 201
 
