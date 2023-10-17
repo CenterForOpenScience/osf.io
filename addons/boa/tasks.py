@@ -161,8 +161,7 @@ def handle_error(message, username, fullname, query_file_name,
     """Handle Boa and WB API errors and send emails.
     """
     logger.error(message)
-    sentry.log_message(message)
-    sentry.log_exception()
+    sentry.log_message(message, skip_session=True)
     send_mail(
         mail=ADDONS_BOA_JOB_FAILURE,
         to_addr=username,
