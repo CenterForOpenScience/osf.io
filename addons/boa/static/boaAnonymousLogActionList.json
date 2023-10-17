@@ -1,9 +1,4 @@
 {
-    "boa_file_added" : "A user added a file to Boa in a project",
-    "boa_file_removed" : "A user removed a file from Boa in a project",
-    "boa_file_updated" : "A user updated a file in Boa in a project",
-    "boa_folder_created" : "A user created a folder in Boa in a project",
-    "boa_folder_selected" : "A user linked a Boa folder in a project",
     "boa_node_authorized" : "A user authorized the Boa addon for a project",
     "boa_node_deauthorized" : "A user deauthorized the Boa addon for a project",
     "boa_node_deauthorized_no_user" : "Boa addon for a project deauthorized"

@@ -55,7 +55,7 @@ function ViewModel(url) {
             return 'Are you sure you want to remove this ' + self.addonName + ' account?';
         }),
         confirmAuth: ko.pureComputed(function() {
-            return 'Are you sure you want to authorize this project with your ' + self.addonName + ' access token?';
+            return 'Are you sure you want to authorize this project with your ' + self.addonName + ' credentials?';
         }),
         deauthorizeSuccess: ko.pureComputed(function() {
             return 'Disconnected ' + self.addonName + '.';
@@ -171,7 +171,7 @@ ViewModel.prototype.clearModal = function() {
 ViewModel.prototype.connectAccount = function() {
     var self = this;
 
-    if ( !self.username() && !self.password() ){
+    if ( !(self.username() && self.password()) ){
         self.changeMessage('Please enter a username and password.', 'text-danger');
         return;
     }
@@ -203,7 +203,7 @@ ViewModel.prototype.connectAccount = function() {
     }).fail(function(xhr, textStatus, error) {
         var errorMessage = (xhr.status === 401) ? language.authInvalid : language.authError;
         self.changeMessage(errorMessage, 'text-danger');
-        Raven.captureMessage('Could not authenticate with boa', {
+        Raven.captureMessage('Could not authenticate with Boa', {
             url: url,
             textStatus: textStatus,
             error: error
@@ -230,7 +230,7 @@ ViewModel.prototype.importAuth = function() {
         .then(function(){
             if (self.accounts().length > 1) {
                 bootbox.prompt({
-                    title: 'Choose ' + $osf.htmlEscape(self.addonName) + ' Access Token to Import',
+                    title: 'Choose ' + $osf.htmlEscape(self.addonName) + ' credentials to Import',
                     inputType: 'select',
                     inputOptions: ko.utils.arrayMap(
                         self.accounts(),
@@ -255,7 +255,7 @@ ViewModel.prototype.importAuth = function() {
                 });
             } else {
                 bootbox.confirm({
-                    title: 'Import ' + $osf.htmlEscape(self.addonName) + ' Access Token?',
+                    title: 'Import ' + $osf.htmlEscape(self.addonName) + ' credentials?',
                     message: self.messages.confirmAuth(),
                     callback: function(confirmed) {
                         if (confirmed) {

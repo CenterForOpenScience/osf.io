@@ -12,10 +12,9 @@ var $modal = $('#boaCredentialsModal');
 var ViewModel = oop.extend(OAuthAddonSettingsViewModel,{
     constructor: function(){
         var self = this;
-        self.super.constructor.call(self, 'boa', 'boa');
+        self.super.constructor.call(self, 'boa', 'Boa');
 
         self.url = '/api/v1/settings/boa/accounts/';
-        var otherString = 'Other (Please Specify)';
 
         self.username = ko.observable();
         self.password = ko.observable();
@@ -44,7 +43,7 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel,{
     },
     connectAccount : function() {
         var self = this;
-        if ( !self.username() && !self.password() ){
+        if ( !(self.username() && self.password()) ){
             self.setMessage('Please enter a username and password.', 'text-danger');
             return;
         }
@@ -62,7 +61,7 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel,{
         }).fail(function(xhr, textStatus, error) {
             var errorMessage = (xhr.status === 401) ? language.authInvalid : language.authError;
             self.setMessage(errorMessage, 'text-danger');
-            Raven.captureMessage('Could not authenticate with boa', {
+            Raven.captureMessage('Could not authenticate with Boa', {
                 textStatus: textStatus,
                 error: error,
             });

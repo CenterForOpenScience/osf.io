@@ -1371,6 +1371,12 @@ function _submitToBoaEvent (event, item, col) {
             }
         ).done(function(xhr) {
             console.error('@@@   BOA SUCCESS!', item);
+            $osf.growl(
+                'Success',
+                'File submitted to Boa. You will be notified by email when the job is done.',
+                'success',
+            );
+            tb.modal.dismiss();
             // if (showError) {
             //     window.location.reload();
             // }
@@ -1380,6 +1386,7 @@ function _submitToBoaEvent (event, item, col) {
                 'Error',
                 'Unable to submit file to Boa. This is most likely due to problems.'
             );
+            tb.modal.dismiss();
         });
     }
 
@@ -1404,13 +1411,12 @@ function _submitToBoaEvent (event, item, col) {
         '2012 July/SF',
     ];
 
+    var datasetInstr = m('p', 'Please select a dataset to run the query against:');
     var datasetSelect = m('div', [
         m(
             'select.form-control',
             {
-                // config: Select2Template.config(options),
                 onchange: function(ev){
-                    console.error('∑∑∑ debuggin');
                     updateDataset(ev.target.value);
                 }
             },
@@ -1426,9 +1432,9 @@ function _submitToBoaEvent (event, item, col) {
 
     var detail = m('span', 'Submit this file to the Boa server? ');
     var mithrilContentSingle = m('div', [
-        m('p.text-danger', detail, 'This submit-to-boa action is irreversible.')
+        m('p.text-danger', detail, 'This submission is irreversible.')
     ]);
-    var interactSpiel = m('div', [datasetSelect, mithrilContentSingle]);
+    var interactSpiel = m('div', [datasetInstr, datasetSelect, mithrilContentSingle]);
     var mithrilButtonsSingle = m('div', [
         m('span.btn.btn-default', { onclick : function() { cancelSubmitToBoa(); } }, 'Cancel'),
         m('span.btn.btn-danger', { onclick : function() { runSubmitToBoa(item, selectedDataset); } }, 'Submit')

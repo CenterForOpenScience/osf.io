@@ -24,8 +24,7 @@
                                 <input class="form-control" name="password" data-bind="value: password" type="password" placeholder="********" />
                             </div>
                             <div class="text-muted" style="text-align: center">
-                              <em> These credentials will be encrypted. However, we <strong>strongly encourage</strong> using a <a href="https://doc.boa.org/server/9.1/user_manual/session_management.html#managing-devices" target="_blank"> DEVICE (OR APP) PASSWORD <blink>REVISIT</blink></a>.
-                                </em>
+                              <em>These credentials will be encrypted.</em>
                             </div>
                         </div>
 
