@@ -2261,24 +2261,26 @@ class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, Contribut
         else:
             return []
 
-    def copy_editable_fields(
-            self, resource, alternative_resource=None, include_contributors=True, save=True, excluded_attributes=None
-    ):
+    def copy_editable_fields(self, resource, alternative_resource=None, include_contributors=True, save=True, excluded_attributes=None):
         """
-        Copy editable fields from 'resource' to the current object. DraftRegistrations have different rules for creation
-        based on whether they are based on OSF Projects or are 'no-project` Registrations that will copu default
-        metadata information from the user, or some other source other then an OSF Project or Node.
+        This method copies various editable fields from the 'resource' object to the current object. Includes, title,
+        description, category, contributors, node_license, tags, subjects, and affiliated_institutions.
+        The field on the resource will always supersede the field on the alternative_resource. For example, copying
+        fields from the draft_registration to the registration.  resource will be a DraftRegistration object, but the
+        alternative_resource will be a Node. DraftRegistration fields will trump Node fields.
 
-        :param Object resource: Primary resource to copy attributes from
+        :param Object resource: Primary resource where you want to copy attributes
         :param Object alternative_resource: Backup resource for copying attributes
-        :param bool include_contributors: Whether to also copy contributors
-        :param bool save: Whether to save the changes immediately
-        :param List excluded_attributes: List of attributes to exclude from copying
+        :param Boolean include_contributors: represents whether to also copy the resource's contributors
+        :param Boolean save: represents whether to save the resources changes immediately
+        :param List: a list of strings representing attributes to exclude from copying
         """
         if not excluded_attributes:
             excluded_attributes = []
 
-        self._copy_basic_attributes(resource, alternative_resource, excluded_attributes)
+        for attribute in ['title', 'description', 'category', 'node_license']:
+            if attribute not in excluded_attributes:
+                self.set_editable_attribute(attribute, resource, alternative_resource)
 
         if include_contributors:
             # Contributors will always come from "resource", as contributor constraints

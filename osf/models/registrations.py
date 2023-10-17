@@ -1265,8 +1265,8 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         if node:
             branched_from = node
         else:
-            branched_from = DraftNode.objects.create(creator=user, title='Untitled')
-            excluded_attributes = ['affiliated_institutions']
+            branched_from = DraftNode.objects.create(creator=user, title=settings.DEFAULT_DRAFT_NODE_TITLE)
+            excluded_attributes.append('title')
 
         if not isinstance(branched_from, (Node, DraftNode)):
             raise DraftRegistrationStateError()
