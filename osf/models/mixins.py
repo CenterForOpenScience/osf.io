@@ -2265,7 +2265,9 @@ class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, Contribut
             self, resource, alternative_resource=None, include_contributors=True, save=True, excluded_attributes=None
     ):
         """
-        Copy editable fields from 'resource' to the current object.
+        Copy editable fields from 'resource' to the current object. DraftRegistrations have different rules for creation
+        based on whether they are based on OSF Projects or are 'no-project` Registrations that will copu default
+        metadata information from the user, or some other source other then an OSF Project or Node.
 
         :param Object resource: Primary resource to copy attributes from
         :param Object alternative_resource: Backup resource for copying attributes
@@ -2279,7 +2281,10 @@ class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, Contribut
         self._copy_basic_attributes(resource, alternative_resource, excluded_attributes)
 
         if include_contributors:
+            # Contributors will always come from "resource", as contributor constraints
+            # will require contributors to be present on the resource
             self.copy_contributors_from(resource)
+            # Copy unclaimed records for unregistered users
             self.copy_unclaimed_records(resource)
 
         self._copy_m2m_fields(resource, alternative_resource, excluded_attributes)
@@ -2288,17 +2293,18 @@ class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, Contribut
             self.save()
 
     def _copy_basic_attributes(self, resource, alternative_resource, excluded_attributes):
-        # Copy basic attributes such as title, description, category, and node_license
         for attribute in ['title', 'description', 'category', 'node_license']:
             if attribute not in excluded_attributes:
                 self.set_editable_attribute(attribute, resource, alternative_resource)
 
     def _copy_m2m_fields(self, resource, alternative_resource, excluded_attributes):
-        # Copy m2m fields like tags, subjects, and affiliated_institutions
         m2m_fields = ['tags', 'subjects', 'affiliated_institutions']
         for field in m2m_fields:
             if field not in excluded_attributes:
-                getattr(self, field).add(*self.stage_m2m_values(field, resource, alternative_resource))
+                if field == 'tags':  # special case tags with value `all_tags'
+                    self.tags.add(*self.stage_m2m_values('all_tags', resource, alternative_resource))
+                else:
+                    getattr(self, field).add(*self.stage_m2m_values(field, resource, alternative_resource))
 
     class Meta:
         abstract = True

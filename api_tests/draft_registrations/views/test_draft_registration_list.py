@@ -270,7 +270,6 @@ class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
         """
         project = ProjectFactory(is_public=True, creator=user)
         payload['data']['relationships']['branched_from']['data']['id'] = project._id
-
         res = app.post_json_api(
             url_draft_registrations,
             payload,

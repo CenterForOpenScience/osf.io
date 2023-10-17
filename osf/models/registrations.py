@@ -1262,7 +1262,6 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
             provider.validate_schema(schema)
 
         excluded_attributes = []
-
         if node:
             branched_from = node
         else:
@@ -1280,13 +1279,11 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
             provider=provider,
         )
         draft.save()
-        draft.update(data, auth=Auth(user))
         draft.copy_editable_fields(
             branched_from,
-            Auth(user),
-            save=True,
             excluded_attributes=excluded_attributes
         )
+        draft.update(data, auth=Auth(user))
 
         if not node:
             draft.affiliated_institutions.add(*draft.creator.get_affiliated_institutions())
