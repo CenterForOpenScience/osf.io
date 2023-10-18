@@ -563,6 +563,8 @@ class GatherView(TemplateView):
                     root, ext = os.path.splitext(obj['attributes']['materialized'])
                 if not ext:
                     ext = 'none'
+                if len(ext) > RdmStatistics._meta.get_field('extention_type').max_length:
+                    ext = 'unknown'
                 if obj['attributes']['kind'] == 'file':
                     try:
                         self.count_list.append(['file', obj['id'], int(obj['attributes']['size'] if obj['attributes']['size'] else 0), ext])
