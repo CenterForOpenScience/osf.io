@@ -29,3 +29,4 @@ BOA_DATASETS = [
 ]
 
 BOA_JOB_LIST_URL = 'https://boa.cs.iastate.edu/boa/index.php?q=boa/jobs'
+BOA_SUPPORT_EMAIL = 'boasupport@iastate.edu'
