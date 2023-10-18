@@ -2289,24 +2289,12 @@ class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, Contribut
             # Copy unclaimed records for unregistered users
             self.copy_unclaimed_records(resource)
 
-        self._copy_m2m_fields(resource, alternative_resource, excluded_attributes)
+        self.tags.add(*self.stage_m2m_values('all_tags', resource, alternative_resource))
+        self.subjects.add(*self.stage_m2m_values('subjects', resource, alternative_resource))
+        self.affiliated_institutions.add(*self.stage_m2m_values('affiliated_institutions', resource, alternative_resource))
 
         if save:
             self.save()
-
-    def _copy_basic_attributes(self, resource, alternative_resource, excluded_attributes):
-        for attribute in ['title', 'description', 'category', 'node_license']:
-            if attribute not in excluded_attributes:
-                self.set_editable_attribute(attribute, resource, alternative_resource)
-
-    def _copy_m2m_fields(self, resource, alternative_resource, excluded_attributes):
-        m2m_fields = ['tags', 'subjects', 'affiliated_institutions']
-        for field in m2m_fields:
-            if field not in excluded_attributes:
-                if field == 'tags':  # special case tags with value `all_tags'
-                    self.tags.add(*self.stage_m2m_values('all_tags', resource, alternative_resource))
-                else:
-                    getattr(self, field).add(*self.stage_m2m_values(field, resource, alternative_resource))
 
     class Meta:
         abstract = True
