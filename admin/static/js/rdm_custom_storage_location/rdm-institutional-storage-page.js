@@ -1618,13 +1618,6 @@ $('#stop_restore_button').on('click', function () {
         type: 'post',
         data: data
     }).done(function (response) {
-        // If stop restore success without task_id, display message.
-        if (response && response['message'] === 'Stop restore data successfully.') {
-            enableRestoreFunction();
-            $osf.growl(_('Stop Restore Export Data'), _('Stopped restoring data process.'), 'success', growlBoxDelay);
-            return;
-        }
-        stop_restore_task_id = response['task_id'];
         enableRestoreFunction();
         $osf.growl(_('Stop Restore Export Data'), _('Stopped restoring data process.'), 'success', 0);
     }).fail(function (jqXHR) {
@@ -1704,9 +1697,9 @@ function checkTaskStatus(task_id, task_type) {
             }
         }
     }).fail(function (jqXHR) {
-        enableRestoreFunction();
         var data = jqXHR.responseJSON;
-        if (data && data['result']) {
+        if (data && data['result'] && data['result'] !== 'Restore process is stopped') {
+            enableRestoreFunction();
             var title = _('Restore Export Data');
             $osf.growl(title, _(data['result']), 'danger', 0);
         }
