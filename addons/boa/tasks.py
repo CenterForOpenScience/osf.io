@@ -19,35 +19,42 @@ logger = logging.getLogger(__name__)
 
 
 @celery_app.task(name='addons.boa.tasks.submit_to_boa')
-def submit_to_boa(host, username, password, user_guid, query_dataset,
-                  query_file_name, query_download_url, output_upload_url):
+def submit_to_boa(host, username, password, user_guid, project_guid,
+                  query_dataset, query_file_name, query_download_url, output_upload_url):
     """
-    Note:
-    * All the parameters must be verified by the caller.
-    * Both the ``query_download_url`` and ``output_upload_url`` must be WB URL since it generates
-      fewer requests between OSF and WB and has authentication passed via the headers.
-    * Running asyncio in celery is tricky. See the following link for the solution we've chosen:
-      * https://stackoverflow.com/questions/39815771/how-to-combine-celery-with-asyncio
+    Download Boa query file, submit it to Boa API, wait for Boa to finish the job
+    and upload result output to OSF. Send success / failure emails notifications.
+
+    A few Notes:
+        * All the parameters must be verified by the caller.
+        * Both the ``query_download_url`` and ``output_upload_url`` must be WB URL for two reasons:
+            * It generates fewer requests between OSF and WB;
+            * It has authentication passed via the headers securely.
+        * Running asyncio in celery is tricky. Refer to the discussion below for details:
+            * https://stackoverflow.com/questions/39815771/how-to-combine-celery-with-asyncio
     """
-    async_to_sync(submit_to_boa_async)(host, username, password, user_guid, query_dataset,
-                                       query_file_name, query_download_url, output_upload_url)
+    async_to_sync(submit_to_boa_async)(host, username, password, user_guid, project_guid,
+                                       query_dataset, query_file_name, query_download_url, output_upload_url)
 
 
-async def submit_to_boa_async(host, username, password, user_guid, query_dataset,
-                              query_file_name, query_download_url, output_upload_url):
+async def submit_to_boa_async(host, username, password, user_guid, project_guid,
+                              query_dataset, query_file_name, query_download_url, output_upload_url):
     """
-    Note:
-    * Due to django's incompatibility issue with asyncio, must use ``sync_to_async()`` when necessary
-    * See notes in ``submit_to_boa()``
-    * TODO: should we add ``node_guid`` to be included in emails to users?
+    Download Boa query file, submit it to Boa API, wait for Boa to finish the job
+    and upload result output to OSF. Send success / failure emails notifications.
+
+    A couple of notes:
+        * This is the async function that must be wrapped with ``async_to_sync`` by the caller
+        * See notes in ``submit_to_boa()`` for details.
     """
 
     logger.debug('>>>>>>>> Task begins')
     user = await sync_to_async(OSFUser.objects.get)(guids___id=user_guid)
     cookie_value = (await sync_to_async(user.get_or_create_cookie)()).decode()
+    project_url = f'{osf_settings.DOMAIN}{project_guid}/'
 
-    logger.debug(f'Downloading Boa query file: '
-                f'name=[{query_file_name}], user=[{user_guid}], url=[{query_download_url}] ...')
+    logger.debug(f'Downloading Boa query file: project=[{project_guid}], '
+                 f'name=[{query_file_name}], user=[{user_guid}], url=[{query_download_url}] ...')
     download_request = request.Request(query_download_url)
     download_request.add_header('Cookie', f'{osf_settings.COOKIE_NAME}={cookie_value}')
     try:
@@ -126,8 +133,7 @@ async def submit_to_boa_async(host, username, password, user_guid, query_dataset
     output_file_name = query_file_name.replace('.boa', boa_settings.OUTPUT_FILE_SUFFIX)
     logger.debug(f'Uploading Boa query output to OSF: name=[{output_file_name}], upload_url=[{output_upload_url}] ...')
     try:
-        # TODO: either let the caller v1 view provide the base upload URL without query params (e.g. ``?kind=file``) or
-        #       let it provide the full upload URL with all query params (e.g. ``?kind=file&name=[...]``.
+        # TODO: either let the caller v1 view provide the full upload URL w/ all query params
         upload_request = request.Request(f'{output_upload_url}&name={output_file_name}')
         upload_request.method = 'PUT'
         upload_request.data = ensure_bytes(boa_job_output)
@@ -150,13 +156,14 @@ async def submit_to_boa_async(host, username, password, user_guid, query_dataset
         query_file_name=query_file_name,
         output_file_name=output_file_name,
         job_id=boa_job.id,
+        project_url=project_url,
         boa_job_list_url=boa_settings.BOA_JOB_LIST_URL,
         osf_support_email=osf_settings.OSF_SUPPORT_EMAIL,
     )
     return
 
 
-def handle_error(message, username, fullname, query_file_name,
+def handle_error(message, username, fullname, project_url, query_file_name,
                  job_id=None, query_error=False, is_complete=False, needs_config=False):
     """Handle Boa and WB API errors and send emails.
     """
@@ -172,6 +179,7 @@ def handle_error(message, username, fullname, query_file_name,
         query_error=query_error,
         is_complete=is_complete,
         needs_config=needs_config,
+        project_url=project_url,
         boa_job_list_url=boa_settings.BOA_JOB_LIST_URL,
         osf_support_email=osf_settings.OSF_SUPPORT_EMAIL,
     )

@@ -116,22 +116,36 @@ boa_get_config = generic_views.get_config(
 @must_have_addon(SHORT_NAME, 'node')
 def boa_submit_job(node_addon, user_addon, **kwargs):
 
+    req_params = request.json
+
+    # Boa addon configuration
     provider = node_addon.external_account.provider_id
     parts = provider.rsplit(':', 1)
     host, username = parts[0], parts[1]
     password = node_addon.external_account.oauth_key
+
+    # User
     user_guid = kwargs['auth'].user._id
-    params = request.json
-    dataset = params['dataset']
-    attrs = params['data']
-    file_name = attrs['name']
-    links = attrs['links']
+
+    # Project and file
+    project_guid = req_params['data']['nodeId']
+    file_name = req_params['data']['name']
+    # materialized_path = req_params['data']['materialized']
+
+    # Query file download URL and result output upload URL
+    links = req_params['data']['links']
     download_url = links['download']
     download_url = download_url.replace(osf_settings.WATERBUTLER_URL, osf_settings.WATERBUTLER_INTERNAL_URL)
     upload_url = links['upload']
     upload_url = re.sub(r'\/[0123456789abcdef]+\?', '/?', upload_url)
     upload_url = upload_url.replace(osf_settings.WATERBUTLER_URL, osf_settings.WATERBUTLER_INTERNAL_URL)
+
+    # Boa dataset
+    dataset = req_params['dataset']
+
+    # Send to task ``submit_to_boa``
     enqueue_task(submit_to_boa.s(
-        host, username, password, user_guid, dataset, file_name, download_url, upload_url
+        host, username, password, user_guid, project_guid, dataset, file_name, download_url, upload_url
     ))
+
     return {}
