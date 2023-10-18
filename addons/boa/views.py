@@ -130,7 +130,7 @@ def boa_submit_job(node_addon, user_addon, **kwargs):
     # Project and file
     project_guid = req_params['data']['nodeId']
     file_name = req_params['data']['name']
-    # materialized_path = req_params['data']['materialized']
+    file_full_path = req_params['data']['materialized']
 
     # Query file download URL and result output upload URL
     links = req_params['data']['links']
@@ -144,8 +144,7 @@ def boa_submit_job(node_addon, user_addon, **kwargs):
     dataset = req_params['dataset']
 
     # Send to task ``submit_to_boa``
-    enqueue_task(submit_to_boa.s(
-        host, username, password, user_guid, project_guid, dataset, file_name, download_url, upload_url
-    ))
+    enqueue_task(submit_to_boa.s(host, username, password, user_guid, project_guid, dataset,
+                                 file_name, file_full_path, download_url, upload_url))
 
     return {}
