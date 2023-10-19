@@ -128,7 +128,7 @@ async def submit_to_boa_async(host, username, password, user_guid, project_guid,
             client.close()
             message = f'Boa job output is not available: job_id = [{str(boa_job.id)}]!'
             await sync_to_async(handle_error)(message, BoaErrorCode.OUTPUT_ERROR, user.username, user.fullname,
-                                              project_url, query_file_name, output_file_name)
+                                              project_url, query_file_name, output_file_name, job_id=boa_job.id)
             return
         logger.info('Boa job finished.')
         logger.debug(f'Boa job output: job_id = [{str(boa_job.id)}]\n########\n{boa_job_output}\n########')
