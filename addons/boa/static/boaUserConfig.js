@@ -10,11 +10,11 @@ var oop = require('js/oop');
 var $modal = $('#boaCredentialsModal');
 
 var ViewModel = oop.extend(OAuthAddonSettingsViewModel,{
-    constructor: function(){
+    constructor: function(url){
         var self = this;
         self.super.constructor.call(self, 'boa', 'Boa');
 
-        self.url = '/api/v1/settings/boa/accounts/';
+        self.url = url;
 
         self.username = ko.observable();
         self.password = ko.observable();
@@ -72,7 +72,8 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel,{
 function BoaUserConfig(selector, url) {
     var self = this;
     self.selector = selector;
-    self.viewModel = new ViewModel();
+    self.url = url;
+    self.viewModel = new ViewModel(url);
     osfHelpers.applyBindings(self.viewModel, self.selector);
 }
 

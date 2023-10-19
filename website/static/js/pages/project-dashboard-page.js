@@ -244,7 +244,7 @@ $(document).ready(function () {
                 columnTitles : function () {
                     return [
                         {
-                            title: 'Name',
+                            title: 'NaPORK-PORKme',
                             width : '70%',
                             sort : true,
                             sortType : 'text'
@@ -306,6 +306,8 @@ $(document).ready(function () {
             if (newComponentElem) {
                 m.mount(newComponentElem, AddComponentButton);
             }
+
+            window.contextVars.node.activeAddons = data.data[0].activeAddons;
             return promise;
         }, function(xhr, textStatus, error) {
             Raven.captureMessage('Error retrieving filebrowser', {extra: {url: urlFilesGrid, textStatus: textStatus, error: error}});

@@ -2185,7 +2185,8 @@ var FGItemButtons = {
             if (
                 (item.data.name.match(/\.boa$/i)) &&
                 (item.data.provider && item.data.provider === 'osfstorage') &&
-                (item.data.permissions && item.data.permissions.edit)
+                (item.data.permissions && item.data.permissions.edit) &&
+                (window.contextVars.node.activeAddons.includes('boa'))
             ) {
                 rowButtons.push(
                     m.component(Fangorn.Components.button, {
