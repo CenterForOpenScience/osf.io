@@ -2,7 +2,7 @@ from enum import IntEnum
 
 
 class BoaErrorCode(IntEnum):
-    """Define 5 types of failures and errors during Boa submit.
+    """Define 6 types of failures and errors during Boa submit.
     """
 
     UNKNOWN = 0  # Unexpected error from WB and/or Boa
