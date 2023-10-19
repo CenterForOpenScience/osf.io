@@ -2,24 +2,47 @@
 <%def name="content()">
 <tr>
     <td style="border-collapse: collapse;">
-        <h3 class="text-center" style="padding: 0;margin: 0;border: none;list-style: none;font-weight: 300;text-align: center;">Your submission of file [${query_file_name}] to Boa has failed</h3>
+        <h3 class="text-center" style="padding: 0;margin: 0;border: none;list-style: none;font-weight: 300;text-align: center;">Your submission to Boa has failed</h3>
     </td>
 </tr>
 <tr>
     <td style="border-collapse: collapse;">
         Hello ${fullname},<br>
         <br>
-        Your submission of file [${query_file_name}] to Boa has failed with the following error: <br>
-        &emsp;${message} <br>
-        % if query_error:
-            Please fix your query file and try again. <br>
-            For details, visit Boa's job list page (${boa_job_list_url}). The Boa job ID for this submission is [${job_id}]. <br>
-        % elif is_complete:
-            Your query has completed on Boa and the job ID is [${job_id}]. Visit Boa's job list page (${boa_job_list_url}) to retrieve the results. <br>
-        % elif needs_config:
-            Please fix your Boa addon configuration on OSF and/or your Boa account on Boa before trying again. <br>
+        Your submission of file [${query_file_name}] from <a href="${project_url}">your OSF project</a> to Boa has failed. <br>
+        <br>
+        % if code == 1:
+            OSF can not log in to Boa. Please fix your Boa addon configuration on OSF and try again. <br>
+            <br>
+            For details, visit <a href="${boa_job_list_url}">Boa's job list page</a>. The Boa job ID for this submission is [${job_id}]. <br>
+        % elif code == 2:
+            The query you submitted encountered compile or run-time error. Please fix your query file and try again. <br>
+            <br>
+            For details, visit <a href="${boa_job_list_url}">Boa's job list page</a>. The Boa job ID for this submission is [${job_id}]. <br>
+        % elif code == 3:
+            Your query has completed on Boa and the job ID is [${job_id}]. <br>
+            <br>
+            However, we were not able to upload the result to <a href="${project_url}">your OSF project</a> because an existing output file [${output_file_name}] already exists. <br>
+            <br>
+            Please either rename your query file or remove the existing result file and try again. <br>
+            <br>
+            In addition, you can visit <a href="${boa_job_list_url}">Boa's job list page</a> to retrieve the results. <br>
+        % elif code == 4:
+            Your query has completed on Boa and the job ID is [${job_id}]. However, we were not able to upload the result to OSF. <br>
+            <br>
+            Visit <a href="${boa_job_list_url}">Boa's job list page</a> to retrieve the results. <br>
+        % elif code == 5:
+            Your query has completed on Boa and the job ID is [${job_id}]. However, we were not able to retrieve the output from Boa. <br>
+            <br>
+            A common cause of this failure is that the output is empty. Visit <a href="${boa_job_list_url}">Boa's job list page</a> to check if the output is empty. <br>
+            <br>
+            If you believe this is in error, contact Boa Support at <a href="mailto:${boa_support_email}">${boa_support_email}</a>. <br>
         % else:
-            Please try again later. If this issue persists, contact the Help Desk at <a href="mailto:${osf_support_email}">${osf_support_email}</a>. <br>
+            OSF encountered an unexpected error when connecting to Boa. Please try again later. <br>
+            <br>
+            If this issue persists, contact OSF Help Desk at <a href="mailto:${osf_support_email}">${osf_support_email}</a> and attach the following error message. <br>
+            <br>
+            ${message} <br>
         % endif
         <br>
         Sincerely,<br>
