@@ -244,7 +244,7 @@ $(document).ready(function () {
                 columnTitles : function () {
                     return [
                         {
-                            title: 'NaPORK-PORKme',
+                            title: 'Name',
                             width : '70%',
                             sort : true,
                             sortType : 'text'
