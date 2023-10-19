@@ -1362,19 +1362,18 @@ function _submitToBoaEvent (event, item, col) {
         tb.modal.dismiss();
     }
     function runSubmitToBoa(item, dataset) {
-        console.error('@@@ Submitting item to Boa!', item);
         return $osf.postJSON(
             item.data.nodeApiUrl + 'boa/submit-job/',
             {
                 data: item.data,
+                parent: item.parent().data,
                 dataset: dataset,
             }
         ).done(function(xhr) {
-            console.error('@@@   BOA SUCCESS!', item);
             $osf.growl(
                 'Success',
                 'File submitted to Boa. You will be notified by email when the job is done.',
-                'success',
+                'success'
             );
             tb.modal.dismiss();
             // if (showError) {
