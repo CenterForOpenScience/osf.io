@@ -6,7 +6,8 @@ class BoaErrorCode(IntEnum):
     """
 
     UNKNOWN = 0  # Unexpected error from WB and/or Boa
-    QUERY_ERROR = 1  # Fail to compile or execute the Boa query
-    UPLOAD_ERROR = 2  # Fail to upload the result output file to OSF
-    OUTPUT_ERROR = 3  # Fail to retrieve the output after Boa job has finished
-    AUTHN_ERROR = 4  # Fail to authenticate with Boa
+    AUTHN_ERROR = 1  # Fail to authenticate with Boa
+    QUERY_ERROR = 2  # Fail to compile or execute the Boa query
+    UPLOAD_ERROR_CONFLICT = 3  # Fail to upload the output to OSF because file already exists
+    UPLOAD_ERROR_OTHER = 4  # Fail to upload the output to OSF due to reasons other than ``UPLOAD_ERROR_CONFLICT``
+    OUTPUT_ERROR = 5  # Fail to retrieve the output after Boa job has finished

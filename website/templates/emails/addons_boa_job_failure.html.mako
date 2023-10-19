@@ -12,21 +12,31 @@
         Your submission of file [${query_file_name}] from <a href="${project_url}">your OSF project</a> to Boa has failed. <br>
         <br>
         % if code == 1:
-            The query you submitted encountered compile or run-time error. Please fix your query file and try again. <br>
+            OSF can not log in to Boa. Please fix your Boa addon configuration on OSF and try again. <br>
             <br>
             For details, visit <a href="${boa_job_list_url}">Boa's job list page</a>. The Boa job ID for this submission is [${job_id}]. <br>
         % elif code == 2:
+            The query you submitted encountered compile or run-time error. Please fix your query file and try again. <br>
+            <br>
+            For details, visit <a href="${boa_job_list_url}">Boa's job list page</a>. The Boa job ID for this submission is [${job_id}]. <br>
+        % elif code == 3:
+            Your query has completed on Boa and the job ID is [${job_id}]. <br>
+            <br>
+            However, we were not able to upload the result to <a href="${project_url}">your OSF project</a> because an existing output file [${output_file_name}] already exists. <br>
+            <br>
+            Please either rename your query file or remove the existing result file and try again. <br>
+            <br>
+            In addition, you can visit <a href="${boa_job_list_url}">Boa's job list page</a> to retrieve the results. <br>
+        % elif code == 4:
             Your query has completed on Boa and the job ID is [${job_id}]. However, we were not able to upload the result to OSF. <br>
             <br>
             Visit <a href="${boa_job_list_url}">Boa's job list page</a> to retrieve the results. <br>
-        % elif code == 3:
+        % elif code == 5:
             Your query has completed on Boa and the job ID is [${job_id}]. However, we were not able to retrieve the output from Boa. <br>
             <br>
             A common cause of this failure is that the output is empty. Visit <a href="${boa_job_list_url}">Boa's job list page</a> to check if the output is empty. <br>
             <br>
             If you believe this is in error, contact Boa Support at <a href="mailto:${boa_support_email}">${boa_support_email}</a>. <br>
-        % elif code == 4:
-            OSF can not log in to Boa. Please fix your Boa addon configuration on OSF and try again. <br>
         % else:
             OSF encountered an unexpected error when connecting to Boa. Please try again later. <br>
             <br>

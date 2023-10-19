@@ -53,6 +53,7 @@ async def submit_to_boa_async(host, username, password, user_guid, project_guid,
     user = await sync_to_async(OSFUser.objects.get)(guids___id=user_guid)
     cookie_value = (await sync_to_async(user.get_or_create_cookie)()).decode()
     project_url = f'{osf_settings.DOMAIN}{project_guid}/'
+    output_file_name = query_file_name.replace('.boa', boa_settings.OUTPUT_FILE_SUFFIX)
 
     logger.debug(f'Downloading Boa query file: user=[{user_guid}], project=[{project_guid}], '
                  f'file_name=[{query_file_name}], full_path=[{file_full_path}], url=[{query_download_url}] ...')
@@ -63,7 +64,8 @@ async def submit_to_boa_async(host, username, password, user_guid, project_guid,
     except (ValueError, HTTPError, URLError):
         message = f'Failed to download Boa query file: user=[{user_guid}], project=[{project_guid}], ' \
                   f'file_name=[{query_file_name}], full_path=[{file_full_path}], url=[{query_download_url}] ...'
-        await sync_to_async(handle_error)(message, BoaErrorCode.UNKNOWN, user.username, user.fullname, project_url, query_file_name)
+        await sync_to_async(handle_error)(message, BoaErrorCode.UNKNOWN, user.username, user.fullname,
+                                          project_url, query_file_name, output_file_name)
         return
     logger.info('Boa query successfully downloaded.')
     logger.debug(f'Boa query:\n########\n{boa_query}\n########')
@@ -76,7 +78,8 @@ async def submit_to_boa_async(host, username, password, user_guid, project_guid,
     except BoaException:
         client.close()
         message = f'Boa login failed: boa_username=[{username}], boa_host=[{host}]!'
-        await sync_to_async(handle_error)(message, BoaErrorCode.AUTHN_ERROR, user.username, user.fullname, project_url, query_file_name)
+        await sync_to_async(handle_error)(message, BoaErrorCode.AUTHN_ERROR, user.username, user.fullname,
+                                          project_url, query_file_name, output_file_name)
         return
     logger.info('Boa login completed.')
 
@@ -86,7 +89,8 @@ async def submit_to_boa_async(host, username, password, user_guid, project_guid,
     except BoaException:
         client.close()
         message = f'Failed to retrieve or verify the target Boa dataset: dataset=[{query_dataset}]!'
-        await sync_to_async(handle_error)(message, BoaErrorCode.UNKNOWN, user.username, user.fullname, project_url, query_file_name)
+        await sync_to_async(handle_error)(message, BoaErrorCode.UNKNOWN, user.username, user.fullname,
+                                          project_url, query_file_name, output_file_name)
         return
     logger.info('Boa dataset retrieved.')
 
@@ -96,7 +100,8 @@ async def submit_to_boa_async(host, username, password, user_guid, project_guid,
     except BoaException:
         client.close()
         message = f'Failed to submit the query to Boa API: : boa_host=[{host}], dataset=[{query_dataset}]!'
-        await sync_to_async(handle_error)(message, BoaErrorCode.UNKNOWN, user.username, user.fullname, project_url, query_file_name)
+        await sync_to_async(handle_error)(message, BoaErrorCode.UNKNOWN, user.username, user.fullname,
+                                          project_url, query_file_name, output_file_name)
         return
     logger.info('Query successfully submitted.')
     logger.debug(f'Waiting for job to finish: job_id = [{str(boa_job.id)}] ...')
@@ -108,13 +113,13 @@ async def submit_to_boa_async(host, username, password, user_guid, project_guid,
         client.close()
         message = f'Boa job failed with compile error: job_id = [{str(boa_job.id)}]!'
         await sync_to_async(handle_error)(message, BoaErrorCode.QUERY_ERROR, user.username, user.fullname,
-                                          project_url, query_file_name, boa_job.id)
+                                          project_url, query_file_name, output_file_name, job_id=boa_job.id)
         return
     elif boa_job.exec_status is ExecutionStatus.ERROR:
         client.close()
         message = f'Boa job failed with execution error: job_id = [{str(boa_job.id)}]!'
         await sync_to_async(handle_error)(message, BoaErrorCode.QUERY_ERROR, user.username, user.fullname,
-                                          project_url, query_file_name, boa_job.id)
+                                          project_url, query_file_name, output_file_name, job_id=boa_job.id)
         return
     else:
         try:
@@ -122,15 +127,14 @@ async def submit_to_boa_async(host, username, password, user_guid, project_guid,
         except BoaException:
             client.close()
             message = f'Boa job output is not available: job_id = [{str(boa_job.id)}]!'
-            await sync_to_async(handle_error)(message, BoaErrorCode.OUTPUT_ERROR, user.username,
-                                              user.fullname, project_url, query_file_name)
+            await sync_to_async(handle_error)(message, BoaErrorCode.OUTPUT_ERROR, user.username, user.fullname,
+                                              project_url, query_file_name, output_file_name)
             return
         logger.info('Boa job finished.')
         logger.debug(f'Boa job output: job_id = [{str(boa_job.id)}]\n########\n{boa_job_output}\n########')
         client.close()
         logger.debug('Boa client closed.')
 
-    output_file_name = query_file_name.replace('.boa', boa_settings.OUTPUT_FILE_SUFFIX)
     logger.debug(f'Uploading Boa query output to OSF: name=[{output_file_name}], upload_url=[{output_upload_url}] ...')
     try:
         # TODO: either let the caller v1 view provide the full upload URL w/ all query params
@@ -139,11 +143,16 @@ async def submit_to_boa_async(host, username, password, user_guid, project_guid,
         upload_request.data = ensure_bytes(boa_job_output)
         upload_request.add_header('Cookie', f'{osf_settings.COOKIE_NAME}={cookie_value}')
         request.urlopen(upload_request)
-    except (ValueError, HTTPError, URLError):
+    except (ValueError, HTTPError, URLError) as e:
         message = f'Failed to upload query output file to OSF: ' \
                   f'name=[{output_file_name}], user=[{user_guid}], url=[{output_upload_url}]!'
-        await sync_to_async(handle_error)(message, BoaErrorCode.UPLOAD_ERROR, user.username, user.fullname,
-                                          project_url, query_file_name, boa_job.id)
+        error_code = BoaErrorCode.UPLOAD_ERROR_OTHER
+        if isinstance(e, HTTPError):
+            message += f', http_error=[{e.code}: {e.reason}]'
+            if e.code == 409:
+                error_code = BoaErrorCode.UPLOAD_ERROR_CONFLICT
+        await sync_to_async(handle_error)(message, error_code, user.username, user.fullname,
+                                          project_url, query_file_name, output_file_name, job_id=boa_job.id)
         return
 
     logger.info('Successfully uploaded query output to OSF.')
@@ -163,7 +172,7 @@ async def submit_to_boa_async(host, username, password, user_guid, project_guid,
     return
 
 
-def handle_error(message, code, username, fullname, project_url, query_file_name, job_id=None):
+def handle_error(message, code, username, fullname, project_url, query_file_name, output_file_name, job_id=None):
     """Handle Boa and WB API errors and send emails.
     """
     logger.error(message)
@@ -175,6 +184,7 @@ def handle_error(message, code, username, fullname, project_url, query_file_name
         code=code,
         message=message,
         query_file_name=query_file_name,
+        output_file_name=output_file_name,
         job_id=job_id,
         project_url=project_url,
         boa_job_list_url=boa_settings.BOA_JOB_LIST_URL,
