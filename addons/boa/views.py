@@ -1,5 +1,4 @@
 import logging
-import re
 
 from boaapi.boa_client import BoaClient, BoaException, BOA_API_ENDPOINT
 from django.core.exceptions import ValidationError
@@ -10,9 +9,10 @@ from addons.base import generic_views
 from addons.boa.models import BoaProvider
 from addons.boa.serializer import BoaSerializer
 from addons.boa.tasks import submit_to_boa
+from api.base.utils import waterbutler_api_url_for
 from framework.auth.decorators import must_be_logged_in
 from framework.celery_tasks.handlers import enqueue_task
-from osf.models import ExternalAccount
+from osf.models import ExternalAccount, AbstractNode
 from website import settings as osf_settings
 from website.project.decorators import must_have_addon
 
@@ -124,27 +124,33 @@ def boa_submit_job(node_addon, user_addon, **kwargs):
     host, username = parts[0], parts[1]
     password = node_addon.external_account.oauth_key
 
-    # User
-    user_guid = kwargs['auth'].user._id
-
-    # Project and file
+    # User and project
+    user = kwargs['auth'].user
+    user_guid = user._id
     project_guid = req_params['data']['nodeId']
+    project_node = AbstractNode.load(project_guid)
+
+    # Query file
     file_name = req_params['data']['name']
     file_full_path = req_params['data']['materialized']
+    file_download_url = req_params['data']['links']['download'].replace(osf_settings.WATERBUTLER_URL,
+                                                                        osf_settings.WATERBUTLER_INTERNAL_URL)
 
-    # Query file download URL and result output upload URL
-    links = req_params['data']['links']
-    download_url = links['download']
-    download_url = download_url.replace(osf_settings.WATERBUTLER_URL, osf_settings.WATERBUTLER_INTERNAL_URL)
-    upload_url = links['upload']
-    upload_url = re.sub(r'\/[0123456789abcdef]+\?', '/?', upload_url)
-    upload_url = upload_url.replace(osf_settings.WATERBUTLER_URL, osf_settings.WATERBUTLER_INTERNAL_URL)
+    # Parent folder: project root is different from sub-folder
+    is_addon_root = req_params['parent'].get('isAddonRoot', False)
+    if is_addon_root:
+        base_url = project_node.osfstorage_region.waterbutler_url
+        parent_wb_url = waterbutler_api_url_for(project_guid, 'osfstorage', _internal=True, base_url=base_url)
+        output_upload_url = f'{parent_wb_url}?kind=file&name='
+    else:
+        output_upload_url = req_params['parent']['links']['upload'].replace(osf_settings.WATERBUTLER_URL,
+                                                                            osf_settings.WATERBUTLER_INTERNAL_URL)
 
     # Boa dataset
     dataset = req_params['dataset']
 
     # Send to task ``submit_to_boa``
     enqueue_task(submit_to_boa.s(host, username, password, user_guid, project_guid, dataset,
-                                 file_name, file_full_path, download_url, upload_url))
+                                 file_name, file_full_path, file_download_url, output_upload_url))
 
     return {}
