@@ -394,7 +394,7 @@ class TestDraftRegistrationCreateWithoutNode(TestDraftRegistrationCreate):
         res = app.post_json_api(url_draft_registrations, payload, auth=user.auth)
         assert res.status_code == 201
         attributes = res.json['data']['attributes']
-        assert attributes['title'] == 'Untitled'
+        assert attributes['title'] == ''
         assert attributes['description'] != project_public.description
         assert attributes['category'] != project_public.category
         assert set(attributes['tags']) != set([tag.name for tag in project_public.tags.all()])

@@ -269,7 +269,7 @@ class TestDraftRegistrations:
             schema=factories.get_default_metaschema(),
         )
 
-        assert draft.title == 'Untitled'
+        assert draft.title == ''
         assert draft.description == ''
         assert draft.category == ''
         assert user in draft.contributors.all()

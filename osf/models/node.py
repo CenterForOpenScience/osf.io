@@ -1488,7 +1488,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             resource = self
             alternative_resource = None
 
-        registered.copy_editable_fields(resource, auth=auth, alternative_resource=alternative_resource)
+        registered.copy_editable_fields(resource, alternative_resource=alternative_resource)
         registered.copy_registration_responses_into_schema_response(draft_registration)
 
         if settings.ENABLE_ARCHIVER:
