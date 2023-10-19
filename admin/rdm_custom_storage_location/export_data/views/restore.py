@@ -112,13 +112,14 @@ def check_before_restore_export_data(cookies, export_id, destination_id, **kwarg
     try:
         export_data_json = read_file_info_and_check_schema(export_data=export_data, cookies=cookies, **kwargs)
         export_data_folders = export_data_json.get('folders', [])
+        export_data_files = export_data_json.get('files', [])
     except Exception as e:
         logger.error(f'Exception: {e}')
         export_data.status = pre_status
         export_data.save()
         return {'open_dialog': False, 'message': str(e)}
 
-    if not len(export_data_folders):
+    if not len(export_data_folders) and not len(export_data_files):
         export_data.status = pre_status
         export_data.save()
         return {'open_dialog': False, 'message': f'The export data files are corrupted'}
@@ -205,6 +206,8 @@ def restore_export_data_process(task, cookies, export_id, export_data_restore_id
 
         destination_region = export_data_restore.destination
         destination_provider = destination_region.provider_name
+        if not utils.is_add_on_storage(destination_provider):
+            destination_provider = INSTITUTIONAL_STORAGE_PROVIDER_NAME
 
         check_if_restore_process_stopped(task, current_process_step)
         current_process_step = 2
