@@ -137,7 +137,6 @@ async def submit_to_boa_async(host, username, password, user_guid, project_guid,
 
     logger.debug(f'Uploading Boa query output to OSF: name=[{output_file_name}], upload_url=[{output_upload_url}] ...')
     try:
-        # TODO: either let the caller v1 view provide the full upload URL w/ all query params
         upload_request = request.Request(f'{output_upload_url}&name={output_file_name}')
         upload_request.method = 'PUT'
         upload_request.data = ensure_bytes(boa_job_output)
