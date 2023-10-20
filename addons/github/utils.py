@@ -52,7 +52,7 @@ def get_path(kwargs, required=True):
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
 
-def get_refs(addon, branch=None, sha=None, connection=None):
+def get_refs(addon, branch=None, sha=None, connection=None, session=None):
     """Get the appropriate branch name and sha given the addon settings object,
     and optionally the branch and sha from the request arguments.
     :param str branch: Branch name. If None, return the default branch from the
@@ -66,6 +66,9 @@ def get_refs(addon, branch=None, sha=None, connection=None):
     if sha and not branch:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
+    if not session:
+        session = connection.gh3.session
+
     # Get default branch if not provided
     if not branch:
         repo = connection.repo(addon.user, addon.repo)
@@ -74,7 +77,7 @@ def get_refs(addon, branch=None, sha=None, connection=None):
         branch = repo.default_branch
     # Get registered branches if provided
     registered_branches = (
-        [Branch.from_json(b) for b in addon.registration_data.get('branches', [])]
+        [Branch.from_json(b, session) for b in addon.registration_data.get('branches', [])]
         if addon.owner.is_registration
         else []
     )

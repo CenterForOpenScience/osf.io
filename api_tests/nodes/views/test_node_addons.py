@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 import abc
-from json import dumps
 
 import mock
 import pytest
 import mendeley
 from nose.tools import *  # noqa:
-from github3.repos import Repository
 
 
 from addons.bitbucket.tests.factories import BitbucketAccountFactory, BitbucketNodeSettingsFactory
@@ -14,6 +12,7 @@ from addons.box.tests.factories import BoxAccountFactory, BoxNodeSettingsFactory
 from addons.dataverse.tests.factories import DataverseAccountFactory, DataverseNodeSettingsFactory
 from addons.dropbox.tests.factories import DropboxAccountFactory, DropboxNodeSettingsFactory
 from addons.github.tests.factories import GitHubAccountFactory, GitHubNodeSettingsFactory
+from addons.github.tests.utils import create_mock_github
 from addons.googledrive.tests.factories import GoogleDriveAccountFactory, GoogleDriveNodeSettingsFactory
 from addons.owncloud.tests.factories import OwnCloudAccountFactory, OwnCloudNodeSettingsFactory
 from addons.s3.tests.factories import S3AccountFactory, S3NodeSettingsFactory
@@ -711,6 +710,7 @@ class TestNodeGitHubAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'github'
     AccountFactory = GitHubAccountFactory
     NodeSettingsFactory = GitHubNodeSettingsFactory
+    mock_github = create_mock_github()
 
     def _settings_kwargs(self, node, user_settings):
         return {
@@ -722,12 +722,7 @@ class TestNodeGitHubAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
 
     @mock.patch('addons.github.models.GitHubClient')
     def test_folder_list_GET_expected_behavior(self, mock_client):
-        mock_repo = Repository.from_json(dumps({
-            'name': 'test',
-            'id': '12345',
-            'owner':
-                {'login': 'test name'}
-        }))
+        mock_repo = self.mock_github.repo.return_value
 
         mock_connection = mock.MagicMock()
         mock_client.return_value = mock_connection
@@ -748,11 +743,11 @@ class TestNodeGitHubAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
 
     @property
     def _mock_folder_result(self):
-        return {u'path': u'test name/test',
+        return {u'path': u'octo-cat/mock-repo',
                 u'kind': u'repo',
-                u'name': u'test',
+                u'name': u'mock-repo',
                 u'provider': u'github',
-                u'id': u'12345'}
+                u'id': u'11075275'}
 
 
 class TestNodeMendeleyAddon(

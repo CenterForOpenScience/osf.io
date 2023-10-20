@@ -129,7 +129,7 @@ class TestGithubViews(OsfTestCase):
     def _get_sha_for_branch(self, branch=None, mock_branches=None):
         github_mock = self.github
         if mock_branches is None:
-            mock_branches = github_mock.branches
+            mock_branches = self.github.branches
         if branch is None:  # Get default branch name
             branch = self.github.repo.return_value.default_branch
         for each in mock_branches.return_value:
@@ -492,22 +492,7 @@ class TestGithubSettings(OsfTestCase):
     @mock.patch('addons.github.api.GitHubClient.branches')
     def test_link_repo_registration(self, mock_branches):
 
-        mock_branches.return_value = [
-            Branch.from_json(dumps({
-                'name': 'master',
-                'commit': {
-                    'sha': '6dcb09b5b57875f334f61aebed695e2e4193db5e',
-                    'url': 'https://api.github.com/repos/octocat/Hello-World/commits/c5b97d5ae6c19d5c5df71a34c7fbeeda2479ccbc',
-                }
-            })),
-            Branch.from_json(dumps({
-                'name': 'develop',
-                'commit': {
-                    'sha': '6dcb09b5b57875asdasedawedawedwedaewdwdass',
-                    'url': 'https://api.github.com/repos/octocat/Hello-World/commits/cdcb09b5b57875asdasedawedawedwedaewdwdass',
-                }
-            }))
-        ]
+        mock_branches.return_value = self.github.branches.return_value
 
         registration = self.project.register_node(
             schema=get_default_metaschema(),

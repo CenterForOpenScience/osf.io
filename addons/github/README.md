@@ -4,7 +4,7 @@
 
 ### Setup up on Github
 
-1. On your Github user settings, under "Developer settings" go to “OAuth Apps”
+1. On your Github Settings page under the "Developer settings" tab go to “OAuth Apps”
 2. Click on "Register a new application"
 2. Enter any name for the application name, e.g. "OSF Github Addon (local)"
 3. In the "Homepage URL" field, enter `http://localhost:5000/`
