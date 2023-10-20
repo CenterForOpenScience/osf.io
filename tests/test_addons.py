@@ -907,7 +907,6 @@ class TestAddonLogs(OsfTestCase):
             'contentType': 'img/png'
         }).save()
 
-
         assert self.node.storage_usage == 525
 
         payload = self.build_payload_with_dest(
