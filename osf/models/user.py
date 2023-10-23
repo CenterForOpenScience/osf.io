@@ -1960,7 +1960,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         from osf.models import Preprint
 
-        if self.nodes.exclude(is_deleted=True).filter(type='osf.registration').exists():
+        if self.nodes.filter(deleted__isnull=True, type='osf.registration').exists():
             raise UserStateError('You cannot delete this user because they have one or more registrations.')
 
         if Preprint.objects.filter(_contributors=self, ever_public=True, deleted__isnull=True).exists():
