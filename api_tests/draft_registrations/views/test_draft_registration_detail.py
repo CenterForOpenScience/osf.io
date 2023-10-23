@@ -95,7 +95,7 @@ class TestDraftRegistrationDetailEndpoint(TestDraftRegistrationDetail):
         res = app.get(url, auth=user.auth, expect_errors=True)
         attributes = res.json['data']['attributes']
 
-        assert attributes['title'] == 'Untitled'
+        assert attributes['title'] == ''
         assert attributes['description'] == ''
         assert attributes['category'] == ''
         assert attributes['node_license'] is None
