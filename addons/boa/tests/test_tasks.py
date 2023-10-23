@@ -1,8 +1,16 @@
+import mock
 import pytest
-
+from unittest.mock import MagicMock
 
 from addons.boa.boa_error_code import BoaErrorCode
+from addons.boa.tasks import submit_to_boa
+from osf_tests.factories import AuthUserFactory, ProjectFactory
 from tests.base import OsfTestCase
+
+
+class AsyncMock(MagicMock):
+    async def __call__(self, *args, **kwargs):
+        return super(AsyncMock, self).__call__(*args, **kwargs)
 
 
 class TestBoaErrorCode(OsfTestCase):
@@ -16,10 +24,35 @@ class TestBoaErrorCode(OsfTestCase):
         assert BoaErrorCode.OUTPUT_ERROR == 5
 
 
+class TestSubmitToBoa(OsfTestCase):
+
+    def setUp(self):
+        super(TestSubmitToBoa, self).setUp()
+        self.host = 'http://locahost:9999/boa/?q=boa/api'
+        self.username = 'fake-boa-username'
+        self.password = 'fake-boa-password'
+        self.fullname = 'Fake Fullname'
+        self.user_guid = AuthUserFactory()._id
+        self.project_guid = ProjectFactory()._id
+        self.query_dataset = '2023 Oct / Fake Boa Dataset (small)'
+        self.query_file_name = 'fake_boa_script.boa'
+        self.file_full_path = '/fake_boa_folder/fake_boa_script.boa'
+        self.query_download_url = f'http://localhost:7777/v1/resources/{self.project_guid}/providers/osfstorage/1a2b3c4d'
+        self.output_upload_url = f'http://localhost:7777/v1/resources/{self.project_guid}/providers/osfstorage/?kind=file'
+
+    def tearDown(self):
+        super(TestSubmitToBoa, self).tearDown()
+
+    @mock.patch('addons.boa.tasks.submit_to_boa_async', new_callable=AsyncMock)
+    def test_submit_to_boa_async_called(self, mock_submit_to_boa_async):
+        mock_submit_to_boa_async.return_value = True
+        return_value = submit_to_boa(self.host, self.username, self.password, self.user_guid,
+                      self.project_guid, self.query_dataset, self.query_file_name,
+                      self.file_full_path, self.query_download_url, self.output_upload_url)
+        mock_submit_to_boa_async.assert_called()
+        assert return_value is True
+
+
 @pytest.mark.django_db
 class TestSubmitToBoaAsync(OsfTestCase):
-    pass
-
-
-class TestSubmitToBoa(OsfTestCase):
     pass
