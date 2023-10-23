@@ -1906,7 +1906,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         alternate_admins = OSFUser.objects.filter(
             groups__name=resource.format_group(ADMIN),
             is_active=True
-        ).exclude(id=self.id)
+        ).exclude(id=self.id).exists()
 
         if not alternate_admins:
             raise UserStateError(
