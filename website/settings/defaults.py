@@ -2129,3 +2129,4 @@ CAS_LOG_LEVEL = 3  # ERROR
 PREPRINT_METRICS_START_DATE = datetime.datetime(2019, 1, 1)
 
 WAFFLE_VALUES_YAML = 'osf/features.yaml'
+DEFAULT_DRAFT_NODE_TITLE = 'Untitled'
