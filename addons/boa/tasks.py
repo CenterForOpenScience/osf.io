@@ -35,7 +35,7 @@ def submit_to_boa(host, username, password, user_guid, project_guid, query_datas
             * https://stackoverflow.com/questions/39815771/how-to-combine-celery-with-asyncio
     """
     return async_to_sync(submit_to_boa_async)(host, username, password, user_guid, project_guid, query_dataset,
-                                       query_file_name, file_full_path, query_download_url, output_upload_url)
+                                              query_file_name, file_full_path, query_download_url, output_upload_url)
 
 
 async def submit_to_boa_async(host, username, password, user_guid, project_guid, query_dataset,
