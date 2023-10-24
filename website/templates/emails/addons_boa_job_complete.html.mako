@@ -9,9 +9,10 @@
   <td style="border-collapse: collapse;">
       Hello ${fullname},<br>
       <br>
-      Your submission of file [${query_file_name}] to Boa is successful. <br>
+      Your submission [${job_id}] of file [${query_file_full_path}] to Boa is successful. <br>
       <br>
-      The result has been uploaded to OSF and stored in file [${output_file_name}]. Visit <a href="${project_url}">your project</a> to access the result. <br>
+      The result has been uploaded to OSF and stored in file [${output_file_name}] under the same folder where you submit the file.
+      Visit <a href="${project_url}">your project</a> to access the result. <br>
       <br>
       In addition, the Boa job ID for this submission is [${job_id}]. Visit <a href="${boa_job_list_url}">Boa's job list page</a> for more information. <br>
       <br>

@@ -9,7 +9,7 @@
     <td style="border-collapse: collapse;">
         Hello ${fullname},<br>
         <br>
-        Your submission of file [${query_file_name}] from <a href="${project_url}">your OSF project</a> to Boa has failed. <br>
+        Your submission of file [${query_file_full_path}] from <a href="${project_url}">your OSF project</a> to Boa has failed. <br>
         <br>
         % if code == 1:
             OSF can not log in to Boa. Please fix your Boa addon configuration on OSF and try again. <br>
