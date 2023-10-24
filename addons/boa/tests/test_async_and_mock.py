@@ -1,5 +1,7 @@
+import asynctest
 import mock
 import pytest
+import unittest
 
 from addons.boa.async_and_mock import foo_sync, bar_async, bar_async_to_sync
 from addons.boa.tests.async_mock import AsyncMock
@@ -49,7 +51,7 @@ async def test_bar_async_with_mock_via_decorator(mock_just_return_2, mock_just_r
     assert r is True, 'test failed'
 
 
-# NOTE: this test demonstrates that ``with mock.patch()`` context is compatible with decorator @pytest.mark.asyncio.
+# Note: this test demonstrates that ``with mock.patch()`` context is compatible with decorator @pytest.mark.asyncio.
 @pytest.mark.asyncio
 async def test_bar_async_with_mock():
     with mock.patch('addons.boa.async_and_mock.just_return_1', return_value=True) as mock_just_return_1,\
@@ -66,3 +68,23 @@ def test_bar_async_to_sync(mock_bar_async):
     r = bar_async_to_sync(True, True)
     mock_bar_async.assert_called()
     assert r is False
+
+
+# Note: this class demonstrates that decorator ``@pytest.mark.asyncio`` does not work with subclasses of
+# ``unittest.TestCase``; ``test_bar_async`` will not be waited and always passes even with ``assert False``
+# since the decorator is ignored.
+class TestAsyncFunctionWithSubclassingTestCase(unittest.TestCase):
+    @pytest.mark.asyncio
+    async def test_bar_async(self):
+        r = await bar_async(True, True)
+        assert r is True, 'test failed'
+        assert False
+
+
+# Note: use ``asynctest.TestCase`` instead
+class TestAsyncFunctionWithSubclassingAsyncTestCase(asynctest.TestCase):
+    @pytest.mark.xfail
+    async def test_bar_async(self):
+        r = await bar_async(True, True)
+        assert r is True, 'test failed'
+        assert False
