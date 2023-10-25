@@ -104,7 +104,7 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
                 mock.patch('boaapi.boa_client.BoaClient.close', return_value=None) as mock_close, \
                 mock.patch('asyncio.sleep', new_callable=AsyncMock, return_value=None) as mock_async_sleep, \
                 mock.patch('addons.boa.tasks.send_mail', return_value=None) as mock_send_mail, \
-                mock.patch('addons.boa.tasks.handle_error', return_value=None) as mock_handle_error:
+                mock.patch('addons.boa.tasks.handle_boa_error', return_value=None) as mock_handle_boa_error:
             return_value = await submit_to_boa_async(
                 self.host,
                 self.username,
@@ -121,14 +121,14 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
             assert mock_async_sleep.call_count == 4
             mock_close.assert_called()
             mock_send_mail.assert_called()
-            mock_handle_error.assert_not_called()
+            mock_handle_boa_error.assert_not_called()
 
     async def test_download_error(self):
         http_404 = HTTPError(self.host, 404, 'Not Found', HTTPMessage(), None)
         with mock.patch('osf.models.user.OSFUser.objects.get', return_value=self.user), \
                 mock.patch('osf.models.user.OSFUser.get_or_create_cookie', return_value=self.user_cookie), \
                 mock.patch('urllib.request.urlopen', side_effect=http_404), \
-                mock.patch('addons.boa.tasks.handle_error', return_value=None) as mock_handle_error:
+                mock.patch('addons.boa.tasks.handle_boa_error', return_value=None) as mock_handle_boa_error:
             return_value = await submit_to_boa_async(
                 self.host,
                 self.username,
@@ -142,7 +142,7 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
                 self.output_upload_url,
             )
             assert return_value == BoaErrorCode.UNKNOWN
-            mock_handle_error.assert_called()
+            mock_handle_boa_error.assert_called()
 
     async def test_login_error(self):
         with mock.patch('osf.models.user.OSFUser.objects.get', return_value=self.user), \
@@ -150,7 +150,7 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
                 mock.patch('urllib.request.urlopen', return_value=self.mock_resp), \
                 mock.patch('boaapi.boa_client.BoaClient.login', side_effect=BoaException()) as mock_login, \
                 mock.patch('boaapi.boa_client.BoaClient.close', return_value=None) as mock_close, \
-                mock.patch('addons.boa.tasks.handle_error', return_value=None) as mock_handle_error:
+                mock.patch('addons.boa.tasks.handle_boa_error', return_value=None) as mock_handle_boa_error:
             return_value = await submit_to_boa_async(
                 self.host,
                 self.username,
@@ -166,7 +166,7 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
             mock_login.assert_called()
             assert return_value == BoaErrorCode.AUTHN_ERROR
             mock_close.assert_called()
-            mock_handle_error.assert_called()
+            mock_handle_boa_error.assert_called()
 
     async def test_data_set_error(self):
         with mock.patch('osf.models.user.OSFUser.objects.get', return_value=self.user), \
@@ -175,7 +175,7 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
                 mock.patch('boaapi.boa_client.BoaClient.login', return_value=None), \
                 mock.patch('boaapi.boa_client.BoaClient.get_dataset', side_effect=BoaException()) as mock_get_dataset, \
                 mock.patch('boaapi.boa_client.BoaClient.close', return_value=None) as mock_close, \
-                mock.patch('addons.boa.tasks.handle_error', return_value=None) as mock_handle_error:
+                mock.patch('addons.boa.tasks.handle_boa_error', return_value=None) as mock_handle_boa_error:
             return_value = await submit_to_boa_async(
                 self.host,
                 self.username,
@@ -191,7 +191,7 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
             mock_get_dataset.assert_called()
             assert return_value == BoaErrorCode.UNKNOWN
             mock_close.assert_called()
-            mock_handle_error.assert_called()
+            mock_handle_boa_error.assert_called()
 
     async def test_submit_error(self):
         with mock.patch('osf.models.user.OSFUser.objects.get', return_value=self.user), \
@@ -201,7 +201,7 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
                 mock.patch('boaapi.boa_client.BoaClient.get_dataset', return_value=self.query_dataset), \
                 mock.patch('boaapi.boa_client.BoaClient.query', side_effect=BoaException()) as mock_query, \
                 mock.patch('boaapi.boa_client.BoaClient.close', return_value=None) as mock_close, \
-                mock.patch('addons.boa.tasks.handle_error', return_value=None) as mock_handle_error:
+                mock.patch('addons.boa.tasks.handle_boa_error', return_value=None) as mock_handle_boa_error:
             return_value = await submit_to_boa_async(
                 self.host,
                 self.username,
@@ -217,7 +217,7 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
             mock_query.assert_called()
             assert return_value == BoaErrorCode.UNKNOWN
             mock_close.assert_called()
-            mock_handle_error.assert_called()
+            mock_handle_boa_error.assert_called()
 
     async def test_compile_error(self):
         self.mock_job.compiler_status = CompilerStatus.ERROR
@@ -230,7 +230,7 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
                 mock.patch('boaapi.boa_client.BoaClient.query', return_value=self.mock_job), \
                 mock.patch('boaapi.boa_client.BoaClient.close', return_value=None) as mock_close, \
                 mock.patch('asyncio.sleep', new_callable=AsyncMock, return_value=None), \
-                mock.patch('addons.boa.tasks.handle_error', return_value=None) as mock_handle_error:
+                mock.patch('addons.boa.tasks.handle_boa_error', return_value=None) as mock_handle_boa_error:
             return_value = await submit_to_boa_async(
                 self.host,
                 self.username,
@@ -245,7 +245,7 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
             )
             assert return_value == BoaErrorCode.QUERY_ERROR
             mock_close.assert_called()
-            mock_handle_error.assert_called()
+            mock_handle_boa_error.assert_called()
 
     async def test_execute_error(self):
         self.mock_job.compiler_status = CompilerStatus.FINISHED
@@ -258,7 +258,7 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
                 mock.patch('boaapi.boa_client.BoaClient.query', return_value=self.mock_job), \
                 mock.patch('boaapi.boa_client.BoaClient.close', return_value=None) as mock_close, \
                 mock.patch('asyncio.sleep', new_callable=AsyncMock, return_value=None), \
-                mock.patch('addons.boa.tasks.handle_error', return_value=None) as mock_handle_error:
+                mock.patch('addons.boa.tasks.handle_boa_error', return_value=None) as mock_handle_boa_error:
             return_value = await submit_to_boa_async(
                 self.host,
                 self.username,
@@ -273,7 +273,7 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
             )
             assert return_value == BoaErrorCode.QUERY_ERROR
             mock_close.assert_called()
-            mock_handle_error.assert_called()
+            mock_handle_boa_error.assert_called()
 
     async def test_output_error_(self):
         self.mock_job.output.side_effect = BoaException()
@@ -285,7 +285,7 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
                 mock.patch('boaapi.boa_client.BoaClient.query', return_value=self.mock_job), \
                 mock.patch('boaapi.boa_client.BoaClient.close', return_value=None) as mock_close, \
                 mock.patch('asyncio.sleep', new_callable=AsyncMock, return_value=None), \
-                mock.patch('addons.boa.tasks.handle_error', return_value=None) as mock_handle_error:
+                mock.patch('addons.boa.tasks.handle_boa_error', return_value=None) as mock_handle_boa_error:
             return_value = await submit_to_boa_async(
                 self.host,
                 self.username,
@@ -301,7 +301,7 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
             self.mock_job.output.assert_called()
             assert return_value == BoaErrorCode.OUTPUT_ERROR
             mock_close.assert_called()
-            mock_handle_error.assert_called()
+            mock_handle_boa_error.assert_called()
 
     async def test_upload_error_conflict(self):
         http_409 = HTTPError(self.host, 409, 'Conflict', HTTPMessage(), None)
@@ -313,7 +313,7 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
                 mock.patch('boaapi.boa_client.BoaClient.query', return_value=self.mock_job), \
                 mock.patch('boaapi.boa_client.BoaClient.close', return_value=None) as mock_close, \
                 mock.patch('asyncio.sleep', new_callable=AsyncMock, return_value=None), \
-                mock.patch('addons.boa.tasks.handle_error', return_value=None) as mock_handle_error:
+                mock.patch('addons.boa.tasks.handle_boa_error', return_value=None) as mock_handle_boa_error:
             return_value = await submit_to_boa_async(
                 self.host,
                 self.username,
@@ -328,7 +328,7 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
             )
             assert return_value == BoaErrorCode.UPLOAD_ERROR_CONFLICT
             mock_close.assert_called()
-            mock_handle_error.assert_called()
+            mock_handle_boa_error.assert_called()
 
     async def test_upload_error_other(self):
         http_503 = HTTPError(self.host, 503, 'Service Unavailable', HTTPMessage(), None)
@@ -340,7 +340,7 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
                 mock.patch('boaapi.boa_client.BoaClient.query', return_value=self.mock_job), \
                 mock.patch('boaapi.boa_client.BoaClient.close', return_value=None) as mock_close, \
                 mock.patch('asyncio.sleep', new_callable=AsyncMock, return_value=None), \
-                mock.patch('addons.boa.tasks.handle_error', return_value=None) as mock_handle_error:
+                mock.patch('addons.boa.tasks.handle_boa_error', return_value=None) as mock_handle_boa_error:
             return_value = await submit_to_boa_async(
                 self.host,
                 self.username,
@@ -355,4 +355,4 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
             )
             assert return_value == BoaErrorCode.UPLOAD_ERROR_OTHER
             mock_close.assert_called()
-            mock_handle_error.assert_called()
+            mock_handle_boa_error.assert_called()
