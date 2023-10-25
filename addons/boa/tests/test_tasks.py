@@ -6,14 +6,31 @@ import mock
 import pytest
 from urllib.error import HTTPError
 
+from addons.boa import settings as boa_settings
 from addons.boa.boa_error_code import BoaErrorCode
-from addons.boa.tasks import submit_to_boa, submit_to_boa_async
+from addons.boa.tasks import submit_to_boa, submit_to_boa_async, handle_boa_error
 from addons.boa.tests.async_mock import AsyncMock
 from osf_tests.factories import AuthUserFactory, ProjectFactory
 from tests.base import OsfTestCase
+from website import settings as osf_settings
+from website.mails import ADDONS_BOA_JOB_COMPLETE, ADDONS_BOA_JOB_FAILURE
 
 
-class TestBoaErrorCode(OsfTestCase):
+class TestBoaErrorHandling(OsfTestCase):
+
+    def setUp(self):
+        super(TestBoaErrorHandling, self).setUp()
+        self.error_message = 'fake-error-message'
+        self.user_username = 'fake-user-username'
+        self.user_fullname = 'fake-user-fullname'
+        self.project_url = 'http://localhost:5000/1a2b3'
+        self.query_file_name = 'fake_boa_script.boa'
+        self.file_full_path = '/fake_boa_folder/fake_boa_script.boa'
+        self.output_file_name = 'fake_boa_script_results.txt'
+        self.job_id = '1a2b3c4d5e6f7g8'
+
+    def tearDown(self):
+        super(TestBoaErrorHandling, self).tearDown()
 
     def test_boa_error_code(self):
         assert BoaErrorCode.NO_ERROR == -1
@@ -23,6 +40,40 @@ class TestBoaErrorCode(OsfTestCase):
         assert BoaErrorCode.UPLOAD_ERROR_CONFLICT == 3
         assert BoaErrorCode.UPLOAD_ERROR_OTHER == 4
         assert BoaErrorCode.OUTPUT_ERROR == 5
+
+    def test_handle_boa_error(self):
+        with mock.patch('addons.boa.tasks.send_mail', return_value=None) as mock_send_mail, \
+                mock.patch('addons.boa.tasks.sentry.log_message', return_value=None) as mock_sentry_log_message, \
+                mock.patch('addons.boa.tasks.logger.error', return_value=None) as mock_logger_error:
+            return_value = handle_boa_error(
+                self.error_message,
+                BoaErrorCode.UNKNOWN,
+                self.user_username,
+                self.user_fullname,
+                self.project_url,
+                self.file_full_path,
+                query_file_name=self.query_file_name,
+                output_file_name=self.output_file_name,
+                job_id=self.job_id
+            )
+            mock_send_mail.assert_called_with(
+                to_addr=self.user_username,
+                mail=ADDONS_BOA_JOB_FAILURE,
+                fullname=self.user_fullname,
+                code=BoaErrorCode.UNKNOWN,
+                message=self.error_message,
+                query_file_name=self.query_file_name,
+                query_file_full_path=self.file_full_path,
+                output_file_name=self.output_file_name,
+                job_id=self.job_id,
+                project_url=self.project_url,
+                boa_job_list_url=boa_settings.BOA_JOB_LIST_URL,
+                boa_support_email=boa_settings.BOA_SUPPORT_EMAIL,
+                osf_support_email=osf_settings.OSF_SUPPORT_EMAIL,
+            )
+            mock_sentry_log_message.assert_called_with(self.error_message, skip_session=True)
+            mock_logger_error.assert_called_with(self.error_message)
+            assert return_value == BoaErrorCode.UNKNOWN
 
 
 class TestSubmitToBoa(OsfTestCase):
