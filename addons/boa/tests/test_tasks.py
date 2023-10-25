@@ -128,14 +128,17 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
         self.user_guid = self.user._id
         self.user_cookie = self.user.get_or_create_cookie()
         self.project_guid = ProjectFactory()._id
+        self.project_url = f'{osf_settings.DOMAIN}{self.project_guid}/'
         self.query_dataset = '2023 Oct / Fake Boa Dataset (small)'
         self.query_file_name = 'fake_boa_script.boa'
+        self.output_file_name = 'fake_boa_script_results.txt'
         self.file_full_path = '/fake_boa_folder/fake_boa_script.boa'
         self.query_download_url = f'http://localhost:7777/v1/resources/{self.project_guid}/providers/osfstorage/1a2b3c4d'
         self.output_upload_url = f'http://localhost:7777/v1/resources/{self.project_guid}/providers/osfstorage/?kind=file'
         self.mock_resp = mock.Mock()
         self.mock_resp.read.return_value = 'fake-boa-query-string'
         self.mock_job = mock.Mock()
+        self.mock_job.id = '1a2b3c4d5e6f7g8'
         self.mock_job.is_running.side_effect = [True, True, True, True, False]
         self.mock_job.refresh.return_value = None
         self.mock_job.compiler_status = CompilerStatus.FINISHED
@@ -169,9 +172,23 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
                 self.output_upload_url,
             )
             assert return_value == BoaErrorCode.NO_ERROR
+            assert self.mock_job.is_running.call_count == 5
+            assert self.mock_job.refresh.call_count == 4
             assert mock_async_sleep.call_count == 4
             mock_close.assert_called()
-            mock_send_mail.assert_called()
+            mock_send_mail.assert_called_with(
+                to_addr=self.user.username,
+                mail=ADDONS_BOA_JOB_COMPLETE,
+                fullname=self.user.fullname,
+                query_file_name=self.query_file_name,
+                query_file_full_path=self.file_full_path,
+                output_file_name=self.output_file_name,
+                job_id=self.mock_job.id,
+                project_url=self.project_url,
+                boa_job_list_url=boa_settings.BOA_JOB_LIST_URL,
+                boa_support_email=boa_settings.BOA_SUPPORT_EMAIL,
+                osf_support_email=osf_settings.OSF_SUPPORT_EMAIL,
+            )
             mock_handle_boa_error.assert_not_called()
 
     async def test_download_error(self):
