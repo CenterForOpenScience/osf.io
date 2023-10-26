@@ -4,6 +4,7 @@ from boaapi.status import CompilerStatus, ExecutionStatus
 from http.client import HTTPMessage
 import mock
 import pytest
+from unittest.mock import ANY
 from urllib.error import HTTPError
 
 from addons.boa import settings as boa_settings
@@ -210,7 +211,15 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
                 self.output_upload_url,
             )
             assert return_value == BoaErrorCode.UNKNOWN
-            mock_handle_boa_error.assert_called()
+            mock_handle_boa_error.assert_called_with(
+                ANY,
+                BoaErrorCode.UNKNOWN,
+                self.user.username,
+                self.user.fullname,
+                self.project_url,
+                self.file_full_path,
+                query_file_name=self.query_file_name,
+            )
 
     async def test_login_error(self):
         with mock.patch('osf.models.user.OSFUser.objects.get', return_value=self.user), \
@@ -231,10 +240,18 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
                 self.query_download_url,
                 self.output_upload_url,
             )
-            mock_login.assert_called()
             assert return_value == BoaErrorCode.AUTHN_ERROR
+            mock_login.assert_called_with(self.username, self.password)
             mock_close.assert_called()
-            mock_handle_boa_error.assert_called()
+            mock_handle_boa_error.assert_called_with(
+                ANY,
+                BoaErrorCode.AUTHN_ERROR,
+                self.user.username,
+                self.user.fullname,
+                self.project_url,
+                self.file_full_path,
+                query_file_name=self.query_file_name,
+            )
 
     async def test_data_set_error(self):
         with mock.patch('osf.models.user.OSFUser.objects.get', return_value=self.user), \
@@ -256,10 +273,18 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
                 self.query_download_url,
                 self.output_upload_url,
             )
-            mock_get_dataset.assert_called()
             assert return_value == BoaErrorCode.UNKNOWN
+            mock_get_dataset.assert_called()
             mock_close.assert_called()
-            mock_handle_boa_error.assert_called()
+            mock_handle_boa_error.assert_called_with(
+                ANY,
+                BoaErrorCode.UNKNOWN,
+                self.user.username,
+                self.user.fullname,
+                self.project_url,
+                self.file_full_path,
+                query_file_name=self.query_file_name,
+            )
 
     async def test_submit_error(self):
         with mock.patch('osf.models.user.OSFUser.objects.get', return_value=self.user), \
@@ -282,10 +307,18 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
                 self.query_download_url,
                 self.output_upload_url,
             )
-            mock_query.assert_called()
             assert return_value == BoaErrorCode.UNKNOWN
+            mock_query.assert_called()
             mock_close.assert_called()
-            mock_handle_boa_error.assert_called()
+            mock_handle_boa_error.assert_called_with(
+                ANY,
+                BoaErrorCode.UNKNOWN,
+                self.user.username,
+                self.user.fullname,
+                self.project_url,
+                self.file_full_path,
+                query_file_name=self.query_file_name,
+            )
 
     async def test_compile_error(self):
         self.mock_job.compiler_status = CompilerStatus.ERROR
@@ -313,7 +346,16 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
             )
             assert return_value == BoaErrorCode.QUERY_ERROR
             mock_close.assert_called()
-            mock_handle_boa_error.assert_called()
+            mock_handle_boa_error.assert_called_with(
+                ANY,
+                BoaErrorCode.QUERY_ERROR,
+                self.user.username,
+                self.user.fullname,
+                self.project_url,
+                self.file_full_path,
+                query_file_name=self.query_file_name,
+                job_id=self.mock_job.id,
+            )
 
     async def test_execute_error(self):
         self.mock_job.compiler_status = CompilerStatus.FINISHED
@@ -341,7 +383,16 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
             )
             assert return_value == BoaErrorCode.QUERY_ERROR
             mock_close.assert_called()
-            mock_handle_boa_error.assert_called()
+            mock_handle_boa_error.assert_called_with(
+                ANY,
+                BoaErrorCode.QUERY_ERROR,
+                self.user.username,
+                self.user.fullname,
+                self.project_url,
+                self.file_full_path,
+                query_file_name=self.query_file_name,
+                job_id=self.mock_job.id,
+            )
 
     async def test_output_error_(self):
         self.mock_job.output.side_effect = BoaException()
@@ -366,10 +417,19 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
                 self.query_download_url,
                 self.output_upload_url,
             )
-            self.mock_job.output.assert_called()
             assert return_value == BoaErrorCode.OUTPUT_ERROR
+            self.mock_job.output.assert_called()
             mock_close.assert_called()
-            mock_handle_boa_error.assert_called()
+            mock_handle_boa_error.assert_called_with(
+                ANY,
+                BoaErrorCode.OUTPUT_ERROR,
+                self.user.username,
+                self.user.fullname,
+                self.project_url,
+                self.file_full_path,
+                query_file_name=self.query_file_name,
+                job_id=self.mock_job.id,
+            )
 
     async def test_upload_error_conflict(self):
         http_409 = HTTPError(self.host, 409, 'Conflict', HTTPMessage(), None)
@@ -396,7 +456,17 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
             )
             assert return_value == BoaErrorCode.UPLOAD_ERROR_CONFLICT
             mock_close.assert_called()
-            mock_handle_boa_error.assert_called()
+            mock_handle_boa_error.assert_called_with(
+                ANY,
+                BoaErrorCode.UPLOAD_ERROR_CONFLICT,
+                self.user.username,
+                self.user.fullname,
+                self.project_url,
+                self.file_full_path,
+                query_file_name=self.query_file_name,
+                output_file_name=self.output_file_name,
+                job_id=self.mock_job.id,
+            )
 
     async def test_upload_error_other(self):
         http_503 = HTTPError(self.host, 503, 'Service Unavailable', HTTPMessage(), None)
@@ -423,4 +493,14 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
             )
             assert return_value == BoaErrorCode.UPLOAD_ERROR_OTHER
             mock_close.assert_called()
-            mock_handle_boa_error.assert_called()
+            mock_handle_boa_error.assert_called_with(
+                ANY,
+                BoaErrorCode.UPLOAD_ERROR_OTHER,
+                self.user.username,
+                self.user.fullname,
+                self.project_url,
+                self.file_full_path,
+                query_file_name=self.query_file_name,
+                output_file_name=self.output_file_name,
+                job_id=self.mock_job.id,
+            )
