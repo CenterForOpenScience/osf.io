@@ -1,9 +1,8 @@
 from abc import ABC
 
-from addons.base.tests.base import AddonTestCase
+from addons.base.tests.base import AddonTestCase, OAuthAddonTestCaseMixin
 from addons.boa.models import BoaProvider, BoaSerializer, NodeSettings
 from addons.boa.tests.factories import BoaAccountFactory, BoaNodeSettingsFactory, BoaUserSettingsFactory
-from framework.auth import Auth
 
 
 class BoaAddonTestCaseBaseMixin(ABC):
@@ -22,7 +21,7 @@ class BoaAddonTestCaseBaseMixin(ABC):
     UserSettingsFactory = BoaUserSettingsFactory
 
 
-class BoaBasicAuthAddonTestCase(BoaAddonTestCaseBaseMixin, AddonTestCase):
+class BoaBasicAuthAddonTestCase(BoaAddonTestCaseBaseMixin, OAuthAddonTestCaseMixin, AddonTestCase):
 
     def __init__(self, *args, **kwargs):
         super(BoaBasicAuthAddonTestCase, self).__init__(*args, **kwargs)
@@ -30,11 +29,7 @@ class BoaBasicAuthAddonTestCase(BoaAddonTestCaseBaseMixin, AddonTestCase):
         self.external_account = None
 
     def set_user_settings(self, settings):
-        self.external_account = self.ExternalAccountFactory()
-        self.external_account.save()
-        self.user.external_accounts.add(self.external_account)
-        self.user.save()
-        self.auth = Auth(self.user)
+        super(BoaBasicAuthAddonTestCase, self).set_user_settings(settings)
 
     def set_node_settings(self, settings):
-        self.user_settings.grant_oauth_access(self.project, self.external_account)
+        super(BoaBasicAuthAddonTestCase, self).set_node_settings(settings)
