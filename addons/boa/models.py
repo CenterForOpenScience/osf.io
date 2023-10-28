@@ -62,7 +62,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         return self.folder_id
 
     def set_folder(self, folder, auth=None):
-        """Not applicable to cloud computing add-on."""
+        """Not applicable to remote computing add-on."""
         raise NotApplicableError
 
     def fetch_folder_name(self):
@@ -81,15 +81,15 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         self.clear_auth()  # Also performs a .save()
 
     def serialize_waterbutler_credentials(self):
-        """Not applicable to cloud computing add-on."""
+        """Not applicable to remote computing add-on."""
         raise NotApplicableError
 
     def serialize_waterbutler_settings(self):
-        """Not applicable to cloud computing add-on."""
+        """Not applicable to remote computing add-on."""
         raise NotApplicableError
 
     def create_waterbutler_log(self, *args, **kwargs):
-        """Not applicable to cloud computing add-on."""
+        """Not applicable to remote computing add-on."""
         raise NotApplicableError
 
     def after_delete(self, user):
@@ -101,5 +101,5 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         self.save()
 
     def get_folders(self, **kwargs):
-        """Not applicable to cloud computing add-on."""
+        """Not applicable to remote computing add-on."""
         raise NotApplicableError

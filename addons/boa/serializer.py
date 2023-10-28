@@ -12,7 +12,7 @@ class BoaSerializer(StorageAddonSerializer):
     addon_short_name = 'boa'
 
     def serialized_folder(self, node_settings):
-        """Not applicable to cloud-computing add-ons"""
+        """Not applicable to remote computing add-ons"""
         raise NotApplicableError
 
     def credentials_are_valid(self, user_settings, client=None):
