@@ -141,7 +141,7 @@ class StorageAddonSerializer(OAuthAddonSerializer):
     REQUIRED_URLS = ('auth', 'importAuth', 'folders', 'files', 'config', 'deauthorize', 'accounts')
 
     @abc.abstractmethod
-    def credentials_are_valid(self, user_settings):
+    def credentials_are_valid(self, user_settings, client=None):
         pass
 
     @abc.abstractmethod
@@ -154,7 +154,7 @@ class StorageAddonSerializer(OAuthAddonSerializer):
         current_user_settings = current_user.get_addon(self.addon_short_name)
         user_is_owner = user_settings is not None and user_settings.owner == current_user
 
-        valid_credentials = self.credentials_are_valid(user_settings, client)
+        valid_credentials = self.credentials_are_valid(user_settings, client=client)
 
         result = {
             'userIsOwner': user_is_owner,
