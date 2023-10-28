@@ -1,7 +1,9 @@
 from boaapi.boa_client import BoaClient, BOA_API_ENDPOINT, BoaException
 
+from addons.base.exceptions import NotApplicableError
 from addons.base.serializer import StorageAddonSerializer
 from addons.boa.settings import DEFAULT_HOSTS
+from framework import sentry
 from website.util import web_url_for
 
 
@@ -10,12 +12,13 @@ class BoaSerializer(StorageAddonSerializer):
     addon_short_name = 'boa'
 
     def serialized_folder(self, node_settings):
-        # required by superclass, not actually used
-        return None
+        """Not applicable to cloud-computing add-ons"""
+        raise NotApplicableError
 
     def credentials_are_valid(self, user_settings, client=None):
-        node = self.node_settings
-        external_account = node.external_account
+        if client is not None:
+            sentry.log_message('Client ignored for Boa Serializer in credentials_are_valid()')
+        external_account = self.node_settings.external_account
         if external_account is None:
             return False
         provider = self.node_settings.oauth_provider(external_account)
@@ -60,6 +63,8 @@ class BoaSerializer(StorageAddonSerializer):
         return result
 
     def serialize_settings(self, node_settings, current_user, client=None):
-        ret = super(BoaSerializer, self).serialize_settings(node_settings, current_user, client)
+        if client is not None:
+            sentry.log_message('Client ignored for Boa Serializer in serialize_settings()')
+        ret = super(BoaSerializer, self).serialize_settings(node_settings, current_user, client=client)
         ret['hosts'] = DEFAULT_HOSTS
         return ret
