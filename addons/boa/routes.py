@@ -1,9 +1,6 @@
-# -*- coding: utf-8 -*-
+from addons.boa import views
 from framework.routing import Rule, json_renderer
 
-from addons.boa import views
-
-# JSON endpoints
 api_routes = {
     'rules': [
         Rule(
@@ -22,21 +19,18 @@ api_routes = {
             json_renderer,
         ),
         Rule(
-            ['/project/<pid>/boa/settings/',
-             '/project/<pid>/node/<nid>/boa/settings/'],
-            'put',
-            views.boa_set_config,
-            json_renderer
-        ),
-        Rule(
-            ['/project/<pid>/boa/settings/',
-             '/project/<pid>/node/<nid>/boa/settings/'],
+            [
+                '/project/<pid>/boa/settings/',
+                '/project/<pid>/node/<nid>/boa/settings/'
+            ],
             'get',
             views.boa_get_config,
             json_renderer
         ),
         Rule(
-            ['/settings/boa/accounts/'],
+            [
+                '/settings/boa/accounts/'
+            ],
             'post',
             views.boa_add_user_account,
             json_renderer
@@ -50,14 +44,6 @@ api_routes = {
             views.boa_import_auth,
             json_renderer
         ),
-        # NOTE: not for Boa
-        # Rule(
-        #     ['/project/<pid>/boa/folders/',
-        #      '/project/<pid>/node/<nid>/boa/folders/'],
-        #     'get',
-        #     views.boa_folder_list,
-        #     json_renderer
-        # ),
         Rule(
             [
                 '/project/<pid>/boa/submit-job/',

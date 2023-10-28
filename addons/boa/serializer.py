@@ -1,9 +1,8 @@
+from boaapi.boa_client import BoaClient, BOA_API_ENDPOINT, BoaException
+
 from addons.base.serializer import StorageAddonSerializer
 from addons.boa.settings import DEFAULT_HOSTS
 from website.util import web_url_for
-
-from boaapi.boa_client import BoaClient, BOA_API_ENDPOINT
-from boaapi.util import BoaException
 
 
 class BoaSerializer(StorageAddonSerializer):
@@ -22,15 +21,16 @@ class BoaSerializer(StorageAddonSerializer):
         provider = self.node_settings.oauth_provider(external_account)
 
         try:
-            boa = BoaClient(endpoint=BOA_API_ENDPOINT)
-            boa.login(provider.username, provider.password)
-            boa.close()
+            boa_client = BoaClient(endpoint=BOA_API_ENDPOINT)
+            boa_client.login(provider.username, provider.password)
+            boa_client.close()
             return True
         except BoaException:
             return False
 
     @property
     def addon_serialized_urls(self):
+
         node = self.node_settings.owner
         user_settings = self.node_settings.user_settings or self.user_settings
 
@@ -39,15 +39,12 @@ class BoaSerializer(StorageAddonSerializer):
             'accounts': node.api_url_for('boa_account_list'),
             'importAuth': node.api_url_for('boa_import_auth'),
             'deauthorize': node.api_url_for('boa_deauthorize_node'),
-            # 'folders': node.api_url_for('boa_folder_list'),
             'folders': None,
-            # 'files': node.web_url_for('collect_file_trees'),
             'files': None,
-            'config': node.api_url_for('boa_set_config'),
+            'config': None,
         }
         if user_settings:
-            result['owner'] = web_url_for('profile_view_id',
-                                          uid=user_settings.owner._id)
+            result['owner'] = web_url_for('profile_view_id', uid=user_settings.owner._id)
         return result
 
     @property
