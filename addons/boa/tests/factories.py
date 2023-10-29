@@ -12,7 +12,7 @@ class BoaAccountFactory(ExternalAccountFactory):
 
     provider = 'boa'
     provider_name = 'Fake Boa Provider'
-    provider_id = f'{BOA_HOST}:{BOA_USERNAME}'
+    provider_id = Sequence(lambda n: '{0}:{1}-{2}'.format(BOA_HOST, BOA_USERNAME, n))
     profile_url = Sequence(lambda n: 'http://localhost:9999/{0}/boa'.format(n))
     oauth_secret = Sequence(lambda n: 'secret-{0}'.format(n))
     oauth_key = BOA_PASSWORD

@@ -3,7 +3,7 @@ import pytest
 from rest_framework import status as http_status
 
 from addons.base.tests.views import OAuthAddonAuthViewsTestCaseMixin, OAuthAddonConfigViewsTestCaseMixin
-from addons.boa.tests.factories import BOA_HOST, BOA_USERNAME, BOA_PASSWORD
+from addons.boa.tests.factories import BOA_HOST, BOA_PASSWORD
 from addons.boa.tests.utils import BoaBasicAuthAddonTestCase
 from addons.boa.boa_error_code import BoaErrorCode
 from api.base.utils import waterbutler_api_url_for
@@ -248,7 +248,7 @@ class TestBoaSubmitViews(BoaBasicAuthAddonTestCase, OsfTestCase):
             assert res.status_code == http_status.HTTP_200_OK
             mock_submit_s.assert_called_with(
                 BOA_HOST,
-                BOA_USERNAME,
+                mock.ANY,
                 BOA_PASSWORD,
                 self.user._id,
                 self.project._id,
@@ -267,7 +267,7 @@ class TestBoaSubmitViews(BoaBasicAuthAddonTestCase, OsfTestCase):
             assert res.status_code == http_status.HTTP_200_OK
             mock_submit_s.assert_called_with(
                 BOA_HOST,
-                BOA_USERNAME,
+                mock.ANY,
                 BOA_PASSWORD,
                 self.user._id,
                 self.project._id,
