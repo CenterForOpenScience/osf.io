@@ -96,7 +96,7 @@ def boa_submit_job(node_addon, user_addon, **kwargs):
     if is_addon_root:
         base_url = project_node.osfstorage_region.waterbutler_url
         parent_wb_url = waterbutler_api_url_for(project_guid, 'osfstorage', _internal=True, base_url=base_url)
-        output_upload_url = f'{parent_wb_url}?kind=file&name='
+        output_upload_url = f'{parent_wb_url}?kind=file'
     else:
         output_upload_url = req_params['parent']['links']['upload'].replace(osf_settings.WATERBUTLER_URL,
                                                                             osf_settings.WATERBUTLER_INTERNAL_URL)
