@@ -1,19 +1,26 @@
-from rest_framework import status as http_status
-from future.moves.urllib.parse import urlparse, urljoin, parse_qs
-
+from future.moves.urllib.parse import urlparse, parse_qs
 import mock
+from nose.tools import *  # noqa
 import responses
+from rest_framework import status as http_status
+
 from addons.base.tests.base import OAuthAddonTestCaseMixin
 from framework.auth import Auth
 from framework.exceptions import HTTPError
-from nose.tools import (assert_equal, assert_false, assert_in, assert_is_none,
-                        assert_not_equal, assert_raises, assert_true)
 from osf_tests.factories import AuthUserFactory, ProjectFactory
 from osf.utils import permissions
 from website.util import api_url_for, web_url_for
 
 
 class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
+
+    @property
+    def ADDON_SHORT_NAME(self):
+        raise NotImplementedError()
+
+    @property
+    def ExternalAccountFactory(self):
+        raise NotImplementedError()
 
     @property
     def Provider(self):
@@ -68,7 +75,20 @@ class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         res = self.app.delete(url, auth=other_user.auth, expect_errors=True)
         assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
 
+
 class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
+
+    def __init__(self, *args, **kwargs):
+        super(OAuthAddonConfigViewsTestCaseMixin,self).__init__(*args, **kwargs)
+        self.node_settings = None
+
+    @property
+    def ADDON_SHORT_NAME(self):
+        raise NotImplementedError()
+
+    @property
+    def ExternalAccountFactory(self):
+        raise NotImplementedError()
 
     @property
     def folder(self):
@@ -218,7 +238,34 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         last_log = self.project.logs.latest()
         assert_equal(last_log.action, '{0}_node_deauthorized'.format(self.ADDON_SHORT_NAME))
 
+
 class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMixin):
+
+    def __init__(self, *args, **kwargs):
+        super(OAuthAddonConfigViewsTestCaseMixin,self).__init__(*args, **kwargs)
+        self.mock_verify = None
+        self.node_settings = None
+        self.provider = None
+
+    @property
+    def ADDON_SHORT_NAME(self):
+        raise NotImplementedError()
+
+    @property
+    def ExternalAccountFactory(self):
+        raise NotImplementedError()
+
+    @property
+    def folder(self):
+        raise NotImplementedError()
+
+    @property
+    def Serializer(self):
+        raise NotImplementedError()
+
+    @property
+    def client(self):
+        raise NotImplementedError()
 
     @property
     def citationsProvider(self):
