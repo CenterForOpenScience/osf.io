@@ -15,7 +15,7 @@ from addons.owncloud.tests.utils import OwnCloudAddonTestCase
 
 pytestmark = pytest.mark.django_db
 
-class TestAuthViews(OAuthAddonAuthViewsTestCaseMixin, OwnCloudAddonTestCase, OsfTestCase):
+class TestAuthViews(OwnCloudAddonTestCase, OAuthAddonAuthViewsTestCaseMixin, OsfTestCase):
 
     @property
     def Provider(self):
