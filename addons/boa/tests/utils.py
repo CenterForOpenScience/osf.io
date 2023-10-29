@@ -1,11 +1,9 @@
-from abc import ABC
-
 from addons.base.tests.base import AddonTestCase, OAuthAddonTestCaseMixin
 from addons.boa.models import BoaProvider, BoaSerializer, NodeSettings
 from addons.boa.tests.factories import BoaAccountFactory, BoaNodeSettingsFactory, BoaUserSettingsFactory
 
 
-class BoaAddonTestCaseBaseMixin(ABC):
+class BoaAddonTestCaseBaseMixin(object):
 
     short_name = 'boa'
     full_name = 'Boa'
