@@ -3,10 +3,14 @@ import pytest
 from rest_framework import status as http_status
 
 from addons.base.tests.views import OAuthAddonAuthViewsTestCaseMixin, OAuthAddonConfigViewsTestCaseMixin
+from addons.boa.tests.factories import BOA_HOST, BOA_USERNAME, BOA_PASSWORD
 from addons.boa.tests.utils import BoaBasicAuthAddonTestCase
+from addons.boa.boa_error_code import BoaErrorCode
+from api.base.utils import waterbutler_api_url_for
 from osf_tests.factories import AuthUserFactory
 from osf.utils import permissions
 from tests.base import OsfTestCase
+from website import settings as osf_settings
 
 pytestmark = pytest.mark.django_db
 
@@ -188,3 +192,88 @@ class TestConfigViews(BoaBasicAuthAddonTestCase, OAuthAddonConfigViewsTestCaseMi
         with mock.patch.object(type(self.Serializer()), 'credentials_are_valid', return_value=False):
             res = self.app.get(url, auth=user_read_only.auth, expect_errors=True)
             assert res.status_code == http_status.HTTP_403_FORBIDDEN
+
+
+class TestBoaSubmitViews(BoaBasicAuthAddonTestCase, OsfTestCase):
+
+    def setUp(self):
+        super(TestBoaSubmitViews, self).setUp()
+        self.folder_name = 'fake_boa_folder'
+        self.file_name = 'fake_boa_file.boa'
+        self.dataset = 'fake_boa_dataset'
+        self.download_url = f'{osf_settings.WATERBUTLER_URL}/v1/resources/{self.project._primary_key}/' \
+                            f'providers/osfstorage/1a2b3c4d5e6f7g8'
+        self.upload_url = f'{osf_settings.WATERBUTLER_URL}/v1/resources/{self.project._id}/' \
+                          f'providers/osfstorage/8g7f6e5d4c3b2a1?kind=file'
+        self.download_url_internal = f'{osf_settings.WATERBUTLER_INTERNAL_URL}/v1/resources/' \
+                                     f'{self.project._primary_key}/providers/osfstorage/1a2b3c4d5e6f7g8'
+        self.upload_url_internal = f'{osf_settings.WATERBUTLER_INTERNAL_URL}/v1/resources/' \
+                                   f'{self.project._id}/providers/osfstorage/8g7f6e5d4c3b2a1?kind=file'
+        self.payload_sub_folder = {
+            'data': {
+                'links': {'download': self.download_url, },
+                'name': self.file_name,
+                'materialized': f'/{self.folder_name}/{self.file_name}',
+                'nodeId': self.project._id,
+            },
+            'parent': {
+                'links': {'upload': self.upload_url, },
+            },
+            'dataset': self.dataset,
+        }
+        self.payload_addon_root = {
+            'data': {
+                'links': {'download': self.download_url, },
+                'name': self.file_name,
+                'materialized': f'/{self.file_name}',
+                'nodeId': self.project._id,
+            },
+            'parent': {
+                'isAddonRoot': True,
+            },
+            'dataset': self.dataset,
+        }
+
+    def tearDown(self):
+        super(TestBoaSubmitViews, self).tearDown()
+
+    def test_boa_submit_job_from_addon_root(self):
+        with mock.patch('addons.boa.tasks.submit_to_boa.s', return_value=BoaErrorCode.NO_ERROR) as mock_submit_s:
+            self.node_settings.set_auth(self.external_account, self.user)
+            base_url = self.project.osfstorage_region.waterbutler_url
+            addon_root_url = waterbutler_api_url_for(self.project._id, 'osfstorage', _internal=True, base_url=base_url)
+            upload_url_root = f'{addon_root_url}?kind=file'
+            url = self.project.api_url_for('boa_submit_job')
+            res = self.app.post_json(url, self.payload_addon_root, auth=self.user.auth)
+            assert res.status_code == http_status.HTTP_200_OK
+            mock_submit_s.assert_called_with(
+                BOA_HOST,
+                BOA_USERNAME,
+                BOA_PASSWORD,
+                self.user._id,
+                self.project._id,
+                self.dataset,
+                self.file_name,
+                f'/{self.file_name}',
+                self.download_url_internal,
+                upload_url_root,
+            )
+
+    def test_boa_submit_job_from_sub_folder(self):
+        with mock.patch('addons.boa.tasks.submit_to_boa.s', return_value=BoaErrorCode.NO_ERROR) as mock_submit_s:
+            self.node_settings.set_auth(self.external_account, self.user)
+            url = self.project.api_url_for('boa_submit_job')
+            res = self.app.post_json(url, self.payload_sub_folder, auth=self.user.auth)
+            assert res.status_code == http_status.HTTP_200_OK
+            mock_submit_s.assert_called_with(
+                BOA_HOST,
+                BOA_USERNAME,
+                BOA_PASSWORD,
+                self.user._id,
+                self.project._id,
+                self.dataset,
+                self.file_name,
+                f'/{self.folder_name}/{self.file_name}',
+                self.download_url_internal,
+                self.upload_url_internal,
+            )
