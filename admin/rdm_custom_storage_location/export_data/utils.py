@@ -593,6 +593,7 @@ def copy_file_to_other_storage(export_data, destination_node_id, destination_pro
         'rename': file_name,
         'resource': destination_node_id,
         'provider': destination_provider,
+        'synchronous': True,
     }
 
     try:

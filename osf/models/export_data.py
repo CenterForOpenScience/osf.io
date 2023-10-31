@@ -505,7 +505,8 @@ class ExportData(base.BaseModel):
             'conflict': 'warn',
             'rename': file_name,
             'resource': node_id,
-            'provider': location_provider
+            'provider': location_provider,
+            'synchronous': True,
         }
 
         return requests.post(copy_file_url,
