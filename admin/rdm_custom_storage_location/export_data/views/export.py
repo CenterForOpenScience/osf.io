@@ -3,6 +3,7 @@ import copy
 import inspect  # noqa
 import logging
 import os
+import time
 import traceback
 from celery import states
 from celery.contrib.abortable import AbortableAsyncResult, ABORTED
@@ -154,7 +155,8 @@ class ExportDataActionView(ExportDataBaseActionView):
         # create a new task
         cookies = request.COOKIES
         cookie = request.user.get_or_create_cookie().decode()
-        task = tasks.run_export_data_process.delay(cookies, export_data.id, cookie=cookie)
+        task = tasks.run_export_data_process.delay(
+            cookies, export_data.id, location.id, source_storage.id, cookie=cookie)
         # try to replace by the exporting task
         export_data_set = ExportData.objects.filter(pk=export_data.id)
         export_data_set.update(
@@ -170,144 +172,182 @@ class ExportDataActionView(ExportDataBaseActionView):
         }, status=status.HTTP_200_OK)
 
 
-def export_data_process(task, cookies, export_data_id, **kwargs):
+def export_data_process(task, cookies, export_data_id, location_id, source_id, **kwargs):
     logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+    _start_time = time.time()
     try:
+        # [Important] check process status before each step
+        _prev_time = check_export_data_process_status(
+            _start_time, task, export_data_id, location_id, source_id)
         # get corresponding export data record
-        export_data_set = ExportData.objects.filter(pk=export_data_id)
-        export_data = export_data_set.first()
+        export_data = ExportData.objects.get(pk=export_data_id)
 
-        if export_data is None:
-            # missing info to create a new process
-            raise ExportDataTaskException(MSG_EXPORT_REMOVED)
-
-        # start process
+        # start process - update record in DB
         export_data.task_id = task.request.id
         export_data.status = ExportData.STATUS_RUNNING
         export_data.save()
+        logger.info(f'Export process status is changed to {export_data.status}.'
+                    f' ({time.time() - _prev_time})s')
+
+        # [Important] check process status before each step
+        _prev_time = check_export_data_process_status(
+            _prev_time, task, export_data_id, location_id, source_id)
 
         # extract file information
         export_data_json, file_info_json = export_data.extract_file_information_json_from_source_storage()
+        logger.info(f'Extracted file information.'
+                    f' ({time.time() - _prev_time})s')
 
-        if task.is_aborted():  # check before each steps
-            raise ExportDataTaskException(MSG_EXPORT_ABORTED)
+        # [Important] check process status before each step
+        _prev_time = check_export_data_process_status(
+            _prev_time, task, export_data_id, location_id, source_id)
+
         # create export data process folder
         logger.debug(f'creating export data process folder')
         response = export_data.create_export_data_folder(cookies, **kwargs)
         if not task.is_aborted() and response.status_code != 201:
             kwargs['is_rollback'] = True
-            return export_data_rollback_process(task, cookies, export_data_id, **kwargs)
-        logger.debug(f'created export data process folder')
+            return export_data_rollback_process(task, cookies, export_data_id, location_id, **kwargs)
+        logger.info(f'Created export data process folder.'
+                    f' ({time.time() - _prev_time})s')
 
         # export target file and accompanying data
-        if task.is_aborted():  # check before each steps
-            raise ExportDataTaskException(MSG_EXPORT_ABORTED)
+
+        # [Important] check process status before each step
+        _prev_time = check_export_data_process_status(
+            _prev_time, task, export_data_id, location_id, source_id)
+
         # create 'files' folder
         logger.debug(f'creating files folder')
         response = export_data.create_export_data_files_folder(cookies, **kwargs)
         if not task.is_aborted() and response.status_code != 201:
             kwargs['is_rollback'] = True
-            return export_data_rollback_process(task, cookies, export_data_id, **kwargs)
-        logger.debug(f'created files folder')
+            return export_data_rollback_process(task, cookies, export_data_id, location_id, **kwargs)
+        logger.info(f'Created files folder.'
+                    f' ({time.time() - _prev_time})s')
 
-        if task.is_aborted():  # check before each steps
-            raise ExportDataTaskException(MSG_EXPORT_ABORTED)
-        # upload file versions
-        logger.debug(f'uploading file versions')
+        # [Important] check process status before each step
+        _prev_time = check_export_data_process_status(
+            _prev_time, task, export_data_id, location_id, source_id)
+
+        logger.debug(f'prepare file versions data to upload')
         file_versions = export_data.get_source_file_versions_min(file_info_json)
-        # logger.debug(f'file_versions: {file_versions}')
         _length = len(file_versions)
+        logger.info(f'There is {_length} file versions needed to upload to storage destination.'
+                    f' ({time.time() - _prev_time})s')
+
+        # upload file versions
+        logger.debug(f'upload file versions')
         # cached the filename in hash value
         created_filename_list = []
         files_versions_not_found = {}
-        institution_guid = ''
-        if export_data_json and 'institution' in export_data_json:
-            institution_guid = export_data_json.get('institution').get('guid')
         for index, file in enumerate(file_versions):
             logger.debug(f'[{1 + index}/{_length}] file: {file}')
             project_id, provider, file_path, version, file_name, file_id = file
+
             # prevent uploading duplicate file_name in hash value
             if file_name in created_filename_list:
-                logger.debug(f'file created -> ignore')
+                logger.debug(f'Ignore uploaded file')
                 continue
+
+            # [Important] check process status before each step
+            _prev_time = check_export_data_process_status(
+                _prev_time, task, export_data_id, location_id, source_id)
+
             kwargs.update({'version': version})
-            # kwargs.setdefault('version', version)
-            if task.is_aborted():  # check before each steps
-                raise ExportDataTaskException(MSG_EXPORT_ABORTED)
             # copy data file from source storage to location storage
             response = export_data.copy_export_data_file_to_location(
                 cookies, project_id, provider, file_path, file_name, **kwargs)
             # 201: created -> update cache list
             if response.status_code == 201:
                 created_filename_list.append(file_name)
+                logger.debug(f'Upload file successfully.'
+                             f' ({time.time() - _prev_time})s')
             else:
                 if file_id not in files_versions_not_found:
                     files_versions_not_found[file_id] = [version]
                 else:
                     files_versions_not_found[file_id].append(version)
+                logger.debug(f'File upload failed.'
+                             f' ({time.time() - _prev_time})s')
                 continue
+        logger.info(f'Uploaded all {_length} file versions.'
+                    f' Status={response.status_code}.'
+                    f' ({time.time() - _prev_time})s')
+
+        # [Important] check process status before each step
+        _prev_time = check_export_data_process_status(
+            _prev_time, task, export_data_id, location_id, source_id)
 
         # Separate the failed file list from the file_info_json
+        logger.debug('Separate the failed file list from the file_info_json')
         files = file_info_json.get('files', [])
         files_not_found, sub_size, sub_files_numb = separate_failed_files(files, files_versions_not_found)
         export_data_json['size'] -= sub_size
         export_data_json['files_numb'] -= sub_files_numb
-        logger.debug(f'uploaded file versions')
+        logger.info(f'Separated the failed file list from the file_info_json.'
+                    f' ({time.time() - _prev_time})s')
+
+        # [Important] check process status before each step
+        _prev_time = check_export_data_process_status(
+            _prev_time, task, export_data_id, location_id, source_id)
 
         # temporary file
         temp_file_path = export_data.export_data_temp_file_path
+        logger.debug(f'created temporary file')
 
-        if task.is_aborted():  # check before each steps
-            raise ExportDataTaskException(MSG_EXPORT_ABORTED)
-        # create files' information file
-        logger.debug(f'creating files information file')
+        # create files' information JSON file
+        logger.debug(f'creating files information JSON file')
         write_json_file(file_info_json, temp_file_path)
         response = export_data.upload_file_info_file(cookies, temp_file_path, **kwargs)
         if not task.is_aborted() and response.status_code != 201:
             kwargs['is_rollback'] = True
             return export_data_rollback_process(task, cookies, export_data_id, **kwargs)
-        logger.debug(f'created files information file')
+        logger.info(f'Created files information JSON file.'
+                    f' ({time.time() - _prev_time})s')
 
+        # [Important] check process status before each step
+        _prev_time = check_export_data_process_status(
+            _prev_time, task, export_data_id, location_id, source_id)
+
+        # create export data JSON file
+        logger.debug(f'creating export data JSON file')
         process_end = timezone.make_naive(timezone.now(), timezone.utc)
-
-        if task.is_aborted():  # check before each steps
-            raise ExportDataTaskException(MSG_EXPORT_ABORTED)
-        # create export data file
-        logger.debug(f'creating export data file')
         export_data_json['process_end'] = process_end.strftime('%Y-%m-%d %H:%M:%S')
         write_json_file(export_data_json, temp_file_path)
         response = export_data.upload_export_data_file(cookies, temp_file_path, **kwargs)
         if not task.is_aborted() and response.status_code != 201:
             kwargs['is_rollback'] = True
             return export_data_rollback_process(task, cookies, export_data_id, **kwargs)
-        logger.debug(f'created export data file')
+        logger.info(f'Created export data JSON file.'
+                    f' ({time.time() - _prev_time})s')
 
         # remove temporary file
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
         logger.debug(f'removed temporary file')
 
-        if task.is_aborted():  # check before each steps
-            raise ExportDataTaskException(MSG_EXPORT_ABORTED)
-        # re-check status to ensure that it is not in stopping process
-        export_data_set = ExportData.objects.filter(pk=export_data_id)
-        export_data = export_data_set.first()
+        # [Important] check process status before each step
+        _prev_time = check_export_data_process_status(
+            _prev_time, task, export_data_id, location_id, source_id)
+        # get corresponding export data record
+        export_data = ExportData.objects.get(pk=export_data_id)
 
-        if export_data is None:
-            raise ExportDataTaskException(MSG_EXPORT_REMOVED)
+        # ignore condition `if export_data.status == ExportData.STATUS_RUNNING:`
+        # complete process - update record in DB
+        export_data.status = ExportData.STATUS_COMPLETED
+        export_data.process_end = process_end
+        export_data.export_file = export_data.get_export_data_file_path()
+        export_data.project_number = export_data_json.get('projects_numb', 0)
+        export_data.file_number = export_data_json.get('files_numb', 0)
+        export_data.total_size = export_data_json.get('size', 0)
+        export_data.save()
+        logger.info(f'Export process status is changed to {export_data.status}.'
+                    f' ({time.time() - _prev_time})s')
 
-        if export_data.status == ExportData.STATUS_RUNNING:
-            # complete process
-            export_data_set.update(
-                status=ExportData.STATUS_COMPLETED,
-                process_end=process_end,
-                export_file=export_data.get_export_data_file_path(),
-                project_number=export_data_json.get('projects_numb', 0),
-                file_number=export_data_json.get('files_numb', 0),
-                total_size=export_data_json.get('size', 0),
-            )
-        logger.debug(f'completed process')
-        export_data = export_data_set.first()
+        institution_guid = ''
+        if export_data_json and 'institution' in export_data_json:
+            institution_guid = export_data_json.get('institution').get('guid')
         return {
             'message': MSG_EXPORT_COMPLETED,
             'export_data_id': export_data.id,
@@ -338,6 +378,27 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
 
         task.update_state(state=states.FAILURE, meta=task_meta)
         raise Ignore(str(e))
+
+
+def check_export_data_process_status(_prev_time, task, export_data_id=None, location_id=None, source_id=None):
+    drift_seconds, _prev_time = time.time() - _prev_time, time.time()
+    if drift_seconds < 50 and export_data_id is None:
+        return _prev_time
+
+    if task and task.is_aborted():
+        raise ExportDataTaskException(MSG_EXPORT_ABORTED)
+
+    # get the corresponding location record
+    if location_id and not ExportDataLocation.objects.filter(pk=location_id).exists():
+        raise ExportDataTaskException(MSG_EXPORT_REMOVED)
+    # get corresponding export data record
+    if source_id and not Region.objects.filter(pk=source_id).exists():
+        raise ExportDataTaskException(MSG_EXPORT_REMOVED)
+    # get corresponding export data record
+    if export_data_id and not ExportData.objects.filter(pk=export_data_id).exists():
+        raise ExportDataTaskException(MSG_EXPORT_REMOVED)
+
+    return _prev_time
 
 
 def separate_failed_files(files, files_versions_not_found):
@@ -428,7 +489,7 @@ class StopExportDataActionView(ExportDataBaseActionView):
         cookie = request.user.get_or_create_cookie().decode()
         cookies = request.COOKIES
         task = tasks.run_export_data_rollback_process.delay(
-            cookies, export_data.id, cookie=cookie, export_data_task=task_id)
+            cookies, export_data.id, location.id, source_storage.id, cookie=cookie, export_data_task=task_id)
         # try to replace by the stopping task
         export_data_set = ExportData.objects.filter(pk=export_data.id)
         export_data_set.update(
@@ -444,52 +505,66 @@ class StopExportDataActionView(ExportDataBaseActionView):
         }, status=status.HTTP_200_OK)
 
 
-def export_data_rollback_process(task, cookies, export_data_id, **kwargs):
+def export_data_rollback_process(task, cookies, export_data_id, location_id, source_id, **kwargs):
     logger.debug('----{}:{}::{} from {}:{}::{}'.format(*inspect_info(inspect.currentframe(), inspect.stack())))
+    _start_time = time.time()
     is_rollback = kwargs.get('is_rollback', False)
     try:
+        # [Important] check process status before each step
+        _prev_time = check_export_data_process_status(
+            _start_time, task, export_data_id, location_id, source_id)
         # get corresponding export data record
-        export_data_set = ExportData.objects.filter(pk=export_data_id)
-        export_data = export_data_set.first()
+        export_data = ExportData.objects.get(pk=export_data_id)
 
-        if export_data is None:
-            raise ExportDataTaskException(MSG_EXPORT_REMOVED)
-
-        # if export processes can not be stopped
+        # if export processes cannot be stopped
         if export_data.status not in ExportData.EXPORT_DATA_STOPPABLE:
             logger.debug(MSG_EXPORT_UNSTOPPABLE)
             raise ExportDataTaskException(MSG_EXPORT_UNSTOPPABLE)
 
-        # start stopping it
-        export_data_set.update(
-            task_id=task.request.id,
-            status=ExportData.STATUS_STOPPING,
-        )
-        logger.debug(f'stopping process')
+        # start stopping export - update record in DB
+        export_data.task_id = task.request.id
+        export_data.status = ExportData.STATUS_STOPPING
+        export_data.save()
+        logger.info(f'Export process status is changed to {export_data.status}.'
+                    f' ({time.time() - _prev_time})s')
 
-        export_data = export_data_set.first()
+        # [Important] check process status before each step
+        _prev_time = check_export_data_process_status(
+            _prev_time, task, export_data_id, location_id, source_id)
+        # get corresponding export data record
+        export_data = ExportData.objects.get(pk=export_data_id)
+
         file_path = export_data.export_data_temp_file_path
         if os.path.exists(file_path):
             os.remove(file_path)
-        logger.debug(f'removed temporary file')
+        logger.info(f'Removed temporary file.'
+                    f' ({time.time() - _prev_time})s')
 
         # delete export data file
         logger.debug(f'deleting export data file')
         response = export_data.delete_export_data_folder(cookies, **kwargs)
         if response.status_code != 204:
             export_data_status = ExportData.STATUS_ERROR
-            logger.debug(f'can not delete export data file')
+            logger.info(f'Can not delete export data file.'
+                        f' ({time.time() - _prev_time})s')
         else:
             export_data_status = ExportData.STATUS_STOPPED
-            logger.debug(f'deleted export data file')
+            logger.info(f'Deleted export data file.'
+                        f' ({time.time() - _prev_time})s')
 
-        # stop it
-        export_data_set.update(
-            status=ExportData.STATUS_STOPPED,
-            process_end=timezone.make_naive(timezone.now(), timezone.utc),
-            export_file=None,
-        )
-        logger.debug(f'stopped process')
+        # [Important] check process status before each step
+        _prev_time = check_export_data_process_status(
+            _prev_time, task, export_data_id, location_id, source_id)
+        # get corresponding export data record
+        export_data = ExportData.objects.get(pk=export_data_id)
+
+        # stop export - update record in DB
+        export_data.status = ExportData.STATUS_STOPPED
+        export_data.process_end = timezone.make_naive(timezone.now(), timezone.utc)
+        export_data.export_file = None
+        export_data.save()
+        logger.info(f'Export process status is changed to {export_data.status}.'
+                    f' ({time.time() - _prev_time})s')
 
         _msg = MSG_EXPORT_FORCE_STOPPED if export_data_status == ExportData.STATUS_ERROR else MSG_EXPORT_STOPPED
 
