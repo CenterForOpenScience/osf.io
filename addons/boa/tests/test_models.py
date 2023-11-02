@@ -1,59 +1,41 @@
-from nose.tools import assert_is_not_none, assert_equal
 import pytest
 import unittest
 
-from addons.base.tests.models import (OAuthAddonNodeSettingsTestSuiteMixin,
-                                      OAuthAddonUserSettingTestSuiteMixin)
-
-from addons.boa.models import NodeSettings
-from addons.boa.tests.factories import (
-    BoaAccountFactory, BoaNodeSettingsFactory,
-    BoaUserSettingsFactory
-)
-from addons.boa.settings import USE_SSL
+from addons.base.exceptions import NotApplicableError
+from addons.base.tests.models import OAuthAddonNodeSettingsTestSuiteMixin, OAuthAddonUserSettingTestSuiteMixin
+from addons.boa.tests.utils import BoaAddonTestCaseBaseMixin
+from framework.auth import Auth
+from osf.models import NodeLog
 
 pytestmark = pytest.mark.django_db
 
-class TestUserSettings(OAuthAddonUserSettingTestSuiteMixin, unittest.TestCase):
 
-    short_name = 'boa'
-    full_name = 'boa'
-    UserSettingsFactory = BoaUserSettingsFactory
-    ExternalAccountFactory = BoaAccountFactory
+class TestUserSettings(BoaAddonTestCaseBaseMixin, OAuthAddonUserSettingTestSuiteMixin, unittest.TestCase):
+
+    pass
 
 
-class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
+class TestNodeSettings(BoaAddonTestCaseBaseMixin, OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
 
-    short_name = 'boa'
-    full_name = 'boa'
-    ExternalAccountFactory = BoaAccountFactory
-    NodeSettingsFactory = BoaNodeSettingsFactory
-    NodeSettingsClass = NodeSettings
-    UserSettingsFactory = BoaUserSettingsFactory
+    def test_set_folder(self):
+        with pytest.raises(NotApplicableError):
+            self.node_settings.set_folder('fake_folder_id', auth=Auth(self.user))
 
-    def _node_settings_class_kwargs(self, node, user_settings):
-        return {
-            'user_settings': self.user_settings,
-            'folder_id': '/Documents',
-            'owner': self.node
-        }
+    def test_create_log(self):
+        with pytest.raises(NotApplicableError):
+            self.node_settings.create_waterbutler_log(
+                auth=Auth(user=self.user),
+                action=NodeLog.FILE_ADDED,
+                metadata={
+                    'path': 'fake_path',
+                    'materialized': 'fake_materialized_path',
+                }
+            )
 
     def test_serialize_credentials(self):
-        credentials = self.node_settings.serialize_waterbutler_credentials()
-
-        assert_is_not_none(self.node_settings.external_account.oauth_secret)
-        expected = {
-            'host': self.node_settings.external_account.oauth_secret,
-            'password': 'meoword',
-            'username': 'catname'
-        }
-
-        assert_equal(credentials, expected)
+        with pytest.raises(NotApplicableError):
+            _ = self.node_settings.serialize_waterbutler_credentials()
 
     def test_serialize_settings(self):
-        settings = self.node_settings.serialize_waterbutler_settings()
-        expected = {
-            'folder': self.node_settings.folder_id,
-            'verify_ssl': USE_SSL
-        }
-        assert_equal(settings, expected)
+        with pytest.raises(NotApplicableError):
+            _ = self.node_settings.serialize_waterbutler_settings()

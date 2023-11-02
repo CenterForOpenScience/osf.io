@@ -1,22 +1,37 @@
-from addons.base.tests.base import OAuthAddonTestCaseMixin, AddonTestCase
-from addons.owncloud.models import OwnCloudProvider, NodeSettings
+from addons.base.tests.base import AddonTestCase, OAuthAddonTestCaseMixin
+from addons.owncloud.models import NodeSettings, OwnCloudProvider, OwnCloudSerializer
 from addons.owncloud.tests.factories import (
-    OwnCloudAccountFactory, OwnCloudNodeSettingsFactory,
-    OwnCloudUserSettingsFactory
+    OwnCloudAccountFactory,
+    OwnCloudNodeSettingsFactory,
+    OwnCloudUserSettingsFactory,
 )
 
-class OwnCloudAddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
+
+class OwnCloudAddonTestCaseBaseMixin(object):
 
     short_name = 'owncloud'
     full_name = 'OwnCloud'
+    client = None  # Non-oauth add-on does not have client
+    folder = {'path': '/Documents/', 'name': '/Documents', 'id': '/Documents/'}
+    addon_short_name = 'owncloud'
     ADDON_SHORT_NAME = 'owncloud'
-    ExternalAccountFactory = OwnCloudAccountFactory
     Provider = OwnCloudProvider
+    Serializer = OwnCloudSerializer
+    ExternalAccountFactory = OwnCloudAccountFactory
     NodeSettingsFactory = OwnCloudNodeSettingsFactory
     NodeSettingsClass = NodeSettings
     UserSettingsFactory = OwnCloudUserSettingsFactory
-    folder = {
-        'path': '/Documents/',
-        'name': '/Documents',
-        'id': '/Documents/'
-    }
+
+
+class OwnCloudBasicAuthAddonTestCase(OwnCloudAddonTestCaseBaseMixin, OAuthAddonTestCaseMixin, AddonTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super(OwnCloudBasicAuthAddonTestCase, self).__init__(*args, **kwargs)
+        self.auth = None
+        self.external_account = None
+
+    def set_user_settings(self, settings):
+        super(OwnCloudBasicAuthAddonTestCase, self).set_user_settings(settings)
+
+    def set_node_settings(self, settings):
+        super(OwnCloudBasicAuthAddonTestCase, self).set_node_settings(settings)

@@ -4,17 +4,21 @@ from boaapi.status import CompilerStatus, ExecutionStatus
 from http.client import HTTPMessage
 import mock
 import pytest
-from unittest.mock import ANY
+from unittest.mock import ANY, MagicMock
 from urllib.error import HTTPError
 
 from addons.boa import settings as boa_settings
 from addons.boa.boa_error_code import BoaErrorCode
 from addons.boa.tasks import submit_to_boa, submit_to_boa_async, handle_boa_error
-from addons.boa.tests.async_mock import AsyncMock
 from osf_tests.factories import AuthUserFactory, ProjectFactory
 from tests.base import OsfTestCase
 from website import settings as osf_settings
 from website.mails import ADDONS_BOA_JOB_COMPLETE, ADDONS_BOA_JOB_FAILURE
+
+
+class AsyncMock(MagicMock):
+    async def __call__(self, *args, **kwargs):
+        return super(AsyncMock, self).__call__(*args, **kwargs)
 
 
 class TestBoaErrorHandling(OsfTestCase):

@@ -1,19 +1,15 @@
-# -*- coding: utf-8 -*-
-import logging
-
-from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
-                                BaseStorageAddon)
 from django.db import models
-from framework.auth import Auth
+
+from addons.base.exceptions import NotApplicableError
+from addons.base.models import BaseOAuthNodeSettings, BaseOAuthUserSettings, BaseStorageAddon
 from addons.boa.serializer import BoaSerializer
 from addons.boa.settings import DEFAULT_HOSTS
+from framework.auth import Auth
 from osf.models.external import BasicAuthProviderMixin
-# from website.util import api_v2_url
-logger = logging.getLogger(__name__)
 
 
 class BoaProvider(BasicAuthProviderMixin):
-    """An alternative to `ExternalProvider` not tied to OAuth"""
+    """Boa provider, an alternative to `ExternalProvider` which is not tied to OAuth"""
 
     name = 'Boa'
     short_name = 'boa'
@@ -21,9 +17,7 @@ class BoaProvider(BasicAuthProviderMixin):
     def __init__(self, account=None, host=None, username=None, password=None):
         if username:
             username = username.lower()
-        return super(BoaProvider, self).__init__(
-            account=account, host=host, username=username, password=password
-        )
+        super(BoaProvider, self).__init__(account=account, host=host, username=username, password=password)
 
     def __repr__(self):
         return '<{name}: {status}>'.format(
@@ -33,6 +27,7 @@ class BoaProvider(BasicAuthProviderMixin):
 
 
 class UserSettings(BaseOAuthUserSettings):
+
     oauth_provider = BoaProvider
     serializer = BoaSerializer
 
@@ -43,13 +38,12 @@ class UserSettings(BaseOAuthUserSettings):
 
 
 class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
+
     oauth_provider = BoaProvider
     serializer = BoaSerializer
 
     folder_id = models.TextField(blank=True, null=True)
-    user_settings = models.ForeignKey(
-        UserSettings, null=True, blank=True, on_delete=models.CASCADE
-    )
+    user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     _api = None
 
@@ -67,7 +61,9 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     def folder_name(self):
         return self.folder_id
 
-    # def set_folder(self, folder, auth=None):  # NOTE: no for Boa
+    def set_folder(self, folder, auth=None):
+        """Not applicable to remote computing add-on."""
+        raise NotApplicableError
 
     def fetch_folder_name(self):
         if self.folder_id == '/':
@@ -85,16 +81,16 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         self.clear_auth()  # Also performs a .save()
 
     def serialize_waterbutler_credentials(self):
-        # required by superclass, not actually used
-        pass
+        """Not applicable to remote computing add-on."""
+        raise NotApplicableError
 
     def serialize_waterbutler_settings(self):
-        # required by superclass, not actually used
-        pass
+        """Not applicable to remote computing add-on."""
+        raise NotApplicableError
 
     def create_waterbutler_log(self, *args, **kwargs):
-        # required by superclass, not actually used
-        pass
+        """Not applicable to remote computing add-on."""
+        raise NotApplicableError
 
     def after_delete(self, user):
         self.deauthorize(Auth(user=user), add_log=True)
@@ -104,4 +100,6 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         self.deauthorize(add_log=False)
         self.save()
 
-    # def get_folders(self, **kwargs):  # NOTE: no for boa
+    def get_folders(self, **kwargs):
+        """Not applicable to remote computing add-on."""
+        raise NotApplicableError

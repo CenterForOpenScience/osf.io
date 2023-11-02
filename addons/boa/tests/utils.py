@@ -1,22 +1,33 @@
-from addons.base.tests.base import OAuthAddonTestCaseMixin, AddonTestCase
-from addons.boa.models import BoaProvider, NodeSettings
-from addons.boa.tests.factories import (
-    BoaAccountFactory, BoaNodeSettingsFactory,
-    BoaUserSettingsFactory
-)
+from addons.base.tests.base import AddonTestCase, OAuthAddonTestCaseMixin
+from addons.boa.models import BoaProvider, BoaSerializer, NodeSettings
+from addons.boa.tests.factories import BoaAccountFactory, BoaNodeSettingsFactory, BoaUserSettingsFactory
 
-class BoaAddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
+
+class BoaAddonTestCaseBaseMixin(object):
 
     short_name = 'boa'
     full_name = 'Boa'
+    client = None  # Non-oauth add-on does not have client
+    folder = None  # Remote computing add-on does not have folder
+    addon_short_name = 'boa'
     ADDON_SHORT_NAME = 'boa'
-    ExternalAccountFactory = BoaAccountFactory
     Provider = BoaProvider
+    Serializer = BoaSerializer
+    ExternalAccountFactory = BoaAccountFactory
     NodeSettingsFactory = BoaNodeSettingsFactory
     NodeSettingsClass = NodeSettings
     UserSettingsFactory = BoaUserSettingsFactory
-    # folder = {
-    #     'path': '/Documents/',
-    #     'name': '/Documents',
-    #     'id': '/Documents/'
-    # }
+
+
+class BoaBasicAuthAddonTestCase(BoaAddonTestCaseBaseMixin, OAuthAddonTestCaseMixin, AddonTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super(BoaBasicAuthAddonTestCase, self).__init__(*args, **kwargs)
+        self.auth = None
+        self.external_account = None
+
+    def set_user_settings(self, settings):
+        super(BoaBasicAuthAddonTestCase, self).set_user_settings(settings)
+
+    def set_node_settings(self, settings):
+        super(BoaBasicAuthAddonTestCase, self).set_node_settings(settings)
