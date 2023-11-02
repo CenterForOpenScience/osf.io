@@ -210,28 +210,10 @@ class Sitemap(object):
                 config = settings.SITEMAP_PREPRINT_CONFIG
                 preprint_url = obj.url
                 provider = obj.provider
-                domain = provider.domain if (provider.domain_redirect_enabled and provider.domain) else settings.DOMAIN
-                if provider == osf:
-                    preprint_url = '/preprints/{}/'.format(obj._id)
-                config['loc'] = urljoin(domain, preprint_url)
+                config['loc'] = urljoin(settings.DOMAIN, preprint_url)
                 config['lastmod'] = preprint_date
                 self.add_url(config)
 
-                # Preprint file urls
-                try:
-                    file_config = settings.SITEMAP_PREPRINT_FILE_CONFIG
-                    file_config['loc'] = urljoin(
-                        obj.provider.domain or settings.DOMAIN,
-                        os.path.join(
-                            obj._id,
-                            'download',
-                            '?format=pdf'
-                        )
-                    )
-                    file_config['lastmod'] = preprint_date
-                    self.add_url(file_config)
-                except Exception as e:
-                    self.log_errors(obj.primary_file, obj.primary_file._id, e)
             except Exception as e:
                 self.log_errors(obj, obj._id, e)
             progress.increment(2)

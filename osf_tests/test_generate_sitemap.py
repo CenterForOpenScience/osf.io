@@ -118,10 +118,8 @@ class TestGenerateSitemap:
             project_preprint_osf.url,
             project_preprint_other.url,
             registration_active.url,
-            '/preprints/{}/'.format(preprint_osf._id),
+            '/{}/'.format(preprint_osf._id),
             '/preprints/{}/{}/'.format(provider_other._id, preprint_other._id),
-            '/{}/download/?format=pdf'.format(preprint_osf._id),
-            '/{}/download/?format=pdf'.format(preprint_other._id)
         ])
         urls_to_include = [urljoin(settings.DOMAIN, item) for item in urls_to_include]
 
