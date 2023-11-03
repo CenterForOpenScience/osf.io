@@ -261,6 +261,9 @@ def ember_app(path=None):
         if request.path.strip('/').startswith(k):
             ember_app = EXTERNAL_EMBER_APPS[k]
             if k == 'preprints':
+                if 'preprints/assets/' in request.path:
+                    # Route preprint assets request to old preprint app
+                    ember_app = EXTERNAL_EMBER_APPS.get('preprints', False) or ember_app
                 if request.path.rstrip('/').endswith('edit'):
                     # Route preprint edit pages to old preprint app
                     ember_app = EXTERNAL_EMBER_APPS.get('preprints', False) or ember_app
