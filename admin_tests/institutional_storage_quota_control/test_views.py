@@ -166,9 +166,11 @@ class TestUserListByInstitutionStorageID(AdminTestCase):
 
     def test__anonymous(self):
         request = RequestFactory().get(
-            reverse(self.view_name,
-                    kwargs={'institution_id': self.institution01.id}),
+            reverse(
+                self.view_name,
+                kwargs={'institution_id': self.institution01.id}
             )
+        )
         request.user = self.anon
         with self.assertRaises(PermissionDenied):
             self.view(request, institution_id=self.institution01.id)
@@ -176,18 +178,22 @@ class TestUserListByInstitutionStorageID(AdminTestCase):
     def test__superuser(self):
         # access inst01
         request = RequestFactory().get(
-            reverse(self.view_name,
-                    kwargs={'institution_id': self.institution01.id}),
+            reverse(
+                self.view_name,
+                kwargs={'institution_id': self.institution01.id}
             )
+        )
         request.user = self.superuser
         response = self.view(request, institution_id=self.institution01.id)
         nt.assert_equal(response.status_code, 200)
 
         # access inst02
         request = RequestFactory().get(
-            reverse(self.view_name,
-                    kwargs={'institution_id': self.institution02.id}),
+            reverse(
+                self.view_name,
+                kwargs={'institution_id': self.institution02.id}
             )
+        )
         request.user = self.superuser
         response = self.view(request, institution_id=self.institution02.id)
         nt.assert_equal(response.status_code, 200)
@@ -195,18 +201,22 @@ class TestUserListByInstitutionStorageID(AdminTestCase):
     def test__institutional_admin(self):
         # access inst01
         request = RequestFactory().get(
-            reverse(self.view_name,
-                    kwargs={'institution_id': self.institution01.id}),
+            reverse(
+                self.view_name,
+                kwargs={'institution_id': self.institution01.id}
             )
+        )
         request.user = self.institution01_admin
         response = self.view(request, institution_id=self.institution01.id)
         nt.assert_equal(response.status_code, 200)
 
         # access inst02
         request = RequestFactory().get(
-            reverse(self.view_name,
-                    kwargs={'institution_id': self.institution02.id}),
+            reverse(
+                self.view_name,
+                kwargs={'institution_id': self.institution02.id}
             )
+        )
         request.user = self.institution01_admin
         with self.assertRaises(PermissionDenied):
             self.view(request, institution_id=self.institution02.id)
@@ -370,7 +380,7 @@ class TestInstitutionStorageListByAdmin(AdminTestCase):
         request = RequestFactory().get(reverse(self.view_name))
         request.user = self.user
 
-        response = self.view(request,)
+        response = self.view(request)
 
         nt.assert_equal(response.status_code, 200)
         nt.assert_is_not_none(Region.objects.filter(id=region1.id))
@@ -427,7 +437,7 @@ class TestInstitutionStorageListBySuperUser(AdminTestCase):
         request = RequestFactory().get(reverse(self.view_name))
         request.user = self.user
 
-        response = self.view(request,)
+        response = self.view(request)
 
         nt.assert_equal(response.status_code, 200)
         nt.assert_is_instance(
