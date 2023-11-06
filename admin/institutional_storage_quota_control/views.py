@@ -1,3 +1,6 @@
+import logging
+import inspect  # noqa
+from django.contrib.auth.mixins import UserPassesTestMixin
 from django.db import connection
 
 from admin.institutions.views import QuotaUserList
@@ -9,15 +12,32 @@ from django.shortcuts import redirect
 from admin.rdm.utils import RdmPermissionMixin
 from django.core.urlresolvers import reverse
 from django.db.models import Q
+from website.util import inspect_info  # noqa
+
+logger = logging.getLogger(__name__)
 
 
-class InstitutionStorageList(RdmPermissionMixin, ListView):
+class InstitutionStorageList(RdmPermissionMixin, UserPassesTestMixin, ListView):
     paginate_by = 25
     template_name = 'institutional_storage_quota_control/' \
                     'list_institution_storage.html'
     ordering = 'name'
     raise_exception = True
     model = Institution
+
+    def test_func(self):
+        """determine whether the user has institution permissions"""
+        # login check
+        if not self.is_authenticated:
+            return False
+        # allowed if superuser
+        if self.is_super_admin:
+            return True
+        elif self.is_admin:
+            # allowed if admin
+            # ignore check self.is_affiliated_institution(institution_id)
+            return True
+        return False
 
     def get(self, request, *args, **kwargs):
         count = 0
@@ -92,10 +112,15 @@ class InstitutionStorageList(RdmPermissionMixin, ListView):
         return super(InstitutionStorageList, self).get_context_data(**kwargs)
 
 
-class UserListByInstitutionStorageID(RdmPermissionMixin, QuotaUserList):
+class UserListByInstitutionStorageID(RdmPermissionMixin, UserPassesTestMixin, QuotaUserList):
     template_name = 'institutional_storage_quota_control/list_institute.html'
     raise_exception = True
     paginate_by = 25
+
+    def test_func(self):
+        """check user permissions"""
+        institution_id = int(self.kwargs.get('institution_id'))
+        return self.has_auth(institution_id)
 
     def get_userlist(self):
         user_list = []
@@ -120,8 +145,13 @@ class UserListByInstitutionStorageID(RdmPermissionMixin, QuotaUserList):
         return institution.first()
 
 
-class UpdateQuotaUserListByInstitutionStorageID(RdmPermissionMixin, View):
+class UpdateQuotaUserListByInstitutionStorageID(RdmPermissionMixin, UserPassesTestMixin, View):
     raise_exception = True
+
+    def test_func(self):
+        """check user permissions"""
+        institution_id = int(self.kwargs.get('institution_id'))
+        return self.has_auth(institution_id)
 
     def post(self, request, *args, **kwargs):
         institution_id = self.kwargs['institution_id']
