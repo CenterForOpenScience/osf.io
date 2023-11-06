@@ -2,6 +2,7 @@ import logging
 import inspect  # noqa
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.db import connection
+from django.http import Http404
 
 from admin.institutions.views import QuotaUserList
 from osf.models import Institution, OSFUser, UserQuota
@@ -135,14 +136,17 @@ class UserListByInstitutionStorageID(RdmPermissionMixin, UserPassesTestMixin, Qu
         query = 'select name '\
                 'from addons_osfstorage_region '\
                 'where addons_osfstorage_region._id = osf_institution._id'
-        institution = Institution.objects.filter(
+        institutions = Institution.objects.filter(
             id=self.kwargs['institution_id']
         ).extra(
             select={
                 'storage_name': query,
             }
         )
-        return institution.first()
+        institution = institutions.first()
+        if institution is None:
+            raise Http404('Institution is not found.')
+        return institution
 
 
 class UpdateQuotaUserListByInstitutionStorageID(RdmPermissionMixin, UserPassesTestMixin, View):
