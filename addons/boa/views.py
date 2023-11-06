@@ -13,8 +13,9 @@ from api.base.utils import waterbutler_api_url_for
 from framework.auth.decorators import must_be_logged_in
 from framework.celery_tasks.handlers import enqueue_task
 from osf.models import ExternalAccount, AbstractNode
+from osf.utils import permissions
 from website import settings as osf_settings
-from website.project.decorators import must_have_addon
+from website.project.decorators import must_have_addon, must_have_permission
 
 logger = logging.getLogger(__name__)
 
@@ -67,9 +68,9 @@ def boa_add_user_account(auth, **kwargs):
 
 
 @must_be_logged_in
-@must_have_addon(SHORT_NAME, 'user')
 @must_have_addon(SHORT_NAME, 'node')
-def boa_submit_job(node_addon, user_addon, **kwargs):
+@must_have_permission(permissions.WRITE)
+def boa_submit_job(node_addon, **kwargs):
 
     req_params = request.json
 

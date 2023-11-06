@@ -277,3 +277,55 @@ class TestBoaSubmitViews(BoaBasicAuthAddonTestCase, OsfTestCase):
                 self.download_url_internal,
                 self.upload_url_internal,
             )
+
+    def test_boa_submit_job_admin_contrib(self):
+        with mock.patch('addons.boa.tasks.submit_to_boa.s', return_value=BoaErrorCode.NO_ERROR) as mock_submit_s:
+            self.node_settings.set_auth(self.external_account, self.user)
+            user_admin = AuthUserFactory()
+            self.project.add_contributor(user_admin, permissions=permissions.ADMIN, auth=self.auth, save=True)
+            url = self.project.api_url_for('boa_submit_job')
+            res = self.app.post_json(url, self.payload_sub_folder, auth=user_admin.auth)
+            assert res.status_code == http_status.HTTP_200_OK
+            mock_submit_s.assert_called_with(
+                BOA_HOST,
+                mock.ANY,
+                BOA_PASSWORD,
+                user_admin._id,
+                self.project._id,
+                self.dataset,
+                self.file_name,
+                f'/{self.folder_name}/{self.file_name}',
+                self.download_url_internal,
+                self.upload_url_internal,
+            )
+
+    def test_boa_submit_job_write_contrib(self):
+        with mock.patch('addons.boa.tasks.submit_to_boa.s', return_value=BoaErrorCode.NO_ERROR) as mock_submit_s:
+            self.node_settings.set_auth(self.external_account, self.user)
+            user_write = AuthUserFactory()
+            self.project.add_contributor(user_write, permissions=permissions.WRITE, auth=self.auth, save=True)
+            url = self.project.api_url_for('boa_submit_job')
+            res = self.app.post_json(url, self.payload_sub_folder, auth=user_write.auth)
+            assert res.status_code == http_status.HTTP_200_OK
+            mock_submit_s.assert_called_with(
+                BOA_HOST,
+                mock.ANY,
+                BOA_PASSWORD,
+                user_write._id,
+                self.project._id,
+                self.dataset,
+                self.file_name,
+                f'/{self.folder_name}/{self.file_name}',
+                self.download_url_internal,
+                self.upload_url_internal,
+            )
+
+    def test_boa_submit_job_read_contrib(self):
+        with mock.patch('addons.boa.tasks.submit_to_boa.s', return_value=BoaErrorCode.NO_ERROR) as mock_submit_s:
+            self.node_settings.set_auth(self.external_account, self.user)
+            user_read_only = AuthUserFactory()
+            self.project.add_contributor(user_read_only, permissions=permissions.READ, auth=self.auth, save=True)
+            url = self.project.api_url_for('boa_submit_job')
+            res = self.app.post_json(url, self.payload_sub_folder, auth=user_read_only.auth, expect_errors=True)
+            assert res.status_code == http_status.HTTP_403_FORBIDDEN
+            mock_submit_s.assert_not_called()
