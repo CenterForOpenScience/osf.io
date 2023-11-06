@@ -1383,7 +1383,8 @@ function _submitToBoaEvent (event, item, col) {
             console.error('@@@   BOA FAIL!', item);
             $osf.growl(
                 'Error',
-                'Unable to submit file to Boa. This is most likely due to problems.'
+                'Unable to submit the file to Boa. Please try again later. ' +
+                'Contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.'
             );
             tb.modal.dismiss();
         });
