@@ -333,7 +333,7 @@ class TestAccessInstitutionStorageList(AdminTestCase):
         request = RequestFactory().get(reverse(self.view_name))
         request.user = self.institution01_admin
         response = self.view(request, institution_id=self.institution01.id)
-        nt.assert_equal(response.status_code, 320)
+        nt.assert_equal(response.status_code, 302)
 
 
 class TestInstitutionStorageListByAdmin(AdminTestCase):
