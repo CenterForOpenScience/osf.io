@@ -19,7 +19,8 @@ logger = logging.getLogger(__name__)
 
 class InstitutionStorageList(RdmPermissionMixin, UserPassesTestMixin, ListView):
     paginate_by = 25
-    template_name = 'institutional_storage_quota_control/list_institution_storage.html'
+    template_name = 'institutional_storage_quota_control/' \
+                    'list_institution_storage.html'
     ordering = 'name'
     raise_exception = True
     model = Institution
@@ -45,8 +46,8 @@ class InstitutionStorageList(RdmPermissionMixin, UserPassesTestMixin, ListView):
         self.object_list = query_set
 
         for item in query_set:
-            if item.institution.id:
-                institution_id = item.institution.id
+            if item.institution_id:
+                institution_id = item.institution_id
                 count += 1
             else:
                 self.object_list = self.object_list.exclude(id=item.id)
@@ -58,31 +59,53 @@ class InstitutionStorageList(RdmPermissionMixin, UserPassesTestMixin, ListView):
         elif self.is_admin:
             if count == 1:
                 return redirect(reverse(
-                    'institutional_storage_quota_control:institution_user_list',
+                    'institutional_storage_quota_control:'
+                    'institution_user_list',
                     kwargs={'institution_id': institution_id}
                 ))
             return self.render_to_response(ctx)
 
     def get_queryset(self):
         if self.is_super_admin:
+            query = 'select {} ' \
+                    'from osf_institution ' \
+                    'where addons_osfstorage_region._id = osf_institution._id'
             return Region.objects.filter(
-                ~Q(waterbutler_settings__storage__provider='filesystem')
-            ).order_by('_id', self.ordering)
+                ~Q(waterbutler_settings__storage__provider='filesystem'))\
+                .extra(select={'institution_id': query.format('id'),
+                               'institution_name': query.format('name'),
+                               'institution_logo_name': query.format(
+                                   'logo_name'),
+                               }).order_by('institution_name', self.ordering)
 
         elif self.is_admin:
             user_id = self.request.user.id
-            osf_user = OSFUser.objects.get(pk=user_id)
-            institutions = osf_user.affiliated_institutions.all()
-            institution_guids = institutions.values_list('_id')
+            query = 'select {} ' \
+                    'from osf_institution ' \
+                    'where addons_osfstorage_region._id = _id ' \
+                    'and id in (' \
+                    '    select institution_id ' \
+                    '    from osf_osfuser_affiliated_institutions ' \
+                    '    where osfuser_id = {}' \
+                    ')'
             return Region.objects.filter(
-                ~Q(waterbutler_settings__storage__provider='filesystem'),
-                Q(_id__in=institution_guids)
-            ).order_by('_id', self.ordering)
+                ~Q(waterbutler_settings__storage__provider='filesystem'))\
+                .extra(select={'institution_id': query.format('id', user_id),
+                               'institution_name': query.format(
+                                   'name',
+                                   user_id),
+                               'institution_logo_name': query.format(
+                                   'logo_name',
+                                   user_id),
+                               })
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
         page_size = self.get_paginate_by(query_set)
-        paginator, page, query_set, is_paginated = self.paginate_queryset(query_set, page_size)
+        paginator, page, query_set, is_paginated = self.paginate_queryset(
+            query_set,
+            page_size
+        )
         kwargs.setdefault('institutions', query_set)
         kwargs.setdefault('page', page)
         kwargs.setdefault('logohost', settings.OSF_URL)
@@ -99,7 +122,7 @@ class UserListByInstitutionStorageID(RdmPermissionMixin, UserPassesTestMixin, Qu
         institution_id = int(self.kwargs.get('institution_id'))
         return self.has_auth(institution_id)
 
-    def get_user_list(self):
+    def get_userlist(self):
         user_list = []
         for user in OSFUser.objects.filter(
                 affiliated_institutions=self.kwargs['institution_id']):
@@ -134,7 +157,8 @@ class UpdateQuotaUserListByInstitutionStorageID(RdmPermissionMixin, UserPassesTe
         institution_id = self.kwargs['institution_id']
         min_value, max_value = connection.ops.integer_field_range('IntegerField')
         max_quota = min(int(self.request.POST.get('maxQuota')), max_value)
-        for user in OSFUser.objects.filter(affiliated_institutions=institution_id):
+        for user in OSFUser.objects.filter(
+                affiliated_institutions=institution_id):
             UserQuota.objects.update_or_create(
                 user=user,
                 storage_type=UserQuota.CUSTOM_STORAGE,
