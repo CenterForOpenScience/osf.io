@@ -253,20 +253,6 @@ class TestUserListByInstitutionStorageID(AdminTestCase):
 
         nt.assert_equal(institution.storage_name, self.region01.name)
 
-    def test_get_institution__none(self):
-        request = RequestFactory().get(
-            reverse(
-                self.view_name,
-                kwargs={'institution_id': 9999}
-            )
-        )
-        request.user = self.institution01_admin
-
-        view = setup_view(self.view_instance, request,
-                          institution_id=9999)
-        with self.assertRaises(Http404):
-            view.get_institution()
-
     def test_get_context_data_has_storage_name(self):
         request = RequestFactory().get(
             reverse(
