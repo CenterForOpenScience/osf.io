@@ -221,7 +221,7 @@ class TestUserListByInstitutionStorageID(AdminTestCase):
         with self.assertRaises(PermissionDenied):
             self.view(request, institution_id=self.institution02.id)
 
-    def test_get_user_list(self):
+    def test_get_userlist(self):
         request = RequestFactory().get(
             reverse(
                 self.view_name,
@@ -232,7 +232,7 @@ class TestUserListByInstitutionStorageID(AdminTestCase):
 
         view = setup_view(self.view_instance, request,
                           institution_id=self.institution01.id)
-        user_list = view.get_user_list()
+        user_list = view.get_userlist()
 
         nt.assert_equal(len(user_list), 1)
         nt.assert_equal(user_list[0]['fullname'], self.institution01_admin.fullname)
