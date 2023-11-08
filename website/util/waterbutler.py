@@ -33,6 +33,7 @@ def download_file(osf_cookie, file_node, download_path, **kwargs):
         return None
 
     with open(full_path, 'wb') as f:
+        response.raw.decode_content = True
         shutil.copyfileobj(response.raw, f)
 
     response.close()
