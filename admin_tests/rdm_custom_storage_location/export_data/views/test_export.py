@@ -2,6 +2,7 @@ import json
 import logging
 import mock
 import pytest
+import time
 import unittest
 from celery import states
 from celery.contrib.abortable import AbortableAsyncResult, AbortableTask, ABORTED
@@ -489,7 +490,7 @@ class TestExportDataProcess(unittest.TestCase):
 
         with self.assertRaises(Ignore):
             export.export_data_process(
-                self.task, self.cookies, self.export_data.id,
+                self.task, self.cookies, self.export_data.id, self.location.id, self.source.id,
             )
 
         task_result = AbortableAsyncResult(self.task.request.id)
@@ -503,20 +504,23 @@ class TestExportDataProcess(unittest.TestCase):
             nt.assert_equal(_task_result.get('export_data_id'), self.export_data.id)
 
     @pytest.mark.django_db
+    @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.delete_export_data_folder')
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.extract_file_information_json_from_source_storage')
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
     def test_export_data_process__raise_exception(
-            self, mock_export_data, mock_extract_json):
+            self, mock_export_data,
+            mock_extract_json,
+            mock_delete_export_data_folder,
+    ):
         mock_export_data.filter.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.side_effect = self.update_fake
-        mock_export_data.filter.return_value.update.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.return_value.update.side_effect = self.update_fake
         mock_export_data.filter.return_value.exists.return_value = True
+        mock_export_data.get.return_value = self.export_data
         mock_extract_json.side_effect = Exception('some error')
+        mock_delete_export_data_folder.side_effect = Exception('some os error')
 
         with self.assertRaises(Ignore):
             export.export_data_process(
-                self.task, self.cookies, self.export_data.id,
+                self.task, self.cookies, self.export_data.id, self.location.id, self.source.id,
             )
 
         task_result = AbortableAsyncResult(self.task.request.id)
@@ -538,10 +542,8 @@ class TestExportDataProcess(unittest.TestCase):
     def test_export_data_process__raise_task_aborted(
             self, mock_export_data, mock_extract_json):
         mock_export_data.filter.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.side_effect = self.update_fake
-        mock_export_data.filter.return_value.update.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.return_value.update.side_effect = self.update_fake
         mock_export_data.filter.return_value.exists.return_value = True
+        mock_export_data.get.return_value = self.export_data
         export_data_json = file_info_json = {}
 
         def do_something():
@@ -553,7 +555,7 @@ class TestExportDataProcess(unittest.TestCase):
 
         with self.assertRaises(Ignore):
             export.export_data_process(
-                self.task, self.cookies, self.export_data.id,
+                self.task, self.cookies, self.export_data.id, self.location.id, self.source.id,
             )
 
         task_result = AbortableAsyncResult(self.task.request.id)
@@ -570,6 +572,7 @@ class TestExportDataProcess(unittest.TestCase):
 
     @pytest.mark.django_db
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.delete_export_data_folder')
+    @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.create_export_data_files_folder')
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.create_export_data_folder')
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.extract_file_information_json_from_source_storage')
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
@@ -577,21 +580,21 @@ class TestExportDataProcess(unittest.TestCase):
             self, mock_export_data,
             mock_extract_json,
             mock_create_export_data_folder,
+            mock_create_export_data_files_folder,
             mock_delete_export_data_folder
     ):
         mock_export_data.filter.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.side_effect = self.update_fake
-        mock_export_data.filter.return_value.update.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.return_value.update.side_effect = self.update_fake
         mock_export_data.filter.return_value.exists.return_value = True
+        mock_export_data.get.return_value = self.export_data
         export_data_json = file_info_json = {}
         mock_extract_json.return_value = export_data_json, file_info_json
-        mock_create_export_data_folder.return_value.status_code = status.HTTP_400_BAD_REQUEST
+        mock_create_export_data_folder.return_value.status_code = status.HTTP_201_CREATED
+        mock_create_export_data_files_folder.return_value.status_code = status.HTTP_400_BAD_REQUEST
         mock_delete_export_data_folder.return_value.status_code = status.HTTP_204_NO_CONTENT
 
         with self.assertRaises(Ignore):
             export.export_data_process(
-                self.task, self.cookies, self.export_data.id,
+                self.task, self.cookies, self.export_data.id, self.location.id, self.source.id,
             )
 
         task_result = AbortableAsyncResult(self.task.request.id)
@@ -601,12 +604,13 @@ class TestExportDataProcess(unittest.TestCase):
         if task_record_set:
             task_record = task_record_set.first()
             _task_result = json.loads(task_record.result)
-            nt.assert_equal(_task_result.get('exc_type'), 'Ignore')
+            nt.assert_equal(_task_result.get('exc_type'), 'ExportDataTaskException')
             nt.assert_equal(_task_result.get('exc_message'), export.MSG_EXPORT_STOPPED)
             nt.assert_equal(_task_result.get('export_data_id'), self.export_data.id)
             nt.assert_equal(_task_result.get('export_data_status'), self.export_data.status)
 
     @pytest.mark.django_db
+    @mock.patch(f'{EXPORT_DATA_PATH}.write_json_file')
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.upload_export_data_file')
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.upload_file_info_file')
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.copy_export_data_file_to_location')
@@ -624,12 +628,12 @@ class TestExportDataProcess(unittest.TestCase):
             mock_copy_export_data_file_to_location,
             mock_upload_file_info_file,
             mock_upload_export_data_file,
+            mock_write_json_file,
     ):
+        mock_write_json_file.return_value = None
         mock_export_data.filter.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.side_effect = self.update_fake
-        mock_export_data.filter.return_value.update.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.return_value.update.side_effect = self.update_fake
         mock_export_data.filter.return_value.exists.return_value = True
+        mock_export_data.get.return_value = self.export_data
         export_data_json = {
             'institution': {
                 'id': self.institution.id,
@@ -658,7 +662,7 @@ class TestExportDataProcess(unittest.TestCase):
         mock_upload_export_data_file.return_value.status_code = status.HTTP_201_CREATED
 
         _task_result = export.export_data_process(
-            self.task, self.cookies, self.export_data.id,
+            self.task, self.cookies, self.export_data.id, self.location.id, self.source.id,
         )
         self.task.update_state(state=states.SUCCESS, meta=_task_result)
 
@@ -750,7 +754,7 @@ class TestExportDataRollbackProcess(unittest.TestCase):
 
         with self.assertRaises(Ignore):
             export.export_data_rollback_process(
-                self.task, self.cookies, self.export_data.id,
+                self.task, self.cookies, self.export_data.id, self.location.id, self.source.id,
                 export_data_task=self.other_task.request.id,
             )
 
@@ -776,7 +780,7 @@ class TestExportDataRollbackProcess(unittest.TestCase):
 
         with self.assertRaises(Ignore):
             export.export_data_rollback_process(
-                self.task, self.cookies, self.export_data.id,
+                self.task, self.cookies, self.export_data.id, self.location.id, self.source.id,
                 export_data_task=self.other_task.request.id,
             )
 
@@ -798,14 +802,12 @@ class TestExportDataRollbackProcess(unittest.TestCase):
     def test_export_data_rollback_process__rollback_raise_exception(
             self, mock_export_data):
         mock_export_data.filter.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.side_effect = self.update_fake
-        mock_export_data.filter.return_value.update.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.return_value.update.side_effect = self.update_fake
         mock_export_data.filter.return_value.exists.return_value = True
+        mock_export_data.get.return_value = self.export_data
 
         with self.assertRaises(Ignore):
             export.export_data_rollback_process(
-                self.task, self.cookies, self.export_data.id,
+                self.task, self.cookies, self.export_data.id, self.location.id, self.source.id,
                 is_rollback=True,
             )
 
@@ -828,16 +830,14 @@ class TestExportDataRollbackProcess(unittest.TestCase):
     def test_export_data_rollback_process__rollback_raise_stopped(
             self, mock_export_data):
         mock_export_data.filter.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.side_effect = self.update_fake
-        mock_export_data.filter.return_value.update.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.return_value.update.side_effect = self.update_fake
         mock_export_data.filter.return_value.exists.return_value = True
+        mock_export_data.get.return_value = self.export_data
         self.export_data.delete_export_data_folder = mock_method = mock.Mock()
         mock_method.return_value.status_code = status.HTTP_204_NO_CONTENT
 
         with self.assertRaises(Ignore):
             export.export_data_rollback_process(
-                self.task, self.cookies, self.export_data.id,
+                self.task, self.cookies, self.export_data.id, self.location.id, self.source.id,
                 is_rollback=True,
             )
 
@@ -859,16 +859,14 @@ class TestExportDataRollbackProcess(unittest.TestCase):
     def test_export_data_rollback_process__rollback_raise_stopped_with_warning(
             self, mock_export_data):
         mock_export_data.filter.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.side_effect = self.update_fake
-        mock_export_data.filter.return_value.update.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.return_value.update.side_effect = self.update_fake
         mock_export_data.filter.return_value.exists.return_value = True
+        mock_export_data.get.return_value = self.export_data
         self.export_data.delete_export_data_folder = mock_method = mock.Mock()
         mock_method.return_value.status_code = status.HTTP_400_BAD_REQUEST
 
         with self.assertRaises(Ignore):
             export.export_data_rollback_process(
-                self.task, self.cookies, self.export_data.id,
+                self.task, self.cookies, self.export_data.id, self.location.id, self.source.id,
                 is_rollback=True,
             )
 
@@ -890,15 +888,13 @@ class TestExportDataRollbackProcess(unittest.TestCase):
     def test_export_data_rollback_process__return_stopped(
             self, mock_export_data):
         mock_export_data.filter.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.side_effect = self.update_fake
-        mock_export_data.filter.return_value.update.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.return_value.update.side_effect = self.update_fake
         mock_export_data.filter.return_value.exists.return_value = True
+        mock_export_data.get.return_value = self.export_data
         self.export_data.delete_export_data_folder = mock_method = mock.Mock()
         mock_method.return_value.status_code = status.HTTP_204_NO_CONTENT
 
         _task_result = export.export_data_rollback_process(
-            self.task, self.cookies, self.export_data.id,
+            self.task, self.cookies, self.export_data.id, self.location.id, self.source.id,
             export_data_task=self.other_task.request.id,
         )
         self.task.update_state(state=states.SUCCESS, meta=_task_result)
@@ -918,15 +914,13 @@ class TestExportDataRollbackProcess(unittest.TestCase):
     def test_export_data_rollback_process__return_stopped_with_warning(
             self, mock_export_data):
         mock_export_data.filter.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.side_effect = self.update_fake
-        mock_export_data.filter.return_value.update.return_value.first.return_value = self.export_data
-        mock_export_data.filter.return_value.update.return_value.update.side_effect = self.update_fake
         mock_export_data.filter.return_value.exists.return_value = True
+        mock_export_data.get.return_value = self.export_data
         self.export_data.delete_export_data_folder = mock_method = mock.Mock()
         mock_method.return_value.status_code = status.HTTP_400_BAD_REQUEST
 
         _task_result = export.export_data_rollback_process(
-            self.task, self.cookies, self.export_data.id,
+            self.task, self.cookies, self.export_data.id, self.location.id, self.source.id,
             export_data_task=self.other_task.request.id,
         )
         self.task.update_state(state=states.SUCCESS, meta=_task_result)
@@ -1417,7 +1411,7 @@ class TestStopExportDataActionView(AdminTestCase):
         )
         mock_export_data.filter.return_value.exists.return_value = True
         mock_export_data.filter.return_value.first.return_value = export_data
-        mock_export_data.filter.return_value.update.return_value.first.return_value = export_data
+        mock_export_data.get.return_value = export_data
 
         self.request.data = {
             'institution_id': self.institution.id,
