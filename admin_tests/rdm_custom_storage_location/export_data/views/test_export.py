@@ -417,6 +417,7 @@ class TestSeparateFailedFiles(unittest.TestCase):
 
 class TestExportDataProcess(unittest.TestCase):
     def setUp(self):
+        super(TestExportDataProcess, self).setUp()
         celery_app.conf.update({
             'task_always_eager': False,
             'task_eager_propagates': False,
@@ -681,6 +682,7 @@ class TestExportDataProcess(unittest.TestCase):
 
 class TestExportDataRollbackProcess(unittest.TestCase):
     def setUp(self):
+        super(TestExportDataRollbackProcess, self).setUp()
         celery_app.conf.update({
             'task_always_eager': False,
             'task_eager_propagates': False,
@@ -1722,3 +1724,112 @@ class TestCheckRunningExportActionView(AdminTestCase):
 
         nt.assert_equal(response.status_code, status.HTTP_200_OK)
         nt.assert_equal(response.data.get('task_id'), None)
+
+
+class TestCheckExportDataProcessStatus(AdminTestCase):
+    def setUp(self):
+        super(TestCheckExportDataProcessStatus, self).setUp()
+        celery_app.conf.update({
+            'task_always_eager': False,
+            'task_eager_propagates': False,
+        })
+
+        self.institution = InstitutionFactory()
+        self.other_institution = InstitutionFactory()
+
+        self.source = RegionFactory()
+        self.source._id = self.institution._id
+        self.source.save()
+
+        self.location = ExportDataLocationFactory()
+        self.location.institution_guid = self.institution._id
+        self.location.save()
+
+        self.user = AuthUserFactory()
+        self.user.is_active = True
+        self.user.is_registered = True
+        self.user.is_staff = True
+        self.user.is_superuser = False
+        self.user.affiliated_institutions.add(self.institution)
+        self.user.save()
+
+        self.task = AbortableTask()
+        self.task.request_stack = LocalStack()
+        self.task.request.id = FAKE_TASK_ID
+        self.other_task = AbortableTask()
+        self.other_task.request_stack = LocalStack()
+        self.other_task.request.id = FAKE_TASK_ID[:-1] + '1'
+
+        self.export_data = ExportDataFactory(
+            creator=self.user,
+            source=self.source,
+            location=self.location,
+            task_id=self.task.request.id,
+            status=ExportData.STATUS_RUNNING
+        )
+
+    def test_check_export_data_process_status__c1_not_pass_interval(self):
+        _start_time = time.time()
+        _prev_time = export.check_export_data_process_status(_start_time, self.task.request.id)
+        self.assertEqual(_prev_time, _start_time)
+
+    def test_check_export_data_process_status__c2_is_forced(self):
+        _start_time = time.time()
+        _prev_time = export.check_export_data_process_status(
+            _start_time, self.task.request.id,
+            is_force=True
+        )
+        self.assertNotEqual(_prev_time, _start_time)
+
+        _prev_time = export.check_export_data_process_status(
+            _start_time, self.task.request.id,
+            location_id=self.location.id,
+            source_id=self.source.id,
+            export_data_id=self.export_data.id,
+            is_force=True
+        )
+        self.assertNotEqual(_prev_time, _start_time)
+
+    def test_check_export_data_process_status__c3_task_is_aborted(self):
+        _start_time = time.time()
+        self.task.update_state(state=ABORTED, meta={})
+        with self.assertRaises(export.ExportDataTaskException):
+            export.check_export_data_process_status(
+                _start_time, self.task.request.id, is_force=True
+            )
+
+    def test_check_export_data_process_status__c4_location_not_exist(self):
+        _start_time = time.time()
+        location_id = self.location.id
+        self.location.delete()
+        with self.assertRaises(export.ExportDataTaskException):
+            export.check_export_data_process_status(
+                _start_time, self.task.request.id,
+                location_id=location_id,
+                is_force=True
+            )
+
+    def test_check_export_data_process_status__c5_source__not_exist(self):
+        _start_time = time.time()
+        source_id = self.source.id
+        self.source.delete()
+        with self.assertRaises(export.ExportDataTaskException):
+            export.check_export_data_process_status(
+                _start_time, self.task.request.id,
+                location_id=self.location.id,
+                source_id=source_id,
+                is_force=True
+            )
+
+    def test_check_export_data_process_status__c6_export_data__not_exist(self):
+        _start_time = time.time()
+        export_data_id = self.export_data.id
+        self.export_data.delete()
+        with self.assertRaises(export.ExportDataTaskException):
+            export.check_export_data_process_status(
+                _start_time, self.task.request.id,
+                location_id=self.location.id,
+                source_id=self.source.id,
+                export_data_id=export_data_id,
+                is_force=True
+            )
