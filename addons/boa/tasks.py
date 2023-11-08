@@ -1,11 +1,13 @@
 import asyncio
+from http.client import HTTPException
 import logging
-from urllib import request
-from urllib.error import HTTPError, URLError
 
 from asgiref.sync import async_to_sync, sync_to_async
 from boaapi.boa_client import BoaClient, BoaException
 from boaapi.status import CompilerStatus, ExecutionStatus
+from urllib import request
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
 
 from addons.boa import settings as boa_settings
 from addons.boa.boa_error_code import BoaErrorCode
@@ -61,7 +63,7 @@ async def submit_to_boa_async(host, username, password, user_guid, project_guid,
     download_request.add_header('Cookie', f'{osf_settings.COOKIE_NAME}={cookie_value}')
     try:
         boa_query = ensure_str(request.urlopen(download_request).read())
-    except (ValueError, HTTPError, URLError):
+    except (ValueError, HTTPError, URLError, HTTPException):
         message = f'Failed to download Boa query file: user=[{user_guid}], project=[{project_guid}], ' \
                   f'file_name=[{query_file_name}], full_path=[{file_full_path}], url=[{query_download_url}] ...'
         await sync_to_async(handle_boa_error)(message, BoaErrorCode.UNKNOWN, user.username, user.fullname, project_url,
@@ -138,12 +140,13 @@ async def submit_to_boa_async(host, username, password, user_guid, project_guid,
 
     logger.debug(f'Uploading Boa query output to OSF: name=[{output_file_name}], upload_url=[{output_upload_url}] ...')
     try:
-        upload_request = request.Request(f'{output_upload_url}&name={output_file_name}')
+        output_query_param = urlencode({'name': output_file_name})
+        upload_request = request.Request(f'{output_upload_url}&{output_query_param}')
         upload_request.method = 'PUT'
         upload_request.data = ensure_bytes(boa_job_output)
         upload_request.add_header('Cookie', f'{osf_settings.COOKIE_NAME}={cookie_value}')
         request.urlopen(upload_request)
-    except (ValueError, HTTPError, URLError) as e:
+    except (ValueError, HTTPError, URLError, HTTPException) as e:
         message = f'Failed to upload query output file to OSF: ' \
                   f'name=[{output_file_name}], user=[{user_guid}], url=[{output_upload_url}]!'
         error_code = BoaErrorCode.UPLOAD_ERROR_OTHER
