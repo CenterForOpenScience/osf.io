@@ -1775,12 +1775,14 @@ class TestCheckExportDataProcessStatus(AdminTestCase):
 
     def test_check_export_data_process_status__c2_is_forced(self):
         _start_time = time.time()
+        self.task.update_state(state=states.STARTED, meta={})
         _prev_time = export.check_export_data_process_status(
             _start_time, self.task.request.id,
             is_force=True
         )
         self.assertNotEqual(_prev_time, _start_time)
 
+        self.task.update_state(state=states.STARTED, meta={})
         _prev_time = export.check_export_data_process_status(
             _start_time, self.task.request.id,
             location_id=self.location.id,
