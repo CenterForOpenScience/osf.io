@@ -78,7 +78,7 @@ async def submit_to_boa_async(host, username, password, user_guid, project_guid,
     try:
         client.login(username, password)
     except BoaException:
-        client.close()
+        # Don't call `client.close()`, since it will fail with `BoaException` if `client.login()` fails
         message = f'Boa login failed: boa_username=[{username}], boa_host=[{host}]!'
         await sync_to_async(handle_boa_error)(message, BoaErrorCode.AUTHN_ERROR, user.username, user.fullname, project_url,
                                               file_full_path, query_file_name=query_file_name)
