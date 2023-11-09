@@ -37,6 +37,10 @@
             A common cause of this failure is that the output is empty. Visit <a href="${boa_job_list_url}">Boa's job list page</a> to check if the output is empty. <br>
             <br>
             If you believe this is in error, contact Boa Support at <a href="mailto:${boa_support_email}">${boa_support_email}</a>. <br>
+        % elif code == 6:
+            OSF cannot submit your query file to Boa since it is too large: [${file_size} Bytes] is over the maximum allowed threshold [${max_file_size} Bytes]. <br>
+            <br>
+            If you believe this is in error, contact Boa Support at <a href="mailto:${boa_support_email}">${boa_support_email}</a>. <br>
         % else:
             OSF encountered an unexpected error when connecting to Boa. Please try again later. <br>
             <br>

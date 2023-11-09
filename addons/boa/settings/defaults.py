@@ -1,8 +1,10 @@
 DEFAULT_HOSTS = []
 USE_SSL = True
 
-# Max file size permitted by frontend in megabytes
-MAX_UPLOAD_SIZE = 512
+# Note: not applicable to the Boa addon
+MAX_UPLOAD_SIZE = 512  # 512 MB
+
+MAX_SUBMISSION_SIZE = 512 * 1024  # 512 KB
 
 # Suffix to replace '.boa' for the output file
 OUTPUT_FILE_SUFFIX = '_results.txt'

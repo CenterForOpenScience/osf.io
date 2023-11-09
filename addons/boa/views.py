@@ -87,6 +87,7 @@ def boa_submit_job(node_addon, **kwargs):
 
     # Query file
     file_name = req_params['data']['name']
+    file_size = req_params['data']['sizeInt']
     file_full_path = req_params['data']['materialized']
     file_download_url = req_params['data']['links']['download'].replace(osf_settings.WATERBUTLER_URL,
                                                                         osf_settings.WATERBUTLER_INTERNAL_URL)
@@ -107,6 +108,6 @@ def boa_submit_job(node_addon, **kwargs):
 
     # Send to task ``submit_to_boa``
     enqueue_task(submit_to_boa.s(host, username, password, user_guid, project_guid, dataset,
-                                 file_name, file_full_path, file_download_url, output_upload_url))
+                                 file_name, file_size, file_full_path, file_download_url, output_upload_url))
 
     return {}

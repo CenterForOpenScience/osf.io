@@ -12,3 +12,4 @@ class BoaErrorCode(IntEnum):
     UPLOAD_ERROR_CONFLICT = 3   # Fail to upload the output to OSF because file already exists
     UPLOAD_ERROR_OTHER = 4      # Fail to upload the output to OSF due to reasons other than ``UPLOAD_ERROR_CONFLICT``
     OUTPUT_ERROR = 5            # Fail to retrieve the output after Boa job has finished
+    SUBMISSION_ERROR_FILE_TOO_LARGE = 6    # Fail to submit to boa due to query file too large
