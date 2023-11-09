@@ -84,7 +84,6 @@ def boa_submit_job(node_addon, **kwargs):
     user = kwargs['auth'].user
     user_guid = user._id
     project_guid = req_params['data']['nodeId']
-    project_node = AbstractNode.load(project_guid)
 
     # Query file
     file_name = req_params['data']['name']
@@ -95,6 +94,7 @@ def boa_submit_job(node_addon, **kwargs):
     # Parent folder: project root is different from sub-folder
     is_addon_root = req_params['parent'].get('isAddonRoot', False)
     if is_addon_root:
+        project_node = AbstractNode.load(project_guid)
         base_url = project_node.osfstorage_region.waterbutler_url
         parent_wb_url = waterbutler_api_url_for(project_guid, 'osfstorage', _internal=True, base_url=base_url)
         output_upload_url = f'{parent_wb_url}?kind=file'
