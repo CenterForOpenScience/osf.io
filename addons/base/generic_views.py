@@ -1,20 +1,18 @@
-"""Generic add-on view factories"""
-# -*- coding: utf-8 -*-
+from flask import request
 from rest_framework import status as http_status
 
-from flask import request
-
-from framework.exceptions import HTTPError, PermissionsError
 from framework.auth.decorators import must_be_logged_in
-
+from framework.exceptions import HTTPError, PermissionsError
 from osf.models import ExternalAccount
-
 from osf.utils import permissions
 from website.project.decorators import (
-    must_have_addon, must_be_addon_authorizer,
-    must_have_permission, must_not_be_registration,
-    must_be_valid_project
+    must_be_addon_authorizer,
+    must_be_valid_project,
+    must_have_addon,
+    must_have_permission,
+    must_not_be_registration,
 )
+
 
 def import_auth(addon_short_name, Serializer):
     @must_have_addon(addon_short_name, 'user')
@@ -39,10 +37,11 @@ def import_auth(addon_short_name, Serializer):
 
         return {
             'result': Serializer().serialize_settings(node_addon, auth.user),
-            'message': 'Successfully imported access token from profile.',
+            'message': 'Successfully imported credentials from profile.',
         }
     _import_auth.__name__ = '{0}_import_auth'.format(addon_short_name)
     return _import_auth
+
 
 def account_list(addon_short_name, Serializer):
     @must_be_logged_in
@@ -52,6 +51,7 @@ def account_list(addon_short_name, Serializer):
         return serializer.serialized_user_settings
     _account_list.__name__ = '{0}_account_list'.format(addon_short_name)
     return _account_list
+
 
 def folder_list(addon_short_name, addon_full_name, get_folders):
     # TODO [OSF-6678]: Generalize this for API use after node settings have been refactored
@@ -66,6 +66,7 @@ def folder_list(addon_short_name, addon_full_name, get_folders):
         return get_folders(node_addon, folder_id)
     _folder_list.__name__ = '{0}_folder_list'.format(addon_short_name)
     return _folder_list
+
 
 def get_config(addon_short_name, Serializer):
     @must_be_logged_in
@@ -82,6 +83,7 @@ def get_config(addon_short_name, Serializer):
         }
     _get_config.__name__ = '{0}_get_config'.format(addon_short_name)
     return _get_config
+
 
 def set_config(addon_short_name, addon_full_name, Serializer, set_folder):
     @must_not_be_registration
@@ -109,6 +111,7 @@ def set_config(addon_short_name, addon_full_name, Serializer, set_folder):
         }
     _set_config.__name__ = '{0}_set_config'.format(addon_short_name)
     return _set_config
+
 
 def deauthorize_node(addon_short_name):
     @must_not_be_registration
