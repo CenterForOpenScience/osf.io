@@ -41,6 +41,14 @@
             OSF cannot submit your query file to Boa since it is too large: [${file_size} Bytes] is over the maximum allowed threshold [${max_file_size} Bytes]. <br>
             <br>
             If you believe this is in error, contact OSF Help Desk at <a href="mailto:${osf_support_email}">${osf_support_email}</a>. <br>
+        % elif code == 7:
+            It's been ${max_job_wait_hours} hours since we submitted your query job [${job_id}] to Boa. <br>
+            <br>
+            However, OSF haven't received confirmation from Boa that the job has been finished. <br>
+            <br>
+            Visit <a href="${boa_job_list_url}">Boa's job list page</a> to check it's status. <br>
+            <br>
+            If you believe this is in error, contact OSF Help Desk at <a href="mailto:${osf_support_email}">${osf_support_email}</a>. <br>
         % else:
             OSF encountered an unexpected error when connecting to Boa. Please try again later. <br>
             <br>

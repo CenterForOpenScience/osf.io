@@ -1,6 +1,7 @@
 import asyncio
 from http.client import HTTPException
 import logging
+import time
 
 from asgiref.sync import async_to_sync, sync_to_async
 from boaapi.boa_client import BoaClient, BoaException
@@ -111,6 +112,7 @@ async def submit_to_boa_async(host, username, password, user_guid, project_guid,
     logger.debug(f'Submitting the query to Boa API: boa_host=[{host}], dataset=[{query_dataset}] ...')
     try:
         boa_job = client.query(boa_query, dataset)
+        start_time = time.time()
     except BoaException:
         client.close()
         message = f'Failed to submit the query to Boa API: : boa_host=[{host}], dataset=[{query_dataset}]!'
@@ -120,6 +122,13 @@ async def submit_to_boa_async(host, username, password, user_guid, project_guid,
     logger.info('Query successfully submitted.')
     logger.debug(f'Waiting for job to finish: job_id=[{str(boa_job.id)}] ...')
     while boa_job.is_running():
+        if time.time() - start_time > boa_settings.MAX_JOB_WAITING_TIME:
+            client.close()
+            message = f'Boa job did not complete in time: job_id=[{str(boa_job.id)}]!'
+            await sync_to_async(handle_boa_error)(message, BoaErrorCode.JOB_TIME_OUT_ERROR,
+                                                  user.username, user.fullname, project_url, file_full_path,
+                                                  query_file_name=query_file_name, job_id=boa_job.id)
+            return BoaErrorCode.QUERY_ERROR
         logger.debug(f'Boa job still running, waiting 10s: job_id=[{str(boa_job.id)}] ...')
         boa_job.refresh()
         await asyncio.sleep(boa_settings.REFRESH_JOB_INTERVAL)
@@ -209,6 +218,7 @@ def handle_boa_error(message, code, username, fullname, project_url, query_file_
         query_file_full_path=query_file_full_path,
         output_file_name=output_file_name,
         job_id=job_id,
+        max_job_wait_hours=boa_settings.MAX_JOB_WAITING_TIME / 3600,
         project_url=project_url,
         boa_job_list_url=boa_settings.BOA_JOB_LIST_URL,
         boa_support_email=boa_settings.BOA_SUPPORT_EMAIL,
