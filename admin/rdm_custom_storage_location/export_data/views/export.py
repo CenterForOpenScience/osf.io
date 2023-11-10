@@ -515,7 +515,6 @@ def export_data_rollback_process(task, cookies, export_data_id, location_id, sou
     _start_time = time.time()
     task_id = task.request.id
     is_rollback = kwargs.get('is_rollback', False)
-    is_stopped = False
     try:
         # [Important] check process status before each step
         _prev_time = check_export_data_process_status(
@@ -530,7 +529,6 @@ def export_data_rollback_process(task, cookies, export_data_id, location_id, sou
 
         # if an export process is stopped before rollback
         if is_rollback and export_data.status in [ExportData.STATUS_STOPPED]:
-            is_stopped = True
             raise ExportDataTaskException(MSG_EXPORT_STOPPED)
 
         # start stopping export - update record in DB
@@ -606,7 +604,8 @@ def export_data_rollback_process(task, cookies, export_data_id, location_id, sou
         export_data_set = ExportData.objects.filter(pk=export_data_id)
         if export_data_set.exists():
             export_data = export_data_set.first()
-            if not is_stopped:
+            # Stop export can be finished before the export's rollback process
+            if export_data.status not in [ExportData.STATUS_STOPPED]:
                 export_data.status = ExportData.STATUS_ERROR
                 export_data.save()
             logger.info(f'Export process status is changed to {export_data.status}.')
