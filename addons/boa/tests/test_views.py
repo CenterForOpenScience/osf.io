@@ -200,6 +200,7 @@ class TestBoaSubmitViews(BoaBasicAuthAddonTestCase, OsfTestCase):
         super(TestBoaSubmitViews, self).setUp()
         self.folder_name = 'fake_boa_folder'
         self.file_name = 'fake_boa_file.boa'
+        self.file_size = 255
         self.dataset = 'fake_boa_dataset'
         self.download_url = f'{osf_settings.WATERBUTLER_URL}/v1/resources/{self.project._primary_key}/' \
                             f'providers/osfstorage/1a2b3c4d5e6f7g8'
@@ -215,6 +216,7 @@ class TestBoaSubmitViews(BoaBasicAuthAddonTestCase, OsfTestCase):
                 'name': self.file_name,
                 'materialized': f'/{self.folder_name}/{self.file_name}',
                 'nodeId': self.project._id,
+                'sizeInt': self.file_size,
             },
             'parent': {
                 'links': {'upload': self.upload_url, },
@@ -227,6 +229,7 @@ class TestBoaSubmitViews(BoaBasicAuthAddonTestCase, OsfTestCase):
                 'name': self.file_name,
                 'materialized': f'/{self.file_name}',
                 'nodeId': self.project._id,
+                'sizeInt': self.file_size,
             },
             'parent': {
                 'isAddonRoot': True,
@@ -254,6 +257,7 @@ class TestBoaSubmitViews(BoaBasicAuthAddonTestCase, OsfTestCase):
                 self.project._id,
                 self.dataset,
                 self.file_name,
+                self.file_size,
                 f'/{self.file_name}',
                 self.download_url_internal,
                 upload_url_root,
@@ -273,6 +277,7 @@ class TestBoaSubmitViews(BoaBasicAuthAddonTestCase, OsfTestCase):
                 self.project._id,
                 self.dataset,
                 self.file_name,
+                self.file_size,
                 f'/{self.folder_name}/{self.file_name}',
                 self.download_url_internal,
                 self.upload_url_internal,
@@ -294,6 +299,7 @@ class TestBoaSubmitViews(BoaBasicAuthAddonTestCase, OsfTestCase):
                 self.project._id,
                 self.dataset,
                 self.file_name,
+                self.file_size,
                 f'/{self.folder_name}/{self.file_name}',
                 self.download_url_internal,
                 self.upload_url_internal,
@@ -315,6 +321,7 @@ class TestBoaSubmitViews(BoaBasicAuthAddonTestCase, OsfTestCase):
                 self.project._id,
                 self.dataset,
                 self.file_name,
+                self.file_size,
                 f'/{self.folder_name}/{self.file_name}',
                 self.download_url_internal,
                 self.upload_url_internal,

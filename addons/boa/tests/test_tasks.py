@@ -30,6 +30,8 @@ class TestBoaErrorHandling(OsfTestCase):
         self.user_fullname = 'fake-user-fullname'
         self.project_url = 'http://localhost:5000/1a2b3'
         self.query_file_name = 'fake_boa_script.boa'
+        self.file_size = 255
+        self.max_job_wait_hours = boa_settings.MAX_JOB_WAITING_TIME / 3600
         self.file_full_path = '/fake_boa_folder/fake_boa_script.boa'
         self.output_file_name = 'fake_boa_script_results.txt'
         self.job_id = '1a2b3c4d5e6f7g8'
@@ -45,6 +47,8 @@ class TestBoaErrorHandling(OsfTestCase):
         assert BoaErrorCode.UPLOAD_ERROR_CONFLICT == 3
         assert BoaErrorCode.UPLOAD_ERROR_OTHER == 4
         assert BoaErrorCode.OUTPUT_ERROR == 5
+        assert BoaErrorCode.FILE_TOO_LARGE_ERROR == 6
+        assert BoaErrorCode.JOB_TIME_OUT_ERROR == 7
 
     def test_handle_boa_error(self):
         with mock.patch('addons.boa.tasks.send_mail', return_value=None) as mock_send_mail, \
@@ -58,6 +62,7 @@ class TestBoaErrorHandling(OsfTestCase):
                 self.project_url,
                 self.file_full_path,
                 query_file_name=self.query_file_name,
+                file_size=self.file_size,
                 output_file_name=self.output_file_name,
                 job_id=self.job_id
             )
@@ -68,9 +73,12 @@ class TestBoaErrorHandling(OsfTestCase):
                 code=BoaErrorCode.UNKNOWN,
                 message=self.error_message,
                 query_file_name=self.query_file_name,
+                file_size=self.file_size,
+                max_file_size=boa_settings.MAX_SUBMISSION_SIZE,
                 query_file_full_path=self.file_full_path,
                 output_file_name=self.output_file_name,
                 job_id=self.job_id,
+                max_job_wait_hours=self.max_job_wait_hours,
                 project_url=self.project_url,
                 boa_job_list_url=boa_settings.BOA_JOB_LIST_URL,
                 boa_support_email=boa_settings.BOA_SUPPORT_EMAIL,
@@ -92,6 +100,7 @@ class TestSubmitToBoa(OsfTestCase):
         self.project_guid = ProjectFactory()._id
         self.query_dataset = '2023 Oct / Fake Boa Dataset (small)'
         self.query_file_name = 'fake_boa_script.boa'
+        self.file_size = 255
         self.file_full_path = '/fake_boa_folder/fake_boa_script.boa'
         self.query_download_url = f'http://localhost:7777/v1/resources/{self.project_guid}/providers/osfstorage/1a2b3c4d'
         self.output_upload_url = f'http://localhost:7777/v1/resources/{self.project_guid}/providers/osfstorage/?kind=file'
@@ -113,6 +122,7 @@ class TestSubmitToBoa(OsfTestCase):
                 self.project_guid,
                 self.query_dataset,
                 self.query_file_name,
+                self.file_size,
                 self.file_full_path,
                 self.query_download_url,
                 self.output_upload_url
@@ -136,6 +146,7 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
         self.project_url = f'{osf_settings.DOMAIN}{self.project_guid}/'
         self.query_dataset = '2023 Oct / Fake Boa Dataset (small)'
         self.query_file_name = 'fake_boa_script.boa'
+        self.file_size = 255
         self.output_file_name = 'fake_boa_script_results.txt'
         self.file_full_path = '/fake_boa_folder/fake_boa_script.boa'
         self.query_download_url = f'http://localhost:7777/v1/resources/{self.project_guid}/providers/osfstorage/1a2b3c4d'
@@ -172,6 +183,7 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
                 self.project_guid,
                 self.query_dataset,
                 self.query_file_name,
+                self.file_size,
                 self.file_full_path,
                 self.query_download_url,
                 self.output_upload_url,
@@ -210,6 +222,7 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
                 self.project_guid,
                 self.query_dataset,
                 self.query_file_name,
+                self.file_size,
                 self.file_full_path,
                 self.query_download_url,
                 self.output_upload_url,
@@ -240,13 +253,14 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
                 self.project_guid,
                 self.query_dataset,
                 self.query_file_name,
+                self.file_size,
                 self.file_full_path,
                 self.query_download_url,
                 self.output_upload_url,
             )
             assert return_value == BoaErrorCode.AUTHN_ERROR
             mock_login.assert_called_with(self.username, self.password)
-            mock_close.assert_called()
+            mock_close.assert_not_called()
             mock_handle_boa_error.assert_called_with(
                 ANY,
                 BoaErrorCode.AUTHN_ERROR,
@@ -273,6 +287,7 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
                 self.project_guid,
                 self.query_dataset,
                 self.query_file_name,
+                self.file_size,
                 self.file_full_path,
                 self.query_download_url,
                 self.output_upload_url,
@@ -307,6 +322,7 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
                 self.project_guid,
                 self.query_dataset,
                 self.query_file_name,
+                self.file_size,
                 self.file_full_path,
                 self.query_download_url,
                 self.output_upload_url,
@@ -344,6 +360,7 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
                 self.project_guid,
                 self.query_dataset,
                 self.query_file_name,
+                self.file_size,
                 self.file_full_path,
                 self.query_download_url,
                 self.output_upload_url,
@@ -381,6 +398,7 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
                 self.project_guid,
                 self.query_dataset,
                 self.query_file_name,
+                self.file_size,
                 self.file_full_path,
                 self.query_download_url,
                 self.output_upload_url,
@@ -417,6 +435,7 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
                 self.project_guid,
                 self.query_dataset,
                 self.query_file_name,
+                self.file_size,
                 self.file_full_path,
                 self.query_download_url,
                 self.output_upload_url,
@@ -454,6 +473,7 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
                 self.project_guid,
                 self.query_dataset,
                 self.query_file_name,
+                self.file_size,
                 self.file_full_path,
                 self.query_download_url,
                 self.output_upload_url,
@@ -491,6 +511,7 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
                 self.project_guid,
                 self.query_dataset,
                 self.query_file_name,
+                self.file_size,
                 self.file_full_path,
                 self.query_download_url,
                 self.output_upload_url,
