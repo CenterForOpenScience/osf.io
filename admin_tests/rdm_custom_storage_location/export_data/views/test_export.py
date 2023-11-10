@@ -829,6 +829,36 @@ class TestExportDataRollbackProcess(unittest.TestCase):
 
     @pytest.mark.django_db
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
+    def test_export_data_rollback_process__rollback_stopped_process(
+            self, mock_export_data):
+        self.export_data.status = ExportData.STATUS_STOPPED
+        self.export_data.save()
+        mock_export_data.filter.return_value.first.return_value = self.export_data
+        mock_export_data.filter.return_value.exists.return_value = True
+        mock_export_data.get.return_value = self.export_data
+
+        with self.assertRaises(Ignore):
+            export.export_data_rollback_process(
+                self.task, self.cookies, self.export_data.id, self.location.id, self.source.id,
+                is_rollback=True,
+            )
+
+        task_result = AbortableAsyncResult(self.task.request.id)
+        nt.assert_equal(task_result.state, states.FAILURE)
+        nt.assert_equal(self.export_data.status, ExportData.STATUS_STOPPED)
+        task_record_set = TaskResult.objects.filter(task_id=self.task.request.id)
+        if task_record_set:
+            task_record = task_record_set.first()
+            _task_result = json.loads(task_record.result)
+            nt.assert_equal(_task_result.get('exc_type'), 'ExportDataTaskException')
+            nt.assert_equal(_task_result.get('exc_message'), export.MSG_EXPORT_STOPPED)
+            nt.assert_equal(_task_result.get('export_data_id'), self.export_data.id)
+            nt.assert_equal(_task_result.get('export_data_task_id'), None)
+            nt.assert_equal(_task_result.get('export_data_status'), self.export_data.status)
+            nt.assert_equal(_task_result.get('traceback'), None)
+
+    @pytest.mark.django_db
+    @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
     def test_export_data_rollback_process__rollback_raise_stopped(
             self, mock_export_data):
         mock_export_data.filter.return_value.first.return_value = self.export_data

@@ -48,6 +48,8 @@ MSG_EXPORT_STOPPED = f'The data export process is successfully stopped'
 MSG_EXPORT_FORCE_STOPPED = (f'The export data process is stopped'
                             f' without completely deleting the export data file')
 MSG_EXPORT_FAILED_UPLOAD_TO_LOCATION = f'Cannot create folder or upload file to the export storage location'
+# the delta seconds between call check data function
+# it is used to avoid too many check calls in a short period of time
 CHECK_DATA_INTERVAL_MIN_SECS = 10
 
 
@@ -184,9 +186,6 @@ def check_export_data_process_status(
         return _prev_time
 
     _check_time = time.time()
-    task = AbortableAsyncResult(task_id)
-    if task and task.is_aborted():
-        raise ExportDataTaskException(MSG_EXPORT_ABORTED)
 
     # check if the export storage location / the export storage destination is deleted
     if location_id and not ExportDataLocation.objects.filter(pk=location_id).exists():
@@ -199,6 +198,11 @@ def check_export_data_process_status(
     #   according to the parent object
     if export_data_id and not ExportData.objects.filter(pk=export_data_id).exists():
         raise ExportDataTaskException(MSG_EXPORT_REMOVED)
+
+    # check if the task is aborted (can be 'Stop Export Data')
+    task = AbortableAsyncResult(task_id)
+    if task and task.is_aborted():
+        raise ExportDataTaskException(MSG_EXPORT_ABORTED)
 
     return _check_time
 
@@ -218,17 +222,17 @@ def export_data_process(task, cookies, export_data_id, location_id, source_id, *
         export_data.task_id = task.request.id
         export_data.status = ExportData.STATUS_RUNNING
         export_data.save()
-        logger.info(f'Export process status is changed to {export_data.status}.'
-                    f' ({time.time() - _prev_time}s)')
+        logger.info(f'Export process status is changed to {export_data.status}.')
 
         # [Important] check process status before each step
         _prev_time = check_export_data_process_status(
             _prev_time, task_id, export_data_id, location_id, source_id)
 
         # extract file information
+        _step_start_time = time.time()
         export_data_json, file_info_json = export_data.extract_file_information_json_from_source_storage()
         logger.info(f'Extracted file information.'
-                    f' ({time.time() - _prev_time}s)')
+                    f' ({time.time() - _step_start_time}s)')
 
         # [Important] check process status before each step
         _prev_time = check_export_data_process_status(
@@ -236,11 +240,12 @@ def export_data_process(task, cookies, export_data_id, location_id, source_id, *
 
         # create export data process folder
         logger.debug(f'creating export data process folder')
+        _step_start_time = time.time()
         response = export_data.create_export_data_folder(cookies, **kwargs)
         if not task.is_aborted() and response.status_code != 201:
             raise ExportDataTaskException(MSG_EXPORT_FAILED_UPLOAD_TO_LOCATION)
         logger.info(f'Created \'{export_data.export_data_folder_path}\' folder path.'
-                    f' ({time.time() - _prev_time}s)')
+                    f' ({time.time() - _step_start_time}s)')
 
         # export target file and accompanying data
 
@@ -250,24 +255,27 @@ def export_data_process(task, cookies, export_data_id, location_id, source_id, *
 
         # create 'files' folder
         logger.debug(f'creating files folder')
+        _step_start_time = time.time()
         response = export_data.create_export_data_files_folder(cookies, **kwargs)
         if not task.is_aborted() and response.status_code != 201:
             raise ExportDataTaskException(MSG_EXPORT_FAILED_UPLOAD_TO_LOCATION)
         logger.info(f'Created \'{export_data.export_data_files_folder_path}\' folder path.'
-                    f' ({time.time() - _prev_time}s)')
+                    f' ({time.time() - _step_start_time}s)')
 
         # [Important] check process status before each step
         _prev_time = check_export_data_process_status(
             _prev_time, task_id, export_data_id, location_id, source_id)
 
         logger.debug(f'prepare list of file versions data to upload')
+        _step_start_time = time.time()
         file_versions = export_data.get_source_file_versions_min(file_info_json)
         _length = len(file_versions)
         logger.info(f'There is {_length} file versions needed to upload to the export storage destination.'
-                    f' ({time.time() - _prev_time}s)')
+                    f' ({time.time() - _step_start_time}s)')
 
         # upload file versions
         logger.debug(f'upload file versions')
+        _step_start_time = time.time()
         # cached the filename in hash value
         created_filename_list = []
         files_versions_not_found = {}
@@ -286,6 +294,7 @@ def export_data_process(task, cookies, export_data_id, location_id, source_id, *
             _prev_time = check_export_data_process_status(
                 _prev_time, task_id, export_data_id, location_id, source_id)
 
+            _up_file_start_time = time.time()
             kwargs.update({'version': version})
             # copy data file from source storage to location storage
             response = export_data.copy_export_data_file_to_location(
@@ -294,17 +303,17 @@ def export_data_process(task, cookies, export_data_id, location_id, source_id, *
             if response.status_code == 201:
                 created_filename_list.append(file_name)
                 logger.debug(f'Upload file successfully.'
-                             f' ({time.time() - _prev_time}s)')
+                             f' ({time.time() - _up_file_start_time}s)')
             else:
                 if file_id not in files_versions_not_found:
                     files_versions_not_found[file_id] = [version]
                 else:
                     files_versions_not_found[file_id].append(version)
                 logger.debug(f'File upload failed.'
-                             f' ({time.time() - _prev_time}s)')
+                             f' ({time.time() - _up_file_start_time}s)')
                 continue
         logger.info(f'Have gone through the entire list of file versions.'
-                    f' ({time.time() - _prev_time}s)')
+                    f' ({time.time() - _step_start_time}s)')
 
         # [Important] check process status before each step
         _prev_time = check_export_data_process_status(
@@ -312,6 +321,7 @@ def export_data_process(task, cookies, export_data_id, location_id, source_id, *
 
         # Separate the failed file list from the file_info_json
         logger.debug('Separate the failed file list from the file_info_json')
+        _step_start_time = time.time()
         files = file_info_json.get('files', [])
         files_not_found, sub_size, sub_files_numb = separate_failed_files(files, files_versions_not_found)
         export_data_json['size'] -= sub_size
@@ -319,7 +329,7 @@ def export_data_process(task, cookies, export_data_id, location_id, source_id, *
         logger.info(f'Separated the failed file list from the file_info_json.')
         logger.info(f'Uploaded {_length - sub_files_numb}/{_length} file versions.'
                     f' Failed {sub_files_numb} file versions.'
-                    f' ({time.time() - _prev_time}s)')
+                    f' ({time.time() - _step_start_time}s)')
 
         # [Important] check process status before each step
         _prev_time = check_export_data_process_status(
@@ -331,12 +341,13 @@ def export_data_process(task, cookies, export_data_id, location_id, source_id, *
 
         # create files' information JSON file
         logger.debug(f'creating files information JSON file')
+        _step_start_time = time.time()
         write_json_file(file_info_json, temp_file_path)
         response = export_data.upload_file_info_file(cookies, temp_file_path, **kwargs)
         if not task.is_aborted() and response.status_code != 201:
             raise ExportDataTaskException(MSG_EXPORT_FAILED_UPLOAD_TO_LOCATION)
         logger.info(f'Created files information JSON file.'
-                    f' ({time.time() - _prev_time}s)')
+                    f' ({time.time() - _step_start_time}s)')
 
         # [Important] check process status before each step
         _prev_time = check_export_data_process_status(
@@ -344,6 +355,7 @@ def export_data_process(task, cookies, export_data_id, location_id, source_id, *
 
         # create export data JSON file
         logger.debug(f'creating export data JSON file')
+        _step_start_time = time.time()
         process_end = timezone.make_naive(timezone.now(), timezone.utc)
         export_data_json['process_end'] = process_end.strftime('%Y-%m-%d %H:%M:%S')
         write_json_file(export_data_json, temp_file_path)
@@ -351,7 +363,7 @@ def export_data_process(task, cookies, export_data_id, location_id, source_id, *
         if not task.is_aborted() and response.status_code != 201:
             raise ExportDataTaskException(MSG_EXPORT_FAILED_UPLOAD_TO_LOCATION)
         logger.info(f'Created export data JSON file.'
-                    f' ({time.time() - _prev_time}s)')
+                    f' ({time.time() - _step_start_time}s)')
 
         # remove temporary file
         if os.path.exists(temp_file_path):
@@ -373,8 +385,7 @@ def export_data_process(task, cookies, export_data_id, location_id, source_id, *
         export_data.file_number = export_data_json.get('files_numb', 0)
         export_data.total_size = export_data_json.get('size', 0)
         export_data.save()
-        logger.info(f'Export process status is changed to {export_data.status}.'
-                    f' ({time.time() - _prev_time}s)')
+        logger.info(f'Export process status is changed to {export_data.status}.')
 
         institution_guid = export_data_json.get('institution').get('guid')
         return {
@@ -504,6 +515,7 @@ def export_data_rollback_process(task, cookies, export_data_id, location_id, sou
     _start_time = time.time()
     task_id = task.request.id
     is_rollback = kwargs.get('is_rollback', False)
+    is_stopped = False
     try:
         # [Important] check process status before each step
         _prev_time = check_export_data_process_status(
@@ -515,6 +527,11 @@ def export_data_rollback_process(task, cookies, export_data_id, location_id, sou
         if not is_rollback and export_data.status not in ExportData.EXPORT_DATA_STOPPABLE:
             logger.debug(MSG_EXPORT_UNSTOPPABLE)
             raise ExportDataTaskException(MSG_EXPORT_UNSTOPPABLE)
+
+        # if an export process is stopped before rollback
+        if is_rollback and export_data.status in [ExportData.STATUS_STOPPED]:
+            is_stopped = True
+            raise ExportDataTaskException(MSG_EXPORT_STOPPED)
 
         # start stopping export - update record in DB
         export_data.task_id = task.request.id
@@ -589,8 +606,9 @@ def export_data_rollback_process(task, cookies, export_data_id, location_id, sou
         export_data_set = ExportData.objects.filter(pk=export_data_id)
         if export_data_set.exists():
             export_data = export_data_set.first()
-            export_data.status = ExportData.STATUS_ERROR
-            export_data.save()
+            if not is_stopped:
+                export_data.status = ExportData.STATUS_ERROR
+                export_data.save()
             logger.info(f'Export process status is changed to {export_data.status}.')
             task_meta['export_data_status'] = export_data.status
 
