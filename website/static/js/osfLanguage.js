@@ -104,6 +104,12 @@ module.exports = {
                         $osf.osfSupportLink(),
             submitSettingsSuccess : 'Folder Successfully linked',
         },
+        boa: {
+            authInvalid: 'Invalid credentials. Please enter a valid username and password.',
+            userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +
+                'contact ' + $osf.osfSupportLink() + ' if the problem persists.',
+            confirmAuth : 'Are you sure you want to authorize this project with your Boa credentials?',
+        },
     },
     apiOauth2Application: {
         discardUnchanged: 'Are you sure you want to discard your unsaved changes?',

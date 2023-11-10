@@ -36,6 +36,7 @@ WORKDIR /code
 COPY ./requirements.txt ./
 COPY ./requirements/ ./requirements/
 COPY ./addons/bitbucket/requirements.txt ./addons/bitbucket/
+COPY ./addons/boa/requirements.txt ./addons/boa/
 COPY ./addons/box/requirements.txt ./addons/box/
 #COPY ./addons/citations/requirements.txt ./addons/citations/
 COPY ./addons/dataverse/requirements.txt ./addons/dataverse/
@@ -116,6 +117,7 @@ COPY ./admin/webpack* ./admin/
 COPY ./admin/static/ ./admin/static/
 ## Addons
 COPY ./addons/bitbucket/static/ ./addons/bitbucket/static/
+COPY ./addons/boa/static/ ./addons/boa/static/
 COPY ./addons/box/static/ ./addons/box/static/
 COPY ./addons/citations/static/ ./addons/citations/static/
 COPY ./addons/dataverse/static/ ./addons/dataverse/static/

@@ -410,6 +410,11 @@ class CeleryConfig:
     task_low_queue = 'low'
     task_med_queue = 'med'
     task_high_queue = 'high'
+    task_remote_computing_queue = 'remote'
+
+    remote_computing_modules = {
+        'addons.boa.tasks.submit_to_boa',
+    }
 
     low_pri_modules = {
         'framework.analytics.tasks',
@@ -472,14 +477,16 @@ class CeleryConfig:
         pass
     else:
         task_queues = (
-            Queue(task_low_queue, Exchange(task_low_queue), routing_key=task_low_queue,
-                consumer_arguments={'x-priority': -1}),
-            Queue(task_default_queue, Exchange(task_default_queue), routing_key=task_default_queue,
-                consumer_arguments={'x-priority': 0}),
-            Queue(task_med_queue, Exchange(task_med_queue), routing_key=task_med_queue,
-                consumer_arguments={'x-priority': 1}),
-            Queue(task_high_queue, Exchange(task_high_queue), routing_key=task_high_queue,
-                consumer_arguments={'x-priority': 10}),
+            Queue(task_remote_computing_queue, Exchange(task_remote_computing_queue),
+                  routing_key=task_remote_computing_queue, consumer_arguments={'x-priority': -10}),
+            Queue(task_low_queue, Exchange(task_low_queue),
+                  routing_key=task_low_queue,  consumer_arguments={'x-priority': -1}),
+            Queue(task_default_queue, Exchange(task_default_queue),
+                  routing_key=task_default_queue, consumer_arguments={'x-priority': 0}),
+            Queue(task_med_queue, Exchange(task_med_queue),
+                  routing_key=task_med_queue, consumer_arguments={'x-priority': 1}),
+            Queue(task_high_queue, Exchange(task_high_queue),
+                  routing_key=task_high_queue, consumer_arguments={'x-priority': 10}),
         )
 
         task_default_exchange_type = 'direct'
@@ -2129,3 +2136,4 @@ CAS_LOG_LEVEL = 3  # ERROR
 PREPRINT_METRICS_START_DATE = datetime.datetime(2019, 1, 1)
 
 WAFFLE_VALUES_YAML = 'osf/features.yaml'
+DEFAULT_DRAFT_NODE_TITLE = 'Untitled'

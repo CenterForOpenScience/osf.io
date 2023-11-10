@@ -25,27 +25,26 @@ def get_session_data():
         return {}
 
 
-def log_exception():
+def log_exception(skip_session=False):
     if not enabled:
         logger.warning('Sentry called to log exception, but is not active')
         return None
+    extra = {
+        'session': {} if skip_session else get_session_data(),
+    }
+    return sentry.captureException(extra=extra)
 
-    return sentry.captureException(extra={
-        'session': get_session_data(),
-    })
 
-
-def log_message(message, extra_data=None, level=logging.ERROR):
+def log_message(message, skip_session=False, extra_data=None, level=logging.ERROR):
     if not enabled:
         logger.warning(
             'Sentry called to log message, but is not active: %s' % message
         )
         return None
     extra = {
-        'session': get_session_data(),
+        'session': {} if skip_session else get_session_data(),
     }
     if extra_data is None:
         extra_data = {}
     extra.update(extra_data)
-
     return sentry.captureMessage(message, extra=extra, level=level)
