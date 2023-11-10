@@ -64,10 +64,10 @@ async def submit_to_boa_async(host, username, password, user_guid, project_guid,
         message = f'Boa query file too large to submit: user=[{user_guid}], project=[{project_guid}], ' \
                   f'file_name=[{query_file_name}], file_size=[{file_size}], ' \
                   f'full_path=[{file_full_path}], url=[{query_download_url}] ...'
-        await sync_to_async(handle_boa_error)(message, BoaErrorCode.SUBMISSION_ERROR_FILE_TOO_LARGE,
+        await sync_to_async(handle_boa_error)(message, BoaErrorCode.FILE_TOO_LARGE_ERROR,
                                               user.username, user.fullname, project_url, file_full_path,
                                               query_file_name=query_file_name, file_size=file_size)
-        return BoaErrorCode.SUBMISSION_ERROR_FILE_TOO_LARGE
+        return BoaErrorCode.FILE_TOO_LARGE_ERROR
 
     logger.debug(f'Downloading Boa query file: user=[{user_guid}], project=[{project_guid}], '
                  f'file_name=[{query_file_name}], full_path=[{file_full_path}], url=[{query_download_url}] ...')
@@ -122,7 +122,7 @@ async def submit_to_boa_async(host, username, password, user_guid, project_guid,
     while boa_job.is_running():
         logger.debug(f'Boa job still running, waiting 10s: job_id=[{str(boa_job.id)}] ...')
         boa_job.refresh()
-        await asyncio.sleep(10)
+        await asyncio.sleep(boa_settings.REFRESH_JOB_INTERVAL)
     if boa_job.compiler_status is CompilerStatus.ERROR:
         client.close()
         message = f'Boa job failed with compile error: job_id=[{str(boa_job.id)}]!'

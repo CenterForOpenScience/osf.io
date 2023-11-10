@@ -40,7 +40,7 @@
         % elif code == 6:
             OSF cannot submit your query file to Boa since it is too large: [${file_size} Bytes] is over the maximum allowed threshold [${max_file_size} Bytes]. <br>
             <br>
-            If you believe this is in error, contact Boa Support at <a href="mailto:${boa_support_email}">${boa_support_email}</a>. <br>
+            If you believe this is in error, contact OSF Help Desk at <a href="mailto:${osf_support_email}">${osf_support_email}</a>. <br>
         % else:
             OSF encountered an unexpected error when connecting to Boa. Please try again later. <br>
             <br>

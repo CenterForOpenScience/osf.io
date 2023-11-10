@@ -4,7 +4,11 @@ USE_SSL = True
 # Note: not applicable to the Boa addon
 MAX_UPLOAD_SIZE = 512  # 512 MB
 
+# Max file size allowed for submission
 MAX_SUBMISSION_SIZE = 512 * 1024  # 512 KB
+
+# Time to wait / sleep between job status check
+REFRESH_JOB_INTERVAL = 10  # 10 seconds
 
 # Suffix to replace '.boa' for the output file
 OUTPUT_FILE_SUFFIX = '_results.txt'

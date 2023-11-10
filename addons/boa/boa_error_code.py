@@ -2,7 +2,7 @@ from enum import IntEnum
 
 
 class BoaErrorCode(IntEnum):
-    """Define 6 types of failures and errors (0~5) and 1 type for no error (-1) during Boa submit.
+    """Define 7 types of failures and errors (0~6) and 1 type for no error (-1) during Boa submit.
     """
 
     NO_ERROR = -1               # No error
@@ -12,4 +12,4 @@ class BoaErrorCode(IntEnum):
     UPLOAD_ERROR_CONFLICT = 3   # Fail to upload the output to OSF because file already exists
     UPLOAD_ERROR_OTHER = 4      # Fail to upload the output to OSF due to reasons other than ``UPLOAD_ERROR_CONFLICT``
     OUTPUT_ERROR = 5            # Fail to retrieve the output after Boa job has finished
-    SUBMISSION_ERROR_FILE_TOO_LARGE = 6    # Fail to submit to boa due to query file too large
+    FILE_TOO_LARGE_ERROR = 6    # Fail to submit to Boa due to query file too large
