@@ -15,7 +15,7 @@ class BoaAddonAppConfig(BaseAddonAppConfig):
     short_name = 'boa'
     owners = ['user', 'node']
     configs = ['accounts', 'node']
-    categories = ['Remote computing']
+    categories = ['remote-computing']
     has_hgrid_files = False
     node_settings_template = os.path.join(TEMPLATE_PATH, 'boa_node_settings.mako')
     user_settings_template = os.path.join(TEMPLATE_PATH, 'boa_user_settings.mako')
