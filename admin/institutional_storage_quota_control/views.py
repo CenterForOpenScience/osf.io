@@ -1,5 +1,3 @@
-import logging
-import inspect  # noqa
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.db import connection
 
@@ -12,9 +10,6 @@ from django.shortcuts import redirect
 from admin.rdm.utils import RdmPermissionMixin
 from django.core.urlresolvers import reverse
 from django.db.models import Q
-from website.util import inspect_info  # noqa
-
-logger = logging.getLogger(__name__)
 
 
 class InstitutionStorageList(RdmPermissionMixin, UserPassesTestMixin, ListView):
