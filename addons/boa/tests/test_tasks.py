@@ -4,6 +4,7 @@ from boaapi.status import CompilerStatus, ExecutionStatus
 from http.client import HTTPMessage
 import mock
 import pytest
+import time
 from unittest.mock import ANY, MagicMock
 from urllib.error import HTTPError
 
@@ -147,6 +148,7 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
         self.query_dataset = '2023 Oct / Fake Boa Dataset (small)'
         self.query_file_name = 'fake_boa_script.boa'
         self.file_size = 255
+        self.file_size_too_large = boa_settings.MAX_SUBMISSION_SIZE + 255
         self.output_file_name = 'fake_boa_script_results.txt'
         self.file_full_path = '/fake_boa_folder/fake_boa_script.boa'
         self.query_download_url = f'http://localhost:7777/v1/resources/{self.project_guid}/providers/osfstorage/1a2b3c4d'
@@ -527,5 +529,77 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
                 self.file_full_path,
                 query_file_name=self.query_file_name,
                 output_file_name=self.output_file_name,
+                job_id=self.mock_job.id,
+            )
+
+    async def test_file_too_large_error(self):
+        with mock.patch('osf.models.user.OSFUser.objects.get', return_value=self.user), \
+                mock.patch('osf.models.user.OSFUser.get_or_create_cookie', return_value=self.user_cookie), \
+                mock.patch('addons.boa.tasks.handle_boa_error', return_value=None) as mock_handle_boa_error:
+            return_value = await submit_to_boa_async(
+                self.host,
+                self.username,
+                self.password,
+                self.user_guid,
+                self.project_guid,
+                self.query_dataset,
+                self.query_file_name,
+                self.file_size_too_large,
+                self.file_full_path,
+                self.query_download_url,
+                self.output_upload_url,
+            )
+            assert return_value == BoaErrorCode.FILE_TOO_LARGE_ERROR
+            mock_handle_boa_error.assert_called_with(
+                ANY,
+                BoaErrorCode.FILE_TOO_LARGE_ERROR,
+                self.user.username,
+                self.user.fullname,
+                self.project_url,
+                self.file_full_path,
+                query_file_name=self.query_file_name,
+                file_size=self.file_size_too_large,
+            )
+
+    async def test_job_timeout_error(self):
+        self.mock_job.is_running.side_effect = [True, True, False]
+        time_now = time.time()
+        time_not_expired = time_now + boa_settings.REFRESH_JOB_INTERVAL
+        time_expired = time_not_expired + boa_settings.MAX_JOB_WAITING_TIME
+        time_side_effect = [time_now, time_not_expired, time_expired]
+
+        with mock.patch('osf.models.user.OSFUser.objects.get', return_value=self.user), \
+                mock.patch('osf.models.user.OSFUser.get_or_create_cookie', return_value=self.user_cookie), \
+                mock.patch('urllib.request.urlopen', return_value=self.mock_resp), \
+                mock.patch('boaapi.boa_client.BoaClient.login', return_value=None), \
+                mock.patch('boaapi.boa_client.BoaClient.get_dataset', return_value=self.query_dataset), \
+                mock.patch('boaapi.boa_client.BoaClient.query', return_value=self.mock_job), \
+                mock.patch('boaapi.boa_client.BoaClient.close', return_value=None) as mock_close, \
+                mock.patch('asyncio.sleep', new_callable=AsyncMock, return_value=None), \
+                mock.patch('addons.boa.tasks.time.time', side_effect=time_side_effect), \
+                mock.patch('addons.boa.tasks.handle_boa_error', return_value=None) as mock_handle_boa_error:
+            return_value = await submit_to_boa_async(
+                self.host,
+                self.username,
+                self.password,
+                self.user_guid,
+                self.project_guid,
+                self.query_dataset,
+                self.query_file_name,
+                self.file_size,
+                self.file_full_path,
+                self.query_download_url,
+                self.output_upload_url,
+            )
+            assert return_value == BoaErrorCode.JOB_TIME_OUT_ERROR
+            mock_close.assert_called()
+            mock_handle_boa_error.assert_called_with(
+                ANY,
+                BoaErrorCode.JOB_TIME_OUT_ERROR,
+                self.user.username,
+                self.user.fullname,
+                self.project_url,
+                self.file_full_path,
+                query_file_name=self.query_file_name,
                 job_id=self.mock_job.id,
             )
