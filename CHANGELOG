@@ -2,6 +2,11 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+23.16.0 (2023-11-10)
+====================
+- Boa Addon
+- Remove default title of "Untitled" from Drafts
+
 23.15.0 (2023-10-10)
 ====================
 - Update routing for Institutions, Preprints Discover pages
