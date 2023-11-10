@@ -1,3 +1,4 @@
+# Not used currently, but may be expanded to accommodate other Boa databases in the future
 DEFAULT_HOSTS = []
 
 # Max file size allowed for submission
