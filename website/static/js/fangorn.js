@@ -1354,15 +1354,26 @@ function doCheckout(item, checkout, showError) {
  */
 function _submitToBoaEvent (event, item, col) {
     var tb = this;
-    var selectedDataset = '2019 October/GitHub';
+    var selectedDataset = '';
     function updateDataset(dataset) {
         selectedDataset = dataset;
+        if (dataset === '') {
+            $('#boaNoDatasetWarning').css({display: 'block'});
+        }
+        else {
+            $('#boaNoDatasetWarning').css({display: 'none'});
+        }
     }
     function cancelSubmitToBoa() {
         tb.modal.dismiss();
     }
     function runSubmitToBoa(item, dataset) {
-        return $osf.postJSON(
+        if (dataset === '') {
+            $('#boaNoDatasetWarning').css({display: 'block'});
+            return;
+        }
+        $('#boaNoDatasetWarning').css({display: 'none'});
+        $osf.postJSON(
             item.data.nodeApiUrl + 'boa/submit-job/',
             {
                 data: item.data,
@@ -1376,11 +1387,7 @@ function _submitToBoaEvent (event, item, col) {
                 'success'
             );
             tb.modal.dismiss();
-            // if (showError) {
-            //     window.location.reload();
-            // }
         }).fail(function(xhr) {
-            console.error('@@@   BOA FAIL!', item);
             $osf.growl(
                 'Error',
                 'Unable to submit the file to Boa. Please try again later. ' +
@@ -1388,6 +1395,7 @@ function _submitToBoaEvent (event, item, col) {
             );
             tb.modal.dismiss();
         });
+        return;
     }
 
     var datasets = [
@@ -1421,7 +1429,7 @@ function _submitToBoaEvent (event, item, col) {
                 }
             },
             [
-                m('option', {value: ''}, ''),
+                m('option.text-muted', {value: '', disabled: true, selected: true}, 'Select a dataset'),
                 datasets.map(function(dataset) {
                     var args = {value: dataset};
                     return m('option', args, dataset);
@@ -1430,24 +1438,24 @@ function _submitToBoaEvent (event, item, col) {
         )
     ]);
 
-    var detail = m('span', 'Submit this file to the Boa server? ');
-    var mithrilContentSingle = m('div', [
-        m('p.text-danger', detail, 'This submission is irreversible.')
-    ]);
-    var interactSpiel = m('div', [datasetInstr, datasetSelect, mithrilContentSingle]);
+    var postscript = m('p', 'Are you sure you want to submit "' + item.data.name + '" to Boa?');
+    var noDatasetWarning = m(
+        'p.text-danger',
+        {id: 'boaNoDatasetWarning', style: {display: 'none'}},
+        'You must select a dataset.'
+    );
+    var interactSpiel = m('div', [datasetInstr, datasetSelect, postscript, noDatasetWarning]);
     var mithrilButtonsSingle = m('div', [
         m('span.btn.btn-default', { onclick : function() { cancelSubmitToBoa(); } }, 'Cancel'),
-        m('span.btn.btn-danger', { onclick : function() { runSubmitToBoa(item, selectedDataset); } }, 'Submit')
+        m('span.btn.btn-info', { onclick : function() { runSubmitToBoa(item, selectedDataset); } }, 'Submit')
     ]);
 
     // This is already being checked before this step but will keep this edit permission check
-    if(item.data.permissions.edit){
+    if (item.data.permissions.edit) {
         tb.modal.update(
-            // datasetSelect,
-            // mithrilContentSingle,
             interactSpiel,
             mithrilButtonsSingle,
-            m('h3.break-word.modal-title', 'Submit "' + item.data.name + '" to Boa?')
+            m('h3.break-word.modal-title', 'Submit file to Boa?')
         );
     }
 

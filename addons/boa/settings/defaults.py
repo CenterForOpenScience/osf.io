@@ -1,8 +1,5 @@
+# Not used currently, but may be expanded to accommodate other Boa databases in the future
 DEFAULT_HOSTS = []
-USE_SSL = True
-
-# Note: not applicable to the Boa addon
-MAX_UPLOAD_SIZE = 512  # 512 MB
 
 # Max file size allowed for submission
 MAX_SUBMISSION_SIZE = 512 * 1024  # 512 KB

@@ -1,7 +1,6 @@
 import os
 
 from addons.base.apps import BaseAddonAppConfig
-from addons.boa.settings import MAX_UPLOAD_SIZE
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_PATH = os.path.join(HERE, 'templates')
@@ -15,11 +14,10 @@ class BoaAddonAppConfig(BaseAddonAppConfig):
     short_name = 'boa'
     owners = ['user', 'node']
     configs = ['accounts', 'node']
-    categories = ['Remote computing']
+    categories = ['remote-computing']
     has_hgrid_files = False
     node_settings_template = os.path.join(TEMPLATE_PATH, 'boa_node_settings.mako')
     user_settings_template = os.path.join(TEMPLATE_PATH, 'boa_user_settings.mako')
-    max_file_size = MAX_UPLOAD_SIZE
 
     actions = ()
 

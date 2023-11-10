@@ -1,7 +1,9 @@
-OSF Boa Addon
+# OSF Boa Addon
 
+Via https://boa.cs.iastate.edu/:
+
+> Boa is a domain-specific language and infrastructure that eases mining software repositories. Boa's infrastructure leverages distributed computing techniques to execute queries against hundreds of thousands of software projects very efficiently.
 
 ## Setup:
-1. Copy settings/local-dist.py to settings/local.py and change the necessary settings.
-2. The setting `DEFAULT_HOSTS` can be set to a list of known hosts that satisfies [OCS1.7](https://www.freedesktop.org/wiki/Specifications/open-collaboration-services-1.7/). While this is not necessary, a default list can be used to provide users with suggested hosts.
-3. Make sure GnuPG is enabled as below:
+
+1. No local server configuration is required for the Boa addon to work.  Users will need to [request an account](https://boa.cs.iastate.edu/request/) from Boa to connect and enable the addon.
