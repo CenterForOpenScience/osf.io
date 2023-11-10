@@ -19,7 +19,6 @@ class BoaAddonAppConfig(BaseAddonAppConfig):
     has_hgrid_files = False
     node_settings_template = os.path.join(TEMPLATE_PATH, 'boa_node_settings.mako')
     user_settings_template = os.path.join(TEMPLATE_PATH, 'boa_user_settings.mako')
-    max_file_size = MAX_UPLOAD_SIZE
 
     actions = ()
 
