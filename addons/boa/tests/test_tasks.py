@@ -4,7 +4,6 @@ from boaapi.status import CompilerStatus, ExecutionStatus
 from http.client import HTTPMessage
 import mock
 import pytest
-import time
 from unittest.mock import ANY, MagicMock
 from urllib.error import HTTPError
 
@@ -15,6 +14,9 @@ from osf_tests.factories import AuthUserFactory, ProjectFactory
 from tests.base import OsfTestCase
 from website import settings as osf_settings
 from website.mails import ADDONS_BOA_JOB_COMPLETE, ADDONS_BOA_JOB_FAILURE
+
+DEFAULT_REFRESH_JOB_INTERVAL = boa_settings.REFRESH_JOB_INTERVAL
+DEFAULT_MAX_JOB_WAITING_TIME = boa_settings.MAX_JOB_WAITING_TIME
 
 
 class AsyncMock(MagicMock):
@@ -162,6 +164,8 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
         self.mock_job.compiler_status = CompilerStatus.FINISHED
         self.mock_job.exec_status = ExecutionStatus.FINISHED
         self.mock_job.output.return_value = 'fake-boa-output-string'
+        boa_settings.REFRESH_JOB_INTERVAL = DEFAULT_REFRESH_JOB_INTERVAL
+        boa_settings.MAX_JOB_WAITING_TIME = DEFAULT_MAX_JOB_WAITING_TIME
 
     def tearDown(self):
         super(TestSubmitToBoaAsync, self).tearDown()
@@ -562,12 +566,8 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
             )
 
     async def test_job_timeout_error(self):
-        self.mock_job.is_running.side_effect = [True, True, False]
-        time_now = time.time()
-        time_not_expired = time_now + boa_settings.REFRESH_JOB_INTERVAL
-        time_expired = time_not_expired + boa_settings.MAX_JOB_WAITING_TIME
-        time_side_effect = [time_now, time_not_expired, time_expired]
-
+        boa_settings.REFRESH_JOB_INTERVAL = 1
+        boa_settings.MAX_JOB_WAITING_TIME = 1
         with mock.patch('osf.models.user.OSFUser.objects.get', return_value=self.user), \
                 mock.patch('osf.models.user.OSFUser.get_or_create_cookie', return_value=self.user_cookie), \
                 mock.patch('urllib.request.urlopen', return_value=self.mock_resp), \
@@ -575,8 +575,6 @@ class TestSubmitToBoaAsync(OsfTestCase, AsyncTestCase):
                 mock.patch('boaapi.boa_client.BoaClient.get_dataset', return_value=self.query_dataset), \
                 mock.patch('boaapi.boa_client.BoaClient.query', return_value=self.mock_job), \
                 mock.patch('boaapi.boa_client.BoaClient.close', return_value=None) as mock_close, \
-                mock.patch('asyncio.sleep', new_callable=AsyncMock, return_value=None), \
-                mock.patch('addons.boa.tasks.time.time', side_effect=time_side_effect), \
                 mock.patch('addons.boa.tasks.handle_boa_error', return_value=None) as mock_handle_boa_error:
             return_value = await submit_to_boa_async(
                 self.host,
