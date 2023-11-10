@@ -48,7 +48,7 @@ class AddonSerializer(JSONAPISerializer):
     ])
 
     class Meta:
-        type_ = 'addon'
+        type_ = 'addons'
 
     id = ser.CharField(source='short_name', read_only=True)
     name = ser.CharField(source='full_name', read_only=True)
