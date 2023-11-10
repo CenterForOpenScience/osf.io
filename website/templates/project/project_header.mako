@@ -41,7 +41,7 @@
                             </a>
                         </li>
                         <li id="projectNavFiles">
-                            <a href="${node['url']}files/" target="_blank" class="subnav-header">
+                            <a href="${node['url']}files/" class="subnav-header">
                                 Files
                             </a>
                         </li>
