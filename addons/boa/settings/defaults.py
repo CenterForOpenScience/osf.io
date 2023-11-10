@@ -1,8 +1,17 @@
 DEFAULT_HOSTS = []
 USE_SSL = True
 
-# Max file size permitted by frontend in megabytes
-MAX_UPLOAD_SIZE = 512
+# Note: not applicable to the Boa addon
+MAX_UPLOAD_SIZE = 512  # 512 MB
+
+# Max file size allowed for submission
+MAX_SUBMISSION_SIZE = 512 * 1024  # 512 KB
+
+# Max time for Celery to wait for Boa to finish the job
+MAX_JOB_WAITING_TIME = 24 * 60 * 60  # 24 hours
+
+# Time to wait / sleep between job status check
+REFRESH_JOB_INTERVAL = 10  # 10 seconds
 
 # Suffix to replace '.boa' for the output file
 OUTPUT_FILE_SUFFIX = '_results.txt'

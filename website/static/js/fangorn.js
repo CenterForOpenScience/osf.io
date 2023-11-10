@@ -1384,7 +1384,7 @@ function _submitToBoaEvent (event, item, col) {
             $osf.growl(
                 'Error',
                 'Unable to submit the file to Boa. Please try again later. ' +
-                'Contact <a href="mailto: support@osf.io">support@osf.io</a> if the problem persists.'
+                'Contact <a href="mailto:support@osf.io">support@osf.io</a> if the problem persists.'
             );
             tb.modal.dismiss();
         });
