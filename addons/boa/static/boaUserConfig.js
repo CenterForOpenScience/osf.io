@@ -20,7 +20,7 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel,{
         self.password = ko.observable();
         self.loaded = ko.observable(false);
     },
-    fetch :function(){
+    fetch: function(){
         var self = this;
         $.ajax({
             url: self.url,
@@ -38,10 +38,10 @@ var ViewModel = oop.extend(OAuthAddonSettingsViewModel,{
             });
         });
     },
-    clearModal : function() {
+    clearModal: function() {
         var self = this;
     },
-    connectAccount : function() {
+    connectAccount: function() {
         var self = this;
         if ( !(self.username() && self.password()) ){
             self.setMessage('Please enter a username and password.', 'text-danger');
