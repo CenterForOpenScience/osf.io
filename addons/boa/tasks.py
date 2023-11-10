@@ -128,7 +128,7 @@ async def submit_to_boa_async(host, username, password, user_guid, project_guid,
             await sync_to_async(handle_boa_error)(message, BoaErrorCode.JOB_TIME_OUT_ERROR,
                                                   user.username, user.fullname, project_url, file_full_path,
                                                   query_file_name=query_file_name, job_id=boa_job.id)
-            return BoaErrorCode.QUERY_ERROR
+            return BoaErrorCode.JOB_TIME_OUT_ERROR
         logger.debug(f'Boa job still running, waiting 10s: job_id=[{str(boa_job.id)}] ...')
         boa_job.refresh()
         await asyncio.sleep(boa_settings.REFRESH_JOB_INTERVAL)
