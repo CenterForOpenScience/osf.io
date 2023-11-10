@@ -1,7 +1,6 @@
 import os
 
 from addons.base.apps import BaseAddonAppConfig
-from addons.boa.settings import MAX_UPLOAD_SIZE
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_PATH = os.path.join(HERE, 'templates')
