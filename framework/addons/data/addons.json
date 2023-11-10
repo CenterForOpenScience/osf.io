@@ -273,7 +273,7 @@
         "Boa": {
             "Permissions": {
                 "status": "partial",
-                "text": "Making an OSF project public or private is independent of Boa privacy."
+                "text": "An OSF project's privacy is independent of Boa privacy."
             },
             "View / download file versions": {
                 "status": "NA"
@@ -287,11 +287,11 @@
             },
             "Logs": {
                 "status": "partial",
-                "text": "The OSF keeps track of Boa-generated results that have been copied to OSF Storage."
+                "text": "The OSF tracks Boa-generated results that were copied to OSF Storage."
             },
             "Forking": {
                 "status": "partial",
-                "text": "Forking a project or component does not copy Boa authorization unless the user forking the project is the same user who authorized the Boa add-on in the source project being forked."
+                "text": "Boa authorization will only copy to a forked project/component if the contributor that authorized the add-on is the same contributor that forked the project/component."
             },
             "Registering": {
                 "status": "partial",
