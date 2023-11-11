@@ -8,6 +8,8 @@ from osf.models import (
     OSFUser,
 )
 from api.nodes.permissions import ContributorDetailPermissions
+from osf.utils.permissions import READ, WRITE, ADMIN
+
 
 class IsContributorOrAdminContributor(permissions.BasePermission):
     """
@@ -57,3 +59,28 @@ class DraftContributorDetailPermissions(ContributorDetailPermissions):
 
     def load_resource(self, context, view):
         return DraftRegistration.load(context['draft_id'])
+
+
+class DraftRegistrationPermission(permissions.BasePermission):
+    """
+    Check permissions for draft and node, Admin can create (POST) or edit (PATCH, PUT) to a DraftRegistration, but write
+    users can only edit them. Node permissions are inherited by the DraftRegistration when they are higher.
+    """
+    acceptable_models = (DraftRegistration, AbstractNode)
+
+    def has_object_permission(self, request, view, obj):
+        auth = get_user_auth(request)
+        node_permission = False
+
+        if request.method in permissions.SAFE_METHODS:
+            if isinstance(obj, DraftRegistration):
+                node_permission = obj.branched_from.has_permission(auth.user, READ)
+            return obj.has_permission(auth.user, READ) or node_permission
+        elif request.method == 'POST':  # Only Admin can create a draft registration
+            if isinstance(obj, DraftRegistration):
+                node_permission = obj.branched_from.has_permission(auth.user, ADMIN)
+            return obj.has_permission(auth.user, ADMIN) or node_permission
+        else:
+            if isinstance(obj, DraftRegistration):
+                node_permission = obj.branched_from.has_permission(auth.user, WRITE)
+            return obj.has_permission(auth.user, WRITE) or node_permission

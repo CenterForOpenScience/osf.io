@@ -8,7 +8,7 @@ from future.moves.urllib.parse import urljoin, urlparse
 
 from api.base.settings.defaults import API_BASE
 from api.base.versioning import CREATE_REGISTRATION_FIELD_CHANGE_VERSION
-from api_tests.nodes.views.test_node_draft_registration_list import DraftRegistrationTestCase
+from api_tests.nodes.views.test_node_draft_registration_list import AbstractDraftRegistrationTestCase
 from api_tests.subjects.mixins import SubjectsFilterMixin
 from api_tests.registrations.filters.test_filters import RegistrationListFilteringMixin
 from api_tests.utils import create_test_file
@@ -605,7 +605,7 @@ class TestRegistrationSubjectFiltering(SubjectsFilterMixin):
         return '/{}registrations/'.format(API_BASE)
 
 
-class TestNodeRegistrationCreate(DraftRegistrationTestCase):
+class TestNodeRegistrationCreate(AbstractDraftRegistrationTestCase):
     """
     Tests for creating registration through old workflow -
     POST NodeRegistrationList
