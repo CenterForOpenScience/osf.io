@@ -525,18 +525,19 @@ def export_data_rollback_process(task, cookies, export_data_id, location_id, sou
         # if export processes cannot be stopped
         if not is_rollback and export_data.status not in ExportData.EXPORT_DATA_STOPPABLE:
             logger.debug(MSG_EXPORT_UNSTOPPABLE)
+            # ExportData.STATUS_ERROR is expected
             raise ExportDataTaskException(MSG_EXPORT_UNSTOPPABLE)
 
         # if an export process is stopped before rollback
         if is_rollback and export_data.status in [ExportData.STATUS_STOPPED]:
+            # ExportData.STATUS_STOPPED is expected
             raise ExportDataTaskException(MSG_EXPORT_STOPPED)
 
         # start stopping export - update record in DB
         export_data.task_id = task.request.id
         export_data.status = ExportData.STATUS_STOPPING
         export_data.save()
-        logger.info(f'Export process status is changed to {export_data.status}.'
-                    f' ({time.time() - _prev_time}s)')
+        logger.info(f'Export process status is changed to {export_data.status}.')
 
         # [Important] check process status before each step
         _prev_time = check_export_data_process_status(
@@ -545,20 +546,24 @@ def export_data_rollback_process(task, cookies, export_data_id, location_id, sou
         file_path = export_data.export_data_temp_file_path
         if os.path.exists(file_path):
             os.remove(file_path)
-        logger.debug(f'Removed temporary file.'
-                     f' ({time.time() - _prev_time}s)')
+        logger.debug(f'Removed temporary file.')
 
         # delete export data file
         logger.debug(f'deleting export data file')
+        _step_start_time = time.time()
         response = export_data.delete_export_data_folder(cookies, **kwargs)
         if response.status_code != 204:
-            export_data_status = ExportData.STATUS_ERROR
+            _msg = MSG_EXPORT_FORCE_STOPPED
             logger.info(f'Can not delete \'{export_data.export_data_folder_path}\' folder path.'
-                        f' ({time.time() - _prev_time}s)')
+                        f' ({time.time() - _step_start_time}s)')
         else:
-            export_data_status = ExportData.STATUS_STOPPED
+            _msg = MSG_EXPORT_STOPPED
             logger.info(f'Deleted \'{export_data.export_data_folder_path}\' folder path.'
-                        f' ({time.time() - _prev_time}s)')
+                        f' ({time.time() - _step_start_time}s)')
+
+        if is_rollback:
+            # ExportData.STATUS_ERROR is expected
+            raise ExportDataTaskException(_msg)
 
         # [Important] check process status before each step
         _prev_time = check_export_data_process_status(
@@ -571,13 +576,7 @@ def export_data_rollback_process(task, cookies, export_data_id, location_id, sou
         export_data.process_end = timezone.make_naive(timezone.now(), timezone.utc)
         export_data.export_file = None
         export_data.save()
-        logger.info(f'Export process status is changed to {export_data.status}.'
-                    f' ({time.time() - _prev_time}s)')
-
-        _msg = MSG_EXPORT_FORCE_STOPPED if export_data_status == ExportData.STATUS_ERROR else MSG_EXPORT_STOPPED
-
-        if is_rollback:
-            raise ExportDataTaskException(_msg)
+        logger.info(f'Export process status is changed to {export_data.status}.')
 
         export_data_task_id = kwargs.get('export_data_task')
         export_data_task = AsyncResult(export_data_task_id)
@@ -585,7 +584,7 @@ def export_data_rollback_process(task, cookies, export_data_id, location_id, sou
             'message': _msg,
             'export_data_id': export_data_id,
             'export_data_task_id': export_data_task_id,
-            'export_data_status': export_data_status,
+            'export_data_status': export_data.status,
             'export_data_task_result': get_task_result(export_data_task.result),
         }
     except Exception as e:
@@ -607,6 +606,7 @@ def export_data_rollback_process(task, cookies, export_data_id, location_id, sou
             # Stop export can be finished before the export's rollback process
             if export_data.status not in [ExportData.STATUS_STOPPED]:
                 export_data.status = ExportData.STATUS_ERROR
+                export_data.process_end = timezone.make_naive(timezone.now(), timezone.utc)
                 export_data.save()
             logger.info(f'Export process status is changed to {export_data.status}.')
             task_meta['export_data_status'] = export_data.status

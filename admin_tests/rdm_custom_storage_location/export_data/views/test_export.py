@@ -773,6 +773,35 @@ class TestExportDataRollbackProcess(unittest.TestCase):
 
     @pytest.mark.django_db
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
+    def test_export_data_rollback_process__raise_cannot_stop_stopping_process(
+            self, mock_export_data):
+        # for export_data.status not in [STATUS_PENDING, STATUS_RUNNING, ExportData.STATUS_STOPPED]
+        self.export_data.status = ExportData.STATUS_STOPPING
+        self.export_data.save()
+        mock_export_data.filter.return_value.first.return_value = self.export_data
+        mock_export_data.filter.return_value.exists.return_value = True
+
+        with self.assertRaises(Ignore):
+            export.export_data_rollback_process(
+                self.task, self.cookies, self.export_data.id, self.location.id, self.source.id,
+                export_data_task=self.other_task.request.id,
+            )
+
+        task_result = AbortableAsyncResult(self.task.request.id)
+        nt.assert_equal(task_result.state, states.FAILURE)
+        nt.assert_equal(self.export_data.status, ExportData.STATUS_ERROR)
+        task_record_set = TaskResult.objects.filter(task_id=self.task.request.id)
+        if task_record_set:
+            task_record = task_record_set.first()
+            _task_result = json.loads(task_record.result)
+            nt.assert_equal(_task_result.get('exc_type'), 'ExportDataTaskException')
+            nt.assert_equal(_task_result.get('exc_message'), export.MSG_EXPORT_UNSTOPPABLE)
+            nt.assert_equal(_task_result.get('export_data_id'), self.export_data.id)
+            nt.assert_equal(_task_result.get('export_data_task_id'), self.other_task.request.id)
+            nt.assert_equal(_task_result.get('export_data_status'), self.export_data.status)
+
+    @pytest.mark.django_db
+    @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
     def test_export_data_rollback_process__raise_cannot_stop_stopped_process(
             self, mock_export_data):
         self.export_data.status = ExportData.STATUS_STOPPED
@@ -788,7 +817,7 @@ class TestExportDataRollbackProcess(unittest.TestCase):
 
         task_result = AbortableAsyncResult(self.task.request.id)
         nt.assert_equal(task_result.state, states.FAILURE)
-        nt.assert_equal(self.export_data.status, ExportData.STATUS_ERROR)
+        nt.assert_equal(self.export_data.status, ExportData.STATUS_STOPPED)
         task_record_set = TaskResult.objects.filter(task_id=self.task.request.id)
         if task_record_set:
             task_record = task_record_set.first()
@@ -963,7 +992,7 @@ class TestExportDataRollbackProcess(unittest.TestCase):
         nt.assert_equal(_task_result.get('message'), export.MSG_EXPORT_FORCE_STOPPED)
         nt.assert_equal(_task_result.get('export_data_id'), self.export_data.id)
         nt.assert_equal(_task_result.get('export_data_task_id'), self.other_task.request.id)
-        nt.assert_equal(_task_result.get('export_data_status'), ExportData.STATUS_ERROR)
+        nt.assert_equal(_task_result.get('export_data_status'), ExportData.STATUS_STOPPED)
         other_task_result = AbortableAsyncResult(self.other_task.request.id)
         nt.assert_equal(_task_result.get('export_data_task_result'), export.get_task_result(other_task_result.result))
 
