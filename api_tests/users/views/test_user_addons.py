@@ -203,11 +203,10 @@ class UserAddonAccountListMixin(object):
                 addon_data['attributes']['display_name'],
                 self.account.display_name)
             assert_equal(
-                addon_data['attributes']['provider'],
-                self.account.provider)
-            assert_equal(
                 addon_data['attributes']['profile_url'],
                 self.account.profile_url)
+            addon_relationship_link = addon_data['relationships']['provider']['links']['related']['href']
+            assert addon_relationship_link.endswith(f'/addons/{self.account.provider}/')
         if wrong_type:
             assert_equal(res.status_code, 404)
 
@@ -294,11 +293,11 @@ class UserAddonAccountDetailMixin(object):
                 addon_data['attributes']['display_name'],
                 self.account.display_name)
             assert_equal(
-                addon_data['attributes']['provider'],
-                self.account.provider)
-            assert_equal(
                 addon_data['attributes']['profile_url'],
                 self.account.profile_url)
+            addon_relationship_link = addon_data['relationships']['provider']['links']['related']['href']
+            assert addon_relationship_link.endswith(f'/addons/{self.account.provider}/')
+
         if wrong_type:
             assert_equal(res.status_code, 404)
 
