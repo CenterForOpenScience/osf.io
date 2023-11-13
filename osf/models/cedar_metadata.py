@@ -7,7 +7,7 @@ class CedarMetadataTemplate(ObjectIDMixin, BaseModel):
     title = models.CharField(max_length=255)
     template = DateTimeAwareJSONField(default=dict)
     active = models.BooleanField(default=True)
-    tempate_version = models.PositiveIntegerField
+    template_version = models.PositiveIntegerField()
 
     class Meta:
         unique_together = ('title', 'template_version')
