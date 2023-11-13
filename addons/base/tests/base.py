@@ -1,9 +1,6 @@
-from nose.tools import *  # noqa (PEP8 asserts)
+from django.conf import settings as django_settings
 
 from framework.auth import Auth
-
-from django.conf import settings
-
 from osf_tests.factories import AuthUserFactory, ProjectFactory
 
 
@@ -28,23 +25,27 @@ class AddonTestCase(object):
 
     """
     DISABLE_OUTGOING_CONNECTIONS = True
-    DB_NAME = getattr(settings, 'TEST_DB_ADDON_NAME', 'osf_addon')
+    DB_NAME = getattr(django_settings, 'TEST_DB_ADDON_NAME', 'osf_addon')
     ADDON_SHORT_NAME = None
     OWNERS = ['user', 'node']
     NODE_USER_FIELD = 'user_settings'
 
+    def __init__(self, *args, **kwargs):
+        super(AddonTestCase,self).__init__(*args, **kwargs)
+        self.node_settings = None
+        self.project = None
+        self.user = None
+        self.user_settings = None
+
     # Optional overrides
-    def create_user(self):
+    @staticmethod
+    def create_user():
         return AuthUserFactory.build()
 
     def create_project(self):
         return ProjectFactory(creator=self.user)
 
     def set_user_settings(self, settings):
-        """Make any necessary modifications to the user settings object,
-        e.g. setting access_token.
-
-        """
         raise NotImplementedError('Must define set_user_settings(self, settings) method')
 
     def set_node_settings(self, settings):
@@ -52,7 +53,6 @@ class AddonTestCase(object):
 
     def create_user_settings(self):
         """Initialize user settings object if requested by `self.OWNERS`.
-
         """
         if 'user' not in self.OWNERS:
             return
@@ -64,9 +64,7 @@ class AddonTestCase(object):
 
     def create_node_settings(self):
         """Initialize node settings object if requested by `self.OWNERS`,
-        additionally linking to user settings if requested by
-        `self.NODE_USER_FIELD`.
-
+        additionally linking to user settings if requested by `self.NODE_USER_FIELD`.
         """
         if 'node' not in self.OWNERS:
             return
@@ -86,18 +84,25 @@ class AddonTestCase(object):
         if not self.ADDON_SHORT_NAME:
             raise ValueError('Must define ADDON_SHORT_NAME in the test class.')
         self.user.save()
-
         self.project = self.create_project()
         self.project.save()
-
         self.create_user_settings()
         self.create_node_settings()
+
 
 class OAuthAddonTestCaseMixin(object):
 
     @property
     def ExternalAccountFactory(self):
         raise NotImplementedError()
+
+    def __init__(self, *args, **kwargs):
+        super(OAuthAddonTestCaseMixin, self).__init__(*args, **kwargs)
+        self.auth = None
+        self.external_account = None
+        self.project = None
+        self.user_settings = None
+        self.user = None
 
     def set_user_settings(self, settings):
         self.external_account = self.ExternalAccountFactory()

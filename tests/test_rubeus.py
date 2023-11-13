@@ -11,6 +11,7 @@ from framework.auth import Auth
 from website.util import rubeus
 from website.util.rubeus import sort_by_name
 
+
 class TestRubeus(OsfTestCase):
 
     def setUp(self):
@@ -316,8 +317,9 @@ class TestSerializingNodeWithAddon(OsfTestCase):
         self.serializer = rubeus.NodeFileCollector(node=self.project, auth=self.auth)
 
     def test_collect_addons(self):
-        ret = self.serializer._collect_addons(self.project)
-        assert_equal(ret, [serialized])
+        return_value, active_addons = self.serializer._collect_addons(self.project)
+        assert_equal(return_value, [serialized])
+        assert_equal(len(active_addons), 1)
 
     def test_sort_by_name(self):
         files = [

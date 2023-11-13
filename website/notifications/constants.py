@@ -28,6 +28,7 @@ NOTIFICATION_TYPES = {
 # Formatted file provider names for notification emails
 PROVIDERS = {
     'osfstorage': 'OSF Storage',
+    'boa': 'Boa',
     'box': 'Box',
     'dataverse': 'Dataverse',
     'dropbox': 'Dropbox',

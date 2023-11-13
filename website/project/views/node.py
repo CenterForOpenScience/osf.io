@@ -332,7 +332,7 @@ def node_addons(auth, node, **kwargs):
     ret['addon_settings'] = [addon for addon in addon_settings]
 
     # Addons can have multiple categories, but we only want a set of unique ones being used.
-    ret['addon_categories'] = set([item for addon in addon_settings for item in addon['categories']])
+    ret['addon_categories'] = sorted(set([item for addon in addon_settings for item in addon['categories']]))
 
     # The page only needs to load enabled addons and it refreshes when a new addon is being enabled.
     ret['addon_js'] = collect_node_config_js([addon for addon in addon_settings if addon['enabled']])
