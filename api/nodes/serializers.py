@@ -1557,12 +1557,6 @@ class DraftRegistrationLegacySerializer(JSONAPISerializer):
         'html': 'get_absolute_url',
     })
 
-    affiliate_user_institutions = ser.BooleanField(
-        required=False,
-        default=True,
-        help_text='Specify whether user institution affiliations should be copied over to the draft registration.',
-    )
-
     def get_absolute_url(self, obj):
         return obj.absolute_url
 
@@ -1603,7 +1597,6 @@ class DraftRegistrationLegacySerializer(JSONAPISerializer):
         registration_responses = validated_data.pop('registration_responses', None)
         schema = validated_data.pop('registration_schema')
         provider = validated_data.pop('provider', None)
-        affiliate_user_institutions = validated_data.pop('affiliate_user_institutions', True)
 
         self.enforce_metadata_or_registration_responses(metadata, registration_responses)
 
@@ -1617,9 +1610,6 @@ class DraftRegistrationLegacySerializer(JSONAPISerializer):
 
         if registration_responses:
             self.update_registration_responses(draft, registration_responses)
-
-        if affiliate_user_institutions and draft.branched_from_type == DraftNode:
-            draft.affiliated_institutions.set(draft.creator.affiliated_institutions.all())
 
         return draft
 

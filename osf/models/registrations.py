@@ -1262,31 +1262,31 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
             provider.validate_schema(schema)
 
         excluded_attributes = []
-        if not node:
-            # If no node provided, a DraftNode is created for you
-            node = DraftNode.objects.create(creator=user, title=settings.DEFAULT_DRAFT_NODE_TITLE)
-            # Force the user to add their own title for no-project
+        if node:
+            branched_from = node
+        else:
+            branched_from = DraftNode.objects.create(creator=user, title=settings.DEFAULT_DRAFT_NODE_TITLE)
             excluded_attributes.append('title')
 
-        if not (isinstance(node, Node) or isinstance(node, DraftNode)):
+        if not isinstance(branched_from, (Node, DraftNode)):
             raise DraftRegistrationStateError()
 
         draft = cls(
             initiator=user,
-            branched_from=node,
+            branched_from=branched_from,
             registration_schema=schema,
             registration_metadata=data or {},
             provider=provider,
         )
         draft.save()
         draft.copy_editable_fields(
-            node,
-            save=True,
+            branched_from,
             excluded_attributes=excluded_attributes
         )
         draft.update(data, auth=Auth(user))
 
-        if node.type == 'osf.draftnode':
+        if not node:
+            draft.affiliated_institutions.add(*draft.creator.get_affiliated_institutions())
             initiator_permissions = draft.contributor_set.get(user=user).permission
             signals.contributor_added.send(
                 draft,
