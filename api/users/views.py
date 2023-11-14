@@ -74,7 +74,6 @@ from rest_framework.response import Response
 from rest_framework.exceptions import NotAuthenticated, NotFound, ValidationError, Throttled
 from osf.models import (
     Contributor,
-    ExternalAccount,
     Guid,
     AbstractNode,
     Preprint,
@@ -290,13 +289,9 @@ class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixi
     def get_object(self):
         user_settings = self.get_addon_settings(check_object_permissions=False)
         account_id = self.kwargs['account_id']
-        from django.db.models import Value
 
-        account = ExternalAccount.objects.filter(
-            _id=account_id,
-        ).annotate(
-            user_id=Value(user_settings.owner._id),
-        ).get()
+        account = user_settings.external_accounts.get(_id=account_id)
+
         if not (account and user_settings.external_accounts.filter(id=account.id).exists()):
             raise NotFound('Requested addon unavailable')
         return account
