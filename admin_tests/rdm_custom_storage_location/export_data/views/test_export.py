@@ -679,6 +679,74 @@ class TestExportDataProcess(unittest.TestCase):
             self.export_data.process_start_timestamp
         ))
 
+    @pytest.mark.django_db
+    @mock.patch(f'{EXPORT_DATA_PATH}.write_json_file')
+    @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.upload_export_data_file')
+    @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.upload_file_info_file')
+    @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.copy_export_data_file_to_location')
+    @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.get_source_file_versions_min')
+    @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.create_export_data_files_folder')
+    @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.create_export_data_folder')
+    @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.extract_file_information_json_from_source_storage')
+    @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.objects')
+    def test_export_data_process__connection_timeout(
+            self, mock_export_data,
+            mock_extract_json,
+            mock_create_export_data_folder,
+            mock_create_export_data_files_folder,
+            mock_get_source_file_versions_min,
+            mock_copy_export_data_file_to_location,
+            mock_upload_file_info_file,
+            mock_upload_export_data_file,
+            mock_write_json_file,
+    ):
+        mock_write_json_file.return_value = None
+        mock_export_data.filter.return_value.first.return_value = self.export_data
+        mock_export_data.filter.return_value.exists.return_value = True
+        mock_export_data.get.return_value = self.export_data
+        export_data_json = {
+            'institution': {
+                'id': self.institution.id,
+                'guid': self.institution.guid,
+                'name': self.institution.name,
+            },
+            'process_start': '%Y-%m-%d %H:%M:%S',
+            'process_end': None,
+            'storage': {
+                'name': self.source.name,
+                'type': self.source.provider_full_name,
+            },
+            'projects_numb': 1,
+            'files_numb': 0,
+            'size': 0,
+            'file_path': self.export_data.get_file_info_file_path(),
+        }
+        file_info_json = {}
+        mock_extract_json.return_value = export_data_json, file_info_json
+        mock_create_export_data_folder.return_value.status_code = status.HTTP_201_CREATED
+        mock_create_export_data_files_folder.return_value.status_code = status.HTTP_201_CREATED
+        file_versions = []
+        mock_get_source_file_versions_min.return_value = file_versions
+        mock_copy_export_data_file_to_location.side_effect = Exception('ConnectionError')
+        mock_upload_file_info_file.return_value.status_code = status.HTTP_201_CREATED
+        mock_upload_export_data_file.return_value.status_code = status.HTTP_201_CREATED
+
+        _task_result = export.export_data_process(
+            self.task, self.cookies, self.export_data.id, self.location.id, self.source.id
+        )
+        self.task.update_state(state=states.SUCCESS, meta=_task_result)
+
+        task_result = AbortableAsyncResult(self.task.request.id)
+        nt.assert_true(task_result.state in states.READY_STATES)
+        nt.assert_equal(self.export_data.status, ExportData.STATUS_COMPLETED)
+        nt.assert_equal(_task_result.get('message'), export.MSG_EXPORT_COMPLETED)
+        nt.assert_equal(_task_result.get('export_data_id'), self.export_data.id)
+        nt.assert_equal(_task_result.get('export_data_status'), self.export_data.status)
+        nt.assert_equal(_task_result.get('list_file_info_export_not_found'), [])
+        nt.assert_equal(_task_result.get('file_name_export_fail'), 'failed_files_export_{}_{}.csv'.format(
+            export_data_json.get('institution').get('guid'),
+            self.export_data.process_start_timestamp
+        ))
 
 class TestExportDataRollbackProcess(unittest.TestCase):
     def setUp(self):

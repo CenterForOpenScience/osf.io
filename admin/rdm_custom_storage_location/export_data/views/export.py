@@ -18,6 +18,7 @@ from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from requests.exceptions import ReadTimeout, ConnectionError
 
 from addons.osfstorage.models import Region
 from admin.rdm_custom_storage_location import tasks
@@ -297,20 +298,29 @@ def export_data_process(task, cookies, export_data_id, location_id, source_id, *
             _up_file_start_time = time.time()
             kwargs.update({'version': version})
             # copy data file from source storage to location storage
-            response = export_data.copy_export_data_file_to_location(
-                cookies, project_id, provider, file_path, file_name, **kwargs)
-            # 201: created -> update cache list
-            if response.status_code == 201:
-                created_filename_list.append(file_name)
-                logger.debug(f'Upload file successfully.'
-                             f' ({time.time() - _up_file_start_time}s)')
-            else:
+
+            try:
+                response = export_data.copy_export_data_file_to_location(
+                    cookies, project_id, provider, file_path, file_name, **kwargs)
+                # 201: created -> update cache list
+                if response.status_code == 201:
+                    created_filename_list.append(file_name)
+                    logger.debug(f'Upload file successfully.'
+                                 f' ({time.time() - _up_file_start_time}s)')
+                else:
+                    if file_id not in files_versions_not_found:
+                        files_versions_not_found[file_id] = [version]
+                    else:
+                        files_versions_not_found[file_id].append(version)
+                    logger.debug(f'File upload failed.'
+                                 f' ({time.time() - _up_file_start_time}s)')
+                    continue
+            except (ReadTimeout, ConnectionError):
+                logger.error(f'Timeout exception occurs. Add file_id to list failed files. file_id: {file_id}')
                 if file_id not in files_versions_not_found:
                     files_versions_not_found[file_id] = [version]
                 else:
                     files_versions_not_found[file_id].append(version)
-                logger.debug(f'File upload failed.'
-                             f' ({time.time() - _up_file_start_time}s)')
                 continue
         logger.info(f'Have gone through the entire list of file versions.'
                     f' ({time.time() - _step_start_time}s)')
