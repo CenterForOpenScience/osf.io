@@ -199,6 +199,20 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
             return export_data_rollback_process(task, cookies, export_data_id, **kwargs)
         logger.debug(f'created export data process folder')
 
+        # temporary file
+        temp_file_path = export_data.export_data_temp_file_path
+
+        if task.is_aborted():  # check before each steps
+            raise ExportDataTaskException(MSG_EXPORT_ABORTED)
+        # create files' information file
+        logger.debug(f'creating files information file')
+        write_json_file(file_info_json, temp_file_path)
+        response = export_data.upload_file_info_full_data_file(cookies, temp_file_path, **kwargs)
+        if not task.is_aborted() and response.status_code != 201:
+            kwargs['is_rollback'] = True
+            return export_data_rollback_process(task, cookies, export_data_id, **kwargs)
+        logger.debug(f'created files information file')
+
         # export target file and accompanying data
         if task.is_aborted():  # check before each steps
             raise ExportDataTaskException(MSG_EXPORT_ABORTED)
@@ -255,7 +269,7 @@ def export_data_process(task, cookies, export_data_id, **kwargs):
         logger.debug(f'uploaded file versions')
 
         # temporary file
-        temp_file_path = export_data.export_data_temp_file_path
+        # temp_file_path = export_data.export_data_temp_file_path
 
         if task.is_aborted():  # check before each steps
             raise ExportDataTaskException(MSG_EXPORT_ABORTED)
