@@ -414,13 +414,13 @@ class ExportData(base.BaseModel):
         return self.upload_export_data_file(cookies, file_path, **kwargs)
 
     def get_file_info_full_data_filename(self, institution_guid=None):
-        """get file_info_{institution_guid}_{process_start_timestamp}.json file name for each institution"""
+        """get file_info_{institution_guid}_{process_start_timestamp}_full_data.json file name for each institution"""
         if not institution_guid:
             institution_guid = self.source.guid
         return f'file_info_{institution_guid}_{self.process_start_timestamp}_full_data.json'
 
     def upload_file_info_full_data_file(self, cookies, file_path, **kwargs):
-        """Upload export_{source.id}_{process_start_timestamp}/file_info_{institution_guid}_{process_start_timestamp}.json file
+        """Upload export_{source.id}_{process_start_timestamp}/file_info_{institution_guid}_{process_start_timestamp}_full_data.json file
            to the storage location"""
         file_name = self.get_file_info_full_data_filename(self.location.institution_guid)
         kwargs.setdefault('file_name', file_name)
