@@ -16,7 +16,7 @@ class CedarClient(object):
         resources = r.json()['resources']
         return [item['@id'] for item in resources]
 
-    def retreive_template_by_id(self, id):
+    def retrieve_template_by_id(self, id):
         url = f'{self.host}templates/{quote_plus(id)}'
         r = requests.get(url, headers=self.headers)
         return r.json()
