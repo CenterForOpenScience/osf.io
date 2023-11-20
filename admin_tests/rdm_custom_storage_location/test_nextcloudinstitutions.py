@@ -303,7 +303,7 @@ class TestUserMapView(AdminTestCase):
         nt.assert_equal(response_body.get('OK'), 0)
         nt.assert_equal(response_body.get('NG'), 1)
         nt.assert_equal(response_body.get('provider_name'), 'nextcloudinstitutions')
-        nt.assert_equal(response_body.get('report')[0], "NG, INVALID_FORMAT: ")
+        nt.assert_equal(response_body.get('report')[0], 'NG, INVALID_FORMAT: ')
         nt.assert_equal(response_body.get('user_to_extuser'), {})
 
     def test_post_ng_superuser(self):
@@ -321,5 +321,5 @@ class TestUserMapView(AdminTestCase):
         nt.assert_equal(response_body.get('OK'), 0)
         nt.assert_equal(response_body.get('NG'), 1)
         nt.assert_equal(response_body.get('provider_name'), 'nextcloudinstitutions')
-        nt.assert_equal(response_body.get('report')[0], "NG, INVALID_FORMAT: ")
+        nt.assert_equal(response_body.get('report')[0], 'NG, INVALID_FORMAT: ')
         nt.assert_equal(response_body.get('user_to_extuser'), {})

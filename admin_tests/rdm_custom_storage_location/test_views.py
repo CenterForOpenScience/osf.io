@@ -48,7 +48,7 @@ class TestInstitutionDefaultStorage(AdminTestCase):
         ]
 
     def test_unauthorized(self):
-        self.user = AnonymousUser()
+        self.request.user = AnonymousUser()
         nt.assert_false(self.view.test_func())
 
     def test_normal_user_login(self):
@@ -131,7 +131,7 @@ class TestInstitutionalStorageListView(AdminTestCase):
         self.view = setup_user_view(self.view, self.request, user=self.user)
 
     def test_unauthorized(self):
-        self.user = AnonymousUser()
+        self.request.user = AnonymousUser()
         nt.assert_false(self.view.test_func())
 
     def test_admin_login(self):
@@ -565,6 +565,7 @@ class TestPermissionRemoveTemporaryAuthData(AdminTestCase):
         response = self.view_post({})
         self.assertEquals(response.status_code, 404)
         self.assertEquals(response.content, b'{"message": "Institution does not exist"}')
+
 
 class TestPermissionUserMapView(AdminTestCase):
     def setUp(self):
