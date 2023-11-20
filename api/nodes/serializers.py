@@ -1,6 +1,8 @@
 from django.db import connection
 from distutils.version import StrictVersion
+from addons.boa.models import BoaProvider
 
+from boaapi.boa_client import BoaClient, BoaException, BOA_API_ENDPOINT
 from api.base.exceptions import (
     Conflict, EndpointNotImplementedError,
     InvalidModelValueError,
@@ -1089,6 +1091,48 @@ class NodeAddonSettingsSerializer(NodeAddonSettingsSerializerBase):
                 raise exceptions.NotFound('Unable to find requested folder.')
             except InvalidAuthError:
                 raise exceptions.PermissionDenied('Addon credentials are invalid.')
+
+        return instance
+
+
+class BoaNodeAddonSettingsSerializer(NodeAddonSettingsSerializer):
+    SHORT_NAME = 'boa'
+    FULL_NAME = 'Boa'
+
+    oauth_secret = ser.CharField(required=False, allow_null=True, write_only=True)
+    oauth_key = ser.CharField(required=False, allow_null=True, write_only=True)
+
+    def update(self, instance, validated_data):
+        instance = super().update(instance, validated_data)
+        username = validated_data.get('username')
+        password = validated_data.get('password')
+        user = self.context['request'].user
+
+        if username and password:
+            try:
+                boa_client = BoaClient(endpoint=BOA_API_ENDPOINT)
+                boa_client.login(username, password)
+                boa_client.close()
+            except BoaException:
+                raise exceptions.PermissionDenied('You do not have access to this addon')
+
+            provider = BoaProvider(
+                account=None,
+                host=BOA_API_ENDPOINT,
+                username=username,
+                password=password,
+            )
+            provider.account.save()
+            provider.account = ExternalAccount.objects.get(
+                provider=provider.short_name,
+                provider_id=f'{BOA_API_ENDPOINT}:{username}'.lower(),
+            )
+            if provider.account.oauth_key != password:
+                provider.account.oauth_key = password
+                provider.account.save()
+
+            if not user.external_accounts.filter(id=provider.account.id).exists():
+                user.external_accounts.add(provider.account)
 
         return instance
 
