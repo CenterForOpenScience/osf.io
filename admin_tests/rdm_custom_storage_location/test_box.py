@@ -45,7 +45,7 @@ class TestFetchToken(AdminTestCase):
         )
         request.is_ajax()
         request.user = self.user
-        return views.FetchTemporaryTokenView.as_view()(request)
+        return views.FetchTemporaryTokenView.as_view()(request, institution_id=self.institution.id)
 
     def test_provider_missing(self):
         response = self.view_post({
@@ -120,7 +120,7 @@ class TestSaveCredentials(AdminTestCase):
         )
         request.is_ajax()
         request.user = self.user
-        return views.SaveCredentialsView.as_view()(request)
+        return views.SaveCredentialsView.as_view()(request, institution_id=self.institution.id)
 
     def test_provider_missing(self):
         response = self.view_post({
@@ -149,6 +149,49 @@ class TestSaveCredentials(AdminTestCase):
 
     @mock.patch('boxsdk.Client.folder')
     def test_success(self, mock_folder):
+        ExternalAccountTemporary.objects.create(
+            provider=self.seed_data['provider_name'],
+            provider_name=self.seed_data['provider_name'],
+            oauth_key=self.seed_data['oauth_key'],
+            oauth_secret=self.seed_data['oauth_secret'],
+            expires_at=self.seed_data['expires_at'],
+            refresh_token=self.seed_data['refresh_token'],
+            date_last_refreshed=self.seed_data['date_last_refreshed'],
+            display_name=self.seed_data['display_name'],
+            profile_url=self.seed_data['profile_url'],
+            _id=self.seed_data['_id'],
+            provider_id=self.seed_data['provider_id'],
+        )
+        response = self.view_post({
+            'provider_short_name': 'box',
+            'storage_name': 'storage_name',
+            'box_folder': '0',
+        })
+        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
+        nt.assert_in('OAuth was set successfully', response.content.decode())
+
+        external_account = ExternalAccount.objects.get(
+            provider=self.seed_data['provider_name'], provider_id=self.seed_data['provider_id'])
+        nt.assert_equals(external_account.oauth_key, self.seed_data['oauth_key'])
+        nt.assert_equals(external_account.oauth_secret, self.seed_data['oauth_secret'])
+
+        nt.assert_false(ExternalAccountTemporary.objects.filter(_id=self.institution._id))
+
+        institution_storage = Region.objects.filter(_id=self.institution._id).first()
+        nt.assert_is_not_none(institution_storage)
+        nt.assert_equals(institution_storage.name, 'storage_name')
+
+        wb_credentials = institution_storage.waterbutler_credentials
+        nt.assert_equals(wb_credentials['storage']['token'], self.seed_data['oauth_key'])
+
+        wb_settings = institution_storage.waterbutler_settings
+        nt.assert_equals(wb_settings['storage']['folder'], '0')
+
+    @mock.patch('boxsdk.Client.folder')
+    def test_success_superuser(self, mock_folder):
+        self.user.affiliated_institutions.clear()
+        self.user.is_superuser = True
+        self.user.save()
         ExternalAccountTemporary.objects.create(
             provider=self.seed_data['provider_name'],
             provider_name=self.seed_data['provider_name'],
@@ -291,3 +334,103 @@ class TestSaveCredentials(AdminTestCase):
         new_external_account = RegionExternalAccount.objects.get(region=region).external_account
         nt.assert_not_equal(new_external_account, previous_external_account)
         nt.assert_false(ExternalAccount.objects.filter(id=previous_external_account.id).exists())
+
+    @mock.patch('boxsdk.Client.folder')
+    def test_connection_success_superuser(self, mock_folder):
+        self.user.affiliated_institutions.clear()
+        self.user.is_superuser = True
+        self.user.save()
+        ExternalAccountTemporary.objects.create(
+            provider=self.seed_data['provider_name'],
+            provider_name=self.seed_data['provider_name'],
+            oauth_key=self.seed_data['oauth_key'],
+            oauth_secret=self.seed_data['oauth_secret'],
+            expires_at=self.seed_data['expires_at'],
+            refresh_token=self.seed_data['refresh_token'],
+            date_last_refreshed=self.seed_data['date_last_refreshed'],
+            display_name=self.seed_data['display_name'],
+            profile_url=self.seed_data['profile_url'],
+            _id=self.seed_data['_id'],
+            provider_id=self.seed_data['provider_id'],
+        )
+        response = self.view_post({
+            'provider_short_name': 'box',
+            'storage_name': 'Cardboard Box',
+            'box_folder': 'Valid folder',
+        })
+
+        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
+        nt.assert_in('OAuth was set successfully', response.content.decode())
+
+    @mock.patch('boxsdk.Client.folder')
+    def test_connection_success_update_account_superuser(self, mock_folder):
+        self.user.affiliated_institutions.clear()
+        self.user.is_superuser = True
+        self.user.save()
+        region = RegionFactory(_id=self.institution._id)
+        previous_external_account = ExternalAccountFactory(provider='box')
+        RegionExternalAccount.objects.create(
+            region=region,
+            external_account=previous_external_account
+        )
+
+        ExternalAccountTemporary.objects.create(
+            provider=self.seed_data['provider_name'],
+            provider_name=self.seed_data['provider_name'],
+            oauth_key=self.seed_data['oauth_key'],
+            oauth_secret=self.seed_data['oauth_secret'],
+            expires_at=self.seed_data['expires_at'],
+            refresh_token=self.seed_data['refresh_token'],
+            date_last_refreshed=self.seed_data['date_last_refreshed'],
+            display_name=self.seed_data['display_name'],
+            profile_url=self.seed_data['profile_url'],
+            _id=self.seed_data['_id'],
+            provider_id=self.seed_data['provider_id'],
+        )
+        response = self.view_post({
+            'provider_short_name': 'box',
+            'storage_name': 'Cardboard Box',
+            'box_folder': 'Valid folder',
+        })
+
+        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
+        nt.assert_in('OAuth was set successfully', response.content.decode())
+
+        new_external_account = RegionExternalAccount.objects.get(region=region).external_account
+        nt.assert_not_equal(new_external_account, previous_external_account)
+        nt.assert_false(ExternalAccount.objects.filter(id=previous_external_account.id).exists())
+
+
+class TestRemoveTemporaryAuthData(AdminTestCase):
+    def setUp(self):
+        super(TestRemoveTemporaryAuthData, self).setUp()
+        self.institution = InstitutionFactory()
+        self.user = AuthUserFactory()
+        self.user.affiliated_institutions.add(self.institution)
+        self.user.is_staff = True
+        self.user.save()
+
+    def view_post_cancel(self, params):
+        request = RequestFactory().post(
+            'fake_path',
+            json.dumps(params),
+            content_type='application/json'
+        )
+        request.is_ajax()
+        request.user = self.user
+        return views.RemoveTemporaryAuthData.as_view()(request, institution_id=self.institution.id)
+
+    def test_cancel(self):
+        response = self.view_post_cancel({
+            'provider_short_name': 'box',
+        })
+        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
+
+    def test_cancel_superuser(self):
+        self.user.affiliated_institutions.clear()
+        self.user.is_superuser = True
+        self.user.save()
+        response = self.view_post_cancel({
+            'provider_short_name': 'box',
+        })
+        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)

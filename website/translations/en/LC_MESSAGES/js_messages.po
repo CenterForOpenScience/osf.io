@@ -7483,3 +7483,6 @@ msgstr ""
 
 msgid "Cannot be restored because export data does not exist"
 msgstr ""
+
+msgid "Institution does not exist"
+msgstr ""

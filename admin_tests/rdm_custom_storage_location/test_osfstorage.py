@@ -30,7 +30,7 @@ class TestSaveCredentials(AdminTestCase):
         )
         request.is_ajax()
         request.user = self.user
-        return views.SaveCredentialsView.as_view()(request)
+        return views.SaveCredentialsView.as_view()(request, institution_id=self.institution.id)
 
     def test_provider_missing(self):
         response = self.view_post({
@@ -77,3 +77,14 @@ class TestSaveCredentials(AdminTestCase):
                          default_storage.waterbutler_url)
         nt.assert_equals(inst_storage.mfr_url,
                          default_storage.mfr_url)
+
+    def test_success_superuser(self):
+        self.user.affiliated_institutions.clear()
+        self.user.is_superuser = True
+        self.user.save()
+        response = self.view_post({
+            'provider_short_name': 'osfstorage',
+        })
+
+        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
+        nt.assert_in('NII storage was set successfully', response.content.decode())

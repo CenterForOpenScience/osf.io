@@ -332,10 +332,11 @@ $.ajaxSetup({
 });
 
 function ajaxCommon(type, params, providerShortName, route, callback) {
+    var institution_id = window.contextVars.institution_id || '';
     if (type === 'POST') {
         params = JSON.stringify(params);
     }
-    var url = '../' + route + '/'
+    var url = '/custom_storage_location/' + route + '/' + institution_id;
     $.ajax({
         url: url,
         type: type,
@@ -707,8 +708,10 @@ $('#csv_file').change(function () {
         });
         fd.append('check_extuser', $('#csv_check_extuser').is(':checked'));
     }
+    var institution_id = window.contextVars.institution_id || '';
+    var url = '/custom_storage_location/usermap/' + institution_id;
     $.ajax({
-        url: '../usermap/',
+        url: url,
         type: 'POST',
         data: fd,
         processData: false,
