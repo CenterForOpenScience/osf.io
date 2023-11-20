@@ -188,6 +188,10 @@ CONFIRM_EMAIL_ERPC = Mail(
     'confirm_erpc',
     subject='OSF Account Verification, Election Research Preacceptance Competition'
 )
+CONFIRM_EMAIL_agu_conference_2024 = Mail(
+    'confirm_agu_conference_2024',
+    subject='OSF Account Verification, from the American Geophysical Union Conference'
+)
 CONFIRM_EMAIL_PREPRINTS = lambda name, provider: Mail(
     'confirm_preprints_{}'.format(name),
     subject='OSF Account Verification, {}'.format(provider)
