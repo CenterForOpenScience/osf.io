@@ -22,6 +22,7 @@ from osf.models import (
 from admin.base import settings as admin_settings
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import EncryptedJSONField
+from admin.base.settings import EACH_FILE_EXPORT_TIME_OUT
 
 logger = logging.getLogger(__name__)
 
@@ -512,7 +513,8 @@ class ExportData(base.BaseModel):
         return requests.post(copy_file_url,
                              headers={'content-type': 'application/json'},
                              cookies=cookies,
-                             json=request_body)
+                             json=request_body,
+                             timeout=EACH_FILE_EXPORT_TIME_OUT)
 
     def get_data_file_file_path(self, file_name):
         """get /export_{source.id}_{process_start_timestamp}/files/{file_name} file path"""

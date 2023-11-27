@@ -350,3 +350,6 @@ LOCALE_PATHS = (
 
 # The directory to store data temporarily.
 TEMPORARY_PATH = '/tmp/'
+
+# Time out for calling copy API
+EACH_FILE_EXPORT_TIME_OUT = 1800
