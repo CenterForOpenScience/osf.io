@@ -188,7 +188,7 @@ CONFIRM_EMAIL_ERPC = Mail(
     'confirm_erpc',
     subject='OSF Account Verification, Election Research Preacceptance Competition'
 )
-CONFIRM_EMAIL_agu_conference_2023 = Mail(
+CONFIRM_EMAIL_AGU_CONFERENCE_2023 = Mail(
     'confirm_agu_conference_2023',
     subject='OSF Account Verification, from the American Geophysical Union Conference'
 )
