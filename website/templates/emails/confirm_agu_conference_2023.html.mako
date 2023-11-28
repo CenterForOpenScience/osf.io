@@ -12,7 +12,9 @@
     you get oriented on the OSF. This is an opportunity for us to show you useful OSF features, talk about
     open science in your domains, and for you to ask any questions you may have.
     You can register for this free event here:
-
+    <br>
+    https://cos-io.zoom.us/meeting/register/tZAuceCvrjotHNG3n6XzLFDv1Rnn2hkjczHr
+    <br>
     To continue, please verify your email address by visiting this link:<br>
     <br>
     ${confirmation_url}<br>
