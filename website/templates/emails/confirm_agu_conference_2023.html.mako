@@ -14,8 +14,8 @@
     You can register for this free event here:
     <br>
     https://cos-io.zoom.us/meeting/register/tZAuceCvrjotHNG3n6XzLFDv1Rnn2hkjczHr
-    <br>
-    To continue, please verify your email address by visiting this link:<br>
+    <br><br>
+    To confirm your OSF account, please verify your email address by visiting this link:<br>
     <br>
     ${confirmation_url}<br>
     <br>
