@@ -1992,6 +1992,11 @@ SPAM_AUTOBAN_IP_BLOCK = True
 SPAM_THROTTLE_AUTOBAN = True
 SPAM_CREATION_THROTTLE_LIMIT = 5
 
+# CEDAR API configs
+CEDAR_API_HOST = ''
+CEDAR_API_KEY = ''
+CEDAR_HOME_FOLDER_ID = ''
+
 # refresh campaign every 5 minutes
 CAMPAIGN_REFRESH_THRESHOLD = 5 * 60  # 5 minutes in seconds
 
