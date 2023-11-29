@@ -69,10 +69,23 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, utils.DataverseAddo
             filename
         )
 
-    def test_set_folder(self):
-        dataverse = utils.create_mock_dataverse()
+    @mock.patch('addons.dataverse.client.Connection')
+    def test_set_folder(self, mock_client):
+        mock_return = lambda attributes: type('MockObject', (mock.Mock,), attributes)
         dataset = utils.create_mock_dataset()
-        self.node_settings.set_folder(dataverse, dataset, auth=Auth(self.user))
+        dataverse = utils.create_mock_dataverse()
+
+        mock_client.return_value = mock_return({
+            'get_service_document': mock_return({}),
+            'get_dataverse': lambda alias: mock_return(
+                {
+                    'title': 'FastBatman',
+                    'alias': alias,
+                    'id': 'SwoleBatman'
+                }
+            )
+        })
+        self.node_settings.set_folder(dataverse, dataset=dataset, auth=Auth(self.user))
         # Folder was set
         assert_equal(self.node_settings.folder_id, dataset.id)
         # Log was saved

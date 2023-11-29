@@ -43,6 +43,7 @@ from osf.models import (
 from website.project import new_private_link
 from website.project.model import NodeUpdateError
 from osf.utils import permissions as osf_permissions
+from addons.dataverse import client
 
 
 class RegistrationProviderRelationshipField(RelationshipField):
@@ -2038,3 +2039,40 @@ class NodeGroupsDetailSerializer(NodeGroupsSerializer):
             # permission is in writeable_method_fields, so validation happens on OSF Group model
             raise exceptions.ValidationError(detail=str(e))
         return obj
+
+
+class DataverseNodeAddonSettingsSerializer(NodeAddonSettingsSerializer):
+
+    host = ser.CharField(required=False, allow_null=True, write_only=True)
+    access_token = ser.CharField(required=False, allow_null=True, write_only=True)
+
+    def update(self, instance, validated_data):
+        instance = super().update(instance, validated_data)
+        user = self.context['request'].user
+        host = validated_data.get('host')
+        access_token = validated_data.get('access_token')
+
+        if host and access_token:
+            client.connect_or_error(host, access_token)
+
+            account, created = ExternalAccount.objects.update_or_create(
+                provider='dataverse',
+                provider_id=access_token,   # Change to username if Dataverse allows
+                defaults={
+                    'provider_name': 'dataverse',
+                    'display_name': host,
+                    'oauth_key': host,
+                    'oauth_secret': access_token,
+                },
+            )
+            instance.external_account_id = account.id
+            user_settings = user.get_or_add_addon('dataverse')
+            user_settings.save()
+            instance.user_settings = user_settings
+            instance.save()
+            account.save()
+
+            if not user.external_accounts.filter(id=account.id).exists():
+                user.external_accounts.add(account)
+
+        return instance
