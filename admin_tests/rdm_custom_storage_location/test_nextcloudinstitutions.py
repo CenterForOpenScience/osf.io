@@ -1,3 +1,4 @@
+from io import BytesIO
 from django.test import RequestFactory
 from rest_framework import status as http_status
 import json
@@ -193,7 +194,7 @@ class TestFetchCredentialsView(AdminTestCase):
         nt.assert_equal(response_body.get('nextcloudinstitutions_folder'), settings.DEFAULT_BASE_FOLDER)
 
     def test_get_default(self):
-        response = self.view_get(f'provider_short_name=nextcloudinstitutions')
+        response = self.view_get('provider_short_name=nextcloudinstitutions')
         nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
         response_body = json.loads(response.content.decode())
         nt.assert_equal(response_body.get('nextcloudinstitutions_host'), '')
@@ -206,7 +207,7 @@ class TestFetchCredentialsView(AdminTestCase):
         self.user.affiliated_institutions.clear()
         self.user.is_superuser = True
         self.user.save()
-        response = self.view_get(f'provider_short_name=nextcloudinstitutions&institution_id={self.institution.id}')
+        response = self.view_get('provider_short_name=nextcloudinstitutions')
         nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
         response_body = json.loads(response.content.decode())
         nt.assert_equal(response_body.get('nextcloudinstitutions_host'), '')
@@ -224,13 +225,17 @@ class TestUserMapView(AdminTestCase):
         self.user.affiliated_institutions.add(self.institution)
         self.user.is_staff = True
         self.user.save()
-        self.test_binary_data = b''
-        self.test_binary_data2 = b'''
-            #User_GUID(or ePPN),External_UserID,Fullname(ignored)
-            #Please input External users into the second column.
-            EX5U2,,test1\n
-            NBEUR,,test2
-        '''
+        string = f'#User_GUID(or ePPN),External_UserID,Fullname(ignored)\r\n' \
+                 f'{self.user._id.upper()},test,{self.user.fullname.encode("utf-8")}'
+        ng_string = '#User_GUID(or ePPN),External_UserID,Fullname(ignored)\r\n' \
+                    '#Please input External users into the second column.\r\n' \
+                    '\r\n' \
+                    'EX5U2,,b"test1"\r\n' \
+                    ',test2,b"test2"\r\n' \
+                    'test@example.com,test3,'
+        self.test_binary_data = BytesIO(string.encode('utf-8'))
+        self.test_binary_data_ng = BytesIO(ng_string.encode('utf-8'))
+        self.test_binary_data_invalid_format = BytesIO(b'test_invalid_format')
 
     def view_post(self, params, binary_data):
         request = RequestFactory().post(
@@ -263,11 +268,11 @@ class TestUserMapView(AdminTestCase):
         }, self.test_binary_data)
         nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
         response_body = json.loads(response.content.decode())
-        nt.assert_equal(response_body.get('OK'), 0)
+        nt.assert_equal(response_body.get('OK'), 1)
         nt.assert_equal(response_body.get('NG'), 0)
         nt.assert_equal(response_body.get('provider_name'), 'nextcloudinstitutions')
         nt.assert_equal(response_body.get('report'), [])
-        nt.assert_equal(response_body.get('user_to_extuser'), {})
+        nt.assert_equal(response_body.get('user_to_extuser'), {self.user._id: 'test'})
 
     def test_post_clear(self):
         response = self.view_post({
@@ -288,6 +293,24 @@ class TestUserMapView(AdminTestCase):
         nt.assert_equal(response_body.get('report'), [])
         nt.assert_equal(response_body.get('user_to_extuser'), {})
 
+    def test_post_ng_invalid_format(self):
+        response = self.view_post({
+            'storage_name': 'My storage',
+            'nextcloudinstitutions_host': 'valid.nextcloud.net',
+            'nextcloudinstitutions_username': 'admin',
+            'nextcloudinstitutions_password': '1234',
+            'nextcloudinstitutions_folder': 'reserved_for_osf',
+            'nextcloudinstitutions_notification_secret': '',
+            'provider': 'nextcloudinstitutions',
+        }, self.test_binary_data_invalid_format)
+        nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
+        response_body = json.loads(response.content.decode())
+        nt.assert_equal(response_body.get('OK'), 0)
+        nt.assert_equal(response_body.get('NG'), 1)
+        nt.assert_equal(response_body.get('provider_name'), 'nextcloudinstitutions')
+        nt.assert_equal(response_body.get('report')[0], 'NG, INVALID_FORMAT: ')
+        nt.assert_equal(response_body.get('user_to_extuser'), {})
+
     def test_post_ng(self):
         response = self.view_post({
             'storage_name': 'My storage',
@@ -297,16 +320,22 @@ class TestUserMapView(AdminTestCase):
             'nextcloudinstitutions_folder': 'reserved_for_osf',
             'nextcloudinstitutions_notification_secret': '',
             'provider': 'nextcloudinstitutions',
-        }, self.test_binary_data2)
+            'check_extuser': True,
+        }, self.test_binary_data_ng)
         nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
         response_body = json.loads(response.content.decode())
         nt.assert_equal(response_body.get('OK'), 0)
-        nt.assert_equal(response_body.get('NG'), 1)
+        nt.assert_equal(response_body.get('NG'), 3)
         nt.assert_equal(response_body.get('provider_name'), 'nextcloudinstitutions')
-        nt.assert_equal(response_body.get('report')[0], 'NG, INVALID_FORMAT: ')
+        nt.assert_equal(response_body.get('report')[0], 'NG, EMPTY_EXTUSER: ')
+        nt.assert_equal(response_body.get('report')[1], 'NG, EMPTY_USER: ')
+        nt.assert_equal(response_body.get('report')[2], 'NG, UNKNOWN_USER: ')
         nt.assert_equal(response_body.get('user_to_extuser'), {})
 
     def test_post_ng_superuser(self):
+        self.user.affiliated_institutions.clear()
+        self.user.is_superuser = True
+        self.user.save()
         response = self.view_post({
             'storage_name': 'My storage',
             'nextcloudinstitutions_host': 'valid.nextcloud.net',
@@ -315,11 +344,36 @@ class TestUserMapView(AdminTestCase):
             'nextcloudinstitutions_folder': 'reserved_for_osf',
             'nextcloudinstitutions_notification_secret': '',
             'provider': 'nextcloudinstitutions',
-        }, self.test_binary_data2)
+        }, self.test_binary_data_ng)
         nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
         response_body = json.loads(response.content.decode())
         nt.assert_equal(response_body.get('OK'), 0)
-        nt.assert_equal(response_body.get('NG'), 1)
+        nt.assert_equal(response_body.get('NG'), 3)
         nt.assert_equal(response_body.get('provider_name'), 'nextcloudinstitutions')
-        nt.assert_equal(response_body.get('report')[0], 'NG, INVALID_FORMAT: ')
+        nt.assert_equal(response_body.get('report')[0], 'NG, EMPTY_EXTUSER: ')
+        nt.assert_equal(response_body.get('report')[1], 'NG, EMPTY_USER: ')
+        nt.assert_equal(response_body.get('report')[2], 'NG, UNKNOWN_USER: ')
         nt.assert_equal(response_body.get('user_to_extuser'), {})
+
+    def test_get(self):
+        response = self.view_get({
+            'provider': 'nextcloudinstitutions',
+        })
+        test_content = f'#User_GUID(or ePPN),External_UserID,Fullname(ignored)\r\n' \
+                       f'#Please input External users into the second column.\r\n' \
+                       f'{self.user._id.upper()},,{self.user.fullname.encode("utf-8")}\r\n'
+        binary_content = test_content.encode('utf-8')
+        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
+        nt.assert_equals(response.content, binary_content)
+
+    def test_get_superuser(self):
+        self.user.affiliated_institutions.clear()
+        self.user.is_superuser = True
+        self.user.save()
+        response = self.view_get({
+            'provider': 'nextcloudinstitutions',
+        })
+        test_content = '#User_GUID(or ePPN),External_UserID,Fullname(ignored)\r\n'
+        binary_content = test_content.encode('utf-8')
+        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
+        nt.assert_equals(response.content, binary_content)

@@ -3,6 +3,7 @@
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.http import HttpResponse, Http404, JsonResponse
 from django.views.generic import TemplateView, View, ListView
+import codecs
 import json
 import hashlib
 from rest_framework import status as http_status
@@ -534,7 +535,7 @@ class UserMapView(InstitutionalStorageBaseView, View):
 
         check_extuser = to_bool(request.POST.get('check_extuser', 'false'))
         usermap = request.FILES['usermap']
-        csv_reader = csv.reader(usermap, delimiter=',', quotechar='"')
+        csv_reader = csv.reader(codecs.iterdecode(usermap, 'utf-8'), delimiter=',', quotechar='"')
 
         result = {OK: 0, NG: 0}
         user_to_extuser = dict()  # This is UserMap.  (guid -> extuser)
@@ -649,7 +650,7 @@ class UserMapView(InstitutionalStorageBaseView, View):
         ext = 'csv'
         name = 'usermap-' + provider_name
 
-        s = StringIO.StringIO()
+        s = StringIO()
         csv_writer = csv.writer(s, delimiter=',')
 
         def fullname(osfuser):
