@@ -209,9 +209,8 @@ class TestPermissionTestConnection(AdminTestCase):
 
     def test_unauthorized(self):
         self.user = AnonymousUser()
-        response = self.view_post({})
-        self.assertEquals(response.status_code, 302)
-        self.assertEquals(response._headers['location'][1], '/accounts/login/?next=/fake_path')
+        with nt.assert_raises(PermissionDenied):
+            self.view_post({})
 
     def test_normal_user(self):
         with nt.assert_raises(PermissionDenied):
@@ -285,9 +284,8 @@ class TestPermissionSaveCredentials(AdminTestCase):
 
     def test_unauthorized(self):
         self.user = AnonymousUser()
-        response = self.view_post({})
-        self.assertEquals(response.status_code, 302)
-        self.assertEquals(response._headers['location'][1], '/accounts/login/?next=/fake_path')
+        with nt.assert_raises(PermissionDenied):
+            self.view_post({})
 
     def test_normal_user(self):
         with nt.assert_raises(PermissionDenied):
@@ -360,9 +358,8 @@ class TestPermissionFetchCredentialsView(AdminTestCase):
 
     def test_unauthorized(self):
         self.user = AnonymousUser()
-        response = self.view_post({})
-        self.assertEquals(response.status_code, 302)
-        self.assertEquals(response._headers['location'][1], '/accounts/login/?next=/fake_path')
+        with nt.assert_raises(PermissionDenied):
+            self.view_post({})
 
     def test_normal_user(self):
         with nt.assert_raises(PermissionDenied):
@@ -440,9 +437,8 @@ class TestPermissionFetchTemporaryToken(AdminTestCase):
 
     def test_unauthorized(self):
         self.user = AnonymousUser()
-        response = self.view_post({})
-        self.assertEquals(response.status_code, 302)
-        self.assertEquals(response._headers['location'][1], '/accounts/login/?next=/fake_path')
+        with nt.assert_raises(PermissionDenied):
+            self.view_post({})
 
     def test_normal_user(self):
         with nt.assert_raises(PermissionDenied):
@@ -515,9 +511,8 @@ class TestPermissionRemoveTemporaryAuthData(AdminTestCase):
 
     def test_unauthorized(self):
         self.user = AnonymousUser()
-        response = self.view_post({})
-        self.assertEquals(response.status_code, 302)
-        self.assertEquals(response._headers['location'][1], '/accounts/login/?next=/fake_path')
+        with nt.assert_raises(PermissionDenied):
+            self.view_post({})
 
     def test_normal_user(self):
         with nt.assert_raises(PermissionDenied):
@@ -597,9 +592,8 @@ class TestPermissionUserMapView(AdminTestCase):
     # POST
     def test_post_unauthorized(self):
         self.user = AnonymousUser()
-        response = self.view_post({})
-        self.assertEquals(response.status_code, 302)
-        self.assertEquals(response._headers['location'][1], '/accounts/login/?next=/fake_path')
+        with nt.assert_raises(PermissionDenied):
+            self.view_post({})
 
     def test_post_normal_user(self):
         with nt.assert_raises(PermissionDenied):
@@ -655,9 +649,8 @@ class TestPermissionUserMapView(AdminTestCase):
     # GET
     def test_get_unauthorized(self):
         self.user = AnonymousUser()
-        response = self.view_get({})
-        self.assertEquals(response.status_code, 302)
-        self.assertEquals(response._headers['location'][1], '/accounts/login/?next=/fake_path')
+        with nt.assert_raises(PermissionDenied):
+            self.view_get({})
 
     def test_get_normal_user(self):
         with nt.assert_raises(PermissionDenied):

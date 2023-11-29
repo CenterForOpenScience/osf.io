@@ -34,9 +34,6 @@ class InstitutionalStorageBaseView(RdmPermissionMixin, UserPassesTestMixin):
 
     def test_func(self):
         """ Check user permissions """
-        if not self.is_authenticated:
-            # If user is not authenticated then redirect to login page
-            self.raise_exception = False
         institution_id = int(self.kwargs.get('institution_id'))
         return self.has_auth(institution_id)
 
@@ -49,9 +46,9 @@ class InstitutionalStorageView(InstitutionalStorageBaseView, TemplateView):
     def test_func(self):
         """ Check user permissions """
         if not self.is_authenticated:
-            # If user is not authenticated, return False
+            # If user is not authenticated then redirect to login page
+            self.raise_exception = False
             return False
-        self.raise_exception = True
         institution_id = self.kwargs.get('institution_id', None)
         if not institution_id and self.is_super_admin:
             # If user is super administrator but no institution_id provided, return False
@@ -102,15 +99,15 @@ class InstitutionalStorageListView(InstitutionalStorageBaseView, ListView):
     def test_func(self):
         """ Check user permissions """
         if not self.is_authenticated:
-            # If user is not authenticated, return False
+            # If user is not authenticated then redirect to login page
+            self.raise_exception = False
             return False
-        self.raise_exception = True
         # Only allow super administrators to access this view
         return self.is_super_admin
 
     def get_queryset(self):
         """ GET: set to self.object_list """
-        return Institution.objects.all().order_by(self.ordering)
+        return Institution.objects.filter(is_deleted=False).order_by(self.ordering)
 
     def get_context_data(self, **kwargs):
         query_set = kwargs.pop('object_list', self.object_list)
