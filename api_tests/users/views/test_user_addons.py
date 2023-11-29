@@ -36,8 +36,7 @@ class UserAddonListMixin(object):
         if not wrong_type:
             addon_data = res.json['data'][0]
             assert_true(addon_data['attributes']['user_has_auth'])
-            assert_in(
-                self.node._id, addon_data['links']['accounts'][self.account_id]['nodes_connected'][0])
+            assert addon_data['relationships']['accounts']
         if wrong_type:
             assert_equal(res.status_code, 200)
             assert_equal(res.json['data'], [])
@@ -117,10 +116,7 @@ class UserAddonDetailMixin(object):
         if not wrong_type:
             addon_data = res.json['data']
             assert_true(addon_data['attributes']['user_has_auth'])
-            assert_in(
-                self.node._id,
-                addon_data['links']['accounts'][self.account_id]['nodes_connected'][0]
-            )
+            assert addon_data['relationships']['accounts']
         if wrong_type:
             assert_equal(res.status_code, 404)
 
@@ -207,11 +203,10 @@ class UserAddonAccountListMixin(object):
                 addon_data['attributes']['display_name'],
                 self.account.display_name)
             assert_equal(
-                addon_data['attributes']['provider'],
-                self.account.provider)
-            assert_equal(
                 addon_data['attributes']['profile_url'],
                 self.account.profile_url)
+            addon_relationship_link = addon_data['relationships']['provider']['links']['related']['href']
+            assert addon_relationship_link.endswith(f'/addons/{self.account.provider}/')
         if wrong_type:
             assert_equal(res.status_code, 404)
 
@@ -298,11 +293,11 @@ class UserAddonAccountDetailMixin(object):
                 addon_data['attributes']['display_name'],
                 self.account.display_name)
             assert_equal(
-                addon_data['attributes']['provider'],
-                self.account.provider)
-            assert_equal(
                 addon_data['attributes']['profile_url'],
                 self.account.profile_url)
+            addon_relationship_link = addon_data['relationships']['provider']['links']['related']['href']
+            assert addon_relationship_link.endswith(f'/addons/{self.account.provider}/')
+
         if wrong_type:
             assert_equal(res.status_code, 404)
 

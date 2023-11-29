@@ -1685,9 +1685,16 @@ def relationship_diff(current_items, new_items):
 
 class AddonAccountSerializer(JSONAPISerializer):
     id = ser.CharField(source='_id', read_only=True)
-    provider = ser.CharField(read_only=True)
     profile_url = ser.CharField(required=False, read_only=True)
     display_name = ser.CharField(required=False, read_only=True)
+
+    provider = RelationshipField(
+        related_view='users:user-addon-detail',
+        related_view_kwargs={
+            'provider': '<provider>',
+            'user_id': '<user_id>',
+        },
+    )
 
     links = links = LinksField({
         'self': 'get_absolute_url',

@@ -74,7 +74,6 @@ from rest_framework.response import Response
 from rest_framework.exceptions import NotAuthenticated, NotFound, ValidationError, Throttled
 from osf.models import (
     Contributor,
-    ExternalAccount,
     Guid,
     AbstractNode,
     Preprint,
@@ -270,6 +269,7 @@ class UserAddonAccountList(JSONAPIBaseView, generics.ListAPIView, UserMixin, Add
     def get_queryset(self):
         return self.get_addon_settings(check_object_permissions=False).external_accounts
 
+
 class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin, AddonSettingsMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/Users_addon_accounts_read).
     """
@@ -290,7 +290,8 @@ class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixi
         user_settings = self.get_addon_settings(check_object_permissions=False)
         account_id = self.kwargs['account_id']
 
-        account = ExternalAccount.load(account_id)
+        account = user_settings.external_accounts.get(_id=account_id)
+
         if not (account and user_settings.external_accounts.filter(id=account.id).exists()):
             raise NotFound('Requested addon unavailable')
         return account

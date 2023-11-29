@@ -908,6 +908,12 @@ class NodeAddonSettingsSerializerBase(JSONAPISerializer):
     external_account_id = ser.CharField(source='external_account._id', required=False, allow_null=True)
     folder_id = ser.CharField(required=False, allow_null=True)
     folder_path = ser.CharField(required=False, allow_null=True)
+    node = RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={
+            'node_id': '<owner._id>',
+        },
+    )
 
     # Forward-specific
     label = ser.CharField(required=False, allow_blank=True)

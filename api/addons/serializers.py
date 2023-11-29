@@ -47,8 +47,12 @@ class AddonSerializer(JSONAPISerializer):
         'categories',
     ])
 
+    links = LinksField({
+        'self': 'get_absolute_url',
+    })
+
     class Meta:
-        type_ = 'addon'
+        type_ = 'addons'
 
     id = ser.CharField(source='short_name', read_only=True)
     name = ser.CharField(source='full_name', read_only=True)

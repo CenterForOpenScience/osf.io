@@ -181,7 +181,11 @@ class BaseOAuthUserSettings(BaseUserSettings):
     @property
     def external_accounts(self):
         """The user's list of ``ExternalAccount`` instances for this provider"""
-        return self.owner.external_accounts.filter(provider=self.oauth_provider.short_name)
+        return self.owner.external_accounts.filter(
+            provider=self.oauth_provider.short_name
+        ).annotate(
+            user_id=models.Value(self.owner._id),
+        )
 
     def delete(self, save=True):
         for account in self.external_accounts.filter(provider=self.config.short_name):
