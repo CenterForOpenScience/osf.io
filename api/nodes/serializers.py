@@ -1096,25 +1096,19 @@ class NodeAddonSettingsSerializer(NodeAddonSettingsSerializerBase):
 
 
 class BoaNodeAddonSettingsSerializer(NodeAddonSettingsSerializer):
-    SHORT_NAME = 'boa'
-    FULL_NAME = 'Boa'
 
-    oauth_secret = ser.CharField(required=False, allow_null=True, write_only=True)
-    oauth_key = ser.CharField(required=False, allow_null=True, write_only=True)
+    username = ser.CharField(required=False, allow_null=True, write_only=True)
+    password = ser.CharField(required=False, allow_null=True, write_only=True)
 
     def update(self, instance, validated_data):
         instance = super().update(instance, validated_data)
         username = validated_data.get('username')
         password = validated_data.get('password')
         user = self.context['request'].user
-
         if username and password:
-            try:
-                boa_client = BoaClient(endpoint=BOA_API_ENDPOINT)
-                boa_client.login(username, password)
-                boa_client.close()
-            except BoaException:
-                raise exceptions.PermissionDenied('You do not have access to this addon')
+            boa_client = BoaClient(endpoint=BOA_API_ENDPOINT)
+            boa_client.login(username, password)
+            boa_client.close()
 
             provider = BoaProvider(
                 account=None,
