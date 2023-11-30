@@ -9,6 +9,8 @@ var sprintf = require('agh.sprintf').sprintf;
 
 var clipboard = require('js/clipboard');
 
+var constants = require('js/constants/constants');
+
 var no_storage_name_providers = ['osfstorage', 'onedrivebusiness'];
 // type1: get from admin/rdm_addons/api_v1/views.py
 var preload_accounts_type1 = ['dropboxbusiness'];
@@ -17,8 +19,8 @@ var preload_accounts_type2 = ['nextcloudinstitutions',
                 'ociinstitutions',
                 's3compatinstitutions']
 // delay time to show growl box; in millisecond
-var growlBoxDelay = 5000;
-var intervalCheckStatus = 5000;
+var growlBoxDelay = constants.GROWL_BOX_DELAY_TIME || 5000;
+var intervalCheckStatus = constants.CHECK_STATUS_INTERVAL || 10000;
 var list_file_info_export_fail = [];
 var list_file_info_restore_fail = [];
 var file_name_export_fail = '';
