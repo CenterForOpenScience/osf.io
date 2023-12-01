@@ -95,15 +95,6 @@ class UserSettings(BaseOAuthUserSettings):
     oauth_provider = DataverseProvider
     serializer = DataverseSerializer
 
-    @property
-    def has_auth(self):
-        return self.external_accounts.exists()
-
-    @property
-    def external_accounts(self):
-        """The user's list of ``ExternalAccount`` instances for this provider"""
-        return self.owner.external_accounts.filter(provider=self.oauth_provider.short_name)
-
 
 class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     oauth_provider = DataverseProvider
@@ -169,6 +160,8 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             self.dataset_doi = dataset.doi
             self._dataset_id = dataset.id
             self.dataset = dataset.title
+        else:
+            self._dataset_id = folder_id
 
         self.save()
 
@@ -262,13 +255,16 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         self.save()
 
     def get_folders(self, path, folder_id):
-        # Update with Dataverse specific fields
-        if self.has_auth:
-            connection = client.connect_from_settings(self)
-            dataverses = client.get_dataverses(connection)
-            return [
-                {
-                    'path': dataverse.alias,
-                    'id': dataverse.title,
-                    'addon': 'dataverse'
-                } for dataverse in dataverses]
+        """
+        V2 API currently only lists Dataverse's, which act as top-level Dataverse base folders.
+        """
+        connection = client.connect_from_settings(self)
+        dataverses = client.get_dataverses(connection)
+        return [
+            {
+                'path': dataverse.alias,
+                'id': dataverse.title,
+                'name': dataverse.title,
+                'addon': 'dataverse'
+            } for dataverse in dataverses
+        ]

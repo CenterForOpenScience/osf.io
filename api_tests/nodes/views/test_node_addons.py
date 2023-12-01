@@ -29,6 +29,7 @@ from addons.zotero.tests.factories import (
     ZoteroAccountFactory, ZoteroNodeSettingsFactory
 )
 from osf.utils.permissions import WRITE, READ, ADMIN
+from api_tests.addons_tests.dataverse.test_configure_dataverse import mock_dataverse_client
 
 pytestmark = pytest.mark.django_db
 # Varies between addons. Some need to make a call to get the root,
@@ -694,7 +695,7 @@ class TestNodeBitbucketAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
         }
 
 
-class TestNodeDataverseAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
+class TestNodeDataverseAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'dataverse'
     AccountFactory = DataverseAccountFactory
     NodeSettingsFactory = DataverseNodeSettingsFactory
@@ -705,6 +706,22 @@ class TestNodeDataverseAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
             '_dataset_id': '1234567890',
             'owner': self.node
         }
+
+    @property
+    def _mock_folder_result(self):
+        return {
+            'name': 'Dataverse Test Title',
+            'path': 'Dataverse Test Alias',
+            'id': 'Dataverse Test Title'
+        }
+
+    def test_folder_list_GET_expected_behavior(self):
+        with mock.patch('addons.dataverse.client.Connection', return_value=mock_dataverse_client()):
+            super().test_folder_list_GET_expected_behavior()
+
+    def test_settings_detail_PUT_all_sets_settings(self):
+        with mock.patch('addons.dataverse.client.Connection', return_value=mock_dataverse_client()):
+            super().test_settings_detail_PUT_all_sets_settings()
 
 
 class TestNodeGitHubAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):

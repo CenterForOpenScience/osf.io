@@ -6,7 +6,31 @@ from api.base.settings.defaults import API_BASE
 from osf_tests.factories import ProjectFactory, AuthUserFactory, ExternalAccountFactory
 from addons.dataverse.tests.factories import DataverseUserSettingsFactory
 
-mock_return = lambda attributes: type('MockObject', (mock.Mock,), attributes)
+_mock = lambda attributes: type('MockObject', (mock.Mock,), attributes)
+
+
+def mock_dataverse_client():
+    return _mock({
+        'get_dataverses': lambda: [
+            _mock(
+                {
+                    'alias': 'Dataverse Test Alias',
+                    'title': 'Dataverse Test Title',
+                    'name': 'Dataverse Test Name',
+                    'id': 'Dataverse Test ID',
+                }
+            )
+        ],
+        'get_service_document': _mock({}),
+        'get_dataverse': lambda alias: _mock(
+            {
+                'title': 'FastBatman',
+                'alias': alias,
+                'id': 'WR',
+                'name': 'Quez Watkins'
+            }
+        ),
+    })
 
 
 @pytest.mark.django_db
@@ -38,45 +62,34 @@ class TestDataverseConfig:
         enabled_addon.save()
         return node
 
-    @mock.patch('addons.dataverse.client.Connection')
+    @mock.patch('addons.dataverse.client.Connection', return_value=mock_dataverse_client())
     def test_addon_folders_PATCH(self, mock_client, app, node_with_authorized_addon, user):
-        mock_return = lambda attributes: type('MockObject', (mock.Mock,), attributes)
-
-        mock_client.return_value = mock_return({
-            'get_service_document': mock_return({}),
-            'get_dataverse': lambda alias: mock_return(
-                {
-                    'title': 'FastBatman',
-                    'alias': alias,
-                    'id': 'SwoleBatman'
-                }
-            )
-        })
-
-        payload = {'data': {'attributes': {'folder_id': 'test_123'}}}
-
         resp = app.patch_json_api(
             f'/{API_BASE}nodes/{node_with_authorized_addon._id}/addons/dataverse/',
-            payload,
+            {
+                'data': {
+                    'attributes': {
+                        'folder_id': 'test_123'
+                    }
+                }
+            },
             auth=user.auth
         )
         assert resp.status_code == 200
-        assert resp.json['data']['attributes']['folder_id'] == 'test-folder'
-        assert resp.json['data']['attributes']['folder_path'] == 'test-folder'
+        assert resp.json['data']['attributes']['folder_id'] == 'test_123'
 
-    @mock.patch('addons.dataverse.client.Connection')
+    @mock.patch('addons.dataverse.client.Connection', return_value=mock_dataverse_client())
     def test_addon_credentials_PATCH(self, mock_client, app, node, user, enabled_addon):
-        mock_return = lambda attributes: type('MockObject', (mock.Mock,), attributes)
-
-        mock_client.return_value = mock_return({
-            'get_service_document': mock_return({})
-        })
-
-        payload = {'data': {'attributes': {'host': 'jakeelliot@eagles.bird', 'access_token': 'access_token'}}}
-
         resp = app.patch_json_api(
             f'/{API_BASE}nodes/{node._id}/addons/dataverse/',
-            payload,
+            {
+                'data': {
+                    'attributes': {
+                        'host': 'jakeelliot@eagles.bird',
+                        'access_token': 'THEfranchise'
+                    }
+                }
+            },
             auth=user.auth
         )
         assert resp.status_code == 200
