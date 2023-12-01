@@ -1107,7 +1107,11 @@ class BoaNodeAddonSettingsSerializer(NodeAddonSettingsSerializer):
         user = self.context['request'].user
         if username and password:
             boa_client = BoaClient(endpoint=BOA_API_ENDPOINT)
-            boa_client.login(username, password)
+
+            try:
+                boa_client.login(username, password)
+            except BoaException:
+                raise exceptions.PermissionDenied('Raised login error')
             boa_client.close()
 
             provider = BoaProvider(

@@ -4,7 +4,12 @@ from framework.auth.core import Auth
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import ProjectFactory, AuthUserFactory, ExternalAccountFactory
 
-mock_return = lambda attributes: type('MockObject', (mock.Mock,), attributes)
+_mock = lambda attributes: type('MockObject', (mock.Mock,), attributes)
+
+def mock_boa_client():
+    return _mock({
+        'login': False
+    })
 
 
 @pytest.mark.django_db
