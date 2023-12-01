@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
+import owncloud
 
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
@@ -69,6 +70,10 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     _api = None
 
     @property
+    def has_auth(self):
+        return bool(self.user_settings and self.user_settings.has_auth and self.external_account)
+
+    @property
     def api(self):
         if self._api is None:
             self._api = OwnCloudProvider(self.external_account)
@@ -83,6 +88,13 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         return self.folder_id
 
     def set_folder(self, folder, auth=None):
+        c = OwnCloudClient(self.external_account.oauth_secret, verify_certs=settings.USE_SSL)
+        c.login(self.external_account.display_name, self.external_account.oauth_key)
+        try:
+            assert c.list(folder)
+        except owncloud.owncloud.HTTPResponseError:
+            raise exceptions.InvalidFolderError(f'path `{folder}` is not found')
+
         if folder == '/ (Full ownCloud)':
             folder = '/'
         self.folder_id = folder
