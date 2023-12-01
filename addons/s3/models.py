@@ -55,6 +55,10 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     @property
+    def has_auth(self):
+        return bool(self.user_settings and self.user_settings.external_accounts.exists() and self.external_account)
+
+    @property
     def folder_path(self):
         return self.folder_name
 
