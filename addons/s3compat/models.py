@@ -150,7 +150,6 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         if not self.folder_id:
             raise exceptions.AddonError('Cannot serialize settings for S3 Compatible Storage addon')
         return {
-            'nid': self.owner._id,
             'bucket': self.folder_id,
             'encrypt_uploads': self.encrypt_uploads
         }
