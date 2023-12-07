@@ -258,7 +258,7 @@ def export_data_process(task, cookies, export_data_id, location_id, source_id, *
         logger.debug(f'creating files information file')
         write_json_file(file_info_json, temp_file_path)
         response = export_data.upload_file_info_full_data_file(cookies, temp_file_path, **kwargs)
-        if not task.is_aborted() and response.status_code != 201:
+        if not task.is_aborted() and response.status_code not in [201, 204]:
             raise ExportDataTaskException(MSG_EXPORT_FAILED_UPLOAD_TO_LOCATION)
         logger.debug(f'created files information file')
 
@@ -367,7 +367,7 @@ def export_data_process(task, cookies, export_data_id, location_id, source_id, *
         _step_start_time = time.time()
         write_json_file(file_info_json, temp_file_path)
         response = export_data.upload_file_info_file(cookies, temp_file_path, **kwargs)
-        if not task.is_aborted() and response.status_code != 201:
+        if not task.is_aborted() and response.status_code not in [201, 204]:
             raise ExportDataTaskException(MSG_EXPORT_FAILED_UPLOAD_TO_LOCATION)
         logger.info(f'Created files information JSON file.'
                     f' ({time.time() - _step_start_time}s)')
