@@ -16,20 +16,21 @@ class Command(BaseCommand):
             schema_name = template['schema:name']
             pav_last_updated_on = template['pav:lastUpdatedOn']
             existing_versions = CedarMetadataTemplate.objects.filter(cedar_id=cedar_id)
-            if not existing_versions:
+            if existing_versions:
+                latest_version = existing_versions.order_by('-template_version').first()
+                if pav_last_updated_on != latest_version.template['pav:lastUpdatedOn']:
+                    CedarMetadataTemplate.objects.create(
+                        schema_name=schema_name,
+                        template=template,
+                        cedar_id=cedar_id,
+                        template_version=latest_version.template_version + 1
+                    )
+                    latest_version.active = False
+                    latest_version.save()
+            else:
                 CedarMetadataTemplate.objects.create(
                     schema_name=schema_name,
                     template=template,
                     cedar_id=cedar_id,
                     template_version=1
                 )
-            latest_version = existing_versions.order_by('-template_version').first()
-            if pav_last_updated_on != latest_version.template['pav:lastUpdatedOn']:
-                CedarMetadataTemplate.objects.create(
-                    schema_name=schema_name,
-                    template=template,
-                    cedar_id=cedar_id,
-                    template_version=latest_version.template_version + 1
-                )
-                latest_version.active = False
-                latest_version.save()
