@@ -283,9 +283,9 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
         if 'study_design' in validated_data:
             obj.study_design = validated_data.pop('study_design')
         if 'data_type' in validated_data:
-            obj.study_design = validated_data.pop('data_type')
+            obj.data_type = validated_data.pop('data_type')
         if 'disease' in validated_data:
-            obj.study_design = validated_data.pop('disease')
+            obj.disease = validated_data.pop('disease')
 
         obj.save()
         return obj

@@ -290,7 +290,7 @@ class CollectionProviderForm(forms.ModelForm):
             )
             if active_removed_choices:
                 raise forms.ValidationError(
-                    'Cannot remove the following choices for "study_design", as they are '
+                    'Cannot remove the following choices for "disease", as they are '
                     f'currently in use: {active_removed_choices}'
                 )
         else:  # Creating a new CollectionProvider
@@ -320,7 +320,7 @@ class CollectionProviderForm(forms.ModelForm):
             )
             if active_removed_choices:
                 raise forms.ValidationError(
-                    'Cannot remove the following choices for "data_type_choices", as they are '
+                    'Cannot remove the following choices for "data_type", as they are '
                     f'currently in use: {active_removed_choices}'
                 )
         else:  # Creating a new CollectionProvider

@@ -21,6 +21,17 @@ from django.contrib import messages
 from admin.providers.views import AddAdminOrModerator, RemoveAdminsAndModerators
 
 
+def process_collection_choices(self, choices_name, form):
+    collection = self.object.primary_collection
+    choices_name_attr = f'{choices_name}_choices'
+    choices_added = form.cleaned_data[choices_name_attr]['added']
+    choices_removed = form.cleaned_data[choices_name_attr]['removed']
+
+    getattr(collection, choices_name_attr).extend(choices_added)
+    for item in choices_removed:
+        getattr(collection, choices_name_attr).remove(item)
+
+
 class CreateCollectionProvider(PermissionRequiredMixin, CreateView):
     raise_exception = True
     permission_required = 'osf.change_collectionprovider'
@@ -48,9 +59,9 @@ class CreateCollectionProvider(PermissionRequiredMixin, CreateView):
         for item in form.cleaned_data['study_design_choices']['added']:
             self.object.primary_collection.study_design_choices.append(item)
         for item in form.cleaned_data['data_type_choices']['added']:
-            self.object.primary_collection.study_design_choices.append(item)
+            self.object.primary_collection.data_type_choices.append(item)
         for item in form.cleaned_data['disease_choices']['added']:
-            self.object.primary_collection.study_design_choices.append(item)
+            self.object.primary_collection.disease_choices.append(item)
         self.object.primary_collection.save()
         return super().form_valid(form)
 
@@ -249,19 +260,11 @@ class CollectionProviderChangeForm(PermissionRequiredMixin, UpdateView):
     model = CollectionProvider
     form_class = CollectionProviderForm
 
-    def process_choices(self, choices_name, form):
-        collection = self.object.primary_collection
-        choices_added = form.cleaned_data[f'{choices_name}_choices']['added']
-        choices_removed = form.cleaned_data[f'{choices_name}_choices']['removed']
-
-        getattr(collection, f'{choices_name}_choices').extend(choices_added)
-        for item in choices_removed:
-            getattr(collection, f'{choices_name}_choices').remove(item)
 
     def form_valid(self, form):
         if self.object.primary_collection:
             for choices_name in ['collected_type', 'status', 'issue', 'volume', 'program_area', 'school_type', 'study_design', 'data_type', 'disease']:
-                self.process_choices(choices_name, form)
+                process_collection_choices(choices_name, form)
         self.object.primary_collection.save()
         return super().form_valid(form)
 
