@@ -21,8 +21,8 @@ from django.contrib import messages
 from admin.providers.views import AddAdminOrModerator, RemoveAdminsAndModerators
 
 
-def process_collection_choices(self, choices_name, form):
-    collection = self.object.primary_collection
+def _process_collection_choices(provider, choices_name, form):
+    collection = provider.primary_collection
     choices_name_attr = f'{choices_name}_choices'
     choices_added = form.cleaned_data[choices_name_attr]['added']
     choices_removed = form.cleaned_data[choices_name_attr]['removed']
@@ -260,11 +260,10 @@ class CollectionProviderChangeForm(PermissionRequiredMixin, UpdateView):
     model = CollectionProvider
     form_class = CollectionProviderForm
 
-
     def form_valid(self, form):
         if self.object.primary_collection:
             for choices_name in ['collected_type', 'status', 'issue', 'volume', 'program_area', 'school_type', 'study_design', 'data_type', 'disease']:
-                process_collection_choices(choices_name, form)
+                _process_collection_choices(self.object, choices_name, form)
         self.object.primary_collection.save()
         return super().form_valid(form)
 
