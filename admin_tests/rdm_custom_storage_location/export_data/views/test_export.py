@@ -611,6 +611,7 @@ class TestExportDataProcess(unittest.TestCase):
             nt.assert_equal(_task_result.get('export_data_status'), self.export_data.status)
 
     @pytest.mark.django_db
+    @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.upload_file_info_full_data_file')
     @mock.patch(f'{EXPORT_DATA_PATH}.write_json_file')
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.upload_export_data_file')
     @mock.patch(f'{EXPORT_DATA_PATH}.ExportData.upload_file_info_file')
@@ -630,6 +631,7 @@ class TestExportDataProcess(unittest.TestCase):
             mock_upload_file_info_file,
             mock_upload_export_data_file,
             mock_write_json_file,
+            mock_upload_file_info_full_data_file
     ):
         mock_write_json_file.return_value = None
         mock_export_data.filter.return_value.first.return_value = self.export_data
@@ -661,6 +663,7 @@ class TestExportDataProcess(unittest.TestCase):
         mock_copy_export_data_file_to_location.return_value.status_code = status.HTTP_201_CREATED
         mock_upload_file_info_file.return_value.status_code = status.HTTP_201_CREATED
         mock_upload_export_data_file.return_value.status_code = status.HTTP_201_CREATED
+        mock_upload_file_info_full_data_file.return_value.status_code = status.HTTP_201_CREATED
 
         _task_result = export.export_data_process(
             self.task, self.cookies, self.export_data.id, self.location.id, self.source.id,

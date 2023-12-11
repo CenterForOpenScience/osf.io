@@ -248,6 +248,20 @@ def export_data_process(task, cookies, export_data_id, location_id, source_id, *
         logger.info(f'Created \'{export_data.export_data_folder_path}\' folder path.'
                     f' ({time.time() - _step_start_time}s)')
 
+        # temporary file
+        temp_file_path = export_data.export_data_temp_file_path
+        logger.debug(f'created temporary file')
+
+        if task.is_aborted():  # check before each steps
+            raise ExportDataTaskException(MSG_EXPORT_ABORTED)
+        # create files' information file
+        logger.debug(f'creating files information file')
+        write_json_file(file_info_json, temp_file_path)
+        response = export_data.upload_file_info_full_data_file(cookies, temp_file_path, **kwargs)
+        if not task.is_aborted() and response.status_code not in [201, 204]:
+            raise ExportDataTaskException(MSG_EXPORT_FAILED_UPLOAD_TO_LOCATION)
+        logger.debug(f'created files information file')
+
         # export target file and accompanying data
 
         # [Important] check process status before each step
@@ -346,15 +360,14 @@ def export_data_process(task, cookies, export_data_id, location_id, source_id, *
             _prev_time, task_id, export_data_id, location_id, source_id)
 
         # temporary file
-        temp_file_path = export_data.export_data_temp_file_path
-        logger.debug(f'created temporary file')
+        # temp_file_path = export_data.export_data_temp_file_path
 
         # create files' information JSON file
         logger.debug(f'creating files information JSON file')
         _step_start_time = time.time()
         write_json_file(file_info_json, temp_file_path)
         response = export_data.upload_file_info_file(cookies, temp_file_path, **kwargs)
-        if not task.is_aborted() and response.status_code != 201:
+        if not task.is_aborted() and response.status_code not in [201, 204]:
             raise ExportDataTaskException(MSG_EXPORT_FAILED_UPLOAD_TO_LOCATION)
         logger.info(f'Created files information JSON file.'
                     f' ({time.time() - _step_start_time}s)')
