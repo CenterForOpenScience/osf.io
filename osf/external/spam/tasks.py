@@ -46,8 +46,11 @@ def _check_resource_for_domains(guid, content):
     resource = guid.referent
     spammy_domains = []
     referrer_content_type = ContentType.objects.get_for_model(resource)
-    for domain in _extract_domains(content):
-        notable_domain, _ = NotableDomain.objects.get_or_create(domain=domain)
+    for domain, note in _extract_domains(content):
+        notable_domain, _ = NotableDomain.objects.get_or_create(
+            domain=domain,
+            defaults={'note': note}
+        )
         if notable_domain.note == NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT:
             spammy_domains.append(notable_domain.domain)
         DomainReference.objects.get_or_create(
@@ -72,8 +75,11 @@ def check_resource_for_domains_async(guid, content):
 
 
 def _extract_domains(content):
+    from osf.models import NotableDomain
+
     extracted_domains = set()
     for match in DOMAIN_REGEX.finditer(content):
+        note = NotableDomain.Note.UNKNOWN
         domain = match.group('domain')
         if not domain or domain in extracted_domains:
             continue
@@ -85,6 +91,8 @@ def _extract_domains(content):
 
         try:
             response = requests.head(constructed_url, timeout=settings.DOMAIN_EXTRACTION_TIMEOUT)
+        except requests.exceptions.Timeout:
+            note = NotableDomain.Note.UNVERIFIED
         except (requests.exceptions.ConnectionError, requests.exceptions.InvalidURL):
             continue
         except requests.exceptions.RequestException:
@@ -99,7 +107,7 @@ def _extract_domains(content):
         # Avoid returning a duplicate domain discovered via redirect
         if domain not in extracted_domains:
             extracted_domains.add(domain)
-            yield domain
+            yield domain, note
 
 
 @run_postcommit(once_per_request=False, celery=True)
