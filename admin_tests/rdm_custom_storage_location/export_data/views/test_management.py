@@ -717,8 +717,9 @@ class TestCheckExportData(AdminTestCase):
                 res = view.get(request, data_id=self.export_data.id)
         nt.assert_equals(res.status_code, 400)
 
+    @mock.patch('admin.rdm_custom_storage_location.export_data.views.management.check_for_file_existent_on_export_location')
     @mock.patch.object(ExportData, 'extract_file_information_json_from_source_storage')
-    def test_check_export_data_successful(self, mock_class):
+    def test_check_export_data_successful(self, mock_class, mock_check_exist):
         request = RequestFactory().get('/fake_path')
         request.user = self.user
         request.COOKIES = '213919sdasdn823193929'
@@ -730,6 +731,7 @@ class TestCheckExportData(AdminTestCase):
         mock_export_data = mock.MagicMock()
         mock_request = mock.MagicMock()
         mock_validate = mock.MagicMock()
+        mock_check_exist.return_value = []
         mock_validate.return_value = True
         mock_request.get.return_value = FakeRes(200)
         self.export_data.source._id = 'vcu'

@@ -18,6 +18,7 @@ from admin.rdm_custom_storage_location.export_data.utils import (
     process_data_information,
     validate_exported_data,
     count_files_ng_ok,
+    check_for_file_existent_on_export_location,
 )
 from osf.models import ExportData, Institution
 from website.util import inspect_info  # noqa
@@ -431,6 +432,18 @@ class CheckExportData(RdmPermissionMixin, View):
         exclude_keys = []
         data = count_files_ng_ok(exported_file_versions, storage_file_versions, exclude_keys=exclude_keys)
 
+        # check file exist in Export location storage
+        node_id = export_data.EXPORT_DATA_FAKE_NODE_ID
+        provider = export_data.location.provider_name
+        location_id = export_data.location.id
+        file_path = f'/{export_data.export_data_folder_name}/files/'
+        file_list = check_for_file_existent_on_export_location(exported_file_info, node_id, provider, file_path, location_id, cookies, cookie)
+        file_fails_list = data.get('list_file_ng') + file_list
+        for file in file_list:
+            if not any(d['path'] == file['path'] for d in data.get('list_file_ng')):
+                data['ng'] += 1
+                data['ok'] -= 1
+        data['list_file_ng'] = file_fails_list
         # end check
         export_data.status = ExportData.STATUS_COMPLETED
         export_data.save()
