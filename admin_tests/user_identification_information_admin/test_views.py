@@ -192,8 +192,7 @@ class TestExportFileCSVAdminView(AdminTestCase):
         self.S3Node_settings2 = S3NodeSettingsFactory(user_settings=self.user_settings2)
 
         institution = InstitutionFactory()
-        self.user.affiliated_institutions.add(institution)
-        self.super_user.affiliated_institutions.add(institution)
+        self.admin_user.affiliated_institutions.add(institution)
         self.super_user.save()
         self.admin_user.save()
 
