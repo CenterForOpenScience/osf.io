@@ -66,12 +66,12 @@ class TestDomainExtraction:
         assert not domains
         mock_head.assert_not_called()
 
-    def test_extract_domains__ignored_if_does_not_resolve(self):
+    def test_extract_domains__unverfied_if_does_not_resolve(self):
         sample_text = 'This.will.not.connect'
         with mock.patch.object(spam_tasks.requests, 'head') as mock_head:
             mock_head.side_effect = spam_tasks.requests.exceptions.ConnectionError
             domains = set(spam_tasks._extract_domains(sample_text))
-        assert not domains
+        assert domains == {('This.will.not.connect', NotableDomain.Note.UNVERIFIED)}
 
     def test_actract_domains__returned_on_error(self):
         sample_text = 'This.will.timeout'
