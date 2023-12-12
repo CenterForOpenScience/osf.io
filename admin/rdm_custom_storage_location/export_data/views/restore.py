@@ -28,6 +28,8 @@ from osf.models import ExportData, ExportDataRestore, BaseFileNode, Tag, RdmFile
 from website.util import inspect_info  # noqa
 from framework.transactions.handlers import no_auto_transaction
 from website.util.quota import update_user_used_quota
+from django.contrib.auth.mixins import UserPassesTestMixin
+from django.http import Http404
 
 logger = logging.getLogger(__name__)
 INSTITUTIONAL_STORAGE_PROVIDER_NAME = 'osfstorage'
@@ -40,11 +42,38 @@ class ProcessError(Exception):
 
 @no_auto_transaction
 @method_decorator(transaction.non_atomic_requests, name='dispatch')
-class RestoreDataActionView(RdmPermissionMixin, APIView):
+class RestoreDataActionView(RdmPermissionMixin, UserPassesTestMixin, APIView):
     raise_exception = True
     authentication_classes = (
         drf_authentication.SessionAuthentication,
     )
+
+    def test_func(self):
+        # login check
+        if not self.is_authenticated:
+            return False
+
+        # allowed if superuser or admin
+        if not self.is_super_admin and not self.is_admin:
+            return False
+
+        """check user permissions"""
+        destination_id = self.request.POST.get('destination_id')
+        export_id = self.kwargs.get('export_id')
+        if destination_id and export_id:
+            export_data_inst_id = None
+            destination_inst_id = None
+            check_export_data = ExportData.objects.filter(id=export_id, is_deleted=False).first()
+            if check_export_data:
+                export_data_inst_id = get_institution_id(check_export_data.source)
+            destination_inst_id = get_institution_id(Region.objects.filter(id=destination_id).first())
+            if export_data_inst_id and destination_inst_id:
+                has_auth = (export_data_inst_id == destination_inst_id) and self.has_auth(export_data_inst_id)
+                if not has_auth:
+                    return False
+            return True
+        else:
+            return True
 
     def post(self, request, **kwargs):
         destination_id = request.POST.get('destination_id')
@@ -83,6 +112,13 @@ class RestoreDataActionView(RdmPermissionMixin, APIView):
             projects__ids.append(project._id)
         return prepare_for_restore_export_data_process(cookies, export_id, destination_id, projects__ids, creator, cookie=cookie)
 
+def get_institution_id(region):
+    institution_id = None
+    if region:
+        institution = Institution.objects.filter(_id=region._id).first()
+        if institution:
+            institution_id = institution.id
+    return institution_id
 
 def check_before_restore_export_data(cookies, export_id, destination_id, **kwargs):
     check_export_data = ExportData.objects.filter(id=export_id, is_deleted=False)
@@ -270,11 +306,45 @@ def check_if_restore_process_stopped(task, current_process_step):
 
 @no_auto_transaction
 @method_decorator(transaction.non_atomic_requests, name='dispatch')
-class StopRestoreDataActionView(RdmPermissionMixin, APIView):
+class StopRestoreDataActionView(RdmPermissionMixin, UserPassesTestMixin, APIView):
     raise_exception = True
     authentication_classes = (
         drf_authentication.SessionAuthentication,
     )
+
+    def test_func(self):
+        # login check
+        if not self.is_authenticated:
+            return False
+
+        # allowed if superuser or admin
+        if not self.is_super_admin and not self.is_admin:
+            return False
+
+        """check user permissions"""
+        task_id = self.request.POST.get('task_id')
+        export_id = self.kwargs.get('export_id')
+        destination_id = self.request.POST.get('destination_id')
+
+        if task_id and destination_id:
+            # Must check exist ExportDataRestore with task_id,destination_id and export_id
+            restore_data_inst_id = None
+            check_restore_data = ExportDataRestore.objects.filter(task_id=task_id).first()
+            if check_restore_data:
+                restore_data_inst_id = get_institution_id(check_restore_data.export.source)
+
+            export_data_inst_id = None
+            check_export_data = ExportData.objects.filter(id=export_id, is_deleted=False).first()
+            if check_export_data:
+                export_data_inst_id = get_institution_id(check_export_data.source)
+
+            destination_inst_id = get_institution_id(Region.objects.filter(id=destination_id).first())
+            has_auth = (restore_data_inst_id == export_data_inst_id == destination_inst_id) and self.has_auth(restore_data_inst_id) and self.has_auth(export_data_inst_id) and self.has_auth(destination_inst_id)
+            if not has_auth:
+                return False
+            return True
+        else:
+            return True
 
     def post(self, request, *args, **kwargs):
         task_id = request.POST.get('task_id')
@@ -384,11 +454,43 @@ def restore_export_data_rollback_process(task, cookies, export_id, export_data_r
     return {'message': 'Stop restore data successfully.'}
 
 
-class CheckTaskStatusRestoreDataActionView(RdmPermissionMixin, APIView):
+class CheckTaskStatusRestoreDataActionView(RdmPermissionMixin, UserPassesTestMixin, APIView):
     raise_exception = True
     authentication_classes = (
         drf_authentication.SessionAuthentication,
     )
+
+    def test_func(self):
+        # login check
+        if not self.is_authenticated:
+            return False
+
+        # allowed if superuser or admin
+        if not self.is_super_admin and not self.is_admin:
+            return False
+
+        """check user permissions"""
+        task_id = self.request.GET.get('task_id')
+        export_id = self.kwargs.get('export_id')
+
+        if task_id:
+            # Must check exist ExportDataRestore with task_id and export_id
+            restore_data_inst_id = None
+            check_restore_data = ExportDataRestore.objects.filter(task_id=task_id).first()
+            if check_restore_data:
+                restore_data_inst_id = get_institution_id(check_restore_data.export.source)
+
+            export_data_inst_id = None
+            check_export_data = ExportData.objects.filter(id=export_id, is_deleted=False).first()
+            if check_export_data:
+                export_data_inst_id = get_institution_id(check_export_data.source)
+
+            has_auth = (restore_data_inst_id == export_data_inst_id) and self.has_auth(restore_data_inst_id) and self.has_auth(export_data_inst_id)
+            if not has_auth:
+                return False
+            return True
+        else:
+            return True
 
     def get(self, request, **kwargs):
         task_id = request.GET.get('task_id')
@@ -794,11 +896,38 @@ def move_all_files_from_backup_folder_to_root(export_data_restore, destination_f
         raise ProcessError(f'Failed to move backup folder to root')
 
 
-class CheckRunningRestoreActionView(RdmPermissionMixin, APIView):
+class CheckRunningRestoreActionView(RdmPermissionMixin, UserPassesTestMixin, APIView):
     raise_exception = True
     authentication_classes = (
         drf_authentication.SessionAuthentication,
     )
+
+    def test_func(self):
+        # login check
+        if not self.is_authenticated:
+            return False
+
+        # allowed if superuser or admin
+        if not self.is_super_admin and not self.is_admin:
+            return False
+
+        """check user permissions"""
+        export_id = self.kwargs.get('export_id')
+        destination_id = self.request.GET.get('destination_id')
+
+        if destination_id:
+            export_data_inst_id = None
+            check_export_data = ExportData.objects.filter(id=export_id, is_deleted=False).first()
+            if check_export_data:
+                export_data_inst_id = get_institution_id(check_export_data.source)
+
+            destination_inst_id = get_institution_id(Region.objects.filter(id=destination_id).first())
+            has_auth = (export_data_inst_id == destination_inst_id) and self.has_auth(export_data_inst_id) and self.has_auth(destination_inst_id)
+            if not has_auth:
+                return False
+            return True
+        else:
+            return True
 
     def get(self, request, **kwargs):
         destination_id = request.GET.get('destination_id')
