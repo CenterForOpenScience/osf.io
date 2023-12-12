@@ -239,7 +239,7 @@ class TestBulkAddInstitutionEntitlement(AdminTestCase):
 
         self.institution02_admin = AuthUserFactory(fullname='admin001_inst02')
         self.institution02_admin.is_staff = True
-        self.institution02_admin.affiliated_institutions.add(self.institution02) 
+        self.institution02_admin.affiliated_institutions.add(self.institution02)
         self.institution02_admin.user_permissions.add(self.change_permission)
         self.institution02_admin.save()
 
@@ -386,7 +386,7 @@ class TestToggleInstitutionEntitlement(AdminTestCase):
 
         self.institution02_admin = AuthUserFactory(fullname='admin001_inst02')
         self.institution02_admin.is_staff = True
-        self.institution02_admin.affiliated_institutions.add(self.institution02) 
+        self.institution02_admin.affiliated_institutions.add(self.institution02)
         self.institution02_admin.user_permissions.add(self.change_permission)
         self.institution02_admin.save()
 
@@ -560,7 +560,7 @@ class TestDeleteInstitutionEntitlement(AdminTestCase):
 
         self.institution02_admin = AuthUserFactory(fullname='admin001_inst02')
         self.institution02_admin.is_staff = True
-        self.institution02_admin.affiliated_institutions.add(self.institution02) 
+        self.institution02_admin.affiliated_institutions.add(self.institution02)
         self.institution02_admin.user_permissions.add(self.change_permission)
         self.institution02_admin.save()
 

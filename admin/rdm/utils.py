@@ -35,7 +35,7 @@ class RdmPermissionMixin(object):
         return False
 
     @property
-    def is_affiliated_institution_exist(self):       
+    def is_affiliated_institution_exist(self):
         """determine whether the user has affiliated institutions"""
         return self.request.user.affiliated_institutions.exists()
 
