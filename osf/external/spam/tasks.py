@@ -91,12 +91,11 @@ def _extract_domains(content):
 
         try:
             response = requests.head(constructed_url, timeout=settings.DOMAIN_EXTRACTION_TIMEOUT)
-        except requests.exceptions.Timeout:
-            note = NotableDomain.Note.UNVERIFIED
-        except (requests.exceptions.ConnectionError, requests.exceptions.InvalidURL):
+        except requests.exceptions.InvalidURL:
+            # Likely false-positive from a filename.ext
             continue
         except requests.exceptions.RequestException:
-            pass
+            note = NotableDomain.Note.UNVERIFIED
         else:
             # Store the redirect location (to help catch link shorteners)
             if response.status_code in REDIRECT_CODES and 'location' in response.headers:
