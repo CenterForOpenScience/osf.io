@@ -42,12 +42,12 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
     disease = models.CharField(
         help_text='This field was added for use by Inflammatory Bowel Disease Genetics Consortium',
         blank=True,
-        max_length=500
+        max_length=127
     )
     data_type = models.CharField(
         help_text='This field was added for use by Inflammatory Bowel Disease Genetics Consortium',
         blank=True,
-        max_length=500
+        max_length=127
     )
     machine_state = models.IntegerField(
         choices=CollectionSubmissionStates.int_field_choices(),
