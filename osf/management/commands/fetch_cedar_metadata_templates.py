@@ -19,15 +19,16 @@ class Command(BaseCommand):
             if existing_versions:
                 latest_version = existing_versions.order_by('-template_version').first()
                 if pav_last_updated_on != latest_version.template['pav:lastUpdatedOn']:
+                    # New version should be inactive
                     CedarMetadataTemplate.objects.create(
                         schema_name=schema_name,
                         template=template,
                         cedar_id=cedar_id,
+                        active=False,
                         template_version=latest_version.template_version + 1
                     )
-                    latest_version.active = False
-                    latest_version.save()
             else:
+                # Initial version should be active
                 CedarMetadataTemplate.objects.create(
                     schema_name=schema_name,
                     template=template,
