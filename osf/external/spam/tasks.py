@@ -57,7 +57,9 @@ def _check_resource_for_domains(guid, content):
             domain=notable_domain,
             referrer_object_id=resource.id,
             referrer_content_type=referrer_content_type,
-            defaults={'is_triaged': notable_domain.note != NotableDomain.Note.UNKNOWN}
+            defaults={
+                'is_triaged': notable_domain.note not in (NotableDomain.Note.UNKNOWN, NotableDomain.Note.UNVERIFIED)
+            }
         )
     if spammy_domains:
         resource.confirm_spam(save=True, domains=list(spammy_domains))
