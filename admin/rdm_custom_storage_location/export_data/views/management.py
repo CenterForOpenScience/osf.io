@@ -277,7 +277,7 @@ class DeleteExportDataView(ExportStorageLocationViewBaseView, UserPassesTestMixi
             return False
 
         # allowed if superuser or admin
-        if not self.is_super_admin and not self.is_admin:
+        if not self.is_super_admin and not self.is_institutional_admin:
             return False
 
         institution_id_set = set()
@@ -391,7 +391,7 @@ class RevertExportDataView(ExportStorageLocationViewBaseView, UserPassesTestMixi
             return False
 
         # allowed if superuser or admin
-        if not self.is_super_admin and not self.is_admin:
+        if not self.is_super_admin and not self.is_institutional_admin:
             return False
 
         institution_id_set = set()

@@ -191,7 +191,16 @@ class TestInstitutionEntitlementList(AdminTestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_InstitutionEntitlementList_admin_without_permission(self):
+        # institution_id not same institution of login user
         request = RequestFactory().get(reverse('institutions:entitlements') + '?institution_id=' + str(self.institution01.id))
+        request.user = self.institution02_admin
+
+        with self.assertRaises(PermissionDenied):
+            views.InstitutionEntitlementList.as_view()(request)
+
+        # admin not in institution
+        request = RequestFactory().get(reverse('institutions:entitlements') + '?institution_id=' + str(self.institution01.id))
+        self.institution02_admin.affiliated_institutions = []
         request.user = self.institution02_admin
 
         with self.assertRaises(PermissionDenied):
@@ -444,7 +453,10 @@ class TestToggleInstitutionEntitlement(AdminTestCase):
         request.user = self.anon
 
         with self.assertRaises(PermissionDenied):
-            self.view_permission.as_view()(request)
+            self.view_permission.as_view()(
+                request,
+                institution_id=self.institution01.id,
+                entitlement_id=self.entitlement_1.id)
 
     def test_ToggleInstitutionEntitlement_super(self):
         request = RequestFactory().post(
@@ -471,6 +483,7 @@ class TestToggleInstitutionEntitlement(AdminTestCase):
         self.assertEqual(response.status_code, 302)
 
     def test_ToggleInstitutionEntitlement_admin_without_permission(self):
+        # institution_id not same institution of login user
         request = RequestFactory().post(
             reverse('institutions:entitlement_toggle',
                     kwargs={'institution_id': self.institution01.id, 'entitlement_id': self.entitlement_1.id})
@@ -478,7 +491,24 @@ class TestToggleInstitutionEntitlement(AdminTestCase):
         request.user = self.institution02_admin
 
         with self.assertRaises(PermissionDenied):
-            self.view_permission.as_view()(request)
+            self.view_permission.as_view()(
+                request,
+                institution_id=self.institution01.id,
+                entitlement_id=self.entitlement_1.id)
+
+        # admin not in institution
+        request = RequestFactory().post(
+            reverse('institutions:entitlement_toggle',
+                    kwargs={'institution_id': self.institution01.id, 'entitlement_id': self.entitlement_1.id})
+        )
+        self.institution02_admin.affiliated_institutions = []
+        request.user = self.institution02_admin
+
+        with self.assertRaises(PermissionDenied):
+            self.view_permission.as_view()(
+                request,
+                institution_id=self.institution01.id,
+                entitlement_id=self.entitlement_1.id)
 
     def test_ToggleInstitutionEntitlement_not_exist_inst(self):
         request = RequestFactory().post(
@@ -487,7 +517,10 @@ class TestToggleInstitutionEntitlement(AdminTestCase):
         )
         request.user = self.superuser
         with self.assertRaises(Http404):
-            self.view_permission.as_view()(request)
+            self.view_permission.as_view()(
+                request,
+                institution_id=123456,
+                entitlement_id=self.entitlement_1.id)
 
     def test_ToggleInstitutionEntitlement_with_entitlement_not_in_institution(self):
         request = RequestFactory().post(
@@ -592,7 +625,10 @@ class TestDeleteInstitutionEntitlement(AdminTestCase):
         request.user = self.anon
 
         with self.assertRaises(PermissionDenied):
-            self.view_permission.as_view()(request)
+            self.view_permission.as_view()(
+                request,
+                institution_id=self.institution01.id,
+                entitlement_id=self.entitlement_1.id)
 
     def test_DeleteInstitutionEntitlement_super(self):
         request = RequestFactory().post(
@@ -619,6 +655,7 @@ class TestDeleteInstitutionEntitlement(AdminTestCase):
         self.assertEqual(response.status_code, 302)
 
     def test_DeleteInstitutionEntitlement_admin_without_permission(self):
+        # institution_id not same institution of login user
         request = RequestFactory().post(
             reverse('institutions:entitlement_delete',
                     kwargs={'institution_id': self.institution01.id, 'entitlement_id': self.entitlement_1.id})
@@ -626,7 +663,24 @@ class TestDeleteInstitutionEntitlement(AdminTestCase):
         request.user = self.institution02_admin
 
         with self.assertRaises(PermissionDenied):
-            self.view_permission.as_view()(request)
+            self.view_permission.as_view()(
+                request,
+                institution_id=self.institution01.id,
+                entitlement_id=self.entitlement_1.id)
+
+        # admin not in institution
+        request = RequestFactory().post(
+            reverse('institutions:entitlement_delete',
+                    kwargs={'institution_id': self.institution01.id, 'entitlement_id': self.entitlement_1.id})
+        )
+        self.institution02_admin.affiliated_institutions = []
+        request.user = self.institution02_admin
+
+        with self.assertRaises(PermissionDenied):
+            self.view_permission.as_view()(
+                request,
+                institution_id=self.institution01.id,
+                entitlement_id=self.entitlement_1.id)
 
     def test_DeleteInstitutionEntitlement_not_exist_inst(self):
         request = RequestFactory().post(
@@ -635,7 +689,10 @@ class TestDeleteInstitutionEntitlement(AdminTestCase):
         )
         request.user = self.superuser
         with self.assertRaises(Http404):
-            self.view_permission.as_view()(request)
+            self.view_permission.as_view()(
+                request,
+                institution_id=123456,
+                entitlement_id=self.entitlement_1.id)
 
     def test_DeleteInstitutionEntitlement_with_entitlement_not_in_institution(self):
         request = RequestFactory().post(

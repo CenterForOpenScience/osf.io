@@ -29,7 +29,6 @@ from website.util import inspect_info  # noqa
 from framework.transactions.handlers import no_auto_transaction
 from website.util.quota import update_user_used_quota
 from django.contrib.auth.mixins import UserPassesTestMixin
-from django.http import Http404
 
 logger = logging.getLogger(__name__)
 INSTITUTIONAL_STORAGE_PROVIDER_NAME = 'osfstorage'
@@ -54,7 +53,7 @@ class RestoreDataActionView(RdmPermissionMixin, UserPassesTestMixin, APIView):
             return False
 
         # allowed if superuser or admin
-        if not self.is_super_admin and not self.is_admin:
+        if not self.is_super_admin and not self.is_institutional_admin:
             return False
 
         """check user permissions"""
@@ -318,7 +317,7 @@ class StopRestoreDataActionView(RdmPermissionMixin, UserPassesTestMixin, APIView
             return False
 
         # allowed if superuser or admin
-        if not self.is_super_admin and not self.is_admin:
+        if not self.is_super_admin and not self.is_institutional_admin:
             return False
 
         """check user permissions"""
@@ -466,7 +465,7 @@ class CheckTaskStatusRestoreDataActionView(RdmPermissionMixin, UserPassesTestMix
             return False
 
         # allowed if superuser or admin
-        if not self.is_super_admin and not self.is_admin:
+        if not self.is_super_admin and not self.is_institutional_admin:
             return False
 
         """check user permissions"""
@@ -908,7 +907,7 @@ class CheckRunningRestoreActionView(RdmPermissionMixin, UserPassesTestMixin, API
             return False
 
         # allowed if superuser or admin
-        if not self.is_super_admin and not self.is_admin:
+        if not self.is_super_admin and not self.is_institutional_admin:
             return False
 
         """check user permissions"""

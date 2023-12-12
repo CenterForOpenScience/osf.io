@@ -1125,6 +1125,13 @@ class TestDeleteExportDataView(AdminTestCase):
         with self.assertRaises(PermissionDenied):
             management.DeleteExportDataView.as_view()(request)
 
+        # admin not in institution
+        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id, 'delete_permanently': 'off', 'institution_id': self.institution01.id}
+        self.institution01_admin.affiliated_institutions = []
+        request.user = self.institution01_admin
+        with self.assertRaises(PermissionDenied):
+            management.DeleteExportDataView.as_view()(request)
+
     def test_delete_with_invalid_request_body(self):
         request = RequestFactory().post('/fake_path')
         request.user = self.superuser
@@ -1304,6 +1311,13 @@ class TestRevertExportData(AdminTestCase):
 
         # institution_id not same institution of login user
         request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id, 'institution_id': self.institution02.id}
+        with self.assertRaises(PermissionDenied):
+            management.RevertExportDataView.as_view()(request)
+
+        # admin not in institution
+        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id, 'institution_id': self.institution01.id}
+        self.institution01_admin.affiliated_institutions = []
+        request.user = self.institution01_admin
         with self.assertRaises(PermissionDenied):
             management.RevertExportDataView.as_view()(request)
 

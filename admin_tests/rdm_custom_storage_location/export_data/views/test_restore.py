@@ -222,6 +222,8 @@ class TestRestoreDataActionView(AdminTestCase):
 
     def test__test_func__addmin_without_permission(self):
         view = restore.RestoreDataActionView()
+
+        # not same institution of login user
         request = APIRequestFactory().post('restore_export_data', {
             'destination_id': self.region_inst_01.id,
         })
@@ -236,6 +238,18 @@ class TestRestoreDataActionView(AdminTestCase):
             'destination_id': self.region_inst_02.id,
         })
         request.user = self.institution01_admin
+        view.request = request
+        view.kwargs = {
+            'export_id': self.export_data_02.id,
+        }
+        nt.assert_equal(view.test_func(), False)
+
+        # admin not in institution
+        request = APIRequestFactory().post('restore_export_data', {
+            'destination_id': self.region_inst_02.id,
+        })
+        self.institution02_admin.affiliated_institutions = []
+        request.user = self.institution02_admin
         view.request = request
         view.kwargs = {
             'export_id': self.export_data_02.id,
@@ -382,6 +396,8 @@ class TestCheckTaskStatusRestoreDataActionView(AdminTestCase):
 
     def test__test_func__addmin_without_permission(self):
         view = restore.CheckTaskStatusRestoreDataActionView()
+
+        # not same institution of login user
         request = APIRequestFactory().get('task_status', {
             'task_id': self.restore_data_01.task_id,
             'task_type': 'Restore'
@@ -401,6 +417,19 @@ class TestCheckTaskStatusRestoreDataActionView(AdminTestCase):
         view.request = request
         view.kwargs = {
             'export_id': self.export_data_02.id,
+        }
+        nt.assert_equal(view.test_func(), False)
+
+        # admin not in institution
+        request = APIRequestFactory().get('task_status', {
+            'task_id': self.restore_data_01.task_id,
+            'task_type': 'Restore'
+        })
+        self.institution01_admin.affiliated_institutions = []
+        request.user = self.institution01_admin
+        view.request = request
+        view.kwargs = {
+            'export_id': self.export_data_01.id,
         }
         nt.assert_equal(view.test_func(), False)
 
@@ -1936,7 +1965,9 @@ class TestStopRestoreDataActionView(AdminTestCase):
 
     def test__test_func__addmin_without_permission(self):
         view = restore.StopRestoreDataActionView()
-        request = APIRequestFactory().post('stop_restore_export_data', { 
+
+        # not same institution of login user
+        request = APIRequestFactory().post('stop_restore_export_data', {
             'task_id': self.restore_data_01.task_id,
             'destination_id': self.region_inst_01.id,
         })
@@ -1952,6 +1983,19 @@ class TestStopRestoreDataActionView(AdminTestCase):
             'destination_id': self.restore_data_01.destination.id,
         })
         request.user = self.institution01_admin
+        view.request = request
+        view.kwargs = {
+            'export_id': self.export_data_02.id,
+        }
+        nt.assert_equal(view.test_func(), False)
+
+        # admin not in institution
+        request = APIRequestFactory().post('stop_restore_export_data', {
+            'task_id': self.restore_data_02.task_id,
+            'destination_id': self.restore_data_02.destination.id,
+        })
+        self.institution02_admin.affiliated_institutions = []
+        request.user = self.institution02_admin
         view.request = request
         view.kwargs = {
             'export_id': self.export_data_02.id,
@@ -2094,6 +2138,7 @@ class TestCheckRunningRestoreActionView(AdminTestCase):
         nt.assert_equal(view.test_func(), True)
 
     def test__test_func__addmin_without_permission(self):
+        #not same institution of login user
         view = restore.CheckRunningRestoreActionView()
         request = APIRequestFactory().get('check_running_restore', {
             'destination_id': self.region_inst_01.id,
@@ -2110,6 +2155,19 @@ class TestCheckRunningRestoreActionView(AdminTestCase):
             'destination_id': self.region_inst_02.id,
         })
         request.user = self.institution01_admin
+        view.request = request
+        view.kwargs = {
+            'export_id': self.export_data_02.id,
+        }
+        nt.assert_equal(view.test_func(), False)
+
+        # admin not in institution
+        view = restore.CheckRunningRestoreActionView()
+        request = APIRequestFactory().get('check_running_restore', {
+            'destination_id': self.region_inst_02.id,
+        })
+        self.institution02_admin.affiliated_institutions = []
+        request.user = self.institution02_admin
         view.request = request
         view.kwargs = {
             'export_id': self.export_data_02.id,
