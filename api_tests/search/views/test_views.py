@@ -50,6 +50,7 @@ class ApiSearchTestCase:
         return CollectionFactory(creator=user, provider=CollectionProviderFactory(), is_public=True,
                                  status_choices=['', 'asdf', 'lkjh'], collected_type_choices=['', 'asdf', 'lkjh'],
                                  issue_choices=['', '0', '1', '2'], volume_choices=['', '0', '1', '2'],
+                                 disease_choices=['illness'], data_type_choices=['realness'],
                                  program_area_choices=['', 'asdf', 'lkjh'])
 
     @pytest.fixture()
@@ -1000,3 +1001,22 @@ class TestSearchCollections(ApiSearchTestCase):
         assert res.json['links']['meta']['total'] == 1
         assert len(res.json['data']) == 1
         assert res.json['data'][0]['id'] == node_with_abstract._id
+
+    def test_POST_search_collections_disease_data_type(
+            self, app, url_collection_search, user, node_one, node_two, collection_public,
+            node_with_abstract, node_private, registration_collection, registration_one,
+            registration_two, registration_private, reg_with_abstract):
+
+        collection_public.collect_object(node_one, user, disease='illness', data_type='realness')
+        collection_public.collect_object(node_two, user, data_type='realness')
+
+        payload = self.post_payload(disease='illness')
+        res = app.post_json_api(url_collection_search, payload)
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 1
+
+        payload = self.post_payload(dataType='realness')
+        res = app.post_json_api(url_collection_search, payload)
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 2
+        assert len(res.json['data']) == 2
