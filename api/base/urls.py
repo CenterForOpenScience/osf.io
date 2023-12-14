@@ -22,6 +22,7 @@ urlpatterns = [
                 re_path(r'^banners/', include('api.banners.urls', namespace='banners')),
                 re_path(r'^crossref/', include('api.crossref.urls', namespace='crossref')),
                 re_path(r'^chronos/', include('api.chronos.urls', namespace='chronos')),
+                re_path(r'^cedar_metadata_templates/', include('api.cedar_metadata_templates.urls', namespace='cedar-metadata-templates')),
                 re_path(r'^meetings/', include('api.meetings.urls', namespace='meetings')),
                 re_path(r'^metrics/', include('api.metrics.urls', namespace='metrics')),
                 re_path(r'^registries/(?P<provider_id>\w+)/bulk_create/(?P<filename>.*)/$', RegistrationBulkCreate.as_view(), name='bulk_create_csv'),
