@@ -57,6 +57,22 @@ $('#tags-input-study-design').on('itemRemoved', function(event) {
     $('#id_study_design_choices').val(JSON.stringify($('#tags-input-study-design').tagsinput('items')));
 });
 
+$('#tags-input-data-type').on('itemAdded', function(event) {
+    $('#id_data_type_choices').val(JSON.stringify($('#tags-input-data-type').tagsinput('items')));
+});
+
+$('#tags-input-data-type').on('itemRemoved', function(event) {
+    $('#id_data_type_choices').val(JSON.stringify($('#tags-input-data-type').tagsinput('items')));
+});
+
+$('#tags-input-disease').on('itemAdded', function(event) {
+    $('#id_disease_choices').val(JSON.stringify($('#tags-input-disease').tagsinput('items')));
+});
+
+$('#tags-input-disease').on('itemRemoved', function(event) {
+    $('#id_disease_choices').val(JSON.stringify($('#tags-input-disease').tagsinput('items')));
+});
+
 
 $(document).ready(function() {
    var collectedTypeItems = JSON.parse($('#id_collected_type_choices').val());
@@ -92,5 +108,15 @@ $(document).ready(function() {
    var studyDesignItems = JSON.parse($('#id_study_design_choices').val());
    studyDesignItems.forEach(function(element){
        $('#tags-input-study-design').tagsinput('add', element)
+   });
+
+   var diseaseItems = JSON.parse($('#id_disease_choices').val());
+   diseaseItems.forEach(function(element){
+       $('#tags-input-disease').tagsinput('add', element)
+   });
+
+   var dataTypeItems = JSON.parse($('#id_data_type_choices').val());
+   dataTypeItems.forEach(function(element){
+       $('#tags-input-data-type').tagsinput('add', element)
    });
 });

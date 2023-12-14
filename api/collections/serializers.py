@@ -68,6 +68,14 @@ class CollectionSerializer(JSONAPISerializer):
         child=ser.CharField(max_length=127),
         default=list(),
     )
+    data_type_choices = ser.ListField(
+        child=ser.CharField(max_length=127),
+        default=list(),
+    )
+    disease_choices = ser.ListField(
+        child=ser.CharField(max_length=127),
+        default=list(),
+    )
 
     links = LinksField({})
 
@@ -241,6 +249,8 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
     program_area = ser.CharField(required=False)
     school_type = ser.CharField(required=False)
     study_design = ser.CharField(required=False)
+    data_type = ser.CharField(required=False)
+    disease = ser.CharField(required=False)
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
@@ -272,6 +282,10 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
             obj.school_Type = validated_data.pop('school_type')
         if 'study_design' in validated_data:
             obj.study_design = validated_data.pop('study_design')
+        if 'data_type' in validated_data:
+            obj.data_type = validated_data.pop('data_type')
+        if 'disease' in validated_data:
+            obj.disease = validated_data.pop('disease')
 
         obj.save()
         return obj
@@ -337,6 +351,8 @@ class LegacyCollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPI
     program_area = ser.CharField(required=False)
     school_type = ser.CharField(required=False)
     study_design = ser.CharField(required=False)
+    date_type = ser.CharField(required=False)
+    disease = ser.CharField(required=False)
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
@@ -368,6 +384,10 @@ class LegacyCollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPI
             obj.school_Type = validated_data.pop('school_type')
         if 'study_design' in validated_data:
             obj.study_design = validated_data.pop('study_design')
+        if 'data_type' in validated_data:
+            obj.data_type = validated_data.pop('data_type')
+        if 'disease' in validated_data:
+            obj.disease = validated_data.pop('disease')
 
         obj.save()
         return obj
