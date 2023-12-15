@@ -68,7 +68,7 @@ class TestUserIdentificationListView(AdminTestCase):
             list_name.append(results[i]['fullname'])
 
         nt.assert_equal(len(results), 2)
-        nt.assert_in(self.superuser.fullname, list_name)
+        nt.assert_in(self.admin_user.fullname, list_name)
         nt.assert_in(self.user.fullname, list_name)
 
     def test_get_userlist_user_is_admin(self):
