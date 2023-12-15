@@ -79,3 +79,12 @@ def get_dummy_institution():
     dummy_institution.id = MAGIC_INSTITUTION_ID
     dummy_institution.name = ''
     return dummy_institution
+
+def get_institution_id_by_region(region):
+    from addons.osfstorage.models import Region
+    institution_id = None
+    if isinstance(region, Region):
+        institution = Region.institution
+        if institution:
+            institution_id = institution.id
+    return institution_id

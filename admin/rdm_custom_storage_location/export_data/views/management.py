@@ -23,7 +23,6 @@ from admin.rdm_custom_storage_location.export_data.utils import (
 from osf.models import ExportData, Institution, ExportDataLocation
 from website.util import inspect_info  # noqa
 from .location import ExportStorageLocationViewBaseView
-from django.contrib.auth.mixins import UserPassesTestMixin
 from addons.osfstorage.models import Region
 
 logger = logging.getLogger(__name__)
@@ -268,10 +267,11 @@ class ExportDataInformationView(ExportBaseView):
 
 
 @method_decorator(transaction.non_atomic_requests, name='dispatch')
-class DeleteExportDataView(ExportStorageLocationViewBaseView, UserPassesTestMixin, View):
+class DeleteExportDataView(ExportStorageLocationViewBaseView, View):
     raise_exception = True
 
     def test_func(self):
+        """check user permissions"""
         # login check
         if not self.is_authenticated:
             return False
@@ -282,7 +282,6 @@ class DeleteExportDataView(ExportStorageLocationViewBaseView, UserPassesTestMixi
 
         institution_id_set = set()
         try:
-            """check user permissions"""
             selected_source_inst = Region.objects.filter(id=self.request.POST.get('selected_source_id')).first()
             if selected_source_inst:
                 institution_id_set.add(selected_source_inst.institution.id)
@@ -308,15 +307,15 @@ class DeleteExportDataView(ExportStorageLocationViewBaseView, UserPassesTestMixi
                     return False
                 elif len(institution_guid_set) == 1:
                     institution_id_set.add(Institution.load(institution_guid_set.pop()).id)
-
         except ValueError:
             pass
 
-        if len(institution_id_set) > 1:
+        if len(institution_id_set) < 1:
+            return True
+        elif len(institution_id_set) > 1:
             return False
-        elif len(institution_id_set) == 1 and not self.has_auth(institution_id_set.pop()):
-            return False
-        return True
+        else:
+            return self.has_auth(institution_id_set.pop())
 
     def post(self, request):
         # Init and validate request body data
@@ -324,24 +323,28 @@ class DeleteExportDataView(ExportStorageLocationViewBaseView, UserPassesTestMixi
             cookie = request.user.get_or_create_cookie().decode()
             cookies = request.COOKIES
             is_super = self.is_super_admin
-            selected_source_id = int(request.POST.get('selected_source_id')) if request.POST.get('selected_source_id') else None
-            selected_location_id = int(request.POST.get('selected_location_id')) if request.POST.get('selected_location_id') else None
+            selected_source_id = request.POST.get('selected_source_id')
+            if selected_source_id:
+                selected_source_id = int(selected_source_id)
+            selected_location_id = request.POST.get('selected_location_id')
+            if selected_location_id:
+                selected_location_id = int(selected_location_id)
             institution_id = request.POST.get('institution_id')
             if is_super and not institution_id:
-                message = 'The request missing required institution_id. '
+                message = 'The request missing required institution_id.'
                 return JsonResponse({'message': message}, status=400)
             elif institution_id:
                 institution_id = int(institution_id)
 
             list_export_data_delete = request.POST.get('list_id_export_data')
             if not list_export_data_delete:
-                message = 'The request missing list_id_export_data. '
+                message = 'The request missing list_id_export_data.'
                 return JsonResponse({'message': message}, status=400)
             list_export_data_delete = list(filter(None, list_export_data_delete.split('#')))
             list_export_data_delete = list(map(int, list_export_data_delete))
 
         except ValueError:
-            message = 'The request contain invalid value. '
+            message = 'The request contain invalid value.'
             return JsonResponse({'message': message}, status=400)
 
         # Delete export data
@@ -353,7 +356,7 @@ class DeleteExportDataView(ExportStorageLocationViewBaseView, UserPassesTestMixi
                     item.delete()
                 else:
 
-                    message = 'Cannot connect to the export data storage location. '
+                    message = 'Cannot connect to the export data storage location.'
                     return JsonResponse({'message': message}, status=400)
         else:
             ExportData.objects.filter(id__in=list_export_data_delete).update(is_deleted=True)
@@ -382,10 +385,11 @@ class DeleteExportDataView(ExportStorageLocationViewBaseView, UserPassesTestMixi
                     return redirect('custom_storage_location:export_data:export_data_list')
 
 
-class RevertExportDataView(ExportStorageLocationViewBaseView, UserPassesTestMixin, View):
+class RevertExportDataView(ExportStorageLocationViewBaseView, View):
     raise_exception = True
 
     def test_func(self):
+        """check user permissions"""
         # login check
         if not self.is_authenticated:
             return False
@@ -425,32 +429,37 @@ class RevertExportDataView(ExportStorageLocationViewBaseView, UserPassesTestMixi
         except ValueError:
             pass
 
-        if len(institution_id_set) > 1:
+        if len(institution_id_set) < 1:
+            return True
+        elif len(institution_id_set) > 1:
             return False
-        elif len(institution_id_set) == 1 and not self.has_auth(institution_id_set.pop()):
-            return False
-        return True
+        else:
+            return self.has_auth(institution_id_set.pop())
 
     def post(self, request):
         # Init and validate request body data
         try:
             is_super = self.is_super_admin
-            selected_source_id = int(request.POST.get('selected_source_id')) if request.POST.get('selected_source_id') else None
-            selected_location_id = int(request.POST.get('selected_location_id')) if request.POST.get('selected_location_id') else None
+            selected_source_id = request.POST.get('selected_source_id')
+            if selected_source_id:
+                selected_source_id = int(selected_source_id)
+            selected_location_id = request.POST.get('selected_location_id')
+            if selected_location_id:
+                selected_location_id = int(selected_location_id)
             institution_id = request.POST.get('institution_id')
             if is_super and not institution_id:
-                message = 'The request missing required institution_id. '
+                message = 'The request missing required institution_id.'
                 return JsonResponse({'message': message}, status=400)
             elif institution_id:
                 institution_id = int(institution_id)
             list_export_data = request.POST.get('list_id_export_data')
             if not list_export_data:
-                message = 'The request missing list_id_export_data. '
+                message = 'The request missing list_id_export_data.'
                 return JsonResponse({'message': message}, status=400)
             list_export_data = list(filter(None, list_export_data.split('#')))
             list_export_data = list(map(int, list_export_data))
         except ValueError:
-            message = 'The request contain invalid value. '
+            message = 'The request contain invalid value.'
             return JsonResponse({'message': message}, status=400)
 
         # Revert export data deleted and redirect
@@ -629,11 +638,3 @@ class CheckRestoreData(RdmPermissionMixin, View):
         restore_data.save()
 
         return JsonResponse(data, status=200)
-
-def get_institution_id(region):
-    institution_id = None
-    if region:
-        institution = Institution.objects.filter(_id=region._id).first()
-        if institution:
-            institution_id = institution.id
-    return institution_id

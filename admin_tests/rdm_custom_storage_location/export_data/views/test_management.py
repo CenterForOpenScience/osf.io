@@ -921,6 +921,10 @@ class TestDeleteExportDataView(AdminTestCase):
 
         self.anon = AnonymousUser()
 
+        self.normal_user = AuthUserFactory(fullname='normal_user')
+        self.normal_user.is_staff = False
+        self.normal_user.is_superuser = False
+
         self.superuser = AuthUserFactory(fullname='superuser')
         self.superuser.is_staff = True
         self.superuser.is_superuser = True
@@ -1044,6 +1048,14 @@ class TestDeleteExportDataView(AdminTestCase):
     def test_delete_anonymous(self):
         request = RequestFactory().post('/fake_path')
         request.user = self.anon
+        request.COOKIES = '213919sdasdn823193929'
+        request.POST = {'list_id_export_data': '4#', 'delete_permanently': 'off', 'institution_id': self.institution.id}
+        with self.assertRaises(PermissionDenied):
+            management.DeleteExportDataView.as_view()(request)
+
+    def test_delete_normal_user(self):
+        request = RequestFactory().post('/fake_path')
+        request.user = self.normal_user
         request.COOKIES = '213919sdasdn823193929'
         request.POST = {'list_id_export_data': '4#', 'delete_permanently': 'off', 'institution_id': self.institution.id}
         with self.assertRaises(PermissionDenied):
@@ -1181,6 +1193,10 @@ class TestRevertExportData(AdminTestCase):
 
         self.anon = AnonymousUser()
 
+        self.normal_user = AuthUserFactory(fullname='normal_user')
+        self.normal_user.is_staff = False
+        self.normal_user.is_superuser = False
+
         self.superuser = AuthUserFactory(fullname='superuser')
         self.superuser.is_staff = True
         self.superuser.is_superuser = True
@@ -1233,6 +1249,14 @@ class TestRevertExportData(AdminTestCase):
     def test_revert_anonymous(self):
         request = RequestFactory().post('/fake_path')
         request.user = self.anon
+        request.COOKIES = '213919sdasdn823193929'
+        request.POST = {'list_id_export_data': '4#', 'institution_id': self.institution.id}
+        with self.assertRaises(PermissionDenied):
+            management.RevertExportDataView.as_view()(request)
+
+    def test_revert_normal_user(self):
+        request = RequestFactory().post('/fake_path')
+        request.user = self.normal_user
         request.COOKIES = '213919sdasdn823193929'
         request.POST = {'list_id_export_data': '4#', 'institution_id': self.institution.id}
         with self.assertRaises(PermissionDenied):

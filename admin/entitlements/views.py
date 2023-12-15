@@ -25,26 +25,24 @@ class InstitutionEntitlementList(RdmPermissionMixin, UserPassesTestMixin, ListVi
 
     def test_func(self):
         """check user permissions"""
-        if self.request.GET.get('institution_id'):
-            institution_id = self.request.GET.get('institution_id')
-            has_auth = self.has_auth(institution_id)
-            if not has_auth:
-                return False
-            elif not Institution.objects.filter(id=institution_id).exists():
+        # login check
+        if not self.is_authenticated:
+            return False
+
+        institution_id = self.request.GET.get('institution_id')
+        if not institution_id:
+            # superuser or admin has an institiution
+            return self.is_super_admin or self.is_institutional_admin
+        else:
+            # superuser and institiution not exist
+            if self.is_super_admin and not Institution.objects.filter(id=institution_id).exists():
                 raise Http404(
                     'Institution with id "{}" not found.'.format(
                         institution_id
                     ))
-            return True
-        else:
-            # login check
-            if not self.is_authenticated:
-                return False
-
-            # allowed if superuser or admin
-            if not self.is_super_admin and not self.is_institutional_admin:
-                return False
-            return True
+            # superuser or institutional admin has permission
+            return self.is_super_admin or \
+                (self.is_admin and self.is_affiliated_institution(institution_id))
 
     def get_queryset(self):
         return InstitutionEntitlement.objects.order_by('entitlement')
@@ -79,18 +77,22 @@ class InstitutionEntitlementList(RdmPermissionMixin, UserPassesTestMixin, ListVi
 
 class BulkAddInstitutionEntitlement(RdmPermissionMixin, UserPassesTestMixin, View):
     raise_exception = True
+
     def test_func(self):
         """check user permissions"""
-        institution_id = self.request.POST.get('institution_id')
-        has_auth = self.has_auth(institution_id)
-        if not has_auth:
+        # login check
+        if not self.is_authenticated:
             return False
-        elif not Institution.objects.filter(id=institution_id).exists():
+        institution_id = self.request.POST.get('institution_id')
+        # superuser and institiution not exist
+        if self.is_super_admin and not Institution.objects.filter(id=institution_id).exists():
             raise Http404(
                 'Institution with id "{}" not found.'.format(
                     institution_id
                 ))
-        return True
+        # superuser or institutional admin has permission
+        return self.is_super_admin or \
+            (self.is_admin and self.is_affiliated_institution(institution_id))
 
     def post(self, request):
         institution_id = request.POST.get('institution_id')
@@ -116,24 +118,33 @@ class ToggleInstitutionEntitlement(RdmPermissionMixin, UserPassesTestMixin, View
 
     def test_func(self):
         """check user permissions"""
-        institution_id = self.kwargs['institution_id']
-        has_auth = self.has_auth(institution_id)
-        if not has_auth:
+        # login check
+        if not self.is_authenticated:
             return False
-        elif not Institution.objects.filter(id=institution_id).exists():
+
+        institution_id = self.kwargs.get('institution_id')
+        # superuser and institiution not exist
+        if self.is_super_admin and not Institution.objects.filter(id=institution_id).exists():
             raise Http404(
                 'Institution with id "{}" not found.'.format(
                     institution_id
                 ))
-        entitlement = InstitutionEntitlement.objects.filter(id=self.kwargs['entitlement_id'])
-        if not entitlement.exists():
+
+        # superuser or institutional admin has permission
+        has_auth = self.is_super_admin or \
+            (self.is_admin and self.is_affiliated_institution(institution_id))
+        if not has_auth:
+            return False
+
+        entitlement = InstitutionEntitlement.objects.filter(id=self.kwargs.get('entitlement_id')).first()
+        if not entitlement:
             raise Http404(
                 'Entitlement with id "{}" not found.'.format(
                     self.kwargs['entitlement_id']
                 ))
-        elif entitlement.get().institution_id != institution_id:
-            return False
-        return True
+        else:
+            # entitlement same institution of admin user
+            return entitlement.institution_id == institution_id
 
     def post(self, request, *args, **kwargs):
         entitlement = InstitutionEntitlement.objects.get(id=self.kwargs['entitlement_id'])
@@ -151,24 +162,33 @@ class DeleteInstitutionEntitlement(RdmPermissionMixin, UserPassesTestMixin, View
 
     def test_func(self):
         """check user permissions"""
-        institution_id = self.kwargs['institution_id']
-        has_auth = self.has_auth(institution_id)
-        if not has_auth:
+        # login check
+        if not self.is_authenticated:
             return False
-        elif not Institution.objects.filter(id=institution_id).exists():
+
+        institution_id = self.kwargs.get('institution_id')
+        # superuser and institiution not exist
+        if self.is_super_admin and not Institution.objects.filter(id=institution_id).exists():
             raise Http404(
                 'Institution with id "{}" not found.'.format(
                     institution_id
                 ))
-        entitlement = InstitutionEntitlement.objects.filter(id=self.kwargs['entitlement_id'])
-        if not entitlement.exists():
+
+        # superuser or institutional admin has permission
+        has_auth = self.is_super_admin or \
+            (self.is_admin and self.is_affiliated_institution(institution_id))
+        if not has_auth:
+            return False
+
+        entitlement = InstitutionEntitlement.objects.filter(id=self.kwargs.get('entitlement_id')).first()
+        if not entitlement:
             raise Http404(
                 'Entitlement with id "{}" not found.'.format(
                     self.kwargs['entitlement_id']
                 ))
-        elif entitlement.get().institution_id != institution_id:
-            return False
-        return True
+        else:
+            # entitlement same institution of admin user
+            return entitlement.institution_id == institution_id
 
     def post(self, request, *args, **kwargs):
         entitlement = InstitutionEntitlement.objects.get(id=self.kwargs['entitlement_id'])
