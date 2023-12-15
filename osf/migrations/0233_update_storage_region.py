@@ -43,22 +43,22 @@ def add_storage_type_to_existing_regions(*args):
             # Add type = 'NII_STORAGE' to storages that are using NII Storage
             Region.objects.filter(id__in=nii_storage_regions_ids).update(
                 waterbutler_settings=Func(
-                    F("waterbutler_settings"),
-                    Value(["storage", "type"]),
+                    F('waterbutler_settings'),
+                    Value(['storage', 'type']),
                     Value(Region.NII_STORAGE, JSONField()),
                     True,
-                    function="jsonb_set",
+                    function='jsonb_set',
                 )
             )
 
             # Add type = 'INSTITUTIONS' to storages that are not using NII Storage
             Region.objects.filter(id__in=institution_storage_regions_ids).update(
                 waterbutler_settings=Func(
-                    F("waterbutler_settings"),
-                    Value(["storage", "type"]),
+                    F('waterbutler_settings'),
+                    Value(['storage', 'type']),
                     Value(Region.INSTITUTIONS, JSONField()),
                     True,
-                    function="jsonb_set",
+                    function='jsonb_set',
                 )
             )
     except Exception as e:
