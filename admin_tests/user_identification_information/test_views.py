@@ -365,7 +365,7 @@ class TestExportFileCSVView(AdminTestCase):
         self.user.affiliated_institutions.add(self.institution)
         self.user.save()
 
-        self.superuser = AuthUserFactory(fullname='alex queen')        
+        self.superuser = AuthUserFactory(fullname='alex queen')
         self.superuser.is_superuser = True
         self.superuser.is_staff = True
         self.superuser.save()
