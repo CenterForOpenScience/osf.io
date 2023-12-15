@@ -84,7 +84,7 @@ def get_institution_id_by_region(region):
     from addons.osfstorage.models import Region
     institution_id = None
     if isinstance(region, Region):
-        institution = Region.institution
+        institution = region.institution
         if institution:
             institution_id = institution.id
     return institution_id
