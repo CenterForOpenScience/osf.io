@@ -516,6 +516,10 @@ class StatisticalStatusDefaultStorage(RdmPermissionMixin, UserPassesTestMixin, Q
         """ Get list of users' quota info """
         user_list = []
         institution = self.get_institution()
+        if not institution:
+            # If institution is not found, redirect to HTTP 404 page
+            raise Http404
+
         # Get user quota type for institution if using NII Storage
         user_quota_type = institution.get_user_quota_type_for_nii_storage()
         if not user_quota_type:

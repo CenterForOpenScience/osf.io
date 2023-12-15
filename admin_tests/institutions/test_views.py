@@ -535,6 +535,12 @@ class TestStatisticalStatusDefaultStorage(AdminTestCase):
         with nt.assert_raises(Http404):
             self.view.get(self.request)
 
+    def test_institution_deleted(self):
+        self.institution.is_deleted = True
+        self.institution.save()
+        with nt.assert_raises(Http404):
+            self.view.get(self.request)
+
     @mock.patch('website.util.quota.used_quota')
     def test_default_quota(self, mock_usedquota):
         mock_usedquota.return_value = 0
