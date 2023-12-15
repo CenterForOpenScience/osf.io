@@ -154,36 +154,41 @@ class TestUserIdentificationInformationListSorted(AdminTestCase):
 class TestUserIdentificationListView(AdminTestCase):
 
     def setUp(self):
+        institution = InstitutionFactory()
+
         self.user = AuthUserFactory(fullname='Test User1')
-        self.super_user = AuthUserFactory(fullname='Broken Matt Hardy')
-        self.admin_user = AuthUserFactory(fullname='Test User3')
         self.user.is_superuser = False
-        self.super_user.is_superuser = True
+        self.user.is_staff = False
+        self.user.affiliated_institutions.add(institution)
+        self.user.save()
+
+        self.superuser = AuthUserFactory(fullname='Broken Matt Hardy')
+        self.superuser.is_superuser = True
+        self.superuser.is_staff = True
+        self.superuser.save()
+
+        self.admin_user = AuthUserFactory(fullname='Test User3')
+        self.admin_user.affiliated_institutions.add(institution)
         self.admin_user.is_staff = True
+        self.admin_user.is_superuser = False
+        self.admin_user.save()
 
         self.request = RequestFactory().get('/fake_path')
         self.request.user = self.user
 
-        self.super_user.add_addon('github')
-        self.user_settings2 = self.super_user.get_addon('github')
+        self.superuser.add_addon('github')
+        self.user_settings2 = self.superuser.get_addon('github')
         self.external_account2 = GitHubAccountFactory(provider_name='Github name')
         self.user_settings2.owner.external_accounts.add(self.external_account2)
         self.user_settings2.owner.save()
         self.GitHubNode_settings = GitHubNodeSettingsFactory(user_settings=self.user_settings2)
 
-        self.super_user.add_addon('s3')
-        self.user_settings2 = self.super_user.get_addon('s3')
+        self.superuser.add_addon('s3')
+        self.user_settings2 = self.superuser.get_addon('s3')
         self.external_account2 = S3AccountFactory(provider_name='Amazon S3')
         self.user_settings2.owner.external_accounts.add(self.external_account2)
         self.user_settings2.owner.save()
         self.S3Node_settings2 = S3NodeSettingsFactory(user_settings=self.user_settings2)
-
-        institution = InstitutionFactory()
-        self.user.affiliated_institutions.add(institution)
-        self.super_user.affiliated_institutions.add(institution)
-        self.user.save()
-        self.super_user.save()
-        self.admin_user.save()
 
         self.anon = AnonymousUser()
 
@@ -197,11 +202,11 @@ class TestUserIdentificationListView(AdminTestCase):
             list_name.append(results[i]['fullname'])
 
         nt.assert_equal(len(results), 2)
-        nt.assert_in(self.super_user.fullname, list_name)
+        nt.assert_in(self.admin_user.fullname, list_name)
         nt.assert_in(self.user.fullname, list_name)
 
     def test_get_userlist_user_is_superuser(self):
-        self.request.user = self.super_user
+        self.request.user = self.superuser
         view = views.UserIdentificationListView()
         view = setup_view(view, self.request)
         results = view.get_user_list()
@@ -217,37 +222,37 @@ class TestUserIdentificationListView(AdminTestCase):
 
     def test_get_userlist_search_guid(self):
         request = RequestFactory().get(reverse('user_identification_information:user_identification_list'),
-                                       {'guid': self.super_user._id})
-        request.user = self.super_user
+                                       {'guid': self.superuser._id})
+        request.user = self.superuser
         view = views.UserIdentificationListView()
         view = setup_view(view, request)
         res = view.get_user_list()
-        nt.assert_equal(res[0]['id'], self.super_user._id)
+        nt.assert_equal(res[0]['id'], self.superuser._id)
         nt.assert_equal(len(res), 1)
 
     def test_get_userlist_search_user_name(self):
         request = RequestFactory().get(reverse('user_identification_information:user_identification_list'),
-                                       {'username': self.super_user.username})
-        request.user = self.super_user
+                                       {'username': self.superuser.username})
+        request.user = self.superuser
         view = views.UserIdentificationListView()
         view = setup_view(view, request)
         res = view.get_user_list()
-        nt.assert_equal(res[0]['email'], self.super_user.username)
+        nt.assert_equal(res[0]['email'], self.superuser.username)
         nt.assert_equal(len(res), 1)
 
     def test_get_userlist_search_name(self):
         request = RequestFactory().get(reverse('user_identification_information:user_identification_list'),
                                        {'fullname': 'Broken'})
-        request.user = self.super_user
+        request.user = self.superuser
         view = views.UserIdentificationListView()
         view = setup_view(view, request)
         res = view.get_user_list()
-        nt.assert_equal(res[0]['fullname'], self.super_user.fullname)
+        nt.assert_equal(res[0]['fullname'], self.superuser.fullname)
         nt.assert_equal(len(res), 1)
 
     def test_get_userlist_search_empty(self):
         request = RequestFactory().get(reverse('user_identification_information:user_identification_list'), {'fullname': ''})
-        request.user = self.super_user
+        request.user = self.superuser
         view = views.UserIdentificationListView()
         view = setup_view(view, request)
         res = view.get_user_list()
@@ -256,7 +261,7 @@ class TestUserIdentificationListView(AdminTestCase):
     def test_get_userlist_search_none_in_list(self):
         request = RequestFactory().get(reverse('user_identification_information:user_identification_list'),
                                        {'fullname': 'admin'})
-        request.user = self.super_user
+        request.user = self.superuser
         view = views.UserIdentificationListView()
         view = setup_view(view, request)
         res = view.get_user_list()
@@ -267,13 +272,17 @@ class TestUserIdentificationListView(AdminTestCase):
         with nt.assert_raises(PermissionDenied):
             views.UserIdentificationListView.as_view()(self.request)
 
+    def test__permission_normal_user(self):
+        self.request.user = self.user
+        with nt.assert_raises(PermissionDenied):
+            views.UserIdentificationListView.as_view()(self.request)
+
     def test__permission_super_user(self):
-        self.request.user = self.super_user
+        self.request.user = self.superuser
         res = views.UserIdentificationListView.as_view()(self.request)
         nt.assert_equal(res.status_code, 200)
 
     def test__permission_admin(self):
-        self.admin_user.affiliated_institutions.add(InstitutionFactory())
         self.request.user = self.admin_user
         with nt.assert_raises(PermissionDenied):
             views.UserIdentificationListView.as_view()(self.request)
@@ -282,17 +291,26 @@ class TestUserIdentificationDetailView(AdminTestCase):
 
     def setUp(self):
         self.user = AuthUserFactory(fullname='Test User1')
-        self.super_user = AuthUserFactory(fullname='Broken Matt Hardy')
-        self.admin_user = AuthUserFactory(fullname='Test User3')
         self.user.is_superuser = False
-        self.super_user.is_superuser = True
+        self.user.is_staff = False
+        self.user.save()
+
+        self.superuser = AuthUserFactory(fullname='Broken Matt Hardy')
+        self.superuser.is_superuser = True
+        self.superuser.is_staff = True
+        self.superuser.save()
+
+        self.admin_user = AuthUserFactory(fullname='Test User3')
         self.admin_user.is_staff = True
+        self.admin_user.is_superuser = False
+        self.admin_user.affiliated_institutions.add(InstitutionFactory())
+        self.admin_user.save()
 
         self.request = RequestFactory().get('/fake_path')
         self.request.user = self.admin_user
 
-        self.super_user.add_addon('s3')
-        self.user_settings = self.super_user.get_addon('s3')
+        self.superuser.add_addon('s3')
+        self.user_settings = self.superuser.get_addon('s3')
         self.external_account = S3AccountFactory(provider_name='Amazon S3')
         self.user_settings.owner.external_accounts.add(self.external_account)
         self.user_settings.owner.save()
@@ -310,19 +328,24 @@ class TestUserIdentificationDetailView(AdminTestCase):
     def test_get_object(self):
         view = views.UserIdentificationDetailView()
         request = RequestFactory().get('/fake_path')
-        request.user = self.super_user
-        view = setup_log_view(view, request, guid=self.super_user._id)
+        request.user = self.superuser
+        view = setup_log_view(view, request, guid=self.superuser._id)
         results = view.get_object()
         nt.assert_is_instance(results, dict)
 
     def test__permission_anonymous(self):
         self.request.user = self.anon
         with nt.assert_raises(PermissionDenied):
-            views.UserIdentificationDetailView.as_view()(self.request, guid=self.super_user._id)
+            views.UserIdentificationDetailView.as_view()(self.request, guid=self.superuser._id)
+
+    def test__permission_normal_user(self):
+        self.request.user = self.user
+        with nt.assert_raises(PermissionDenied):
+            views.UserIdentificationDetailView.as_view()(self.request, guid=self.user._id)
 
     def test__permission_super_user(self):
-        self.request.user = self.super_user
-        res = views.UserIdentificationListView.as_view()(self.request, guid=self.super_user._id)
+        self.request.user = self.superuser
+        res = views.UserIdentificationListView.as_view()(self.request, guid=self.superuser._id)
         nt.assert_equal(res.status_code, 200)
 
     def test__permission_admin(self):
@@ -334,20 +357,29 @@ class TestUserIdentificationDetailView(AdminTestCase):
 class TestExportFileCSVView(AdminTestCase):
     def setUp(self):
         super(TestExportFileCSVView, self).setUp()
-        self.user = AuthUserFactory(fullname='Kenny Michel', username='Kenny@gmail.com')
-        self.super_user = AuthUserFactory(fullname='alex queen')
-        self.admin_user = AuthUserFactory(fullname='Test User')
-        self.super_user.is_superuser = True
         self.institution = InstitutionFactory()
+
+        self.anon = AnonymousUser()
+
+        self.user = AuthUserFactory(fullname='Kenny Michel', username='Kenny@gmail.com')
         self.user.affiliated_institutions.add(self.institution)
-        self.super_user.affiliated_institutions.add(self.institution)
         self.user.save()
-        self.super_user.save()
+
+        self.superuser = AuthUserFactory(fullname='alex queen')        
+        self.superuser.is_superuser = True
+        self.superuser.is_staff = True
+        self.superuser.save()
+
+        self.admin_user = AuthUserFactory(fullname='Test User')
+        self.admin_user.affiliated_institutions.add(self.institution)
         self.admin_user.is_staff = True
+        self.admin_user.is_superuser = False
+        self.admin_user.save()
+
         self.view = views.ExportFileCSVView()
 
-        self.super_user.add_addon('s3')
-        self.user_settings2 = self.super_user.get_addon('s3')
+        self.superuser.add_addon('s3')
+        self.user_settings2 = self.superuser.get_addon('s3')
         self.external_account2 = S3AccountFactory(provider_name='Amazon S3')
         self.user_settings2.owner.external_accounts.add(self.external_account2)
         self.user_settings2.owner.save()
@@ -355,7 +387,6 @@ class TestExportFileCSVView(AdminTestCase):
 
         self.request = RequestFactory().get('/fake_path')
         self.request.user = self.user
-        self.anon = AnonymousUser()
 
     def test_get(self):
         request = RequestFactory().get('/fake_path')
@@ -367,7 +398,7 @@ class TestExportFileCSVView(AdminTestCase):
 
     def test_get_is_super_admin(self):
         request = RequestFactory().get('/fake_path')
-        request.user = self.super_user
+        request.user = self.superuser
         view = setup_view(self.view, request)
         res = view.get(request)
         nt.assert_equal(res.status_code, 200)
@@ -378,8 +409,13 @@ class TestExportFileCSVView(AdminTestCase):
         with nt.assert_raises(PermissionDenied):
             views.ExportFileCSVView.as_view()(self.request)
 
+    def test__permission_normal_user(self):
+        self.request.user = self.user
+        with nt.assert_raises(PermissionDenied):
+            views.ExportFileCSVView.as_view()(self.request)
+
     def test__permission_super_user(self):
-        self.request.user = self.super_user
+        self.request.user = self.superuser
         res = views.ExportFileCSVView.as_view()(self.request)
         nt.assert_equal(res.status_code, 200)
 

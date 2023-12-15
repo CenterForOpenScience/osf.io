@@ -1,4 +1,3 @@
-from django.contrib.auth.mixins import UserPassesTestMixin
 from osf.models import OSFUser
 
 from admin.user_identification_information.views import (
@@ -8,14 +7,14 @@ from admin.user_identification_information.views import (
 )
 
 
-class UserIdentificationAdminListView(UserIdentificationListView, UserPassesTestMixin):
+class UserIdentificationAdminListView(UserIdentificationListView):
     def test_func(self):
         """check user permissions"""
         # login check
         if not self.is_authenticated:
             return False
-        # permitted if is admin and login user has institution
 
+        # permitted if is admin and login user has institution
         return not self.is_super_admin and self.is_admin \
             and self.request.user.affiliated_institutions.exists()
 
@@ -23,12 +22,13 @@ class UserIdentificationAdminListView(UserIdentificationListView, UserPassesTest
         return self.user_list()
 
 
-class UserIdentificationDetailAdminView(UserIdentificationDetailView, UserPassesTestMixin):
+class UserIdentificationDetailAdminView(UserIdentificationDetailView):
     def test_func(self):
         """check user permissions"""
         # login check
         if not self.is_authenticated:
             return False
+
         # permitted if is admin and login user has institution
         if not self.is_super_admin and self.is_admin \
          and self.request.user.affiliated_institutions.exists():
@@ -41,7 +41,7 @@ class UserIdentificationDetailAdminView(UserIdentificationDetailView, UserPasses
         return self.user_details()
 
 
-class ExportFileCSVAdminView(ExportFileCSVView, UserPassesTestMixin):
+class ExportFileCSVAdminView(ExportFileCSVView):
 
     def test_func(self):
         """check user permissions"""
