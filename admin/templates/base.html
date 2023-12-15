@@ -353,7 +353,7 @@
             </li>
           {% endif %}
           {% if not user.is_superuser and user.is_staff %}
-            <li><a href="{% url 'institutions:statistical_status_default_storage' %}"><i class='fa fa-link'></i> <span>{% trans "Quota for Institutional Storage" %}</span></a></li>
+            <li><a href="{% url 'institutions:statistical_status_default_storage' %}"><i class='fa fa-link'></i> <span>{% trans "Quota for NII Storage" %}</span></a></li>
           {% endif %}
           {% if user.is_superuser or user.is_staff %}
             <li><a href="{% url 'institutional_storage_quota_control:list_institution_storage' %}"><i class='fa fa-link'></i> <span>{% trans "Inst. Storage Quota Control" %}</span></a></li>

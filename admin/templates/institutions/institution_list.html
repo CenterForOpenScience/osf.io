@@ -8,10 +8,10 @@
   <link rel="stylesheet" type="text/css" href="/static/css/institutions.css" />
 {% endblock %}
 {% block title %}
-    <title>{% trans "List of Institutions" %}</title>
+    <title>{% trans "List of Institutions using NII storage" %}</title>
 {% endblock title %}
 {% block content %}
-    <h2>{% trans "List of Institutions" %}</h2>
+    <h2>{% trans "List of Institutions using NII storage" %}</h2>
 
     <form action={% url 'institutions:recalculate_quota' %} method="post">
         <div class="row">
@@ -20,7 +20,7 @@
             </div>
             <div class="col-md-6">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-primary pull-right" style="width: 140px;">{% trans "Recalculate quota" %}</button>
+                <button type="submit" class="btn btn-primary pull-right" {% if not institutions|length %}disabled{% endif %}>{% trans "Recalculate quota for all institutions" %}</button>
             </div>
         </div>
     </form>

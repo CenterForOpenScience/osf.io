@@ -177,13 +177,21 @@
                 <input type="number" name="maxQuota"
                        id="storageLimit" class="form-control flex-item"
                        style="width:70px; max-width: 115px; margin-left: 2px;"
-                       min="1" required="" value="100"
-                       oninvalid="this.setCustomValidity({% trans 'Value must be an integer number greater than or equal 1' %})"
+                       min="1" max="2147483647" required="" value="100"
+                       oninvalid="this.setCustomValidity('{% trans 'Please enter Each user Quota for NII Storage (GB) within 1~2147483647.' %}')"
                        oninput="setCustomValidity('')"
                 />
                 <button type="submit"
                         style="margin-left: 2px; flex-grow: 0;"
                         class="btn btn-primary next-btn flex-item">{% trans 'Apply' %}</button>
+            </div>
+        </form>
+    </div>
+    <div class="flex-item" style="flex-grow: 0; margin-left: 2em;">
+        <form method="post" action={% url 'institutions:recalculate_quota_of_users_in_institution' institution_id=institution_id %}>
+            <div>
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary pull-right">{% trans "Recalculate quota" %}</button>
             </div>
         </form>
     </div>

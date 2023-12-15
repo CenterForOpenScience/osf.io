@@ -2,18 +2,10 @@
 <h2 id="title">{% trans "Statistical Status of Institutional Storage" %}</h2>
 <h3 id="sub-title">{% blocktrans %}Institutional Storage > {{ institution_name }}{% endblocktrans %}</h3>
 
-<form action={% url 'institutions:recalculate_quota_of_users_in_institution' %} method="post">
-    <div class="row">
-        <div class="col-md-6">
-            {% include "util/pagination.html" with items=page status=direction order=order_by %}
-        </div>
-        <div class="col-md-6">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-primary pull-right" style="width: 140px;">{% trans "Recalculate quota" %}</button>
-        </div>
-    </div>
-</form>
-
+<div class="flex-item" style="flex-grow: 0;">
+    {% include "util/pagination.html" with items=page status=direction order=order_by %}
+</div>
+<div class="table-responsive">
 <table class="table table-striped table-hover table-responsive">
     <thead>
         <tr>
@@ -59,7 +51,7 @@
         {% for user in users %}
         <tr>
             <td>
-                <a href="{%  url 'users:user' user.id %}details/"
+                <a href="{% url 'users:user_details' user.id %}"
                    class="btn btn-primary">
                     {{ user.id }}
                 </a>
@@ -75,5 +67,6 @@
         {% endfor %}
     </tbody>
 </table>
+</div>
 
 <script src="/static/js/carets.js"></script>
