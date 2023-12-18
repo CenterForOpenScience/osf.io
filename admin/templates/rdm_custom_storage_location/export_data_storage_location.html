@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% load render_bundle from webpack_loader %}
+
+{% block top_includes %}
+    <link rel="stylesheet" type="text/css" href="/static/css/institutions.css"/>
+    <link rel="stylesheet" href="/static/css/rdm_addons.css">
+    <link rel="stylesheet" href="/static/css/rdm_institutional_storage.css">
+{% endblock %}
+
+{% block title %}
+    <title>{% trans "Export data storage location" %}</title>
+{% endblock title %}
+
+{% block content %}
+    <h2><small style="color: red;">本画面内の機能はベータ版であり、不用な操作はお控え頂きたく存じます。操作される方は <a href="mailto:rdm_support@nii.ac.jp">rdm_support@nii.ac.jp</a> への連絡をお願い致します。</small></h2>
+    <h2>{% trans "Export data storage location" %}{% if user.is_institutional_admin %}<small>({{ institution.name }})</small>{% endif %}</h2>
+
+    <div id="content-main">
+        <form role="form" id="institutional_storage_export_form">
+            {% csrf_token %}
+            <div id="addonSettings">
+                <div class="row form-inline storage-name">
+                    <div class="form-group">
+                        <label for="storage_name" class="label-large">{% trans "Name:" %}</label>
+                        <input type="text" id="storage_name" name="storage_name"
+                               required
+                               class="form-control"
+                               oninvalid="this.setCustomValidity('This field is required.')"
+                               oninput="setCustomValidity('')"
+                               pattern="^(?=\s*\S).*$"
+                               maxlength="255"
+                               minlength="1"
+                               value="">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h3 class="panel-title label-large">{% trans "Configure Accounts for Export Data Storage Location" %}</h3>
+                            </div>
+                            <div class="panel-body">
+
+                                <table class="table table-condensed">
+                                    {% for provider_item in providers %}
+                                        <tr>
+                                            <td class="is_allowed">
+                                                <div class="radio">
+                                                    <label class="center-block">
+                                                        <input type="radio" name="options" id="{{ provider_item.short_name }}"
+                                                               {% if forloop.first %}checked{% endif %}
+                                                               value="{{ provider_item.short_name }}">
+                                                        <h4 class="addon-title">
+                                                            <img src="{{ provider_item.icon_url_admin }}" class="addon-icon"
+                                                                 alt="{{ provider_item.full_name }}">
+                                                            <span>{{ provider_item.full_name }}</span>
+                                                        </h4>
+                                                    </label>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </table>
+
+                            </div>
+                        </div>
+                        <div class="pull-right">
+                            <button class="btn btn-default"
+                                    type="reset">{% trans "Cancel" %}</button>
+                            <button class="btn btn-success next-btn"
+                                    type="submit">{% trans "Save" %}</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </form>
+        {% for provider_item in providers %}
+            {% include provider_item.modal_path %}
+        {% endfor %}
+
+    </div>
+
+    {% include "util/pagination.html" with items=page status=status %}
+    <table class="table table-striped table-hover table-responsive">
+        <thead>
+        <tr>
+            <th style="width: 5em;">{% trans "ID" %}</th>
+            <th style="width: 25em;">{% trans "Name" %}</th>
+            <th style="width: 25em;">{% trans "Provider" %}</th>
+            <th style="width: 10em;"></th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for location in locations %}
+            <tr id="location_{{ location.id }}">
+                <td>{{ location.id }}</td>
+                <td style="word-break: break-word;">{{ location.name }}</td>
+                <td>{{ location.provider_full_name }}</td>
+                <td>
+                    <button type="button" class="btn btn-primary delete-location"
+                            data-id="{{ location.id }}" data-provide="{{ location.provider_short_name }}"
+                    >{% trans "Delete" %}</button>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% if not locations|length %}
+        <h3>{% trans "No results found" %}</h3>
+    {% endif %}
+    <input type="hidden" id="osf_domain" value="{{ osf_domain }}">
+
+    <br class="clear">
+{% endblock content %}
+
+{% block bottom_js %}
+    {% render_bundle 'rdm-institutional-storage-page' %}
+    <script>
+        window.locationRegister = false;
+        window.contextVars = $.extend(true, {}, window.contextVars, {
+            'export_control': false,
+            'restore_control': false,
+            'institution_id': {{ institution.id }},
+        });
+        window.page = {
+            perPage: {{ page.paginator.per_page }},
+            pageCount: {{ page.paginator.count }},
+            pageNumber: {{ page.number }},
+            pageNumPages: {{ page.paginator.num_pages }},
+        };
+    </script>
+{% endblock %}

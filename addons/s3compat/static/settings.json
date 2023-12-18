@@ -18,9 +18,6 @@
                           {"name": "Kanazawa University Cloud(HyperStore)",
                            "host": "s3-kakuma.rdm.kanazawa-u.ac.jp",
                            "serverSideEncryption": false},
-                          {"name": "FUJIFILM (ObjectArchive) 金沢大学",
-                           "host": "https://s3.oaserv.rdm.kanazawa-u.ac.jp",
-                           "serverSideEncryption": false},
                           {"name": "Rakuten Cloud",
                            "host": "s3.jp3.objectstorage.rakuten-cloud.net"},
                           {"name": "mdx S3DS",
@@ -34,6 +31,24 @@
                            "bucketLocations": {
                              "sailingship": {"name": "sailingship", "host": "hssgws3.riken.jp:443"},
                              "": {"name": "sailingship"}},
+                           "serverSideEncryption": false},
+                          {"name": "SPring-8 Proto S3 Service",
+                           "host": "sp8-s3gw.spring8.or.jp:443",
+                           "bucketLocations": {
+                             "us-east-1": {"name": "us-east-1", "host": "sp8-s3gw.spring8.or.jp:443"},
+                             "": {"name": "us-east-1"}},
+                           "serverSideEncryption": false},
+                          {"name": "ONION-object @ CMC Osaka University",
+                           "host": "s3-osakau.oniongw.hpc.cmc.osaka-u.ac.jp:443",
+                           "bucketLocations": {
+                             "osakau": {"name": "osakau", "host": "s3-osakau.oniongw.hpc.cmc.osaka-u.ac.jp:443"},
+                             "": {"name": "osakau"}},
+                           "serverSideEncryption": false},
+                          {"name": "MinIO@Kanazawa University",
+                           "host": "minio.rdm.kanazawa-u.ac.jp:443",
+                           "bucketLocations": {
+                             "ku-kakuma-1": {"name": "ku-kakuma-1", "host": "minio.rdm.kanazawa-u.ac.jp:443"},
+                             "": {"name": "ku-kakuma-1"}},
                            "serverSideEncryption": false}
                            ],
     "encryptUploads": true

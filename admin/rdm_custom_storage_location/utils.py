@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import inspect  # noqa
+import logging
 import traceback
 
 from boxsdk import Client as BoxClient, OAuth2
@@ -42,6 +44,9 @@ from osf.models.external import ExternalAccountTemporary, ExternalAccount
 from osf.utils import external_util
 import datetime
 
+from website.util import inspect_info  # noqa
+
+logger = logging.getLogger(__name__)
 
 providers = None
 
@@ -64,7 +69,8 @@ no_storage_name_providers = ['osfstorage', 'onedrivebusiness']
 def have_storage_name(provider_name):
     return provider_name not in no_storage_name_providers
 
-def get_providers():
+
+def get_providers(available_list=None):
     provider_list = []
     for provider in osf_settings.ADDONS_AVAILABLE:
         if 'storage' in provider.categories and provider.short_name in enabled_providers_list:
@@ -73,6 +79,8 @@ def get_providers():
             provider.modal_path = get_modal_path(provider.short_name)
             provider_list.append(provider)
     provider_list.sort(key=lambda x: x.full_name.lower())
+    if isinstance(available_list, list):
+        return [addon for addon in provider_list if addon.short_name in available_list]
     return provider_list
 
 def get_addon_by_name(addon_short_name):
@@ -583,7 +591,7 @@ def validate_onedrivebusiness_connection(institution_id, folder_id_or_path):
         'message': 'Credentials are valid'
     }, http_status.HTTP_200_OK), folder_id
 
-def save_s3_credentials(institution_id, storage_name, access_key, secret_key, bucket):
+def save_s3_credentials(institution_id, storage_name, access_key, secret_key, bucket, server_side_encryption=False):
     test_connection_result = test_s3_connection(access_key, secret_key, bucket)
     if test_connection_result[1] != http_status.HTTP_200_OK:
         return test_connection_result
@@ -596,9 +604,8 @@ def save_s3_credentials(institution_id, storage_name, access_key, secret_key, bu
     }
     wb_settings = {
         'storage': {
-            'folder': {
-                'encrypt_uploads': True,
-            },
+            'folder': '',
+            'encrypt_uploads': server_side_encryption,
             'bucket': bucket,
             'provider': 's3',
         },
@@ -612,7 +619,7 @@ def save_s3_credentials(institution_id, storage_name, access_key, secret_key, bu
     }, http_status.HTTP_200_OK)
 
 def save_s3compat_credentials(institution_id, storage_name, host_url, access_key, secret_key,
-                              bucket):
+                              bucket, server_side_encryption=False):
 
     test_connection_result = test_s3compat_connection(host_url, access_key, secret_key, bucket)
     if test_connection_result[1] != http_status.HTTP_200_OK:
@@ -629,9 +636,8 @@ def save_s3compat_credentials(institution_id, storage_name, host_url, access_key
     }
     wb_settings = {
         'storage': {
-            'folder': {
-                'encrypt_uploads': True,
-            },
+            'folder': '',
+            'encrypt_uploads': server_side_encryption,
             'bucket': bucket,
             'provider': 's3compat',
         }
@@ -864,7 +870,7 @@ def save_onedrivebusiness_credentials(user, storage_name, provider_name, folder_
         'message': 'OAuth was set successfully'
     }, http_status.HTTP_200_OK)
 
-def wd_info_for_institutions(provider_name):
+def wd_info_for_institutions(provider_name, server_side_encryption=False):
     wb_credentials = {
         'storage': {
         },
@@ -875,6 +881,10 @@ def wd_info_for_institutions(provider_name):
             'provider': provider_name
         },
     }
+
+    if provider_name == 's3compatinstitutions':
+        wb_settings['encrypt_uploads'] = server_side_encryption
+
     return (wb_credentials, wb_settings)
 
 def use_https(url):
@@ -902,7 +912,7 @@ def save_dropboxbusiness_credentials(institution, storage_name, provider_name):
     }, http_status.HTTP_200_OK)
 
 def save_basic_storage_institutions_credentials_common(
-        institution, storage_name, folder, provider_name, provider, separator=':', extended_data=None):
+        institution, storage_name, folder, provider_name, provider, separator=':', extended_data=None, server_side_encryption=False):
     try:
         provider.account.save()
     except ValidationError:
@@ -929,7 +939,7 @@ def save_basic_storage_institutions_credentials_common(
         rdm_addon_option.extended.update(extended_data)
     rdm_addon_option.save()
 
-    wb_credentials, wb_settings = wd_info_for_institutions(provider_name)
+    wb_credentials, wb_settings = wd_info_for_institutions(provider_name, server_side_encryption)
     region = update_storage(institution._id,  # not institution.id
                             storage_name,
                             wb_credentials, wb_settings)
@@ -958,7 +968,7 @@ def save_nextcloudinstitutions_credentials(
     return save_basic_storage_institutions_credentials_common(
         institution, storage_name, folder, provider_name, provider, extended_data=extended_data)
 
-def save_s3compatinstitutions_credentials(institution, storage_name, host_url, access_key, secret_key, bucket, provider_name):
+def save_s3compatinstitutions_credentials(institution, storage_name, host_url, access_key, secret_key, bucket, provider_name, server_side_encryption=False):
     host = host_url.rstrip('/').replace('https://', '').replace('http://', '')
     test_connection_result = test_s3compat_connection(
         host, access_key, secret_key, bucket)
@@ -971,7 +981,7 @@ def save_s3compatinstitutions_credentials(institution, storage_name, host_url, a
         username=access_key, password=secret_key, separator=separator)
 
     return save_basic_storage_institutions_credentials_common(
-        institution, storage_name, bucket, provider_name, provider, separator)
+        institution, storage_name, bucket, provider_name, provider, separator, server_side_encryption)
 
 def save_ociinstitutions_credentials(institution, storage_name, host_url, access_key, secret_key, bucket, provider_name):
     host = host_url.rstrip('/').replace('https://', '').replace('http://', '')

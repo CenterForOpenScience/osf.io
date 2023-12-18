@@ -1,0 +1,66 @@
+{
+  "type": "object",
+  "properties": {
+    "institution": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "guid": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "guid",
+        "name"
+      ],
+      "additionalProperties": true
+    },
+    "process_start": {
+      "type": "string"
+    },
+    "process_end": {
+      "type": "string"
+    },
+    "storage": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "projects_numb": {
+      "type": "integer"
+    },
+    "files_numb": {
+      "type": "integer"
+    },
+    "size": {
+      "type": "integer"
+    },
+    "file_path": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "institution",
+    "process_start",
+    "process_end",
+    "storage",
+    "projects_numb",
+    "files_numb",
+    "size",
+    "file_path"
+  ],
+  "additionalProperties": true
+}

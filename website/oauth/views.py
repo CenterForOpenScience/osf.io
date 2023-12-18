@@ -77,14 +77,6 @@ def osf_oauth_callback(service_name, auth):
 
 @must_be_logged_in
 def oauth_callback(service_name, auth):
-    try:
-        validate_rdm_addons_allowed(auth, service_name)
-    except PermissionsError as e:
-        raise HTTPError(
-            http_status.HTTP_403_FORBIDDEN,
-            data=dict(message_long=str(e))
-        )
-
     service = get_service(service_name)
 
     if service._oauth_version == 1:

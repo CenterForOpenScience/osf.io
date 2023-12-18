@@ -90,8 +90,8 @@ RUN set -ex \
         libpng-dev \
         freetype-dev \
         jpeg-dev \
-    && pip3 install Cython \
-    && pip3 install numpy==1.14.5 \
+    && pip3 install Cython==0.29.36 \
+    && pip3 install numpy==1.15.4 \
     && for reqs_file in \
         /code/requirements.txt \
         /code/requirements/release.txt \

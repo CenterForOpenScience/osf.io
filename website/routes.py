@@ -127,6 +127,8 @@ def get_globals():
         'use_project_comment_settings': settings.to_bool('USE_PROJECT_COMMENT_SETTINGS', True),
         'use_project_institution_settings': settings.to_bool('USE_PROJECT_INSTITUTION_SETTINGS', True),
         'use_tfa': settings.to_bool('USE_TFA', True),
+        'support_url': getattr(settings, 'SUPPORT_URL', '{}support/'.format(settings.DOMAIN)),
+        'support_target': '_blank' if hasattr(settings, 'SUPPORT_URL') else '_self',
         'global_support_url': getattr(settings, 'GLOBAL_SUPPORT_URL', '{}support/'.format(settings.DOMAIN)),
         'global_support_target': '_blank' if hasattr(settings, 'GLOBAL_SUPPORT_URL') else '_self',
         'use_viewonlylinks': settings.to_bool('USE_VIEWONLYLINKS', True),

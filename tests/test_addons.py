@@ -2,7 +2,6 @@
 
 import os
 import datetime
-from rest_framework import status as http_status
 import time
 import functools
 
@@ -13,16 +12,19 @@ import jwt
 import mock
 import pytest
 from django.utils import timezone
-from django.contrib.auth.models import Permission
 from framework.auth import cas, signing
 from framework.auth.core import Auth
 from framework.exceptions import HTTPError
 from nose.tools import *  # noqa
-from osf_tests import factories
 from tests.base import OsfTestCase, get_default_metaschema
 from api_tests.utils import create_test_file
-from osf_tests.factories import (AuthUserFactory, ProjectFactory,
-                             RegistrationFactory, DraftRegistrationFactory,)
+from osf_tests.factories import (
+    AuthUserFactory,
+    ProjectFactory,
+    RegistrationFactory,
+    DraftRegistrationFactory,
+    ExportDataLocationFactory,
+)
 from website import settings
 from api.base import settings as api_settings
 from addons.base import views
@@ -31,9 +33,17 @@ from addons.github.models import GithubFolder, GithubFile, GithubFileNode
 from addons.github.tests.factories import GitHubAccountFactory, GoogleDriveAccountFactory
 from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder
 from addons.osfstorage.tests.factories import FileVersionFactory
-from osf.models import NodeLog, Session, RegistrationSchema, QuickFilesNode, RdmFileTimestamptokenVerifyResult, RdmUserKey
+from osf.models import (
+    NodeLog,
+    Session,
+    QuickFilesNode,
+    RdmFileTimestamptokenVerifyResult,
+    RdmUserKey,
+    ExportData,
+    Institution,
+)
 from osf.models import files as file_models
-from osf.models.files import BaseFileNode, TrashedFileNode, FileVersion
+from osf.models.files import BaseFileNode, TrashedFileNode
 from osf.utils.permissions import WRITE, READ
 from website.project import new_private_link
 from website.project.views.node import _view_project as serialize_node
@@ -56,6 +66,7 @@ class SetEnvironMiddleware(object):
         return self.app(environ, start_response)
 
 
+@pytest.mark.feature_202210
 class TestAddonAuth(OsfTestCase):
 
     def setUp(self):
@@ -158,6 +169,17 @@ class TestAddonAuth(OsfTestCase):
         res = self.app.get(url, expect_errors=True, auth=self.user.auth)
         assert_equal(res.status_code, 400)
 
+    def test_auth_missing_action(self):
+        options = {'payload': jwe.encrypt(jwt.encode({'data': dict(dict(
+            nid=self.node._id,
+            metrics={'uri': settings.MFR_SERVER_URL},
+            provider=self.node_addon.config.short_name)),
+            'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
+        }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), self.JWE_KEY)}
+        url = api_url_for('get_auth', **options)
+        res = self.app.get(url, expect_errors=True, auth=self.user.auth)
+        assert_equal(res.status_code, 400)
+
     @mock.patch('addons.base.views.cas.get_client')
     def test_auth_bad_bearer_token(self, mock_cas_client):
         mock_cas_client.return_value = mock.Mock(profile=mock.Mock(return_value=cas.CasResponse(authenticated=False)))
@@ -229,6 +251,59 @@ class TestAddonAuth(OsfTestCase):
         test_file.reload()
         assert_equal(test_file.get_view_count(), 1)
         assert_equal(node.logs.count(), nlogs) # don't log views
+
+    def test_auth__with_fake_node__missing_location_id(self):
+        url = self.build_url(
+            cookie=self.cookie[::-1],
+            nid=ExportData.EXPORT_DATA_FAKE_NODE_ID,
+        )
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_auth__with_fake_node__not_allowed_location_id(self):
+        url = self.build_url(
+            cookie=self.cookie[::-1],
+            nid=ExportData.EXPORT_DATA_FAKE_NODE_ID,
+            location_id=1,
+        )
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_auth__with_fake_node__default_location_id(self):
+        # default location
+        location = ExportDataLocationFactory(institution_guid=Institution.INSTITUTION_DEFAULT)
+
+        url = self.build_url(
+            cookie=self.cookie[::-1],
+            nid=ExportData.EXPORT_DATA_FAKE_NODE_ID,
+            location_id=location.id,
+            metrics={'uri': settings.MFR_SERVER_URL+'?callback_log=False'},
+        )
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 200)
+        data = jwt.decode(
+            jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY),
+            settings.WATERBUTLER_JWT_SECRET,
+            algorithm=settings.WATERBUTLER_JWT_ALGORITHM
+        )['data']
+        assert_equal(data['auth'], views.make_auth(self.user))
+        assert_equal(data['credentials'], {})
+        assert_equal(data['settings'], {})
+        assert_equal(data['callback_url'], '')
+
+    def test_auth__user_is_None(self):
+        none_auth = Auth()
+        # default location
+        location = ExportDataLocationFactory(institution_guid=Institution.INSTITUTION_DEFAULT)
+
+        url = self.build_url(
+            cookie=self.cookie[::-1],
+            nid=ExportData.EXPORT_DATA_FAKE_NODE_ID,
+            location_id=location.id,
+            metrics={'uri': settings.MFR_SERVER_URL + '?callback_log=False'},
+        )
+        res = self.app.get(url, auth=none_auth, expect_errors=True)
+        assert_equal(res.status_code, 401)
 
 
 class TestAddonLogs(OsfTestCase):

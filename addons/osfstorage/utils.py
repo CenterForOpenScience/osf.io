@@ -58,7 +58,7 @@ def serialize_revision(node, record, version, index, anon=False):
 
     return {
         'user': user,
-        'index': index + 1,
+        'index': version.identifier,
         'date': version.created.isoformat(),
         'downloads': version._download_count if hasattr(version, '_download_count') else record.get_download_count(version=index),
         'md5': version.metadata.get('md5'),

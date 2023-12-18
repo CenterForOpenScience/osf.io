@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 import datetime
+import inspect
+
 import mock
 import os
 import pytest
 import time
-import unittest
+import unittest  # noqa
 from django.utils import timezone
 
 from flask import Flask
@@ -21,7 +23,7 @@ from api.base.utils import waterbutler_api_url_for
 from osf.utils.functional import rapply
 from website.routes import process_rules, OsfWebRenderer
 from website import settings
-from website.util import paths
+from website.util import paths, inspect_info
 from website.util import web_url_for, api_url_for, is_json_request, conjunct, api_v2_url
 from website.project import utils as project_utils
 from website.profile import utils as profile_utils
@@ -503,3 +505,17 @@ class TestExternalUtil(OsfTestCase):
         set_new_access_token(self.external_account)
         region_from_db = Region.objects.get(pk=self.region.id)
         assert new_access_token == region_from_db.waterbutler_credentials['storage']['token']
+
+
+@pytest.mark.feature_202210
+class TestInspectInfo:
+    def test_inspect_info(self):
+        current_frame = inspect.currentframe()
+        stack_info = inspect.stack()
+
+        # ('/code/tests/test_utils.py', 517, 'test_inspect_info', '/usr/local/lib/python3.6/site-packages/_pytest/python.py', 170, 'pytest_pyfunc_call')
+        ret, lineno = inspect_info(current_frame, stack_info), 517  # line 517
+        frame_info = inspect.getframeinfo(current_frame)
+        stack_first = stack_info[1]
+        assert isinstance(ret, tuple)
+        assert ret == (frame_info[0], lineno, frame_info[2], stack_first[1], stack_first[2], stack_first[3])

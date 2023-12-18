@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+from django.db.models import IntegerField
+from django.db.models.functions import Cast
 from rest_framework import status as http_status
 import logging
 
@@ -17,7 +19,7 @@ from framework.auth.decorators import must_be_signed, must_be_logged_in
 
 from api.caching.tasks import update_storage_usage
 from osf.exceptions import InvalidTagError, TagNotFoundError
-from osf.models import FileVersion, OSFUser
+from osf.models import FileVersion, OSFUser, ExportDataRestore, ExportData
 from osf.utils.permissions import WRITE
 from osf.utils.requests import check_select_for_update
 from website.project.decorators import (
@@ -107,7 +109,9 @@ def osfstorage_get_revisions(file_node, payload, target, **kwargs):
 
     version_count = file_node.versions.count()
     counts = dict(PageCounter.objects.filter(resource=file_node.target.guids.first().id, file=file_node, action='download').values_list('_id', 'total'))
-    qs = FileVersion.includable_objects.filter(basefilenode__id=file_node.id).include('creator__guids').order_by('-created')
+    qs = FileVersion.includable_objects.filter(basefilenode__id=file_node.id).include('creator__guids').annotate(
+        version_identifier=Cast('identifier', IntegerField())
+    ).order_by('-version_identifier')
 
     for i, version in enumerate(qs):
         version._download_count = counts.get('{}{}'.format(counter_prefix, version_count - i - 1), 0)
@@ -130,9 +134,9 @@ def osfstorage_copy_hook(source, destination, name=None, **kwargs):
 @decorators.waterbutler_opt_hook
 def osfstorage_move_hook(source, destination, name=None, **kwargs):
     source_target = source.target
-
+    is_check_permission = kwargs.get('is_check_permission')
     try:
-        ret = source.move_under(destination, name=name).serialize(), http_status.HTTP_200_OK
+        ret = source.move_under(destination, name=name, is_check_permission=is_check_permission).serialize(), http_status.HTTP_200_OK
     except exceptions.FileNodeCheckedOutError:
         raise HTTPError(http_status.HTTP_405_METHOD_NOT_ALLOWED, data={
             'message_long': 'Cannot move file as it is checked out.'
@@ -143,7 +147,7 @@ def osfstorage_move_hook(source, destination, name=None, **kwargs):
         })
 
     # once the move is complete recalculate storage for both targets if it's a inter-target move.
-    if source_target != destination.target:
+    if is_check_permission and source_target != destination.target:
         update_storage_usage(destination.target)
         update_storage_usage(source_target)
 
@@ -288,6 +292,16 @@ def osfstorage_create_child(file_node, payload, **kwargs):
     name = payload.get('name')
     user = OSFUser.load(payload.get('user'))
     is_folder = payload.get('kind') == 'folder'
+    # Add a check condition when moving the file to the backup folder in case the file is checked out
+    node = kwargs.get('target')
+    is_check_permission = True
+    export_data = ExportData.objects.filter(creator=user, status=ExportData.STATUS_RUNNING).first()
+    if not export_data:
+        export_data = ExportDataRestore.objects.filter(creator=user, status=ExportData.STATUS_RUNNING).first()
+    if export_data:
+        institution = node.creator.affiliated_institutions.get()
+        if user.is_allowed_to_use_institution(institution):
+            is_check_permission = False
 
     if getattr(file_node.target, 'is_registration', False) and not getattr(file_node.target, 'archiving', False):
         raise HTTPError(
@@ -323,7 +337,7 @@ def osfstorage_create_child(file_node, payload, **kwargs):
             )
         })
 
-    if file_node.checkout and file_node.checkout._id != user._id:
+    if file_node.checkout and file_node.checkout._id != user._id and is_check_permission:
         raise HTTPError(http_status.HTTP_403_FORBIDDEN, data={
             'message_long': 'File cannot be updated due to checkout status.'
         })

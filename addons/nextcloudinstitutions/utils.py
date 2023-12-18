@@ -217,7 +217,7 @@ def _check_for_file(project, path, fileinfo):
     if node.is_deleted:
         return
     admin = _select_admin(node)
-    admin_cookie = admin.get_or_create_cookie()
+    admin_cookie = admin.get_or_create_cookie().decode()
     created = True
 
     cls = BaseFileNode.resolve_class(SHORT_NAME, BaseFileNode.FILE)

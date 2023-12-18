@@ -12,34 +12,130 @@
           "qid": "funder",
           "nav": "資金配分機関情報",
           "title": "資金配分機関情報|Funder",
+          "help": "資金配分機関情報を選択してください。一覧に無い場合は英語略称を記入してください。|Please select the funder. If not listed, please enter the English abbreviation.",
           "type": "choose",
           "format": "e-rad-award-funder",
           "options": [
-            {
-              "text": "JST",
-              "tooltip": "国立研究開発法人科学技術振興機構|Japan Science and Technology Agency|1020"
-            },
-            {
-              "text": "NEDO",
-              "tooltip": "国立研究開発法人新エネルギー・産業技術総合開発機構|New Energy and Industrial Technology Development Organization|1305"
-            },
             {
               "text": "AMED",
               "tooltip": "国立研究開発法人日本医療研究開発機構|Japan Agency for Medical Research and Development|303"
             },
             {
-              "text": "BRAIN",
-              "tooltip": "生物系特定産業技術研究支援センター|Bio-oriented Technology Research Advancement Institution|1205"
+              "text": "MOD",
+              "tooltip": "防衛省|Ministry of Defense|501"
+            },
+            {
+              "text": "NRA",
+              "tooltip": "原子力規制庁|Nuclear Regulation Authority|1503"
+            },
+            {
+              "text": "ERCA",
+              "tooltip": "独立行政法人環境再生保全機構|Environmental Restoration and Conservation Agency|1502"
+            },
+            {
+              "text": "CAO",
+              "tooltip": "内閣府|Cabinet Office|301"
+            },
+            {
+              "text": "SOUMU",
+              "tooltip": "総務省|Ministry of Internal Affairs and Communications|601"
+            },
+            {
+              "text": "FDMA",
+              "tooltip": "消防庁|Fire and Disaster Management Agency|605"
+            },
+            {
+              "text": "NICT",
+              "tooltip": "国立研究開発法人情報通信研究機構|National Institute of Information and Communications Technology|615"
+            },
+            {
+              "text": "MEXT",
+              "tooltip": "文部科学省|Ministry of Education|1001"
+            },
+            {
+              "text": "JST",
+              "tooltip": "国立研究開発法人科学技術振興機構|Japan Science and Technology Agency|1020"
+            },
+            {
+              "text": "JSPS",
+              "tooltip": "独立行政法人日本学術振興会|Japan Society for the Promotion of Science|1025"
+            },
+            {
+              "text": "MHLW",
+              "tooltip": "厚生労働省|Ministry of Health|1101"
+            },
+            {
+              "text": "MAFF",
+              "tooltip": "農林水産省|Ministry of Agriculture|1201"
+            },
+            {
+              "text": "PRIMAFF",
+              "tooltip": "農林水産省農林水産政策研究所|Policy Research Institute|1203"
+            },
+            {
+              "text": "NARO",
+              "tooltip": "国立研究開発法人農業・食品産業技術総合研究機構|National Agriculture and Food Research Organization|1205"
+            },
+            {
+              "text": "METI",
+              "tooltip": "経済産業省|Ministry of Economy|1301"
+            },
+            {
+              "text": "NEDO",
+              "tooltip": "国立研究開発法人新エネルギー・産業技術総合開発機構|New Energy and Industrial Technology Development|1305 Organization"
+            },
+            {
+              "text": "MLIT",
+              "tooltip": "国土交通省|Ministry of Land|1401"
+            },
+            {
+              "text": "NILIM",
+              "tooltip": "国土技術政策総合研究所|National Institute for Land and Infrastructure Management|1405"
+            },
+            {
+              "text": "ENV",
+              "tooltip": "環境省|Ministry of the Environment|1501"
+            },
+            {
+              "text": "BIBIOHN",
+              "tooltip": "国立研究開発法人医薬基盤・健康・栄養研究所|National Institutes of Biomedical Innovation|1106"
             }
           ],
-          "required": true
+          "required": true,
+          "pattern": "^[a-zA-Z0-9]+$"
         },
         {
-          "qid": "e-rad-project-id",
-          "nav": "e-Radの課題番号",
-          "title": "e-Radの課題番号|e-Rad project ID",
+          "qid": "funding-stream-code",
+          "nav": "体系的番号におけるプログラム情報コード",
+          "title": "体系的番号におけるプログラム情報コード|Funding stream code in Japan Grant Number",
           "type": "string",
-          "format": "e-rad-award-number",
+          "format": "funding-stream-code",
+          "required": false,
+          "pattern": "^[a-zA-Z0-9]{0,5}$",
+          "space_normalization": true
+        },
+        {
+          "qid": "program-name-ja",
+          "nav": "プログラム名 (日本語)",
+          "title": "プログラム名 (日本語)|Program name (Japanese)",
+          "type": "string",
+          "format": "jgn-program-name-ja",
+          "required": false
+        },
+        {
+          "qid": "program-name-en",
+          "nav": "Program name (English)",
+          "title": "Program name (English)",
+          "type": "string",
+          "format": "jgn-program-name-en",
+          "required": false
+        },
+        {
+          "qid": "japan-grant-number",
+          "nav": "体系的番号",
+          "title": "体系的番号|Japan Grant Number",
+          "type": "string",
+          "format": "japan-grant-number",
           "required": true
         },
         {
@@ -48,7 +144,8 @@
           "title": "プロジェクト名 (日本語)|Project name (Japanese)",
           "type": "string",
           "format": "e-rad-award-title-ja",
-          "required": true
+          "required": true,
+          "space_normalization": true
         },
         {
           "qid": "project-name-en",
@@ -56,7 +153,8 @@
           "title": "Project name (English)",
           "type": "string",
           "format": "e-rad-award-title-en",
-          "required": true
+          "required": true,
+          "space_normalization": true
         },
         {
           "qid": "project-research-field",
@@ -132,8 +230,9 @@
           "nav": "データ No.",
           "title": "データ No.|Data No.",
           "type": "string",
-          "format": "text",
-          "required": false
+          "format": "file-data-number",
+          "required": false,
+          "space_normalization": true
         },
         {
           "qid": "grdm-file:title-ja",
@@ -141,7 +240,8 @@
           "title": "データの名称 (日本語)|Title (Japanese)",
           "type": "string",
           "format": "text",
-          "required": true
+          "required": true,
+          "space_normalization": true
         },
         {
           "qid": "grdm-file:title-en",
@@ -149,7 +249,8 @@
           "title": "Title (English)",
           "type": "string",
           "format": "text",
-          "required": true
+          "required": true,
+          "space_normalization": true
         },
         {
           "qid": "grdm-file:date-issued-updated",
@@ -157,7 +258,9 @@
           "title": "掲載日・掲載更新日|Date (Issued / Updated)",
           "type": "string",
           "format": "date",
-          "required": false
+          "required": true,
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "help": "例: 2010-01-01|E.g., 2010-01-01"
         },
         {
           "qid": "grdm-file:data-description-ja",
@@ -165,7 +268,8 @@
           "title": "データの説明 (日本語)|Description (Japanese)",
           "type": "string",
           "format": "textarea",
-          "required": true
+          "required": true,
+          "help": "例: 〇〇実証においてセンサより撮像したデータであり、道路の画像データ, 〇〇のシミュレーションにおいて〇〇の条件のもとで得られたデータ, 〇〇への応用が期待できる、〇〇〇〇のゲノム解析と、その効率的な化合物生産に役立てるための発現プロファイル情報"
         },
         {
           "qid": "grdm-file:data-description-en",
@@ -247,188 +351,56 @@
                 "default": true
               },
               {
-                  "text": "conference paper",
-                  "tooltip": "会議発表論文|conference paper"
+                  "text": "aggregated data",
+                  "tooltip": "集計データ|aggregated data"
               },
               {
-                  "text": "data paper",
-                  "tooltip": "データ論文|data paper"
+                  "text": "clinical trial data",
+                  "tooltip": "臨床試験データ|clinical trial data"
               },
               {
-                  "text": "departmental bulletin paper",
-                  "tooltip": "紀要論文|departmental bulletin paper"
+                  "text": "compiled data",
+                  "tooltip": "編集データ|compiled data"
               },
               {
-                  "text": "editorial",
-                  "tooltip": "エディトリアル|editorial"
+                  "text": "encoded data",
+                  "tooltip": "符号化データ|encoded data"
               },
               {
-                  "text": "journal article",
-                  "tooltip": "学術雑誌論文|journal article"
+                  "text": "experimental data",
+                  "tooltip": "実験データ|experimental data"
               },
               {
-                  "text": "newspaper",
-                  "tooltip": "新聞|newspaper"
+                  "text": "genomic data",
+                  "tooltip": "ゲノムデータ|genomic data"
               },
               {
-                  "text": "periodical",
-                  "tooltip": "逐次刊行物|periodical"
+                  "text": "geospatial data",
+                  "tooltip": "地理空間データ|geospatial data"
               },
               {
-                  "text": "review article",
-                  "tooltip": "レビュー論文|review article"
+                  "text": "laboratory notebook",
+                  "tooltip": "実験ノート|laboratory notebook"
               },
               {
-                  "text": "software paper",
-                  "tooltip": "ソフトウェア論文|software paper"
+                  "text": "measurement and test data",
+                  "tooltip": "測定・評価データ|measurement and test data"
               },
               {
-                  "text": "article",
-                  "tooltip": "記事|article"
+                  "text": "observational data",
+                  "tooltip": "観測データ|observational data"
               },
               {
-                  "text": "book",
-                  "tooltip": "図書|book"
+                  "text": "recorded data",
+                  "tooltip": "記録データ|recorded data"
               },
               {
-                  "text": "book part",
-                  "tooltip": "図書（部分）|book part"
+                  "text": "simulation data",
+                  "tooltip": "シミュレーションデータ|simulation data"
               },
               {
-                  "text": "cartographic material",
-                  "tooltip": "地図資料|cartographic material"
-              },
-              {
-                  "text": "map",
-                  "tooltip": "地図|map"
-              },
-              {
-                  "text": "conference object",
-                  "tooltip": "会議発表資料|conference object"
-              },
-              {
-                  "text": "conference proceedings",
-                  "tooltip": "会議録|conference proceedings"
-              },
-              {
-                  "text": "conference poster",
-                  "tooltip": "会議発表ポスター|conference poster"
-              },
-              {
-                  "text": "interview",
-                  "tooltip": "インタビュー|interview"
-              },
-              {
-                  "text": "image",
-                  "tooltip": "イメージ|image"
-              },
-              {
-                  "text": "still image",
-                  "tooltip": "静止画|still image"
-              },
-              {
-                  "text": "moving image",
-                  "tooltip": "動画|moving image"
-              },
-              {
-                  "text": "video",
-                  "tooltip": "録画資料|video"
-              },
-              {
-                  "text": "lecture",
-                  "tooltip": "講演|lecture"
-              },
-              {
-                  "text": "patent",
-                  "tooltip": "特許|patent"
-              },
-              {
-                  "text": "internal report",
-                  "tooltip": "内部報告書|internal report"
-              },
-              {
-                  "text": "report",
-                  "tooltip": "報告書|report"
-              },
-              {
-                  "text": "research report",
-                  "tooltip": "研究報告書|research report"
-              },
-              {
-                  "text": "technical report",
-                  "tooltip": "テクニカルレポート|technical report"
-              },
-              {
-                  "text": "policy report",
-                  "tooltip": "ポリシーレポート|policy report"
-              },
-              {
-                  "text": "report part",
-                  "tooltip": "報告書（部分）|report part"
-              },
-              {
-                  "text": "working paper",
-                  "tooltip": "ワーキングペーパー|working paper"
-              },
-              {
-                  "text": "data management plan",
-                  "tooltip": "データ管理計画|data management plan"
-              },
-              {
-                  "text": "sound",
-                  "tooltip": "音声・音楽|sound"
-              },
-              {
-                  "text": "thesis",
-                  "tooltip": "学位論文|thesis"
-              },
-              {
-                  "text": "bachelor thesis",
-                  "tooltip": "学士論文|bachelor thesis"
-              },
-              {
-                  "text": "master thesis",
-                  "tooltip": "修士論文|master thesis"
-              },
-              {
-                  "text": "doctoral thesis",
-                  "tooltip": "博士論文|doctoral thesis"
-              },
-              {
-                  "text": "interactive resource",
-                  "tooltip": "インタラクティブリソース|interactive resource"
-              },
-              {
-                  "text": "learning object",
-                  "tooltip": "教材|learning object"
-              },
-              {
-                  "text": "manuscript",
-                  "tooltip": "手稿|manuscript"
-              },
-              {
-                  "text": "musical notation",
-                  "tooltip": "楽譜|musical notation"
-              },
-              {
-                  "text": "research proposal",
-                  "tooltip": "研究計画書|research proposal"
-              },
-              {
-                  "text": "software",
-                  "tooltip": "ソフトウェア|software"
-              },
-              {
-                  "text": "technical documentation",
-                  "tooltip": "技術文書|technical documentation"
-              },
-              {
-                  "text": "workflow",
-                  "tooltip": "ワークフロー|workflow"
-              },
-              {
-                  "text": "other",
-                  "tooltip": "その他|other"
+                  "text": "survey data",
+                  "tooltip": "調査データ|survey data"
               }
           ],
           "required": true
@@ -439,7 +411,9 @@
           "title": "概略データ量|File size",
           "type": "string",
           "format": "file-capacity",
-          "required": false
+          "required": false,
+          "pattern": "^[><]?([0-9]+(\\.[0-9]+)?-)?([0-9]+)(\\.[0-9]+)?([A-Za-z]*B)$",
+          "help": "例: >100GB, <10GB, 100-10MB|E.g., >100GB, <10GB, 100-10MB"
         },
         {
           "qid": "grdm-file:data-policy-free",
@@ -463,9 +437,127 @@
           "qid": "grdm-file:data-policy-license",
           "nav": "管理対象データの利活用・提供方針 (ライセンス)",
           "title": "管理対象データの利活用・提供方針 (ライセンス)|Data utilization and provision policy (License)",
-          "type": "string",
-          "format": "text",
-          "required": true
+          "required": true,
+          "type": "choose",
+          "format": "singleselect",
+          "options": [
+            {
+              "text": "group:None:1",
+              "tooltip": "None"
+            },
+            {
+              "text": "NO_LICENSE",
+              "tooltip": "ライセンスなし|No license"
+            },
+            {
+              "text": "group:Content",
+              "tooltip": "コンテンツ用|Content"
+            },
+            {
+              "text": "CC0",
+              "tooltip": "CC0 1.0 Universal"
+            },
+            {
+              "text": "CC0PD",
+              "tooltip": "CC0 1.0 パブリック・ドメイン提供|CC0 1.0 Public Domain Dedication"
+            },
+            {
+              "text": "CCBY",
+              "tooltip": "CC BY 4.0 表示 国際|CC BY 4.0 Attribution International"
+            },
+            {
+              "text": "CCBYSA",
+              "tooltip": "CC BY-SA 4.0 表示—継承|CC BY-SA 4.0 Attribution-ShareAlike"
+            },
+            {
+              "text": "CCBYND",
+              "tooltip": "CC BY-ND 4.0 表示—改変禁止|CC BY-ND 4.0 Attribution—NoDerivatives"
+            },
+            {
+              "text": "CCBYNC",
+              "tooltip": "CC BY-NC 4.0 表示—非営利|CC BY-NC 4.0 Attribution—NonCommercial"
+            },
+            {
+              "text": "CCBYNCSA",
+              "tooltip": "CC BY-NC-SA 4.0 表示—非営利—継承|CC BY-NC-SA 4.0 Attribution—NonCommercial—ShareAlike"
+            },
+            {
+              "text": "CCBYNCND",
+              "tooltip": "CC BY-NC-ND 4.0 表示—非営利—改変禁止|CC BY-NC-ND 4.0 Attribution—NonCommercial—NoDerivatives"
+            },
+            {
+              "text": "AFL",
+              "tooltip": "Academic Free License (AFL) 3.0"
+            },
+            {
+              "text": "PD",
+              "tooltip": "パブリックドメイン|Public Domain"
+            },
+            {
+              "text": "group:CodePermissive",
+              "tooltip": "コード用 - 非コピーレフト|Code - Permissive"
+            },
+            {
+              "text": "MIT",
+              "tooltip": "MIT License"
+            },
+            {
+              "text": "Apache2",
+              "tooltip": "Apache License 2.0"
+            },
+            {
+              "text": "BSD2",
+              "tooltip": "BSD 2-Clause \"Simplified\" License"
+            },
+            {
+              "text": "BSD3",
+              "tooltip": "BSD 3-Clause \"New\"/\"Revised\" License"
+            },
+            {
+              "text": "group:CodeCopyleft",
+              "tooltip": "コード用 - コピーレフト|Code - Copyleft"
+            },
+            {
+              "text": "GPL3",
+              "tooltip": "GNU General Public License (GPL) 3.0"
+            },
+            {
+              "text": "GPL2",
+              "tooltip": "GNU General Public License (GPL) 2.0"
+            },
+            {
+              "text": "group:CodeOther",
+              "tooltip": "コード用 - その他|Code - Other"
+            },
+            {
+              "text": "Artistic2",
+              "tooltip": "Artistic License 2.0"
+            },
+            {
+              "text": "Eclipse1",
+              "tooltip": "Eclipse Public License 1.0"
+            },
+            {
+              "text": "LGPL3",
+              "tooltip": "GNU Lesser General Public License (LGPL) 3.0"
+            },
+            {
+              "text": "LGPL2_1",
+              "tooltip": "GNU Lesser General Public License (LGPL) 2.1"
+            },
+            {
+              "text": "Mozilla2",
+              "tooltip": "Mozilla Public License 2.0"
+            },
+            {
+              "text": "group:None:2",
+              "tooltip": "None"
+            },
+            {
+              "text": "OTHER",
+              "tooltip": "その他|Other"
+            }
+          ]
         },
         {
           "qid": "grdm-file:data-policy-cite-ja",
@@ -515,7 +607,9 @@
           "title": "公開予定日 (公開期間猶予の場合)|Publication date (for embargoed access)",
           "type": "string",
           "format": "date",
-          "required": false
+          "required": false,
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+          "help": "例: 2010-01-01|E.g., 2010-01-01"
         },
         {
           "qid": "grdm-file:repo-information-ja",
@@ -523,7 +617,7 @@
           "title": "リポジトリ情報 (日本語)|Repository information (Japanese)",
           "type": "string",
           "format": "text",
-          "required": false
+          "required": true
         },
         {
           "qid": "grdm-file:repo-information-en",
@@ -539,7 +633,9 @@
           "title": "リポジトリURL・DOIリンク|Repository URL/ DOI link",
           "type": "string",
           "format": "file-url",
-          "required": false
+          "required": false,
+          "pattern": "[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_\\+.~#?&//=]*)$",
+          "help": "例: https://example.com/example|E.g., https://example.com/example"
         },
         {
           "qid": "grdm-file:creators",
@@ -547,15 +643,17 @@
           "title": "データ作成者|Creator Name",
           "type": "string",
           "format": "file-creators",
-          "required": false
+          "required": false,
+          "help": "e-Rad 研究者番号(半角数字)|e-Rad Researcher Number(single-byte numeric characters)"
         },
         {
           "qid": "grdm-file:hosting-inst-ja",
-          "nav": "データ管理組織 (日本語)",
-          "title": "データ管理組織 (日本語)|Hosting institution (Japanese)",
+          "nav": "データ管理機関 (日本語)",
+          "title": "データ管理機関 (日本語)|Hosting institution (Japanese)",
           "type": "string",
           "format": "file-institution-ja",
-          "required": true
+          "required": true,
+          "space_normalization": true
         },
         {
           "qid": "grdm-file:hosting-inst-en",
@@ -563,7 +661,17 @@
           "title": "Hosting institution (English)",
           "type": "string",
           "format": "file-institution-en",
-          "required": true
+          "required": true,
+          "space_normalization": true
+        },
+        {
+          "qid": "grdm-file:hosting-inst-id",
+          "nav": "データ管理機関コード",
+          "title": "データ管理機関コード|Hosting institution Identifier",
+          "type": "string",
+          "format": "file-institution-identifier",
+          "required": false,
+          "space_normalization": true
         },
         {
           "qid": "grdm-file:data-man-number",
@@ -571,7 +679,9 @@
           "title": "データ管理者の e-Rad 研究者番号|Data manager identifier (e-Rad)",
           "type": "string",
           "format": "e-rad-researcher-number",
-          "required": false
+          "required": false,
+          "pattern": "^[a-zA-Z0-9]+$",
+          "help": "e-Rad 研究者番号(半角数字)|e-Rad Researcher Number(single-byte numeric characters)"
         },
         {
           "qid": "grdm-file:data-man-name-ja",
@@ -579,7 +689,8 @@
           "title": "データ管理者 (日本語)|Data manager (Japanese)",
           "type": "string",
           "format": "e-rad-researcher-name-ja",
-          "required": false
+          "required": true,
+          "space_normalization": true
         },
         {
           "qid": "grdm-file:data-man-name-en",
@@ -587,7 +698,27 @@
           "title": "Data manager (English)",
           "type": "string",
           "format": "e-rad-researcher-name-en",
-          "required": false
+          "required": true,
+          "space_normalization": true
+        },
+        {
+          "qid": "grdm-file:data-man-org-ja",
+          "nav": "データ管理者の所属組織名 (日本語)",
+          "title": "データ管理者の所属組織名 (日本語)|Contact organization of data manager (Japanese)",
+          "type": "string",
+          "format": "text",
+          "required": false,
+          "space_normalization": true,
+          "help": "例: 〇〇研究所〇〇部門〇〇課, 〇〇大学〇〇研究室"
+        },
+        {
+          "qid": "grdm-file:data-man-org-en",
+          "nav": "Contact organization of data manager (English)",
+          "title": "Contact organization of data manager (English)",
+          "type": "string",
+          "format": "text",
+          "required": false,
+          "space_normalization": true
         },
         {
           "qid": "grdm-file:data-man-address-ja",
@@ -595,7 +726,8 @@
           "title": "データ管理者の所属機関の連絡先住所 (日本語)|Contact address of data manager (Japanese)",
           "type": "string",
           "format": "text",
-          "required": true
+          "required": false,
+          "space_normalization": true
         },
         {
           "qid": "grdm-file:data-man-address-en",
@@ -603,7 +735,8 @@
           "title": "Contact address of data manager (English)",
           "type": "string",
           "format": "text",
-          "required": true
+          "required": false,
+          "space_normalization": true
         },
         {
           "qid": "grdm-file:data-man-tel",
@@ -611,7 +744,8 @@
           "title": "データ管理者の所属機関の連絡先電話番号|Contact phone number of data manager",
           "type": "string",
           "format": "text",
-          "required": true
+          "required": false,
+          "space_normalization": true
         },
         {
           "qid": "grdm-file:data-man-email",
@@ -619,7 +753,8 @@
           "title": "データ管理者の所属機関の連絡先メールアドレス|Contact mail address of data manager",
           "type": "string",
           "format": "text",
-          "required": true
+          "required": false,
+          "space_normalization": true
         },
         {
           "qid": "grdm-file:remarks-ja",

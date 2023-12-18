@@ -2,25 +2,22 @@ from rest_framework import status as http_status
 import logging
 import os
 
-from oauthlib.common import generate_token
-
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
 from django.db import models
 from dropbox.dropbox import Dropbox
 from dropbox.exceptions import ApiError, DropboxException
 from dropbox.files import FolderMetadata
-from dropbox import DropboxOAuth2Flow, oauth
-from flask import request
+from furl import furl
 from framework.auth import Auth
 from framework.exceptions import HTTPError
-from framework.sessions import session
 from osf.models.external import ExternalProvider
 from osf.models.files import File, Folder, BaseFileNode
+from osf.utils.fields import ensure_str
 from addons.base import exceptions
 from addons.dropbox import settings
 from addons.dropbox.serializer import DropboxSerializer
-from website.util import api_v2_url, web_url_for
+from website.util import api_v2_url
 
 logger = logging.getLogger(__name__)
 
@@ -49,67 +46,31 @@ class Provider(ExternalProvider):
     client_id = settings.DROPBOX_KEY
     client_secret = settings.DROPBOX_SECRET
 
-    # Explicitly override auth_url_base as None -- DropboxOAuth2Flow handles this for us
-    auth_url_base = None
-    callback_url = None
-    handle_callback = None
-
-    @property
-    def oauth_flow(self):
-        if 'oauth_states' not in session.data:
-            session.data['oauth_states'] = {}
-        if self.short_name not in session.data['oauth_states']:
-            session.data['oauth_states'][self.short_name] = {
-                'state': generate_token()
-            }
-        return DropboxOAuth2Flow(
-            self.client_id,
-            self.client_secret,
-            redirect_uri=web_url_for(
-                'oauth_callback',
-                service_name=self.short_name,
-                _absolute=True
-            ),
-            session=session.data['oauth_states'][self.short_name], csrf_token_session_key='state'
-        )
+    auth_url_base = settings.DROPBOX_OAUTH_AUTH_ENDPOINT
+    callback_url = settings.DROPBOX_OAUTH_TOKEN_ENDPOINT
+    auto_refresh_url = settings.DROPBOX_OAUTH_TOKEN_ENDPOINT
+    refresh_time = settings.REFRESH_TIME
 
     @property
     def auth_url(self):
-        ret = self.oauth_flow.start('force_reapprove=true')
-        session.save()
-        return ret
+        # Dropbox requires explicitly requesting refresh_tokens via `token_access_type`
+        # https://developers.dropbox.com/oauth-guide#implementing-oauth
+        url = super(Provider, self).auth_url
+        return furl(url).add({'token_access_type': 'offline'}).url
 
-    def auth_callback_common(self):
-        # TODO: consider not using client library during auth flow
-        try:
-            access_token = self.oauth_flow.finish(request.values).access_token
-            return access_token
-        except (oauth.NotApprovedException, oauth.BadStateException):
-            # 1) user cancelled and client library raised exc., or
-            # 2) the state was manipulated, possibly due to time.
-            # Either way, return and display info about how to properly connect.
-            return None
-        except (oauth.ProviderException, oauth.CsrfException):
-            raise HTTPError(http_status.HTTP_403_FORBIDDEN)
-        except oauth.BadRequestException:
-            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
-
-    # Overrides ExternalProvider
-    def auth_callback(self, user):
-        access_token = self.auth_callback_common()
-        if access_token is None:
-            return False
+    def handle_callback(self, response):
+        access_token = response['access_token']
         self.client = Dropbox(access_token)
-
         info = self.client.users_get_current_account()
-        return self._set_external_account(
-            user,
-            {
-                'key': access_token,
-                'provider_id': info.account_id,
-                'display_name': info.name.display_name,
-            }
-        )
+        return {
+            'key': access_token,
+            'provider_id': info.account_id,
+            'display_name': info.name.display_name,
+        }
+
+    def fetch_access_token(self, force_refresh=False):
+        self.refresh_oauth_key(force=force_refresh)
+        return ensure_str(self.account.oauth_key)
 
 
 class UserSettings(BaseOAuthUserSettings):
@@ -124,7 +85,7 @@ class UserSettings(BaseOAuthUserSettings):
 
         Tells Dropbox to remove the grant for the GakuNin RDM associated with this account.
         """
-        client = Dropbox(external_account.oauth_key)
+        client = Dropbox(Provider(external_account).fetch_access_token())
         try:
             client.auth_token_revoke()
         except DropboxException:
@@ -163,6 +124,9 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     def display_name(self):
         return '{0}: {1}'.format(self.config.full_name, self.folder)
 
+    def fetch_access_token(self):
+        return self.api.fetch_access_token()
+
     def clear_settings(self):
         self.folder = None
 
@@ -182,7 +146,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 }
             }]
 
-        client = Dropbox(self.external_account.oauth_key)
+        client = Dropbox(self.fetch_access_token())
 
         try:
             folder_id = '' if folder_id == '/' else folder_id
@@ -235,7 +199,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
             raise exceptions.AddonError('Addon is not authorized')
-        return {'token': self.external_account.oauth_key}
+        return {'token': self.fetch_access_token()}
 
     def serialize_waterbutler_settings(self):
         if not self.folder:

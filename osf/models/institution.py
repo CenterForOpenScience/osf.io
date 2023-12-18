@@ -25,6 +25,7 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
     # TODO Remove null=True for things that shouldn't be nullable
     # e.g. CharFields should never be null=True
 
+    INSTITUTION_DEFAULT = 'us'
     INSTITUTION_GROUPS = {
         'institutional_admins': ('view_institutional_metrics', ),
     }
@@ -80,6 +81,10 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
 
     def __unicode__(self):
         return u'{} : ({})'.format(self.name, self._id)
+
+    @property
+    def guid(self):
+        return self._id
 
     @property
     def api_v2_url(self):
@@ -153,6 +158,77 @@ class Institution(DirtyFieldsMixin, Loggable, base.ObjectIDMixin, base.BaseModel
         rv = super(Institution, self).save(*args, **kwargs)
         self.update_search()
         return rv
+
+    def get_default_storage_location(self):
+        from osf.models import ExportDataLocation
+        query_set = ExportDataLocation.objects.filter(institution_guid=self.INSTITUTION_DEFAULT)
+        return query_set
+
+    def get_institutional_storage_location(self):
+        from osf.models import ExportDataLocation
+        query_set = ExportDataLocation.objects.filter(institution_guid=self.guid)
+        return query_set
+
+    def get_allowed_storage_location(self):
+        return self.get_default_storage_location().union(self.get_institutional_storage_location())
+
+    def get_allowed_storage_location_order_by(self):
+        return list(self.get_institutional_storage_location()) + list(self.get_default_storage_location())
+
+    def have_institutional_storage_location_id(self, storage_id):
+        return self.get_institutional_storage_location().filter(pk=storage_id).exists()
+
+    def have_allowed_storage_location_id(self, storage_id):
+        _default_storage_location = self.get_default_storage_location().filter(pk=storage_id)
+        _institutional_storage_location = self.get_institutional_storage_location().filter(pk=storage_id)
+        _allowed_storage_location = _default_storage_location.union(_institutional_storage_location)
+        return _allowed_storage_location.exists()
+
+    def get_institutional_storage(self):
+        """The all institutional storages which this institution can be used.
+
+        If None, set default storage base on the default regions of the osfstorage.
+
+        :return: list of regions
+        """
+        from addons.osfstorage.models import Region
+        if not Region.objects.filter(_id=self._id).exists():
+            # set up NII storage
+            from admin.rdm_custom_storage_location import utils
+            utils.set_default_storage(self._id)
+        return Region.objects.filter(_id=self._id).order_by('pk')
+
+    def get_allowed_institutional_storage(self):
+        """The allowed institutional storages.
+
+        The alternate name of get_institutional_storage method.
+
+        :return: list of regions
+        """
+        return self.get_institutional_storage()
+
+    def get_default_region(self):
+        """The default region is the first one of the allowed institutional storages.
+
+        :return: region the default
+        """
+        return self.get_allowed_institutional_storage().first()
+
+    def get_default_institutional_storage(self):
+        """The alternate name of get_default_region method.
+
+        :return: region the default
+        """
+        return self.get_default_region()
+
+    def is_allowed_institutional_storage_id(self, storage_id):
+        """It is whether an allowed institutional storages.
+
+        :param storage_id: input id of the storage for checking
+        :return: boolean True/False
+        """
+        return self.get_allowed_institutional_storage().filter(pk=storage_id).exists()
+
 
 @receiver(post_save, sender=Institution)
 def create_institution_auth_groups(sender, instance, created, **kwargs):

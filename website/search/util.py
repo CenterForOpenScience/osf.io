@@ -300,6 +300,8 @@ def convert_query_string(qs, normalize=False):
         return qs
 
 def build_private_search_query(user, qs='*', start=0, size=10, sort=None, highlight=None):
+    from addons.metadata.search import build_private_search_match_query as build_metadata_private_search_match_query
+
     match_node = {
         'bool': {
             'must': [
@@ -436,6 +438,7 @@ def build_private_search_query(user, qs='*', start=0, size=10, sort=None, highli
                             match_file,
                             match_wiki,
                             match_comment,
+                            build_metadata_private_search_match_query(user),
                             {
                                 'terms': {
                                     'category': [

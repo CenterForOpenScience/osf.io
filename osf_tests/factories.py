@@ -29,8 +29,10 @@ from osf.models.sanctions import Sanction
 from osf.models.storage import PROVIDER_ASSET_NAME_CHOICES
 from osf.utils.names import impute_names_model
 from osf.utils.workflows import DefaultStates, DefaultTriggers
+from addons.base.institutions_utils import KEYNAME_BASE_FOLDER
 from addons.osfstorage.models import OsfStorageFile, Region
 
+settings = apps.get_app_config('addons_osfstorage')
 fake = Factory.create()
 
 # If tests are run on really old processors without high precision this might fail. Unlikely to occur.
@@ -1011,14 +1013,43 @@ generic_waterbutler_settings = {
         'provider': 'glowcloud',
         'container': 'osf_storage',
         'use_public': True,
-    }
+        'bucket': 'bucket test',
+        'folder': {
+            'encrypt_uploads': 'encrypt upload test',
+        }
+    },
+    'extended': {
+        KEYNAME_BASE_FOLDER: 'base folder',
+    },
+    'admin_dbmid': 'abc',
+    'team_folder_id': '1',
 }
 
 generic_waterbutler_credentials = {
     'storage': {
         'region': 'PartsUnknown',
         'username': 'mankind',
-        'token': 'heresmrsocko'
+        'token': 'heresmrsocko',
+        'access_key': 'abc',
+        'secret_key': '123',
+        'host': 'host test',
+    },
+    'external_account': {
+        'oauth_secret': 'abc',
+        'display_name': 'userA',
+        'oauth_key': '123',
+        'fileaccess_token': 'file_abc',
+    }
+}
+addon_waterbutler_settings = {
+    'storage': {
+        'provider': 'nextcloudinstitutions',
+    }
+}
+
+bulkmount_waterbutler_settings = {
+    'storage': {
+        'provider': 'osfstorage',
     }
 }
 
@@ -1108,3 +1139,88 @@ class BrandFactory(DjangoModelFactory):
 
     primary_color = factory.Faker('hex_color')
     secondary_color = factory.Faker('hex_color')
+
+
+class ExportDataLocationFactory(DjangoModelFactory):
+    class Meta:
+        model = models.ExportDataLocation
+
+    institution_guid = factory.Sequence(lambda n: 'us_east_{0}'.format(n))
+    name = factory.Sequence(lambda n: 'Location {0}'.format(n))
+    waterbutler_credentials = generic_waterbutler_credentials
+    waterbutler_settings = generic_waterbutler_settings
+    waterbutler_url = 'http://123.456.test.woo'
+    mfr_url = 'http://123.456.test.woo'
+
+
+class ExportDataFactory(DjangoModelFactory):
+    class Meta:
+        model = models.ExportData
+
+    location = factory.SubFactory(ExportDataLocationFactory)
+    source = factory.SubFactory(RegionFactory)
+    process_start = datetime.datetime.now()
+    is_deleted = False
+    status = models.ExportData.STATUS_COMPLETED
+    creator = factory.SubFactory(UserFactory)
+
+
+class ExportDataRestoreFactory(DjangoModelFactory):
+    class Meta:
+        model = models.ExportDataRestore
+
+    export = factory.SubFactory(ExportDataFactory)
+    destination = factory.SubFactory(RegionFactory)
+    process_start = datetime.datetime.now()
+    status = models.ExportData.STATUS_COMPLETED
+    creator = factory.SubFactory(UserFactory)
+
+
+class ContentTypeFactory(DjangoModelFactory):
+    class Meta:
+        model = ContentType
+
+
+class OsfStorageFileFactory(DjangoModelFactory):
+    class Meta:
+        model = OsfStorageFile
+    id = 1
+    provider = 'osfstorage'
+    target_content_type = factory.SubFactory(ContentTypeFactory)
+    target_object_id = 1
+    path = 'fake_path'
+
+
+class FileVersionFactory(DjangoModelFactory):
+    class Meta:
+        model = models.FileVersion
+
+    region = factory.SubFactory(RegionFactory)
+    creator = factory.SubFactory(AuthUserFactory)
+    modified = timezone.now()
+    location = {
+        'service': 'cloud',
+        settings.WATERBUTLER_RESOURCE: 'resource',
+        'object': '1615307',
+    }
+    identifier = 1
+
+
+class BaseFileNodeFactory(DjangoModelFactory):
+    class Meta:
+        model = models.BaseFileNode
+
+    id = 1
+    provider = 'osfstorage'
+    path = 'fake_path'
+    name = factory.Faker('company')
+
+
+class BaseFileVersionsThroughFactory(DjangoModelFactory):
+    class Meta:
+        model = models.BaseFileVersionsThrough
+
+
+class RdmFileTimestamptokenVerifyResultFactory(DjangoModelFactory):
+    class Meta:
+        model = models.RdmFileTimestamptokenVerifyResult

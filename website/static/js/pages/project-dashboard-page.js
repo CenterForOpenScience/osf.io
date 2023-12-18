@@ -592,6 +592,22 @@ $(document).ready(function () {
 
                     var configOption = Fangorn.Utils.resolveconfigOption.call(this, item, 'resolveRows', [item]);
                     return configOption || defaultColumns;
+                },
+                onload : function () {
+                    var tb = this;
+                    // Add loading modal when loading page
+                    tb.select('#tb-tbody').prepend(
+                        '<div style="width: 100%; height: 100%; padding: 50px 100px; position: sticky; top: 0; left: 0; background-color: white;"' +
+                        ' class="tb-modal-shade">' +
+                        '<div class="spinner-loading-wrapper" style="background-color: transparent;">' +
+                        '<div class="ball-scale ball-scale-blue"><div></div></div>' +
+                        '<p class="m-t-sm fg-load-message">Loading files...</p>' +
+                        '</div></div>'
+                    );
+                    // Hide loading
+                    tb.select('#tb-tbody > .tb-modal-shade').hide();
+                    tb.select('#tb-tbody').css('overflow', '');
+                    Fangorn.DefaultOptions.onload.call(this);
                 }
             };
             var filebrowser = new Fangorn(fangornOpts);

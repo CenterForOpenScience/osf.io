@@ -375,11 +375,16 @@ class RegistrationResponsesValidator:
             question.registration_response_key,  # default
         )
 
-        if question.block_type in ('single-select-input', 'e-rad-award-funder-input',
-                                   'e-rad-award-field-input'):
+        if question.block_type in ('single-select-input', 'e-rad-award-field-input'):
             return {
                 'type': 'string',
                 'enum': self._get_multiple_choice_options(question),
+                'description': question_text,
+            }
+        elif question.block_type == 'e-rad-award-funder-input':
+            # allow any option
+            return {
+                'type': 'string',
                 'description': question_text,
             }
         elif question.block_type == 'multi-select-input':
@@ -398,7 +403,12 @@ class RegistrationResponsesValidator:
                 'description': question_text,
             }
         elif question.block_type in ('short-text-input', 'long-text-input', 'contributors-input',
-                                     'e-rad-award-number-input', 'e-rad-award-title-ja-input',
+                                     'japan-grant-number-input',
+                                     'jgn-program-name-ja-input',
+                                     'jgn-program-name-en-input',
+                                     'funding-stream-code-input',
+                                     'e-rad-award-number-input',
+                                     'e-rad-award-title-ja-input',
                                      'e-rad-award-title-en-input',
                                      'e-rad-researcher-number-input',
                                      'e-rad-researcher-name-ja-input',
@@ -406,8 +416,10 @@ class RegistrationResponsesValidator:
                                      'e-rad-bunnya-input',
                                      'file-metadata-input', 'date-input',
                                      'file-capacity-input', 'file-creators-input',
+                                     'file-data-number-input',
                                      'file-url-input', 'file-institution-ja-input',
-                                     'file-institution-en-input'):
+                                     'file-institution-en-input',
+                                     'file-institution-id-input'):
             if self.required_fields and question.required:
                 return {
                     'type': 'string',

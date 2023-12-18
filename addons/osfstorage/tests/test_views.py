@@ -789,7 +789,7 @@ class TestGetRevisions(StorageTestCase):
         super(TestGetRevisions, self).setUp()
         self.path = 'tie/your/mother/down.mp3'
         self.record = recursively_create_file(self.node_settings, self.path)
-        attach_versions(self.record, [factories.FileVersionFactory() for __ in range(15)])
+        attach_versions(self.record, [factories.FileVersionFactory(identifier=index + 1) for index in range(15)])
         self.record.save()
 
     def get_revisions(self, fid=None, guid=None, **kwargs):
@@ -818,8 +818,8 @@ class TestGetRevisions(StorageTestCase):
 
         assert_equal(len(res.json['revisions']), 15)
         assert_equal(res.json['revisions'], [x for x in expected])
-        assert_equal(res.json['revisions'][0]['index'], 15)
-        assert_equal(res.json['revisions'][-1]['index'], 1)
+        assert_equal(res.json['revisions'][0]['index'], '15')
+        assert_equal(res.json['revisions'][-1]['index'], '1')
 
     def test_get_revisions_path_not_found(self):
         res = self.get_revisions(fid='missing', expect_errors=True)

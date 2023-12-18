@@ -162,5 +162,25 @@
         "binderhub": "https://binder.cs.rcos.nii.ac.jp",
         "onedrivebusiness": "https://onedrive.live.com",
         "metadata": "https://rcos.nii.ac.jp/service/rdm/"
-    }
+    },
+    "institutional_storage_add_on_method": [
+        "nextcloudinstitutions",
+        "dropboxbusiness",
+        "s3compatinstitutions",
+        "ociinstitutions",
+        "s3",
+        "s3compat",
+        "owncloud"
+    ],
+    "institutional_storage_bulk_mount_method": [
+        "box",
+        "googledrive",
+        "nextcloud",
+        "osfstorage",
+        "swift",
+        "onedrive",
+        "s3",
+        "s3compat",
+        "owncloud"
+    ]
 }

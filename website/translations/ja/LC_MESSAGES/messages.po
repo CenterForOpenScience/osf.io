@@ -1180,7 +1180,7 @@ msgid ""
 "rules set by each user organization shall apply to the individual users. "
 "                 GakuNin RDM uses cookies to operate its services and "
 "improve the user experience. Users of GakuNin RDM are requested to read "
-"the information on our <a href='https://support.rdm.nii.ac.jp/terms/privacy'>privacy policy</a>. "
+"the information on our <a href='https://support.rdm.nii.ac.jp/terms/'>privacy policy</a>. "
 "                 By clicking \"I agree\" button on the right or continuing "
 "to use this site, you agree to our use of cookies. If you do not agree, "
 "                 please disable cookies in your browser settings or "
@@ -1442,7 +1442,7 @@ msgid ""
 "<h4>We've updated our <a target=\"_blank\" "
 "href=\"https://support.rdm.nii.ac.jp/terms\">Terms"
 " of Use</a> and <a target=\"_blank\" "
-"href=\"https://support.rdm.nii.ac.jp/terms/privacy\">Privacy"
+"href=\"https://support.rdm.nii.ac.jp/terms/\">Privacy"
 " Policy</a>. Please read them carefully.</h4>"
 msgstr ""
 "\n"
@@ -1571,7 +1571,7 @@ msgstr "サインイン"
 
 #: website/templates/nav.mako:140
 msgid "Notice:"
-msgstr "注意:"
+msgstr "お知らせ:"
 
 #: website/templates/nav.mako:144
 msgid ""
@@ -1934,15 +1934,24 @@ msgstr "所属(学校)"
 msgid "Body of Wiki"
 msgstr "Wiki本文"
 
-#: website/templates/search_grdm.mako:595
+#: website/templates/search_grdm.mako:553
+msgid "File Metadata"
+msgstr "ファイルメタデータ"
+
+#: website/templates/search_grdm.mako:573
+#: website/templates/search_grdm.mako:576
+msgid "Project Metadata"
+msgstr "プロジェクトメタデータ"
+
+#: website/templates/search_grdm.mako:618
 msgid "Modified by"
 msgstr "更新者"
 
-#: website/templates/search_grdm.mako:598
+#: website/templates/search_grdm.mako:621
 msgid "Created by"
 msgstr "作成者"
 
-#: website/templates/search_grdm.mako:604
+#: website/templates/search_grdm.mako:627
 msgid "Comment"
 msgstr "コメント"
 
@@ -2278,7 +2287,7 @@ msgstr "アカウント設定"
 #: website/templates/profile/account.mako:15
 #: website/templates/profile/add_email.mako:21
 msgid "Connected Emails"
-msgstr "メールアドレスに接続しました"
+msgstr "登録メールアドレス"
 
 #: website/templates/profile/account.mako:20
 #: website/templates/profile/add_email.mako:27
@@ -3182,11 +3191,11 @@ msgstr "<b %(removedContributor)s></b>は、以下のプロジェクトやコン
 #, python-format
 msgid ""
 "<b %(removedContributor)s></b> cannot be                        removed "
-"as a contributor.  You need at least one administrator, bibliographic "
-"contributor, and registered user."
+"as a contributor.  You need at least one administrator and bibliographic "
+"contributor."
 msgstr ""
 "<b "
-"%(removedContributor)s></b>はメンバーとして削除できません。少なくとも1人の管理者、目録表示メンバー、および登録ユーザーが必要です。"
+"%(removedContributor)s></b>はメンバーとして削除できません。少なくとも1人の管理者と目録表示メンバーが必要です。"
 
 #: website/templates/project/modal_remove_contributor.mako:82
 msgid ""
@@ -4102,3 +4111,6 @@ msgstr "プロジェクトへの招待を再度受け取りたい場合、以下
 
 msgid "\"Full name\", \"Family name\", \"Given name\", \"Family name (EN)\", \"Given name (EN)\" on the Name tab, and \"Affiliation\" and \"Affiliation (English)\" on the Employment tab is required."
 msgstr "名前タブの「氏名」「姓」「名前」「姓(英語)」「名前(英語)」、ならびに職歴タブの「所属」「所属(英語)」は必須入力(*)です。"
+
+msgid "If you do not have an email address registered, please enter or add your email address in the \"Registered email address\" entry field first."
+msgstr "メールアドレスが未登録のユーザは、先に『登録メールアドレス』記入欄に、メールアドレスを入力・追加してください。"

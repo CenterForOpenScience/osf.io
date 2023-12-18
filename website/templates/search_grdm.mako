@@ -540,13 +540,43 @@
         </p>
         <!-- /ko -->
     </script>
+    <script type="text/html" id="metadata">
+        <span>
+            <div class="search-result-title">
+                <span class="tb-expand-icon-holder" style="vertical-align: middle;">
+                    <span class="glyphicon glyphicon-file">
+                    </span>
+                </span>
+                <span style="vertical-align: middle;">
+                    <font size="5">
+                        <a data-bind="attr: {href: url + '#edit-metadata'}, html: path"></a>
+                        (${_("File Metadata")})
+                    </font>
+                </span>
+            </div>
+        </span>
+        <!-- ko if: node_title && node_url -->
+        <span>
+            <strong>${_("Project")}:</strong>
+            <a data-bind="attr: {href: node_url}, text: node_title"></a>
+        </span>
+        <br>
+        <!-- /ko -->
+        <!-- ko if: (modifier_id && modifier_name && date_modified) || (creator_id && creator_name && date_created) -->
+        <div data-bind="template: {name: 'updated-time', data: $data}"></div>
+        <!-- /ko -->
+    </script>
     <script type="text/html" id="registration">
-        <!-- ko if: parent_url -->
-        <h4><a data-bind="attr: {href: parent_url}, text: parent_title"></a> / <a data-bind="attr: {href: url}, text: title"></a>  (<span class="text-danger" data-bind="if: is_retracted">${_("Withdrawn ")}</span>${_("Registration")})</h4>
-        <!-- /ko -->
-        <!-- ko if: !parent_url -->
-        <h4><span data-bind="if: parent_title"><span data-bind="text: parent_title"></span> /</span> <a data-bind="attr: {href: url}, text: title"></a>  (<span class="text-danger" data-bind="if: is_retracted">${_("Withdrawn ")}</span>${_("Registration")})</h4>
-        <!-- /ko -->
+        <div>
+            <font size="5">
+                <!-- ko if: parent_url -->
+                <a data-bind="attr: {href: parent_url}, text: parent_title"></a> / <a data-bind="attr: {href: metadata_url}, text: title"></a>  (<span class="text-danger" data-bind="if: is_retracted">${_("Withdrawn ")}</span>${_("Project Metadata")})
+                <!-- /ko -->
+                <!-- ko if: !parent_url -->
+                <span data-bind="if: parent_title"><span data-bind="text: parent_title"></span> /</span> <a data-bind="attr: {href: metadata_url}, text: title"></a>  (<span class="text-danger" data-bind="if: is_retracted">${_("Withdrawn ")}</span>${_("Project Metadata")})
+                <!-- /ko -->
+            </font>
+        </div>
         <strong><span data-bind="text: 'Date Registered: ' + dateRegistered['local'], tooltip: {title: dateRegistered['utc']}"></span></strong>
 
         <p data-bind="visible: description"><strong>${_("Description")}:</strong> <span data-bind="fitText: {text: description, length: 500}"></span></p>
@@ -569,13 +599,6 @@
         <!-- ko if: tags.length > 0 -->
         <div data-bind="template: 'tag-cloud'"></div>
         <!-- /ko -->
-        ${_("<p><strong>Jump to:</strong>") | n}
-            <!-- ko if: n_wikis > 0 -->
-            <a data-bind="attr: {href: wikiUrl}">${_("Wiki")}</a> -
-            <!-- /ko -->
-            <a data-bind="attr: {href: filesUrl}">${_("Files</a>") | n}
-        </p>
-        </p>
     </script>
     <script id="tag-cloud" type="text/html">
         <p data-bind="visible: tags.length"><strong>${_("Tags")}:</strong>

@@ -1,3 +1,4 @@
+import pytest
 from django.test import RequestFactory
 from django.http import Http404, HttpResponse
 import json
@@ -73,6 +74,7 @@ class TestInstitutionDefaultStorage(AdminTestCase):
         nt.assert_equal(res.context_data['selected_provider_short_name'], res.context_data['region'].waterbutler_settings['storage']['provider'])
 
 
+@pytest.mark.feature_202210
 class TestIconView(AdminTestCase):
     def setUp(self):
         super(TestIconView, self).setUp()
@@ -106,6 +108,7 @@ class TestIconView(AdminTestCase):
             self.view.get(self.request, *args, **self.view.kwargs)
 
 
+@pytest.mark.feature_202210
 class TestPermissionTestConnection(AdminTestCase):
 
     def setUp(self):
@@ -150,8 +153,12 @@ class TestPermissionTestConnection(AdminTestCase):
         self.user.save()
 
         response = self.view_post({})
-        self.assertEquals(response.status_code, 302)
-        self.assertEquals(response._headers['location'][1], '/accounts/login/?next=/fake_path')
+        self.assertEquals(response.status_code, 400)
+        self.assertEquals(response.content, b'{"message": "Provider is missing."}')
+
+        response = self.view_post({'provider_short_name': 'test'})
+        self.assertEquals(response.status_code, 400)
+        self.assertEquals(response.content, b'{"message": "Invalid provider."}')
 
 
 class TestPermissionSaveCredentials(AdminTestCase):

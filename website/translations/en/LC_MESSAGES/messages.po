@@ -1159,7 +1159,7 @@ msgid ""
 "rules set by each user organization shall apply to the individual users. "
 "                 GakuNin RDM uses cookies to operate its services and "
 "improve the user experience. Users of GakuNin RDM are requested to read "
-"the information on our <a href='https://support.rdm.nii.ac.jp/terms/privacy'>privacy policy</a>. "
+"the information on our <a href='https://support.rdm.nii.ac.jp/terms/'>privacy policy</a>. "
 "                 By clicking \"I agree\" button on the right or continuing "
 "to use this site, you agree to our use of cookies. If you do not agree, "
 "                 please disable cookies in your browser settings or "
@@ -1405,7 +1405,7 @@ msgid ""
 "<h4>We've updated our <a target=\"_blank\" "
 "href=\"https://support.rdm.nii.ac.jp/terms\">Terms"
 " of Use</a> and <a target=\"_blank\" "
-"href=\"https://support.rdm.nii.ac.jp/terms/privacy\">Privacy"
+"href=\"https://support.rdm.nii.ac.jp/terms/\">Privacy"
 " Policy</a>. Please read them carefully.</h4>"
 msgstr ""
 
@@ -1873,15 +1873,24 @@ msgstr "Education"
 msgid "Body of Wiki"
 msgstr ""
 
-#: website/templates/search_grdm.mako:595
+#: website/templates/search_grdm.mako:553
+msgid "File Metadata"
+msgstr ""
+
+#: website/templates/search_grdm.mako:573
+#: website/templates/search_grdm.mako:576
+msgid "Project Metadata"
+msgstr ""
+
+#: website/templates/search_grdm.mako:618
 msgid "Modified by"
 msgstr ""
 
-#: website/templates/search_grdm.mako:598
+#: website/templates/search_grdm.mako:621
 msgid "Created by"
 msgstr ""
 
-#: website/templates/search_grdm.mako:604
+#: website/templates/search_grdm.mako:627
 msgid "Comment"
 msgstr ""
 
@@ -3092,8 +3101,8 @@ msgstr ""
 #, python-format
 msgid ""
 "<b %(removedContributor)s></b> cannot be                        removed "
-"as a contributor.  You need at least one administrator, bibliographic "
-"contributor, and registered user."
+"as a contributor.  You need at least one administrator and bibliographic "
+"contributor."
 msgstr ""
 
 #: website/templates/project/modal_remove_contributor.mako:82
@@ -3991,4 +4000,7 @@ msgid "Please click the button below if you would like to receive an invitation 
 msgstr ""
 
 msgid "\"Full name\", \"Family name\", \"Given name\", \"Family name (EN)\", \"Given name (EN)\" on the Name tab, and \"Affiliation\" and \"Affiliation (English)\" on the Employment tab is required."
+msgstr ""
+
+msgid "If you do not have an email address registered, please enter or add your email address in the \"Registered email address\" entry field first."
 msgstr ""

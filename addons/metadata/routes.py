@@ -46,6 +46,10 @@ api_routes = {
             '/project/<pid>/{}/draft_registrations/<did>/files/<mnode>/<path:filepath>'.format(SHORT_NAME),
             '/project/<pid>/node/<nid>/{}/draft_registrations/<did>/files/<mnode>/<path:filepath>'.format(SHORT_NAME),
         ], 'delete', views.metadata_delete_file_from_drafts, json_renderer),
+        Rule([
+            '/project/<pid>/{}/file_metadata/suggestions/files/<path:filepath>'.format(SHORT_NAME),
+            '/project/<pid>/node/<nid>/{}/file_metadata/suggestions/files/<path:filepath>'.format(SHORT_NAME),
+        ], 'get', views.metadata_file_metadata_suggestions, json_renderer),
     ],
     'prefix': '/api/v1',
 }
