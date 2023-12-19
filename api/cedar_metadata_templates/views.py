@@ -4,21 +4,17 @@ from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 from rest_framework.exceptions import NotFound
 
+from api.base import permissions as base_permissions
 from api.base.filters import ListFilterMixin
-# from api.base.parsers import (
-#     JSONAPIMultipleRelationshipsParser,
-#     JSONAPIMultipleRelationshipsParserForRegularJSON,
-# )
 from api.base.versioning import PrivateVersioning
 from api.base.views import JSONAPIBaseView
-from api.base import permissions as base_permissions
-# from api.base.utils import get_user_auth
 from api.cedar_metadata_templates.serializers import CedarMetadataTemplateSerializer
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import CedarMetadataTemplate
 
 
 class CedarMetadataTemplateList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
+
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -40,7 +36,9 @@ class CedarMetadataTemplateList(JSONAPIBaseView, generics.ListAPIView, ListFilte
     def get_queryset(self):
         return self.get_queryset_from_request()
 
+
 class CedarMetadataTemplateDetail(JSONAPIBaseView, generics.RetrieveAPIView):
+
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
