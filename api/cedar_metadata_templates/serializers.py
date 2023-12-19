@@ -5,6 +5,7 @@ from api.base.utils import absolute_reverse
 
 
 class CedarMetadataTemplateSerializer(JSONAPISerializer):
+
     class Meta:
         type_ = 'cedar-metadata-tempalates'
 
@@ -15,7 +16,7 @@ class CedarMetadataTemplateSerializer(JSONAPISerializer):
     cedar_id = ser.CharField(read_only=True)
     template = ser.DictField(read_only=True)
     active = ser.BooleanField(read_only=True)
-    tempalte_version = ser.IntegerField(read_only=True)
+    template_version = ser.IntegerField(read_only=True)
 
     links = LinksField({'self': 'get_absolute_url'})
 
