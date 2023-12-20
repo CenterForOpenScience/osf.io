@@ -20,6 +20,9 @@ class Command(BaseCommand):
             return
 
         fetched = set()
+        newly_added = set()
+        unchanged = set()
+        updated = set()
         failed = set()
         for cedar_id in ids:
             try:
@@ -35,7 +38,9 @@ class Command(BaseCommand):
             existing_versions = CedarMetadataTemplate.objects.filter(cedar_id=cedar_id)
             if existing_versions:
                 latest_version = existing_versions.order_by('-template_version').first()
-                if pav_last_updated_on != latest_version.template['pav:lastUpdatedOn']:
+                if pav_last_updated_on == latest_version.template['pav:lastUpdatedOn']:
+                    unchanged.add(cedar_id)
+                else:
                     # New version should be inactive
                     CedarMetadataTemplate.objects.create(
                         schema_name=schema_name,
@@ -44,6 +49,7 @@ class Command(BaseCommand):
                         active=False,
                         template_version=latest_version.template_version + 1
                     )
+                    updated.add(cedar_id)
             else:
                 # Initial version should be active
                 CedarMetadataTemplate.objects.create(
@@ -52,6 +58,10 @@ class Command(BaseCommand):
                     cedar_id=cedar_id,
                     template_version=1
                 )
+                newly_added.add(cedar_id)
 
-        logger.info(f'fetched ({len(fetched)})={fetched}')
-        logger.error(f'failed ({len(failed)})={failed}')
+        logger.error(f'failed ({len(failed)}): {failed}')
+        logger.info(f'fetched ({len(fetched)}): {fetched}')
+        logger.info(f'\tnewly_added ({len(newly_added)}): {newly_added}')
+        logger.info(f'\tunchanged ({len(unchanged)}): {unchanged}')
+        logger.info(f'\tupdated ({len(updated)}): {updated}')
