@@ -15,8 +15,8 @@ class Command(BaseCommand):
 
         try:
             ids = CedarClient().retrieve_all_template_ids()
-        except CedarClientError:
-            logger.error('Unable to retrieve all cedar template ids')
+        except CedarClientError as e:
+            logger.error(f'Unable to retrieve all cedar template ids: e={e.reason}')
             return
 
         fetched = set()
@@ -24,8 +24,8 @@ class Command(BaseCommand):
         for cedar_id in ids:
             try:
                 template = CedarClient().retrieve_template_by_id(cedar_id)
-            except CedarClientError:
-                logger.error('Unable to retrieve the cedar template')
+            except CedarClientError as e:
+                logger.error(f'Unable to retrieve the cedar template: id={cedar_id}, e={e.reason}')
                 failed.add(cedar_id)
                 continue
             else:

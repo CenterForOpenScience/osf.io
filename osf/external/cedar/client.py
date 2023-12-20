@@ -22,21 +22,25 @@ class CedarClient(object):
             r = requests.get(url, headers=self.headers)
             r.raise_for_status()
         except RequestException:
-            raise CedarClientRequestError
+            raise CedarClientRequestError(
+                reason=f'Fail to complete Cedar API request: home_folder_id={self.home_folder_id}'
+            )
         try:
             resources = r.json()['resources']
         except JSONDecodeError:
-            raise CedarClientResponseError
+            raise CedarClientResponseError(
+                reason=f'Fail to parse Cedar API response: home_folder_id={self.home_folder_id}'
+            )
         return [item['@id'] for item in resources]
 
-    def retrieve_template_by_id(self, id):
-        url = f'{self.host}templates/{quote_plus(id)}'
+    def retrieve_template_by_id(self, template_id):
+        url = f'{self.host}templates/{quote_plus(template_id)}'
         try:
             r = requests.get(url, headers=self.headers)
             r.raise_for_status()
         except RequestException:
-            raise CedarClientRequestError
+            raise CedarClientRequestError(reason=f'Fail to complete Cedar API request: template_id={template_id}')
         try:
             return r.json()
         except JSONDecodeError:
-            raise CedarClientResponseError
+            raise CedarClientResponseError(reason=f'Fail to parse Cedar API response template_id={template_id}')
