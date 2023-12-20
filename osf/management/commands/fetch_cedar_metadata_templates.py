@@ -1,18 +1,35 @@
+import logging
+
 from django.core.management.base import BaseCommand
 
 from osf.models import CedarMetadataTemplate
 from osf.external.cedar.client import CedarClient
+from osf.external.cedar.exceptions import CedarClientError
+
+logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
 
-        # TODO: add error handling
-        ids = CedarClient().retrieve_all_template_ids()
+        try:
+            ids = CedarClient().retrieve_all_template_ids()
+        except CedarClientError:
+            logger.error('Unable to retrieve all cedar template ids')
+            return
+
+        fetched = set()
+        failed = set()
         for cedar_id in ids:
-            # TODO: add error handling
-            template = CedarClient().retrieve_template_by_id(cedar_id)
+            try:
+                template = CedarClient().retrieve_template_by_id(cedar_id)
+            except CedarClientError:
+                logger.error('Unable to retrieve the cedar template')
+                failed.add(cedar_id)
+                continue
+            else:
+                fetched.add(cedar_id)
             schema_name = template['schema:name']
             pav_last_updated_on = template['pav:lastUpdatedOn']
             existing_versions = CedarMetadataTemplate.objects.filter(cedar_id=cedar_id)
@@ -35,3 +52,6 @@ class Command(BaseCommand):
                     cedar_id=cedar_id,
                     template_version=1
                 )
+
+        logger.info(f'fetched ({len(fetched)})={fetched}')
+        logger.error(f'failed ({len(failed)})={failed}')
