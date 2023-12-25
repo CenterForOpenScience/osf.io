@@ -24,6 +24,7 @@ from admin.base import settings as admin_settings
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import EncryptedJSONField
 from website.settings import INSTITUTIONAL_STORAGE_BULK_MOUNT_METHOD
+from admin.base.settings import EACH_FILE_EXPORT_TIME_OUT
 
 logger = logging.getLogger(__name__)
 
@@ -161,6 +162,17 @@ class ExportData(base.BaseModel):
             'institution': institution_json,
         }
 
+        # If source institutional storage is the same as default storage, also get default storage for export
+        if self.source.has_same_settings_as_default_region and self.source.id != 1:
+            # get list FileVersion linked to source storage, default storage
+            file_versions = FileVersion.objects.filter(region_id__in=[1, self.source.id])
+        else:
+            # get list FileVersion linked to source storage
+            file_versions = self.source.fileversion_set.all()
+
+        # get base_file_nodes__ids by file_versions__ids above via the BaseFileVersionsThrough model
+        base_file_versions_set = BaseFileVersionsThrough.objects.filter(fileversion__in=file_versions)
+        base_file_nodes__ids = base_file_versions_set.values_list('basefilenode_id', flat=True).distinct('basefilenode_id')
         # get project list, includes public/private/deleted projects
         projects = institution.nodes.filter(type='osf.node', is_deleted=False)
         institution_users = institution.osfuser_set.all()
@@ -564,6 +576,19 @@ class ExportData(base.BaseModel):
         kwargs.setdefault('file_name', file_name)
         return self.upload_export_data_file(cookies, file_path, **kwargs)
 
+    def get_file_info_full_data_filename(self, institution_guid=None):
+        """get file_info_{institution_guid}_{process_start_timestamp}_full_data.json file name for each institution"""
+        if not institution_guid:
+            institution_guid = self.source.guid
+        return f'file_info_{institution_guid}_{self.process_start_timestamp}_full_data.json'
+
+    def upload_file_info_full_data_file(self, cookies, file_path, **kwargs):
+        """Upload export_{source.id}_{process_start_timestamp}/file_info_{institution_guid}_{process_start_timestamp}_full_data.json file
+           to the storage location"""
+        file_name = self.get_file_info_full_data_filename(self.location.institution_guid)
+        kwargs.setdefault('file_name', file_name)
+        return self.upload_export_data_file(cookies, file_path, **kwargs)
+
     def get_file_info_file_path(self, institution_guid=None):
         """get /export_{source.id}_{process_start_timestamp}/file_info_{institution_guid}_{process_start_timestamp}.json file path"""
         if not institution_guid:
@@ -656,13 +681,15 @@ class ExportData(base.BaseModel):
             'conflict': 'warn',
             'rename': file_name,
             'resource': node_id,
-            'provider': location_provider
+            'provider': location_provider,
+            'synchronous': True,
         }
 
         return requests.post(copy_file_url,
                              headers={'content-type': 'application/json'},
                              cookies=cookies,
-                             json=request_body)
+                             json=request_body,
+                             timeout=EACH_FILE_EXPORT_TIME_OUT)
 
     def get_data_file_file_path(self, file_name):
         """get /export_{source.id}_{process_start_timestamp}/files/{file_name} file path"""

@@ -9,6 +9,8 @@ var sprintf = require('agh.sprintf').sprintf;
 
 var clipboard = require('js/clipboard');
 
+var constants = require('js/constants/constants');
+
 var no_storage_name_providers = ['osfstorage', 'onedrivebusiness'];
 // type1: get from admin/rdm_addons/api_v1/views.py
 var preload_accounts_type1 = ['dropboxbusiness'];
@@ -17,8 +19,8 @@ var preload_accounts_type2 = ['nextcloudinstitutions',
                 'ociinstitutions',
                 's3compatinstitutions']
 // delay time to show growl box; in millisecond
-var growlBoxDelay = 5000;
-var intervalCheckStatus = 5000;
+var growlBoxDelay = constants.GROWL_BOX_DELAY_TIME || 5000;
+var intervalCheckStatus = constants.CHECK_STATUS_INTERVAL || 10000;
 var list_file_info_export_fail = [];
 var list_file_info_restore_fail = [];
 var file_name_export_fail = '';
@@ -1123,18 +1125,25 @@ function showExportFilesNotFound(data) {
             'file_path', 'file_name', 'versions', 'size', 'stamper']];
         data_res.forEach(function (file) {
             file.version.forEach(function (version) {
-                list_file_info_export_fail.push([file.project.id, file.project.name, version.contributor,
-                    file.id, file.materialized_path, file.name, version.identifier,
-                    file.size, file.timestamp.verify_user]);
-                text_show_file += "<tr><td>" + file.project.id + "</td><td>" + file.project.name + "</td><td>"
-                    + version.contributor + "</td><td>" + file.id + "</td><td>"
-                    + file.materialized_path + "</td><td>" + file.name + "</td><td>"
-                    + version.identifier + "</td><td>" + file.size + " Bytes</td><td>"
-                    + file.timestamp.verify_user + "</td></tr>";
+                list_file_info_export_fail.push([
+                    file.project.id, file.project.name,
+                    version.contributor, file.id,
+                    file.materialized_path, file.name,
+                    version.identifier, version.size,
+                    file.timestamp.verify_user
+                ]);
+                text_show_file += "<tr>" +
+                    "<td>" + file.project.id + "</td><td>" + file.project.name + "</td>" +
+                    "<td>" + version.contributor + "</td><td>" + file.id + "</td>" +
+                    "<td>" + file.materialized_path + "</td><td>" + file.name + "</td>" +
+                    "<td>" + version.identifier + "</td><td>" + version.size + " Bytes</td>" +
+                    "<td>" + file.timestamp.verify_user + "</td>" +
+                    "</tr>";
             });
         });
-        $('.table-ng-file-export-not-exist').html(text_show_file);
-        $('.table-ng-file-export-not-exist').css('word-break', 'break-word');
+        var $table_ng_file_export_not_exist = $('.table-ng-file-export-not-exist');
+        $table_ng_file_export_not_exist.html(text_show_file);
+        $table_ng_file_export_not_exist.css('word-break', 'break-word');
     }
 }
 
@@ -1661,18 +1670,25 @@ function checkTaskStatus(task_id, task_type) {
                     var data_res_unique = Object.values(data_res_map);
                     data_res_unique.forEach(function (file) {
                         file.version.forEach(function(version) {
-                            list_file_info_restore_fail.push([file.project.id, file.project.name, version.contributor,
-                                                file.id, file.materialized_path, file.name, version.identifier,
-                                                file.size, file.timestamp.verify_user]);
-                            text_show_file += "<tr><td>" + file.project.id + "</td><td>" + file.project.name + "</td><td>"
-                                                + version.contributor + "</td><td>"+ file.id + "</td><td>"
-                                                + file.materialized_path + "</td><td>" + file.name + "</td><td>"
-                                                + version.identifier + "</td><td>" + file.size + " Bytes</td><td>"
-                                                + file.timestamp.verify_user + "</td></tr>";
+                            list_file_info_restore_fail.push([
+                                file.project.id, file.project.name,
+                                version.contributor, file.id,
+                                file.materialized_path, file.name,
+                                version.identifier, file.size,
+                                file.timestamp.verify_user
+                            ]);
+                            text_show_file += "<tr>" +
+                                "<td>" + file.project.id + "</td><td>" + file.project.name + "</td>" +
+                                "<td>" + version.contributor + "</td><td>"+ file.id + "</td>" +
+                                "<td>" + file.materialized_path + "</td><td>" + file.name + "</td>" +
+                                "<td>" + version.identifier + "</td><td>" + version.size + " Bytes</td>" +
+                                "<td>" + file.timestamp.verify_user + "</td>" +
+                                "</tr>";
                         });
                     });
-                    $('.table-ng-file-restore-not-exist').html(text_show_file);
-                    $('.table-ng-file-restore-not-exist').css('word-break', 'break-word');
+                    var $table_ng_file_restore_not_exist = $('.table-ng-file-restore-not-exist');
+                    $table_ng_file_restore_not_exist.html(text_show_file);
+                    $table_ng_file_restore_not_exist.css('word-break', 'break-word');
                 }
             }
         } else if (state === 'PENDING' || state === 'STARTED') {

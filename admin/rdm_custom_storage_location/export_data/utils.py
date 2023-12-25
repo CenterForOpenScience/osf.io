@@ -430,6 +430,44 @@ def count_files_ng_ok(exported_file_versions, storage_file_versions, exclude_key
     data['list_file_ng'] = list_file_ng if len(list_file_ng) <= 10 else list_file_ng[:10]
     return data
 
+def check_for_file_existent_on_export_location(file_info_json, node_id, provider, file_path, location_id, cookies, cookie):
+    response = get_file_data(node_id, provider, file_path, cookies, base_url=WATERBUTLER_URL, get_file_info=False,
+                             version=None, location_id=location_id, cookie=cookie)
+    # Get list file in export storage location
+    response_body = response.json() if response.status_code == 200 else None
+    file_list = response_body.get('data') if response_body is not None else None
+    if (file_list is None):
+        return None
+    attrs = ['name', 'size']
+    storage_file_list = [{attr: file.get('attributes', {}).get(attr) for attr in attrs} for file in file_list]
+    storage_file_dict = {file.get('name'): file for file in storage_file_list}
+
+    # get file data saved in file info Json
+    file_versions = []
+    for file in file_info_json.get('files', []):
+        versions = file.get('version', [])
+        file_path = file.get('materialized_path')
+        for version in versions:
+            size = version.get('size')
+            metadata = version.get('metadata')
+            # get metadata.get('sha256', metadata.get('md5', metadata.get('sha512', metadata.get('sha1', metadata.get('name')))))
+            file_name = metadata.get('sha256', metadata.get('md5'))
+            version_name = version.get('version_name')
+            version_id = version.get('identifier')
+            file_versions.append({'path': file_path, 'name': file_name, 'version_name': version_name, 'version_id': version_id, 'size': size})
+
+    # compare file_list with file_versions
+    list_file_ng = []
+    for file in file_versions:
+        if not storage_file_dict.get(file['name']):
+            ng_content = {
+                'path': file['path'],
+                'size': file['size'],
+                'version_id': file['version_id'],
+                'reason': 'File does not exist on the Export Storage Location',
+            }
+            list_file_ng.append(ng_content)
+    return list_file_ng
 
 def check_file_metadata(data, restore_data, storage_file_info):
     destination_region = restore_data.destination
@@ -636,6 +674,7 @@ def copy_file_to_other_storage(export_data, destination_node_id, destination_pro
         'rename': file_name,
         'resource': destination_node_id,
         'provider': destination_provider,
+        'synchronous': True,
     }
 
     try:

@@ -1383,6 +1383,66 @@ class TestCheckExportData(AdminTestCase):
         res = utils.deep_diff(a_new, a_standard, exclude_keys=['section1', 'section2'])
         nt.assert_not_equal(res, None)
 
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
+    def test_check_for_file_existent_on_export_location(self, mock_get_file_data):
+        test_response = requests.Response()
+        test_response.status_code = status.HTTP_200_OK
+        response_body = {
+            'data': [
+                {
+                    'id': '1',
+                    'attributes': {
+                        'name': '10a14359db515c709492b51cff52feaad4783c166ba9ad34fb03e74be1924c4d',
+                        'size': 8,
+                    }
+                }
+            ]
+        }
+        test_response._content = json.dumps(response_body).encode('utf-8')
+        mock_get_file_data.return_value = test_response
+
+        file_json = {
+            'files': [
+                {
+                    'materialized_path': '/test_path/file1.txt',
+                    'version': [
+                        {
+                            'version_name': 'file1.txt',
+                            'size': 10,
+                            'identifier': 1,
+                            'metadata': {
+                                'md5': '9193f63d5939cfbb102e677ca717465d',
+                                'sha256': '10a14359db515c709492b51cff52feaad4783c166ba9ad34fb03e74be1924c4d'
+                            }
+                        }
+                    ]
+                },
+                {
+                    'materialized_path': '/test_path/file2.txt',
+                    'version': [
+                        {
+                            'version_name': 'file2.txt',
+                            'size': 20,
+                            'identifier': 1,
+                            'metadata': {
+                                'md5': '273604bfeef7126abe1f9bff1e45126c',
+                                'sha256': '19ad8d7393d45c3a124d2e9bb5111412973a16fb3d24a0aa378bcd410c33fd3f'
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+        result = utils.check_for_file_existent_on_export_location(file_json, TEST_PROJECT_ID, TEST_PROVIDER, '/test/', None, None, None)
+        expected_result = [
+            {
+                'path': '/test_path/file2.txt',
+                'size': 20,
+                'version_id': 1,
+                'reason': 'File does not exist on the Export Storage Location',
+            }
+        ]
+        nt.assert_equal(result, expected_result)
 
 @pytest.mark.feature_202210
 class TestCheckRestoreData(AdminTestCase):
