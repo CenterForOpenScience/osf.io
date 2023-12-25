@@ -3,8 +3,6 @@ import json
 import mock
 import pytest
 import requests
-from django.core.exceptions import SuspiciousOperation
-from django.test import RequestFactory
 from jsonschema import ValidationError, SchemaError
 from mock import patch, MagicMock
 from nose import tools as nt
@@ -100,7 +98,7 @@ file_1_json = {
                 'nid': 'pj2t8',
                 'host': '9a488c3f14b7',
                 'bucket': 'grdm-ierae',
-                'folder': "",
+                'folder': '',
                 'object': 'd71d0346be62dace293de7f972ec38e9acd2d470a9eb7de49f95aea90636d304',
                 'address': None,
                 'service': 's3compat',
@@ -115,7 +113,7 @@ file_1_json = {
         'nid': 'pj2t8',
         'host': '9a488c3f14b7',
         'bucket': 'grdm-ierae',
-        'folder': "",
+        'folder': '',
         'object': 'd71d0346be62dace293de7f972ec38e9acd2d470a9eb7de49f95aea90636d304',
         'address': None,
         'service': 's3compat',
@@ -166,7 +164,7 @@ file_2_json = {
                 'size': '10818',
                 'extra': {
                     'md5': '3c99887c8cb4f33081570eac9703e500',
-                    'encryption': ""
+                    'encryption': ''
                 },
                 'sha256': '764976fccf6e20b40e3d3437dfdf2e955532f235945f08a9b7728fb823d0f582',
                 'sha512': '22f680b31f5a00845f9447b3ec6b591bd3f255632f6e58243bf978c3d7d358bb7cbec7dd5d5c02470b3b890c3e5d07b5e302d457ac86011e83f2acac550ec507',
@@ -182,7 +180,7 @@ file_2_json = {
                 'nid': 'pj2t8',
                 'host': '9a488c3f14b7',
                 'bucket': 'grdm-ierae',
-                'folder': "",
+                'folder': '',
                 'object': '764976fccf6e20b40e3d3437dfdf2e955532f235945f08a9b7728fb823d0f582',
                 'address': None,
                 'service': 's3compat',
@@ -197,7 +195,7 @@ file_2_json = {
         'nid': 'pj2t8',
         'host': '9a488c3f14b7',
         'bucket': 'grdm-ierae',
-        'folder': "",
+        'folder': '',
         'object': '764976fccf6e20b40e3d3437dfdf2e955532f235945f08a9b7728fb823d0f582',
         'address': None,
         'service': 's3compat',
@@ -248,7 +246,7 @@ file_3_json = {
                 'size': '257',
                 'extra': {
                     'md5': 'b898161e932e5edfe8512fb37484cc59',
-                    'encryption': ""
+                    'encryption': ''
                 },
                 'sha256': '962d811bd42bcce10da657af37c37fd19a39c8c82284d0544f4fde2b655720b1',
                 'sha512': '89aa6cab81568eac435a6cfbfe4b452b8617f2d641b1fa05d640aa8cb819477b02150175d5b919708c2b5996f0c62a4d487fc71ec709d96872b75046155d7751',
@@ -264,7 +262,7 @@ file_3_json = {
                 'nid': 'pj2t8',
                 'host': '9a488c3f14b7',
                 'bucket': 'grdm-ierae',
-                'folder': "",
+                'folder': '',
                 'object': '962d811bd42bcce10da657af37c37fd19a39c8c82284d0544f4fde2b655720b1',
                 'address': None,
                 'service': 's3compat',
@@ -279,7 +277,7 @@ file_3_json = {
         'nid': 'pj2t8',
         'host': '9a488c3f14b7',
         'bucket': 'grdm-ierae',
-        'folder': "",
+        'folder': '',
         'object': '962d811bd42bcce10da657af37c37fd19a39c8c82284d0544f4fde2b655720b1',
         'address': None,
         'service': 's3compat',
@@ -330,7 +328,7 @@ file_4_json = {
                 'size': '223',
                 'extra': {
                     'md5': '32215d4817ec892d9fa6d0aa09032a54',
-                    'encryption': ""
+                    'encryption': ''
                 },
                 'sha256': 'cc436ccb5614a4e083bfb9d5546a22c7e52ef49dc8bceb9c9693cdecb2e368e2',
                 'sha512': '415eeaa4d2a51b690f962ab0667484a6cd773d3a4de85bff649597367ce9930a222199d2f13576d970efc907656477f823925ff13cd42049fafe455b1d2d24c8',
@@ -346,7 +344,7 @@ file_4_json = {
                 'nid': 'pj2t8',
                 'host': '9a488c3f14b7',
                 'bucket': 'grdm-ierae',
-                'folder': "",
+                'folder': '',
                 'object': 'cc436ccb5614a4e083bfb9d5546a22c7e52ef49dc8bceb9c9693cdecb2e368e2',
                 'address': None,
                 'service': 's3compat',
@@ -361,7 +359,7 @@ file_4_json = {
         'nid': 'pj2t8',
         'host': '9a488c3f14b7',
         'bucket': 'grdm-ierae',
-        'folder': "",
+        'folder': '',
         'object': 'cc436ccb5614a4e083bfb9d5546a22c7e52ef49dc8bceb9c9693cdecb2e368e2',
         'address': None,
         'service': 's3compat',
@@ -413,7 +411,7 @@ file_5_json = {
                 'size': '2283',
                 'extra': {
                     'md5': 'bdbfbec057078db6331cc2a3fbf57418',
-                    'encryption': ""
+                    'encryption': ''
                 },
                 'sha256': '350526f64b1961da90e3bc04e12ac60dc973f74f7b92fcd351a5305501090f05',
                 'sizeInt': 2283,
@@ -428,7 +426,7 @@ file_5_json = {
                 'nid': 'pj2t8',
                 'host': '9a488c3f14b7',
                 'bucket': 'grdm-ierae',
-                'folder': "",
+                'folder': '',
                 'object': '350526f64b1961da90e3bc04e12ac60dc973f74f7b92fcd351a5305501090f05',
                 'address': None,
                 'service': 's3compat',
@@ -443,7 +441,7 @@ file_5_json = {
         'nid': 'pj2t8',
         'host': '9a488c3f14b7',
         'bucket': 'grdm-ierae',
-        'folder': "",
+        'folder': '',
         'object': '350526f64b1961da90e3bc04e12ac60dc973f74f7b92fcd351a5305501090f05',
         'address': None,
         'service': 's3compat',
