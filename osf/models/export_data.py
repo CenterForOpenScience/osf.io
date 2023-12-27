@@ -5,7 +5,7 @@ import os.path
 
 import requests
 from django.db import models
-from django.db.models import DateTimeField
+from django.db.models import DateTimeField, Q
 
 from addons.osfstorage.models import Region
 from api.base.utils import waterbutler_api_url_for
@@ -168,7 +168,10 @@ class ExportData(base.BaseModel):
             # type='osf.{}folder'.format(self.source.provider_short_name),
             type__endswith='folder',
             target_object_id__in=projects__ids,
-            deleted=None)
+        ).exclude(
+            # exclude deleted folders
+            Q(deleted__isnull=False) | Q(deleted_on__isnull=False) | Q(deleted_by_id__isnull=False),
+        )
         folders = []
         for folder in base_folder_nodes:
             folder_info = {
@@ -190,7 +193,11 @@ class ExportData(base.BaseModel):
         base_file_nodes = BaseFileNode.objects.filter(
             id__in=base_file_nodes__ids,
             target_object_id__in=projects__ids,
-            deleted=None)
+        ).exclude(
+            # exclude deleted files
+            Q(deleted__isnull=False) | Q(deleted_on__isnull=False) | Q(deleted_by_id__isnull=False),
+        )
+
         total_size = 0
         total_file = 0
         files = []
