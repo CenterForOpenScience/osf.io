@@ -337,6 +337,9 @@ class ExportData(base.BaseModel):
                 file_versions = file_versions_res.json().get('data', [])
                 file_versions_info = []
 
+                # For add-on method, only export the latest file version
+                file_versions = file_versions[0:1]
+
                 for version in file_versions:
                     version_attributes = version.get('attributes', {})
                     version_identifier = version_attributes.get('version')

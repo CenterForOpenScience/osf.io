@@ -490,13 +490,21 @@ class CheckRestoreData(RdmPermissionMixin, View):
 
         # Get data from current destination storage
         _, storage_file_info = restore_data.extract_file_information_json_from_destination_storage(cookie=cookie)
-        exported_file_versions = process_data_information(exported_file_info['files'])
-        storage_file_versions = process_data_information(storage_file_info['files'])
         exported_provider_name = export_data.source_waterbutler_settings.get('storage', {}).get('provider')
         destination_provider_name = restore_data.destination.provider_name
+        exported_file_versions = []
+        storage_file_versions = []
+        if is_add_on_storage(exported_provider_name) or is_add_on_storage(destination_provider_name):
+            # If either source or destination is add-on storage, only check the latest file version
+            exported_file_versions = process_data_information(exported_file_info['files'], True)
+            storage_file_versions = process_data_information(storage_file_info['files'], True)
+        else:
+            exported_file_versions = process_data_information(exported_file_info['files'])
+            storage_file_versions = process_data_information(storage_file_info['files'])
+
         if is_add_on_storage(exported_provider_name) or is_add_on_storage(destination_provider_name):
             # If either source or destination is add-on storage then exclude the following keys
-            exclude_keys = ['id', 'provider', 'path', 'created_at', 'modified_at', 'timestamp_id',
+            exclude_keys = ['id', 'provider', 'path', 'created_at', 'modified_at', 'timestamp_id', 'identifier', 'contributor',
                             # location/
                             'location',
                             # metadata/

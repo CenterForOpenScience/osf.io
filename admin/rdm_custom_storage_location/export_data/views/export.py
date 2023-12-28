@@ -249,7 +249,7 @@ def export_data_process(task, cookies, export_data_id, location_id, source_id, *
 
         # extract file information
         _step_start_time = time.time()
-        export_data_json, file_info_json = export_data.extract_file_information_json_from_source_storage()
+        export_data_json, file_info_json = export_data.extract_file_information_json_from_source_storage(**kwargs)
         logger.info(f'Extracted file information.'
                     f' ({time.time() - _step_start_time}s)')
 

@@ -6,6 +6,7 @@ from copy import deepcopy
 
 import jsonschema
 import requests
+import hashlib
 from django.db import transaction
 from django.db.models import Q
 from rest_framework import status as http_status
@@ -290,13 +291,19 @@ def validate_file_json(file_data, json_schema_file_name):
         return False
 
 
-def process_data_information(list_data):
+def process_data_information(list_data, is_get_lated_version=False):
     list_data_version = []
     for item in list_data:
-        for file_version in item['version']:
+        if (is_get_lated_version):
+            file_version = item['version'][0]
             current_data = {**item, **file_version}
             del current_data['version']
             list_data_version.append(current_data)
+        else:
+            for file_version in item['version']:
+                current_data = {**item, **file_version}
+                del current_data['version']
+                list_data_version.append(current_data)
     return list_data_version
 
 
@@ -375,8 +382,9 @@ def deep_diff(x, y, parent_key=None, exclude_keys=None, epsilon_keys=None):
 
 def check_diff_between_version(list_version_a, list_version_b, parent_key=None, exclude_keys=None, epsilon_keys=None):
     for i in range(len(list_version_a)):
-        if list_version_a[i]['identifier'] != list_version_b[i]['identifier']:
-            return True, 'Missing file version', list_version_b[i]
+        if exclude_keys is not None and 'identifier' not in exclude_keys:
+            if list_version_a[i]['identifier'] != list_version_b[i]['identifier']:
+                return True, 'Missing file version', list_version_b[i]
         check_diff = deep_diff(list_version_a[i], list_version_b[i], parent_key=parent_key, exclude_keys=exclude_keys, epsilon_keys=epsilon_keys)
         if check_diff:
             list_diff = list(check_diff)
@@ -394,14 +402,22 @@ def count_files_ng_ok(exported_file_versions, storage_file_versions, exclude_key
     }
     list_file_ng = []
     count_files = 0
+    exported_file_provider = exported_file_versions[0].get('provider')
+    storage_file_provider = storage_file_versions[0].get('provider')
     for file_a in exported_file_versions:
         version_identifier_a = file_a['identifier']
         materialized_path_a = file_a.get('materialized_path')
 
-        file_b = next((
-            file for file in storage_file_versions
-            if file.get('materialized_path') == materialized_path_a and file.get('identifier') == version_identifier_a
-        ), None)
+        if is_add_on_storage(exported_file_provider) or is_add_on_storage(storage_file_provider):
+            file_b = next((
+                file for file in storage_file_versions
+                if file.get('materialized_path') == materialized_path_a
+            ), None)
+        else:
+            file_b = next((
+                file for file in storage_file_versions
+                if file.get('materialized_path') == materialized_path_a and file.get('identifier') == version_identifier_a
+            ), None)
         if file_b:
             is_diff, message, file_version = check_diff_between_version([file_a], [file_b], exclude_keys=exclude_keys)
             if not is_diff:
@@ -450,8 +466,15 @@ def check_for_file_existent_on_export_location(file_info_json, node_id, provider
         for version in versions:
             size = version.get('size')
             metadata = version.get('metadata')
+            modified_at = version.get('modified_at')
             # get metadata.get('sha256', metadata.get('md5', metadata.get('sha512', metadata.get('sha1', metadata.get('name')))))
-            file_name = metadata.get('sha256', metadata.get('md5'))
+            file_name = metadata.get('sha256', metadata.get('md5', metadata.get('sha512', metadata.get('sha1'))))
+            export_provider = file.get('provider')
+            if export_provider == 'onedrivebusiness':
+                # OneDrive Business: get new hash based on quickXorHash and file version modified time
+                quick_xor_hash = metadata.get('quickXorHash')
+                new_string_to_hash = f'{quick_xor_hash}{modified_at}'
+                file_name = hashlib.sha256(new_string_to_hash.encode('utf-8')).hexdigest()
             version_name = version.get('version_name')
             version_id = version.get('identifier')
             file_versions.append({'path': file_path, 'name': file_name, 'version_name': version_name, 'version_id': version_id, 'size': size})
