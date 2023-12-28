@@ -59,8 +59,8 @@
                                 {% csrf_token %}
                                 <div class="col-xs-2 storageLimitContainer">
                                     <input type="number" name="maxQuota" id="storageLimit" class="form-control" min="1" max="2147483647" required value="{{ current_user.quota }}"
-                                           oninvalid="this.setCustomValidity('{% trans 'Please enter Quota for Institutional Storage (GB) within 1~2147483647.' %}')" oninput="setCustomValidity('')"
-                                           {% if current_user.disable_update_max_quota %}disabled{% endif %}/>
+                                           oninvalid="this.setCustomValidity('{% trans 'Please enter Quota for Institutional Storage (GB) within 1~2147483647.' %}')" oninput="validateMaxQuotaInput()"
+                                           onKeyDown="preventDotInput(event)" {% if current_user.disable_update_max_quota %}disabled{% endif %}/>
                                 </div>
                                 <input type="submit" id="applyMaxQuota" class="btn btn-success" value="{% trans 'Apply' %}"
                                     {% if current_user.disable_update_max_quota %}disabled{% endif %}
@@ -73,4 +73,20 @@
         </div>
     </div>
 </div>
+<script>
+    function validateMaxQuotaInput() {
+        let $max_quota = $('#storageLimit');
+        let max_quota = $max_quota.val();
+        if (!(/^[0-9]+$/.test(max_quota))) {
+            $max_quota.get(0).setCustomValidity('{% trans 'Please enter Quota for Institutional Storage (GB) within 1~2147483647.' %}');
+        } else {
+            $max_quota.get(0).setCustomValidity('');
+        }
+    }
+    function preventDotInput(e) {
+        if (e.key !== undefined && e.key === '.') {
+            e.preventDefault();
+        }
+    }
+</script>
 {% endblock content %}

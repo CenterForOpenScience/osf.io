@@ -179,7 +179,8 @@
                        style="width:70px; max-width: 115px; margin-left: 2px;"
                        min="1" max="2147483647" required="" value="100"
                        oninvalid="this.setCustomValidity('{% trans 'Please enter Each user Quota for NII Storage (GB) within 1~2147483647.' %}')"
-                       oninput="setCustomValidity('')"
+                       oninput="validateMaxQuotaInput()"
+                       onKeyDown="preventDotInput(event)"
                 />
                 <button type="submit"
                         style="margin-left: 2px; flex-grow: 0;"
@@ -275,5 +276,19 @@
         !id_name && $id_name.val('').focus();
 
         return !!id_guid || (!!id_name && id_name.length <= 255) || !!id_email;
+    }
+    function validateMaxQuotaInput() {
+        let $max_quota = $('#storageLimit');
+        let max_quota = $max_quota.val();
+        if (!(/^[0-9]+$/.test(max_quota))) {
+            $max_quota.get(0).setCustomValidity('{% trans 'Please enter Each user Quota for NII Storage (GB) within 1~2147483647.' %}');
+        } else {
+            $max_quota.get(0).setCustomValidity('');
+        }
+    }
+    function preventDotInput(e) {
+        if (e.key !== undefined && e.key === '.') {
+            e.preventDefault();
+        }
     }
 </script>

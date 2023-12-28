@@ -782,8 +782,17 @@ class UserDetailsView(RdmPermissionMixin, UserPassesTestMixin, GuidView):
             # If user is not authenticated then redirect to login page
             self.raise_exception = False
             return False
-        return not self.is_super_admin and self.is_admin \
-            and self.request.user.affiliated_institutions.exists()
+        # Get request user by user guid
+        user = OSFUser.load(self.kwargs.get('guid'))
+        if not user:
+            # If user not found, redirect to HTTP 404 page
+            raise Http404
+        # Get user's affiliated institution
+        institution = user.affiliated_institutions.first()
+        if not institution:
+            # User does not have affiliated institution, redirect to HTTP 403 page
+            return False
+        return not self.is_super_admin and self.is_admin and self.has_auth(institution.id)
 
     def get_object(self, queryset=None):
         """ Get user details, including user max quota """

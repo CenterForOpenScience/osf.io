@@ -160,9 +160,22 @@ class TestUpdateQuotaUserListByInstitutionStorageID(AdminTestCase):
             reverse(self.view_name,
                     kwargs={'institution_id': 0}),
             {'maxQuota': new_max_quota})
-        request.user = self.superuser
+        request.user = self.institution01_admin
         with nt.assert_raises(Http404):
             self.view(request, institution_id=0)
+
+    def test_post__institution_use_nii_storage(self):
+        new_max_quota = 120
+        region1 = RegionFactory(_id=self.institution01.guid)
+        region1.waterbutler_settings['storage']['type'] = Region.NII_STORAGE
+        region1.save()
+        request = RequestFactory().post(
+            reverse(self.view_name,
+                    kwargs={'institution_id': self.institution01.id}),
+            {'maxQuota': new_max_quota})
+        request.user = self.superuser
+        with nt.assert_raises(Http404):
+            self.view(request, institution_id=self.institution01.id)
 
     def test_post__max_quota_value_is_none(self):
         UserQuota.objects.create(user=self.institution01_admin, storage_type=UserQuota.CUSTOM_STORAGE, max_quota=api_settings.DEFAULT_MAX_QUOTA)
@@ -317,6 +330,17 @@ class TestUserListByInstitutionStorageID(AdminTestCase):
         response = self.view(request, institution_id=self.institution02.id)
         nt.assert_equal(response.status_code, 200)
 
+        # access non-existent institution
+        request = RequestFactory().get(
+            reverse(
+                self.view_name,
+                kwargs={'institution_id': 0}
+            )
+        )
+        request.user = self.superuser
+        with self.assertRaises(Http404):
+            self.view(request, institution_id=0)
+
     def test__institutional_admin(self):
         # access inst01
         request = RequestFactory().get(
@@ -339,6 +363,17 @@ class TestUserListByInstitutionStorageID(AdminTestCase):
         request.user = self.institution01_admin
         with self.assertRaises(PermissionDenied):
             self.view(request, institution_id=self.institution02.id)
+
+        # access non-existent institution
+        request = RequestFactory().get(
+            reverse(
+                self.view_name,
+                kwargs={'institution_id': 0}
+            )
+        )
+        request.user = self.institution01_admin
+        with self.assertRaises(Http404):
+            self.view(request, institution_id=0)
 
     def test_get_userlist(self):
         request = RequestFactory().get(
@@ -399,6 +434,22 @@ class TestUserListByInstitutionStorageID(AdminTestCase):
 
         view = setup_view(self.view_instance, request,
                           institution_id=0)
+        with nt.assert_raises(Http404):
+            view.get_institution()
+
+        # Institution use NII Storage
+        self.institution01._id = ''
+        self.institution01.save()
+        request = RequestFactory().get(
+            reverse(
+                self.view_name,
+                kwargs={'institution_id': self.institution01.id}
+            )
+        )
+        request.user = self.superuser
+
+        view = setup_view(self.view_instance, request,
+                          institution_id=self.institution01.id)
         with nt.assert_raises(Http404):
             view.get_institution()
 

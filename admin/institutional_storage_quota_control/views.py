@@ -96,6 +96,9 @@ class UserListByInstitutionStorageID(RdmPermissionMixin, UserPassesTestMixin, Qu
             self.raise_exception = False
             return False
         institution_id = int(self.kwargs.get('institution_id'))
+        if not Institution.objects.filter(id=institution_id).exists():
+            # If institution_id does not exist, redirect to HTTP 404 page
+            raise Http404
         return self.has_auth(institution_id)
 
     def get_userlist(self):
@@ -133,6 +136,9 @@ class UpdateQuotaUserListByInstitutionStorageID(RdmPermissionMixin, UserPassesTe
             self.raise_exception = False
             return False
         institution_id = int(self.kwargs.get('institution_id'))
+        if not Institution.objects.filter(id=institution_id).exists():
+            # If institution_id does not exist, redirect to HTTP 404 page
+            raise Http404
         return self.has_auth(institution_id)
 
     def post(self, request, *args, **kwargs):

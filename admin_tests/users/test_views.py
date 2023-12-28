@@ -992,6 +992,44 @@ class TestGetUserInstitutionQuota(AdminTestCase):
         nt.assert_false(view.test_func())
         nt.assert_true(view.raise_exception)
 
+    def test_admin_login__user_guid_not_found(self):
+        request = RequestFactory().get(reverse('users:user_details', kwargs={'guid': 'test'}))
+        request.user = self.user
+        request.user.is_active = True
+        request.user.is_registered = True
+        request.user.is_superuser = False
+        request.user.is_staff = True
+        view = setup_view(self.view, request, guid='test')
+        with nt.assert_raises(Http404):
+            view.test_func()
+
+    def test_admin_login__user_does_not_have_affiliated_institutions(self):
+        user = UserFactory()
+        request = RequestFactory().get(reverse('users:user_details', kwargs={'guid': user._id}))
+        request.user = self.user
+        request.user.is_active = True
+        request.user.is_registered = True
+        request.user.is_superuser = False
+        request.user.is_staff = True
+        view = setup_view(self.view, request, guid=user._id)
+        nt.assert_false(view.test_func())
+        nt.assert_true(view.raise_exception)
+
+    def test_admin_login__no_permission_for_user_affiliated_institutions(self):
+        institution = InstitutionFactory()
+        user = UserFactory()
+        user.affiliated_institutions.add(institution)
+        user.save()
+        request = RequestFactory().get(reverse('users:user_details', kwargs={'guid': user._id}))
+        request.user = self.user
+        request.user.is_active = True
+        request.user.is_registered = True
+        request.user.is_superuser = False
+        request.user.is_staff = True
+        view = setup_view(self.view, request, guid=user._id)
+        nt.assert_false(view.test_func())
+        nt.assert_true(view.raise_exception)
+
     def test_get_default_quota_deleted_institution(self):
         self.institution.is_deleted = True
         self.institution.save()
