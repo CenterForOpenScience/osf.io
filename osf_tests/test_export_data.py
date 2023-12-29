@@ -136,6 +136,7 @@ class TestExportData(TestCase):
         target = AbstractNode(id=object_id)
         node = OsfStorageFileFactory.create(target_object_id=object_id, target=target)
         file_version = FileVersionFactory(region=cls.export_data.source)
+        file_version.creator.affiliated_institutions.set([cls.institution])
 
         file_versions_through = BaseFileVersionsThroughFactory.create(version_name='file.txt', basefilenode=node,
                                                                       fileversion=file_version)

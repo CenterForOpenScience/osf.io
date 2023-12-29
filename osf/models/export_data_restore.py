@@ -79,13 +79,6 @@ class ExportDataRestore(base.BaseModel):
             'institution': institution_json,
         }
 
-        # get list FileVersion linked to destination storage
-        file_versions = self.destination.fileversion_set.all()
-
-        # get base_file_nodes__ids by file_versions__ids above via the BaseFileVersionsThrough model
-        base_file_versions_set = BaseFileVersionsThrough.objects.filter(fileversion__in=file_versions)
-        base_file_nodes__ids = base_file_versions_set.values_list('basefilenode_id', flat=True).distinct('basefilenode_id')
-
         # get project list, includes public/private/deleted projects
         projects = institution.nodes.filter(type='osf.node', is_deleted=False)
         institution_users = institution.osfuser_set.all()
