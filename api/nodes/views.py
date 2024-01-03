@@ -1357,19 +1357,21 @@ class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, Node
     serializer_class = NodeAddonSettingsSerializer
     view_category = 'nodes'
     view_name = 'node-addons'
-
-    ordering = ('-id',)
+    ordering_field = ('name',)
 
     def get_default_queryset(self):
         qs = []
         for addon in ADDONS_OAUTH:
             obj = self.get_addon_settings(provider=addon, fail_if_absent=False, check_object_permissions=False)
+            # Since there's no queryset, just a list, we have to map short_name to it's serializer field.
             if obj:
+                obj.name = obj.config.short_name
                 qs.append(obj)
-        sorted(qs, key=lambda addon: addon.id, reverse=True)
+
         return qs
 
-    get_queryset = get_default_queryset
+    def get_queryset(self):
+        return self.get_queryset_from_request()
 
 
 class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, NodeMixin, AddonSettingsMixin):
