@@ -953,9 +953,15 @@ class NodeAddonSettingsSerializerBase(JSONAPISerializer):
     def create(self, validated_data):
         auth = Auth(self.context['request'].user)
         node = self.context['view'].get_node()
-        addon = self.context['request'].parser_context['kwargs']['provider']
+        addon = self.context['request'].parser_context['kwargs'].get('provider')
+        if not addon:
+            addon = validated_data.get('provider')
+
+        if not addon:
+            raise exceptions.NotFound('Requested addon not found')
 
         return node.get_or_add_addon(addon, auth=auth)
+
 
 class ForwardNodeAddonSettingsSerializer(NodeAddonSettingsSerializerBase):
 
