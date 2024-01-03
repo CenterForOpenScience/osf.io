@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% load render_bundle from webpack_loader %}
+
+{% load static %}
+{% block title %}
+    <title>OSF Admin | Cedar Metadata Template edit</title>
+{% endblock title %}
+
+{% block content %}
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" class="btn btn-primary" value="Save">
+    </form>
+{% endblock content %}
