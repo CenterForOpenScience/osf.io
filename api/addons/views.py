@@ -103,3 +103,26 @@ class AddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
                 queryset = sub_query.intersection(queryset)
         return list(queryset)
+
+
+class AddonDetail(JSONAPIBaseView, generics.RetrieveAPIView):
+    """
+
+    """
+    permission_classes = (
+        drf_permissions.AllowAny,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        TokenHasScope, )
+
+    required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = AddonSerializer
+    view_category = 'addons'
+    view_name = 'addon-detail'
+
+    def get_object(self):
+        try:
+            return osf_settings.ADDONS_AVAILABLE_DICT[self.kwargs['provider_id']]
+        except KeyError:
+            raise NotFound(f'`{self.kwargs["provider_id"]}` Not found')

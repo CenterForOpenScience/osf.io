@@ -48,7 +48,7 @@ class NodeAddonListMixin(object):
 
     def get_response_for_addon(self, response):
         for datum in response.json['data']:
-            if datum['id'] == self.short_name:
+            if self.short_name in datum['id']:  # id == <node_id>-<short_name>
                 return datum['attributes']
         return None
 
