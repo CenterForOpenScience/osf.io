@@ -17,6 +17,7 @@ from api.base import settings as api_settings
 from osf.models import OSFUser, UserQuota, Email
 from website.util import quota
 from datetime import datetime
+from django.contrib.auth.mixins import UserPassesTestMixin
 
 
 class UserIdentificationInformationListView(ListView):
@@ -87,10 +88,19 @@ class UserIdentificationInformationListView(ListView):
         return list_data
 
 
-class UserIdentificationListView(RdmPermissionMixin, UserIdentificationInformationListView):
+class UserIdentificationListView(RdmPermissionMixin, UserPassesTestMixin, UserIdentificationInformationListView):
     template_name = 'user_identification_information/list_user_identification.html'
     raise_exception = True
     paginate_by = 20
+
+    def test_func(self):
+        """check user permissions"""
+        # login check
+        if not self.is_authenticated:
+            return False
+
+        # permitted if superuser
+        return self.is_super_admin
 
     def user_list(self):
         guid = self.request.GET.get('guid')
@@ -139,10 +149,19 @@ class UserIdentificationListView(RdmPermissionMixin, UserIdentificationInformati
         return self.user_list()
 
 
-class UserIdentificationDetailView(RdmPermissionMixin, GuidView):
+class UserIdentificationDetailView(RdmPermissionMixin, UserPassesTestMixin, GuidView):
     template_name = 'user_identification_information/user_identification_details.html'
     context_object_name = 'user_details'
     raise_exception = True
+
+    def test_func(self):
+        """check user permissions"""
+        # login check
+        if not self.is_authenticated:
+            return False
+
+        # permitted if superuser
+        return self.is_super_admin
 
     def user_details(self):
         user_details = OSFUser.load(self.kwargs.get('guid'))
@@ -189,11 +208,21 @@ class UserIdentificationDetailView(RdmPermissionMixin, GuidView):
         return self.user_details()
 
 
-class ExportFileCSVView(RdmPermissionMixin, UserIdentificationInformationListView):
+class ExportFileCSVView(RdmPermissionMixin, UserPassesTestMixin, UserIdentificationInformationListView):
     """Response a CSV file in name format:
     - for super admin: export_user_identification_{institution_guid}_{yyyymmddhhMMSS}.csv
     - for admin: filename=export_user_identification_{yyyymmddhhMMSS}.csv
     """
+    raise_exception = True
+
+    def test_func(self):
+        """check user permissions"""
+        # login check
+        if not self.is_authenticated:
+            return False
+
+        # permitted if superuser
+        return self.is_super_admin
 
     def get(self, request, **kwargs):
         time_now = datetime.today().strftime('%Y%m%d%H%M%S')
