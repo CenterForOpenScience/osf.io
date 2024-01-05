@@ -1769,7 +1769,7 @@ function getPersistentLinkFor(item) {
     } else {
         redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
     }
-    return redir.toString();
+    return encodeURI(redir.toString());
 }
 
 function _createLinkEvent(event, item) {
