@@ -305,7 +305,9 @@
           {% if perms.osf.change_node %}
               <li><a href="{% url 'internet_archive:internet_archive' %}"><i class='fa fa-link'></i> <span>Internet Archive</span></a></li>
           {% endif %}
-
+          {% if perms.osf.change_cedarmetadatatemplate %}
+            <li><a href="{% url 'cedar_metadata_templates:list' %}"><i class='fa fa-link'></i> <span>Cedar Metadata Templates</span></a></li>
+          {% endif %}
           {% if perms.osf.change_maintenancestate %}
             <li><a href="{% url 'maintenance:display' %}"><i class='fa fa-link'></i> <span>Maintenance Alerts</span></a></li>
           {% endif %}
