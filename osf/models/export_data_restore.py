@@ -94,7 +94,7 @@ class ExportDataRestore(base.BaseModel):
             type__endswith='folder',
             target_object_id__in=projects__ids,
         ).exclude(
-            # exclude deleted files
+            # exclude deleted folder
             Q(deleted__isnull=False) | Q(deleted_on__isnull=False) | Q(deleted_by_id__isnull=False),
         )
         folders = []

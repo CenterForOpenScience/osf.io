@@ -186,14 +186,6 @@ class ExportData(base.BaseModel):
         projects__ids = projects.values_list('id', flat=True)
 
         # get folder nodes
-        base_folder_nodes = BaseFileNode.objects.filter(
-            # type='osf.{}folder'.format(self.source.provider_short_name),
-            type__endswith='folder',
-            target_object_id__in=projects__ids,
-        ).exclude(
-            # exclude deleted folders
-            Q(deleted__isnull=False) | Q(deleted_on__isnull=False) | Q(deleted_by_id__isnull=False),
-        )
         folders = []
         if self.source.provider_name in INSTITUTIONAL_STORAGE_BULK_MOUNT_METHOD:
             # Bulk-mount storage
@@ -201,7 +193,10 @@ class ExportData(base.BaseModel):
                 # type='osf.{}folder'.format(self.source.provider_short_name),
                 type__endswith='folder',
                 target_object_id__in=projects__ids,
-                deleted=None)
+            ).exclude(
+                # exclude deleted folders
+                Q(deleted__isnull=False) | Q(deleted_on__isnull=False) | Q(deleted_by_id__isnull=False),
+            )
             for folder in base_folder_nodes:
                 folder_info = {
                     'path': folder.path,

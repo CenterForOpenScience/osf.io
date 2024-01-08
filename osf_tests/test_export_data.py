@@ -61,6 +61,7 @@ class TestExportData(TestCase):
             basefilenode=file1,
             fileversion=file_version
         )
+        file_version.creator.affiliated_institutions.set([cls.institution])
         file_versions = [file_version]
         total_size = sum([f.size for f in file_versions])
         files_numb = len(file_versions)
@@ -452,7 +453,6 @@ class TestExportData(TestCase):
         expected_value = 'file_info_{}_{}.json'.format(self.export_data.source.guid,
                                                        self.export_data.process_start_timestamp)
         nt.assert_equal(res, expected_value)
-
 
     def test_get_hashes_from_metadata(self):
         result = get_hashes_from_metadata(provider_name='s3', extra={'hashes': {'md5': 'test'}}, hash_name='md5')

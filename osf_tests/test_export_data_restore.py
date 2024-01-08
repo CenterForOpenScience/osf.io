@@ -57,6 +57,7 @@ class TestExportDataRestore(TestCase):
             basefilenode=file1,
             fileversion=file_version
         )
+        file_version.creator.affiliated_institutions.set([cls.institution])
         file_versions = [file_version]
         total_size = sum([f.size for f in file_versions])
         files_numb = len(file_versions)
@@ -205,7 +206,6 @@ class TestExportDataRestore(TestCase):
     def test_extract_file_information_json_from_sourFce_storage__04_abnormal_file_data(self):
         test_file_info_json = copy.deepcopy(self.file_info_json)
         test_export_data_json = copy.deepcopy(self.export_data_json)
-        test_export_data_json['projects_numb'] -= 1
         test_export_data_json['files_numb'] -= 1
         test_export_data_json['size'] -= self.file1.versions.first().size
         self.file1.deleted = datetime.now()
