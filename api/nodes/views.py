@@ -25,7 +25,7 @@ from api.base.exceptions import (
     InvalidQueryStringError,
 )
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
-from api.base.pagination import CommentPagination, NodeContributorPagination, MaxSizePagination
+from api.base.pagination import CommentPagination, NodeContributorPagination, MaxSizePagination, NodeLogDownloadPagination
 from api.base.parsers import (
     JSONAPIRelationshipParser,
     JSONAPIRelationshipParserForRegularJSON,
@@ -66,7 +66,7 @@ from api.files.serializers import FileSerializer, OsfStorageFileSerializer
 from api.identifiers.serializers import NodeIdentifierSerializer
 from api.identifiers.views import IdentifierList
 from api.institutions.serializers import InstitutionSerializer
-from api.logs.serializers import NodeLogSerializer
+from api.logs.serializers import NodeLogSerializer, NodeLogDownloadSerializer
 from api.nodes.filters import NodesFilterMixin
 from api.nodes.permissions import (
     IsAdmin,
@@ -128,7 +128,7 @@ from framework.exceptions import HTTPError, PermissionsError
 from framework.auth.oauth_scopes import CoreScopes
 from framework.sentry import log_exception
 from osf.features import OSF_GROUPS
-from osf.models import AbstractNode
+from osf.models import AbstractNode, NodeLog
 from osf.models import (Node, PrivateLink, Institution, Comment, DraftRegistration, Registration, )
 from osf.models import OSFUser
 from osf.models import OSFGroup
@@ -1571,10 +1571,19 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMi
     )
 
     def get_default_queryset(self):
+        if self.request.query_params.get('action') == 'download':
+            # If there is query param 'action' with value is 'download', query and get only needed fields for download function
+            node = self.get_node()
+            return NodeLog.objects.filter(node_id=node.id, should_hide=False).order_by('-date')
         auth = get_user_auth(self.request)
         return self.get_node().get_logs_queryset(auth)
 
     def get_queryset(self):
+        if self.request.query_params.get('action') == 'download':
+            # If there is query param 'action' with value is 'download', query and get only needed fields for download function
+            self.serializer_class = NodeLogDownloadSerializer
+            self.pagination_class = NodeLogDownloadPagination
+            return self.get_queryset_from_request().prefetch_related('user__guids')
         return self.get_queryset_from_request().include(
             'node__guids', 'user__guids', 'original_node__guids', limit_includes=10,
         )

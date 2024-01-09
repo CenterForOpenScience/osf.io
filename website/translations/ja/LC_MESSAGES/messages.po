@@ -3434,7 +3434,7 @@ msgid "Clear Filters"
 msgstr "フィルタをクリア"
 
 #: website/templates/project/project.mako:607
-msgid "Refresh"
+msgid "Update"
 msgstr "更新"
 
 #: website/templates/project/project.mako:639
@@ -3442,8 +3442,8 @@ msgid "Loading logs..."
 msgstr "ログをロード中..."
 
 #: website/templates/project/project.mako:645
-msgid "Download as file"
-msgstr "ファイルをダウンロード"
+msgid "Download as file for 0 logs"
+msgstr "0件のファイルをダウンロード"
 
 #: website/templates/project/project.mako:646
 #: website/templates/project/timestamp.mako:206

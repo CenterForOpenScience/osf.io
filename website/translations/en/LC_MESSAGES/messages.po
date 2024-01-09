@@ -3338,7 +3338,7 @@ msgid "Clear Filters"
 msgstr ""
 
 #: website/templates/project/project.mako:607
-msgid "Refresh"
+msgid "Update"
 msgstr ""
 
 #: website/templates/project/project.mako:639
@@ -3346,7 +3346,7 @@ msgid "Loading logs..."
 msgstr ""
 
 #: website/templates/project/project.mako:645
-msgid "Download as file"
+msgid "Download as file for 0 logs"
 msgstr ""
 
 #: website/templates/project/project.mako:646
