@@ -305,6 +305,9 @@ class NodeLogDownloadSerializer(JSONAPISerializer):
         related_view_kwargs={'user_id': '<user._id>'},
     )
 
+    def get_absolute_url(self, obj):
+        return obj.absolute_url
+
     def to_representation(self, obj, envelope='data'):
         """ Overriding to_representation to return different representation for download node logs function. """
         # Get params and embed's user based on JSONAPISerializer's to_representation
