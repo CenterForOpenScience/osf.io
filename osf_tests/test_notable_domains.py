@@ -268,7 +268,7 @@ class TestNotableDomain:
         project = wiki_version.wiki_page.node
         project.is_public = True
         project.save()
-        wiki_version.content = 'This has a domain: https://cos.io'
+        wiki_version.content = '[EXTREME VIDEO] <b><a href="https://cos.io/JAkeEloit">WATCH VIDEO</a></b>'
 
         request_context.g.current_session = {'auth_user_id': project.creator._id}
         with mock.patch.object(spam_tasks.requests, 'head'):
