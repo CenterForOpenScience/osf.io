@@ -1594,6 +1594,8 @@ class TestUtilsForRestoreData(AdminTestCase):
         })
         self.export_data = ExportDataFactory()
         self.export_data_restore = ExportDataRestoreFactory(status=ExportData.STATUS_RUNNING)
+        self.export_data_restore.destination.waterbutler_settings['storage']['provider'] = 'onedrivebusiness'
+        self.export_data_restore.destination.save()
         self.destination_id = self.export_data_restore.destination.id
 
     # check_for_any_running_restore_process
@@ -1715,6 +1717,112 @@ class TestUtilsForRestoreData(AdminTestCase):
             nt.assert_equal(response.content, b'{}')
             nt.assert_equal(response.status_code, status.HTTP_200_OK)
 
+    # get_files_in_path
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
+    def test_get_files_in_path__response_empty(self, mock_get_file_data):
+        def get_data_by_file_or_folder(*args, **kwargs):
+            test_response = requests.Response()
+            response_body = {
+                'data': []
+            }
+            test_response.status_code = status.HTTP_200_OK
+            test_response._content = json.dumps(response_body).encode('utf-8')
+            return test_response
+
+        mock_get_file_data.side_effect = get_data_by_file_or_folder
+
+        result = utils.get_files_in_path(ExportData.EXPORT_DATA_FAKE_NODE_ID, TEST_PROVIDER, '/test/',
+                                         None)
+        mock_get_file_data.assert_called()
+        nt.assert_equal(result, [])
+
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
+    def test_get_files_in_path__response_error(self, mock_get_file_data):
+        def get_data_by_file_or_folder(*args, **kwargs):
+            test_response = requests.Response()
+            test_response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+            test_response._content = b'Mock test response error when move file'
+            return test_response
+
+        mock_get_file_data.side_effect = get_data_by_file_or_folder
+
+        result = utils.get_files_in_path(ExportData.EXPORT_DATA_FAKE_NODE_ID, TEST_PROVIDER, '/test/',
+                                         None)
+        mock_get_file_data.assert_called()
+        nt.assert_equal(result, [])
+
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
+    def test_get_files_in_path__addon_no_max_keys(self, mock_get_file_data):
+        def get_data_by_file_or_folder(*args, **kwargs):
+            test_response = requests.Response()
+            response_body = {
+                'data': [{
+                    'attributes': {
+                        'path': '/folder/',
+                        'materialized': '/folder/'
+                    }
+                }]
+            }
+            test_response.status_code = status.HTTP_200_OK
+            test_response._content = json.dumps(response_body).encode('utf-8')
+            return test_response
+
+        mock_get_file_data.side_effect = get_data_by_file_or_folder
+
+        result = utils.get_files_in_path(ExportData.EXPORT_DATA_FAKE_NODE_ID, TEST_PROVIDER, '/test/',
+                                         None)
+        mock_get_file_data.assert_called()
+        nt.assert_equal(result, [{
+            'attributes': {
+                'path': '/folder/',
+                'materialized': '/folder/'
+            }
+        }])
+
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
+    def test_get_files_in_path__next_token(self, mock_get_file_data):
+        def get_data_by_file_or_folder(*args, **kwargs):
+            test_response = requests.Response()
+            response_body = {
+                'data': [{
+                    'attributes': {
+                        'path': '/folder/',
+                        'materialized': '/folder/'
+                    }
+                }],
+                'next_token': '/folder 1/'
+            }
+            if 'next_token' in kwargs and kwargs['next_token'] == '/folder 1/':
+                response_body = {
+                    'data': [{
+                        'attributes': {
+                            'path': '/folder 1/',
+                            'materialized': '/folder 1/'
+                        }
+                    }],
+                    'next_token': None
+                }
+            test_response.status_code = status.HTTP_200_OK
+            test_response._content = json.dumps(response_body).encode('utf-8')
+            return test_response
+
+        mock_get_file_data.side_effect = get_data_by_file_or_folder
+
+        result = utils.get_files_in_path(ExportData.EXPORT_DATA_FAKE_NODE_ID, 's3compat', '/test/',
+                                         None)
+        mock_get_file_data.assert_called()
+        nt.assert_equal(result, [{
+            'attributes': {
+                'path': '/folder/',
+                'materialized': '/folder/'
+            }
+        }, {
+            'attributes': {
+                'path': '/folder 1/',
+                'materialized': '/folder 1/'
+            }
+        }])
+
     # create_folder
     def test_create_folder(self):
         test_response = requests.Response()
@@ -1824,7 +1932,7 @@ class TestUtilsForRestoreData(AdminTestCase):
 
     # create_folder_path
     def test_create_folder_path_invalid_folder_path(self):
-        response = utils.create_folder_path(TEST_PROJECT_ID, TEST_PROVIDER, '/folder', None)
+        response = utils.create_folder_path(TEST_PROJECT_ID, self.export_data_restore.destination, '/folder', None)
         nt.assert_equal(response, None)
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
@@ -1845,7 +1953,7 @@ class TestUtilsForRestoreData(AdminTestCase):
         mock_get_file_data.return_value = test_response
         mock_create_folder.return_value = (create_folder_response_body, status.HTTP_200_OK)
 
-        response = utils.create_folder_path(TEST_PROJECT_ID, TEST_PROVIDER, '/folder/', None)
+        response = utils.create_folder_path(TEST_PROJECT_ID, self.export_data_restore.destination, '/folder/', None)
         mock_get_file_data.assert_called()
         mock_create_folder.assert_called()
         nt.assert_equal(response, None)
@@ -1867,7 +1975,7 @@ class TestUtilsForRestoreData(AdminTestCase):
         mock_get_file_data.return_value = test_not_found_response
         mock_create_folder.return_value = (create_folder_response_body, status.HTTP_200_OK)
 
-        response = utils.create_folder_path(TEST_PROJECT_ID, TEST_PROVIDER, '/folder/', None)
+        response = utils.create_folder_path(TEST_PROJECT_ID, self.export_data_restore.destination, '/folder/', None)
         mock_get_file_data.assert_called()
         mock_create_folder.assert_called()
         nt.assert_equal(response, None)
@@ -1905,7 +2013,7 @@ class TestUtilsForRestoreData(AdminTestCase):
         mock_get_file_data.side_effect = get_data_by_file_or_folder
         mock_create_folder.return_value = (create_folder_response_body, status.HTTP_200_OK)
 
-        response = utils.create_folder_path(TEST_PROJECT_ID, TEST_PROVIDER, '/folder/', None)
+        response = utils.create_folder_path(TEST_PROJECT_ID, self.export_data_restore.destination, '/folder/', None)
         mock_get_file_data.assert_called()
         mock_create_folder.assert_called()
         nt.assert_equal(response, None)
@@ -1943,7 +2051,7 @@ class TestUtilsForRestoreData(AdminTestCase):
         mock_get_file_data.side_effect = get_data_by_file_or_folder
         mock_create_folder.return_value = (create_folder_response_body, status.HTTP_200_OK)
 
-        response = utils.create_folder_path(TEST_PROJECT_ID, TEST_PROVIDER, '/folder/', None)
+        response = utils.create_folder_path(TEST_PROJECT_ID, self.export_data_restore.destination, '/folder/', None)
         mock_get_file_data.assert_called()
         mock_create_folder.assert_not_called()
         nt.assert_equal(response, None)
@@ -1958,8 +2066,29 @@ class TestUtilsForRestoreData(AdminTestCase):
         mock_get_file_data.return_value = test_response
         mock_create_folder.return_value = (None, status.HTTP_400_BAD_REQUEST)
 
-        response = utils.create_folder_path(TEST_PROJECT_ID, TEST_PROVIDER, '/folder/', None)
+        response = utils.create_folder_path(TEST_PROJECT_ID, self.export_data_restore.destination, '/folder/', None)
         mock_get_file_data.assert_called()
+        mock_create_folder.assert_called()
+        nt.assert_equal(response, None)
+
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
+    def test_create_folder_path__ignore_for_bulk_mount_method(self, mock_get_file_data, mock_create_folder):
+        self.export_data_restore.destination.waterbutler_settings['storage']['provider'] = TEST_PROVIDER
+        self.export_data_restore.destination.save()
+        create_folder_response_body = {
+            'data': {
+                'attributes': {
+                    'path': '/folder/',
+                    'materialized': '/folder/'
+                }
+            }
+        }
+
+        mock_create_folder.return_value = (create_folder_response_body, status.HTTP_200_OK)
+
+        response = utils.create_folder_path(TEST_PROJECT_ID, self.export_data_restore.destination, '/folder/', None)
+        mock_get_file_data.assert_not_called()
         mock_create_folder.assert_called()
         nt.assert_equal(response, None)
 
@@ -2220,80 +2349,17 @@ class TestUtilsForRestoreData(AdminTestCase):
 
     # copy_file_from_location_to_destination
     def test_copy_file_from_location_to_destination_invalid_file_path(self):
-        response = utils.copy_file_from_location_to_destination(self.export_data, TEST_PROJECT_ID, TEST_PROVIDER, '/folder/', '/', None)
+        response = utils.copy_file_from_location_to_destination(
+            self.export_data, TEST_PROJECT_ID, TEST_PROVIDER,
+            '/folder/',
+            '/', None)
         nt.assert_equal(response, None)
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_to_other_storage')
     @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
-    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
-    def test_copy_file_from_location_to_destination_create_folders_and_file(self, mock_get_file_data, mock_create_folder, mock_copy_file):
-        create_folder_response_body = {
-            'data': {
-                'attributes': {
-                    'path': '/folder/',
-                    'materialized': '/folder/'
-                }
-            }
-        }
-        test_response = requests.Response()
-        test_response.status_code = status.HTTP_200_OK
-        test_response._content = json.dumps({}).encode('utf-8')
-
-        mock_get_file_data.return_value = test_response
-        mock_create_folder.return_value = (create_folder_response_body, status.HTTP_200_OK)
-        mock_copy_file.return_value = {}
-
-        response = utils.copy_file_from_location_to_destination(self.export_data, TEST_PROJECT_ID, TEST_PROVIDER, '/folder/file.txt',
-                                                                '/folder/file.txt', None)
-        mock_get_file_data.assert_called()
-        mock_create_folder.assert_called()
-        mock_copy_file.assert_called()
-        nt.assert_equal(response, {})
-
-    @patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_to_other_storage')
-    @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
-    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
-    def test_copy_file_from_location_to_destination_failed_to_get_folder_info(self, mock_get_file_data, mock_create_folder, mock_copy_file):
-        create_folder_response_body = {
-            'data': {
-                'attributes': {
-                    'path': '/folder/',
-                    'materialized': '/folder/'
-                }
-            }
-        }
-        test_not_found_response = requests.Response()
-        test_not_found_response.status_code = status.HTTP_404_NOT_FOUND
-
-        mock_get_file_data.return_value = test_not_found_response
-        mock_create_folder.return_value = (create_folder_response_body, status.HTTP_200_OK)
-        mock_copy_file.return_value = {}
-
-        response = utils.copy_file_from_location_to_destination(self.export_data, TEST_PROJECT_ID, TEST_PROVIDER, '/folder/file.txt', '/folder/file.txt',
-                                                                None)
-        mock_get_file_data.assert_called()
-        mock_create_folder.assert_called()
-        mock_copy_file.assert_called()
-        nt.assert_equal(response, {})
-
-    @patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_to_other_storage')
-    @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
-    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
-    def test_copy_file_from_location_to_destination_no_match_folder_info(self, mock_get_file_data, mock_create_folder, mock_copy_file):
-        def get_data_by_file_or_folder(*args, **kwargs):
-            test_response = requests.Response()
-            response_body = {
-                'data': [{
-                    'attributes': {
-                        'path': '/folder2/',
-                        'materialized': '/folder2/'
-                    }
-                }]
-            }
-            test_response.status_code = status.HTTP_200_OK
-            test_response._content = json.dumps(response_body).encode('utf-8')
-            return test_response
-
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_files_in_path')
+    def test_copy_file_from_location_to_destination_create_folders_and_file(
+            self, mock_get_files_in_path, mock_create_folder, mock_copy_file):
         create_folder_response_body = {
             'data': {
                 'attributes': {
@@ -2303,34 +2369,85 @@ class TestUtilsForRestoreData(AdminTestCase):
             }
         }
 
-        mock_get_file_data.side_effect = get_data_by_file_or_folder
+        mock_get_files_in_path.return_value = []
         mock_create_folder.return_value = (create_folder_response_body, status.HTTP_200_OK)
         mock_copy_file.return_value = {}
 
-        response = utils.copy_file_from_location_to_destination(self.export_data, TEST_PROJECT_ID, TEST_PROVIDER, '/folder/file.txt', '/folder/file.txt', None)
-        mock_get_file_data.assert_called()
+        response = utils.copy_file_from_location_to_destination(
+            self.export_data, TEST_PROJECT_ID, TEST_PROVIDER,
+            '/folder/file.txt',
+            '/folder/file.txt', None)
+        mock_get_files_in_path.assert_called()
         mock_create_folder.assert_called()
         mock_copy_file.assert_called()
         nt.assert_equal(response, {})
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_to_other_storage')
     @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
-    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
-    def test_copy_file_from_location_to_destination_success(self, mock_get_file_data, mock_create_folder, mock_copy_file):
-        def get_data_by_file_or_folder(*args, **kwargs):
-            test_response = requests.Response()
-            response_body = {
-                'data': [{
-                    'attributes': {
-                        'path': '/folder/',
-                        'materialized': '/folder/'
-                    }
-                }]
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_files_in_path')
+    def test_copy_file_from_location_to_destination_failed_to_get_folder_info(
+            self, mock_get_files_in_path, mock_create_folder, mock_copy_file):
+        create_folder_response_body = {
+            'data': {
+                'attributes': {
+                    'path': '/folder/',
+                    'materialized': '/folder/'
+                }
             }
-            test_response.status_code = status.HTTP_200_OK
-            test_response._content = json.dumps(response_body).encode('utf-8')
-            return test_response
+        }
 
+        mock_get_files_in_path.return_value = []
+        mock_create_folder.return_value = (create_folder_response_body, status.HTTP_200_OK)
+        mock_copy_file.return_value = {}
+
+        response = utils.copy_file_from_location_to_destination(
+            self.export_data, TEST_PROJECT_ID, TEST_PROVIDER,
+            '/folder/file.txt',
+            '/folder/file.txt',
+            None)
+        mock_get_files_in_path.assert_called()
+        mock_create_folder.assert_called()
+        mock_copy_file.assert_called()
+        nt.assert_equal(response, {})
+
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_to_other_storage')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_files_in_path')
+    def test_copy_file_from_location_to_destination_no_match_folder_info(
+            self, mock_get_files_in_path, mock_create_folder, mock_copy_file):
+        create_folder_response_body = {
+            'data': {
+                'attributes': {
+                    'path': '/folder/',
+                    'materialized': '/folder/'
+                }
+            }
+        }
+
+        mock_get_files_in_path.return_value = [{
+            'attributes': {
+                'path': '/folder2/',
+                'materialized': '/folder2/'
+            }
+        }]
+        mock_create_folder.return_value = (create_folder_response_body, status.HTTP_200_OK)
+        mock_copy_file.return_value = {}
+
+        response = utils.copy_file_from_location_to_destination(
+            self.export_data, TEST_PROJECT_ID, TEST_PROVIDER,
+            '/folder/file.txt',
+            '/folder/file.txt',
+            None)
+        mock_get_files_in_path.assert_called()
+        mock_create_folder.assert_called()
+        mock_copy_file.assert_called()
+        nt.assert_equal(response, {})
+
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_to_other_storage')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_files_in_path')
+    def test_copy_file_from_location_to_destination_success(
+            self, mock_get_files_in_path, mock_create_folder, mock_copy_file):
         create_folder_response_body = {
             'data': {
                 'attributes': {
@@ -2349,32 +2466,40 @@ class TestUtilsForRestoreData(AdminTestCase):
             }
         }
 
-        mock_get_file_data.side_effect = get_data_by_file_or_folder
+        mock_get_files_in_path.return_value = [{
+            'attributes': {
+                'path': '/folder/',
+                'materialized': '/folder/'
+            }
+        }]
         mock_create_folder.return_value = (create_folder_response_body, status.HTTP_200_OK)
         mock_copy_file.return_value = copy_file_response_body
 
-        response = utils.copy_file_from_location_to_destination(self.export_data, TEST_PROJECT_ID, TEST_PROVIDER, '/folder/file.txt', '/folder/file.txt',
-                                                                None)
-        mock_get_file_data.assert_called()
+        response = utils.copy_file_from_location_to_destination(
+            self.export_data, TEST_PROJECT_ID, TEST_PROVIDER,
+            '/folder/file.txt',
+            '/folder/file.txt',
+            None)
+        mock_get_files_in_path.assert_called()
         mock_create_folder.assert_not_called()
         mock_copy_file.assert_called()
         nt.assert_equal(response, copy_file_response_body)
 
     @patch(f'{EXPORT_DATA_UTIL_PATH}.copy_file_to_other_storage')
     @patch(f'{EXPORT_DATA_UTIL_PATH}.create_folder')
-    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')
-    def test_copy_file_from_location_to_destination_failed_to_create_folder(self, mock_get_file_data, mock_create_folder, mock_copy_file):
-        test_response = requests.Response()
-        test_response.status_code = status.HTTP_200_OK
-        test_response._content = json.dumps({}).encode('utf-8')
-
-        mock_get_file_data.return_value = test_response
+    @patch(f'{EXPORT_DATA_UTIL_PATH}.get_files_in_path')
+    def test_copy_file_from_location_to_destination_failed_to_create_folder(
+            self, mock_get_files_in_path, mock_create_folder, mock_copy_file):
+        mock_get_files_in_path.return_value = []
         mock_create_folder.return_value = (None, status.HTTP_400_BAD_REQUEST)
         mock_copy_file.return_value = {}
 
-        response = utils.copy_file_from_location_to_destination(self.export_data, TEST_PROJECT_ID, TEST_PROVIDER, '/folder/file.txt', '/folder/file.txt',
-                                                                None)
-        mock_get_file_data.assert_called()
+        response = utils.copy_file_from_location_to_destination(
+            self.export_data, TEST_PROJECT_ID, TEST_PROVIDER,
+            '/folder/file.txt',
+            '/folder/file.txt',
+            None)
+        mock_get_files_in_path.assert_called()
         mock_create_folder.assert_called()
         mock_copy_file.assert_not_called()
         nt.assert_equal(response, None)
@@ -3261,19 +3386,17 @@ class TestUtilsForRestoreData(AdminTestCase):
         nt.assert_is_none(utils.is_add_on_storage(None))
         nt.assert_is_none(utils.is_add_on_storage('osf_storage'))
 
-        # both addon method and bulk-mount method
-        nt.assert_false(utils.is_add_on_storage('owncloud'))
-        nt.assert_false(utils.is_add_on_storage('s3compat'))
-        nt.assert_false(utils.is_add_on_storage('s3'))
-
         # only addon method providers
         nt.assert_true(utils.is_add_on_storage('nextcloudinstitutions'))
         nt.assert_true(utils.is_add_on_storage('s3compatinstitutions'))
         nt.assert_true(utils.is_add_on_storage('ociinstitutions'))
         nt.assert_true(utils.is_add_on_storage('dropboxbusiness'))
+        nt.assert_true(utils.is_add_on_storage('onedrivebusiness'))
 
         # only bulk-mount method providers
-        nt.assert_false(utils.is_add_on_storage('onedrivebusiness'))
+        nt.assert_false(utils.is_add_on_storage('owncloud'))
+        nt.assert_false(utils.is_add_on_storage('s3compat'))
+        nt.assert_false(utils.is_add_on_storage('s3'))
         nt.assert_false(utils.is_add_on_storage('swift'))
         nt.assert_false(utils.is_add_on_storage('box'))
         nt.assert_false(utils.is_add_on_storage('nextcloud'))
