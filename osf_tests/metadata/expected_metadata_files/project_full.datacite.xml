@@ -42,6 +42,16 @@
       <awardNumber awardURI="https://moneypockets.example/millions">10000000</awardNumber>
       <awardTitle>because reasons</awardTitle>
     </fundingReference>
+    <fundingReference>
+      <funderName>Mx. Moneypockets</funderName>
+      <funderIdentifier funderIdentifierType="Crossref Funder ID">https://doi.org/10.$$$$</funderIdentifier>
+      <awardNumber awardURI="https://moneypockets.example/millions-more">2000000</awardNumber>
+      <awardTitle>because reasons!</awardTitle>
+    </fundingReference>
+    <fundingReference>
+      <funderName>Caring Fan</funderName>
+      <funderIdentifier funderIdentifierType="Crossref Funder ID">https://doi.org/10.$</funderIdentifier>
+    </fundingReference>
   </fundingReferences>
   <relatedIdentifiers>
     <relatedIdentifier relatedIdentifierType="URL" relationType="HasVersion">http://localhost:5000/w5ibb</relatedIdentifier>
