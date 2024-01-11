@@ -763,8 +763,9 @@ class TestRestoreDataFunction(AdminTestCase):
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.move_all_files_to_backup_folder')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.check_if_restore_process_stopped')
     @mock.patch(f'{RESTORE_EXPORT_DATA_PATH}.read_file_info_and_check_schema')
-    def test_restore_export_data_process_bulk_mount_storage(self, mock_read_file_info, mock_check_process, mock_move_to_backup, mock_copy_to_destination,
-                                                            mock_add_tag_and_timestamp, mock_create_folder_path):
+    def test_restore_export_data_process_bulk_mount_storage(
+            self, mock_read_file_info, mock_check_process, mock_move_to_backup, mock_copy_to_destination,
+            mock_add_tag_and_timestamp, mock_create_folder_path):
         task = AbortableTask()
         task.request_stack = LocalStack()
         task.request.id = FAKE_TASK_ID
@@ -776,8 +777,8 @@ class TestRestoreDataFunction(AdminTestCase):
         mock_add_tag_and_timestamp.return_value = None
         mock_create_folder_path.return_value = None
 
-        self.view.restore_export_data_process(task, {}, self.export_data_restore.export.id,
-                                              self.export_data_restore.id, ['vcu'])
+        self.view.restore_export_data_process(task, {}, self.bulk_mount_data_restore.export.id,
+                                              self.bulk_mount_data_restore.id, ['vcu'])
         mock_read_file_info.assert_called()
         mock_check_process.assert_called()
         mock_move_to_backup.assert_not_called()
@@ -1556,8 +1557,8 @@ class TestRestoreDataFunction(AdminTestCase):
         task.request_stack = LocalStack()
         task.request.id = FAKE_TASK_ID
 
-        response = self.view.restore_export_data_rollback_process(task, None, self.export_data.id,
-                                                                  self.export_data_restore.id,
+        response = self.view.restore_export_data_rollback_process(task, None, self.bulk_mount_data_restore.export.id,
+                                                                  self.bulk_mount_data_restore.id,
                                                                   3)
 
         mock_read_file_info.assert_not_called()
