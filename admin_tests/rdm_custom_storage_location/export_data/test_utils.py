@@ -1594,7 +1594,7 @@ class TestUtilsForRestoreData(AdminTestCase):
         })
         self.export_data = ExportDataFactory()
         self.export_data_restore = ExportDataRestoreFactory(status=ExportData.STATUS_RUNNING)
-        self.export_data_restore.destination.waterbutler_settings['storage']['provider'] = 'onedrivebusiness'
+        self.export_data_restore.destination.waterbutler_settings['storage']['provider'] = 'dropboxbusiness'
         self.export_data_restore.destination.save()
         self.destination_id = self.export_data_restore.destination.id
 
@@ -3386,17 +3386,19 @@ class TestUtilsForRestoreData(AdminTestCase):
         nt.assert_is_none(utils.is_add_on_storage(None))
         nt.assert_is_none(utils.is_add_on_storage('osf_storage'))
 
+        # both addon method and bulk-mount method
+        nt.assert_false(utils.is_add_on_storage('owncloud'))
+        nt.assert_false(utils.is_add_on_storage('s3compat'))
+        nt.assert_false(utils.is_add_on_storage('s3'))
+
         # only addon method providers
         nt.assert_true(utils.is_add_on_storage('nextcloudinstitutions'))
         nt.assert_true(utils.is_add_on_storage('s3compatinstitutions'))
         nt.assert_true(utils.is_add_on_storage('ociinstitutions'))
         nt.assert_true(utils.is_add_on_storage('dropboxbusiness'))
-        nt.assert_true(utils.is_add_on_storage('onedrivebusiness'))
 
         # only bulk-mount method providers
-        nt.assert_false(utils.is_add_on_storage('owncloud'))
-        nt.assert_false(utils.is_add_on_storage('s3compat'))
-        nt.assert_false(utils.is_add_on_storage('s3'))
+        nt.assert_false(utils.is_add_on_storage('onedrivebusiness'))
         nt.assert_false(utils.is_add_on_storage('swift'))
         nt.assert_false(utils.is_add_on_storage('box'))
         nt.assert_false(utils.is_add_on_storage('nextcloud'))
