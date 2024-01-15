@@ -222,7 +222,6 @@ def restore_export_data_process(task, cookies, export_id, export_data_restore_id
             export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
                                        status=ExportData.STATUS_COMPLETED)
             return {'message': 'Restore data successfully.'}
-        # destination_first_project_id = export_data_files[0].get('project', {}).get('id')
 
         check_if_restore_process_stopped(task, current_process_step)
         current_process_step = 1
@@ -233,13 +232,13 @@ def restore_export_data_process(task, cookies, export_id, export_data_restore_id
         if utils.is_add_on_storage(destination_provider):
             # Move all existing files/folders in destination to backup_{process_start} folder
             for project_id in list_project_id:
-                # move_all_files_to_backup_folder(task, current_process_step, destination_first_project_id, export_data_restore, cookies, **kwargs)
                 move_all_files_to_backup_folder(task, current_process_step, project_id, export_data_restore, cookies, **kwargs)
 
         check_if_restore_process_stopped(task, current_process_step)
         current_process_step = 2
         update_restore_process_state(task, current_process_step)
 
+        # create folders in destination
         create_folder_in_destination(task, current_process_step, export_data_folders, export_data_restore, cookies, **kwargs)
 
         # Download files from export data, then upload files to destination. Returns list of created file node in DB
@@ -663,7 +662,6 @@ def move_all_files_to_backup_folder(task, current_process_step, destination_firs
 def create_folder_in_destination(task, current_process_step, export_data_folders,
                                  export_data_restore, cookies, **kwargs):
     destination_region = export_data_restore.destination
-    destination_provider = INSTITUTIONAL_STORAGE_PROVIDER_NAME
     destination_base_url = destination_region.waterbutler_url
     list_updated_projects = []
     for folder in export_data_folders:
@@ -674,9 +672,10 @@ def create_folder_in_destination(task, current_process_step, export_data_folders
         # Update region_id for folder's project
         list_updated_projects = update_region_id(task, current_process_step, destination_region, folder_project_id, list_updated_projects)
 
-        utils.create_folder_path(folder_project_id, destination_provider, folder_materialized_path,
+        utils.create_folder_path(folder_project_id, destination_region, folder_materialized_path,
                                  cookies, base_url=destination_base_url, **kwargs)
 
+    # recalculate user quota for all updated projects
     if list_updated_projects:
         # recalculate user quota
         recalculate_user_quota(destination_region)
