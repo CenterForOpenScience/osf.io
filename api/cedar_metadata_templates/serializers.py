@@ -21,4 +21,4 @@ class CedarMetadataTemplateSerializer(JSONAPISerializer):
     links = LinksField({'self': 'get_absolute_url'})
 
     def get_absolute_url(self, obj):
-        return absolute_reverse('cedar-metadata-templates:cedar-metadata-templates-detail', kwargs={'template_id': obj._id})
+        return absolute_reverse('cedar-metadata-templates:cedar-metadata-template-detail', kwargs={'template_id': obj._id})
