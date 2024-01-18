@@ -539,7 +539,7 @@ def _subject_triples(dbsubject, *, child_ref=None, related_ref=None):
     _is_bepress = (not dbsubject.bepress_subject)
     _is_distinct_from_bepress = (dbsubject.text != dbsubject.bepress_text)
     if _is_bepress or _is_distinct_from_bepress:
-        _subject_ref = rdflib.URIRef(dbsubject.absolute_api_v2_subject_url)
+        _subject_ref = rdflib.URIRef(dbsubject.get_semantic_iri())
         yield (DCTERMS.subject, _subject_ref)
         yield (_subject_ref, RDF.type, SKOS.Concept)
         yield (_subject_ref, SKOS.prefLabel, dbsubject.text)
