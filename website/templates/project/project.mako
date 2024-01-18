@@ -613,10 +613,10 @@
                 <div class="container-fluid" style="padding: 0px">
                     <div>
                         <div class="pull-left" style="margin-bottom: 5px">
-                            <input type="text" id="LogSearchS" placeholder='${_("Start date")}' size="14" autocomplete="off">
+                            <input type="text" id="LogSearchS" placeholder='${_("Start time")}' size="14" autocomplete="off">
                         </div>
                         <div class="pull-left" style="margin-left: 10px; margin-bottom: 5px">
-                            <input type="text" id="LogSearchE" placeholder='${_("End date")}' size="14" autocomplete="off">
+                            <input type="text" id="LogSearchE" placeholder='${_("End time")}' size="14" autocomplete="off">
                         </div>
                         <div class="pull-left form-check" style="margin-left: 10px; padding-top: 2px;" id="useDropdown">
                             <input class="form-check-input" type="checkbox" id="useDropdownCheckbox">

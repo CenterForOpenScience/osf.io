@@ -2074,9 +2074,12 @@ msgstr "職名"
 
 #: website/templates/include/profile/jobs.mako:54
 #: website/templates/include/profile/schools.mako:54
-#: website/templates/project/project.mako:614
 msgid "Start date"
 msgstr "開始日"
+
+#: website/templates/project/project.mako:614
+msgid "Start time"
+msgstr "開始日時"
 
 #: website/templates/include/profile/jobs.mako:58
 #: website/templates/include/profile/jobs.mako:73
@@ -2094,9 +2097,12 @@ msgstr "年"
 
 #: website/templates/include/profile/jobs.mako:69
 #: website/templates/include/profile/schools.mako:69
-#: website/templates/project/project.mako:617
 msgid "End date"
 msgstr "終了日"
+
+#: website/templates/project/project.mako:617
+msgid "End time"
+msgstr "終了日時"
 
 #: website/templates/include/profile/jobs.mako:85
 #: website/templates/include/profile/schools.mako:85

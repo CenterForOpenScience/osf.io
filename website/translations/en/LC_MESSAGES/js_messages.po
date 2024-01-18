@@ -7489,3 +7489,6 @@ msgstr ""
 
 msgid "Downloading"
 msgstr ""
+
+msgid "Download failed."
+msgstr ""

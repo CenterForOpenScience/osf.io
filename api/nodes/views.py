@@ -1,5 +1,6 @@
 import re
 
+from datetime import datetime
 from distutils.version import StrictVersion
 from django.apps import apps
 from django.db.models import Q, OuterRef, Exists, Subquery, F
@@ -1587,6 +1588,24 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMi
         return self.get_queryset_from_request().include(
             'node__guids', 'user__guids', 'original_node__guids', limit_includes=10,
         )
+
+    def param_queryset(self, query_params, default_queryset):
+        """ Overrides the function to add the last microsecond to param 'filter[date][lte]' """
+        new_query_params = query_params.copy()
+        # Get end time param
+        end_time_param_value = query_params.get('filter[date][lte]')
+        if end_time_param_value:
+            try:
+                # Convert end time param to datetime object
+                end_time = datetime.strptime(end_time_param_value, '%Y-%m-%dT%H:%M')
+                # Insert the last microsecond to datetime object
+                end_time = end_time.replace(second=datetime.max.second, microsecond=datetime.max.microsecond)
+                # Format the datetime object to string
+                new_query_params['filter[date][lte]'] = datetime.strftime(end_time, '%Y-%m-%dT%H:%M:%S.%f')
+            except ValueError:
+                # Cannot add the last microsecond to end time param, do nothing
+                pass
+        return super(NodeLogList, self).param_queryset(new_query_params, default_queryset)
 
 
 class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, NodeMixin):

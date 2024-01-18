@@ -140,9 +140,10 @@ var commonDropdownSuggestOptions = {
 };
 
 var initDropdownSuggestAllUsers = function (placeholder) {
+    var query = { 'page[size]': 100 };
     var options = {
         ajax: {
-	    url: $osf.apiV2Url('/users/'),
+	    url: $osf.apiV2Url('/users/', {query: query}),
 	    dataType: 'json',
 	    data: function (term, page) {
 		return {
@@ -508,22 +509,28 @@ $(document).ready(function () {
             var downloadLogButton = $('#DownloadLog');
             downloadLogButton.addClass('disabled');
             downloadLogButton.text(_('Downloading'));
-            var totalLogs = $('#totalLogs').val() || 0;
-            if (totalLogs === 0) {
-                downloadLogButton.removeClass('disabled');
+            var totalLogs = parseInt($('#totalLogs').val(), 10);
+            if (!totalLogs) {
                 downloadLogButton.text(_('Download'));
                 return;
             }
             var urlNodeLogs = _buildDownloadLogUrl(node, totalLogs);
             var promise = m.request({ method: 'GET', config: $osf.setXHRAuthorization, url: urlNodeLogs});
             promise.then(function (data) {
-                downloadLogButton.removeClass('disabled');
+                var newTotalLogs = parseInt($('#totalLogs').val(), 10);
+                if (!!newTotalLogs) {
+                    downloadLogButton.removeClass('disabled');
+                }
                 downloadLogButton.text(_('Download'));
                 new ArrangeLogDownload(data);
             }, function(xhr, textStatus, error) {
-                downloadLogButton.removeClass('disabled');
+                var newTotalLogs = parseInt($('#totalLogs').val(), 10);
+                if (!!newTotalLogs) {
+                    downloadLogButton.removeClass('disabled');
+                }
                 downloadLogButton.text(_('Download'));
                 Raven.captureMessage('Error retrieving DownloadLog', {extra: {url: urlFilesGrid, textStatus: textStatus, error: error}});
+                $osf.growl(_('Error'), _('Download failed.'));
             });
         });
 
@@ -821,6 +828,10 @@ $(document).ready(function () {
         logSearchChangeOldDict[selector] = val;
     };
     var initDatetimepicker = function (selector) {
+        if (!!window.chrome) {
+            // If browser is using Chromium, add specified css class
+            $(selector).addClass('search-datetime-input');
+        }
         $(selector).on('keydown', function(e) {
             var key = e.which;
             if (key === 13) {  // Enter Key
@@ -837,6 +848,15 @@ $(document).ready(function () {
             }
         };
         datetimepicker.mount(selector).datetimepicker({onClose: onCloseDatetimePicker});
+        // Event after initialize datetimepicker
+        var todayButtonSelector = selector + '+.xdsoft_datetimepicker .xdsoft_today_button';
+        $(todayButtonSelector).off('dblclick');
+        $(todayButtonSelector).on('click', function(e) {
+            var currentDate = moment($(selector).datetimepicker('getValue'));
+            if (currentDate.isValid()) {
+                $(selector).val(currentDate.format(LogFeed.DATETIME_FORMAT));
+            }
+        });
     };
     initDatetimepicker('#LogSearchS');
     initDatetimepicker('#LogSearchE');

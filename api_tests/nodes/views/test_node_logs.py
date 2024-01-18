@@ -1,5 +1,6 @@
 import mock
 import pytest
+import time
 
 from dateutil.parser import parse as parse_date
 
@@ -334,6 +335,38 @@ class TestNodeLogFiltering(TestNodeLogList):
             '+')[0].replace(' ', 'T')
 
         url = '/{}nodes/{}/logs/?filter[date][ne]={}'.format(
+            API_BASE, public_project._id, date_pointer_added)
+        res = app.get(url, auth=user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1
+        assert res.json['data'][API_LATEST]['attributes']['action'] == 'project_created'
+
+    def test_filter_end_date(self, app, user, public_project, pointer):
+        public_project.add_pointer(pointer, auth=Auth(user), save=True)
+        assert public_project.logs.latest().action == 'pointer_created'
+        assert public_project.logs.count() == 2
+
+        pointer_added_log = public_project.logs.get(action='pointer_created')
+        date_pointer_added = pointer_added_log.date.strftime('%Y-%m-%dT%H:%M')
+
+        url = '/{}nodes/{}/logs/?filter[date][lte]={}'.format(
+            API_BASE, public_project._id, date_pointer_added)
+        res = app.get(url, auth=user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 2
+        assert res.json['data'][API_LATEST]['attributes']['action'] == 'pointer_created'
+
+    def test_filter_end_date_unsupported_format(self, app, user, public_project, pointer):
+        # make sure project created and pointer created logs are not in the same second
+        time.sleep(1)
+        public_project.add_pointer(pointer, auth=Auth(user), save=True)
+        assert public_project.logs.latest().action == 'pointer_created'
+        assert public_project.logs.count() == 2
+
+        pointer_added_log = public_project.logs.get(action='pointer_created')
+        date_pointer_added = pointer_added_log.date.strftime('%Y-%m-%d %H:%M:%S')
+
+        url = '/{}nodes/{}/logs/?filter[date][lte]={}'.format(
             API_BASE, public_project._id, date_pointer_added)
         res = app.get(url, auth=user.auth)
         assert res.status_code == 200
