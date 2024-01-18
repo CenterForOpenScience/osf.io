@@ -348,7 +348,7 @@ class TestOsfGathering(TestCase):
         assert_triples(osf_gathering.gather_subjects(self.projectfocus), set())
         _bloo_subject = factories.SubjectFactory(text='Bloomy', provider=_osf_provider)
         self.project.set_subjects([[_bloo_subject._id]], auth=Auth(self.user__admin))
-        _bloo_iri = URIRef(_bloo_subject.absolute_api_v2_subject_url)
+        _bloo_iri = URIRef(_bloo_subject.get_semantic_iri())
         _bepress_iri = rdflib.URIRef('https://bepress.com/reference_guide_dc/disciplines/')
         assert_triples(osf_gathering.gather_subjects(self.projectfocus), {
             (self.projectfocus.iri, DCTERMS.subject, _bloo_iri),
@@ -368,10 +368,10 @@ class TestOsfGathering(TestCase):
             [_customchild_subj._id, _customparent_subj._id],
             [_bloo_subject._id],
         ], auth=Auth(self.user__admin))
-        _parent_iri = URIRef(_parent_subj.absolute_api_v2_subject_url)
-        _child_iri = URIRef(_child_subj.absolute_api_v2_subject_url)
-        _customparent_iri = URIRef(_customparent_subj.absolute_api_v2_subject_url)
-        _customchild_iri = URIRef(_customchild_subj.absolute_api_v2_subject_url)
+        _parent_iri = URIRef(_parent_subj.get_semantic_iri())
+        _child_iri = URIRef(_child_subj.get_semantic_iri())
+        _customparent_iri = URIRef(_customparent_subj.get_semantic_iri())
+        _customchild_iri = URIRef(_customchild_subj.get_semantic_iri())
         _customtax_iri = URIRef(f'{self.registration.provider.absolute_api_v2_url}subjects/')
         assert_triples(osf_gathering.gather_subjects(self.registrationfocus), {
             (self.registrationfocus.iri, DCTERMS.subject, _bloo_iri),
