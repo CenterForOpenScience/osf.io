@@ -175,3 +175,19 @@ class TestSubjectProperties(OsfTestCase):
         assert self.bepress_child.path == 'bepress|BePress Text|BePress Child'
         assert self.other_subj.path == 'asdf|Other Text'
         assert self.other_child.path == 'asdf|Other Text|Other Child'
+
+    def test_get_semantic_iri(self):
+        _bepress_iri = self.bepress_subj.get_semantic_iri()
+        _other_iri = self.other_subj.get_semantic_iri()
+        assert _bepress_iri != _other_iri
+        assert _bepress_iri.endswith(self.bepress_subj._id)
+        assert _other_iri.endswith(self.other_subj._id)
+
+        # if a subject has the exact same text as its bepress synonym, expect the bepress subject iri
+        _sametext_subj = SubjectFactory(
+            text=self.bepress_subj.text,
+            bepress_subject=self.bepress_subj,
+            provider=self.asdf_provider,
+        )
+        _sametext_iri = _sametext_subj.get_semantic_iri()
+        assert _bepress_iri == _sametext_iri

@@ -57,7 +57,7 @@ class Subject(ObjectIDMixin, BaseModel, DirtyFieldsMixin):
     def get_semantic_iri(self) -> str:
         _identified_subject = (
             self.bepress_subject
-            if self.bepress_subject and (self.text != self.bepress_subject.text)
+            if self.bepress_subject and (self.text == self.bepress_subject.text)
             else self
         )
         return _identified_subject.absolute_api_v2_subject_url.rstrip('/')

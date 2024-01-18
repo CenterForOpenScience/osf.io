@@ -15,10 +15,10 @@
         "https://doi.org/11.pp/FK2osf.io/w4ibb" ;
     dcterms:modified "2123-05-04" ;
     dcterms:publisher <http://localhost:5000/preprints/preprovi> ;
-    dcterms:subject <http://localhost:8000/v2/subjects/subjwibb/>,
-        <http://localhost:8000/v2/subjects/subjwibbb/>,
-        <http://localhost:8000/v2/subjects/subjwobb/>,
-        <http://localhost:8000/v2/subjects/subjwobbb/> ;
+    dcterms:subject <http://localhost:8000/v2/subjects/subjwibb>,
+        <http://localhost:8000/v2/subjects/subjwibbb>,
+        <http://localhost:8000/v2/subjects/subjwobb>,
+        <http://localhost:8000/v2/subjects/subjwobbb> ;
     dcterms:title "this is a preprint title!" ;
     dcterms:type <https://schema.datacite.org/meta/kernel-4.4/#Preprint> ;
     owl:sameAs <https://doi.org/11.pp/FK2osf.io/w4ibb> ;
@@ -53,11 +53,11 @@
     osf:funder <https://doi.org/10.$$$$> ;
     osf:hasFunding <https://moneypockets.example/millions> .
 
-<http://localhost:8000/v2/subjects/subjwobb/> a skos:Concept ;
-    skos:broader <http://localhost:8000/v2/subjects/subjwibb/> ;
+<http://localhost:8000/v2/subjects/subjwobb> a skos:Concept ;
+    skos:broader <http://localhost:8000/v2/subjects/subjwibb> ;
     skos:inScheme <http://localhost:8000/v2/providers/preprints/preprovi/subjects/> ;
     skos:prefLabel "wobble" ;
-    skos:related <http://localhost:8000/v2/subjects/subjwobbb/> .
+    skos:related <http://localhost:8000/v2/subjects/subjwobbb> .
 
 <https://cos.io/> a dcterms:Agent,
         foaf:Organization ;
@@ -89,13 +89,13 @@
 <http://localhost:8000/v2/providers/preprints/preprovi/subjects/> a skos:ConceptScheme ;
     dcterms:title "preprovi" .
 
-<http://localhost:8000/v2/subjects/subjwibb/> a skos:Concept ;
+<http://localhost:8000/v2/subjects/subjwibb> a skos:Concept ;
     skos:inScheme <http://localhost:8000/v2/providers/preprints/preprovi/subjects/> ;
     skos:prefLabel "wibble" ;
-    skos:related <http://localhost:8000/v2/subjects/subjwibbb/> .
+    skos:related <http://localhost:8000/v2/subjects/subjwibbb> .
 
-<http://localhost:8000/v2/subjects/subjwobbb/> a skos:Concept ;
-    skos:broader <http://localhost:8000/v2/subjects/subjwibbb/> ;
+<http://localhost:8000/v2/subjects/subjwobbb> a skos:Concept ;
+    skos:broader <http://localhost:8000/v2/subjects/subjwibbb> ;
     skos:inScheme <https://bepress.com/reference_guide_dc/disciplines/> ;
     skos:prefLabel "wobbble" .
 
@@ -106,7 +106,7 @@
     dcterms:identifier "https://doi.org/10.$$$$" ;
     foaf:name "Mx. Moneypockets" .
 
-<http://localhost:8000/v2/subjects/subjwibbb/> a skos:Concept ;
+<http://localhost:8000/v2/subjects/subjwibbb> a skos:Concept ;
     skos:inScheme <https://bepress.com/reference_guide_dc/disciplines/> ;
     skos:prefLabel "wibbble" .
 
