@@ -30,8 +30,8 @@ class CedarMetadataRecordList(JSONAPIBaseView, ListCreateAPIView, ListFilterMixi
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
-    required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
-    required_write_scopes = [CoreScopes.NODE_BASE_WRITE, CoreScopes.NODE_FILE_WRITE, CoreScopes.NODE_REGISTRATIONS_WRITE]
+    required_read_scopes = [CoreScopes.CEDAR_METADATA_RECORD_READ]
+    required_write_scopes = [CoreScopes.CEDAR_METADATA_RECORD_WRITE]
 
     serializer_class = CedarMetadataRecordsCreateSerializer
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON, )
@@ -56,8 +56,8 @@ class CedarMetadataRecordDetail(JSONAPIBaseView, RetrieveUpdateDestroyAPIView):
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
-    required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.NODE_FILE_READ, CoreScopes.NODE_REGISTRATIONS_READ]
-    required_write_scopes = [CoreScopes.NODE_BASE_WRITE, CoreScopes.NODE_FILE_WRITE, CoreScopes.NODE_REGISTRATIONS_WRITE]
+    required_read_scopes = [CoreScopes.CEDAR_METADATA_RECORD_READ]
+    required_write_scopes = [CoreScopes.CEDAR_METADATA_RECORD_WRITE]
 
     serializer_class = CedarMetadataRecordsSerializer
 

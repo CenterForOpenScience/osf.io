@@ -19,7 +19,7 @@ class CedarMetadataTemplateList(JSONAPIBaseView, generics.ListAPIView, ListFilte
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
-    required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
+    required_read_scopes = [CoreScopes.CEDAR_METADATA_RECORD_READ]
     required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = CedarMetadataTemplateSerializer
