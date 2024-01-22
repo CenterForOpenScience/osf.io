@@ -13,7 +13,7 @@ from osf.models import CedarMetadataRecord, CedarMetadataTemplate, Guid
 logger = logging.getLogger(__name__)
 
 
-class GuidRelationshipField(RelationshipField):
+class TargetRelationshipField(RelationshipField):
 
     def get_object(self, _id):
         return Guid.load(_id)
@@ -40,9 +40,9 @@ class CedarMetadataRecordsSerializer(JSONAPISerializer):
 
     id = ser.CharField(source='_id', read_only=True)
 
-    guid = RelationshipField(
+    target = RelationshipField(
         related_view='guids:guid-detail',
-        related_view_kwargs={'guids': '<guid._id>'},
+        related_view_kwargs={'guids': '<target._id>'},
         # always_embed=True,
         read_only=False,
     )
@@ -78,9 +78,9 @@ class CedarMetadataRecordsSerializer(JSONAPISerializer):
 
 class CedarMetadataRecordsCreateSerializer(CedarMetadataRecordsSerializer):
 
-    guid = GuidRelationshipField(
+    target = TargetRelationshipField(
         related_view='guids:guid-detail',
-        related_view_kwargs={'guids': '<guid._id>'},
+        related_view_kwargs={'guids': '<target._id>'},
         read_only=False,
         required=True,
     )
@@ -98,15 +98,15 @@ class CedarMetadataRecordsCreateSerializer(CedarMetadataRecordsSerializer):
 
     def create(self, validated_data):
 
-        guid = validated_data.pop('guid')
+        target = validated_data.pop('target')
         template = validated_data.pop('template')
         metadata = validated_data.pop('metadata')
         is_published = validated_data.pop('is_published')
-        record = CedarMetadataRecord(guid=guid, template=template, metadata=metadata, is_published=is_published)
+        record = CedarMetadataRecord(target=target, template=template, metadata=metadata, is_published=is_published)
         try:
             record.save()
         except ValidationError as e:
             raise InvalidModelValueError(detail=e.messages[0])
         except IntegrityError:
-            raise JSONAPIException(detail=f'Cedar metadata record already exists: guid=[{guid._id}], template=[{template._id}]')
+            raise JSONAPIException(detail=f'Cedar metadata record already exists: guid=[{target._id}], template=[{template._id}]')
         return record

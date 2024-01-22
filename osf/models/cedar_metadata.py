@@ -20,13 +20,13 @@ class CedarMetadataTemplate(ObjectIDMixin, BaseModel):
 
 class CedarMetadataRecord(ObjectIDMixin, BaseModel):
 
-    guid = models.ForeignKey('Guid', on_delete=models.CASCADE)
+    target = models.ForeignKey('Guid', on_delete=models.CASCADE)
     template = models.ForeignKey('CedarMetadataTemplate', on_delete=models.CASCADE)
     metadata = DateTimeAwareJSONField(default=dict)
     is_published = models.BooleanField(default=False)
 
     class Meta:
-        unique_together = ('guid', 'template')
+        unique_together = ('target', 'template')
 
     def __unicode__(self):
-        return f'(guid=[{self.guid._id}], template=[{self.template._id}])'
+        return f'(guid=[{self.target._id}], template=[{self.template._id}])'
