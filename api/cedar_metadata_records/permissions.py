@@ -17,13 +17,13 @@ class CedarMetadataRecordPermission(permissions.BasePermission):
 
         auth = get_user_auth(request)
 
-        delegated_object = obj.guid.referent
-        if isinstance(delegated_object, BaseFileNode):
-            delegated_object = delegated_object.target
-        elif not isinstance(delegated_object, (Node, Registration)):
+        permission_source = obj.guid.referent
+        if isinstance(permission_source, BaseFileNode):
+            permission_source = permission_source.target
+        elif not isinstance(permission_source, (Node, Registration)):
             return False
 
         if request.method in permissions.SAFE_METHODS:
-            is_public = delegated_object.is_public and obj.is_published
-            return is_public or delegated_object.can_view(auth)
-        return delegated_object.can_edit(auth)
+            is_public = permission_source.is_public and obj.is_published
+            return is_public or permission_source.can_view(auth)
+        return permission_source.can_edit(auth)
