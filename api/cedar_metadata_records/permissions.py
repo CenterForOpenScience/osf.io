@@ -20,7 +20,7 @@ class CedarMetadataRecordPermission(permissions.BasePermission):
         delegated_object = obj.guid.referent
         if isinstance(delegated_object, BaseFileNode):
             delegated_object = delegated_object.target
-        elif not isinstance(delegated_object, Node) and not isinstance(delegated_object, Registration):
+        elif not isinstance(delegated_object, (Node, Registration)):
             return False
 
         if request.method in permissions.SAFE_METHODS:
