@@ -19,7 +19,7 @@ class CedarMetadataTemplateList(JSONAPIBaseView, generics.ListAPIView, ListFilte
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
-    required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
+    required_read_scopes = [CoreScopes.CEDAR_METADATA_RECORD_READ]
     required_write_scopes = [CoreScopes.NULL]
 
     serializer_class = CedarMetadataTemplateSerializer
@@ -28,7 +28,7 @@ class CedarMetadataTemplateList(JSONAPIBaseView, generics.ListAPIView, ListFilte
     # This view goes under the _/ namespace
     versioning_class = PrivateVersioning
     view_category = 'cedar-metadata-templates'
-    view_name = 'cedar-metadata-templates-list'
+    view_name = 'cedar-metadata-template-list'
 
     def get_default_queryset(self):
         return CedarMetadataTemplate.objects.all()
@@ -51,7 +51,7 @@ class CedarMetadataTemplateDetail(JSONAPIBaseView, generics.RetrieveAPIView):
     # This view goes under the _/ namespace
     versioning_class = PrivateVersioning
     view_category = 'cedar-metadata-templates'
-    view_name = 'cedar-metadata-templates-detail'
+    view_name = 'cedar-metadata-template-detail'
 
     def get_object(self):
         try:
