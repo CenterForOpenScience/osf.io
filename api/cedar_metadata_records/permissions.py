@@ -1,8 +1,12 @@
+import logging
+
 from rest_framework import permissions
 
 from api.base.utils import get_user_auth
 
 from osf.models import BaseFileNode, CedarMetadataRecord, Node, Registration
+
+logger = logging.getLogger(__name__)
 
 
 class CedarMetadataRecordPermission(permissions.BasePermission):

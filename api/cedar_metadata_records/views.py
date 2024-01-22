@@ -1,4 +1,5 @@
 from __future__ import unicode_literals
+import logging
 
 from rest_framework import permissions as drf_permissions
 from rest_framework.exceptions import NotFound
@@ -6,14 +7,20 @@ from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIV
 
 from api.base import permissions as base_permissions
 from api.base.filters import ListFilterMixin
+from api.base.parsers import (
+    JSONAPIMultipleRelationshipsParser,
+    JSONAPIMultipleRelationshipsParserForRegularJSON,
+)
 from api.base.versioning import PrivateVersioning
 from api.base.views import JSONAPIBaseView
 from api.cedar_metadata_records.permissions import CedarMetadataRecordPermission
-from api.cedar_metadata_records.serializers import CedarMetadataRecordsSerializer
+from api.cedar_metadata_records.serializers import CedarMetadataRecordsSerializer, CedarMetadataRecordsCreateSerializer
 
 from framework.auth.oauth_scopes import CoreScopes
 
 from osf.models import CedarMetadataRecord
+
+logger = logging.getLogger(__name__)
 
 
 class CedarMetadataRecordList(JSONAPIBaseView, ListCreateAPIView, ListFilterMixin):
@@ -26,7 +33,9 @@ class CedarMetadataRecordList(JSONAPIBaseView, ListCreateAPIView, ListFilterMixi
     required_read_scopes = [CoreScopes.ALWAYS_PUBLIC]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE, CoreScopes.NODE_FILE_WRITE, CoreScopes.NODE_REGISTRATIONS_WRITE]
 
-    serializer_class = CedarMetadataRecordsSerializer
+    serializer_class = CedarMetadataRecordsCreateSerializer
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON, )
+    model_class = CedarMetadataRecord
 
     # This view goes under the _/ namespace
     versioning_class = PrivateVersioning
