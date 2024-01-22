@@ -13,7 +13,7 @@ from osf.models import CedarMetadataRecord, CedarMetadataTemplate, Guid
 logger = logging.getLogger(__name__)
 
 
-class GuidRelationshipField(RelationshipField):
+class TargetRelationshipField(RelationshipField):
 
     def get_object(self, _id):
         return Guid.load(_id)
@@ -40,7 +40,8 @@ class CedarMetadataRecordsSerializer(JSONAPISerializer):
 
     id = ser.CharField(source='_id', read_only=True)
 
-    guid = RelationshipField(
+    target = RelationshipField(
+        source='guid',
         related_view='guids:guid-detail',
         related_view_kwargs={'guids': '<guid._id>'},
         # always_embed=True,
@@ -78,9 +79,11 @@ class CedarMetadataRecordsSerializer(JSONAPISerializer):
 
 class CedarMetadataRecordsCreateSerializer(CedarMetadataRecordsSerializer):
 
-    guid = GuidRelationshipField(
+    target = TargetRelationshipField(
+        source='guid',
         related_view='guids:guid-detail',
         related_view_kwargs={'guids': '<guid._id>'},
+        # always_embed=True,
         read_only=False,
         required=True,
     )
@@ -88,6 +91,7 @@ class CedarMetadataRecordsCreateSerializer(CedarMetadataRecordsSerializer):
     template = CedarMetadataTemplateRelationshipField(
         related_view='cedar-metadata-templates:cedar-metadata-template-detail',
         related_view_kwargs={'template_id': '<template._id>'},
+        # always_embed=True,
         read_only=False,
         required=True,
     )
