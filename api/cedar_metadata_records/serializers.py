@@ -44,14 +44,14 @@ class CedarMetadataRecordsSerializer(JSONAPISerializer):
         related_view='guids:guid-detail',
         related_view_kwargs={'guids': '<target._id>'},
         # always_embed=True,
-        read_only=False,
+        read_only=True,
     )
 
     template = RelationshipField(
         related_view='cedar-metadata-templates:cedar-metadata-template-detail',
         related_view_kwargs={'template_id': '<template._id>'},
         # always_embed=True,
-        read_only=False,
+        read_only=True,
     )
 
     metadata = ser.DictField(read_only=False)
