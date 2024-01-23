@@ -6,10 +6,10 @@ from rest_framework import serializers as ser
 from api.base.exceptions import InvalidModelValueError, JSONAPIException
 from api.base.serializers import JSONAPISerializer, LinksField, RelationshipField
 from api.base.utils import absolute_reverse
-from api.cedar_metadata_templates.serializers import CedarMetadataTemplateSerializer
+from api.cedar_metadata_records.utils import get_guids_related_view, get_guids_related_view_kwargs
 
 from osf.exceptions import ValidationError
-from osf.models import BaseFileNode, CedarMetadataRecord, CedarMetadataTemplate, Guid, Node, Registration
+from osf.models import CedarMetadataRecord, CedarMetadataTemplate, Guid
 
 logger = logging.getLogger(__name__)
 
@@ -50,26 +50,6 @@ class CedarMetadataRecordsBaseSerializer(JSONAPISerializer):
     def get_absolute_url(self, obj):
         return absolute_reverse('cedar-metadata-records:cedar-metadata-record-detail', kwargs={'record_id': obj._id})
 
-    def get_target_id(self, obj):
-        return obj.guid._id
-
-    def get_target_type(self, obj):
-        referent = obj.guid.referent
-        if isinstance(referent, Node):
-            return 'nodes'
-        elif isinstance(referent, Registration):
-            return 'registrations'
-        elif isinstance(referent, BaseFileNode):
-            return 'files'
-        else:
-            raise NotImplementedError()
-
-    def get_template_id(self, obj):
-        return obj.template._id
-
-    def get_template_type(self, obj):
-        return CedarMetadataTemplateSerializer.Meta.type_
-
     def update(self, instance, validated_data):
         raise NotImplementedError
 
@@ -94,12 +74,8 @@ class CedarMetadataRecordsListCreateSerializer(CedarMetadataRecordsBaseSerialize
 
     target = TargetRelationshipField(
         source='guid',
-        related_view='guids:guid-detail',
-        related_view_kwargs={'guids': '<guid._id>'},
-        related_meta={
-            'django_content_type': 'get_target_type',
-        },
-        # always_embed=True,
+        related_view=lambda record: get_guids_related_view(record),
+        related_view_kwargs=lambda record: get_guids_related_view_kwargs(record),
         read_only=False,
         required=True,
     )
@@ -138,11 +114,8 @@ class CedarMetadataRecordsDetailSerializer(CedarMetadataRecordsBaseSerializer):
 
     target = RelationshipField(
         source='guid',
-        related_view='guids:guid-detail',
-        related_view_kwargs={'guids': '<guid._id>'},
-        related_meta={
-            'django_content_type': 'get_target_type',
-        },
+        related_view=lambda record: get_guids_related_view(record),
+        related_view_kwargs=lambda record: get_guids_related_view_kwargs(record),
         read_only=True,
     )
 
