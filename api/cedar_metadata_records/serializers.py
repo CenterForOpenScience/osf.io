@@ -6,9 +6,10 @@ from rest_framework import serializers as ser
 from api.base.exceptions import InvalidModelValueError, JSONAPIException
 from api.base.serializers import JSONAPISerializer, LinksField, RelationshipField
 from api.base.utils import absolute_reverse
+from api.cedar_metadata_templates.serializers import CedarMetadataTemplateSerializer
 
 from osf.exceptions import ValidationError
-from osf.models import CedarMetadataRecord, CedarMetadataTemplate, Guid
+from osf.models import BaseFileNode, CedarMetadataRecord, CedarMetadataTemplate, Guid, Node, Registration
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +50,26 @@ class CedarMetadataRecordsBaseSerializer(JSONAPISerializer):
     def get_absolute_url(self, obj):
         return absolute_reverse('cedar-metadata-records:cedar-metadata-record-detail', kwargs={'record_id': obj._id})
 
+    def get_target_id(self, obj):
+        return obj.guid._id
+
+    def get_target_type(self, obj):
+        referent = obj.guid.referent
+        if isinstance(referent, Node):
+            return 'nodes'
+        elif isinstance(referent, Registration):
+            return 'registrations'
+        elif isinstance(referent, BaseFileNode):
+            return 'files'
+        else:
+            raise NotImplementedError()
+
+    def get_template_id(self, obj):
+        return obj.template._id
+
+    def get_template_type(self, obj):
+        return CedarMetadataTemplateSerializer.Meta.type_
+
     def update(self, instance, validated_data):
         raise NotImplementedError
 
@@ -75,6 +96,10 @@ class CedarMetadataRecordsListCreateSerializer(CedarMetadataRecordsBaseSerialize
         source='guid',
         related_view='guids:guid-detail',
         related_view_kwargs={'guids': '<guid._id>'},
+        related_meta={
+            'type': 'get_target_type',
+            'id': 'get_target_id',
+        },
         # always_embed=True,
         read_only=False,
         required=True,
@@ -83,6 +108,10 @@ class CedarMetadataRecordsListCreateSerializer(CedarMetadataRecordsBaseSerialize
     template = CedarMetadataTemplateRelationshipField(
         related_view='cedar-metadata-templates:cedar-metadata-template-detail',
         related_view_kwargs={'template_id': '<template._id>'},
+        related_meta={
+            'type': 'get_template_type',
+            'id': 'get_template_id',
+        },
         # always_embed=True,
         read_only=False,
         required=True,
@@ -117,6 +146,10 @@ class CedarMetadataRecordsDetailSerializer(CedarMetadataRecordsBaseSerializer):
         source='guid',
         related_view='guids:guid-detail',
         related_view_kwargs={'guids': '<guid._id>'},
+        related_meta={
+            'type': 'get_target_type',
+            'id': 'get_target_id',
+        },
         # always_embed=True,
         read_only=True,
     )
@@ -124,6 +157,10 @@ class CedarMetadataRecordsDetailSerializer(CedarMetadataRecordsBaseSerializer):
     template = RelationshipField(
         related_view='cedar-metadata-templates:cedar-metadata-template-detail',
         related_view_kwargs={'template_id': '<template._id>'},
+        related_meta={
+            'type': 'get_template_type',
+            'id': 'get_template_id',
+        },
         # always_embed=True,
         read_only=True,
     )
