@@ -946,6 +946,11 @@ class RelationshipField(ser.Field):
                     elif related_type == 'custom-file-metadata':
                         related_id = resolved_url.kwargs['guid_id']
                         related_type = 'custom-file-metadata-records'
+                    elif related_type == 'cedar-metadata-templates' and related_class.view_name == 'cedar-metadata-template-detail':
+                        related_id = resolved_url.kwargs['template_id']
+                    elif related_type == 'guids' and related_class.view_name == 'guid-detail':
+                        related_id = resolved_url.kwargs['guids']
+                        related_type = related_meta.get('django_content_type', 'guids')
                     else:
                         related_id = resolved_url.kwargs[related_type[:-1] + '_id']
                 except KeyError:

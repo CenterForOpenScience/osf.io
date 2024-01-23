@@ -97,8 +97,7 @@ class CedarMetadataRecordsListCreateSerializer(CedarMetadataRecordsBaseSerialize
         related_view='guids:guid-detail',
         related_view_kwargs={'guids': '<guid._id>'},
         related_meta={
-            'type': 'get_target_type',
-            'id': 'get_target_id',
+            'django_content_type': 'get_target_type',
         },
         # always_embed=True,
         read_only=False,
@@ -108,11 +107,6 @@ class CedarMetadataRecordsListCreateSerializer(CedarMetadataRecordsBaseSerialize
     template = CedarMetadataTemplateRelationshipField(
         related_view='cedar-metadata-templates:cedar-metadata-template-detail',
         related_view_kwargs={'template_id': '<template._id>'},
-        related_meta={
-            'type': 'get_template_type',
-            'id': 'get_template_id',
-        },
-        # always_embed=True,
         read_only=False,
         required=True,
     )
@@ -147,21 +141,14 @@ class CedarMetadataRecordsDetailSerializer(CedarMetadataRecordsBaseSerializer):
         related_view='guids:guid-detail',
         related_view_kwargs={'guids': '<guid._id>'},
         related_meta={
-            'type': 'get_target_type',
-            'id': 'get_target_id',
+            'django_content_type': 'get_target_type',
         },
-        # always_embed=True,
         read_only=True,
     )
 
     template = RelationshipField(
         related_view='cedar-metadata-templates:cedar-metadata-template-detail',
         related_view_kwargs={'template_id': '<template._id>'},
-        related_meta={
-            'type': 'get_template_type',
-            'id': 'get_template_id',
-        },
-        # always_embed=True,
         read_only=True,
     )
 
