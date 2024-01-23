@@ -31,7 +31,7 @@ class CedarMetadataTemplateRelationshipField(RelationshipField):
         return self.get_object(data)
 
 
-class CedarMetadataRecordsSerializer(JSONAPISerializer):
+class CedarMetadataRecordsBaseSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'cedar-metadata-records'
@@ -40,24 +40,9 @@ class CedarMetadataRecordsSerializer(JSONAPISerializer):
 
     id = ser.CharField(source='_id', read_only=True)
 
-    target = RelationshipField(
-        source='guid',
-        related_view='guids:guid-detail',
-        related_view_kwargs={'guids': '<guid._id>'},
-        # always_embed=True,
-        read_only=True,
-    )
+    metadata = ser.DictField(read_only=True)
 
-    template = RelationshipField(
-        related_view='cedar-metadata-templates:cedar-metadata-template-detail',
-        related_view_kwargs={'template_id': '<template._id>'},
-        # always_embed=True,
-        read_only=True,
-    )
-
-    metadata = ser.DictField(read_only=False)
-
-    is_published = ser.BooleanField(read_only=False)
+    is_published = ser.BooleanField(read_only=True)
 
     links = LinksField({'self': 'get_absolute_url'})
 
@@ -65,19 +50,26 @@ class CedarMetadataRecordsSerializer(JSONAPISerializer):
         return absolute_reverse('cedar-metadata-records:cedar-metadata-record-detail', kwargs={'record_id': obj._id})
 
     def update(self, instance, validated_data):
-        assert isinstance(instance, CedarMetadataRecord), 'instance must be a CedarMetadataRecord'
-        for key, value in validated_data.items():
-            if key == 'metadata':
-                instance.metadata = value
-            elif key == 'is_published':
-                instance.is_published = value
-            else:
-                continue  # ignore other attributes
-        instance.save()
-        return instance
+        raise NotImplementedError
+
+    def create(self, validated_data):
+        raise NotImplementedError
 
 
-class CedarMetadataRecordsCreateSerializer(CedarMetadataRecordsSerializer):
+class CedarMetadataRecordsListSerializer(CedarMetadataRecordsBaseSerializer):
+
+    def update(self, instance, validated_data):
+        raise NotImplementedError
+
+    def create(self, validated_data):
+        raise NotImplementedError
+
+
+class CedarMetadataRecordsListCreateSerializer(CedarMetadataRecordsBaseSerializer):
+
+    metadata = ser.DictField(read_only=False, required=True)
+
+    is_published = ser.BooleanField(read_only=False, required=True)
 
     target = TargetRelationshipField(
         source='guid',
@@ -96,10 +88,6 @@ class CedarMetadataRecordsCreateSerializer(CedarMetadataRecordsSerializer):
         required=True,
     )
 
-    metadata = ser.DictField(read_only=False, required=True)
-
-    is_published = ser.BooleanField(read_only=False, required=True)
-
     def create(self, validated_data):
 
         guid = validated_data.pop('guid')
@@ -114,3 +102,43 @@ class CedarMetadataRecordsCreateSerializer(CedarMetadataRecordsSerializer):
         except IntegrityError:
             raise JSONAPIException(detail=f'Cedar metadata record already exists: guid=[{guid._id}], template=[{template._id}]')
         return record
+
+    def update(self, instance, validated_data):
+        raise NotImplementedError
+
+
+class CedarMetadataRecordsDetailSerializer(CedarMetadataRecordsBaseSerializer):
+
+    metadata = ser.DictField(read_only=False, required=False)
+
+    is_published = ser.BooleanField(read_only=False, required=False)
+
+    target = RelationshipField(
+        source='guid',
+        related_view='guids:guid-detail',
+        related_view_kwargs={'guids': '<guid._id>'},
+        # always_embed=True,
+        read_only=True,
+    )
+
+    template = RelationshipField(
+        related_view='cedar-metadata-templates:cedar-metadata-template-detail',
+        related_view_kwargs={'template_id': '<template._id>'},
+        # always_embed=True,
+        read_only=True,
+    )
+
+    def update(self, instance, validated_data):
+        assert isinstance(instance, CedarMetadataRecord), 'instance must be a CedarMetadataRecord'
+        for key, value in validated_data.items():
+            if key == 'metadata':
+                instance.metadata = value
+            elif key == 'is_published':
+                instance.is_published = value
+            else:
+                continue  # ignore other attributes
+        instance.save()
+        return instance
+
+    def create(self, validated_data):
+        raise NotImplementedError
