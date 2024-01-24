@@ -26,10 +26,8 @@ RUN apk add --no-cache --virtual .run-deps \
     libevent \
     && yarn global add bower
 
-RUN apk add --no-cache python3 py3-pip && \
-    python3 -m ensurepip && \
-    pip3 install --upgrade pip==21.0 && \
-    rm -rf /var/cache/apk/*
+RUN python3 -m ensurepip && \
+    pip3 install --upgrade pip==21.0
 
 WORKDIR /code
 
