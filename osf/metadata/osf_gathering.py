@@ -147,10 +147,12 @@ OSFMAP = {
     OSF.Project: {
         **OSF_OBJECT,
         OSF.supplements: OSF_OBJECT_REFERENCE,
+        OSF.usesCedarTemplate: None,
     },
     OSF.ProjectComponent: {
         **OSF_OBJECT,
         OSF.supplements: OSF_OBJECT_REFERENCE,
+        OSF.usesCedarTemplate: None,
     },
     OSF.Registration: {
         **OSF_OBJECT,
@@ -161,6 +163,7 @@ OSFMAP = {
         OSF.hasMaterialsResource: OSF_OBJECT_REFERENCE,
         OSF.hasPapersResource: OSF_OBJECT_REFERENCE,
         OSF.hasSupplementalResource: OSF_OBJECT_REFERENCE,
+        OSF.usesCedarTemplate: None,
     },
     OSF.RegistrationComponent: {
         **OSF_OBJECT,
@@ -171,6 +174,7 @@ OSFMAP = {
         OSF.hasMaterialsResource: OSF_OBJECT_REFERENCE,
         OSF.hasPapersResource: OSF_OBJECT_REFERENCE,
         OSF.hasSupplementalResource: OSF_OBJECT_REFERENCE,
+        OSF.usesCedarTemplate: None,
     },
     OSF.Preprint: {
         **OSF_OBJECT,
@@ -195,6 +199,7 @@ OSFMAP = {
         OSF.filePath: None,
         OSF.funding: None,
         OSF.hasFunding: None,
+        OSF.usesCedarTemplate: None,
         OWL.sameAs: None,
     },
     DCTERMS.Agent: {
@@ -1010,3 +1015,15 @@ def _omitted_metadata(focus, omitted_property_set, description):
     for property_iri in omitted_property_set:
         yield (bnode, OSF.omittedMetadataProperty, property_iri)
     yield (bnode, DCTERMS.description, _language_text(focus, description))
+
+@gather.er(OSF.usesCedarTemplate)
+def gather_cedar_templates(focus):
+    try:
+        _guids = focus.dbmodel.guids.all()
+    except AttributeError:
+        return  # no guids
+    records = osfdb.CedarMetadataRecord.objects.filter(guid__in=_guids, public=True)
+    for record in records:
+        template_iri = rdflib.URIRef(record.get_template_semantic_iri())
+        yield (OSF.usesCedarTemplate, template_iri)
+        yield (template_iri, DCTERMS.title, record.get_template_name())
