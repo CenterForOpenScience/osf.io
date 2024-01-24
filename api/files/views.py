@@ -10,14 +10,18 @@ from osf.models import (
     Guid,
     BaseFileNode,
     FileVersion,
+    CedarMetadataRecord,
 )
 
 from api.base.exceptions import Gone
+from api.base.filters import ListFilterMixin
 from api.base.permissions import PermissionWithGetter
 from api.base.throttling import CreateGuidThrottle, NonCookieAuthThrottle, UserRateThrottle, BurstRateThrottle
 from api.base import utils
 from api.base.views import JSONAPIBaseView
 from api.base import permissions as base_permissions
+from api.cedar_metadata_records.serializers import CedarMetadataRecordsListSerializer
+from api.cedar_metadata_records.permissions import CedarMetadataRecordPermission
 from api.nodes.permissions import ContributorOrPublic
 from api.files import annotations
 from api.files.permissions import IsPreprintFile
@@ -171,3 +175,25 @@ class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
         context = JSONAPIBaseView.get_serializer_context(self)
         context['file'] = self.file
         return context
+
+
+class FileCedarMetadataRecordsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
+
+    permission_classes = (
+        CedarMetadataRecordPermission,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+    required_read_scopes = [CoreScopes.CEDAR_METADATA_RECORD_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = CedarMetadataRecordsListSerializer
+
+    view_category = 'files'
+    view_name = 'file-cedar-metadata-records-list'
+
+    def get_default_queryset(self):
+        return CedarMetadataRecord.objects.filter(guid___id=self.kwargs['file_id'])
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()

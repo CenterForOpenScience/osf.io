@@ -57,6 +57,8 @@ from api.base.views import (
     WaterButlerMixin,
 )
 from api.base.waffle_decorators import require_flag
+from api.cedar_metadata_records.serializers import CedarMetadataRecordsListSerializer
+from api.cedar_metadata_records.permissions import CedarMetadataRecordPermission
 from api.citations.utils import render_citation
 from api.comments.permissions import CanCommentOrPublic
 from api.comments.serializers import (
@@ -150,6 +152,7 @@ from osf.models import (
     Guid,
     File,
     Folder,
+    CedarMetadataRecord,
 )
 from addons.osfstorage.models import Region
 from osf.utils.permissions import ADMIN, WRITE_NODE
@@ -2285,3 +2288,25 @@ class NodeSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
         context['wiki_addon'] = node.get_addon('wiki')
         context['forward_addon'] = node.get_addon('forward')
         return context
+
+
+class NodeCedarMetadataRecordsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
+
+    permission_classes = (
+        CedarMetadataRecordPermission,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+    required_read_scopes = [CoreScopes.CEDAR_METADATA_RECORD_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
+    serializer_class = CedarMetadataRecordsListSerializer
+
+    view_category = 'nodes'
+    view_name = 'node-cedar-metadata-records-list'
+
+    def get_default_queryset(self):
+        return CedarMetadataRecord.objects.filter(guid___id=self.kwargs['node_id'])
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
