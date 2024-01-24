@@ -1022,7 +1022,7 @@ def gather_cedar_templates(focus):
         _guids = focus.dbmodel.guids.all()
     except AttributeError:
         return  # no guids
-    records = osfdb.CedarMetadataRecord.objects.filter(guid__in=_guids, public=True)
+    records = osfdb.CedarMetadataRecord.objects.filter(guid__in=_guids, is_published=True)
     for record in records:
         template_iri = rdflib.URIRef(record.get_template_semantic_iri())
         yield (OSF.usesCedarTemplate, template_iri)
