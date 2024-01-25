@@ -396,12 +396,18 @@ def count_files_ng_ok(exported_file_versions, storage_file_versions, exclude_key
     list_file_ng = []
     count_files = 0
     for file_a in exported_file_versions:
-        version_identifier_a = file_a['identifier']
+        # following properties is not change after the Export/Restore process
+        # use them to identify a file version
+        version_identifier_a = file_a.get('identifier')
         materialized_path_a = file_a.get('materialized_path')
+        project_id_a = file_a.get('project', {}).get('id')
 
         file_b = next((
-            file for file in storage_file_versions
-            if file.get('materialized_path') == materialized_path_a and file.get('identifier') == version_identifier_a
+            file for file in storage_file_versions if (
+                file.get('materialized_path') == materialized_path_a
+                and file.get('identifier') == version_identifier_a
+                and file.get('project', {}).get('id') == project_id_a
+            )
         ), None)
         if file_b:
             is_diff, message, file_version = check_diff_between_version([file_a], [file_b], exclude_keys=exclude_keys)
@@ -410,9 +416,10 @@ def count_files_ng_ok(exported_file_versions, storage_file_versions, exclude_key
             else:
                 data['ng'] += 1
                 ng_content = {
+                    'project_id': project_id_a,
                     'path': materialized_path_a,
-                    'size': file_a['size'],
-                    'version_id': file_a['identifier'],
+                    'version_id': version_identifier_a,
+                    'size': file_a.get('size', 0),
                     'reason': message,
                 }
                 list_file_ng.append(ng_content)
@@ -420,9 +427,10 @@ def count_files_ng_ok(exported_file_versions, storage_file_versions, exclude_key
         else:
             data['ng'] += 1
             ng_content = {
+                'project_id': project_id_a,
                 'path': materialized_path_a,
-                'size': file_a['size'],
-                'version_id': file_a.get('identifier', 0),
+                'version_id': version_identifier_a,
+                'size': file_a.get('size', 0),
                 'reason': 'File is not exist',
             }
             list_file_ng.append(ng_content)

@@ -1365,6 +1365,7 @@ class TestUtils(AdminTestCase):
         nt.assert_equal(len(res['list_file_ng']), res['ng'])
         # check properties in each NG file item
         file_info = res['list_file_ng'][0]
+        nt.assert_in('project_id', file_info)
         nt.assert_in('path', file_info)
         nt.assert_in('version_id', file_info)
         nt.assert_in('size', file_info)
@@ -1410,6 +1411,7 @@ class TestUtils(AdminTestCase):
         nt.assert_equal(len(res['list_file_ng']), res['ng'])
         # check properties in each NG file item
         file_info = res['list_file_ng'][0]
+        nt.assert_in('project_id', file_info)
         nt.assert_in('path', file_info)
         nt.assert_in('version_id', file_info)
         nt.assert_in('size', file_info)
@@ -1424,6 +1426,48 @@ class TestUtils(AdminTestCase):
         nt.assert_equal(res['ng'], 0)
         nt.assert_equal(len(res['list_file_ng']), res['ng'])
         nt.assert_equal(res['ok'], res['total'])
+
+    def test_count_file_ng_ok__same_files_in_other_projects(self):
+        # project_id=prj01 file_id=1~files_len
+        # project_id=prj02 file_id=1~files_len
+        files_len = 3
+        files_old = [
+            gen_file(i, version_n=3, project_guid='prj01',)
+            for i in range(1, files_len + 1, 1)] + [
+            gen_file(i, version_n=3, project_guid='prj02',)
+            for i in range(1, files_len + 1, 1)]
+        # file_id=1~files_len+1
+        files_new = files_old + [
+            gen_file(files_len + 1, version_n=10, project_guid='prj02')
+        ]
+
+        data_old = utils.process_data_information(files_old)
+        data_new = utils.process_data_information(files_new)
+        res = utils.count_files_ng_ok(data_new, data_old)
+        print(f'res={res}')
+
+        # check properties
+        nt.assert_in('ok', res)
+        nt.assert_in('ng', res)
+        nt.assert_in('total', res)
+        nt.assert_in('list_file_ng', res)
+
+        # check quantity
+        nt.assert_equal(res['ok'] + res['ng'], res['total'])
+        # taken all without limit on the NG file list
+        nt.assert_equal(len(res['list_file_ng']), res['ng'])
+
+        # check properties in each NG file item
+        file_info = res['list_file_ng'][0]
+        nt.assert_in('project_id', file_info)
+        nt.assert_in('path', file_info)
+        nt.assert_in('version_id', file_info)
+        nt.assert_in('size', file_info)
+        nt.assert_in('reason', file_info)
+
+        # check content in 'reason': '"...project..." not match'
+        nt.assert_not_in('project', file_info['reason'])
+        nt.assert_not_in('" not match', file_info['reason'])
 
 
 @pytest.mark.feature_202210
