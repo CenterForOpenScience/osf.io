@@ -1,3 +1,4 @@
+import copy
 import json
 import uuid
 
@@ -1374,6 +1375,52 @@ class TestUtils(AdminTestCase):
         data_new = utils.process_data_information(files_old)
         res = utils.count_files_ng_ok(data_new, data_old)
         # check quantity
+        nt.assert_equal(res['ng'], 0)
+        nt.assert_equal(len(res['list_file_ng']), res['ng'])
+        nt.assert_equal(res['ok'], res['total'])
+
+    def test_count_file_ng_ok__exclude_location(self):
+        # file_id=1~files_len
+        files_len = 3
+        files_old = [gen_file(i, version_n=5) for i in range(1, files_len + 1, 1)]
+        # simulate the case where the location is changed
+        files_new = []
+        for file_info in copy.deepcopy(files_old):
+            version_list = file_info['version']
+            latest_version = version_list[0]
+            latest_ver_location = latest_version['location']
+            # e.g. re-deploy WB server
+            latest_ver_location['host'] = uuid.uuid4().hex[:12],
+            # e.g. change only the bucket
+            latest_ver_location['bucket'] = 'grdm-ierae-new',
+            file_info['location'] = latest_version['location']
+            files_new.append(file_info)
+
+        data_old = utils.process_data_information(files_old)
+        data_new = utils.process_data_information(files_new)
+        res = utils.count_files_ng_ok(data_new, data_old)
+        # check properties
+        nt.assert_in('ok', res)
+        nt.assert_in('ng', res)
+        nt.assert_in('total', res)
+        nt.assert_in('list_file_ng', res)
+        # check quantity
+        nt.assert_equal(res['ok'] + res['ng'], res['total'])
+        # taken all without limit on the NG file list
+        nt.assert_equal(len(res['list_file_ng']), res['ng'])
+        # check properties in each NG file item
+        file_info = res['list_file_ng'][0]
+        nt.assert_in('path', file_info)
+        nt.assert_in('version_id', file_info)
+        nt.assert_in('size', file_info)
+        nt.assert_in('reason', file_info)
+        # check content in 'reason': '"location" not match'
+        nt.assert_in('location', file_info['reason'])
+        nt.assert_in('" not match', file_info['reason'])
+
+        # case of excluding 'location'
+        exclude_keys = ['location']
+        res = utils.count_files_ng_ok(data_new, data_old, exclude_keys=exclude_keys)
         nt.assert_equal(res['ng'], 0)
         nt.assert_equal(len(res['list_file_ng']), res['ng'])
         nt.assert_equal(res['ok'], res['total'])
