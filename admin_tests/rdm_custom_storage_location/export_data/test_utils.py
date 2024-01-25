@@ -1,8 +1,10 @@
 import json
+import uuid
 
 import mock
 import pytest
 import requests
+from datetime import datetime, timezone, timedelta
 from jsonschema import ValidationError, SchemaError
 from mock import patch, MagicMock
 from nose import tools as nt
@@ -480,6 +482,117 @@ FAKE_DATA_NEW = {
         file_4_json,
     ]
 }
+
+
+def gen_file(file_id, version_n=1, **kwargs):
+    datetime_format = '%Y-%m-%d %H:%M:%S'
+    project_guid = kwargs.get('project_guid', 'prj01')
+    project_name = kwargs.get('project_name', f'project {project_guid}')
+    user_id = kwargs.get('user_id', 1)
+    user_email = kwargs.get('user_email', 'user_ut@example.com.vn')
+    file_name = kwargs.get('name', f'file_{file_id}.txt')
+    file_tags = kwargs.get('tags', ['test', 'generated'])
+    file_timestamp_id = kwargs.get('timestamp_id', file_id)
+    wb_container_id = kwargs.get('wb_container_id', '9a488c3f14b7')
+    location_provider = kwargs.get('location_provider', 's3compat')
+    location_bucket = kwargs.get('location_bucket', 'grdm-ierae')
+
+    file_path = f'/{uuid.uuid4().hex[:24]}'
+    materialized_path = f'/{file_name}'
+
+    project_uuid = uuid.uuid4().hex
+    prj_json = {
+        'id': project_guid,
+        'name': project_name
+    }
+
+    version_list = []
+    now = datetime.now(tz=timezone.utc)
+    for i in range(version_n, 0, -1):
+        created_at = now - timedelta(minutes=1)
+        ver_size = 1200 + i
+        ver_sha256 = uuid.uuid4().hex + uuid.uuid4().hex
+        ver_md5 = uuid.uuid4().hex
+        ver_sha1 = (uuid.uuid4().hex + uuid.uuid4().hex)[:40]
+        ver_etag = uuid.uuid4().hex + uuid.uuid4().hex
+        ver_sha512 = uuid.uuid4().hex + uuid.uuid4().hex + uuid.uuid4().hex + uuid.uuid4().hex
+        ver_path = f'/{ver_sha256}'
+        ver_json = {
+            'identifier': str(i),
+            'created_at': created_at.strftime(datetime_format),
+            'modified_at': created_at.strftime(datetime_format),
+            'size': ver_size,
+            'version_name': file_name,
+            'contributor': user_email,
+            'metadata': {
+                'md5': ver_md5,
+                'etag': ver_etag,
+                'kind': 'file',
+                'name': ver_sha256,
+                'path': ver_path,
+                'sha1': ver_sha1,
+                'size': str(ver_size),
+                'extra': {
+                    'md5': ver_md5,
+                    'encryption': ''
+                },
+                'sha256': ver_sha256,
+                'sha512': ver_sha512,
+                'sizeInt': ver_size,
+                'modified': created_at.strftime('%a, %d %b %Y %H:%M:%S %Z'),
+                'provider': location_provider,
+                'contentType': 'binary/octet-stream',
+                'created_utc': None,
+                'materialized': ver_path,
+                'modified_utc': created_at.isoformat(timespec='seconds')
+            },
+            'location': {
+                'nid': project_guid,
+                'host': wb_container_id,
+                'bucket': location_bucket,
+                'folder': '',
+                'object': ver_sha256,
+                'address': None,
+                'service': location_provider,
+                'version': '0.0.1',
+                'provider': location_provider,
+                'encrypt_uploads': False
+            }
+        }
+        version_list.append(ver_json)
+
+    latest_version = version_list[0]
+    first_version = version_list[-1]
+    timestamp_json = {
+        'timestamp_id': file_timestamp_id,
+        'inspection_result_status': 1,
+        'provider': 'osfstorage',
+        'upload_file_modified_user': None,
+        'project_id': project_guid,
+        'path': materialized_path,
+        'key_file_name': f'{project_guid}_{project_uuid}_pub.pem',
+        'upload_file_created_user': user_id,
+        'upload_file_size': latest_version['size'],
+        'verify_file_size': latest_version['size'],
+        'verify_user': user_id,
+    }
+    file_json = {
+        'id': file_id,
+        'path': file_path,
+        'materialized_path': materialized_path,
+        'name': latest_version['version_name'],
+        'provider': 'osfstorage',
+        'created_at': first_version['created_at'],
+        'modified_at': latest_version['modified_at'],
+        'project': prj_json,
+        'tags': file_tags,
+        'version': version_list,
+        'size': latest_version['size'],
+        'location': latest_version['location'],
+        'timestamp': timestamp_json,
+        'checkout_id': None,
+    }
+    return file_json
 
 
 class FakeRes:
@@ -1227,6 +1340,44 @@ class TestUtils(AdminTestCase):
         result = utils.validate_file_json(FAKE_DATA, 'file-info-schema.json')
         nt.assert_true(result)
 
+    def test_count_file_ng_ok(self):
+        # for check Export Data and check Restore Data
+        # file_id=1~files_len
+        files_len = 3
+        files_old = [gen_file(i, version_n=5) for i in range(1, files_len + 1, 1)]
+        # file_id=1~files_len+2
+        files_new = files_old + [
+            gen_file(files_len + 1, version_n=10),
+            gen_file(files_len + 2, version_n=10),
+        ]
+        data_old = utils.process_data_information(files_old)
+        data_new = utils.process_data_information(files_new)
+        res = utils.count_files_ng_ok(data_new, data_old)
+        # check properties
+        nt.assert_in('ok', res)
+        nt.assert_in('ng', res)
+        nt.assert_in('total', res)
+        nt.assert_in('list_file_ng', res)
+        # check quantity
+        nt.assert_equal(res['ok'] + res['ng'], res['total'])
+        # taken all without limit on the NG file list
+        nt.assert_equal(len(res['list_file_ng']), res['ng'])
+        # check properties in each NG file item
+        file_info = res['list_file_ng'][0]
+        nt.assert_in('path', file_info)
+        nt.assert_in('version_id', file_info)
+        nt.assert_in('size', file_info)
+        nt.assert_in('reason', file_info)
+
+        # case of no change
+        data_old = utils.process_data_information(files_old)
+        data_new = utils.process_data_information(files_old)
+        res = utils.count_files_ng_ok(data_new, data_old)
+        # check quantity
+        nt.assert_equal(res['ng'], 0)
+        nt.assert_equal(len(res['list_file_ng']), res['ng'])
+        nt.assert_equal(res['ok'], res['total'])
+
 
 @pytest.mark.feature_202210
 class TestUtilsForExportData(AdminTestCase):
@@ -1236,12 +1387,6 @@ class TestUtilsForExportData(AdminTestCase):
         self.user.is_superuser = True
         self.institution = InstitutionFactory()
         self.export_data = ExportDataFactory()
-
-    def test_count_file_ng_ok(self):
-        data_old = utils.process_data_information(FAKE_DATA['files'])
-        data_new = utils.process_data_information(FAKE_DATA_NEW['files'])
-        rs = utils.count_files_ng_ok(data_new, data_old)
-        nt.assert_greater(rs['ng'], 0)
 
     def test_validate_exported_data(self):
         mock_from_json = MagicMock()

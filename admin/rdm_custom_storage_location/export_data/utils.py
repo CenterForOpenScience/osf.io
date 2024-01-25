@@ -428,7 +428,7 @@ def count_files_ng_ok(exported_file_versions, storage_file_versions, exclude_key
             list_file_ng.append(ng_content)
             count_files += 1
     data['total'] = count_files
-    data['list_file_ng'] = list_file_ng if len(list_file_ng) <= 10 else list_file_ng[:10]
+    data['list_file_ng'] = list_file_ng
     return data
 
 
