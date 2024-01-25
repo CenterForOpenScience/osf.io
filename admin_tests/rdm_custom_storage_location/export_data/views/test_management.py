@@ -33,7 +33,6 @@ class FakeRes:
         self._content_data = data
 
     def json(self):
-        data = FAKE_DATA
         return self._content_data
 
 
