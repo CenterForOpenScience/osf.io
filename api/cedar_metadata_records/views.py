@@ -14,8 +14,11 @@ from api.base.parsers import (
 from api.base.versioning import PrivateVersioning
 from api.base.views import JSONAPIBaseView
 from api.cedar_metadata_records.permissions import CedarMetadataRecordPermission
-from api.cedar_metadata_records.serializers import CedarMetadataRecordsSerializer, CedarMetadataRecordsCreateSerializer
-
+from api.cedar_metadata_records.serializers import (
+    CedarMetadataRecordsListSerializer,
+    CedarMetadataRecordsListCreateSerializer,
+    CedarMetadataRecordsDetailSerializer,
+)
 from framework.auth.oauth_scopes import CoreScopes
 
 from osf.models import CedarMetadataRecord
@@ -33,7 +36,7 @@ class CedarMetadataRecordList(JSONAPIBaseView, ListCreateAPIView, ListFilterMixi
     required_read_scopes = [CoreScopes.CEDAR_METADATA_RECORD_READ]
     required_write_scopes = [CoreScopes.CEDAR_METADATA_RECORD_WRITE]
 
-    serializer_class = CedarMetadataRecordsCreateSerializer
+    serializer_class = CedarMetadataRecordsListSerializer
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON, )
     model_class = CedarMetadataRecord
 
@@ -41,6 +44,12 @@ class CedarMetadataRecordList(JSONAPIBaseView, ListCreateAPIView, ListFilterMixi
     versioning_class = PrivateVersioning
     view_category = 'cedar-metadata-records'
     view_name = 'cedar-metadata-record-list'
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return CedarMetadataRecordsListCreateSerializer
+        else:
+            return CedarMetadataRecordsListSerializer
 
     def get_default_queryset(self):
         return CedarMetadataRecord.objects.filter(is_published=True)
@@ -59,7 +68,7 @@ class CedarMetadataRecordDetail(JSONAPIBaseView, RetrieveUpdateDestroyAPIView):
     required_read_scopes = [CoreScopes.CEDAR_METADATA_RECORD_READ]
     required_write_scopes = [CoreScopes.CEDAR_METADATA_RECORD_WRITE]
 
-    serializer_class = CedarMetadataRecordsSerializer
+    serializer_class = CedarMetadataRecordsDetailSerializer
 
     # This view goes under the _/ namespace
     versioning_class = PrivateVersioning

@@ -393,6 +393,11 @@ class FileSerializer(BaseFileSerializer):
         help_text='Whether to mark the file as unviewed for the current user',
     )
 
+    cedar_metadata_records = RelationshipField(
+        related_view='files:file-cedar-metadata-records-list',
+        related_view_kwargs={'file_id': '<_id>'},
+    )
+
     def get_target_type(self, obj):
         if isinstance(obj, Preprint):
             return 'preprints'
