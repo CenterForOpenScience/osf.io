@@ -38,4 +38,8 @@ class CedarMetadataRecord(ObjectIDMixin, BaseModel):
         return self.template.get_semantic_iri()
 
     def get_template_name(self):
-        return self.template.name
+        return self.template.schema_name
+
+    def save(self, *args, **kwargs):
+        self.guid.referent.update_search()
+        return super().save(*args, **kwargs)

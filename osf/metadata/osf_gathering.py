@@ -147,12 +147,12 @@ OSFMAP = {
     OSF.Project: {
         **OSF_OBJECT,
         OSF.supplements: OSF_OBJECT_REFERENCE,
-        OSF.usesCedarTemplate: None,
+        OSF.hasCedarTemplate: None,
     },
     OSF.ProjectComponent: {
         **OSF_OBJECT,
         OSF.supplements: OSF_OBJECT_REFERENCE,
-        OSF.usesCedarTemplate: None,
+        OSF.hasCedarTemplate: None,
     },
     OSF.Registration: {
         **OSF_OBJECT,
@@ -163,7 +163,7 @@ OSFMAP = {
         OSF.hasMaterialsResource: OSF_OBJECT_REFERENCE,
         OSF.hasPapersResource: OSF_OBJECT_REFERENCE,
         OSF.hasSupplementalResource: OSF_OBJECT_REFERENCE,
-        OSF.usesCedarTemplate: None,
+        OSF.hasCedarTemplate: None,
     },
     OSF.RegistrationComponent: {
         **OSF_OBJECT,
@@ -174,7 +174,7 @@ OSFMAP = {
         OSF.hasMaterialsResource: OSF_OBJECT_REFERENCE,
         OSF.hasPapersResource: OSF_OBJECT_REFERENCE,
         OSF.hasSupplementalResource: OSF_OBJECT_REFERENCE,
-        OSF.usesCedarTemplate: None,
+        OSF.hasCedarTemplate: None,
     },
     OSF.Preprint: {
         **OSF_OBJECT,
@@ -199,7 +199,7 @@ OSFMAP = {
         OSF.filePath: None,
         OSF.funding: None,
         OSF.hasFunding: None,
-        OSF.usesCedarTemplate: None,
+        OSF.hasCedarTemplate: None,
         OWL.sameAs: None,
     },
     DCTERMS.Agent: {
@@ -1016,7 +1016,7 @@ def _omitted_metadata(focus, omitted_property_set, description):
         yield (bnode, OSF.omittedMetadataProperty, property_iri)
     yield (bnode, DCTERMS.description, _language_text(focus, description))
 
-@gather.er(OSF.usesCedarTemplate)
+@gather.er(OSF.hasCedarTemplate)
 def gather_cedar_templates(focus):
     try:
         _guids = focus.dbmodel.guids.all()
@@ -1025,5 +1025,5 @@ def gather_cedar_templates(focus):
     records = osfdb.CedarMetadataRecord.objects.filter(guid__in=_guids, is_published=True)
     for record in records:
         template_iri = rdflib.URIRef(record.get_template_semantic_iri())
-        yield (OSF.usesCedarTemplate, template_iri)
+        yield (OSF.hasCedarTemplate, template_iri)
         yield (template_iri, DCTERMS.title, record.get_template_name())
