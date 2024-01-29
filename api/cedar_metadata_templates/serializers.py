@@ -7,7 +7,7 @@ from api.base.utils import absolute_reverse
 class CedarMetadataTemplateSerializer(JSONAPISerializer):
 
     class Meta:
-        type_ = 'cedar-metadata-tempalates'
+        type_ = 'cedar-metadata-templates'
 
     filterable_fields = frozenset(['schema_name', 'cedar_id', 'active'])
 
