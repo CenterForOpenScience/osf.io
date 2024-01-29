@@ -443,6 +443,7 @@ class CeleryConfig:
         'osf.management.commands.spam_metrics',
         'osf.management.commands.daily_reporters_go',
         'osf.management.commands.monthly_reporters_go',
+        'osf.management.commands.ingest_cedar_metadata_templates',
     }
 
     med_pri_modules = {
