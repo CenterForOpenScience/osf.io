@@ -1,6 +1,7 @@
 from django.db import models
 
 from osf.models.base import BaseModel, ObjectIDMixin
+from osf.models.validators import JsonschemaValidator
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
 
@@ -43,3 +44,10 @@ class CedarMetadataRecord(ObjectIDMixin, BaseModel):
     def save(self, *args, **kwargs):
         self.guid.referent.update_search()
         return super().save(*args, **kwargs)
+
+    def clean(self):
+        super().clean()
+        _cedar_template_jsonschema = self.template.template
+        _cedar_record_json = self.metadata
+        # raises django.core.exceptions.ValidationError when invalid
+        JsonschemaValidator(_cedar_template_jsonschema)(_cedar_record_json)
