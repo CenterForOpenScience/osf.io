@@ -630,7 +630,7 @@ class CheckRestoreData(RdmPermissionMixin, View):
         _, storage_file_info = restore_data.extract_file_information_json_from_destination_storage()
         exported_file_versions = process_data_information(exported_file_info['files'])
         storage_file_versions = process_data_information(storage_file_info['files'])
-        exclude_keys = []
+        exclude_keys = ['location']
         data = count_files_ng_ok(exported_file_versions, storage_file_versions, exclude_keys=exclude_keys)
 
         # end check

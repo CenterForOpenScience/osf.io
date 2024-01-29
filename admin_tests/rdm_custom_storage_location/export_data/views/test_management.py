@@ -1,5 +1,8 @@
+import copy
+import json
 import mock
 import pytest
+import uuid
 from django.core.exceptions import SuspiciousOperation, PermissionDenied
 from django.http import Http404, JsonResponse
 from django.test import RequestFactory
@@ -19,16 +22,18 @@ from osf_tests.factories import (
 )
 from tests.base import AdminTestCase
 from django.contrib.auth.models import AnonymousUser
-from admin_tests.rdm_custom_storage_location.export_data.test_utils import FAKE_DATA, FAKE_DATA_NEW
+from admin_tests.rdm_custom_storage_location.export_data.test_utils import FAKE_DATA, FAKE_DATA_NEW, gen_file
+
+MANAGEMENT_EXPORT_DATA_PATH = 'admin.rdm_custom_storage_location.export_data.views.management'
 
 
 class FakeRes:
-    def __init__(self, status_code):
+    def __init__(self, status_code, data=FAKE_DATA):
         self.status_code = status_code
+        self._content_data = data
 
     def json(self):
-        data = FAKE_DATA
-        return data
+        return self._content_data
 
 
 @pytest.mark.feature_202210
@@ -60,7 +65,7 @@ class TestMethodGetExportData(AdminTestCase):
         self.export_data = ExportDataFactory()
         self.export_data.save()
 
-    @mock.patch('admin.rdm_custom_storage_location.export_data.views.management.ExportData.objects')
+    @mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects')
     def test_method(self, mock_export_data):
         mock_export_data.filter.return_value = self.export_data.objects
         mock_export_data.order_by.return_value = [self.export_data]
@@ -95,8 +100,8 @@ class TestExportDataListView(AdminTestCase):
         mock_render = mock.MagicMock()
         mock_render.return_value = None
 
-        with mock.patch('admin.rdm_custom_storage_location.export_data.views.management.ExportBaseView', mock_class):
-            with mock.patch('admin.rdm_custom_storage_location.export_data.views.management.render', mock_render):
+        with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportBaseView', mock_class):
+            with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.render', mock_render):
                 res = self.view.get(self.request)
                 nt.assert_equal(res, None)
 
@@ -121,8 +126,8 @@ class TestExportDataDeletedListView(AdminTestCase):
         mock_render = mock.MagicMock()
         mock_render.return_value = None
 
-        with mock.patch('admin.rdm_custom_storage_location.export_data.views.management.ExportBaseView', mock_class):
-            with mock.patch('admin.rdm_custom_storage_location.export_data.views.management.render', mock_render):
+        with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportBaseView', mock_class):
+            with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.render', mock_render):
                 res = self.view.get(self.request)
                 nt.assert_equal(res, None)
 
@@ -151,9 +156,9 @@ class TestExportDataInformationView(AdminTestCase):
         view = management.ExportDataInformationView()
         view = setup_view(view, request,
                           institution_id=self.institution.id, data_id=self.export_data.id)
-        with mock.patch('admin.rdm_custom_storage_location.export_data.views.management.validate_exported_data', mock_validate):
+        with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.validate_exported_data', mock_validate):
             with mock.patch('osf.models.export_data.requests', mock_request):
-                with mock.patch('admin.rdm_custom_storage_location.export_data.views.management.render', mock_render):
+                with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.render', mock_render):
                     res = view.get(request)
                     nt.assert_equal(res, None)
 
@@ -173,9 +178,9 @@ class TestExportDataInformationView(AdminTestCase):
         view = management.ExportDataInformationView()
         view = setup_view(view, request,
                           institution_id=self.institution.id, data_id=self.export_data.id)
-        with mock.patch('admin.rdm_custom_storage_location.export_data.views.management.validate_exported_data', mock_validate):
+        with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.validate_exported_data', mock_validate):
             with mock.patch('osf.models.export_data.requests', mock_request):
-                with mock.patch('admin.rdm_custom_storage_location.export_data.views.management.render', mock_render):
+                with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.render', mock_render):
                     res = view.get(request)
                     nt.assert_equal(res, None)
 
@@ -204,7 +209,7 @@ class TestExportDataInformationView(AdminTestCase):
         with self.assertRaises(Http404):
             view.get(request)
 
-    @mock.patch('admin.rdm_custom_storage_location.export_data.views.management.ExportDataInformationView.handle_no_permission')
+    @mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportDataInformationView.handle_no_permission')
     def test_get_object_permission_error_non_existent_institution(self, mock_handle_no_permission):
         test_user = AuthUserFactory()
         test_region = RegionFactory(_id='')
@@ -221,7 +226,7 @@ class TestExportDataInformationView(AdminTestCase):
             view.get_object()
             mock_handle_no_permission.assert_called()
 
-    @mock.patch('admin.rdm_custom_storage_location.export_data.views.management.ExportDataInformationView.handle_no_permission')
+    @mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportDataInformationView.handle_no_permission')
     def test_get_object_permission_error_not_related_institution(self, mock_handle_no_permission):
         test_user = AuthUserFactory()
         test_institution_id = 2 if self.institution.id != 2 else 1
@@ -258,7 +263,7 @@ class TestCheckExportData(AdminTestCase):
         mock_export_data.filter.return_value.first.return_value = export_data
         view = management.CheckExportData()
         view = setup_view(view, request, data_id=export_data.id)
-        with mock.patch('admin.rdm_custom_storage_location.export_data.views.management.ExportData.objects', mock_export_data):
+        with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects', mock_export_data):
             res = view.get(request, data_id=export_data.id)
         nt.assert_equal(res.status_code, 400)
 
@@ -272,7 +277,7 @@ class TestCheckExportData(AdminTestCase):
         mock_export_data.filter.return_value.first.return_value = self.export_data
         view = management.CheckExportData()
         view = setup_view(view, request, data_id=self.export_data.id)
-        with mock.patch('admin.rdm_custom_storage_location.export_data.views.management.ExportData.objects', mock_export_data):
+        with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects', mock_export_data):
             with mock.patch('osf.models.export_data.requests', mock_request):
                 res = view.get(request, data_id=self.export_data.id)
         nt.assert_equals(res.status_code, 400)
@@ -288,12 +293,12 @@ class TestCheckExportData(AdminTestCase):
         mock_export_data.filter.return_value.first.return_value = self.export_data
         view = management.CheckExportData()
         view = setup_view(view, request, data_id=self.export_data.id)
-        with mock.patch('admin.rdm_custom_storage_location.export_data.views.management.ExportData.objects', mock_export_data):
+        with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects', mock_export_data):
             with mock.patch('osf.models.export_data.requests', mock_request):
                 res = view.get(request, data_id=self.export_data.id)
         nt.assert_equals(res.status_code, 400)
 
-    @mock.patch('admin.rdm_custom_storage_location.export_data.views.management.check_for_file_existent_on_export_location')
+    @mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.check_for_file_existent_on_export_location')
     @mock.patch.object(ExportData, 'extract_file_information_json_from_source_storage')
     def test_check_export_data_successful(self, mock_class, mock_check_exist):
         request = RequestFactory().get('/fake_path')
@@ -314,9 +319,9 @@ class TestCheckExportData(AdminTestCase):
         mock_export_data.filter.return_value.first.return_value = self.export_data
         view = management.CheckExportData()
         view = setup_view(view, request, data_id=self.export_data.id)
-        with mock.patch('admin.rdm_custom_storage_location.export_data.views.management.ExportData.objects', mock_export_data):
+        with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects', mock_export_data):
             with mock.patch('osf.models.export_data.requests', mock_request):
-                with mock.patch('admin.rdm_custom_storage_location.export_data.views.management.validate_exported_data', mock_validate):
+                with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.validate_exported_data', mock_validate):
                     res = view.get(request, data_id=self.export_data.id)
         nt.assert_equals(res.status_code, 200)
 
@@ -349,7 +354,7 @@ class TestCheckRestoreData(AdminTestCase):
         mock_export_data.filter.return_value.first.return_value = export_data
         view = management.CheckRestoreData()
         view = setup_view(view, request, data_id=export_data.id)
-        with mock.patch('admin.rdm_custom_storage_location.export_data.views.management.ExportData.objects', mock_export_data):
+        with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects', mock_export_data):
             res = view.get(request, data_id=export_data.id)
         nt.assert_equal(res.status_code, 400)
 
@@ -369,7 +374,7 @@ class TestCheckRestoreData(AdminTestCase):
         mock_export_data.filter.return_value.first.return_value = export_data
         view = management.CheckRestoreData()
         view = setup_view(view, request, data_id=export_data.id)
-        with mock.patch('admin.rdm_custom_storage_location.export_data.views.management.ExportData.objects', mock_export_data):
+        with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects', mock_export_data):
             res = view.get(request, data_id=export_data.id)
         nt.assert_equal(res.status_code, 400)
 
@@ -391,7 +396,7 @@ class TestCheckRestoreData(AdminTestCase):
         mock_export_data.filter.return_value.first.return_value = export_data
         view = management.CheckRestoreData()
         view = setup_view(view, request, data_id=export_data.id)
-        with mock.patch('admin.rdm_custom_storage_location.export_data.views.management.ExportData.objects', mock_export_data):
+        with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects', mock_export_data):
             with mock.patch('osf.models.export_data.requests', mock_request):
                 res = view.get(request, data_id=export_data.id)
         nt.assert_equals(res.status_code, 400)
@@ -414,14 +419,14 @@ class TestCheckRestoreData(AdminTestCase):
         mock_export_data.filter.return_value.first.return_value = self.export_data
         view = management.CheckRestoreData()
         view = setup_view(view, request, data_id=self.export_data.id)
-        with mock.patch('admin.rdm_custom_storage_location.export_data.views.management.ExportData.objects', mock_export_data):
+        with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects', mock_export_data):
             with mock.patch('osf.models.export_data.requests', mock_request):
                 res = view.get(request, data_id=self.export_data.id)
         nt.assert_equals(res.status_code, 400)
 
     @mock.patch.object(ExportData, 'get_latest_restored_data_with_destination_id')
     @mock.patch.object(ExportDataRestore, 'extract_file_information_json_from_destination_storage')
-    def test_check_restore_data_successful(self, mock_class_export, mock_class_restore):
+    def test_check_restore_data__successful(self, mock_extract_file, mock_get_latest_restore):
         request = RequestFactory().get('/fake_path')
         request.user = self.user
         request.COOKIES = '213919sdasdn823193929'
@@ -433,22 +438,86 @@ class TestCheckRestoreData(AdminTestCase):
         def side_effect_export_data_restore(destination_id=100):
             return self.export_data_restore
 
-        mock_class_export.side_effect = side_effect_export_data
-        mock_class_restore.side_effect = side_effect_export_data_restore
+        mock_extract_file.side_effect = side_effect_export_data
+        mock_get_latest_restore.side_effect = side_effect_export_data_restore
+
         mock_export_data = mock.MagicMock()
-        mock_request = mock.MagicMock()
-        mock_validate = mock.MagicMock()
-        mock_validate.return_value = True
-        mock_request.get.return_value = FakeRes(200)
         self.export_data.source._id = 'vcu'
         mock_export_data.filter.return_value.first.return_value = self.export_data
-        view = management.CheckRestoreData()
-        view = setup_view(view, request, data_id=self.export_data.id)
-        with mock.patch('admin.rdm_custom_storage_location.export_data.views.management.ExportData.objects', mock_export_data):
+        with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects', mock_export_data):
+            mock_request = mock.MagicMock()
+            mock_request.get.return_value = FakeRes(200)
             with mock.patch('osf.models.export_data.requests', mock_request):
-                with mock.patch('admin.rdm_custom_storage_location.export_data.views.management.validate_exported_data', mock_validate):
+                mock_validate = mock.MagicMock()
+                mock_validate.return_value = True
+                with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.validate_exported_data', mock_validate):
+                    view = management.CheckRestoreData()
+                    view = setup_view(view, request, data_id=self.export_data.id)
                     res = view.get(request, data_id=self.export_data.id)
+
         nt.assert_equals(res.status_code, 200)
+        content_data = json.loads(res.content.decode())
+        # check quantity
+        nt.assert_equal(content_data['ok'] + content_data['ng'], content_data['total'])
+        nt.assert_equal(len(content_data['list_file_ng']), content_data['ng'])
+
+    @mock.patch.object(ExportData, 'get_latest_restored_data_with_destination_id')
+    @mock.patch.object(ExportDataRestore, 'extract_file_information_json_from_destination_storage')
+    def test_check_restore_data__successful__when_location_change(self, mock_extract_file, mock_get_latest_restore):
+        request = RequestFactory().get('/fake_path')
+        request.user = self.user
+        request.COOKIES = '213919sdasdn823193929'
+        request.GET = {'destination_id': 100}
+
+        # file_id=1~files_len
+        files_len = 3
+        files_old = [gen_file(i, version_n=5) for i in range(1, files_len + 1, 1)]
+        fake_data_json = copy.deepcopy(FAKE_DATA_NEW)
+        fake_data_json['files'] = files_old
+
+        def side_effect_export_data():
+            return '', fake_data_json
+
+        # simulate the case where the location is changed
+        files_new = []
+        for file_info in copy.deepcopy(files_old):
+            version_list = file_info['version']
+            latest_version = version_list[0]
+            latest_ver_location = latest_version['location']
+            # e.g. re-deploy WB server
+            latest_ver_location['host'] = uuid.uuid4().hex[:12],
+            # e.g. change only the bucket
+            latest_ver_location['bucket'] = 'grdm-ierae-new',
+            file_info['location'] = latest_version['location']
+            files_new.append(file_info)
+        fake_data_json['files'] = files_new
+
+        def side_effect_export_data_restore(destination_id=100):
+            return self.export_data_restore
+
+        mock_extract_file.side_effect = side_effect_export_data
+        mock_get_latest_restore.side_effect = side_effect_export_data_restore
+
+        mock_export_data = mock.MagicMock()
+        self.export_data.source._id = 'vcu'
+        mock_export_data.filter.return_value.first.return_value = self.export_data
+        with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects', mock_export_data):
+            mock_request = mock.MagicMock()
+            mock_request.get.return_value = FakeRes(200, fake_data_json)
+            with mock.patch('osf.models.export_data.requests', mock_request):
+                mock_validate = mock.MagicMock()
+                mock_validate.return_value = True
+                with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.validate_exported_data', mock_validate):
+                    view = management.CheckRestoreData()
+                    view = setup_view(view, request, data_id=self.export_data.id)
+                    res = view.get(request, data_id=self.export_data.id)
+
+        nt.assert_equals(res.status_code, 200)
+        content_data = json.loads(res.content.decode())
+        # check quantity
+        nt.assert_equal(content_data['ng'], 0)
+        nt.assert_equal(len(content_data['list_file_ng']), content_data['ng'])
+        nt.assert_equal(content_data['ok'], content_data['total'])
 
 
 @pytest.mark.feature_202210
@@ -462,8 +531,8 @@ class TestExportDataFileCSVView(AdminTestCase):
         self.export_data = ExportDataFactory()
         self.view = management.ExportDataFileCSVView()
 
-    @mock.patch('admin.rdm_custom_storage_location.export_data.views.management.ExportData.read_file_info_from_location')
-    @mock.patch('admin.rdm_custom_storage_location.export_data.views.management.ExportDataFileCSVView.get_object')
+    @mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.read_file_info_from_location')
+    @mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportDataFileCSVView.get_object')
     def test_get(self, mock_get_object, mock_read_file_info):
         mock_get_object.return_value = self.export_data
         mock_read_file_info.return_value = FakeRes(200)
@@ -514,7 +583,7 @@ class TestDeleteExportDataView(AdminTestCase):
         self.institution02_admin.affiliated_institutions.add(self.institution02)
         self.institution02_admin.save()
 
-    @mock.patch('admin.rdm_custom_storage_location.export_data.views.management.ExportData.objects')
+    @mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects')
     @mock.patch('osf.models.export_data.requests')
     def test_delete_permanently(self, mock_request, mock_export_data):
         mock_export_data.filter.return_value = [self.export_data]
@@ -527,7 +596,7 @@ class TestDeleteExportDataView(AdminTestCase):
         res = view.post(request)
         nt.assert_equal(res.status_code, 302)
 
-    @mock.patch('admin.rdm_custom_storage_location.export_data.views.management.ExportData.objects')
+    @mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects')
     @mock.patch('osf.models.export_data.requests')
     def test_delete_permanently_not_soure(self, mock_request, mock_export_data):
         mock_export_data.filter.return_value = [self.export_data]
@@ -540,7 +609,7 @@ class TestDeleteExportDataView(AdminTestCase):
         res = view.post(request)
         nt.assert_equal(res.status_code, 302)
 
-    @mock.patch('admin.rdm_custom_storage_location.export_data.views.management.ExportData.objects')
+    @mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects')
     @mock.patch('osf.models.export_data.requests')
     def test_delete_permanently_with_super(self, mock_request, mock_export_data):
         mock_export_data.filter.return_value = [self.export_data]
@@ -554,7 +623,7 @@ class TestDeleteExportDataView(AdminTestCase):
         res = view.post(request)
         nt.assert_equal(res.status_code, 302)
 
-    @mock.patch('admin.rdm_custom_storage_location.export_data.views.management.ExportData.objects')
+    @mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects')
     @mock.patch('osf.models.export_data.requests')
     def test_delete_permanently_with_super_not_source(self, mock_request, mock_export_data):
         mock_export_data.filter.return_value = [self.export_data]
@@ -568,7 +637,7 @@ class TestDeleteExportDataView(AdminTestCase):
         res = view.post(request)
         nt.assert_equal(res.status_code, 302)
 
-    @mock.patch('admin.rdm_custom_storage_location.export_data.views.management.ExportData.objects')
+    @mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects')
     @mock.patch('osf.models.export_data.requests')
     def test_delete_permanently_fail(self, mock_request, mock_export_data):
         mock_export_data.filter.return_value = [self.export_data]
