@@ -9,6 +9,7 @@ from admin.base import settings
 from osf.models import Institution
 from website.util import inspect_info  # noqa
 from .location import ExportStorageLocationViewBaseView
+from django.http import Http404
 
 logger = logging.getLogger(__name__)
 
@@ -49,8 +50,11 @@ class ExportDataInstitutionalStorageListView(ExportStorageLocationViewBaseView, 
 
     def get(self, request, *args, **kwargs):
         institution_id = self.kwargs.get('institution_id')
-        self.institution = Institution.objects.get(pk=institution_id)
-        self.institution_guid = self.institution.guid
+        try:
+            self.institution = Institution.objects.get(pk=institution_id)
+            self.institution_guid = self.institution.guid
+        except Institution.DoesNotExist:
+            raise Http404('Institution data with id {} not found'.format(institution_id))
 
         if not self.is_super_admin and not self.is_affiliated_institution(institution_id):
             self.handle_no_permission()

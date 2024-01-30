@@ -13,6 +13,7 @@ from osf_tests.factories import (
     RegionFactory,
     InstitutionFactory,
 )
+from django.core.exceptions import PermissionDenied
 
 
 class TestInstitutionDefaultStorage(AdminTestCase):
@@ -125,17 +126,15 @@ class TestPermissionTestConnection(AdminTestCase):
         return views.TestConnectionView.as_view()(request)
 
     def test_normal_user(self):
-        response = self.view_post({})
-        self.assertEquals(response.status_code, 302)
-        self.assertEquals(response._headers['location'][1], '/accounts/login/?next=/fake_path')
+        with nt.assert_raises(PermissionDenied):
+            self.view_post({})
 
     def test_staff_without_institution(self):
         self.user.is_staff = True
         self.user.save()
 
-        response = self.view_post({})
-        self.assertEquals(response.status_code, 302)
-        self.assertEquals(response._headers['location'][1], '/accounts/login/?next=/fake_path')
+        with nt.assert_raises(PermissionDenied):
+            self.view_post({})
 
     def test_staff_with_institution(self):
         institution = InstitutionFactory()

@@ -3,7 +3,7 @@ import json
 import mock
 import pytest
 import uuid
-from django.core.exceptions import SuspiciousOperation, PermissionDenied
+from django.core.exceptions import PermissionDenied
 from django.http import Http404, JsonResponse
 from django.test import RequestFactory
 from django.urls import reverse
@@ -23,6 +23,7 @@ from osf_tests.factories import (
 from tests.base import AdminTestCase
 from django.contrib.auth.models import AnonymousUser
 from admin_tests.rdm_custom_storage_location.export_data.test_utils import FAKE_DATA, FAKE_DATA_NEW, gen_file
+from django.http import HttpResponseBadRequest
 
 MANAGEMENT_EXPORT_DATA_PATH = 'admin.rdm_custom_storage_location.export_data.views.management'
 
@@ -55,6 +56,10 @@ class TestExportBaseView(AdminTestCase):
         response = self.view.load_institution()
         nt.assert_equal(response, None)
 
+    def test_load_institution_not_exist(self):
+        self.view.kwargs = {'institution_id': '0'}
+        with nt.assert_raises(Http404):
+            self.view.load_institution()
 
 @pytest.mark.feature_202210
 class TestMethodGetExportData(AdminTestCase):
@@ -97,14 +102,22 @@ class TestExportDataListView(AdminTestCase):
     def test_get(self):
         mock_class = mock.MagicMock()
         mock_class.handle_no_permission.return_value = True
-        mock_render = mock.MagicMock()
-        mock_render.return_value = None
-
         with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportBaseView', mock_class):
+            mock_render = mock.MagicMock()
+            mock_render.return_value = None
             with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.render', mock_render):
-                res = self.view.get(self.request)
+                res = self.view.get(self.request, institution_id=self.institution.id)
                 nt.assert_equal(res, None)
 
+    def test_get_super_not_institution_id(self):
+        mock_class = mock.MagicMock()
+        mock_class.handle_no_permission.return_value = True
+        with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportBaseView', mock_class):
+            mock_render = mock.MagicMock()
+            mock_render.return_value = None
+            with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.render', mock_render):
+                res = self.view.get(self.request)
+                nt.assert_equal(res.status_code, 302)
 
 @pytest.mark.feature_202210
 class TestExportDataDeletedListView(AdminTestCase):
@@ -123,10 +136,9 @@ class TestExportDataDeletedListView(AdminTestCase):
     def test_get(self):
         mock_class = mock.MagicMock()
         mock_class.handle_no_permission.return_value = True
-        mock_render = mock.MagicMock()
-        mock_render.return_value = None
-
         with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportBaseView', mock_class):
+            mock_render = mock.MagicMock()
+            mock_render.return_value = None
             with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.render', mock_render):
                 res = self.view.get(self.request)
                 nt.assert_equal(res, None)
@@ -143,59 +155,58 @@ class TestExportDataInformationView(AdminTestCase):
         self.institution = InstitutionFactory(_id=self.export_data.source.guid)
 
     def test_get_success(self):
-        mock_render = mock.MagicMock()
-        mock_render.return_value = None
         mock_validate = mock.MagicMock()
         mock_validate.return_value = True
-        mock_request = mock.MagicMock()
-        fake_res = FakeRes(200)
-        mock_request.get.return_value = fake_res
-        request = RequestFactory().get('/fake_path')
-        request.user = self.user
-        request.COOKIES = '213919sdasdn823193929'
-        view = management.ExportDataInformationView()
-        view = setup_view(view, request,
-                          institution_id=self.institution.id, data_id=self.export_data.id)
         with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.validate_exported_data', mock_validate):
+            mock_request = mock.MagicMock()
+            mock_request.get.return_value = FakeRes(200)
             with mock.patch('osf.models.export_data.requests', mock_request):
+                mock_render = mock.MagicMock()
+                mock_render.return_value = None
                 with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.render', mock_render):
+                    request = RequestFactory().get('/fake_path')
+                    request.user = self.user
+                    request.COOKIES = '213919sdasdn823193929'
+                    view = management.ExportDataInformationView()
+                    view = setup_view(view, request,
+                                    institution_id=self.institution.id, data_id=self.export_data.id)
                     res = view.get(request)
                     nt.assert_equal(res, None)
 
     def test_get_success_not_admin(self):
-        self.user.is_superuser = False
-        self.user.affiliated_institutions.add(self.institution)
-        mock_render = mock.MagicMock()
-        mock_render.return_value = None
         mock_validate = mock.MagicMock()
         mock_validate.return_value = True
-        mock_request = mock.MagicMock()
-        fake_res = FakeRes(200)
-        mock_request.get.return_value = fake_res
-        request = RequestFactory().get('/fake_path')
-        request.user = self.user
-        request.COOKIES = '213919sdasdn823193929'
-        view = management.ExportDataInformationView()
-        view = setup_view(view, request,
-                          institution_id=self.institution.id, data_id=self.export_data.id)
         with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.validate_exported_data', mock_validate):
+            mock_request = mock.MagicMock()
+            mock_request.get.return_value = FakeRes(200)
             with mock.patch('osf.models.export_data.requests', mock_request):
+                mock_render = mock.MagicMock()
+                mock_render.return_value = None
                 with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.render', mock_render):
+                    self.user.is_superuser = False
+                    self.user.affiliated_institutions.add(self.institution)
+                    request = RequestFactory().get('/fake_path')
+                    request.user = self.user
+                    request.COOKIES = '213919sdasdn823193929'
+                    view = management.ExportDataInformationView()
+                    view = setup_view(view, request,
+                                    institution_id=self.institution.id, data_id=self.export_data.id)
                     res = view.get(request)
                     nt.assert_equal(res, None)
 
     @mock.patch('osf.models.export_data.requests')
-    def test_get_file_info_not_valid(self, mock_request):
-        fake_res = FakeRes(200)
-        mock_request.get.return_value = fake_res
+    @mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.render_bad_request_response')
+    def test_get_file_info_not_valid(self, mock_render, mock_request):
+        mock_render.return_value = HttpResponseBadRequest(content='fake')
+        mock_request.get.return_value = FakeRes(200)
         request = RequestFactory().get('/fake_path')
         request.user = self.user
         request.COOKIES = '213919sdasdn823193929'
         view = management.ExportDataInformationView()
         view = setup_view(view, request,
                           institution_id=self.institution.id, data_id=self.export_data.id)
-        with self.assertRaises(SuspiciousOperation):
-            view.get(request)
+        res = view.get(request)
+        nt.assert_equal(res.status_code, 400)
 
     def test_get_not_found(self):
         mock_class = mock.MagicMock()
@@ -253,6 +264,37 @@ class TestCheckExportData(AdminTestCase):
         self.institution = InstitutionFactory()
         self.export_data = ExportDataFactory()
 
+        self.institution01 = InstitutionFactory(name='inst01')
+        self.region_inst_01 = RegionFactory(_id=self.institution01._id)
+        self.export_data_01 = ExportDataFactory(source=self.region_inst_01)
+        self.export_data_01_location = ExportDataLocationFactory(institution_guid=self.institution01._id)
+
+        self.institution02 = InstitutionFactory(name='inst02')
+        self.region_inst_02 = RegionFactory(_id=self.institution02._id)
+        self.export_data_02 = ExportDataFactory(source=self.region_inst_02)
+        self.export_data_02_location = ExportDataLocationFactory(institution_guid=self.institution02._id)
+
+        self.anon = AnonymousUser()
+
+        self.normal_user = AuthUserFactory(fullname='normal_user')
+        self.normal_user.is_staff = False
+        self.normal_user.is_superuser = False
+
+        self.superuser = AuthUserFactory(fullname='superuser')
+        self.superuser.is_staff = True
+        self.superuser.is_superuser = True
+        self.superuser.save()
+
+        self.institution01_admin = AuthUserFactory(fullname='admin001_inst01')
+        self.institution01_admin.is_staff = True
+        self.institution01_admin.affiliated_institutions.add(self.institution01)
+        self.institution01_admin.save()
+
+        self.institution02_admin = AuthUserFactory(fullname='admin001_inst02')
+        self.institution02_admin.is_staff = True
+        self.institution02_admin.affiliated_institutions.add(self.institution02)
+        self.institution02_admin.save()
+
     def test_export_data_not_completed(self):
         request = RequestFactory().get('/fake_path')
         request.user = self.user
@@ -261,42 +303,45 @@ class TestCheckExportData(AdminTestCase):
         export_data.status = ExportData.STATUS_CHECKING
         mock_export_data = mock.MagicMock()
         mock_export_data.filter.return_value.first.return_value = export_data
-        view = management.CheckExportData()
-        view = setup_view(view, request, data_id=export_data.id)
         with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects', mock_export_data):
+            view = management.CheckExportData()
+            view.export_data = self.export_data
+            view = setup_view(view, request, data_id=export_data.id)
             res = view.get(request, data_id=export_data.id)
-        nt.assert_equal(res.status_code, 400)
+            nt.assert_equal(res.status_code, 400)
 
     def test_cannot_connect_to_storage(self):
-        request = RequestFactory().get('/fake_path')
-        request.user = self.user
-        request.COOKIES = '213919sdasdn823193929'
         mock_export_data = mock.MagicMock()
-        mock_request = mock.MagicMock()
-        mock_request.get.return_value = JsonResponse({'message': ''}, status=400)
         mock_export_data.filter.return_value.first.return_value = self.export_data
-        view = management.CheckExportData()
-        view = setup_view(view, request, data_id=self.export_data.id)
         with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects', mock_export_data):
+            mock_request = mock.MagicMock()
+            mock_request.get.return_value = JsonResponse({'message': ''}, status=400)
             with mock.patch('osf.models.export_data.requests', mock_request):
+                request = RequestFactory().get('/fake_path')
+                request.user = self.user
+                request.COOKIES = '213919sdasdn823193929'
+                view = management.CheckExportData()
+                view = setup_view(view, request, data_id=self.export_data.id)
+                view.export_data = self.export_data
                 res = view.get(request, data_id=self.export_data.id)
-        nt.assert_equals(res.status_code, 400)
+                nt.assert_equals(res.status_code, 400)
 
     def test_validate_fail(self):
         request = RequestFactory().get('/fake_path')
         request.user = self.user
         request.COOKIES = '213919sdasdn823193929'
         mock_export_data = mock.MagicMock()
-        mock_request = mock.MagicMock()
-        mock_request.get.return_value = FakeRes(200)
         self.export_data.status = ExportData.STATUS_RUNNING
         mock_export_data.filter.return_value.first.return_value = self.export_data
-        view = management.CheckExportData()
-        view = setup_view(view, request, data_id=self.export_data.id)
         with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects', mock_export_data):
+            mock_request = mock.MagicMock()
+            mock_request.get.return_value = FakeRes(200)
             with mock.patch('osf.models.export_data.requests', mock_request):
+                view = management.CheckExportData()
+                view = setup_view(view, request, data_id=self.export_data.id)
+                view.export_data = self.export_data
                 res = view.get(request, data_id=self.export_data.id)
-        nt.assert_equals(res.status_code, 400)
+                nt.assert_equals(res.status_code, 400)
 
     @mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.check_for_file_existent_on_export_location')
     @mock.patch.object(ExportData, 'extract_file_information_json_from_source_storage')
@@ -307,24 +352,104 @@ class TestCheckExportData(AdminTestCase):
 
         def side_effect():
             return '', FAKE_DATA_NEW
-
         mock_class.side_effect = side_effect
         mock_export_data = mock.MagicMock()
-        mock_request = mock.MagicMock()
-        mock_validate = mock.MagicMock()
         mock_check_exist.return_value = []
-        mock_validate.return_value = True
-        mock_request.get.return_value = FakeRes(200)
         self.export_data.source._id = 'vcu'
         mock_export_data.filter.return_value.first.return_value = self.export_data
+        with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects', mock_export_data):
+            mock_request = mock.MagicMock()
+            mock_request.get.return_value = FakeRes(200)
+            with mock.patch('osf.models.export_data.requests', mock_request):
+                mock_validate = mock.MagicMock()
+                mock_validate.return_value = True
+                with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.validate_exported_data', mock_validate):
+                    view = management.CheckExportData()
+                    view = setup_view(view, request, data_id=self.export_data.id)
+                    view.export_data = self.export_data
+                    res = view.get(request, data_id=self.export_data.id)
+                    nt.assert_equals(res.status_code, 200)
+
+    def test__dispatch_anonymous(self):
+        request = RequestFactory().get('/fake_path')
+        request.user = self.anon
+        request.COOKIES = '213919sdasdn823193929'
         view = management.CheckExportData()
         view = setup_view(view, request, data_id=self.export_data.id)
-        with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects', mock_export_data):
-            with mock.patch('osf.models.export_data.requests', mock_request):
-                with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.validate_exported_data', mock_validate):
-                    res = view.get(request, data_id=self.export_data.id)
-        nt.assert_equals(res.status_code, 200)
+        with self.assertRaises(PermissionDenied):
+            view.dispatch(request)
 
+    def test__dispatch_not_exist(self):
+        request = RequestFactory().get('/fake_path')
+        request.user = self.superuser
+        request.COOKIES = '213919sdasdn823193929'
+        view = management.CheckExportData()
+        view = setup_view(view, request, data_id=0)
+        res = view.dispatch(request)
+        nt.assert_equals(res.status_code, 404)
+
+    @mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.check_for_file_existent_on_export_location')
+    @mock.patch.object(ExportData, 'extract_file_information_json_from_source_storage')
+    def test__dispatch_success(self, mock_class, mock_check_exist):
+        def side_effect():
+            return '', FAKE_DATA_NEW
+
+        mock_class.side_effect = side_effect
+        mock_check_exist.return_value = []
+        self.export_data.source._id = 'vcu'
+        mock_export_data = mock.MagicMock()
+        mock_export_data.filter.return_value.first.return_value = self.export_data
+
+        with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects', mock_export_data):
+            mock_request = mock.MagicMock()
+            mock_request.get.return_value = FakeRes(200)
+            with mock.patch('osf.models.export_data.requests', mock_request):
+                mock_validate = mock.MagicMock()
+                mock_validate.return_value = True
+                with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.validate_exported_data', mock_validate):
+                    request = RequestFactory().get('/fake_path')
+                    request.user = self.superuser
+                    request.COOKIES = '213919sdasdn823193929'
+                    view = management.CheckExportData()
+                    view = setup_view(view, request, data_id=self.export_data.id)
+                    res = view.dispatch(request)
+                    nt.assert_equals(res.status_code, 200)
+
+    def test__test_func_normal_user(self):
+        request = RequestFactory().get('/fake_path')
+        request.user = self.normal_user
+        request.COOKIES = '213919sdasdn823193929'
+        view = management.CheckExportData()
+        view = setup_view(view, request, data_id=self.export_data.id)
+        view.export_data = self.export_data
+        nt.assert_false(view.test_func())
+
+    def test__test_func_super(self):
+        request = RequestFactory().get('/fake_path')
+        request.user = self.superuser
+        request.COOKIES = '213919sdasdn823193929'
+        view = management.CheckExportData()
+        view = setup_view(view, request, data_id=self.export_data.id)
+        view.export_data = self.export_data
+        nt.assert_true(view.test_func())
+
+    def test__test_func_admin_has_perrmision(self):
+        request = RequestFactory().get('/fake_path')
+        request.user = self.institution01_admin
+        request.COOKIES = '213919sdasdn823193929'
+        view = management.CheckExportData()
+        view = setup_view(view, request, data_id=self.export_data_01.id)
+        view.export_data = self.export_data_01
+        nt.assert_true(view.test_func())
+
+    def test__test_func_admin_not_perrmision(self):
+        request = RequestFactory().get('/fake_path')
+        request.user = self.institution01_admin
+        request.COOKIES = '213919sdasdn823193929'
+        view = management.CheckExportData()
+        view = setup_view(view, request, data_id=self.export_data_02.id)
+        view.export_data = self.export_data_02
+        nt.assert_false(view.test_func())
 
 @pytest.mark.feature_202210
 class TestCheckRestoreData(AdminTestCase):
@@ -336,6 +461,41 @@ class TestCheckRestoreData(AdminTestCase):
         self.export_data = ExportDataFactory()
         self.export_data_restore = ExportDataRestoreFactory()
         self.export_data_restore.export = self.export_data
+
+        self.institution01 = InstitutionFactory(name='inst01')
+        self.region_inst_01 = RegionFactory(_id=self.institution01._id)
+        self.export_data_01 = ExportDataFactory(source=self.region_inst_01)
+        self.export_data_01_location = ExportDataLocationFactory(institution_guid=self.institution01._id)
+        self.export_data_restore_01 = ExportDataRestoreFactory()
+        self.export_data_restore_01.export = self.export_data_01
+
+        self.institution02 = InstitutionFactory(name='inst02')
+        self.region_inst_02 = RegionFactory(_id=self.institution02._id)
+        self.export_data_02 = ExportDataFactory(source=self.region_inst_02)
+        self.export_data_02_location = ExportDataLocationFactory(institution_guid=self.institution02._id)
+        self.export_data_restore_02 = ExportDataRestoreFactory()
+        self.export_data_restore_02.export = self.export_data_02
+
+        self.anon = AnonymousUser()
+
+        self.normal_user = AuthUserFactory(fullname='normal_user')
+        self.normal_user.is_staff = False
+        self.normal_user.is_superuser = False
+
+        self.superuser = AuthUserFactory(fullname='superuser')
+        self.superuser.is_staff = True
+        self.superuser.is_superuser = True
+        self.superuser.save()
+
+        self.institution01_admin = AuthUserFactory(fullname='admin001_inst01')
+        self.institution01_admin.is_staff = True
+        self.institution01_admin.affiliated_institutions.add(self.institution01)
+        self.institution01_admin.save()
+
+        self.institution02_admin = AuthUserFactory(fullname='admin001_inst02')
+        self.institution02_admin.is_staff = True
+        self.institution02_admin.affiliated_institutions.add(self.institution02)
+        self.institution02_admin.save()
 
     @mock.patch.object(ExportData, 'get_latest_restored_data_with_destination_id')
     def test_restore_data_with_status_not_completed_and_get_from_request(self, mock_class):
@@ -352,11 +512,15 @@ class TestCheckRestoreData(AdminTestCase):
         mock_class.side_effect = side_effect
         mock_export_data = mock.MagicMock()
         mock_export_data.filter.return_value.first.return_value = export_data
-        view = management.CheckRestoreData()
-        view = setup_view(view, request, data_id=export_data.id)
+
         with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects', mock_export_data):
+            view = management.CheckRestoreData()
+            view = setup_view(view, request, data_id=export_data.id)
+            view.export_data = self.export_data
+            view.institution_id = self.institution.id
+            view.destination_id = self.export_data.source.id
             res = view.get(request, data_id=export_data.id)
-        nt.assert_equal(res.status_code, 400)
+            nt.assert_equal(res.status_code, 400)
 
     @mock.patch.object(ExportData, 'get_latest_restored')
     def test_restore_data_not_completed_and_not_from_request(self, mock_class):
@@ -372,11 +536,15 @@ class TestCheckRestoreData(AdminTestCase):
         mock_class.side_effect = side_effect
         mock_export_data = mock.MagicMock()
         mock_export_data.filter.return_value.first.return_value = export_data
-        view = management.CheckRestoreData()
-        view = setup_view(view, request, data_id=export_data.id)
+
         with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects', mock_export_data):
+            view = management.CheckRestoreData()
+            view = setup_view(view, request, data_id=export_data.id)
+            view.export_data = self.export_data
+            view.institution_id = self.institution.id
+            view.destination_id = self.export_data.source.id
             res = view.get(request, data_id=export_data.id)
-        nt.assert_equal(res.status_code, 400)
+            nt.assert_equal(res.status_code, 400)
 
     @mock.patch.object(ExportData, 'get_latest_restored_data_with_destination_id')
     def test_check_restore_data_cannot_connect_to_storage(self, mock_class):
@@ -391,15 +559,18 @@ class TestCheckRestoreData(AdminTestCase):
 
         mock_class.side_effect = side_effect
         mock_export_data = mock.MagicMock()
-        mock_request = mock.MagicMock()
-        mock_request.get.return_value = JsonResponse({'message': ''}, status=400)
         mock_export_data.filter.return_value.first.return_value = export_data
-        view = management.CheckRestoreData()
-        view = setup_view(view, request, data_id=export_data.id)
         with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects', mock_export_data):
+            mock_request = mock.MagicMock()
+            mock_request.get.return_value = JsonResponse({'message': ''}, status=400)
             with mock.patch('osf.models.export_data.requests', mock_request):
+                view = management.CheckRestoreData()
+                view = setup_view(view, request, data_id=export_data.id)
+                view.export_data = self.export_data
+                view.institution_id = self.institution.id
+                view.destination_id = self.export_data.source.id
                 res = view.get(request, data_id=export_data.id)
-        nt.assert_equals(res.status_code, 400)
+                nt.assert_equals(res.status_code, 400)
 
     @mock.patch.object(ExportData, 'get_latest_restored_data_with_destination_id')
     def test_check_restore_data_with_validate_fail(self, mock_class):
@@ -417,12 +588,16 @@ class TestCheckRestoreData(AdminTestCase):
         mock_request = mock.MagicMock()
         mock_request.get.return_value = FakeRes(200)
         mock_export_data.filter.return_value.first.return_value = self.export_data
-        view = management.CheckRestoreData()
-        view = setup_view(view, request, data_id=self.export_data.id)
+
         with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects', mock_export_data):
             with mock.patch('osf.models.export_data.requests', mock_request):
+                view = management.CheckRestoreData()
+                view = setup_view(view, request, data_id=self.export_data.id)
+                view.export_data = self.export_data
+                view.institution_id = self.institution.id
+                view.destination_id = self.export_data.source.id
                 res = view.get(request, data_id=self.export_data.id)
-        nt.assert_equals(res.status_code, 400)
+                nt.assert_equals(res.status_code, 400)
 
     @mock.patch.object(ExportData, 'get_latest_restored_data_with_destination_id')
     @mock.patch.object(ExportDataRestore, 'extract_file_information_json_from_destination_storage')
@@ -453,6 +628,9 @@ class TestCheckRestoreData(AdminTestCase):
                 with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.validate_exported_data', mock_validate):
                     view = management.CheckRestoreData()
                     view = setup_view(view, request, data_id=self.export_data.id)
+                    view.export_data = self.export_data
+                    view.institution_id = self.institution.id
+                    view.destination_id = self.export_data.source.id
                     res = view.get(request, data_id=self.export_data.id)
 
         nt.assert_equals(res.status_code, 200)
@@ -510,6 +688,9 @@ class TestCheckRestoreData(AdminTestCase):
                 with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.validate_exported_data', mock_validate):
                     view = management.CheckRestoreData()
                     view = setup_view(view, request, data_id=self.export_data.id)
+                    view.export_data = self.export_data
+                    view.institution_id = self.institution.id
+                    view.destination_id = self.export_data.source.id
                     res = view.get(request, data_id=self.export_data.id)
 
         nt.assert_equals(res.status_code, 200)
@@ -519,6 +700,108 @@ class TestCheckRestoreData(AdminTestCase):
         nt.assert_equal(len(content_data['list_file_ng']), content_data['ng'])
         nt.assert_equal(content_data['ok'], content_data['total'])
 
+    def test__dispatch_anonymous(self):
+        request = RequestFactory().get('/fake_path')
+        request.user = self.anon
+        request.COOKIES = '213919sdasdn823193929'
+        view = management.CheckRestoreData()
+        view = setup_view(view, request, data_id=self.export_data.id)
+        with self.assertRaises(PermissionDenied):
+            view.dispatch(request)
+
+    def test__dispatch_not_exist(self):
+        request = RequestFactory().get('/fake_path')
+        request.user = self.superuser
+        request.COOKIES = '213919sdasdn823193929'
+        view = management.CheckRestoreData()
+        view = setup_view(view, request, data_id=0)
+        res = view.dispatch(request)
+        nt.assert_equals(res.status_code, 404)
+
+        # not exist destination_id
+        request.GET = {'destination_id': '0'}
+        view.request = request
+        view = setup_view(view, request, data_id=self.export_data.id)
+        res = view.dispatch(request, data_id=self.export_data.id)
+        nt.assert_equals(res.status_code, 404)
+
+    def test__dispatch_not_valid(self):
+        request = RequestFactory().get('/fake_path')
+        request.user = self.superuser
+        request.GET = {'destination_id': 'fake_id'}
+        request.COOKIES = '213919sdasdn823193929'
+        view = management.CheckRestoreData()
+        view = setup_view(view, request, data_id=self.export_data.id)
+        view.request = request
+        res = view.dispatch(request, data_id=self.export_data.id)
+        nt.assert_equals(res.status_code, 400)
+
+    @mock.patch.object(ExportData, 'get_latest_restored_data_with_destination_id')
+    @mock.patch.object(ExportDataRestore, 'extract_file_information_json_from_destination_storage')
+    def test__dispatch_success(self, mock_class_export, mock_class_restore):
+        def side_effect_export_data():
+            return '', FAKE_DATA_NEW
+
+        def side_effect_export_data_restore(destination_id=100):
+            return self.export_data_restore
+
+        mock_class_export.side_effect = side_effect_export_data
+        mock_class_restore.side_effect = side_effect_export_data_restore
+        mock_export_data = mock.MagicMock()
+        self.export_data.source._id = 'vcu'
+        mock_export_data.filter.return_value.first.return_value = self.export_data
+        with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects', mock_export_data):
+            mock_request = mock.MagicMock()
+            mock_request.get.return_value = FakeRes(200)
+            with mock.patch('osf.models.export_data.requests', mock_request):
+                mock_validate = mock.MagicMock()
+                mock_validate.return_value = True
+                with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.validate_exported_data', mock_validate):
+                    request = RequestFactory().get('/fake_path')
+                    request.user = self.superuser
+                    request.COOKIES = '213919sdasdn823193929'
+                    request.GET = {'destination_id': str(self.region_inst_01.id)}
+                    view = management.CheckRestoreData()
+                    view = setup_view(view, request, data_id=self.export_data.id)
+                    view.request = request
+                    res = view.dispatch(request, data_id=self.export_data.id)
+        nt.assert_equals(res.status_code, 200)
+
+    def test__test_func_normal_user(self):
+        request = RequestFactory().get('/fake_path')
+        request.user = self.normal_user
+        request.COOKIES = '213919sdasdn823193929'
+        view = management.CheckRestoreData()
+        view = setup_view(view, request, data_id=self.export_data.id)
+        view.export_data = self.export_data
+        nt.assert_false(view.test_func())
+
+    def test__test_func_super(self):
+        request = RequestFactory().get('/fake_path')
+        request.user = self.superuser
+        request.COOKIES = '213919sdasdn823193929'
+        view = management.CheckRestoreData()
+        view = setup_view(view, request, data_id=self.export_data.id)
+        view.export_data = self.export_data
+        nt.assert_true(view.test_func())
+
+    def test__test_func_admin_has_perrmision(self):
+        request = RequestFactory().get('/fake_path')
+        request.user = self.institution01_admin
+        request.COOKIES = '213919sdasdn823193929'
+        view = management.CheckRestoreData()
+        view = setup_view(view, request, data_id=self.export_data_01.id)
+        view.export_data = self.export_data_01
+        nt.assert_true(view.test_func())
+
+    def test__test_func_admin_not_perrmision(self):
+        request = RequestFactory().get('/fake_path')
+        request.user = self.institution01_admin
+        request.COOKIES = '213919sdasdn823193929'
+        view = management.CheckRestoreData()
+        view = setup_view(view, request, data_id=self.export_data_02.id)
+        view.export_data = self.export_data_02
+        nt.assert_false(view.test_func())
 
 @pytest.mark.feature_202210
 class TestExportDataFileCSVView(AdminTestCase):
@@ -531,6 +814,37 @@ class TestExportDataFileCSVView(AdminTestCase):
         self.export_data = ExportDataFactory()
         self.view = management.ExportDataFileCSVView()
 
+        self.institution01 = InstitutionFactory(name='inst01')
+        self.region_inst_01 = RegionFactory(_id=self.institution01._id)
+        self.export_data_01 = ExportDataFactory(source=self.region_inst_01)
+        self.export_data_01_location = ExportDataLocationFactory(institution_guid=self.institution01._id)
+
+        self.institution02 = InstitutionFactory(name='inst02')
+        self.region_inst_02 = RegionFactory(_id=self.institution02._id)
+        self.export_data_02 = ExportDataFactory(source=self.region_inst_02)
+        self.export_data_02_location = ExportDataLocationFactory(institution_guid=self.institution02._id)
+
+        self.anon = AnonymousUser()
+
+        self.normal_user = AuthUserFactory(fullname='normal_user')
+        self.normal_user.is_staff = False
+        self.normal_user.is_superuser = False
+
+        self.superuser = AuthUserFactory(fullname='superuser')
+        self.superuser.is_staff = True
+        self.superuser.is_superuser = True
+        self.superuser.save()
+
+        self.institution01_admin = AuthUserFactory(fullname='admin001_inst01')
+        self.institution01_admin.is_staff = True
+        self.institution01_admin.affiliated_institutions.add(self.institution01)
+        self.institution01_admin.save()
+
+        self.institution02_admin = AuthUserFactory(fullname='admin001_inst02')
+        self.institution02_admin.is_staff = True
+        self.institution02_admin.affiliated_institutions.add(self.institution02)
+        self.institution02_admin.save()
+
     @mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.read_file_info_from_location')
     @mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportDataFileCSVView.get_object')
     def test_get(self, mock_get_object, mock_read_file_info):
@@ -542,6 +856,61 @@ class TestExportDataFileCSVView(AdminTestCase):
         res = view.get(request)
         nt.assert_equal(res.status_code, 200)
 
+    def test__test_func_anonymus(self):
+        request = RequestFactory().get('/fake_path')
+        request.user = self.anon
+        view = setup_view(self.view, request)
+        nt.assert_false(view.test_func())
+
+    def test__test_func_normal_user(self):
+        request = RequestFactory().get('/fake_path')
+        request.user = self.normal_user
+        view = setup_view(self.view, request)
+        nt.assert_false(view.test_func())
+
+    def test__test_func_super_user(self):
+        request = RequestFactory().get('/fake_path')
+        request.user = self.superuser
+        view = setup_view(self.view, request)
+        nt.assert_true(view.test_func())
+
+    def test__test_func_admin_has_perrmision(self):
+        request = RequestFactory().get('/fake_path')
+        request.user = self.institution01_admin
+        view = setup_view(self.view, request)
+        nt.assert_true(view.test_func())
+
+    def test__test_func_admin_not_permission(self):
+        request = RequestFactory().get('/fake_path')
+        self.institution01_admin.affiliated_institutions.clear()
+        self.institution01_admin.save()
+        request.user = self.institution01_admin
+        view = setup_view(self.view, request)
+        nt.assert_false(view.test_func())
+
+    def test__test_get_object_success(self):
+        request = RequestFactory().get('/fake_path')
+        request.user = self.institution01_admin
+        view = setup_view(self.view, request, data_id=self.export_data_01.id)
+        nt.assert_is_not_none(view.get_object())
+
+    def test__test_get_object_not_permission(self):
+        request = RequestFactory().get('/fake_path')
+        self.institution01_admin.affiliated_institutions.clear()
+        self.institution01_admin.save()
+        request.user = self.institution01_admin
+        view = setup_view(self.view, request, data_id=self.export_data_02.id)
+        with nt.assert_raises(PermissionDenied):
+            view.get_object()
+
+    def test__test_get_object_not_exit(self):
+        request = RequestFactory().get('/fake_path')
+        self.institution01_admin.affiliated_institutions.clear()
+        self.institution01_admin.save()
+        request.user = self.institution01_admin
+        view = setup_view(self.view, request, data_id=0)
+        with nt.assert_raises(Http404):
+            view.get_object()
 
 @pytest.mark.feature_202210
 class TestDeleteExportDataView(AdminTestCase):
@@ -639,7 +1008,9 @@ class TestDeleteExportDataView(AdminTestCase):
 
     @mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects')
     @mock.patch('osf.models.export_data.requests')
-    def test_delete_permanently_fail(self, mock_request, mock_export_data):
+    @mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.render_bad_request_response')
+    def test_delete_permanently_fail(self, mock_render, mock_request, mock_export_data):
+        mock_render.return_value = HttpResponseBadRequest(content='fake')
         mock_export_data.filter.return_value = [self.export_data]
         mock_request.delete.return_value = JsonResponse({'message': ''}, status=400)
         request = RequestFactory().post('/fake_path')
@@ -787,7 +1158,9 @@ class TestDeleteExportDataView(AdminTestCase):
         with self.assertRaises(PermissionDenied):
             management.DeleteExportDataView.as_view()(request)
 
-    def test_delete_with_invalid_request_body(self):
+    @mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.render_bad_request_response')
+    def test_delete_with_invalid_request_body(self, mock_render):
+        mock_render.return_value = HttpResponseBadRequest(content='fake')
         request = RequestFactory().post('/fake_path')
         request.user = self.superuser
         request.COOKIES = '213919sdasdn823193929'
@@ -827,11 +1200,15 @@ class TestRevertExportData(AdminTestCase):
         self.institution01 = InstitutionFactory(name='inst01')
         self.region_inst_01 = RegionFactory(_id=self.institution01._id)
         self.export_data_01 = ExportDataFactory(source=self.region_inst_01)
+        self.export_data_01.is_deleted = True
+        self.export_data_01.save()
         self.export_data_01_location = ExportDataLocationFactory(institution_guid=self.institution01._id)
 
         self.institution02 = InstitutionFactory(name='inst02')
         self.region_inst_02 = RegionFactory(_id=self.institution02._id)
         self.export_data_02 = ExportDataFactory(source=self.region_inst_02)
+        self.export_data_02.is_deleted = True
+        self.export_data_02.save()
         self.export_data_02_location = ExportDataLocationFactory(institution_guid=self.institution02._id)
 
         self.anon = AnonymousUser()
@@ -988,7 +1365,9 @@ class TestRevertExportData(AdminTestCase):
         with self.assertRaises(PermissionDenied):
             management.RevertExportDataView.as_view()(request)
 
-    def test_revert_with_invalid_request_body(self):
+    @mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.render_bad_request_response')
+    def test_revert_with_invalid_request_body(self, mock_render):
+        mock_render.return_value = HttpResponseBadRequest(content='fake')
         request = RequestFactory().post('/fake_path')
         request.user = self.superuser
         request.COOKIES = '213919sdasdn823193929'

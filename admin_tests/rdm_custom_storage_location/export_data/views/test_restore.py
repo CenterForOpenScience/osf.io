@@ -95,7 +95,8 @@ class TestRestoreDataActionView(AdminTestCase):
     def test_post_missing_params(self):
         request = APIRequestFactory().post('restore_export_data', {})
         request.user = AuthUserFactory()
-        response = self.view.post(request)
+        self.view.request = request
+        response = self.view.dispatch(request)
         nt.assert_equal(response.data, {'message': f'Missing required parameters.'})
         nt.assert_equal(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -128,7 +129,10 @@ class TestRestoreDataActionView(AdminTestCase):
         mock_export_data.filter.return_value.first.return_value = self.export_data
         mock_prepare_for_restore.return_value = Response(
             {'task_id': FAKE_TASK_ID}, status=status.HTTP_200_OK)
-
+        self.view.destination_id = self.region_inst_01.id
+        self.view.export_id = self.export_data.id
+        self.view.export_data = self.export_data
+        self.view.destination = self.region_inst_01
         response = self.view.post(request)
         mock_prepare_for_restore.assert_called()
         nt.assert_equal(response.data, {'task_id': FAKE_TASK_ID})
@@ -151,7 +155,10 @@ class TestRestoreDataActionView(AdminTestCase):
         mock_check_before_restore.return_value = {}
         mock_prepare_for_restore.return_value = Response(
             {'task_id': FAKE_TASK_ID}, status=status.HTTP_200_OK)
-
+        self.view.destination_id = self.region_inst_01.id
+        self.view.export_id = self.export_data.id
+        self.view.export_data = self.export_data
+        self.view.destination = self.region_inst_01
         response = self.view.post(request)
         mock_check_for_running_restore.assert_called()
         mock_check_before_restore.assert_called()
@@ -222,6 +229,10 @@ class TestRestoreDataActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_01.id,
         }
+        view.destination_id = self.region_inst_01.id
+        view.export_id = self.export_data_01.id
+        view.export_data = self.export_data_01
+        view.destination = self.region_inst_01
         nt.assert_equal(view.test_func(), True)
 
     def test__test_func__addmin_with_permission(self):
@@ -234,6 +245,10 @@ class TestRestoreDataActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_01.id,
         }
+        view.destination_id = self.region_inst_01.id
+        view.export_id = self.export_data_01.id
+        view.export_data = self.export_data_01
+        view.destination = self.region_inst_01
         nt.assert_equal(view.test_func(), True)
 
     def test__test_func__addmin_without_permission(self):
@@ -248,6 +263,10 @@ class TestRestoreDataActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_01.id,
         }
+        view.destination_id = self.region_inst_01.id
+        view.export_id = self.export_data_01.id
+        view.export_data = self.export_data_01
+        view.destination = self.region_inst_01
         nt.assert_equal(view.test_func(), False)
 
         request = APIRequestFactory().post('restore_export_data', {
@@ -258,6 +277,10 @@ class TestRestoreDataActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_02.id,
         }
+        view.destination_id = self.region_inst_01.id
+        view.export_id = self.export_data_02.id
+        view.export_data = self.export_data_02
+        view.destination = self.region_inst_01
         nt.assert_equal(view.test_func(), False)
 
         # admin not in institution
@@ -282,6 +305,10 @@ class TestRestoreDataActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_01.id,
         }
+        view.destination_id = self.region_inst_02.id
+        view.export_id = self.export_data_01.id
+        view.export_data = self.export_data_01
+        view.destination = self.region_inst_02
         nt.assert_equal(view.test_func(), False)
 
 # Test cases for CheckTaskStatusRestoreDataActionView
@@ -1861,7 +1888,8 @@ class TestStopRestoreDataActionView(AdminTestCase):
     def test_post_missing_params(self):
         request = APIRequestFactory().post('stop_restore_export_data', {})
         request.user = AuthUserFactory()
-        response = self.view.post(request)
+        self.view.request = request
+        response = self.view.dispatch(request)
         nt.assert_equal(response.data, {'message': f'Missing required parameters.'})
         nt.assert_equal(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -1874,7 +1902,9 @@ class TestStopRestoreDataActionView(AdminTestCase):
         request.user = AuthUserFactory()
 
         mock_rollback_process.return_value = self.new_task
-
+        self.view.export_data_restore = self.export_data_restore
+        self.view.export_id = self.export_data_restore.export.id
+        self.view.task_id = FAKE_TASK_ID
         response = self.view.post(request)
         mock_rollback_process.assert_called()
         nt.assert_equal(response.data, {'task_id': self.new_task_id})
@@ -1889,11 +1919,11 @@ class TestStopRestoreDataActionView(AdminTestCase):
         request.user = AuthUserFactory()
 
         mock_rollback_process.return_value = self.new_task
-
-        response = self.view.post(request)
+        self.view.request = request
+        response = self.view.dispatch(request, export_id=self.export_data_restore.export.id)
         mock_rollback_process.assert_not_called()
-        nt.assert_equal(response.data, {'message': f'Permission denied for this restore process'})
-        nt.assert_equal(response.status_code, status.HTTP_400_BAD_REQUEST)
+        nt.assert_equal(response.data, {'message': f'The restore export data is not exist'})
+        nt.assert_equal(response.status_code, status.HTTP_404_NOT_FOUND)
 
     @mock.patch(f'{EXPORT_DATA_TASK_PATH}.run_restore_export_data_rollback_process.delay')
     def test_post_task_no_result(self, mock_rollback_process):
@@ -1907,6 +1937,9 @@ class TestStopRestoreDataActionView(AdminTestCase):
 
         mock_rollback_process.return_value = self.new_task
 
+        self.view.export_data_restore = self.export_data_restore
+        self.view.export_id = self.export_data_restore.export.id
+        self.view.task_id = FAKE_TASK_ID
         response = self.view.post(request)
         mock_rollback_process.assert_not_called()
         nt.assert_equal(response.data, {'message': f'Stop restore data successfully.'})
@@ -1923,6 +1956,9 @@ class TestStopRestoreDataActionView(AdminTestCase):
 
         mock_rollback_process.return_value = self.new_task
 
+        self.view.export_data_restore = self.export_data_restore
+        self.view.export_id = self.export_data_restore.export.id
+        self.view.task_id = FAKE_TASK_ID
         response = self.view.post(request)
         mock_rollback_process.assert_not_called()
         nt.assert_equal(response.data, {'message': f'Stop restore data successfully.'})
@@ -1939,6 +1975,9 @@ class TestStopRestoreDataActionView(AdminTestCase):
 
         mock_rollback_process.return_value = self.new_task
 
+        self.view.export_data_restore = self.export_data_restore
+        self.view.export_id = self.export_data_restore.export.id
+        self.view.task_id = FAKE_TASK_ID
         response = self.view.post(request)
         mock_rollback_process.assert_not_called()
         nt.assert_equal(response.data, {'message': f'Cannot stop restore process at this time.'})
@@ -1955,7 +1994,9 @@ class TestStopRestoreDataActionView(AdminTestCase):
         request.user = AuthUserFactory()
 
         mock_rollback_process.return_value = self.new_task
-
+        self.view.export_data_restore = self.export_data_restore
+        self.view.export_id = self.export_data_restore.export.id
+        self.view.task_id = FAKE_TASK_ID
         response = self.view.post(request)
         mock_task_abort.assert_called()
         mock_rollback_process.assert_not_called()
@@ -1999,6 +2040,12 @@ class TestStopRestoreDataActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_01.id,
         }
+        view.destination_id = self.region_inst_01.id
+        view.destination_inst_id = self.institution01.id
+        view.export_id = self.export_data_01.id
+        view.export_data_inst_id = self.institution01.id
+        view.export_data_restore = self.restore_data_01
+        view.export_data_restore_inst_id = self.institution01.id
         nt.assert_equal(view.test_func(), True)
 
     def test__test_func__addmin_with_permission(self):
@@ -2012,6 +2059,12 @@ class TestStopRestoreDataActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_01.id,
         }
+        view.destination_id = self.region_inst_01.id
+        view.destination_inst_id = self.institution01.id
+        view.export_id = self.export_data_01.id
+        view.export_data_inst_id = self.institution01.id
+        view.export_data_restore = self.restore_data_01
+        view.export_data_restore_inst_id = self.institution01.id
         nt.assert_equal(view.test_func(), True)
 
     def test__test_func__addmin_without_permission(self):
@@ -2027,6 +2080,12 @@ class TestStopRestoreDataActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_01.id,
         }
+        view.destination_id = self.region_inst_01.id
+        view.destination_inst_id = self.institution01.id
+        view.export_id = self.export_data_01.id
+        view.export_data_inst_id = self.institution01.id
+        view.export_data_restore = self.restore_data_01
+        view.export_data_restore_inst_id = self.institution01.id
         nt.assert_equal(view.test_func(), False)
 
         request = APIRequestFactory().post('stop_restore_export_data', {
@@ -2038,6 +2097,12 @@ class TestStopRestoreDataActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_02.id,
         }
+        view.destination_id = self.region_inst_01.id
+        view.destination_inst_id = self.institution01.id
+        view.export_id = self.export_data_02.id
+        view.export_data_inst_id = self.institution02.id
+        view.export_data_restore = self.restore_data_02
+        view.export_data_restore_inst_id = self.institution02.id
         nt.assert_equal(view.test_func(), False)
 
         # admin not in institution
@@ -2051,17 +2116,13 @@ class TestStopRestoreDataActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_02.id,
         }
+        view.destination_id = self.region_inst_02.id
+        view.destination_inst_id = self.institution02.id
+        view.export_id = self.export_data_02.id
+        view.export_data_inst_id = self.institution02.id
+        view.export_data_restore = self.restore_data_02
+        view.export_data_restore_inst_id = self.institution02.id
         nt.assert_equal(view.test_func(), False)
-
-    def test__test_func__without_param(self):
-        view = restore.StopRestoreDataActionView()
-        request = APIRequestFactory().post('stop_restore_export_data', {})
-        request.user = self.superuser
-        view.request = request
-        view.kwargs = {
-            'export_id': self.export_data_01.id,
-        }
-        nt.assert_equal(view.test_func(), True)
 
     def test__test_func__super_with_param_not_same_inst(self):
         view = restore.StopRestoreDataActionView()
@@ -2074,6 +2135,12 @@ class TestStopRestoreDataActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_02.id,
         }
+        view.destination_id = self.region_inst_02.id
+        view.destination_inst_id = self.institution02.id
+        view.export_id = self.export_data_02.id
+        view.export_data_inst_id = self.institution02.id
+        view.export_data_restore = self.restore_data_01
+        view.export_data_restore_inst_id = self.institution01.id
         nt.assert_equal(view.test_func(), False)
 
         request = APIRequestFactory().post('stop_restore_export_data', {
@@ -2085,6 +2152,12 @@ class TestStopRestoreDataActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_01.id,
         }
+        view.destination_id = self.region_inst_02.id
+        view.destination_inst_id = self.institution02.id
+        view.export_id = self.export_data_01.id
+        view.export_data_inst_id = self.institution01.id
+        view.export_data_restore = self.restore_data_01
+        view.export_data_restore_inst_id = self.institution01.id
         nt.assert_equal(view.test_func(), False)
 
         request = APIRequestFactory().post('stop_restore_export_data', {
@@ -2096,6 +2169,12 @@ class TestStopRestoreDataActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_02.id,
         }
+        view.destination_id = self.region_inst_01.id
+        view.destination_inst_id = self.institution01.id
+        view.export_id = self.export_data_02.id
+        view.export_data_inst_id = self.institution02.id
+        view.export_data_restore = self.restore_data_01
+        view.export_data_restore_inst_id = self.institution01.id
         nt.assert_equal(view.test_func(), False)
 
 # Test cases for CheckRunningRestoreActionView
@@ -2150,6 +2229,7 @@ class TestCheckRunningRestoreActionView(AdminTestCase):
         request = APIRequestFactory().get('check_running_restore', {
             'destination_id': self.export_data_restore.destination.id,
         })
+        self.view.destination_id = self.export_data_restore.destination.id
         response = self.view.get(request)
         nt.assert_equal(response.data, {
             'task_id': FAKE_TASK_ID,
@@ -2215,6 +2295,8 @@ class TestCheckRunningRestoreActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_01.id,
         }
+        view.export_data = self.export_data_01
+        view.destination_id = self.region_inst_01.id
         nt.assert_equal(view.test_func(), False)
 
         view = restore.CheckRunningRestoreActionView()
@@ -2226,6 +2308,8 @@ class TestCheckRunningRestoreActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_02.id,
         }
+        view.export_data = self.export_data_02
+        view.destination_id = self.region_inst_02.id
         nt.assert_equal(view.test_func(), False)
 
         # admin not in institution
@@ -2239,6 +2323,8 @@ class TestCheckRunningRestoreActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_02.id,
         }
+        view.export_data = self.export_data_02
+        view.destination_id = self.region_inst_02.id
         nt.assert_equal(view.test_func(), False)
 
     def test__test_func__without_param(self):
@@ -2261,4 +2347,6 @@ class TestCheckRunningRestoreActionView(AdminTestCase):
         view.kwargs = {
             'export_id': self.export_data_02.id,
         }
+        view.export_data = self.export_data_02
+        view.destination_id = self.region_inst_01.id
         nt.assert_equal(view.test_func(), False)

@@ -19,6 +19,7 @@ from osf_tests.factories import (
 from tests.base import AdminTestCase
 from django.contrib.auth.models import AnonymousUser
 from django.http import Http404
+from django.http import HttpResponseBadRequest
 
 pytestmark = pytest.mark.django_db
 
@@ -213,6 +214,15 @@ class TestInstitutionEntitlementList(AdminTestCase):
         with self.assertRaises(Http404):
             views.InstitutionEntitlementList.as_view()(request)
 
+    @mock.patch('admin.entitlements.views.render_bad_request_response')
+    def test_InstitutionEntitlementList_not_valid_intitution(self, mock_render):
+        mock_render.return_value = HttpResponseBadRequest(content='fake')
+        request = RequestFactory().get(reverse('institutions:entitlements') + '?institution_id=fake_id')
+        request.user = self.user_2
+
+        response = views.InstitutionEntitlementList.as_view()(request)
+        self.assertEqual(response.status_code, 400)
+
 class TestBulkAddInstitutionEntitlement(AdminTestCase):
 
     def setUp(self):
@@ -324,7 +334,11 @@ class TestBulkAddInstitutionEntitlement(AdminTestCase):
             self.view_permission.as_view()(request)
 
     def test_permission_normal_user(self):
-        request = RequestFactory().post(reverse('entitlements:bulk_add'))
+        data = {'institution_id': self.institution01.id,
+                'entitlements': 'demo super',
+                'login_availability': 'on'
+                }
+        request = RequestFactory().post(reverse('entitlements:bulk_add'), data=data)
         request.user = self.normal_user
 
         with self.assertRaises(PermissionDenied):
@@ -362,6 +376,41 @@ class TestBulkAddInstitutionEntitlement(AdminTestCase):
             self.view_permission.as_view()(request)
 
     def test_permission_not_exist_inst(self):
+        data = {'institution_id': 0,
+                'entitlements': 'demo super',
+                'login_availability': 'on'
+                }
+        request = RequestFactory().post(reverse('entitlements:bulk_add'), data=data)
+        request.user = self.superuser
+        with self.assertRaises(Http404):
+            self.view_permission.as_view()(request)
+
+    @mock.patch('admin.entitlements.views.render_bad_request_response')
+    def test__institution_id_none(self, mock_render):
+        mock_render.return_value = HttpResponseBadRequest(content='fake')
+        data = {'entitlements': 'demo super',
+                'login_availability': 'on'
+                }
+        request = RequestFactory().post(reverse('entitlements:bulk_add'), data=data)
+        request.user = self.superuser
+        result = self.view_permission.as_view()(request)
+        self.assertEqual(result.status_code, 400)
+
+    @mock.patch('admin.entitlements.views.render_bad_request_response')
+    def test__institution_id_invalid_format(self, mock_render):
+        mock_render.return_value = HttpResponseBadRequest(content='fake')
+        data = {'institution_id': 'fake_id',
+                'entitlements': 'demo super',
+                'login_availability': 'on'
+                }
+        request = RequestFactory().post(reverse('entitlements:bulk_add'), data=data)
+        request.user = self.superuser
+        result = self.view_permission.as_view()(request)
+        self.assertEqual(result.status_code, 400)
+
+    @mock.patch('admin.entitlements.views.render_bad_request_response')
+    def test__institution_id_not_exist(self, mock_render):
+        mock_render.return_value = HttpResponseBadRequest(content='fake')
         data = {'institution_id': 0,
                 'entitlements': 'demo super',
                 'login_availability': 'on'
@@ -574,6 +623,30 @@ class TestToggleInstitutionEntitlement(AdminTestCase):
                 institution_id=self.institution01.id,
                 entitlement_id=self.entitlement_2.id)
 
+    def test_permission_admin_not_exist_inst(self):
+        request = RequestFactory().post(
+            reverse('institutions:entitlement_toggle',
+                    kwargs={'institution_id': 0, 'entitlement_id': self.entitlement_1.id})
+        )
+        request.user = self.institution01_admin
+        with self.assertRaises(Http404):
+            self.view_permission.as_view()(
+                request,
+                institution_id=0,
+                entitlement_id=self.entitlement_1.id)
+
+    def test_permission_admin_not_exist_entitlement(self):
+        request = RequestFactory().post(
+            reverse('institutions:entitlement_toggle',
+                    kwargs={'institution_id': self.institution01.id, 'entitlement_id': 0})
+        )
+        request.user = self.institution01_admin
+        with self.assertRaises(Http404):
+            self.view_permission.as_view()(
+                request,
+                institution_id=self.institution01.id,
+                entitlement_id=0)
+
 class TestDeleteInstitutionEntitlement(AdminTestCase):
 
     def setUp(self):
@@ -774,3 +847,27 @@ class TestDeleteInstitutionEntitlement(AdminTestCase):
                 request,
                 institution_id=self.institution01.id,
                 entitlement_id=self.entitlement_2.id)
+
+    def test_permission_admin_not_exist_inst(self):
+        request = RequestFactory().post(
+            reverse('institutions:entitlement_delete',
+                    kwargs={'institution_id': 0, 'entitlement_id': self.entitlement_1.id})
+        )
+        request.user = self.institution01_admin
+        with self.assertRaises(Http404):
+            self.view_permission.as_view()(
+                request,
+                institution_id=0,
+                entitlement_id=self.entitlement_1.id)
+
+    def test_permission_admin_not_exist_entitlement(self):
+        request = RequestFactory().post(
+            reverse('institutions:entitlement_delete',
+                    kwargs={'institution_id': self.institution01.id, 'entitlement_id': 0})
+        )
+        request.user = self.institution01_admin
+        with self.assertRaises(Http404):
+            self.view_permission.as_view()(
+                request,
+                institution_id=self.institution01.id,
+                entitlement_id=0)

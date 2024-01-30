@@ -10,16 +10,15 @@ from django.views import View
 from django.views.defaults import page_not_found, permission_denied
 from django.views.generic import FormView
 from django.views.generic import ListView
-from rest_framework import status as http_status
 
 from admin.base.views import GuidView
 from admin.rdm.utils import RdmPermissionMixin
 from admin.user_emails.forms import UserEmailsSearchForm
-from framework.exceptions import HTTPError
 from osf.models.user import OSFUser, Email
 from website import mailchimp_utils
 from website import mails
 from website import settings
+from admin.base.utils import render_bad_request_response
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +41,6 @@ class RdmAdminRequiredMixin(UserPassesTestMixin, RdmPermissionMixin):
         if self.is_super_admin or self.is_admin:
             return True
         return False
-
 
 class UserEmailsFormView(RdmAdminRequiredMixin, FormView):
     template_name = 'user_emails/search.html'
@@ -93,13 +91,18 @@ class UserEmailsSearchList(RdmAdminRequiredMixin, ListView):
     form_class = UserEmailsSearchForm
     paginate_by = 25
 
+    def get(self, request, *args, **kwargs):
+        keyword = self.kwargs.get('name')
+        guid = self.kwargs.get('guid')
+        if not keyword and not guid:
+            return render_bad_request_response(request=request, error_msgs='missing name or guid parameter')
+        return super(UserEmailsSearchList, self).get(request, *args, **kwargs)
+
     def get_queryset(self):
         keyword = self.kwargs.get('name')
         guid = self.kwargs.get('guid')
         request_user = self.request.user
 
-        if not keyword and not guid:
-            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
         if guid:
             users_query = OSFUser.objects.filter(guids___id=guid)
         else:

@@ -1844,6 +1844,47 @@ class TestUserProfile(OsfTestCase):
 
         assert_true(self.user.social['researcherId'] is None)
 
+    @mock.patch('osf.models.user.OSFUser.check_spam')
+    def test_unserialize_account_info_with_empty_body(self, mock_check_spam):
+        url = api_url_for('serialize_account_info')
+        jobs = [{
+            'institution': 'an institution',
+            'institution_ja': 'Institution',
+            'department': 'department A',
+            'department_ja': 'Department A',
+            'location': 'Anywhere',
+            'startMonth': 'January',
+            'startYear': '2001',
+            'endMonth': 'March',
+            'endYear': '2001',
+            'ongoing': False,
+        }, {
+            'institution': 'another institution',
+            'institution_ja': 'Another Institution',
+            'department': 'department B',
+            'department_ja': 'Department B',
+            'location': 'Nowhere',
+            'startMonth': 'January',
+            'startYear': '2001',
+            'endMonth': 'March',
+            'endYear': '2001',
+            'ongoing': False,
+        }]
+        self.user.jobs = jobs
+        self.user.save()
+
+        payload = None
+
+        res = self.app.put_json(
+            url,
+            payload,
+            auth=self.user.auth,
+            expect_errors=True
+        )
+
+        self.user.reload()
+        assert_equal(res.status_code, 400)
+
     def test_append_idp_attr_common(self):
         ext, created = UserExtendedData.objects.get_or_create(user=self.user)
         # update every login.
@@ -2855,6 +2896,35 @@ class TestUserInviteViews(OsfTestCase):
         )
         res = self.app.get(claim_url)
         assert_equal(res.status_code, 200)
+
+    def test_claim_user_activate_not_exist_uid(self):
+        self.referrer = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.referrer, is_public=True)
+        claim_url = '/user/{uid}/{pid}/claim/activate'.format(
+            uid='fake_uid',
+            pid=self.project._id,
+        )
+        res = self.app.get(claim_url, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_claim_user_activate_not_exist_pid(self):
+        self.referrer = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.referrer, is_public=True)
+
+        given_email = fake_email()
+        unreg_user = self.project.add_unregistered_contributor(
+            fullname=fake.name(),
+            email=given_email,
+            auth=Auth(self.project.creator),
+        )
+        unreg_user.save()
+
+        claim_url = '/user/{uid}/{pid}/claim/activate'.format(
+            uid=unreg_user._id,
+            pid='fake_pid',
+        )
+        res = self.app.get(claim_url, expect_errors=True)
+        assert_equal(res.status_code, 404)
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
     def test_send_claim_email_to_referrer(self, send_mail):

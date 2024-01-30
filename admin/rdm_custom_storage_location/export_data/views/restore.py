@@ -29,6 +29,8 @@ from framework.transactions.handlers import no_auto_transaction
 from website.util.quota import update_user_used_quota
 from django.contrib.auth.mixins import UserPassesTestMixin
 from admin.rdm.utils import get_institution_id_by_region
+from rest_framework.renderers import JSONRenderer
+
 
 logger = logging.getLogger(__name__)
 INSTITUTIONAL_STORAGE_PROVIDER_NAME = 'osfstorage'
@@ -46,50 +48,63 @@ class RestoreDataActionView(RdmPermissionMixin, UserPassesTestMixin, APIView):
     authentication_classes = (
         drf_authentication.SessionAuthentication,
     )
+    destination_id = None
+    export_id = None
+    export_data = None
+    destination = None
+
+    def dispatch(self, request, *args, **kwargs):
+        # login check
+        if not self.is_authenticated:
+            return self.handle_no_permission()
+
+        self.destination_id = request.POST.get('destination_id')
+        self.export_id = kwargs.get('export_id')
+
+        # Check required parameters
+        if self.destination_id is None or self.export_id is None:
+            return response_render({'message': f'Missing required parameters.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate format destination_id
+        try:
+            self.destination_id = int(self.destination_id)
+        except ValueError:
+            return response_render({'message': 'The destination_id must be a integer'}, status=status.HTTP_400_BAD_REQUEST)
+        # Check exist data and store data
+        self.export_data = ExportData.objects.filter(id=self.export_id, is_deleted=False).first()
+        if not self.export_data:
+            return response_render({'message': 'The export data does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        self.destination = Region.objects.filter(id=self.destination_id).first()
+        if not self.destination:
+            return response_render({'message': 'The destination storage does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        return super().dispatch(request, *args, **kwargs)
 
     def test_func(self):
         """check user permissions"""
-        # login check
-        if not self.is_authenticated:
-            return False
-
         # allowed if superuser or admin
         if not self.is_super_admin and not self.is_institutional_admin:
             return False
-
-        destination_id = self.request.POST.get('destination_id')
-        export_id = self.kwargs.get('export_id')
-        if not destination_id or not export_id:
-            return True
+        export_data_inst_id = get_institution_id_by_region(self.export_data.source)
+        destination_inst_id = get_institution_id_by_region(self.destination)
+        if not export_data_inst_id or not destination_inst_id:
+            return False
         else:
-            export_data_inst_id = None
-            check_export_data = ExportData.objects.filter(id=export_id, is_deleted=False).first()
-            if check_export_data:
-                export_data_inst_id = get_institution_id_by_region(check_export_data.source)
-            destination_inst_id = get_institution_id_by_region(Region.objects.filter(id=destination_id).first())
-            if not export_data_inst_id or not destination_inst_id:
-                return True
-            else:
-                return (export_data_inst_id == destination_inst_id) and self.has_auth(export_data_inst_id)
+            return (export_data_inst_id == destination_inst_id) and self.has_auth(export_data_inst_id)
 
     def post(self, request, **kwargs):
-        destination_id = request.POST.get('destination_id')
-        export_id = self.kwargs.get('export_id')
         cookie = request.user.get_or_create_cookie().decode()
         kwargs.setdefault('cookie', cookie)
         cookies = request.COOKIES
         creator = request.user
         is_from_confirm_dialog = request.POST.get('is_from_confirm_dialog', default=False)
-        if destination_id is None or export_id is None:
-            return Response({'message': f'Missing required parameters.'}, status=status.HTTP_400_BAD_REQUEST)
 
         if not is_from_confirm_dialog:
             # Check the destination is available (not in restore process or checking restore data process)
-            any_process_running = utils.check_for_any_running_restore_process(destination_id)
+            any_process_running = utils.check_for_any_running_restore_process(self.destination_id)
             if any_process_running:
                 return Response({'message': f'Cannot restore in this time.'}, status=status.HTTP_400_BAD_REQUEST)
 
-            result = check_before_restore_export_data(cookies, export_id, destination_id, cookie=cookie)
+            result = check_before_restore_export_data(cookies, self.export_id, self.destination_id, cookie=cookie)
             if result.get('open_dialog'):
                 # If open_dialog is True, return HTTP 200 with empty response
                 return Response({}, status=status.HTTP_200_OK)
@@ -100,14 +115,13 @@ class RestoreDataActionView(RdmPermissionMixin, UserPassesTestMixin, APIView):
                 return Response({'message': result.get('message')}, status=status.HTTP_400_BAD_REQUEST)
 
         # Start restore data task and return task id
-        export_data = ExportData.objects.filter(id=export_id).first()
-        source_storage_guid = export_data.source.guid
+        source_storage_guid = self.export_data.source.guid
         institution = Institution.load(source_storage_guid)
         projects = institution.nodes.filter(type='osf.node', is_deleted=False)
         projects__ids = []
         for project in projects:
             projects__ids.append(project._id)
-        return prepare_for_restore_export_data_process(cookies, export_id, destination_id, projects__ids, creator, cookie=cookie)
+        return prepare_for_restore_export_data_process(cookies, self.export_id, self.destination_id, projects__ids, creator, cookie=cookie)
 
 def check_before_restore_export_data(cookies, export_id, destination_id, **kwargs):
     check_export_data = ExportData.objects.filter(id=export_id, is_deleted=False)
@@ -299,6 +313,55 @@ class StopRestoreDataActionView(RdmPermissionMixin, UserPassesTestMixin, APIView
     authentication_classes = (
         drf_authentication.SessionAuthentication,
     )
+    task_id = None
+    destination_id = None
+    destination_inst_id = None
+    export_id = None
+    export_data_inst_id = None
+    export_data_restore = None
+    export_data_restore_inst_id = None
+
+    def dispatch(self, request, *args, **kwargs):
+        # login check
+        if not self.is_authenticated:
+            return self.handle_no_permission()
+
+        self.task_id = request.POST.get('task_id')
+        self.destination_id = request.POST.get('destination_id')
+        self.export_id = kwargs.get('export_id')
+
+        # Check required parameters
+        if not self.destination_id or not self.export_id or not self.task_id:
+            return response_render({'message': f'Missing required parameters.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate format destination_id
+        try:
+            self.destination_id = int(self.destination_id)
+        except ValueError:
+            return response_render({'message': 'The destination_id must be a integer'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check exist and store data with task_id,destination_id and export_id
+        check_export_data = ExportData.objects.filter(id=self.export_id, is_deleted=False).first()
+        if check_export_data:
+            self.export_data_inst_id = get_institution_id_by_region(check_export_data.source)
+        else:
+            return response_render({'message': f'The export data is not exist'},
+                            status=status.HTTP_404_NOT_FOUND)
+
+        destination_region = Region.objects.filter(id=self.destination_id).first()
+        if destination_region:
+            self.destination_inst_id = get_institution_id_by_region(destination_region)
+        else:
+            return response_render({'message': f'The destination storage does not exist'},
+                            status=status.HTTP_404_NOT_FOUND)
+
+        self.export_data_restore = ExportDataRestore.objects.filter(task_id=self.task_id, destination_id=self.destination_id)
+        if self.export_data_restore:
+            self.export_data_restore_inst_id = get_institution_id_by_region(self.export_data_restore.export.source)
+        else:
+            return response_render({'message': f'The restore export data is not exist'},
+                            status=status.HTTP_404_NOT_FOUND)
+        return super().dispatch(request, *args, **kwargs)
 
     def test_func(self):
         """check user permissions"""
@@ -310,56 +373,27 @@ class StopRestoreDataActionView(RdmPermissionMixin, UserPassesTestMixin, APIView
         if not self.is_super_admin and not self.is_institutional_admin:
             return False
 
-        task_id = self.request.POST.get('task_id')
-        export_id = self.kwargs.get('export_id')
-        destination_id = self.request.POST.get('destination_id')
-        if not task_id or not destination_id:
-            return True
-        else:
-            # Check exist ExportDataRestore with task_id,destination_id and export_id
-            restore_data_inst_id = None
-            check_restore_data = ExportDataRestore.objects.filter(task_id=task_id).first()
-            if check_restore_data:
-                restore_data_inst_id = get_institution_id_by_region(check_restore_data.export.source)
-            export_data_inst_id = None
-            check_export_data = ExportData.objects.filter(id=export_id, is_deleted=False).first()
-            if check_export_data:
-                export_data_inst_id = get_institution_id_by_region(check_export_data.source)
-            destination_inst_id = get_institution_id_by_region(Region.objects.filter(id=destination_id).first())
-            return (restore_data_inst_id == export_data_inst_id == destination_inst_id)\
-                        and self.has_auth(restore_data_inst_id)
+        return (self.export_data_restore_inst_id == self.export_data_inst_id == self.destination_inst_id)\
+                    and self.has_auth(self.export_data_restore_inst_id)
 
     def post(self, request, *args, **kwargs):
-        task_id = request.POST.get('task_id')
-        destination_id = request.POST.get('destination_id')
-        export_id = self.kwargs.get('export_id')
         cookie = request.user.get_or_create_cookie().decode()
         kwargs.setdefault('cookie', cookie)
         cookies = request.COOKIES
 
-        if not destination_id or not export_id or not task_id:
-            return Response({'message': f'Missing required parameters.'}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Get corresponding export data restore record
-        export_data_restore_set = ExportDataRestore.objects.filter(task_id=task_id, destination_id=destination_id)
-        if not export_data_restore_set.exists():
-            return Response({'message': f'Permission denied for this restore process'},
-                            status=status.HTTP_400_BAD_REQUEST)
-        export_data_restore = export_data_restore_set.first()
-
         # Get current task's result
-        task = AbortableAsyncResult(task_id)
+        task = AbortableAsyncResult(self.task_id)
         result = task.result
 
         # If result is None then update status to Stopped
         if not result:
-            export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
+            self.export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
                                        status=ExportData.STATUS_STOPPED)
             return Response({'message': f'Stop restore data successfully.'}, status=status.HTTP_200_OK)
 
         # If process state is not STARTED and not PENDING then update status to Stopped
         if task.state != 'STARTED' and task.state != PENDING:
-            export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
+            self.export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
                                        status=ExportData.STATUS_STOPPED)
             return Response({'message': f'Stop restore data successfully.'}, status=status.HTTP_200_OK)
 
@@ -370,21 +404,21 @@ class StopRestoreDataActionView(RdmPermissionMixin, UserPassesTestMixin, APIView
             return Response({'message': f'Cannot stop restore process at this time.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Update process status
-        export_data_restore.update(status=ExportData.STATUS_STOPPING)
+        self.export_data_restore.update(status=ExportData.STATUS_STOPPING)
 
         # Abort current task
         task.abort()
 
         # If task does not abort then return error response
         if task.state != ABORTED:
-            export_data_restore.update(status=ExportData.STATUS_ERROR)
+            self.export_data_restore.update(status=ExportData.STATUS_ERROR)
             return Response({'message': f'Cannot stop restore process at this time.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Start rollback restore export data process
         process = tasks.run_restore_export_data_rollback_process.delay(
             cookies,
-            export_id,
-            export_data_restore.pk,
+            self.export_id,
+            self.export_data_restore.pk,
             current_progress_step,
             cookie=cookie,
         )
@@ -878,32 +912,46 @@ class CheckRunningRestoreActionView(RdmPermissionMixin, UserPassesTestMixin, API
     authentication_classes = (
         drf_authentication.SessionAuthentication,
     )
+    destination_id = None
+    export_id = None
+    export_data = None
+
+    def dispatch(self, request, *args, **kwargs):
+        # login check
+        if not self.is_authenticated:
+            return self.handle_no_permission()
+
+        self.destination_id = request.GET.get('destination_id')
+        self.export_id = kwargs.get('export_id')
+
+        # Validate format destination_id
+        try:
+            if self.destination_id:
+                self.destination_id = int(self.destination_id)
+        except ValueError:
+            return response_render({'message': 'The destination_id must be a integer'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check exist data and store data
+        self.export_data = ExportData.objects.filter(id=self.export_id, is_deleted=False).first()
+        if not self.export_data:
+            return response_render({'message': 'The export data does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        return super().dispatch(request, *args, **kwargs)
 
     def test_func(self):
         """check user permissions"""
-        # login check
-        if not self.is_authenticated:
-            return False
-
         # allowed if superuser or admin
         if not self.is_super_admin and not self.is_institutional_admin:
             return False
 
-        export_id = self.kwargs.get('export_id')
-        destination_id = self.request.GET.get('destination_id')
-        if not destination_id:
+        if not self.destination_id:
             return True
         else:
-            export_data_inst_id = None
-            check_export_data = ExportData.objects.filter(id=export_id, is_deleted=False).first()
-            if check_export_data:
-                export_data_inst_id = get_institution_id_by_region(check_export_data.source)
-            destination_inst_id = get_institution_id_by_region(Region.objects.filter(id=destination_id).first())
+            export_data_inst_id = get_institution_id_by_region(self.export_data.source)
+            destination_inst_id = get_institution_id_by_region(Region.objects.filter(id=self.destination_id).first())
             return (export_data_inst_id == destination_inst_id) and self.has_auth(export_data_inst_id)
 
     def get(self, request, **kwargs):
-        destination_id = request.GET.get('destination_id')
-        running_restore = ExportDataRestore.objects.filter(destination_id=destination_id).exclude(
+        running_restore = ExportDataRestore.objects.filter(destination_id=self.destination_id).exclude(
             Q(status=ExportData.STATUS_STOPPED) | Q(status=ExportData.STATUS_COMPLETED) | Q(
                 status=ExportData.STATUS_ERROR))
         task_id = None
@@ -913,3 +961,13 @@ class CheckRunningRestoreActionView(RdmPermissionMixin, UserPassesTestMixin, API
             'task_id': task_id
         }
         return Response(response, status=status.HTTP_200_OK)
+
+
+def response_render(data, status):
+    """render json response instance of rest framework"""
+    response = Response(data=data, status=status)
+    response.accepted_renderer = JSONRenderer()
+    response.accepted_media_type = 'application/json'
+    response.renderer_context = {}
+    response.render()
+    return response

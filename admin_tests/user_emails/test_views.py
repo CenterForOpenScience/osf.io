@@ -9,13 +9,13 @@ from nose import tools as nt
 from admin.user_emails import views
 from admin.user_emails.forms import UserEmailsSearchForm
 from admin_tests.utilities import setup_view, setup_form_view
-from framework.exceptions import HTTPError
 from osf.models.user import OSFUser, Email
 from osf_tests.factories import (
     UserFactory,
     AuthUserFactory, InstitutionFactory
 )
 from tests.base import AdminTestCase
+from django.http import HttpResponseBadRequest
 
 pytestmark = pytest.mark.django_db
 
@@ -223,15 +223,22 @@ class TestUserEmailSearchList(AdminTestCase):
         for user in results:
             nt.assert_in('Hardy', user.fullname)
 
-    def test_get_queryset_method_not_keyword(self):
+    def test_get_method(self):
+        view = views.UserEmailsSearchList()
+        view = setup_view(view, self.request)
+        view.kwargs = {'name': 'Hardy'}
+        result = view.get(self.request)
+        nt.assert_equal(result.status_code, 200)
+
+    @mock.patch('admin.user_emails.views.render_bad_request_response')
+    def test_get_method_not_keyword(self, mock_render):
+        mock_render.return_value = HttpResponseBadRequest(content='fake')
         view = views.UserEmailsSearchList()
         view = setup_view(view, self.request)
         view.kwargs = {'name': ''}
-
-        with nt.assert_raises(HTTPError) as exc_info:
-            view.get_queryset()
-
-        nt.assert_equal(exc_info.exception.code, 400)
+        result = view.get(self.request)
+        mock_render.assert_called_once()
+        nt.assert_equal(result.status_code, 400)
 
     @mock.patch('admin.user_emails.views.UserEmailsSearchList.is_admin')
     def test_get_queryset_method_is_admin(self, mock_is_admin):

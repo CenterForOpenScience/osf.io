@@ -710,6 +710,10 @@ def unserialize_account_info(auth, **kwargs):
 
     user = get_target_user(auth)
     json_data = escape_html(request.get_json())
+    if not json_data:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST,
+                        data=dict(message_short='Missing request body',
+                        message_long='The request body data is required'))
 
     # json get can return None, use `or` here to ensure we always strip a string
     user.fullname = (json_data.get('full') or '').strip()
