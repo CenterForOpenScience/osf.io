@@ -45,6 +45,19 @@ class CedarMetadataRecordsBaseSerializer(JSONAPISerializer):
 
     is_published = ser.BooleanField(read_only=True)
 
+    target = TargetRelationshipField(
+        source='guid',
+        related_view=lambda record: get_guids_related_view(record),
+        related_view_kwargs=lambda record: get_guids_related_view_kwargs(record),
+        read_only=True,
+    )
+
+    template = CedarMetadataTemplateRelationshipField(
+        related_view='cedar-metadata-templates:cedar-metadata-template-detail',
+        related_view_kwargs={'template_id': '<template._id>'},
+        read_only=True,
+    )
+
     links = LinksField({'self': 'get_absolute_url'})
 
     def get_absolute_url(self, obj):

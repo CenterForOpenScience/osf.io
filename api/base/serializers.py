@@ -779,7 +779,16 @@ class RelationshipField(ser.Field):
                         view = self._handle_callable_view(obj, view)
                     if request.parser_context['kwargs'].get('version', False):
                         kwargs.update({'version': request.parser_context['kwargs']['version']})
-                    url = drf_reverse(view, kwargs=kwargs, request=request, format=format)
+                    try:
+                        url = drf_reverse(view, kwargs=kwargs, request=request, format=format)
+                    except NoReverseMatch as e:
+                        # Handle private endpoint view serialization when it is a relationship in a public one
+                        if kwargs.get('version', False):
+                            kwargs.pop('version')
+                            url = utils.absolute_reverse(view, kwargs=kwargs)
+                        else:
+                            raise e
+
                     if self.filter:
                         formatted_filters = self.format_filter(obj)
                         if formatted_filters:
