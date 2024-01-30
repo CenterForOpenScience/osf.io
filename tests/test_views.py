@@ -1150,6 +1150,8 @@ class TestUserProfile(OsfTestCase):
             assert_equal(self.user.social[key], value)
         assert_true(self.user.social['researcherId'] is None)
 
+        assert NotableDomain.objects.get(domain='frozen.pizza.com')
+
     # Regression test for help-desk ticket
     def test_making_email_primary_is_not_case_sensitive(self):
         user = AuthUserFactory(username='fred@queen.test')
