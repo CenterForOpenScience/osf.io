@@ -21,6 +21,7 @@ from addons.figshare.tests.factories import FigshareAccountFactory, FigshareNode
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import AuthUserFactory
 from tests.base import ApiAddonTestCase
+from api_tests.addons_tests.bitbucket.test_bitbucket_configure import mock_bitbucket_client
 
 from addons.mendeley.tests.factories import (
     MendeleyAccountFactory, MendeleyNodeSettingsFactory
@@ -680,10 +681,14 @@ class TestNodeWikiAddon(NodeUnmanageableAddonTestSuiteMixin, ApiAddonTestCase):
 
 # OAUTH
 
-class TestNodeBitbucketAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
+class TestNodeBitbucketAddon(NodeConfigurableAddonTestSuiteMixin, ApiAddonTestCase):
     short_name = 'bitbucket'
     AccountFactory = BitbucketAccountFactory
     NodeSettingsFactory = BitbucketNodeSettingsFactory
+
+    @property
+    def _mock_folder_info(self):
+        return {'folder_id': 'jasonkelece/0987654321'}
 
     def _settings_kwargs(self, node, user_settings):
         return {
@@ -691,6 +696,22 @@ class TestNodeBitbucketAddon(NodeOAuthAddonTestSuiteMixin, ApiAddonTestCase):
             'repo': 'mock',
             'user': 'abc',
             'owner': self.node
+        }
+
+    def test_folder_list_GET_expected_behavior(self):
+        with mock.patch('addons.bitbucket.models.BitbucketClient', return_value=mock_bitbucket_client()):
+            super(TestNodeBitbucketAddon, self).test_folder_list_GET_expected_behavior()
+
+    def test_settings_detail_PUT_all_sets_settings(self):
+        with mock.patch('addons.bitbucket.models.BitbucketClient', return_value=mock_bitbucket_client()):
+            super(TestNodeBitbucketAddon, self).test_settings_detail_PUT_all_sets_settings()
+
+    @property
+    def _mock_folder_result(self):
+        return {
+            'name': 'bitbucket-user-name/test-folder',
+            'path': '/',
+            'id': 'bitbucket-user-name/test-folder',
         }
 
 
