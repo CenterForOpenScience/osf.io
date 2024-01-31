@@ -13,6 +13,8 @@ from addons.base import exceptions
 from addons.dataverse.client import connect_from_settings_or_401
 from addons.dataverse.serializer import DataverseSerializer
 from addons.dataverse.utils import DataverseNodeLogger
+from addons.dataverse import client
+
 
 class DataverseFileNode(BaseFileNode):
     _provider = 'dataverse'
@@ -106,6 +108,11 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     user_settings = models.ForeignKey(UserSettings, null=True, blank=True, on_delete=models.CASCADE)
 
     @property
+    def has_auth(self):
+        """Instance has an external account and *active* permission to use it"""
+        return bool(self.user_settings and self.user_settings.has_auth and self.external_account)
+
+    @property
     def folder_name(self):
         return self.dataset
 
@@ -142,24 +149,32 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             auth=auth
         )
 
-    def set_folder(self, dataverse, dataset, auth=None):
+    def set_folder(self, folder_id, auth=None, dataset=None):
+        connection = client.connect_from_settings(self)
+        dataverse = client.get_dataverse(connection, folder_id)
+
         self.dataverse_alias = dataverse.alias
         self.dataverse = dataverse.title
 
-        self.dataset_doi = dataset.doi
-        self._dataset_id = dataset.id
-        self.dataset = dataset.title
+        if dataset:
+            self.dataset_doi = dataset.doi
+            self._dataset_id = dataset.id
+            self.dataset = dataset.title
+        else:
+            self._dataset_id = folder_id
 
         self.save()
 
         if auth:
+            log_params = {
+                'project': self.owner.parent_id,
+                'node': self.owner._id,
+            }
+            if dataset:
+                log_params['dataset'] = dataset.title
             self.owner.add_log(
                 action='dataverse_dataset_linked',
-                params={
-                    'project': self.owner.parent_id,
-                    'node': self.owner._id,
-                    'dataset': dataset.title,
-                },
+                params=log_params,
                 auth=auth,
             )
 
@@ -238,3 +253,18 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
     def on_delete(self):
         self.deauthorize(add_log=False)
         self.save()
+
+    def get_folders(self, path, folder_id):
+        """
+        V2 API currently only lists Dataverse's, which act as top-level Dataverse base folders.
+        """
+        connection = client.connect_from_settings(self)
+        dataverses = client.get_dataverses(connection)
+        return [
+            {
+                'path': dataverse.alias,
+                'id': dataverse.title,
+                'name': dataverse.title,
+                'addon': 'dataverse'
+            } for dataverse in dataverses
+        ]

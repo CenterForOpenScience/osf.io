@@ -141,7 +141,25 @@ def dataverse_set_config(node_addon, auth, **kwargs):
     dataverse = client.get_dataverse(connection, alias)
     dataset = client.get_dataset(dataverse, doi)
 
-    node_addon.set_folder(dataverse, dataset, auth)
+    node_addon.dataverse_alias = dataverse.alias
+    node_addon.dataverse = dataverse.title
+
+    node_addon.dataset_doi = dataset.doi
+    node_addon._dataset_id = dataset.id
+    node_addon.dataset = dataset.title
+
+    node_addon.save()
+
+    if auth:
+        node_addon.owner.add_log(
+            action='dataverse_dataset_linked',
+            params={
+                'project': node_addon.owner.parent_id,
+                'node': node_addon.owner._id,
+                'dataset': dataset.title,
+            },
+            auth=auth,
+        )
 
     return {'dataverse': dataverse.title, 'dataset': dataset.title}, http_status.HTTP_200_OK
 

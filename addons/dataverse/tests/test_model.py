@@ -16,6 +16,7 @@ from addons.dataverse.tests.factories import (
 )
 from addons.dataverse.tests import utils
 from osf_tests.factories import DraftRegistrationFactory
+from api_tests.addons_tests.dataverse.test_configure_dataverse import mock_dataverse_client
 
 pytestmark = pytest.mark.django_db
 
@@ -69,10 +70,12 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, utils.DataverseAddo
             filename
         )
 
-    def test_set_folder(self):
-        dataverse = utils.create_mock_dataverse()
+    @mock.patch('addons.dataverse.client.Connection', return_value=mock_dataverse_client())
+    def test_set_folder(self, mock_client):
         dataset = utils.create_mock_dataset()
-        self.node_settings.set_folder(dataverse, dataset, auth=Auth(self.user))
+        dataverse = utils.create_mock_dataverse()
+
+        self.node_settings.set_folder(dataverse, dataset=dataset, auth=Auth(self.user))
         # Folder was set
         assert_equal(self.node_settings.folder_id, dataset.id)
         # Log was saved
