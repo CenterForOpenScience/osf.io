@@ -2,11 +2,9 @@
 import inspect  # noqa
 import json
 import logging
-from typing import Any
 
 from django.contrib.auth.mixins import UserPassesTestMixin
-from django.http import HttpRequest, JsonResponse
-from django.http.response import HttpResponse
+from django.http import JsonResponse
 from django.views import View
 from django.views.generic import ListView
 from rest_framework import status as http_status

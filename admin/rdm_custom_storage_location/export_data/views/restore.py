@@ -355,7 +355,7 @@ class StopRestoreDataActionView(RdmPermissionMixin, UserPassesTestMixin, APIView
             return response_render({'message': f'The destination storage does not exist'},
                             status=status.HTTP_404_NOT_FOUND)
 
-        self.export_data_restore = ExportDataRestore.objects.filter(task_id=self.task_id, destination_id=self.destination_id)
+        self.export_data_restore = ExportDataRestore.objects.filter(task_id=self.task_id, destination_id=self.destination_id).first()
         if self.export_data_restore:
             self.export_data_restore_inst_id = get_institution_id_by_region(self.export_data_restore.export.source)
         else:
