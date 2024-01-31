@@ -18,7 +18,7 @@ class CedarMetadataTemplate(ObjectIDMixin, BaseModel):
         return f'(name=[{self.schema_name}], version=[{self.template_version}], id=[{self.cedar_id}])'
 
     def get_semantic_iri(self):
-        return self.template['@id']
+        return self.cedar_id
 
 
 class CedarMetadataRecord(ObjectIDMixin, BaseModel):
