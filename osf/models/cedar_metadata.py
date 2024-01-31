@@ -17,6 +17,9 @@ class CedarMetadataTemplate(ObjectIDMixin, BaseModel):
     def __unicode__(self):
         return f'(name=[{self.schema_name}], version=[{self.template_version}], id=[{self.cedar_id}])'
 
+    def get_semantic_iri(self):
+        return self.cedar_id
+
 
 class CedarMetadataRecord(ObjectIDMixin, BaseModel):
 
@@ -30,3 +33,13 @@ class CedarMetadataRecord(ObjectIDMixin, BaseModel):
 
     def __unicode__(self):
         return f'(guid=[{self.guid._id}], template=[{self.template._id}])'
+
+    def get_template_semantic_iri(self):
+        return self.template.get_semantic_iri()
+
+    def get_template_name(self):
+        return self.template.schema_name
+
+    def save(self, *args, **kwargs):
+        self.guid.referent.update_search()
+        return super().save(*args, **kwargs)
