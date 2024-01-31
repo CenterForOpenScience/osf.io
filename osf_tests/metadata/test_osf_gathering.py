@@ -70,7 +70,7 @@ class TestOsfGathering(TestCase):
             filename='blarg.txt',
             sha256=cls.file_sha256,
         )
-        cls.file_cedar_reford = factories.CedarMetadataRecordFactory(
+        cls.file_cedar_record = factories.CedarMetadataRecordFactory(
             template=cls.cedar_template,
             is_published=True,
             guid=cls.file.get_guid()
