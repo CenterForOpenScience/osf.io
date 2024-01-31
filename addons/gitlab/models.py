@@ -447,3 +447,22 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                     self.save()
                 return True
         return False
+
+    def get_folders(self, *args, **kwargs):
+        connection = GitLabClient(external_account=self.external_account)
+        return [
+            {
+                'addon': 'gitlab',
+                'path': '/',
+                'kind': 'folder',
+                'id': repo.id,
+                'name': repo.path_with_namespace,
+            } for repo in connection.repos(all=True)
+        ]
+
+    def set_folder(self, folder_data, auth):
+        if folder_data.get('folder_path') != self.repo or folder_data.get('folder_id') != self.repo_id:
+            self.repo = folder_data['folder_path']
+            self.repo_id = folder_data['folder_id']
+            self.nodelogger.log(action='folder_selected', save=True)
+            self.save()
