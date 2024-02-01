@@ -4,6 +4,7 @@ import logging
 from rest_framework import permissions as drf_permissions
 from rest_framework.exceptions import NotFound
 from rest_framework.generics import ListCreateAPIView, RetrieveAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.renderers import JSONRenderer
 from rest_framework.views import Response
 
 from api.base import permissions as base_permissions
@@ -91,6 +92,8 @@ class CedarMetadataRecordMetadataDownload(JSONAPIBaseView, RetrieveAPIView):
     )
     required_read_scopes = [CoreScopes.CEDAR_METADATA_RECORD_READ]
     required_write_scopes = [CoreScopes.CEDAR_METADATA_RECORD_WRITE]
+
+    renderer_classes = [JSONRenderer]
 
     # This view goes under the _/ namespace
     versioning_class = PrivateVersioning
