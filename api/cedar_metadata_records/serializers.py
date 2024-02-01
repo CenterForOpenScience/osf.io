@@ -60,15 +60,14 @@ class CedarMetadataRecordsBaseSerializer(JSONAPISerializer):
 
     links = LinksField({
         'self': 'get_absolute_url',
-        'download': 'get_download_link',
+        'metadata_download': 'get_metadata_download_link',
     })
 
     def get_absolute_url(self, obj):
         return absolute_reverse('cedar-metadata-records:cedar-metadata-record-detail', kwargs={'record_id': obj._id})
 
-    def get_download_link(self, obj):
-        self_url = self.get_absolute_url(obj)
-        return self_url + '?action=download'
+    def get_metadata_download_link(self, obj):
+        return absolute_reverse('cedar-metadata-records:cedar-metadata-record-metadata-download', kwargs={'record_id': obj._id})
 
     def update(self, instance, validated_data):
         raise NotImplementedError
