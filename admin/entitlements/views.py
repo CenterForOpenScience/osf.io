@@ -42,10 +42,10 @@ class InstitutionEntitlementList(RdmPermissionMixin, UserPassesTestMixin, ListVi
     def test_func(self):
         """check user permissions"""
         if not self.institution_id:
-            # superuser or admin has an institiution
+            # superuser or admin has an institution
             return self.is_super_admin or self.is_institutional_admin
         else:
-            # institiution not exist
+            # institution not exist
             if not Institution.objects.filter(id=self.institution_id).exists():
                 raise Http404(
                     'Institution with id "{}" not found.'.format(
@@ -107,7 +107,7 @@ class BulkAddInstitutionEntitlement(RdmPermissionMixin, UserPassesTestMixin, Vie
 
     def test_func(self):
         """check user permissions"""
-        # institiution not exist
+        # institution not exist
         if not Institution.objects.filter(id=self.institution_id, is_deleted=False).exists():
             raise Http404(
                 'Institution with id "{}" not found.'.format(
@@ -121,7 +121,8 @@ class BulkAddInstitutionEntitlement(RdmPermissionMixin, UserPassesTestMixin, Vie
         entitlements = request.POST.getlist('entitlements')
         login_availability_list = request.POST.getlist('login_availability')
 
-        existing_set = InstitutionEntitlement.objects.filter(institution_id=self.institution_id, entitlement__in=entitlements)
+        existing_set = InstitutionEntitlement.objects.filter(
+            institution_id=self.institution_id, entitlement__in=entitlements)
         existing_list = existing_set.values_list('entitlement', flat=True)
         for idx, entitlement in enumerate(entitlements):
             if entitlement not in existing_list:
@@ -148,7 +149,7 @@ class ToggleInstitutionEntitlement(RdmPermissionMixin, UserPassesTestMixin, View
         self.institution_id = int(self.kwargs.get('institution_id'))
         self.entitlement_id = int(self.kwargs.get('entitlement_id'))
 
-        # institiution not exist
+        # institution not exist
         if not Institution.objects.filter(id=self.institution_id, is_deleted=False).exists():
             raise Http404(
                 'Institution with id "{}" not found.'.format(
@@ -196,7 +197,7 @@ class DeleteInstitutionEntitlement(RdmPermissionMixin, UserPassesTestMixin, View
         self.institution_id = int(self.kwargs.get('institution_id'))
         self.entitlement_id = int(self.kwargs.get('entitlement_id'))
 
-        # superuser and institiution not exist
+        # superuser and institution not exist
         if not Institution.objects.filter(id=self.institution_id, is_deleted=False).exists():
             raise Http404(
                 'Institution with id "{}" not found.'.format(

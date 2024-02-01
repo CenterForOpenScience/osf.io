@@ -85,11 +85,10 @@ class ExportBaseView(ExportStorageLocationViewBaseView, ListView):
         if institution_id:
             # superuser admin can access it
             try:
-                self.institution = Institution.objects.get(id=institution_id)
+                self.institution = Institution.objects.get(id=institution_id, is_deleted=False)
                 self.institution_guid = self.institution.guid
             except Institution.DoesNotExist:
-                raise Http404(
-                    'Institution with id {} not found'.format(institution_id))
+                raise Http404(f'Institution with id {institution_id} not found')
         else:
             # institutional admin access without institution_id -> get from representative_affiliated_institution
             if not institution_id and self.request.user.is_affiliated_institution:
@@ -136,7 +135,8 @@ class ExportDataListView(ExportBaseView):
         source_name_list = list(set(filter(None, source_name_list)))
         source_name_list.sort()
 
-        self.query_set = get_export_data(self.institution_guid, selected_location_id, selected_source_id, selected_source_name=selected_source_name)
+        self.query_set = get_export_data(self.institution_guid, selected_location_id,
+                                         selected_source_id, selected_source_name=selected_source_name)
 
         self.page_size = self.get_paginate_by(self.query_set)
         _, self.page, self.query_set, _ = self.paginate_queryset(self.query_set, self.page_size)
@@ -176,7 +176,8 @@ class ExportDataDeletedListView(ExportBaseView):
         source_name_list = list(set(filter(None, source_name_list)))
         source_name_list.sort()
 
-        self.query_set = get_export_data(self.institution_guid, selected_location_id, selected_source_id, deleted=True, selected_source_name=selected_source_name)
+        self.query_set = get_export_data(self.institution_guid, selected_location_id, selected_source_id,
+                                          deleted=True, selected_source_name=selected_source_name)
         self.page_size = self.get_paginate_by(self.query_set)
         _, self.page, self.query_set, _ = self.paginate_queryset(self.query_set, self.page_size)
         context = {
@@ -198,7 +199,8 @@ class ExportDataInformationView(ExportBaseView):
     template_name = 'rdm_custom_storage_location/export_data_information.html'
 
     def get_object(self, **kwargs):
-        export_data = ExportData.objects.filter(id=self.kwargs.get('data_id')).first()
+        data_id = self.kwargs.get('data_id')
+        export_data = ExportData.objects.filter(id=data_id, is_deleted=False).first()
         if export_data:
             if not self.is_super_admin:
                 source_institution_guid = export_data.source.guid
@@ -211,13 +213,10 @@ class ExportDataInformationView(ExportBaseView):
                 if not self.is_affiliated_institution(source_institution_id):
                     self.handle_no_permission()
             return export_data
-        raise Http404(
-            'Export data with id {} not found.'.format(
-                self.kwargs.get('data_id')
-            ))
+        raise Http404(f'Export data with id {data_id} not found.')
 
     def get(self, request, *args, **kwargs):
-        export_data = ExportData.objects.filter(id=self.kwargs.get('data_id')).first()
+        export_data = ExportData.objects.filter(id=self.kwargs.get('data_id'), is_deleted=False).first()
         if not self.is_super_admin:
             self.load_institution()
         else:
@@ -314,7 +313,7 @@ class DeleteExportDataView(ExportStorageLocationViewBaseView, View):
             institution_id = self.request.POST.get('institution_id')
             if institution_id:
                 if not Institution.objects.filter(id=int(institution_id), is_deleted=False).exists():
-                    raise Http404(f'The institiution with id {institution_id} is not exist')
+                    raise Http404(f'The institution with id {institution_id} is not exist')
                 institution_id_set.add(int(institution_id))
 
             selected_location_id = self.request.POST.get('selected_location_id')
@@ -331,7 +330,8 @@ class DeleteExportDataView(ExportStorageLocationViewBaseView, View):
             if list_export_data:
                 list_export_data = list(filter(None, list_export_data.split('#')))
                 list_export_data = list(map(int, list_export_data))
-                institution_guid = ExportData.objects.filter(id__in=list_export_data, is_deleted=False).values_list('source___id', flat=True)
+                institution_guid = ExportData.objects.filter(
+                    id__in=list_export_data).values_list('source___id', flat=True)
                 institution_guid_set = set(institution_guid)
                 if len(institution_guid_set) > 1:
                     return False
@@ -385,6 +385,7 @@ class DeleteExportDataView(ExportStorageLocationViewBaseView, View):
                 if response.status_code == 204:
                     item.delete()
                 else:
+
                     message = 'Cannot connect to the export data storage location.'
                     return render_bad_request_response(request=request, error_msgs=message)
         else:
@@ -428,7 +429,7 @@ class RevertExportDataView(ExportStorageLocationViewBaseView, View):
             return False
 
         institution_id_set = set()
-        # Colect institution_id from request body data
+        # Collect institution_id from request body data
         try:
             selected_source_id = self.request.POST.get('selected_source_id')
             if selected_source_id:
@@ -441,7 +442,7 @@ class RevertExportDataView(ExportStorageLocationViewBaseView, View):
             institution_id = self.request.POST.get('institution_id')
             if institution_id:
                 if not Institution.objects.filter(id=int(institution_id), is_deleted=False).exists():
-                    raise Http404(f'The institiution with id {institution_id} is not exist')
+                    raise Http404(f'The institution with id {institution_id} is not exist')
                 institution_id_set.add(int(institution_id))
 
             selected_location_id = self.request.POST.get('selected_location_id')
@@ -457,7 +458,8 @@ class RevertExportDataView(ExportStorageLocationViewBaseView, View):
             if list_export_data:
                 list_export_data = list(filter(None, list_export_data.split('#')))
                 list_export_data = list(map(int, list_export_data))
-                institution_guid = ExportData.objects.filter(id__in=list_export_data, is_deleted=True).values_list('source___id', flat=True)
+                institution_guid = ExportData.objects.filter(
+                    id__in=list_export_data, is_deleted=True).values_list('source___id', flat=True)
                 institution_guid_set = set(institution_guid)
                 if len(institution_guid_set) > 1:
                     return False
@@ -529,7 +531,8 @@ class ExportDataFileCSVView(RdmPermissionMixin, UserPassesTestMixin, View):
         return user.is_super_admin or user.is_institutional_admin
 
     def get_object(self, **kwargs):
-        export_data = ExportData.objects.filter(id=self.kwargs.get('data_id')).first()
+        data_id = self.kwargs.get('data_id')
+        export_data = ExportData.objects.filter(id=data_id, is_deleted=False).first()
         if export_data:
             if not self.is_super_admin:
                 source_institution_guid = export_data.source.guid
@@ -542,10 +545,7 @@ class ExportDataFileCSVView(RdmPermissionMixin, UserPassesTestMixin, View):
                 if not self.is_affiliated_institution(source_institution_id):
                     self.handle_no_permission()
             return export_data
-        raise Http404(
-            'Export data with id {} not found.'.format(
-                self.kwargs.get('data_id')
-            ))
+        raise Http404(f'Export data with id {data_id} not found.')
 
     def get(self, *args, **kwargs):
         cookie = self.request.user.get_or_create_cookie().decode()
@@ -595,7 +595,6 @@ class CheckExportData(RdmPermissionMixin, UserPassesTestMixin, View):
     raise_exception = True
     export_data = None
     user_institution_guid = None
-    export_data = None
 
     def dispatch(self, request, *args, **kwargs):
         """Initialize attributes shared by all view methods."""
@@ -606,28 +605,28 @@ class CheckExportData(RdmPermissionMixin, UserPassesTestMixin, View):
         data_id = self.kwargs.get('data_id')
         self.export_data = ExportData.objects.filter(id=data_id, is_deleted=False).first()
         if not self.export_data:
-            message = 'The data_id "{}" is not exist'.format(data_id)
+            message = f'The data_id "{data_id}" is not exist'
             return JsonResponse({'message': message}, status=404)
 
         return super(CheckExportData, self).dispatch(request, *args, **kwargs)
 
     def test_func(self):
         """check user permissions"""
-        institiution_guid = self.export_data.source._id
+        institution_guid = self.export_data.source._id
         user = self.request.user
         if not user.is_superuser and user.is_affiliated_institution:
             institution = user.affiliated_institutions.first()
             self.user_institution_guid = institution.guid
 
         return user.is_superuser or (user.is_institutional_admin
-                                      and self.user_institution_guid == institiution_guid)
+                                      and self.user_institution_guid == institution_guid)
 
     def get(self, request, *args, **kwargs):
         cookie = request.user.get_or_create_cookie().decode()
         cookies = request.COOKIES
 
         if self.export_data.status != ExportData.STATUS_COMPLETED:
-            message = 'Cannot check in this time. The process is {}'.format(self.export_data.status)
+            message = f'Cannot check in this time. The process is {self.export_data.status}'
             return JsonResponse({'message': message}, status=400)
 
         # start check
@@ -661,7 +660,8 @@ class CheckExportData(RdmPermissionMixin, UserPassesTestMixin, View):
             provider = self.export_data.location.provider_name
             location_id = self.export_data.location.id
             file_path = f'/{self.export_data.export_data_folder_name}/files/'
-            file_list = check_for_file_existent_on_export_location(exported_file_info, node_id, provider, file_path, location_id, cookies, cookie)
+            file_list = check_for_file_existent_on_export_location(
+                exported_file_info, node_id, provider, file_path, location_id, cookies, cookie)
             file_fails_list = data.get('list_file_ng') + file_list
             for file in file_list:
                 if not any(d['path'] == file['path'] for d in data.get('list_file_ng')):
@@ -694,14 +694,15 @@ class CheckRestoreData(RdmPermissionMixin, UserPassesTestMixin, View):
         try:
             self.destination_id = self.request.GET.get('destination_id')
             if self.destination_id:
-                self.institution_id = get_institution_id_by_region(Region.objects.filter(id=int(self.destination_id)).first())
+                self.institution_id = get_institution_id_by_region(
+                    Region.objects.filter(id=int(self.destination_id)).first())
                 if not self.institution_id:
-                    message = 'The destination_id "{}" is not exist'.format(self.destination_id)
+                    message = f'The destination_id "{self.destination_id}" is not exist'
                     return JsonResponse({'message': message}, status=404)
             data_id = self.kwargs.get('data_id')
             self.export_data = ExportData.objects.filter(id=data_id, is_deleted=False).first()
             if not self.export_data:
-                message = 'The data_id "{}" is not exist'.format(data_id)
+                message = f'The data_id "{data_id}" is not exist'
                 return JsonResponse({'message': message}, status=404)
 
             return super(CheckRestoreData, self).dispatch(request, *args, **kwargs)
@@ -735,11 +736,11 @@ class CheckRestoreData(RdmPermissionMixin, UserPassesTestMixin, View):
             else:
                 restore_data = self.export_data.get_latest_restored()
         except ExportDataRestore.DoesNotExist:
-            message = 'Cannot check restore data with data_id is {} and destination_id is {}'.format(data_id, self.destination_id)
+            message = f'Cannot check restore data with data_id is {data_id} and destination_id is {self.destination_id}'
             return JsonResponse({'message': message}, status=400)
 
         if restore_data.status != ExportData.STATUS_COMPLETED:
-            message = 'Cannot check in this time. The process is {}'.format(restore_data.status)
+            message = f'Cannot check in this time. The process is {restore_data.status}'
             return JsonResponse({'message': message}, status=400)
 
         # start check

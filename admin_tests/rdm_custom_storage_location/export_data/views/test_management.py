@@ -61,6 +61,7 @@ class TestExportBaseView(AdminTestCase):
         with nt.assert_raises(Http404):
             self.view.load_institution()
 
+
 @pytest.mark.feature_202210
 class TestMethodGetExportData(AdminTestCase):
     def setUp(self):
@@ -118,6 +119,7 @@ class TestExportDataListView(AdminTestCase):
             with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.render', mock_render):
                 res = self.view.get(self.request)
                 nt.assert_equal(res.status_code, 302)
+
 
 @pytest.mark.feature_202210
 class TestExportDataDeletedListView(AdminTestCase):
@@ -296,16 +298,16 @@ class TestCheckExportData(AdminTestCase):
         self.institution02_admin.save()
 
     def test_export_data_not_completed(self):
-        request = RequestFactory().get('/fake_path')
-        request.user = self.user
-        request.COOKIES = '213919sdasdn823193929'
         export_data = self.export_data
         export_data.status = ExportData.STATUS_CHECKING
         mock_export_data = mock.MagicMock()
         mock_export_data.filter.return_value.first.return_value = export_data
         with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.ExportData.objects', mock_export_data):
+            request = RequestFactory().get('/fake_path')
+            request.user = self.user
+            request.COOKIES = '213919sdasdn823193929'
             view = management.CheckExportData()
-            view.export_data = self.export_data
+            view.export_data = export_data
             view = setup_view(view, request, data_id=export_data.id)
             res = view.get(request, data_id=export_data.id)
             nt.assert_equal(res.status_code, 400)
@@ -327,9 +329,6 @@ class TestCheckExportData(AdminTestCase):
                 nt.assert_equals(res.status_code, 400)
 
     def test_validate_fail(self):
-        request = RequestFactory().get('/fake_path')
-        request.user = self.user
-        request.COOKIES = '213919sdasdn823193929'
         mock_export_data = mock.MagicMock()
         self.export_data.status = ExportData.STATUS_RUNNING
         mock_export_data.filter.return_value.first.return_value = self.export_data
@@ -337,6 +336,9 @@ class TestCheckExportData(AdminTestCase):
             mock_request = mock.MagicMock()
             mock_request.get.return_value = FakeRes(200)
             with mock.patch('osf.models.export_data.requests', mock_request):
+                request = RequestFactory().get('/fake_path')
+                request.user = self.user
+                request.COOKIES = '213919sdasdn823193929'
                 view = management.CheckExportData()
                 view = setup_view(view, request, data_id=self.export_data.id)
                 view.export_data = self.export_data
@@ -450,6 +452,7 @@ class TestCheckExportData(AdminTestCase):
         view = setup_view(view, request, data_id=self.export_data_02.id)
         view.export_data = self.export_data_02
         nt.assert_false(view.test_func())
+
 
 @pytest.mark.feature_202210
 class TestCheckRestoreData(AdminTestCase):
@@ -602,11 +605,6 @@ class TestCheckRestoreData(AdminTestCase):
     @mock.patch.object(ExportData, 'get_latest_restored_data_with_destination_id')
     @mock.patch.object(ExportDataRestore, 'extract_file_information_json_from_destination_storage')
     def test_check_restore_data__successful(self, mock_extract_file, mock_get_latest_restore):
-        request = RequestFactory().get('/fake_path')
-        request.user = self.user
-        request.COOKIES = '213919sdasdn823193929'
-        request.GET = {'destination_id': 100}
-
         def side_effect_export_data():
             return '', FAKE_DATA_NEW
 
@@ -626,6 +624,10 @@ class TestCheckRestoreData(AdminTestCase):
                 mock_validate = mock.MagicMock()
                 mock_validate.return_value = True
                 with mock.patch(f'{MANAGEMENT_EXPORT_DATA_PATH}.validate_exported_data', mock_validate):
+                    request = RequestFactory().get('/fake_path')
+                    request.user = self.user
+                    request.COOKIES = '213919sdasdn823193929'
+                    request.GET = {'destination_id': 100}
                     view = management.CheckRestoreData()
                     view = setup_view(view, request, data_id=self.export_data.id)
                     view.export_data = self.export_data
@@ -785,7 +787,7 @@ class TestCheckRestoreData(AdminTestCase):
         view.export_data = self.export_data
         nt.assert_true(view.test_func())
 
-    def test__test_func_admin_has_perrmision(self):
+    def test__test_func_admin_has_permission(self):
         request = RequestFactory().get('/fake_path')
         request.user = self.institution01_admin
         request.COOKIES = '213919sdasdn823193929'
@@ -794,7 +796,7 @@ class TestCheckRestoreData(AdminTestCase):
         view.export_data = self.export_data_01
         nt.assert_true(view.test_func())
 
-    def test__test_func_admin_not_perrmision(self):
+    def test__test_func_admin_not_permission(self):
         request = RequestFactory().get('/fake_path')
         request.user = self.institution01_admin
         request.COOKIES = '213919sdasdn823193929'
@@ -802,6 +804,7 @@ class TestCheckRestoreData(AdminTestCase):
         view = setup_view(view, request, data_id=self.export_data_02.id)
         view.export_data = self.export_data_02
         nt.assert_false(view.test_func())
+
 
 @pytest.mark.feature_202210
 class TestExportDataFileCSVView(AdminTestCase):
@@ -912,6 +915,7 @@ class TestExportDataFileCSVView(AdminTestCase):
         with nt.assert_raises(Http404):
             view.get_object()
 
+
 @pytest.mark.feature_202210
 class TestDeleteExportDataView(AdminTestCase):
     def setUp(self):
@@ -960,7 +964,8 @@ class TestDeleteExportDataView(AdminTestCase):
         request = RequestFactory().post('/fake_path')
         request.user = self.user
         request.COOKIES = '213919sdasdn823193929'
-        request.POST = {'list_id_export_data': '3#', 'delete_permanently': 'on', 'selected_source_id': '100', 'selected_location_id': '100'}
+        request.POST = {'list_id_export_data': '3#', 'delete_permanently': 'on',
+                         'selected_source_id': '100', 'selected_location_id': '100'}
         view = setup_view(self.view, request)
         res = view.post(request)
         nt.assert_equal(res.status_code, 302)
@@ -987,7 +992,9 @@ class TestDeleteExportDataView(AdminTestCase):
         self.user.is_superuser = True
         request.user = self.user
         request.COOKIES = '213919sdasdn823193929'
-        request.POST = {'list_id_export_data': '3#', 'delete_permanently': 'on', 'selected_source_id': '100', 'selected_location_id': '100', 'institution_id': self.institution.id}
+        request.POST = {'list_id_export_data': '3#', 'delete_permanently': 'on',
+                         'selected_source_id': '100', 'selected_location_id': '100',
+                         'institution_id': self.institution.id}
         view = setup_view(self.view, request)
         res = view.post(request)
         nt.assert_equal(res.status_code, 302)
@@ -1016,7 +1023,8 @@ class TestDeleteExportDataView(AdminTestCase):
         request = RequestFactory().post('/fake_path')
         request.user = self.user
         request.COOKIES = '213919sdasdn823193929'
-        request.POST = {'list_id_export_data': '3#', 'delete_permanently': 'on', 'selected_source_id': '100', 'selected_location_id': '100'}
+        request.POST = {'list_id_export_data': '3#', 'delete_permanently': 'on',
+                         'selected_source_id': '100', 'selected_location_id': '100'}
         view = setup_view(self.view, request)
         res = view.post(request)
         nt.assert_equal(res.status_code, 400)
@@ -1025,7 +1033,8 @@ class TestDeleteExportDataView(AdminTestCase):
         request = RequestFactory().post('/fake_path')
         request.user = self.user
         request.COOKIES = '213919sdasdn823193929'
-        request.POST = {'list_id_export_data': '4#', 'delete_permanently': 'off', 'selected_source_id': '100', 'selected_location_id': '100'}
+        request.POST = {'list_id_export_data': '4#', 'delete_permanently': 'off',
+                         'selected_source_id': '100', 'selected_location_id': '100'}
         view = setup_view(self.view, request)
         res = view.post(request)
         nt.assert_equal(res.status_code, 302)
@@ -1044,7 +1053,8 @@ class TestDeleteExportDataView(AdminTestCase):
         self.user.is_superuser = True
         request.user = self.user
         request.COOKIES = '213919sdasdn823193929'
-        request.POST = {'list_id_export_data': '4#', 'delete_permanently': 'off', 'selected_source_id': '100', 'selected_location_id': '100', 'institution_id': self.institution.id}
+        request.POST = {'list_id_export_data': '4#', 'delete_permanently': 'off', 'selected_source_id': '100',
+                         'selected_location_id': '100', 'institution_id': self.institution.id}
         view = setup_view(self.view, request)
         res = view.post(request)
         nt.assert_equal(res.status_code, 302)
@@ -1079,7 +1089,8 @@ class TestDeleteExportDataView(AdminTestCase):
         request = RequestFactory().post('/fake_path')
         request.user = self.superuser
         request.COOKIES = '213919sdasdn823193929'
-        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'delete_permanently': 'off', 'institution_id': self.institution01.id}
+        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#',
+                         'delete_permanently': 'off', 'institution_id': self.institution01.id}
         res = management.DeleteExportDataView.as_view()(request)
         nt.assert_equal(res.status_code, 302)
 
@@ -1089,27 +1100,37 @@ class TestDeleteExportDataView(AdminTestCase):
         request.COOKIES = '213919sdasdn823193929'
 
         # list_id_export_data not same institution of other parameter
-        request.POST = {'list_id_export_data': f'{self.export_data_02.id}#', 'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id, 'delete_permanently': 'off', 'institution_id': self.institution01.id}
+        request.POST = {'list_id_export_data': f'{self.export_data_02.id}#',
+                        'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id,
+                        'delete_permanently': 'off', 'institution_id': self.institution01.id}
         with self.assertRaises(PermissionDenied):
             management.DeleteExportDataView.as_view()(request)
 
         # list_id_export_data with multi value not same institution
-        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#{self.export_data_02.id}#', 'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id, 'delete_permanently': 'off', 'institution_id': self.institution01.id}
+        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#{self.export_data_02.id}#',
+                        'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id,
+                        'delete_permanently': 'off', 'institution_id': self.institution01.id}
         with self.assertRaises(PermissionDenied):
             management.DeleteExportDataView.as_view()(request)
 
         # selected_source_id not same institution of other parameter
-        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_02.id, 'selected_location_id': self.export_data_01_location.id, 'delete_permanently': 'off', 'institution_id': self.institution01.id}
+        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#',
+                        'selected_source_id': self.region_inst_02.id, 'selected_location_id': self.export_data_01_location.id,
+                        'delete_permanently': 'off', 'institution_id': self.institution01.id}
         with self.assertRaises(PermissionDenied):
             management.DeleteExportDataView.as_view()(request)
 
         # selected_location_id not same institution of other parameter
-        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_02_location.id, 'delete_permanently': 'off', 'institution_id': self.institution01.id}
+        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#',
+                        'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_02_location.id,
+                        'delete_permanently': 'off', 'institution_id': self.institution01.id}
         with self.assertRaises(PermissionDenied):
             management.DeleteExportDataView.as_view()(request)
 
         # institution_id not same institution of other parameter
-        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id, 'delete_permanently': 'off', 'institution_id': self.institution02.id}
+        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#',
+                        'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id,
+                        'delete_permanently': 'off', 'institution_id': self.institution02.id}
         with self.assertRaises(PermissionDenied):
             management.DeleteExportDataView.as_view()(request)
 
@@ -1117,7 +1138,9 @@ class TestDeleteExportDataView(AdminTestCase):
         request = RequestFactory().post('/fake_path')
         request.user = self.institution01_admin
         request.COOKIES = '213919sdasdn823193929'
-        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id, 'delete_permanently': 'off', 'institution_id': self.institution01.id}
+        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#',
+                        'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id,
+                        'delete_permanently': 'off', 'institution_id': self.institution01.id}
         res = management.DeleteExportDataView.as_view()(request)
         nt.assert_equal(res.status_code, 302)
 
@@ -1127,32 +1150,44 @@ class TestDeleteExportDataView(AdminTestCase):
         request.COOKIES = '213919sdasdn823193929'
 
         # list_id_export_data not same institution of login user
-        request.POST = {'list_id_export_data': f'{self.export_data_02.id}#', 'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id, 'delete_permanently': 'off', 'institution_id': self.institution01.id}
+        request.POST = {'list_id_export_data': f'{self.export_data_02.id}#',
+                        'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id,
+                        'delete_permanently': 'off', 'institution_id': self.institution01.id}
         with self.assertRaises(PermissionDenied):
             management.DeleteExportDataView.as_view()(request)
 
         # list_id_export_data with multi value not same institution
-        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#{self.export_data_02.id}#', 'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id, 'delete_permanently': 'off', 'institution_id': self.institution01.id}
+        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#{self.export_data_02.id}#',
+                        'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id,
+                        'delete_permanently': 'off', 'institution_id': self.institution01.id}
         with self.assertRaises(PermissionDenied):
             management.DeleteExportDataView.as_view()(request)
 
         # selected_source_id not same institution of login user
-        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_02.id, 'selected_location_id': self.export_data_01_location.id, 'delete_permanently': 'off', 'institution_id': self.institution01.id}
+        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_02.id,
+                        'selected_location_id': self.export_data_01_location.id, 'delete_permanently': 'off',
+                        'institution_id': self.institution01.id}
         with self.assertRaises(PermissionDenied):
             management.DeleteExportDataView.as_view()(request)
 
         # selected_location_id not same institution of login user
-        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_02_location.id, 'delete_permanently': 'off', 'institution_id': self.institution01.id}
+        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id,
+                        'selected_location_id': self.export_data_02_location.id, 'delete_permanently': 'off',
+                        'institution_id': self.institution01.id}
         with self.assertRaises(PermissionDenied):
             management.DeleteExportDataView.as_view()(request)
 
         # institution_id not same institution of login user
-        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id, 'delete_permanently': 'off', 'institution_id': self.institution02.id}
+        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id,
+                        'selected_location_id': self.export_data_01_location.id, 'delete_permanently': 'off',
+                        'institution_id': self.institution02.id}
         with self.assertRaises(PermissionDenied):
             management.DeleteExportDataView.as_view()(request)
 
         # admin not in institution
-        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id, 'delete_permanently': 'off', 'institution_id': self.institution01.id}
+        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id,
+                        'selected_location_id': self.export_data_01_location.id, 'delete_permanently': 'off',
+                        'institution_id': self.institution01.id}
         self.institution01_admin.affiliated_institutions = []
         request.user = self.institution01_admin
         with self.assertRaises(PermissionDenied):
@@ -1165,29 +1200,40 @@ class TestDeleteExportDataView(AdminTestCase):
         request.user = self.superuser
         request.COOKIES = '213919sdasdn823193929'
         # list_id_export_data not integer value
-        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#abc#', 'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id, 'delete_permanently': 'off', 'institution_id': self.institution01.id}
+        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#abc#', 'selected_source_id': self.region_inst_01.id,
+                        'selected_location_id': self.export_data_01_location.id, 'delete_permanently': 'off',
+                        'institution_id': self.institution01.id}
         res = management.DeleteExportDataView.as_view()(request)
         nt.assert_equal(res.status_code, 400)
 
         # selected_source_id not integer value
-        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': 'abc', 'selected_location_id': self.export_data_01_location.id, 'delete_permanently': 'off', 'institution_id': self.institution01.id}
+        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': 'abc',
+                        'selected_location_id': self.export_data_01_location.id, 'delete_permanently': 'off',
+                        'institution_id': self.institution01.id}
         res = management.DeleteExportDataView.as_view()(request)
         nt.assert_equal(res.status_code, 400)
 
         # selected_location_id not integer value
-        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id, 'selected_location_id': 'abc', 'delete_permanently': 'off', 'institution_id': self.institution01.id}
+        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#',
+                        'selected_source_id': self.region_inst_01.id, 'selected_location_id': 'abc',
+                        'delete_permanently': 'off', 'institution_id': self.institution01.id}
         res = management.DeleteExportDataView.as_view()(request)
         nt.assert_equal(res.status_code, 400)
 
         # institution_id not integer value
-        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id, 'delete_permanently': 'off', 'institution_id': 'abc'}
+        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#',
+                        'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id,
+                        'delete_permanently': 'off', 'institution_id': 'abc'}
         res = management.DeleteExportDataView.as_view()(request)
         nt.assert_equal(res.status_code, 400)
 
         # institution_id is missing value
-        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id, 'delete_permanently': 'off', 'institution_id': None}
+        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#',
+                        'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id,
+                        'delete_permanently': 'off', 'institution_id': None}
         res = management.DeleteExportDataView.as_view()(request)
         nt.assert_equal(res.status_code, 400)
+
 
 @pytest.mark.feature_202210
 class TestRevertExportData(AdminTestCase):
@@ -1252,7 +1298,8 @@ class TestRevertExportData(AdminTestCase):
         request = RequestFactory().post('/fake_path')
         self.user.is_superuser = True
         request.user = self.user
-        request.POST = {'list_id_export_data': '1000#', 'selected_source_id': '100', 'selected_location_id': '100', 'institution_id': self.institution.id}
+        request.POST = {'list_id_export_data': '1000#', 'selected_source_id': '100',
+                        'selected_location_id': '100', 'institution_id': self.institution.id}
         view = setup_view(self.view, request)
         res = view.post(request)
         nt.assert_equal(res.status_code, 302)
@@ -1261,7 +1308,8 @@ class TestRevertExportData(AdminTestCase):
         request = RequestFactory().post('/fake_path')
         self.user.is_superuser = True
         request.user = self.user
-        request.POST = {'list_id_export_data': '1000#', 'selected_source_id': None, 'selected_location_id': None, 'institution_id': self.institution.id}
+        request.POST = {'list_id_export_data': '1000#', 'selected_source_id': None,
+                        'selected_location_id': None, 'institution_id': self.institution.id}
         view = setup_view(self.view, request)
         res = view.post(request)
         nt.assert_equal(res.status_code, 302)
@@ -1296,27 +1344,33 @@ class TestRevertExportData(AdminTestCase):
         request.COOKIES = '213919sdasdn823193929'
 
         # list_id_export_data not same institution of other parameter
-        request.POST = {'list_id_export_data': f'{self.export_data_02.id}#', 'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id, 'institution_id': self.institution01.id}
+        request.POST = {'list_id_export_data': f'{self.export_data_02.id}#', 'selected_source_id': self.region_inst_01.id,
+                        'selected_location_id': self.export_data_01_location.id, 'institution_id': self.institution01.id}
         with self.assertRaises(PermissionDenied):
             management.RevertExportDataView.as_view()(request)
 
         # list_id_export_data with multi value not same institution
-        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#{self.export_data_02.id}#', 'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id, 'institution_id': self.institution01.id}
+        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#{self.export_data_02.id}#',
+                        'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id,
+                        'institution_id': self.institution01.id}
         with self.assertRaises(PermissionDenied):
             management.RevertExportDataView.as_view()(request)
 
         # selected_source_id not same institution of other parameter
-        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_02.id, 'selected_location_id': self.export_data_01_location.id, 'institution_id': self.institution01.id}
+        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_02.id,
+                        'selected_location_id': self.export_data_01_location.id, 'institution_id': self.institution01.id}
         with self.assertRaises(PermissionDenied):
             management.RevertExportDataView.as_view()(request)
 
         # selected_location_id not same institution of other parameter
-        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_02_location.id, 'institution_id': self.institution01.id}
+        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id,
+                        'selected_location_id': self.export_data_02_location.id, 'institution_id': self.institution01.id}
         with self.assertRaises(PermissionDenied):
             management.RevertExportDataView.as_view()(request)
 
         # institution_id not same institution of other parameter
-        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id, 'institution_id': self.institution02.id}
+        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id,
+                        'selected_location_id': self.export_data_01_location.id, 'institution_id': self.institution02.id}
         with self.assertRaises(PermissionDenied):
             management.RevertExportDataView.as_view()(request)
 
@@ -1324,7 +1378,8 @@ class TestRevertExportData(AdminTestCase):
         request = RequestFactory().post('/fake_path')
         request.user = self.institution01_admin
         request.COOKIES = '213919sdasdn823193929'
-        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id, 'institution_id': self.institution01.id}
+        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id,
+                        'selected_location_id': self.export_data_01_location.id, 'institution_id': self.institution01.id}
         res = management.RevertExportDataView.as_view()(request)
         nt.assert_equal(res.status_code, 302)
 
@@ -1334,32 +1389,39 @@ class TestRevertExportData(AdminTestCase):
         request.COOKIES = '213919sdasdn823193929'
 
         # list_id_export_data not same institution of login user
-        request.POST = {'list_id_export_data': f'{self.export_data_02.id}#', 'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id, 'institution_id': self.institution01.id}
+        request.POST = {'list_id_export_data': f'{self.export_data_02.id}#', 'selected_source_id': self.region_inst_01.id,
+                        'selected_location_id': self.export_data_01_location.id, 'institution_id': self.institution01.id}
         with self.assertRaises(PermissionDenied):
             management.RevertExportDataView.as_view()(request)
 
         # list_id_export_data with multi value not same institution
-        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#{self.export_data_02.id}#', 'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id, 'institution_id': self.institution01.id}
+        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#{self.export_data_02.id}#',
+                        'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id,
+                        'institution_id': self.institution01.id}
         with self.assertRaises(PermissionDenied):
             management.RevertExportDataView.as_view()(request)
 
         # selected_source_id not same institution of login user
-        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_02.id, 'selected_location_id': self.export_data_01_location.id, 'institution_id': self.institution01.id}
+        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_02.id,
+                        'selected_location_id': self.export_data_01_location.id, 'institution_id': self.institution01.id}
         with self.assertRaises(PermissionDenied):
             management.RevertExportDataView.as_view()(request)
 
         # selected_location_id not same institution of login user
-        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_02_location.id, 'institution_id': self.institution01.id}
+        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id,
+                        'selected_location_id': self.export_data_02_location.id, 'institution_id': self.institution01.id}
         with self.assertRaises(PermissionDenied):
             management.RevertExportDataView.as_view()(request)
 
         # institution_id not same institution of login user
-        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id, 'institution_id': self.institution02.id}
+        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id,
+                        'selected_location_id': self.export_data_01_location.id, 'institution_id': self.institution02.id}
         with self.assertRaises(PermissionDenied):
             management.RevertExportDataView.as_view()(request)
 
         # admin not in institution
-        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id, 'institution_id': self.institution01.id}
+        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id,
+                        'selected_location_id': self.export_data_01_location.id, 'institution_id': self.institution01.id}
         self.institution01_admin.affiliated_institutions = []
         request.user = self.institution01_admin
         with self.assertRaises(PermissionDenied):
@@ -1372,26 +1434,31 @@ class TestRevertExportData(AdminTestCase):
         request.user = self.superuser
         request.COOKIES = '213919sdasdn823193929'
         # list_id_export_data not integer value
-        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#abc#', 'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id, 'institution_id': self.institution01.id}
+        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#abc#', 'selected_source_id': self.region_inst_01.id,
+                        'selected_location_id': self.export_data_01_location.id, 'institution_id': self.institution01.id}
         res = management.RevertExportDataView.as_view()(request)
         nt.assert_equal(res.status_code, 400)
 
         # selected_source_id not integer value
-        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': 'abc', 'selected_location_id': self.export_data_01_location.id, 'institution_id': self.institution01.id}
+        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': 'abc',
+                        'selected_location_id': self.export_data_01_location.id, 'institution_id': self.institution01.id}
         res = management.RevertExportDataView.as_view()(request)
         nt.assert_equal(res.status_code, 400)
 
         # selected_location_id not integer value
-        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id, 'selected_location_id': 'abc', 'institution_id': self.institution01.id}
+        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id,
+                        'selected_location_id': 'abc', 'institution_id': self.institution01.id}
         res = management.RevertExportDataView.as_view()(request)
         nt.assert_equal(res.status_code, 400)
 
         # institution_id not integer value
-        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id, 'institution_id': 'abc'}
+        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id,
+                        'selected_location_id': self.export_data_01_location.id, 'institution_id': 'abc'}
         res = management.RevertExportDataView.as_view()(request)
         nt.assert_equal(res.status_code, 400)
 
         # institution_id is missing value
-        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id, 'selected_location_id': self.export_data_01_location.id, 'institution_id': None}
+        request.POST = {'list_id_export_data': f'{self.export_data_01.id}#', 'selected_source_id': self.region_inst_01.id,
+                        'selected_location_id': self.export_data_01_location.id, 'institution_id': None}
         res = management.RevertExportDataView.as_view()(request)
         nt.assert_equal(res.status_code, 400)

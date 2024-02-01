@@ -427,7 +427,7 @@ class UpdateQuotaUserListByInstitutionID(PermissionRequiredMixin, View):
         try:
             max_quota = min(int(self.request.POST.get('maxQuota')), max_value)
         except (ValueError, TypeError):
-            return render_bad_request_response(request, error_msgs='max_quota must be a interger')
+            return render_bad_request_response(request, error_msgs='max_quota must be a integer')
 
         for user in OSFUser.objects.filter(
                 affiliated_institutions=institution_id):

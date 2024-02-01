@@ -72,7 +72,7 @@ class TestExportStorageLocationViewBaseView(AdminTestCase):
         view = setup_view(self.view, self.request)
         nt.assert_true(view.is_affiliated_institution(institution_id))
 
-    def test__test_func_anonymus(self):
+    def test__test_func_anonymous(self):
         self.request.user = self.anon
         nt.assert_false(setup_view(self.view, self.request).test_func())
 
@@ -87,6 +87,7 @@ class TestExportStorageLocationViewBaseView(AdminTestCase):
     def test__test_func_admin_not_inst(self):
         self.request.user = self.institution02_admin
         nt.assert_false(setup_view(self.view, self.request).test_func())
+
 
 @pytest.mark.feature_202210
 class ExportStorageLocationView(AdminTestCase):

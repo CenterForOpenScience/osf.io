@@ -31,7 +31,6 @@ from django.contrib.auth.mixins import UserPassesTestMixin
 from admin.rdm.utils import get_institution_id_by_region
 from rest_framework.renderers import JSONRenderer
 
-
 logger = logging.getLogger(__name__)
 INSTITUTIONAL_STORAGE_PROVIDER_NAME = 'osfstorage'
 
@@ -121,7 +120,8 @@ class RestoreDataActionView(RdmPermissionMixin, UserPassesTestMixin, APIView):
         projects__ids = []
         for project in projects:
             projects__ids.append(project._id)
-        return prepare_for_restore_export_data_process(cookies, self.export_id, self.destination_id, projects__ids, creator, cookie=cookie)
+        return prepare_for_restore_export_data_process(cookies, self.export_id,
+                                                        self.destination_id, projects__ids, creator, cookie=cookie)
 
 def check_before_restore_export_data(cookies, export_id, destination_id, **kwargs):
     check_export_data = ExportData.objects.filter(id=export_id, is_deleted=False)
@@ -286,7 +286,9 @@ def restore_export_data_process(task, cookies, export_id, export_data_restore_id
             task.update_state(state=ABORTED,
                               meta={'current_restore_step': current_process_step})
         else:
-            restore_export_data_rollback_process(task, cookies, export_id, export_data_restore_id, process_step=current_process_step, **kwargs)
+            restore_export_data_rollback_process(
+                task, cookies, export_id, export_data_restore_id,
+                process_step=current_process_step, **kwargs)
         raise e
 
 
@@ -332,13 +334,15 @@ class StopRestoreDataActionView(RdmPermissionMixin, UserPassesTestMixin, APIView
 
         # Check required parameters
         if not self.destination_id or not self.export_id or not self.task_id:
-            return response_render({'message': f'Missing required parameters.'}, status=status.HTTP_400_BAD_REQUEST)
+            return response_render({'message': f'Missing required parameters.'},
+                                    status=status.HTTP_400_BAD_REQUEST)
 
         # Validate format destination_id
         try:
             self.destination_id = int(self.destination_id)
         except ValueError:
-            return response_render({'message': 'The destination_id must be a integer'}, status=status.HTTP_400_BAD_REQUEST)
+            return response_render({'message': 'The destination_id must be a integer'},
+                                    status=status.HTTP_400_BAD_REQUEST)
 
         # Check exist and store data with task_id,destination_id and export_id
         check_export_data = ExportData.objects.filter(id=self.export_id, is_deleted=False).first()
@@ -355,7 +359,8 @@ class StopRestoreDataActionView(RdmPermissionMixin, UserPassesTestMixin, APIView
             return response_render({'message': f'The destination storage does not exist'},
                             status=status.HTTP_404_NOT_FOUND)
 
-        self.export_data_restore = ExportDataRestore.objects.filter(task_id=self.task_id, destination_id=self.destination_id).first()
+        self.export_data_restore = ExportDataRestore.objects.filter(task_id=self.task_id,
+                                                                    destination_id=self.destination_id).first()
         if self.export_data_restore:
             self.export_data_restore_inst_id = get_institution_id_by_region(self.export_data_restore.export.source)
         else:
@@ -401,7 +406,8 @@ class StopRestoreDataActionView(RdmPermissionMixin, UserPassesTestMixin, APIView
         current_progress_step = result.get('current_restore_step')
         logger.debug(f'Current progress step before abort: {current_progress_step}')
         if current_progress_step >= 4 or current_progress_step is None:
-            return Response({'message': f'Cannot stop restore process at this time.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'message': f'Cannot stop restore process at this time.'},
+                             status=status.HTTP_400_BAD_REQUEST)
 
         # Update process status
         self.export_data_restore.update(status=ExportData.STATUS_STOPPING)
@@ -412,7 +418,8 @@ class StopRestoreDataActionView(RdmPermissionMixin, UserPassesTestMixin, APIView
         # If task does not abort then return error response
         if task.state != ABORTED:
             self.export_data_restore.update(status=ExportData.STATUS_ERROR)
-            return Response({'message': f'Cannot stop restore process at this time.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'message': f'Cannot stop restore process at this time.'},
+                             status=status.HTTP_400_BAD_REQUEST)
 
         # Start rollback restore export data process
         process = tasks.run_restore_export_data_rollback_process.delay(
@@ -425,7 +432,8 @@ class StopRestoreDataActionView(RdmPermissionMixin, UserPassesTestMixin, APIView
         return Response({'task_id': process.task_id}, status=status.HTTP_200_OK)
 
 
-def restore_export_data_rollback_process(task, cookies, export_id, export_data_restore_id, process_step, **kwargs):
+def restore_export_data_rollback_process(task, cookies, export_id,
+                                          export_data_restore_id, process_step, **kwargs):
     export_data_restore = ExportDataRestore.objects.get(pk=export_data_restore_id)
     export_data_restore.update(task_id=task.request.id)
 
@@ -460,7 +468,8 @@ def restore_export_data_rollback_process(task, cookies, export_id, export_data_r
 
             # Move all files from the backup folder out and delete backup folder
             if 0 < process_step < 4:
-                move_all_files_from_backup_folder_to_root(export_data_restore, destination_first_project_id, cookies, **kwargs)
+                move_all_files_from_backup_folder_to_root(export_data_restore,
+                                                           destination_first_project_id, cookies, **kwargs)
 
         export_data_restore.update(process_end=timezone.make_naive(timezone.now(), timezone.utc),
                                    status=ExportData.STATUS_STOPPED)
@@ -622,7 +631,8 @@ def update_region_id(task, current_process_step, destination_region, project_id,
 
         # Update file versions' region_id of this project
         file_ids = BaseFileNode.objects.filter(target_object_id=project.id).values_list('id', flat=True)
-        file_versions = FileVersion.objects.filter(basefilenode__id__in=file_ids, region___id=Institution.INSTITUTION_DEFAULT)
+        file_versions = FileVersion.objects.filter(basefilenode__id__in=file_ids,
+                                                    region___id=Institution.INSTITUTION_DEFAULT)
         if file_versions.exists():
             file_versions.update(region=destination_region)
 
@@ -656,7 +666,8 @@ def generate_new_file_path(file_materialized_path, version_id, is_file_not_lates
     return new_file_materialized_path
 
 
-def move_all_files_to_backup_folder(task, current_process_step, destination_first_project_id, export_data_restore, cookies, **kwargs):
+def move_all_files_to_backup_folder(task, current_process_step,
+                                     destination_first_project_id, export_data_restore, cookies, **kwargs):
     try:
         destination_region = export_data_restore.destination
         destination_provider = INSTITUTIONAL_STORAGE_PROVIDER_NAME
@@ -704,7 +715,8 @@ def create_folder_in_destination(task, current_process_step, export_data_folders
         folder_project_id = folder.get('project', {}).get('id')
 
         # Update region_id for folder's project
-        list_updated_projects = update_region_id(task, current_process_step, destination_region, folder_project_id, list_updated_projects)
+        list_updated_projects = update_region_id(task, current_process_step,
+                                                  destination_region, folder_project_id, list_updated_projects)
 
         utils.create_folder_path(folder_project_id, destination_region, folder_materialized_path,
                                  cookies, base_url=destination_base_url, **kwargs)
@@ -715,7 +727,8 @@ def create_folder_in_destination(task, current_process_step, export_data_folders
         recalculate_user_quota(destination_region)
 
 
-def copy_files_from_export_data_to_destination(task, current_process_step, export_data_files, export_data_restore, cookies, **kwargs):
+def copy_files_from_export_data_to_destination(task, current_process_step,
+                                                export_data_files, export_data_restore, cookies, **kwargs):
     export_data = export_data_restore.export
 
     destination_region = export_data_restore.destination
@@ -864,7 +877,8 @@ def add_tag_and_timestamp_to_database(task, current_process_step, list_created_f
         check_if_restore_process_stopped(task, current_process_step)
 
 
-def delete_all_files_except_backup_folder(export_data_restore, location_id, destination_first_project_id, cookies, **kwargs):
+def delete_all_files_except_backup_folder(export_data_restore, location_id,
+                                           destination_first_project_id, cookies, **kwargs):
     destination_region = export_data_restore.destination
     destination_base_url = destination_region.waterbutler_url
     destination_provider = INSTITUTIONAL_STORAGE_PROVIDER_NAME
@@ -929,12 +943,14 @@ class CheckRunningRestoreActionView(RdmPermissionMixin, UserPassesTestMixin, API
             if self.destination_id:
                 self.destination_id = int(self.destination_id)
         except ValueError:
-            return response_render({'message': 'The destination_id must be a integer'}, status=status.HTTP_400_BAD_REQUEST)
+            return response_render({'message': 'The destination_id must be a integer'},
+                                    status=status.HTTP_400_BAD_REQUEST)
 
         # Check exist data and store data
         self.export_data = ExportData.objects.filter(id=self.export_id, is_deleted=False).first()
         if not self.export_data:
-            return response_render({'message': 'The export data does not exist'}, status=status.HTTP_404_NOT_FOUND)
+            return response_render({'message': 'The export data does not exist'},
+                                    status=status.HTTP_404_NOT_FOUND)
         return super().dispatch(request, *args, **kwargs)
 
     def test_func(self):

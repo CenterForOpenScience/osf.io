@@ -780,6 +780,7 @@ class TestUpdateQuotaUserListByInstitutionID(AdminTestCase):
         with nt.assert_raises(Http404):
             self.view(request, institution_id=0)
 
+
 class TestQuotaUserList(AdminTestCase):
     def setUp(self):
         super(TestQuotaUserList, self).setUp()
@@ -989,6 +990,7 @@ class TestUserListByInstitutionID(AdminTestCase):
         with nt.assert_raises(Http404):
             view.get_userlist()
 
+
 class TestExportFileTSV(AdminTestCase):
     def setUp(self):
         super(TestExportFileTSV, self).setUp()
@@ -1028,6 +1030,7 @@ class TestExportFileTSV(AdminTestCase):
                           institution_id=0)
         with nt.assert_raises(Http404):
             view.get(request)
+
 
 class TestRecalculateQuota(AdminTestCase):
     def setUp(self):
@@ -1119,7 +1122,8 @@ class TestRecalculateQuotaOfUsersInInstitution(AdminTestCase):
 
     @mock.patch('admin.institutions.views.Region.objects')
     @mock.patch('website.util.quota.update_user_used_quota')
-    def test_dispatch_method_with_institution_exists_in_Region(self, mock_update_user_used_quota_method, mock_region):
+    def test_dispatch_method_with_institution_exists_in_Region(self, mock_update_user_used_quota_method,
+                                                                mock_region):
         mock_region.filter.return_value.exists.return_value = True
         response = self.view.dispatch(request=self.request)
 

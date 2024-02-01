@@ -235,7 +235,7 @@ class TestRestoreDataActionView(AdminTestCase):
         view.destination = self.region_inst_01
         nt.assert_equal(view.test_func(), True)
 
-    def test__test_func__addmin_with_permission(self):
+    def test__test_func__admin_with_permission(self):
         view = restore.RestoreDataActionView()
         request = APIRequestFactory().post('restore_export_data', {
             'destination_id': self.region_inst_01.id,
@@ -251,7 +251,7 @@ class TestRestoreDataActionView(AdminTestCase):
         view.destination = self.region_inst_01
         nt.assert_equal(view.test_func(), True)
 
-    def test__test_func__addmin_without_permission(self):
+    def test__test_func__admin_without_permission(self):
         view = restore.RestoreDataActionView()
 
         # not same institution of login user
@@ -310,6 +310,7 @@ class TestRestoreDataActionView(AdminTestCase):
         view.export_data = self.export_data_01
         view.destination = self.region_inst_02
         nt.assert_equal(view.test_func(), False)
+
 
 # Test cases for CheckTaskStatusRestoreDataActionView
 @pytest.mark.feature_202210
@@ -441,7 +442,7 @@ class TestCheckTaskStatusRestoreDataActionView(AdminTestCase):
         }
         nt.assert_equal(view.test_func(), True)
 
-    def test__test_func__addmin_with_permission(self):
+    def test__test_func__admin_with_permission(self):
         view = restore.CheckTaskStatusRestoreDataActionView()
         request = APIRequestFactory().get('task_status', {
             'task_id': self.restore_data_01.task_id,
@@ -454,7 +455,7 @@ class TestCheckTaskStatusRestoreDataActionView(AdminTestCase):
         }
         nt.assert_equal(view.test_func(), True)
 
-    def test__test_func__addmin_without_permission(self):
+    def test__test_func__admin_without_permission(self):
         view = restore.CheckTaskStatusRestoreDataActionView()
 
         # not same institution of login user
@@ -502,6 +503,7 @@ class TestCheckTaskStatusRestoreDataActionView(AdminTestCase):
             'export_id': self.export_data_01.id,
         }
         nt.assert_equal(view.test_func(), True)
+
 
 # Test cases for functions in restore.py used only in restore data process
 @pytest.mark.feature_202210
@@ -2176,6 +2178,7 @@ class TestStopRestoreDataActionView(AdminTestCase):
         view.export_data_restore = self.restore_data_01
         view.export_data_restore_inst_id = self.institution01.id
         nt.assert_equal(view.test_func(), False)
+
 
 # Test cases for CheckRunningRestoreActionView
 @pytest.mark.feature_202210

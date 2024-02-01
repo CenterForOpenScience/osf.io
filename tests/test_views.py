@@ -126,6 +126,7 @@ def no_auto_transact():
     UserFactory()
     return 'error', 500
 
+
 class TestViewsAreAtomic(OsfTestCase):
     def test_error_response_rolls_back_transaction(self):
         original_user_count = OSFUser.objects.count()
@@ -5361,6 +5362,7 @@ class TestUnconfirmedUserViews(OsfTestCase):
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, http_status.HTTP_400_BAD_REQUEST)
 
+
 class TestStaticFileViews(OsfTestCase):
 
     def test_robots_dot_txt(self):
@@ -5651,8 +5653,6 @@ class TestResolveGuid(OsfTestCase):
             '/{}/'.format(preprint._id)
         )
 
-
-
     def test_preprint_provider_with_osf_domain(self):
         provider = PreprintProviderFactory(_id='osf', domain='https://rdm.nii.ac.jp/')
         preprint = PreprintFactory(provider=provider)
@@ -5678,6 +5678,7 @@ class TestResolveGuid(OsfTestCase):
 
         assert_equal(res.status_code, http_status.HTTP_410_GONE)
         assert_equal(res.request.path, '/{}/'.format(guid))
+
 
 class TestConfirmationViewBlockBingPreview(OsfTestCase):
 

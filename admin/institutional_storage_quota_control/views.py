@@ -169,7 +169,7 @@ class UpdateQuotaUserListByInstitutionStorageID(RdmPermissionMixin, UserPassesTe
         try:
             max_quota = min(int(self.request.POST.get('maxQuota')), max_value)
         except ValueError:
-            return render_bad_request_response(request=request, error_msgs='maxQuota must be a interger')
+            return render_bad_request_response(request=request, error_msgs='maxQuota must be a integer')
         for user in OSFUser.objects.filter(
                 affiliated_institutions=self.institution_id):
             UserQuota.objects.update_or_create(
