@@ -16,6 +16,8 @@ from osf_tests.factories import (
 )
 from tests.base import AdminTestCase
 from api.base import settings as api_settings
+from django.http import Http404
+from django.urls.exceptions import NoReverseMatch
 
 pytestmark = pytest.mark.django_db
 
@@ -231,6 +233,7 @@ class TestUserListByInstitutionStorageID(AdminTestCase):
 
         view = setup_view(self.view_instance, request,
                           institution_id=self.institution01.id)
+        view.institution_id = self.institution01.id
         user_list = view.get_userlist()
 
         nt.assert_equal(len(user_list), 1)
@@ -264,12 +267,32 @@ class TestUserListByInstitutionStorageID(AdminTestCase):
 
         view = setup_view(self.view_instance, request,
                           institution_id=self.institution01.id)
+        view.institution_id = self.institution01.id
         view.object_list = view.get_queryset()
         res = view.get_context_data()
 
         nt.assert_is_instance(res, dict)
         nt.assert_equal(res['institution_storage_name'], self.region01.name)
 
+    def test__institution_id_not_exist(self):
+        request = RequestFactory().get(
+            reverse(
+                self.view_name,
+                kwargs={'institution_id': 0}
+            )
+        )
+        request.user = self.superuser
+        with self.assertRaises(Http404):
+            self.view(request, institution_id=0)
+
+    def test__institution_id_not_valid(self):
+        with self.assertRaises(NoReverseMatch):
+            RequestFactory().get(
+                reverse(
+                    self.view_name,
+                    kwargs={'institution_id': 'fake_id'}
+                )
+            )
 
 class TestAccessInstitutionStorageList(AdminTestCase):
     def setUp(self):
