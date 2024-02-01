@@ -294,7 +294,6 @@ services:
       - /bin/bash
       - -c
       - yarn --frozen-lockfile &&
-       ./node_modules/.bin/bower install --allow-root --config.interactive=false &&
        yarn start --host 0.0.0.0 --port 4201 --live-reload-port 41954
     restart: unless-stopped
     depends_on:
