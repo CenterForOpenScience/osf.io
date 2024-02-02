@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- this file retrieved on 2023-04-18 from https://schema.datacite.org/meta/kernel-4.4/include/datacite-relationType-v4.xsd -->
+<!-- this file retrieved on 2024-02-02 from https://schema.datacite.org/meta/kernel-4.5/include/datacite-relationType-v4.xsd -->
 <!--
   2011-01-13 v1.0 - FZ, TIB, Germany
   2013-05 v3.0: Addition of ID to simpleType element, addition of values "IsIdenticalTo", "HasMetadata" & "IsMetadataFor"
@@ -13,40 +13,42 @@
       <xs:documentation>Description of the relationship of the resource being registered (A) and the related resource (B).</xs:documentation>
     </xs:annotation>
     <xs:restriction base="xs:string">
-      <xs:enumeration value="IsCitedBy"/>
-      <xs:enumeration value="Cites"/>
-      <xs:enumeration value="IsSupplementTo"/>
-      <xs:enumeration value="IsSupplementedBy"/>
-      <xs:enumeration value="IsContinuedBy"/>
-      <xs:enumeration value="Continues"/>
-      <xs:enumeration value="IsNewVersionOf"/>
-      <xs:enumeration value="IsPreviousVersionOf"/>
-      <xs:enumeration value="IsPartOf"/>
-      <xs:enumeration value="HasPart"/>
-      <xs:enumeration value="IsPublishedIn"/>
-      <xs:enumeration value="IsReferencedBy"/>
-      <xs:enumeration value="References"/>
-      <xs:enumeration value="IsDocumentedBy"/>
-      <xs:enumeration value="Documents"/>
-      <xs:enumeration value="IsCompiledBy"/>
-      <xs:enumeration value="Compiles"/>
-      <xs:enumeration value="IsVariantFormOf"/>
-      <xs:enumeration value="IsOriginalFormOf"/>
-      <xs:enumeration value="IsIdenticalTo"/>
-      <xs:enumeration value="HasMetadata"/>
-      <xs:enumeration value="IsMetadataFor"/>
-      <xs:enumeration value="Reviews"/>
-      <xs:enumeration value="IsReviewedBy"/>
-      <xs:enumeration value="IsDerivedFrom"/>
-      <xs:enumeration value="IsSourceOf"/>
-      <xs:enumeration value="Describes"/>
-      <xs:enumeration value="IsDescribedBy"/>
-      <xs:enumeration value="HasVersion"/>
-      <xs:enumeration value="IsVersionOf"/>
-      <xs:enumeration value="Requires"/>
-      <xs:enumeration value="IsRequiredBy"/>
-      <xs:enumeration value="Obsoletes"/>
-      <xs:enumeration value="IsObsoletedBy"/>
+      <xs:enumeration value="IsCitedBy" />
+      <xs:enumeration value="Cites" />
+      <xs:enumeration value="IsSupplementTo" />
+      <xs:enumeration value="IsSupplementedBy" />
+      <xs:enumeration value="IsContinuedBy" />
+      <xs:enumeration value="Continues" />
+      <xs:enumeration value="IsNewVersionOf" />
+      <xs:enumeration value="IsPreviousVersionOf" />
+      <xs:enumeration value="IsPartOf" />
+      <xs:enumeration value="HasPart" />
+      <xs:enumeration value="IsPublishedIn" />
+      <xs:enumeration value="IsReferencedBy" />
+      <xs:enumeration value="References" />
+      <xs:enumeration value="IsDocumentedBy" />
+      <xs:enumeration value="Documents" />
+      <xs:enumeration value="IsCompiledBy" />
+      <xs:enumeration value="Compiles" />
+      <xs:enumeration value="IsVariantFormOf" />
+      <xs:enumeration value="IsOriginalFormOf" />
+      <xs:enumeration value="IsIdenticalTo" />
+      <xs:enumeration value="HasMetadata" />
+      <xs:enumeration value="IsMetadataFor" />
+      <xs:enumeration value="Reviews" />
+      <xs:enumeration value="IsReviewedBy" />
+      <xs:enumeration value="IsDerivedFrom" />
+      <xs:enumeration value="IsSourceOf" />
+      <xs:enumeration value="Describes" />
+      <xs:enumeration value="IsDescribedBy" />
+      <xs:enumeration value="HasVersion" />
+      <xs:enumeration value="IsVersionOf" />
+      <xs:enumeration value="Requires" />
+      <xs:enumeration value="IsRequiredBy" />
+      <xs:enumeration value="Obsoletes" />
+      <xs:enumeration value="IsObsoletedBy" />
+      <xs:enumeration value="Collects" />
+      <xs:enumeration value="IsCollectedBy" />
     </xs:restriction>
   </xs:simpleType>
 </xs:schema>

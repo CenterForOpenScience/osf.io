@@ -208,6 +208,9 @@ class TestSerializers(OsfTestCase):
                 doi_prefix='11.rp',
             ),
         )
+        osfdb.GuidMetadataRecord.objects.for_guid(self.registration._id).update({
+            'resource_type_general': 'StudyRegistration',
+        }, auth=self.user)
         self.guid_dict = {
             OSF.Project: self.project._id,
             OSF.Preprint: self.preprint._id,

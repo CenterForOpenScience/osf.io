@@ -107,7 +107,7 @@
         "relatedItemIdentifier": "http://localhost:5000/w5ibb",
         "relatedItemIdentifierType": "URL"
       },
-      "relatedItemType": "Text",
+      "relatedItemType": "StudyRegistration",
       "relationType": "HasVersion",
       "titles": [
         {

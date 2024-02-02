@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- this file retrieved on 2023-04-18 from https://schema.datacite.org/meta/kernel-4.4/include/datacite-relatedIdentifierType-v4.xsd -->
+<!-- this file retrieved on 2024-02-02 from https://schema.datacite.org/meta/kernel-4.5/include/datacite-relatedIdentifierType-v4.xsd -->
 <!-- Version 1.0 - Created 2011-01-13 - FZ, TIB, Germany
   2013-05 v3.0: Addition of ID to simpleType element; addition of value "PMID"
   2014-08-20 v3.1: Addition of values "arxiv" and "bibcode"
@@ -11,25 +11,25 @@
       <xs:documentation>The type of the RelatedIdentifier.</xs:documentation>
     </xs:annotation>
     <xs:restriction base="xs:string">
-      <xs:enumeration value="ARK"/>
-      <xs:enumeration value="arXiv"/>
-      <xs:enumeration value="bibcode"/>
-      <xs:enumeration value="DOI"/>
-      <xs:enumeration value="EAN13"/>
-      <xs:enumeration value="EISSN"/>
-      <xs:enumeration value="Handle"/>
-      <xs:enumeration value="IGSN"/>
-      <xs:enumeration value="ISBN"/>
-      <xs:enumeration value="ISSN"/>
-      <xs:enumeration value="ISTC"/>
-      <xs:enumeration value="LISSN"/>
-      <xs:enumeration value="LSID"/>
-      <xs:enumeration value="PMID"/>
-      <xs:enumeration value="PURL"/>
-      <xs:enumeration value="UPC"/>
-      <xs:enumeration value="URL"/>
-      <xs:enumeration value="URN"/>
-      <xs:enumeration value="w3id"/>
+      <xs:enumeration value="ARK" />
+      <xs:enumeration value="arXiv" />
+      <xs:enumeration value="bibcode" />
+      <xs:enumeration value="DOI" />
+      <xs:enumeration value="EAN13" />
+      <xs:enumeration value="EISSN" />
+      <xs:enumeration value="Handle" />
+      <xs:enumeration value="IGSN" />
+      <xs:enumeration value="ISBN" />
+      <xs:enumeration value="ISSN" />
+      <xs:enumeration value="ISTC" />
+      <xs:enumeration value="LISSN" />
+      <xs:enumeration value="LSID" />
+      <xs:enumeration value="PMID" />
+      <xs:enumeration value="PURL" />
+      <xs:enumeration value="UPC" />
+      <xs:enumeration value="URL" />
+      <xs:enumeration value="URN" />
+      <xs:enumeration value="w3id" />
     </xs:restriction>
   </xs:simpleType>
 </xs:schema>

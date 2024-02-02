@@ -3,6 +3,7 @@
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 @prefix osf: <https://osf.io/vocab/2022/> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 
 <http://localhost:5000/w5ibb> a osf:Registration ;
     dcterms:conformsTo <http://fake.example/schema/for/test> ;
@@ -18,6 +19,7 @@
     dcterms:rightsHolder "Me",
         "You" ;
     dcterms:title "this is a project title!" ;
+    dcterms:type <https://schema.datacite.org/meta/kernel-4/#StudyRegistration> ;
     dcat:accessService <http://localhost:5000> ;
     osf:hostingInstitution <https://cos.io/> .
 
@@ -57,3 +59,5 @@
     foaf:name "OSF" .
 
 <http://fake.example/schema/for/test> dcterms:title "Open-Ended Registration" .
+
+<https://schema.datacite.org/meta/kernel-4/#StudyRegistration> rdfs:label "StudyRegistration"@en .

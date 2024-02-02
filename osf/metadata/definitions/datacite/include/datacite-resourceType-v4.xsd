@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- this file retrieved on 2023-04-18 from https://schema.datacite.org/meta/kernel-4.4/include/datacite-resourceType-v4.xsd -->
+<!-- this file retrieved on 2024-02-02 from https://schema.datacite.org/meta/kernel-4.5/include/datacite-resourceType-v4.xsd -->
 <!-- Version 1.0 - Created 2011-01-13 - FZ, TIB, Germany
      2013-05 v3.0: Addition of ID to simpleType element; added values "Audiovisual", "Workflow" & "Other"; deleted value "Film"
      2017-10-23 v4.1: Addition of value "DataPaper"
@@ -11,34 +11,36 @@
       <xs:documentation>The general type of a resource.</xs:documentation>
     </xs:annotation>
     <xs:restriction base="xs:string">
-      <xs:enumeration value="Audiovisual"/>
-      <xs:enumeration value="Book"/>
-      <xs:enumeration value="BookChapter"/>
-      <xs:enumeration value="Collection"/>
-      <xs:enumeration value="ComputationalNotebook"/>
-      <xs:enumeration value="ConferencePaper"/>
-      <xs:enumeration value="ConferenceProceeding"/>
-      <xs:enumeration value="DataPaper"/>
-      <xs:enumeration value="Dataset"/>
-      <xs:enumeration value="Dissertation"/>
-      <xs:enumeration value="Event"/>
-      <xs:enumeration value="Image"/>
-      <xs:enumeration value="InteractiveResource"/>
-      <xs:enumeration value="Journal"/>
-      <xs:enumeration value="JournalArticle"/>
-      <xs:enumeration value="Model"/>
-      <xs:enumeration value="OutputManagementPlan"/>
-      <xs:enumeration value="PeerReview"/>
-      <xs:enumeration value="PhysicalObject"/>
-      <xs:enumeration value="Preprint"/>
-      <xs:enumeration value="Report"/>
-      <xs:enumeration value="Service"/>
-      <xs:enumeration value="Software"/>
-      <xs:enumeration value="Sound"/>
-      <xs:enumeration value="Standard"/>
-      <xs:enumeration value="Text"/>
-      <xs:enumeration value="Workflow"/>
-      <xs:enumeration value="Other"/>
+      <xs:enumeration value="Audiovisual" />
+      <xs:enumeration value="Book" />
+      <xs:enumeration value="BookChapter" />
+      <xs:enumeration value="Collection" />
+      <xs:enumeration value="ComputationalNotebook" />
+      <xs:enumeration value="ConferencePaper" />
+      <xs:enumeration value="ConferenceProceeding" />
+      <xs:enumeration value="DataPaper" />
+      <xs:enumeration value="Dataset" />
+      <xs:enumeration value="Dissertation" />
+      <xs:enumeration value="Event" />
+      <xs:enumeration value="Image" />
+      <xs:enumeration value="Instrument" />
+      <xs:enumeration value="InteractiveResource" />
+      <xs:enumeration value="Journal" />
+      <xs:enumeration value="JournalArticle" />
+      <xs:enumeration value="Model" />
+      <xs:enumeration value="OutputManagementPlan" />
+      <xs:enumeration value="PeerReview" />
+      <xs:enumeration value="PhysicalObject" />
+      <xs:enumeration value="Preprint" />
+      <xs:enumeration value="Report" />
+      <xs:enumeration value="Service" />
+      <xs:enumeration value="Software" />
+      <xs:enumeration value="Sound" />
+      <xs:enumeration value="Standard" />
+      <xs:enumeration value="StudyRegistration" />
+      <xs:enumeration value="Text" />
+      <xs:enumeration value="Workflow" />
+      <xs:enumeration value="Other" />
     </xs:restriction>
   </xs:simpleType>
 </xs:schema>

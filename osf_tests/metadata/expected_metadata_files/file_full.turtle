@@ -26,7 +26,7 @@
     dcterms:rightsHolder "Me",
         "You" ;
     dcterms:title "this is a project title!"@en ;
-    dcterms:type <https://schema.datacite.org/meta/kernel-4.4/#Dataset> ;
+    dcterms:type <https://schema.datacite.org/meta/kernel-4/#Dataset> ;
     owl:sameAs <https://doi.org/10.70102/FK2osf.io/w2ibb> ;
     osf:funder <https://doi.org/10.$>,
         <https://doi.org/10.$$$$> ;
@@ -75,4 +75,4 @@
     dcterms:identifier "http://localhost:5000" ;
     foaf:name "OSF" .
 
-<https://schema.datacite.org/meta/kernel-4.4/#Dataset> rdfs:label "Dataset"@en .
+<https://schema.datacite.org/meta/kernel-4/#Dataset> rdfs:label "Dataset"@en .
