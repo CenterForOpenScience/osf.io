@@ -31,7 +31,7 @@ class CedarMetadataTemplateList(JSONAPIBaseView, generics.ListAPIView, ListFilte
     view_name = 'cedar-metadata-template-list'
 
     def get_default_queryset(self):
-        return CedarMetadataTemplate.objects.all()
+        return CedarMetadataTemplate.objects.filter(active=True)
 
     def get_queryset(self):
         return self.get_queryset_from_request()
