@@ -203,16 +203,32 @@ class Sitemap(object):
         objs = (Preprint.objects.can_view()
                     .select_related('node', 'provider', 'primary_file'))
         progress.start(objs.count() * 2, 'PREP: ')
-        osf = PreprintProvider.objects.get(_id='osf')
         for obj in objs:
             try:
                 preprint_date = obj.modified.strftime('%Y-%m-%d')
                 config = settings.SITEMAP_PREPRINT_CONFIG
-                preprint_url = obj.url
-                provider = obj.provider
+                preprint_url = os.path.join('preprints', obj.provider._id, obj._id)
                 config['loc'] = urljoin(settings.DOMAIN, preprint_url)
                 config['lastmod'] = preprint_date
                 self.add_url(config)
+
+                # Preprint file urls
+                if not obj.is_retracted:
+                    # Withdrawn preprints may be viewed but not downloaded
+                    try:
+                        file_config = settings.SITEMAP_PREPRINT_FILE_CONFIG
+                        file_config['loc'] = urljoin(
+                            settings.DOMAIN,
+                            os.path.join(
+                                obj._id,
+                                'download',
+                                '?format=pdf'
+                            )
+                        )
+                        file_config['lastmod'] = preprint_date
+                        self.add_url(file_config)
+                    except Exception as e:
+                        self.log_errors(obj.primary_file, obj.primary_file._id, e)
 
             except Exception as e:
                 self.log_errors(obj, obj._id, e)

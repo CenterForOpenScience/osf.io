@@ -5018,28 +5018,22 @@ class TestResolveGuid(OsfTestCase):
     def setUp(self):
         super(TestResolveGuid, self).setUp()
 
-    def test_preprint_provider_without_domain(self):
+    @mock.patch('website.views.use_ember_app')
+    def test_preprint_provider_without_domain(self, mock_use_ember_app):
         provider = PreprintProviderFactory(domain='')
         preprint = PreprintFactory(provider=provider)
         url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
         res = self.app.get(url)
-        assert_equal(res.status_code, 200)
-        assert_equal(
-            res.request.path,
-            '/{}/'.format(preprint._id)
-        )
+        mock_use_ember_app.assert_called_with()
 
-    def test_preprint_provider_with_domain_without_redirect(self):
+    @mock.patch('website.views.use_ember_app')
+    def test_preprint_provider_with_domain_without_redirect(self, mock_use_ember_app):
         domain = 'https://test.com/'
         provider = PreprintProviderFactory(_id='test', domain=domain, domain_redirect_enabled=False)
         preprint = PreprintFactory(provider=provider)
         url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
         res = self.app.get(url)
-        assert_equal(res.status_code, 200)
-        assert_equal(
-            res.request.path,
-            '/{}/'.format(preprint._id)
-        )
+        mock_use_ember_app.assert_called_with()
 
     def test_preprint_provider_with_domain_with_redirect(self):
         domain = 'https://test.com/'
@@ -5062,16 +5056,13 @@ class TestResolveGuid(OsfTestCase):
 
 
 
-    def test_preprint_provider_with_osf_domain(self):
+    @mock.patch('website.views.use_ember_app')
+    def test_preprint_provider_with_osf_domain(self, mock_use_ember_app):
         provider = PreprintProviderFactory(_id='osf', domain='https://osf.io/')
         preprint = PreprintFactory(provider=provider)
         url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
         res = self.app.get(url)
-        assert_equal(res.status_code, 200)
-        assert_equal(
-            res.request.path,
-            '/{}/'.format(preprint._id)
-        )
+        mock_use_ember_app.assert_called_with()
 
 
 class TestConfirmationViewBlockBingPreview(OsfTestCase):
