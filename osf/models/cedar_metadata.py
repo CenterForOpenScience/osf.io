@@ -23,7 +23,7 @@ class CedarMetadataTemplate(ObjectIDMixin, BaseModel):
 
 class CedarMetadataRecord(ObjectIDMixin, BaseModel):
 
-    guid = models.ForeignKey('Guid', on_delete=models.CASCADE)
+    guid = models.ForeignKey('Guid', on_delete=models.CASCADE, related_name='cedar_metadata_records')
     template = models.ForeignKey('CedarMetadataTemplate', on_delete=models.CASCADE)
     metadata = DateTimeAwareJSONField(default=dict)
     is_published = models.BooleanField(default=False)
