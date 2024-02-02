@@ -3,7 +3,9 @@ import logging
 
 from rest_framework import permissions as drf_permissions
 from rest_framework.exceptions import NotFound
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.generics import ListCreateAPIView, RetrieveAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.renderers import JSONRenderer
+from rest_framework.views import Response
 
 from api.base import permissions as base_permissions
 from api.base.filters import ListFilterMixin
@@ -80,3 +82,34 @@ class CedarMetadataRecordDetail(JSONAPIBaseView, RetrieveUpdateDestroyAPIView):
             return CedarMetadataRecord.objects.get(_id=self.kwargs['record_id'])
         except CedarMetadataRecord.DoesNotExist:
             raise NotFound
+
+class CedarMetadataRecordMetadataDownload(JSONAPIBaseView, RetrieveAPIView):
+
+    permission_classes = (
+        CedarMetadataRecordPermission,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+    required_read_scopes = [CoreScopes.CEDAR_METADATA_RECORD_READ]
+    required_write_scopes = [CoreScopes.CEDAR_METADATA_RECORD_WRITE]
+
+    renderer_classes = [JSONRenderer]
+
+    # This view goes under the _/ namespace
+    versioning_class = PrivateVersioning
+    view_category = 'cedar-metadata-records'
+    view_name = 'cedar-metadata-record-metadata-download'
+
+    def get_object(self):
+        try:
+            return CedarMetadataRecord.objects.get(_id=self.kwargs['record_id'])
+        except CedarMetadataRecord.DoesNotExist:
+            raise NotFound
+
+    def get_serializer_class(self):
+        return None
+
+    def get(self, request, **kwargs):
+        record = self.get_object()
+        file_name = f'{record._id}-{record.get_template_name()}-v{record.get_template_version()}.json'
+        return Response(record.metadata, headers={'Content-Disposition': f'attachment; filename={file_name}'})

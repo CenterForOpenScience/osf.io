@@ -40,6 +40,9 @@ class CedarMetadataRecord(ObjectIDMixin, BaseModel):
     def get_template_name(self):
         return self.template.schema_name
 
+    def get_template_version(self):
+        return self.template.template_version
+
     def save(self, *args, **kwargs):
         self.guid.referent.update_search()
         return super().save(*args, **kwargs)
