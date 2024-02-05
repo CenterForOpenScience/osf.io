@@ -72,20 +72,6 @@ def _recatalog_datacite_custom_types(chunk_size):
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
-        provider_group = parser.add_mutually_exclusive_group(required=True)
-        provider_group.add_argument(
-            '--providers',
-            type=str,
-            nargs='+',
-            help='recatalog metadata for items from specific providers (by `_id`)',
-        )
-        provider_group.add_argument(
-            '--all-providers',
-            '-a',
-            action='store_true',
-            help='recatalog metadata for items from all providers',
-        )
-
         type_group = parser.add_mutually_exclusive_group(required=True)
         type_group.add_argument(
             '--all-types',
@@ -126,6 +112,20 @@ class Command(BaseCommand):
             ''',
         )
 
+        provider_group = parser.add_mutually_exclusive_group()
+        provider_group.add_argument(
+            '--providers',
+            type=str,
+            nargs='+',
+            help='recatalog metadata for items from specific providers (by `_id`)',
+        )
+        provider_group.add_argument(
+            '--all-providers',
+            '-a',
+            action='store_true',
+            help='recatalog metadata for items from all providers (default if no --providers given)',
+        )
+
         parser.add_argument(
             '--start-id',
             type=int,
@@ -146,27 +146,21 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        pls_all_providers = options['all_providers']
         pls_all_types = options['all_types']
         pls_recatalog_preprints = options['preprints']
         pls_recatalog_registrations = options['registrations']
         pls_recatalog_projects = options['projects']
         pls_recatalog_files = options['files']
         pls_recatalog_users = options['users']
+        provider_ids = options.get('providers')
         start_id = options['start_id']
         chunk_size = options['chunk_size']
         chunk_count = options['chunk_count']
         datacite_custom_types = options['datacite_custom_types']
 
-        if pls_all_providers:
-            providers = None  # `None` means "don't filter by provider"
-        else:
-            provider_ids = options['providers']
-            providers = AbstractProvider.objects.filter(_id__in=provider_ids)
-
         if datacite_custom_types:  # temporary arg for datacite 4.5 migration
             assert not start_id, 'oh no, cannot resume with `--datacite-custom-types`'
-            assert not providers, 'oh no, cannot filter providers with `--datacite-custom-types`'
+            assert not provider_ids, 'oh no, cannot filter providers with `--datacite-custom-types`'
             _recatalog_datacite_custom_types(chunk_size)
             return  # end
 
@@ -187,6 +181,8 @@ class Command(BaseCommand):
 
         for provided_model in provided_models:
             _queryset = provided_model.objects
-            if providers is not None:
-                _queryset = _queryset.filter(provider__in=providers)
+            if provider_ids is not None:
+                _queryset = _queryset.filter(
+                    provider__in=AbstractProvider.objects.filter(_id__in=provider_ids),
+                )
             recatalog(_queryset, start_id, chunk_count, chunk_size)

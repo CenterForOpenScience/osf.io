@@ -1,9 +1,11 @@
 import pytest
 from unittest import mock
 from operator import attrgetter
+import random
 
 from django.core.management import call_command
 
+from osf.models.metadata import GuidMetadataRecord
 from osf_tests.factories import (
     PreprintProviderFactory,
     PreprintFactory,
@@ -182,7 +184,6 @@ class TestRecatalogMetadata:
         # datacite custom types
         call_command(
             'recatalog_metadata',
-            '--all-providers',
             '--datacite-custom-types',
         )
         assert set(mock_update_share_task.apply_async.mock_calls) == set(
