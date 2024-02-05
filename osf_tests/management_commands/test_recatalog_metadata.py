@@ -181,14 +181,19 @@ class TestRecatalogMetadata:
         )
         assert mock_update_share_task.apply_async.mock_calls == expected_apply_async_calls(registrations[2:6])
 
+        mock_update_share_task.reset_mock()
+
         # datacite custom types
         call_command(
             'recatalog_metadata',
             '--datacite-custom-types',
         )
-        assert set(mock_update_share_task.apply_async.mock_calls) == set(
-            expected_apply_async_calls(items_with_custom_datacite_type),
-        )
+        _expected_osfids = set(_iter_osfids(items_with_custom_datacite_type))
+        _actual_osfids = {
+            _call[-1]['kwargs']['guid']
+            for _call in mock_update_share_task.apply_async.mock_calls
+        }
+        assert _expected_osfids == _actual_osfids
 
 
 ###
@@ -198,13 +203,18 @@ def expected_apply_async_calls(items):
     return [
         mock.call(
             kwargs={
-                'guid': _item.guids.values_list('_id', flat=True).first(),
+                'guid': _osfid,
                 'is_backfill': True,
             },
             queue='low',
         )
-        for _item in items
+        for _osfid in _iter_osfids(items)
     ]
+
+
+def _iter_osfids(items):
+    for _item in items:
+        yield _item.guids.values_list('_id', flat=True).first()
 
 
 def sorted_by_id(things_with_ids):
