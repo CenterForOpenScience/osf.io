@@ -55,11 +55,12 @@ def ingest_cedar_metadata_templates():
                 )
                 updated.add(cedar_id)
         else:
-            # Initial version should be active
+            # Initial version should also be inactive
             CedarMetadataTemplate.objects.create(
                 schema_name=schema_name,
                 template=template,
                 cedar_id=cedar_id,
+                active=False,
                 template_version=1
             )
             newly_added.add(cedar_id)
