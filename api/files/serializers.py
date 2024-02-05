@@ -47,7 +47,7 @@ from api.base.serializers import (
     ShowIfVersion,
 )
 from api.base.utils import absolute_reverse, get_user_auth
-from api.base.exceptions import Conflict
+from api.base.exceptions import Conflict, JSONAPIException
 from api.base.versioning import get_kebab_snake_case_field
 
 class CheckoutField(ser.HyperlinkedRelatedField):
@@ -370,6 +370,13 @@ class BaseFileSerializer(JSONAPISerializer):
                 return guid._id
         return None
 
+    def get_file_guid_or_error(self, obj):
+        if obj:
+            guid = obj.get_guid()
+            if guid:
+                return guid._id
+        raise JSONAPIException
+
     def get_absolute_url(self, obj):
         return api_v2_url('files/{}/'.format(obj._id))
 
@@ -395,7 +402,7 @@ class FileSerializer(BaseFileSerializer):
 
     cedar_metadata_records = RelationshipField(
         related_view='files:file-cedar-metadata-records-list',
-        related_view_kwargs={'file_id': '<_id>'},
+        related_view_kwargs={'file_id': 'get_file_guid_or_error'},
     )
 
     def get_target_type(self, obj):
