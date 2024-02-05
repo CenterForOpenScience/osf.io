@@ -402,7 +402,7 @@ class FileSerializer(BaseFileSerializer):
 
     cedar_metadata_records = RelationshipField(
         related_view='files:file-cedar-metadata-records-list',
-        related_view_kwargs={'file_id': 'get_file_guid_or_error'},
+        related_view_kwargs={'file_guid': 'get_file_guid_or_error'},
     )
 
     def get_target_type(self, obj):
