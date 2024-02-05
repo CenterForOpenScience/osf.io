@@ -370,6 +370,14 @@ class BaseFileSerializer(JSONAPISerializer):
                 return guid._id
         return None
 
+    def get_file_guid_or_id(self, obj):
+        if obj:
+            guid = obj.get_guid()
+            if guid:
+                return guid._id
+            return obj._id
+        return None
+
     def get_absolute_url(self, obj):
         return api_v2_url('files/{}/'.format(obj._id))
 
@@ -395,7 +403,7 @@ class FileSerializer(BaseFileSerializer):
 
     cedar_metadata_records = RelationshipField(
         related_view='files:file-cedar-metadata-records-list',
-        related_view_kwargs={'file_guid': 'get_file_guid'},
+        related_view_kwargs={'file_id_or_guid': 'get_file_guid_or_id'},
     )
 
     def get_target_type(self, obj):

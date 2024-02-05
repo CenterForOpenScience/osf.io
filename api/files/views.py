@@ -193,7 +193,17 @@ class FileCedarMetadataRecordsList(JSONAPIBaseView, generics.ListAPIView, ListFi
     view_name = 'file-cedar-metadata-records-list'
 
     def get_default_queryset(self):
-        return CedarMetadataRecord.objects.filter(guid___id=self.kwargs['file_guid'])
+        file_id_or_guid = self.kwargs['file_id_or_guid']
+        try:
+            Guid.objects.get(_id=file_id_or_guid)
+            return CedarMetadataRecord.objects.filter(guid___id=self.kwargs['file_id_or_guid'])
+        except Guid.DoesNotExist:
+            file = BaseFileNode.load(file_id_or_guid)
+            if file:
+                guid = file.get_guid()
+                if guid:
+                    return CedarMetadataRecord.objects.filter(guid___id=guid._id)
+        return CedarMetadataRecord.objects.none()
 
     def get_queryset(self):
         return self.get_queryset_from_request()
