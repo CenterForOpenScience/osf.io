@@ -193,7 +193,7 @@ class FileCedarMetadataRecordsList(JSONAPIBaseView, generics.ListAPIView, ListFi
     view_name = 'file-cedar-metadata-records-list'
 
     def get_default_queryset(self):
-        return CedarMetadataRecord.objects.filter(guid___id=self.kwargs['file_id'])
+        return CedarMetadataRecord.objects.filter(guid___id=self.kwargs['file_guid'])
 
     def get_queryset(self):
         return self.get_queryset_from_request()
