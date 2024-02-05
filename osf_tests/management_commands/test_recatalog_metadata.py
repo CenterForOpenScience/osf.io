@@ -76,7 +76,33 @@ class TestRecatalogMetadata:
             for preprint in preprints
         ])))
 
-    def test_recatalog_metadata(self, mock_update_share_task, preprint_provider, preprints, registration_provider, registrations, projects, files, users):
+    @pytest.fixture
+    def items_with_custom_datacite_type(self, preprints, registrations, projects, files):
+        _nonpreprint_sample = [
+            random.choice(_items)
+            for _items in (registrations, projects, files)
+        ]
+        for _item in _nonpreprint_sample:
+            _guid_record = GuidMetadataRecord.objects.for_guid(_item)
+            _guid_record.resource_type_general = 'BookChapter'  # datacite resourceTypeGeneral value
+            _guid_record.save()
+        return {
+            *preprints,  # every preprint has datacite type "Preprint"
+            *_nonpreprint_sample,
+        }
+
+    def test_recatalog_metadata(
+        self,
+        mock_update_share_task,
+        preprint_provider,
+        preprints,
+        registration_provider,
+        registrations,
+        projects,
+        files,
+        users,
+        items_with_custom_datacite_type,
+    ):
         # test preprints
         call_command(
             'recatalog_metadata',
@@ -152,6 +178,16 @@ class TestRecatalogMetadata:
             '--chunk-count=2',
         )
         assert mock_update_share_task.apply_async.mock_calls == expected_apply_async_calls(registrations[2:6])
+
+        # datacite custom types
+        call_command(
+            'recatalog_metadata',
+            '--all-providers',
+            '--datacite-custom-types',
+        )
+        assert set(mock_update_share_task.apply_async.mock_calls) == set(
+            expected_apply_async_calls(items_with_custom_datacite_type),
+        )
 
 
 ###
