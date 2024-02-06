@@ -15,12 +15,14 @@ from api.base.parsers import (
 )
 from api.base.versioning import PrivateVersioning
 from api.base.views import JSONAPIBaseView
+from api.base.utils import get_user_auth
 from api.cedar_metadata_records.permissions import CedarMetadataRecordPermission
 from api.cedar_metadata_records.serializers import (
     CedarMetadataRecordsListSerializer,
     CedarMetadataRecordsListCreateSerializer,
     CedarMetadataRecordsDetailSerializer,
 )
+from api.cedar_metadata_records.utils import can_view_record
 from framework.auth.oauth_scopes import CoreScopes
 
 from osf.models import CedarMetadataRecord
@@ -54,7 +56,10 @@ class CedarMetadataRecordList(JSONAPIBaseView, ListCreateAPIView, ListFilterMixi
             return CedarMetadataRecordsListSerializer
 
     def get_default_queryset(self):
-        return CedarMetadataRecord.objects.filter(is_published=True)
+        published_records = CedarMetadataRecord.objects.filter(is_published=True)
+        user_auth = get_user_auth(self.request)
+        record_ids = [record.id for record in published_records if can_view_record(user_auth, record)]
+        return CedarMetadataRecord.objects.filter(pk__in=record_ids)
 
     def get_queryset(self):
         return self.get_queryset_from_request()

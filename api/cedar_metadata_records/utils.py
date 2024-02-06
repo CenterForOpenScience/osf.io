@@ -27,3 +27,16 @@ def get_guids_related_view_kwargs(obj):
         return {'file_id': '<guid._id>'}
     else:
         raise NotImplementedError()
+
+def can_view_record(user_auth, record):
+
+    permission_source = record.guid.referent
+
+    if isinstance(permission_source, BaseFileNode):
+        permission_source = permission_source.target
+    elif not isinstance(permission_source, (Node, Registration)):
+        return False
+
+    if not record.is_published:
+        return permission_source.can_edit(user_auth)
+    return permission_source.is_public or permission_source.can_view(user_auth)
