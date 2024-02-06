@@ -1,6 +1,8 @@
 FROM node:18-alpine3.17
 
 # Creation of www-data group was removed as it is created by default in alpine 3.14 and higher
+# Alpine does not create a www-data user, so we still need to create that. 82 is the standard
+# uid/guid for www-data in Alpine.
 RUN set -x \
     && adduser -h /var/www -u 82 -D -S -G www-data www-data
 
