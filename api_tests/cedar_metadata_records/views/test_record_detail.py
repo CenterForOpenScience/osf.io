@@ -70,17 +70,13 @@ class TestCedarMetadataRecordDetailPrivateProjectPublishedMetadata(TestCedarMeta
         assert urlparse(data['links']['self']).path == f'/{API_PRIVATE_BASE}cedar_metadata_records/{cedar_record_for_node._id}/'
         assert urlparse(data['links']['metadata_download']).path == f'/{API_PRIVATE_BASE}cedar_metadata_records/{cedar_record_for_node._id}/metadata_download/'
 
-    # TODO: discuss and fix permission
-    @pytest.mark.skip(reason='discuss and fix permission')
     def test_record_detail_for_node_with_invalid_auth(self, app, user_alt, cedar_record_for_node):
 
-        resp = app.get(f'/_/cedar_metadata_records/{cedar_record_for_node._id}/', auth=user_alt.auth)
-        assert resp.status_code == 401
+        resp = app.get(f'/_/cedar_metadata_records/{cedar_record_for_node._id}/', auth=user_alt.auth, expect_errors=True)
+        assert resp.status_code == 403
 
-    # TODO: discuss and fix permission
-    @pytest.mark.skip(reason='discuss and fix permission')
     def test_record_detail_for_node_with_no_auth(self, app, cedar_record_for_node):
-        resp = app.get(f'/_/cedar_metadata_records/{cedar_record_for_node._id}/', auth=None)
+        resp = app.get(f'/_/cedar_metadata_records/{cedar_record_for_node._id}/', auth=None, expect_errors=True)
         assert resp.status_code == 401
 
 
@@ -125,28 +121,22 @@ class TestCedarMetadataRecordDetailPrivateProjectDraftMetadata(TestCedarMetadata
         assert urlparse(data['links']['self']).path == f'/{API_PRIVATE_BASE}cedar_metadata_records/{cedar_draft_record_for_node_alt._id}/'
         assert urlparse(data['links']['metadata_download']).path == f'/{API_PRIVATE_BASE}cedar_metadata_records/{cedar_draft_record_for_node_alt._id}/metadata_download/'
 
-    # TODO: discuss and fix permission
-    @pytest.mark.skip(reason='discuss and fix permission')
     def test_record_detail_for_node_with_read_auth(self, app, node_alt, cedar_draft_record_for_node_alt):
 
         read = AuthUserFactory()
         node_alt.add_contributor(read, permissions=READ)
         node_alt.save()
 
-        resp = app.get(f'/_/cedar_metadata_records/{cedar_draft_record_for_node_alt._id}/', auth=read.auth)
-        assert resp.status_code == 401
+        resp = app.get(f'/_/cedar_metadata_records/{cedar_draft_record_for_node_alt._id}/', auth=read.auth, expect_errors=True)
+        assert resp.status_code == 403
 
-    # TODO: discuss and fix permission
-    @pytest.mark.skip(reason='discuss and fix permission')
     def test_record_detail_for_node_with_invalid_auth(self, app, user_alt, cedar_draft_record_for_node_alt):
 
-        resp = app.get(f'/_/cedar_metadata_records/{cedar_draft_record_for_node_alt._id}/', auth=user_alt.auth)
-        assert resp.status_code == 401
+        resp = app.get(f'/_/cedar_metadata_records/{cedar_draft_record_for_node_alt._id}/', auth=user_alt.auth, expect_errors=True)
+        assert resp.status_code == 403
 
-    # TODO: discuss and fix permission
-    @pytest.mark.skip(reason='discuss and fix permission')
     def test_record_detail_for_node_with_no_auth(self, app, cedar_draft_record_for_node_alt):
-        resp = app.get(f'/_/cedar_metadata_records/{cedar_draft_record_for_node_alt._id}/', auth=None)
+        resp = app.get(f'/_/cedar_metadata_records/{cedar_draft_record_for_node_alt._id}/', auth=None, expect_errors=True)
         assert resp.status_code == 401
 
 
@@ -287,29 +277,23 @@ class TestCedarMetadataRecordDetailPublicProjectDraftMetadata(TestCedarMetadataR
         assert urlparse(data['links']['self']).path == f'/{API_PRIVATE_BASE}cedar_metadata_records/{cedar_draft_record_for_node_pub_alt._id}/'
         assert urlparse(data['links']['metadata_download']).path == f'/{API_PRIVATE_BASE}cedar_metadata_records/{cedar_draft_record_for_node_pub_alt._id}/metadata_download/'
 
-    # TODO: discuss and fix permission
-    @pytest.mark.skip(reason='discuss and fix permission')
-    def test_record_detail_for_node_with_read_auth(self, app, node_pub_alt, user, cedar_draft_record_for_node_pub_alt):
+    def test_record_detail_for_node_with_read_auth(self, app, node_pub_alt, cedar_draft_record_for_node_pub_alt):
 
         read = AuthUserFactory()
         node_pub_alt.add_contributor(read, permissions=READ)
         node_pub_alt.save()
 
-        resp = app.get(f'/_/cedar_metadata_records/{cedar_draft_record_for_node_pub_alt._id}/', auth=read.auth)
-        assert resp.status_code == 401
+        resp = app.get(f'/_/cedar_metadata_records/{cedar_draft_record_for_node_pub_alt._id}/', auth=read.auth, expect_errors=True)
+        assert resp.status_code == 403
 
-    # TODO: discuss and fix permission
-    @pytest.mark.skip(reason='discuss and fix permission')
     def test_record_detail_for_node_with_invalid_auth(self, app, user_alt, cedar_draft_record_for_node_pub_alt):
 
-        resp = app.get(f'/_/cedar_metadata_records/{cedar_draft_record_for_node_pub_alt._id}/', auth=user_alt.auth)
-        assert resp.status_code == 401
+        resp = app.get(f'/_/cedar_metadata_records/{cedar_draft_record_for_node_pub_alt._id}/', auth=user_alt.auth, expect_errors=True)
+        assert resp.status_code == 403
 
-    # TODO: discuss and fix permission
-    @pytest.mark.skip(reason='discuss and fix permission')
     def test_record_detail_for_node_with_no_auth(self, app, cedar_draft_record_for_node_pub_alt):
 
-        resp = app.get(f'/_/cedar_metadata_records/{cedar_draft_record_for_node_pub_alt._id}/', auth=None)
+        resp = app.get(f'/_/cedar_metadata_records/{cedar_draft_record_for_node_pub_alt._id}/', auth=None, expect_errors=True)
         assert resp.status_code == 401
 
 
