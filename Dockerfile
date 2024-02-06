@@ -1,8 +1,7 @@
-FROM node:8-alpine3.9
+FROM node:18-alpine3.17
 
 # Source: https://github.com/docker-library/httpd/blob/7976cabe162268bd5ad2d233d61e340447bfc371/2.4/alpine/Dockerfile#L3
 RUN set -x \
-    && addgroup -g 82 -S www-data \
     && adduser -h /var/www -u 82 -D -S -G www-data www-data
 
 RUN apk add --no-cache --virtual .run-deps \
@@ -26,8 +25,9 @@ RUN apk add --no-cache --virtual .run-deps \
     libevent \
     && yarn global add bower
 
+# Setuptools lower than 58.0.0 are needed for rdflib-jsonld on python 3.10
 RUN python3 -m ensurepip && \
-    pip3 install --upgrade pip==21.0
+    pip3 install --upgrade pip==21.0 "setuptools<58.0.0"
 
 WORKDIR /code
 
@@ -78,7 +78,7 @@ RUN set -ex \
     && (pip3 uninstall uritemplate.py --yes || true) \
     && pip3 install --no-cache-dir uritemplate.py==0.3.0 \
     # Fix: https://github.com/CenterForOpenScience/osf.io/pull/6783
-    && python3 -m compileall /usr/lib/python3.6 || true \
+    && python3 -m compileall /usr/lib/python3.10 || true \
     && apk del .build-deps
 
 # Settings
@@ -156,19 +156,22 @@ ENV GIT_COMMIT ${GIT_COMMIT}
 
 # TODO: Admin/API should fully specify their bower static deps, and not include ./website/static in their defaults.py.
 #       (this adds an additional 300+mb to the build image)
-RUN for module in \
-        api.base.settings \
-        admin.base.settings \
-    ; do \
-        export DJANGO_SETTINGS_MODULE=$module \
-        && python3 manage.py collectstatic --noinput --no-init-app \
-    ; done \
-    && for file in \
-        ./website/templates/_log_templates.mako \
-        ./website/static/built/nodeCategories.json \
-    ; do \
-        touch $file && chmod o+w $file \
-    ; done \
-    && rm ./website/settings/local.py ./api/base/settings/local.py
+
+# TODO: Uncomment following RUN when python dependencies are ready
+
+# RUN for module in \
+#        api.base.settings \
+#        admin.base.settings \
+#    ; do \
+#        export DJANGO_SETTINGS_MODULE=$module \
+#        && python3 manage.py collectstatic --noinput --no-init-app \
+#    ; done \
+#    && for file in \
+#        ./website/templates/_log_templates.mako \
+#        ./website/static/built/nodeCategories.json \
+#    ; do \
+#        touch $file && chmod o+w $file \
+#    ; done \
+#    && rm ./website/settings/local.py ./api/base/settings/local.py
 
 CMD ["su-exec", "nobody", "invoke", "--list"]
