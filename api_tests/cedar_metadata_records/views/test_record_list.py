@@ -45,7 +45,7 @@ class TestCedarMetadataRecordList(TestCedarMetadataRecord):
         assert set(cedar_published_record_ids) == set([datum['id'] for datum in data])
 
 @pytest.mark.django_db
-class TestCedarMetadataTemplateListCreateForProjects(TestCedarMetadataRecord):
+class TestCedarMetadataRecordListCreateForProjects(TestCedarMetadataRecord):
 
     @pytest.fixture
     def payload_node(self, cedar_template_alt, cedar_record_metadata_json, node):
@@ -150,11 +150,11 @@ class TestCedarMetadataTemplateListCreateForProjects(TestCedarMetadataRecord):
         assert resp.status_code == 401
 
 @pytest.mark.django_db
-class TestCedarMetadataTemplateListCreateForRegistrations(TestCedarMetadataRecord):
+class TestCedarMetadataRecordListCreateForRegistrations(TestCedarMetadataRecord):
     # TODO: implement this
     pass
 
 @pytest.mark.django_db
-class TestCedarMetadataTemplateListCreateForFiles(TestCedarMetadataRecord):
+class TestCedarMetadataRecordListCreateForFiles(TestCedarMetadataRecord):
     # TODO: implement this
     pass

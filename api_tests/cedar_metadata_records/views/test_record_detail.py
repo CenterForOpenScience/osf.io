@@ -312,26 +312,15 @@ class TestCedarMetadataRecordDetailPublicProjectDraftMetadata(TestCedarMetadataR
         resp = app.get(f'/_/cedar_metadata_records/{cedar_draft_record_for_node_pub_alt._id}/', auth=None)
         assert resp.status_code == 401
 
+
 @pytest.mark.django_db
-class TestCedarMetadataRecordDetailPrivateRegistrationPublishedMetadata(TestCedarMetadataRecord):
+class TestCedarMetadataRecordDetailRegistrationPublishedMetadata(TestCedarMetadataRecord):
     # TODO: implement this
     pass
 
 
 @pytest.mark.django_db
-class TestCedarMetadataRecordDetailPrivateRegistrationDraftMetadata(TestCedarMetadataRecord):
-    # TODO: implement this
-    pass
-
-
-@pytest.mark.django_db
-class TestCedarMetadataRecordDetailPublicRegistrationPublishedMetadata(TestCedarMetadataRecord):
-    # TODO: implement this
-    pass
-
-
-@pytest.mark.django_db
-class TestCedarMetadataRecordDetailPublicRegistrationDraftMetadata(TestCedarMetadataRecord):
+class TestCedarMetadataRecordDetailRegistrationDraftMetadata(TestCedarMetadataRecord):
     pass
 
 
