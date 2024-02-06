@@ -20,6 +20,9 @@ class CedarMetadataTemplate(ObjectIDMixin, BaseModel):
     def get_semantic_iri(self):
         return self.cedar_id
 
+    def is_active(self):
+        return self.active
+
 
 class CedarMetadataRecord(ObjectIDMixin, BaseModel):
 

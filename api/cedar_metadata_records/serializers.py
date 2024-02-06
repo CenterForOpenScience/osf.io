@@ -2,11 +2,13 @@ import logging
 
 from django.db import IntegrityError
 from rest_framework import serializers as ser
+from rest_framework.exceptions import PermissionDenied, NotFound
 
 from api.base.exceptions import InvalidModelValueError, JSONAPIException
 from api.base.serializers import JSONAPISerializer, LinksField, RelationshipField
-from api.base.utils import absolute_reverse
+from api.base.utils import absolute_reverse, get_user_auth
 from api.cedar_metadata_records.utils import get_guids_related_view, get_guids_related_view_kwargs
+from api.cedar_metadata_records.utils import can_create_record
 
 from osf.exceptions import ValidationError
 from osf.models import CedarMetadataRecord, CedarMetadataTemplate, Guid
@@ -112,6 +114,12 @@ class CedarMetadataRecordsListCreateSerializer(CedarMetadataRecordsBaseSerialize
         template = validated_data.pop('template')
         metadata = validated_data.pop('metadata')
         is_published = validated_data.pop('is_published')
+
+        auth = get_user_auth(self.context['request'])
+        if not can_create_record(auth, guid):
+            raise PermissionDenied
+        if not template.is_active():
+            raise NotFound
         record = CedarMetadataRecord(guid=guid, template=template, metadata=metadata, is_published=is_published)
         try:
             record.save()
