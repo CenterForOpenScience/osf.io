@@ -131,9 +131,13 @@ class TestCedarMetadataRecord(object):
         return [cedar_draft_record_for_node_alt._id, cedar_draft_record_for_node_pub_alt._id]
 
     @pytest.fixture()
-    def cedar_published_record_ids(self, cedar_record_for_node, cedar_record_for_node_pub, cedar_record_for_registration, cedar_record_for_file):
-        return [cedar_record_for_node._id, cedar_record_for_node_pub._id, cedar_record_for_registration._id, cedar_record_for_file._id]
+    def cedar_published_private_record_ids(self, cedar_record_for_node, cedar_record_for_registration, cedar_record_for_file):
+        return [cedar_record_for_node._id, cedar_record_for_registration._id, cedar_record_for_file._id]
 
     @pytest.fixture()
-    def all_cedar_record_ids(self, cedar_draft_record_ids, cedar_published_record_ids):
-        return cedar_draft_record_ids + cedar_draft_record_ids
+    def cedar_published_public_record_ids(self, cedar_record_for_node_pub):
+        return [cedar_record_for_node_pub._id]
+
+    @pytest.fixture()
+    def all_cedar_record_ids(self, cedar_draft_record_ids, cedar_published_private_record_ids, cedar_published_public_record_ids):
+        return cedar_draft_record_ids + cedar_published_private_record_ids + cedar_published_public_record_ids
