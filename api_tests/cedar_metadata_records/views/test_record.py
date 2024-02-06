@@ -69,6 +69,16 @@ class TestCedarMetadataRecord(object):
         )
 
     @pytest.fixture()
+    def cedar_template_inactive(self, cedar_template_json):
+        return CedarMetadataTemplate.objects.create(
+            schema_name=fake.bs(),
+            cedar_id=fake.md5(),
+            template_version=1,
+            template=cedar_template_json,
+            active=False,
+        )
+
+    @pytest.fixture()
     def cedar_record_metadata_json(self):
         return {'rm_key_1': 'rm_value_1', 'rm_key_2': 'rm_value_2', 'rm_key_3': 'rm_value_3'}
 

@@ -122,8 +122,13 @@ class TestCedarMetadataRecordListCreateForProjects(TestCedarMetadataRecord):
         assert urlparse(data['links']['self']).path == f'/{API_PRIVATE_BASE}cedar_metadata_records/{record._id}/'
         assert urlparse(data['links']['metadata_download']).path == f'/{API_PRIVATE_BASE}cedar_metadata_records/{record._id}/metadata_download/'
 
-    # TODO: discuss and fix permission
-    @pytest.mark.skip(reason='discuss and fix permission')
+    def test_record_list_create_for_node_with_inactive_template(self, app, user, payload_node, cedar_template_inactive):
+
+        payload = payload_node
+        payload['data']['relationships']['template']['data']['id'] = cedar_template_inactive._id
+        resp = app.post_json('/_/cedar_metadata_records/', payload_node, auth=user.auth, expect_errors=True)
+        assert resp.status_code == 404
+
     def test_record_list_create_for_node_with_read_auth(self, app, node, payload_node):
 
         read = AuthUserFactory()
@@ -131,16 +136,14 @@ class TestCedarMetadataRecordListCreateForProjects(TestCedarMetadataRecord):
         node.save()
 
         resp = app.post_json('/_/cedar_metadata_records/', payload_node, auth=read.auth, expect_errors=True)
-        assert resp.status_code == 401
+        assert resp.status_code == 403
 
-    # TODO: discuss and fix permission
-    @pytest.mark.skip(reason='discuss and fix permission')
     def test_record_list_create_for_node_with_invalid_auth(self, app, user_alt, node, payload_node):
 
         resp = app.post_json('/_/cedar_metadata_records/', payload_node, auth=user_alt.auth, expect_errors=True)
-        assert resp.status_code == 401
+        assert resp.status_code == 403
 
-    def test_record_list_create_for_node_without_auth(self, app, user_alt, node, payload_node):
+    def test_record_list_create_for_node_without_auth(self, app, node, payload_node):
 
         resp = app.post_json('/_/cedar_metadata_records/', payload_node, auth=None, expect_errors=True)
         assert resp.status_code == 401
