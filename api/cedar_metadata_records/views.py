@@ -79,9 +79,11 @@ class CedarMetadataRecordDetail(JSONAPIBaseView, RetrieveUpdateDestroyAPIView):
 
     def get_object(self):
         try:
-            return CedarMetadataRecord.objects.get(_id=self.kwargs['record_id'])
+            record = CedarMetadataRecord.objects.get(_id=self.kwargs['record_id'])
         except CedarMetadataRecord.DoesNotExist:
             raise NotFound
+        self.check_object_permissions(self.request, record)
+        return record
 
 class CedarMetadataRecordMetadataDownload(JSONAPIBaseView, RetrieveAPIView):
 
@@ -102,9 +104,11 @@ class CedarMetadataRecordMetadataDownload(JSONAPIBaseView, RetrieveAPIView):
 
     def get_object(self):
         try:
-            return CedarMetadataRecord.objects.get(_id=self.kwargs['record_id'])
+            record = CedarMetadataRecord.objects.get(_id=self.kwargs['record_id'])
         except CedarMetadataRecord.DoesNotExist:
             raise NotFound
+        self.check_object_permissions(self.request, record)
+        return record
 
     def get_serializer_class(self):
         return None
