@@ -33,7 +33,6 @@ logger = logging.getLogger(__name__)
 class CedarMetadataRecordList(JSONAPIBaseView, ListCreateAPIView, ListFilterMixin):
 
     permission_classes = (
-        CedarMetadataRecordPermission,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )

@@ -58,7 +58,7 @@ from api.base.views import (
 )
 from api.base.waffle_decorators import require_flag
 from api.cedar_metadata_records.serializers import CedarMetadataRecordsListSerializer
-from api.cedar_metadata_records.permissions import CedarMetadataRecordPermission
+from api.cedar_metadata_records.utils import can_view_record
 from api.citations.utils import render_citation
 from api.comments.permissions import CanCommentOrPublic
 from api.comments.serializers import (
@@ -2293,7 +2293,6 @@ class NodeSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
 class NodeCedarMetadataRecordsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
     permission_classes = (
-        CedarMetadataRecordPermission,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
@@ -2306,7 +2305,10 @@ class NodeCedarMetadataRecordsList(JSONAPIBaseView, generics.ListAPIView, ListFi
     view_name = 'node-cedar-metadata-records-list'
 
     def get_default_queryset(self):
-        return CedarMetadataRecord.objects.filter(guid___id=self.kwargs['node_id'])
+        node_records = CedarMetadataRecord.objects.filter(guid___id=self.kwargs['node_id'])
+        user_auth = get_user_auth(self.request)
+        record_ids = [record.id for record in node_records if can_view_record(user_auth, record, guid_type=Node)]
+        return CedarMetadataRecord.objects.filter(pk__in=record_ids)
 
     def get_queryset(self):
         return self.get_queryset_from_request()

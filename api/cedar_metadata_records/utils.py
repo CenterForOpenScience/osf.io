@@ -28,9 +28,12 @@ def get_guids_related_view_kwargs(obj):
     else:
         raise NotImplementedError()
 
-def can_view_record(user_auth, record):
+def can_view_record(user_auth, record, guid_type=None):
 
     permission_source = record.guid.referent
+
+    if guid_type and not isinstance(permission_source, guid_type):
+        return False
 
     if isinstance(permission_source, BaseFileNode):
         permission_source = permission_source.target
