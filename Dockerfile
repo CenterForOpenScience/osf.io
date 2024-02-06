@@ -1,6 +1,6 @@
 FROM node:18-alpine3.17
 
-# Source: https://github.com/docker-library/httpd/blob/7976cabe162268bd5ad2d233d61e340447bfc371/2.4/alpine/Dockerfile#L3
+# Creation of www-data group was removed as it is created by default in alpine 3.14 and higher
 RUN set -x \
     && adduser -h /var/www -u 82 -D -S -G www-data www-data
 
