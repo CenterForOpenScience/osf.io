@@ -2,11 +2,8 @@ import pytest
 from urllib.parse import urlparse
 
 from .test_record import TestCedarMetadataRecord
-
 from api.base.settings import API_BASE, API_PRIVATE_BASE
-
 from osf.utils.permissions import READ, WRITE
-
 from osf_tests.factories import AuthUserFactory
 
 @pytest.mark.django_db
