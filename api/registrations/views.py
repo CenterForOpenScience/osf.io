@@ -36,7 +36,7 @@ from api.base.utils import (
     is_truthy,
 )
 from api.cedar_metadata_records.serializers import CedarMetadataRecordsListSerializer
-from api.cedar_metadata_records.permissions import CedarMetadataRecordPermission
+from api.cedar_metadata_records.utils import can_view_record
 from api.comments.serializers import RegistrationCommentSerializer, CommentCreateSerializer
 from api.draft_registrations.views import DraftMixin
 from api.identifiers.serializers import RegistrationIdentifierSerializer
@@ -976,7 +976,6 @@ class RegistrationResourceList(JSONAPIBaseView, generics.ListAPIView, ListFilter
 class RegistrationCedarMetadataRecordsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
     permission_classes = (
-        CedarMetadataRecordPermission,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
@@ -989,7 +988,10 @@ class RegistrationCedarMetadataRecordsList(JSONAPIBaseView, generics.ListAPIView
     view_name = 'registration-cedar-metadata-records-list'
 
     def get_default_queryset(self):
-        return CedarMetadataRecord.objects.filter(guid___id=self.kwargs['node_id'])
+        registration_records = CedarMetadataRecord.objects.filter(guid___id=self.kwargs['node_id'])
+        user_auth = get_user_auth(self.request)
+        record_ids = [record.id for record in registration_records if can_view_record(user_auth, record, guid_type=Registration)]
+        return CedarMetadataRecord.objects.filter(pk__in=record_ids)
 
     def get_queryset(self):
         return self.get_queryset_from_request()

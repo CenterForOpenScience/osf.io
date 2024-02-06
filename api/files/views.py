@@ -21,7 +21,7 @@ from api.base import utils
 from api.base.views import JSONAPIBaseView
 from api.base import permissions as base_permissions
 from api.cedar_metadata_records.serializers import CedarMetadataRecordsListSerializer
-from api.cedar_metadata_records.permissions import CedarMetadataRecordPermission
+from api.cedar_metadata_records.utils import can_view_record
 from api.nodes.permissions import ContributorOrPublic
 from api.files import annotations
 from api.files.permissions import IsPreprintFile
@@ -180,7 +180,6 @@ class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
 class FileCedarMetadataRecordsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
     permission_classes = (
-        CedarMetadataRecordPermission,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
@@ -193,17 +192,22 @@ class FileCedarMetadataRecordsList(JSONAPIBaseView, generics.ListAPIView, ListFi
     view_name = 'file-cedar-metadata-records-list'
 
     def get_default_queryset(self):
+        file_records = None
         file_id_or_guid = self.kwargs['file_id_or_guid']
         try:
             Guid.objects.get(_id=file_id_or_guid)
-            return CedarMetadataRecord.objects.filter(guid___id=self.kwargs['file_id_or_guid'])
+            file_records = CedarMetadataRecord.objects.filter(guid___id=file_id_or_guid)
         except Guid.DoesNotExist:
             file = BaseFileNode.load(file_id_or_guid)
             if file:
                 guid = file.get_guid()
                 if guid:
-                    return CedarMetadataRecord.objects.filter(guid___id=guid._id)
-        return CedarMetadataRecord.objects.none()
+                    file_records = CedarMetadataRecord.objects.filter(guid___id=guid._id)
+        if not file_records:
+            return CedarMetadataRecord.objects.none()
+        user_auth = utils.get_user_auth(self.request)
+        record_ids = [record.id for record in file_records if can_view_record(user_auth, record, guid_type=BaseFileNode)]
+        return CedarMetadataRecord.objects.filter(pk__in=record_ids)
 
     def get_queryset(self):
         return self.get_queryset_from_request()
