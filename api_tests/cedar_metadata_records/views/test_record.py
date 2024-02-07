@@ -38,11 +38,15 @@ class TestCedarMetadataRecord(object):
 
     @pytest.fixture()
     def node_for_file(self, user):
-        return ProjectFactory(creator=user, is_public=True)
+        return ProjectFactory(creator=user, is_public=False)
 
     @pytest.fixture()
     def registration(self, user):
-        return RegistrationFactory(creator=user)
+        return RegistrationFactory(creator=user, is_public=True)
+
+    @pytest.fixture()
+    def registration_alt(self, user):
+        return RegistrationFactory(creator=user, is_public=True)
 
     @pytest.fixture()
     def file(self, user, node_for_file):
@@ -132,6 +136,15 @@ class TestCedarMetadataRecord(object):
         )
 
     @pytest.fixture()
+    def cedar_draft_record_for_registration_alt(self, registration_alt, cedar_template, cedar_record_metadata_json):
+        return CedarMetadataRecord.objects.create(
+            guid=registration_alt.guids.first(),
+            template=cedar_template,
+            metadata=cedar_record_metadata_json,
+            is_published=False,
+        )
+
+    @pytest.fixture()
     def cedar_record_for_file(self, file, cedar_template, cedar_record_metadata_json):
         return CedarMetadataRecord.objects.create(
             guid=file.get_guid(create=False),
@@ -141,16 +154,16 @@ class TestCedarMetadataRecord(object):
         )
 
     @pytest.fixture()
-    def cedar_draft_record_ids(self, cedar_draft_record_for_node_alt, cedar_draft_record_for_node_pub_alt):
-        return [cedar_draft_record_for_node_alt._id, cedar_draft_record_for_node_pub_alt._id]
+    def cedar_draft_record_ids(self, cedar_draft_record_for_node_alt, cedar_draft_record_for_node_pub_alt, cedar_draft_record_for_registration_alt):
+        return [cedar_draft_record_for_node_alt._id, cedar_draft_record_for_node_pub_alt._id, cedar_draft_record_for_registration_alt._id]
 
     @pytest.fixture()
-    def cedar_published_private_record_ids(self, cedar_record_for_node, cedar_record_for_registration, cedar_record_for_file):
-        return [cedar_record_for_node._id, cedar_record_for_registration._id, cedar_record_for_file._id]
+    def cedar_published_private_record_ids(self, cedar_record_for_node, cedar_record_for_file):
+        return [cedar_record_for_node._id, cedar_record_for_file._id]
 
     @pytest.fixture()
-    def cedar_published_public_record_ids(self, cedar_record_for_node_pub):
-        return [cedar_record_for_node_pub._id]
+    def cedar_published_public_record_ids(self, cedar_record_for_node_pub, cedar_record_for_registration):
+        return [cedar_record_for_node_pub._id, cedar_record_for_registration._id]
 
     @pytest.fixture()
     def all_cedar_record_ids(self, cedar_draft_record_ids, cedar_published_private_record_ids, cedar_published_public_record_ids):
