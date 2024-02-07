@@ -21,6 +21,7 @@ runs:
   - name: Other installs
     shell: bash
     run: |
+      # bumped psycopg to match requirements.txt, as otherwise build would fail
       pip install psycopg2==2.8.4 --no-binary psycopg2
       invoke travis_addon_settings
       invoke requirements --dev --addons
