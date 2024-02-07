@@ -1,6 +1,6 @@
 # Reference README-docker-compose.md for instructions.
 
-version: '3.4'
+version: '3.5'
 
 volumes:
   redis_data_vol:
@@ -362,15 +362,15 @@ services:
       - /bin/bash
       - -c
       - invoke requirements --all &&
-        (python3 -m compileall /usr/lib/python3.6 || true) &&
-        rm -Rf /python3.6/* &&
-        cp -Rf -p /usr/lib/python3.6 /
+        (python3 -m compileall /usr/lib/python3.10 || true) &&
+        rm -Rf /python3.10/* &&
+        cp -Rf -p /usr/lib/python3.10 /
     restart: 'no'
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/python3.6
+      - osf_requirements_vol:/python3.10
 
   assets:
     image: quay.io/centerforopenscience/osf:develop
@@ -381,7 +381,7 @@ services:
       LANG: en_US.UTF-8
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/lib/python3.6
+      - osf_requirements_vol:/usr/lib/python3.10
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
     stdin_open: true
@@ -395,7 +395,7 @@ services:
       LANG: en_US.UTF-8
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/lib/python3.6
+      - osf_requirements_vol:/usr/lib/python3.10
       - osf_node_modules_vol:/code/node_modules  # needed due to admin references of ../webpack.<...>.js configurations.
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_admin_bower_components_vol:/code/admin/static/vendor/bower_components
@@ -447,7 +447,7 @@ services:
       - .docker-compose.env
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/lib/python3.6
+      - osf_requirements_vol:/usr/lib/python3.10
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
 #      - ./ssl/ca-chain.cert.pem:/etc/ssl/certs/ca-chain.cert.pem:ro
@@ -472,7 +472,7 @@ services:
     stdin_open: true
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/lib/python3.6
+      - osf_requirements_vol:/usr/lib/python3.10
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
       - osf_admin_bower_components_vol:/code/admin/static/vendor/bower_components
@@ -495,7 +495,7 @@ services:
       - .docker-compose.env
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/lib/python3.6
+      - osf_requirements_vol:/usr/lib/python3.10
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
     stdin_open: true
@@ -518,7 +518,7 @@ services:
       - .docker-compose.sharejs.env
     volumes:
       - ./:/code:cached
-      - osf_requirements_vol:/usr/lib/python3.6
+      - osf_requirements_vol:/usr/lib/python3.10
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
       - ember_osf_web_dist_vol:/ember_osf_web
