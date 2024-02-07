@@ -34,7 +34,7 @@ def remove_search_index(dry_run=True):
             logger.info('Removing {} with title \'{}\' from search index and SHARE.'.format(node._id, node.title))
     else:
         for node in nodes:
-            update_node(node, bulk=False, async=True)
+            update_node(node, bulk=False)
             update_share(node)
 
 if __name__ == '__main__':

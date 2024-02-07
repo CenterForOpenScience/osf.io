@@ -1570,7 +1570,7 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
         payload_ver['data']['attributes']['draft_registration_id'] = draft_registration._id
         assert draft_registration.branched_from.is_admin_contributor(user) is False
         assert draft_registration.has_permission(user, permissions.ADMIN) is True
-        assert draft_registration.title is ''
+        assert draft_registration.title == ''
         draft_registration.title = 'test user generated title required'
         draft_registration.save()
         res = app.post_json_api(url_registrations_ver, payload_ver, auth=user.auth)
@@ -1581,7 +1581,7 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
         assert draft_registration.branched_from.is_admin_contributor(user) is True
         assert draft_registration.has_permission(user, permissions.ADMIN) is True
         payload_ver['data']['attributes']['draft_registration_id'] = draft_registration._id
-        assert draft_registration.title is ''
+        assert draft_registration.title == ''
         draft_registration.title = 'test user generated title required'
         draft_registration.save()
         res = app.post_json_api(url_registrations_ver, payload_ver, auth=user.auth)
