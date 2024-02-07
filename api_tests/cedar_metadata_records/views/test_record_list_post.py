@@ -289,11 +289,11 @@ class TestCedarMetadataRecordListCreateForFiles(TestCedarMetadataRecord):
         assert urlparse(data['links']['self']).path == f'/{API_PRIVATE_BASE}cedar_metadata_records/{record._id}/'
         assert urlparse(data['links']['metadata_download']).path == f'/{API_PRIVATE_BASE}cedar_metadata_records/{record._id}/metadata_download/'
 
-    def test_record_list_create_for_file_with_write_contributor_auth(self, app, node_for_file, file, payload_file, cedar_template_alt, cedar_record_metadata_json):
+    def test_record_list_create_for_file_with_write_contributor_auth(self, app, node, file, payload_file, cedar_template_alt, cedar_record_metadata_json):
 
         write = AuthUserFactory()
-        node_for_file.add_contributor(write, permissions=WRITE)
-        node_for_file.save()
+        node.add_contributor(write, permissions=WRITE)
+        node.save()
 
         resp = app.post_json('/_/cedar_metadata_records/', payload_file, auth=write.auth)
         assert resp.status_code == 201
@@ -312,11 +312,11 @@ class TestCedarMetadataRecordListCreateForFiles(TestCedarMetadataRecord):
         assert urlparse(data['links']['self']).path == f'/{API_PRIVATE_BASE}cedar_metadata_records/{record._id}/'
         assert urlparse(data['links']['metadata_download']).path == f'/{API_PRIVATE_BASE}cedar_metadata_records/{record._id}/metadata_download/'
 
-    def test_record_list_create_for_file_with_read_auth(self, app, node_for_file, payload_file):
+    def test_record_list_create_for_file_with_read_auth(self, app, node, payload_file):
 
         read = AuthUserFactory()
-        node_for_file.add_contributor(read, permissions=READ)
-        node_for_file.save()
+        node.add_contributor(read, permissions=READ)
+        node.save()
 
         resp = app.post_json('/_/cedar_metadata_records/', payload_file, auth=read.auth, expect_errors=True)
         assert resp.status_code == 403
