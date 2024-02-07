@@ -37,12 +37,16 @@ class TestCedarMetadataRecord(object):
         return ProjectFactory(creator=user, is_public=True)
 
     @pytest.fixture()
+    def node_for_file(self, user):
+        return ProjectFactory(creator=user, is_public=True)
+
+    @pytest.fixture()
     def registration(self, user):
         return RegistrationFactory(creator=user)
 
     @pytest.fixture()
-    def file(self, user, node):
-        return create_test_file(node, user, create_guid=True)
+    def file(self, user, node_for_file):
+        return create_test_file(node_for_file, user, create_guid=True)
 
     @pytest.fixture()
     def cedar_template_json(self):
