@@ -196,7 +196,7 @@ class SpamMixin(models.Model):
             return
 
         request_kwargs = {
-            'remote_addr': request_headers.get('Remote-Addr') or request_headers['Host'],  # for local testing
+            'remote_addr': request_headers.get('Remote-Addr') or request_headers.get('Host'),  # for local testing
             'user_agent': request_headers.get('User-Agent'),
             'referer': request_headers.get('Referer'),
         }

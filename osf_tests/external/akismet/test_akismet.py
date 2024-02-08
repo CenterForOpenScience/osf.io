@@ -10,6 +10,7 @@ from osf_tests.factories import (
     ConferenceFactory
 )
 from osf.models import NodeLog, SpamStatus
+from osf.external.spam import tasks as spam_tasks
 
 from website import settings
 
@@ -29,7 +30,8 @@ class TestUserSpamAkismet:
             for _ in range(2)
         ]
         test_user.social['profileWebsites'] = ['osf.io', 'cos.io']
-        test_user.save()
+        with mock.patch.object(spam_tasks.requests, 'head'):
+            test_user.save()
         return test_user
 
     def test_get_spam_content(self, user):
@@ -48,13 +50,15 @@ class TestUserSpamAkismet:
         # contents instead of the concatenated list in order to enable easier, more accurate comparison
         returned_content_elements = sorted(returned_content_string.split(' '))
         expected_content_elements = sorted(expected_content_string.split(' '))
+        print(returned_content_elements, expected_content_string)
         assert returned_content_elements == expected_content_elements
 
     @pytest.mark.enable_enqueue_task
     def test_do_check_spam(self, user, mock_akismet):
         suspicious_content = 'spam eggs sausage and spam'
         user.spam_data = {'Referrer': 'Woo', 'User-Agent': 'yay', 'Remote-Addr': 'ok'}
-        user.save()
+        with mock.patch.object(spam_tasks.requests, 'head'):
+            user.save()
         with mock.patch('osf.models.user.OSFUser._get_spam_content', mock.Mock(return_value=suspicious_content)):
             with responses.RequestsMock(assert_all_requests_are_fired=False) as rsps:
                 rsps.add(responses.POST, f'https://none.rest.akismet.com/1.1/comment-check', status=200, body='true')
@@ -81,11 +85,13 @@ class TestUserSpamAkismet:
     def test_check_spam(self, mock_do_check_spam, user):
 
         # test check_spam for other saved fields
-        assert user.check_spam(saved_fields={'fullname': 'Dusty Rhodes'}, request_headers=None) is False
+        with mock.patch.object(spam_tasks.requests, 'head'):
+            assert user.check_spam(saved_fields={'fullname': 'Dusty Rhodes'}, request_headers=None) is False
         assert mock_do_check_spam.call_count == 0
 
         # test check spam for correct saved_fields
-        user.check_spam(saved_fields={'schools': [{'institution': 'UVA'}]}, request_headers=None)
+        with mock.patch.object(spam_tasks.requests, 'head'):
+            user.check_spam(saved_fields={'schools': [{'institution': 'UVA'}]}, request_headers=None)
         assert mock_do_check_spam.call_count == 1
 
 

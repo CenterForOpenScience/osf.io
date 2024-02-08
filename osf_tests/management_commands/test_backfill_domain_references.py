@@ -49,7 +49,8 @@ class TestBackfillDomainReferences:
     def test_user(self, spam_domain):
         user = UserFactory()
         user.social['profileWebsites'] = [spam_domain.geturl()]
-        user.save()
+        with mock.patch.object(backfill_task.spam_tasks.requests, 'head'):
+            user.save()
         return user
 
     @pytest.mark.enable_enqueue_task
@@ -223,6 +224,8 @@ class TestBackfillDomainReferences:
 
     @pytest.mark.enable_enqueue_task
     def test_backfill_user_domain_references(self, test_user, spam_domain):
+        # delete DomainReference's created on test_user save()
+        DomainReference.objects.all().delete()
         assert DomainReference.objects.count() == 0
         with mock.patch.object(backfill_task.spam_tasks.requests, 'head'):
             backfill_task.backfill_domain_references(model_name='osf.OSFUser')
@@ -236,6 +239,9 @@ class TestBackfillDomainReferences:
 
     @pytest.mark.enable_enqueue_task
     def test_backfill_user_domain_references__only_selected_once(self, test_user):
+        # Delete domains created on user save to simulate a backfill
+        NotableDomain.objects.all().delete()
+
         with mock.patch.object(backfill_task.spam_tasks.requests, 'head'):
             initial_resource_count = backfill_task.backfill_domain_references(model_name='osf.OSFUser')
             subsequent_resource_count = backfill_task.backfill_domain_references(model_name='osf.OSFUser')
@@ -243,10 +249,15 @@ class TestBackfillDomainReferences:
         assert subsequent_resource_count == 0
 
     @pytest.mark.enable_enqueue_task
-    def test_backfill_user_domain_references__resources_without_domains_ignored(self, test_user):
-        # User without links
-        UserFactory()
+    def test_backfill_user_domain_references__resources_without_domains_ignored(self, test_user, spam_domain):
+        # Delete domains created on user save to simulate a backfill
+        NotableDomain.objects.all().delete()
+
+        # User without links, to be ignored
+        with mock.patch.object(backfill_task.spam_tasks.requests, 'head'):
+            UserFactory().save()
+
         with mock.patch.object(backfill_task.spam_tasks.requests, 'head'):
             resource_count = backfill_task.backfill_domain_references(model_name='osf.OSFUser')
-        # Just the test_user retrieved
+        # Just the test_user counted
         assert resource_count == 1
