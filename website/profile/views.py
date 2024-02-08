@@ -701,7 +701,6 @@ def unserialize_social(auth, **kwargs):
 
     try:
         user.save()
-        user.check_spam(saved_fields=None, request_headers=request.headers)
     except ValidationError as exc:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
             message_long=exc.messages[0]

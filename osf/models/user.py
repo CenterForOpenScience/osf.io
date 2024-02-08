@@ -58,6 +58,7 @@ from website import filters, mails
 from website.project import new_bookmark_collection
 from website.util.metrics import OsfSourceTags
 from importlib import import_module
+from osf.utils.requests import get_headers_from_request
 
 SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
 
@@ -1025,8 +1026,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         self.update_is_active()
         self.username = self.username.lower().strip() if self.username else None
-        dirty_fields = set(self.get_dirty_fields(check_relationship=True))
-        ret = super(OSFUser, self).save(*args, **kwargs)
+        dirty_fields = self.get_dirty_fields(check_relationship=True)
+        ret = super(OSFUser, self).save(*args, **kwargs)  # must save BEFORE spam check, as user needs guid.
+        if set(self.SPAM_USER_PROFILE_FIELDS.keys()).intersection(dirty_fields):
+            request = get_current_request()
+            headers = get_headers_from_request(request)
+            self.check_spam(dirty_fields, request_headers=headers)
+
+        dirty_fields = set(dirty_fields)
         if self.SEARCH_UPDATE_FIELDS.intersection(dirty_fields) and self.is_confirmed:
             self.update_search()
             self.update_search_nodes_contributors()
@@ -1859,28 +1866,55 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return self.comments_viewed_timestamp.get(target_id, default_timestamp)
 
     def _get_spam_content(self, saved_fields=None, **unused_kwargs):
+        """
+        Retrieves content for spam checking from specified fields.
+        Sometimes from validated serializer data, sometimes from
+        dirty_fields.
+
+        Parameters:
+        - saved_fields (dict): Fields that have been saved and their values.
+        - unused_kwargs: Ignored additional keyword arguments.
+
+        Returns:
+        - str: A string containing the spam check contents, joined by spaces.
+        """
+        # Determine which fields to check for spam.
         spam_check_fields = set(self.SPAM_USER_PROFILE_FIELDS.keys())
-        spam_check_source = {}
+
+        # Decide the source of the fields to check: either use 'saved_fields' if provided, or the object's attributes.
         if saved_fields:
             spam_check_source = saved_fields
-            spam_check_fields = spam_check_fields.intersection(set(saved_fields.keys()))
+            # Only check fields that are both in 'saved_fields' and 'SPAM_USER_PROFILE_FIELDS'.
+            spam_check_fields = spam_check_fields.intersection(saved_fields.keys())
         else:
             spam_check_source = {field: getattr(self, field) for field in spam_check_fields}
 
-        spam_check_contents = []
-        for spam_field in spam_check_fields:
-            spam_field_content = spam_check_source[spam_field]
-            if not spam_field_content:
-                continue
-            if spam_field in ['schools', 'jobs']:
-                spam_check_contents.extend(
-                    _get_nested_spam_check_content(spam_check_source, spam_field)
-                )
-            else:  # Only other currently checked field is social['profileWebsites']
-                spam_check_contents.extend(
-                    spam_check_source.get('social', dict()).get('profileWebsites', list())
-                )
-        return ' '.join(spam_check_contents).strip()
+        spam_contents = []
+        for field in spam_check_fields:
+            # Check if the field's value is present, if not it's from
+            # dirty fields, so fetch it.
+            if not spam_check_source[field]:
+                value = getattr(self, field)
+                # Special handling for the 'social' field to extract 'profileWebsites'.
+                if field == 'social':
+                    websites = value.get('profileWebsites', [])
+                    spam_contents.extend(websites)
+                else:
+                    # Handle nested spam check content for other fields.
+                    nested_contents = _get_nested_spam_check_content(spam_check_source, field)
+                    spam_contents.extend(nested_contents)
+            else:
+                # For 'schools' and 'jobs', always extract nested spam check content.
+                if field in ['schools', 'jobs']:
+                    nested_contents = _get_nested_spam_check_content(spam_check_source, field)
+                    spam_contents.extend(nested_contents)
+                else:
+                    # Extract 'profileWebsites' directly for the 'social' field.
+                    websites = spam_check_source.get('social', {}).get('profileWebsites', [])
+                    spam_contents.extend(websites)
+
+        # Join all collected spam check contents into a single string.
+        return ' '.join(spam_contents).strip()
 
     def check_spam(self, saved_fields, request_headers):
         is_spam = False
