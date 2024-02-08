@@ -105,7 +105,7 @@ def send_mail(
     # Don't use ttls and login in DEBUG_MODE
     ttls = login = not settings.DEBUG_MODE
     logger.debug('Sending email...')
-    logger.debug(fu'To: {to_addr}\nFrom: {from_addr}\nSubject: {subject}\nMessage: {message}')
+    logger.debug(f'To: {to_addr}\nFrom: {from_addr}\nSubject: {subject}\nMessage: {message}')
 
     kwargs = dict(
         from_addr=from_addr,

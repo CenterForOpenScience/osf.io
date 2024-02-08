@@ -1,7 +1,7 @@
 from enum import Enum
 from future.moves.urllib.parse import urljoin
 import logging
-from collections.abc import Iterable
+from typing import Iterable
 
 from dirtyfields import DirtyFieldsMixin
 
@@ -57,14 +57,13 @@ class InstitutionManager(models.Manager):
 
 
 class Institution(DirtyFieldsMixin, Loggable, ObjectIDMixin, BaseModel, GuardianMixin):
-
     objects = InstitutionManager()
 
     # TODO Remove null=True for things that shouldn't be nullable
     # e.g. CharFields should never be null=True
 
     INSTITUTION_GROUPS = {
-        'institutional_admins': ('view_institutional_metrics', ),
+        'institutional_admins': ('view_institutional_metrics',),
     }
     group_format = 'institution_{self._id}_{group}'
     groups = INSTITUTION_GROUPS

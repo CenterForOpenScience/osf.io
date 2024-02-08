@@ -1,6 +1,6 @@
 import logging
 import random
-from collections.abc import Iterable
+from typing import Iterable
 
 import bson
 from django.contrib.contenttypes.fields import (GenericForeignKey,
@@ -79,6 +79,7 @@ class QuerySetExplainMixin:
         cursor.execute('explain analyze verbose %s' % query, params)
         return '\n'.join(r[0] for r in cursor.fetchall())
 
+
 QuerySet = type('QuerySet', (QuerySetExplainMixin, QuerySet), dict(QuerySet.__dict__))
 
 
@@ -94,19 +95,21 @@ class BaseModel(TimeStampedModel, QuerySetExplainMixin):
         return f'{self.id}'
 
     def to_storage(self, include_auto_now=True):
-        local_django_fields = {x.name for x in self._meta.concrete_fields if include_auto_now or not getattr(x, 'auto_now', False)}
+        local_django_fields = {x.name for x in self._meta.concrete_fields if
+                               include_auto_now or not getattr(x, 'auto_now', False)}
         return {name: self.serializable_value(name) for name in local_django_fields}
 
     @classmethod
     def get_fk_field_names(cls):
         return [field.name for field in cls._meta.get_fields() if
-                    field.is_relation and not field.auto_created and (field.many_to_one or field.one_to_one) and not isinstance(field, GenericForeignKey)]
+                field.is_relation and not field.auto_created and (
+                            field.many_to_one or field.one_to_one) and not isinstance(field, GenericForeignKey)]
 
     @classmethod
     def get_m2m_field_names(cls):
         return [field.attname or field.name for field in
-                     cls._meta.get_fields() if
-                     field.is_relation and field.many_to_many and not hasattr(field, 'field')]
+                cls._meta.get_fields() if
+                field.is_relation and field.many_to_many and not hasattr(field, 'field')]
 
     @classmethod
     def load(cls, data, select_for_update=False):
@@ -114,8 +117,10 @@ class BaseModel(TimeStampedModel, QuerySetExplainMixin):
             if isinstance(data, basestring):
                 # Some models (CitationStyle) have an _id that is not a bson
                 # Looking up things by pk will never work with a basestring
-                return cls.objects.get(_id=data) if not select_for_update else cls.objects.filter(_id=data).select_for_update().get()
-            return cls.objects.get(pk=data) if not select_for_update else cls.objects.filter(pk=data).select_for_update().get()
+                return cls.objects.get(_id=data) if not select_for_update else cls.objects.filter(
+                    _id=data).select_for_update().get()
+            return cls.objects.get(pk=data) if not select_for_update else cls.objects.filter(
+                pk=data).select_for_update().get()
         except cls.DoesNotExist:
             return None
 
@@ -153,7 +158,8 @@ class BaseModel(TimeStampedModel, QuerySetExplainMixin):
         copy.id = None
 
         # empty all the fks
-        fk_field_names = [f.name for f in self._meta.model._meta.get_fields() if isinstance(f, (ForeignKey, GenericForeignKey))]
+        fk_field_names = [f.name for f in self._meta.model._meta.get_fields() if
+                          isinstance(f, (ForeignKey, GenericForeignKey))]
         for field_name in fk_field_names:
             setattr(copy, field_name, None)
 
@@ -193,7 +199,7 @@ class Guid(BaseModel):
 
     id = models.AutoField(primary_key=True)
     _id = LowercaseCharField(max_length=255, null=False, blank=False, default=generate_guid, db_index=True,
-                           unique=True)
+                             unique=True)
     referent = GenericForeignKey()
     content_type = models.ForeignKey(ContentType, null=True, blank=True, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField(null=True, blank=True)
@@ -206,7 +212,8 @@ class Guid(BaseModel):
     @classmethod
     def load(cls, data, select_for_update=False):
         try:
-            return cls.objects.get(_id=data) if not select_for_update else cls.objects.filter(_id=data).select_for_update().get()
+            return cls.objects.get(_id=data) if not select_for_update else cls.objects.filter(
+                _id=data).select_for_update().get()
         except cls.DoesNotExist:
             return None
 
@@ -225,6 +232,7 @@ class BlackListGuid(BaseModel):
     @property
     def _id(self):
         return self.guid
+
 
 def generate_guid_instance():
     return Guid.objects.create().id
@@ -257,7 +265,8 @@ class ObjectIDMixin(BaseIDMixin):
     @classmethod
     def load(cls, q, select_for_update=False):
         try:
-            return cls.objects.get(_id=q) if not select_for_update else cls.objects.filter(_id=q).select_for_update().get()
+            return cls.objects.get(_id=q) if not select_for_update else cls.objects.filter(
+                _id=q).select_for_update().get()
         except cls.DoesNotExist:
             # modm doesn't throw exceptions when loading things that don't exist
             return None
@@ -276,7 +285,8 @@ class TypedObjectIDMixin(ObjectIDMixin):
     @classmethod
     def load(cls, q, select_for_update=False):
         try:
-            return cls.objects.get(_id=q, type=cls._typedmodels_type) if not select_for_update else cls.objects.filter(_id=q, type=cls._typedmodels_type).select_for_update().get()
+            return cls.objects.get(_id=q, type=cls._typedmodels_type) if not select_for_update else cls.objects.filter(
+                _id=q, type=cls._typedmodels_type).select_for_update().get()
         except cls.DoesNotExist:
             # modm doesn't throw exceptions when loading things that don't exist
             return None
@@ -363,6 +373,7 @@ class GuidMixin(BaseIDMixin):
     content_type_pk = models.PositiveIntegerField(null=True, blank=True)
 
     objects = GuidMixinQuerySet.as_manager()
+
     # TODO: use pre-delete signal to disable delete cascade
 
     def __unicode__(self):
@@ -437,7 +448,8 @@ class GuidMixin(BaseIDMixin):
 def ensure_guid(sender, instance, created, **kwargs):
     if not issubclass(sender, GuidMixin):
         return False
-    existing_guids = Guid.objects.filter(object_id=instance.pk, content_type=ContentType.objects.get_for_model(instance))
+    existing_guids = Guid.objects.filter(object_id=instance.pk,
+                                         content_type=ContentType.objects.get_for_model(instance))
     has_cached_guids = hasattr(instance, '_prefetched_objects_cache') and 'guids' in instance._prefetched_objects_cache
     if not existing_guids.exists():
         # Clear query cache of instance.guids
