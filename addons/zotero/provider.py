@@ -101,7 +101,7 @@ class ZoteroCitationsProvider(CitationsProvider):
                 ancestor_id = folders[list_id].get('parent_list_id')
 
             while ancestor_id != attached_list_id:
-                if ancestor_id is '__':
+                if ancestor_id == '__':
                     raise HTTPError(http_status.HTTP_403_FORBIDDEN)
                 ancestor_id = folders[ancestor_id].get('parent_list_id')
 

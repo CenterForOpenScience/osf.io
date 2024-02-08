@@ -172,7 +172,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
         ret = []
         for item in c.list(path):
-            if item.file_type is 'dir':
+            if item.file_type == 'dir':
                 ret.append({
                     'addon': 'owncloud',
                     'path': item.path,
