@@ -193,11 +193,13 @@ class ApiAddonTestCase(ApiTestCase):
     """
     DISABLE_OUTGOING_CONNECTIONS = True
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def short_name(self):
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def addon_type(self):
         pass
 

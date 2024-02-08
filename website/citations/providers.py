@@ -12,7 +12,8 @@ class CitationsOauthProvider(ExternalProvider):
 
     _client = None
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def serializer(self):
         pass
 
@@ -76,11 +77,13 @@ class CitationsProvider:
 
     __metaclass__ = abc.ABCMeta
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def serializer(self):
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def provider_name(self):
         pass
 

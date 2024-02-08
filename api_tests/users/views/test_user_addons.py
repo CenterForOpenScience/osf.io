@@ -386,7 +386,8 @@ class UserAddonTestSuiteMixin(
 class UserOAuthAddonTestSuiteMixin(UserAddonTestSuiteMixin):
     addon_type = 'OAUTH'
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def AccountFactory(self):
         pass
 

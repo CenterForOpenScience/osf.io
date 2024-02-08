@@ -130,7 +130,8 @@ class ExternalProvider(with_metaclass(ExternalProviderMeta)):
             status=self.account.provider_id if self.account else 'anonymous'
         )
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def auth_url_base(self):
         """The base URL to begin the OAuth dance"""
         pass
@@ -196,29 +197,34 @@ class ExternalProvider(with_metaclass(ExternalProviderMeta)):
         current_session.save()
         return url
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def callback_url(self):
         """The provider URL to exchange the code for a token"""
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def client_id(self):
         """OAuth Client ID. a/k/a: Application ID"""
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def client_secret(self):
         """OAuth Client Secret. a/k/a: Application Secret, Application Key"""
         pass
 
     default_scopes = list()
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def name(self):
         """Human-readable name of the service. e.g.: ORCiD, GitHub"""
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def short_name(self):
         """Name of the service to be used internally. e.g.: orcid, github"""
         pass

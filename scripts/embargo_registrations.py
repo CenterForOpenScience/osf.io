@@ -29,7 +29,7 @@ def main(dry_run=True):
     for embargo in pending_embargoes:
         if should_be_embargoed(embargo):
             if dry_run:
-                logger.warn('Dry run mode')
+                logger.warning('Dry run mode')
             try:
                 parent_registration = Registration.objects.get(embargo=embargo)
             except Registration.DoesNotExist:
@@ -37,7 +37,7 @@ def main(dry_run=True):
                     f'Embargo {embargo._id} is not attached to a registration'
                 )
                 continue
-            logger.warn(
+            logger.warning(
                 'Embargo {} approved. Activating embargo for registration {}'
                 .format(embargo._id, parent_registration._id)
             )
@@ -68,9 +68,9 @@ def main(dry_run=True):
     for embargo in active_embargoes:
         if embargo.end_date < timezone.now() and not embargo.is_deleted:
             if dry_run:
-                logger.warn('Dry run mode')
+                logger.warning('Dry run mode')
             parent_registration = Registration.objects.get(embargo=embargo)
-            logger.warn(
+            logger.warning(
                 'Embargo {} complete. Making registration {} public'
                 .format(embargo._id, parent_registration._id)
             )

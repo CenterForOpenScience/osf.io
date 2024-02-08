@@ -73,7 +73,7 @@ class OsfStorageFileNode(BaseFileNode):
     @materialized_path.setter
     def materialized_path(self, val):
         # raise Exception('Cannot set materialized path on OSFStorage as it is computed.')
-        logger.warn('Cannot set materialized path on OSFStorage because it\'s computed.')
+        logger.warning('Cannot set materialized path on OSFStorage because it\'s computed.')
 
     @classmethod
     def get(cls, _id, target):
@@ -302,7 +302,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
     @history.setter
     def history(self, value):
-        logger.warn('Tried to set history on OsfStorageFile/Folder')
+        logger.warning('Tried to set history on OsfStorageFile/Folder')
 
     def serialize(self, include_full=None, version=None):
         ret = super().serialize()

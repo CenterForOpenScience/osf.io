@@ -109,7 +109,7 @@ def migrate_responses(resources, resource_name, dry_run=False, rows='all'):
 
     logger.info(f'Successfully migrated {success_count} out of {total_count} {resource_name}.')
     if error_count:
-        logger.warn(f'Encountered errors on {error_count} out of {total_count} {resource_name}.')
+        logger.warning(f'Encountered errors on {error_count} out of {total_count} {resource_name}.')
         if not success_count:
             sentry.log_message(f'`migrate_registration_responses` has only errors left ({error_count} errors)')
 

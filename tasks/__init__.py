@@ -688,7 +688,7 @@ def latest_tag_info():
         ).decode().split('-')
     except subprocess.CalledProcessError as err:
         raise err
-        # logger.warn("Error when running git describe")
+        # logger.warning("Error when running git describe")
         return {}
 
     info = {}

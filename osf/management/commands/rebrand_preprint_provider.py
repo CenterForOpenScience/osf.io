@@ -64,11 +64,11 @@ def delete_old_provider(src_id):
     assert src_prov.subjects.annotate(pc=Count('preprints')).filter(pc__gt=0).count() == 0, f'Provider {src_id} still has used subjects'
 
     # I don't trust CASCADE deletes to be set up correctly
-    logger.warn('Deleting Assets: {}'.format(src_prov.asset_files.annotate(pc=Count('providers')).filter(pc=1).delete()))
-    logger.warn(f'Deleting Groups: {src_prov.group_objects.delete()}')
-    logger.warn(f'Deleting Subjects: {src_prov.subjects.all().delete()}')
-    logger.warn(f'Deleting Subscriptions: {src_prov.notification_subscriptions.all().delete()}')
-    logger.warn(f'Deleting Provider: {src_prov.delete()}')
+    logger.warning('Deleting Assets: {}'.format(src_prov.asset_files.annotate(pc=Count('providers')).filter(pc=1).delete()))
+    logger.warning(f'Deleting Groups: {src_prov.group_objects.delete()}')
+    logger.warning(f'Deleting Subjects: {src_prov.subjects.all().delete()}')
+    logger.warning(f'Deleting Subscriptions: {src_prov.notification_subscriptions.all().delete()}')
+    logger.warning(f'Deleting Provider: {src_prov.delete()}')
 
 def reindex_share(dst_id, dry_run):
     dst_prov = PreprintProvider.load(dst_id)

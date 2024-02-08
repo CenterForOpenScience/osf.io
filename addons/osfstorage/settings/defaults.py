@@ -29,7 +29,7 @@ try:
     mod = importlib.import_module(f'.{settings.MIGRATION_ENV}', package='addons.osfstorage.settings')
     globals().update({k: getattr(mod, k) for k in dir(mod)})
 except Exception as ex:
-    logger.warn(f'No migration settings loaded for OSFStorage, falling back to local dev. {ex}')
+    logger.warning(f'No migration settings loaded for OSFStorage, falling back to local dev. {ex}')
 
 # Max file size permitted by frontend in megabytes
 MAX_UPLOAD_SIZE = 5 * 1024  # 5 GB

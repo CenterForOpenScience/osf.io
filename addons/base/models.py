@@ -640,19 +640,22 @@ class BaseOAuthNodeSettings(BaseNodeSettings):
     class Meta:
         abstract = True
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def folder_id(self):
         raise NotImplementedError(
             "BaseOAuthNodeSettings subclasses must expose a 'folder_id' property."
         )
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def folder_name(self):
         raise NotImplementedError(
             "BaseOAuthNodeSettings subclasses must expose a 'folder_name' property."
         )
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def folder_path(self):
         raise NotImplementedError(
             "BaseOAuthNodeSettings subclasses must expose a 'folder_path' property."

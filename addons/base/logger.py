@@ -8,7 +8,8 @@ class AddonNodeLogger:
     """
     __metaclass__ = abc.ABCMeta
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def addon_short_name(self):
         pass
 

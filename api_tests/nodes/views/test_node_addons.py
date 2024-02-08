@@ -601,11 +601,13 @@ class NodeAddonTestSuiteMixin(
 class NodeOAuthAddonTestSuiteMixin(NodeAddonTestSuiteMixin):
     addon_type = 'OAUTH'
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def AccountFactory(self):
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def NodeSettingsFactory(self):
         pass
 

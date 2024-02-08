@@ -13,11 +13,13 @@ class AddonSerializerTestSuiteMixin:
 
     __metaclass__ = abc.ABCMeta
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def Serializer(self):
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def ExternalAccountFactory(self):
         pass
 
@@ -29,11 +31,13 @@ class AddonSerializerTestSuiteMixin:
     def set_node_settings(self, user_settings):
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def required_settings(self):
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def required_settings_authorized(self):
         pass
 
@@ -166,7 +170,8 @@ class StorageAddonSerializerTestSuiteMixin(OAuthAddonSerializerTestSuiteMixin):
     required_settings = ('userIsOwner', 'nodeHasAuth', 'urls', 'userHasAuth')
     required_settings_authorized = ('ownerName', )
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def client(self):
         """Provide a mocked version of this provider's client (i.e. the client should not make
         acutal API calls).
@@ -217,7 +222,8 @@ class CitationAddonSerializerTestSuiteMixin(OAuthAddonSerializerTestSuiteMixin):
     required_settings = ('userIsOwner', 'nodeHasAuth', 'urls', 'userHasAuth')
     required_settings_authorized = ('ownerName', )
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def folder(self):
         pass
 

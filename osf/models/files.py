@@ -394,7 +394,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         return self.absolute_api_v2_url
 
     def _repoint_guids(self, updated):
-        logger.warn('BaseFileNode._repoint_guids is deprecated.')
+        logger.warning('BaseFileNode._repoint_guids is deprecated.')
 
     def _update_node(self, recursive=True, save=True):
         if self.parent is not None:
@@ -611,7 +611,7 @@ class Folder(models.Model):
 
     def _create_child(self, name, kind, path=None, materialized_path=None, save=True):
         if not self.pk:
-            logger.warn('BaseFileNode._create_child caused an implicit save because you just created a child with an unsaved parent.')
+            logger.warning('BaseFileNode._create_child caused an implicit save because you just created a child with an unsaved parent.')
             self.save()
 
         target_content_type = ContentType.objects.get_for_model(self.target)
@@ -685,7 +685,7 @@ class TrashedFileNode(BaseFileNode):
             return: Bytes deleted
         """
         if not client:
-            logger.warn(f'No GCS Client detected. Not purging BFN {self.id}')
+            logger.warning(f'No GCS Client detected. Not purging BFN {self.id}')
             return 0
         freed = 0
         for version in self.versions.all():
@@ -697,7 +697,7 @@ class TrashedFileNode(BaseFileNode):
 
     def _unpurge(self, client=None, save=True):
         if not client:
-            logger.warn(f'No GCS Client detected. Not unpurging BFN {self.id}')
+            logger.warning(f'No GCS Client detected. Not unpurging BFN {self.id}')
             return 0
         consumed = self.versions.latest()._unpurge(client=client, save=save)
         self.purged = None
@@ -812,24 +812,24 @@ class FileVersion(ObjectIDMixin, BaseModel):
 
     def _purge(self, client=None, save=True):
         if not client:
-            logger.warn(f'No GCS Client detected. Not purging FV {self.id}')
+            logger.warning(f'No GCS Client detected. Not purging FV {self.id}')
             return 0
         if self.basefilenode_set.filter(deleted__isnull=True).exists():
-            logger.warn(f'Live file detected. Not purging FV {self.id}')
+            logger.warning(f'Live file detected. Not purging FV {self.id}')
             return 0
         if not self.location or not self.location.get('object'):
-            logger.warn(f'No valid location detected. Not purging FV {self.id}')
+            logger.warning(f'No valid location detected. Not purging FV {self.id}')
             return 0
         dup = FileVersion.objects.exclude(id=self.id).filter(location__object=self.location['object'], basefilenode__deleted__isnull=True).first()
         if dup:
-            logger.warn(f'Duplicate live file detected on FV {dup.id}. Not purging FV {self.id}')
+            logger.warning(f'Duplicate live file detected on FV {dup.id}. Not purging FV {self.id}')
             return 0
         bucket = client.get_bucket(self.location['bucket'])
         blob = bucket.get_blob(self.location['object'])
         if blob:
             blob.delete()
         else:
-            logger.warn(f'Blob not found for FV {self.id}. Marking as purged.')
+            logger.warning(f'Blob not found for FV {self.id}. Marking as purged.')
         self.purged = timezone.now()
         if save:
             self.save()
@@ -839,7 +839,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
         if not self.purged:
             return 0
         if not client:
-            logger.warn(f'No GCS Credentials detected. Not unpurging FV {self.id}')
+            logger.warning(f'No GCS Credentials detected. Not unpurging FV {self.id}')
             return 0
         backup_bucket = client.get_bucket('{}-backup'.format(self.location['bucket']))
         bucket = client.get_bucket(self.location['bucket'])

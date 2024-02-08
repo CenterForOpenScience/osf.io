@@ -414,7 +414,7 @@ def verify_registrations(registration_ids):
     for r_id in registration_ids:
         reg = Registration.load(r_id)
         if not reg:
-            logger.warn(f'Registration {r_id} not found')
+            logger.warning(f'Registration {r_id} not found')
         else:
             if verify(reg):
                 VERIFIED.append(reg)
@@ -437,7 +437,7 @@ def check(reg):
     else:
         still_archiving = not archive_tree_finished
     if still_archiving and root_job.datetime_initiated < expired_if_before:
-        logger.warn(f'Registration {reg._id} is stuck in archiving')
+        logger.warning(f'Registration {reg._id} is stuck in archiving')
         if verify(reg):
             logger.info(f'Registration {reg._id} verified recoverable')
             CHECKED_STUCK_RECOVERABLE.append(reg)
@@ -452,7 +452,7 @@ def check_registrations(registration_ids):
     for r_id in registration_ids:
         reg = Registration.load(r_id)
         if not reg:
-            logger.warn(f'Registration {r_id} not found')
+            logger.warning(f'Registration {r_id} not found')
         else:
             check(reg)
 
@@ -462,7 +462,7 @@ def log_results(dry_run):
     if CHECKED_STUCK_RECOVERABLE:
         logger.info(f'{len(CHECKED_STUCK_RECOVERABLE)} registrations stuck but recoverable: {[e._id for e in CHECKED_STUCK_RECOVERABLE]}')
     if CHECKED_STUCK_BROKEN:
-        logger.warn(f'{len(CHECKED_STUCK_BROKEN)} registrations stuck and unrecoverable: {[e._id for e in CHECKED_STUCK_BROKEN]}')
+        logger.warning(f'{len(CHECKED_STUCK_BROKEN)} registrations stuck and unrecoverable: {[e._id for e in CHECKED_STUCK_BROKEN]}')
 
     if VERIFIED:
         logger.info('{} registrations verified: {}'.format(

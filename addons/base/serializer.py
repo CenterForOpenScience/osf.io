@@ -12,23 +12,28 @@ class AddonSerializer:
         self.node_settings = node_settings
         self.user_settings = user_settings
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def addon_short_name(self):
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def addon_serialized_urls(self):
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def serialized_urls(self):
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def user_is_owner(self):
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def credentials_owner(self):
         pass
 

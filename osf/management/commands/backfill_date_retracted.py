@@ -28,7 +28,7 @@ def set_date_retracted(*args):
 
     for registration in registrations:
         if not registration.registered_from:
-            logger.warn(f'Skipping failed registration {registration._id}')
+            logger.warning(f'Skipping failed registration {registration._id}')
             continue
         retraction_logs = registration.registered_from.logs.filter(action='retraction_approved', params__retraction_id=registration.retraction._id)
         if retraction_logs.count() != 1 and retraction_logs.first().date - retraction_logs.last().date > timedelta(seconds=5):

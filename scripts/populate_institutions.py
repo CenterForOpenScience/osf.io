@@ -87,7 +87,7 @@ def main(default_args=False):
         for inst_data in institutions_to_update:
             update_or_create(inst_data)
         for extra_inst in Institution.objects.exclude(_id__in=[x['_id'] for x in institutions]):
-            logger.warn(f'Extra Institution : {extra_inst._id} - {extra_inst.name}')
+            logger.warning(f'Extra Institution : {extra_inst._id} - {extra_inst.name}')
 
 
 INSTITUTIONS = {

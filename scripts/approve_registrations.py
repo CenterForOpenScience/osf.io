@@ -32,7 +32,7 @@ def main(dry_run=True):
 
     for registration_approval in approvals_past_pending:
         if dry_run:
-            logger.warn('Dry run mode')
+            logger.warning('Dry run mode')
         try:
             pending_registration = models.Registration.objects.get(registration_approval=registration_approval)
         except models.Registration.DoesNotExist:
@@ -40,7 +40,7 @@ def main(dry_run=True):
                 f'RegistrationApproval {registration_approval._id} is not attached to a registration'
             )
             continue
-        logger.warn(
+        logger.warning(
             'RegistrationApproval {} automatically approved by system. Making registration {} public.'
             .format(registration_approval._id, pending_registration._id)
         )

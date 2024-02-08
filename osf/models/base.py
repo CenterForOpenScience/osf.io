@@ -305,7 +305,7 @@ class OptionalGuidMixin(BaseIDMixin):
 
     def get_guid(self, create=False):
         if not self.pk:
-            logger.warn('Implicitly saving object before creating guid')
+            logger.warning('Implicitly saving object before creating guid')
             self.save()
         if create:
             try:

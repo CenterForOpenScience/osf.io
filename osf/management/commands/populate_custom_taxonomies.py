@@ -106,7 +106,7 @@ def create_from_subjects_acceptable(custom_provider, add_missing=False, missing=
                 subjects_to_copy.append(subj.parent)
                 previous_len += 1
             else:
-                logger.warn('Failed. Retrying next iteration')
+                logger.warning('Failed. Retrying next iteration')
 
         new_len = len(subjects_to_copy)
         if new_len == previous_len:
@@ -151,7 +151,7 @@ def do_custom_mapping(custom_provider, customs):
             if map_custom_subject(custom_provider, cust_name, map_dict.get('parent'), map_dict.get('bepress')):
                 successes.append(cust_name)
             else:
-                logger.warn('Failed. Retrying next iteration')
+                logger.warning('Failed. Retrying next iteration')
         [unmapped_customs.pop(key) for key in successes]
         new_len = len(unmapped_customs)
         if new_len == previous_len:

@@ -24,15 +24,18 @@ class OAuthAddonModelTestSuiteMixinBase:
 
     ___metaclass__ = abc.ABCMeta
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def short_name(self):
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def full_name(self):
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def ExternalAccountFactory(self):
         pass
 
@@ -159,15 +162,18 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         yield context
         context.pop()
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def NodeSettingsFactory(self):
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def NodeSettingsClass(self):
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def UserSettingsFactory(self):
         pass
 
@@ -464,11 +470,13 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
 
 
 class OAuthCitationsTestSuiteMixinBase(OAuthAddonModelTestSuiteMixinBase):
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def ProviderClass(self):
         pass
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def OAuthProviderClass(self):
         pass
 
@@ -633,7 +641,8 @@ class OAuthCitationsNodeSettingsTestSuiteMixin(
 
 class CitationAddonProviderTestSuiteMixin(OAuthCitationsTestSuiteMixinBase):
 
-    @abc.abstractproperty
+    @property
+    @abc.abstractmethod
     def ApiExceptionClass(self):
         pass
 

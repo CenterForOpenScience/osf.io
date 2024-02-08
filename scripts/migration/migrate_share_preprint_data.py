@@ -38,7 +38,7 @@ def migrate(dry=True):
             # TODO: This reliably fails for certain nodes with
             # IncompleteRead(0 bytes read)
             failures.append(preprint_id)
-            logger.warn(f'Encountered exception {e} while posting to SHARE for preprint {preprint_id}')
+            logger.warning(f'Encountered exception {e} while posting to SHARE for preprint {preprint_id}')
         else:
             successes.append(preprint_id)
 

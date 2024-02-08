@@ -18,7 +18,7 @@ COMPLETED = 'completed'
 
 def log_to_sentry(message, **kwargs):
     if not settings.SENTRY_DSN:
-        return logger.warn('send_to_raven called with no SENTRY_DSN')
+        return logger.warning('send_to_raven called with no SENTRY_DSN')
     return sentry.captureMessage(message, extra=kwargs)
 
 # Use _index here as to not clutter the namespace for kwargs
