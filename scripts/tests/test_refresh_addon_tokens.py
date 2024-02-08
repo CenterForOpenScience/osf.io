@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-import mock
+from unittest import mock
 from django.utils import timezone
 from nose.tools import *  # noqa
 
@@ -24,11 +22,11 @@ from scripts.refresh_addon_tokens import (
 class TestRefreshTokens(OsfTestCase):
 
     def setUp(self):
-        super(TestRefreshTokens, self).setUp()
+        super().setUp()
         self.addons = ('box', 'googledrive', 'mendeley', )
 
     def tearDown(self):
-        super(TestRefreshTokens, self).tearDown()
+        super().tearDown()
         ExternalAccount.objects.all().delete()
 
     def test_look_up_provider(self):

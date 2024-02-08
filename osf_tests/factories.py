@@ -1,12 +1,11 @@
-# -*- coding: utf-8 -*-
 import time
 from importlib import import_module
 
 import datetime
-import mock
+from unittest import mock
 from factory import SubFactory
 from factory.fuzzy import FuzzyDateTime, FuzzyAttribute, FuzzyChoice
-from mock import patch, Mock
+from unittest.mock import patch, Mock
 
 import factory
 import pytz
@@ -41,7 +40,7 @@ from addons.osfstorage.models import OsfStorageFile, Region
 fake = Factory.create()
 
 # If tests are run on really old processors without high precision this might fail. Unlikely to occur.
-fake_email = lambda: '{}+{}@{}'.format(FAKE_EMAIL_NAME, int(time.clock() * 1000000), FAKE_EMAIL_DOMAIN)
+fake_email = lambda: f'{FAKE_EMAIL_NAME}+{int(time.clock() * 1000000)}@{FAKE_EMAIL_DOMAIN}'
 
 # Do this out of a cls context to avoid setting "t" as a local
 PROVIDER_ASSET_NAME_CHOICES = tuple([t[0] for t in PROVIDER_ASSET_NAME_CHOICES])
@@ -61,7 +60,7 @@ def FakeList(provider, n, *args, **kwargs):
 
 class UserFactory(DjangoModelFactory):
     # TODO: Change this to only generate long names and see what breaks
-    fullname = factory.Sequence(lambda n: 'Freddie Mercury{0}'.format(n))
+    fullname = factory.Sequence(lambda n: f'Freddie Mercury{n}')
 
     username = factory.LazyFunction(fake_email)
     password = factory.PostGenerationMethodCall('set_password', 'queenfan86', notify=False)
@@ -134,7 +133,7 @@ class AuthFactory(factory.base.Factory):
 
 class UnregUserFactory(DjangoModelFactory):
     email = factory.LazyFunction(fake_email)
-    fullname = factory.Sequence(lambda n: 'Freddie Mercury{0}'.format(n))
+    fullname = factory.Sequence(lambda n: f'Freddie Mercury{n}')
     date_registered = factory.Faker('date_time', tzinfo=pytz.utc)
 
     class Meta:
@@ -164,7 +163,7 @@ class UnconfirmedUserFactory(DjangoModelFactory):
     class Meta:
         model = models.OSFUser
     username = factory.LazyFunction(fake_email)
-    fullname = factory.Sequence(lambda n: 'Freddie Mercury{0}'.format(n))
+    fullname = factory.Sequence(lambda n: f'Freddie Mercury{n}')
     password = 'lolomglgt'
 
     @classmethod
@@ -202,7 +201,7 @@ class BaseNodeFactory(DjangoModelFactory):
         if kwargs.get('is_deleted', None):
             kwargs['deleted'] = timezone.now()
         with patch('framework.sessions.get_session', return_value=SessionStore()):
-            return super(BaseNodeFactory, cls)._create(*args, **kwargs)
+            return super()._create(*args, **kwargs)
 
 class ProjectFactory(BaseNodeFactory):
     category = 'project'
@@ -278,7 +277,7 @@ class NodeLicenseRecordFactory(DjangoModelFactory):
             'node_license',
             models.NodeLicense.objects.get(name='No license')
         )
-        return super(NodeLicenseRecordFactory, cls)._create(*args, **kwargs)
+        return super()._create(*args, **kwargs)
 
 
 class NodeLogFactory(DjangoModelFactory):
@@ -293,14 +292,14 @@ class PrivateLinkFactory(DjangoModelFactory):
     class Meta:
         model = models.PrivateLink
 
-    name = factory.Sequence(lambda n: 'Example Private Link #{}'.format(n))
+    name = factory.Sequence(lambda n: f'Example Private Link #{n}')
     key = factory.Faker('md5')
     anonymous = False
     creator = factory.SubFactory(UserFactory)
 
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
-        instance = super(PrivateLinkFactory, cls)._create(target_class, *args, **kwargs)
+        instance = super()._create(target_class, *args, **kwargs)
         if instance.is_deleted and not instance.deleted:
             instance.deleted = timezone.now()
             instance.save()
@@ -350,7 +349,7 @@ class RegistrationProviderFactory(DjangoModelFactory):
     description = factory.Faker('bs')
     external_url = factory.Faker('url')
     access_token = factory.Faker('bs')
-    share_source = factory.Sequence(lambda n: 'share source #{0}'.format(n))
+    share_source = factory.Sequence(lambda n: f'share source #{n}')
 
     class Meta:
         model = models.RegistrationProvider
@@ -596,7 +595,7 @@ class CommentFactory(DjangoModelFactory):
     class Meta:
         model = models.Comment
 
-    content = factory.Sequence(lambda n: 'Comment {0}'.format(n))
+    content = factory.Sequence(lambda n: f'Comment {n}')
 
     @classmethod
     def _build(cls, target_class, *args, **kwargs):
@@ -639,7 +638,7 @@ class CommentFactory(DjangoModelFactory):
 
 
 class SubjectFactory(DjangoModelFactory):
-    text = factory.Sequence(lambda n: 'Example Subject #{}'.format(n))
+    text = factory.Sequence(lambda n: f'Example Subject #{n}')
 
     class Meta:
         model = models.Subject
@@ -665,7 +664,7 @@ class PreprintProviderFactory(DjangoModelFactory):
     name = factory.Faker('company')
     description = factory.Faker('bs')
     external_url = factory.Faker('url')
-    share_source = factory.Sequence(lambda n: 'share source #{0}'.format(n))
+    share_source = factory.Sequence(lambda n: f'share source #{n}')
 
     class Meta:
         model = models.PreprintProvider
@@ -709,7 +708,7 @@ class PreprintFactory(DjangoModelFactory):
     created = factory.LazyFunction(timezone.now)
     creator = factory.SubFactory(AuthUserFactory)
 
-    doi = factory.Sequence(lambda n: '10.123/{}'.format(n))
+    doi = factory.Sequence(lambda n: f'10.123/{n}')
 
     @classmethod
     def _build(cls, target_class, *args, **kwargs):
@@ -752,9 +751,9 @@ class PreprintFactory(DjangoModelFactory):
         preprint_file = OsfStorageFile.create(
             target_object_id=instance.id,
             target_content_type=ContentType.objects.get_for_model(instance),
-            path='/{}'.format(filename),
+            path=f'/{filename}',
             name=filename,
-            materialized_path='/{}'.format(filename))
+            materialized_path=f'/{filename}')
 
         instance.machine_state = kwargs.pop('machine_state', 'initial')
         preprint_file.save()
@@ -790,7 +789,7 @@ class TagFactory(DjangoModelFactory):
     class Meta:
         model = models.Tag
 
-    name = factory.Sequence(lambda n: 'Example Tag #{}'.format(n))
+    name = factory.Sequence(lambda n: f'Example Tag #{n}')
     system = False
 
 class DismissedAlertFactory(DjangoModelFactory):
@@ -803,13 +802,13 @@ class DismissedAlertFactory(DjangoModelFactory):
         kwargs['user'] = kwargs.get('user', UserFactory())
         kwargs['location'] = kwargs.get('location', 'iver/settings')
 
-        return super(DismissedAlertFactory, cls)._create(*args, **kwargs)
+        return super()._create(*args, **kwargs)
 
 class ApiOAuth2ScopeFactory(DjangoModelFactory):
     class Meta:
         model = models.ApiOAuth2Scope
 
-    name = factory.Sequence(lambda n: 'scope{}'.format(n))
+    name = factory.Sequence(lambda n: f'scope{n}')
     is_public = True
     is_active = True
     description = factory.Faker('text')
@@ -819,11 +818,11 @@ class ApiOAuth2PersonalTokenFactory(DjangoModelFactory):
         model = models.ApiOAuth2PersonalToken
 
     owner = factory.SubFactory(UserFactory)
-    name = factory.Sequence(lambda n: 'Example OAuth2 Personal Token #{}'.format(n))
+    name = factory.Sequence(lambda n: f'Example OAuth2 Personal Token #{n}')
 
     @classmethod
     def _create(cls, *args, **kwargs):
-        token = super(ApiOAuth2PersonalTokenFactory, cls)._create(*args, **kwargs)
+        token = super()._create(*args, **kwargs)
         token.scopes.add(ApiOAuth2ScopeFactory())
         return token
 
@@ -833,7 +832,7 @@ class ApiOAuth2ApplicationFactory(DjangoModelFactory):
 
     owner = factory.SubFactory(UserFactory)
 
-    name = factory.Sequence(lambda n: 'Example OAuth2 Application #{}'.format(n))
+    name = factory.Sequence(lambda n: f'Example OAuth2 Application #{n}')
 
     home_url = 'ftp://ftp.ncbi.nlm.nimh.gov/'
     callback_url = 'http://example.uk'
@@ -860,13 +859,13 @@ class IdentifierFactory(DjangoModelFactory):
         model = models.Identifier
 
     referent = factory.SubFactory(RegistrationFactory)
-    value = factory.Sequence(lambda n: 'carp:/2460{}'.format(n))
+    value = factory.Sequence(lambda n: f'carp:/2460{n}')
 
     @classmethod
     def _create(cls, *args, **kwargs):
         kwargs['category'] = kwargs.get('category', 'carpid')
 
-        return super(IdentifierFactory, cls)._create(*args, **kwargs)
+        return super()._create(*args, **kwargs)
 
 
 class NodeRelationFactory(DjangoModelFactory):
@@ -883,9 +882,9 @@ class ExternalAccountFactory(DjangoModelFactory):
     oauth_key = 'some-silly-key'
     oauth_secret = 'some-super-secret'
     provider = 'mock2'
-    provider_id = factory.Sequence(lambda n: 'user-{0}'.format(n))
+    provider_id = factory.Sequence(lambda n: f'user-{n}')
     provider_name = 'Fake Provider'
-    display_name = factory.Sequence(lambda n: 'user-{0}'.format(n))
+    display_name = factory.Sequence(lambda n: f'user-{n}')
     profile_url = 'http://wutwut.com/'
     refresh_token = 'some-sillier-key'
 
@@ -938,7 +937,7 @@ class ConferenceFactory(DjangoModelFactory):
     class Meta:
         model = models.Conference
 
-    endpoint = factory.Sequence(lambda n: 'conference{0}'.format(n))
+    endpoint = factory.Sequence(lambda n: f'conference{n}')
     name = factory.Faker('catch_phrase')
     active = True
     is_meeting = True
@@ -1054,8 +1053,8 @@ class RegionFactory(DjangoModelFactory):
     class Meta:
         model = Region
 
-    name = factory.Sequence(lambda n: 'Region {0}'.format(n))
-    _id = factory.Sequence(lambda n: 'us_east_{0}'.format(n))
+    name = factory.Sequence(lambda n: f'Region {n}')
+    _id = factory.Sequence(lambda n: f'us_east_{n}')
     waterbutler_credentials = generic_waterbutler_credentials
     waterbutler_settings = generic_waterbutler_settings
     waterbutler_url = 'http://123.456.test.woo'
@@ -1071,7 +1070,7 @@ class ProviderAssetFileFactory(DjangoModelFactory):
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
         providers = kwargs.pop('providers', [])
-        instance = super(ProviderAssetFileFactory, cls)._create(target_class, *args, **kwargs)
+        instance = super()._create(target_class, *args, **kwargs)
         instance.providers.add(*providers)
         instance.save()
         return instance
@@ -1086,7 +1085,7 @@ class InstitutionAssetFileFactory(DjangoModelFactory):
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
         institutions = kwargs.pop('institutions', [])
-        instance = super(InstitutionAssetFileFactory, cls)._create(target_class, *args, **kwargs)
+        instance = super()._create(target_class, *args, **kwargs)
         instance.institutions.add(*institutions)
         instance.save()
         return instance
@@ -1110,7 +1109,7 @@ class ChronosJournalFactory(DjangoModelFactory):
             'PUBLISHER_NAME': factory.Faker('name').generate([])
             # Other stuff too probably
         })
-        instance = super(ChronosJournalFactory, cls)._create(target_class, *args, **kwargs)
+        instance = super()._create(target_class, *args, **kwargs)
         instance.save()
         return instance
 
@@ -1134,7 +1133,7 @@ class ChronosSubmissionFactory(DjangoModelFactory):
             'CHRONOS_SUBMISSION_URL': kwargs.get('submission_url', factory.Faker('url').generate([])),
             # Other stuff too probably
         })
-        instance = super(ChronosSubmissionFactory, cls)._create(target_class, *args, **kwargs)
+        instance = super()._create(target_class, *args, **kwargs)
         instance.save()
         return instance
 

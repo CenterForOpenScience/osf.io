@@ -24,7 +24,7 @@ class ParseCrossRefConfirmation(APIView):
 
     @csrf_exempt
     def dispatch(self, request, *args, **kwargs):
-        return super(ParseCrossRefConfirmation, self).dispatch(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
 
     def get_serializer_class(self):
         return None
@@ -73,7 +73,7 @@ class ParseCrossRefConfirmation(APIView):
                         break
                     else:
                         unexpected_errors = True
-            logger.info('Creation success email received from CrossRef for preprints: {}'.format(guids))
+            logger.info(f'Creation success email received from CrossRef for preprints: {guids}')
 
         if dois_processed != record_count or status != 'completed':
             if unexpected_errors:
@@ -84,6 +84,6 @@ class ParseCrossRefConfirmation(APIView):
                     batch_id=batch_id,
                     email_content=request.POST['body-plain'],
                 )
-                logger.error('Error submitting metadata for batch_id {} with CrossRef, email sent to help desk'.format(batch_id))
+                logger.error(f'Error submitting metadata for batch_id {batch_id} with CrossRef, email sent to help desk')
 
         return HttpResponse('Mail received', status=200)

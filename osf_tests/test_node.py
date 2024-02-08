@@ -1,6 +1,6 @@
 import datetime
 
-import mock
+from unittest import mock
 import pytest
 import pytz
 import responses
@@ -627,12 +627,12 @@ class TestProject:
     def test_url(self, project):
         assert (
             project.url ==
-            '/{0}/'.format(project._primary_key)
+            f'/{project._primary_key}/'
         )
 
     def test_api_url(self, project):
         api_url = project.api_url
-        assert api_url == '/api/v1/project/{0}/'.format(project._primary_key)
+        assert api_url == f'/api/v1/project/{project._primary_key}/'
 
     def test_web_url_for(self, node, request_context):
         result = node.web_url_for('view_project')
@@ -657,7 +657,7 @@ class TestProject:
         assert settings.DOMAIN in result
 
     def test_get_absolute_url(self, node):
-        assert node.get_absolute_url() == '{}v2/nodes/{}/'.format(settings.API_DOMAIN, node._id)
+        assert node.get_absolute_url() == f'{settings.API_DOMAIN}v2/nodes/{node._id}/'
 
     def test_parents(self):
         node = ProjectFactory()
@@ -676,11 +676,11 @@ class TestProject:
         assert node.category == 'hypothesis'
         assert bool(node.parents)
         assert node.logs.first().action == 'project_created'
-        assert set(node.get_addon_names()) == set([
+        assert set(node.get_addon_names()) == {
             addon_config.short_name
             for addon_config in settings.ADDONS_AVAILABLE
             if 'node' in addon_config.added_default
-        ])
+        }
         for addon_config in settings.ADDONS_AVAILABLE:
             if 'node' in addon_config.added_default:
                 assert addon_config.short_name in node.get_addon_names()
@@ -929,8 +929,8 @@ class TestContributorMethods:
         assert node.is_contributor(user2)
         assert user1._id in node.visible_contributor_ids
         assert user2._id not in node.visible_contributor_ids
-        assert set(node.get_permissions(user1)) == set([permissions.READ, permissions.WRITE, permissions.ADMIN])
-        assert set(node.get_permissions(user2)) == set([permissions.READ, permissions.WRITE])
+        assert set(node.get_permissions(user1)) == {permissions.READ, permissions.WRITE, permissions.ADMIN}
+        assert set(node.get_permissions(user2)) == {permissions.READ, permissions.WRITE}
         last_log = node.logs.all().order_by('-date')[0]
         assert (
             last_log.params['contributors'] ==
@@ -1212,7 +1212,7 @@ class TestContributorMethods:
         new_contrib = AuthUserFactory()
         node.add_contributor(new_contrib, permissions=DEFAULT_CONTRIBUTOR_PERMISSIONS, auth=auth)
 
-        assert set(node.get_permissions(new_contrib)) == set([permissions.READ, permissions.WRITE])
+        assert set(node.get_permissions(new_contrib)) == {permissions.READ, permissions.WRITE}
 
         assert node.get_visible(new_contrib) is True
 
@@ -1222,7 +1222,7 @@ class TestContributorMethods:
             False,
             auth=auth
         )
-        assert set(node.get_permissions(new_contrib)) == set([permissions.READ])
+        assert set(node.get_permissions(new_contrib)) == {permissions.READ}
         assert node.get_visible(new_contrib) is False
 
     def test_update_contributor_non_admin_raises_error(self, node, auth):
@@ -1398,7 +1398,7 @@ class TestContributorAddedSignal:
             node.add_contributors(contributors=contributors, auth=auth)
             node.save()
             assert node.is_contributor(user)
-            assert mock_signals.signals_sent() == set([contributor_added])
+            assert mock_signals.signals_sent() == {contributor_added}
 
 
 class TestContributorVisibility:
@@ -1492,10 +1492,10 @@ class TestPermissionMethods:
             node=node, user=user,
         )
         node.add_permission(user, READ)
-        assert set(node.get_permissions(user)) == set([permissions.READ])
+        assert set(node.get_permissions(user)) == {permissions.READ}
 
         node.add_permission(user, WRITE)
-        assert set(node.get_permissions(user)) == set([permissions.READ, permissions.WRITE])
+        assert set(node.get_permissions(user)) == {permissions.READ, permissions.WRITE}
         assert contributor.user in node.contributors
 
     def test_add_permission(self, node):
@@ -1822,7 +1822,7 @@ class TestPermissions:
         user = UserFactory()
         project.add_contributor(user, permissions=permissions.READ, auth=Auth(user=project.creator))
         project.save()
-        assert set([permissions.READ]) == set(self.project.get_permissions(user))
+        assert {permissions.READ} == set(self.project.get_permissions(user))
 
     def test_adjust_permissions(self, project):
         project.permissions[42] = ['dance']
@@ -2657,7 +2657,7 @@ class TestManageContributors:
             node.manage_contributors(
                 users, auth=auth, save=True
             )
-        assert excinfo.value.args[0] == 'User {0} not in contributors'.format(user.fullname)
+        assert excinfo.value.args[0] == f'User {user.fullname} not in contributors'
 
     def test_manage_contributors_no_contributors(self, node, auth):
         with pytest.raises(NodeStateError):
@@ -3232,7 +3232,7 @@ class TestForkNode:
         assert bool(fork) is True
         # Forker has admin permissions
         assert fork.contributors.count() == 1
-        assert set(fork.get_permissions(user2)) == set([permissions.READ, permissions.WRITE, permissions.ADMIN])
+        assert set(fork.get_permissions(user2)) == {permissions.READ, permissions.WRITE, permissions.ADMIN}
 
     def test_fork_preserves_license(self, node, auth):
         license = NodeLicenseRecordFactory()
@@ -4125,7 +4125,7 @@ class TestTemplateNode:
 
         templated = project.use_as_template(auth)
 
-        assert set(templated.get_permissions(user)) == set([permissions.READ, permissions.WRITE, permissions.ADMIN])
+        assert set(templated.get_permissions(user)) == {permissions.READ, permissions.WRITE, permissions.ADMIN}
 
     def test_template_security(self, user, auth, project, pointee, component, subproject):
         """Create a templated node from a node with public and private children
@@ -4164,8 +4164,8 @@ class TestTemplateNode:
 
         # check that all children were copied
         assert (
-            set(x.template_node._id for x in new.nodes) ==
-            set(x._id for x in visible_nodes if x not in project.linked_nodes)
+            {x.template_node._id for x in new.nodes} ==
+            {x._id for x in visible_nodes if x not in project.linked_nodes}
         )
         # ensure all child nodes were actually copied, instead of moved
         assert bool({x._primary_key for x in new.nodes}.isdisjoint(
@@ -4176,7 +4176,7 @@ class TestTemplateNode:
         for node in new.nodes:
             assert (
                 set(node.get_permissions(other_user)) ==
-                set([permissions.READ, permissions.WRITE, permissions.ADMIN])
+                {permissions.READ, permissions.WRITE, permissions.ADMIN}
             )
 
 # copied from tests/test_models.py
@@ -4408,7 +4408,7 @@ class TestAddonCallbacks:
                 )
 
 
-class TestAdminImplicitRead(object):
+class TestAdminImplicitRead:
 
     @pytest.fixture()
     def jane_doe(self):
@@ -4582,7 +4582,7 @@ class TestCollectionProperties:
 
     def _collection_url(self, collection):
         try:
-            return '/collections/{}/'.format(collection.provider._id)
+            return f'/collections/{collection.provider._id}/'
         except AttributeError:
             # Non-provided collection
             pass

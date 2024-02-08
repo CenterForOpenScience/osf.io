@@ -72,7 +72,7 @@ class CitationsOauthProvider(ExternalProvider):
 
         return self._citations_for_folder(list_id)
 
-class CitationsProvider(object):
+class CitationsProvider:
 
     __metaclass__ = abc.ABCMeta
 
@@ -125,7 +125,7 @@ class CitationsProvider(object):
         node_addon.save()
 
         node_addon.owner.add_log(
-            '{0}_folder_selected'.format(self.provider_name),
+            f'{self.provider_name}_folder_selected',
             params={
                 'project': node_addon.owner.parent_id,
                 'node': node_addon.owner._id,

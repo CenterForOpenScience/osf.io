@@ -1,7 +1,6 @@
-# -*- coding: utf-8 -*-
 import pytest
 
-import mock
+from unittest import mock
 
 from addons.onedrive import settings
 from addons.onedrive.client import OneDriveClient
@@ -20,7 +19,7 @@ def test_folders():
         if method != 'GET':
             raise 'failure to match method'
 
-        if '{}/drives'.format(settings.MSGRAPH_API_URL) not in url:
+        if f'{settings.MSGRAPH_API_URL}/drives' not in url:
             raise 'failure to match url'
 
         mock_res = mock.Mock()

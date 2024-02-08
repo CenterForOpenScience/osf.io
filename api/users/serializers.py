@@ -38,9 +38,9 @@ from api.base.versioning import get_kebab_snake_case_field
 
 class SocialField(ser.DictField):
     def __init__(self, min_version, **kwargs):
-        super(SocialField, self).__init__(**kwargs)
+        super().__init__(**kwargs)
         self.min_version = min_version
-        self.help_text = 'This field will change data formats after version {}'.format(self.min_version)
+        self.help_text = f'This field will change data formats after version {self.min_version}'
 
     def to_representation(self, value):
         old_social_string_fields = ['twitter', 'github', 'linkedIn']
@@ -54,7 +54,7 @@ class SocialField(ser.DictField):
                 elif social.get(key) == []:
                     social[key] = ''
             value = social
-        return super(SocialField, self).to_representation(value)
+        return super().to_representation(value)
 
 
 class UserSerializer(JSONAPISerializer):
@@ -408,7 +408,7 @@ class UserSettingsSerializer(JSONAPISerializer):
 
     def to_representation(self, instance):
         self.context['twofactor_addon'] = instance.get_addon('twofactor')
-        return super(UserSettingsSerializer, self).to_representation(instance)
+        return super().to_representation(instance)
 
     def get_two_factor_enabled(self, obj):
         try:
@@ -535,7 +535,7 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
         return instance
 
 
-class UserEmail(object):
+class UserEmail:
     def __init__(self, email_id, address, confirmed, verified, primary, is_merge=False):
         self.id = email_id
         self.address = address
@@ -579,7 +579,7 @@ class UserEmailsSerializer(JSONAPISerializer):
     def get_resend_confirmation_url(self, obj):
         if not obj.confirmed:
             url = self.get_absolute_url(obj)
-            return '{}?resend_confirmation=true'.format(url)
+            return f'{url}?resend_confirmation=true'
 
     class Meta:
         @staticmethod
@@ -591,7 +591,7 @@ class UserEmailsSerializer(JSONAPISerializer):
         address = validated_data['address']
         is_merge = Email.objects.filter(address=address).exists()
         if address in user.unconfirmed_emails or address in user.emails.all().values_list('address', flat=True):
-            raise Conflict('This user already has registered with the email address {}'.format(address))
+            raise Conflict(f'This user already has registered with the email address {address}')
         try:
             token = user.add_unconfirmed_email(address)
             user.save()

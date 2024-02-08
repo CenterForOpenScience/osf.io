@@ -33,7 +33,7 @@ def set_preprint_providers():
 class TestCampaignInitialization(OsfTestCase):
 
     def setUp(self):
-        super(TestCampaignInitialization, self).setUp()
+        super().setUp()
         set_preprint_providers()
         self.campaign_lists = [
             'erpc',
@@ -75,7 +75,7 @@ class TestCampaignInitialization(OsfTestCase):
 class TestCampaignMethods(OsfTestCase):
 
     def setUp(self):
-        super(TestCampaignMethods, self).setUp()
+        super().setUp()
         set_preprint_providers()
         self.campaign_lists = [
             'erpc',
@@ -164,7 +164,7 @@ class TestCampaignMethods(OsfTestCase):
 class TestCampaignsAuthViews(OsfTestCase):
 
     def setUp(self):
-        super(TestCampaignsAuthViews, self).setUp()
+        super().setUp()
         self.campaigns = {
             'erpc': {
                 'title_register': 'Election Research Preacceptance Competition',
@@ -211,7 +211,7 @@ class TestCampaignsAuthViews(OsfTestCase):
 class TestRegistrationThroughCampaigns(OsfTestCase):
 
     def setUp(self):
-        super(TestRegistrationThroughCampaigns, self).setUp()
+        super().setUp()
         campaigns.get_campaigns()  # Set up global CAMPAIGNS
 
     def test_confirm_email_get_with_campaign(self):
@@ -233,7 +233,7 @@ class TestRegistrationThroughCampaigns(OsfTestCase):
 class TestCampaignsCASInstitutionLogin(OsfTestCase):
 
     def setUp(self):
-        super(TestCampaignsCASInstitutionLogin, self).setUp()
+        super().setUp()
         self.url_login = web_url_for('auth_login', campaign='institution')
         self.url_register = web_url_for('auth_register', campaign='institution')
         self.service_url = web_url_for('dashboard', _absolute=True)

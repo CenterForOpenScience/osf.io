@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 import logging
 
 from django.core.management.base import BaseCommand
@@ -14,7 +12,7 @@ logger = logging.getLogger(__name__)
 class Command(BaseCommand):
     """Add/update reviews auth groups for all reviews providers"""
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             '--dry',
             action='store_true',

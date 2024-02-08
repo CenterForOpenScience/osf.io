@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 from nose.tools import (
     assert_equal, assert_raises, assert_true,
     assert_false, assert_in, assert_is, assert_is_none
@@ -25,7 +25,7 @@ pytestmark = pytest.mark.django_db
 class TestClient(DataverseAddonTestCase, unittest.TestCase):
 
     def setUp(self):
-        super(TestClient, self).setUp()
+        super().setUp()
 
         self.host = 'some.host.url'
         self.token = 'some-fancy-api-token-which-is-long'

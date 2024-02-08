@@ -1,7 +1,6 @@
-
 from django.db import IntegrityError
 from django.utils import timezone
-import mock
+from unittest import mock
 from past.builtins import basestring
 import pytest
 
@@ -174,7 +173,7 @@ class TestInstitutionManager:
             to_addr=user.username,
             mail=mails.INSTITUTION_DEACTIVATION,
             user=user,
-            forgot_password_link='{}{}'.format(settings.DOMAIN, forgot_password),
+            forgot_password_link=f'{settings.DOMAIN}{forgot_password}',
             osf_support_email=settings.OSF_SUPPORT_EMAIL
         )
 

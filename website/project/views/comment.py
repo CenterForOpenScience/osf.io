@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import markdown
 from django.utils import timezone
 from flask import request

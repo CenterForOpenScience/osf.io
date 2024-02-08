@@ -102,17 +102,17 @@ def _send_with_sendgrid(from_addr, to_addr, subject, message, categories=None, a
         status, msg = client.send(mail)
         if status >= 400:
             sentry.log_message(
-                '{} error response from sendgrid.'.format(status) +
-                'from_addr:  {}\n'.format(from_addr) +
-                'to_addr:  {}\n'.format(to_addr) +
-                'subject:  {}\n'.format(subject) +
+                f'{status} error response from sendgrid.' +
+                f'from_addr:  {from_addr}\n' +
+                f'to_addr:  {to_addr}\n' +
+                f'subject:  {subject}\n' +
                 'mimetype:  html\n' +
-                'message:  {}\n'.format(message[:30]) +
-                'categories:  {}\n'.format(categories) +
-                'attachment_name:  {}\n'.format(attachment_name)
+                f'message:  {message[:30]}\n' +
+                f'categories:  {categories}\n' +
+                f'attachment_name:  {attachment_name}\n'
             )
         return status < 400
     else:
         sentry.log_message(
-            'SENDGRID_WHITELIST_MODE is True. Failed to send emails to non-whitelisted recipient {}.'.format(to_addr)
+            f'SENDGRID_WHITELIST_MODE is True. Failed to send emails to non-whitelisted recipient {to_addr}.'
         )

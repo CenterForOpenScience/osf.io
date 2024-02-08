@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 from datetime import timedelta
 
 from django.utils import timezone
@@ -13,7 +13,7 @@ from website import mails
 class TestTriggeredMails(OsfTestCase):
 
     def setUp(self):
-        super(TestTriggeredMails, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         self.user.date_last_login = timezone.now()
         self.user.save()

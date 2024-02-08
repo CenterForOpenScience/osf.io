@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import pytest
 
 from framework.auth import Auth
@@ -15,7 +14,7 @@ from osf.management.commands import migrate_deleted_date
 class TestMigrateDeletedDate(DbTestCase):
 
     def setUp(self):
-        super(TestMigrateDeletedDate, self).setUp()
+        super().setUp()
         self.region_us = RegionFactory(_id='US', name='United States')
 
     def project(self, user, is_public=True, is_deleted=False, region=None, parent=None):

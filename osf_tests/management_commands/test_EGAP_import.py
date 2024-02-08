@@ -1,4 +1,3 @@
-# encoding: utf-8
 import os
 import shutil
 import pytest
@@ -62,7 +61,7 @@ class TestEGAPImport:
         greg, auth_header = get_creator_auth_header(greg.username)
 
         gregs_token = ApiOAuth2PersonalToken.objects.get(owner=greg).token_id
-        assert auth_header['Authorization'] == 'Bearer {}'.format(gregs_token)
+        assert auth_header['Authorization'] == f'Bearer {gregs_token}'
 
     def test_ensure_egap_schema(self):
         ensure_egap_schema()
@@ -109,7 +108,7 @@ class TestEGAPImport:
         )
         token = ApiOAuth2PersonalTokenFactory(owner=greg)
         token.save()
-        auth = {'Authorization': 'Bearer {}'.format(token.token_id)}
+        auth = {'Authorization': f'Bearer {token.token_id}'}
 
         egap_project_path = os.path.join(egap_assets_path, egap_project_name, 'data', 'nonanonymous')
 
@@ -154,7 +153,7 @@ class TestEGAPImport:
         )
         token = ApiOAuth2PersonalTokenFactory(owner=greg)
         token.save()
-        auth = {'Authorization': 'Bearer {}'.format(token.token_id)}
+        auth = {'Authorization': f'Bearer {token.token_id}'}
 
         egap_project_path = os.path.join(egap_assets_path, egap_project_name, 'data', 'nonanonymous')
 
@@ -180,6 +179,6 @@ class TestEGAPImport:
         asset_path = get_egap_assets(node_with_file._id, {'fake auth': 'sadasdadsdasdsds'})
         directory_list = os.listdir(asset_path)
         # __MACOSX is a hidden file created by the os when zipping
-        assert set(directory_list) == set(['20110307AA', '__MACOSX', '20110302AA', 'egap_assets.zip', '20120117AA'])
+        assert set(directory_list) == {'20110307AA', '__MACOSX', '20110302AA', 'egap_assets.zip', '20120117AA'}
 
         shutil.rmtree(asset_path)

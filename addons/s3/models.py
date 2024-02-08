@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from addons.base.models import (BaseOAuthNodeSettings, BaseOAuthUserSettings,
                                 BaseStorageAddon)
 from django.db import models
@@ -60,7 +58,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     @property
     def display_name(self):
-        return u'{0}: {1}'.format(self.config.full_name, self.folder_id)
+        return f'{self.config.full_name}: {self.folder_id}'
 
     def set_folder(self, folder_id, auth):
         bucket_name = folder_id.split(':')[0]
@@ -84,7 +82,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             # Default to the key. When hit, add mapping to settings
             pass
 
-        self.folder_name = '{} ({})'.format(folder_id, bucket_location)
+        self.folder_name = f'{folder_id} ({bucket_location})'
         self.save()
 
         self.nodelogger.log(action='bucket_linked', extra={'bucket': bucket_name, 'path': self.folder_id}, save=True)
@@ -147,7 +145,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
 
     def delete(self, save=True):
         self.deauthorize(log=False)
-        super(NodeSettings, self).delete(save=save)
+        super().delete(save=save)
 
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
@@ -175,7 +173,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         url = self.owner.web_url_for('addon_view_or_download_file', path=metadata['path'], provider='s3')
 
         self.owner.add_log(
-            's3_{0}'.format(action),
+            f's3_{action}',
             auth=auth,
             params={
                 'project': self.owner.parent_id,

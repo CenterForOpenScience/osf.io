@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-import mock
+from unittest import mock
 from nose.tools import *  # noqa (PEP8 asserts)
 
 import hmac
@@ -104,12 +102,12 @@ class ContextTestCase(OsfTestCase):
 
     @classmethod
     def setUpClass(cls):
-        super(ContextTestCase, cls).setUpClass()
+        super().setUpClass()
         settings.MAILGUN_API_KEY, cls._MAILGUN_API_KEY = cls.MAILGUN_API_KEY, settings.MAILGUN_API_KEY
 
     @classmethod
     def tearDownClass(cls):
-        super(ContextTestCase, cls).tearDownClass()
+        super().tearDownClass()
         settings.MAILGUN_API_KEY = cls._MAILGUN_API_KEY
 
     def make_context(self, method='POST', **kwargs):
@@ -135,14 +133,14 @@ class ContextTestCase(OsfTestCase):
 class TestProvisionNode(ContextTestCase):
 
     def setUp(self):
-        super(TestProvisionNode, self).setUp()
+        super().setUp()
         self.node = ProjectFactory()
         self.user = self.node.creator
         self.conference = ConferenceFactory()
         self.body = 'dragon on my back'
         self.content = b'dragon attack'
         self.attachment = BytesIO(self.content)
-        self.recipient = '{0}{1}-poster@osf.io'.format(
+        self.recipient = '{}{}-poster@osf.io'.format(
             'test-' if settings.DEV_MODE else '',
             self.conference.endpoint,
         )
@@ -156,7 +154,7 @@ class TestProvisionNode(ContextTestCase):
             'stripped-text': self.body,
         }
         data.update(kwargs.pop('data', {}))
-        return super(TestProvisionNode, self).make_context(data=data, **kwargs)
+        return super().make_context(data=data, **kwargs)
 
     def test_provision(self):
         with self.make_context():
@@ -340,10 +338,10 @@ class TestMessage(ContextTestCase):
     def test_sender_name(self):
         names = [
             (' Fred', 'Fred'),
-            (u'Me‰¨ü', u'Me‰¨ü'),
-            (u'fred@queen.com', u'fred@queen.com'),
-            (u'Fred <fred@queen.com>', u'Fred'),
-            (u'"Fred" <fred@queen.com>', u'Fred'),
+            ('Me‰¨ü', 'Me‰¨ü'),
+            ('fred@queen.com', 'fred@queen.com'),
+            ('Fred <fred@queen.com>', 'Fred'),
+            ('"Fred" <fred@queen.com>', 'Fred'),
         ]
         for name in names:
             with self.make_context(data={'from': name[0]}):
@@ -352,8 +350,8 @@ class TestMessage(ContextTestCase):
 
     def test_sender_email(self):
         emails = [
-            (u'fred@queen.com', u'fred@queen.com'),
-            (u'FRED@queen.com', u'fred@queen.com')
+            ('fred@queen.com', 'fred@queen.com'),
+            ('FRED@queen.com', 'fred@queen.com')
         ]
         for email in emails:
             with self.make_context(data={'from': email[0]}):
@@ -368,7 +366,7 @@ class TestMessage(ContextTestCase):
                 msg.route
 
     def test_route_invalid_test(self):
-        recipient = '{0}conf-talk@osf.io'.format('' if settings.DEV_MODE else 'stage-')
+        recipient = '{}conf-talk@osf.io'.format('' if settings.DEV_MODE else 'stage-')
         with self.make_context(data={'recipient': recipient}):
             self.app.app.preprocess_request()
             msg = message.ConferenceMessage()
@@ -380,7 +378,7 @@ class TestMessage(ContextTestCase):
         conf.name = 'Chocolate Conference'
         conf.field_names['submission2'] = 'data'
         conf.save()
-        recipient = '{0}chocolate-data@osf.io'.format('test-' if settings.DEV_MODE else '')
+        recipient = '{}chocolate-data@osf.io'.format('test-' if settings.DEV_MODE else '')
         with self.make_context(data={'recipient': recipient}):
             self.app.app.preprocess_request()
             msg = message.ConferenceMessage()
@@ -389,7 +387,7 @@ class TestMessage(ContextTestCase):
         conf.__class__.delete(conf)
 
     def test_route_valid_b(self):
-        recipient = '{0}conf-poster@osf.io'.format('test-' if settings.DEV_MODE else '')
+        recipient = '{}conf-poster@osf.io'.format('test-' if settings.DEV_MODE else '')
         with self.make_context(data={'recipient': recipient}):
             self.app.app.preprocess_request()
             msg = message.ConferenceMessage()
@@ -397,7 +395,7 @@ class TestMessage(ContextTestCase):
             assert_equal(msg.conference_category, 'poster')
 
     def test_alternate_route_invalid(self):
-        recipient = '{0}chocolate-data@osf.io'.format('test-' if settings.DEV_MODE else '')
+        recipient = '{}chocolate-data@osf.io'.format('test-' if settings.DEV_MODE else '')
         with self.make_context(data={'recipient': recipient}):
             self.app.app.preprocess_request()
             msg = message.ConferenceMessage()
@@ -592,7 +590,7 @@ class TestConferenceIntegration(ContextTestCase):
         conference = ConferenceFactory()
         body = 'dragon on my back'
         content = 'dragon attack'
-        recipient = '{0}{1}-poster@osf.io'.format(
+        recipient = '{}{}-poster@osf.io'.format(
             'test-' if settings.DEV_MODE else '',
             conference.endpoint,
         )
@@ -609,7 +607,7 @@ class TestConferenceIntegration(ContextTestCase):
                 ).hexdigest(),
                 'attachment-count': '1',
                 'X-Mailgun-Sscore': 0,
-                'from': '{0} <{1}>'.format(fullname, username),
+                'from': f'{fullname} <{username}>',
                 'recipient': recipient,
                 'subject': title,
                 'stripped-text': body,
@@ -640,7 +638,7 @@ class TestConferenceIntegration(ContextTestCase):
         username = 'deacon@queen.com'
         title = 'good songs'
         body = 'dragon on my back'
-        recipient = '{0}{1}-poster@osf.io'.format(
+        recipient = '{}{}-poster@osf.io'.format(
             'test-' if settings.DEV_MODE else '',
             conference.endpoint,
         )
@@ -657,7 +655,7 @@ class TestConferenceIntegration(ContextTestCase):
                 ).hexdigest(),
                 'attachment-count': '1',
                 'X-Mailgun-Sscore': 0,
-                'from': '{0} <{1}>'.format(fullname, username),
+                'from': f'{fullname} <{username}>',
                 'recipient': recipient,
                 'subject': title,
                 'stripped-text': body,
@@ -681,7 +679,7 @@ class TestConferenceIntegration(ContextTestCase):
         conference = ConferenceFactory()
         body = 'dragon on my back'
         content = 'dragon attack'
-        recipient = '{0}{1}-poster@osf.io'.format(
+        recipient = '{}{}-poster@osf.io'.format(
             'test-' if settings.DEV_MODE else '',
             conference.endpoint,
         )
@@ -732,7 +730,7 @@ class TestConferenceIntegration(ContextTestCase):
 
         body = 'Greg is a good plant'
         content = 'Long may they reign.'
-        recipient = '{0}{1}-poster@osf.io'.format(
+        recipient = '{}{}-poster@osf.io'.format(
             'test-' if settings.DEV_MODE else '',
             conference.endpoint,
         )
@@ -749,7 +747,7 @@ class TestConferenceIntegration(ContextTestCase):
                 ).hexdigest(),
                 'attachment-count': '1',
                 'X-Mailgun-Sscore': 0,
-                'from': '{0} <{1}>'.format(user.fullname, user.username),
+                'from': f'{user.fullname} <{user.username}>',
                 'recipient': recipient,
                 'subject': title,
                 'stripped-text': body,

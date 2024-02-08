@@ -20,7 +20,7 @@ class FigshareClient(BaseClient):
     @property
     def _default_headers(self):
         if self.access_token:
-            return {'Authorization': 'token {}'.format(self.access_token)}
+            return {'Authorization': f'token {self.access_token}'}
         return {}
 
     @property

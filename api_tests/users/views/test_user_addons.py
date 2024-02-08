@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import abc
 from nose.tools import *  # noqa:
 import re
@@ -21,7 +20,7 @@ from addons.s3.tests.factories import S3AccountFactory
 from addons.zotero.tests.factories import ZoteroAccountFactory
 
 
-class UserAddonListMixin(object):
+class UserAddonListMixin:
     def set_setting_list_url(self):
         self.setting_list_url = '/{}users/{}/addons/'.format(
             API_BASE, self.user._id
@@ -101,7 +100,7 @@ class UserAddonListMixin(object):
         assert_equal(res.status_code, 403)
 
 
-class UserAddonDetailMixin(object):
+class UserAddonDetailMixin:
     def set_setting_detail_url(self):
         self.setting_detail_url = '/{}users/{}/addons/{}/'.format(
             API_BASE, self.user._id, self.short_name
@@ -187,7 +186,7 @@ class UserAddonDetailMixin(object):
         assert_equal(res.status_code, 403)
 
 
-class UserAddonAccountListMixin(object):
+class UserAddonAccountListMixin:
     def set_account_list_url(self):
         self.account_list_url = '/{}users/{}/addons/{}/accounts/'.format(
             API_BASE, self.user._id, self.short_name
@@ -278,7 +277,7 @@ class UserAddonAccountListMixin(object):
         assert_equal(res.status_code, 403)
 
 
-class UserAddonAccountDetailMixin(object):
+class UserAddonAccountDetailMixin:
     def set_account_detail_url(self):
         self.account_detail_url = '/{}users/{}/addons/{}/accounts/{}/'.format(
             API_BASE, self.user._id, self.short_name, self.account_id

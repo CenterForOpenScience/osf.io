@@ -1,5 +1,5 @@
 # from nose.tools import *  # noqa
-import mock
+from unittest import mock
 from nose.tools import (assert_false, assert_true,
     assert_equal, assert_is_none)
 import pytest
@@ -100,7 +100,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         assert_equal(self.node_settings.folder_id, folder_id)
         # Log was saved
         last_log = self.node.logs.latest()
-        assert_equal(last_log.action, '{0}_bucket_linked'.format(self.short_name))
+        assert_equal(last_log.action, f'{self.short_name}_bucket_linked')
 
     def test_serialize_settings(self):
         settings = self.node_settings.serialize_waterbutler_settings()

@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-import mock
+from unittest import mock
 import pytest
 from future.moves.urllib.parse import urlparse, urljoin
 import responses
@@ -26,7 +25,7 @@ class TestAuthViews(ZoteroTestCase, views.OAuthAddonAuthViewsTestCaseMixin, OsfT
             'oauth_token': 'token',
             'oauth_secret': 'secret',
         }
-        super(TestAuthViews, self).test_oauth_start()
+        super().test_oauth_start()
 
 
 class TestConfigViews(ZoteroTestCase, views.OAuthCitationAddonConfigViewsTestCaseMixin, OsfTestCase):
@@ -41,7 +40,7 @@ class TestConfigViews(ZoteroTestCase, views.OAuthCitationAddonConfigViewsTestCas
     mockResponsesFiledUnfiled = mock_responses_with_filed_and_unfiled
 
     def setUp(self):
-        super(TestConfigViews, self).setUp()
+        super().setUp()
         self.foldersApiUrl = urljoin(API_URL, 'users/{}/collections'
             .format(self.external_account.provider_id))
         self.documentsApiUrl = urljoin(API_URL, 'users/{}/items/top'
@@ -128,7 +127,7 @@ class TestConfigViews(ZoteroTestCase, views.OAuthCitationAddonConfigViewsTestCas
         )
 
         res = self.app.get(
-            self.project.api_url_for('{0}_citation_list'.format(self.ADDON_SHORT_NAME), list_id='ROOT'),
+            self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_citation_list', list_id='ROOT'),
             auth=self.user.auth
         )
 

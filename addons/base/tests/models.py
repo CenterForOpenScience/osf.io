@@ -1,6 +1,6 @@
 import abc
 
-import mock
+from unittest import mock
 import pytest
 import pytz
 import datetime
@@ -20,7 +20,7 @@ from osf_tests.conftest import request_context
 pytestmark = pytest.mark.django_db
 
 
-class OAuthAddonModelTestSuiteMixinBase(object):
+class OAuthAddonModelTestSuiteMixinBase:
 
     ___metaclass__ = abc.ABCMeta
 
@@ -179,7 +179,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         }
 
     def setUp(self):
-        super(OAuthAddonNodeSettingsTestSuiteMixin, self).setUp()
+        super().setUp()
         self.node = ProjectFactory()
         self.user = self.node.creator
         self.external_account = self.ExternalAccountFactory()
@@ -334,7 +334,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         assert_is(self.node_settings.folder_id, None)
 
         last_log = self.node.logs.first()
-        assert_equal(last_log.action, '{0}_node_deauthorized'.format(self.short_name))
+        assert_equal(last_log.action, f'{self.short_name}_node_deauthorized')
         params = last_log.params
         assert_in('node', params)
         assert_in('project', params)
@@ -347,7 +347,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         assert_equal(self.node_settings.folder_id, folder_id)
         # Log was saved
         last_log = self.node.logs.first()
-        assert_equal(last_log.action, '{0}_folder_selected'.format(self.short_name))
+        assert_equal(last_log.action, f'{self.short_name}_folder_selected')
 
     def test_set_user_auth(self):
         node_settings = self.NodeSettingsFactory()
@@ -365,7 +365,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         assert_equal(node_settings.user_settings, user_settings)
         # A log was saved
         last_log = node_settings.owner.logs.first()
-        assert_equal(last_log.action, '{0}_node_authorized'.format(self.short_name))
+        assert_equal(last_log.action, f'{self.short_name}_node_authorized')
         log_params = last_log.params
         assert_equal(log_params['node'], node_settings.owner._id)
         assert_equal(last_log.user, user_settings.owner)
@@ -408,7 +408,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         assert_equal(self.node.logs.count(), nlog + 1)
         assert_equal(
             self.node.logs.latest().action,
-            '{0}_{1}'.format(self.short_name, action),
+            f'{self.short_name}_{action}',
         )
         assert_equal(
             self.node.logs.latest().params['path'],
@@ -478,7 +478,7 @@ class OAuthCitationsNodeSettingsTestSuiteMixin(
         OAuthCitationsTestSuiteMixinBase):
 
     def setUp(self):
-        super(OAuthCitationsNodeSettingsTestSuiteMixin, self).setUp()
+        super().setUp()
         self.user_settings.grant_oauth_access(
             node=self.node,
             external_account=self.external_account,
@@ -592,7 +592,7 @@ class OAuthCitationsNodeSettingsTestSuiteMixin(
         )
 
         log = self.node.logs.latest()
-        assert_equal(log.action, '{}_folder_selected'.format(self.short_name))
+        assert_equal(log.action, f'{self.short_name}_folder_selected')
         assert_equal(log.params['folder_id'], folder_id)
         assert_equal(log.params['folder_name'], folder_name)
 
@@ -638,7 +638,7 @@ class CitationAddonProviderTestSuiteMixin(OAuthCitationsTestSuiteMixinBase):
         pass
 
     def setUp(self):
-        super(CitationAddonProviderTestSuiteMixin, self).setUp()
+        super().setUp()
         self.provider = self.OAuthProviderClass()
 
     @abc.abstractmethod

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from past.builtins import basestring
 import furl
 from future.moves.urllib.parse import urlunsplit, urlsplit, parse_qs, urlencode
@@ -139,7 +138,7 @@ def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_nam
         if display_name is None:
             raise Gone
         else:
-            raise Gone(detail='The requested {name} is no longer available.'.format(name=display_name))
+            raise Gone(detail=f'The requested {display_name} is no longer available.')
     return obj
 
 def default_node_list_queryset(model_cls):
@@ -243,7 +242,7 @@ def assert_resource_type(obj, resource_tuple):
         error_message += 'or ' + resource_tuple[-1].__name__
 
     a_or_an = 'an' if error_message[0].lower() in 'aeiou' else 'a'
-    assert isinstance(obj, resource_tuple), 'obj must be {} {}; got {}'.format(a_or_an, error_message, obj)
+    assert isinstance(obj, resource_tuple), f'obj must be {a_or_an} {error_message}; got {obj}'
 
 
 class MockQueryset(list):

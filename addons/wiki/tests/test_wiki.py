@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
 # TODO: Port to pytest
 
 # PEP8 asserts
 from copy import deepcopy
 from rest_framework import status as http_status
 import time
-import mock
+from unittest import mock
 import pytest
 import pytz
 import datetime
@@ -38,14 +37,14 @@ from .config import EXAMPLE_DOCS, EXAMPLE_OPS
 pytestmark = pytest.mark.django_db
 
 # forward slashes are not allowed, typically they would be replaced with spaces
-SPECIAL_CHARACTERS_ALL = u'`~!@#$%^*()-=_+ []{}\|/?.df,;:''"'
-SPECIAL_CHARACTERS_ALLOWED = u'`~!@#$%^*()-=_+ []{}\|?.df,;:''"'
+SPECIAL_CHARACTERS_ALL = r'`~!@#$%^*()-=_+ []{}\|/?.df,;:''"'
+SPECIAL_CHARACTERS_ALLOWED = r'`~!@#$%^*()-=_+ []{}\|?.df,;:''"'
 
 @pytest.mark.enable_bookmark_creation
 class TestWikiViews(OsfTestCase):
 
     def setUp(self):
-        super(TestWikiViews, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(is_public=True, creator=self.user)
         self.consolidate_auth = Auth(user=self.project.creator)
@@ -208,7 +207,7 @@ class TestWikiViews(OsfTestCase):
     def test_project_wiki_edit_post_with_non_ascii_title(self):
         # regression test for https://github.com/CenterForOpenScience/openscienceframework.org/issues/1040
         # wname doesn't exist in the db, so it will be created
-        new_wname = u'øˆ∆´ƒøßå√ß'
+        new_wname = 'øˆ∆´ƒøßå√ß'
         url = self.project.web_url_for('project_wiki_edit_post', wname=new_wname)
         res = self.app.post(url, {'content': 'new content'}, auth=self.user.auth).follow()
         assert_equal(res.status_code, 200)
@@ -335,7 +334,7 @@ class TestWikiViews(OsfTestCase):
     def test_project_dashboard_wiki_wname_get_shows_non_ascii_characters(self):
         # Regression test for:
         # https://github.com/CenterForOpenScience/openscienceframework.org/issues/1104
-        text = u'你好'
+        text = '你好'
         self.home_wiki.update(self.user, text)
 
         # can view wiki preview from project dashboard
@@ -461,7 +460,7 @@ class TestWikiViews(OsfTestCase):
 class TestViewHelpers(OsfTestCase):
 
     def setUp(self):
-        super(TestViewHelpers, self).setUp()
+        super().setUp()
         self.project = ProjectFactory()
         self.wname = 'New page'
         wiki = WikiPage.objects.create_for_node(self.project, self.wname, 'some content', Auth(self.project.creator))
@@ -485,7 +484,7 @@ class TestViewHelpers(OsfTestCase):
 class TestWikiDelete(OsfTestCase):
 
     def setUp(self):
-        super(TestWikiDelete, self).setUp()
+        super().setUp()
 
         creator = AuthUserFactory()
         self.user = creator
@@ -563,7 +562,7 @@ class TestWikiDelete(OsfTestCase):
 class TestWikiRename(OsfTestCase):
 
     def setUp(self):
-        super(TestWikiRename, self).setUp()
+        super().setUp()
 
         creator = AuthUserFactory()
 
@@ -581,7 +580,7 @@ class TestWikiRename(OsfTestCase):
         )
 
     @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
-    def test_rename_wiki_page_valid(self, mock_sharejs, new_name=u'away'):
+    def test_rename_wiki_page_valid(self, mock_sharejs, new_name='away'):
         self.app.put_json(
             self.url,
             {'value': new_name},
@@ -598,7 +597,7 @@ class TestWikiRename(OsfTestCase):
         assert_equal(new_wiki.content, self.version.content)
         assert_equal(new_wiki.identifier, self.version.identifier)
 
-    def test_rename_wiki_page_invalid(self, new_name=u'invalid/name'):
+    def test_rename_wiki_page_invalid(self, new_name='invalid/name'):
         res = self.app.put_json(
             self.url,
             {'value': new_name},
@@ -689,15 +688,15 @@ class TestWikiRename(OsfTestCase):
 
     def test_rename_wiki_page_with_valid_html(self):
         # script is not an issue since data is sanitized via bleach or mako before display.
-        self.test_rename_wiki_page_valid(new_name=u'<html>hello<html>')
+        self.test_rename_wiki_page_valid(new_name='<html>hello<html>')
 
     def test_rename_wiki_page_with_invalid_html(self):
         # script is not an issue since data is sanitized via bleach or mako before display.
         # with that said routes still do not accept forward slashes
-        self.test_rename_wiki_page_invalid(new_name=u'<html>hello</html>')
+        self.test_rename_wiki_page_invalid(new_name='<html>hello</html>')
 
     def test_rename_wiki_page_with_non_ascii_title(self):
-        self.test_rename_wiki_page_valid(new_name=u'øˆ∆´ƒøßå√ß')
+        self.test_rename_wiki_page_valid(new_name='øˆ∆´ƒøßå√ß')
 
     def test_rename_wiki_page_with_valid_special_character_title(self):
         self.test_rename_wiki_page_valid(new_name=SPECIAL_CHARACTERS_ALLOWED)
@@ -720,13 +719,13 @@ class TestWikiLinks(OsfTestCase):
             wiki_page=wiki_page,
         )
         assert_in(
-            '/{}/wiki/wiki2/'.format(project._id),
+            f'/{project._id}/wiki/wiki2/',
             wiki.html(project),
         )
 
     # Regression test for https://sentry.osf.io/osf/production/group/310/
     def test_bad_links(self):
-        content = u'<span></span><iframe src="http://httpbin.org/"></iframe>'
+        content = '<span></span><iframe src="http://httpbin.org/"></iframe>'
         user = AuthUserFactory()
         node = ProjectFactory()
         wiki_page = WikiFactory(
@@ -748,7 +747,7 @@ class TestWikiLinks(OsfTestCase):
 class TestWikiUuid(OsfTestCase):
 
     def setUp(self):
-        super(TestWikiUuid, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(is_public=True, creator=self.user)
         self.wname = 'foo.bar'
@@ -937,12 +936,12 @@ class TestWikiShareJSMongo(OsfTestCase):
 
     @classmethod
     def setUpClass(cls):
-        super(TestWikiShareJSMongo, cls).setUpClass()
+        super().setUpClass()
         cls._original_sharejs_db_name = settings.SHAREJS_DB_NAME
         settings.SHAREJS_DB_NAME = 'sharejs_test'
 
     def setUp(self):
-        super(TestWikiShareJSMongo, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(is_public=True, creator=self.user)
         self.wname = 'foo.bar'
@@ -1067,7 +1066,7 @@ class TestWikiShareJSMongo(OsfTestCase):
         assert_equals(current_content, new_content)
 
     def tearDown(self):
-        super(TestWikiShareJSMongo, self).tearDown()
+        super().tearDown()
         self.db.drop_collection('docs')
         self.db.drop_collection('docs_ops')
 
@@ -1080,7 +1079,7 @@ class TestWikiShareJSMongo(OsfTestCase):
 class TestWikiUtils(OsfTestCase):
 
     def setUp(self):
-        super(TestWikiUtils, self).setUp()
+        super().setUp()
         self.project = ProjectFactory()
 
     def test_get_sharejs_uuid(self):
@@ -1148,7 +1147,7 @@ class TestWikiUtils(OsfTestCase):
 class TestPublicWiki(OsfTestCase):
 
     def setUp(self):
-        super(TestPublicWiki, self).setUp()
+        super().setUp()
         self.project = ProjectFactory()
         self.consolidate_auth = Auth(user=self.project.creator)
         self.user = AuthUserFactory()
@@ -1291,7 +1290,7 @@ class TestPublicWiki(OsfTestCase):
 class TestWikiMenu(OsfTestCase):
 
     def setUp(self):
-        super(TestWikiMenu, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         self.project = ProjectFactory(creator=self.user, is_public=True)
         self.component = NodeFactory(creator=self.user, parent=self.project, is_public=True)

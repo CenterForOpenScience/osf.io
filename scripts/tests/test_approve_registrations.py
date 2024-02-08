@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from datetime import timedelta
 
 from django.utils import timezone
@@ -15,7 +13,7 @@ from scripts.approve_registrations import main
 class TestApproveRegistrations(OsfTestCase):
 
     def setUp(self):
-        super(TestApproveRegistrations, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         self.registration = RegistrationFactory(creator=self.user, archive=False)
         self.registration.is_public = True

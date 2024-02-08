@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-import mock
+from unittest import mock
 from nose.tools import *  # noqa (PEP8 asserts)
 import pytest
 import unittest
@@ -20,7 +19,7 @@ pytestmark = pytest.mark.django_db
 
 class TestGoogleDriveProvider(unittest.TestCase):
     def setUp(self):
-        super(TestGoogleDriveProvider, self).setUp()
+        super().setUp()
         self.provider = GoogleDriveProvider()
 
     @mock.patch.object(GoogleAuthClient, 'userinfo')
@@ -57,11 +56,11 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         )
         self.mock_refresh.return_value = True
         self.mock_refresh.start()
-        super(TestNodeSettings, self).setUp()
+        super().setUp()
 
     def tearDown(self):
         self.mock_refresh.stop()
-        super(TestNodeSettings, self).tearDown()
+        super().tearDown()
 
     @mock.patch('addons.googledrive.models.GoogleDriveProvider')
     def test_api_not_cached(self, mock_gdp):
@@ -108,7 +107,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         assert_equal(self.node_settings.folder_id, folder['id'])
         # Log was saved
         last_log = self.node.logs.latest()
-        assert_equal(last_log.action, '{0}_folder_selected'.format(self.short_name))
+        assert_equal(last_log.action, f'{self.short_name}_folder_selected')
 
     def test_serialize_settings(self):
         settings = self.node_settings.serialize_waterbutler_settings()

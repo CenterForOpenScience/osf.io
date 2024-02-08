@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import io
 import csv
 from datetime import timedelta
@@ -100,7 +98,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         script_start_time = timezone.now()
-        logger.info('Script started time: {}'.format(script_start_time))
+        logger.info(f'Script started time: {script_start_time}')
         logger.debug(options)
 
         sniff_r = options.get('sniff_r')
@@ -111,5 +109,5 @@ class Command(BaseCommand):
         find_spammy_files(sniff_r=sniff_r, n=n, t=t, to_addrs=to_addrs)
 
         script_finish_time = timezone.now()
-        logger.info('Script finished time: {}'.format(script_finish_time))
-        logger.info('Run time {}'.format(script_finish_time - script_start_time))
+        logger.info(f'Script finished time: {script_finish_time}')
+        logger.info(f'Run time {script_finish_time - script_start_time}')

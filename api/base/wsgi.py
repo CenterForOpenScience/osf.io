@@ -46,7 +46,7 @@ def __getattr__(self, attr):
         return getattr(self._request, attr)
     except AttributeError:
         info = sys.exc_info()
-        six.reraise(info[0], info[1], info[2].tb_next)
+        raise info[1].with_traceback(info[2].tb_next)
 
 Field.context = context
 Request.__getattr__ = __getattr__

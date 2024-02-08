@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import functools
 from future.moves.urllib.parse import urljoin
 import logging
@@ -190,9 +189,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     # For ContributorMixin
     guardian_object_type = 'preprint'
 
-    READ_PREPRINT = 'read_{}'.format(guardian_object_type)
-    WRITE_PREPRINT = 'write_{}'.format(guardian_object_type)
-    ADMIN_PREPRINT = 'admin_{}'.format(guardian_object_type)
+    READ_PREPRINT = f'read_{guardian_object_type}'
+    WRITE_PREPRINT = f'write_{guardian_object_type}'
+    ADMIN_PREPRINT = f'admin_{guardian_object_type}'
 
     # For ContributorMixin
     base_perms = [READ_PREPRINT, WRITE_PREPRINT, ADMIN_PREPRINT]
@@ -399,14 +398,14 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     @property
     def deep_url(self):
         # Required for GUID routing
-        return '/preprints/{}/'.format(self._id)
+        return f'/preprints/{self._id}/'
 
     @property
     def url(self):
         if (self.provider.domain_redirect_enabled and self.provider.domain) or self.provider._id == 'osf':
-            return '/{}/'.format(self._id)
+            return f'/{self._id}/'
 
-        return '/preprints/{}/{}/'.format(self.provider._id, self._id)
+        return f'/preprints/{self.provider._id}/{self._id}/'
 
     @property
     def absolute_url(self):
@@ -417,7 +416,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
     @property
     def absolute_api_v2_url(self):
-        path = '/preprints/{}/'.format(self._id)
+        path = f'/preprints/{self._id}/'
         return api_v2_url(path)
 
     @property
@@ -640,7 +639,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if self.has_submitted_preprint and not self.primary_file:
             raise ValidationError('Cannot save non-initial preprint without primary file.')
 
-        ret = super(Preprint, self).save(*args, **kwargs)
+        ret = super().save(*args, **kwargs)
 
         if saved_fields and (not settings.SPAM_CHECK_PUBLIC_ONLY or self.verified_publishable):
             request, user_id = get_request_and_user_id()
@@ -811,7 +810,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if not self.has_permission(auth.user, WRITE):
             raise PermissionsError('Must have admin or write permissions to edit a preprint\'s title.')
 
-        return super(Preprint, self).set_title(title, auth, save)
+        return super().set_title(title, auth, save)
 
     def set_description(self, description, auth, save=False):
         """Set the description and log the event.
@@ -823,7 +822,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
         if not self.has_permission(auth.user, WRITE):
             raise PermissionsError('Must have admin or write permissions to edit a preprint\'s title.')
 
-        return super(Preprint, self).set_description(description, auth, save)
+        return super().set_description(description, auth, save)
 
     def get_spam_fields(self, saved_fields=None):
         if not saved_fields or (self.is_published and 'is_published' in saved_fields):
@@ -967,7 +966,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             params['urls'] = {'view': url, 'download': url + '?action=download'}
 
         self.add_log(
-            'osf_storage_{0}'.format(action),
+            f'osf_storage_{action}',
             auth=Auth(user),
             params=params
         )

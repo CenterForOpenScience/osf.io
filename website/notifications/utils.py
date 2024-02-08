@@ -14,7 +14,7 @@ from framework.celery_tasks import app
 
 class NotificationsDict(dict):
     def __init__(self):
-        super(NotificationsDict, self).__init__()
+        super().__init__()
         self.update(messages=[], children=collections.defaultdict(NotificationsDict))
 
     def add_message(self, keys, messages):
@@ -47,7 +47,7 @@ def find_subscription_type(subscription):
 
 def to_subscription_key(uid, event):
     """Build the Subscription primary key for the given guid and event"""
-    return u'{}_{}'.format(uid, event)
+    return f'{uid}_{event}'
 
 
 def from_subscription_key(key):
@@ -268,7 +268,7 @@ def format_data(user, nodes):
 
     user_subscriptions = get_all_user_subscriptions(user)
     for node in nodes:
-        assert node, '{} is not a valid Node.'.format(node._id)
+        assert node, f'{node._id} is not a valid Node.'
 
         can_read = node.has_permission(user, READ)
         can_read_children = node.has_permission_on_children(user, READ)

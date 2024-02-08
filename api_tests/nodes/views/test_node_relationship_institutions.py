@@ -35,7 +35,7 @@ class TestNodeRelationshipInstitutions:
     @pytest.fixture()
     def make_resource_url(self):
         def make_resource_url(node):
-            return '/{0}nodes/{1}/relationships/institutions/'.format(
+            return '/{}nodes/{}/relationships/institutions/'.format(
                 API_BASE, node._id)
         return make_resource_url
 
@@ -73,7 +73,7 @@ class TestNodeRelationshipInstitutions:
 
     @pytest.fixture()
     def node_institutions_url(self, node):
-        return '/{0}nodes/{1}/relationships/institutions/'.format(
+        return '/{}nodes/{}/relationships/institutions/'.format(
             API_BASE, node._id)
 
     @pytest.fixture()

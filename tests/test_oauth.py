@@ -3,7 +3,7 @@ import logging
 from rest_framework import status as http_status
 import json
 import logging
-import mock
+from unittest import mock
 import time
 from future.moves.urllib.parse import urlparse, urljoin, parse_qs
 
@@ -100,7 +100,7 @@ class TestExternalAccount(OsfTestCase):
     # ExternalProvider should go here.
 
     def setUp(self):
-        super(TestExternalAccount, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.provider = MockOAuth2Provider()
 
@@ -195,7 +195,7 @@ class TestExternalProviderOAuth1(OsfTestCase):
     # Test functionality of the ExternalProvider class, for OAuth 1.0a
 
     def setUp(self):
-        super(TestExternalProviderOAuth1, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         self.provider = MockOAuth1Provider()
 
@@ -336,7 +336,7 @@ class TestExternalProviderOAuth2(OsfTestCase):
     # Test functionality of the ExternalProvider class, for OAuth 2.0
 
     def setUp(self):
-        super(TestExternalProviderOAuth2, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         self.provider = MockOAuth2Provider()
 

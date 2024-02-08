@@ -164,7 +164,7 @@ HTTP_CODE_MAP = {
 }
 
 
-class NodeMixin(object):
+class NodeMixin:
     """Mixin with convenience methods for retrieving the current node based on the
     current URL. By default, fetches the current node based on the node_id kwarg.
     """
@@ -196,7 +196,7 @@ class NodeMixin(object):
         return node
 
 
-class DraftMixin(object):
+class DraftMixin:
 
     serializer_class = DraftRegistrationLegacySerializer
 
@@ -288,13 +288,13 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
             return NodeSerializer
 
     def get_serializer_context(self):
-        context = super(NodeList, self).get_serializer_context()
+        context = super().get_serializer_context()
         region_id = self.request.query_params.get('region', None)
         if region_id:
             try:
                 region_id = Region.objects.filter(_id=region_id).values_list('id', flat=True).get()
             except Region.DoesNotExist:
-                raise InvalidQueryStringError('Region {} is invalid.'.format(region_id))
+                raise InvalidQueryStringError(f'Region {region_id} is invalid.')
             context.update({
                 'region_id': region_id,
             })
@@ -396,7 +396,7 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
             raise PermissionDenied(str(err))
 
     def get_renderer_context(self):
-        context = super(NodeDetail, self).get_renderer_context()
+        context = super().get_renderer_context()
         show_counts = is_truthy(self.request.query_params.get('related_counts', False))
         if show_counts:
             node = self.get_object()
@@ -611,7 +611,7 @@ class NodeBibliographicContributorsList(BaseContributorList, NodeMixin):
         return self.get_node()
 
     def get_default_queryset(self):
-        contributors = super(NodeBibliographicContributorsList, self).get_default_queryset()
+        contributors = super().get_default_queryset()
         return contributors.filter(visible=True)
 
 
@@ -744,14 +744,14 @@ class NodeChildrenList(BaseChildrenList, bulk_views.ListBulkCreateJSONAPIView, N
     model_class = Node
 
     def get_serializer_context(self):
-        context = super(NodeChildrenList, self).get_serializer_context()
+        context = super().get_serializer_context()
         region__id = self.request.query_params.get('region', None)
         id = None
         if region__id:
             try:
                 id = Region.objects.filter(_id=region__id).values_list('id', flat=True).get()
             except Region.DoesNotExist:
-                raise InvalidQueryStringError('Region {} is invalid.'.format(region__id))
+                raise InvalidQueryStringError(f'Region {region__id} is invalid.')
 
         context.update({
             'region_id': id,
@@ -812,7 +812,7 @@ class NodeCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMix
             citation = render_citation(node=node, style=style)
         except ValueError as err:  # style requested could not be found
             csl_name = re.findall(r'[a-zA-Z]+\.csl', str(err))[0]
-            raise NotFound('{} is not a known style.'.format(csl_name))
+            raise NotFound(f'{csl_name} is not a known style.')
 
         return {'citation': citation, 'id': style}
 
@@ -916,7 +916,7 @@ class NodeLinksList(BaseNodeLinksList, bulk_views.BulkDestroyJSONAPIView, bulk_v
         """
         Tells parser that we are creating a relationship
         """
-        res = super(NodeLinksList, self).get_parser_context(http_request)
+        res = super().get_parser_context(http_request)
         res['is_relationship'] = True
         return res
 
@@ -1272,7 +1272,7 @@ class NodeGroupsList(NodeGroupsBase, generics.ListCreateAPIView, ListFilterMixin
                 raise ValidationError('{} is not a filterable permission.'.format(operation['value']))
             return Q(id__in=groups_with_perm_ids)
 
-        return super(NodeGroupsList, self).build_query_from_field(field_name, operation)
+        return super().build_query_from_field(field_name, operation)
 
     # overrides ListCreateAPIView
     def get_serializer_class(self):
@@ -1286,13 +1286,13 @@ class NodeGroupsList(NodeGroupsBase, generics.ListCreateAPIView, ListFilterMixin
         """
         Extra context for NodeGroupsSerializer
         """
-        context = super(NodeGroupsList, self).get_serializer_context()
+        context = super().get_serializer_context()
         context['node'] = self.get_node(check_object_permissions=False)
         return context
 
     @require_flag(OSF_GROUPS)
     def perform_create(self, serializer):
-        return super(NodeGroupsList, self).perform_create(serializer)
+        return super().perform_create(serializer)
 
 
 class NodeGroupsDetail(NodeGroupsBase, generics.RetrieveUpdateDestroyAPIView):
@@ -1316,7 +1316,7 @@ class NodeGroupsDetail(NodeGroupsBase, generics.RetrieveUpdateDestroyAPIView):
         # Node permissions checked when group is loaded
         group = self.get_osf_group(self.kwargs.get('group_id'))
         if not group.get_permission_to_node(node):
-            raise NotFound('Group {} does not have permissions to node {}.'.format(group._id, node._id))
+            raise NotFound(f'Group {group._id} does not have permissions to node {node._id}.')
         return group
 
     # Overrides RetrieveUpdateDestroyAPIView
@@ -1334,7 +1334,7 @@ class NodeGroupsDetail(NodeGroupsBase, generics.RetrieveUpdateDestroyAPIView):
         """
         Extra context for NodeGroupsSerializer
         """
-        context = super(NodeGroupsDetail, self).get_serializer_context()
+        context = super().get_serializer_context()
         context['node'] = self.get_node(check_object_permissions=False)
         return context
 
@@ -1402,16 +1402,16 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, ge
         node = self.get_node()
         if node.has_addon(addon):
             raise InvalidModelValueError(
-                detail='Add-on {} already enabled for node {}'.format(addon, node._id),
+                detail=f'Add-on {addon} already enabled for node {node._id}',
             )
 
-        return super(NodeAddonDetail, self).perform_create(serializer)
+        return super().perform_create(serializer)
 
     def perform_destroy(self, instance):
         addon = instance.config.short_name
         node = self.get_node()
         if not node.has_addon(instance.config.short_name):
-            raise NotFound('Node {} does not have add-on {}'.format(node._id, addon))
+            raise NotFound(f'Node {node._id} does not have add-on {addon}')
 
         node.delete_addon(addon, auth=get_user_auth(self.request))
 
@@ -1449,7 +1449,7 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
         if not node_addon.has_auth:
             raise JSONAPIException(
                 detail='This addon is enabled but an account has not been imported from your user settings',
-                meta={'link': '{}users/me/addons/{}/accounts/'.format(API_BASE, node_addon.config.short_name)},
+                meta={'link': f'{API_BASE}users/me/addons/{node_addon.config.short_name}/accounts/'},
             )
 
         path = self.request.query_params.get('path')
@@ -1467,7 +1467,7 @@ class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Addo
             raise HTTP_CODE_MAP.get(exc.code, exc)
 
 
-class NodeStorageProvider(object):
+class NodeStorageProvider:
 
     def __init__(self, node, provider_name, storage_addon=None):
         self.path = '/'
@@ -1612,7 +1612,7 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMi
         """
         Tells parser that we are creating a relationship
         """
-        res = super(NodeCommentsList, self).get_parser_context(http_request)
+        res = super().get_parser_context(http_request)
         res['is_relationship'] = True
         return res
 
@@ -1748,7 +1748,7 @@ class NodeInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestr
 
     def create(self, *args, **kwargs):
         try:
-            ret = super(NodeInstitutionsRelationship, self).create(*args, **kwargs)
+            ret = super().create(*args, **kwargs)
         except RelationshipPostMakesNoChanges:
             return Response(status=HTTP_204_NO_CONTENT)
         return ret
@@ -1933,7 +1933,7 @@ class LinkedNodesList(BaseLinkedList, NodeMixin):
     view_name = 'linked-nodes'
 
     def get_queryset(self):
-        queryset = super(LinkedNodesList, self).get_queryset()
+        queryset = super().get_queryset()
         return queryset.exclude(type='osf.registration')
 
     # overrides APIView
@@ -1941,7 +1941,7 @@ class LinkedNodesList(BaseLinkedList, NodeMixin):
         """
         Tells parser that we are creating a relationship
         """
-        res = super(LinkedNodesList, self).get_parser_context(http_request)
+        res = super().get_parser_context(http_request)
         res['is_relationship'] = True
         return res
 
@@ -2083,14 +2083,14 @@ class NodeLinkedRegistrationsList(BaseLinkedList, NodeMixin):
     view_name = 'linked-registrations'
 
     def get_queryset(self):
-        return super(NodeLinkedRegistrationsList, self).get_queryset().filter(type='osf.registration')
+        return super().get_queryset().filter(type='osf.registration')
 
     # overrides APIView
     def get_parser_context(self, http_request):
         """
         Tells parser that we are creating a relationship
         """
-        res = super(NodeLinkedRegistrationsList, self).get_parser_context(http_request)
+        res = super().get_parser_context(http_request)
         res['is_relationship'] = True
         return res
 
@@ -2280,7 +2280,7 @@ class NodeSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, NodeMixin):
         Extra context for NodeSettingsSerializer - this will prevent loading
         addons multiple times in SerializerMethodFields
         """
-        context = super(NodeSettings, self).get_serializer_context()
+        context = super().get_serializer_context()
         node = self.get_node(check_object_permissions=False)
         context['wiki_addon'] = node.get_addon('wiki')
         context['forward_addon'] = node.get_addon('forward')

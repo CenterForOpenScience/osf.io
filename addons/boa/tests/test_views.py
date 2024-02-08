@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 from rest_framework import status as http_status
 
@@ -29,7 +29,7 @@ class TestAuthViews(BoaBasicAuthAddonTestCase, OAuthAddonAuthViewsTestCaseMixin,
 class TestConfigViews(BoaBasicAuthAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCase):
 
     def setUp(self):
-        super(TestConfigViews, self).setUp()
+        super().setUp()
         self.mock_boa_client_login = mock.patch('boaapi.boa_client.BoaClient.login')
         self.mock_boa_client_close = mock.patch('boaapi.boa_client.BoaClient.close')
         self.mock_boa_client_login.start()
@@ -38,7 +38,7 @@ class TestConfigViews(BoaBasicAuthAddonTestCase, OAuthAddonConfigViewsTestCaseMi
     def tearDown(self):
         self.mock_boa_client_close.stop()
         self.mock_boa_client_login.stop()
-        super(TestConfigViews, self).tearDown()
+        super().tearDown()
 
     def test_folder_list(self):
         """Not applicable to remote computing add-ons."""
@@ -77,7 +77,7 @@ class TestConfigViews(BoaBasicAuthAddonTestCase, OAuthAddonConfigViewsTestCaseMi
         assert self.node_settings.external_account is not None
         assert serialized['validCredentials'] is True
 
-        url = self.project.api_url_for('{0}_get_config'.format(self.ADDON_SHORT_NAME))
+        url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_get_config')
         res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == http_status.HTTP_200_OK
         assert 'result' in res.json
@@ -93,7 +93,7 @@ class TestConfigViews(BoaBasicAuthAddonTestCase, OAuthAddonConfigViewsTestCaseMi
         assert self.node_settings.external_account is None
         assert serialized['validCredentials'] is False
 
-        url = self.project.api_url_for('{0}_get_config'.format(self.ADDON_SHORT_NAME))
+        url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_get_config')
         res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == http_status.HTTP_200_OK
         assert 'result' in res.json
@@ -112,7 +112,7 @@ class TestConfigViews(BoaBasicAuthAddonTestCase, OAuthAddonConfigViewsTestCaseMi
         assert self.node_settings.external_account is not None
         assert serialized['validCredentials'] is True
 
-        url = self.project.api_url_for('{0}_get_config'.format(self.ADDON_SHORT_NAME))
+        url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_get_config')
         res = self.app.get(url, auth=user_write.auth)
         assert res.status_code == http_status.HTTP_200_OK
         assert 'result' in res.json
@@ -130,7 +130,7 @@ class TestConfigViews(BoaBasicAuthAddonTestCase, OAuthAddonConfigViewsTestCaseMi
         assert self.node_settings.external_account is None
         assert serialized['validCredentials'] is False
 
-        url = self.project.api_url_for('{0}_get_config'.format(self.ADDON_SHORT_NAME))
+        url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_get_config')
         res = self.app.get(url, auth=user_write.auth)
         assert res.status_code == http_status.HTTP_200_OK
         assert 'result' in res.json
@@ -149,7 +149,7 @@ class TestConfigViews(BoaBasicAuthAddonTestCase, OAuthAddonConfigViewsTestCaseMi
         assert self.node_settings.external_account is not None
         assert serialized['validCredentials'] is True
 
-        url = self.project.api_url_for('{0}_get_config'.format(self.ADDON_SHORT_NAME))
+        url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_get_config')
         res = self.app.get(url, auth=user_admin.auth)
         assert res.status_code == http_status.HTTP_200_OK
         assert 'result' in res.json
@@ -167,7 +167,7 @@ class TestConfigViews(BoaBasicAuthAddonTestCase, OAuthAddonConfigViewsTestCaseMi
         assert self.node_settings.external_account is None
         assert serialized['validCredentials'] is False
 
-        url = self.project.api_url_for('{0}_get_config'.format(self.ADDON_SHORT_NAME))
+        url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_get_config')
         res = self.app.get(url, auth=user_admin.auth)
         assert res.status_code == http_status.HTTP_200_OK
         assert 'result' in res.json
@@ -178,7 +178,7 @@ class TestConfigViews(BoaBasicAuthAddonTestCase, OAuthAddonConfigViewsTestCaseMi
         user_read_only = AuthUserFactory()
         self.project.add_contributor(user_read_only, permissions=permissions.READ, auth=self.auth, save=True)
 
-        url = self.project.api_url_for('{0}_get_config'.format(self.ADDON_SHORT_NAME))
+        url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_get_config')
         with mock.patch.object(type(self.Serializer()), 'credentials_are_valid', return_value=True):
             res = self.app.get(url, auth=user_read_only.auth, expect_errors=True)
             assert res.status_code == http_status.HTTP_403_FORBIDDEN
@@ -188,7 +188,7 @@ class TestConfigViews(BoaBasicAuthAddonTestCase, OAuthAddonConfigViewsTestCaseMi
         user_read_only = AuthUserFactory()
         self.project.add_contributor(user_read_only, permissions=permissions.READ, auth=self.auth, save=True)
 
-        url = self.project.api_url_for('{0}_get_config'.format(self.ADDON_SHORT_NAME))
+        url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_get_config')
         with mock.patch.object(type(self.Serializer()), 'credentials_are_valid', return_value=False):
             res = self.app.get(url, auth=user_read_only.auth, expect_errors=True)
             assert res.status_code == http_status.HTTP_403_FORBIDDEN
@@ -197,7 +197,7 @@ class TestConfigViews(BoaBasicAuthAddonTestCase, OAuthAddonConfigViewsTestCaseMi
 class TestBoaSubmitViews(BoaBasicAuthAddonTestCase, OsfTestCase):
 
     def setUp(self):
-        super(TestBoaSubmitViews, self).setUp()
+        super().setUp()
         self.folder_name = 'fake_boa_folder'
         self.file_name = 'fake_boa_file.boa'
         self.file_size = 255
@@ -238,7 +238,7 @@ class TestBoaSubmitViews(BoaBasicAuthAddonTestCase, OsfTestCase):
         }
 
     def tearDown(self):
-        super(TestBoaSubmitViews, self).tearDown()
+        super().tearDown()
 
     def test_boa_submit_job_from_addon_root(self):
         with mock.patch('addons.boa.tasks.submit_to_boa.s', return_value=BoaErrorCode.NO_ERROR) as mock_submit_s:

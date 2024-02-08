@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 from django.db import migrations, models
 import django.db.models.deletion
 import django_extensions.db.fields
@@ -38,6 +36,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterUniqueTogether(
             name='domainreference',
-            unique_together=set([('referrer_object_id', 'domain')]),
+            unique_together={('referrer_object_id', 'domain')},
         ),
     ]

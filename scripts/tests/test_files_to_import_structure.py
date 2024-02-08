@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-import mock
+from unittest import mock
 from tests.base import OsfTestCase
 from scripts.EGAP.files_to_import_structure import action_files_by_name
 

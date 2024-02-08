@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 import pytest
 from nose.tools import *  # noqa: F403
 
@@ -15,7 +12,7 @@ from website.views import find_bookmark_collection
 class TestSearchViews(OsfTestCase):
 
     def setUp(self):
-        super(TestSearchViews, self).setUp()
+        super().setUp()
         import website.search.search as search
         search.delete_all()
 
@@ -23,7 +20,7 @@ class TestSearchViews(OsfTestCase):
         self.project = factories.ProjectFactory(creator=robbie)
         self.contrib = factories.UserFactory(fullname='Brian May')
         for i in range(0, 12):
-            factories.UserFactory(fullname='Freddie Mercury{}'.format(i))
+            factories.UserFactory(fullname=f'Freddie Mercury{i}')
 
         self.user_one = factories.AuthUserFactory()
         self.user_two = factories.AuthUserFactory()
@@ -33,7 +30,7 @@ class TestSearchViews(OsfTestCase):
         self.project_public_user_two = factories.ProjectFactory(title='aaa', creator=self.user_two, is_public=True)
 
     def tearDown(self):
-        super(TestSearchViews, self).tearDown()
+        super().tearDown()
         import website.search.search as search
         search.delete_all()
 
@@ -162,12 +159,12 @@ class TestSearchViews(OsfTestCase):
         assert_not_in('Joan', res.body.decode())
         assert_true(res.json['results'][0]['social'])
         assert_equal(res.json['results'][0]['names']['fullname'], user_one.fullname)
-        assert_equal(res.json['results'][0]['social']['github'], 'http://github.com/{}'.format(user_one.given_name))
-        assert_equal(res.json['results'][0]['social']['twitter'], 'http://twitter.com/{}'.format(user_one.given_name))
-        assert_equal(res.json['results'][0]['social']['ssrn'], 'http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id={}'.format(user_one.given_name))
+        assert_equal(res.json['results'][0]['social']['github'], f'http://github.com/{user_one.given_name}')
+        assert_equal(res.json['results'][0]['social']['twitter'], f'http://twitter.com/{user_one.given_name}')
+        assert_equal(res.json['results'][0]['social']['ssrn'], f'http://papers.ssrn.com/sol3/cf_dev/AbsByAuth.cfm?per_id={user_one.given_name}')
 
         user_two.social = {
-            'profileWebsites': ['http://me.com/{}'.format(user_two.given_name)],
+            'profileWebsites': [f'http://me.com/{user_two.given_name}'],
             'orcid': user_two.given_name,
             'linkedIn': user_two.given_name,
             'scholar': user_two.given_name,
@@ -198,12 +195,12 @@ class TestSearchViews(OsfTestCase):
         assert_equal(len(res.json['results']), 1)
         assert_true(res.json['results'][0]['social'])
         assert_not_in('ssrn', res.json['results'][0]['social'])
-        assert_equal(res.json['results'][0]['social']['profileWebsites'][0], 'http://me.com/{}'.format(user_two.given_name))
-        assert_equal(res.json['results'][0]['social']['impactStory'], 'https://impactstory.org/u/{}'.format(user_two.given_name))
-        assert_equal(res.json['results'][0]['social']['orcid'], 'http://orcid.org/{}'.format(user_two.given_name))
-        assert_equal(res.json['results'][0]['social']['baiduScholar'], 'http://xueshu.baidu.com/scholarID/{}'.format(user_two.given_name))
-        assert_equal(res.json['results'][0]['social']['linkedIn'], 'https://www.linkedin.com/{}'.format(user_two.given_name))
-        assert_equal(res.json['results'][0]['social']['scholar'], 'http://scholar.google.com/citations?user={}'.format(user_two.given_name))
+        assert_equal(res.json['results'][0]['social']['profileWebsites'][0], f'http://me.com/{user_two.given_name}')
+        assert_equal(res.json['results'][0]['social']['impactStory'], f'https://impactstory.org/u/{user_two.given_name}')
+        assert_equal(res.json['results'][0]['social']['orcid'], f'http://orcid.org/{user_two.given_name}')
+        assert_equal(res.json['results'][0]['social']['baiduScholar'], f'http://xueshu.baidu.com/scholarID/{user_two.given_name}')
+        assert_equal(res.json['results'][0]['social']['linkedIn'], f'https://www.linkedin.com/{user_two.given_name}')
+        assert_equal(res.json['results'][0]['social']['scholar'], f'http://scholar.google.com/citations?user={user_two.given_name}')
 
 
 @pytest.mark.enable_bookmark_creation
@@ -221,7 +218,7 @@ class TestODMTitleSearch(OsfTestCase):
     :return: a list of dictionaries of projects
     """
     def setUp(self):
-        super(TestODMTitleSearch, self).setUp()
+        super().setUp()
 
         self.user = factories.AuthUserFactory()
         self.user_two = factories.AuthUserFactory()

@@ -12,7 +12,7 @@ class TestCore(unittest.TestCase):
 
     def setUp(self):
 
-        super(TestCore, self).setUp()
+        super().setUp()
 
         self.user = UserFactory()
         self.user.add_addon('dropbox')

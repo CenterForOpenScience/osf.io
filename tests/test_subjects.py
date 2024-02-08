@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from django.core.exceptions import ValidationError
 from nose.tools import *  # noqa: F403 (PEP8 asserts)
 from osf.exceptions import ValidationValueError
@@ -11,7 +10,7 @@ from osf.models.validators import validate_subject_hierarchy
 
 class TestSubjectTreeValidation(OsfTestCase):
     def setUp(self):
-        super(TestSubjectTreeValidation, self).setUp()
+        super().setUp()
 
         self.root_subject = SubjectFactory()
         self.one_level_root = SubjectFactory()
@@ -127,7 +126,7 @@ class TestSubjectTreeValidation(OsfTestCase):
 
 class TestSubjectEditValidation(OsfTestCase):
     def setUp(self):
-        super(TestSubjectEditValidation, self).setUp()
+        super().setUp()
         self.subject = SubjectFactory()
 
     def test_edit_unused_subject(self):
@@ -156,7 +155,7 @@ class TestSubjectEditValidation(OsfTestCase):
 
 class TestSubjectProperties(OsfTestCase):
     def setUp(self):
-        super(TestSubjectProperties, self).setUp()
+        super().setUp()
 
         self.osf_provider = PreprintProviderFactory(_id='osf', share_title='bepress')
         self.asdf_provider = PreprintProviderFactory(_id='asdf')

@@ -23,23 +23,23 @@ class TestSubscriptionList:
 
     @pytest.fixture()
     def global_user_notification(self, user):
-        notification = NotificationSubscriptionFactory(_id='{}_global'.format(user._id), user=user, event_name='global')
+        notification = NotificationSubscriptionFactory(_id=f'{user._id}_global', user=user, event_name='global')
         notification.add_user_to_subscription(user, 'email_transactional')
         return notification
 
     @pytest.fixture()
     def url(self, user, node):
-        return '/{}subscriptions/'.format(API_BASE)
+        return f'/{API_BASE}subscriptions/'
 
     def test_list_complete(self, app, user, provider, node, global_user_notification, url):
         res = app.get(url, auth=user.auth)
         notification_ids = [item['id'] for item in res.json['data']]
         # There should only be 4 notifications: users' global, node's comments, node's file updates and provider's preprint added.
         assert len(notification_ids) == 4
-        assert '{}_global'.format(user._id) in notification_ids
-        assert '{}_new_pending_submissions'.format(provider._id) in notification_ids
-        assert '{}_comments'.format(node._id) in notification_ids
-        assert '{}_file_updated'.format(node._id) in notification_ids
+        assert f'{user._id}_global' in notification_ids
+        assert f'{provider._id}_new_pending_submissions' in notification_ids
+        assert f'{node._id}_comments' in notification_ids
+        assert f'{node._id}_file_updated' in notification_ids
 
     def test_unauthenticated(self, app, url):
         res = app.get(url, expect_errors=True)

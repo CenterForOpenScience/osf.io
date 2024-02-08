@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from distutils.version import StrictVersion
 from django.apps import apps
 from django.db.models import Q, OuterRef, Exists, Subquery, CharField, Value, BooleanField
@@ -39,7 +38,7 @@ def get_file_object(target, path, provider, request):
         return obj
 
     if isinstance(target, AbstractNode) and not target.get_addon(provider) or not target.get_addon(provider).configured:
-        raise NotFound('The {} provider is not configured for this project.'.format(provider))
+        raise NotFound(f'The {provider} provider is not configured for this project.')
 
     view_only = request.query_params.get('view_only', default=None)
     base_url = None
@@ -73,7 +72,7 @@ def get_file_object(target, path, provider, request):
 def enforce_no_children(request):
     return StrictVersion(request.version) < StrictVersion('2.12')
 
-class NodeOptimizationMixin(object):
+class NodeOptimizationMixin:
     """Mixin with convenience method for optimizing serialization of nodes.
     Annotates the node queryset with several properties to reduce number of queries.
 

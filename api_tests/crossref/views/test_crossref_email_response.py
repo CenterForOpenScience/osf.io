@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 import hmac
 import hashlib
@@ -25,8 +25,8 @@ class TestCrossRefEmailResponse:
             'timestamp': '123',
             'recipient': ['test@test.osf.io'],
             'sender': ['test-admin@crossref.org'],
-            'Content-Type': [u'text/plain; charset="UTF-8"'],
-            'Subject': [u'CrossRef submission ID: 1390671938'],
+            'Content-Type': ['text/plain; charset="UTF-8"'],
+            'Subject': ['CrossRef submission ID: 1390671938'],
             'token': 'secret'
         }
 

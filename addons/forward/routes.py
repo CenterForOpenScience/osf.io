@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Forward addon routes."""
 from framework.routing import Rule, json_renderer
 from addons.forward import views

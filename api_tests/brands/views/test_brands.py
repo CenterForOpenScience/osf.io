@@ -25,11 +25,11 @@ class TestBrand:
 
     @pytest.fixture()
     def url_brand_list(self):
-        return '/{}brands/'.format(API_BASE)
+        return f'/{API_BASE}brands/'
 
     @pytest.fixture()
     def url_brand_detail(self, brand1):
-        return '/{}brands/{}/'.format(API_BASE, brand1.id)
+        return f'/{API_BASE}brands/{brand1.id}/'
 
     @pytest.fixture()
     def payload(self):

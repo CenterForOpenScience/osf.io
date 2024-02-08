@@ -18,7 +18,7 @@ class BootstrapTextInput(TextInput):
     def __call__(self, field, **kwargs):
         kwargs.setdefault('class', 'form-control')
         kwargs.setdefault('class_', 'form-control')
-        return super(BootstrapTextInput, self).__call__(field, **kwargs)
+        return super().__call__(field, **kwargs)
 
 
 class BootstrapPasswordInput(PasswordInput):
@@ -27,7 +27,7 @@ class BootstrapPasswordInput(PasswordInput):
     def __call__(self, field, **kwargs):
         kwargs.setdefault('class', 'form-control')
         kwargs.setdefault('class_', 'form-control')
-        html = super(BootstrapPasswordInput, self).__call__(field, **kwargs)
+        html = super().__call__(field, **kwargs)
         return html
 
 class BootstrapTextArea(TextArea):
@@ -36,7 +36,7 @@ class BootstrapTextArea(TextArea):
     def __call__(self, field, **kwargs):
         kwargs.setdefault('class', 'form-control')
         kwargs.setdefault('class_', 'form-control')
-        html = super(BootstrapTextArea, self).__call__(field, **kwargs)
+        html = super().__call__(field, **kwargs)
         return html
 
 
@@ -48,7 +48,7 @@ def push_errors_to_status(errors):
                 status.push_status_message(error, trust=False)
 
 
-class NoHtmlCharacters(object):
+class NoHtmlCharacters:
     """ Raises a validation error if an email address contains characters that
     we escape for HTML output
 
@@ -57,7 +57,7 @@ class NoHtmlCharacters(object):
     """
     # TODO: Improve this for a post-bleach world
     def __init__(self, message=None):
-        self.message = message or u'HTML is not allowed in form field'
+        self.message = message or 'HTML is not allowed in form field'
 
     def __call__(self, form, field):
         if not field.data == strip_html(field.data):

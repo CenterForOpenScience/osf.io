@@ -1,6 +1,6 @@
 import datetime as dt
 import pytest
-import mock
+from unittest import mock
 import pytz
 import datetime
 
@@ -113,7 +113,7 @@ class TestNodeView(AdminTestCase):
 
 class TestNodeDeleteView(AdminTestCase):
     def setUp(self):
-        super(TestNodeDeleteView, self).setUp()
+        super().setUp()
         self.node = ProjectFactory()
         self.request = RequestFactory().post('/fake_path')
         self.plain_view = NodeDeleteView
@@ -174,7 +174,7 @@ class TestNodeDeleteView(AdminTestCase):
 
 class TestRemoveContributor(AdminTestCase):
     def setUp(self):
-        super(TestRemoveContributor, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.node = ProjectFactory(creator=self.user)
         self.user_2 = AuthUserFactory()
@@ -253,7 +253,7 @@ class TestRemoveContributor(AdminTestCase):
 @pytest.mark.enable_implicit_clean
 class TestNodeReindex(AdminTestCase):
     def setUp(self):
-        super(TestNodeReindex, self).setUp()
+        super().setUp()
         self.request = RequestFactory().post('/fake_path')
 
         self.user = AuthUserFactory()
@@ -300,7 +300,7 @@ class TestNodeReindex(AdminTestCase):
 
 class TestNodeConfirmHamView(AdminTestCase):
     def setUp(self):
-        super(TestNodeConfirmHamView, self).setUp()
+        super().setUp()
 
         self.request = RequestFactory().post('/fake_path')
         self.user = AuthUserFactory()
@@ -331,7 +331,7 @@ class TestNodeConfirmHamView(AdminTestCase):
 class TestAdminNodeLogView(AdminTestCase):
 
     def setUp(self):
-        super(TestAdminNodeLogView, self).setUp()
+        super().setUp()
 
         self.request = RequestFactory().post('/fake_path')
         self.user = AuthUserFactory()
@@ -349,12 +349,12 @@ class TestAdminNodeLogView(AdminTestCase):
 
         log_entry = logs.last()
         nt.assert_true(log_entry.action == 'edit_title')
-        nt.assert_true(log_entry.params['title_new'] == u'New Title')
+        nt.assert_true(log_entry.params['title_new'] == 'New Title')
 
 
 class TestRestartStuckRegistrationsView(AdminTestCase):
     def setUp(self):
-        super(TestRestartStuckRegistrationsView, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.registration = RegistrationFactory(creator=self.user, archive=True)
         self.registration.save()
@@ -373,7 +373,7 @@ class TestRestartStuckRegistrationsView(AdminTestCase):
 
         view = RestartStuckRegistrationsView()
         view = setup_log_view(view, self.request, guid=self.registration._id)
-        nt.assert_equal(self.registration.archive_job.status, u'INITIATED')
+        nt.assert_equal(self.registration.archive_job.status, 'INITIATED')
 
         # django.contrib.messages has a bug which effects unittests
         # more info here -> https://code.djangoproject.com/ticket/17971
@@ -383,12 +383,12 @@ class TestRestartStuckRegistrationsView(AdminTestCase):
 
         view.post(self.request)
 
-        nt.assert_equal(self.registration.archive_job.status, u'SUCCESS')
+        nt.assert_equal(self.registration.archive_job.status, 'SUCCESS')
 
 
 class TestRemoveStuckRegistrationsView(AdminTestCase):
     def setUp(self):
-        super(TestRemoveStuckRegistrationsView, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         self.registration = RegistrationFactory(creator=self.user, archive=True)
         # Make the registration "stuck"

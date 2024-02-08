@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import logging
 import datetime
 
@@ -17,7 +16,7 @@ def restore_deleted_root_folders(dry_run=False):
         provider='osfstorage'
     )
 
-    logger.info('Restoring {} deleted osfstorage root folders'.format(len(deleted_roots)))
+    logger.info(f'Restoring {len(deleted_roots)} deleted osfstorage root folders')
 
     for i, folder in enumerate(deleted_roots, 1):
         folder.deleted_on = None
@@ -40,7 +39,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         script_start_time = datetime.datetime.now()
-        logger.info('Script started time: {}'.format(script_start_time))
+        logger.info(f'Script started time: {script_start_time}')
 
         dry_run = options['dry_run']
 
@@ -50,5 +49,5 @@ class Command(BaseCommand):
         restore_deleted_root_folders(dry_run)
 
         script_finish_time = datetime.datetime.now()
-        logger.info('Script finished time: {}'.format(script_finish_time))
-        logger.info('Run time {}'.format(script_finish_time - script_start_time))
+        logger.info(f'Script finished time: {script_finish_time}')
+        logger.info(f'Run time {script_finish_time - script_start_time}')

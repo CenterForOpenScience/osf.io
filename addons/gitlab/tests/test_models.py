@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-import mock
+from unittest import mock
 import pytest
 import unittest
 from nose.tools import *  # noqa
@@ -63,12 +61,12 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
         mock.PropertyMock()
     )
     def test_complete_has_auth_not_verified(self):
-        super(TestNodeSettings, self).test_complete_has_auth_not_verified()
+        super().test_complete_has_auth_not_verified()
 
     @mock.patch('addons.gitlab.api.GitLabClient.repos')
     def test_to_json(self, mock_repos):
         mock_repos.return_value = {}
-        super(TestNodeSettings, self).test_to_json()
+        super().test_to_json()
 
     @mock.patch('addons.gitlab.api.GitLabClient.repos')
     def test_to_json_user_is_owner(self, mock_repos):
@@ -103,7 +101,7 @@ class TestCallbacks(OsfTestCase):
 
     def setUp(self):
 
-        super(TestCallbacks, self).setUp()
+        super().setUp()
 
         self.project = ProjectFactory.build()
         self.consolidated_auth = Auth(self.project.creator)
@@ -229,7 +227,7 @@ class TestCallbacks(OsfTestCase):
 class TestGitLabNodeSettings(unittest.TestCase):
 
     def setUp(self):
-        super(TestGitLabNodeSettings, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         self.user.add_addon('gitlab')
         self.user_settings = self.user.get_addon('gitlab')

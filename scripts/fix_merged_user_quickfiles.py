@@ -19,11 +19,11 @@ def main():
         script_utils.add_file_logger(logger, __file__)
     with transaction.atomic():
         qs = QuickFilesNode.objects.exclude(_contributors=F('creator')).annotate(contrib_count=Count('_contributors')).exclude(contrib_count=0)
-        logger.info('Found {} quickfiles nodes with mismatched creator and _contributors'.format(qs.count()))
+        logger.info(f'Found {qs.count()} quickfiles nodes with mismatched creator and _contributors')
 
         for node in qs:
             bad_contrib = node._contributors.get()
-            logger.info('Fixing {} (quickfiles node): Replacing {} (bad contributor) with {} (creator)'.format(node._id, bad_contrib._id, node.creator._id))
+            logger.info(f'Fixing {node._id} (quickfiles node): Replacing {bad_contrib._id} (bad contributor) with {node.creator._id} (creator)')
             node.contributor_set.filter(user=bad_contrib).update(user=node.creator)
             node.save()
         if dry:

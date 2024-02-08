@@ -132,7 +132,7 @@ All changes will persist. Transactions must be handled manually."""
 
 class Command(shell_plus.Command):
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             '--no-transaction', action='store_false', dest='transaction',
             help="Don't run session in transaction. Transactions must be "
@@ -245,4 +245,4 @@ class Command(shell_plus.Command):
         print(banner)
         if auto_transact:
             self.atomic.__enter__()
-        super(Command, self).handle(*args, **options)
+        super().handle(*args, **options)

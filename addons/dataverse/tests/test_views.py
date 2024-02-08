@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
 from nose.tools import (assert_false, assert_equal, assert_in, assert_true)
-import mock
+from unittest import mock
 import pytest
 import unittest
 
@@ -66,14 +65,14 @@ class TestConfigViews(DataverseAddonTestCase, OAuthAddonConfigViewsTestCaseMixin
     client = DataverseProvider
 
     def setUp(self):
-        super(TestConfigViews, self).setUp()
+        super().setUp()
         self.mock_ser_api = mock.patch('addons.dataverse.serializer.client.connect_from_settings')
         self.mock_ser_api.return_value = create_mock_connection()
         self.mock_ser_api.start()
 
     def tearDown(self):
         self.mock_ser_api.stop()
-        super(TestConfigViews, self).tearDown()
+        super().tearDown()
 
     @mock.patch('addons.dataverse.views.client.connect_from_settings')
     def test_folder_list(self, mock_connection):
@@ -93,7 +92,7 @@ class TestConfigViews(DataverseAddonTestCase, OAuthAddonConfigViewsTestCaseMixin
     def test_set_config(self, mock_connection):
         mock_connection.return_value = self.connection
 
-        url = self.project.api_url_for('{0}_set_config'.format(self.ADDON_SHORT_NAME))
+        url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_set_config')
         res = self.app.post_json(url, {
             'dataverse': {'alias': 'ALIAS3'},
             'dataset': {'doi': 'doi:12.3456/DVN/00003'},
@@ -102,14 +101,14 @@ class TestConfigViews(DataverseAddonTestCase, OAuthAddonConfigViewsTestCaseMixin
         self.project.reload()
         assert_equal(
             self.project.logs.latest().action,
-            '{0}_dataset_linked'.format(self.ADDON_SHORT_NAME)
+            f'{self.ADDON_SHORT_NAME}_dataset_linked'
         )
         assert_equal(res.json['dataverse'], self.connection.get_dataverse('ALIAS3').title)
         assert_equal(res.json['dataset'],
             self.connection.get_dataverse('ALIAS3').get_dataset_by_doi('doi:12.3456/DVN/00003').title)
 
     def test_get_config(self):
-        url = self.project.api_url_for('{0}_get_config'.format(self.ADDON_SHORT_NAME))
+        url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_get_config')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, http_status.HTTP_200_OK)
         assert_in('result', res.json)

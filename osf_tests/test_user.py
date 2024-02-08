@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Tests ported from tests/test_models.py and tests/test_user.py
 import os
 import json
@@ -10,7 +9,7 @@ from django.contrib.auth.models import Group
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 from django.conf import settings as django_conf_settings
-import mock
+from unittest import mock
 import itsdangerous
 import pytest
 import pytz
@@ -504,7 +503,7 @@ class TestOSFUser:
         random_string.return_value = 'abcde'
         u = UnconfirmedUserFactory()
         assert (u.get_confirmation_url(u.username, external_id_provider='service', destination='dashboard') ==
-                '{0}confirm/external/{1}/{2}/?destination={3}'.format(settings.DOMAIN, u._id, 'abcde', 'dashboard'))
+                '{}confirm/external/{}/{}/?destination={}'.format(settings.DOMAIN, u._id, 'abcde', 'dashboard'))
 
     @mock.patch('website.security.random_string')
     def test_get_confirmation_token(self, random_string):
@@ -563,7 +562,7 @@ class TestOSFUser:
         u.add_unconfirmed_email('foo@bar.com')
         assert(
             u.get_confirmation_url('foo@bar.com') ==
-            '{0}confirm/{1}/{2}/'.format(settings.DOMAIN, u._id, 'abcde')
+            '{}confirm/{}/{}/'.format(settings.DOMAIN, u._id, 'abcde')
         )
 
     def test_get_confirmation_url_when_token_is_expired_raises_error(self):
@@ -590,7 +589,7 @@ class TestOSFUser:
         random_string.return_value = '54321'
 
         url = u.get_confirmation_url('foo@bar.com', force=True)
-        expected = '{0}confirm/{1}/{2}/'.format(settings.DOMAIN, u._id, '54321')
+        expected = '{}confirm/{}/{}/'.format(settings.DOMAIN, u._id, '54321')
         assert url == expected
 
     def test_confirm_primary_email(self):
@@ -698,12 +697,12 @@ class TestOSFUser:
         )
 
     def test_url(self, user):
-        assert user.url == '/{0}/'.format(user._id)
+        assert user.url == f'/{user._id}/'
 
     def test_absolute_url(self, user):
         assert(
             user.absolute_url ==
-            urljoin(settings.DOMAIN, '/{0}/'.format(user._id))
+            urljoin(settings.DOMAIN, f'/{user._id}/')
         )
 
     def test_profile_image_url(self, user):
@@ -820,7 +819,7 @@ class TestOSFUser:
         institution = InstitutionFactory()
         email_domain = institution.email_domains[0]
 
-        user_email = '{}@{}'.format(fake.domain_word(), email_domain)
+        user_email = f'{fake.domain_word()}@{email_domain}'
         user = UserFactory(username=user_email)
         user.update_affiliated_institutions_by_email_domain()
 
@@ -861,11 +860,11 @@ class TestProjectsInCommon:
         group_project.add_osf_group(group)
         group_project.save()
 
-        project_keys = set([node._id for node in user.all_nodes])
+        project_keys = {node._id for node in user.all_nodes}
         projects = set(user.all_nodes)
-        user2_project_keys = set([node._id for node in user2.all_nodes])
+        user2_project_keys = {node._id for node in user2.all_nodes}
 
-        assert set(n._id for n in user.get_projects_in_common(user2)) == project_keys.intersection(user2_project_keys)
+        assert {n._id for n in user.get_projects_in_common(user2)} == project_keys.intersection(user2_project_keys)
         assert user.get_projects_in_common(user2) == projects.intersection(user2.all_nodes)
 
     def test_n_projects_in_common(self, user, auth):
@@ -1215,7 +1214,7 @@ class TestUnregisteredUser:
         domain = settings.DOMAIN
         assert (
             unreg_user.get_claim_url(pid, external=True) ==
-            '{domain}user/{uid}/{pid}/claim/?token={token}'.format(**locals())
+            f'{domain}user/{uid}/{pid}/claim/?token={token}'
         )
 
         # test_unreg_moderator
@@ -1225,7 +1224,7 @@ class TestUnregisteredUser:
         domain = settings.DOMAIN
         assert (
             unreg_moderator.get_claim_url(pid, external=True) ==
-            '{domain}user/{uid}/{pid}/claim/?token={token}'.format(**locals())
+            f'{domain}user/{uid}/{pid}/claim/?token={token}'
         )
 
     def test_get_claim_url_raises_value_error_if_not_valid_pid(self, unreg_user, unreg_moderator):
@@ -1240,7 +1239,7 @@ class TestUnregisteredUser:
             unreg_user.add_unclaimed_record(project,
                 given_name='fred m', referrer=referrer)
             unreg_user.save()
-        assert str(e.value) == 'Referrer does not have permission to add a contributor to {}'.format(project._primary_key)
+        assert str(e.value) == f'Referrer does not have permission to add a contributor to {project._primary_key}'
 
         # test_referrer_is_not_admin_or_moderator
         referrer = UserFactory()
@@ -1248,7 +1247,7 @@ class TestUnregisteredUser:
             unreg_moderator.add_unclaimed_record(provider,
                 given_name='hodor', referrer=referrer)
             unreg_user.save()
-        assert str(e.value) == 'Referrer does not have permission to add a moderator to provider {}'.format(provider._id)
+        assert str(e.value) == f'Referrer does not have permission to add a moderator to provider {provider._id}'
 
     @mock.patch('osf.models.OSFUser.update_search_nodes')
     @mock.patch('osf.models.OSFUser.update_search')
@@ -1505,7 +1504,7 @@ class TestMergingUsers:
 
         with capture_signals() as mock_signals:
             merge_dupe()
-            assert mock_signals.signals_sent() == set([user_merged])
+            assert mock_signals.signals_sent() == {user_merged}
 
     @pytest.mark.enable_enqueue_task
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
@@ -1635,7 +1634,7 @@ class TestMergingUsers:
 
 class TestDisablingUsers(OsfTestCase):
     def setUp(self):
-        super(TestDisablingUsers, self).setUp()
+        super().setUp()
         self.user = UserFactory()
 
     def test_user_enabled_by_default(self):
@@ -1701,7 +1700,7 @@ class TestDisablingUsers(OsfTestCase):
 @pytest.mark.enable_bookmark_creation
 class TestUser(OsfTestCase):
     def setUp(self):
-        super(TestUser, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
 
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/2454
@@ -1902,7 +1901,7 @@ class TestUser(OsfTestCase):
 @pytest.mark.enable_bookmark_creation
 class TestUserMerging(OsfTestCase):
     def setUp(self):
-        super(TestUserMerging, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         with self.context:
             handlers.celery_before_request()
@@ -2027,14 +2026,14 @@ class TestUserMerging(OsfTestCase):
             'notifications_configured': {
                 '123ab': True, 'abc12': True,
             },
-            'emails': set([
+            'emails': {
                 other_user.emails.first().id,
                 self.user.emails.first().id,
-            ]),
-            'external_accounts': set([
+            },
+            'external_accounts': {
                 self.user.external_accounts.first().id,
                 other_user.external_accounts.first().id,
-            ]),
+            },
             'recently_added': set(),
             'mailchimp_mailing_lists': {
                 settings.MAILCHIMP_GENERAL_LIST: True
@@ -2077,9 +2076,9 @@ class TestUserMerging(OsfTestCase):
         # check each field/value pair
         for k, v in expected.items():
             if is_mrm_field(getattr(self.user, k)):
-                assert set(list(getattr(self.user, k).all().values_list('id', flat=True))) == v, '{} doesn\'t match expectations'.format(k)
+                assert set(list(getattr(self.user, k).all().values_list('id', flat=True))) == v, f'{k} doesn\'t match expectations'
             else:
-                assert getattr(self.user, k) == v, '{} doesn\'t match expectation'.format(k)
+                assert getattr(self.user, k) == v, f'{k} doesn\'t match expectation'
 
         assert sorted(self.user.system_tags) == ['other', 'shared', 'user']
 
@@ -2167,7 +2166,7 @@ class TestUserMerging(OsfTestCase):
 class TestUserValidation(OsfTestCase):
 
     def setUp(self):
-        super(TestUserValidation, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
 
     def test_validate_fullname_none(self):

@@ -1,6 +1,6 @@
 import abc
 
-class AddonNodeLogger(object):
+class AddonNodeLogger:
     """Helper class for adding correctly-formatted addon logs to nodes.
 
     :param Node node: The node to add logs to
@@ -53,7 +53,7 @@ class AddonNodeLogger(object):
             params.update(extra)
 
         self.node.add_log(
-            action='{0}_{1}'.format(self.addon_short_name, action),
+            action=f'{self.addon_short_name}_{action}',
             params=params,
             auth=self.auth
         )

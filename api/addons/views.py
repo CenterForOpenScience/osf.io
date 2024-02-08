@@ -16,7 +16,7 @@ from api.base.views import JSONAPIBaseView
 from website import settings as osf_settings
 
 
-class AddonSettingsMixin(object):
+class AddonSettingsMixin:
     """Mixin with convenience method for retrieving the current <Addon><Node|User>Settings based on the
     current URL. By default, fetches the settings based on the user or node available in self context.
     """
@@ -33,7 +33,7 @@ class AddonSettingsMixin(object):
             owner_type = 'node'
 
         try:
-            addon_module = apps.get_app_config('addons_{}'.format(provider))
+            addon_module = apps.get_app_config(f'addons_{provider}')
         except LookupError:
             raise NotFound('Requested addon unrecognized')
 

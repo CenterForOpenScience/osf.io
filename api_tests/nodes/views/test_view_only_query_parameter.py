@@ -15,7 +15,7 @@ def admin():
 
 @pytest.fixture()
 def base_url():
-    return '/{}nodes/'.format(API_BASE)
+    return f'/{API_BASE}nodes/'
 
 @pytest.fixture()
 def read_contrib():
@@ -69,7 +69,7 @@ def private_node_one_private_link(private_node_one):
 
 @pytest.fixture()
 def private_node_one_url(private_node_one):
-    return '/{}nodes/{}/'.format(API_BASE, private_node_one._id)
+    return f'/{API_BASE}nodes/{private_node_one._id}/'
 
 
 @pytest.fixture()
@@ -89,7 +89,7 @@ def private_node_two(admin, read_contrib, write_contrib):
 
 @pytest.fixture()
 def private_node_two_url(private_node_two):
-    return '/{}nodes/{}/'.format(API_BASE, private_node_two._id)
+    return f'/{API_BASE}nodes/{private_node_two._id}/'
 
 
 @pytest.fixture()
@@ -123,7 +123,7 @@ def public_node_one_private_link(public_node_one):
 
 @pytest.fixture()
 def public_node_one_url(public_node_one):
-    return '/{}nodes/{}/'.format(API_BASE, public_node_one._id)
+    return f'/{API_BASE}nodes/{public_node_one._id}/'
 
 
 @pytest.fixture()
@@ -141,7 +141,7 @@ def public_node_two(admin, read_contrib, write_contrib):
 
 @pytest.fixture()
 def public_node_two_url(public_node_two):
-    return '/{}nodes/{}/'.format(API_BASE, public_node_two._id)
+    return f'/{API_BASE}nodes/{public_node_two._id}/'
 
 
 @pytest.mark.django_db

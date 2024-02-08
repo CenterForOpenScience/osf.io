@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 import logging
 import inspect
 from functools import wraps
@@ -26,9 +24,9 @@ def log_to_sentry(message, **kwargs):
 # Use _index here as to not clutter the namespace for kwargs
 def dispatch(_event, status, _index=None, **kwargs):
     if _index:
-        _event = '{}.{}'.format(_event, _index)
+        _event = f'{_event}.{_index}'
 
-    logger.debug('[{}][{}]{!r}'.format(_event, status, kwargs))
+    logger.debug(f'[{_event}][{status}]{kwargs!r}')
 
 
 def logged(event, index=None):

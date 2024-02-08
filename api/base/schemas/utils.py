@@ -17,7 +17,7 @@ def validate_user_json(value, json_schema):
         jsonschema.validate(value, from_json(json_schema))
     except jsonschema.ValidationError as e:
         if len(e.path) > 1:
-            raise InvalidModelValueError("For '{}' the field value {}".format(e.path[-1], e.message))
+            raise InvalidModelValueError(f"For '{e.path[-1]}' the field value {e.message}")
         raise InvalidModelValueError(e.message)
     except jsonschema.SchemaError as e:
         raise InvalidModelValueError(e.message)

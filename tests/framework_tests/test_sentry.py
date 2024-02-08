@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-# encoding: utf-8
 
-import mock
+from unittest import mock
 from django.conf import settings as django_conf_settings
 from importlib import import_module
 

@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-import mock
+from unittest import mock
 import pytest
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
@@ -18,7 +17,7 @@ def user_two():
 
 @pytest.fixture()
 def url(user_one):
-    return '/{}users/{}/settings/'.format(API_BASE, user_one._id)
+    return f'/{API_BASE}users/{user_one._id}/settings/'
 
 
 @pytest.mark.django_db

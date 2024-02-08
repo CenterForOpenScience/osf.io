@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
 from django.http import HttpResponse
 
 from future.moves.urllib.parse import urlparse
-import mock
+from unittest import mock
 from nose.tools import *  # noqa:
 from rest_framework.test import APIRequestFactory
 from django.test.utils import override_settings
@@ -18,7 +17,7 @@ class MiddlewareTestCase(ApiTestCase):
     MIDDLEWARE = None
 
     def setUp(self):
-        super(MiddlewareTestCase, self).setUp()
+        super().setUp()
         self.middleware = self.MIDDLEWARE()
         self.mock_response = mock.Mock()
         self.request_factory = APIRequestFactory()

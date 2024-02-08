@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from django.db import models
 import waffle
 import jsonschema
@@ -101,7 +100,7 @@ class AbstractSchema(ObjectIDMixin, BaseModel):
         unique_together = ('name', 'schema_version')
 
     def __unicode__(self):
-        return '(name={}, schema_version={}, id={})'.format(self.name, self.schema_version, self.id)
+        return f'(name={self.name}, schema_version={self.schema_version}, id={self.id})'
 
 
 class RegistrationSchema(AbstractSchema):
@@ -139,7 +138,7 @@ class RegistrationSchema(AbstractSchema):
 
     @property
     def absolute_api_v2_url(self):
-        path = '/schemas/registrations/{}/'.format(self._id)
+        path = f'/schemas/registrations/{self._id}/'
         return api_v2_url(path)
 
     def validate_metadata(self, metadata, reviewer=False, required_fields=False):
@@ -193,7 +192,7 @@ class FileMetadataSchema(AbstractSchema):
 
     @property
     def absolute_api_v2_url(self):
-        path = '/schemas/files/{}/'.format(self._id)
+        path = f'/schemas/files/{self._id}/'
         return api_v2_url(path)
 
 
@@ -225,7 +224,7 @@ class RegistrationSchemaBlock(ObjectIDMixin, BaseModel):
 
     @property
     def absolute_api_v2_url(self):
-        path = '{}schema_blocks/{}/'.format(self.schema.absolute_api_v2_url, self._id)
+        path = f'{self.schema.absolute_api_v2_url}schema_blocks/{self._id}/'
         return api_v2_url(path)
 
     def save(self, *args, **kwargs):

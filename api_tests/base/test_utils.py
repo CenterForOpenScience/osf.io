@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
 from nose.tools import *  # noqa:
-import mock  # noqa
+from unittest import mock
 import unittest
 import pytest
 from importlib import import_module
@@ -30,7 +29,7 @@ class TestTruthyFalsy:
 class TestIsDeprecated(unittest.TestCase):
 
     def setUp(self):
-        super(TestIsDeprecated, self).setUp()
+        super().setUp()
         self.min_version = '2.0'
         self.max_version = '2.5'
 
@@ -65,7 +64,7 @@ class TestFlaskDjangoIntegration:
             except BaseException:
                 assert_true(
                     False,
-                    'Exception from push_status_message via API v2 with type "{}".'.format(status)
+                    f'Exception from push_status_message via API v2 with type "{status}".'
                 )
 
     def test_push_status_message_expected_error(self):

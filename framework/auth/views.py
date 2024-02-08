@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import furl
 from rest_framework import status as http_status
 from future.moves.urllib.parse import urlencode
@@ -362,7 +361,7 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
             data['next_url'] = web_url_for(redirect_view, campaigns=None, next=next_url)
             data['campaign'] = None
             sentry.log_message(
-                '{} is not a valid campaign. Please add it if this is a new one'.format(campaign)
+                f'{campaign} is not a valid campaign. Please add it if this is a new one'
             )
     # login or register with next parameter
     elif next_url:
@@ -862,11 +861,11 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
     elif merge_target:
         # Merge account confirmation
         mail_template = mails.CONFIRM_MERGE
-        confirmation_url = '{}?logout=1'.format(confirmation_url)
+        confirmation_url = f'{confirmation_url}?logout=1'
     elif user.is_active:
         # Add email confirmation
         mail_template = mails.CONFIRM_EMAIL
-        confirmation_url = '{}?logout=1'.format(confirmation_url)
+        confirmation_url = f'{confirmation_url}?logout=1'
     elif campaign:
         # Account creation confirmation: from campaign
         mail_template = campaigns.email_template_for_campaign(campaign)
@@ -1001,7 +1000,7 @@ def resend_confirmation_post(auth):
     if form.validate():
         clean_email = form.email.data
         user = get_user(email=clean_email)
-        status_message = ('If there is an OSF account associated with this unconfirmed email address {0}, '
+        status_message = ('If there is an OSF account associated with this unconfirmed email address {}, '
                           'a confirmation email has been resent to it. If you do not receive an email and believe '
                           'you should have, please contact OSF Support.').format(clean_email)
         kind = 'success'
@@ -1011,7 +1010,7 @@ def resend_confirmation_post(auth):
                     send_confirm_email(user, clean_email, renew=True)
                 except KeyError:
                     # already confirmed, redirect to dashboard
-                    status_message = 'This email {0} has already been confirmed.'.format(clean_email)
+                    status_message = f'This email {clean_email} has already been confirmed.'
                     kind = 'warning'
                 user.email_last_sent = timezone.now()
                 user.save()

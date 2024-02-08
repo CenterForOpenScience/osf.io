@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from nose.tools import *  # noqa:
 
 from osf_tests import factories
@@ -17,9 +16,9 @@ class TestMaxPagination(ApiTestCase):
 class TestJSONAPIPagination(ApiTestCase):
 
     def setUp(self):
-        super(TestJSONAPIPagination, self).setUp()
+        super().setUp()
 
-        self.url_version_2_0 = '/{}nodes/'.format(settings.API_BASE)
+        self.url_version_2_0 = f'/{settings.API_BASE}nodes/'
         self.url_version_2_1 = '/{}nodes/?version=2.1'.format(
             settings.API_BASE)
         self.user = factories.AuthUserFactory()

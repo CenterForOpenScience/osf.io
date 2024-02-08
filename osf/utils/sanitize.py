@@ -6,7 +6,7 @@ import bleach
 
 
 def is_iterable(obj):
-    return isinstance(obj, collections.Iterable)
+    return isinstance(obj, collections.abc.Iterable)
 
 
 def is_iterable_but_not_string(obj):
@@ -29,7 +29,7 @@ def strip_html(unclean, tags=None):
         tags = []
 
     if unclean is None:
-        return u''
+        return ''
     elif isinstance(unclean, dict) or isinstance(unclean, list):
         return bleach.clean(str(unclean), strip=True, tags=[], attributes=[], styles=[])
     # We make this noop for non-string, non-collection inputs so this function can be used with higher-order

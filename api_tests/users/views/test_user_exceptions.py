@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import pytest
 
 from api.base.settings.defaults import API_BASE
@@ -34,7 +33,7 @@ class TestExceptionFormatting:
 
     @pytest.fixture()
     def url(self, user):
-        return '/{}users/{}/'.format(API_BASE, user._id)
+        return f'/{API_BASE}users/{user._id}/'
 
     def test_user_errors(self, app, user, user_two, url):
 

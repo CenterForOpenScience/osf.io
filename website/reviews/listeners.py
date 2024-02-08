@@ -1,4 +1,3 @@
-
 from django.utils import timezone
 
 from website.notifications import utils
@@ -191,7 +190,7 @@ def reviews_withdrawal_requests_notification(self, timestamp, context):
     preprint_word = preprint.provider.preprint_word
 
     # Set message
-    context['message'] = u'has requested withdrawal of the {} "{}".'.format(preprint_word, preprint.title)
+    context['message'] = f'has requested withdrawal of the {preprint_word} "{preprint.title}".'
     # Set url for profile image of the submitter
     context['profile_image_url'] = get_profile_image_url(context['requester'])
     # Set submission url

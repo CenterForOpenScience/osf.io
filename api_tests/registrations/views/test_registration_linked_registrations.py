@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 
 from nose.tools import *  # noqa:
 
@@ -17,7 +17,7 @@ from tests.base import ApiTestCase, get_default_metaschema
 class LinkedRegistrationsTestCase(ApiTestCase):
 
     def setUp(self):
-        super(LinkedRegistrationsTestCase, self).setUp()
+        super().setUp()
         self.mock_archive = mock.patch('website.archiver.tasks.archive')
 
         self.non_contributor = AuthUserFactory()
@@ -80,14 +80,14 @@ class LinkedRegistrationsTestCase(ApiTestCase):
             get_default_metaschema(), Auth(self.admin_contributor), draft_reg, None)
 
     def tearDown(self):
-        super(LinkedRegistrationsTestCase, self).tearDown()
+        super().tearDown()
         self.mock_archive.stop()
 
 
 class TestRegistrationLinkedRegistrationsList(LinkedRegistrationsTestCase):
 
     def setUp(self):
-        super(TestRegistrationLinkedRegistrationsList, self).setUp()
+        super().setUp()
 
     def make_request(
             self, registration_id=None, auth=None, expect_errors=False):
@@ -173,7 +173,7 @@ class TestRegistrationsLinkedRegistrationsRelationship(
         LinkedRegistrationsTestCase):
 
     def setUp(self):
-        super(TestRegistrationsLinkedRegistrationsRelationship, self).setUp()
+        super().setUp()
         self.public_url = '/{}registrations/{}/relationships/linked_registrations/'.format(
             API_BASE, self.public_registration._id)
 
@@ -182,7 +182,7 @@ class TestRegistrationsLinkedRegistrationsRelationship(
         url = '/{}registrations/{}/relationships/linked_registrations/'.format(
             API_BASE, registration_id)
         if version:
-            url = '{}?version={}'.format(url, version)
+            url = f'{url}?version={version}'
         if auth:
             return self.app.get(url, auth=auth, expect_errors=expect_errors)
         return self.app.get(url, expect_errors=expect_errors)

@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import furl
 import pytz
 import pytest
@@ -67,7 +67,7 @@ class TestUserView(AdminTestCase):
 
 class TestResetPasswordView(AdminTestCase):
     def setUp(self):
-        super(TestResetPasswordView, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         self.request = RequestFactory().get('/fake_path')
         self.request.POST = {'emails': self.user.emails.all()}
@@ -263,7 +263,7 @@ class TestDisableSpamUser(AdminTestCase):
         self.assertEqual(response.status_code, 302)
 
 
-class SpamUserListMixin(object):
+class SpamUserListMixin:
     def setUp(self):
 
         self.flagged_user = UserFactory()
@@ -308,7 +308,7 @@ class SpamUserListMixin(object):
 
 class TestFlaggedSpamUserList(SpamUserListMixin, AdminTestCase):
     def setUp(self):
-        super(TestFlaggedSpamUserList, self).setUp()
+        super().setUp()
         self.plain_view = views.UserFlaggedSpamList
         self.view = setup_log_view(self.plain_view(), self.request)
         self.url = reverse('users:flagged-spam')
@@ -321,7 +321,7 @@ class TestFlaggedSpamUserList(SpamUserListMixin, AdminTestCase):
 
 class TestConfirmedSpamUserList(SpamUserListMixin, AdminTestCase):
     def setUp(self):
-        super(TestConfirmedSpamUserList, self).setUp()
+        super().setUp()
         self.plain_view = views.UserKnownSpamList
         self.view = setup_log_view(self.plain_view(), self.request)
 
@@ -335,7 +335,7 @@ class TestConfirmedSpamUserList(SpamUserListMixin, AdminTestCase):
 
 class TestConfirmedHamUserList(SpamUserListMixin, AdminTestCase):
     def setUp(self):
-        super(TestConfirmedHamUserList, self).setUp()
+        super().setUp()
         self.plain_view = views.UserKnownHamList
         self.view = setup_log_view(self.plain_view(), self.request)
 
@@ -349,7 +349,7 @@ class TestConfirmedHamUserList(SpamUserListMixin, AdminTestCase):
 
 class TestRemove2Factor(AdminTestCase):
     def setUp(self):
-        super(TestRemove2Factor, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.request = RequestFactory().post('/fake_path')
         self.view = views.User2FactorDeleteView
@@ -414,7 +414,7 @@ class TestUserSearchView(AdminTestCase):
         nt.assert_true(form.is_valid())
         response = self.view.form_valid(form)
         nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(response.headers['location'], '/users/{}/'.format(self.user_1.guids.first()._id))
+        nt.assert_equal(response.headers['location'], f'/users/{self.user_1.guids.first()._id}/')
 
     def test_search_user_by_name(self):
         form_data = {
@@ -444,7 +444,7 @@ class TestUserSearchView(AdminTestCase):
         nt.assert_true(form.is_valid())
         response = self.view.form_valid(form)
         nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(response.headers['location'], '/users/{}/'.format(self.user_1.guids.first()._id))
+        nt.assert_equal(response.headers['location'], f'/users/{self.user_1.guids.first()._id}/')
 
     def test_search_user_by_alternate_email(self):
         form_data = {
@@ -454,7 +454,7 @@ class TestUserSearchView(AdminTestCase):
         nt.assert_true(form.is_valid())
         response = self.view.form_valid(form)
         nt.assert_equal(response.status_code, 302)
-        nt.assert_equal(response.headers['location'], '/users/{}/'.format(self.user_2.guids.first()._id))
+        nt.assert_equal(response.headers['location'], f'/users/{self.user_2.guids.first()._id}/')
 
     def test_search_user_list(self):
         view = views.UserSearchList()
@@ -488,7 +488,7 @@ class TestGetLinkView(AdminTestCase):
         view = setup_view(view, request, guid=user._id)
 
         user_token = list(user.email_verifications.keys())[0]
-        ideal_link_path = '/confirm/{}/{}/'.format(user._id, user_token)
+        ideal_link_path = f'/confirm/{user._id}/{user_token}/'
         link = view.get_link(user)
         link_path = str(furl.furl(link).path)
 
@@ -508,7 +508,7 @@ class TestGetLinkView(AdminTestCase):
         new_user_token = list(user.email_verifications.keys())[0]
 
         link_path = str(furl.furl(link).path)
-        ideal_link_path = '/confirm/{}/{}/'.format(user._id, new_user_token)
+        ideal_link_path = f'/confirm/{user._id}/{new_user_token}/'
 
         nt.assert_equal(link_path, ideal_link_path)
 
@@ -523,7 +523,7 @@ class TestGetLinkView(AdminTestCase):
         user_token = user.verification_key_v2.get('token')
         nt.assert_is_not_none(user_token)
 
-        ideal_link_path = '/resetpassword/{}/{}'.format(user._id, user_token)
+        ideal_link_path = f'/resetpassword/{user._id}/{user_token}'
         link_path = str(furl.furl(link).path)
 
         nt.assert_equal(link_path, ideal_link_path)
@@ -550,7 +550,7 @@ class TestGetLinkView(AdminTestCase):
 
 class TestUserReindex(AdminTestCase):
     def setUp(self):
-        super(TestUserReindex, self).setUp()
+        super().setUp()
         self.request = RequestFactory().post('/fake_path')
 
         self.user = AuthUserFactory()
@@ -568,7 +568,7 @@ class TestUserReindex(AdminTestCase):
 
 class TestUserMerge(AdminTestCase):
     def setUp(self):
-        super(TestUserMerge, self).setUp()
+        super().setUp()
         self.request = RequestFactory().post('/fake_path')
 
     @mock.patch('osf.models.user.OSFUser.merge_user')

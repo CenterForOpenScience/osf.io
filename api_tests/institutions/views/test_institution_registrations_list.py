@@ -16,7 +16,7 @@ from osf.models import Node
 
 class TestInstitutionRegistrationList(ApiTestCase):
     def setUp(self):
-        super(TestInstitutionRegistrationList, self).setUp()
+        super().setUp()
         self.institution = InstitutionFactory()
         self.registration1 = RegistrationFactory(is_public=True)
         self.registration1.affiliated_institutions.add(self.institution)
@@ -33,7 +33,7 @@ class TestInstitutionRegistrationList(ApiTestCase):
         self.registration3.affiliated_institutions.add(self.institution)
         self.registration3.save()
 
-        self.institution_node_url = '/{0}institutions/{1}/registrations/'.format(
+        self.institution_node_url = '/{}institutions/{}/registrations/'.format(
             API_BASE, self.institution._id)
 
     def test_return_all_public_nodes(self):
@@ -90,7 +90,7 @@ class TestInstitutionRegistrationList(ApiTestCase):
         registration3.add_contributor(
             user3, auth=Auth(self.user1), visible=False)
         registration3.save()
-        registration3_url = '/{0}registrations/{1}/?embed=contributors'.format(
+        registration3_url = '/{}registrations/{}/?embed=contributors'.format(
             API_BASE, registration3._id)
 
         res = self.app.get(registration3_url)
@@ -112,7 +112,7 @@ class TestRegistrationListFiltering(
         self.url = '/{}institutions/{}/registrations/?version=2.2&'.format(
             API_BASE, self.institution._id)
 
-        super(TestRegistrationListFiltering, self).setUp()
+        super().setUp()
 
         A_children = [
             child for child in Node.objects.get_children(

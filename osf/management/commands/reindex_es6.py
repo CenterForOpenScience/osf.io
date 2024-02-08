@@ -84,7 +84,7 @@ def reindex_and_alias(old_indices: list, dry_run: bool = False):
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             '--indices',
             type=str,

@@ -12,7 +12,7 @@ from scripts import populate_new_and_noteworthy_projects as script
 class TestPopulateNewAndNoteworthy(OsfTestCase):
 
     def setUp(self):
-        super(TestPopulateNewAndNoteworthy, self).setUp()
+        super().setUp()
 
         self.new_and_noteworthy_links_node = ProjectFactory()
         self.new_and_noteworthy_links_node._id = NEW_AND_NOTEWORTHY_LINKS_NODE
@@ -27,7 +27,7 @@ class TestPopulateNewAndNoteworthy(OsfTestCase):
         self.all_ids = {self.nn1._id, self.nn2._id, self.nn3._id, self.nn4._id, self.nn5._id}
 
     def tearDown(self):
-        super(TestPopulateNewAndNoteworthy, self).tearDown()
+        super().tearDown()
         Node.objects.all().delete()
 
     def test_get_new_and_noteworthy_nodes(self):

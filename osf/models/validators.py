@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import re
 import waffle
 import jsonschema
@@ -95,7 +94,7 @@ def validate_social(value):
     from osf.models import OSFUser
     for soc_key in value.keys():
         if soc_key not in OSFUser.SOCIAL_FIELDS:
-            raise ValidationError('{} is not a valid key for social.'.format(soc_key))
+            raise ValidationError(f'{soc_key} is not a valid key for social.')
 
 def validate_email(value):
     from osf.models import NotableDomain
@@ -114,7 +113,7 @@ def validate_email(value):
 
 def validate_subject_highlighted_count(provider, is_highlighted_addition):
     if is_highlighted_addition and provider.subjects.filter(highlighted=True).count() >= 10:
-        raise DjangoValidationError('Too many highlighted subjects for PreprintProvider {}'.format(provider._id))
+        raise DjangoValidationError(f'Too many highlighted subjects for PreprintProvider {provider._id}')
 
 def validate_subject_hierarchy_length(parent):
     from osf.models import Subject
@@ -158,7 +157,7 @@ def validate_subject_hierarchy(subject_hierarchy):
     for subject_id in subject_hierarchy:
         subject = Subject.load(subject_id)
         if not subject:
-            raise ValidationValueError('Subject with id <{}> could not be found.'.format(subject_id))
+            raise ValidationValueError(f'Subject with id <{subject_id}> could not be found.')
 
         if subject.parent:
             continue
@@ -168,7 +167,7 @@ def validate_subject_hierarchy(subject_hierarchy):
 
         while raw_hierarchy:
             if not set(subject.children.values_list('_id', flat=True)) & raw_hierarchy:
-                raise ValidationValueError('Invalid subject hierarchy: {}'.format(subject_hierarchy))
+                raise ValidationValueError(f'Invalid subject hierarchy: {subject_hierarchy}')
             else:
                 for child in subject.children.filter(_id__in=raw_hierarchy):
                     subject = child
@@ -178,12 +177,12 @@ def validate_subject_hierarchy(subject_hierarchy):
         if set(validated_hierarchy) == set(subject_hierarchy):
             return
         else:
-            raise ValidationValueError('Invalid subject hierarchy: {}'.format(subject_hierarchy))
-    raise ValidationValueError('Unable to find root subject in {}'.format(subject_hierarchy))
+            raise ValidationValueError(f'Invalid subject hierarchy: {subject_hierarchy}')
+    raise ValidationValueError(f'Unable to find root subject in {subject_hierarchy}')
 
 
 @deconstructible
-class CommentMaxLength(object):
+class CommentMaxLength:
     mention_re = re.compile(r'\[([@|\+].*?)\]\(htt[ps]{1,2}:\/\/[a-z\d:.]+?\/[a-z\d]{5}\/\)')
     max_length = None
 
@@ -198,7 +197,7 @@ class CommentMaxLength(object):
         reduced_comment = self.mention_re.sub(self.link_repl, value)
         if len(reduced_comment) > self.max_length + 2:
             raise ValidationValueError(
-                'Ensure this field has no more than {} characters.'.format(self.max_length))
+                f'Ensure this field has no more than {self.max_length} characters.')
 
         return True
 
@@ -213,7 +212,7 @@ def validate_no_html(value):
 def validate_doi(value):
     # DOI must start with 10 and have a slash in it - avoided getting too complicated
     if not re.match('10\\.\\S*\\/', value):
-        raise ValidationValueError('"{}" is not a valid DOI'.format(value))
+        raise ValidationValueError(f'"{value}" is not a valid DOI')
     return True
 
 
@@ -224,7 +223,7 @@ def validate_location(value):
 
     for key in ('service', settings.WATERBUTLER_RESOURCE, 'object'):
         if key not in value:
-            raise ValidationValueError('Location {} missing key "{}"'.format(value, key))
+            raise ValidationValueError(f'Location {value} missing key "{key}"')
     return True
 
 
@@ -294,7 +293,7 @@ class RegistrationResponsesValidator:
                 question_title = properties.get(question_id).get('description') or question_id
                 if e.relative_schema_path[0] == 'required':
                     raise ValidationError(
-                        'For your registration the \'{}\' field is required'.format(question_title)
+                        f'For your registration the \'{question_title}\' field is required'
                     )
                 elif 'enum' in properties.get(question_id):
                     raise ValidationError(
@@ -304,7 +303,7 @@ class RegistrationResponsesValidator:
                     )
                 else:
                     raise ValidationError(
-                        'For your registration, your response to the \'{}\' field is invalid. {}'.format(question_title, e.message),
+                        f'For your registration, your response to the \'{question_title}\' field is invalid. {e.message}',
                     )
             raise ValidationError(e.message)
         except jsonschema.SchemaError as e:
@@ -412,10 +411,10 @@ class RegistrationResponsesValidator:
                     'description': question_text,
                 }
 
-        raise ValueError('Unexpected `block_type`: {}'.format(question.block_type))
+        raise ValueError(f'Unexpected `block_type`: {question.block_type}')
 
 
-class SwitchValidator(object):
+class SwitchValidator:
     def __init__(self, switch_name: str, message: str = SWITCH_VALIDATOR_ERROR, should_be: bool = True):
         """
         This throws a validation error if a switched off field is prematurely used. This the on/off state of the field

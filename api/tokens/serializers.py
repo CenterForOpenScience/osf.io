@@ -13,7 +13,7 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
     """Serialize data about a registered personal access token"""
 
     def __init__(self, *args, **kwargs):
-        super(ApiOAuth2PersonalTokenSerializer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         request = kwargs['context']['request']
 
@@ -66,7 +66,7 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
         return obj.absolute_api_v2_url
 
     def to_representation(self, obj, envelope='data'):
-        data = super(ApiOAuth2PersonalTokenSerializer, self).to_representation(obj, envelope=envelope)
+        data = super().to_representation(obj, envelope=envelope)
         # Make sure users only see token_id on create
         if not self.context['request'].method == 'POST':
             if 'data' in data:
@@ -114,7 +114,7 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
 
 class ApiOAuth2PersonalTokenWritableSerializer(ApiOAuth2PersonalTokenSerializer):
     def __init__(self, *args, **kwargs):
-        super(ApiOAuth2PersonalTokenWritableSerializer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         request = kwargs['context']['request']
 
         # Dynamically overriding scopes field for early versions to make scopes writable via an attribute

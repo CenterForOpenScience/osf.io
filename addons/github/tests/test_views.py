@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from rest_framework import status as http_status
 import unittest
 
@@ -6,7 +5,7 @@ from django.utils import timezone
 from github3.repos.branch import Branch
 from nose.tools import *  # noqa: F403
 from json import dumps
-import mock
+from unittest import mock
 import pytest
 
 from framework.auth import Auth
@@ -33,7 +32,7 @@ class TestGitHubAuthViews(GitHubAddonTestCase, OAuthAddonAuthViewsTestCaseMixin,
         mock.PropertyMock()
     )
     def test_delete_external_account(self):
-        super(TestGitHubAuthViews, self).test_delete_external_account()
+        super().test_delete_external_account()
 
 
 class TestGitHubConfigViews(GitHubAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCase):
@@ -44,7 +43,7 @@ class TestGitHubConfigViews(GitHubAddonTestCase, OAuthAddonConfigViewsTestCaseMi
     ## Overrides ##
 
     def setUp(self):
-        super(TestGitHubConfigViews, self).setUp()
+        super().setUp()
         self.mock_api_user = mock.patch('addons.github.api.GitHubClient.user')
         self.mock_api_credentials_are_valid = mock.patch('addons.github.api.GitHubClient.check_authorization', return_value=True)
         self.mock_api_user.return_value = mock.Mock()
@@ -53,7 +52,7 @@ class TestGitHubConfigViews(GitHubAddonTestCase, OAuthAddonConfigViewsTestCaseMi
 
     def tearDown(self):
         self.mock_api_user.stop()
-        super(TestGitHubConfigViews, self).tearDown()
+        super().tearDown()
 
     def test_folder_list(self):
         # GH only lists root folder (repos), this test is superfluous
@@ -64,7 +63,7 @@ class TestGitHubConfigViews(GitHubAddonTestCase, OAuthAddonConfigViewsTestCaseMi
     def test_set_config(self, mock_repo, mock_add_hook):
         # GH selects repos, not folders, so this needs to be overriden
         mock_repo.return_value = 'repo_name'
-        url = self.project.api_url_for('{0}_set_config'.format(self.ADDON_SHORT_NAME))
+        url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_set_config')
         res = self.app.post_json(url, {
             'github_user': 'octocat',
             'github_repo': 'repo_name',
@@ -73,7 +72,7 @@ class TestGitHubConfigViews(GitHubAddonTestCase, OAuthAddonConfigViewsTestCaseMi
         self.project.reload()
         assert_equal(
             self.project.logs.latest().action,
-            '{0}_repo_linked'.format(self.ADDON_SHORT_NAME)
+            f'{self.ADDON_SHORT_NAME}_repo_linked'
         )
         mock_add_hook.assert_called_once_with(save=False)
 
@@ -83,7 +82,7 @@ class TestGitHubConfigViews(GitHubAddonTestCase, OAuthAddonConfigViewsTestCaseMi
 class TestCRUD(OsfTestCase):
 
     def setUp(self):
-        super(TestCRUD, self).setUp()
+        super().setUp()
         self.github = create_mock_github(user='fred', private=False)
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
@@ -101,7 +100,7 @@ class TestCRUD(OsfTestCase):
 class TestGithubViews(OsfTestCase):
 
     def setUp(self):
-        super(TestGithubViews, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
 
@@ -243,8 +242,8 @@ class TestGithubViews(OsfTestCase):
     def check_hook_urls(self, urls, node, path, sha):
         url = node.web_url_for('addon_view_or_download_file', path=path, provider='github')
         expected_urls = {
-            'view': '{0}?ref={1}'.format(url, sha),
-            'download': '{0}?action=download&ref={1}'.format(url, sha)
+            'view': f'{url}?ref={sha}',
+            'download': f'{url}?action=download&ref={sha}'
         }
 
         assert_equal(urls['view'], expected_urls['view'])
@@ -252,7 +251,7 @@ class TestGithubViews(OsfTestCase):
 
     @mock.patch('addons.github.views.verify_hook_signature')
     def test_hook_callback_add_file_not_thro_osf(self, mock_verify):
-        url = '/api/v1/project/{0}/github/hook/'.format(self.project._id)
+        url = f'/api/v1/project/{self.project._id}/github/hook/'
         timestamp = str(timezone.now())
         self.app.post_json(
             url,
@@ -285,7 +284,7 @@ class TestGithubViews(OsfTestCase):
 
     @mock.patch('addons.github.views.verify_hook_signature')
     def test_hook_callback_modify_file_not_thro_osf(self, mock_verify):
-        url = '/api/v1/project/{0}/github/hook/'.format(self.project._id)
+        url = f'/api/v1/project/{self.project._id}/github/hook/'
         timestamp = str(timezone.now())
         self.app.post_json(
             url,
@@ -312,7 +311,7 @@ class TestGithubViews(OsfTestCase):
 
     @mock.patch('addons.github.views.verify_hook_signature')
     def test_hook_callback_remove_file_not_thro_osf(self, mock_verify):
-        url = '/api/v1/project/{0}/github/hook/'.format(self.project._id)
+        url = f'/api/v1/project/{self.project._id}/github/hook/'
         timestamp = str(timezone.now())
         self.app.post_json(
             url,
@@ -333,7 +332,7 @@ class TestGithubViews(OsfTestCase):
 
     @mock.patch('addons.github.views.verify_hook_signature')
     def test_hook_callback_add_file_thro_osf(self, mock_verify):
-        url = '/api/v1/project/{0}/github/hook/'.format(self.project._id)
+        url = f'/api/v1/project/{self.project._id}/github/hook/'
         self.app.post_json(
             url,
             {'test': True,
@@ -351,7 +350,7 @@ class TestGithubViews(OsfTestCase):
 
     @mock.patch('addons.github.views.verify_hook_signature')
     def test_hook_callback_modify_file_thro_osf(self, mock_verify):
-        url = '/api/v1/project/{0}/github/hook/'.format(self.project._id)
+        url = f'/api/v1/project/{self.project._id}/github/hook/'
         self.app.post_json(
             url,
             {'test': True,
@@ -369,7 +368,7 @@ class TestGithubViews(OsfTestCase):
 
     @mock.patch('addons.github.views.verify_hook_signature')
     def test_hook_callback_remove_file_thro_osf(self, mock_verify):
-        url = '/api/v1/project/{0}/github/hook/'.format(self.project._id)
+        url = f'/api/v1/project/{self.project._id}/github/hook/'
         self.app.post_json(
             url,
             {'test': True,
@@ -390,7 +389,7 @@ class TestRegistrationsWithGithub(OsfTestCase):
 
     def setUp(self):
 
-        super(TestRegistrationsWithGithub, self).setUp()
+        super().setUp()
         self.project = ProjectFactory()
         self.consolidated_auth = Auth(user=self.project.creator)
 
@@ -408,7 +407,7 @@ class TestGithubSettings(OsfTestCase):
 
     def setUp(self):
 
-        super(TestGithubSettings, self).setUp()
+        super().setUp()
         self.github = create_mock_github(user='fred', private=False)
         self.project = ProjectFactory()
         self.auth = self.project.creator.auth

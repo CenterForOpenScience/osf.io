@@ -1,5 +1,4 @@
 """Views fo the node settings page."""
-# -*- coding: utf-8 -*-
 from flask import request
 import logging
 

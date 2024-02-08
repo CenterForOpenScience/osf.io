@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
 from rest_framework import status as http_status
 import pkgutil
 
-import mock
+from unittest import mock
 
 from nose import SkipTest
 from nose.tools import *  # noqa:
@@ -30,7 +29,7 @@ for loader, name, _ in pkgutil.iter_modules(['api']):
     if name != 'base' and name != 'test':
         try:
             URLS_MODULES.append(
-                importlib.import_module('api.{}.urls'.format(name))
+                importlib.import_module(f'api.{name}.urls')
             )
         except ImportError:
             pass
@@ -49,7 +48,7 @@ for mod in URLS_MODULES:
 
 class TestApiBaseViews(ApiTestCase):
     def setUp(self):
-        super(TestApiBaseViews, self).setUp()
+        super().setUp()
         self.EXCLUDED_VIEWS = [
             ClaimUser,
             CopyFileMetadataView,
@@ -61,7 +60,7 @@ class TestApiBaseViews(ApiTestCase):
         ]
 
     def test_root_returns_200(self):
-        res = self.app.get('/{}'.format(API_BASE))
+        res = self.app.get(f'/{API_BASE}')
         assert_equal(res.status_code, 200)
 
     def test_does_not_exist_returns_404(self):
@@ -94,16 +93,16 @@ class TestApiBaseViews(ApiTestCase):
                     has_cls = any([c in view.permission_classes for c in cls])
                     assert_true(
                         has_cls,
-                        '{0} lacks the appropriate permission classes'.format(view)
+                        f'{view} lacks the appropriate permission classes'
                     )
                 else:
                     assert_in(
                         cls,
                         view.permission_classes,
-                        '{0} lacks the appropriate permission classes'.format(view)
+                        f'{view} lacks the appropriate permission classes'
                     )
             for key in [READ, WRITE]:
-                scopes = getattr(view, 'required_{}_scopes'.format(key), None)
+                scopes = getattr(view, f'required_{key}_scopes', None)
                 assert_true(bool(scopes))
                 for scope in scopes:
                     assert_is_not_none(scope)
@@ -116,7 +115,7 @@ class TestApiBaseViews(ApiTestCase):
                 continue
             assert_true(
                 hasattr(view, '_get_embed_partial'),
-                '{0} lacks embed support'.format(view)
+                f'{view} lacks embed support'
             )
 
     def test_view_classes_define_or_override_serializer_class(self):
@@ -124,7 +123,7 @@ class TestApiBaseViews(ApiTestCase):
             has_serializer_class = getattr(view, 'serializer_class', None) or getattr(view, 'get_serializer_class', None)
             assert_true(
                 has_serializer_class,
-                '{0} should include serializer class or override get_serializer_class()'.format(view)
+                f'{view} should include serializer class or override get_serializer_class()'
             )
 
     @mock.patch(
@@ -136,7 +135,7 @@ class TestApiBaseViews(ApiTestCase):
         user = factories.AuthUserFactory()
 
         res = self.app.get(
-            '/{}nodes/'.format(API_BASE),
+            f'/{API_BASE}nodes/',
             auth=user.auth,
             expect_errors=True
         )
@@ -151,7 +150,7 @@ class TestApiBaseViews(ApiTestCase):
         user = factories.AuthUserFactory()
 
         res = self.app.get(
-            '/{}nodes/'.format(API_BASE),
+            f'/{API_BASE}nodes/',
             auth=user.auth,
             expect_errors=True
         )
@@ -161,7 +160,7 @@ class TestApiBaseViews(ApiTestCase):
 class TestStatusView(ApiTestCase):
 
     def test_status_view(self):
-        url = '/{}status/'.format(API_BASE)
+        url = f'/{API_BASE}status/'
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
         assert_in('maintenance', res.json)
@@ -169,7 +168,7 @@ class TestStatusView(ApiTestCase):
 
     def test_status_view_with_maintenance(self):
         maintenance.set_maintenance(message='test')
-        url = '/{}status/'.format(API_BASE)
+        url = f'/{API_BASE}status/'
         res = self.app.get(url)
         m = maintenance.get_maintenance()
         assert_equal(res.status_code, 200)
@@ -182,11 +181,11 @@ class TestStatusView(ApiTestCase):
 class TestJSONAPIBaseView(ApiTestCase):
 
     def setUp(self):
-        super(TestJSONAPIBaseView, self).setUp()
+        super().setUp()
 
         self.user = factories.AuthUserFactory()
         self.node = factories.ProjectFactory(creator=self.user)
-        self.url = '/{0}nodes/{1}/'.format(API_BASE, self.node._id)
+        self.url = f'/{API_BASE}nodes/{self.node._id}/'
         for i in range(5):
             factories.ProjectFactory(parent=self.node, creator=self.user)
         for i in range(5):

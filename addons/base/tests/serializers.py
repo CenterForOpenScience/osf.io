@@ -1,6 +1,6 @@
 import abc
 
-import mock
+from unittest import mock
 from framework.auth import Auth
 from nose.tools import (assert_equal, assert_false, assert_in,
                         assert_is_not_none, assert_raises, assert_true)
@@ -9,7 +9,7 @@ from tests.utils import mock_auth
 from website.util import web_url_for
 
 
-class AddonSerializerTestSuiteMixin(object):
+class AddonSerializerTestSuiteMixin:
 
     __metaclass__ = abc.ABCMeta
 
@@ -38,7 +38,7 @@ class AddonSerializerTestSuiteMixin(object):
         pass
 
     def setUp(self):
-        super(AddonSerializerTestSuiteMixin, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.node = ProjectFactory(creator=self.user)
         self.set_user_settings(self.user)

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests for addons.forward.utils."""
 
 from nose.tools import assert_equal, assert_true, assert_false

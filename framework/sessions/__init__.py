@@ -35,7 +35,7 @@ def add_key_to_url(url, scheme, key):
     if parsed_url.fragment:
         # Fragments should exists server side so this mean some one set up a # in the url
         # WSGI sucks and auto unescapes it so we just shove it back into the path with the escaped hash
-        replacements['path'] = '{}%23{}'.format(parsed_url.path, parsed_url.fragment)
+        replacements['path'] = f'{parsed_url.path}%23{parsed_url.fragment}'
         replacements['fragment'] = ''
 
     parsed_redirect_url = parsed_url._replace(**replacements)

@@ -121,7 +121,7 @@ class NodeRequestCreateSerializer(NodeRequestSerializer):
             )
             node_request.save()
         except IntegrityError:
-            raise Conflict('Users may not have more than one {} request per node.'.format(request_type))
+            raise Conflict(f'Users may not have more than one {request_type} request per node.')
         node_request.run_submit(auth.user)
         return node_request
 
@@ -162,7 +162,7 @@ class PreprintRequestCreateSerializer(PreprintRequestSerializer):
         request_type = validated_data.pop('request_type', None)
 
         if PreprintRequest.objects.filter(target_id=preprint.id, creator_id=auth.user.id, request_type=request_type).exists():
-            raise Conflict('Users may not have more than one {} request per preprint.'.format(request_type))
+            raise Conflict(f'Users may not have more than one {request_type} request per preprint.')
 
         if request_type != RequestTypes.WITHDRAWAL.value:
             raise exceptions.ValidationError('You must specify a valid request_type.')

@@ -1,5 +1,5 @@
 from future.moves.urllib.parse import urlparse, parse_qs
-import mock
+from unittest import mock
 from nose.tools import *  # noqa
 import responses
 from rest_framework import status as http_status
@@ -79,7 +79,7 @@ class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
 class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
 
     def __init__(self, *args, **kwargs):
-        super(OAuthAddonConfigViewsTestCaseMixin,self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.node_settings = None
 
     @property
@@ -110,7 +110,7 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         node = ProjectFactory(creator=self.user)
         node_settings = node.get_or_add_addon(self.ADDON_SHORT_NAME, auth=Auth(self.user))
         node.save()
-        url = node.api_url_for('{0}_import_auth'.format(self.ADDON_SHORT_NAME))
+        url = node.api_url_for(f'{self.ADDON_SHORT_NAME}_import_auth')
         res = self.app.put_json(url, {
             'external_account_id': ea._id
         }, auth=self.user.auth)
@@ -121,7 +121,7 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
 
         node.reload()
         last_log = node.logs.latest()
-        assert_equal(last_log.action, '{0}_node_authorized'.format(self.ADDON_SHORT_NAME))
+        assert_equal(last_log.action, f'{self.ADDON_SHORT_NAME}_node_authorized')
 
     def test_import_auth_invalid_account(self):
         ea = self.ExternalAccountFactory()
@@ -129,7 +129,7 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         node = ProjectFactory(creator=self.user)
         node.add_addon(self.ADDON_SHORT_NAME, auth=self.auth)
         node.save()
-        url = node.api_url_for('{0}_import_auth'.format(self.ADDON_SHORT_NAME))
+        url = node.api_url_for(f'{self.ADDON_SHORT_NAME}_import_auth')
         res = self.app.put_json(url, {
             'external_account_id': ea._id
         }, auth=self.user.auth, expect_errors=True)
@@ -146,7 +146,7 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         node.add_contributor(user, permissions=permissions.READ, auth=self.auth, save=True)
         node.add_addon(self.ADDON_SHORT_NAME, auth=self.auth)
         node.save()
-        url = node.api_url_for('{0}_import_auth'.format(self.ADDON_SHORT_NAME))
+        url = node.api_url_for(f'{self.ADDON_SHORT_NAME}_import_auth')
         res = self.app.put_json(url, {
             'external_account_id': ea._id
         }, auth=user.auth, expect_errors=True)
@@ -154,7 +154,7 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
 
     def test_set_config(self):
         self.node_settings.set_auth(self.external_account, self.user)
-        url = self.project.api_url_for('{0}_set_config'.format(self.ADDON_SHORT_NAME))
+        url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_set_config')
         res = self.app.put_json(url, {
             'selected': self.folder
         }, auth=self.user.auth)
@@ -162,12 +162,12 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         self.project.reload()
         assert_equal(
             self.project.logs.latest().action,
-            '{0}_folder_selected'.format(self.ADDON_SHORT_NAME)
+            f'{self.ADDON_SHORT_NAME}_folder_selected'
         )
         assert_equal(res.json['result']['folder']['path'], self.folder['path'])
 
     def test_get_config(self):
-        url = self.project.api_url_for('{0}_get_config'.format(self.ADDON_SHORT_NAME))
+        url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_get_config')
         with mock.patch.object(type(self.Serializer()), 'credentials_are_valid', return_value=True):
             res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, http_status.HTTP_200_OK)
@@ -180,19 +180,19 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         assert_equal(serialized, res.json['result'])
 
     def test_get_config_unauthorized(self):
-        url = self.project.api_url_for('{0}_get_config'.format(self.ADDON_SHORT_NAME))
+        url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_get_config')
         user = AuthUserFactory()
         self.project.add_contributor(user, permissions=permissions.READ, auth=self.auth, save=True)
         res = self.app.get(url, auth=user.auth, expect_errors=True)
         assert_equal(res.status_code, http_status.HTTP_403_FORBIDDEN)
 
     def test_get_config_not_logged_in(self):
-        url = self.project.api_url_for('{0}_get_config'.format(self.ADDON_SHORT_NAME))
+        url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_get_config')
         res = self.app.get(url, auth=None, expect_errors=True)
         assert_equal(res.status_code, http_status.HTTP_302_FOUND)
 
     def test_account_list_single(self):
-        url = api_url_for('{0}_account_list'.format(self.ADDON_SHORT_NAME))
+        url = api_url_for(f'{self.ADDON_SHORT_NAME}_account_list')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, http_status.HTTP_200_OK)
         assert_in('accounts', res.json)
@@ -203,14 +203,14 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         self.user.external_accounts.add(ea)
         self.user.save()
 
-        url = api_url_for('{0}_account_list'.format(self.ADDON_SHORT_NAME))
+        url = api_url_for(f'{self.ADDON_SHORT_NAME}_account_list')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, http_status.HTTP_200_OK)
         assert_in('accounts', res.json)
         assert_equal(len(res.json['accounts']), 2)
 
     def test_account_list_not_authorized(self):
-        url = api_url_for('{0}_account_list'.format(self.ADDON_SHORT_NAME))
+        url = api_url_for(f'{self.ADDON_SHORT_NAME}_account_list')
         res = self.app.get(url, auth=None, expect_errors=True)
         assert_equal(res.status_code, http_status.HTTP_302_FOUND)
 
@@ -220,13 +220,13 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         # subclass, mock any API calls, and call super.
         self.node_settings.set_auth(self.external_account, self.user)
         self.node_settings.save()
-        url = self.project.api_url_for('{0}_folder_list'.format(self.ADDON_SHORT_NAME))
+        url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_folder_list')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, http_status.HTTP_200_OK)
         # TODO test result serialization?
 
     def test_deauthorize_node(self):
-        url = self.project.api_url_for('{0}_deauthorize_node'.format(self.ADDON_SHORT_NAME))
+        url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_deauthorize_node')
         res = self.app.delete(url, auth=self.user.auth)
         assert_equal(res.status_code, http_status.HTTP_200_OK)
         self.node_settings.reload()
@@ -236,7 +236,7 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         # A log event was saved
         self.project.reload()
         last_log = self.project.logs.latest()
-        assert_equal(last_log.action, '{0}_node_deauthorized'.format(self.ADDON_SHORT_NAME))
+        assert_equal(last_log.action, f'{self.ADDON_SHORT_NAME}_node_deauthorized')
 
 
 class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMixin):
@@ -284,7 +284,7 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
         raise NotImplementedError()
 
     def setUp(self):
-        super(OAuthCitationAddonConfigViewsTestCaseMixin, self).setUp()
+        super().setUp()
         self.mock_verify = mock.patch.object(
             self.client,
             '_verify_client_validity'
@@ -293,12 +293,12 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
 
     def tearDown(self):
         self.mock_verify.stop()
-        super(OAuthCitationAddonConfigViewsTestCaseMixin, self).tearDown()
+        super().tearDown()
 
     def test_set_config(self):
         with mock.patch.object(self.client, '_folder_metadata') as mock_metadata:
             mock_metadata.return_value = self.folder
-            url = self.project.api_url_for('{0}_set_config'.format(self.ADDON_SHORT_NAME))
+            url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_set_config')
             res = self.app.put_json(url, {
                 'external_list_id': self.folder.json['id'],
                 'external_list_name': self.folder.name,
@@ -307,7 +307,7 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
             self.project.reload()
             assert_equal(
                 self.project.logs.latest().action,
-                '{0}_folder_selected'.format(self.ADDON_SHORT_NAME)
+                f'{self.ADDON_SHORT_NAME}_folder_selected'
             )
             assert_equal(res.json['result']['folder']['name'], self.folder.name)
 
@@ -316,7 +316,7 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
             mock_metadata.return_value = self.folder
             self.node_settings.api._client = 'client'
             self.node_settings.save()
-            url = self.project.api_url_for('{0}_get_config'.format(self.ADDON_SHORT_NAME))
+            url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_get_config')
             res = self.app.get(url, auth=self.user.auth)
             assert_equal(res.status_code, http_status.HTTP_200_OK)
             assert_in('result', res.json)
@@ -332,7 +332,7 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
         with mock.patch.object(self.client, '_get_folders'):
             self.node_settings.set_auth(self.external_account, self.user)
             self.node_settings.save()
-            url = self.project.api_url_for('{0}_citation_list'.format(self.ADDON_SHORT_NAME))
+            url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_citation_list')
             res = self.app.get(url, auth=self.user.auth)
             assert_equal(res.status_code, http_status.HTTP_200_OK)
 
@@ -388,7 +388,7 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
         )
 
         res = self.app.get(
-            self.project.api_url_for('{0}_citation_list'.format(self.ADDON_SHORT_NAME)),
+            self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_citation_list'),
             auth=self.user.auth
         )
         root = res.json['contents'][0]
@@ -418,7 +418,7 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
         )
 
         res = self.app.get(
-            self.project.api_url_for('{0}_citation_list'.format(self.ADDON_SHORT_NAME), list_id='ROOT'),
+            self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_citation_list', list_id='ROOT'),
             auth=self.user.auth
         )
 
@@ -455,7 +455,7 @@ class OAuthCitationAddonConfigViewsTestCaseMixin(OAuthAddonConfigViewsTestCaseMi
         )
 
         res = self.app.get(
-            self.project.api_url_for('{0}_citation_list'.format(self.ADDON_SHORT_NAME), list_id='ROOT'),
+            self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_citation_list', list_id='ROOT'),
             auth=non_authorizing_user.auth,
             expect_errors=True
         )

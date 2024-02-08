@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Asynchronous task queue module."""
 from celery import Celery
 from celery.utils.log import get_task_logger
@@ -32,5 +31,5 @@ def error_handler(task_id, task_name):
     excep = result.get(propagate=False)
     # log detailed error mesage in error log
     logger.error('#####FAILURE LOG BEGIN#####\n'
-                'Task {0} raised exception: {1}\n{2}\n'
+                'Task {} raised exception: {}\n{}\n'
                 '#####FAILURE LOG STOP#####'.format(task_name, excep, result.traceback))

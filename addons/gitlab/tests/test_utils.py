@@ -24,7 +24,7 @@ HOOK_PAYLOAD = json.dumps({
 class TestHookVerify(OsfTestCase):
 
     def setUp(self):
-        super(TestHookVerify, self).setUp()
+        super().setUp()
         self.node_settings = NodeSettings(
             hook_secret='speakfriend',
         )

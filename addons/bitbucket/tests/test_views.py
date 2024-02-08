@@ -1,7 +1,6 @@
-# -*- coding: utf-8 -*-
 from rest_framework import status as http_status
 
-import mock
+from unittest import mock
 import datetime
 import unittest
 import pytest
@@ -38,7 +37,7 @@ class TestBitbucketAuthViews(BitbucketAddonTestCase, OAuthAddonAuthViewsTestCase
         mock.PropertyMock()
     )
     def test_delete_external_account(self):
-        super(TestBitbucketAuthViews, self).test_delete_external_account()
+        super().test_delete_external_account()
 
 
 class TestBitbucketConfigViews(BitbucketAddonTestCase, OAuthAddonConfigViewsTestCaseMixin, OsfTestCase):
@@ -49,14 +48,14 @@ class TestBitbucketConfigViews(BitbucketAddonTestCase, OAuthAddonConfigViewsTest
     ## Overrides ##
 
     def setUp(self):
-        super(TestBitbucketConfigViews, self).setUp()
+        super().setUp()
         self.mock_access_token = mock.patch('addons.bitbucket.models.BitbucketProvider.fetch_access_token')
         self.mock_access_token.return_value = mock.Mock()
         self.mock_access_token.start()
 
     def tearDown(self):
         self.mock_access_token.stop()
-        super(TestBitbucketConfigViews, self).tearDown()
+        super().tearDown()
 
     def test_folder_list(self):
         # BB only lists root folder (repos), this test is superfluous
@@ -68,7 +67,7 @@ class TestBitbucketConfigViews(BitbucketAddonTestCase, OAuthAddonConfigViewsTest
         # BB selects repos, not folders, so this needs to be overriden
         mock_account.return_value = mock.Mock()
         mock_repo.return_value = 'repo_name'
-        url = self.project.api_url_for('{0}_set_config'.format(self.ADDON_SHORT_NAME))
+        url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_set_config')
         res = self.app.post_json(url, {
             'bitbucket_user': 'octocat',
             'bitbucket_repo': 'repo_name',
@@ -77,14 +76,14 @@ class TestBitbucketConfigViews(BitbucketAddonTestCase, OAuthAddonConfigViewsTest
         self.project.reload()
         assert_equal(
             self.project.logs.latest().action,
-            '{0}_repo_linked'.format(self.ADDON_SHORT_NAME)
+            f'{self.ADDON_SHORT_NAME}_repo_linked'
         )
 
 
 class TestBitbucketViews(OsfTestCase):
 
     def setUp(self):
-        super(TestBitbucketViews, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
 
@@ -192,8 +191,8 @@ class TestBitbucketViews(OsfTestCase):
     def check_hook_urls(self, urls, node, path, sha):
         url = node.web_url_for('addon_view_or_download_file', path=path, provider='bitbucket')
         expected_urls = {
-            'view': '{0}?ref={1}'.format(url, sha),
-            'download': '{0}?action=download&ref={1}'.format(url, sha)
+            'view': f'{url}?ref={sha}',
+            'download': f'{url}?action=download&ref={sha}'
         }
 
         assert_equal(urls['view'], expected_urls['view'])
@@ -204,7 +203,7 @@ class TestBitbucketSettings(OsfTestCase):
 
     def setUp(self):
 
-        super(TestBitbucketSettings, self).setUp()
+        super().setUp()
         self.bitbucket = create_mock_bitbucket(user='fred', private=False)
         self.project = ProjectFactory()
         self.project.save()

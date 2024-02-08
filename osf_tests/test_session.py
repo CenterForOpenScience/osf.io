@@ -268,7 +268,7 @@ class TestUserSessionMap:
 class TestSessions(AppTestCase):
 
     def setUp(self):
-        super(TestSessions, self).setUp()
+        super().setUp()
         self.context.g.current_session = None
         self.user = AuthUserFactory()
         self.fake_url = 'http://fake.osf.io/fake'
@@ -299,7 +299,7 @@ class TestSessions(AppTestCase):
         self.cookie_invalid = fake.md5()
 
     def tearDown(self):
-        super(TestSessions, self).tearDown()
+        super().tearDown()
 
     @mock.patch('framework.sessions.get_session')
     def test_set_current_session(self, mock_get_session):

@@ -19,7 +19,7 @@ class MetadataSerializer(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def serialize(self) -> typing.Union[str, bytes]:
+    def serialize(self) -> str | bytes:
         raise NotImplementedError
 
     # optional for subclasses

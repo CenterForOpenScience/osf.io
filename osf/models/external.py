@@ -92,12 +92,12 @@ class ExternalProviderMeta(abc.ABCMeta):
     """Keeps track of subclasses of the ``ExternalProvider`` object"""
 
     def __init__(cls, name, bases, dct):
-        super(ExternalProviderMeta, cls).__init__(name, bases, dct)
+        super().__init__(name, bases, dct)
         if not isinstance(cls.short_name, abc.abstractproperty):
             PROVIDER_LOOKUP[cls.short_name] = cls
 
 
-class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
+class ExternalProvider(with_metaclass(ExternalProviderMeta)):
     """A connection to an external service (ex: GitHub).
 
     This object contains no credentials, and is not saved in the database.
@@ -119,7 +119,7 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
     expiry_time = 0  # If/When the refresh token expires (seconds). 0 indicates a non-expiring refresh token
 
     def __init__(self, account=None):
-        super(ExternalProvider, self).__init__()
+        super().__init__()
 
         # provide an unauthenticated session by default
         self.account = account
@@ -473,7 +473,7 @@ class ExternalProvider(object, with_metaclass(ExternalProviderMeta)):
             return (timezone.now() - self.account.expires_at).total_seconds() > self.expiry_time
         return False
 
-class BasicAuthProviderMixin(object):
+class BasicAuthProviderMixin:
     """
         Providers utilizing BasicAuth can utilize this class to implement the
         storage providers framework by subclassing this mixin. This provides
@@ -483,7 +483,7 @@ class BasicAuthProviderMixin(object):
     """
 
     def __init__(self, account=None, host=None, username=None, password=None):
-        super(BasicAuthProviderMixin, self).__init__()
+        super().__init__()
         if account:
             self.account = account
         elif not account and host and password and username:
@@ -491,7 +491,7 @@ class BasicAuthProviderMixin(object):
                 display_name=username,
                 oauth_key=password,
                 oauth_secret=host,
-                provider_id='{}:{}'.format(host, username),
+                provider_id=f'{host}:{username}',
                 profile_url=host,
                 provider=self.short_name,
                 provider_name=self.name

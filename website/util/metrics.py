@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from enum import Enum
 
 def get_entry_point(user):
@@ -20,24 +19,24 @@ def get_entry_point(user):
 
 def provider_source_tag(provider_id, service=None):
     if service:
-        return 'source:provider|{}|{}'.format(service, provider_id)
+        return f'source:provider|{service}|{provider_id}'
     else:
-        return 'source:provider|{}'.format(provider_id)
+        return f'source:provider|{provider_id}'
 
 
 def campaign_source_tag(campaign_name):
-    return 'source:campaign|{}'.format(campaign_name)
+    return f'source:campaign|{campaign_name}'
 
 
 def provider_claimed_tag(provider_id, service=None):
     if service:
-        return 'claimed:provider|{}|{}'.format(service, provider_id)
+        return f'claimed:provider|{service}|{provider_id}'
     else:
-        return 'claimed:provider|{}'.format(provider_id)
+        return f'claimed:provider|{provider_id}'
 
 
 def campaign_claimed_tag(campaign_name):
-    return 'claimed:campaign|{}'.format(campaign_name)
+    return f'claimed:campaign|{campaign_name}'
 
 
 class OsfSourceTags(Enum):

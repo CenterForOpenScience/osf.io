@@ -20,7 +20,7 @@ from api.base import permissions as base_permissions
 from api.applications.serializers import ApiOAuth2ApplicationSerializer, ApiOAuth2ApplicationDetailSerializer, ApiOAuth2ApplicationResetSerializer
 
 
-class ApplicationMixin(object):
+class ApplicationMixin:
     """Mixin with convenience methods for retrieving the current application based on the
     current URL. By default, fetches the current application based on the client_id kwarg.
     """

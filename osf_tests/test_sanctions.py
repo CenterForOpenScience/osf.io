@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
 """Tests ported from tests/test_sanctions.py and tests/test_registrations.py"""
-import mock
+from unittest import mock
 import pytest
 import datetime
 

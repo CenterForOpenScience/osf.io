@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 from past.builtins import basestring
-import mock
+from unittest import mock
 from django.utils import timezone
 from nose.tools import *  # noqa
 
@@ -31,7 +29,7 @@ class TestFolder(TestFileNode, Folder):
 class FilesTestCase(OsfTestCase):
 
     def setUp(self):
-        super(FilesTestCase, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.node = ProjectFactory(creator=self.user)
 
@@ -39,7 +37,7 @@ class FilesTestCase(OsfTestCase):
 class TestStoredFileNode(FilesTestCase):
 
     def setUp(self):
-        super(TestStoredFileNode, self).setUp()
+        super().setUp()
         self.test_file = TestFile(
             _path='anid',
             name='name',
@@ -57,7 +55,7 @@ class TestStoredFileNode(FilesTestCase):
         assert_in(self.test_file.provider, url)
 
     def test_deep_url_unicode(self):
-        self.test_file.path = u'༼ つ ͠° ͟ ͟ʖ ͡° ༽つ'
+        self.test_file.path = '༼ つ ͠° ͟ ͟ʖ ͡° ༽つ'
         self.test_file.save()
         url = self.test_file.deep_url
         assert_true(isinstance(url, basestring))
@@ -305,7 +303,7 @@ class TestFileNodeObj(FilesTestCase):
 
         restored = trashed.restore()
 
-        local_django_fields = set([x.name for x in restored._meta.get_fields() if not x.is_relation])
+        local_django_fields = {x.name for x in restored._meta.get_fields() if not x.is_relation}
 
         for field_name in local_django_fields:
             assert_equal(
@@ -344,7 +342,7 @@ class TestFileNodeObj(FilesTestCase):
 
         restored = trashed_root.restore()
 
-        local_django_fields = set([x.name for x in restored._meta.get_fields() if not x.is_relation])
+        local_django_fields = {x.name for x in restored._meta.get_fields() if not x.is_relation}
 
         for field_name in local_django_fields:
             assert_equal(
@@ -365,19 +363,19 @@ class TestFileNodeObj(FilesTestCase):
             for i in range(random.randrange(3, 15)):
                 if is_folder:
                     fn = TestFolder(
-                        _path='name{}'.format(i),
-                        name='name{}'.format(i),
+                        _path=f'name{i}',
+                        name=f'name{i}',
                         target=self.node,
                         parent_id=parent.id,
-                        materialized_path='{}/{}'.format(parent.materialized_path, 'name{}'.format(i)),
+                        materialized_path='{}/{}'.format(parent.materialized_path, f'name{i}'),
                     )
                 else:
                     fn = TestFile(
-                        _path='name{}'.format(i),
-                        name='name{}'.format(i),
+                        _path=f'name{i}',
+                        name=f'name{i}',
                         target=self.node,
                         parent_id=parent.id,
-                        materialized_path='{}/{}'.format(parent.materialized_path, 'name{}'.format(i)),
+                        materialized_path='{}/{}'.format(parent.materialized_path, f'name{i}'),
                     )
 
                 fn.save()
@@ -614,7 +612,7 @@ class TestFileObj(FilesTestCase):
 class TestFolderObj(FilesTestCase):
 
     def setUp(self):
-        super(TestFolderObj, self).setUp()
+        super().setUp()
         self.parent = TestFolder(
             _path='aparent',
             name='parent',

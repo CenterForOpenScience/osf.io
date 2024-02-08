@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from django.core.management.base import BaseCommand
 from osf.models import Registration, RegistrationSchema
 
@@ -20,6 +19,6 @@ class Command(BaseCommand):
             for schema in schemas:
                 registrations = Registration.objects.filter(registered_schema=schema).get_roots()
                 count = registrations.count()
-                print('{} (Version {}): {}'.format(schema_name, schema.schema_version, count))
+                print(f'{schema_name} (Version {schema.schema_version}): {count}')
                 total += count
-        print('Total: {}'.format(total))
+        print(f'Total: {total}')

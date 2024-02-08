@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 import responses
 from urllib.parse import parse_qs

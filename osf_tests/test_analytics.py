@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Unit tests for analytics logic in framework/analytics/__init__.py
 """
@@ -71,23 +70,23 @@ def file_node3(project):
 
 @pytest.fixture()
 def page_counter(project, file_node):
-    page_counter_id = 'download:{}:{}'.format(project._id, file_node.id)
+    page_counter_id = f'download:{project._id}:{file_node.id}'
     resource = project.guids.first()
-    page_counter, created = PageCounter.objects.get_or_create(_id=page_counter_id, resource=resource, file=file_node, version=None, action='download', date={u'2018/02/04': {u'total': 41, u'unique': 33}})
+    page_counter, created = PageCounter.objects.get_or_create(_id=page_counter_id, resource=resource, file=file_node, version=None, action='download', date={'2018/02/04': {'total': 41, 'unique': 33}})
     return page_counter
 
 @pytest.fixture()
 def page_counter2(project, file_node2):
-    page_counter_id = 'download:{}:{}'.format(project._id, file_node2.id)
+    page_counter_id = f'download:{project._id}:{file_node2.id}'
     resource = project.guids.first()
-    page_counter, created = PageCounter.objects.get_or_create(_id=page_counter_id, resource=resource, file=file_node2, version=None, action='download', date={u'2018/02/04': {u'total': 4, u'unique': 26}})
+    page_counter, created = PageCounter.objects.get_or_create(_id=page_counter_id, resource=resource, file=file_node2, version=None, action='download', date={'2018/02/04': {'total': 4, 'unique': 26}})
     return page_counter
 
 @pytest.fixture()
 def page_counter_for_individual_version(project, file_node3):
-    page_counter_id = 'download:{}:{}'.format(project._id, file_node3.id)
+    page_counter_id = f'download:{project._id}:{file_node3.id}'
     resource = project.guids.first()
-    page_counter, created = PageCounter.objects.get_or_create(_id=page_counter_id, resource=resource, file=file_node3, version=0, action='download', date={u'2018/02/04': {u'total': 1, u'unique': 1}})
+    page_counter, created = PageCounter.objects.get_or_create(_id=page_counter_id, resource=resource, file=file_node3, version=0, action='download', date={'2018/02/04': {'total': 1, 'unique': 1}})
     return page_counter
 
 

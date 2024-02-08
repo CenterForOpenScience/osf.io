@@ -47,7 +47,7 @@ class TestViewOnlyLinksDetail:
 
     @pytest.fixture()
     def url(self, view_only_link):
-        return '/{}view_only_links/{}/'.format(API_BASE, view_only_link._id)
+        return f'/{API_BASE}view_only_links/{view_only_link._id}/'
 
     def test_view_only_links_detail(
             self, app, user, read_only_user, read_write_user,

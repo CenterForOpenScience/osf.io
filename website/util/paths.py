@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import os
 import json
 import logging
@@ -18,7 +16,7 @@ def load_asset_paths():
     try:
         with open(settings.ASSET_HASH_PATH) as fp:
             asset_paths = json.load(fp)
-    except IOError:
+    except OSError:
         logger.error('No "webpack-assets.json" file found. You may need to run webpack.')
         pass
     return asset_paths

@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
-import mock
+from unittest import mock
 import time
 import unittest
 import logging
@@ -43,19 +40,19 @@ def query(term, raw=False):
     return results
 
 def query_collections(name):
-    term = 'category:collectionSubmission AND "{}"'.format(name)
+    term = f'category:collectionSubmission AND "{name}"'
     return query(term, raw=True)
 
 def query_user(name):
-    term = 'category:user AND "{}"'.format(name)
+    term = f'category:user AND "{name}"'
     return query(term)
 
 def query_file(name):
-    term = 'category:file AND "{}"'.format(name)
+    term = f'category:file AND "{name}"'
     return query(term)
 
 def query_tag_file(name):
-    term = 'category:file AND (tags:u"{}")'.format(name)
+    term = f'category:file AND (tags:u"{name}")'
     return query(term)
 
 def retry_assertion(interval=0.3, retries=3):
@@ -90,7 +87,7 @@ def create_file_version(file, user):
 @pytest.mark.enable_enqueue_task
 class TestCollectionsSearch(OsfTestCase):
     def setUp(self):
-        super(TestCollectionsSearch, self).setUp()
+        super().setUp()
         search.delete_index(elastic_search.INDEX)
         search.create_index(elastic_search.INDEX)
 
@@ -314,7 +311,7 @@ class TestCollectionsSearch(OsfTestCase):
 class TestUserUpdate(OsfTestCase):
 
     def setUp(self):
-        super(TestUserUpdate, self).setUp()
+        super().setUp()
         search.delete_index(elastic_search.INDEX)
         search.create_index(elastic_search.INDEX)
         self.user = factories.UserFactory(fullname='David Bowie')
@@ -428,7 +425,7 @@ class TestUserUpdate(OsfTestCase):
 class TestProject(OsfTestCase):
 
     def setUp(self):
-        super(TestProject, self).setUp()
+        super().setUp()
         search.delete_index(elastic_search.INDEX)
         search.create_index(elastic_search.INDEX)
         self.user = factories.UserFactory(fullname='John Deacon')
@@ -454,7 +451,7 @@ class TestOSFGroup(OsfTestCase):
 
     def setUp(self):
         with run_celery_tasks():
-            super(TestOSFGroup, self).setUp()
+            super().setUp()
             search.delete_index(elastic_search.INDEX)
             search.create_index(elastic_search.INDEX)
             self.user = factories.UserFactory(fullname='John Deacon')
@@ -486,34 +483,34 @@ class TestOSFGroup(OsfTestCase):
 
     def test_add_member(self):
         self.group.make_member(self.user_two)
-        docs = query('category:group AND "{}"'.format(self.user_two.fullname))['results']
+        docs = query(f'category:group AND "{self.user_two.fullname}"')['results']
         assert_equal(len(docs), 1)
 
         self.group.make_manager(self.user_two)
-        docs = query('category:group AND "{}"'.format(self.user_two.fullname))['results']
+        docs = query(f'category:group AND "{self.user_two.fullname}"')['results']
         assert_equal(len(docs), 1)
 
         self.group.remove_member(self.user_two)
-        docs = query('category:group AND "{}"'.format(self.user_two.fullname))['results']
+        docs = query(f'category:group AND "{self.user_two.fullname}"')['results']
         assert_equal(len(docs), 0)
 
     def test_connect_to_node(self):
         self.project.add_osf_group(self.group)
-        docs = query('category:project AND "{}"'.format(self.group.name))['results']
+        docs = query(f'category:project AND "{self.group.name}"')['results']
         assert_equal(len(docs), 1)
 
         self.project.remove_osf_group(self.group)
-        docs = query('category:project AND "{}"'.format(self.group.name))['results']
+        docs = query(f'category:project AND "{self.group.name}"')['results']
         assert_equal(len(docs), 0)
 
     def test_remove_group(self):
         group_name = self.group.name
         self.project.add_osf_group(self.group)
-        docs = query('category:project AND "{}"'.format(group_name))['results']
+        docs = query(f'category:project AND "{group_name}"')['results']
         assert_equal(len(docs), 1)
 
         self.group.remove_group()
-        docs = query('category:project AND "{}"'.format(group_name))['results']
+        docs = query(f'category:project AND "{group_name}"')['results']
         assert_equal(len(docs), 0)
         docs = query(group_name)['results']
         assert_equal(len(docs), 0)
@@ -525,7 +522,7 @@ class TestPreprint(OsfTestCase):
 
     def setUp(self):
         with run_celery_tasks():
-            super(TestPreprint, self).setUp()
+            super().setUp()
             search.delete_index(elastic_search.INDEX)
             search.create_index(elastic_search.INDEX)
             self.user = factories.UserFactory(fullname='John Deacon')
@@ -645,12 +642,12 @@ class TestPreprint(OsfTestCase):
         tags = ['stonecoldcrazy', 'just a poor boy', 'from-a-poor-family']
 
         for tag in tags:
-            docs = query('tags:"{}"'.format(tag))['results']
+            docs = query(f'tags:"{tag}"')['results']
             assert_equal(len(docs), 0)
             self.published_preprint.add_tag(tag, Auth(self.user), save=True)
 
         for tag in tags:
-            docs = query('tags:"{}"'.format(tag))['results']
+            docs = query(f'tags:"{tag}"')['results']
             assert_equal(len(docs), 1)
 
     def test_remove_tag(self):
@@ -660,7 +657,7 @@ class TestPreprint(OsfTestCase):
         for tag in tags:
             self.published_preprint.add_tag(tag, Auth(self.user), save=True)
             self.published_preprint.remove_tag(tag, Auth(self.user), save=True)
-            docs = query('tags:"{}"'.format(tag))['results']
+            docs = query(f'tags:"{tag}"')['results']
             assert_equal(len(docs), 0)
 
     def test_add_contributor(self):
@@ -668,12 +665,12 @@ class TestPreprint(OsfTestCase):
         # for contributor.
         user2 = factories.UserFactory(fullname='Adam Lambert')
 
-        docs = query('category:preprint AND "{}"'.format(user2.fullname))['results']
+        docs = query(f'category:preprint AND "{user2.fullname}"')['results']
         assert_equal(len(docs), 0)
         # with run_celery_tasks():
         self.published_preprint.add_contributor(user2, save=True)
 
-        docs = query('category:preprint AND "{}"'.format(user2.fullname))['results']
+        docs = query(f'category:preprint AND "{user2.fullname}"')['results']
         assert_equal(len(docs), 1)
 
     def test_remove_contributor(self):
@@ -684,28 +681,28 @@ class TestPreprint(OsfTestCase):
         self.published_preprint.add_contributor(user2, save=True)
         self.published_preprint.remove_contributor(user2, Auth(self.user))
 
-        docs = query('category:preprint AND "{}"'.format(user2.fullname))['results']
+        docs = query(f'category:preprint AND "{user2.fullname}"')['results']
         assert_equal(len(docs), 0)
 
     def test_hide_contributor(self):
         user2 = factories.UserFactory(fullname='Brian May')
         self.published_preprint.add_contributor(user2)
         self.published_preprint.set_visible(user2, False, save=True)
-        docs = query('category:preprint AND "{}"'.format(user2.fullname))['results']
+        docs = query(f'category:preprint AND "{user2.fullname}"')['results']
         assert_equal(len(docs), 0)
         self.published_preprint.set_visible(user2, True, save=True)
-        docs = query('category:preprint AND "{}"'.format(user2.fullname))['results']
+        docs = query(f'category:preprint AND "{user2.fullname}"')['results']
         assert_equal(len(docs), 1)
 
     def test_move_contributor(self):
         user2 = factories.UserFactory(fullname='Brian May')
         self.published_preprint.add_contributor(user2, save=True)
-        docs = query('category:preprint AND "{}"'.format(user2.fullname))['results']
+        docs = query(f'category:preprint AND "{user2.fullname}"')['results']
         assert_equal(len(docs), 1)
         docs[0]['contributors'][0]['fullname'] == self.user.fullname
         docs[0]['contributors'][1]['fullname'] == user2.fullname
         self.published_preprint.move_contributor(user2, Auth(self.user), 0)
-        docs = query('category:preprint AND "{}"'.format(user2.fullname))['results']
+        docs = query(f'category:preprint AND "{user2.fullname}"')['results']
         assert_equal(len(docs), 1)
         docs[0]['contributors'][0]['fullname'] == user2.fullname
         docs[0]['contributors'][1]['fullname'] == self.user.fullname
@@ -727,7 +724,7 @@ class TestPreprint(OsfTestCase):
 class TestNodeSearch(OsfTestCase):
 
     def setUp(self):
-        super(TestNodeSearch, self).setUp()
+        super().setUp()
         with run_celery_tasks():
             self.node = factories.ProjectFactory(is_public=True, title='node')
             self.public_child = factories.ProjectFactory(parent=self.node, is_public=True, title='public_child')
@@ -773,7 +770,7 @@ class TestNodeSearch(OsfTestCase):
 class TestRegistrationRetractions(OsfTestCase):
 
     def setUp(self):
-        super(TestRegistrationRetractions, self).setUp()
+        super().setUp()
         self.user = factories.UserFactory(fullname='Doug Bogie')
         self.title = 'Red Special'
         self.consolidate_auth = Auth(user=self.user)
@@ -866,7 +863,7 @@ class TestPublicNodes(OsfTestCase):
 
     def setUp(self):
         with run_celery_tasks():
-            super(TestPublicNodes, self).setUp()
+            super().setUp()
             self.user = factories.UserFactory(fullname='Doug Bogie')
             self.title = 'Red Special'
             self.consolidate_auth = Auth(user=self.user)
@@ -976,12 +973,12 @@ class TestPublicNodes(OsfTestCase):
 
         with run_celery_tasks():
             for tag in tags:
-                docs = query('tags:"{}"'.format(tag))['results']
+                docs = query(f'tags:"{tag}"')['results']
                 assert_equal(len(docs), 0)
                 self.project.add_tag(tag, self.consolidate_auth, save=True)
 
         for tag in tags:
-            docs = query('tags:"{}"'.format(tag))['results']
+            docs = query(f'tags:"{tag}"')['results']
             assert_equal(len(docs), 1)
 
     def test_remove_tag(self):
@@ -991,7 +988,7 @@ class TestPublicNodes(OsfTestCase):
         for tag in tags:
             self.project.add_tag(tag, self.consolidate_auth, save=True)
             self.project.remove_tag(tag, self.consolidate_auth, save=True)
-            docs = query('tags:"{}"'.format(tag))['results']
+            docs = query(f'tags:"{tag}"')['results']
             assert_equal(len(docs), 0)
 
     def test_update_wiki(self):
@@ -1028,12 +1025,12 @@ class TestPublicNodes(OsfTestCase):
         # for contributor.
         user2 = factories.UserFactory(fullname='Adam Lambert')
 
-        docs = query('category:project AND "{}"'.format(user2.fullname))['results']
+        docs = query(f'category:project AND "{user2.fullname}"')['results']
         assert_equal(len(docs), 0)
         with run_celery_tasks():
             self.project.add_contributor(user2, save=True)
 
-        docs = query('category:project AND "{}"'.format(user2.fullname))['results']
+        docs = query(f'category:project AND "{user2.fullname}"')['results']
         assert_equal(len(docs), 1)
 
     def test_remove_contributor(self):
@@ -1044,7 +1041,7 @@ class TestPublicNodes(OsfTestCase):
         self.project.add_contributor(user2, save=True)
         self.project.remove_contributor(user2, self.consolidate_auth)
 
-        docs = query('category:project AND "{}"'.format(user2.fullname))['results']
+        docs = query(f'category:project AND "{user2.fullname}"')['results']
         assert_equal(len(docs), 0)
 
     def test_hide_contributor(self):
@@ -1052,11 +1049,11 @@ class TestPublicNodes(OsfTestCase):
         self.project.add_contributor(user2)
         with run_celery_tasks():
             self.project.set_visible(user2, False, save=True)
-        docs = query('category:project AND "{}"'.format(user2.fullname))['results']
+        docs = query(f'category:project AND "{user2.fullname}"')['results']
         assert_equal(len(docs), 0)
         with run_celery_tasks():
             self.project.set_visible(user2, True, save=True)
-        docs = query('category:project AND "{}"'.format(user2.fullname))['results']
+        docs = query(f'category:project AND "{user2.fullname}"')['results']
         assert_equal(len(docs), 1)
 
     def test_wrong_order_search(self):
@@ -1088,11 +1085,11 @@ class TestAddContributor(OsfTestCase):
     def setUp(self):
         self.name1 = 'Roger1 Taylor1'
         self.name2 = 'John2 Deacon2'
-        self.name3 = u'j\xc3\xb3ebert3 Smith3'
-        self.name4 = u'B\xc3\xb3bbert4 Jones4'
+        self.name3 = 'j\xc3\xb3ebert3 Smith3'
+        self.name4 = 'B\xc3\xb3bbert4 Jones4'
 
         with run_celery_tasks():
-            super(TestAddContributor, self).setUp()
+            super().setUp()
             self.user = factories.UserFactory(fullname=self.name1)
             self.user3 = factories.UserFactory(fullname=self.name3)
 
@@ -1184,7 +1181,7 @@ class TestProjectSearchResults(OsfTestCase):
         self.possessive = 'Spanish\'s Inquisition'
 
         with run_celery_tasks():
-            super(TestProjectSearchResults, self).setUp()
+            super().setUp()
             self.user = factories.UserFactory(fullname='Doug Bogie')
 
             self.project_singular = factories.ProjectFactory(
@@ -1250,7 +1247,7 @@ def job(**kwargs):
         elif key[-4:] == 'Year':
             job[key] = kwargs.get(key, '2000')
         else:
-            job[key] = kwargs.get(key, 'test_{}'.format(key))
+            job[key] = kwargs.get(key, f'test_{key}')
     return job
 
 
@@ -1259,7 +1256,7 @@ def job(**kwargs):
 class TestUserSearchResults(OsfTestCase):
     def setUp(self):
         with run_celery_tasks():
-            super(TestUserSearchResults, self).setUp()
+            super().setUp()
             self.user_one = factories.UserFactory(jobs=[job(institution='Oxford'),
                                                         job(institution='Star Fleet')],
                                                   fullname='Date Soong')
@@ -1320,14 +1317,14 @@ class TestSearchExceptions(OsfTestCase):
     @classmethod
     def setUpClass(cls):
         logging.getLogger('website.project.model').setLevel(logging.CRITICAL)
-        super(TestSearchExceptions, cls).setUpClass()
+        super().setUpClass()
         if settings.SEARCH_ENGINE == 'elastic':
             cls._client = search.search_engine.CLIENT
             search.search_engine.CLIENT = None
 
     @classmethod
     def tearDownClass(cls):
-        super(TestSearchExceptions, cls).tearDownClass()
+        super().tearDownClass()
         if settings.SEARCH_ENGINE == 'elastic':
             search.search_engine.CLIENT = cls._client
 
@@ -1351,11 +1348,11 @@ class TestSearchMigration(OsfTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        super(TestSearchMigration, cls).tearDownClass()
+        super().tearDownClass()
         search.create_index(settings.ELASTIC_INDEX)
 
     def setUp(self):
-        super(TestSearchMigration, self).setUp()
+        super().setUp()
         populate_institutions(default_args=True)
         self.es = search.search_engine.CLIENT
         search.delete_index(settings.ELASTIC_INDEX)
@@ -1379,7 +1376,7 @@ class TestSearchMigration(OsfTestCase):
         for n in range(1, 21):
             migrate(delete=False, remove=False, index=settings.ELASTIC_INDEX, app=self.app.app)
             var = self.es.indices.get_aliases()
-            assert_equal(list(var[settings.ELASTIC_INDEX + '_v{}'.format(n)]['aliases'].keys())[0], settings.ELASTIC_INDEX)
+            assert_equal(list(var[settings.ELASTIC_INDEX + f'_v{n}']['aliases'].keys())[0], settings.ELASTIC_INDEX)
 
     def test_first_migration_with_remove(self):
         migrate(delete=False, remove=True, index=settings.ELASTIC_INDEX, app=self.app.app)
@@ -1390,12 +1387,12 @@ class TestSearchMigration(OsfTestCase):
         for n in range(1, 21, 2):
             migrate(delete=False, remove=True, index=settings.ELASTIC_INDEX, app=self.app.app)
             var = self.es.indices.get_aliases()
-            assert_equal(list(var[settings.ELASTIC_INDEX + '_v{}'.format(n)]['aliases'].keys())[0], settings.ELASTIC_INDEX)
+            assert_equal(list(var[settings.ELASTIC_INDEX + f'_v{n}']['aliases'].keys())[0], settings.ELASTIC_INDEX)
 
             migrate(delete=False, remove=True, index=settings.ELASTIC_INDEX, app=self.app.app)
             var = self.es.indices.get_aliases()
-            assert_equal(list(var[settings.ELASTIC_INDEX + '_v{}'.format(n + 1)]['aliases'].keys())[0], settings.ELASTIC_INDEX)
-            assert not var.get(settings.ELASTIC_INDEX + '_v{}'.format(n))
+            assert_equal(list(var[settings.ELASTIC_INDEX + f'_v{n + 1}']['aliases'].keys())[0], settings.ELASTIC_INDEX)
+            assert not var.get(settings.ELASTIC_INDEX + f'_v{n}')
 
     def test_migration_institutions(self):
         migrate(delete=True, index=settings.ELASTIC_INDEX, app=self.app.app)
@@ -1410,7 +1407,7 @@ class TestSearchMigration(OsfTestCase):
         institution_bucket_found = False
         res = self.es.search(index=settings.ELASTIC_INDEX, doc_type=None, search_type='count', body=count_query)
         for bucket in res['aggregations']['counts']['buckets']:
-            if bucket['key'] == u'institution':
+            if bucket['key'] == 'institution':
                 institution_bucket_found = True
 
         assert_equal(institution_bucket_found, True)
@@ -1457,7 +1454,7 @@ class TestSearchMigration(OsfTestCase):
 class TestSearchFiles(OsfTestCase):
 
     def setUp(self):
-        super(TestSearchFiles, self).setUp()
+        super().setUp()
         self.user = factories.UserFactory(fullname='David Bowie')
         self.node = factories.ProjectFactory(is_public=True, title='Otis', creator=self.user)
         self.osf_storage = self.node.get_addon('osfstorage')

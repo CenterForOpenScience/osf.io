@@ -16,7 +16,7 @@ from osf_tests.factories import (
 class TestRegistrationEmbeds(ApiTestCase):
 
     def setUp(self):
-        super(TestRegistrationEmbeds, self).setUp()
+        super().setUp()
 
         self.user = AuthUserFactory()
         self.auth = Auth(self.user)
@@ -44,7 +44,7 @@ class TestRegistrationEmbeds(ApiTestCase):
             project=self.child1, is_public=True)
 
     def test_embed_children(self):
-        url = '/{0}registrations/{1}/?embed=children'.format(
+        url = '/{}registrations/{}/?embed=children'.format(
             API_BASE, self.registration._id)
         res = self.app.get(url, auth=self.user.auth)
         json = res.json
@@ -55,18 +55,18 @@ class TestRegistrationEmbeds(ApiTestCase):
             assert_in(child['attributes']['title'], titles)
 
     def test_embed_contributors(self):
-        url = '/{0}registrations/{1}/?embed=contributors'.format(
+        url = '/{}registrations/{}/?embed=contributors'.format(
             API_BASE, self.registration._id)
 
         res = self.app.get(url, auth=self.user.auth)
         embeds = res.json['data']['embeds']
         ids = [c._id for c in self.contribs] + [self.user._id]
-        ids = ['{}-{}'.format(self.registration._id, id_) for id_ in ids]
+        ids = [f'{self.registration._id}-{id_}' for id_ in ids]
         for contrib in embeds['contributors']['data']:
             assert_in(contrib['id'], ids)
 
     def test_embed_identifiers(self):
-        url = '/{0}registrations/{1}/?embed=identifiers'.format(
+        url = '/{}registrations/{}/?embed=identifiers'.format(
             API_BASE, self.registration._id)
 
         res = self.app.get(url, auth=self.user.auth)

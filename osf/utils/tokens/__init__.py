@@ -9,7 +9,7 @@ from website import settings
 from osf.utils.tokens import handlers
 from osf.exceptions import TokenHandlerNotFound
 
-class TokenHandler(object):
+class TokenHandler:
 
     HANDLERS = {
         'approve_registration_approval': functools.partial(handlers.sanction_handler, 'registration', 'approve'),
@@ -76,7 +76,7 @@ def process_token_or_pass(func):
                     http_status.HTTP_400_BAD_REQUEST,
                     data={
                         'message_short': 'Invalid Token',
-                        'message_long': 'No token handler for action: {} found'.format(e.action)
+                        'message_long': f'No token handler for action: {e.action} found'
                     }
                 )
             if res:

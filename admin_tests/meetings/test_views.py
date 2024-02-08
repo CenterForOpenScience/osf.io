@@ -25,7 +25,7 @@ from admin.meetings.forms import MeetingForm
 
 class TestMeetingListView(AdminTestCase):
     def setUp(self):
-        super(TestMeetingListView, self).setUp()
+        super().setUp()
         Conference.objects.all().delete()
         ConferenceFactory()
         ConferenceFactory()
@@ -59,7 +59,7 @@ class TestMeetingListView(AdminTestCase):
 
 class TestMeetingFormView(AdminTestCase):
     def setUp(self):
-        super(TestMeetingFormView, self).setUp()
+        super().setUp()
         self.conf = ConferenceFactory()
         self.user = AuthUserFactory()
         self.request = RequestFactory().post('/fake_path')
@@ -134,7 +134,7 @@ class TestMeetingFormView(AdminTestCase):
 
 class TestMeetingCreateFormView(AdminTestCase):
     def setUp(self):
-        super(TestMeetingCreateFormView, self).setUp()
+        super().setUp()
         Conference.objects.all().delete()
         self.user = AuthUserFactory()
         self.request = RequestFactory().post('/fake_path')

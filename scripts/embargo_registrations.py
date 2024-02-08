@@ -34,11 +34,11 @@ def main(dry_run=True):
                 parent_registration = Registration.objects.get(embargo=embargo)
             except Registration.DoesNotExist:
                 logger.error(
-                    'Embargo {} is not attached to a registration'.format(embargo._id)
+                    f'Embargo {embargo._id} is not attached to a registration'
                 )
                 continue
             logger.warn(
-                'Embargo {0} approved. Activating embargo for registration {1}'
+                'Embargo {} approved. Activating embargo for registration {}'
                 .format(embargo._id, parent_registration._id)
             )
             if not dry_run:
@@ -71,7 +71,7 @@ def main(dry_run=True):
                 logger.warn('Dry run mode')
             parent_registration = Registration.objects.get(embargo=embargo)
             logger.warn(
-                'Embargo {0} complete. Making registration {1} public'
+                'Embargo {} complete. Making registration {} public'
                 .format(embargo._id, parent_registration._id)
             )
             if not dry_run:

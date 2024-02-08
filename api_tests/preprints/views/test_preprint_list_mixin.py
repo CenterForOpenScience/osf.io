@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import pytest
 from django.utils import timezone
 
@@ -194,19 +194,19 @@ class PreprintIsPublishedListMixin:
     def test_filter_published_false_non_contrib(
             self, app, user_non_contrib, url):
         res = app.get(
-            '{}filter[is_published]=false'.format(url),
+            f'{url}filter[is_published]=false',
             auth=user_non_contrib.auth)
         assert len(res.json['data']) == 0
 
     def test_filter_published_false_public(self, app, url):
-        res = app.get('{}filter[is_published]=false'.format(url))
+        res = app.get(f'{url}filter[is_published]=false')
         assert len(res.json['data']) == 0
 
     def test_filter_published_false_admin(
             self, app, user_admin_contrib, preprint_unpublished, url):
 
         res = app.get(
-            '{}filter[is_published]=false'.format(url),
+            f'{url}filter[is_published]=false',
             auth=user_admin_contrib.auth)
         assert len(res.json['data']) == 1
         assert preprint_unpublished._id in [d['id'] for d in res.json['data']]

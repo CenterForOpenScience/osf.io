@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
 from datetime import datetime
-import mock
+from unittest import mock
 import pytest
 import random
 from nose.tools import *  # noqa:
@@ -86,11 +85,11 @@ class NodeCRUDTestCase:
 
     @pytest.fixture()
     def url_public(self, project_public):
-        return '/{}nodes/{}/'.format(API_BASE, project_public._id)
+        return f'/{API_BASE}nodes/{project_public._id}/'
 
     @pytest.fixture()
     def url_private(self, project_private):
-        return '/{}nodes/{}/'.format(API_BASE, project_private._id)
+        return f'/{API_BASE}nodes/{project_private._id}/'
 
     @pytest.fixture()
     def url_fake(self):
@@ -99,7 +98,7 @@ class NodeCRUDTestCase:
     @pytest.fixture()
     def make_contrib_id(self):
         def contrib_id(node_id, user_id):
-            return '{}-{}'.format(node_id, user_id)
+            return f'{node_id}-{user_id}'
         return contrib_id
 
 
@@ -114,7 +113,7 @@ class TestNodeContributorList(NodeCRUDTestCase):
 
     @pytest.fixture()
     def url_public(self, project_public):
-        return '/{}nodes/{}/contributors/'.format(API_BASE, project_public._id)
+        return f'/{API_BASE}nodes/{project_public._id}/contributors/'
 
     def test_concatenated_id(self, app, user, project_public, url_public):
         res = app.get(url_public)
@@ -208,7 +207,7 @@ class TestNodeContributorList(NodeCRUDTestCase):
 
     def test_filtering_on_obsolete_fields(self, app, user, url_public):
         # regression test for changes in filter fields
-        url_fullname = '{}?filter[fullname]=foo'.format(url_public)
+        url_fullname = f'{url_public}?filter[fullname]=foo'
         res = app.get(url_fullname, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
         errors = res.json['errors']
@@ -216,7 +215,7 @@ class TestNodeContributorList(NodeCRUDTestCase):
         assert errors[0]['detail'] == '\'fullname\' is not a valid field for this endpoint.'
 
         # middle_name is now middle_names
-        url_middle_name = '{}?filter[middle_name]=foo'.format(url_public)
+        url_middle_name = f'{url_public}?filter[middle_name]=foo'
         res = app.get(url_middle_name, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
         errors = res.json['errors']
@@ -257,7 +256,7 @@ class TestNodeContributorList(NodeCRUDTestCase):
     def test_unregistered_contributor_field_is_null_if_account_claimed(
             self, app, user):
         project = ProjectFactory(creator=user, is_public=True)
-        url = '/{}nodes/{}/contributors/'.format(API_BASE, project._id)
+        url = f'/{API_BASE}nodes/{project._id}/contributors/'
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
         assert len(res.json['data']) == 1
@@ -271,7 +270,7 @@ class TestNodeContributorList(NodeCRUDTestCase):
             'Robert Jackson',
             'robert@gmail.com',
             auth=Auth(user), save=True)
-        url = '/{}nodes/{}/contributors/'.format(API_BASE, project._id)
+        url = f'/{API_BASE}nodes/{project._id}/contributors/'
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
         assert len(res.json['data']) == 2
@@ -282,7 +281,7 @@ class TestNodeContributorList(NodeCRUDTestCase):
         project_two = ProjectFactory(creator=user, is_public=True)
         project_two.add_unregistered_contributor(
             'Bob Jackson', 'robert@gmail.com', auth=Auth(user), save=True)
-        url = '/{}nodes/{}/contributors/'.format(API_BASE, project_two._id)
+        url = f'/{API_BASE}nodes/{project_two._id}/contributors/'
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
         assert len(res.json['data']) == 2
@@ -312,10 +311,10 @@ class TestNodeContributorList(NodeCRUDTestCase):
                 save=True
             )
         req_one = app.get(
-            '{}?page=2'.format(url_public),
+            f'{url_public}?page=2',
             auth=Auth(project_public.creator))
         req_two = app.get(
-            '{}?page=2'.format(url_public),
+            f'{url_public}?page=2',
             auth=Auth(project_public.creator))
         id_one = [item['id'] for item in req_one.json['data']]
         id_two = [item['id'] for item in req_two.json['data']]
@@ -1357,12 +1356,12 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
 
     @pytest.fixture()
     def url_project_contribs(self, project_public):
-        return '/{}nodes/{}/contributors/'.format(API_BASE, project_public._id)
+        return f'/{API_BASE}nodes/{project_public._id}/contributors/'
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_add_contributor_no_email_if_false(
             self, mock_mail, app, user, url_project_contribs):
-        url = '{}?send_email=false'.format(url_project_contribs)
+        url = f'{url_project_contribs}?send_email=false'
         payload = {
             'data': {
                 'type': 'contributors',
@@ -1380,7 +1379,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
     def test_add_contributor_sends_email(
             self, mock_mail, app, user, user_two,
             url_project_contribs):
-        url = '{}?send_email=default'.format(url_project_contribs)
+        url = f'{url_project_contribs}?send_email=default'
         payload = {
             'data': {
                 'type': 'contributors',
@@ -1404,7 +1403,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
     @mock.patch('website.project.signals.contributor_added.send')
     def test_add_contributor_signal_if_default(
             self, mock_send, app, user, user_two, url_project_contribs):
-        url = '{}?send_email=default'.format(url_project_contribs)
+        url = f'{url_project_contribs}?send_email=default'
         payload = {
             'data': {
                 'type': 'contributors',
@@ -1427,7 +1426,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
 
     def test_add_contributor_signal_preprint_email_disallowed(
             self, app, user, user_two, url_project_contribs):
-        url = '{}?send_email=preprint'.format(url_project_contribs)
+        url = f'{url_project_contribs}?send_email=preprint'
         payload = {
             'data': {
                 'type': 'contributors',
@@ -1450,7 +1449,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_add_unregistered_contributor_sends_email(
             self, mock_mail, app, user, url_project_contribs):
-        url = '{}?send_email=default'.format(url_project_contribs)
+        url = f'{url_project_contribs}?send_email=default'
         payload = {
             'data': {
                 'type': 'contributors',
@@ -1467,7 +1466,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
     @mock.patch('website.project.signals.unreg_contributor_added.send')
     def test_add_unregistered_contributor_signal_if_default(
             self, mock_send, app, user, url_project_contribs):
-        url = '{}?send_email=default'.format(url_project_contribs)
+        url = f'{url_project_contribs}?send_email=default'
         payload = {
             'data': {
                 'type': 'contributors',
@@ -1484,7 +1483,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
 
     def test_add_unregistered_contributor_signal_preprint_email_disallowed(
             self, app, user, url_project_contribs):
-        url = '{}?send_email=preprint'.format(url_project_contribs)
+        url = f'{url_project_contribs}?send_email=preprint'
         payload = {
             'data': {
                 'type': 'contributors',
@@ -1501,7 +1500,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_add_contributor_invalid_send_email_param(
             self, mock_mail, app, user, url_project_contribs):
-        url = '{}?send_email=true'.format(url_project_contribs)
+        url = f'{url_project_contribs}?send_email=true'
         payload = {
             'data': {
                 'type': 'contributors',
@@ -1521,7 +1520,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_add_unregistered_contributor_without_email_no_email(
             self, mock_mail, app, user, url_project_contribs):
-        url = '{}?send_email=default'.format(url_project_contribs)
+        url = f'{url_project_contribs}?send_email=default'
         payload = {
             'data': {
                 'type': 'contributors',
@@ -1815,7 +1814,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
 
     @pytest.fixture()
     def url_public(self, project_public):
-        return '/{}nodes/{}/contributors/'.format(API_BASE, project_public._id)
+        return f'/{API_BASE}nodes/{project_public._id}/contributors/'
 
     @pytest.fixture()
     def url_private(self, project_private):
@@ -2263,7 +2262,7 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
 
     @pytest.fixture()
     def url_public(self, project_public):
-        return '/{}nodes/{}/contributors/'.format(API_BASE, project_public._id)
+        return f'/{API_BASE}nodes/{project_public._id}/contributors/'
 
     @pytest.fixture()
     def url_private(self, project_private):
@@ -2622,7 +2621,7 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
 
     @pytest.fixture()
     def url_public(self, project_public):
-        return '/{}nodes/{}/contributors/'.format(API_BASE, project_public._id)
+        return f'/{API_BASE}nodes/{project_public._id}/contributors/'
 
     @pytest.fixture()
     def url_private(self, project_private):
@@ -2914,7 +2913,7 @@ class TestNodeContributorFiltering:
     def test_filtering(self, app, user, url, project):
 
         #   test_filtering_full_name_field
-        filter_url = '{}?filter[full_name]=Freddie'.format(url)
+        filter_url = f'{url}?filter[full_name]=Freddie'
         res = app.get(filter_url, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
         errors = res.json['errors']
@@ -2926,20 +2925,20 @@ class TestNodeContributorFiltering:
         project.add_contributor(user_two, permissions.WRITE)
         project.add_contributor(user_three, permissions.READ, visible=False)
     #   test_filtering_permission_field_admin
-        filter_url = '{}?filter[permission]=admin'.format(url, project._id)
+        filter_url = f'{url}?filter[permission]=admin'
         res = app.get(filter_url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
         assert len(res.json['data']) == 1
         assert res.json['data'][0]['attributes'].get('permission') == permissions.ADMIN
 
     #   test_filtering_permission_field_write
-        filter_url = '{}?filter[permission]=write'.format(url, project._id)
+        filter_url = f'{url}?filter[permission]=write'
         res = app.get(filter_url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
         assert len(res.json['data']) == 2
 
     #   test_filtering_permission_field_read
-        filter_url = '{}?filter[permission]=read'.format(url, project._id)
+        filter_url = f'{url}?filter[permission]=read'
         res = app.get(filter_url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
         assert len(res.json['data']) == 3
@@ -2963,7 +2962,7 @@ class TestNodeContributorFiltering:
         assert len(res.json['data']) == 1
 
     #   test_filtering_on_invalid_field
-        filter_url = '{}?filter[invalid]=foo'.format(url, project._id)
+        filter_url = f'{url}?filter[invalid]=foo'
         res = app.get(filter_url, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
         errors = res.json['errors']

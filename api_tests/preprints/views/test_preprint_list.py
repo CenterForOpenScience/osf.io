@@ -1,4 +1,4 @@
-import mock
+from unittest import mock
 import datetime as dt
 
 from nose.tools import *  # noqa:
@@ -121,7 +121,7 @@ class TestPreprintCreateWithoutNode:
 
     @pytest.fixture()
     def url(self):
-        return '/{}preprints/'.format(API_BASE)
+        return f'/{API_BASE}preprints/'
 
     @pytest.fixture()
     def supplementary_project(self, user_one):
@@ -214,11 +214,11 @@ class TestPreprintCreateWithoutNode:
 class TestPreprintList(ApiTestCase):
 
     def setUp(self):
-        super(TestPreprintList, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
 
         self.preprint = PreprintFactory(creator=self.user)
-        self.url = '/{}preprints/'.format(API_BASE)
+        self.url = f'/{API_BASE}preprints/'
 
         self.project = ProjectFactory(creator=self.user)
 
@@ -288,7 +288,7 @@ class TestPreprintsListFiltering(PreprintsListFilteringMixin):
 
     @pytest.fixture()
     def url(self):
-        return '/{}preprints/?version=2.2&'.format(API_BASE)
+        return f'/{API_BASE}preprints/?version=2.2&'
 
     @mock.patch('website.identifiers.clients.crossref.CrossRefClient.update_identifier')
     def test_provider_filter_equals_returns_one(
@@ -364,13 +364,13 @@ class TestPreprintSubjectFiltering(SubjectsFilterMixin):
 
     @pytest.fixture()
     def url(self):
-        return '/{}preprints/'.format(API_BASE)
+        return f'/{API_BASE}preprints/'
 
 
 class TestPreprintListFilteringByReviewableFields(ReviewableFilterMixin):
     @pytest.fixture()
     def url(self):
-        return '/{}preprints/'.format(API_BASE)
+        return f'/{API_BASE}preprints/'
 
     @pytest.fixture()
     def expected_reviewables(self, user):
@@ -397,7 +397,7 @@ class TestPreprintListFilteringByReviewableFields(ReviewableFilterMixin):
 
 class TestPreprintCreate(ApiTestCase):
     def setUp(self):
-        super(TestPreprintCreate, self).setUp()
+        super().setUp()
 
         self.user = AuthUserFactory()
         self.other_user = AuthUserFactory()
@@ -411,7 +411,7 @@ class TestPreprintCreate(ApiTestCase):
         self.provider = PreprintProviderFactory()
 
         self.user_two = AuthUserFactory()
-        self.url = '/{}preprints/'.format(API_BASE)
+        self.url = f'/{API_BASE}preprints/'
 
     def publish_preprint(self, preprint, user, expect_errors=False):
         preprint_file = test_utils.create_test_preprint_file(
@@ -420,7 +420,7 @@ class TestPreprintCreate(ApiTestCase):
         update_payload = build_preprint_update_payload(preprint._id, preprint_file._id)
 
         res = self.app.patch_json_api(
-            self.url + '{}/'.format(preprint._id),
+            self.url + f'{preprint._id}/',
             update_payload,
             auth=user.auth,
             expect_errors=expect_errors
@@ -589,7 +589,7 @@ class TestPreprintCreate(ApiTestCase):
         update_payload = build_preprint_update_payload(preprint._id, 'fakefileid')
 
         res = self.app.patch_json_api(
-            self.url + '{}/'.format(preprint._id),
+            self.url + f'{preprint._id}/',
             update_payload,
             auth=self.user.auth,
             expect_errors=True
@@ -649,7 +649,7 @@ class TestPreprintCreate(ApiTestCase):
         update_payload = build_preprint_update_payload(preprint._id, github_file._id)
 
         res = self.app.patch_json_api(
-            self.url + '{}/'.format(preprint._id),
+            self.url + f'{preprint._id}/',
             update_payload,
             auth=self.user.auth,
             expect_errors=True
@@ -791,7 +791,7 @@ class TestPreprintIsPublishedList(PreprintIsPublishedListMixin):
 
     @pytest.fixture()
     def url(self):
-        return '/{}preprints/?version=2.2&'.format(API_BASE)
+        return f'/{API_BASE}preprints/?version=2.2&'
 
     @pytest.fixture()
     def preprint_unpublished(
@@ -851,7 +851,7 @@ class TestPreprintIsPublishedList(PreprintIsPublishedListMixin):
     def test_filter_published_false_write_contrib(
             self, app, user_write_contrib, preprint_unpublished, url):
         res = app.get(
-            '{}filter[is_published]=false'.format(url),
+            f'{url}filter[is_published]=false',
             auth=user_write_contrib.auth)
         assert len(res.json['data']) == 1
 
@@ -881,7 +881,7 @@ class TestReviewsPendingPreprintIsPublishedList(PreprintIsPublishedListMixin):
 
     @pytest.fixture()
     def url(self):
-        return '/{}preprints/?version=2.2&'.format(API_BASE)
+        return f'/{API_BASE}preprints/?version=2.2&'
 
     @pytest.fixture()
     def preprint_unpublished(
@@ -926,7 +926,7 @@ class TestReviewsPendingPreprintIsPublishedList(PreprintIsPublishedListMixin):
     def test_filter_published_false_write_contrib(
             self, app, user_write_contrib, preprint_unpublished, url):
         res = app.get(
-            '{}filter[is_published]=false'.format(url),
+            f'{url}filter[is_published]=false',
             auth=user_write_contrib.auth)
         assert len(res.json['data']) == 1
 
@@ -956,7 +956,7 @@ class TestReviewsInitialPreprintIsPublishedList(PreprintIsPublishedListMixin):
 
     @pytest.fixture()
     def url(self):
-        return '/{}preprints/?version=2.2&'.format(API_BASE)
+        return f'/{API_BASE}preprints/?version=2.2&'
 
     @pytest.fixture()
     def preprint_unpublished(
@@ -1002,7 +1002,7 @@ class TestReviewsInitialPreprintIsPublishedList(PreprintIsPublishedListMixin):
     def test_filter_published_false_write_contrib(
             self, app, user_write_contrib, preprint_unpublished, url):
         res = app.get(
-            '{}filter[is_published]=false'.format(url),
+            f'{url}filter[is_published]=false',
             auth=user_write_contrib.auth)
         assert len(res.json['data']) == 0
 
@@ -1010,7 +1010,7 @@ class TestReviewsInitialPreprintIsPublishedList(PreprintIsPublishedListMixin):
             self, app, user_admin_contrib, preprint_unpublished, url):
 
         res = app.get(
-            '{}filter[is_published]=false'.format(url),
+            f'{url}filter[is_published]=false',
             auth=user_admin_contrib.auth)
         # initial state now visible to no one
         assert len(res.json['data']) == 0
@@ -1060,11 +1060,11 @@ class TestPreprintIsPublishedListMatchesDetail(
 
     @pytest.fixture()
     def list_url(self):
-        return '/{}preprints/?version=2.2&'.format(API_BASE)
+        return f'/{API_BASE}preprints/?version=2.2&'
 
     @pytest.fixture()
     def detail_url(self, preprint_unpublished):
-        return '/{}preprints/{}/'.format(API_BASE, preprint_unpublished._id)
+        return f'/{API_BASE}preprints/{preprint_unpublished._id}/'
 
     def test_unpublished_not_visible_to_admins(
             self,
@@ -1145,11 +1145,11 @@ class TestReviewsInitialPreprintIsPublishedListMatchesDetail(
 
     @pytest.fixture()
     def list_url(self):
-        return '/{}preprints/?version=2.2&'.format(API_BASE)
+        return f'/{API_BASE}preprints/?version=2.2&'
 
     @pytest.fixture()
     def detail_url(self, preprint_unpublished):
-        return '/{}preprints/{}/'.format(API_BASE, preprint_unpublished._id)
+        return f'/{API_BASE}preprints/{preprint_unpublished._id}/'
 
     def test_unpublished_not_visible_to_admins(
             self,
@@ -1230,11 +1230,11 @@ class TestReviewsPendingPreprintIsPublishedListMatchesDetail(
 
     @pytest.fixture()
     def list_url(self):
-        return '/{}preprints/?version=2.2&'.format(API_BASE)
+        return f'/{API_BASE}preprints/?version=2.2&'
 
     @pytest.fixture()
     def detail_url(self, preprint_unpublished):
-        return '/{}preprints/{}/'.format(API_BASE, preprint_unpublished._id)
+        return f'/{API_BASE}preprints/{preprint_unpublished._id}/'
 
     def test_unpublished_visible_to_admins(
             self,
@@ -1286,7 +1286,7 @@ class TestPreprintIsValidList(PreprintIsValidListMixin):
 
     @pytest.fixture()
     def url(self, project):
-        return '/{}preprints/?version=2.2&'.format(API_BASE)
+        return f'/{API_BASE}preprints/?version=2.2&'
 
 
 @pytest.mark.django_db
@@ -1304,13 +1304,13 @@ class TestPreprintListWithMetrics:
         ('views', 'PreprintView'),
     ])
     def test_preprint_list_with_metrics(self, app, metric_name, metric_class_name):
-        url = '/{}preprints/?metrics[{}]=total'.format(API_BASE, metric_name)
+        url = f'/{API_BASE}preprints/?metrics[{metric_name}]=total'
         preprint1 = PreprintFactory()
         preprint1.downloads = 41
         preprint2 = PreprintFactory()
         preprint2.downloads = 42
 
-        with mock.patch('api.preprints.views.{}.get_top_by_count'.format(metric_class_name)) as mock_get_top_by_count:
+        with mock.patch(f'api.preprints.views.{metric_class_name}.get_top_by_count') as mock_get_top_by_count:
             mock_get_top_by_count.return_value = [preprint2, preprint1]
             res = app.get(url)
         assert res.status_code == 200
@@ -1329,7 +1329,7 @@ class TestPreprintListWithMetrics:
         ('yearly', dt.timedelta(days=365)),
     ])
     def test_preprint_list_filter_metric_by_time_period(self, mock_timezone_now, app, settings, query_value, timedelta):
-        url = '/{}preprints/?metrics[views]={}'.format(API_BASE, query_value)
+        url = f'/{API_BASE}preprints/?metrics[views]={query_value}'
         mock_now = dt.datetime.utcnow().replace(tzinfo=timezone.utc)
         mock_timezone_now.return_value = mock_now
 

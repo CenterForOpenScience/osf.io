@@ -201,7 +201,7 @@ class TestViewOnlyLinkNodesSet:
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'The node {0} cannot be affiliated with this View Only Link because the node you\'re trying to affiliate is not descended from the node that the View Only Link is attached to.'.format(
+        assert res.json['errors'][0]['detail'] == 'The node {} cannot be affiliated with this View Only Link because the node you\'re trying to affiliate is not descended from the node that the View Only Link is attached to.'.format(
             project_two._id)
 
     def test_set_node_second_level_component_without_first_level_parent(
@@ -485,7 +485,7 @@ class TestViewOnlyLinkNodesUpdate:
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'The node {0} cannot be affiliated with this View Only Link because the node you\'re trying to affiliate is not descended from the node that the View Only Link is attached to.'.format(
+        assert res.json['errors'][0]['detail'] == 'The node {} cannot be affiliated with this View Only Link because the node you\'re trying to affiliate is not descended from the node that the View Only Link is attached to.'.format(
             component_one._id)
 
     def test_update_node_not_component(
@@ -502,7 +502,7 @@ class TestViewOnlyLinkNodesUpdate:
             auth=user.auth,
             expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'The node {0} cannot be affiliated with this View Only Link because the node you\'re trying to affiliate is not descended from the node that the View Only Link is attached to.'.format(
+        assert res.json['errors'][0]['detail'] == 'The node {} cannot be affiliated with this View Only Link because the node you\'re trying to affiliate is not descended from the node that the View Only Link is attached to.'.format(
             project_two._id)
 
     def test_update_node_second_level_component_without_first_level_parent(

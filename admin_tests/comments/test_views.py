@@ -18,7 +18,7 @@ from admin.comments.views import (
 
 class TestSpamListView(AdminTestCase):
     def setUp(self):
-        super(TestSpamListView, self).setUp()
+        super().setUp()
         Comment.objects.all().delete()
         self.project = ProjectFactory(is_public=True)
         self.user_1 = AuthUserFactory()
@@ -88,7 +88,7 @@ class TestSpamListView(AdminTestCase):
 
 class TestUserCommentListView(AdminTestCase):
     def setUp(self):
-        super(TestUserCommentListView, self).setUp()
+        super().setUp()
         self.project = ProjectFactory(is_public=True)
         self.user_1 = AuthUserFactory()
         self.user_2 = AuthUserFactory()

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """Functional tests using WebTest."""
 import datetime as dt
 from rest_framework import status as http_status
@@ -7,7 +6,7 @@ import logging
 import unittest
 
 import markupsafe
-import mock
+from unittest import mock
 import pytest
 from nose.tools import *  # noqa: F403
 import re
@@ -59,7 +58,7 @@ def assert_not_in_html(member, container, **kwargs):
 class TestDisabledUser(OsfTestCase):
 
     def setUp(self):
-        super(TestDisabledUser, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         self.user.set_password('Korben Dallas')
         self.user.is_disabled = True
@@ -84,7 +83,7 @@ class TestAnUnregisteredUser(OsfTestCase):
 class TestAUser(OsfTestCase):
 
     def setUp(self):
-        super(TestAUser, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.auth = self.user.auth
 
@@ -132,7 +131,7 @@ class TestAUser(OsfTestCase):
             self.user,
             permissions=permissions.ADMIN,
             save=True)
-        res = self.app.get('/{0}/addons/'.format(project._primary_key), auth=self.auth, auto_follow=True)
+        res = self.app.get(f'/{project._primary_key}/addons/', auth=self.auth, auto_follow=True)
         assert_in('OSF Storage', res)
 
     def test_sees_correct_title_on_dashboard(self):
@@ -195,7 +194,7 @@ class TestAUser(OsfTestCase):
     def test_no_wiki_content_message(self):
         project = ProjectFactory(creator=self.user)
         # Goes to project's wiki, where there is no content
-        res = self.app.get('/{0}/wiki/home/'.format(project._primary_key), auth=self.auth)
+        res = self.app.get(f'/{project._primary_key}/wiki/home/', auth=self.auth)
         # Sees a message indicating no content
         assert_in('Add important information, links, or images here to describe your project.', res)
         # Sees that edit panel is open by default when home wiki has no content
@@ -213,7 +212,7 @@ class TestAUser(OsfTestCase):
             wiki_page=wiki_page,
             content=wiki_content
         )
-        res = self.app.get('/{0}/wiki/{1}/'.format(
+        res = self.app.get('/{}/wiki/{}/'.format(
             project._primary_key,
             wiki_page_name,
         ), auth=self.auth)
@@ -239,7 +238,7 @@ class TestAUser(OsfTestCase):
 
     def test_wiki_does_not_exist(self):
         project = ProjectFactory(creator=self.user)
-        res = self.app.get('/{0}/wiki/{1}/'.format(
+        res = self.app.get('/{}/wiki/{}/'.format(
             project._primary_key,
             'not a real page yet',
         ), auth=self.auth, expect_errors=True)
@@ -263,7 +262,7 @@ class TestAUser(OsfTestCase):
 class TestComponents(OsfTestCase):
 
     def setUp(self):
-        super(TestComponents, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
@@ -292,7 +291,7 @@ class TestComponents(OsfTestCase):
             auth=self.user.auth
         ).maybe_follow()
         assert_in(
-            'Delete {0}'.format(self.component.project_or_component),
+            f'Delete {self.component.project_or_component}',
             res
         )
 
@@ -309,7 +308,7 @@ class TestComponents(OsfTestCase):
             auth=non_admin.auth
         ).maybe_follow()
         assert_not_in(
-            'Delete {0}'.format(self.component.project_or_component),
+            f'Delete {self.component.project_or_component}',
             res
         )
 
@@ -343,7 +342,7 @@ class TestComponents(OsfTestCase):
 class TestPrivateLinkView(OsfTestCase):
 
     def setUp(self):
-        super(TestPrivateLinkView, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()  # Is NOT a contributor
         self.project = ProjectFactory(is_public=False)
         self.link = PrivateLinkFactory(anonymous=True)
@@ -398,7 +397,7 @@ class TestPrivateLinkView(OsfTestCase):
 class TestMergingAccounts(OsfTestCase):
 
     def setUp(self):
-        super(TestMergingAccounts, self).setUp()
+        super().setUp()
         self.user = UserFactory.build()
         self.user.fullname = "tess' test string"
         self.user.set_password('science')
@@ -432,7 +431,7 @@ class TestMergingAccounts(OsfTestCase):
         self.user.save()
         # At the dupe user's profile there is an alert message at the top
         # indicating that the user is merged
-        res = self.app.get('/profile/{0}/'.format(self.dupe._primary_key)).maybe_follow()
+        res = self.app.get(f'/profile/{self.dupe._primary_key}/').maybe_follow()
         assert_in('This account has been merged', res)
 
 
@@ -440,7 +439,7 @@ class TestMergingAccounts(OsfTestCase):
 class TestShortUrls(OsfTestCase):
 
     def setUp(self):
-        super(TestShortUrls, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
         self.auth = self.user.auth
         self.consolidate_auth = Auth(user=self.user)
@@ -501,7 +500,7 @@ class TestShortUrls(OsfTestCase):
 class TestClaiming(OsfTestCase):
 
     def setUp(self):
-        super(TestClaiming, self).setUp()
+        super().setUp()
         self.referrer = AuthUserFactory()
         self.project = ProjectFactory(creator=self.referrer, is_public=True)
 
@@ -623,7 +622,7 @@ class TestClaiming(OsfTestCase):
 class TestConfirmingEmail(OsfTestCase):
 
     def setUp(self):
-        super(TestConfirmingEmail, self).setUp()
+        super().setUp()
         self.user = UnconfirmedUserFactory()
         self.confirmation_url = self.user.get_confirmation_url(
             self.user.username,
@@ -681,7 +680,7 @@ class TestConfirmingEmail(OsfTestCase):
 class TestClaimingAsARegisteredUser(OsfTestCase):
 
     def setUp(self):
-        super(TestClaimingAsARegisteredUser, self).setUp()
+        super().setUp()
         self.referrer = AuthUserFactory()
         self.project = ProjectFactory(creator=self.referrer, is_public=True)
         name, email = fake.name(), fake_email()
@@ -752,7 +751,7 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
 class TestResendConfirmation(OsfTestCase):
 
     def setUp(self):
-        super(TestResendConfirmation, self).setUp()
+        super().setUp()
         self.unconfirmed_user = UnconfirmedUserFactory()
         self.confirmed_user = UserFactory()
         self.get_url = web_url_for('resend_confirmation_get')
@@ -828,7 +827,7 @@ class TestResendConfirmation(OsfTestCase):
 class TestForgotPassword(OsfTestCase):
 
     def setUp(self):
-        super(TestForgotPassword, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         self.auth_user = AuthUserFactory()
         self.get_url = web_url_for('forgot_password_get')
@@ -946,7 +945,7 @@ class TestForgotPassword(OsfTestCase):
 class TestForgotPasswordInstitution(OsfTestCase):
 
     def setUp(self):
-        super(TestForgotPasswordInstitution, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         self.auth_user = AuthUserFactory()
         self.get_url = web_url_for('redirect_unsupported_institution')
@@ -1128,7 +1127,7 @@ class TestAUserProfile(OsfTestCase):
 @pytest.mark.enable_bookmark_creation
 class TestPreprintBannerView(OsfTestCase):
     def setUp(self):
-        super(TestPreprintBannerView, self).setUp()
+        super().setUp()
 
         self.admin = AuthUserFactory()
         self.write_contrib = AuthUserFactory()
@@ -1281,31 +1280,31 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_in('{}'.format(self.preprint.provider.name), res.body.decode())
+        assert_in(f'{self.preprint.provider.name}', res.body.decode())
         assert_in('Pending\n', res.body.decode())
         assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body.decode())
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_in('{}'.format(self.preprint.provider.name), res.body.decode())
+        assert_in(f'{self.preprint.provider.name}', res.body.decode())
         assert_in('Pending\n', res.body.decode())
         assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body.decode())
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert_in('{}'.format(self.preprint.provider.name), res.body.decode())
+        assert_in(f'{self.preprint.provider.name}', res.body.decode())
         assert_in('Pending\n', res.body.decode())
         assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body.decode())
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert_in('on {}'.format(self.preprint.provider.name), res.body.decode())
+        assert_in(f'on {self.preprint.provider.name}', res.body.decode())
         assert_not_in('Pending\n', res.body.decode())
         assert_not_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body.decode())
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert_in('on {}'.format(self.preprint.provider.name), res.body.decode())
+        assert_in(f'on {self.preprint.provider.name}', res.body.decode())
         assert_not_in('Pending\n', res.body.decode())
         assert_not_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body.decode())
 
@@ -1323,7 +1322,7 @@ class TestPreprintBannerView(OsfTestCase):
         url = component.web_url_for('view_project')
 
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_in('{}'.format(preprint.provider.name), res.body.decode())
+        assert_in(f'{preprint.provider.name}', res.body.decode())
         assert_in('Pending\n', res.body.decode())
         assert_in('This preprint is publicly available and searchable but is subject to removal by a moderator.', res.body.decode())
 
@@ -1337,31 +1336,31 @@ class TestPreprintBannerView(OsfTestCase):
 
         # Admin - preprint
         res = self.app.get(url, auth=self.admin.auth)
-        assert_in('{}'.format(self.preprint.provider.name), res.body.decode())
+        assert_in(f'{self.preprint.provider.name}', res.body.decode())
         assert_in('Pending\n', res.body.decode())
         assert_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body.decode())
 
         # Write - preprint
         res = self.app.get(url, auth=self.write_contrib.auth)
-        assert_in('{}'.format(self.preprint.provider.name), res.body.decode())
+        assert_in(f'{self.preprint.provider.name}', res.body.decode())
         assert_in('Pending\n', res.body.decode())
         assert_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body.decode())
 
         # Read - preprint
         res = self.app.get(url, auth=self.read_contrib.auth)
-        assert_in('{}'.format(self.preprint.provider.name), res.body.decode())
+        assert_in(f'{self.preprint.provider.name}', res.body.decode())
         assert_in('Pending\n', res.body.decode())
         assert_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body.decode())
 
         # Noncontrib - preprint
         res = self.app.get(url, auth=self.non_contrib.auth)
-        assert_in('{}'.format(self.preprint.provider.name), res.body.decode())
+        assert_in(f'{self.preprint.provider.name}', res.body.decode())
         assert_not_in('Pending\n', res.body.decode())
         assert_not_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body.decode())
 
         # Unauthenticated - preprint
         res = self.app.get(url)
-        assert_in('{}'.format(self.preprint.provider.name), res.body.decode())
+        assert_in(f'{self.preprint.provider.name}', res.body.decode())
         assert_not_in('Pending\n', res.body.decode())
         assert_not_in('This preprint is not publicly available or searchable until approved by a moderator.', res.body.decode())
 

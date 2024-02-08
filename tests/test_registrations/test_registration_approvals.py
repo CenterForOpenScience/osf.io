@@ -1,6 +1,6 @@
 import datetime
 
-import mock
+from unittest import mock
 from django.utils import timezone
 from nose.tools import *  # noqa
 from tests.base import fake, OsfTestCase
@@ -32,7 +32,7 @@ DUMMY_TOKEN = tokens.encode({
 
 class RegistrationApprovalModelTestCase(OsfTestCase):
     def setUp(self):
-        super(RegistrationApprovalModelTestCase, self).setUp()
+        super().setUp()
         self.user = UserFactory()
         self.project = ProjectFactory(creator=self.user)
         self.registration = RegistrationFactory(project=self.project)

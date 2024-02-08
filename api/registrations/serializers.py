@@ -631,7 +631,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         return StrictVersion(getattr(request, 'version', '2.0')) >= StrictVersion(CREATE_REGISTRATION_FIELD_CHANGE_VERSION)
 
     def __init__(self, *args, **kwargs):
-        super(RegistrationCreateSerializer, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         request = kwargs['context']['request']
         # required fields defined here for the different versions
         if self.expect_cleaner_attributes(request):

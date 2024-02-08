@@ -1,5 +1,4 @@
 """Views for the node settings page."""
-# -*- coding: utf-8 -*-
 from rest_framework import status as http_status
 
 from django.core.exceptions import ValidationError
@@ -76,7 +75,7 @@ def owncloud_add_user_account(auth, **kwargs):
         # ... or get the old one
         provider.account = ExternalAccount.objects.get(
             provider=provider.short_name,
-            provider_id='{}:{}'.format(host.url, username).lower()
+            provider_id=f'{host.url}:{username}'.lower()
         )
         if provider.account.oauth_key != password:
             provider.account.oauth_key = password

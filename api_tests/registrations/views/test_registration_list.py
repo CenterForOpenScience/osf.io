@@ -1,6 +1,6 @@
 import dateutil.relativedelta
 from django.utils import timezone
-import mock
+from unittest import mock
 from nose.tools import *  # noqa:
 import pytest
 
@@ -42,13 +42,13 @@ SCHEMA_VERSION = 2
 class TestRegistrationList(ApiTestCase):
 
     def setUp(self):
-        super(TestRegistrationList, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
 
         self.project = ProjectFactory(is_public=False, creator=self.user)
         self.registration_project = RegistrationFactory(
             creator=self.user, project=self.project)
-        self.url = '/{}registrations/'.format(API_BASE)
+        self.url = f'/{API_BASE}registrations/'
 
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_registration_project = RegistrationFactory(
@@ -64,7 +64,7 @@ class TestRegistrationList(ApiTestCase):
         url = res.json['data'][0]['relationships']['registered_from']['links']['related']['href']
         assert_equal(
             urlparse(url).path,
-            '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
+            f'/{API_BASE}nodes/{self.public_project._id}/'
         )
 
     def test_return_registrations_logged_in_contributor(self):
@@ -79,8 +79,8 @@ class TestRegistrationList(ApiTestCase):
 
         assert_equal(res.content_type, 'application/vnd.api+json')
 
-        assert [registered_from_one, registered_from_two] == ['/{}nodes/{}/'.format(API_BASE, self.public_project._id),
-             '/{}nodes/{}/'.format(API_BASE, self.project._id)]
+        assert [registered_from_one, registered_from_two] == [f'/{API_BASE}nodes/{self.public_project._id}/',
+             f'/{API_BASE}nodes/{self.project._id}/']
 
     def test_return_registrations_logged_in_non_contributor(self):
         res = self.app.get(self.url, auth=self.user_two.auth)
@@ -93,7 +93,7 @@ class TestRegistrationList(ApiTestCase):
 
         assert_equal(
             registered_from,
-            '/{}nodes/{}/'.format(API_BASE, self.public_project._id))
+            f'/{API_BASE}nodes/{self.public_project._id}/')
 
     def test_total_biographic_contributor_in_registration(self):
         user3 = AuthUserFactory()
@@ -102,7 +102,7 @@ class TestRegistrationList(ApiTestCase):
         registration.add_contributor(
             user3, auth=Auth(self.user), visible=False)
         registration.save()
-        registration_url = '/{0}registrations/{1}/?embed=contributors'.format(
+        registration_url = '/{}registrations/{}/?embed=contributors'.format(
             API_BASE, registration._id)
 
         res = self.app.get(registration_url)
@@ -124,13 +124,13 @@ class TestRegistrationList(ApiTestCase):
 class TestSparseRegistrationList(ApiTestCase):
 
     def setUp(self):
-        super(TestSparseRegistrationList, self).setUp()
+        super().setUp()
         self.user = AuthUserFactory()
 
         self.project = ProjectFactory(is_public=False, creator=self.user)
         self.registration_project = RegistrationFactory(
             creator=self.user, project=self.project)
-        self.url = '/{}sparse/registrations/'.format(API_BASE)
+        self.url = f'/{API_BASE}sparse/registrations/'
 
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_registration_project = RegistrationFactory(
@@ -166,7 +166,7 @@ class TestSparseRegistrationList(ApiTestCase):
         registration.add_contributor(
             user3, auth=Auth(self.user), visible=False)
         registration.save()
-        registration_url = '/{0}registrations/{1}/?embed=contributors'.format(
+        registration_url = '/{}registrations/{}/?embed=contributors'.format(
             API_BASE, registration._id)
 
         res = self.app.get(registration_url)
@@ -190,7 +190,7 @@ class TestSparseRegistrationList(ApiTestCase):
 class TestRegistrationFiltering(ApiTestCase):
 
     def setUp(self):
-        super(TestRegistrationFiltering, self).setUp()
+        super().setUp()
         self.user_one = AuthUserFactory()
         self.user_two = AuthUserFactory()
         self.project_one = ProjectFactory(
@@ -239,10 +239,10 @@ class TestRegistrationFiltering(ApiTestCase):
         self.folder = CollectionFactory()
         self.bookmark_collection = find_bookmark_collection(self.user_one)
 
-        self.url = '/{}registrations/'.format(API_BASE)
+        self.url = f'/{API_BASE}registrations/'
 
     def test_filtering_by_category(self):
-        url = '/{}registrations/?filter[category]=hypothesis'.format(API_BASE)
+        url = f'/{API_BASE}registrations/?filter[category]=hypothesis'
         res = self.app.get(url, auth=self.user_one.auth)
         registration_json = res.json['data']
         ids = [each['id'] for each in registration_json]
@@ -254,7 +254,7 @@ class TestRegistrationFiltering(ApiTestCase):
         assert_not_in(self.private_project_user_two_reg._id, ids)
 
     def test_filtering_by_public(self):
-        url = '/{}registrations/?filter[public]=false'.format(API_BASE)
+        url = f'/{API_BASE}registrations/?filter[public]=false'
         res = self.app.get(url, auth=self.user_one.auth)
         reg_json = res.json['data']
 
@@ -267,7 +267,7 @@ class TestRegistrationFiltering(ApiTestCase):
         assert_not_in(self.project_one_reg._id, ids)
         assert_not_in(self.project_two_reg._id, ids)
 
-        url = '/{}registrations/?filter[public]=true'.format(API_BASE)
+        url = f'/{API_BASE}registrations/?filter[public]=true'
         res = self.app.get(url, auth=self.user_one.auth)
         reg_json = res.json['data']
 
@@ -451,7 +451,7 @@ class TestRegistrationFiltering(ApiTestCase):
         assert_not_in(self.bookmark_collection._id, ids)
 
     def test_get_one_registration_with_exact_filter_logged_in(self):
-        url = '/{}registrations/?filter[title]=Project%20One'.format(API_BASE)
+        url = f'/{API_BASE}registrations/?filter[title]=Project%20One'
 
         res = self.app.get(url, auth=self.user_one.auth)
         reg_json = res.json['data']
@@ -484,7 +484,7 @@ class TestRegistrationFiltering(ApiTestCase):
         assert_not_in(self.bookmark_collection._id, ids)
 
     def test_get_some_registrations_with_substring_logged_in(self):
-        url = '/{}registrations/?filter[title]=Two'.format(API_BASE)
+        url = f'/{API_BASE}registrations/?filter[title]=Two'
 
         res = self.app.get(url, auth=self.user_one.auth)
         reg_json = res.json['data']
@@ -500,7 +500,7 @@ class TestRegistrationFiltering(ApiTestCase):
         assert_not_in(self.bookmark_collection._id, ids)
 
     def test_get_some_registrations_with_substring_not_logged_in(self):
-        url = '/{}registrations/?filter[title]=One'.format(API_BASE)
+        url = f'/{API_BASE}registrations/?filter[title]=One'
 
         res = self.app.get(url)
         reg_json = res.json['data']
@@ -516,7 +516,7 @@ class TestRegistrationFiltering(ApiTestCase):
         assert_not_in(self.bookmark_collection._id, ids)
 
     def test_get_only_public_or_my_registrations_with_filter_logged_in(self):
-        url = '/{}registrations/?filter[title]=Project'.format(API_BASE)
+        url = f'/{API_BASE}registrations/?filter[title]=Project'
 
         res = self.app.get(url, auth=self.user_one.auth)
         reg_json = res.json['data']
@@ -532,7 +532,7 @@ class TestRegistrationFiltering(ApiTestCase):
         assert_not_in(self.bookmark_collection._id, ids)
 
     def test_get_only_public_registrations_with_filter_not_logged_in(self):
-        url = '/{}registrations/?filter[title]=Project'.format(API_BASE)
+        url = f'/{API_BASE}registrations/?filter[title]=Project'
 
         res = self.app.get(url)
         reg_json = res.json['data']
@@ -548,7 +548,7 @@ class TestRegistrationFiltering(ApiTestCase):
         assert_not_in(self.bookmark_collection._id, ids)
 
     def test_alternate_filtering_field_logged_in(self):
-        url = '/{}registrations/?filter[description]=Three'.format(API_BASE)
+        url = f'/{API_BASE}registrations/?filter[description]=Three'
 
         res = self.app.get(url, auth=self.user_one.auth)
         reg_json = res.json['data']
@@ -564,7 +564,7 @@ class TestRegistrationFiltering(ApiTestCase):
         assert_not_in(self.bookmark_collection._id, ids)
 
     def test_alternate_filtering_field_not_logged_in(self):
-        url = '/{}registrations/?filter[description]=Two'.format(API_BASE)
+        url = f'/{API_BASE}registrations/?filter[description]=Two'
 
         res = self.app.get(url)
         reg_json = res.json['data']
@@ -580,7 +580,7 @@ class TestRegistrationFiltering(ApiTestCase):
         assert_not_in(self.bookmark_collection._id, ids)
 
     def test_incorrect_filtering_field_not_logged_in(self):
-        url = '/{}registrations/?filter[notafield]=bogus'.format(API_BASE)
+        url = f'/{API_BASE}registrations/?filter[notafield]=bogus'
 
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 400)
@@ -602,7 +602,7 @@ class TestRegistrationSubjectFiltering(SubjectsFilterMixin):
 
     @pytest.fixture()
     def url(self):
-        return '/{}registrations/'.format(API_BASE)
+        return f'/{API_BASE}registrations/'
 
 
 class TestNodeRegistrationCreate(DraftRegistrationTestCase):
@@ -648,7 +648,7 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
 
     @pytest.fixture()
     def url_registrations_ver(self, project_public, url_registrations):
-        return '{}?version={}'.format(url_registrations, CREATE_REGISTRATION_FIELD_CHANGE_VERSION)
+        return f'{url_registrations}?version={CREATE_REGISTRATION_FIELD_CHANGE_VERSION}'
 
     @pytest.fixture()
     def payload(self, draft_registration):
@@ -1644,7 +1644,7 @@ class TestRegistrationBulkUpdate:
 
     @pytest.fixture()
     def url(self):
-        return '/{}registrations/'.format(API_BASE)
+        return f'/{API_BASE}registrations/'
 
     @pytest.fixture()
     def user(self):
@@ -1937,4 +1937,4 @@ class TestRegistrationListFiltering(
         RegistrationListFilteringMixin,
         ApiTestCase):
 
-    url = '/{}registrations/?'.format(API_BASE)
+    url = f'/{API_BASE}registrations/?'

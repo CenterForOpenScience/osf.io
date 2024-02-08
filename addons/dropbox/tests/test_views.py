@@ -7,7 +7,7 @@ from nose.tools import assert_equal
 from tests.base import OsfTestCase
 from urllib3.exceptions import MaxRetryError
 
-import mock
+from unittest import mock
 import pytest
 from addons.base.tests import views as views_testing
 from addons.dropbox.tests.utils import (
@@ -34,11 +34,11 @@ class TestAuthViews(DropboxAddonTestCase, views_testing.OAuthAddonAuthViewsTestC
         mock.PropertyMock(return_value='http://api.foo.com')
     )
     def test_oauth_start(self):
-        super(TestAuthViews, self).test_oauth_start()
+        super().test_oauth_start()
 
     @mock.patch('addons.dropbox.models.UserSettings.revoke_remote_oauth_access', mock.PropertyMock())
     def test_delete_external_account(self):
-        super(TestAuthViews, self).test_delete_external_account()
+        super().test_delete_external_account()
 
 
 class TestConfigViews(DropboxAddonTestCase, views_testing.OAuthAddonConfigViewsTestCaseMixin, OsfTestCase):
@@ -52,17 +52,17 @@ class TestConfigViews(DropboxAddonTestCase, views_testing.OAuthAddonConfigViewsT
 
     @mock.patch('addons.dropbox.models.Dropbox', return_value=mock_client)
     def test_folder_list(self, *args):
-        super(TestConfigViews, self).test_folder_list()
+        super().test_folder_list()
 
     @mock.patch.object(DropboxSerializer, 'credentials_are_valid', return_value=True)
     def test_import_auth(self, *args):
-        super(TestConfigViews, self).test_import_auth()
+        super().test_import_auth()
 
 
 class TestFilebrowserViews(DropboxAddonTestCase, OsfTestCase):
 
     def setUp(self):
-        super(TestFilebrowserViews, self).setUp()
+        super().setUp()
         self.user.add_addon('dropbox')
         self.node_settings.external_account = self.user_settings.external_accounts[0]
         self.node_settings.save()

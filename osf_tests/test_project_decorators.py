@@ -25,7 +25,7 @@ def as_factory_allow_retractions(**kwargs):
 class TestValidProject(OsfTestCase):
 
     def setUp(self):
-        super(TestValidProject, self).setUp()
+        super().setUp()
         self.project = ProjectFactory()
         self.node = NodeFactory()
         self.auth = Auth(user=self.project.creator)

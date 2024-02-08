@@ -15,7 +15,7 @@ class BitbucketClient(BaseClient):
     @property
     def _default_headers(self):
         if self.access_token:
-            return {'Authorization': 'Bearer {}'.format(self.access_token)}
+            return {'Authorization': f'Bearer {self.access_token}'}
         return {}
 
     @property

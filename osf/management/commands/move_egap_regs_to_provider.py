@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 import logging
 
 from django.core.management.base import BaseCommand
@@ -29,7 +28,7 @@ def main(dry_run):
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
-        super(Command, self).add_arguments(parser)
+        super().add_arguments(parser)
         parser.add_argument(
             '--dry',
             action='store_true',

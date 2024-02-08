@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import pytest
 
 from api.base.settings.defaults import API_BASE
@@ -11,7 +10,7 @@ from osf_tests.factories import (
 
 
 @pytest.mark.django_db
-class SubjectsFilterMixin(object):
+class SubjectsFilterMixin:
     @pytest.fixture()
     def user(self):
         return AuthUserFactory()
@@ -35,7 +34,7 @@ class SubjectsFilterMixin(object):
 
     @pytest.fixture()
     def has_subject(self, url):
-        return '{}?filter[subjects]='.format(url)
+        return f'{url}?filter[subjects]='
 
     @pytest.fixture()
     def subject_one(self):
@@ -52,32 +51,32 @@ class SubjectsFilterMixin(object):
         resource.subjects.add(subject_one)
         resource_two.subjects.add(subject_two)
 
-        expected = set([resource._id])
+        expected = {resource._id}
         res = app.get(
-            '{}{}&version=2.2'.format(has_subject, subject_one._id),
+            f'{has_subject}{subject_one._id}&version=2.2',
             auth=user.auth
         )
-        actual = set([obj['id'] for obj in res.json['data']])
+        actual = {obj['id'] for obj in res.json['data']}
         assert expected == actual
 
-        expected = set([resource_two._id])
+        expected = {resource_two._id}
         res = app.get(
-            '{}{}&version=2.2'.format(has_subject, subject_two._id),
+            f'{has_subject}{subject_two._id}&version=2.2',
             auth=user.auth
         )
-        actual = set([obj['id'] for obj in res.json['data']])
+        actual = {obj['id'] for obj in res.json['data']}
         assert expected == actual
 
     def test_subject_filter_using_text_v_2_2(
             self, app, user, subject_two, resource, resource_two,
             has_subject):
         resource_two.subjects.add(subject_two)
-        expected = set([resource_two._id])
+        expected = {resource_two._id}
         res = app.get(
-            '{}{}&version=2.2'.format(has_subject, subject_two.text),
+            f'{has_subject}{subject_two.text}&version=2.2',
             auth=user.auth
         )
-        actual = set([obj['id'] for obj in res.json['data']])
+        actual = {obj['id'] for obj in res.json['data']}
         assert expected == actual
 
     def test_subject_filter_using_id_v_2_16(
@@ -87,43 +86,43 @@ class SubjectsFilterMixin(object):
         resource.subjects.add(subject_one)
         resource_two.subjects.add(subject_two)
 
-        expected = set([resource._id])
+        expected = {resource._id}
         res = app.get(
-            '{}{}&version={}'.format(has_subject, subject_one._id, subjects_as_relationships_version),
+            f'{has_subject}{subject_one._id}&version={subjects_as_relationships_version}',
             auth=user.auth
         )
-        actual = set([obj['id'] for obj in res.json['data']])
+        actual = {obj['id'] for obj in res.json['data']}
         assert expected == actual
 
-        expected = set([resource_two._id])
+        expected = {resource_two._id}
         res = app.get(
-            '{}{}&version={}'.format(has_subject, subject_two._id, subjects_as_relationships_version),
+            f'{has_subject}{subject_two._id}&version={subjects_as_relationships_version}',
             auth=user.auth
         )
-        actual = set([obj['id'] for obj in res.json['data']])
+        actual = {obj['id'] for obj in res.json['data']}
         assert expected == actual
 
     def test_subject_filter_using_text_v_2_16(
             self, app, user, subject_two, resource, resource_two,
             has_subject):
         resource_two.subjects.add(subject_two)
-        expected = set([resource_two._id])
+        expected = {resource_two._id}
         res = app.get(
-            '{}{}&version={}'.format(has_subject, subject_two.text, subjects_as_relationships_version),
+            f'{has_subject}{subject_two.text}&version={subjects_as_relationships_version}',
             auth=user.auth
         )
-        actual = set([obj['id'] for obj in res.json['data']])
+        actual = {obj['id'] for obj in res.json['data']}
         assert expected == actual
 
     def test_unknown_subject_filter(self, app, user, has_subject):
         res = app.get(
-            '{}notActuallyASubjectIdOrTestMostLikely'.format(has_subject),
+            f'{has_subject}notActuallyASubjectIdOrTestMostLikely',
             auth=user.auth)
         assert len(res.json['data']) == 0
 
 
 @pytest.mark.django_db
-class SubjectsListMixin(object):
+class SubjectsListMixin:
     @pytest.fixture()
     def user_admin_contrib(self):
         return AuthUserFactory()
@@ -193,7 +192,7 @@ class SubjectsListMixin(object):
 
 
 @pytest.mark.django_db
-class UpdateSubjectsMixin(object):
+class UpdateSubjectsMixin:
     @pytest.fixture()
     def user_admin_contrib(self):
         return AuthUserFactory()
@@ -223,11 +222,11 @@ class UpdateSubjectsMixin(object):
 
     @pytest.fixture()
     def resource_type_plural(self, resource):
-        return '{}s'.format(resource.__class__.__name__.lower())
+        return f'{resource.__class__.__name__.lower()}s'
 
     @pytest.fixture()
     def url(self, resource, resource_type_plural):
-        return '/{}{}/{}/'.format(API_BASE, resource_type_plural, resource._id)
+        return f'/{API_BASE}{resource_type_plural}/{resource._id}/'
 
     @pytest.fixture()
     def make_resource_payload(self):
@@ -296,7 +295,7 @@ class UpdateSubjectsMixin(object):
     def test_set_subjects_as_relationships_perms(self, app, user_admin_contrib, resource, subject, resource_type_plural,
             url, make_resource_payload, user_write_contrib, user_read_contrib, user_non_contrib, write_can_edit):
 
-        url = '{}?version={}'.format(url, subjects_as_relationships_version)
+        url = f'{url}?version={subjects_as_relationships_version}'
         update_subjects_payload = make_resource_payload(resource, resource_type_plural, relationships={
             'subjects': {
                 'data': [
@@ -396,7 +395,7 @@ class UpdateSubjectsMixin(object):
         subject.parent = parent
         subject.save()
 
-        url = '{}?version={}'.format(url, subjects_as_relationships_version)
+        url = f'{url}?version={subjects_as_relationships_version}'
         update_subjects_payload = make_resource_payload(resource, resource_type_plural, relationships={
             'subjects': {
                 'data': [
@@ -425,7 +424,7 @@ class UpdateSubjectsMixin(object):
         subject.save()
 
         # Sent in level three only
-        url = '{}?version={}'.format(url, subjects_as_relationships_version)
+        url = f'{url}?version={subjects_as_relationships_version}'
         update_subjects_payload = make_resource_payload(resource, resource_type_plural, relationships={
             'subjects': {
                 'data': [
@@ -477,7 +476,7 @@ class UpdateSubjectsMixin(object):
 
 
 @pytest.mark.django_db
-class SubjectsRelationshipMixin(object):
+class SubjectsRelationshipMixin:
     @pytest.fixture()
     def user_admin_contrib(self):
         return AuthUserFactory()

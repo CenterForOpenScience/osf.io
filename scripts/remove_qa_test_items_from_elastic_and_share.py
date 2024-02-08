@@ -31,7 +31,7 @@ def remove_search_index(dry_run=True):
     if dry_run:
         logger.warn('Dry run mode.')
         for node in nodes:
-            logger.info('Removing {} with title \'{}\' from search index and SHARE.'.format(node._id, node.title))
+            logger.info(f'Removing {node._id} with title \'{node.title}\' from search index and SHARE.')
     else:
         for node in nodes:
             update_node(node, bulk=False)

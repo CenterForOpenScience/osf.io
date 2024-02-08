@@ -22,7 +22,7 @@ class UserSettings(BaseUserSettings):
                                                         self.totp_secret_b32)
 
     def to_json(self, user):
-        rv = super(UserSettings, self).to_json(user)
+        rv = super().to_json(user)
         rv.update({
             'is_enabled': True,
             'is_confirmed': self.is_confirmed,
@@ -49,13 +49,13 @@ class UserSettings(BaseUserSettings):
     #############
 
     def on_add(self):
-        super(UserSettings, self).on_add()
+        super().on_add()
         self.totp_secret = _generate_seed()
         self.totp_drift = 0
         self.is_confirmed = False
 
     def on_delete(self):
-        super(UserSettings, self).on_delete()
+        super().on_delete()
         self.totp_secret = None
         self.totp_drift = 0
         self.is_confirmed = False

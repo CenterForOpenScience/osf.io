@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import re
 import hmac
 import hashlib
@@ -30,7 +28,7 @@ BASE_REGEX = r"""
         @osf\.io
     """
 
-class ConferenceMessage(object):
+class ConferenceMessage:
 
     def __init__(self):
         self.request = request._get_current_object()
@@ -144,7 +142,7 @@ class ConferenceMessage(object):
             # NOTE: test.osf.io has DEV_MODE = False
             if not data['test'] or (data['test'] and data['test'].rstrip('-') != 'test'):
                 raise ConferenceError(
-                    'Mismatch between `DEV_MODE` and recipient {0}'.format(
+                    'Mismatch between `DEV_MODE` and recipient {}'.format(
                         self.form['recipient']
                     )
                 )
@@ -168,7 +166,7 @@ class ConferenceMessage(object):
         return list(filter(
             lambda value: value is not None,
             list(map(
-                lambda idx: self.request.files.get('attachment-{0}'.format(idx + 1)),
+                lambda idx: self.request.files.get(f'attachment-{idx + 1}'),
                 list(range(count)),
             )),
         ))

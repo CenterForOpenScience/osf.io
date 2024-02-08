@@ -82,16 +82,16 @@ def create_file_tree_and_json(author_source, registry_source, target):
     # Create two JSON files, one project json with ID, Title, Postdate, and authors listed
     # with emails. And another with all the key value pairs for the registry meta.
     top_dir = target
-    logger.info('Creating EGAP directory at {}'.format(top_dir))
+    logger.info(f'Creating EGAP directory at {top_dir}')
     os.mkdir(top_dir)
     author_list = create_author_dict(author_source)
-    with open(registry_source, 'rt', encoding='utf-8-sig') as csv_registry_file:
+    with open(registry_source, encoding='utf-8-sig') as csv_registry_file:
         csv_reader = csv.reader(csv_registry_file, delimiter=',')
         header_row = next(csv_reader)
         normalized_header_row = [col_header.strip() for col_header in header_row]
         logger.info('Debug data')
-        logger.info('Header row: {}'.format(header_row))
-        logger.info('Normalized header row: {}'.format(normalized_header_row))
+        logger.info(f'Header row: {header_row}')
+        logger.info(f'Normalized header row: {normalized_header_row}')
 
         id_index = normalized_header_row.index('ID')
         for line in csv_reader:
@@ -107,24 +107,24 @@ def create_file_tree_and_json(author_source, registry_source, target):
             try:
                 registration_dict = make_registration_dict(row, normalized_header_row, project_id)
             except Exception:
-                logger.warning('Error creating directory for {}'.format(project_id))
+                logger.warning(f'Error creating directory for {project_id}')
                 shutil.rmtree(root_directory)
                 continue
             make_json_file(root_directory, registration_dict, 'registration')
-            logger.info('Successfully created directory for {}'.format(project_id))
+            logger.info(f'Successfully created directory for {project_id}')
 
 
 
 def create_author_dict(source):
     # Reads in author CSV and returns a list of dicts with names and emails of EGAP Authors
     authors = []
-    with open(source, 'rt', encoding='utf-8-sig') as csv_file:
+    with open(source, encoding='utf-8-sig') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
         header_row = next(csv_reader)
         normalized_header_row = [col_header.strip() for col_header in header_row]
         logger.info('Debug data')
-        logger.info('Header row: {}'.format(header_row))
-        logger.info('Normalized header row: {}'.format(normalized_header_row))
+        logger.info(f'Header row: {header_row}')
+        logger.info(f'Normalized header row: {normalized_header_row}')
         name_index = normalized_header_row.index('Name')
         email_index = normalized_header_row.index('Email')
         for line in csv_reader:
@@ -157,7 +157,7 @@ def make_project_dict(row, author_list, normalized_header_row):
         author = author.strip()
         if author:
             if author not in author_name_list:
-                logger.warning('Author {} not in Author spreadsheet for project {}.'.format(author,row[id_index]))
+                logger.warning(f'Author {author} not in Author spreadsheet for project {row[id_index]}.')
                 project['contributors'].append({'name': author})
             else:
                 author_list_index = author_name_list.index(author)

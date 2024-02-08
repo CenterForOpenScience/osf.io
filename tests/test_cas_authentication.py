@@ -1,7 +1,6 @@
-# -*- coding: utf-8 -*-
 import furl
 import responses
-import mock
+from unittest import mock
 from nose.tools import *  # noqa: F403
 import pytest
 import unittest
@@ -47,8 +46,8 @@ def make_external_response(release=True, unicode=False):
     }
     if release:
         attributes.update({
-            'given-names': fake.first_name() if not unicode else u'нет',
-            'family-name': fake.last_name() if not unicode else u'Да',
+            'given-names': fake.first_name() if not unicode else 'нет',
+            'family-name': fake.last_name() if not unicode else 'Да',
         })
     return cas.CasResponse(
         authenticated=True,
@@ -117,7 +116,7 @@ def make_service_validation_response_body(user, access_token=None):
 
 def test_parse_authorization_header():
     token = fake.md5()
-    valid = 'Bearer {}'.format(token)
+    valid = f'Bearer {token}'
     assert_equal(cas.parse_auth_header(valid), token)
 
     missing_token = 'Bearer '
@@ -295,7 +294,7 @@ class TestCASTicketAuthentication(OsfTestCase):
 class TestCASExternalLogin(OsfTestCase):
 
     def setUp(self):
-        super(TestCASExternalLogin, self).setUp()
+        super().setUp()
         self.user = UserFactory()
 
     def test_get_user_from_cas_resp_already_authorized(self):

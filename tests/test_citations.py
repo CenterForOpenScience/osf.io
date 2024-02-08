@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import pytest
 from django.utils import timezone
 from nose.tools import *  # noqa
@@ -34,11 +33,11 @@ class CitationsUtilsTestCase(OsfTestCase):
 
 class CitationsNodeTestCase(OsfTestCase):
     def setUp(self):
-        super(CitationsNodeTestCase, self).setUp()
+        super().setUp()
         self.node = ProjectFactory()
 
     def tearDown(self):
-        super(CitationsNodeTestCase, self).tearDown()
+        super().tearDown()
         OSFUser.objects.all().delete()
 
     def test_csl_single_author(self):

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import unittest
 from nose.tools import assert_raises, assert_equal
 import pytest
@@ -14,7 +13,7 @@ pytestmark = pytest.mark.django_db
 class TestNodeSettings(unittest.TestCase):
 
     def setUp(self):
-        super(TestNodeSettings, self).setUp()
+        super().setUp()
         self.node = ProjectFactory()
         self.settings = ForwardSettingsFactory(owner=self.node)
         self.node.save()
@@ -30,7 +29,7 @@ class TestNodeSettings(unittest.TestCase):
 class TestSettingsValidation(unittest.TestCase):
 
     def setUp(self):
-        super(TestSettingsValidation, self).setUp()
+        super().setUp()
         self.settings = ForwardSettingsFactory()
 
     def test_validate_url_bad(self):

@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 import logging
 import os
 
@@ -43,7 +41,7 @@ logger = logging.getLogger(__name__)
 class BaseFileNodeManager(TypedModelManager):
 
     def get_queryset(self):
-        qs = super(BaseFileNodeManager, self).get_queryset()
+        qs = super().get_queryset()
 
         if hasattr(self.model, '_provider') and self.model._provider is not None:
             return qs.filter(provider=self.model._provider)
@@ -59,7 +57,7 @@ class ActiveFileNodeManager(Manager):
     """
 
     def get_queryset(self):
-        qs = super(ActiveFileNodeManager, self).get_queryset()
+        qs = super().get_queryset()
         return qs.exclude(type__in=TrashedFileNode._typedmodels_subtypes)
 
 class UnableToResolveFileClass(Exception):
@@ -165,7 +163,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
 
     @property
     def absolute_api_v2_url(self):
-        path = '/files/{}/'.format(self._id)
+        path = f'/files/{self._id}/'
         return api_v2_url(path)
 
     # For Comment API compatibility
@@ -234,7 +232,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         return self.node and self.node.has_permission(user, perm)
 
     def to_storage(self, **kwargs):
-        storage = super(BaseFileNode, self).to_storage(**kwargs)
+        storage = super().to_storage(**kwargs)
         if 'trashed' not in self.type.lower():
             for key in tuple(storage.keys()):
                 if 'deleted' in key:
@@ -274,7 +272,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
             else:
                 if subclass._provider == provider:
                     return subclass
-        raise UnableToResolveFileClass('Could not resolve class for {} and {}'.format(provider, type_cls))
+        raise UnableToResolveFileClass(f'Could not resolve class for {provider} and {type_cls}')
 
     def _resolve_class(self, type_cls):
         for subclass in BaseFileNode.__subclasses__():
@@ -341,7 +339,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
             headers=headers,
         )
         if resp.status_code != 200:
-            logger.warning('Unable to find {} got status code {}'.format(self, resp.status_code))
+            logger.warning(f'Unable to find {self} got status code {resp.status_code}')
             return None
         return self.update(revision, resp.json()['data']['attributes'])
         # TODO Switch back to head requests
@@ -468,7 +466,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
     def save(self, *args, **kwargs):
         if hasattr(self._meta.model, '_provider') and self._meta.model._provider is not None:
             self.provider = self._meta.model._provider
-        super(BaseFileNode, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     def __repr__(self):
         return '<{}(name={!r}, target={!r})>'.format(
@@ -759,7 +757,7 @@ class TrashedFolder(TrashedFileNode):
         :param deleted_on:
         :return:
         """
-        tf = super(TrashedFolder, self).restore(recursive=True, parent=None, save=True, deleted_on=None)
+        tf = super().restore(recursive=True, parent=None, save=True, deleted_on=None)
 
         if not self.is_file and recursive:
             deleted_on = deleted_on or self.deleted_on
