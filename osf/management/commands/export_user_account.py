@@ -1,6 +1,5 @@
 import datetime as dt
 import time
-import io
 import os
 import json
 import logging

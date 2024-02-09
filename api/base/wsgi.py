@@ -28,7 +28,6 @@ if os.environ.get('API_REMOTE_DEBUG', None):
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.base.settings')
 
 #### WARNING: Here be monkeys ###############
-import six
 import sys
 from rest_framework.fields import Field
 from rest_framework.request import Request

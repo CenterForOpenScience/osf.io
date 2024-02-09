@@ -142,10 +142,10 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 'name': '/ (Full Google Drive)',
                 'urls': {
                     'folders': api_v2_url(f'nodes/{self.owner._id}/addons/googledrive/folders/',
-                        params={
-                            'path': '/',
-                            'id': about['rootFolderId']
-                    })
+                                          params={
+                                              'path': '/',
+                                              'id': about['rootFolderId']
+                                          })
                 }
             }]
 

@@ -83,9 +83,9 @@ class BaseAddonAppConfig(AppConfig):
             paths.append(os.path.dirname(self.node_settings_template))
         template_dirs = list(
             {
-                    path
-                    for path in paths
-                    if os.path.exists(path)
+                path
+                for path in paths
+                if os.path.exists(path)
             }
         )
         if template_dirs:

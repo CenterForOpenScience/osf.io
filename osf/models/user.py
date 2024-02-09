@@ -1673,8 +1673,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         try:
             return self.unclaimed_records[project_id]
         except KeyError:  # reraise as ValueError
-            raise ValueError(f'No unclaimed record for user {self._id} on node {project_id}'
-                                )
+            raise ValueError(f'No unclaimed record for user {self._id} on node {project_id}')
 
     def get_claim_url(self, project_id, external=False):
         """Return the URL that an unclaimed user should use to claim their

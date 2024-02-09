@@ -6,8 +6,6 @@ import re
 import unicodedata
 from framework import sentry
 
-import six
-
 from django.apps import apps
 from django.core.paginator import Paginator
 from django.contrib.contenttypes.models import ContentType

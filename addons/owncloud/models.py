@@ -160,7 +160,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                     'folders': api_v2_url(f'nodes/{self.owner._id}/addons/owncloud/folders/',
                         params={
                             'path': '/',
-                    })
+                        })
                 }
             }]
 
@@ -182,7 +182,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                         'folders': api_v2_url(f'nodes/{self.owner._id}/addons/owncloud/folders/',
                             params={
                                 'path': item.path,
-                        })
+                            })
 
                     }
                 })

@@ -164,8 +164,7 @@ def update_user(auth):
         ############
 
         # get the first email that is set to primary and has an address
-        primary_email = next(
-                each for each in data['emails']
+        primary_email = next(each for each in data['emails']
                 # email is primary
                 if each.get('primary') and each.get('confirmed')
                 # an address is specified (can't trust those sneaky users!)
