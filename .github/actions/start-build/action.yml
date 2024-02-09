@@ -17,7 +17,7 @@ runs:
       pip install --upgrade pip==21.0.1 "setuptools<58.0.0" "wheel==0.38.4"
       pip install invoke==0.13.0
       #lowest flake8 version to support python 3.10
-      pip install flake8==4.0.1 --force-reinstall --upgrade
+      pip install flake8==7.0.0 --force-reinstall --upgrade
       pip install wheel
       invoke wheelhouse --dev --addons
   - name: Other installs
