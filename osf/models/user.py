@@ -2125,14 +2125,20 @@ def _get_nested_spam_check_content(spam_check_source, field_name):
     if spam_check_source:
         if field_name == 'social':
             # Attempt to extract from the nested 'social' field first, then fall back to 'profileWebsites'.
-            return spam_check_source.get('social', {}).get('profileWebsites', []) \
-                   or spam_check_source.get('profileWebsites', [])
+            data = spam_check_source.get('profileWebsites', [])
+            return spam_check_source.get('social', {}).get('profileWebsites', []) or data
 
         if isinstance(spam_check_source, dict):
             for data in spam_check_source[field_name]:
-                spam_check_content += list(data.values())
+                keys = OSFUser.SPAM_USER_PROFILE_FIELDS.get(field_name)
+                for key in keys:
+                    if data[key]:
+                        spam_check_content.append(data[key])
         else:
             for data in spam_check_source:
-                spam_check_content += list(data.values())
+                keys = OSFUser.SPAM_USER_PROFILE_FIELDS.get(field_name)
+                for key in keys:
+                    if data[key]:
+                        spam_check_content.append(data[key])
 
     return spam_check_content
