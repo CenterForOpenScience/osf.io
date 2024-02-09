@@ -1691,7 +1691,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         unclaimed_record = self.get_unclaimed_record(project_id)
         token = unclaimed_record['token']
         return f'{base_url}user/{uid}/{project_id}/claim/?token={token}'
-                    
 
     def is_affiliated_with_institution(self, institution):
         """Return if this user is affiliated with the given ``institution``."""
