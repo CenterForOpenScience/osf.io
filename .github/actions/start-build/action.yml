@@ -13,7 +13,8 @@ runs:
   - name: PIP install
     shell: bash
     run: |
-      pip install --upgrade pip==21.0.1
+      # pinned pip to 21.0a and setuptools<58.0.0 as current dependencies do not build on newer versions of pip and setuptools
+      pip install --upgrade pip==21.0.1 "setuptools<58.0.0"
       pip install invoke==0.13.0
       pip install flake8==2.4.0 --force-reinstall --upgrade
       pip install wheel
