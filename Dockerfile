@@ -135,11 +135,12 @@ COPY ./addons/s3/static/ ./addons/s3/static/
 COPY ./addons/twofactor/static/ ./addons/twofactor/static/
 COPY ./addons/wiki/static/ ./addons/wiki/static/
 COPY ./addons/zotero/static/ ./addons/zotero/static/
+COPY ./build_js_config_files.py ./build_js_config_files.py
 RUN \
     # OSF
     yarn install --frozen-lockfile \
     && mkdir -p ./website/static/built/ \
-    && invoke build_js_config_files \
+    && python3 build_js_config_files.py \
     && yarn run webpack-prod \
     # Admin
     && cd ./admin \
@@ -161,19 +162,19 @@ ENV GIT_COMMIT ${GIT_COMMIT}
 
 # TODO: Uncomment following RUN when python dependencies are ready
 
-# RUN for module in \
-#        api.base.settings \
-#        admin.base.settings \
-#    ; do \
-#        export DJANGO_SETTINGS_MODULE=$module \
-#        && python3 manage.py collectstatic --noinput --no-init-app \
-#    ; done \
-#    && for file in \
-#        ./website/templates/_log_templates.mako \
-#        ./website/static/built/nodeCategories.json \
-#    ; do \
-#        touch $file && chmod o+w $file \
-#    ; done \
-#    && rm ./website/settings/local.py ./api/base/settings/local.py
+ RUN for module in \
+        api.base.settings \
+        admin.base.settings \
+    ; do \
+        export DJANGO_SETTINGS_MODULE=$module \
+        && python3 manage.py collectstatic --noinput --no-init-app \
+    ; done \
+    && for file in \
+        ./website/templates/_log_templates.mako \
+        ./website/static/built/nodeCategories.json \
+    ; do \
+        touch $file && chmod o+w $file \
+    ; done \
+    && rm ./website/settings/local.py ./api/base/settings/local.py
 
 CMD ["su-exec", "nobody", "invoke", "--list"]
