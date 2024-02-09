@@ -165,7 +165,7 @@ class CommentCreateSerializer(CommentSerializer):
         elif not target.referent.belongs_to_node(node_id):
             raise ValueError('Cannot post to comment target on another node.')
         elif isinstance(target.referent, BaseFileNode) and target.referent.provider not in osf_settings.ADDONS_COMMENTABLE:
-                raise ValueError('Comments are not supported for this file provider.')
+            raise ValueError('Comments are not supported for this file provider.')
         return target
 
     def create(self, validated_data):

@@ -40,14 +40,14 @@ class TestMigrateDeletedDate(DbTestCase):
 
         comment.delete(Auth(user), save=True)
         comment.reload()
-        assert(comment.deleted)
+        assert (comment.deleted)
 
         comment.deleted = None
         comment.save()
         migrate_deleted_date.run_statements(statement, 1000, table)
         comment.reload()
-        assert(comment.deleted)
-        assert(comment.deleted == comment.modified)
+        assert (comment.deleted)
+        assert (comment.deleted == comment.modified)
 
     def test_populate_columns(self):
         statement = migrate_deleted_date.POPULATE_BASE_FILE_NODE
@@ -61,8 +61,8 @@ class TestMigrateDeletedDate(DbTestCase):
         osf_folder.delete()
         osf_folder.reload()
         project.reload()
-        assert(osf_folder.deleted)
-        assert(project.deleted)
+        assert (osf_folder.deleted)
+        assert (project.deleted)
 
         project.deleted = None
         osf_folder.deleted = None
@@ -72,4 +72,4 @@ class TestMigrateDeletedDate(DbTestCase):
         migrate_deleted_date.run_sql(statement, check_statement, 1000)
 
         osf_folder.reload()
-        assert(osf_folder.deleted)
+        assert (osf_folder.deleted)

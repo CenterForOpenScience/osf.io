@@ -120,7 +120,7 @@ def requires_search(func):
                     raise exceptions.MalformedQueryError('Failed to parse query')
                 if 'ParseException' in e.error:  # ES 1.5
                     raise exceptions.MalformedQueryError(e.error)
-                if type(e.error) == dict:  # ES 2.0
+                if isinstance(e.error, dict):  # ES 2.0
                     try:
                         root_cause = e.error['root_cause'][0]
                         if root_cause['type'] == 'query_parsing_exception':

@@ -213,9 +213,9 @@ class TestGroupCollectionsPreprints:
         queryset = formfield.queryset
 
         collections_group = Collection.objects.filter(creator=user, is_bookmark_collection=True)[0].get_group('admin')
-        assert(collections_group not in queryset)
+        assert (collections_group not in queryset)
 
-        assert(preprint.get_group('admin') not in queryset)
+        assert (preprint.get_group('admin') not in queryset)
 
     @pytest.mark.enable_bookmark_creation
     def test_admin_app_save_related_collections(self, post_request, osf_user_admin, user, preprint):
@@ -238,7 +238,7 @@ class TestGroupCollectionsPreprints:
             else:
                 data_dict[field] = '{}'
         post_form = form(data_dict, instance=user)
-        assert(post_form.is_valid())
+        assert (post_form.is_valid())
         post_form.save(commit=False)
         qdict = QueryDict('', mutable=True)
         qdict.update(data_dict)
@@ -246,6 +246,6 @@ class TestGroupCollectionsPreprints:
         osf_user_admin.save_related(request=post_request, form=post_form, formsets=[], change=True)
 
         collections_group = Collection.objects.filter(creator=user, is_bookmark_collection=True)[0].get_group('admin')
-        assert(collections_group in user.groups.all())
+        assert (collections_group in user.groups.all())
 
-        assert(preprint.get_group('admin') in user.groups.all())
+        assert (preprint.get_group('admin') in user.groups.all())

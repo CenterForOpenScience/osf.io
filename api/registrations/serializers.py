@@ -744,7 +744,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         for qid in file_qids:
             for file_response in draft.registration_responses.get(qid, []):
                 if not self._is_attached_file_valid(file_response, registering):
-                        orphan_files.append(file_response)
+                    orphan_files.append(file_response)
 
         return orphan_files
 

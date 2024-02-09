@@ -45,8 +45,8 @@ class ZoteroProviderTestCase(CitationAddonProviderTestSuiteMixin, unittest.TestC
 
         res = self.provider.handle_callback(response)
 
-        assert(res.get('display_name') == 'Fake User Name')
-        assert(res.get('provider_id') == 'Fake User ID')
+        assert (res.get('display_name') == 'Fake User Name')
+        assert (res.get('provider_id') == 'Fake User ID')
 
 
 class ZoteroNodeSettingsTestCase(OAuthCitationsNodeSettingsTestSuiteMixin, unittest.TestCase):

@@ -2975,7 +2975,7 @@ class TestPointerMethods:
         assert (
             node.logs.latest().action == NodeLog.POINTER_REMOVED
         )
-        assert(
+        assert (
             node.logs.latest().params == {
                 'parent_node': node.parent_id,
                 'node': node._primary_key,
@@ -3016,10 +3016,10 @@ class TestPointerMethods:
         assert forked.is_fork is True
         assert forked.forked_from == content
         assert forked.primary is True
-        assert(
+        assert (
             node.logs.latest().action == NodeLog.POINTER_FORKED
         )
-        assert(
+        assert (
             node.logs.latest().params == {
                 'parent_node': node.parent_id,
                 'node': node._primary_key,
@@ -3077,21 +3077,21 @@ class TestForkNode:
         assert fork.forked_date != original.created
 
         # Test that pointers were copied correctly
-        assert(
+        assert (
             list(original.nodes_pointer.all()) == list(fork.nodes_pointer.all())
         )
 
         # Test that subjects were copied correctly
-        assert(
+        assert (
             list(original.subjects.all()) == list(fork.subjects.all())
         )
 
         # Test that add-ons were copied correctly
-        assert(
+        assert (
             original.get_addon_names() ==
             fork.get_addon_names()
         )
-        assert(
+        assert (
             [addon.config.short_name for addon in original.get_addons()] ==
             [addon.config.short_name for addon in fork.get_addons()]
         )
@@ -3470,7 +3470,7 @@ class TestHasPermissionOnChildren:
         sub_component.save()
         NodeFactory(parent=node)  # another subcomponent
 
-        assert(
+        assert (
             node.has_permission_on_children(non_admin_user, permissions.READ)
         ) is True
 
@@ -3487,7 +3487,7 @@ class TestHasPermissionOnChildren:
         sub_component.save()
         NodeFactory(parent=node)
 
-        assert(
+        assert (
             node.has_permission_on_children(non_admin_user, permissions.READ)
         ) is False
 
@@ -3510,7 +3510,7 @@ class TestHasPermissionOnChildren:
         parent.save()
         node = NodeFactory(parent=parent, category='project')
 
-        assert(
+        assert (
             node.has_permission_on_children(non_admin_user, permissions.READ)
         ) is False
 

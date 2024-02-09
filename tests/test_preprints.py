@@ -1488,7 +1488,7 @@ class TestSetPreprintFile(OsfTestCase):
         self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
         assert_equal(self.preprint.primary_file._id, self.file._id)
 
-        assert(self.preprint.created)
+        assert (self.preprint.created)
         assert_not_equal(self.project.created, self.preprint.created)
 
     def test_cant_save_without_file(self):
@@ -2278,7 +2278,7 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
         self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
         self.preprint.reload()
         assert_equal(self.preprint.logs.count(), nlogs + 1)
-        assert('urls' in self.preprint.logs.filter(action='osf_storage_file_added')[0].params)
+        assert ('urls' in self.preprint.logs.filter(action='osf_storage_file_added')[0].params)
 
     def test_add_folder_osfstorage_log(self):
         path = 'pizza'
@@ -2288,7 +2288,7 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
         self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
         self.preprint.reload()
         assert_equal(self.preprint.logs.count(), nlogs + 1)
-        assert('urls' not in self.preprint.logs.filter(action='osf_storage_file_added')[0].params)
+        assert ('urls' not in self.preprint.logs.filter(action='osf_storage_file_added')[0].params)
 
 
 @pytest.mark.django_db

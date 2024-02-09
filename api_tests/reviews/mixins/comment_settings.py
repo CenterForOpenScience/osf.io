@@ -52,7 +52,7 @@ class ReviewActionCommentSettingsMixin:
     def test_comment_settings(
             self, app, url, provider, actions, provider_admin,
             provider_moderator, preprint_admin):
-        expected_ids = {l._id for l in actions}
+        expected_ids = {item._id for item in actions}
         for anonymous in [True, False]:
             for private in [True, False]:
                 provider.reviews_comments_anonymous = anonymous
@@ -74,7 +74,7 @@ class ReviewActionCommentSettingsMixin:
     def __assert_fields(
             self, res, expected_ids, hidden_creator, hidden_comment):
         data = res.json['data']
-        actual_ids = {l['id'] for l in data}
+        actual_ids = {item['id'] for item in data}
         if expected_ids != actual_ids:
             raise Exception((expected_ids, actual_ids))
         assert expected_ids == actual_ids

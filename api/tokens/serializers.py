@@ -152,7 +152,7 @@ def validate_requested_scopes(data):
     if not data:
         return []
 
-    if type(data) != list:
+    if not isinstance(data, list):
         data = data.split(' ')
     scopes = ApiOAuth2Scope.objects.filter(name__in=data)
 

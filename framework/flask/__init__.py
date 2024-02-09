@@ -1,7 +1,7 @@
 from flask import (Flask, request, jsonify, render_template,  # noqa
-    render_template_string, Blueprint, send_file, abort, make_response,
-    redirect as flask_redirect, url_for, send_from_directory, current_app
-)
+                   render_template_string, Blueprint, send_file, abort, make_response,
+                   redirect as flask_redirect, url_for, send_from_directory, current_app
+                   )
 import furl
 
 from website import settings

@@ -174,7 +174,7 @@ class TestApplicationReset:
         assert old_secret == user_app.client_secret
 
         # test reset with no client secret does not reset
-        del(payload['data']['attributes']['client_secret'])
+        del payload['data']['attributes']['client_secret']
         res = app.patch_json_api(
             application_detail_url,
             payload,

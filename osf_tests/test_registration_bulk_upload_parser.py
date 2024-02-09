@@ -58,8 +58,8 @@ def assert_parsed(actual_parsed, expected_parsed):
         assert_true(key in parsed)
         actual = parsed[key]
         expected = value
-        if actual and expected and type(actual) == list and type(expected) == list:
-            if type(actual[0]) == str:
+        if actual and expected and isinstance(actual, list) and isinstance(expected, list):
+            if isinstance(actual[0], str):
                 assert_equal(actual.sort(), expected.sort(), msg=f'"{key}" parsed correctly')
                 continue
         assert_equal(actual, expected)

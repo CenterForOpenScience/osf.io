@@ -480,7 +480,7 @@ class TestArchiverTasks(ArchiverTestCase):
             'osfstorage',
             self.archive_job._id
         )
-        assert(mock_group.called_with(archive_osfstorage_signature))
+        assert (mock_group.called_with(archive_osfstorage_signature))
 
     @use_fake_addons
     def test_archive_node_fail(self):
@@ -524,14 +524,14 @@ class TestArchiverTasks(ArchiverTestCase):
             'dropbox',
             self.archive_job._id
         )
-        assert(mock_group.called_with(archive_dropbox_signature))
+        assert (mock_group.called_with(archive_dropbox_signature))
 
     @mock.patch('website.archiver.tasks.make_copy_request.delay')
     def test_archive_addon(self, mock_make_copy_request):
         archive_addon('osfstorage', self.archive_job._id)
         assert_equal(self.archive_job.get_target('osfstorage').status, ARCHIVER_INITIATED)
         cookie = self.user.get_or_create_cookie()
-        assert(mock_make_copy_request.called_with(
+        assert (mock_make_copy_request.called_with(
             self.archive_job._id,
             settings.WATERBUTLER_URL + '/ops/copy',
             data=dict(

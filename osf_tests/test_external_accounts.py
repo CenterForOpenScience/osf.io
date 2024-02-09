@@ -25,7 +25,7 @@ class TestEncryptedExternalAccountFields:
         ea.reload()
 
         for field_name, value in self.encrypted_field_dict.items():
-                assert self.encrypted_field_dict[field_name] == getattr(ea, field_name)
+            assert self.encrypted_field_dict[field_name] == getattr(ea, field_name)
 
     def test_database_is_encrypted(self):
         eaf = ExternalAccountFactory(**self.encrypted_field_dict)

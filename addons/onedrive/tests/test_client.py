@@ -10,7 +10,7 @@ from addons.onedrive.tests.utils import (raw_root_folder_response, raw_me_respon
 
 def test_headers():
     client = OneDriveClient(access_token='meowmix')
-    assert(client._default_headers == {'Authorization': 'Bearer meowmix'})
+    assert (client._default_headers == {'Authorization': 'Bearer meowmix'})
 
 
 def test_folders():
@@ -29,7 +29,7 @@ def test_folders():
     client = OneDriveClient(access_token='meowmix')
     with mock.patch.object(client, '_make_request', side_effect=_quack):
         retval = client.folders(drive_id='abcd')
-        assert(retval == raw_root_folder_response)
+        assert (retval == raw_root_folder_response)
 
 
 def test_user_info_token():
@@ -52,4 +52,4 @@ def test_user_info_token():
     client = OneDriveClient(access_token='meowmix')
     with mock.patch.object(client, '_make_request', side_effect=_woof):
         retval = client.user_info()
-        assert(retval == dummy_user_info)
+        assert (retval == dummy_user_info)

@@ -283,7 +283,7 @@ class RegistrationAndPermissionCheckForPointers(permissions.BasePermission):
         node_link = NodeRelation.load(request.parser_context['kwargs']['node_link_id'])
         node = AbstractNode.load(request.parser_context['kwargs'][view.node_lookup_url_kwarg])
         auth = get_user_auth(request)
-        if request.method == 'DELETE'and node.is_registration:
+        if request.method == 'DELETE' and node.is_registration:
             raise exceptions.MethodNotAllowed(method=request.method)
         if node.is_collection or node.is_registration:
             raise exceptions.NotFound

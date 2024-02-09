@@ -569,7 +569,7 @@ class TestPreprintUpdate:
         assert preprint.article_doi == '10.1234/test'
 
         preprint_detail = app.get(url, auth=user.auth).json['data']
-        assert preprint_detail['links']['doi'] == f'https://doi.org/10.1234/test'
+        assert preprint_detail['links']['doi'] == 'https://doi.org/10.1234/test'
 
     def test_title_has_a_512_char_limit(self, app, user, preprint, url):
         new_title = 'a' * 513

@@ -533,7 +533,7 @@ class TestAddonLogs(OsfTestCase):
         self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
         self.node.reload()
         assert_equal(self.node.logs.count(), nlogs + 1)
-        assert('urls' in self.node.logs.filter(action='osf_storage_file_added')[0].params)
+        assert ('urls' in self.node.logs.filter(action='osf_storage_file_added')[0].params)
 
     def test_add_log_updates_cache_create(self):
         self.configure_osf_addon()
@@ -1011,7 +1011,7 @@ class TestAddonLogs(OsfTestCase):
         self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
         self.node.reload()
         assert_equal(self.node.logs.count(), nlogs + 1)
-        assert('urls' not in self.node.logs.filter(action='osf_storage_file_added')[0].params)
+        assert ('urls' not in self.node.logs.filter(action='osf_storage_file_added')[0].params)
 
 
 class TestCheckAuth(OsfTestCase):

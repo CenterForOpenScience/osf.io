@@ -1924,7 +1924,7 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
         Returns addon, if exists, otherwise returns None
         """
         addon = obj.get_or_add_addon(addon_name, auth=auth) if should_enable else obj.delete_addon(addon_name, auth)
-        if type(addon) == bool:
+        if isinstance(addon, bool):
             addon = None
         return addon
 

@@ -57,7 +57,7 @@ class FigshareClient(BaseClient):
             self._build_url(settings.API_BASE_URL, 'account', 'projects', project_id, 'articles')
         ).json()
         project['articles'] = []
-        if(articles):
+        if articles:
             project['articles'] = []
             for article in articles:
                 fetched = self.article(article['id'])

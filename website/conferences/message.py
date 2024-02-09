@@ -136,7 +136,8 @@ class ConferenceMessage:
     def route(self):
         match = re.search(re.compile(BASE_REGEX.format(allowed_types=(self.allowed_types or 'poster|talk')), re.IGNORECASE | re.VERBOSE), self.form['recipient'])
         if not match:
-            raise ConferenceError('Invalid recipient: '.format(self.form['recipient']))
+            # removed format as it was doing nothing if it is indedeed needed, use git blame
+            raise ConferenceError('Invalid recipient:')
         data = match.groupdict()
         if bool(settings.DEV_MODE) != bool(data['test']):
             # NOTE: test.osf.io has DEV_MODE = False

@@ -17,9 +17,9 @@ logger = logging.getLogger(__name__)
 def find_spammy_files(sniff_r=None, n=None, t=None, to_addrs=None):
     if not sniff_r:
         raise RuntimeError('Require arg sniff_r not found')
-    if type(sniff_r) == str:
+    if isinstance(sniff_r, str):
         sniff_r = [sniff_r]
-    if type(to_addrs) == str:
+    if isinstance(to_addrs, str):
         to_addrs = [to_addrs]
     for sniff in sniff_r:
         filename = f'spam_files_{sniff}.csv'
