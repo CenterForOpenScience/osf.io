@@ -99,6 +99,10 @@ class TestCedarMetadataRecord(object):
         return {'rm_key_1': 'rm_value_1', 'rm_key_2': 'rm_value_2', 'rm_key_3': 'rm_value_3'}
 
     @pytest.fixture()
+    def cedar_record_metadata_alt_json(self):
+        return {'rm_key_2': 'rm_value_2', 'rm_key_3': 'rm_value_3', 'rm_key_4': 'rm_value_4'}
+
+    @pytest.fixture()
     def cedar_record_for_node(self, node, cedar_template, cedar_record_metadata_json):
         return CedarMetadataRecord.objects.create(
             guid=node.guids.first(),
@@ -203,3 +207,16 @@ class TestCedarMetadataRecord(object):
     @pytest.fixture()
     def all_cedar_record_ids(self, cedar_draft_record_ids, cedar_published_private_record_ids, cedar_published_public_record_ids):
         return cedar_draft_record_ids + cedar_published_private_record_ids + cedar_published_public_record_ids
+
+    @pytest.fixture()
+    def record_patch_payload(self, cedar_record_metadata_alt_json):
+
+        return {
+            'data': {
+                'type': 'cedar_metadata_records',
+                'attributes': {
+                    'metadata': cedar_record_metadata_alt_json,
+                    'is_published': 'false'
+                }
+            }
+        }
