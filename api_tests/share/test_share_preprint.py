@@ -1,5 +1,5 @@
 from datetime import datetime
-from unittest from unittest import mock
+from unittest import mock
 
 import pytest
 import responses

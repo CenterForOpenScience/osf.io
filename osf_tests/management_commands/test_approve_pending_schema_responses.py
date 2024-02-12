@@ -1,7 +1,7 @@
 import pytest
 
 from django.utils import timezone
-from unittest from unittest import mock
+from unittest import mock
 
 from osf.management.commands.approve_pending_schema_responses import approve_pending_schema_responses
 from osf.models import SchemaResponse

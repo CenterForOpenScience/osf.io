@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 import pytest
-from unittest from unittest import mock
+from unittest import mock
 
 from osf_tests.factories import (
     AuthUserFactory,

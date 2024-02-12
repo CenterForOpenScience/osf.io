@@ -1,4 +1,4 @@
-from unittest from unittest import mock
+from unittest import mock
 from urllib.parse import urljoin
 
 import pytest

@@ -1,5 +1,5 @@
 from __future__ import print_function
-from unittest from unittest import mock
+from unittest import mock
 import logging
 import os
 import re

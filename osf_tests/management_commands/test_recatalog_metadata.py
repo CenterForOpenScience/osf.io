@@ -1,5 +1,5 @@
 import pytest
-from unittest from unittest import mock
+from unittest import mock
 from operator import attrgetter
 
 from django.core.management import call_command
