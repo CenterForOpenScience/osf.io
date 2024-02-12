@@ -220,3 +220,7 @@ class TestCedarMetadataRecord(object):
                 }
             }
         }
+
+    @staticmethod
+    def get_record_metadata_download_file_name(record):
+        return f'{record._id}-{record.get_template_name()}-v{record.get_template_version()}.json'
