@@ -9,14 +9,13 @@ from osf_tests.factories import (
     AuthUserFactory,
 )
 from osf.models.spam import SpamStatus
-from osf.external.spam import tasks as spam_tasks
 
 
 @pytest.mark.django_db
 class TestUserSpamOOPSpam:
 
     @pytest.fixture
-    def user(self):
+    def user(self, mock_spam_head_request):
         test_user = AuthUserFactory()
         test_user.schools = [
             {'insitution': fake.company(), 'department': 'engineering', 'degree': fake.catch_phrase()}
@@ -27,8 +26,7 @@ class TestUserSpamOOPSpam:
             for _ in range(2)
         ]
         test_user.social['profileWebsites'] = ['osf.io', 'cos.io']
-        with mock.patch.object(spam_tasks.requests, 'head'):
-            test_user.save()
+        test_user.save()
         return test_user
 
     @mock.patch('osf.external.oopspam.client.OOPSpamClient')

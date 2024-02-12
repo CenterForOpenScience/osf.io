@@ -2221,7 +2221,7 @@ class TestUserValidation(OsfTestCase):
         # some are correctly not extracted and not kept in notable domain so spot
         # check some, not all, because not all `testsPositive` urls should be in
         # NotableDomains
-        assert NotableDomain.objects.all().count() > previous_number_of_domains
+        assert NotableDomain.objects.all().count() == previous_number_of_domains + 12
         assert NotableDomain.objects.get(domain='definitelyawebsite.com')
         assert NotableDomain.objects.get(domain='a.b-c.de')
 
