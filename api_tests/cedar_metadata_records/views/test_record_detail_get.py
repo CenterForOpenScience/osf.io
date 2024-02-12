@@ -7,7 +7,7 @@ from osf.utils.permissions import READ, WRITE
 from osf_tests.factories import AuthUserFactory
 
 @pytest.mark.django_db
-class TestCedarMetadataRecordDetailPrivateProjectPublishedMetadata(TestCedarMetadataRecord):
+class TestCedarMetadataRecordDetailRetrievePrivateProjectPublishedMetadata(TestCedarMetadataRecord):
 
     def test_record_detail_for_node_with_admin_auth(self, app, node, user, cedar_template, cedar_record_for_node, cedar_record_metadata_json):
 
@@ -47,7 +47,7 @@ class TestCedarMetadataRecordDetailPrivateProjectPublishedMetadata(TestCedarMeta
         assert urlparse(data['links']['self']).path == f'/{API_PRIVATE_BASE}cedar_metadata_records/{cedar_record_for_node._id}/'
         assert urlparse(data['links']['metadata_download']).path == f'/{API_PRIVATE_BASE}cedar_metadata_records/{cedar_record_for_node._id}/metadata_download/'
 
-    def test_record_detail_for_node_with_read_auth(self, app, node, user, cedar_template, cedar_record_for_node, cedar_record_metadata_json):
+    def test_record_detail_for_node_with_read_auth(self, app, node, cedar_template, cedar_record_for_node, cedar_record_metadata_json):
 
         read = AuthUserFactory()
         node.add_contributor(read, permissions=READ)
@@ -78,7 +78,7 @@ class TestCedarMetadataRecordDetailPrivateProjectPublishedMetadata(TestCedarMeta
 
 
 @pytest.mark.django_db
-class TestCedarMetadataRecordDetailPrivateProjectDraftMetadata(TestCedarMetadataRecord):
+class TestCedarMetadataRecordDetailRetrievePrivateProjectDraftMetadata(TestCedarMetadataRecord):
 
     def test_record_detail_for_node_with_admin_auth(self, app, node_alt, user, cedar_template, cedar_draft_record_for_node_alt, cedar_record_metadata_json):
 
@@ -138,7 +138,7 @@ class TestCedarMetadataRecordDetailPrivateProjectDraftMetadata(TestCedarMetadata
 
 
 @pytest.mark.django_db
-class TestCedarMetadataRecordDetailPublicProjectPublishedMetadata(TestCedarMetadataRecord):
+class TestCedarMetadataRecordDetailRetrievePublicProjectPublishedMetadata(TestCedarMetadataRecord):
 
     def test_record_detail_for_node_with_admin_auth(self, app, node_pub, user, cedar_template, cedar_record_for_node_pub, cedar_record_metadata_json):
 
@@ -178,7 +178,7 @@ class TestCedarMetadataRecordDetailPublicProjectPublishedMetadata(TestCedarMetad
         assert urlparse(data['links']['self']).path == f'/{API_PRIVATE_BASE}cedar_metadata_records/{cedar_record_for_node_pub._id}/'
         assert urlparse(data['links']['metadata_download']).path == f'/{API_PRIVATE_BASE}cedar_metadata_records/{cedar_record_for_node_pub._id}/metadata_download/'
 
-    def test_record_detail_for_node_with_read_auth(self, app, node_pub, user, cedar_template, cedar_record_for_node_pub, cedar_record_metadata_json):
+    def test_record_detail_for_node_with_read_auth(self, app, node_pub, cedar_template, cedar_record_for_node_pub, cedar_record_metadata_json):
 
         read = AuthUserFactory()
         node_pub.add_contributor(read, permissions=READ)
@@ -234,7 +234,7 @@ class TestCedarMetadataRecordDetailPublicProjectPublishedMetadata(TestCedarMetad
 
 
 @pytest.mark.django_db
-class TestCedarMetadataRecordDetailPublicProjectDraftMetadata(TestCedarMetadataRecord):
+class TestCedarMetadataRecordDetailRetrievePublicProjectDraftMetadata(TestCedarMetadataRecord):
 
     def test_record_detail_for_node_with_admin_auth(self, app, node_pub_alt, user, cedar_template, cedar_draft_record_for_node_pub_alt, cedar_record_metadata_json):
 
@@ -295,7 +295,7 @@ class TestCedarMetadataRecordDetailPublicProjectDraftMetadata(TestCedarMetadataR
 
 
 @pytest.mark.django_db
-class TestCedarMetadataRecordDetailRegistrationPublishedMetadata(TestCedarMetadataRecord):
+class TestCedarMetadataRecordDetailRetrieveRegistrationPublishedMetadata(TestCedarMetadataRecord):
 
     def test_record_detail_for_registration_with_admin_auth(self, app, registration, user, cedar_template, cedar_record_for_registration, cedar_record_metadata_json):
 
@@ -335,7 +335,7 @@ class TestCedarMetadataRecordDetailRegistrationPublishedMetadata(TestCedarMetada
         assert urlparse(data['links']['self']).path == f'/{API_PRIVATE_BASE}cedar_metadata_records/{cedar_record_for_registration._id}/'
         assert urlparse(data['links']['metadata_download']).path == f'/{API_PRIVATE_BASE}cedar_metadata_records/{cedar_record_for_registration._id}/metadata_download/'
 
-    def test_record_detail_for_registration_with_read_auth(self, app, registration, user, cedar_template, cedar_record_for_registration, cedar_record_metadata_json):
+    def test_record_detail_for_registration_with_read_auth(self, app, registration, cedar_template, cedar_record_for_registration, cedar_record_metadata_json):
 
         read = AuthUserFactory()
         registration.add_contributor(read, permissions=READ)
@@ -391,7 +391,7 @@ class TestCedarMetadataRecordDetailRegistrationPublishedMetadata(TestCedarMetada
 
 
 @pytest.mark.django_db
-class TestCedarMetadataRecordDetailRegistrationDraftMetadata(TestCedarMetadataRecord):
+class TestCedarMetadataRecordDetailRetrieveRegistrationDraftMetadata(TestCedarMetadataRecord):
 
     def test_record_detail_for_registration_with_admin_auth(self, app, registration_alt, user, cedar_template, cedar_draft_record_for_registration_alt, cedar_record_metadata_json):
 
@@ -452,7 +452,7 @@ class TestCedarMetadataRecordDetailRegistrationDraftMetadata(TestCedarMetadataRe
 
 
 @pytest.mark.django_db
-class TestCedarMetadataRecordDetailPrivateFilePublishedMetadata(TestCedarMetadataRecord):
+class TestCedarMetadataRecordDetailRetrievePrivateFilePublishedMetadata(TestCedarMetadataRecord):
 
     def test_record_detail_for_file_with_admin_auth(self, app, node, file, user, cedar_template, cedar_record_for_file, cedar_record_metadata_json):
 
@@ -494,7 +494,7 @@ class TestCedarMetadataRecordDetailPrivateFilePublishedMetadata(TestCedarMetadat
         assert urlparse(data['links']['self']).path == f'/{API_PRIVATE_BASE}cedar_metadata_records/{cedar_record_for_file._id}/'
         assert urlparse(data['links']['metadata_download']).path == f'/{API_PRIVATE_BASE}cedar_metadata_records/{cedar_record_for_file._id}/metadata_download/'
 
-    def test_record_detail_for_file_with_read_auth(self, app, node, file, user, cedar_template, cedar_record_for_file, cedar_record_metadata_json):
+    def test_record_detail_for_file_with_read_auth(self, app, node, file, cedar_template, cedar_record_for_file, cedar_record_metadata_json):
 
         read = AuthUserFactory()
         node.add_contributor(read, permissions=READ)
@@ -526,7 +526,7 @@ class TestCedarMetadataRecordDetailPrivateFilePublishedMetadata(TestCedarMetadat
 
 
 @pytest.mark.django_db
-class TestCedarMetadataRecordDetailPrivateFileDraftMetadata(TestCedarMetadataRecord):
+class TestCedarMetadataRecordDetailRetrievePrivateFileDraftMetadata(TestCedarMetadataRecord):
 
     def test_record_detail_for_file_with_admin_auth(self, app, node_alt, file_alt, user, cedar_template, cedar_draft_record_for_file_alt, cedar_record_metadata_json):
 
@@ -588,7 +588,7 @@ class TestCedarMetadataRecordDetailPrivateFileDraftMetadata(TestCedarMetadataRec
 
 
 @pytest.mark.django_db
-class TestCedarMetadataRecordDetailPublicFilePublishedMetadata(TestCedarMetadataRecord):
+class TestCedarMetadataRecordDetailRetrievePublicFilePublishedMetadata(TestCedarMetadataRecord):
 
     def test_record_detail_for_file_with_admin_auth(self, app, node_pub, file_pub, user, cedar_template, cedar_record_for_file_pub, cedar_record_metadata_json):
 
@@ -630,7 +630,7 @@ class TestCedarMetadataRecordDetailPublicFilePublishedMetadata(TestCedarMetadata
         assert urlparse(data['links']['self']).path == f'/{API_PRIVATE_BASE}cedar_metadata_records/{cedar_record_for_file_pub._id}/'
         assert urlparse(data['links']['metadata_download']).path == f'/{API_PRIVATE_BASE}cedar_metadata_records/{cedar_record_for_file_pub._id}/metadata_download/'
 
-    def test_record_detail_for_file_with_read_auth(self, app, node_pub, file_pub, user, cedar_template, cedar_record_for_file_pub, cedar_record_metadata_json):
+    def test_record_detail_for_file_with_read_auth(self, app, node_pub, file_pub, cedar_template, cedar_record_for_file_pub, cedar_record_metadata_json):
 
         read = AuthUserFactory()
         node_pub.add_contributor(read, permissions=READ)
@@ -689,7 +689,7 @@ class TestCedarMetadataRecordDetailPublicFilePublishedMetadata(TestCedarMetadata
 
 
 @pytest.mark.django_db
-class TestCedarMetadataRecordDetailPublicFileDraftMetadata(TestCedarMetadataRecord):
+class TestCedarMetadataRecordDetailRetrievePublicFileDraftMetadata(TestCedarMetadataRecord):
 
     def test_record_detail_for_file_with_admin_auth(self, app, node_pub_alt, file_pub_alt, user, cedar_template, cedar_draft_record_for_file_pub_alt, cedar_record_metadata_json):
 
