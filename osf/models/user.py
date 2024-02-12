@@ -1880,23 +1880,22 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         # Determine which fields to check for spam, preferring saved_fields if provided.
         spam_check_fields = set(self.SPAM_USER_PROFILE_FIELDS)
-        spam_check_source = saved_fields if saved_fields else {field: getattr(self, field) for field in
-                                                               spam_check_fields}
+        if saved_fields:
+            spam_check_fields = set(saved_fields).intersection(spam_check_fields)
 
-        # Ensure we only consider relevant fields present in the spam_check_source.
-        spam_check_fields = spam_check_fields.intersection(spam_check_source.keys())
+        spam_check_source = {field: getattr(self, field) for field in spam_check_fields}
 
         spam_contents = []
         for field in spam_check_fields:
-            field_value = spam_check_source.get(field)
-            # Validated fields have field_value values, but saved fields are only field names.
-            if field_value:
+            validated_data_from_serializer = spam_check_source.get(field)
+            # Validated fields aren't from dirty_fields, they have values.
+            if validated_data_from_serializer:
                 spam_contents.extend(_get_nested_spam_check_content(spam_check_source, field))
             else:
+                # these are the changed fields from dirty_fields, they have need current model values before saving.
                 value = getattr(self, field, {})
                 spam_contents.extend(_get_nested_spam_check_content(value, field))
 
-        # Join all collected spam check contents into a single string.
         return ' '.join(spam_contents).strip()
 
     def check_spam(self, saved_fields, request_headers):

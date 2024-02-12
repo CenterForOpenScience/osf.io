@@ -50,7 +50,6 @@ class TestUserSpamAkismet:
         # contents instead of the concatenated list in order to enable easier, more accurate comparison
         returned_content_elements = sorted(returned_content_string.split(' '))
         expected_content_elements = sorted(expected_content_string.split(' '))
-        print(returned_content_elements, expected_content_string)
         assert returned_content_elements == expected_content_elements
 
     @pytest.mark.enable_enqueue_task
